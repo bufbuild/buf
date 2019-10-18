@@ -29,7 +29,7 @@ Using an [IDL](https://en.wikipedia.org/wiki/Interface_description_language) suc
 provides numerous benefits over JSON:
 
 - Generated stubs for each language you use.
-- Forwards and backwards campatibility for your data types.
+- Forwards and backwards compatibility for your data types.
 - Payload sizes are up to 10 times smaller.
 - Serialization speed is up to 100 times faster.
 - Structured RPCs for your APIs instead of documented HTTP endpoints.
