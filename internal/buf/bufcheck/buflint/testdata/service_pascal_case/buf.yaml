@@ -1,0 +1,3 @@
+lint:
+  use:
+    - SERVICE_PASCAL_CASE

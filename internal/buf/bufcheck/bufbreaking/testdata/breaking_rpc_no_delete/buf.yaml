@@ -1,0 +1,3 @@
+breaking:
+  use:
+    - RPC_NO_DELETE

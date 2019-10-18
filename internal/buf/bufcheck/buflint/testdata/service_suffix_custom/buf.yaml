@@ -1,0 +1,4 @@
+lint:
+  use:
+    - SERVICE_SUFFIX
+  service_suffix: API

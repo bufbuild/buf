@@ -1,0 +1,3 @@
+lint:
+  use:
+    - SERVICE_SUFFIX

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package a;
+
+import "google/protobuf/empty.proto";
+
+message One {}
+message Two {}
+message Three {}
+message Four {}
+message Five {}
+message Six {}
+message Seven {}
+message Eight {}
+message Nine {}
+message Ten {}
+message Eleven {}
+message Twelve {}
+
+service Foo {
+  rpc One(One) returns (Two) {}
+  rpc Two(Three) returns (Three) {}
+  rpc Three(Four) returns (One) {}
+  rpc Four(Five) returns (Six) {}
+  rpc Five(Three) returns (Seven) {}
+  rpc Six(Eight) returns (Nine) {}
+  rpc Seven(google.protobuf.Empty) returns (Ten) {}
+  rpc Eight(Eleven) returns (google.protobuf.Empty) {}
+  rpc Nine(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc Ten(Twelve) returns (Twelve) {}
+}

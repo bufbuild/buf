@@ -1,0 +1,3 @@
+lint:
+  use:
+    - PACKAGE_VERSION_SUFFIX

@@ -1,0 +1,28 @@
+name: ci
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+        with:
+          ref: master
+      - name: checkout-master
+        run: git checkout master
+      - name: checkout
+        uses: actions/checkout@v1
+      - name: setup
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.1
+      - name: deps
+        run: make deps
+      - name: lint
+        run: make lint
+      - name: cover
+        run: make cover
+      - name: codecov
+        run: make codecov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

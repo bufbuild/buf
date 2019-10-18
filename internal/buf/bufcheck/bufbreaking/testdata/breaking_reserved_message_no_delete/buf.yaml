@@ -1,0 +1,3 @@
+breaking:
+  use:
+    - RESERVED_MESSAGE_NO_DELETE

@@ -1,0 +1,3 @@
+breaking:
+  except:
+    - SERVICE_NO_DELETE

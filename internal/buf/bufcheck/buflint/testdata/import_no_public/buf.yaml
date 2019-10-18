@@ -1,0 +1,3 @@
+lint:
+  use:
+    - IMPORT_NO_PUBLIC

@@ -1,0 +1,3 @@
+lint:
+  use:
+    - RPC_REQUEST_RESPONSE_UNIQUE

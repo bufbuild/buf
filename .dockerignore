@@ -1,0 +1,7 @@
+.build/
+.env/
+.tmp/
+cmd/buf/buf
+cmd/protoc-gen-buf-check-breaking/protoc-gen-buf-check-breaking
+cmd/protoc-gen-buf-check-lint/protoc-gen-buf-check-lint
+internal/buf/bufbuild/cache/

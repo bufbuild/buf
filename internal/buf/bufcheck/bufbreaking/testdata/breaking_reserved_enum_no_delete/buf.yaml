@@ -1,0 +1,3 @@
+breaking:
+  use:
+    - RESERVED_ENUM_NO_DELETE

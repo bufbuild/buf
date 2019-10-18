@@ -1,0 +1,3 @@
+lint:
+  use:
+    - MESSAGE_PASCAL_CASE
