@@ -11,18 +11,19 @@ more details.**
 ## Goal
 
 Buf's goal is for Protobuf to not only be a good choice on the technical merits,
-but for Protobuf to be so easy to use that the decision is easy. Your organization
+but to be so easy to use that the decision is trivial. Your organization
 should not have to reinvent the wheel to use Protobuf efficiently and effectively. Stop
 worrying about your Protobuf management strategy getting out of control. We'll
 handle that for you, so you can worry about what matters.
 
-"Protobuf is so much harder to use than JSON, why should I use Protobuf?"
+
+## Overview
+
+*"Protobuf is so much harder to use than JSON, why should I use Protobuf?"*
 
 Buf aims to eventually reverse this sentence. Our goal is for you to say:
 
-"JSON is so much harder to use than Protobuf, why should I use JSON?"
-
-## Overview
+*"JSON is so much harder to use than Protobuf, why should I use JSON?"*
 
 Using an [IDL](https://en.wikipedia.org/wiki/Interface_description_language) such as
 [Protocol Buffers](https://developers.google.com/protocol-buffers) ("Protobuf")
@@ -74,12 +75,12 @@ In time, Buf aims to solve all this and more. However, there is a long way betwe
 Phase 1 is to solve the API Structure and Backwards Compatibility problems: let's
 help you maintain consistent Protobuf APIs that maintain compability.
 
-**Today, we are releasing the Buf CLI tool, and associated `protoc` plugins, into public beta.**
+**We have released the Buf CLI tool, and associated `protoc` plugins, into public beta.**
 
 Buf currently contains:
 
-- A [linter](https://buf.build/docs/lint-overview) that enforces good API design choices and structure.
-- A [breaking change detector](https://buf.build/docs/breaking-overview) that enforces compabibility at the source code or wire level.
+- A [linter](https://buf.build/docs/lint-usage) that enforces good API design choices and structure.
+- A [breaking change detector](https://buf.build/docs/breaking-usage) that enforces compabibility at the source code or wire level.
 - A configurable file [builder](https://buf.build/docs/build-overview) that produces [Images](https://buf.build/docs/build-images), our extension of
   [FileDescriptorSets](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto).
 
@@ -147,7 +148,7 @@ Features of Buf's include:
 
   See the [Image](https://buf.build/docs/build-images) and [compiler](https://buf.build/docs/build-compiler) documentation for more details.
 
-  In short, we don't expect you to natively trust our internal compiler is actually equivalent to
+  In short, we don't expect you to natively trust the internal compiler is actually equivalent to
   `protoc` - we would want to verify this claim ourselves. There are also cases (such as Bazel setups)
   where you may already have infrastructure around calling `protoc`, and may want to just use
   artifacts from `protoc` as input to `buf`.
@@ -155,7 +156,7 @@ Features of Buf's include:
 - **Use buf as a protoc plugin instead of a standalone tool**. You can go a step further and use
   Buf's lint and breaking change functionality as a `protoc` plugin with the provided
   [protoc-gen-buf-check-lint](https://buf.build/docs/lint-protoc-plugin) and
-  [protoc-gen-buf-check-breaking](https://buf.build/docs/protoc-gen-buf-check-breaking) plugins.
+  [protoc-gen-buf-check-breaking](https://buf.build/docs/breaking-protoc-plugin) plugins.
 
 ## Buf Image Registry
 
