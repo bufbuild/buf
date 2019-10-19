@@ -73,14 +73,14 @@ In time, Buf aims to solve all this and more. However, there is a long way betwe
 ## Buf CLI
 
 Phase 1 is to solve the API Structure and Backwards Compatibility problems: let's
-help you maintain consistent Protobuf APIs that maintain compability.
+help you maintain consistent Protobuf APIs that maintain compatibility.
 
 **We have released the Buf CLI tool, and associated `protoc` plugins, into public beta.**
 
 Buf currently contains:
 
 - A [linter](https://buf.build/docs/lint-usage) that enforces good API design choices and structure.
-- A [breaking change detector](https://buf.build/docs/breaking-usage) that enforces compabibility at the source code or wire level.
+- A [breaking change detector](https://buf.build/docs/breaking-usage) that enforces compatibility at the source code or wire level.
 - A configurable file [builder](https://buf.build/docs/build-overview) that produces [Images](https://buf.build/docs/build-images), our extension of
   [FileDescriptorSets](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto).
 
@@ -98,7 +98,7 @@ Features of Buf's include:
   of lint and breaking change checkers your organization needs.
 
   Buf provides [40 available lint checkers](https://buf.build/docs/lint-checkers) and [54 available breaking
-  checkers](https://buf.build/docs/breaking-checkers) to cover most needs. We believe our breaking change detection truely
+  checkers](https://buf.build/docs/breaking-checkers) to cover most needs. We believe our breaking change detection truly
   covers every scenario for your APIs.
 
 - **Selectable error output**. By default, Buf outputs `file:line:col:message` information
@@ -107,7 +107,7 @@ Features of Buf's include:
   including if types move across files. JSON output that includes the end line and end column
   of the lint error is also available, and JUnit output is coming soon.
 
-- **Editor integration**. The default error output is easily parsable by any editor, making the
+- **Editor integration**. The default error output is easily parseable by any editor, making the
   feedback loop for issues very short. Currently, we only provide [Vim integration](https://buf.build/docs/editor-integration)
   for linting but will extend this in the future to include other editors such as Emacs, VS Code,
   and Intellij IDEs.
