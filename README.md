@@ -79,7 +79,7 @@ help you maintain consistent Protobuf APIs that maintain compability.
 Buf currently contains:
 
 - A [linter](https://buf.build/docs/lint-overview) that enforces good API design choices and structure.
-- A [breaking change detector](https://buf.build/docs/breaking-overvidw) that enforces compabibility at the source code or wire level.
+- A [breaking change detector](https://buf.build/docs/breaking-overview) that enforces compabibility at the source code or wire level.
 - A configurable file [builder](https://buf.build/docs/build-overview) that produces [Images](https://buf.build/docs/build-images), our extension of
   [FileDescriptorSets](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto).
 
