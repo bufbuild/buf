@@ -19,7 +19,7 @@ include make/golang.mk
 include make/protoc_gen_go.mk
 include make/docker.mk
 
-RELEASE_DOCKER_IMAGE := golang:1.13.1-buster
+RELEASE_DOCKER_IMAGE := golang:1.13.3-buster
 
 .PHONY: buflint
 buflint: bufinstall

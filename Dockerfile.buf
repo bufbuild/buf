@@ -1,4 +1,4 @@
-FROM golang:1.13.1-alpine3.10
+FROM golang:1.13.3-alpine3.10
 
 ENV \
   CACHE_BASE=/cache/buf \
