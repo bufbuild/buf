@@ -17,6 +17,17 @@ worrying about your Protobuf management strategy getting out of control. We'll
 handle that for you, so you can worry about what matters.
 
 
+## Quick Links
+
+However, we recommend you read the below introduction first!
+
+- [Tour of existing functionality- takes about 10 minutes to complete](https://buf.build/docs/tour-1)
+- [Overview of our 40 lint checkers](https://buf.build/docs/lint-checkers)
+- [Overview of our 54 breaking change checkers](https://buf.build/docs/breaking-checkers)
+- [Protobuf Style Guide](https://buf.build/docs/style-guide)
+- [Migration from Protolock](https://buf.build/docs/migration-protolock)
+- [Migration from Prototool](https://buf.build/docs/migration-prototool)
+
 ## Overview
 
 *"Protobuf is so much harder to use than JSON, why should I use Protobuf?"*
