@@ -15,7 +15,7 @@ func newRootCommand(use string, devel bool) *clicobra.Command {
 			newCheckCmd(flags),
 			newLsFilesCmd(flags),
 		},
-		BindFlags: flags.bindAllRootCommandFlags,
+		BindFlags: flags.bindRootCommandFlags,
 	}
 }
 

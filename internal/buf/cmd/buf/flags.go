@@ -9,7 +9,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/cli"
 	"github.com/bufbuild/buf/internal/pkg/cli/clicobra"
-	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
@@ -38,17 +37,7 @@ const (
 
 // Flags are flags for the buf CLI.
 type Flags struct {
-	*clicobra.Flags
-
-	// root command flags
-	// LogLevel and LogFormat are also bound
-	Timeout time.Duration
-	// root devel command flags
-	Profile           bool
-	ProfilePath       string
-	ProfileLoops      int
-	ProfileType       string
-	ProfileAllowError bool
+	baseFlags *clicobra.TimeoutFlags
 
 	Config        string
 	AgainstConfig string
@@ -76,7 +65,7 @@ type Flags struct {
 //
 // Devel should not be set for release binaries.
 func newFlags(devel bool) *Flags {
-	return &Flags{Flags: clicobra.NewFlags(devel)}
+	return &Flags{baseFlags: clicobra.NewTimeoutFlags(devel)}
 }
 
 // newRunFunc creates a new run function.
@@ -89,22 +78,20 @@ func (f *Flags) newRunFunc(
 		*bytepool.SegList,
 	) error,
 ) func(*cli.ExecEnv) error {
-	return func(execEnv *cli.ExecEnv) error {
-		return conditionalProfile(execEnv, f, fn)
-	}
+	return f.baseFlags.NewRunFunc(
+		func(
+			ctx context.Context,
+			execEnv *cli.ExecEnv,
+			logger *zap.Logger,
+			segList *bytepool.SegList,
+		) error {
+			return fn(ctx, execEnv, f, logger, segList)
+		},
+	)
 }
 
-func (f *Flags) bindAllRootCommandFlags(flagSet *pflag.FlagSet) {
-	f.BindLogLevel(flagSet)
-	f.BindLogFormat(flagSet)
-	flagSet.DurationVar(&f.Timeout, "timeout", 10*time.Second, `The duration until timing out.`)
-	if f.Devel() {
-		flagSet.BoolVar(&f.Profile, "profile", false, "Run profiling.")
-		flagSet.StringVar(&f.ProfilePath, "profile-path", "", "The profile base directory path.")
-		flagSet.IntVar(&f.ProfileLoops, "profile-loops", 10, "The number of loops to run.")
-		flagSet.StringVar(&f.ProfileType, "profile-type", "cpu", "The profile type [cpu,mem,block,mutex].")
-		flagSet.BoolVar(&f.ProfileAllowError, "profile-allow-error", false, "Allow errors for profiled commands.")
-	}
+func (f *Flags) bindRootCommandFlags(flagSet *pflag.FlagSet) {
+	f.baseFlags.BindRootCommandFlags(flagSet, 10*time.Second)
 }
 
 func (f *Flags) bindImageBuildInput(flagSet *pflag.FlagSet) {
@@ -202,50 +189,4 @@ func (f *Flags) bindCheckLsCheckersCategories(flagSet *pflag.FlagSet) {
 
 func (f *Flags) bindCheckLsCheckersFormat(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(&f.Format, checkLsCheckersFormatFlagName, "text", "The format to print checkers as. Must be one of [text,json].")
-}
-
-func conditionalProfile(
-	execEnv *cli.ExecEnv,
-	flags *Flags,
-	f func(context.Context, *cli.ExecEnv, *Flags, *zap.Logger, *bytepool.SegList) error,
-) error {
-	logger, err := flags.NewLogger(execEnv.Stderr)
-	if err != nil {
-		return err
-	}
-	defer logutil.Defer(logger.Named("clicommand"), "run")()
-
-	ctx := context.Background()
-	var cancel context.CancelFunc
-	if !flags.Profile && flags.Timeout != 0 {
-		ctx, cancel = context.WithTimeout(context.Background(), flags.Timeout)
-		defer cancel()
-	}
-
-	segList := bytepool.NewNoPoolSegList()
-
-	if !flags.Profile {
-		return f(ctx, execEnv, flags, logger, segList)
-	}
-
-	defer func() {
-		var unrecycled uint64
-		for _, listStats := range segList.ListStats() {
-			logger.Debug("memory", zap.Any("list_stats", listStats))
-			unrecycled += listStats.TotalUnrecycled
-		}
-		if unrecycled != 0 {
-			logger.Debug("memory_leak", zap.Uint64("unrecycled", unrecycled))
-		}
-	}()
-	return clicobra.Profile(
-		logger,
-		flags.ProfilePath,
-		flags.ProfileType,
-		flags.ProfileLoops,
-		flags.ProfileAllowError,
-		func() error {
-			return f(ctx, execEnv, flags, logger, segList)
-		},
-	)
 }

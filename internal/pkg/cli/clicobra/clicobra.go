@@ -2,6 +2,7 @@
 package clicobra
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/cli"
 	"github.com/bufbuild/buf/internal/pkg/cli/internal"
 	"github.com/bufbuild/buf/internal/pkg/errs"
@@ -22,8 +24,13 @@ import (
 
 // Flags are base flags.
 type Flags struct {
-	LogLevel  string
-	LogFormat string
+	logLevel          string
+	logFormat         string
+	profile           bool
+	profilePath       string
+	profileLoops      int
+	profileType       string
+	profileAllowError bool
 
 	devel bool
 }
@@ -37,24 +44,91 @@ func NewFlags(devel bool) *Flags {
 	}
 }
 
-// NewLogger creates a new Logger from the Flags.
-func (f *Flags) NewLogger(stderr io.Writer) (*zap.Logger, error) {
-	return logutil.NewLogger(stderr, f.LogLevel, f.LogFormat)
+// BindRootCommandFlags binds the root-command flags.
+func (f *Flags) BindRootCommandFlags(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.logLevel, "log-level", "info", "The log level [debug,info,warn,error].")
+	flagSet.StringVar(&f.logFormat, "log-format", "color", "The log format [text,color,json].")
+	if f.devel {
+		flagSet.BoolVar(&f.profile, "profile", false, "Run profiling.")
+		flagSet.StringVar(&f.profilePath, "profile-path", "", "The profile base directory path.")
+		flagSet.IntVar(&f.profileLoops, "profile-loops", 1, "The number of loops to run.")
+		flagSet.StringVar(&f.profileType, "profile-type", "cpu", "The profile type [cpu,mem,block,mutex].")
+		flagSet.BoolVar(&f.profileAllowError, "profile-allow-error", false, "Allow errors for profiled commands.")
+	}
 }
 
-// BindLogLevel binds the log-level flag.
-func (f *Flags) BindLogLevel(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.LogLevel, "log-level", "info", "The log level [debug,info,warn,error].")
+// NewRunFunc creates a new run function.
+func (f *Flags) NewRunFunc(
+	fn func(
+		*cli.ExecEnv,
+		*zap.Logger,
+		*bytepool.SegList,
+	) error,
+) func(*cli.ExecEnv) error {
+	return func(execEnv *cli.ExecEnv) error {
+		return doRun(execEnv, f, fn)
+	}
 }
 
-// BindLogFormat binds the log-format flag.
-func (f *Flags) BindLogFormat(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.LogFormat, "log-format", "color", "The log format [text,color,json].")
-}
-
-// Devel returns true if devel is set.
+// Devel returns true if devel was set.
 func (f *Flags) Devel() bool {
 	return f.devel
+}
+
+// TimeoutFlags are base flags with a root timeout.
+type TimeoutFlags struct {
+	flags   *Flags
+	timeout time.Duration
+}
+
+// NewTimeoutFlags returns a new TimeoutFlags.
+//
+// Devel should not be set for release binaries.
+func NewTimeoutFlags(devel bool) *TimeoutFlags {
+	return &TimeoutFlags{
+		flags: NewFlags(devel),
+	}
+}
+
+// BindRootCommandFlags binds the root-command flags with timeout.
+func (t *TimeoutFlags) BindRootCommandFlags(flagSet *pflag.FlagSet, defaultTimeout time.Duration) {
+	t.flags.BindRootCommandFlags(flagSet)
+	flagSet.DurationVar(&t.timeout, "timeout", defaultTimeout, `The duration until timing out.`)
+}
+
+// NewRunFunc creates a new run function.
+func (t *TimeoutFlags) NewRunFunc(
+	fn func(
+		context.Context,
+		*cli.ExecEnv,
+		*zap.Logger,
+		*bytepool.SegList,
+	) error,
+) func(*cli.ExecEnv) error {
+	return func(execEnv *cli.ExecEnv) error {
+		ctx := context.Background()
+		var cancel context.CancelFunc
+		if !t.flags.profile && t.timeout != 0 {
+			ctx, cancel = context.WithTimeout(context.Background(), t.timeout)
+			defer cancel()
+		}
+		return doRun(
+			execEnv,
+			t.flags,
+			func(
+				execEnv *cli.ExecEnv,
+				logger *zap.Logger,
+				segList *bytepool.SegList,
+			) error {
+				return fn(ctx, execEnv, logger, segList)
+			},
+		)
+	}
+}
+
+// Devel returns true if devel was set.
+func (t *TimeoutFlags) Devel() bool {
+	return t.flags.devel
 }
 
 // Main runs the application using the OS runtime and calling os.Exit on the return value of Run.
@@ -74,63 +148,6 @@ func Run(rootCommand *Command, version string, runEnv *cli.RunEnv) int {
 		return 1
 	}
 	return exitCode
-}
-
-// Profile profiles the function.
-//
-// The function should only return error on system error.
-func Profile(
-	logger *zap.Logger,
-	profilePath string,
-	profileType string,
-	profileLoops int,
-	profileAllowError bool,
-	f func() error,
-) error {
-	var err error
-	if profilePath == "" {
-		profilePath, err = ioutil.TempDir("", "")
-		if err != nil {
-			return err
-		}
-	}
-	if profileType == "" {
-		profileType = "cpu"
-	}
-	if profileLoops == 0 {
-		profileLoops = 10
-	}
-	var profileFunc func(*profile.Profile)
-	switch profileType {
-	case "cpu":
-		profileFunc = profile.CPUProfile
-	case "mem":
-		profileFunc = profile.MemProfile
-	case "block":
-		profileFunc = profile.BlockProfile
-	case "mutex":
-		profileFunc = profile.MutexProfile
-	default:
-		return fmt.Errorf("unknown profile type: %q", profileType)
-	}
-	profileStart := time.Now()
-	logger.Debug("profile_start", zap.String("profile_path", profilePath))
-	stop := profile.Start(
-		profile.Quiet,
-		profile.ProfilePath(profilePath),
-		profileFunc,
-	)
-	for i := 0; i < profileLoops; i++ {
-		if err := f(); err != nil {
-			if !profileAllowError {
-				logger.Error("profile_end_with_error")
-				return err
-			}
-		}
-	}
-	stop.Stop()
-	logger.Debug("profile_end", zap.Duration("duration", time.Since(profileStart)))
-	return nil
 }
 
 // Command is a command.
@@ -265,4 +282,102 @@ func printError(writer io.Writer, cliErr error) {
 			_, _ = fmt.Fprintf(writer, "system error: %s\n", errString)
 		}
 	}
+}
+
+func doRun(
+	execEnv *cli.ExecEnv,
+	flags *Flags,
+	f func(*cli.ExecEnv, *zap.Logger, *bytepool.SegList) error,
+) error {
+	logger, err := logutil.NewLogger(execEnv.Stderr, flags.logLevel, flags.logFormat)
+	if err != nil {
+		return err
+	}
+	defer logutil.Defer(logger.Named("command"), "run")()
+
+	segList := bytepool.NewNoPoolSegList()
+	if strings.TrimSpace(strings.ToLower(flags.logLevel)) == "debug" {
+		defer func() {
+			var unrecycled uint64
+			for _, listStats := range segList.ListStats() {
+				logger.Debug("memory", zap.Any("list_stats", listStats))
+				unrecycled += listStats.TotalUnrecycled
+			}
+			if unrecycled != 0 {
+				logger.Debug("memory_leak", zap.Uint64("unrecycled", unrecycled))
+			}
+		}()
+	}
+
+	if !flags.profile {
+		return f(execEnv, logger, segList)
+	}
+
+	return doProfile(
+		logger,
+		flags.profilePath,
+		flags.profileType,
+		flags.profileLoops,
+		flags.profileAllowError,
+		func() error {
+			return f(execEnv, logger, segList)
+		},
+	)
+}
+
+// doProfile profiles the function.
+//
+// The function should only return error on system error.
+func doProfile(
+	logger *zap.Logger,
+	profilePath string,
+	profileType string,
+	profileLoops int,
+	profileAllowError bool,
+	f func() error,
+) error {
+	var err error
+	if profilePath == "" {
+		profilePath, err = ioutil.TempDir("", "")
+		if err != nil {
+			return err
+		}
+	}
+	if profileType == "" {
+		profileType = "cpu"
+	}
+	if profileLoops == 0 {
+		profileLoops = 10
+	}
+	var profileFunc func(*profile.Profile)
+	switch profileType {
+	case "cpu":
+		profileFunc = profile.CPUProfile
+	case "mem":
+		profileFunc = profile.MemProfile
+	case "block":
+		profileFunc = profile.BlockProfile
+	case "mutex":
+		profileFunc = profile.MutexProfile
+	default:
+		return fmt.Errorf("unknown profile type: %q", profileType)
+	}
+	profileStart := time.Now()
+	logger.Debug("profile_start", zap.String("profile_path", profilePath))
+	stop := profile.Start(
+		profile.Quiet,
+		profile.ProfilePath(profilePath),
+		profileFunc,
+	)
+	for i := 0; i < profileLoops; i++ {
+		if err := f(); err != nil {
+			if !profileAllowError {
+				logger.Error("profile_end_with_error")
+				return err
+			}
+		}
+	}
+	stop.Stop()
+	logger.Debug("profile_end", zap.Duration("duration", time.Since(profileStart)))
+	return nil
 }
