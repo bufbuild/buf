@@ -5,17 +5,15 @@ package storagegit
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"io"
 	"math"
 	"runtime"
 	"sync"
 
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-billy.v4/memfs"
@@ -45,7 +43,7 @@ func Clone(
 
 	if gitBranch == "" {
 		// we detect this outside of this function so this is a system error
-		return errors.New("gitBranch is empty")
+		return errs.NewInternal("gitBranch is empty")
 	}
 	filesystem := memfs.New()
 	if _, err := git.CloneContext(
@@ -83,7 +81,7 @@ func copyBillyFilesystemToBucket(
 		filesystem,
 		func(regularFilePath string, regularFileSize uint32) error {
 			if regularFilePath == "" || regularFilePath[0] != '/' {
-				return fmt.Errorf("invalid regularFilePath: %q", regularFilePath)
+				return errs.NewInternalf("invalid regularFilePath: %q", regularFilePath)
 			}
 			// just to make sure
 			path, err := storagepath.NormalizeAndValidate(regularFilePath[1:])
@@ -99,7 +97,7 @@ func copyBillyFilesystemToBucket(
 			go func() {
 				err := copyBillyPath(ctx, filesystem, bucket, regularFilePath, regularFileSize, path)
 				lock.Lock()
-				retErr = multierr.Append(retErr, err)
+				retErr = errs.Append(retErr, err)
 				lock.Unlock()
 				<-semaphoreC
 				wg.Done()
@@ -128,10 +126,10 @@ func copyBillyPath(
 	}
 	writeObject, err := to.Put(ctx, toPath, fromSize)
 	if err != nil {
-		return multierr.Append(err, file.Close())
+		return errs.Append(err, file.Close())
 	}
 	_, err = io.Copy(writeObject, file)
-	return multierr.Combine(err, writeObject.Close(), file.Close())
+	return errs.Append(err, errs.Append(writeObject.Close(), file.Close()))
 }
 
 func walkBillyFilesystemDir(
@@ -142,7 +140,7 @@ func walkBillyFilesystemDir(
 	dirPath string,
 ) error {
 	if dirPath == "" || dirPath[0] != '/' {
-		return fmt.Errorf("invalid dirPath: %q", dirPath)
+		return errs.NewInternalf("invalid dirPath: %q", dirPath)
 	}
 	select {
 	case <-ctx.Done():
@@ -161,12 +159,12 @@ func walkBillyFilesystemDir(
 		}
 		name := fileInfo.Name()
 		if name == "" || name[0] == '/' {
-			return fmt.Errorf("invalid name: %q", name)
+			return errs.NewInternalf("invalid name: %q", name)
 		}
 		if fileInfo.Mode().IsRegular() {
 			size := fileInfo.Size()
 			if size > math.MaxUint32 {
-				return fmt.Errorf("size %d is greater than uint32", size)
+				return errs.NewInternalf("size %d is greater than uint32", size)
 			}
 			// TODO: check to make sure normalization matches up with billy package
 			if err := f(storagepath.Join(dirPath, name), uint32(size)); err != nil {

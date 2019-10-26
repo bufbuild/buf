@@ -2,8 +2,7 @@
 package storageos
 
 import (
-	"errors"
-
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
 
@@ -11,7 +10,7 @@ import (
 const BucketType = "os"
 
 // errNotDir is the error returned if a path does not dir.
-var errNotDir = errors.New("not a directory")
+var errNotDir = errs.NewInternal("not a directory")
 
 // IsNotDir returns true for a PathError that is for a root path not being a directory.
 //

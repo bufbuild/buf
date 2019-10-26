@@ -184,5 +184,5 @@ func sortFormats(formats []Format) {
 }
 
 func newFormatOverrideUnknownError(formatOverrideFlagName string, formatOverride string) error {
-	return errs.NewUserErrorf("%s: unknown format: %q", formatOverrideFlagName, formatOverride)
+	return errs.NewInvalidArgumentf("%s: unknown format: %q", formatOverrideFlagName, formatOverride)
 }

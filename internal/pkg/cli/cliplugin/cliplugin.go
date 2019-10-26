@@ -11,35 +11,51 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/cli"
 	"github.com/bufbuild/buf/internal/pkg/cli/internal"
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/golang/protobuf/proto"
 	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
-	"go.uber.org/multierr"
 )
 
-// Handler handles protoc plugun functionality.
+// ResponseWriter is a response writer.
+//
+// Not thread-safe.
+type ResponseWriter interface {
+	// WriteCodeGeneratorResponseFile adds the file to the response.
+	//
+	// Can be called multiple times.
+	WriteCodeGeneratorResponseFile(*plugin_go.CodeGeneratorResponse_File)
+	// WriteError writes the error to the response.
+	//
+	// Can be called multiple times. Errors will be concatenated by newlines.
+	// Resulting error string will have spaces trimmed before creating the response.
+	WriteError(string)
+}
+
+// Handler handles protoc plugin functionality.
 type Handler interface {
 	// Handle handles the request.
-
-	// If Handle returns a user error and no system errors, this will be added to the error field.
-	// If Handle returns any system error, the whole error will be printed as an error to stderr
-	// and the plugin will exit with code 1.
-	// Only one of files and error can be returned.
+	//
+	// Only system errors should be returned.
 	Handle(
 		stderr io.Writer,
+		responseWriter ResponseWriter,
 		request *plugin_go.CodeGeneratorRequest,
-	) ([]*plugin_go.CodeGeneratorResponse_File, error)
+	)
 }
 
 // HandlerFunc is a function that implements Handler.
-type HandlerFunc func(io.Writer, *plugin_go.CodeGeneratorRequest) ([]*plugin_go.CodeGeneratorResponse_File, error)
+type HandlerFunc func(
+	io.Writer,
+	ResponseWriter,
+	*plugin_go.CodeGeneratorRequest,
+)
 
 // Handle implements Handler.
 func (h HandlerFunc) Handle(
 	stderr io.Writer,
+	responseWriter ResponseWriter,
 	request *plugin_go.CodeGeneratorRequest,
-) ([]*plugin_go.CodeGeneratorResponse_File, error) {
-	return h(stderr, request)
+) {
+	h(stderr, responseWriter, request)
 }
 
 // Main runs the application using the OS runtime and calling os.Exit on the return value of Run.
@@ -72,50 +88,41 @@ func runHandler(handler Handler, start time.Time, runEnv *cli.RunEnv) error {
 	if err := proto.Unmarshal(input, request); err != nil {
 		return err
 	}
-
-	handlerFiles, handlerErr := handler.Handle(runEnv.Stderr, request)
-	if handlerErr != nil {
-		var userErrs []error
-		var systemErrs []error
-		for _, err := range multierr.Errors(handlerErr) {
-			// really need to replace this with xerrors
-			if errs.IsUserError(err) {
-				userErrs = append(userErrs, err)
-			} else {
-				systemErrs = append(systemErrs, err)
-			}
-		}
-		if len(systemErrs) > 0 {
-			return handlerErr
-		}
-		if len(userErrs) > 0 {
-			response := &plugin_go.CodeGeneratorResponse{}
-			errStrings := make([]string, 0, len(userErrs))
-			for _, err := range userErrs {
-				if errString := strings.TrimSpace(err.Error()); errString != "" {
-					errStrings = append(errStrings, errString)
-				}
-			}
-			if len(errStrings) > 0 {
-				response.Error = proto.String(strings.Join(errStrings, "\n"))
-			}
-			data, err := proto.Marshal(response)
-			if err != nil {
-				return err
-			}
-			_, err = runEnv.Stdout.Write(data)
-			return err
-		}
-		return nil
-	}
-
-	response := &plugin_go.CodeGeneratorResponse{
-		File: handlerFiles,
-	}
+	responseWriter := newResponseWriter()
+	handler.Handle(runEnv.Stderr, responseWriter, request)
+	response := responseWriter.ToCodeGeneratorResponse()
 	data, err := proto.Marshal(response)
 	if err != nil {
 		return err
 	}
 	_, err = runEnv.Stdout.Write(data)
 	return err
+}
+
+type responseWriter struct {
+	files         []*plugin_go.CodeGeneratorResponse_File
+	errorMessages []string
+}
+
+func newResponseWriter() *responseWriter {
+	return &responseWriter{}
+}
+
+func (r *responseWriter) WriteCodeGeneratorResponseFile(file *plugin_go.CodeGeneratorResponse_File) {
+	r.files = append(r.files, file)
+}
+
+func (r *responseWriter) WriteError(errorMessage string) {
+	r.errorMessages = append(r.errorMessages, errorMessage)
+}
+
+func (r *responseWriter) ToCodeGeneratorResponse() *plugin_go.CodeGeneratorResponse {
+	var err *string
+	if errorMessage := strings.TrimSpace(strings.Join(r.errorMessages, "\n")); errorMessage != "" {
+		err = proto.String(errorMessage)
+	}
+	return &plugin_go.CodeGeneratorResponse{
+		File:  r.files,
+		Error: err,
+	}
 }

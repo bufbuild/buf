@@ -1,9 +1,9 @@
 package protodesc
 
 import (
-	"fmt"
 	"strconv"
 
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	protobufdescriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
@@ -194,7 +194,7 @@ func (t FieldDescriptorProtoType) String() string {
 func getFieldDescriptorProtoType(v protobufdescriptor.FieldDescriptorProto_Type) (FieldDescriptorProtoType, error) {
 	t, ok := numberToFieldDescriptorProtoType[int32(v)]
 	if !ok {
-		return 0, fmt.Errorf("no FieldDescriptorProtoType for %v", v)
+		return 0, errs.NewInternalf("no FieldDescriptorProtoType for %v", v)
 	}
 	return t, nil
 }
@@ -214,7 +214,7 @@ func (l FieldDescriptorProtoLabel) String() string {
 func getFieldDescriptorProtoLabel(v protobufdescriptor.FieldDescriptorProto_Label) (FieldDescriptorProtoLabel, error) {
 	t, ok := numberToFieldDescriptorProtoLabel[int32(v)]
 	if !ok {
-		return 0, fmt.Errorf("no FieldDescriptorProtoLabel for %v", v)
+		return 0, errs.NewInternalf("no FieldDescriptorProtoLabel for %v", v)
 	}
 	return t, nil
 }
@@ -234,7 +234,7 @@ func (c FieldOptionsCType) String() string {
 func getFieldOptionsCType(v protobufdescriptor.FieldOptions_CType) (FieldOptionsCType, error) {
 	t, ok := numberToFieldOptionsCType[int32(v)]
 	if !ok {
-		return 0, fmt.Errorf("no FieldOptionsCType for %v", v)
+		return 0, errs.NewInternalf("no FieldOptionsCType for %v", v)
 	}
 	return t, nil
 }
@@ -254,7 +254,7 @@ func (j FieldOptionsJSType) String() string {
 func getFieldOptionsJSType(v protobufdescriptor.FieldOptions_JSType) (FieldOptionsJSType, error) {
 	t, ok := numberToFieldOptionsJSType[int32(v)]
 	if !ok {
-		return 0, fmt.Errorf("no FieldOptionsJSType for %v", v)
+		return 0, errs.NewInternalf("no FieldOptionsJSType for %v", v)
 	}
 	return t, nil
 }
@@ -274,7 +274,7 @@ func (t FileOptionsOptimizeMode) String() string {
 func getFileOptionsOptimizeMode(v protobufdescriptor.FileOptions_OptimizeMode) (FileOptionsOptimizeMode, error) {
 	t, ok := numberToFileOptionsOptimizeMode[int32(v)]
 	if !ok {
-		return 0, fmt.Errorf("no FileOptionsOptimizeMode for %v", v)
+		return 0, errs.NewInternalf("no FileOptionsOptimizeMode for %v", v)
 	}
 	return t, nil
 }
@@ -294,7 +294,7 @@ func (t MethodOptionsIdempotencyLevel) String() string {
 func getMethodOptionsIdempotencyLevel(v protobufdescriptor.MethodOptions_IdempotencyLevel) (MethodOptionsIdempotencyLevel, error) {
 	t, ok := numberToMethodOptionsIdempotencyLevel[int32(v)]
 	if !ok {
-		return 0, fmt.Errorf("no MethodOptionsIdempotencyLevel for %v", v)
+		return 0, errs.NewInternalf("no MethodOptionsIdempotencyLevel for %v", v)
 	}
 	return t, nil
 }

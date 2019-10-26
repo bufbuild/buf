@@ -1,6 +1,7 @@
 package breaking
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -12,7 +13,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/cli/cliplugin"
 	"github.com/bufbuild/buf/internal/pkg/encodingutil"
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/logutil"
 	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
 )
@@ -29,15 +29,21 @@ func Main() {
 // Public so this can be used in the cmdtesting package.
 func Handle(
 	stderr io.Writer,
+	responseWriter cliplugin.ResponseWriter,
 	request *plugin_go.CodeGeneratorRequest,
-) ([]*plugin_go.CodeGeneratorResponse_File, error) {
+) {
 	externalConfig := &externalConfig{}
-	if err := encodingutil.UnmarshalJSONOrYAMLStrict([]byte(request.GetParameter()), externalConfig); err != nil {
-		return nil, err
+	if err := encodingutil.UnmarshalJSONOrYAMLStrict(
+		[]byte(request.GetParameter()),
+		externalConfig,
+	); err != nil {
+		responseWriter.WriteError(err.Error())
+		return
 	}
 	if externalConfig.AgainstInput == "" {
 		// this is actually checked as part of ReadImageEnv but just in case
-		return nil, errs.NewUserError(`"against_input" is required`)
+		responseWriter.WriteError(`"against_input" is required`)
+		return
 	}
 	timeout := externalConfig.Timeout
 	if timeout == 0 {
@@ -47,7 +53,8 @@ func Handle(
 	defer cancel()
 	logger, err := logutil.NewLogger(stderr, externalConfig.LogLevel, externalConfig.LogFormat)
 	if err != nil {
-		return nil, err
+		responseWriter.WriteError(err.Error())
+		return
 	}
 
 	files := request.FileToGenerate
@@ -65,16 +72,19 @@ func Handle(
 		!externalConfig.ExcludeImports,
 	)
 	if err != nil {
-		return nil, err
+		responseWriter.WriteError(err.Error())
+		return
 	}
 	envReader = internal.NewBufosEnvReader(logger, bytepool.NewNoPoolSegList(), "", "input_config")
 	config, err := envReader.GetConfig(ctx, encodingutil.GetJSONStringOrStringValue(externalConfig.InputConfig))
 	if err != nil {
-		return nil, err
+		responseWriter.WriteError(err.Error())
+		return
 	}
 	image, err := bufpb.CodeGeneratorRequestToImage(request)
 	if err != nil {
-		return nil, err
+		responseWriter.WriteError(err.Error())
+		return
 	}
 	annotations, err := internal.NewBufbreakingHandler(logger).BreakingCheck(
 		ctx,
@@ -83,13 +93,20 @@ func Handle(
 		image,
 	)
 	if err != nil {
-		return nil, err
+		responseWriter.WriteError(err.Error())
+		return
 	}
 	asJSON, err := internal.IsFormatJSON("error_format", externalConfig.ErrorFormat)
 	if err != nil {
-		return nil, err
+		responseWriter.WriteError(err.Error())
+		return
 	}
-	return nil, analysis.AnnotationsToUserError(annotations, asJSON)
+	buffer := bytes.NewBuffer(nil)
+	if err := analysis.PrintAnnotations(buffer, annotations, asJSON); err != nil {
+		responseWriter.WriteError(err.Error())
+		return
+	}
+	responseWriter.WriteError(buffer.String())
 }
 
 type externalConfig struct {

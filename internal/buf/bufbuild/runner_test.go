@@ -132,7 +132,7 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufpb.Image {
 		"google/../google/type/date.proto",
 		"google/foo/nonsense.proto",
 	)
-	assert.Equal(t, errs.NewUserError("google/foo/nonsense.proto is not present in the Image"), err)
+	assert.Equal(t, errs.NewInvalidArgument("google/foo/nonsense.proto is not present in the Image"), err)
 	importNames, err = imageWithSpecificNames.ImportNames()
 	assert.NoError(t, err)
 	assert.Equal(

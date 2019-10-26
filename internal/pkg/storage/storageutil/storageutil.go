@@ -13,7 +13,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"go.uber.org/multierr"
 )
 
 // Copy copies the bucket at from to the bucket at to for the given prefix.
@@ -49,7 +48,7 @@ func Copy(
 				err := copyPath(ctx, from, to, path, newPath)
 				lock.Lock()
 				if err != nil {
-					retErr = multierr.Append(retErr, err)
+					retErr = errs.Append(retErr, err)
 				} else {
 					count++
 				}
@@ -92,7 +91,7 @@ func CopyPaths(
 			lock.Lock()
 			if err != nil {
 				if !storage.IsNotExist(err) {
-					retErr = multierr.Append(retErr, err)
+					retErr = errs.Append(retErr, err)
 				}
 			} else {
 				count++
@@ -120,10 +119,10 @@ func copyPath(
 	}
 	writeObject, err := to.Put(ctx, toPath, readObject.Size())
 	if err != nil {
-		return multierr.Append(err, readObject.Close())
+		return errs.Append(err, readObject.Close())
 	}
 	_, err = io.Copy(writeObject, readObject)
-	return multierr.Combine(err, writeObject.Close(), readObject.Close())
+	return errs.Append(err, errs.Append(writeObject.Close(), readObject.Close()))
 }
 
 // Untar untars the given tar archive from the reader into the bucket.
@@ -180,7 +179,7 @@ func untar(
 		case <-ctx.Done():
 			err := ctx.Err()
 			if err == context.DeadlineExceeded {
-				return errs.NewUserErrorf("timed out after untarring %d files", fileCount)
+				return errs.NewDeadlineExceededf("timed out after untarring %d files", fileCount)
 			}
 			return err
 		default:
@@ -257,13 +256,13 @@ func doTar(
 	if gzipped {
 		gzipWriter := gzip.NewWriter(writer)
 		defer func() {
-			retErr = multierr.Append(retErr, gzipWriter.Close())
+			retErr = errs.Append(retErr, gzipWriter.Close())
 		}()
 		writer = gzipWriter
 	}
 	tarWriter := tar.NewWriter(writer)
 	defer func() {
-		retErr = multierr.Append(retErr, tarWriter.Close())
+		retErr = errs.Append(retErr, tarWriter.Close())
 	}()
 	return bucket.Walk(
 		ctx,
@@ -286,10 +285,10 @@ func doTar(
 					Mode: 0644,
 				},
 			); err != nil {
-				return multierr.Append(err, readObject.Close())
+				return errs.Append(err, readObject.Close())
 			}
 			_, err = io.Copy(tarWriter, readObject)
-			return multierr.Append(err, readObject.Close())
+			return errs.Append(err, readObject.Close())
 		},
 	)
 }

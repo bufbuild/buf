@@ -1,11 +1,11 @@
 package internal
 
 import (
-	"errors"
 	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/analysis"
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
@@ -163,7 +163,7 @@ func checkFieldLowerSnakeCase(add addFunc, field protodesc.Field) error {
 	message := field.Message()
 	if message == nil {
 		// just a sanity check
-		return errors.New("field.Message() was nil")
+		return errs.NewInternal("field.Message() was nil")
 	}
 	if message.IsMapEntry() {
 		// this check should always pass anyways but just in case
@@ -557,7 +557,7 @@ var CheckRPCRequestStandardName = func(id string, files []protodesc.File, allowG
 func checkRPCRequestStandardName(add addFunc, method protodesc.Method, allowGoogleProtobufEmptyRequests bool) error {
 	service := method.Service()
 	if service == nil {
-		return errors.New("method.Service() is nil")
+		return errs.NewInternal("method.Service() is nil")
 	}
 	name := method.InputTypeName()
 	if allowGoogleProtobufEmptyRequests && name == ".google.protobuf.Empty" {
@@ -587,7 +587,7 @@ var CheckRPCResponseStandardName = func(id string, files []protodesc.File, allow
 func checkRPCResponseStandardName(add addFunc, method protodesc.Method, allowGoogleProtobufEmptyResponses bool) error {
 	service := method.Service()
 	if service == nil {
-		return errors.New("method.Service() is nil")
+		return errs.NewInternal("method.Service() is nil")
 	}
 	name := method.OutputTypeName()
 	if allowGoogleProtobufEmptyResponses && name == ".google.protobuf.Empty" {

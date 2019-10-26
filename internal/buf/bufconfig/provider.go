@@ -8,9 +8,9 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/pkg/encodingutil"
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -41,7 +41,7 @@ func (p *provider) GetConfigForBucket(ctx context.Context, bucket storage.ReadBu
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readObject.Close())
+		retErr = errs.Append(retErr, readObject.Close())
 	}()
 	data, err := ioutil.ReadAll(readObject)
 	if err != nil {

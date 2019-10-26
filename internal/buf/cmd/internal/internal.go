@@ -84,6 +84,6 @@ func IsFormatJSON(flagName string, format string) (bool, error) {
 	case "json":
 		return true, nil
 	default:
-		return false, errs.NewUserErrorf("--%s: unknown format: %q", flagName, s)
+		return false, errs.NewInvalidArgumentf("--%s: unknown format: %q", flagName, s)
 	}
 }

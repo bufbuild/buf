@@ -1,8 +1,7 @@
 package protodesc
 
 import (
-	"errors"
-
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 )
 
@@ -18,7 +17,7 @@ func newDescriptor(
 	locationStore *locationStore,
 ) (descriptor, error) {
 	if filePath == "" {
-		return descriptor{}, errors.New("no filePath")
+		return descriptor{}, errs.NewInternal("no filePath")
 	}
 	filePath, err := storagepath.NormalizeAndValidate(filePath)
 	if err != nil {

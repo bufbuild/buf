@@ -8,10 +8,10 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/bytepool"
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -67,7 +67,7 @@ func (h *handler) BuildImage(
 		if memBucket != nil {
 			bucket = memBucket
 			defer func() {
-				retErr = multierr.Append(retErr, memBucket.Close())
+				retErr = errs.Append(retErr, memBucket.Close())
 			}()
 		}
 	} else {
@@ -134,7 +134,7 @@ func (h *handler) copyToMemory(
 		protoFileSet.RealFilePaths()...,
 	)
 	if err != nil {
-		return nil, multierr.Append(err, memBucket.Close())
+		return nil, errs.Append(err, memBucket.Close())
 	}
 	h.logger.Debug(
 		"copy_to_memory",

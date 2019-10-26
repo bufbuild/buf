@@ -2,8 +2,9 @@
 package ioutil
 
 import (
-	"errors"
 	"io"
+
+	"github.com/bufbuild/buf/internal/pkg/errs"
 )
 
 var (
@@ -12,7 +13,7 @@ var (
 
 	// ErrShortWrite is the errur returned from WriteAll if the amount written is less
 	// than the input data length.
-	ErrShortWrite = errors.New("wrote less bytes than requested")
+	ErrShortWrite = errs.NewInternal("wrote less bytes than requested")
 )
 
 // NopWriteCloser returns an io.WriteCloser with a no-op Close method wrapping the provided io.Writer.

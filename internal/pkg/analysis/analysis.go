@@ -8,9 +8,6 @@ import (
 	"io"
 	"sort"
 	"strconv"
-	"strings"
-
-	"github.com/bufbuild/buf/internal/pkg/errs"
 )
 
 // Annotation is an annotation refencing a location within a file.
@@ -167,18 +164,4 @@ func PrintAnnotations(writer io.Writer, annotations []*Annotation, asJSON bool) 
 		}
 	}
 	return nil
-}
-
-// AnnotationsToUserError converts the annotations to a user error.
-//
-// If annotations is empty, this returns nil.
-func AnnotationsToUserError(annotations []*Annotation, asJSON bool) error {
-	if len(annotations) == 0 {
-		return nil
-	}
-	buffer := bytes.NewBuffer(nil)
-	if err := PrintAnnotations(buffer, annotations, asJSON); err != nil {
-		return err
-	}
-	return errs.NewUserErrorf(strings.TrimSpace(buffer.String()))
 }

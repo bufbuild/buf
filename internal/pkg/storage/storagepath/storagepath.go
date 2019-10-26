@@ -25,10 +25,10 @@ const stringOSPathSeparator = string(os.PathSeparator)
 func NormalizeAndValidate(path string) (string, error) {
 	path = Normalize(path)
 	if filepath.IsAbs(path) {
-		return "", errs.NewUserErrorf("expected %q to be relative", path)
+		return "", errs.NewInvalidArgumentf("expected %q to be relative", path)
 	}
 	if strings.Contains(path, "..") {
-		return "", errs.NewUserErrorf("%q is outside the context directory", path)
+		return "", errs.NewInvalidArgumentf("%q is outside the context directory", path)
 	}
 	return path, nil
 }

@@ -1,11 +1,11 @@
 package internal
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 )
 
@@ -69,7 +69,7 @@ func checkEnumValueNoDeleteWithRules(add addFunc, previousEnum protodesc.Enum, e
 			if !isDeletedEnumValueAllowedWithRules(previousEnumValue, enum, allowIfNumberReserved, allowIfNameReserved) {
 				suffix := ""
 				if allowIfNumberReserved && allowIfNameReserved {
-					return errors.New("both allowIfNumberReserved and allowIfNameReserved set")
+					return errs.NewInternal("both allowIfNumberReserved and allowIfNameReserved set")
 				}
 				if allowIfNumberReserved {
 					suffix = fmt.Sprintf(` without reserving the number "%d"`, previousEnumValue.Number())
@@ -153,7 +153,7 @@ func checkFieldNoDeleteWithRules(add addFunc, previousMessage protodesc.Message,
 				previousNumberString := strconv.FormatInt(int64(previousNumber), 10)
 				suffix := ""
 				if allowIfNumberReserved && allowIfNameReserved {
-					return errors.New("both allowIfNumberReserved and allowIfNameReserved set")
+					return errs.NewInternal("both allowIfNumberReserved and allowIfNameReserved set")
 				}
 				if allowIfNumberReserved {
 					suffix = fmt.Sprintf(` without reserving the number "%d"`, previousField.Number())

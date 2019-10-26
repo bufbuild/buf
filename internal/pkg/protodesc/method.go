@@ -1,6 +1,6 @@
 package protodesc
 
-import "fmt"
+import "github.com/bufbuild/buf/internal/pkg/errs"
 
 type method struct {
 	namedDescriptor
@@ -29,10 +29,10 @@ func newMethod(
 	idempotencyLevelPath []int32,
 ) (*method, error) {
 	if inputTypeName == "" {
-		return nil, fmt.Errorf("no inputTypeName on %q", namedDescriptor.name)
+		return nil, errs.NewInternalf("no inputTypeName on %q", namedDescriptor.name)
 	}
 	if outputTypeName == "" {
-		return nil, fmt.Errorf("no outputTypeName on %q", namedDescriptor.name)
+		return nil, errs.NewInternalf("no outputTypeName on %q", namedDescriptor.name)
 	}
 	return &method{
 		namedDescriptor:      namedDescriptor,

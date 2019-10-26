@@ -2,8 +2,6 @@ package bufpb
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"sort"
 
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/bufbuild/buf/image/v1beta1"
@@ -86,7 +84,7 @@ func (f *image) ImportNames() ([]string, error) {
 	for _, imageImportRef := range imageImportRefs {
 		if imageImportRef.FileIndex == nil {
 			// this should have been caught in validation but just in case
-			return nil, errors.New("nil fileIndex")
+			return nil, errs.NewInternal("nil fileIndex")
 		}
 		importFileIndexes[int(imageImportRef.GetFileIndex())] = struct{}{}
 	}
@@ -114,7 +112,7 @@ func (f *image) WithoutImports() (Image, error) {
 	for _, imageImportRef := range imageImportRefs {
 		if imageImportRef.FileIndex == nil {
 			// this should have been caught in validation but just in case
-			return nil, errors.New("nil fileIndex")
+			return nil, errs.NewInternal("nil fileIndex")
 		}
 		importFileIndexes[int(imageImportRef.GetFileIndex())] = struct{}{}
 	}
@@ -127,7 +125,7 @@ func (f *image) WithoutImports() (Image, error) {
 	}
 
 	if len(newBacking.File) == 0 {
-		return nil, errs.NewUserErrorf("no input files after stripping imports")
+		return nil, errs.NewInvalidArgumentf("no input files after stripping imports")
 	}
 	return newImage(newBacking)
 }
@@ -149,7 +147,7 @@ func (f *image) WithSpecificNames(allowNotExist bool, specificNames ...string) (
 	for _, imageImportRef := range imageImportRefs {
 		if imageImportRef.FileIndex == nil {
 			// this should have been caught in validation but just in case
-			return nil, errors.New("nil fileIndex")
+			return nil, errs.NewInternal("nil fileIndex")
 		}
 		importFileIndexes[int(imageImportRef.GetFileIndex())] = struct{}{}
 	}
@@ -170,7 +168,7 @@ func (f *image) WithSpecificNames(allowNotExist bool, specificNames ...string) (
 		}
 		for specificName := range specificNamesMap {
 			if _, ok := allNamesMap[specificName]; !ok {
-				return nil, errs.NewUserErrorf("%s is not present in the Image", specificName)
+				return nil, errs.NewInvalidArgumentf("%s is not present in the Image", specificName)
 			}
 		}
 	}
@@ -192,7 +190,7 @@ func (f *image) WithSpecificNames(allowNotExist bool, specificNames ...string) (
 		}
 	}
 	if len(newBacking.File) == 0 {
-		return nil, errs.NewUserError("no input files match the given names")
+		return nil, errs.NewInvalidArgument("no input files match the given names")
 	}
 	return newImage(newBacking)
 }
@@ -206,7 +204,7 @@ func (f *image) ToFileDescriptorSet() (protodescpb.FileDescriptorSet, error) {
 
 func (f *image) ToCodeGeneratorRequest(parameter string, fileToGenerate ...string) (*plugin_go.CodeGeneratorRequest, error) {
 	if len(fileToGenerate) == 0 {
-		return nil, errs.NewUserErrorf("no file to generate")
+		return nil, errs.NewInvalidArgumentf("no file to generate")
 	}
 	normalizedFileToGenerate := make([]string, len(fileToGenerate))
 	for i, elem := range fileToGenerate {
@@ -222,7 +220,7 @@ func (f *image) ToCodeGeneratorRequest(parameter string, fileToGenerate ...strin
 	}
 	for _, normalized := range normalizedFileToGenerate {
 		if _, ok := namesMap[normalized]; !ok {
-			return nil, errs.NewUserErrorf("file to generate %q is not within the image", normalized)
+			return nil, errs.NewInvalidArgumentf("file to generate %q is not within the image", normalized)
 		}
 	}
 	var parameterPtr *string
@@ -238,27 +236,27 @@ func (f *image) ToCodeGeneratorRequest(parameter string, fileToGenerate ...strin
 
 func (f *image) validate() error {
 	if f.backing == nil {
-		return errors.New("validate error: nil Image")
+		return errs.NewInternal("validate error: nil Image")
 	}
 	if len(f.backing.File) == 0 {
-		return errors.New("validate error: empty Image.File")
+		return errs.NewInternal("validate error: empty Image.File")
 	}
 
 	if f.backing.BufbuildImageExtension != nil {
 		seenFileIndexes := make(map[uint32]struct{}, len(f.backing.BufbuildImageExtension.ImageImportRefs))
 		for _, imageImportRef := range f.backing.BufbuildImageExtension.ImageImportRefs {
 			if imageImportRef == nil {
-				return errors.New("validate error: nil ImageImportRef")
+				return errs.NewInternal("validate error: nil ImageImportRef")
 			}
 			if imageImportRef.FileIndex == nil {
-				return errors.New("validate error: nil ImageImportRef.FileIndex")
+				return errs.NewInternal("validate error: nil ImageImportRef.FileIndex")
 			}
 			fileIndex := *imageImportRef.FileIndex
 			if fileIndex >= uint32(len(f.backing.File)) {
-				return fmt.Errorf("validate error: invalid file index: %d", fileIndex)
+				return errs.NewInternalf("validate error: invalid file index: %d", fileIndex)
 			}
 			if _, ok := seenFileIndexes[fileIndex]; ok {
-				return fmt.Errorf("validate error: duplicate file index: %d", fileIndex)
+				return errs.NewInternalf("validate error: duplicate file index: %d", fileIndex)
 			}
 			seenFileIndexes[fileIndex] = struct{}{}
 		}
@@ -267,25 +265,25 @@ func (f *image) validate() error {
 	seenNames := make(map[string]struct{}, len(f.backing.File))
 	for _, file := range f.backing.File {
 		if file == nil {
-			return errors.New("validate error: nil File")
+			return errs.NewInternal("validate error: nil File")
 		}
 		if file.Name == nil {
-			return errors.New("validate error: nil FileDescriptorProto.Name")
+			return errs.NewInternal("validate error: nil FileDescriptorProto.Name")
 		}
 		name := *file.Name
 		if name == "" {
-			return errors.New("validate error: empty FileDescrtiptorProto.Name")
+			return errs.NewInternal("validate error: empty FileDescrtiptorProto.Name")
 		}
 		if _, ok := seenNames[name]; ok {
-			return fmt.Errorf("validate error: duplicate FileDescriptorProto.Name: %q", name)
+			return errs.NewInternalf("validate error: duplicate FileDescriptorProto.Name: %q", name)
 		}
 		seenNames[name] = struct{}{}
 		normalizedName, err := storagepath.NormalizeAndValidate(name)
 		if err != nil {
-			return fmt.Errorf("validate error: %v", err)
+			return errs.NewInternalf("validate error: %v", err)
 		}
 		if name != normalizedName {
-			return fmt.Errorf("validate error: FileDescriptorProto.Name %q has normalized name %q", name, normalizedName)
+			return errs.NewInternalf("validate error: FileDescriptorProto.Name %q has normalized name %q", name, normalizedName)
 		}
 	}
 	return nil

@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"errors"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -28,7 +27,7 @@ func newConfigOverrideParser(
 func (c *configOverrideParser) ParseConfigOverride(value string) (*bufconfig.Config, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {
-		return nil, errors.New("config override value is empty")
+		return nil, errs.NewInternal("config override value is empty")
 	}
 	var data []byte
 	var err error
@@ -49,9 +48,9 @@ func (c *configOverrideParser) ParseConfigOverride(value string) (*bufconfig.Con
 }
 
 func newConfigOverrideCouldNotReadFileError(configOverrideFlagName string, err error) error {
-	return errs.NewUserErrorf("%s: could not read file: %v", configOverrideFlagName, err)
+	return errs.NewInvalidArgumentf("%s: could not read file: %v", configOverrideFlagName, err)
 }
 
 func newConfigOverrideCouldNotParseError(configOverrideFlagName string, err error) error {
-	return errs.NewUserErrorf("%s: %v", configOverrideFlagName, err)
+	return errs.NewInvalidArgumentf("%s: %v", configOverrideFlagName, err)
 }

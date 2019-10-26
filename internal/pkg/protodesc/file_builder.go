@@ -1,8 +1,7 @@
 package protodesc
 
 import (
-	"fmt"
-
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/protodescpb"
 	protobufdescriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
@@ -42,7 +41,7 @@ func (f *fileBuilder) toFile() (*file, error) {
 	} else if syntaxString == "proto3" {
 		f.syntax = SyntaxProto3
 	} else {
-		return nil, fmt.Errorf("unknown syntax: %q", syntaxString)
+		return nil, errs.NewInternalf("unknown syntax: %q", syntaxString)
 	}
 
 	for dependencyIndex, dependency := range f.fileDescriptor.GetDependency() {
@@ -58,21 +57,21 @@ func (f *fileBuilder) toFile() (*file, error) {
 	}
 	for _, dependencyIndex := range f.fileDescriptor.GetPublicDependency() {
 		if len(f.fileImports) <= int(dependencyIndex) {
-			return nil, fmt.Errorf("got dependency index of %d but length of imports is %d", dependencyIndex, len(f.fileImports))
+			return nil, errs.NewInternalf("got dependency index of %d but length of imports is %d", dependencyIndex, len(f.fileImports))
 		}
 		fileImport, ok := f.fileImports[dependencyIndex].(*fileImport)
 		if !ok {
-			return nil, fmt.Errorf("could not cast %T to a *fileImport", f.fileImports[dependencyIndex])
+			return nil, errs.NewInternalf("could not cast %T to a *fileImport", f.fileImports[dependencyIndex])
 		}
 		fileImport.setIsPublic()
 	}
 	for _, dependencyIndex := range f.fileDescriptor.GetWeakDependency() {
 		if len(f.fileImports) <= int(dependencyIndex) {
-			return nil, fmt.Errorf("got dependency index of %d but length of imports is %d", dependencyIndex, len(f.fileImports))
+			return nil, errs.NewInternalf("got dependency index of %d but length of imports is %d", dependencyIndex, len(f.fileImports))
 		}
 		fileImport, ok := f.fileImports[dependencyIndex].(*fileImport)
 		if !ok {
-			return nil, fmt.Errorf("could not cast %T to a *fileImport", f.fileImports[dependencyIndex])
+			return nil, errs.NewInternalf("could not cast %T to a *fileImport", f.fileImports[dependencyIndex])
 		}
 		fileImport.setIsWeak()
 	}
