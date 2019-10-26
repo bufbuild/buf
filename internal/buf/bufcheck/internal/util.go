@@ -44,10 +44,10 @@ func checkCategories(knownCategories []string, categoriesMap map[string]struct{}
 	case 0:
 		return nil
 	case 1:
-		return errs.NewUserErrorf("%q is not a known category", unknownCategories[0])
+		return errs.NewInvalidArgumentf("%q is not a known category", unknownCategories[0])
 	default:
 		sort.Strings(unknownCategories)
-		return errs.NewUserErrorf("%q are not known categories", strings.Join(unknownCategories, ", "))
+		return errs.NewInvalidArgumentf("%q are not known categories", strings.Join(unknownCategories, ", "))
 	}
 }
 

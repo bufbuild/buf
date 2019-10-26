@@ -18,7 +18,6 @@ import (
 	"github.com/pkg/profile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -261,26 +260,9 @@ func runRootCommand(
 	return rootCmd.Execute()
 }
 
-func printError(writer io.Writer, cliErr error) {
-	var userErrors []error
-	var systemErrors []error
-	for _, err := range multierr.Errors(cliErr) {
-		// really need to replace this with xerrors
-		if errs.IsUserError(err) {
-			userErrors = append(userErrors, err)
-		} else {
-			systemErrors = append(systemErrors, err)
-		}
-	}
-	for _, err := range userErrors {
-		if errString := err.Error(); errString != "" {
-			_, _ = fmt.Fprintln(writer, errString)
-		}
-	}
-	for _, err := range systemErrors {
-		if errString := err.Error(); errString != "" {
-			_, _ = fmt.Fprintf(writer, "system error: %s\n", errString)
-		}
+func printError(writer io.Writer, err error) {
+	if errString := err.Error(); errString != "" {
+		_, _ = fmt.Fprintln(writer, errString)
 	}
 }
 
@@ -360,7 +342,7 @@ func doProfile(
 	case "mutex":
 		profileFunc = profile.MutexProfile
 	default:
-		return fmt.Errorf("unknown profile type: %q", profileType)
+		return errs.NewInvalidArgumentf("unknown profile type: %q", profileType)
 	}
 	profileStart := time.Now()
 	logger.Debug("profile_start", zap.String("profile_path", profilePath))

@@ -8,7 +8,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -42,7 +41,7 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 			case <-ctx.Done():
 				iErr := ctx.Err()
 				if iErr == context.DeadlineExceeded {
-					iErr = errs.NewUserError("timeout")
+					iErr = errs.NewDeadlineExceeded(iErr.Error())
 				}
 				resultC <- newResult(nil, iErr)
 			default:
@@ -54,7 +53,7 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	for i := 0; i < len(checkers); i++ {
 		result := <-resultC
 		annotations = append(annotations, result.Annotations...)
-		err = multierr.Append(err, result.Err)
+		err = errs.Append(err, result.Err)
 	}
 	if err != nil {
 		return nil, err

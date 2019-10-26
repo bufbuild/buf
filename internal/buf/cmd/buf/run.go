@@ -2,7 +2,6 @@ package buf
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
@@ -25,7 +24,7 @@ func imageBuild(
 	segList *bytepool.SegList,
 ) (retErr error) {
 	if flags.Output == "" {
-		return errs.NewUserErrorf("--%s is required", imageBuildOutputFlagName)
+		return errs.NewInvalidArgumentf("--%s is required", imageBuildOutputFlagName)
 	}
 	asJSON, err := internal.IsFormatJSON(errorFormatFlagName, flags.ErrorFormat)
 	if err != nil {
@@ -55,7 +54,7 @@ func imageBuild(
 		if err := analysis.PrintAnnotations(execEnv.Stderr, annotations, asJSON); err != nil {
 			return err
 		}
-		return errors.New("")
+		return errs.NewInternal("")
 	}
 	return internal.NewBufosImageWriter(
 		logger,
@@ -102,7 +101,7 @@ func checkLint(
 		if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
 			return err
 		}
-		return errors.New("")
+		return errs.NewInternal("")
 	}
 	annotations, err = internal.NewBuflintHandler(logger).LintCheck(
 		ctx,
@@ -119,7 +118,7 @@ func checkLint(
 		if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
 			return err
 		}
-		return errors.New("")
+		return errs.NewInternal("")
 	}
 	return nil
 }
@@ -132,7 +131,7 @@ func checkBreaking(
 	segList *bytepool.SegList,
 ) (retErr error) {
 	if flags.AgainstInput == "" {
-		return errs.NewUserErrorf("--%s is required", checkBreakingAgainstInputFlagName)
+		return errs.NewInvalidArgumentf("--%s is required", checkBreakingAgainstInputFlagName)
 	}
 	asJSON, err := internal.IsFormatJSON(errorFormatFlagName, flags.ErrorFormat)
 	if err != nil {
@@ -160,7 +159,7 @@ func checkBreaking(
 		if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
 			return err
 		}
-		return errors.New("")
+		return errs.NewInternal("")
 	}
 
 	files := flags.Files
@@ -202,7 +201,7 @@ func checkBreaking(
 		if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
 			return err
 		}
-		return errors.New("")
+		return errs.NewInternal("")
 	}
 	annotations, err = internal.NewBufbreakingHandler(logger).BreakingCheck(
 		ctx,
@@ -220,7 +219,7 @@ func checkBreaking(
 		if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
 			return err
 		}
-		return errors.New("")
+		return errs.NewInternal("")
 	}
 	return nil
 }

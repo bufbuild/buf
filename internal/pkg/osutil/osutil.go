@@ -5,8 +5,6 @@
 package osutil
 
 import (
-	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -36,7 +34,7 @@ func DevNull() (string, error) {
 	case "windows":
 		return "nul", nil
 	default:
-		return "", fmt.Errorf("unknown operating system: %q", runtime.GOOS)
+		return "", errs.NewInternalf("unknown operating system: %q", runtime.GOOS)
 	}
 }
 
@@ -53,11 +51,11 @@ func FilePathIsStdout(filePath string) bool {
 // If stdout is nil and filePath is "-", returns user error.
 func WriteCloserForFilePath(stdout io.Writer, filePath string) (io.WriteCloser, error) {
 	if filePath == "" {
-		return nil, errors.New("no filePath")
+		return nil, errs.NewInternal("no filePath")
 	}
 	if FilePathIsStdout(filePath) {
 		if stdout == nil {
-			return nil, errs.NewUserError("file path was - but cannot write to stdout")
+			return nil, errs.NewInvalidArgument("file path was - but cannot write to stdout")
 		}
 		return ioutilext.NopWriteCloser(stdout), nil
 	}
@@ -66,7 +64,7 @@ func WriteCloserForFilePath(stdout io.Writer, filePath string) (io.WriteCloser, 
 	}
 	file, err := os.Create(filePath)
 	if err != nil {
-		return nil, errs.NewUserErrorf("error creating %s: %v", filePath, err)
+		return nil, errs.NewInvalidArgumentf("error creating %s: %v", filePath, err)
 	}
 	return file, nil
 }
@@ -84,11 +82,11 @@ func FilePathIsStdin(filePath string) bool {
 // If stdin is nil and filePath is "-", returns user error.
 func ReadCloserForFilePath(stdin io.Reader, filePath string) (io.ReadCloser, error) {
 	if filePath == "" {
-		return nil, errors.New("no filePath")
+		return nil, errs.NewInternal("no filePath")
 	}
 	if FilePathIsStdin(filePath) {
 		if stdin == nil {
-			return nil, errs.NewUserError("file path was - but cannot read from stdin")
+			return nil, errs.NewInvalidArgument("file path was - but cannot read from stdin")
 		}
 		return ioutil.NopCloser(stdin), nil
 	}
@@ -97,7 +95,8 @@ func ReadCloserForFilePath(stdin io.Reader, filePath string) (io.ReadCloser, err
 	}
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, errs.NewUserErrorf("error opening %s: %v", filePath, err)
+		// TODO: not really an invalid argument
+		return nil, errs.NewInvalidArgumentf("error opening %s: %v", filePath, err)
 	}
 	return file, nil
 }

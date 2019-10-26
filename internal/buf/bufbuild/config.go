@@ -31,13 +31,13 @@ func newConfig(configBuilder ConfigBuilder) (*Config, error) {
 		// verify that no exclude equals a root directly
 		for exclude := range excludeMap {
 			if _, ok := rootMap[exclude]; ok {
-				return nil, errs.NewUserErrorf("%s is both a root and exclude, which means the entire root is excluded, which is not valid", exclude)
+				return nil, errs.NewInvalidArgumentf("%s is both a root and exclude, which means the entire root is excluded, which is not valid", exclude)
 			}
 		}
 		// verify that all excludes are within a root
 		for exclude := range excludeMap {
 			if !storagepath.MapContainsMatch(rootMap, exclude) {
-				return nil, errs.NewUserErrorf("exclude %s is not contained in any root, which is not valid", exclude)
+				return nil, errs.NewInvalidArgumentf("exclude %s is not contained in any root, which is not valid", exclude)
 			}
 		}
 	}
@@ -56,7 +56,7 @@ func transformFileListForConfig(inputs []string, name string) ([]string, error) 
 	var outputs []string
 	for _, input := range inputs {
 		if input == "" {
-			return nil, errs.NewUserErrorf("%s value is empty", name)
+			return nil, errs.NewInvalidArgumentf("%s value is empty", name)
 		}
 		output, err := storagepath.NormalizeAndValidate(input)
 		if err != nil {
@@ -73,13 +73,13 @@ func transformFileListForConfig(inputs []string, name string) ([]string, error) 
 			output2 := outputs[j]
 
 			if output1 == output2 {
-				return nil, errs.NewUserErrorf("duplicate %s %s", name, output1)
+				return nil, errs.NewInvalidArgumentf("duplicate %s %s", name, output1)
 			}
 			if strings.HasPrefix(output1, output2) {
-				return nil, errs.NewUserErrorf("%s %s is within %s %s which is not allowed", name, output1, name, output2)
+				return nil, errs.NewInvalidArgumentf("%s %s is within %s %s which is not allowed", name, output1, name, output2)
 			}
 			if strings.HasPrefix(output2, output1) {
-				return nil, errs.NewUserErrorf("%s %s is within %s %s which is not allowed", name, output2, name, output1)
+				return nil, errs.NewInvalidArgumentf("%s %s is within %s %s which is not allowed", name, output2, name, output1)
 			}
 		}
 	}
@@ -97,10 +97,10 @@ func transformFileListForConfig(inputs []string, name string) ([]string, error) 
 	}
 	if hasDotDir {
 		if len(notDotDir) == 1 {
-			return nil, errs.NewUserErrorf("%s %s is within %s . which is not allowed", name, notDotDir[0], name)
+			return nil, errs.NewInvalidArgumentf("%s %s is within %s . which is not allowed", name, notDotDir[0], name)
 		}
 		if len(notDotDir) > 1 {
-			return nil, errs.NewUserErrorf("%ss %v are within %s . which is not allowed", name, notDotDir, name)
+			return nil, errs.NewInvalidArgumentf("%ss %v are within %s . which is not allowed", name, notDotDir, name)
 		}
 	}
 

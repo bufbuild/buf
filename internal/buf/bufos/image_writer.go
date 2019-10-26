@@ -7,9 +7,9 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufos/internal"
 	"github.com/bufbuild/buf/internal/buf/bufpb"
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/osutil"
 	"github.com/bufbuild/buf/internal/pkg/protodescpb"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -79,14 +79,14 @@ func (i *imageWriter) WriteImage(
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeCloser.Close())
+		retErr = errs.Append(retErr, writeCloser.Close())
 	}()
 
 	switch inputRef.Format {
 	case internal.FormatBinGz, internal.FormatJSONGz:
 		gzipWriteCloser := gzip.NewWriter(writeCloser)
 		defer func() {
-			retErr = multierr.Append(retErr, gzipWriteCloser.Close())
+			retErr = errs.Append(retErr, gzipWriteCloser.Close())
 		}()
 		_, err = gzipWriteCloser.Write(data)
 		return err

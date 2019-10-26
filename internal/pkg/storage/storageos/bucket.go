@@ -2,8 +2,6 @@ package storageos
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"io"
 	"math"
 	"os"
@@ -49,7 +47,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 		return nil, err
 	}
 	if path == "." {
-		return nil, errors.New("cannot get root")
+		return nil, errs.NewInternal("cannot get root")
 	}
 	path = storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
 	if b.closed {
@@ -69,14 +67,14 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 	if !fileInfo.Mode().IsRegular() {
 		// making this a user error as any access means this was generally requested
 		// by the user, since we only call the function for Walk on regular files
-		return nil, errs.NewUserErrorf("%q is not a regular file", path)
+		return nil, errs.NewInvalidArgumentf("%q is not a regular file", path)
 	}
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	if fileInfo.Size() > int64(math.MaxUint32) {
-		return nil, fmt.Errorf("file too large: %d", fileInfo.Size())
+		return nil, errs.NewInternalf("file too large: %d", fileInfo.Size())
 	}
 	return newReadObject(file, uint32(fileInfo.Size())), nil
 }
@@ -87,7 +85,7 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 		return storage.ObjectInfo{}, err
 	}
 	if path == "." {
-		return storage.ObjectInfo{}, errors.New("cannot check root")
+		return storage.ObjectInfo{}, errs.NewInternal("cannot check root")
 	}
 	path = storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
 	if b.closed {
@@ -107,7 +105,7 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 		// filter non-regular files
 		// making this a user error as any access means this was generally requested
 		// by the user, since we only call the function for Walk on regular files
-		return storage.ObjectInfo{}, errs.NewUserErrorf("%q is not a regular file", path)
+		return storage.ObjectInfo{}, errs.NewInvalidArgumentf("%q is not a regular file", path)
 	}
 	return storage.ObjectInfo{
 		Size: uint32(fileInfo.Size()),
@@ -136,7 +134,7 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) 
 			case <-ctx.Done():
 				err := ctx.Err()
 				if err == context.DeadlineExceeded {
-					return errs.NewUserErrorf("timed out after walking %d files", fileCount)
+					return errs.NewDeadlineExceededf("timed out after walking %d files", fileCount)
 				}
 				return err
 			default:
@@ -166,7 +164,7 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 		return nil, err
 	}
 	if path == "." {
-		return nil, errors.New("cannot put root")
+		return nil, errs.NewInternal("cannot put root")
 	}
 	path = storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
 	if b.closed {

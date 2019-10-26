@@ -8,18 +8,19 @@ package storage
 
 import (
 	"context"
-	"errors"
 	"io"
+
+	"github.com/bufbuild/buf/internal/pkg/errs"
 )
 
 var (
 	// ErrIncompleteWrite is the error returned if a write is not complete
-	ErrIncompleteWrite = errors.New("incomplete write")
+	ErrIncompleteWrite = errs.NewInternal("incomplete write")
 	// ErrClosed is the error returned if a bucket or object is already closed.
-	ErrClosed = errors.New("already closed")
+	ErrClosed = errs.NewInternal("already closed")
 
 	// errNotExist is the error returned if a path does not exist.
-	errNotExist = errors.New("does not exist")
+	errNotExist = errs.NewInternal("does not exist")
 )
 
 // PathError is a path error.

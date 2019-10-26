@@ -9,6 +9,7 @@ import (
 	"os/exec"
 
 	"github.com/bufbuild/buf/internal/buf/bufpb"
+	"github.com/bufbuild/buf/internal/pkg/errs"
 )
 
 func getProtocImage(
@@ -67,7 +68,7 @@ func getProtocImage(
 		}
 	}
 	if err != nil {
-		return nil, fmt.Errorf("%s %v returned error: %v %v", protocLocation.BinPath, args, err, buffer.String())
+		return nil, errs.NewInternalf("%s %v returned error: %v %v", protocLocation.BinPath, args, err, buffer.String())
 	}
 
 	data, err := ioutil.ReadFile(tempFilePath)

@@ -1,6 +1,7 @@
 package lint
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -28,11 +29,16 @@ func Main() {
 // Public so this can be used in the cmdtesting package.
 func Handle(
 	stderr io.Writer,
+	responseWriter cliplugin.ResponseWriter,
 	request *plugin_go.CodeGeneratorRequest,
-) ([]*plugin_go.CodeGeneratorResponse_File, error) {
+) {
 	externalConfig := &externalConfig{}
-	if err := encodingutil.UnmarshalJSONOrYAMLStrict([]byte(request.GetParameter()), externalConfig); err != nil {
-		return nil, err
+	if err := encodingutil.UnmarshalJSONOrYAMLStrict(
+		[]byte(request.GetParameter()),
+		externalConfig,
+	); err != nil {
+		responseWriter.WriteError(err.Error())
+		return
 	}
 	timeout := externalConfig.Timeout
 	if timeout == 0 {
@@ -42,16 +48,19 @@ func Handle(
 	defer cancel()
 	logger, err := logutil.NewLogger(stderr, externalConfig.LogLevel, externalConfig.LogFormat)
 	if err != nil {
-		return nil, err
+		responseWriter.WriteError(err.Error())
+		return
 	}
 	envReader := internal.NewBufosEnvReader(logger, bytepool.NewNoPoolSegList(), "", "input_config")
 	config, err := envReader.GetConfig(ctx, encodingutil.GetJSONStringOrStringValue(externalConfig.InputConfig))
 	if err != nil {
-		return nil, err
+		responseWriter.WriteError(err.Error())
+		return
 	}
 	image, err := bufpb.CodeGeneratorRequestToImage(request)
 	if err != nil {
-		return nil, err
+		responseWriter.WriteError(err.Error())
+		return
 	}
 	annotations, err := internal.NewBuflintHandler(logger).LintCheck(
 		ctx,
@@ -59,13 +68,20 @@ func Handle(
 		image,
 	)
 	if err != nil {
-		return nil, err
+		responseWriter.WriteError(err.Error())
+		return
 	}
 	asJSON, err := internal.IsFormatJSON("error_format", externalConfig.ErrorFormat)
 	if err != nil {
-		return nil, err
+		responseWriter.WriteError(err.Error())
+		return
 	}
-	return nil, analysis.AnnotationsToUserError(annotations, asJSON)
+	buffer := bytes.NewBuffer(nil)
+	if err := analysis.PrintAnnotations(buffer, annotations, asJSON); err != nil {
+		responseWriter.WriteError(err.Error())
+		return
+	}
+	responseWriter.WriteError(buffer.String())
 }
 
 type externalConfig struct {

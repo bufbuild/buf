@@ -98,8 +98,6 @@ type ConfigBuilder struct {
 }
 
 // NewConfig returns a new Config.
-//
-// Can return an error that will result in errs.IsUserError(err) == true.
 func (b ConfigBuilder) NewConfig() (*Config, error) {
 	internalConfig, err := internal.ConfigBuilder{
 		Use:                           b.Use,

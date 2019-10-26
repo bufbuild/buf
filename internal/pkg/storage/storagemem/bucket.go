@@ -2,7 +2,6 @@ package storagemem
 
 import (
 	"context"
-	"errors"
 	"io"
 	"strings"
 	"sync"
@@ -11,7 +10,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"go.uber.org/multierr"
 )
 
 type bucket struct {
@@ -38,7 +36,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 		return nil, err
 	}
 	if path == "." {
-		return nil, errors.New("cannot get root")
+		return nil, errs.NewInternal("cannot get root")
 	}
 	b.lock.RLock()
 	defer b.lock.RUnlock()
@@ -62,7 +60,7 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 		return storage.ObjectInfo{}, err
 	}
 	if path == "." {
-		return storage.ObjectInfo{}, errors.New("cannot check root")
+		return storage.ObjectInfo{}, errs.NewInternal("cannot check root")
 	}
 	b.lock.RLock()
 	defer b.lock.RUnlock()
@@ -103,7 +101,7 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) 
 		case <-ctx.Done():
 			err := ctx.Err()
 			if err == context.DeadlineExceeded {
-				return errs.NewUserErrorf("timed out after walking %d files", fileCount)
+				return errs.NewDeadlineExceededf("timed out after walking %d files", fileCount)
 			}
 			return err
 		default:
@@ -124,7 +122,7 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 		return nil, err
 	}
 	if path == "." {
-		return nil, errors.New("cannot put root")
+		return nil, errs.NewInternal("cannot put root")
 	}
 	b.lock.Lock()
 	defer b.lock.Unlock()
@@ -156,7 +154,7 @@ func (b *bucket) Close() error {
 	for _, bytesWrapper := range b.pathToBytesWrapper {
 		// this has a recycled marker so that if we have outstanding
 		// readers or writers, they will fail
-		err = multierr.Append(err, bytesWrapper.Recycle())
+		err = errs.Append(err, bytesWrapper.Recycle())
 	}
 	// just in case we don't protect against close somewhere
 	b.pathToBytesWrapper = make(map[string]*bytesWrapper)

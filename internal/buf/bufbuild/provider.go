@@ -2,8 +2,6 @@ package bufbuild
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"sort"
 
 	"github.com/bufbuild/buf/internal/pkg/errs"
@@ -32,7 +30,7 @@ func (p *provider) GetProtoFileSetForBucket(
 	defer logutil.Defer(p.logger, "get_proto_file_set_for_bucket")()
 
 	if len(config.Roots) == 0 {
-		return nil, errs.NewUserError("no roots specified")
+		return nil, errs.NewInvalidArgument("no roots specified")
 	}
 
 	// map from file path relative to root, to all actual file paths
@@ -55,7 +53,7 @@ func (p *provider) GetProtoFileSetForBucket(
 				// return system error as this would be an issue
 				rootFilePath, err = storagepath.NormalizeAndValidate(rootFilePath)
 				if err != nil {
-					return errors.New(err.Error())
+					return errs.NewInternal(err.Error())
 				}
 				realFilePathMap, ok := rootFilePathToRealFilePathMap[rootFilePath]
 				if !ok {
@@ -79,18 +77,18 @@ func (p *provider) GetProtoFileSetForBucket(
 		switch len(realFilePaths) {
 		case 0:
 			// we expect to always have at least one value, this is a system error
-			return nil, fmt.Errorf("no real file path for file path %q", rootFilePath)
+			return nil, errs.NewInternalf("no real file path for file path %q", rootFilePath)
 		case 1:
 			rootFilePathToRealFilePath[rootFilePath] = realFilePaths[0]
 		default:
 			sort.Strings(realFilePaths)
-			return nil, errs.NewUserErrorf("file with path %s is within multiple roots at %v", rootFilePath, realFilePaths)
+			return nil, errs.NewInvalidArgumentf("file with path %s is within multiple roots at %v", rootFilePath, realFilePaths)
 		}
 	}
 
 	if len(config.Excludes) == 0 {
 		if len(rootFilePathToRealFilePath) == 0 {
-			return nil, errs.NewUserError("no input files found that match roots")
+			return nil, errs.NewInvalidArgument("no input files found that match roots")
 		}
 		return newProtoFileSet(config.Roots, rootFilePathToRealFilePath)
 	}
@@ -103,7 +101,7 @@ func (p *provider) GetProtoFileSetForBucket(
 		}
 	}
 	if len(filteredRootFilePathToRealFilePath) == 0 {
-		return nil, errs.NewUserError("no input files found that match roots and excludes")
+		return nil, errs.NewInvalidArgument("no input files found that match roots and excludes")
 	}
 	return newProtoFileSet(config.Roots, filteredRootFilePathToRealFilePath)
 }
@@ -118,7 +116,7 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 	defer logutil.Defer(p.logger, "get_proto_file_set_for_real_file_paths")()
 
 	if len(config.Roots) == 0 {
-		return nil, errs.NewUserError("no roots specified")
+		return nil, errs.NewInvalidArgument("no roots specified")
 	}
 
 	normalizedRealFilePaths := make(map[string]struct{}, len(realFilePaths))
@@ -128,7 +126,7 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 			return nil, err
 		}
 		if _, ok := normalizedRealFilePaths[normalizedRealFilePath]; ok {
-			return nil, errs.NewUserErrorf("duplicate normalized file path %s", normalizedRealFilePath)
+			return nil, errs.NewInvalidArgumentf("duplicate normalized file path %s", normalizedRealFilePath)
 		}
 		// check that the file exists primarily
 		if _, err := bucket.Stat(ctx, normalizedRealFilePath); err != nil {
@@ -136,7 +134,7 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 				return nil, err
 			}
 			if !allowNotExist {
-				return nil, errs.NewUserError(err.Error())
+				return nil, errs.NewInvalidArgument(err.Error())
 			}
 		} else {
 			normalizedRealFilePaths[normalizedRealFilePath] = struct{}{}
@@ -153,7 +151,7 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 		}
 		switch len(matchingRoots) {
 		case 0:
-			return nil, errs.NewUserErrorf("file %s is not within any root %v", normalizedRealFilePath, config.Roots)
+			return nil, errs.NewInvalidArgumentf("file %s is not within any root %v", normalizedRealFilePath, config.Roots)
 		case 1:
 			normalizedRootFilePath, err := storagepath.Rel(matchingRoots[0], normalizedRealFilePath)
 			if err != nil {
@@ -163,21 +161,22 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 			// return system error as this would be an issue
 			normalizedRootFilePath, err = storagepath.NormalizeAndValidate(normalizedRootFilePath)
 			if err != nil {
-				return nil, errors.New(err.Error())
+				// This is a system error
+				return nil, errs.NewInternal(err.Error())
 			}
 			if otherRealFilePath, ok := rootFilePathToRealFilePath[normalizedRootFilePath]; ok {
-				return nil, errs.NewUserErrorf("file with path %s is within another root as %s at %s", normalizedRealFilePath, normalizedRootFilePath, otherRealFilePath)
+				return nil, errs.NewInvalidArgumentf("file with path %s is within another root as %s at %s", normalizedRealFilePath, normalizedRootFilePath, otherRealFilePath)
 			}
 			rootFilePathToRealFilePath[normalizedRootFilePath] = normalizedRealFilePath
 		default:
 			sort.Strings(matchingRoots)
 			// this should probably never happen due to how we are doing this with matching roots but just in case
-			return nil, errs.NewUserErrorf("file with path %s is within multiple roots at %v", normalizedRealFilePath, matchingRoots)
+			return nil, errs.NewInvalidArgumentf("file with path %s is within multiple roots at %v", normalizedRealFilePath, matchingRoots)
 		}
 	}
 
 	if len(rootFilePathToRealFilePath) == 0 {
-		return nil, errs.NewUserError("no input files specified")
+		return nil, errs.NewInvalidArgument("no input files specified")
 	}
 	return newProtoFileSet(config.Roots, rootFilePathToRealFilePath)
 }

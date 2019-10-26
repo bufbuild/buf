@@ -3,8 +3,8 @@ package protodesc
 import (
 	"runtime"
 
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/protodescpb"
-	"go.uber.org/multierr"
 )
 
 const defaultChunkSizeThreshold = 8
@@ -49,7 +49,7 @@ func newFiles(fileDescriptors ...protodescpb.FileDescriptor) ([]File, error) {
 	for i := 0; i < len(chunks); i++ {
 		result := <-resultC
 		files = append(files, result.Files...)
-		err = multierr.Append(err, result.Err)
+		err = errs.Append(err, result.Err)
 	}
 	if err != nil {
 		return nil, err

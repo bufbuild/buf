@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/pkg/cli"
+	"github.com/bufbuild/buf/internal/pkg/errs"
 	ioutilext "github.com/bufbuild/buf/internal/pkg/ioutil"
 )
 
@@ -71,7 +71,7 @@ func environToEnv(environ []string) (map[string]string, error) {
 	env := make(map[string]string, len(environ))
 	for _, elem := range environ {
 		if !strings.ContainsRune(elem, '=') {
-			return nil, fmt.Errorf("environment variable does not contain =")
+			return nil, errs.NewInternalf("environment variable does not contain =")
 		}
 		split := strings.SplitN(elem, "=", 2)
 		switch len(split) {
@@ -80,7 +80,7 @@ func environToEnv(environ []string) (map[string]string, error) {
 		case 2:
 			env[split[0]] = split[1]
 		default:
-			return nil, fmt.Errorf("unknown environment split")
+			return nil, errs.NewInternalf("unknown environment split")
 		}
 	}
 	return env, nil

@@ -12,6 +12,7 @@ import (
 // UnmarshalJSONStrict unmarshals the data as JSON, returning a user error on failure.
 //
 // If the data length is 0, this is a no-op.
+// If an error is returned, it will be with CodeInvalidArgument.
 func UnmarshalJSONStrict(data []byte, v interface{}) error {
 	if len(data) == 0 {
 		return nil
@@ -19,7 +20,7 @@ func UnmarshalJSONStrict(data []byte, v interface{}) error {
 	jsonDecoder := json.NewDecoder(bytes.NewReader(data))
 	jsonDecoder.DisallowUnknownFields()
 	if err := jsonDecoder.Decode(v); err != nil {
-		return errs.NewUserErrorf("could not unmarshal as JSON: %v", err)
+		return errs.NewInvalidArgumentf("could not unmarshal as JSON: %v", err)
 	}
 	return nil
 }
@@ -27,6 +28,7 @@ func UnmarshalJSONStrict(data []byte, v interface{}) error {
 // UnmarshalYAMLStrict unmarshals the data as YAML, returning a user error on failure.
 //
 // If the data length is 0, this is a no-op.
+// If an error is returned, it will be with CodeInvalidArgument.
 func UnmarshalYAMLStrict(data []byte, v interface{}) error {
 	if len(data) == 0 {
 		return nil
@@ -34,7 +36,7 @@ func UnmarshalYAMLStrict(data []byte, v interface{}) error {
 	yamlDecoder := yaml.NewDecoder(bytes.NewReader(data))
 	yamlDecoder.KnownFields(true)
 	if err := yamlDecoder.Decode(v); err != nil {
-		return errs.NewUserErrorf("could not unmarshal as YAML: %v", err)
+		return errs.NewInvalidArgumentf("could not unmarshal as YAML: %v", err)
 	}
 	return nil
 }
@@ -43,13 +45,14 @@ func UnmarshalYAMLStrict(data []byte, v interface{}) error {
 // a user error with both errors on failure.
 //
 // If the data length is 0, this is a no-op.
+// If an error is returned, it will be with CodeInvalidArgument.
 func UnmarshalJSONOrYAMLStrict(data []byte, v interface{}) error {
 	if len(data) == 0 {
 		return nil
 	}
 	if jsonErr := UnmarshalJSONStrict(data, v); jsonErr != nil {
 		if yamlErr := UnmarshalYAMLStrict(data, v); yamlErr != nil {
-			return errs.NewUserError(jsonErr.Error() + "\n" + yamlErr.Error())
+			return errs.NewInvalidArgument(jsonErr.Error() + "\n" + yamlErr.Error())
 		}
 	}
 	return nil

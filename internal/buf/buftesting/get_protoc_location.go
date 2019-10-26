@@ -1,10 +1,11 @@
 package buftesting
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/bufbuild/buf/internal/pkg/errs"
 )
 
 type protocLocation struct {
@@ -30,7 +31,7 @@ func getProtocLocation() (*protocLocation, error) {
 		return nil, err
 	}
 	if !wktFileInfo.Mode().IsRegular() {
-		return nil, fmt.Errorf("could not find google/protobuf/any.proto in %s", includePath)
+		return nil, errs.NewInternalf("could not find google/protobuf/any.proto in %s", includePath)
 	}
 	return &protocLocation{
 		BinPath:     binPath,

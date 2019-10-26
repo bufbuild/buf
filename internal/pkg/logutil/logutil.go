@@ -12,6 +12,8 @@ import (
 )
 
 // NewLogger returns a new Logger.
+//
+// If an error is returned, it will be with CodeInvalidArgument.
 func NewLogger(stderr io.Writer, level string, format string) (*zap.Logger, error) {
 	level = strings.TrimSpace(strings.ToLower(level))
 	format = strings.TrimSpace(strings.ToLower(format))
@@ -29,7 +31,7 @@ func NewLogger(stderr io.Writer, level string, format string) (*zap.Logger, erro
 	case "":
 		zapLevel = zapcore.InfoLevel
 	default:
-		return nil, errs.NewUserErrorf("unknown log level [debug,info,warn,error]: %q", level)
+		return nil, errs.NewInvalidArgumentf("unknown log level [debug,info,warn,error]: %q", level)
 	}
 
 	var encoder zapcore.Encoder
@@ -43,7 +45,7 @@ func NewLogger(stderr io.Writer, level string, format string) (*zap.Logger, erro
 	case "":
 		encoder = zapcore.NewConsoleEncoder(colortextEncoderConfig)
 	default:
-		return nil, errs.NewUserErrorf("unknown log format [text,color,json]: %q", format)
+		return nil, errs.NewInvalidArgumentf("unknown log format [text,color,json]: %q", format)
 	}
 
 	return zap.New(
