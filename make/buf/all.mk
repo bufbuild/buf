@@ -6,8 +6,10 @@ GO_BINS := \
 	protoc-gen-buf-check-lint
 GO_GET_PKGS := github.com/jhump/protoreflect@master
 
-include make/buf/versions.mk
+DOCKER_BINS := \
+	buf
 
+include make/buf/versions.mk
 include make/base.mk
 include make/dep_errcheck.mk
 include make/dep_golint.mk
@@ -18,8 +20,6 @@ include make/dep_staticcheck.mk
 include make/golang.mk
 include make/protoc_gen_go.mk
 include make/docker.mk
-
-RELEASE_DOCKER_IMAGE := golang:1.13.3-buster
 
 .PHONY: buflint
 buflint: bufinstall
@@ -37,4 +37,4 @@ bufdevinstall:
 
 .PHONY: bufrelease
 bufrelease: all
-	docker run --volume "$(CURDIR):/app" --workdir "/app" $(RELEASE_DOCKER_IMAGE) bash -x scripts/buf/release.bash
+	DOCKER_IMAGE=golang:1.13.3-buster bash scripts/buf/release.bash
