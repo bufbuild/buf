@@ -36,3 +36,11 @@ jobs:
       - name: docker-build
         if: success()
         run: make dockerbuild
+      - name: docker-push
+        if: success()
+        run: bash .github/scripts/dockerpush.bash
+        env:
+          IMAGE: docker.pkg.github.com/bufbuild/buf/buf
+          LATEST_BRANCH: master
+          VERSION_TAG_PREFIX: v
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
