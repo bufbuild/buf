@@ -33,14 +33,8 @@ jobs:
         run: make codecov
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      - name: docker-build
+      - name: docker
         if: success()
-        run: make dockerbuild
-      - name: docker-push
-        if: success()
-        run: bash .github/scripts/dockerpush.bash
+        run: bash .github/scripts/docker.bash
         env:
-          IMAGE: docker.pkg.github.com/bufbuild/buf/buf
-          LATEST_BRANCH: master
-          VERSION_TAG_PREFIX: v
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
