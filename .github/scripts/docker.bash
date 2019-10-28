@@ -16,6 +16,8 @@ check_env_var() {
   fi
 }
 
+# only set on forks
+# https://help.github.com/en/github/automating-your-workflow-with-github-actions/virtual-environments-for-github-actions#environment-variables
 if [ -n "${GITHUB_HEAD_REF}" ]; then
   echo "skipping due to fork"
   exit 0
@@ -42,11 +44,12 @@ if [ -z "${IMAGE_VERSION}" ]; then
   exit 0
 fi
 
-echo "IMAGE_VERSION: ${IMAGE_VERSION}"
-
+echo make "${MAKE_BUILD_TARGET}"
 make "${MAKE_BUILD_TARGET}"
 echo "${GITHUB_TOKEN}" | docker login docker.pkg.github.com --username "${GITHUB_ACTOR}" --password-stdin
 if [ "${IMAGE_VERSION}" != "latest" ]; then
   echo docker tag "${IMAGE}:latest" "${IMAGE}:${IMAGE_VERSION}"
+  docker tag "${IMAGE}:latest" "${IMAGE}:${IMAGE_VERSION}"
 fi
 echo docker push "${IMAGE}:${IMAGE_VERSION}"
+docker push "${IMAGE}:${IMAGE_VERSION}"
