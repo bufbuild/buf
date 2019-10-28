@@ -38,7 +38,7 @@ define dockerbinfunc
 dockerbuild$(1): dockerbuildworkspace
 	docker build \
 		--build-arg DOCKER_WORKSPACE_IMAGE=$(DOCKER_WORKSPACE_IMAGE) \
-		-t $(DOCKER_ORG)/$(1) \
+		-t $(DOCKER_ORG)/$(1):latest \
 		-f Dockerfile.$(1) \
 		.
 
