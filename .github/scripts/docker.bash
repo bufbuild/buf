@@ -2,6 +2,9 @@
 
 set -eo pipefail
 
+DIR="$(cd "$(dirname "${0}")/../.." && pwd)"
+cd "${DIR}"
+
 fail() {
   echo "error: $@" >&2
   exit 1
@@ -13,7 +16,7 @@ check_env_var() {
   fi
 }
 
-if [ -z "${GITHUB_HEAD_REF}" ]; then
+if [ -n "${GITHUB_HEAD_REF}" ]; then
   echo "skipping due to fork"
   exit 0
 fi
@@ -22,11 +25,10 @@ check_env_var GITHUB_ACTOR
 check_env_var GITHUB_REF
 check_env_var GITHUB_TOKEN
 
-
-check_env_var IMAGE
-check_env_var LATEST_BRANCH
-check_env_var VERSION_TAG_PREFIX
-
+MAKE_BUILD_TARGET=dockerbuildbuf
+IMAGE=docker.pkg.github.com/bufbuild/buf/buf
+LATEST_BRANCH=master
+VERSION_TAG_PREFIX=v
 IMAGE_VERSION=
 
 if echo "${GITHUB_REF}" | grep ^refs/heads/${LATEST_BRANCH}$ >/dev/null; then
@@ -42,5 +44,9 @@ fi
 
 echo "IMAGE_VERSION: ${IMAGE_VERSION}"
 
+make "${MAKE_BUILD_TARGET}"
 echo "${GITHUB_TOKEN}" | docker login docker.pkg.github.com --username "${GITHUB_ACTOR}" --password-stdin
+if [ "${IMAGE_VERSION}" != "latest" ]; then
+  echo docker tag "${IMAGE}:latest" "${IMAGE}:${IMAGE_VERSION}"
+fi
 echo docker push "${IMAGE}:${IMAGE_VERSION}"
