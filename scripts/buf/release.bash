@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -eo pipefail
+set -x
 
 DIR="$(cd "$(dirname "${0}")/../.." && pwd)"
 cd "${DIR}"
@@ -37,6 +38,18 @@ sha256() {
     sha256sum "$@"
   fi
 }
+
+if [ -z "${INSIDE_DOCKER}" ]; then
+  if [ -z "${DOCKER_IMAGE}" ]; then
+    fail "DOCKER_IMAGE must be set"
+  fi
+  docker run --volume \
+    "${DIR}:/app" \
+    --workdir "/app" \
+    -e INSIDE_DOCKER=1 \
+    "${DOCKER_IMAGE}" \
+    bash -x scripts/buf/release.bash
+fi
 
 BASE_NAME="buf"
 
