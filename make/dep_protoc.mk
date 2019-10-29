@@ -40,4 +40,4 @@ $(PROTOC):
 	@mkdir -p $(dir $(PROTOC))
 	@touch $(PROTOC)
 
-deps:: $(PROTOC)
+dockerdeps:: $(PROTOC)

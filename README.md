@@ -4,6 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/bufbuild/buf?include_prereleases)](https://github.com/bufbuild/buf/releases)
 [![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)](https://github.com/bufbuild/buf/actions?workflow=ci)
 [![Coverage](https://img.shields.io/codecov/c/github/bufbuild/buf/master)](https://codecov.io/gh/bufbuild/buf)
+[![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)](https://hub.docker.com/r/bufbuild/buf)
 
 **All documentation is hosted at [https://buf.build](https://buf.build). Please head over there for
 more details.**

@@ -156,7 +156,12 @@ func (r *runner) parse(
 		}()
 	}
 	for i := 0; i < len(chunks); i++ {
-		results = append(results, <-resultC)
+		select {
+		case <-ctx.Done():
+			return []*result{newResult(nil, nil, nil, ctx.Err())}
+		case result := <-resultC:
+			results = append(results, result)
+		}
 	}
 	return results
 }

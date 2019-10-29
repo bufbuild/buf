@@ -18,4 +18,4 @@ $(ERRCHECK):
 	@mkdir -p $(dir $(ERRCHECK))
 	@touch $(ERRCHECK)
 
-deps:: $(ERRCHECK)
+dockerdeps:: $(ERRCHECK)

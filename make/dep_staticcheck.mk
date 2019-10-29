@@ -18,4 +18,4 @@ $(STATICCHECK):
 	@mkdir -p $(dir $(STATICCHECK))
 	@touch $(STATICCHECK)
 
-deps:: $(STATICCHECK)
+dockerdeps:: $(STATICCHECK)
