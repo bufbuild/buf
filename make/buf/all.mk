@@ -1,13 +1,12 @@
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto
-GO_BINS := \
+GO_BINS := $(GO_BINS) \
 	buf \
 	protoc-gen-buf-check-breaking \
 	protoc-gen-buf-check-lint
 GO_GET_PKGS := github.com/jhump/protoreflect@master
 
-DOCKER_BINS := \
-	buf
+DOCKER_BINS := $(DOCKER_BINS) buf
 
 include make/buf/versions.mk
 include make/base.mk

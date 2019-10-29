@@ -1,7 +1,7 @@
+FROM golang:1.13.3-alpine3.10
+
 ARG PROJECT
 ARG GO_MODULE
-
-FROM golang:1.13.3-alpine3.10
 
 ENV \
   CACHE_BASE=/cache/$PROJECT \
