@@ -52,6 +52,7 @@ envrestore:
 direnv:
 	@mkdir -p $(CACHE_ENV)
 	@rm -f $(CACHE_ENV)/env.sh
+	@echo 'export CACHE="$(abspath $(CACHE))"' >> $(CACHE_ENV)/env.sh
 	@echo 'export GO111MODULE="$(GO111MODULE)"' >> $(CACHE_ENV)/env.sh
 	@echo 'export GOPRIVATE="$(GOPRIVATE)"' >> $(CACHE_ENV)/env.sh
 	@echo 'export GOPATH="$(GOPATH)"' >> $(CACHE_ENV)/env.sh
