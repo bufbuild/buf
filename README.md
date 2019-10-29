@@ -170,6 +170,8 @@ Features of Buf's include:
   [protoc-gen-buf-check-lint](https://buf.build/docs/lint-protoc-plugin) and
   [protoc-gen-buf-check-breaking](https://buf.build/docs/breaking-protoc-plugin) plugins.
 
+- **Docker image**. You can use Buf from the provided Docker image [bufbuild/buf](https://hub.docker.com/r/bufbuild/buf) as well.
+
 ## Buf Image Registry
 
 We'll work through the beta over the next couple months, and hope to hit a stable v1.0 by
