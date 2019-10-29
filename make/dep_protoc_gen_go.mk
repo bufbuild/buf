@@ -18,4 +18,4 @@ $(PROTOC_GEN_GO):
 	@mkdir -p $(dir $(PROTOC_GEN_GO))
 	@touch $(PROTOC_GEN_GO)
 
-deps:: $(PROTOC_GEN_GO)
+dockerdeps:: $(PROTOC_GEN_GO)

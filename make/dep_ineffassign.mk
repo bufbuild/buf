@@ -18,4 +18,4 @@ $(INEFFASSIGN):
 	@mkdir -p $(dir $(INEFFASSIGN))
 	@touch $(INEFFASSIGN)
 
-deps:: $(INEFFASSIGN)
+dockerdeps:: $(INEFFASSIGN)

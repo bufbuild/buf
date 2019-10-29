@@ -18,4 +18,4 @@ $(GOLINT):
 	@mkdir -p $(dir $(GOLINT))
 	@touch $(GOLINT)
 
-deps:: $(GOLINT)
+dockerdeps:: $(GOLINT)

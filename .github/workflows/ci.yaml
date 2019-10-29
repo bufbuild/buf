@@ -37,4 +37,9 @@ jobs:
         if: success()
         run: bash .github/scripts/docker.bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCKER_BUILD_MAKE_TARGET: dockerbuildbuf
+          DOCKER_IMAGE: bufbuild/buf
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          DOCKER_LATEST_BRANCH: master
+          DOCKER_VERSION_TAG_PREFIX: v

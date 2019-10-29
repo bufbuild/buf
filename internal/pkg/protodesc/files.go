@@ -1,6 +1,7 @@
 package protodesc
 
 import (
+	"context"
 	"runtime"
 
 	"github.com/bufbuild/buf/internal/pkg/errs"
@@ -9,7 +10,7 @@ import (
 
 const defaultChunkSizeThreshold = 8
 
-func newFiles(fileDescriptors ...protodescpb.FileDescriptor) ([]File, error) {
+func newFiles(ctx context.Context, fileDescriptors ...protodescpb.FileDescriptor) ([]File, error) {
 	if len(fileDescriptors) == 0 {
 		return nil, nil
 	}
@@ -47,9 +48,13 @@ func newFiles(fileDescriptors ...protodescpb.FileDescriptor) ([]File, error) {
 	files := make([]File, 0, len(fileDescriptors))
 	var err error
 	for i := 0; i < len(chunks); i++ {
-		result := <-resultC
-		files = append(files, result.Files...)
-		err = errs.Append(err, result.Err)
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case result := <-resultC:
+			files = append(files, result.Files...)
+			err = errs.Append(err, result.Err)
+		}
 	}
 	if err != nil {
 		return nil, err

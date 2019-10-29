@@ -30,11 +30,11 @@ func (h *handler) BreakingCheck(
 	previousImage bufpb.Image,
 	image bufpb.Image,
 ) ([]*analysis.Annotation, error) {
-	previousFiles, err := protodesc.NewFiles(previousImage.GetFile()...)
+	previousFiles, err := protodesc.NewFiles(ctx, previousImage.GetFile()...)
 	if err != nil {
 		return nil, err
 	}
-	files, err := protodesc.NewFiles(image.GetFile()...)
+	files, err := protodesc.NewFiles(ctx, image.GetFile()...)
 	if err != nil {
 		return nil, err
 	}

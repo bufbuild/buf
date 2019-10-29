@@ -32,28 +32,23 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	defer logutil.Defer(r.logger, "check", zap.Int("num_files", len(files)), zap.Int("num_checkers", len(checkers)))()
 
 	var annotations []*analysis.Annotation
-	var err error
 	resultC := make(chan *result, len(checkers))
 	for _, checker := range checkers {
 		checker := checker
 		go func() {
-			select {
-			case <-ctx.Done():
-				iErr := ctx.Err()
-				if iErr == context.DeadlineExceeded {
-					iErr = errs.NewDeadlineExceeded(iErr.Error())
-				}
-				resultC <- newResult(nil, iErr)
-			default:
-			}
 			iAnnotations, iErr := checker.check(previousFiles, files)
 			resultC <- newResult(iAnnotations, iErr)
 		}()
 	}
+	var err error
 	for i := 0; i < len(checkers); i++ {
-		result := <-resultC
-		annotations = append(annotations, result.Annotations...)
-		err = errs.Append(err, result.Err)
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case result := <-resultC:
+			annotations = append(annotations, result.Annotations...)
+			err = errs.Append(err, result.Err)
+		}
 	}
 	if err != nil {
 		return nil, err

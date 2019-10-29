@@ -32,4 +32,4 @@ COPY go.mod go.sum /workspace/
 RUN go mod download
 COPY make /workspace/make
 Copy Makefile /workspace/
-RUN make deps
+RUN make dockerdeps

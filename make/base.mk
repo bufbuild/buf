@@ -72,5 +72,8 @@ cleancache:
 nuke: clean cleancache
 	sudo rm -rf $(CACHE_GO)/pkg/mod
 
+.PHONY: dockerdeps
+dockerdeps::
+
 .PHONY: deps
-deps::
+deps:: dockerdeps
