@@ -31,5 +31,5 @@ RUN wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/s
 COPY go.mod go.sum /workspace/
 RUN go mod download
 COPY make /workspace/make
-Copy Makefile /workspace/
+COPY Makefile /workspace/
 RUN make dockerdeps
