@@ -70,7 +70,7 @@ func newCheckLintCmd(flags *Flags) *clicobra.Command {
 			flags.bindCheckLintInput(flagSet)
 			flags.bindCheckLintConfig(flagSet)
 			flags.bindCheckFiles(flagSet)
-			flags.bindCheckErrorFormat(flagSet)
+			flags.bindCheckLintErrorFormat(flagSet)
 		},
 	}
 }
@@ -89,7 +89,7 @@ func newCheckBreakingCmd(flags *Flags) *clicobra.Command {
 			flags.bindCheckBreakingLimitToInputFiles(flagSet)
 			flags.bindCheckBreakingExcludeImports(flagSet)
 			flags.bindCheckFiles(flagSet)
-			flags.bindCheckErrorFormat(flagSet)
+			flags.bindCheckBreakingErrorFormat(flagSet)
 		},
 	}
 }

@@ -172,6 +172,14 @@ func TestGitClone(t *testing.T) {
 	t.Parallel()
 	absGitPath, err := filepath.Abs("../../../../../.git")
 	require.NoError(t, err)
+	_, err = os.Stat(absGitPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			t.Skip("no .git repository")
+			return
+		}
+		require.NoError(t, err)
+	}
 
 	absFilePathSuccess1, err := filepath.Abs("storagetesting.go")
 	require.NoError(t, err)

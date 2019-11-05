@@ -212,6 +212,25 @@ func TestFail11(t *testing.T) {
 	)
 }
 
+func TestFail12(t *testing.T) {
+	testRun(
+		t,
+		1,
+		`lint:
+  ignore_only:
+    FIELD_LOWER_SNAKE_CASE:
+	  - buf/buf.proto
+	PACKAGE_DIRECTORY_MATCH:
+	  - buf/buf.proto`,
+		"check",
+		"lint",
+		"--input",
+		filepath.Join("testdata", "fail"),
+		"--error-format",
+		"config-ignore-yaml",
+	)
+}
+
 func TestFailCheckBreaking1(t *testing.T) {
 	testRun(
 		t,

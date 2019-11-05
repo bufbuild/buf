@@ -7,6 +7,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
@@ -71,15 +72,27 @@ func Handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	asJSON, err := internal.IsFormatJSON("error_format", externalConfig.ErrorFormat)
+	asJSON, err := internal.IsLintFormatJSON("error_format", externalConfig.ErrorFormat)
+	if err != nil {
+		responseWriter.WriteError(err.Error())
+		return
+	}
+	asConfigIgnoreYAML, err := internal.IsLintFormatConfigIgnoreYAML("error_format", externalConfig.ErrorFormat)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return
 	}
 	buffer := bytes.NewBuffer(nil)
-	if err := analysis.PrintAnnotations(buffer, annotations, asJSON); err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+	if asConfigIgnoreYAML {
+		if err := bufconfig.PrintAnnotationsLintConfigIgnoreYAML(buffer, annotations); err != nil {
+			responseWriter.WriteError(err.Error())
+			return
+		}
+	} else {
+		if err := analysis.PrintAnnotations(buffer, annotations, asJSON); err != nil {
+			responseWriter.WriteError(err.Error())
+			return
+		}
 	}
 	responseWriter.WriteError(buffer.String())
 }

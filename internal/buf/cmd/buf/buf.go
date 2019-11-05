@@ -2,7 +2,7 @@ package buf
 
 import "github.com/bufbuild/buf/internal/pkg/cli/clicobra"
 
-const version = "0.3.0-dev"
+const version = "0.3.0"
 
 var develMode = ""
 
