@@ -54,6 +54,14 @@ generate: pregenerate
 
 .PHONY: checknodiffgenerated
 checknodiffgenerated:
+	@ if [ -d .git ]; then \
+			$(MAKE) checknodiffgeneratedinternal; \
+		else \
+			echo "skipping make checknodiffgenerated due to no .git repository" >&2; \
+		fi
+
+.PHONY: checknodiffgeneratedinternal
+checknodiffgeneratedinternal:
 	bash scripts/checknodiffgenerated.bash $(MAKE) generate
 
 .PHONY: golint

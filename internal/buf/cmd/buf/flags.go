@@ -163,8 +163,12 @@ func (f *Flags) bindCheckFiles(flagSet *pflag.FlagSet) {
 	flagSet.StringSliceVar(&f.Files, "file", nil, `Limit to specific files. This is an advanced feature and is not recommended.`)
 }
 
-func (f *Flags) bindCheckErrorFormat(flagSet *pflag.FlagSet) {
+func (f *Flags) bindCheckBreakingErrorFormat(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(&f.ErrorFormat, errorFormatFlagName, "text", "The format for build errors or check violations, printed to stdout. Must be one of [text,json].")
+}
+
+func (f *Flags) bindCheckLintErrorFormat(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.ErrorFormat, errorFormatFlagName, "text", "The format for build errors or check violations, printed to stdout. Must be one of [text,json,config-ignore-yaml].")
 }
 
 func (f *Flags) bindLsFilesInput(flagSet *pflag.FlagSet) {

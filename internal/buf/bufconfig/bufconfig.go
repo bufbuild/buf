@@ -2,11 +2,15 @@
 package bufconfig
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"sort"
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -97,4 +101,59 @@ type ExternalLintConfig struct {
 	RPCAllowGoogleProtobufEmptyRequests  bool                `json:"rpc_allow_google_protobuf_empty_requests,omitempty" yaml:"rpc_allow_google_protobuf_empty_requests,omitempty"`
 	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
 	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
+}
+
+// PrintAnnotationsLintConfigIgnoreYAML prints the annotations to the Writer as config-ignore-yaml.
+//
+// TODO: this probably belongs in buflint, but since ExternalConfig is not supposed to be used
+// outside of this package, we put it here for now.
+func PrintAnnotationsLintConfigIgnoreYAML(writer io.Writer, annotations []*analysis.Annotation) error {
+	if len(annotations) == 0 {
+		return nil
+	}
+	ignoreIDToRootPathMap := make(map[string]map[string]struct{})
+	for _, annotation := range annotations {
+		if annotation.Filename == "" || annotation.Type == "" {
+			continue
+		}
+		rootPathMap, ok := ignoreIDToRootPathMap[annotation.Type]
+		if !ok {
+			rootPathMap = make(map[string]struct{})
+			ignoreIDToRootPathMap[annotation.Type] = rootPathMap
+		}
+		rootPathMap[annotation.Filename] = struct{}{}
+	}
+	if len(ignoreIDToRootPathMap) == 0 {
+		return nil
+	}
+
+	sortedIgnoreIDs := make([]string, 0, len(ignoreIDToRootPathMap))
+	ignoreIDToSortedRootPaths := make(map[string][]string, len(ignoreIDToRootPathMap))
+	for id, rootPathMap := range ignoreIDToRootPathMap {
+		sortedIgnoreIDs = append(sortedIgnoreIDs, id)
+		rootPaths := make([]string, 0, len(rootPathMap))
+		for rootPath := range rootPathMap {
+			rootPaths = append(rootPaths, rootPath)
+		}
+		sort.Strings(rootPaths)
+		ignoreIDToSortedRootPaths[id] = rootPaths
+	}
+	sort.Strings(sortedIgnoreIDs)
+
+	buffer := bytes.NewBuffer(nil)
+	_, _ = buffer.WriteString(`lint:
+  ignore_only:
+`)
+	for _, id := range sortedIgnoreIDs {
+		_, _ = buffer.WriteString("    ")
+		_, _ = buffer.WriteString(id)
+		_, _ = buffer.WriteString(":\n")
+		for _, rootPath := range ignoreIDToSortedRootPaths[id] {
+			_, _ = buffer.WriteString("      - ")
+			_, _ = buffer.WriteString(rootPath)
+			_, _ = buffer.WriteString("\n")
+		}
+	}
+	_, err := writer.Write(buffer.Bytes())
+	return err
 }

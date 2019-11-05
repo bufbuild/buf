@@ -8,6 +8,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/bytepool"
@@ -75,7 +76,11 @@ func checkLint(
 	logger *zap.Logger,
 	segList *bytepool.SegList,
 ) (retErr error) {
-	asJSON, err := internal.IsFormatJSON(errorFormatFlagName, flags.ErrorFormat)
+	asJSON, err := internal.IsLintFormatJSON(errorFormatFlagName, flags.ErrorFormat)
+	if err != nil {
+		return err
+	}
+	asConfigIgnoreYAML, err := internal.IsLintFormatConfigIgnoreYAML(errorFormatFlagName, flags.ErrorFormat)
 	if err != nil {
 		return err
 	}
@@ -112,11 +117,17 @@ func checkLint(
 		return err
 	}
 	if len(annotations) > 0 {
-		if err := bufbuild.FixAnnotationFilenames(env.Resolver, annotations); err != nil {
-			return err
-		}
-		if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
-			return err
+		if asConfigIgnoreYAML {
+			if err := bufconfig.PrintAnnotationsLintConfigIgnoreYAML(execEnv.Stdout, annotations); err != nil {
+				return err
+			}
+		} else {
+			if err := bufbuild.FixAnnotationFilenames(env.Resolver, annotations); err != nil {
+				return err
+			}
+			if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
+				return err
+			}
 		}
 		return errs.NewInternal("")
 	}

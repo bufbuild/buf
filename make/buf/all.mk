@@ -26,6 +26,14 @@ buflint: bufinstall
 
 .PHONY: bufbreaking
 bufbreaking: bufinstall
+	@ if [ -d .git ]; then \
+			$(MAKE) bufbreakinginternal; \
+		else \
+			echo "skipping make bufbreaking due to no .git repository" >&2; \
+		fi
+
+.PHONY: bufbreakinginternal
+bufbreakinginternal:
 	-buf check breaking --against-input '.git#branch=master'
 
 postlint:: buflint bufbreaking
