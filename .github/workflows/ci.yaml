@@ -19,15 +19,9 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: 1.13.4
-      - name: deps
+      - name: ci
         if: success()
-        run: make deps
-      - name: lint
-        run: make lint
-        if: success()
-      - name: cover
-        if: success()
-        run: make cover
+        run: make ci
       - name: codecov
         if: success()
         run: make codecov

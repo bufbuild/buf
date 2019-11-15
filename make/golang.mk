@@ -29,6 +29,12 @@ all:
 	@$(MAKE) lint
 	@$(MAKE) test
 
+.PHONY: ci
+ci:
+	@$(MAKE) deps
+	@$(MAKE) lint
+	@$(MAKE) cover
+
 .PHONY: updategodeps
 updategodeps:
 	rm -f go.mod go.sum
@@ -37,32 +43,19 @@ ifneq ($(GO_GET_PKGS),)
 	go get $(GO_GET_PKGS)
 endif
 	go get -u -t ./...
-	$(MAKE) generate
+	$(MAKE) generateinternal
 	$(MAKE)
 
 .PHONY: godeps
 godeps: deps
 	go mod download
 
-.PHONY: pregenerate
-pregenerate::
-
-.PHONY: generate
-generate: pregenerate
+.PHONY: gofmtmodtidy
+gofmtmodtidy:
 	go fmt ./...
 	go mod tidy -v
 
-.PHONY: checknodiffgenerated
-checknodiffgenerated:
-	@ if [ -d .git ]; then \
-			$(MAKE) checknodiffgeneratedinternal; \
-		else \
-			echo "skipping make checknodiffgenerated due to no .git repository" >&2; \
-		fi
-
-.PHONY: checknodiffgeneratedinternal
-checknodiffgeneratedinternal:
-	bash make/scripts/checknodiffgenerated.bash $(MAKE) generate
+postgenerate:: gofmtmodtidy
 
 .PHONY: golint
 golint: $(GOLINT)

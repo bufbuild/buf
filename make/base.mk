@@ -78,3 +78,26 @@ dockerdeps::
 
 .PHONY: deps
 deps:: dockerdeps
+
+.PHONY: generate
+generate::
+
+.PHONY: postgenerate
+postgenerate::
+
+.PHONY: generateinternal
+generateinternal:
+	@$(MAKE) generate
+	@$(MAKE) postgenerate
+
+.PHONY: checknodiffgenerated
+checknodiffgenerated:
+	@ if [ -d .git ]; then \
+			$(MAKE) checknodiffgeneratedinternal; \
+		else \
+			echo "skipping make checknodiffgenerated due to no .git repository" >&2; \
+		fi
+
+.PHONY: checknodiffgeneratedinternal
+checknodiffgeneratedinternal:
+	bash make/scripts/checknodiffgenerated.bash $(MAKE) generateinternal
