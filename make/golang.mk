@@ -123,6 +123,12 @@ cover: pretest
 codecov:
 	bash <(curl -s https://codecov.io/bash) -f $(TMP)/cover.txt
 
+.PHONY: codecovcopyfile
+codecovcopyfile:
+	cp make/assets/.codecov.yml $(CURDIR)/.codecov.yml
+
+pregenerate:: codecovcopyfile
+
 .PHONY: install
 install::
 

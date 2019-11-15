@@ -21,7 +21,7 @@ DOCKERMAKETARGET ?= all
 
 .PHONY: dockercopyworkspacefile
 dockercopyworkspacefile:
-	cp make/assets/Dockerfile.workspace $(CURDIR)
+	cp make/assets/$(DOCKER_WORKSPACE_FILE) $(CURDIR)/$(DOCKER_WORKSPACE_FILE)
 
 pregenerate:: dockercopyworkspacefile
 
