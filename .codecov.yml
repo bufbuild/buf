@@ -5,4 +5,4 @@ coverage:
     patch: no
     changes: no
 ignore:
-  - internal/gen/
+  - "**/gen/"

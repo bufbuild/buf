@@ -112,7 +112,7 @@ coverpkgs:
 cover: pretest
 	@mkdir -p $(TMP)
 	@rm -f $(TMP)/cover.txt $(TMP)/cover.html
-	go test -race -coverprofile=$(TMP)/cover.txt -coverpkg=$(shell GOPKGS=$(GOPKGS) $(MAKE) coverpkgs) $(GOPKGS)
+	go test -race -coverprofile=$(TMP)/cover.txt -coverpkg=$(shell GOPKGS=$(GOPKGS) $(MAKE) -s coverpkgs) $(GOPKGS)
 	@go tool cover -html=$(TMP)/cover.txt -o $(TMP)/cover.html
 	@echo
 	@go tool cover -func=$(TMP)/cover.txt | grep total
