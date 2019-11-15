@@ -17,6 +17,12 @@ DOCKER_WORKSPACE_DIR := /workspace
 
 DOCKER_BINS ?=
 
+.PHONY: dockercopyworkspacefile
+dockercopyworkspacefile:
+	cp make/assets/Dockerfile.workspace $(CURDIR)
+
+pregenerate:: dockercopyworkspacefile
+
 .PHONY: dockerbuildworkspace
 dockerbuildworkspace:
 	docker build \
