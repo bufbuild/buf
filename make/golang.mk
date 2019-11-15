@@ -141,3 +141,4 @@ install:: $(1)install
 endef
 
 $(foreach gobin,$(GO_BINS),$(eval $(call gobinfunc,$(gobin))))
+$(foreach gobin,$(GO_BINS),$(eval FILE_IGNORES := $(FILE_IGNORES) cmd/$(gobin)/$(gobin)))
