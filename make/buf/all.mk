@@ -8,6 +8,8 @@ GO_GET_PKGS := github.com/jhump/protoreflect@master
 
 DOCKER_BINS := $(DOCKER_BINS) buf
 
+FILE_IGNORES := $(FILE_IGNORES) .build/ internal/buf/bufbuild/cache/
+
 include make/versions.mk
 include make/base.mk
 include make/dep_errcheck.mk
@@ -19,6 +21,7 @@ include make/dep_staticcheck.mk
 include make/golang.mk
 include make/protoc_gen_go.mk
 include make/docker.mk
+
 
 .PHONY: buflint
 buflint: bufinstall
