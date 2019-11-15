@@ -1,0 +1,8 @@
+coverage:
+  range: 50...90
+  status:
+    project: no
+    patch: no
+    changes: no
+ignore:
+  - "**/gen/"
