@@ -79,15 +79,15 @@ dockerdeps::
 .PHONY: deps
 deps:: dockerdeps
 
-.PHONY: generate
-generate::
+.PHONY: pregenerate
+pregenerate::
 
 .PHONY: postgenerate
 postgenerate::
 
-.PHONY: generateinternal
-generateinternal:
-	@$(MAKE) generate
+.PHONY: generate
+generate:
+	@$(MAKE) pregenerate
 	@$(MAKE) postgenerate
 
 .PHONY: checknodiffgenerated
@@ -100,4 +100,4 @@ checknodiffgenerated:
 
 .PHONY: checknodiffgeneratedinternal
 checknodiffgeneratedinternal:
-	bash make/scripts/checknodiffgenerated.bash $(MAKE) generateinternal
+	bash make/scripts/checknodiffgenerated.bash $(MAKE) generate

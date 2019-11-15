@@ -25,4 +25,4 @@ protocgengo: protocgengoclean $(PROTOC) $(PROTOC_GEN_GO)
 		"--plugin_out=$(PROTOC_GEN_GO_OUT)" \
 		"--plugin_opt=$(PROTOC_GEN_GO_OPT)"
 
-generate:: protocgengo
+pregenerate:: protocgengo

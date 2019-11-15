@@ -43,7 +43,7 @@ ifneq ($(GO_GET_PKGS),)
 	go get $(GO_GET_PKGS)
 endif
 	go get -u -t ./...
-	$(MAKE) generateinternal
+	$(MAKE) generate
 	$(MAKE)
 
 .PHONY: godeps
