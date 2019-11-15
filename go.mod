@@ -13,8 +13,8 @@ require (
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20191112222119-e1110fd1c708 // indirect
 	golang.org/x/net v0.0.0-20191112182307-2180aed22343 // indirect
-	golang.org/x/sys v0.0.0-20191113165036-4c7a9d0fe056 // indirect
-	golang.org/x/tools v0.0.0-20191114161115-faa69481e761 // indirect
+	golang.org/x/sys v0.0.0-20191115151921-52ab43148777 // indirect
+	golang.org/x/tools v0.0.0-20191114222411-4191b8cbba09 // indirect
 	google.golang.org/genproto v0.0.0-20191114150713-6bbd007550de // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2
 	gopkg.in/src-d/go-git.v4 v4.13.1

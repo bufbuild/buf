@@ -62,7 +62,7 @@ checknodiffgenerated:
 
 .PHONY: checknodiffgeneratedinternal
 checknodiffgeneratedinternal:
-	bash scripts/checknodiffgenerated.bash $(MAKE) generate
+	bash make/scripts/checknodiffgenerated.bash $(MAKE) generate
 
 .PHONY: golint
 golint: $(GOLINT)

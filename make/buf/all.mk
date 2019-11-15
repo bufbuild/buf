@@ -8,7 +8,7 @@ GO_GET_PKGS := github.com/jhump/protoreflect@master
 
 DOCKER_BINS := $(DOCKER_BINS) buf
 
-include make/buf/versions.mk
+include make/versions.mk
 include make/base.mk
 include make/dep_errcheck.mk
 include make/dep_golint.mk
@@ -44,4 +44,4 @@ bufdevinstall:
 
 .PHONY: bufrelease
 bufrelease: all
-	DOCKER_IMAGE=golang:1.13.3-buster bash scripts/buf/release.bash
+	DOCKER_IMAGE=golang:1.13.3-buster bash make/scripts/buf/release.bash
