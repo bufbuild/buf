@@ -17,6 +17,8 @@ DOCKER_WORKSPACE_DIR := /workspace
 
 DOCKER_BINS ?=
 
+DOCKERMAKETARGET ?= all
+
 .PHONY: dockercopyworkspacefile
 dockercopyworkspacefile:
 	cp make/assets/Dockerfile.workspace $(CURDIR)
@@ -34,7 +36,7 @@ dockerbuildworkspace:
 
 .PHONY: dockermakeworkspace
 dockermakeworkspace: dockerbuildworkspace
-	docker run -v "$(CURDIR):$(DOCKER_WORKSPACE_DIR)" $(DOCKER_WORKSPACE_IMAGE) make -j 8
+	docker run -v "$(CURDIR):$(DOCKER_WORKSPACE_DIR)" $(DOCKER_WORKSPACE_IMAGE) make -j 8 $(DOCKERMAKETARGET)
 
 .PHONY: dockerbuild
 dockerbuild::
