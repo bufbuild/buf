@@ -19,6 +19,7 @@ endif
 
 GO_BINS ?=
 GO_GET_PKGS ?=
+GO_LINT_IGNORES ?=
 
 GOPKGS ?= ./...
 
@@ -58,24 +59,24 @@ gofmtmodtidy:
 postgenerate:: gofmtmodtidy
 
 .PHONY: golint
-golint: $(GOLINT)
-	golint -set_exit_status $(GOPKGS)
+golint: __go_lint_pkgs $(GOLINT)
+	golint -set_exit_status $(GO_LINT_PKGS)
 
 .PHONY: vet
-vet:
-	go vet $(GOPKGS)
+vet: __go_lint_pkgs
+	go vet $(GO_LINT_PKGS)
 
 .PHONY:
-errcheck: $(ERRCHECK)
-	errcheck $(GOPKGS)
+errcheck: __go_lint_pkgs $(ERRCHECK)
+	errcheck $(GO_LINT_PKGS)
 
 .PHONY:
 ineffassign: $(INEFFASSIGN)
 	ineffassign .
 
 .PHONY: staticcheck
-staticcheck: $(STATICCHECK)
-	staticcheck $(GOPKGS)
+staticcheck: __go_lint_pkgs $(STATICCHECK)
+	staticcheck $(GO_LINT_PKGS)
 
 .PHONY: postlint
 postlint::
@@ -151,3 +152,11 @@ endef
 
 $(foreach gobin,$(GO_BINS),$(eval $(call gobinfunc,$(gobin))))
 $(foreach gobin,$(GO_BINS),$(eval FILE_IGNORES := $(FILE_IGNORES) cmd/$(gobin)/$(gobin)))
+
+.PHONY: __go_lint_pkgs
+__go_lint_pkgs:
+ifdef GO_LINT_IGNORES
+	$(eval GO_LINT_PKGS := $(shell go list $(GOPKGS) | grep -v $(patsubst %,-e %,$(GO_LINT_IGNORES))))
+else
+	$(eval GO_LINT_PKGS := $(GOPKGS))
+endif

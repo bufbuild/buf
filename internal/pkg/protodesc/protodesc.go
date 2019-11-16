@@ -313,13 +313,13 @@ func NewFile(fileDescriptor protodescpb.FileDescriptor) (File, error) {
 	return newFile(fileDescriptor)
 }
 
-// NewFiles converts the FileDescriptorSet into Files.
+// NewFilesUnstable converts the FileDescriptorSet into Files.
 //
 // This may be done concurrently and the returned Files may not be in the same
 // order as the input FileDescriptorProtos on the FileDescriptorSet. If ordering
 // matters, use NewFile.
-func NewFiles(ctx context.Context, fileDescriptors ...protodescpb.FileDescriptor) ([]File, error) {
-	return newFiles(ctx, fileDescriptors...)
+func NewFilesUnstable(ctx context.Context, fileDescriptors ...protodescpb.FileDescriptor) ([]File, error) {
+	return newFilesUnstable(ctx, fileDescriptors...)
 }
 
 // SortFiles sorts the Files by FilePath.

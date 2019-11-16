@@ -1,9 +1,11 @@
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto
+PROTOC_GEN_VALIDATE_OUT := internal/gen/proto
 GO_BINS := $(GO_BINS) buf protoc-gen-buf-check-breaking protoc-gen-buf-check-lint
 GO_GET_PKGS := github.com/jhump/protoreflect@master
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) .build/ internal/buf/bufbuild/cache/
+GO_LINT_IGNORES := \/internal\/gen\/
 
 include make/gomk/versions.mk
 include make/gomk/base.mk
@@ -12,9 +14,11 @@ include make/gomk/dep_golint.mk
 include make/gomk/dep_ineffassign.mk
 include make/gomk/dep_protoc.mk
 include make/gomk/dep_protoc_gen_go.mk
+include make/gomk/dep_protoc_gen_validate.mk
 include make/gomk/dep_staticcheck.mk
 include make/gomk/golang.mk
 include make/gomk/protoc_gen_go.mk
+include make/gomk/protoc_gen_validate.mk
 include make/gomk/docker.mk
 
 .PHONY: buflint

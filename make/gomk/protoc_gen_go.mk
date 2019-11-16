@@ -1,6 +1,9 @@
 ifndef GOMK_DIR
 $(error GOMK_DIR is not set)
 endif
+ifndef CACHE_INCLUDE
+$(error CACHE_INCLUDE is not set)
+endif
 ifndef PROTOC
 $(error PROTOC is not set)
 endif
@@ -23,6 +26,7 @@ protocgengoclean:
 .PHONY: protocgengo
 protocgengo: protocgengoclean $(PROTOC) $(PROTOC_GEN_GO)
 	bash $(GOMK_DIR)/protoc_gen_plugin.bash \
+		"--include_path=$(CACHE_INCLUDE)" \
 		"--proto_path=$(PROTO_PATH)" \
 		"--plugin_name=go" \
 		"--plugin_out=$(PROTOC_GEN_GO_OUT)" \

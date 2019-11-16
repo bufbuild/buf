@@ -152,7 +152,7 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufpb.Image {
 
 	assert.Equal(t, 1585, len(image.GetFile()))
 	// basic check to make sure there is no error at this scale
-	_, err = protodesc.NewFiles(context.Background(), image.GetFile()...)
+	_, err = protodesc.NewFilesUnstable(context.Background(), image.GetFile()...)
 	assert.NoError(t, err)
 	return image
 }

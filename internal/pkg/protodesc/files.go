@@ -10,7 +10,7 @@ import (
 
 const defaultChunkSizeThreshold = 8
 
-func newFiles(ctx context.Context, fileDescriptors ...protodescpb.FileDescriptor) ([]File, error) {
+func newFilesUnstable(ctx context.Context, fileDescriptors ...protodescpb.FileDescriptor) ([]File, error) {
 	if len(fileDescriptors) == 0 {
 		return nil, nil
 	}
