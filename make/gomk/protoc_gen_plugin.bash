@@ -11,8 +11,8 @@ usage() {
   echo "usage: ${0} \
     --proto_path=path/to/one \
     --proto_path=path/to/two \
-    --include_path=path/to/one \
-    --include_path=path/to/two \
+    --proto_include_path=path/to/one \
+    --proto_include_path=path/to/two \
     --plugin_name=go \
     --plugin_out=gen/proto/go \
     --plugin_opt=plugins=grpc"
@@ -26,7 +26,7 @@ check_flag_value_set() {
 }
 
 PROTO_PATHS=()
-INCLUDE_PATHS=()
+PROTO_INCLUDE_PATHS=()
 PLUGIN_NAME=
 PLUGIN_OUT=
 PLUGIN_OPT=
@@ -37,11 +37,11 @@ while test $# -gt 0; do
       exit 0
       ;;
     --proto_path*)
-      PROTO_PATHS+="$(echo ${1} | sed -e 's/^[^=]*=//g')"
+      PROTO_PATHS+=("$(echo ${1} | sed -e 's/^[^=]*=//g')")
       shift
       ;;
-    --include_path*)
-      INCLUDE_PATHS+="$(echo ${1} | sed -e 's/^[^=]*=//g')"
+    --proto_include_path*)
+      PROTO_INCLUDE_PATHS+=("$(echo ${1} | sed -e 's/^[^=]*=//g')")
       shift
       ;;
     --plugin_name*)
@@ -71,7 +71,7 @@ PROTOC_FLAGS=()
 for proto_path in "${PROTO_PATHS[@]}"; do
   PROTOC_FLAGS+=("--proto_path=${proto_path}")
 done
-for proto_path in "${INCLUDE_PATHS[@]}"; do
+for proto_path in "${PROTO_INCLUDE_PATHS[@]}"; do
   PROTOC_FLAGS+=("--proto_path=${proto_path}")
 done
 PROTOC_FLAGS+=("--${PLUGIN_NAME}_out=${PLUGIN_OUT}")

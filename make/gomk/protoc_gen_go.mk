@@ -26,8 +26,9 @@ protocgengoclean:
 .PHONY: protocgengo
 protocgengo: protocgengoclean $(PROTOC) $(PROTOC_GEN_GO)
 	bash $(GOMK_DIR)/protoc_gen_plugin.bash \
-		"--include_path=$(CACHE_INCLUDE)" \
 		"--proto_path=$(PROTO_PATH)" \
+		"--proto_include_path=$(CACHE_INCLUDE)" \
+		$(patsubst %,--proto_include_path=%,$(PROTO_INCLUDE_PATHS)) \
 		"--plugin_name=go" \
 		"--plugin_out=$(PROTOC_GEN_GO_OUT)" \
 		"--plugin_opt=$(PROTOC_GEN_GO_OPT)"

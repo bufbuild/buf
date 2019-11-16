@@ -14,13 +14,13 @@ endif
 PROTOC_GEN_VALIDATE := $(CACHE_VERSIONS)/protoc-gen-validate/$(PROTOC_GEN_VALIDATE_VERSION)
 $(PROTOC_GEN_VALIDATE):
 	@rm -f $(GOBIN)/protoc-gen-validate
-	@rm -rf $(CACHE_INCLUDE)/validate
-	@mkdir -p $(CACHE_INCLUDE)/validate
+	@rm -rf third_party/proto/validate
+	@mkdir -p third_party/proto/validate
 	$(eval PROTOC_GEN_VALIDATE_TMP := $(shell mktemp -d))
 	cd $(PROTOC_GEN_VALIDATE_TMP); go get github.com/envoyproxy/protoc-gen-validate@$(PROTOC_GEN_VALIDATE_VERSION)
 	curl -sSL \
 		https://raw.githubusercontent.com/envoyproxy/protoc-gen-validate/$(PROTOC_GEN_VALIDATE_VERSION)/validate/validate.proto \
-		-o $(CACHE_INCLUDE)/validate/validate.proto
+		-o third_party/proto/validate/validate.proto
 	@rm -rf $(PROTOC_GEN_VALIDATE_TMP)
 	@rm -rf $(dir $(PROTOC_GEN_VALIDATE))
 	@mkdir -p $(dir $(PROTOC_GEN_VALIDATE))

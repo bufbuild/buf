@@ -11,7 +11,7 @@ PROTOC_GEN_GO_VERSION ?= v1.3.2
 # https://github.com/twitchtv/twirp/releases 20190726
 PROTOC_GEN_TWIRP_VERSION ?= v5.8.0
 # https://github.com/envoyproxy/protoc-gen-validate/commits/master 20191111
-PROTOC_GEN_VALIDATE_VERSION ?= de8fa833aeb04a6bf84c313e39898c22f381fb05
+PROTOC_GEN_VALIDATE_VERSION ?= v0.1.0
 # https://github.com/protocolbuffers/protobuf/releases 20191002
 PROTOC_VERSION ?= 3.10.0
 # https://stedolan.github.io/jq/download

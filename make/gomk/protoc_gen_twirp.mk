@@ -22,8 +22,9 @@ PROTOC_GEN_TWIRP_OPT ?=
 .PHONY: protocgentwirp
 protocgentwirp: protocgengoclean $(PROTOC) $(PROTOC_GEN_TWIRP)
 	bash $(GOMK_DIR)/protoc_gen_plugin.bash \
-		"--include_path=$(CACHE_INCLUDE)" \
 		"--proto_path=$(PROTO_PATH)" \
+		"--proto_include_path=$(CACHE_INCLUDE)" \
+		$(patsubst %,--proto_include_path=%,$(PROTO_INCLUDE_PATHS)) \
 		"--plugin_name=twirp" \
 		"--plugin_out=$(PROTOC_GEN_TWIRP_OUT)" \
 		"--plugin_opt=$(PROTOC_GEN_TWIRP_OPT)"
