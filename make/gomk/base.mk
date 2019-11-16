@@ -1,5 +1,8 @@
 SHELL := /usr/bin/env bash -o pipefail
 
+ifndef GOMK_DIR
+$(error GOMK_DIR is not set)
+endif
 ifndef PROJECT
 $(error PROJECT is not set)
 endif
@@ -13,7 +16,6 @@ UNAME_ARCH := $(shell uname -m)
 ENV_DIR := .env
 ENV_SH := $(ENV_DIR)/env.sh
 ENV_BACKUP_DIR := $(HOME)/.config/$(PROJECT)/env
-
 
 ifndef CACHE_BASE
 CACHE_BASE := $(HOME)/.cache/$(PROJECT)
@@ -103,7 +105,7 @@ checknodiffgenerated:
 
 .PHONY: checknodiffgeneratedinternal
 checknodiffgeneratedinternal:
-	bash make/scripts/checknodiffgenerated.bash $(MAKE) generate
+	bash $(GOMK_DIR)/checknodiffgenerated.bash $(MAKE) generate
 
 .PHONY: updategitignores
 updategitignores:

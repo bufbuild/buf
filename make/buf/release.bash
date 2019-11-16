@@ -3,7 +3,7 @@
 set -eo pipefail
 set -x
 
-DIR="$(cd "$(dirname "${0}")/../../.." && pwd)"
+DIR="$(cd "$(dirname "${0}")/../.." && pwd)"
 cd "${DIR}"
 
 fail() {
@@ -48,7 +48,7 @@ if [ -z "${INSIDE_DOCKER}" ]; then
     --workdir "/app" \
     -e INSIDE_DOCKER=1 \
     "${DOCKER_IMAGE}" \
-    bash -x make/scripts/buf/release.bash
+    bash -x make/buf/release.bash
 fi
 
 BASE_NAME="buf"
