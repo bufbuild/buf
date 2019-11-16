@@ -125,7 +125,15 @@ codecov:
 
 .PHONY: codecovcopyfile
 codecovcopyfile:
-	cp make/assets/.codecov.yml $(CURDIR)/.codecov.yml
+	@rm -f .codecov.yml
+	@echo 'coverage:' >> .codecov.yml
+	@echo '  range: 50...90' >> .codecov.yml
+	@echo '  status:' >> .codecov.yml
+	@echo '    project: no' >> .codecov.yml
+	@echo '    patch: no' >> .codecov.yml
+	@echo '    changes: no' >> .codecov.yml
+	@echo 'ignore:' >> .codecov.yml
+	@echo '  - "**/gen/"' >>.codecov.yml
 
 pregenerate:: codecovcopyfile
 
