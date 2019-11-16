@@ -8,5 +8,9 @@ INEFFASSIGN_VERSION ?= ed7b1b5ee0f816bbc0ff35bf7c6fdb4f53b6c59a
 STATICCHECK_VERSION ?= 00664db7fdb567f0b2efbbcdb7d9ed23f7135468
 # https://github.com/golang/protobuf/releases 20190709
 PROTOC_GEN_GO_VERSION ?= v1.3.2
+# https://github.com/twitchtv/twirp/releases 20190726
+PROTOC_GEN_TWIRP_VERSION ?= v5.8.0
 # https://github.com/protocolbuffers/protobuf/releases 20191002
 PROTOC_VERSION ?= 3.10.0
+# https://stedolan.github.io/jq/download
+JQ_VERSION ?= 1.6

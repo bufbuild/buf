@@ -1,3 +1,6 @@
+ifndef GOMK_DIR
+$(error GOMK_DIR is not set)
+endif
 ifndef PROTOC
 $(error PROTOC is not set)
 endif
@@ -19,7 +22,7 @@ protocgengoclean:
 
 .PHONY: protocgengo
 protocgengo: protocgengoclean $(PROTOC) $(PROTOC_GEN_GO)
-	bash make/scripts/protoc_gen_plugin.bash \
+	bash $(GOMK_DIR)/protoc_gen_plugin.bash \
 		"--proto_path=$(PROTO_PATH)" \
 		"--plugin_name=go" \
 		"--plugin_out=$(PROTOC_GEN_GO_OUT)" \

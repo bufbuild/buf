@@ -1,3 +1,4 @@
+GOMK_DIR := make/gomk
 PROJECT := buf
 GO_MODULE := github.com/bufbuild/buf
 DOCKER_ORG := bufbuild
