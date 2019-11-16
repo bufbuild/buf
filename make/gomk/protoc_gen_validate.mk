@@ -19,12 +19,14 @@ endif
 
 # Not modifiable for now
 PROTOC_GEN_VALIDATE_OPT := lang=go
+PROTO_INCLUDE_PATHS := $(PROTO_INCLUDE_PATHS) third_party/proto
 
 .PHONY: protocgenvalidate
 protocgenvalidate: protocgengoclean $(PROTOC) $(PROTOC_GEN_VALIDATE)
 	bash $(GOMK_DIR)/protoc_gen_plugin.bash \
-		"--include_path=$(CACHE_INCLUDE)" \
 		"--proto_path=$(PROTO_PATH)" \
+		"--proto_include_path=$(CACHE_INCLUDE)" \
+		$(patsubst %,--proto_include_path=%,$(PROTO_INCLUDE_PATHS)) \
 		"--plugin_name=validate" \
 		"--plugin_out=$(PROTOC_GEN_VALIDATE_OUT)" \
 		"--plugin_opt=$(PROTOC_GEN_VALIDATE_OPT)"
