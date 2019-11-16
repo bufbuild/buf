@@ -29,7 +29,7 @@ func (h *handler) LintCheck(
 	lintConfig *Config,
 	image bufpb.Image,
 ) ([]*analysis.Annotation, error) {
-	files, err := protodesc.NewFiles(ctx, image.GetFile()...)
+	files, err := protodesc.NewFilesUnstable(ctx, image.GetFile()...)
 	if err != nil {
 		return nil, err
 	}

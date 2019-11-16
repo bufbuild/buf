@@ -1,6 +1,9 @@
 ifndef GOMK_DIR
 $(error GOMK_DIR is not set)
 endif
+ifndef CACHE_INCLUDE
+$(error CACHE_INCLUDE is not set)
+endif
 ifndef PROTOC
 $(error PROTOC is not set)
 endif
@@ -19,6 +22,7 @@ PROTOC_GEN_TWIRP_OPT ?=
 .PHONY: protocgentwirp
 protocgentwirp: protocgengoclean $(PROTOC) $(PROTOC_GEN_TWIRP)
 	bash $(GOMK_DIR)/protoc_gen_plugin.bash \
+		"--include_path=$(CACHE_INCLUDE)" \
 		"--proto_path=$(PROTO_PATH)" \
 		"--plugin_name=twirp" \
 		"--plugin_out=$(PROTOC_GEN_TWIRP_OUT)" \
