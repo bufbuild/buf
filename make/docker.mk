@@ -19,12 +19,6 @@ DOCKER_BINS ?=
 
 DOCKERMAKETARGET ?= all
 
-.PHONY: dockercopyworkspacefile
-dockercopyworkspacefile:
-	cp make/assets/$(DOCKER_WORKSPACE_FILE) $(CURDIR)/$(DOCKER_WORKSPACE_FILE)
-
-pregenerate:: dockercopyworkspacefile
-
 .PHONY: dockerbuildworkspace
 dockerbuildworkspace:
 	docker build \
