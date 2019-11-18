@@ -1,32 +1,24 @@
+GO_BINS := $(GO_BINS) cmd/buf cmd/protoc-gen-buf-check-breaking cmd/protoc-gen-buf-check-lint
+GO_GET_PKGS := $(GO_GET_PKGS) github.com/jhump/protoreflect@master
+DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto
 PROTOC_GEN_VALIDATE_OUT := internal/gen/proto
-GO_BINS := $(GO_BINS) buf protoc-gen-buf-check-breaking protoc-gen-buf-check-lint
-GO_GET_PKGS := github.com/jhump/protoreflect@master
-DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) .build/ internal/buf/bufbuild/cache/
-GO_LINT_IGNORES := \/internal\/gen\/
 
-include make/gomk/versions.mk
-include make/gomk/base.mk
-include make/gomk/dep_errcheck.mk
-include make/gomk/dep_golint.mk
-include make/gomk/dep_ineffassign.mk
-include make/gomk/dep_protoc.mk
-include make/gomk/dep_protoc_gen_go.mk
-include make/gomk/dep_protoc_gen_validate.mk
-include make/gomk/dep_staticcheck.mk
-include make/gomk/golang.mk
-include make/gomk/protoc_gen_go.mk
-include make/gomk/protoc_gen_validate.mk
-include make/gomk/docker.mk
+include make/go/bootstrap.mk
+include make/go/go.mk
+include make/go/codecov.mk
+include make/go/docker.mk
+include make/go/protoc_gen_go.mk
+include make/go/protoc_gen_validate.mk
 
 .PHONY: buflint
-buflint: bufinstall
+buflint: installbuf
 	buf check lint
 
 .PHONY: bufbreaking
-bufbreaking: bufinstall
+bufbreaking: installbuf
 	@ if [ -d .git ]; then \
 			$(MAKE) bufbreakinginternal; \
 		else \
@@ -39,10 +31,10 @@ bufbreakinginternal:
 
 postlint:: buflint bufbreaking
 
-.PHONY: bufdevinstall
-bufdevinstall:
+.PHONY: installbufdev
+installbufdev:
 	go install -ldflags "-X github.com/bufbuild/buf/internal/buf/cmd/buf.develMode=1" ./cmd/buf
 
 .PHONY: bufrelease
 bufrelease: all
-	DOCKER_IMAGE=golang:1.13.3-buster bash make/buf/release.bash
+	DOCKER_IMAGE=golang:1.13.4-buster bash make/buf/scripts/release.bash

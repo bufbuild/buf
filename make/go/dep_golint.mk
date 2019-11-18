@@ -1,12 +1,14 @@
-ifndef CACHE_VERSIONS
-$(error CACHE_VERSIONS is not set)
-endif
-ifndef GOBIN
-$(error GOBIN is not set)
-endif
-ifndef GOLINT_VERSION
-$(error GOLINT_VERSION is not set)
-endif
+# Managed by makego. DO NOT EDIT.
+
+# Must be set
+$(call _assert_var,MAKEGO)
+$(call _conditional_include,$(MAKEGO)/base.mk)
+$(call _assert_var,CACHE_VERSIONS)
+$(call _assert_var,GOBIN)
+
+# Settable
+# https://github.com/golang/lint/commits/master 20190409
+GOLINT_VERSION ?= 959b441ac422379a43da2230f62be024250818b0
 
 GOLINT := $(CACHE_VERSIONS)/golint/$(GOLINT_VERSION)
 $(GOLINT):

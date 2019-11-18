@@ -1,18 +1,16 @@
-ifndef UNAME_OS
-$(error UNAME_OS is not set)
-endif
-ifndef UNAME_ARCH
-$(error UNAME_ARCH is not set)
-endif
-ifndef CACHE_VERSIONS
-$(error CACHE_VERSIONS is not set)
-endif
-ifndef CACHE_BIN
-$(error CACHE_BIN is not set)
-endif
-ifndef JQ_VERSION
-$(error JQ_VERSION is not set)
-endif
+# Managed by makego. DO NOT EDIT.
+
+# Must be set
+$(call _assert_var,MAKEGO)
+$(call _conditional_include,$(MAKEGO)/base.mk)
+$(call _assert_var,UNAME_OS)
+$(call _assert_var,UNAME_ARCH)
+$(call _assert_var,CACHE_VERSIONS)
+$(call _assert_var,CACHE_BIN)
+
+# Settable
+# https://stedolan.github.io/jq/download
+JQ_VERSION ?= 1.6
 
 ifeq ($(UNAME_ARCH),x86_64)
 ifeq ($(UNAME_OS),Darwin)
@@ -36,4 +34,4 @@ $(JQ):
 	@mkdir -p $(dir $(JQ))
 	@touch $(JQ)
 
-deps:: $(JQ)
+dockerdeps:: $(JQ)

@@ -1,15 +1,15 @@
-ifndef CACHE_VERSIONS
-$(error CACHE_VERSIONS is not set)
-endif
-ifndef CACHE_INCLUDE
-$(error CACHE_INCLUDE is not set)
-endif
-ifndef GOBIN
-$(error GOBIN is not set)
-endif
-ifndef PROTOC_GEN_VALIDATE_VERSION
-$(error PROTOC_GEN_VALIDATE_VERSION is not set)
-endif
+# Managed by makego. DO NOT EDIT.
+
+# Must be set
+$(call _assert_var,MAKEGO)
+$(call _conditional_include,$(MAKEGO)/base.mk)
+$(call _assert_var,CACHE_VERSIONS)
+$(call _assert_var,CACHE_INCLUDE)
+$(call _assert_var,GOBIN)
+
+# Settable
+# https://github.com/envoyproxy/protoc-gen-validate/commits/master 20191111
+PROTOC_GEN_VALIDATE_VERSION ?= de8fa833aeb04a6bf84c313e39898c22f381fb05
 
 PROTOC_GEN_VALIDATE := $(CACHE_VERSIONS)/protoc-gen-validate/$(PROTOC_GEN_VALIDATE_VERSION)
 $(PROTOC_GEN_VALIDATE):
