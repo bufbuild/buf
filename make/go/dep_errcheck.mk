@@ -1,12 +1,14 @@
-ifndef CACHE_VERSIONS
-$(error CACHE_VERSIONS is not set)
-endif
-ifndef GOBIN
-$(error GOBIN is not set)
-endif
-ifndef ERRCHECK_VERSION
-$(error ERRCHECK_VERSION is not set)
-endif
+# Managed by makego. DO NOT EDIT.
+
+# Must be set
+$(call _assert_var,MAKEGO)
+$(call _conditional_include,$(MAKEGO)/base.mk)
+$(call _assert_var,CACHE_VERSIONS)
+$(call _assert_var,GOBIN)
+
+# Settable
+# https://github.com/kisielk/errcheck/commits/master 20190103
+ERRCHECK_VERSION ?= e14f8d59a22d460d56c5ee92507cd94c78fbf274
 
 ERRCHECK := $(CACHE_VERSIONS)/errcheck/$(ERRCHECK_VERSION)
 $(ERRCHECK):

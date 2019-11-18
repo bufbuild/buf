@@ -1,12 +1,14 @@
-ifndef CACHE_VERSIONS
-$(error CACHE_VERSIONS is not set)
-endif
-ifndef GOBIN
-$(error GOBIN is not set)
-endif
-ifndef STATICCHECK_VERSION
-$(error STATICCHECK_VERSION is not set)
-endif
+# Managed by makego. DO NOT EDIT.
+
+# Must be set
+$(call _assert_var,MAKEGO)
+$(call _conditional_include,$(MAKEGO)/base.mk)
+$(call _assert_var,CACHE_VERSIONS)
+$(call _assert_var,GOBIN)
+
+# Settable
+# https://github.com/dominikh/go-tools/commits/master 20190825
+STATICCHECK_VERSION ?= 00664db7fdb567f0b2efbbcdb7d9ed23f7135468
 
 STATICCHECK := $(CACHE_VERSIONS)/staticcheck/$(STATICCHECK_VERSION)
 $(STATICCHECK):

@@ -1,12 +1,16 @@
-ifndef CACHE_VERSIONS
-$(error CACHE_VERSIONS is not set)
-endif
-ifndef GOBIN
-$(error GOBIN is not set)
-endif
-ifndef PROTOC_GEN_TWIRP_VERSION
-$(error PROTOC_GEN_TWIRP_VERSION is not set)
-endif
+# Managed by makego. DO NOT EDIT.
+
+# Must be set
+$(call _assert_var,MAKEGO)
+$(call _conditional_include,$(MAKEGO)/base.mk)
+$(call _assert_var,CACHE_VERSIONS)
+$(call _assert_var,GOBIN)
+
+# Settable
+# https://github.com/twitchtv/twirp/releases 20190726
+PROTOC_GEN_TWIRP_VERSION ?= v5.8.0
+
+GO_GET_PKGS := $(GO_GET_PKGS) github.com/twitchtv/twirp@$(PROTOC_GEN_TWIRP_VERSION)
 
 PROTOC_GEN_TWIRP := $(CACHE_VERSIONS)/protoc-gen-twirp/$(PROTOC_GEN_TWIRP_VERSION)
 $(PROTOC_GEN_TWIRP):

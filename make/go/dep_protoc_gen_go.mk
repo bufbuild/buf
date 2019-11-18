@@ -1,12 +1,16 @@
-ifndef CACHE_VERSIONS
-$(error CACHE_VERSIONS is not set)
-endif
-ifndef GOBIN
-$(error GOBIN is not set)
-endif
-ifndef PROTOC_GEN_GO_VERSION
-$(error PROTOC_GEN_GO_VERSION is not set)
-endif
+# Managed by makego. DO NOT EDIT.
+
+# Must be set
+$(call _assert_var,MAKEGO)
+$(call _conditional_include,$(MAKEGO)/base.mk)
+$(call _assert_var,CACHE_VERSIONS)
+$(call _assert_var,GOBIN)
+
+# Settable
+# https://github.com/golang/protobuf/releases 20190709
+PROTOC_GEN_GO_VERSION ?= v1.3.2
+
+GO_GET_PKGS := $(GO_GET_PKGS) github.com/golang/protobuf/proto@$(PROTOC_GEN_GO_VERSION)
 
 PROTOC_GEN_GO := $(CACHE_VERSIONS)/protoc-gen-go/$(PROTOC_GEN_GO_VERSION)
 $(PROTOC_GEN_GO):

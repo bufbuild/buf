@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Managed by makego. DO NOT EDIT.
+
 set -eo pipefail
 
 fail() {

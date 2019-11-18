@@ -1,21 +1,17 @@
-ifndef CACHE_VERSIONS
-$(error CACHE_VERSIONS is not set)
-endif
-ifndef CACHE_INCLUDE
-$(error CACHE_INCLUDE is not set)
-endif
-ifndef CACHE_BIN
-$(error CACHE_BIN is not set)
-endif
-ifndef UNAME_OS
-$(error UNAME_OS is not set)
-endif
-ifndef UNAME_ARCH
-$(error UNAME_ARCH is not set)
-endif
-ifndef PROTOC_VERSION
-$(error PROTOC_VERSION is not set)
-endif
+# Managed by makego. DO NOT EDIT.
+
+# Must be set
+$(call _assert_var,MAKEGO)
+$(call _conditional_include,$(MAKEGO)/base.mk)
+$(call _assert_var,UNAME_OS)
+$(call _assert_var,UNAME_ARCH)
+$(call _assert_var,CACHE_VERSIONS)
+$(call _assert_var,CACHE_INCLUDE)
+$(call _assert_var,CACHE_BIN)
+
+# Settable
+# https://github.com/protocolbuffers/protobuf/releases 20191002
+PROTOC_VERSION ?= 3.10.0
 
 ifeq ($(UNAME_OS),Darwin)
 PROTOC_OS := osx
