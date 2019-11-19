@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufos"
-	"github.com/bufbuild/cli/clicobra"
 	"github.com/bufbuild/cli/clienv"
+	"github.com/bufbuild/cli/clipflag"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
@@ -36,7 +36,7 @@ const (
 
 // Flags are flags for the buf CLI.
 type Flags struct {
-	baseFlags *clicobra.TimeoutFlags
+	baseFlags clipflag.Flags
 
 	Config        string
 	AgainstConfig string
@@ -61,34 +61,32 @@ type Flags struct {
 }
 
 // newFlags returns a new Flags.
-//
-// Devel should not be set for release binaries.
-func newFlags(devel bool) *Flags {
-	return &Flags{baseFlags: clicobra.NewTimeoutFlags(devel)}
+func newFlags() *Flags {
+	return &Flags{baseFlags: clipflag.NewTimeoutFlags(10 * time.Second)}
 }
 
 // newRunFunc creates a new run function.
 func (f *Flags) newRunFunc(
 	fn func(
 		context.Context,
-		*clienv.ExecEnv,
+		clienv.Env,
 		*Flags,
 		*zap.Logger,
 	) error,
-) func(*clienv.ExecEnv) error {
+) func(clienv.Env) error {
 	return f.baseFlags.NewRunFunc(
 		func(
 			ctx context.Context,
-			execEnv *clienv.ExecEnv,
+			cliEnv clienv.Env,
 			logger *zap.Logger,
 		) error {
-			return fn(ctx, execEnv, f, logger)
+			return fn(ctx, cliEnv, f, logger)
 		},
 	)
 }
 
 func (f *Flags) bindRootCommandFlags(flagSet *pflag.FlagSet) {
-	f.baseFlags.BindRootCommandFlags(flagSet, 10*time.Second)
+	f.baseFlags.BindRootCommandFlags(flagSet)
 }
 
 func (f *Flags) bindImageBuildInput(flagSet *pflag.FlagSet) {

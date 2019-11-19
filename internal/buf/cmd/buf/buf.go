@@ -4,9 +4,7 @@ import "github.com/bufbuild/cli/clicobra"
 
 const version = "0.4.0-dev"
 
-var develMode = ""
-
 // Main is the main.
 func Main(use string) {
-	clicobra.Main(newRootCommand(use, develMode == "1"), version)
+	clicobra.Main(newRootCommand(use), version)
 }
