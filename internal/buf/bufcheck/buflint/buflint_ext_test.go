@@ -11,8 +11,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/analysis/analysistesting"
-	"github.com/bufbuild/buf/internal/pkg/bytepool"
-	"github.com/bufbuild/buf/internal/pkg/bytepool/bytepooltesting"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
@@ -744,8 +742,6 @@ func testLintExternalConfigModifier(
 ) {
 	t.Parallel()
 	logger := zap.NewNop()
-	segList := bytepool.NewSegList()
-	defer bytepooltesting.AssertAllRecycled(t, segList)
 
 	bucket, err := storageos.NewReadBucket(filepath.Join("testdata", dirPath))
 	require.NoError(t, err)
@@ -769,7 +765,6 @@ func testLintExternalConfigModifier(
 	defer cancel()
 	buildHandler := bufbuild.NewHandler(
 		logger,
-		segList,
 		bufbuild.NewProvider(logger),
 		bufbuild.NewRunner(logger),
 	)

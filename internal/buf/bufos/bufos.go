@@ -13,7 +13,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufos/internal"
 	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"go.uber.org/zap"
 )
 
@@ -99,7 +98,6 @@ type EnvReader interface {
 // NewEnvReader returns a new EnvReader.
 func NewEnvReader(
 	logger *zap.Logger,
-	segList *bytepool.SegList,
 	httpClient *http.Client,
 	configProvider bufconfig.Provider,
 	buildHandler bufbuild.Handler,
@@ -108,7 +106,6 @@ func NewEnvReader(
 ) EnvReader {
 	return newEnvReader(
 		logger,
-		segList,
 		httpClient,
 		configProvider,
 		buildHandler,
