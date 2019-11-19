@@ -2,7 +2,6 @@
 package storagemem
 
 import (
-	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
 
@@ -10,6 +9,6 @@ import (
 const BucketType = "mem"
 
 // NewBucket returns a new in-memory bucket.
-func NewBucket(segList *bytepool.SegList) storage.Bucket {
-	return newBucket(segList)
+func NewBucket() storage.Bucket {
+	return newBucket()
 }

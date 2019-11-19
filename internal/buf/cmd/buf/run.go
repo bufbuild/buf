@@ -11,7 +11,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/cli/clienv"
 	"go.uber.org/zap"
@@ -22,7 +21,6 @@ func imageBuild(
 	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
-	segList *bytepool.SegList,
 ) (retErr error) {
 	if flags.Output == "" {
 		return errs.NewInvalidArgumentf("--%s is required", imageBuildOutputFlagName)
@@ -33,7 +31,6 @@ func imageBuild(
 	}
 	env, annotations, err := internal.NewBufosEnvReader(
 		logger,
-		segList,
 		imageBuildInputFlagName,
 		imageBuildConfigFlagName,
 		// must be source only
@@ -74,7 +71,6 @@ func checkLint(
 	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
-	segList *bytepool.SegList,
 ) (retErr error) {
 	asJSON, err := internal.IsLintFormatJSON(errorFormatFlagName, flags.ErrorFormat)
 	if err != nil {
@@ -86,7 +82,6 @@ func checkLint(
 	}
 	env, annotations, err := internal.NewBufosEnvReader(
 		logger,
-		segList,
 		checkLintInputFlagName,
 		checkLintConfigFlagName,
 	).ReadEnv(
@@ -139,7 +134,6 @@ func checkBreaking(
 	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
-	segList *bytepool.SegList,
 ) (retErr error) {
 	if flags.AgainstInput == "" {
 		return errs.NewInvalidArgumentf("--%s is required", checkBreakingAgainstInputFlagName)
@@ -150,7 +144,6 @@ func checkBreaking(
 	}
 	env, annotations, err := internal.NewBufosEnvReader(
 		logger,
-		segList,
 		checkBreakingInputFlagName,
 		checkBreakingConfigFlagName,
 	).ReadEnv(
@@ -186,7 +179,6 @@ func checkBreaking(
 
 	againstEnv, annotations, err := internal.NewBufosEnvReader(
 		logger,
-		segList,
 		checkBreakingAgainstInputFlagName,
 		checkBreakingAgainstConfigFlagName,
 	).ReadEnv(
@@ -240,7 +232,6 @@ func checkLsLintCheckers(
 	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
-	segList *bytepool.SegList,
 ) (retErr error) {
 	asJSON, err := internal.IsFormatJSON(checkLsCheckersFormatFlagName, flags.Format)
 	if err != nil {
@@ -255,7 +246,6 @@ func checkLsLintCheckers(
 	} else {
 		config, err := internal.NewBufosEnvReader(
 			logger,
-			segList,
 			"",
 			checkLsCheckersConfigFlagName,
 		).GetConfig(
@@ -278,7 +268,6 @@ func checkLsBreakingCheckers(
 	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
-	segList *bytepool.SegList,
 ) (retErr error) {
 	asJSON, err := internal.IsFormatJSON(checkLsCheckersFormatFlagName, flags.Format)
 	if err != nil {
@@ -293,7 +282,6 @@ func checkLsBreakingCheckers(
 	} else {
 		config, err := internal.NewBufosEnvReader(
 			logger,
-			segList,
 			"",
 			checkLsCheckersConfigFlagName,
 		).GetConfig(
@@ -316,11 +304,9 @@ func lsFiles(
 	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
-	segList *bytepool.SegList,
 ) (retErr error) {
 	filePaths, err := internal.NewBufosEnvReader(
 		logger,
-		segList,
 		lsFilesInputFlagName,
 		lsFilesConfigFlagName,
 	).ListFiles(

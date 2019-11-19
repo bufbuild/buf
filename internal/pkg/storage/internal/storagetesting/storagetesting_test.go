@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/pkg/bytepool"
-	"github.com/bufbuild/buf/internal/pkg/bytepool/bytepooltesting"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
@@ -191,8 +189,7 @@ func TestGitClone(t *testing.T) {
 	require.NoError(t, err)
 	relFilePathError1 := "Makefile"
 
-	segList := bytepool.NewSegList()
-	bucket := storagemem.NewBucket(segList)
+	bucket := storagemem.NewBucket()
 	err = storagegit.Clone(
 		context.Background(),
 		zap.NewNop(),
@@ -212,7 +209,6 @@ func TestGitClone(t *testing.T) {
 	assert.True(t, storage.IsNotExist(err))
 
 	assert.NoError(t, bucket.Close())
-	bytepooltesting.AssertAllRecycled(t, segList)
 }
 
 func testBasic(
@@ -277,8 +273,7 @@ func testBasicMem(
 	expectedPathToContent map[string]string,
 	transformerOptions ...storagepath.TransformerOption,
 ) {
-	segList := bytepool.NewSegList()
-	bucket := storagemem.NewBucket(segList)
+	bucket := storagemem.NewBucket()
 	testBasicBucket(
 		t,
 		bucket,
@@ -288,11 +283,6 @@ func testBasicMem(
 		expectedPathToContent,
 		transformerOptions...,
 	)
-	var unrecycled uint64
-	for _, listStats := range segList.ListStats() {
-		unrecycled += listStats.TotalUnrecycled
-	}
-	assert.Equal(t, 0, int(unrecycled))
 }
 
 func testBasicOS(

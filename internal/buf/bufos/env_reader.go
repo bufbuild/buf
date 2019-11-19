@@ -17,7 +17,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufos/internal"
 	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -32,7 +31,6 @@ import (
 
 type envReader struct {
 	logger               *zap.Logger
-	segList              *bytepool.SegList
 	httpClient           *http.Client
 	configProvider       bufconfig.Provider
 	buildHandler         bufbuild.Handler
@@ -42,7 +40,6 @@ type envReader struct {
 
 func newEnvReader(
 	logger *zap.Logger,
-	segList *bytepool.SegList,
 	httpClient *http.Client,
 	configProvider bufconfig.Provider,
 	buildHandler bufbuild.Handler,
@@ -51,7 +48,6 @@ func newEnvReader(
 ) *envReader {
 	return &envReader{
 		logger:         logger.Named("bufos"),
-		segList:        segList,
 		httpClient:     httpClient,
 		configProvider: configProvider,
 		buildHandler:   buildHandler,
@@ -499,7 +495,7 @@ func (e *envReader) getBucketFromLocalTarball(
 			storagepath.WithStripComponents(stripComponents),
 		)
 	}
-	bucket := storagemem.NewBucket(e.segList)
+	bucket := storagemem.NewBucket()
 	switch format {
 	case internal.FormatTar:
 		err = storageutil.Untar(ctx, bytes.NewReader(data), bucket, transformerOptions...)
@@ -530,7 +526,7 @@ func (e *envReader) getBucketFromGitRepo(
 		}
 		gitRepo = "file://" + absGitRepo
 	}
-	bucket := storagemem.NewBucket(e.segList)
+	bucket := storagemem.NewBucket()
 	if err := storagegit.Clone(
 		ctx,
 		e.logger,

@@ -10,7 +10,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufos"
-	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/errs"
 	"go.uber.org/zap"
 )
@@ -22,18 +21,15 @@ var defaultHTTPClient = &http.Client{
 // NewBufosEnvReader returns a new bufos.EnvReader.
 func NewBufosEnvReader(
 	logger *zap.Logger,
-	segList *bytepool.SegList,
 	inputFlagName string,
 	configOverrideFlagName string,
 ) bufos.EnvReader {
 	return bufos.NewEnvReader(
 		logger,
-		segList,
 		defaultHTTPClient,
 		bufconfig.NewProvider(logger),
 		bufbuild.NewHandler(
 			logger,
-			segList,
 			bufbuild.NewProvider(logger),
 			bufbuild.NewRunner(logger),
 		),

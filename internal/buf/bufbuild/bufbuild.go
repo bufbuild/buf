@@ -8,7 +8,6 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
@@ -68,13 +67,11 @@ type Handler interface {
 // NewHandler returns a new Handler.
 func NewHandler(
 	logger *zap.Logger,
-	segList *bytepool.SegList,
 	buildProvider Provider,
 	buildRunner Runner,
 ) Handler {
 	return newHandler(
 		logger,
-		segList,
 		buildProvider,
 		buildRunner,
 	)

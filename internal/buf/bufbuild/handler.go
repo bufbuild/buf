@@ -7,7 +7,6 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
@@ -17,20 +16,17 @@ import (
 
 type handler struct {
 	logger        *zap.Logger
-	segList       *bytepool.SegList
 	buildProvider Provider
 	buildRunner   Runner
 }
 
 func newHandler(
 	logger *zap.Logger,
-	segList *bytepool.SegList,
 	buildProvider Provider,
 	buildRunner Runner,
 ) *handler {
 	return &handler{
 		logger:        logger.Named("bufbuild"),
-		segList:       segList,
 		buildProvider: buildProvider,
 		buildRunner:   buildRunner,
 	}
@@ -126,7 +122,7 @@ func (h *handler) copyToMemory(
 		return nil, nil
 	}
 
-	memBucket := storagemem.NewBucket(h.segList)
+	memBucket := storagemem.NewBucket()
 	count, err := storageutil.CopyPaths(
 		ctx,
 		bucket,

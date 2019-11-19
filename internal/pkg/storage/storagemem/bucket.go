@@ -6,23 +6,20 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 )
 
 type bucket struct {
-	segList            *bytepool.SegList
-	pathToBytesWrapper map[string]*bytesWrapper
-	closed             bool
-	lock               sync.RWMutex
+	pathToBuffer map[string]*buffer
+	closed       bool
+	lock         sync.RWMutex
 }
 
-func newBucket(segList *bytepool.SegList) *bucket {
+func newBucket() *bucket {
 	return &bucket{
-		segList:            segList,
-		pathToBytesWrapper: make(map[string]*bytesWrapper),
+		pathToBuffer: make(map[string]*buffer),
 	}
 }
 
@@ -43,15 +40,15 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 	if b.closed {
 		return nil, storage.ErrClosed
 	}
-	bytesWrapper, ok := b.pathToBytesWrapper[path]
+	buffer, ok := b.pathToBuffer[path]
 	if !ok {
 		return nil, storage.NewErrNotExist(path)
 	}
-	size, err := bytesWrapper.Len()
+	size, err := buffer.Len()
 	if err != nil {
 		return nil, err
 	}
-	return newReadObject(bytesWrapper, uint32(size)), nil
+	return newReadObject(buffer, uint32(size)), nil
 }
 
 func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
@@ -67,11 +64,11 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 	if b.closed {
 		return storage.ObjectInfo{}, storage.ErrClosed
 	}
-	bytesWrapper, ok := b.pathToBytesWrapper[path]
+	buffer, ok := b.pathToBuffer[path]
 	if !ok {
 		return storage.ObjectInfo{}, storage.NewErrNotExist(path)
 	}
-	size, err := bytesWrapper.Len()
+	size, err := buffer.Len()
 	if err != nil {
 		return storage.ObjectInfo{}, err
 	}
@@ -95,7 +92,7 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) 
 		return storage.ErrClosed
 	}
 	fileCount := 0
-	for path := range b.pathToBytesWrapper {
+	for path := range b.pathToBuffer {
 		fileCount++
 		select {
 		case <-ctx.Done():
@@ -129,19 +126,19 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 	if b.closed {
 		return nil, storage.ErrClosed
 	}
-	bytesWrapper, ok := b.pathToBytesWrapper[path]
+	buffer, ok := b.pathToBuffer[path]
 	if ok {
-		// this has a recycled marker so that if we have outstanding
+		// this has a deleted marker so that if we have outstanding
 		// readers or writers, they will fail
-		if err := bytesWrapper.Recycle(); err != nil {
+		if err := buffer.MarkDeleted(); err != nil {
 			return nil, err
 		}
 		// just in case
-		delete(b.pathToBytesWrapper, path)
+		delete(b.pathToBuffer, path)
 	}
-	bytesWrapper = newBytesWrapper(b.segList.Get(size))
-	b.pathToBytesWrapper[path] = bytesWrapper
-	return newWriteObject(bytesWrapper, size), nil
+	buffer = newBuffer(size)
+	b.pathToBuffer[path] = buffer
+	return newWriteObject(buffer, size), nil
 }
 
 func (b *bucket) Close() error {
@@ -151,29 +148,29 @@ func (b *bucket) Close() error {
 		return storage.ErrClosed
 	}
 	var err error
-	for _, bytesWrapper := range b.pathToBytesWrapper {
-		// this has a recycled marker so that if we have outstanding
+	for _, buffer := range b.pathToBuffer {
+		// this has a deleted marker so that if we have outstanding
 		// readers or writers, they will fail
-		err = errs.Append(err, bytesWrapper.Recycle())
+		err = errs.Append(err, buffer.MarkDeleted())
 	}
 	// just in case we don't protect against close somewhere
-	b.pathToBytesWrapper = make(map[string]*bytesWrapper)
+	b.pathToBuffer = make(map[string]*buffer)
 	b.closed = true
 	return err
 }
 
 type readObject struct {
-	bytesWrapper *bytesWrapper
-	size         uint32
-	read         int
-	closed       bool
-	lock         sync.Mutex
+	buffer *buffer
+	size   uint32
+	read   int
+	closed bool
+	lock   sync.Mutex
 }
 
-func newReadObject(bytesWrapper *bytesWrapper, size uint32) *readObject {
+func newReadObject(buffer *buffer, size uint32) *readObject {
 	return &readObject{
-		bytesWrapper: bytesWrapper,
-		size:         size,
+		buffer: buffer,
+		size:   size,
 	}
 }
 
@@ -190,7 +187,7 @@ func (r *readObject) Read(p []byte) (int, error) {
 	if max < uint32(len(p)) {
 		p = p[:max]
 	}
-	n, err := r.bytesWrapper.CopyTo(p, r.read)
+	n, err := r.buffer.CopyTo(p, r.read)
 	r.read += n
 	if uint32(r.read) >= r.size {
 		err = io.EOF
@@ -213,17 +210,17 @@ func (r *readObject) Size() uint32 {
 }
 
 type writeObject struct {
-	bytesWrapper *bytesWrapper
-	size         uint32
-	written      int
-	closed       bool
-	lock         sync.Mutex
+	buffer  *buffer
+	size    uint32
+	written int
+	closed  bool
+	lock    sync.Mutex
 }
 
-func newWriteObject(bytesWrapper *bytesWrapper, size uint32) *writeObject {
+func newWriteObject(buffer *buffer, size uint32) *writeObject {
 	return &writeObject{
-		bytesWrapper: bytesWrapper,
-		size:         size,
+		buffer: buffer,
+		size:   size,
 	}
 }
 
@@ -236,7 +233,7 @@ func (r *writeObject) Write(p []byte) (int, error) {
 	if uint32(r.written+len(p)) > r.size {
 		return 0, io.EOF
 	}
-	n, err := r.bytesWrapper.CopyFrom(p, r.written)
+	n, err := r.buffer.CopyFrom(p, r.written)
 	r.written += n
 	return n, err
 }
@@ -258,68 +255,75 @@ func (r *writeObject) Size() uint32 {
 	return r.size
 }
 
-type bytesWrapper struct {
-	bytes *bytepool.Bytes
+type buffer struct {
+	data   []byte
+	curLen int
 	// protect against outstanding readers or writers
 	// if we overwrite a file
-	recycled bool
-	lock     sync.RWMutex
+	deleted bool
+	lock    sync.RWMutex
 }
 
-func newBytesWrapper(bytes *bytepool.Bytes) *bytesWrapper {
-	return &bytesWrapper{
-		bytes: bytes,
+func newBuffer(size uint32) *buffer {
+	return &buffer{
+		data: make([]byte, int(size)),
 	}
 }
 
-func (b *bytesWrapper) CopyFrom(from []byte, offset int) (int, error) {
+// CopyFrom copies from the byte slice to the buffer starting at the offset.
+//
+// Returns io.EOF if len(from) + offset is greater than the buffer size.
+func (b *buffer) CopyFrom(from []byte, offset int) (int, error) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	if b.recycled {
+	if b.deleted {
 		return 0, storage.ErrClosed
 	}
-	// can happen if size was 0 to segList.Get
-	if b.bytes == nil {
+	end := len(from) + offset
+	if end > len(b.data) {
 		return 0, io.EOF
 	}
-	return b.bytes.CopyFrom(from, offset)
+	copy(b.data[offset:end], from)
+	if b.curLen < end {
+		b.curLen = end
+	}
+	return len(from), nil
 }
 
-func (b *bytesWrapper) CopyTo(to []byte, offset int) (int, error) {
+// CopyTo copies the from the buffer to the byte slice starting at the offset.
+//
+// Returns io.EOF if len(to) + offset is greater than Len().
+func (b *buffer) CopyTo(to []byte, offset int) (int, error) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
-	if b.recycled {
+	if b.deleted {
 		return 0, storage.ErrClosed
 	}
-	// can happen if size was 0 to segList.Get
-	if b.bytes == nil {
+	end := len(to) + offset
+	if end > b.curLen {
 		return 0, io.EOF
 	}
-	return b.bytes.CopyTo(to, offset)
+	copy(to, b.data[offset:end])
+	return len(to), nil
 }
 
-func (b *bytesWrapper) Len() (int, error) {
+// Len gets the current length.
+func (b *buffer) Len() (int, error) {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
-	if b.recycled {
+	if b.deleted {
 		return 0, storage.ErrClosed
 	}
-	// can happen if size was 0 to segList.Get
-	if b.bytes == nil {
-		return 0, nil
-	}
-	return b.bytes.Len(), nil
+	return b.curLen, nil
 }
 
-func (b *bytesWrapper) Recycle() error {
+// MarkDeleted marks the buffer as deleted.
+func (b *buffer) MarkDeleted() error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	if b.recycled {
+	if b.deleted {
 		return storage.ErrClosed
 	}
-	if b.bytes != nil {
-		b.bytes.Recycle()
-	}
-	b.recycled = true
+	b.deleted = true
 	return nil
 }

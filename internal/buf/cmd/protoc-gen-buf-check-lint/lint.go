@@ -11,7 +11,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/encodingutil"
 	"github.com/bufbuild/cli/cliproto"
 	"github.com/bufbuild/cli/clizap"
@@ -52,7 +51,7 @@ func Handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	envReader := internal.NewBufosEnvReader(logger, bytepool.NewNoPoolSegList(), "", "input_config")
+	envReader := internal.NewBufosEnvReader(logger, "", "input_config")
 	config, err := envReader.GetConfig(ctx, encodingutil.GetJSONStringOrStringValue(externalConfig.InputConfig))
 	if err != nil {
 		responseWriter.WriteError(err.Error())
