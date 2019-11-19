@@ -7,10 +7,12 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufos"
 	"github.com/bufbuild/buf/internal/pkg/bytepool"
-	"github.com/bufbuild/buf/internal/pkg/cli"
-	"github.com/bufbuild/buf/internal/pkg/cli/clicobra"
+	"github.com/bufbuild/buf/internal/pkg/bytepool/bytepoolzap"
+	"github.com/bufbuild/cli/clicobra"
+	"github.com/bufbuild/cli/clienv"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -72,19 +74,20 @@ func newFlags(devel bool) *Flags {
 func (f *Flags) newRunFunc(
 	fn func(
 		context.Context,
-		*cli.ExecEnv,
+		*clienv.ExecEnv,
 		*Flags,
 		*zap.Logger,
 		*bytepool.SegList,
 	) error,
-) func(*cli.ExecEnv) error {
+) func(*clienv.ExecEnv) error {
 	return f.baseFlags.NewRunFunc(
 		func(
 			ctx context.Context,
-			execEnv *cli.ExecEnv,
+			execEnv *clienv.ExecEnv,
 			logger *zap.Logger,
-			segList *bytepool.SegList,
 		) error {
+			segList := bytepool.NewNoPoolSegList()
+			defer bytepoolzap.LogListStats(logger, zapcore.DebugLevel, segList)
 			return fn(ctx, execEnv, f, logger, segList)
 		},
 	)

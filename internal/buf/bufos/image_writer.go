@@ -8,8 +8,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufos/internal"
 	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/pkg/errs"
-	"github.com/bufbuild/buf/internal/pkg/osutil"
 	"github.com/bufbuild/buf/internal/pkg/protodescpb"
+	"github.com/bufbuild/cli/clios"
 	"go.uber.org/zap"
 )
 
@@ -37,7 +37,7 @@ func (i *imageWriter) WriteImage(
 	asFileDescriptorSet bool,
 	image bufpb.Image,
 ) (retErr error) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func (i *imageWriter) WriteImage(
 		}
 	}
 
-	writeCloser, err := osutil.WriteCloserForFilePath(stdout, inputRef.Path)
+	writeCloser, err := clios.WriteCloserForFilePath(stdout, inputRef.Path)
 	if err != nil {
 		return err
 	}

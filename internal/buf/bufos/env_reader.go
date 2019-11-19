@@ -20,13 +20,13 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/bytepool"
 	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/logutil"
-	"github.com/bufbuild/buf/internal/pkg/osutil"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
+	"github.com/bufbuild/cli/clios"
 	"go.uber.org/zap"
 )
 
@@ -608,7 +608,7 @@ func (e *envReader) getFileDataFromOS(
 	if strings.HasPrefix(path, "file://") {
 		path = strings.TrimPrefix(path, "file://")
 	}
-	readCloser, err := osutil.ReadCloserForFilePath(stdin, path)
+	readCloser, err := clios.ReadCloserForFilePath(stdin, path)
 	if err != nil {
 		return nil, err
 	}

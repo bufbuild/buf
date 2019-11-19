@@ -1,6 +1,6 @@
 package buf
 
-import "github.com/bufbuild/buf/internal/pkg/cli/clicobra"
+import "github.com/bufbuild/cli/clicobra"
 
 const version = "0.4.0-dev"
 

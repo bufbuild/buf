@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/pkg/osutil"
+	"github.com/bufbuild/cli/clios"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -12,7 +12,7 @@ import (
 const testValueFlagName = "--test-value"
 
 func TestParseInputRefSuccess(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 
 	testParseInputRefSuccess(
@@ -177,7 +177,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 }
 
 func TestParseInputRefError(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 
 	testParseInputRefErrorBasic(
