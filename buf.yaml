@@ -1,13 +1,10 @@
 build:
   roots:
     - proto
-    - third_party/proto
 lint:
   use:
     - DEFAULT
     - UNARY_RPC
-  ignore:
-    - validate/validate.proto
 breaking:
   use:
     - FILE
