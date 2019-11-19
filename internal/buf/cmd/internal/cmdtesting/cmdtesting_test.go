@@ -160,11 +160,13 @@ func testRunHandlerFunc(
 
 	exitCode := cliproto.Run(
 		handlerFunc,
-		&clienv.RunEnv{
-			Stdin:  stdin,
-			Stdout: stdout,
-			Stderr: stderr,
-		},
+		clienv.NewEnv(
+			nil,
+			stdin,
+			stdout,
+			stderr,
+			nil,
+		),
 	)
 
 	require.Equal(t, expectedExitCode, exitCode, stringutil.TrimLines(stderr.String()))

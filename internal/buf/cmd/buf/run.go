@@ -18,7 +18,7 @@ import (
 
 func imageBuild(
 	ctx context.Context,
-	execEnv *clienv.ExecEnv,
+	cliEnv clienv.Env,
 	flags *Flags,
 	logger *zap.Logger,
 ) (retErr error) {
@@ -36,7 +36,7 @@ func imageBuild(
 		// must be source only
 	).ReadSourceEnv(
 		ctx,
-		execEnv.Stdin,
+		cliEnv.Stdin(),
 		flags.Input,
 		flags.Config,
 		nil,   // we do not filter files for images
@@ -49,7 +49,7 @@ func imageBuild(
 	}
 	if len(annotations) > 0 {
 		// stderr since we do output to stdout potentially
-		if err := analysis.PrintAnnotations(execEnv.Stderr, annotations, asJSON); err != nil {
+		if err := analysis.PrintAnnotations(cliEnv.Stderr(), annotations, asJSON); err != nil {
 			return err
 		}
 		return errs.NewInternal("")
@@ -59,7 +59,7 @@ func imageBuild(
 		imageBuildOutputFlagName,
 	).WriteImage(
 		ctx,
-		execEnv.Stdout,
+		cliEnv.Stdout(),
 		flags.Output,
 		flags.AsFileDescriptorSet,
 		env.Image,
@@ -68,7 +68,7 @@ func imageBuild(
 
 func checkLint(
 	ctx context.Context,
-	execEnv *clienv.ExecEnv,
+	cliEnv clienv.Env,
 	flags *Flags,
 	logger *zap.Logger,
 ) (retErr error) {
@@ -86,7 +86,7 @@ func checkLint(
 		checkLintConfigFlagName,
 	).ReadEnv(
 		ctx,
-		execEnv.Stdin,
+		cliEnv.Stdin(),
 		flags.Input,
 		flags.Config,
 		flags.Files, // we filter checks for files
@@ -98,7 +98,7 @@ func checkLint(
 		return err
 	}
 	if len(annotations) > 0 {
-		if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
+		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
 			return err
 		}
 		return errs.NewInternal("")
@@ -113,14 +113,14 @@ func checkLint(
 	}
 	if len(annotations) > 0 {
 		if asConfigIgnoreYAML {
-			if err := bufconfig.PrintAnnotationsLintConfigIgnoreYAML(execEnv.Stdout, annotations); err != nil {
+			if err := bufconfig.PrintAnnotationsLintConfigIgnoreYAML(cliEnv.Stdout(), annotations); err != nil {
 				return err
 			}
 		} else {
 			if err := bufbuild.FixAnnotationFilenames(env.Resolver, annotations); err != nil {
 				return err
 			}
-			if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
+			if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
 				return err
 			}
 		}
@@ -131,7 +131,7 @@ func checkLint(
 
 func checkBreaking(
 	ctx context.Context,
-	execEnv *clienv.ExecEnv,
+	cliEnv clienv.Env,
 	flags *Flags,
 	logger *zap.Logger,
 ) (retErr error) {
@@ -148,7 +148,7 @@ func checkBreaking(
 		checkBreakingConfigFlagName,
 	).ReadEnv(
 		ctx,
-		execEnv.Stdin,
+		cliEnv.Stdin(),
 		flags.Input,
 		flags.Config,
 		flags.Files, // we filter checks for files
@@ -160,7 +160,7 @@ func checkBreaking(
 		return err
 	}
 	if len(annotations) > 0 {
-		if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
+		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
 			return err
 		}
 		return errs.NewInternal("")
@@ -183,7 +183,7 @@ func checkBreaking(
 		checkBreakingAgainstConfigFlagName,
 	).ReadEnv(
 		ctx,
-		execEnv.Stdin,
+		cliEnv.Stdin(),
 		flags.AgainstInput,
 		flags.AgainstConfig,
 		files, // we filter checks for files
@@ -201,7 +201,7 @@ func checkBreaking(
 				annotation.Filename = annotation.Filename + "@against"
 			}
 		}
-		if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
+		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
 			return err
 		}
 		return errs.NewInternal("")
@@ -219,7 +219,7 @@ func checkBreaking(
 		if err := bufbuild.FixAnnotationFilenames(env.Resolver, annotations); err != nil {
 			return err
 		}
-		if err := analysis.PrintAnnotations(execEnv.Stdout, annotations, asJSON); err != nil {
+		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
 			return err
 		}
 		return errs.NewInternal("")
@@ -229,7 +229,7 @@ func checkBreaking(
 
 func checkLsLintCheckers(
 	ctx context.Context,
-	execEnv *clienv.ExecEnv,
+	cliEnv clienv.Env,
 	flags *Flags,
 	logger *zap.Logger,
 ) (retErr error) {
@@ -260,12 +260,12 @@ func checkLsLintCheckers(
 			return err
 		}
 	}
-	return bufcheck.PrintCheckers(execEnv.Stdout, checkers, asJSON)
+	return bufcheck.PrintCheckers(cliEnv.Stdout(), checkers, asJSON)
 }
 
 func checkLsBreakingCheckers(
 	ctx context.Context,
-	execEnv *clienv.ExecEnv,
+	cliEnv clienv.Env,
 	flags *Flags,
 	logger *zap.Logger,
 ) (retErr error) {
@@ -296,12 +296,12 @@ func checkLsBreakingCheckers(
 			return err
 		}
 	}
-	return bufcheck.PrintCheckers(execEnv.Stdout, checkers, asJSON)
+	return bufcheck.PrintCheckers(cliEnv.Stdout(), checkers, asJSON)
 }
 
 func lsFiles(
 	ctx context.Context,
-	execEnv *clienv.ExecEnv,
+	cliEnv clienv.Env,
 	flags *Flags,
 	logger *zap.Logger,
 ) (retErr error) {
@@ -311,7 +311,7 @@ func lsFiles(
 		lsFilesConfigFlagName,
 	).ListFiles(
 		ctx,
-		execEnv.Stdin,
+		cliEnv.Stdin(),
 		flags.Input,
 		flags.Config,
 	)
@@ -319,7 +319,7 @@ func lsFiles(
 		return err
 	}
 	for _, filePath := range filePaths {
-		if _, err := fmt.Fprintln(execEnv.Stdout, filePath); err != nil {
+		if _, err := fmt.Fprintln(cliEnv.Stdout(), filePath); err != nil {
 			return err
 		}
 	}

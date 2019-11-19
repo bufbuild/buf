@@ -6,8 +6,8 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func newRootCommand(use string, devel bool) *clicobra.Command {
-	flags := newFlags(devel)
+func newRootCommand(use string) *clicobra.Command {
+	flags := newFlags()
 	return &clicobra.Command{
 		Use: use,
 		SubCommands: []*clicobra.Command{

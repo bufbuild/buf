@@ -348,46 +348,32 @@ func TestLsFiles(t *testing.T) {
 }
 
 func testRun(t *testing.T, expectedExitCode int, expectedStdout string, args ...string) {
-	t.Parallel()
-	t.Run("buf", func(t *testing.T) {
-		testRunCmd(
-			t,
-			newRootCommand("test", false),
-			expectedExitCode,
-			expectedStdout,
-			args...,
-		)
-	})
-	t.Run("bufdev", func(t *testing.T) {
-		testRunCmd(
-			t,
-			newRootCommand("test", true),
-			expectedExitCode,
-			expectedStdout,
-			args...,
-		)
-	})
+	testRunCmd(
+		t,
+		newRootCommand("test"),
+		expectedExitCode,
+		expectedStdout,
+		args...,
+	)
 }
 
 func testRunProfile(t *testing.T, expectedExitCode int, expectedStdout string, args ...string) {
-	t.Run("bufdev-profile", func(t *testing.T) {
-		profileDirPath, err := ioutil.TempDir("", "")
-		require.NoError(t, err)
-		defer func() { assert.NoError(t, os.RemoveAll(profileDirPath)) }()
-		testRunCmd(
-			t,
-			newRootCommand("test", true),
-			0,
-			``,
-			append(
-				args,
-				"--profile",
-				fmt.Sprintf("--profile-path=%s", profileDirPath),
-				"--profile-loops=1",
-				"--profile-type=cpu",
-			)...,
-		)
-	})
+	profileDirPath, err := ioutil.TempDir("", "")
+	require.NoError(t, err)
+	defer func() { assert.NoError(t, os.RemoveAll(profileDirPath)) }()
+	testRunCmd(
+		t,
+		newRootCommand("test"),
+		0,
+		``,
+		append(
+			args,
+			"--profile",
+			fmt.Sprintf("--profile-path=%s", profileDirPath),
+			"--profile-loops=1",
+			"--profile-type=cpu",
+		)...,
+	)
 }
 
 func testRunCmd(t *testing.T, cmd *clicobra.Command, expectedExitCode int, expectedStdout string, args ...string) {
@@ -397,11 +383,13 @@ func testRunCmd(t *testing.T, cmd *clicobra.Command, expectedExitCode int, expec
 	exitCode := clicobra.Run(
 		cmd,
 		"test",
-		&clienv.RunEnv{
-			Args:   args,
-			Stdout: stdout,
-			Stderr: stderr,
-		},
+		clienv.NewEnv(
+			args,
+			nil,
+			stdout,
+			stderr,
+			nil,
+		),
 	)
 	assert.Equal(t, expectedExitCode, exitCode, stringutil.TrimLines(stderr.String()))
 	if exitCode == expectedExitCode {
