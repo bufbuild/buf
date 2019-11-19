@@ -3,7 +3,6 @@ GO_GET_PKGS := $(GO_GET_PKGS) github.com/jhump/protoreflect@master
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto
-PROTOC_GEN_VALIDATE_OUT := internal/gen/proto
 FILE_IGNORES := $(FILE_IGNORES) .build/ internal/buf/bufbuild/cache/
 
 include make/go/bootstrap.mk
@@ -11,7 +10,6 @@ include make/go/go.mk
 include make/go/codecov.mk
 include make/go/docker.mk
 include make/go/protoc_gen_go.mk
-include make/go/protoc_gen_validate.mk
 
 .PHONY: buflint
 buflint: installbuf
