@@ -8,40 +8,40 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/pkg/cli"
-	"github.com/bufbuild/buf/internal/pkg/cli/clicobra"
-	"github.com/bufbuild/buf/internal/pkg/osutil"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/cli/clicobra"
+	"github.com/bufbuild/cli/clienv"
+	"github.com/bufbuild/cli/clios"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSuccess1(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 	testRun(t, 0, ``, "image", "build", "-o", devNull, "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess2(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 	testRun(t, 0, ``, "image", "build", "-o", devNull, "--exclude-imports", "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess3(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 	testRun(t, 0, ``, "image", "build", "-o", devNull, "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess4(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 	testRun(t, 0, ``, "image", "build", "-o", devNull, "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess5(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 	testRun(t, 0, ``, "image", "build", "-o", devNull, "--exclude-imports", "--exclude-source-info", "-o", devNull, "--source", filepath.Join("testdata", "success"))
 }
@@ -51,13 +51,13 @@ func TestSuccess6(t *testing.T) {
 }
 
 func TestSuccessProfile1(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 	testRunProfile(t, 0, ``, "image", "build", "-o", devNull, "--source", filepath.Join("testdata", "success"))
 }
 
 func TestFail1(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 	testRun(
 		t,
@@ -70,7 +70,7 @@ func TestFail1(t *testing.T) {
 }
 
 func TestFail2(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 	testRun(
 		t,
@@ -84,7 +84,7 @@ func TestFail2(t *testing.T) {
 }
 
 func TestFail3(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 	testRun(
 		t,
@@ -98,7 +98,7 @@ func TestFail3(t *testing.T) {
 }
 
 func TestFail4(t *testing.T) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	require.NoError(t, err)
 	testRun(
 		t,
@@ -397,7 +397,7 @@ func testRunCmd(t *testing.T, cmd *clicobra.Command, expectedExitCode int, expec
 	exitCode := clicobra.Run(
 		cmd,
 		"test",
-		&cli.RunEnv{
+		&clienv.RunEnv{
 			Args:   args,
 			Stdout: stdout,
 			Stderr: stderr,

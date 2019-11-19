@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/errs"
-	"github.com/bufbuild/buf/internal/pkg/osutil"
+	"github.com/bufbuild/cli/clios"
 )
 
 type inputRefParser struct {
@@ -85,7 +85,7 @@ func (i *inputRefParser) ParseInputRef(value string, onlySources bool, onlyImage
 // we know that path is non-empty at this point
 // we know that format override is not set at this point
 func (i *inputRefParser) parseFormatFromPath(path string) (Format, error) {
-	devNull, err := osutil.DevNull()
+	devNull, err := clios.DevNull()
 	if err != nil {
 		return 0, err
 	}
@@ -137,7 +137,7 @@ func (i *inputRefParser) applyInputRefOptions(inputRef *InputRef, options string
 		}
 		switch key {
 		case "format":
-			devNull, err := osutil.DevNull()
+			devNull, err := clios.DevNull()
 			if err != nil {
 				return err
 			}

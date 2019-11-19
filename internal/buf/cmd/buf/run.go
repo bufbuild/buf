@@ -12,14 +12,14 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/bytepool"
-	"github.com/bufbuild/buf/internal/pkg/cli"
 	"github.com/bufbuild/buf/internal/pkg/errs"
+	"github.com/bufbuild/cli/clienv"
 	"go.uber.org/zap"
 )
 
 func imageBuild(
 	ctx context.Context,
-	execEnv *cli.ExecEnv,
+	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
 	segList *bytepool.SegList,
@@ -71,7 +71,7 @@ func imageBuild(
 
 func checkLint(
 	ctx context.Context,
-	execEnv *cli.ExecEnv,
+	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
 	segList *bytepool.SegList,
@@ -136,7 +136,7 @@ func checkLint(
 
 func checkBreaking(
 	ctx context.Context,
-	execEnv *cli.ExecEnv,
+	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
 	segList *bytepool.SegList,
@@ -237,7 +237,7 @@ func checkBreaking(
 
 func checkLsLintCheckers(
 	ctx context.Context,
-	execEnv *cli.ExecEnv,
+	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
 	segList *bytepool.SegList,
@@ -275,7 +275,7 @@ func checkLsLintCheckers(
 
 func checkLsBreakingCheckers(
 	ctx context.Context,
-	execEnv *cli.ExecEnv,
+	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
 	segList *bytepool.SegList,
@@ -313,7 +313,7 @@ func checkLsBreakingCheckers(
 
 func lsFiles(
 	ctx context.Context,
-	execEnv *cli.ExecEnv,
+	execEnv *clienv.ExecEnv,
 	flags *Flags,
 	logger *zap.Logger,
 	segList *bytepool.SegList,

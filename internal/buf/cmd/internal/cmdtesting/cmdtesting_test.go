@@ -8,9 +8,9 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/buftesting"
 	lint "github.com/bufbuild/buf/internal/buf/cmd/protoc-gen-buf-check-lint"
-	"github.com/bufbuild/buf/internal/pkg/cli"
-	"github.com/bufbuild/buf/internal/pkg/cli/cliplugin"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/cli/clienv"
+	"github.com/bufbuild/cli/cliproto"
 	"github.com/golang/protobuf/proto"
 	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/stretchr/testify/require"
@@ -132,7 +132,7 @@ func testRunLint(
 
 	testRunHandlerFunc(
 		t,
-		cliplugin.HandlerFunc(lint.Handle),
+		cliproto.HandlerFunc(lint.Handle),
 		testBuildCodeGeneratorRequest(
 			t,
 			root,
@@ -147,7 +147,7 @@ func testRunLint(
 
 func testRunHandlerFunc(
 	t *testing.T,
-	handlerFunc cliplugin.HandlerFunc,
+	handlerFunc cliproto.HandlerFunc,
 	request *plugin_go.CodeGeneratorRequest,
 	expectedExitCode int,
 	expectedErrorString string,
@@ -158,9 +158,9 @@ func testRunHandlerFunc(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 
-	exitCode := cliplugin.Run(
+	exitCode := cliproto.Run(
 		handlerFunc,
-		&cli.RunEnv{
+		&clienv.RunEnv{
 			Stdin:  stdin,
 			Stdout: stdout,
 			Stderr: stderr,

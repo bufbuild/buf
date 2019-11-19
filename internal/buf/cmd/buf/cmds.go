@@ -1,7 +1,7 @@
 package buf
 
 import (
-	"github.com/bufbuild/buf/internal/pkg/cli/clicobra"
+	"github.com/bufbuild/cli/clicobra"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
