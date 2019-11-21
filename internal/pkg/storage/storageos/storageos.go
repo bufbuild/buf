@@ -2,29 +2,24 @@
 package storageos
 
 import (
-	"github.com/bufbuild/buf/internal/pkg/errs"
+	"errors"
+
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 )
 
 // BucketType = the bucket type.
 const BucketType = "os"
 
 // errNotDir is the error returned if a path does not dir.
-var errNotDir = errs.NewInternal("not a directory")
+var errNotDir = errors.New("not a directory")
 
-// IsNotDir returns true for a PathError that is for a root path not being a directory.
+// IsNotDir returns true for a Error that is for a root path not being a directory.
 //
 // This is only returned when creating a Bucket, or when putting a file into a directory
 // path - paths within buckets are all regular files.
 func IsNotDir(err error) bool {
-	if err == nil {
-		return false
-	}
-	pathError, ok := err.(*storage.PathError)
-	if !ok {
-		return false
-	}
-	return pathError.Err == errNotDir
+	return storagepath.ErrorEquals(err, errNotDir)
 }
 
 // NewBucket returns a new OS bucket.

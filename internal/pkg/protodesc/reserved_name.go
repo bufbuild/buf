@@ -1,6 +1,6 @@
 package protodesc
 
-import "github.com/bufbuild/buf/internal/pkg/errs"
+import "fmt"
 
 type reservedName struct {
 	locationDescriptor
@@ -13,7 +13,7 @@ func newReservedName(
 	value string,
 ) (*reservedName, error) {
 	if value == "" {
-		return nil, errs.NewInternalf("no value for reserved name in %q", locationDescriptor.filePath)
+		return nil, fmt.Errorf("no value for reserved name in %q", locationDescriptor.filePath)
 	}
 	return &reservedName{
 		locationDescriptor: locationDescriptor,

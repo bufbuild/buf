@@ -15,7 +15,6 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/protodescpb"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 )
@@ -335,7 +334,7 @@ func FilePathToFile(files ...File) (map[string]File, error) {
 	for _, file := range files {
 		filePath := file.FilePath()
 		if _, ok := filePathToFile[filePath]; ok {
-			return nil, errs.NewInternalf("duplicate filePath: %q", filePath)
+			return nil, fmt.Errorf("duplicate filePath: %q", filePath)
 		}
 		filePathToFile[filePath] = file
 	}
@@ -409,7 +408,7 @@ func NestedNameToEnum(containerDescriptor ContainerDescriptor) (map[string]Enum,
 		func(enum Enum) error {
 			nestedName := enum.NestedName()
 			if _, ok := nestedNameToEnum[nestedName]; ok {
-				return errs.NewInternalf("duplicate enum: %q", nestedName)
+				return fmt.Errorf("duplicate enum: %q", nestedName)
 			}
 			nestedNameToEnum[nestedName] = enum
 			return nil
@@ -432,7 +431,7 @@ func FullNameToEnum(files ...File) (map[string]Enum, error) {
 			func(enum Enum) error {
 				fullName := enum.FullName()
 				if _, ok := fullNameToEnum[fullName]; ok {
-					return errs.NewInternalf("duplicate enum: %q", fullName)
+					return fmt.Errorf("duplicate enum: %q", fullName)
 				}
 				fullNameToEnum[fullName] = enum
 				return nil
@@ -463,7 +462,7 @@ func PackageToNestedNameToEnum(files ...File) (map[string]map[string]Enum, error
 					packageToNestedNameToEnum[pkg] = nestedNameToEnum
 				}
 				if _, ok := nestedNameToEnum[nestedName]; ok {
-					return errs.NewInternalf("duplicate enum in package %q: %q", pkg, nestedName)
+					return fmt.Errorf("duplicate enum in package %q: %q", pkg, nestedName)
 				}
 				nestedNameToEnum[nestedName] = enum
 				return nil
@@ -489,7 +488,7 @@ func NameToEnumValue(enum Enum) (map[string]EnumValue, error) {
 	for _, enumValue := range enum.Values() {
 		name := enumValue.Name()
 		if _, ok := nameToEnumValue[name]; ok {
-			return nil, errs.NewInternalf("duplicate enum value: %q", name)
+			return nil, fmt.Errorf("duplicate enum value: %q", name)
 		}
 		nameToEnumValue[name] = enumValue
 	}
@@ -507,7 +506,7 @@ func NestedNameToMessage(containerDescriptor ContainerDescriptor) (map[string]Me
 		func(message Message) error {
 			nestedName := message.NestedName()
 			if _, ok := nestedNameToMessage[nestedName]; ok {
-				return errs.NewInternalf("duplicate message: %q", nestedName)
+				return fmt.Errorf("duplicate message: %q", nestedName)
 			}
 			nestedNameToMessage[nestedName] = message
 			return nil
@@ -530,7 +529,7 @@ func FullNameToMessage(files ...File) (map[string]Message, error) {
 			func(message Message) error {
 				fullName := message.FullName()
 				if _, ok := fullNameToMessage[fullName]; ok {
-					return errs.NewInternalf("duplicate message: %q", fullName)
+					return fmt.Errorf("duplicate message: %q", fullName)
 				}
 				fullNameToMessage[fullName] = message
 				return nil
@@ -561,7 +560,7 @@ func PackageToNestedNameToMessage(files ...File) (map[string]map[string]Message,
 					packageToNestedNameToMessage[pkg] = nestedNameToMessage
 				}
 				if _, ok := nestedNameToMessage[nestedName]; ok {
-					return errs.NewInternalf("duplicate message in package %q: %q", pkg, nestedName)
+					return fmt.Errorf("duplicate message in package %q: %q", pkg, nestedName)
 				}
 				nestedNameToMessage[nestedName] = message
 				return nil
@@ -586,14 +585,14 @@ func NumberToMessageField(message Message) (map[int]Field, error) {
 	for _, messageField := range message.Fields() {
 		number := messageField.Number()
 		if _, ok := numberToMessageField[number]; ok {
-			return nil, errs.NewInternalf("duplicate message field: %q", number)
+			return nil, fmt.Errorf("duplicate message field: %q", number)
 		}
 		numberToMessageField[number] = messageField
 	}
 	for _, messageField := range message.Extensions() {
 		number := messageField.Number()
 		if _, ok := numberToMessageField[number]; ok {
-			return nil, errs.NewInternalf("duplicate message field: %q", number)
+			return nil, fmt.Errorf("duplicate message field: %q", number)
 		}
 		numberToMessageField[number] = messageField
 	}
@@ -609,7 +608,7 @@ func NameToMessageOneof(message Message) (map[string]Oneof, error) {
 	for _, messageOneof := range message.Oneofs() {
 		name := messageOneof.Name()
 		if _, ok := nameToMessageOneof[name]; ok {
-			return nil, errs.NewInternalf("duplicate message oneof: %q", name)
+			return nil, fmt.Errorf("duplicate message oneof: %q", name)
 		}
 		nameToMessageOneof[name] = messageOneof
 	}
@@ -625,7 +624,7 @@ func NameToService(file File) (map[string]Service, error) {
 	for _, service := range file.Services() {
 		name := service.Name()
 		if _, ok := nameToService[name]; ok {
-			return nil, errs.NewInternalf("duplicate service: %q", name)
+			return nil, fmt.Errorf("duplicate service: %q", name)
 		}
 		nameToService[name] = service
 	}
@@ -642,7 +641,7 @@ func FullNameToService(files ...File) (map[string]Service, error) {
 		for _, service := range file.Services() {
 			fullName := service.FullName()
 			if _, ok := fullNameToService[fullName]; ok {
-				return nil, errs.NewInternalf("duplicate service: %q", fullName)
+				return nil, fmt.Errorf("duplicate service: %q", fullName)
 			}
 			fullNameToService[fullName] = service
 		}
@@ -667,7 +666,7 @@ func PackageToNameToService(files ...File) (map[string]map[string]Service, error
 				packageToNameToService[pkg] = nameToService
 			}
 			if _, ok := nameToService[name]; ok {
-				return nil, errs.NewInternalf("duplicate service in package %q: %q", pkg, name)
+				return nil, fmt.Errorf("duplicate service in package %q: %q", pkg, name)
 			}
 			nameToService[name] = service
 		}
@@ -684,7 +683,7 @@ func NameToMethod(service Service) (map[string]Method, error) {
 	for _, method := range service.Methods() {
 		name := method.Name()
 		if _, ok := nameToMethod[name]; ok {
-			return nil, errs.NewInternalf("duplicate method: %q", name)
+			return nil, fmt.Errorf("duplicate method: %q", name)
 		}
 		nameToMethod[name] = method
 	}
@@ -702,7 +701,7 @@ func FullNameToMethod(files ...File) (map[string]Method, error) {
 			for _, method := range service.Methods() {
 				fullName := method.FullName()
 				if _, ok := fullNameToMethod[fullName]; ok {
-					return nil, errs.NewInternalf("duplicate method: %q", fullName)
+					return nil, fmt.Errorf("duplicate method: %q", fullName)
 				}
 				fullNameToMethod[fullName] = method
 			}
@@ -758,7 +757,7 @@ func FieldOneof(field Field) (Oneof, error) {
 	}
 	oneofs := field.Message().Oneofs()
 	if len(oneofs) <= oneofIndex {
-		return nil, errs.NewInternalf("malformed oneof index for field %q: %d", field.FullName(), oneofIndex)
+		return nil, fmt.Errorf("malformed oneof index for field %q: %d", field.FullName(), oneofIndex)
 	}
 	return oneofs[oneofIndex], nil
 }
@@ -838,7 +837,7 @@ func addUniqueFileToMap(keyToFilePathToFile map[string]map[string]File, key stri
 		keyToFilePathToFile[key] = filePathToFile
 	}
 	if _, ok := filePathToFile[file.FilePath()]; ok {
-		return errs.NewInternalf("duplicate file: %s", file.FilePath())
+		return fmt.Errorf("duplicate file: %s", file.FilePath())
 	}
 	filePathToFile[file.FilePath()] = file
 	return nil

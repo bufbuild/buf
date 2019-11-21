@@ -6,16 +6,16 @@ package bufbuild
 import (
 	"context"
 
+	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
 
 // ErrFilePathUnknown is the error returned by GetRealFilePath and GetRootFilePath if
 // the input path does not have a corresponding output path.
-var ErrFilePathUnknown = errs.NewInternal("real file path unknown")
+var ErrFilePathUnknown = buferrs.NewSystemError("real file path unknown")
 
 // ProtoFilePathResolver transforms input file paths to output file paths.
 type ProtoFilePathResolver interface {

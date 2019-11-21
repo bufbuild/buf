@@ -4,8 +4,9 @@ package encodingutil
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"gopkg.in/yaml.v3"
 )
 
@@ -20,7 +21,7 @@ func UnmarshalJSONStrict(data []byte, v interface{}) error {
 	jsonDecoder := json.NewDecoder(bytes.NewReader(data))
 	jsonDecoder.DisallowUnknownFields()
 	if err := jsonDecoder.Decode(v); err != nil {
-		return errs.NewInvalidArgumentf("could not unmarshal as JSON: %v", err)
+		return fmt.Errorf("could not unmarshal as JSON: %v", err)
 	}
 	return nil
 }
@@ -36,7 +37,7 @@ func UnmarshalYAMLStrict(data []byte, v interface{}) error {
 	yamlDecoder := yaml.NewDecoder(bytes.NewReader(data))
 	yamlDecoder.KnownFields(true)
 	if err := yamlDecoder.Decode(v); err != nil {
-		return errs.NewInvalidArgumentf("could not unmarshal as YAML: %v", err)
+		return fmt.Errorf("could not unmarshal as YAML: %v", err)
 	}
 	return nil
 }
@@ -52,7 +53,7 @@ func UnmarshalJSONOrYAMLStrict(data []byte, v interface{}) error {
 	}
 	if jsonErr := UnmarshalJSONStrict(data, v); jsonErr != nil {
 		if yamlErr := UnmarshalYAMLStrict(data, v); yamlErr != nil {
-			return errs.NewInvalidArgument(jsonErr.Error() + "\n" + yamlErr.Error())
+			return errors.New(jsonErr.Error() + "\n" + yamlErr.Error())
 		}
 	}
 	return nil

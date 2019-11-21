@@ -19,8 +19,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-
-	"github.com/bufbuild/buf/internal/pkg/errs"
 )
 
 // Do does a diff.
@@ -83,7 +81,7 @@ func writeTempFile(dir, prefix string, data []byte) (string, error) {
 func replaceTempFilename(diff []byte, filename string) ([]byte, error) {
 	bs := bytes.SplitN(diff, []byte{'\n'}, 3)
 	if len(bs) < 3 {
-		return nil, errs.NewInternalf("got unexpected diff for %s", filename)
+		return nil, fmt.Errorf("got unexpected diff for %s", filename)
 	}
 	// Preserve timestamps.
 	var t0, t1 []byte

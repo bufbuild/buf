@@ -1,6 +1,6 @@
 package protodesc
 
-import "github.com/bufbuild/buf/internal/pkg/errs"
+import "fmt"
 
 type fileImport struct {
 	descriptor
@@ -17,7 +17,7 @@ func newFileImport(
 	path []int32,
 ) (*fileImport, error) {
 	if imp == "" {
-		return nil, errs.NewInternalf("no dependency value in %q", descriptor.filePath)
+		return nil, fmt.Errorf("no dependency value in %q", descriptor.filePath)
 	}
 	return &fileImport{
 		descriptor: descriptor,

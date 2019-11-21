@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/pkg/errs"
+	"github.com/bufbuild/buf/internal/buf/buferrs"
 )
 
 type configOverrideParser struct {
@@ -27,7 +27,7 @@ func newConfigOverrideParser(
 func (c *configOverrideParser) ParseConfigOverride(value string) (*bufconfig.Config, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {
-		return nil, errs.NewInternal("config override value is empty")
+		return nil, buferrs.NewSystemError("config override value is empty")
 	}
 	var data []byte
 	var err error
@@ -48,9 +48,9 @@ func (c *configOverrideParser) ParseConfigOverride(value string) (*bufconfig.Con
 }
 
 func newConfigOverrideCouldNotReadFileError(configOverrideFlagName string, err error) error {
-	return errs.NewInvalidArgumentf("%s: could not read file: %v", configOverrideFlagName, err)
+	return buferrs.NewUserErrorf("%s: could not read file: %v", configOverrideFlagName, err)
 }
 
 func newConfigOverrideCouldNotParseError(configOverrideFlagName string, err error) error {
-	return errs.NewInvalidArgumentf("%s: %v", configOverrideFlagName, err)
+	return buferrs.NewUserErrorf("%s: %v", configOverrideFlagName, err)
 }

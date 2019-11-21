@@ -1,9 +1,8 @@
 package protodesc
 
 import (
+	"fmt"
 	"strings"
-
-	"github.com/bufbuild/buf/internal/pkg/errs"
 )
 
 type namedDescriptor struct {
@@ -21,7 +20,7 @@ func newNamedDescriptor(
 	nestedNames []string,
 ) (namedDescriptor, error) {
 	if name == "" {
-		return namedDescriptor{}, errs.NewInternalf("no name in %q", locationDescriptor.filePath)
+		return namedDescriptor{}, fmt.Errorf("no name in %q", locationDescriptor.filePath)
 	}
 	return namedDescriptor{
 		locationDescriptor: locationDescriptor,
