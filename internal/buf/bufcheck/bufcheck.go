@@ -12,7 +12,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
+	"go.uber.org/multierr"
 )
 
 // Checker is a checker.
@@ -42,7 +42,7 @@ func PrintCheckers(writer io.Writer, checkers []Checker, asJSON bool) (retErr er
 	if !asJSON {
 		tabWriter := tabwriter.NewWriter(writer, 0, 0, 2, ' ', 0)
 		defer func() {
-			retErr = errs.Append(retErr, tabWriter.Flush())
+			retErr = multierr.Append(retErr, tabWriter.Flush())
 		}()
 		writer = tabWriter
 		if _, err := fmt.Fprintln(writer, "ID\tCATEGORIES\tPURPOSE"); err != nil {

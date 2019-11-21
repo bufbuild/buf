@@ -2,13 +2,15 @@ package storagemem
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"sync"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
+	"go.uber.org/multierr"
 )
 
 type bucket struct {
@@ -33,7 +35,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 		return nil, err
 	}
 	if path == "." {
-		return nil, errs.NewInternal("cannot get root")
+		return nil, errors.New("cannot get root")
 	}
 	b.lock.RLock()
 	defer b.lock.RUnlock()
@@ -57,7 +59,7 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 		return storage.ObjectInfo{}, err
 	}
 	if path == "." {
-		return storage.ObjectInfo{}, errs.NewInternal("cannot check root")
+		return storage.ObjectInfo{}, errors.New("cannot check root")
 	}
 	b.lock.RLock()
 	defer b.lock.RUnlock()
@@ -98,7 +100,7 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) 
 		case <-ctx.Done():
 			err := ctx.Err()
 			if err == context.DeadlineExceeded {
-				return errs.NewDeadlineExceededf("timed out after walking %d files", fileCount)
+				return fmt.Errorf("timed out after walking %d files: %v", fileCount, err)
 			}
 			return err
 		default:
@@ -119,7 +121,7 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 		return nil, err
 	}
 	if path == "." {
-		return nil, errs.NewInternal("cannot put root")
+		return nil, errors.New("cannot put root")
 	}
 	b.lock.Lock()
 	defer b.lock.Unlock()
@@ -151,7 +153,7 @@ func (b *bucket) Close() error {
 	for _, buffer := range b.pathToBuffer {
 		// this has a deleted marker so that if we have outstanding
 		// readers or writers, they will fail
-		err = errs.Append(err, buffer.MarkDeleted())
+		err = multierr.Append(err, buffer.MarkDeleted())
 	}
 	// just in case we don't protect against close somewhere
 	b.pathToBuffer = make(map[string]*buffer)

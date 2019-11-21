@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
+	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/buf/buftesting"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -132,7 +132,7 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufpb.Image {
 		"google/../google/type/date.proto",
 		"google/foo/nonsense.proto",
 	)
-	assert.Equal(t, errs.NewInvalidArgument("google/foo/nonsense.proto is not present in the Image"), err)
+	assert.Equal(t, buferrs.NewUserError("google/foo/nonsense.proto is not present in the Image"), err)
 	importNames, err = imageWithSpecificNames.ImportNames()
 	assert.NoError(t, err)
 	assert.Equal(

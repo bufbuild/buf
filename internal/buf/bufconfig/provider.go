@@ -7,10 +7,11 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/pkg/encodingutil"
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -41,14 +42,14 @@ func (p *provider) GetConfigForBucket(ctx context.Context, bucket storage.ReadBu
 		return nil, err
 	}
 	defer func() {
-		retErr = errs.Append(retErr, readObject.Close())
+		retErr = multierr.Append(retErr, readObject.Close())
 	}()
 	data, err := ioutil.ReadAll(readObject)
 	if err != nil {
 		return nil, err
 	}
 	if err := encodingutil.UnmarshalYAMLStrict(data, externalConfig); err != nil {
-		return nil, err
+		return nil, buferrs.NewUserError(err.Error())
 	}
 	return p.newConfig(externalConfig)
 }
@@ -58,7 +59,7 @@ func (p *provider) GetConfigForData(data []byte) (*Config, error) {
 
 	externalConfig := &ExternalConfig{}
 	if err := encodingutil.UnmarshalJSONOrYAMLStrict(data, externalConfig); err != nil {
-		return nil, err
+		return nil, buferrs.NewUserError(err.Error())
 	}
 	return p.newConfig(externalConfig)
 }

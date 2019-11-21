@@ -4,8 +4,8 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/protodescpb"
+	"go.uber.org/multierr"
 )
 
 const defaultChunkSizeThreshold = 8
@@ -53,7 +53,7 @@ func newFilesUnstable(ctx context.Context, fileDescriptors ...protodescpb.FileDe
 			return nil, ctx.Err()
 		case result := <-resultC:
 			files = append(files, result.Files...)
-			err = errs.Append(err, result.Err)
+			err = multierr.Append(err, result.Err)
 		}
 	}
 	if err != nil {

@@ -4,15 +4,59 @@
 package storagepath
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"github.com/bufbuild/buf/internal/pkg/errs"
 )
 
 const stringOSPathSeparator = string(os.PathSeparator)
+
+var (
+	// ErrNotRelative is the error returned if the path is not relative.
+	ErrNotRelative = errors.New("expected to be relative")
+	// ErrOutsideContextDir is the error returned if the path is outside the context directory.
+	ErrOutsideContextDir = errors.New("is outside the context directory")
+)
+
+// Error is a path error.
+type Error struct {
+	Path string
+	Err  error
+}
+
+// NewError returns a new Error.
+func NewError(path string, err error) *Error {
+	return &Error{
+		Path: path,
+		Err:  err,
+	}
+}
+
+// Error implements error.
+func (e *Error) Error() string {
+	errString := ""
+	if e.Err != nil {
+		errString = e.Err.Error()
+	}
+	if errString == "" {
+		errString = "error"
+	}
+	return e.Path + ": " + errString
+}
+
+// ErrorEquals returns true if err is an Error and err.Error == target.
+func ErrorEquals(err error, target error) bool {
+	if err == nil {
+		return false
+	}
+	pathError, ok := err.(*Error)
+	if !ok {
+		return false
+	}
+	return pathError.Err == target
+}
 
 // NormalizeAndValidate normalizes and validates the given path.
 //
@@ -20,15 +64,13 @@ const stringOSPathSeparator = string(os.PathSeparator)
 // Returns error if the path is not relative or jumps context.
 // This can be used to validate that paths are valid to use with Buckets.
 // The error message is safe to pass to users.
-//
-// All errors returned are user errors.
 func NormalizeAndValidate(path string) (string, error) {
 	path = Normalize(path)
 	if filepath.IsAbs(path) {
-		return "", errs.NewInvalidArgumentf("expected %q to be relative", path)
+		return "", NewError(path, ErrNotRelative)
 	}
 	if strings.Contains(path, "..") {
-		return "", errs.NewInvalidArgumentf("%q is outside the context directory", path)
+		return "", NewError(path, ErrOutsideContextDir)
 	}
 	return path, nil
 }

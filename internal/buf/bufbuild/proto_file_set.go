@@ -3,7 +3,7 @@ package bufbuild
 import (
 	"sort"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
+	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 )
 
@@ -28,7 +28,7 @@ func newProtoFileSet(roots []string, rootFilePathToRealFilePath map[string]strin
 	rootRealFilePaths := make([]*rootRealFilePath, 0, len(rootFilePathToRealFilePath))
 	for rootFilePath, realFilePath := range rootFilePathToRealFilePath {
 		if _, ok := realFilePathToRootFilePath[realFilePath]; ok {
-			return nil, errs.NewInternalf("real file path %q passed with duplicate root file path %q", realFilePath, rootFilePath)
+			return nil, buferrs.NewSystemErrorf("real file path %q passed with duplicate root file path %q", realFilePath, rootFilePath)
 		}
 		realFilePathToRootFilePath[realFilePath] = rootFilePath
 		rootRealFilePaths = append(
@@ -83,7 +83,7 @@ func (s *protoFileSet) GetFilePath(inputFilePath string) (string, error) {
 
 func (s *protoFileSet) GetRootFilePath(realFilePath string) (string, error) {
 	if realFilePath == "" {
-		return "", errs.NewInternal("file path empty")
+		return "", buferrs.NewSystemError("file path empty")
 	}
 	realFilePath, err := storagepath.NormalizeAndValidate(realFilePath)
 	if err != nil {
@@ -98,7 +98,7 @@ func (s *protoFileSet) GetRootFilePath(realFilePath string) (string, error) {
 
 func (s *protoFileSet) GetRealFilePath(rootFilePath string) (string, error) {
 	if rootFilePath == "" {
-		return "", errs.NewInternal("file path empty")
+		return "", buferrs.NewSystemError("file path empty")
 	}
 	rootFilePath, err := storagepath.NormalizeAndValidate(rootFilePath)
 	if err != nil {

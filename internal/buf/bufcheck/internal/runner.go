@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -47,7 +47,7 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 			return nil, ctx.Err()
 		case result := <-resultC:
 			annotations = append(annotations, result.Annotations...)
-			err = errs.Append(err, result.Err)
+			err = multierr.Append(err, result.Err)
 		}
 	}
 	if err != nil {

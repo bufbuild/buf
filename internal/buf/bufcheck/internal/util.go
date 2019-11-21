@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
-	"github.com/bufbuild/buf/internal/pkg/errs"
+	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
@@ -44,10 +44,10 @@ func checkCategories(knownCategories []string, categoriesMap map[string]struct{}
 	case 0:
 		return nil
 	case 1:
-		return errs.NewInvalidArgumentf("%q is not a known category", unknownCategories[0])
+		return buferrs.NewUserErrorf("%q is not a known category", unknownCategories[0])
 	default:
 		sort.Strings(unknownCategories)
-		return errs.NewInvalidArgumentf("%q are not known categories", strings.Join(unknownCategories, ", "))
+		return buferrs.NewUserErrorf("%q are not known categories", strings.Join(unknownCategories, ", "))
 	}
 }
 

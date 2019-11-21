@@ -2,8 +2,9 @@ package protodescpb
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -77,33 +78,33 @@ func (f *fileDescriptorSet) Equal(other FileDescriptorSet) bool {
 
 func (f *fileDescriptorSet) validate() error {
 	if f.backing == nil {
-		return errs.NewInternal("validate error: nil FileDescriptorSet")
+		return errors.New("validate error: nil FileDescriptorSet")
 	}
 	if len(f.backing.File) == 0 {
-		return errs.NewInternal("validate error: empty FileDescriptorSet.File")
+		return errors.New("validate error: empty FileDescriptorSet.File")
 	}
 	seenNames := make(map[string]struct{}, len(f.backing.File))
 	for _, file := range f.backing.File {
 		if file == nil {
-			return errs.NewInternal("validate error: nil FileDescriptorProto")
+			return errors.New("validate error: nil FileDescriptorProto")
 		}
 		if file.Name == nil {
-			return errs.NewInternal("validate error: nil FileDescriptorProto.Name")
+			return errors.New("validate error: nil FileDescriptorProto.Name")
 		}
 		name := *file.Name
 		if name == "" {
-			return errs.NewInternal("validate error: empty FileDescriptorProto.Name")
+			return errors.New("validate error: empty FileDescriptorProto.Name")
 		}
 		if _, ok := seenNames[name]; ok {
-			return errs.NewInternalf("validate error: duplicate FileDescriptorProto.Name: %q", name)
+			return fmt.Errorf("validate error: duplicate FileDescriptorProto.Name: %q", name)
 		}
 		seenNames[name] = struct{}{}
 		normalizedName, err := storagepath.NormalizeAndValidate(name)
 		if err != nil {
-			return errs.NewInternalf("validate error: %v", err)
+			return fmt.Errorf("validate error: %v", err)
 		}
 		if name != normalizedName {
-			return errs.NewInternalf("validate error: FileDescriptorProto.Name %q has normalized name %q", name, normalizedName)
+			return fmt.Errorf("validate error: FileDescriptorProto.Name %q has normalized name %q", name, normalizedName)
 		}
 	}
 	return nil

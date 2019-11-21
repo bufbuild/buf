@@ -2,12 +2,13 @@ package storageos
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"math"
 	"os"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 )
@@ -47,7 +48,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 		return nil, err
 	}
 	if path == "." {
-		return nil, errs.NewInternal("cannot get root")
+		return nil, errors.New("cannot get root")
 	}
 	path = storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
 	if b.closed {
@@ -67,14 +68,14 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 	if !fileInfo.Mode().IsRegular() {
 		// making this a user error as any access means this was generally requested
 		// by the user, since we only call the function for Walk on regular files
-		return nil, errs.NewInvalidArgumentf("%q is not a regular file", path)
+		return nil, fmt.Errorf("%q is not a regular file", path)
 	}
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	if fileInfo.Size() > int64(math.MaxUint32) {
-		return nil, errs.NewInternalf("file too large: %d", fileInfo.Size())
+		return nil, fmt.Errorf("file too large: %d", fileInfo.Size())
 	}
 	return newReadObject(file, uint32(fileInfo.Size())), nil
 }
@@ -85,7 +86,7 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 		return storage.ObjectInfo{}, err
 	}
 	if path == "." {
-		return storage.ObjectInfo{}, errs.NewInternal("cannot check root")
+		return storage.ObjectInfo{}, errors.New("cannot check root")
 	}
 	path = storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
 	if b.closed {
@@ -105,7 +106,7 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 		// filter non-regular files
 		// making this a user error as any access means this was generally requested
 		// by the user, since we only call the function for Walk on regular files
-		return storage.ObjectInfo{}, errs.NewInvalidArgumentf("%q is not a regular file", path)
+		return storage.ObjectInfo{}, fmt.Errorf("%q is not a regular file", path)
 	}
 	return storage.ObjectInfo{
 		Size: uint32(fileInfo.Size()),
@@ -134,7 +135,7 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) 
 			case <-ctx.Done():
 				err := ctx.Err()
 				if err == context.DeadlineExceeded {
-					return errs.NewDeadlineExceededf("timed out after walking %d files", fileCount)
+					return fmt.Errorf("timed out after walking %d files: %v", fileCount, err)
 				}
 				return err
 			default:
@@ -164,7 +165,7 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 		return nil, err
 	}
 	if path == "." {
-		return nil, errs.NewInternal("cannot put root")
+		return nil, errors.New("cannot put root")
 	}
 	path = storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
 	if b.closed {
@@ -256,10 +257,7 @@ func (r *writeObject) Size() uint32 {
 	return r.size
 }
 
-// newErrNotDir returns a new PathError for a path not being a directory.
-func newErrNotDir(path string) *storage.PathError {
-	return &storage.PathError{
-		Path: path,
-		Err:  errNotDir,
-	}
+// newErrNotDir returns a new Error for a path not being a directory.
+func newErrNotDir(path string) *storagepath.Error {
+	return storagepath.NewError(path, errNotDir)
 }

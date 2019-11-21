@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
+	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
@@ -109,13 +109,13 @@ func newConfigForCheckerBuilders(
 	for id := range useIDMap {
 		checkerBuilder, ok := idToCheckerBuilder[id]
 		if !ok {
-			return nil, errs.NewInternalf("%q is not a known id after verification", id)
+			return nil, buferrs.NewSystemErrorf("%q is not a known id after verification", id)
 		}
 		resultIDToCheckerBuilder[checkerBuilder.id] = checkerBuilder
 	}
 	for id := range exceptIDMap {
 		if _, ok := idToCheckerBuilder[id]; !ok {
-			return nil, errs.NewInternalf("%q is not a known d after verification", id)
+			return nil, buferrs.NewSystemErrorf("%q is not a known d after verification", id)
 		}
 		delete(resultIDToCheckerBuilder, id)
 	}
@@ -153,7 +153,7 @@ func newConfigForCheckerBuilders(
 				return nil, err
 			}
 			if rootPath == "." {
-				return nil, errs.NewInvalidArgumentf("cannot specify %q as an ignore path", rootPath)
+				return nil, buferrs.NewUserErrorf("cannot specify %q as an ignore path", rootPath)
 			}
 			resultRootPathMap, ok := ignoreIDToRootPaths[id]
 			if !ok {
@@ -174,7 +174,7 @@ func newConfigForCheckerBuilders(
 			return nil, err
 		}
 		if rootPath == "." {
-			return nil, errs.NewInvalidArgumentf("cannot specify %q as an ignore path", rootPath)
+			return nil, buferrs.NewUserErrorf("cannot specify %q as an ignore path", rootPath)
 		}
 		ignoreRootPaths[rootPath] = struct{}{}
 	}
@@ -203,7 +203,7 @@ func transformToIDMap(idsOrCategories []string, idToCategories map[string][]stri
 				idMap[id] = struct{}{}
 			}
 		} else {
-			return nil, errs.NewInvalidArgumentf("%q is not a known id or category", idOrCategory)
+			return nil, buferrs.NewUserErrorf("%q is not a known id or category", idOrCategory)
 		}
 	}
 	return idMap, nil
@@ -236,7 +236,7 @@ func transformToIDToListMap(idOrCategoryToList map[string][]string, idToCategori
 				}
 			}
 		} else {
-			return nil, errs.NewInvalidArgumentf("%q is not a known id or category", idOrCategory)
+			return nil, buferrs.NewUserErrorf("%q is not a known id or category", idOrCategory)
 		}
 	}
 	return idToListMap, nil
@@ -256,7 +256,7 @@ func getIDToCheckerBuilder(checkerBuilders []*CheckerBuilder) (map[string]*Check
 	m := make(map[string]*CheckerBuilder)
 	for _, checkerBuilder := range checkerBuilders {
 		if _, ok := m[checkerBuilder.id]; ok {
-			return nil, errs.NewInternalf("duplicate checker ID: %q", checkerBuilder.id)
+			return nil, buferrs.NewSystemErrorf("duplicate checker ID: %q", checkerBuilder.id)
 		}
 		m[checkerBuilder.id] = checkerBuilder
 	}
@@ -269,7 +269,7 @@ func getCheckerBuilderCategories(
 ) ([]string, error) {
 	categories, ok := idToCategories[checkerBuilder.id]
 	if !ok {
-		return nil, errs.NewInternalf("%q is not configured for categories", checkerBuilder.id)
+		return nil, buferrs.NewSystemErrorf("%q is not configured for categories", checkerBuilder.id)
 	}
 	// it is ok for categories to be empty, however the map must contain an entry
 	// or otherwise this is a system error

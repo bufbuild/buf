@@ -8,57 +8,30 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"io"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 )
 
 var (
 	// ErrIncompleteWrite is the error returned if a write is not complete
-	ErrIncompleteWrite = errs.NewInternal("incomplete write")
+	ErrIncompleteWrite = errors.New("incomplete write")
 	// ErrClosed is the error returned if a bucket or object is already closed.
-	ErrClosed = errs.NewInternal("already closed")
+	ErrClosed = errors.New("already closed")
 
 	// errNotExist is the error returned if a path does not exist.
-	errNotExist = errs.NewInternal("does not exist")
+	errNotExist = errors.New("does not exist")
 )
 
-// PathError is a path error.
-type PathError struct {
-	Path string
-	Err  error
+// NewErrNotExist returns a new Error for a path not existing.
+func NewErrNotExist(path string) *storagepath.Error {
+	return storagepath.NewError(path, errNotExist)
 }
 
-// Error implements error.
-func (p *PathError) Error() string {
-	errString := ""
-	if p.Err != nil {
-		errString = p.Err.Error()
-	}
-	if errString == "" {
-		errString = "error"
-	}
-	return p.Path + ": " + errString
-}
-
-// NewErrNotExist returns a new PathError for a path not existing.
-func NewErrNotExist(path string) *PathError {
-	return &PathError{
-		Path: path,
-		Err:  errNotExist,
-	}
-}
-
-// IsNotExist returns true for a PathError that is for a path not existing.
+// IsNotExist returns true for a Error that is for a path not existing.
 func IsNotExist(err error) bool {
-	if err == nil {
-		return false
-	}
-	pathError, ok := err.(*PathError)
-	if !ok {
-		return false
-	}
-	return pathError.Err == errNotExist
+	return storagepath.ErrorEquals(err, errNotExist)
 }
 
 // ReadObject is a read-only object.

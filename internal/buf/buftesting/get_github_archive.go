@@ -7,10 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
+	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
+	"go.uber.org/multierr"
 )
 
 func getGithubArchive(
@@ -23,12 +24,12 @@ func getGithubArchive(
 ) (retErr error) {
 	outputDirPath = filepath.Clean(outputDirPath)
 	if outputDirPath == "" || outputDirPath == "." || outputDirPath == "/" {
-		return errs.NewInternalf("bad output dir path: %s", outputDirPath)
+		return buferrs.NewSystemErrorf("bad output dir path: %s", outputDirPath)
 	}
 	// check if already exists
 	if fileInfo, err := os.Stat(outputDirPath); err == nil {
 		if !fileInfo.IsDir() {
-			return errs.NewInternalf("expected %s to be a directory", outputDirPath)
+			return buferrs.NewSystemErrorf("expected %s to be a directory", outputDirPath)
 		}
 		return nil
 	}
@@ -42,10 +43,10 @@ func getGithubArchive(
 		return err
 	}
 	defer func() {
-		retErr = errs.Append(retErr, response.Body.Close())
+		retErr = multierr.Append(retErr, response.Body.Close())
 	}()
 	if response.StatusCode != http.StatusOK {
-		return errs.NewInternalf("expected HTTP status code %d to be %d", response.StatusCode, http.StatusOK)
+		return buferrs.NewSystemErrorf("expected HTTP status code %d to be %d", response.StatusCode, http.StatusOK)
 	}
 
 	if err := os.MkdirAll(outputDirPath, 0755); err != nil {
@@ -64,7 +65,7 @@ func getGithubArchive(
 		return err
 	}
 	defer func() {
-		retErr = errs.Append(retErr, bucket.Close())
+		retErr = multierr.Append(retErr, bucket.Close())
 	}()
 	return storageutil.Untargz(
 		ctx,

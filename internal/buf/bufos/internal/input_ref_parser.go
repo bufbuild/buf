@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
+	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/cli/clios"
 )
 
@@ -21,7 +21,7 @@ func newInputRefParser(valueFlagName string) *inputRefParser {
 
 func (i *inputRefParser) ParseInputRef(value string, onlySources bool, onlyImages bool) (*InputRef, error) {
 	if onlySources && onlyImages {
-		return nil, errs.NewInternal("onlySources and onlyImages both set")
+		return nil, buferrs.NewSystemError("onlySources and onlyImages both set")
 	}
 	value = strings.TrimSpace(value)
 	if value == "" {
@@ -165,57 +165,57 @@ func (i *inputRefParser) applyInputRefOptions(inputRef *InputRef, options string
 }
 
 func newValueEmptyError(valueFlagName string) error {
-	return errs.NewInvalidArgumentf("%s is required", valueFlagName)
+	return buferrs.NewUserErrorf("%s is required", valueFlagName)
 }
 
 func newValueMultipleHashtagsError(valueFlagName string, value string) error {
-	return errs.NewInvalidArgumentf("%s: %q has multiple #s which is invalid", valueFlagName, value)
+	return buferrs.NewUserErrorf("%s: %q has multiple #s which is invalid", valueFlagName, value)
 }
 
 func newValueStartsWithHashtagError(valueFlagName string, value string) error {
-	return errs.NewInvalidArgumentf("%s: %q starts with # which is invalid", valueFlagName, value)
+	return buferrs.NewUserErrorf("%s: %q starts with # which is invalid", valueFlagName, value)
 }
 
 func newValueEndsWithHashtagError(valueFlagName string, value string) error {
-	return errs.NewInvalidArgumentf("%s: %q ends with # which is invalid", valueFlagName, value)
+	return buferrs.NewUserErrorf("%s: %q ends with # which is invalid", valueFlagName, value)
 }
 
 func newFormatNotFileForDashPathError(valueFlagName string, format Format) error {
-	return errs.NewInvalidArgumentf(`%s: path was "-" but format was %q which is not a file format (allowed formats are %s)`, valueFlagName, format.String(), formatsToString(fileFormats()))
+	return buferrs.NewUserErrorf(`%s: path was "-" but format was %q which is not a file format (allowed formats are %s)`, valueFlagName, format.String(), formatsToString(fileFormats()))
 }
 
 func newFormatMustBeSourceError(format Format) error {
-	return errs.NewInvalidArgumentf("format was %q but must be a source format (allowed formats are %s)", format.String(), formatsToString(sourceFormats()))
+	return buferrs.NewUserErrorf("format was %q but must be a source format (allowed formats are %s)", format.String(), formatsToString(sourceFormats()))
 }
 
 func newFormatMustBeImageError(format Format) error {
-	return errs.NewInvalidArgumentf("format was %q but must be a image format (allowed formats are %s)", format.String(), formatsToString(imageFormats()))
+	return buferrs.NewUserErrorf("format was %q but must be a image format (allowed formats are %s)", format.String(), formatsToString(imageFormats()))
 }
 
 func newMustSpecifyGitBranchError(valueFlagName string, path string) error {
-	return errs.NewInvalidArgumentf(`%s: must specify git branch (example: "%s#branch=master")`, valueFlagName, path)
+	return buferrs.NewUserErrorf(`%s: must specify git branch (example: "%s#branch=master")`, valueFlagName, path)
 }
 
 func newPathUnknownGzError(valueFlagName string, path string) error {
-	return errs.NewInvalidArgumentf("%s: path %q had .gz extension with unknown format", valueFlagName, path)
+	return buferrs.NewUserErrorf("%s: path %q had .gz extension with unknown format", valueFlagName, path)
 }
 
 func newOptionsInvalidError(valueFlagName string, s string) error {
-	return errs.NewInvalidArgumentf("%s: invalid options: %q", valueFlagName, s)
+	return buferrs.NewUserErrorf("%s: invalid options: %q", valueFlagName, s)
 }
 
 func newOptionsInvalidKeyError(valueFlagName string, key string) error {
-	return errs.NewInvalidArgumentf("%s: invalid options key: %q", valueFlagName, key)
+	return buferrs.NewUserErrorf("%s: invalid options key: %q", valueFlagName, key)
 }
 
 func newOptionsInvalidForFormatError(valueFlagName string, format Format, s string) error {
-	return errs.NewInvalidArgumentf("%s: invalid options for format %q: %q", valueFlagName, format.String(), s)
+	return buferrs.NewUserErrorf("%s: invalid options for format %q: %q", valueFlagName, format.String(), s)
 }
 
 func newOptionsCouldNotParseStripComponentsError(valueFlagName string, s string) error {
-	return errs.NewInvalidArgumentf("%s: could not parse strip_components value %q", valueFlagName, s)
+	return buferrs.NewUserErrorf("%s: could not parse strip_components value %q", valueFlagName, s)
 }
 
 func newFormatOverrideNotAllowedForDevNullError(valueFlagName string, devNull string) error {
-	return errs.NewInvalidArgumentf("%s: not allowed if path is %s", valueFlagName, devNull)
+	return buferrs.NewUserErrorf("%s: not allowed if path is %s", valueFlagName, devNull)
 }

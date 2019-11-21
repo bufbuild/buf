@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/internal/pkg/errs"
+	"github.com/bufbuild/buf/internal/buf/buferrs"
 )
 
 type protocLocation struct {
@@ -31,7 +31,7 @@ func getProtocLocation() (*protocLocation, error) {
 		return nil, err
 	}
 	if !wktFileInfo.Mode().IsRegular() {
-		return nil, errs.NewInternalf("could not find google/protobuf/any.proto in %s", includePath)
+		return nil, buferrs.NewSystemErrorf("could not find google/protobuf/any.proto in %s", includePath)
 	}
 	return &protocLocation{
 		BinPath:     binPath,
