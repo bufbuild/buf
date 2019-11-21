@@ -29,10 +29,6 @@ bufbreakinginternal:
 
 postlint:: buflint bufbreaking
 
-.PHONY: installbufdev
-installbufdev:
-	go install -ldflags "-X github.com/bufbuild/buf/internal/buf/cmd/buf.develMode=1" ./cmd/buf
-
 .PHONY: bufrelease
 bufrelease: all
 	DOCKER_IMAGE=golang:1.13.4-buster bash make/buf/scripts/release.bash
