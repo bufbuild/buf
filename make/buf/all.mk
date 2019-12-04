@@ -1,8 +1,10 @@
-GO_BINS := $(GO_BINS) cmd/buf cmd/protoc-gen-buf-check-breaking cmd/protoc-gen-buf-check-lint
+BUF_BIN ?= cmd/buf
+
+GO_BINS := $(GO_BINS) $(BUF_BIN) cmd/protoc-gen-buf-check-breaking cmd/protoc-gen-buf-check-lint
 GO_GET_PKGS := $(GO_GET_PKGS) github.com/jhump/protoreflect@master
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
-PROTOC_GEN_GO_OUT := internal/gen/proto
+PROTOC_GEN_GO_OUT := internal/gen/proto/go/v1
 FILE_IGNORES := $(FILE_IGNORES) .build/ internal/buf/bufbuild/cache/
 
 include make/go/bootstrap.mk
