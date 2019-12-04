@@ -65,6 +65,17 @@ func newFlags() *Flags {
 	return &Flags{baseFlags: clipflag.NewTimeoutFlags(10 * time.Second)}
 }
 
+// NewBaseRunFunc returns a new run function for the base flags.
+func (f *Flags) NewBaseRunFunc(
+	fn func(
+		context.Context,
+		clienv.Env,
+		*zap.Logger,
+	) error,
+) func(clienv.Env) error {
+	return f.baseFlags.NewRunFunc(fn)
+}
+
 // newRunFunc creates a new run function.
 func (f *Flags) newRunFunc(
 	fn func(
@@ -74,7 +85,7 @@ func (f *Flags) newRunFunc(
 		*zap.Logger,
 	) error,
 ) func(clienv.Env) error {
-	return f.baseFlags.NewRunFunc(
+	return f.NewBaseRunFunc(
 		func(
 			ctx context.Context,
 			cliEnv clienv.Env,

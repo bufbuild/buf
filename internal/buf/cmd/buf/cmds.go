@@ -6,9 +6,9 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func newRootCommand(use string) *clicobra.Command {
+func newRootCommand(use string, options ...RootCommandOption) *clicobra.Command {
 	flags := newFlags()
-	return &clicobra.Command{
+	rootCommand := &clicobra.Command{
 		Use: use,
 		SubCommands: []*clicobra.Command{
 			newImageCmd(flags),
@@ -17,6 +17,10 @@ func newRootCommand(use string) *clicobra.Command {
 		},
 		BindFlags: flags.bindRootCommandFlags,
 	}
+	for _, option := range options {
+		option(rootCommand, flags)
+	}
+	return rootCommand
 }
 
 func newImageCmd(flags *Flags) *clicobra.Command {
