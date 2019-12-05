@@ -3,7 +3,7 @@ module github.com/bufbuild/buf
 go 1.13
 
 require (
-	github.com/bufbuild/cli v0.0.0-20191123175927-ff11173844af
+	github.com/bufbuild/cli v0.0.0-20191205000408-f0fa67d08b50
 	github.com/golang/protobuf v1.3.2
 	github.com/jhump/protoreflect v1.5.1-0.20191024213132-10815c273d3f
 	github.com/pkg/profile v1.4.0 // indirect
@@ -17,7 +17,7 @@ require (
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/net v0.0.0-20191204025024-5ee1b9f4859a // indirect
 	golang.org/x/sys v0.0.0-20191204072324-ce4227a45e2e // indirect
-	golang.org/x/tools v0.0.0-20191204011308-9611592c72f6 // indirect
+	golang.org/x/tools v0.0.0-20191205002649-427c522ce2c7 // indirect
 	google.golang.org/genproto v0.0.0-20191203220235-3fa9dbf08042 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2
 	gopkg.in/src-d/go-git.v4 v4.13.1

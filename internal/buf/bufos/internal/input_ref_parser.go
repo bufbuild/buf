@@ -85,12 +85,8 @@ func (i *inputRefParser) ParseInputRef(value string, onlySources bool, onlyImage
 // we know that path is non-empty at this point
 // we know that format override is not set at this point
 func (i *inputRefParser) parseFormatFromPath(path string) (Format, error) {
-	devNull, err := clios.DevNull()
-	if err != nil {
-		return 0, err
-	}
 	// if formatOverride is not set and path is "-", default to FormatBin
-	if path == "-" || path == devNull {
+	if path == "-" || path == clios.DevNull {
 		return FormatBin, nil
 	}
 	switch filepath.Ext(path) {
@@ -137,12 +133,8 @@ func (i *inputRefParser) applyInputRefOptions(inputRef *InputRef, options string
 		}
 		switch key {
 		case "format":
-			devNull, err := clios.DevNull()
-			if err != nil {
-				return err
-			}
-			if inputRef.Path == devNull {
-				return newFormatOverrideNotAllowedForDevNullError(i.valueFlagName, devNull)
+			if inputRef.Path == clios.DevNull {
+				return newFormatOverrideNotAllowedForDevNullError(i.valueFlagName, clios.DevNull)
 			}
 			format, err := parseFormatOverride(i.valueFlagName, value)
 			if err != nil {

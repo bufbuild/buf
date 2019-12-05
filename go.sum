@@ -8,8 +8,8 @@ github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYU
 github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5doyWs3UAsr3K4I6qtAmlQcZDesFNEHPZAzj8=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5 h1:0CwZNZbxp69SHPdPJAN/hZIm0C4OItdklCFmMRWYpio=
 github.com/armon/go-socks5 v0.0.0-20160902184237-e75332964ef5/go.mod h1:wHh0iHkYZB8zMSxRWpUBQtwG5a7fFgvEO+odwuTv2gs=
-github.com/bufbuild/cli v0.0.0-20191123175927-ff11173844af h1:cnSJL3blsZEp2AkgxZw8QoNargHt4VWgn0Ks2t0ZlPY=
-github.com/bufbuild/cli v0.0.0-20191123175927-ff11173844af/go.mod h1:AyVIn86FqMRByCQnD/o57KL6th1K34PGIeBhqqX4lGg=
+github.com/bufbuild/cli v0.0.0-20191205000408-f0fa67d08b50 h1:fdId2x7Xw0WUcRb9qoVDbWQUyS5JhIoWweDDr0U0+sY=
+github.com/bufbuild/cli v0.0.0-20191205000408-f0fa67d08b50/go.mod h1:AyVIn86FqMRByCQnD/o57KL6th1K34PGIeBhqqX4lGg=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/coreos/etcd v3.3.10+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
 github.com/coreos/go-etcd v2.0.0+incompatible/go.mod h1:Jez6KQU2B/sWsbdaef3ED8NzMklzPG4d5KIOhIy30Tk=
@@ -157,8 +157,8 @@ golang.org/x/tools v0.0.0-20191029190741-b9c20aec41a5/go.mod h1:b+2E5dAYhXwXZwtn
 golang.org/x/tools v0.0.0-20191118222007-07fc4c7f2b98 h1:tZwpOHmF1OEL9wJGSgBALnhFg/8VKjQTtctCX51GLNI=
 golang.org/x/tools v0.0.0-20191118222007-07fc4c7f2b98/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
 golang.org/x/tools v0.0.0-20191125144606-a911d9008d1f/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
-golang.org/x/tools v0.0.0-20191204011308-9611592c72f6 h1:BP62y4oUl8+/CvHuvVqHIPmVRixgDl6y6a+tR7pXXIA=
-golang.org/x/tools v0.0.0-20191204011308-9611592c72f6/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
+golang.org/x/tools v0.0.0-20191205002649-427c522ce2c7 h1:R+waiss/kC/yzpcyEFoesbEJzgvWtLC4zRdYjBNKf1g=
+golang.org/x/tools v0.0.0-20191205002649-427c522ce2c7/go.mod h1:b+2E5dAYhXwXZwtnZ6UAqBI28+e2cm9otk0dWdXHAEo=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 google.golang.org/appengine v1.1.0/go.mod h1:EbEs0AVv82hx2wNQdGPgUI5lhzA/G0D9YwlJXL52JkM=
 google.golang.org/appengine v1.4.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7/EB5XEv4=
