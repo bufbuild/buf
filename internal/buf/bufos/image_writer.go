@@ -37,12 +37,8 @@ func (i *imageWriter) WriteImage(
 	asFileDescriptorSet bool,
 	image bufpb.Image,
 ) (retErr error) {
-	devNull, err := clios.DevNull()
-	if err != nil {
-		return err
-	}
 	// stop short if we have /dev/null equivalent for performance
-	if value == devNull {
+	if value == clios.DevNull {
 		return nil
 	}
 	inputRef, err := i.inputRefParser.ParseInputRef(value, false, true)

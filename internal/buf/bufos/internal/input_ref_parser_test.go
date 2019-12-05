@@ -6,15 +6,11 @@ import (
 
 	"github.com/bufbuild/cli/clios"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const testValueFlagName = "--test-value"
 
 func TestParseInputRefSuccess(t *testing.T) {
-	devNull, err := clios.DevNull()
-	require.NoError(t, err)
-
 	testParseInputRefSuccess(
 		t,
 		&InputRef{
@@ -135,9 +131,9 @@ func TestParseInputRefSuccess(t *testing.T) {
 		t,
 		&InputRef{
 			Format: FormatBin,
-			Path:   devNull,
+			Path:   clios.DevNull,
 		},
-		devNull,
+		clios.DevNull,
 	)
 	testParseInputRefSuccess(
 		t,
@@ -177,9 +173,6 @@ func TestParseInputRefSuccess(t *testing.T) {
 }
 
 func TestParseInputRefError(t *testing.T) {
-	devNull, err := clios.DevNull()
-	require.NoError(t, err)
-
 	testParseInputRefErrorBasic(
 		t,
 		newValueEmptyError(testValueFlagName),
@@ -266,8 +259,8 @@ func TestParseInputRefError(t *testing.T) {
 	)
 	testParseInputRefErrorBasic(
 		t,
-		newFormatOverrideNotAllowedForDevNullError(testValueFlagName, devNull),
-		fmt.Sprintf("%s#format=bin", devNull),
+		newFormatOverrideNotAllowedForDevNullError(testValueFlagName, clios.DevNull),
+		fmt.Sprintf("%s#format=bin", clios.DevNull),
 	)
 	testParseInputRefErrorBasic(
 		t,
