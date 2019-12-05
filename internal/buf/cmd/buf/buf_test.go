@@ -271,9 +271,9 @@ func TestCheckLsBreakingCheckers1(t *testing.T) {
 		0,
 		`
 		ID                                           CATEGORIES                      PURPOSE
+		ENUM_VALUE_SAME_NAME                         FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
 		FIELD_SAME_JSON_NAME                         FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
 		FIELD_SAME_NAME                              FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
-		ENUM_VALUE_SAME_NUMBER                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that enum values have the same number.
 		FIELD_SAME_LABEL                             FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same labels in a given message.
 		FIELD_SAME_ONEOF                             FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 		FIELD_SAME_TYPE                              FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same types in a given message.

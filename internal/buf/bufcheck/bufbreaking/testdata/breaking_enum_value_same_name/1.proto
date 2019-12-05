@@ -6,7 +6,6 @@ enum Two {
   TWO_UNSPECIFIED = 0;
   TWO_ONE = 1;
   TWO_THREE = 2;
-  TWO_TWO = 3;
 }
 
 message Three {
@@ -15,7 +14,6 @@ message Three {
       FIVE_UNSPECIFIED = 0;
       FIVE_ONE = 1;
       FIVE_THREE = 2;
-      FIVE_TWO = 3;
     }
     enum Six {
       SIX_UNSPECIFIED = 0;
@@ -27,7 +25,6 @@ message Three {
     SEVEN_UNSPECIFIED = 0;
     SEVEN_ONE = 1;
     SEVEN_THREE = 2;
-    SEVEN_TWO = 3;
   }
   enum Eight {
     EIGHT_UNSPECIFIED = 0;
