@@ -477,10 +477,6 @@ func PackageToNestedNameToEnum(files ...File) (map[string]map[string]Enum, error
 
 // NameToEnumValue maps the EnumValues in the Enum to a map from name to EnumValue.
 //
-// We choose name instead of number for uniqueness since aliases are allowed.
-// Technically over the wire you can change a name and it is not breaking but
-// we are ignoring this.
-//
 // Returns error if the EnumValues do not have unique names within the Enum,
 // which should generally never happen for properly-formed Enums.
 func NameToEnumValue(enum Enum) (map[string]EnumValue, error) {
@@ -493,6 +489,22 @@ func NameToEnumValue(enum Enum) (map[string]EnumValue, error) {
 		nameToEnumValue[name] = enumValue
 	}
 	return nameToEnumValue, nil
+}
+
+// NumberToEnumValue maps the EnumValues in the Enum to a map from number to EnumValue.
+//
+// Returns error if the EnumValues do not have unique numbers within the Enum,
+// which should generally never happen for properly-formed Enums.
+func NumberToEnumValue(enum Enum) (map[int]EnumValue, error) {
+	numberToEnumValue := make(map[int]EnumValue)
+	for _, enumValue := range enum.Values() {
+		number := enumValue.Number()
+		if _, ok := numberToEnumValue[number]; ok {
+			return nil, fmt.Errorf("duplicate enum value: %q", number)
+		}
+		numberToEnumValue[number] = enumValue
+	}
+	return numberToEnumValue, nil
 }
 
 // NestedNameToMessage maps the Messages in the ContainerDescriptor to a map from

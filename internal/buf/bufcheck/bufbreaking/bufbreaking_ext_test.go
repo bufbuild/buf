@@ -62,14 +62,14 @@ func TestRunBreakingEnumValueNoDeleteUnlessNumberReserved(t *testing.T) {
 	)
 }
 
-func TestRunBreakingEnumValueSameNumber(t *testing.T) {
+func TestRunBreakingEnumValueSameName(t *testing.T) {
 	testBreaking(
 		t,
-		"breaking_enum_value_same_number",
-		analysistesting.NewAnnotation("1.proto", 9, 13, 9, 14, "ENUM_VALUE_SAME_NUMBER"),
-		analysistesting.NewAnnotation("1.proto", 18, 18, 18, 19, "ENUM_VALUE_SAME_NUMBER"),
-		analysistesting.NewAnnotation("1.proto", 30, 17, 30, 18, "ENUM_VALUE_SAME_NUMBER"),
-		analysistesting.NewAnnotation("2.proto", 52, 14, 52, 15, "ENUM_VALUE_SAME_NUMBER"),
+		"breaking_enum_value_same_name",
+		analysistesting.NewAnnotation("1.proto", 8, 15, 8, 16, "ENUM_VALUE_SAME_NAME"),
+		analysistesting.NewAnnotation("1.proto", 16, 20, 16, 21, "ENUM_VALUE_SAME_NAME"),
+		analysistesting.NewAnnotation("1.proto", 27, 19, 27, 20, "ENUM_VALUE_SAME_NAME"),
+		analysistesting.NewAnnotation("2.proto", 51, 16, 51, 17, "ENUM_VALUE_SAME_NAME"),
 	)
 }
 

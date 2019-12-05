@@ -12,7 +12,7 @@ var (
 		v1EnumValueNoDeleteCheckerBuilder,
 		v1EnumValueNoDeleteUnlessNameReservedCheckerBuilder,
 		v1EnumValueNoDeleteUnlessNumberReservedCheckerBuilder,
-		v1EnumValueSameNumberCheckerBuilder,
+		v1EnumValueSameNameCheckerBuilder,
 		v1ExtensionMessageNoDeleteCheckerBuilder,
 		v1FieldNoDeleteCheckerBuilder,
 		v1FieldNoDeleteUnlessNameReservedCheckerBuilder,
@@ -91,11 +91,10 @@ var (
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"ENUM_VALUE_SAME_NUMBER": []string{
+		"ENUM_VALUE_SAME_NAME": []string{
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
-			"WIRE",
 		},
 		"EXTENSION_MESSAGE_NO_DELETE": []string{
 			"FILE",
@@ -330,10 +329,10 @@ var (
 		"enum values are not deleted from a given enum unless the number is reserved",
 		internal.CheckEnumValueNoDeleteUnlessNumberReserved,
 	)
-	v1EnumValueSameNumberCheckerBuilder = bufcheckinternal.NewNopCheckerBuilder(
-		"ENUM_VALUE_SAME_NUMBER",
-		"enum values have the same number",
-		internal.CheckEnumValueSameNumber,
+	v1EnumValueSameNameCheckerBuilder = bufcheckinternal.NewNopCheckerBuilder(
+		"ENUM_VALUE_SAME_NAME",
+		"enum values have the same name",
+		internal.CheckEnumValueSameName,
 	)
 	v1ExtensionMessageNoDeleteCheckerBuilder = bufcheckinternal.NewNopCheckerBuilder(
 		"EXTENSION_MESSAGE_NO_DELETE",

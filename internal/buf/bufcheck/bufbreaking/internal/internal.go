@@ -56,16 +56,16 @@ func checkEnumValueNoDeleteUnlessNameReserved(add addFunc, previousEnum protodes
 }
 
 func checkEnumValueNoDeleteWithRules(add addFunc, previousEnum protodesc.Enum, enum protodesc.Enum, allowIfNumberReserved bool, allowIfNameReserved bool) error {
-	previousNameToEnumValue, err := protodesc.NameToEnumValue(previousEnum)
+	previousNumberToEnumValue, err := protodesc.NumberToEnumValue(previousEnum)
 	if err != nil {
 		return err
 	}
-	nameToEnumValue, err := protodesc.NameToEnumValue(enum)
+	numberToEnumValue, err := protodesc.NumberToEnumValue(enum)
 	if err != nil {
 		return err
 	}
-	for previousName, previousEnumValue := range previousNameToEnumValue {
-		if _, ok := nameToEnumValue[previousName]; !ok {
+	for previousNumber, previousEnumValue := range previousNumberToEnumValue {
+		if _, ok := numberToEnumValue[previousNumber]; !ok {
 			if !isDeletedEnumValueAllowedWithRules(previousEnumValue, enum, allowIfNumberReserved, allowIfNameReserved) {
 				suffix := ""
 				if allowIfNumberReserved && allowIfNameReserved {
@@ -77,7 +77,7 @@ func checkEnumValueNoDeleteWithRules(add addFunc, previousEnum protodesc.Enum, e
 				if allowIfNameReserved {
 					suffix = fmt.Sprintf(` without reserving the name %q`, previousEnumValue.Name())
 				}
-				add(enum, enum.Location(), `Previously present enum value %q on enum %q was deleted%s.`, previousName, enum.Name(), suffix)
+				add(enum, enum.Location(), `Previously present enum value "%d" on enum %q was deleted%s.`, previousNumber, enum.Name(), suffix)
 			}
 		}
 	}
@@ -89,15 +89,12 @@ func isDeletedEnumValueAllowedWithRules(previousEnumValue protodesc.EnumValue, e
 		(allowIfNameReserved && protodesc.NameInReservedNames(previousEnumValue.Name(), enum.ReservedNames()...))
 }
 
-// CheckEnumValueSameNumber is a check function.
-var CheckEnumValueSameNumber = newEnumValuePairCheckFunc(checkEnumValueSameNumber)
+// CheckEnumValueSameName is a check function.
+var CheckEnumValueSameName = newEnumValuePairCheckFunc(checkEnumValueSameName)
 
-func checkEnumValueSameNumber(add addFunc, previousEnumValue protodesc.EnumValue, enumValue protodesc.EnumValue) error {
-	if previousEnumValue.Number() != enumValue.Number() {
-		// otherwise prints as hex
-		previousNumberString := strconv.FormatInt(int64(previousEnumValue.Number()), 10)
-		numberString := strconv.FormatInt(int64(enumValue.Number()), 10)
-		add(enumValue, enumValue.NumberLocation(), `Enum value %q on enum %q changed number from %q to %q.`, enumValue.Name(), enumValue.Enum().Name(), previousNumberString, numberString)
+func checkEnumValueSameName(add addFunc, previousEnumValue protodesc.EnumValue, enumValue protodesc.EnumValue) error {
+	if previousEnumValue.Name() != enumValue.Name() {
+		add(enumValue, enumValue.NumberLocation(), `Enum value "%d" on enum %q changed name from %q to %q.`, enumValue.Number(), enumValue.Enum().Name(), previousEnumValue.Name(), enumValue.Name())
 	}
 	return nil
 }

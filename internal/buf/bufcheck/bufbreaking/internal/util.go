@@ -80,16 +80,16 @@ func newEnumValuePairCheckFunc(
 ) func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error) {
 	return newEnumPairCheckFunc(
 		func(add addFunc, previousEnum protodesc.Enum, enum protodesc.Enum) error {
-			previousNameToEnumValue, err := protodesc.NameToEnumValue(previousEnum)
+			previousNumberToEnumValue, err := protodesc.NumberToEnumValue(previousEnum)
 			if err != nil {
 				return err
 			}
-			nameToEnumValue, err := protodesc.NameToEnumValue(enum)
+			numberToEnumValue, err := protodesc.NumberToEnumValue(enum)
 			if err != nil {
 				return err
 			}
-			for previousName, previousEnumValue := range previousNameToEnumValue {
-				if enumValue, ok := nameToEnumValue[previousName]; ok {
+			for previousNumber, previousEnumValue := range previousNumberToEnumValue {
+				if enumValue, ok := numberToEnumValue[previousNumber]; ok {
 					if err := f(add, previousEnumValue, enumValue); err != nil {
 						return err
 					}

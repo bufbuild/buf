@@ -49,5 +49,4 @@ enum Nine {
   NINE_UNSPECIFIED = 0;
   NINE_ONE = 1;
   NINE_THREE = 2;
-  NINE_TWO = 3;
 }
