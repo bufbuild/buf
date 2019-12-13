@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewConfigError1(t *testing.T) {
@@ -73,24 +72,8 @@ func TestNewConfigError6(t *testing.T) {
 	)
 }
 
-func testNewConfig(
-	t *testing.T,
-	relRoots []string,
-	relExcludes []string,
-) *Config {
-	config, err := ConfigBuilder{
-		Roots:    relRoots,
-		Excludes: relExcludes,
-	}.NewConfig()
-	require.NoError(t, err)
-	return config
-}
-
 func testNewConfigError(t *testing.T, roots []string, excludes []string) {
 	t.Parallel()
-	_, err := ConfigBuilder{
-		Roots:    roots,
-		Excludes: excludes,
-	}.NewConfig()
+	_, err := newConfig(roots, excludes)
 	assert.Error(t, err, fmt.Sprintf("%v %v", roots, excludes))
 }

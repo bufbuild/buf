@@ -771,7 +771,8 @@ func testLintExternalConfigModifier(
 	image, resolver, annotations, err := buildHandler.BuildImage(
 		ctx,
 		bucket,
-		config.Build,
+		config.Build.Roots,
+		config.Build.Excludes,
 		nil,
 		false, // must exist
 		true,  // just to make sure this works properly

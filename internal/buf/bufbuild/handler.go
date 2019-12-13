@@ -35,7 +35,8 @@ func newHandler(
 func (h *handler) BuildImage(
 	ctx context.Context,
 	bucket storage.ReadBucket,
-	buildConfig *Config,
+	roots []string,
+	excludes []string,
 	specificRealFilePaths []string,
 	specificRealFilePathsAllowNotExist bool,
 	includeImports bool,
@@ -46,10 +47,21 @@ func (h *handler) BuildImage(
 	var err error
 	if len(specificRealFilePaths) > 0 {
 		copyToMemory = false
-		protoFileSet, err = h.buildProvider.GetProtoFileSetForRealFilePaths(ctx, bucket, buildConfig, specificRealFilePaths, specificRealFilePathsAllowNotExist)
+		protoFileSet, err = h.buildProvider.GetProtoFileSetForRealFilePaths(
+			ctx,
+			bucket,
+			roots,
+			specificRealFilePaths,
+			specificRealFilePathsAllowNotExist,
+		)
 	} else {
 		copyToMemory = true
-		protoFileSet, err = h.buildProvider.GetProtoFileSetForBucket(ctx, bucket, buildConfig)
+		protoFileSet, err = h.buildProvider.GetProtoFileSetForBucket(
+			ctx,
+			bucket,
+			roots,
+			excludes,
+		)
 	}
 	if err != nil {
 		return nil, nil, nil, err
@@ -74,10 +86,8 @@ func (h *handler) BuildImage(
 		ctx,
 		bucket,
 		protoFileSet,
-		getBuildRunOptions(
-			includeImports,
-			includeSourceInfo,
-		)...,
+		includeImports,
+		includeSourceInfo,
 	)
 	if err != nil {
 		return nil, nil, nil, err
@@ -94,9 +104,10 @@ func (h *handler) BuildImage(
 func (h *handler) ListFiles(
 	ctx context.Context,
 	bucket storage.ReadBucket,
-	buildConfig *Config,
+	roots []string,
+	excludes []string,
 ) ([]string, error) {
-	protoFileSet, err := h.buildProvider.GetProtoFileSetForBucket(ctx, bucket, buildConfig)
+	protoFileSet, err := h.buildProvider.GetProtoFileSetForBucket(ctx, bucket, roots, excludes)
 	if err != nil {
 		return nil, err
 	}
@@ -138,15 +149,4 @@ func (h *handler) copyToMemory(
 		zap.Duration("duration", time.Since(start)),
 	)
 	return memBucket, nil
-}
-
-func getBuildRunOptions(includeImports bool, includeSourceInfo bool) []RunOption {
-	var buildRunOptions []RunOption
-	if includeImports {
-		buildRunOptions = append(buildRunOptions, RunWithIncludeImports())
-	}
-	if includeSourceInfo {
-		buildRunOptions = append(buildRunOptions, RunWithIncludeSourceInfo())
-	}
-	return buildRunOptions
 }
