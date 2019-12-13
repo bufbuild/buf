@@ -191,7 +191,7 @@ func (e *envReader) ListFiles(
 		}
 	}
 
-	filePaths, err := e.buildHandler.ListFiles(ctx, bucket, config.Build)
+	filePaths, err := e.buildHandler.ListFiles(ctx, bucket, config.Build.Roots, config.Build.Excludes)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +357,8 @@ func (e *envReader) readEnvFromBucket(
 	image, rootResolver, annotations, err := e.buildHandler.BuildImage(
 		ctx,
 		bucket,
-		config.Build,
+		config.Build.Roots,
+		config.Build.Excludes,
 		specificRealFilePaths,
 		specificFilePathsAllowNotExist,
 		includeImports,

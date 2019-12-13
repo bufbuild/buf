@@ -26,7 +26,7 @@ type runner struct {
 
 func newRunner(logger *zap.Logger) *runner {
 	return &runner{
-		logger: logger.Named("build"),
+		logger: logger.Named("bufbuild"),
 	}
 }
 
@@ -34,30 +34,12 @@ func (r *runner) Run(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	protoFileSet ProtoFileSet,
-	opts ...RunOption,
-) (bufpb.Image, []*analysis.Annotation, error) {
-	options := &runOptions{}
-	for _, opt := range opts {
-		opt(options)
-	}
-	return r.run(
-		ctx,
-		bucket,
-		protoFileSet.Roots(),
-		protoFileSet.RootFilePaths(),
-		options.IncludeImports,
-		options.IncludeSourceInfo,
-	)
-}
-
-func (r *runner) run(
-	ctx context.Context,
-	bucket storage.ReadBucket,
-	roots []string,
-	rootFilePaths []string,
 	includeImports bool,
 	includeSourceInfo bool,
 ) (_ bufpb.Image, _ []*analysis.Annotation, retErr error) {
+	roots := protoFileSet.Roots()
+	rootFilePaths := protoFileSet.RootFilePaths()
+
 	defer logutil.DeferWithError(r.logger, "run", &retErr, zap.Int("num_files", len(rootFilePaths)))()
 
 	if len(roots) == 0 {

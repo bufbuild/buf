@@ -9,18 +9,22 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
-func newConfig(configBuilder ConfigBuilder) (*Config, error) {
-	if len(configBuilder.Roots) == 0 {
-		configBuilder.Roots = []string{"."}
+type config struct {
+	Roots    []string
+	Excludes []string
+}
+
+func newConfig(inputRoots []string, inputExcludes []string) (*config, error) {
+	if len(inputRoots) == 0 {
+		inputRoots = []string{"."}
 	}
-	roots, err := transformFileListForConfig(configBuilder.Roots, "root")
+	roots, err := transformFileListForConfig(inputRoots, "root")
 	if err != nil {
 		return nil, err
 	}
 	var excludes []string
-	if len(configBuilder.Excludes) > 0 {
-
-		excludes, err = transformFileListForConfig(configBuilder.Excludes, "exclude")
+	if len(inputExcludes) > 0 {
+		excludes, err = transformFileListForConfig(inputExcludes, "exclude")
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +46,7 @@ func newConfig(configBuilder ConfigBuilder) (*Config, error) {
 		}
 	}
 
-	return &Config{
+	return &config{
 		Roots:    roots,
 		Excludes: excludes,
 	}, nil

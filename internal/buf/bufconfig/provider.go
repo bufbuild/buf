@@ -4,7 +4,6 @@ import (
 	"context"
 	"io/ioutil"
 
-	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/buferrs"
@@ -70,13 +69,6 @@ func (p *provider) newConfig(externalConfig *ExternalConfig) (*Config, error) {
 			return nil, err
 		}
 	}
-	buildConfig, err := bufbuild.ConfigBuilder{
-		Roots:    externalConfig.Build.Roots,
-		Excludes: externalConfig.Build.Excludes,
-	}.NewConfig()
-	if err != nil {
-		return nil, err
-	}
 	breakingConfig, err := bufbreaking.ConfigBuilder{
 		Use:                           externalConfig.Breaking.Use,
 		Except:                        externalConfig.Breaking.Except,
@@ -101,7 +93,7 @@ func (p *provider) newConfig(externalConfig *ExternalConfig) (*Config, error) {
 		return nil, err
 	}
 	return &Config{
-		Build:    buildConfig,
+		Build:    externalConfig.Build,
 		Breaking: breakingConfig,
 		Lint:     lintConfig,
 	}, nil

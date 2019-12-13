@@ -1,6 +1,24 @@
 // Package bufbuild drives the building of Protobuf files.
 //
-// The primary entry point to this package is the Handler.
+// This package has two directory concepts used as input: roots and excludes.
+//
+// Roots are the root directories within a bucket to search for Protobuf files.
+// If roots is empty, the default is ["."].
+//
+// There should be no overlap between the roots, ie foo/bar and foo are not allowed.
+// All Protobuf files must be unique relative to the roots, ie if foo and bar
+// are roots, then foo/baz.proto and bar/baz.proto are not allowed.
+//
+// All roots must be relative.
+// All roots will be normalized and validated.
+//
+// Excludes are the directories within a bucket to exclude.
+//
+// There should be no overlap between the excludes, ie foo/bar and foo are not allowed.
+//
+// All excludes must reside within a root, but none willbe equal to a root.
+// All excludes must be relative.
+// All excludes will be normalized and validated.
 package bufbuild
 
 import (
@@ -33,18 +51,17 @@ type Handler interface {
 	//
 	// If specificRealFilePaths is empty, this builds all the files under Buf control.
 	// If specificRealFilePaths is not empty, this uses these specific files.
-	//
 	// specificRealFilePaths may include files that do not exist; this will be checked
 	// prior to running the build per the documention for Provider.
 	//
 	// If annotations or an error is returned, no image or resolver is returned.
-	//
 	// Annotations will be relative to the root of the bucket before returning, ie the
 	// real file paths that already have the resolver applied.
 	BuildImage(
 		ctx context.Context,
 		bucket storage.ReadBucket,
-		buildConfig *Config,
+		roots []string,
+		excludes []string,
 		specificRealFilePaths []string,
 		specificRealFilePathsAllowNotExist bool,
 		includeImports bool,
@@ -55,12 +72,12 @@ type Handler interface {
 	//
 	// File paths will be relative to the root of the bucket before returning, ie the
 	// real file paths that already have the resolver applied.
-	//
 	// File paths are sorted.
 	ListFiles(
 		ctx context.Context,
 		bucket storage.ReadBucket,
-		buildConfig *Config,
+		roots []string,
+		excludes []string,
 	) ([]string, error)
 }
 
@@ -137,15 +154,13 @@ type ProtoFileSet interface {
 type Provider interface {
 	// GetProtoFileSetForBucket gets the set for the bucket and config.
 	//
-	// The config is assumed to be valid and created by this package.
 	GetProtoFileSetForBucket(
 		ctx context.Context,
 		bucket storage.ReadBucket,
-		config *Config,
+		roots []string,
+		excludes []string,
 	) (ProtoFileSet, error)
 	// GetSetForRealFilePaths gets the set for the real file paths and config.
-	//
-	// The config is assumed to be valid and created by this package.
 	//
 	// File paths will be validated to make sure they are within a root,
 	// unique relative to roots, and that they exist. If allowNotExist
@@ -154,7 +169,7 @@ type Provider interface {
 	GetProtoFileSetForRealFilePaths(
 		ctx context.Context,
 		bucket storage.ReadBucket,
-		config *Config,
+		roots []string,
 		realFilePaths []string,
 		allowNotExist bool,
 	) (ProtoFileSet, error)
@@ -163,23 +178,6 @@ type Provider interface {
 // NewProvider returns a new Provider.
 func NewProvider(logger *zap.Logger) Provider {
 	return newProvider(logger)
-}
-
-// RunOption is an option for Run.
-type RunOption func(*runOptions)
-
-// RunWithIncludeImports signals to include imports.
-func RunWithIncludeImports() RunOption {
-	return func(options *runOptions) {
-		options.IncludeImports = true
-	}
-}
-
-// RunWithIncludeSourceInfo signals to include source info.
-func RunWithIncludeSourceInfo() RunOption {
-	return func(options *runOptions) {
-		options.IncludeSourceInfo = true
-	}
 }
 
 // Runner runs compilations.
@@ -196,58 +194,14 @@ type Runner interface {
 		ctx context.Context,
 		bucket storage.ReadBucket,
 		protoFileSet ProtoFileSet,
-		options ...RunOption,
+		includeImports bool,
+		includeSourceInfo bool,
 	) (bufpb.Image, []*analysis.Annotation, error)
 }
 
 // NewRunner returns a new Runner.
 func NewRunner(logger *zap.Logger) Runner {
 	return newRunner(logger)
-}
-
-// Config is the file config.
-//
-// TODO: refactor into an interface.
-type Config struct {
-	// Roots are the root directories within a bucket to search for Protobuf files.
-	//
-	// There must be no overlap between the roots, ie foo/bar and foo are not allowed.
-	// All Protobuf files must be unique relative to the roots, ie if foo and bar
-	// are roots, then foo/baz.proto and bar/baz.proto are not allowed.
-	//
-	// Relative.
-	// The default is ".", which means the root of the bucket.
-
-	// Roots are the root directories within a bucket to search for Protobuf files.
-	// Roots will be non-empty, the default is ["."].
-	//
-	// There will be no overlap between the roots, ie foo/bar and foo are not allowed.
-	// All Protobuf files must be unique relative to the roots, ie if foo and bar
-	// are roots, then foo/baz.proto and bar/baz.proto are not allowed.
-	//
-	// All roots will be relative.
-	// All roots will be normalized and validated.
-	Roots []string
-
-	// Excludes are the directories within a bucket to exclude.
-	//
-	// There will be no overlap between the excludes, ie foo/bar and foo are not allowed.
-	//
-	// All excludes will reside within a root, but none willbe equal to a root.
-	// All excludes will be relative.
-	// All excludes will be normalized and validated.
-	Excludes []string
-}
-
-// ConfigBuilder is a config builder.
-type ConfigBuilder struct {
-	Roots    []string
-	Excludes []string
-}
-
-// NewConfig returns a new Config.
-func (b ConfigBuilder) NewConfig() (*Config, error) {
-	return newConfig(b)
 }
 
 // FixAnnotationFilenames attempts to make all filenames into real file paths.
@@ -281,9 +235,4 @@ func fixAnnotationFilename(resolver ProtoFilePathResolver, annotation *analysis.
 	}
 	annotation.Filename = filePath
 	return nil
-}
-
-type runOptions struct {
-	IncludeImports    bool
-	IncludeSourceInfo bool
 }

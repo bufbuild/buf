@@ -7,7 +7,6 @@ import (
 	"io"
 	"sort"
 
-	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
@@ -25,8 +24,10 @@ const ConfigFilePath = "buf.yaml"
 // Configs must not be linked to a specific Bucket object, that is if a Config
 // is Generated from bucket1, and bucket1 is copied to bucket2, the Config must
 // be valid for bucket2.
+//
+// TODO: remove individual configs as part of refactor.
 type Config struct {
-	Build    *bufbuild.Config
+	Build    ExternalBuildConfig
 	Breaking *bufbreaking.Config
 	Lint     *buflint.Config
 }
@@ -61,6 +62,12 @@ func NewProvider(logger *zap.Logger, options ...ProviderOption) Provider {
 	return newProvider(logger, options...)
 }
 
+// ExternalBuildConfig is an external config.
+type ExternalBuildConfig struct {
+	Roots    []string `json:"roots,omitempty" yaml:"roots,omitempty"`
+	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
+}
+
 // ExternalConfig is an external config.
 //
 // Should only be used outside this package for testing.
@@ -68,14 +75,6 @@ type ExternalConfig struct {
 	Build    ExternalBuildConfig    `json:"build,omitempty" yaml:"build,omitempty"`
 	Breaking ExternalBreakingConfig `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 	Lint     ExternalLintConfig     `json:"lint,omitempty" yaml:"lint,omitempty"`
-}
-
-// ExternalBuildConfig is an external config.
-//
-// Should only be used outside this package for testing.
-type ExternalBuildConfig struct {
-	Roots    []string `json:"roots,omitempty" yaml:"roots,omitempty"`
-	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }
 
 // ExternalBreakingConfig is an external config.

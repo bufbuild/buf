@@ -562,7 +562,8 @@ func testBreakingExternalConfigModifier(
 	previousImage, _, previousAnnotations, err := buildHandler.BuildImage(
 		ctx,
 		previousBucket,
-		previousConfig.Build,
+		previousConfig.Build.Roots,
+		previousConfig.Build.Excludes,
 		nil,
 		false, // must exist
 		true,  // just to make sure this works properly
@@ -575,7 +576,8 @@ func testBreakingExternalConfigModifier(
 	image, resolver, annotations, err := buildHandler.BuildImage(
 		ctx,
 		bucket,
-		config.Build,
+		config.Build.Roots,
+		config.Build.Excludes,
 		nil,
 		false, // must exist
 		false, // just to make sure this works properly

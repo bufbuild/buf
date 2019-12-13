@@ -14,7 +14,9 @@ func TestNewProtoFileSet1(t *testing.T) {
 	testNewProtoFileSet(
 		t,
 		"testdata/1",
-		"proto",
+		[]string{
+			"proto",
+		},
 		[]string{
 			"proto/b",
 		},
@@ -36,7 +38,9 @@ func TestNewProtoFileSet2(t *testing.T) {
 	testNewProtoFileSet(
 		t,
 		"testdata/1",
-		"proto",
+		[]string{
+			"proto",
+		},
 		[]string{
 			"proto/b",
 		},
@@ -58,7 +62,9 @@ func TestNewProtoFileSet3(t *testing.T) {
 	testNewProtoFileSet(
 		t,
 		"testdata/1",
-		"proto",
+		[]string{
+			"proto",
+		},
 		[]string{
 			"proto/a",
 		},
@@ -77,7 +83,9 @@ func TestNewProtoFileSet4(t *testing.T) {
 	testNewProtoFileSet(
 		t,
 		"testdata/1",
-		"proto",
+		[]string{
+			"proto",
+		},
 		[]string{
 			"proto/a/c",
 		},
@@ -99,7 +107,9 @@ func TestNewProtoFileSet5(t *testing.T) {
 	testNewProtoFileSet(
 		t,
 		"testdata/1",
-		"proto",
+		[]string{
+			"proto",
+		},
 		[]string{
 			"proto/a/c",
 			// will not result in anything excluded as we do storagepath.Dir on the input file
@@ -122,7 +132,9 @@ func TestNewProtoFileSet6(t *testing.T) {
 	testNewProtoFileSet(
 		t,
 		"testdata/1",
-		"proto",
+		[]string{
+			"proto",
+		},
 		[]string{
 			"proto/a/c",
 			"proto/d",
@@ -161,7 +173,7 @@ func TestNewProtoFileSetError1(t *testing.T) {
 func testNewProtoFileSet(
 	t *testing.T,
 	relDir string,
-	relRoot string,
+	relRoots []string,
 	relExcludes []string,
 	expectedRelFiles []string,
 ) {
@@ -172,11 +184,8 @@ func testNewProtoFileSet(
 	set, err := NewProvider(zap.NewNop()).GetProtoFileSetForBucket(
 		context.Background(),
 		bucket,
-		testNewConfig(
-			t,
-			[]string{relRoot},
-			relExcludes,
-		),
+		relRoots,
+		relExcludes,
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, set)
@@ -190,11 +199,7 @@ func testNewProtoFileSet(
 		set, err := NewProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
 			context.Background(),
 			bucket,
-			testNewConfig(
-				t,
-				[]string{relRoot},
-				relExcludes,
-			),
+			relRoots,
 			expectedRelFiles,
 			false,
 		)
@@ -223,11 +228,8 @@ func testNewProtoFileSetError(
 	_, err = NewProvider(zap.NewNop()).GetProtoFileSetForBucket(
 		context.Background(),
 		bucket,
-		testNewConfig(
-			t,
-			relRoots,
-			relExcludes,
-		),
+		relRoots,
+		relExcludes,
 	)
 	assert.Error(t, err)
 	if len(allRelFiles) > 1 {
@@ -235,11 +237,7 @@ func testNewProtoFileSetError(
 		_, err = NewProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
 			context.Background(),
 			bucket,
-			testNewConfig(
-				t,
-				relRoots,
-				relExcludes,
-			),
+			relRoots,
 			allRelFiles,
 			false,
 		)

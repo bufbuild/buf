@@ -174,28 +174,23 @@ func testGetBucketGoogleapis(t *testing.T) storage.ReadBucket {
 }
 
 func testGetProtoFileSetGoogleapis(t *testing.T, bucket storage.ReadBucket) bufbuild.ProtoFileSet {
-	config, err := bufbuild.ConfigBuilder{}.NewConfig()
-	require.NoError(t, err)
 	protoFileSet, err := bufbuild.NewProvider(zap.NewNop()).GetProtoFileSetForBucket(
 		context.Background(),
 		bucket,
-		config,
+		nil,
+		nil,
 	)
 	require.NoError(t, err)
 	return protoFileSet
 }
 
 func testBuild(t *testing.T, includeSourceInfo bool, bucket storage.ReadBucket, protoFileSet bufbuild.ProtoFileSet) (bufpb.Image, []*analysis.Annotation) {
-	var runOptions []bufbuild.RunOption
-	runOptions = append(runOptions, bufbuild.RunWithIncludeImports())
-	if includeSourceInfo {
-		runOptions = append(runOptions, bufbuild.RunWithIncludeSourceInfo())
-	}
 	image, annotations, err := bufbuild.NewRunner(zap.NewNop()).Run(
 		context.Background(),
 		bucket,
 		protoFileSet,
-		runOptions...,
+		true,
+		includeSourceInfo,
 	)
 	require.NoError(t, err)
 	return image, annotations

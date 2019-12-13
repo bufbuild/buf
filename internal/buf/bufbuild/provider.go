@@ -18,21 +18,22 @@ type provider struct {
 
 func newProvider(logger *zap.Logger) *provider {
 	return &provider{
-		logger: logger.Named("build"),
+		logger: logger.Named("bufbuild"),
 	}
 }
 
 func (p *provider) GetProtoFileSetForBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
-	config *Config,
+	roots []string,
+	excludes []string,
 ) (ProtoFileSet, error) {
 	defer logutil.Defer(p.logger, "get_proto_file_set_for_bucket")()
 
-	if len(config.Roots) == 0 {
-		return nil, buferrs.NewUserError("no roots specified")
+	config, err := newConfig(roots, excludes)
+	if err != nil {
+		return nil, err
 	}
-
 	// map from file path relative to root, to all actual file paths
 	rootFilePathToRealFilePathMap := make(map[string]map[string]struct{})
 	for _, root := range config.Roots {
@@ -109,16 +110,16 @@ func (p *provider) GetProtoFileSetForBucket(
 func (p *provider) GetProtoFileSetForRealFilePaths(
 	ctx context.Context,
 	bucket storage.ReadBucket,
-	config *Config,
+	roots []string,
 	realFilePaths []string,
 	allowNotExist bool,
 ) (ProtoFileSet, error) {
 	defer logutil.Defer(p.logger, "get_proto_file_set_for_real_file_paths")()
 
-	if len(config.Roots) == 0 {
-		return nil, buferrs.NewUserError("no roots specified")
+	config, err := newConfig(roots, nil)
+	if err != nil {
+		return nil, err
 	}
-
 	normalizedRealFilePaths := make(map[string]struct{}, len(realFilePaths))
 	for _, realFilePath := range realFilePaths {
 		normalizedRealFilePath, err := storagepath.NormalizeAndValidate(realFilePath)
