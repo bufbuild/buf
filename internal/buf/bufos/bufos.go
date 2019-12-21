@@ -22,7 +22,7 @@ type Env struct {
 	Image bufpb.Image
 	// Resolver is the resolver to apply before printing paths or annotations.
 	// Can be nil.
-	Resolver bufbuild.ProtoFilePathResolver
+	Resolver bufbuild.ProtoRealFilePathResolver
 	// Config is the config to use.
 	Config *bufconfig.Config
 }
@@ -65,11 +65,9 @@ type EnvReader interface {
 		includeImports bool,
 		includeSourceInfo bool,
 	) (*Env, []*analysis.Annotation, error)
-	// ReadImageEnv reads an source environment.
+	// ReadImageEnv reads an image environment.
 	//
 	// This is the same as ReadEnv but disallows source values and never builds.
-	// specificFilePaths are always allowed to not exist.
-	// TODO: add filter?
 	ReadImageEnv(
 		ctx context.Context,
 		stdin io.Reader,

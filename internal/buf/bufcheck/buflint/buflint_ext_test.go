@@ -763,20 +763,24 @@ func testLintExternalConfigModifier(
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	buildHandler := bufbuild.NewHandler(
-		logger,
-		bufbuild.NewProvider(logger),
-		bufbuild.NewRunner(logger),
-	)
-	image, resolver, annotations, err := buildHandler.BuildImage(
+	buildHandler := bufbuild.NewHandler(logger)
+	protoFileSet, err := buildHandler.Files(
 		ctx,
 		bucket,
-		config.Build.Roots,
-		config.Build.Excludes,
-		nil,
-		false, // must exist
-		true,  // just to make sure this works properly
-		true,
+		bufbuild.FilesOptions{
+			Roots:    config.Build.Roots,
+			Excludes: config.Build.Excludes,
+		},
+	)
+	require.NoError(t, err)
+	image, annotations, err := buildHandler.Build(
+		ctx,
+		bucket,
+		protoFileSet,
+		bufbuild.BuildOptions{
+			IncludeImports:    true, // just to make sure this works properly
+			IncludeSourceInfo: true,
+		},
 	)
 	require.NoError(t, err)
 	require.Empty(t, annotations)
@@ -791,7 +795,7 @@ func testLintExternalConfigModifier(
 		image,
 	)
 	assert.NoError(t, err)
-	assert.NoError(t, bufbuild.FixAnnotationFilenames(resolver, annotations))
+	assert.NoError(t, bufbuild.FixAnnotationFilenames(protoFileSet, annotations))
 	analysistesting.AssertAnnotationsEqual(t, expectedAnnotations, annotations)
 	assert.NoError(t, bucket.Close())
 }

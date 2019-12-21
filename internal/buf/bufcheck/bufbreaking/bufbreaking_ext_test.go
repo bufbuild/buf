@@ -554,34 +554,46 @@ func testBreakingExternalConfigModifier(
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	buildHandler := bufbuild.NewHandler(
-		logger,
-		bufbuild.NewProvider(logger),
-		bufbuild.NewRunner(logger),
-	)
-	previousImage, _, previousAnnotations, err := buildHandler.BuildImage(
+	buildHandler := bufbuild.NewHandler(logger)
+	previousProtoFileSet, err := buildHandler.Files(
 		ctx,
 		previousBucket,
-		previousConfig.Build.Roots,
-		previousConfig.Build.Excludes,
-		nil,
-		false, // must exist
-		true,  // just to make sure this works properly
-		false,
+		bufbuild.FilesOptions{
+			Roots:    previousConfig.Build.Roots,
+			Excludes: previousConfig.Build.Excludes,
+		},
+	)
+	require.NoError(t, err)
+	previousImage, previousAnnotations, err := buildHandler.Build(
+		ctx,
+		previousBucket,
+		previousProtoFileSet,
+		bufbuild.BuildOptions{
+			IncludeImports:    true, // just to make sure this works properly
+			IncludeSourceInfo: false,
+		},
 	)
 	require.NoError(t, err)
 	require.Empty(t, previousAnnotations)
 	previousImage, err = previousImage.WithoutImports()
 	require.NoError(t, err)
-	image, resolver, annotations, err := buildHandler.BuildImage(
+	protoFileSet, err := buildHandler.Files(
 		ctx,
 		bucket,
-		config.Build.Roots,
-		config.Build.Excludes,
-		nil,
-		false, // must exist
-		false, // just to make sure this works properly
-		true,
+		bufbuild.FilesOptions{
+			Roots:    config.Build.Roots,
+			Excludes: config.Build.Excludes,
+		},
+	)
+	require.NoError(t, err)
+	image, annotations, err := buildHandler.Build(
+		ctx,
+		bucket,
+		protoFileSet,
+		bufbuild.BuildOptions{
+			IncludeImports:    false, // just to make sure this works properly
+			IncludeSourceInfo: true,
+		},
 	)
 	require.NoError(t, err)
 	require.Empty(t, annotations)
@@ -599,7 +611,7 @@ func testBreakingExternalConfigModifier(
 		image,
 	)
 	assert.NoError(t, err)
-	assert.NoError(t, bufbuild.FixAnnotationFilenames(resolver, annotations))
+	assert.NoError(t, bufbuild.FixAnnotationFilenames(protoFileSet, annotations))
 	analysistesting.AssertAnnotationsEqual(t, expectedAnnotations, annotations)
 	assert.NoError(t, bucket.Close())
 }

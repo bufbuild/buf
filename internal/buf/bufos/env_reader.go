@@ -191,10 +191,20 @@ func (e *envReader) ListFiles(
 		}
 	}
 
-	filePaths, err := e.buildHandler.ListFiles(ctx, bucket, config.Build.Roots, config.Build.Excludes)
+	protoFileSet, err := e.buildHandler.Files(
+		ctx,
+		bucket,
+		bufbuild.FilesOptions{
+			Roots:    config.Build.Roots,
+			Excludes: config.Build.Excludes,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
+	filePaths := protoFileSet.RealFilePaths()
+	//// The files are in the order of the root file paths, we want to sort them for output.
+	sort.Strings(filePaths)
 	if inputRef.Format != internal.FormatDir {
 		// if format is not a directory, just output the file paths
 		return filePaths, nil
@@ -206,7 +216,7 @@ func (e *envReader) ListFiles(
 		return nil, err
 	}
 	for i, filePath := range filePaths {
-		resolvedFilePath, err := resolver.GetFilePath(filePath)
+		resolvedFilePath, err := resolver.GetRealFilePath(filePath)
 		if err != nil {
 			// This is an internal error if we cannot resolve this file path.
 			return nil, buferrs.NewSystemError(err.Error())
@@ -354,25 +364,39 @@ func (e *envReader) readEnvFromBucket(
 		}
 	}
 	// we now have everything we need, actually build the image
-	image, rootResolver, annotations, err := e.buildHandler.BuildImage(
+	protoFileSet, err := e.buildHandler.Files(
 		ctx,
 		bucket,
-		config.Build.Roots,
-		config.Build.Excludes,
-		specificRealFilePaths,
-		specificFilePathsAllowNotExist,
-		includeImports,
-		includeSourceInfo,
+		bufbuild.FilesOptions{
+			Roots:                              config.Build.Roots,
+			Excludes:                           config.Build.Excludes,
+			SpecificRealFilePaths:              specificRealFilePaths,
+			SpecificRealFilePathsAllowNotExist: specificFilePathsAllowNotExist,
+		},
 	)
 	if err != nil {
 		return nil, nil, err
 	}
-	resolver := rootResolver
+	var resolver bufbuild.ProtoRealFilePathResolver = protoFileSet
 	if inputRef.Format == internal.FormatDir {
-		resolver, err = internal.NewRelProtoFilePathResolver(inputRef.Path, rootResolver)
+		resolver, err = internal.NewRelProtoFilePathResolver(inputRef.Path, resolver)
 		if err != nil {
 			return nil, nil, err
 		}
+	}
+	image, annotations, err := e.buildHandler.Build(
+		ctx,
+		bucket,
+		protoFileSet,
+		bufbuild.BuildOptions{
+			IncludeImports:    includeImports,
+			IncludeSourceInfo: includeSourceInfo,
+			// If we specified specific file paths, do not copy to memory
+			CopyToMemory: len(specificRealFilePaths) == 0,
+		},
+	)
+	if err != nil {
+		return nil, nil, err
 	}
 	if len(annotations) > 0 {
 		// the documentation for EnvReader says we will resolve before returning

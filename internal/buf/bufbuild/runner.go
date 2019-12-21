@@ -26,10 +26,18 @@ type runner struct {
 
 func newRunner(logger *zap.Logger) *runner {
 	return &runner{
-		logger: logger.Named("bufbuild"),
+		logger: logger,
 	}
 }
 
+// Run runs compilation.
+//
+// If an error is returned, it is a system error.
+// Only one of Image and annotations will be returned.
+//
+// Annotations will be sorted, but Filenames will not have the roots as a prefix, instead
+// they will be relative to the roots. This should be fixed for linter outputs if image
+// mode is not used.
 func (r *runner) Run(
 	ctx context.Context,
 	bucket storage.ReadBucket,

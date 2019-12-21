@@ -77,10 +77,6 @@ func (s *protoFileSet) RealFilePaths() []string {
 	return l
 }
 
-func (s *protoFileSet) GetFilePath(inputFilePath string) (string, error) {
-	return s.GetRealFilePath(inputFilePath)
-}
-
 func (s *protoFileSet) GetRootFilePath(realFilePath string) (string, error) {
 	if realFilePath == "" {
 		return "", buferrs.NewSystemError("file path empty")
@@ -91,7 +87,7 @@ func (s *protoFileSet) GetRootFilePath(realFilePath string) (string, error) {
 	}
 	rootFilePath, ok := s.realFilePathToRootFilePath[realFilePath]
 	if !ok {
-		return "", ErrFilePathUnknown
+		return "", nil
 	}
 	return rootFilePath, nil
 }
@@ -106,7 +102,7 @@ func (s *protoFileSet) GetRealFilePath(rootFilePath string) (string, error) {
 	}
 	realFilePath, ok := s.rootFilePathToRealFilePath[rootFilePath]
 	if !ok {
-		return "", ErrFilePathUnknown
+		return "", nil
 	}
 	return realFilePath, nil
 }

@@ -56,7 +56,7 @@ func (a *Annotation) String() string {
 	if message == "" {
 		message = a.Type
 		if message == "" {
-			message = "failure"
+			message = "FAILURE"
 		}
 	}
 	buffer := bytes.NewBuffer(nil)

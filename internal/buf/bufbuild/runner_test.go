@@ -1,4 +1,4 @@
-package bufbuild_test
+package bufbuild
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/buf/buftesting"
@@ -173,8 +172,8 @@ func testGetBucketGoogleapis(t *testing.T) storage.ReadBucket {
 	return bucket
 }
 
-func testGetProtoFileSetGoogleapis(t *testing.T, bucket storage.ReadBucket) bufbuild.ProtoFileSet {
-	protoFileSet, err := bufbuild.NewProvider(zap.NewNop()).GetProtoFileSetForBucket(
+func testGetProtoFileSetGoogleapis(t *testing.T, bucket storage.ReadBucket) ProtoFileSet {
+	protoFileSet, err := newProvider(zap.NewNop()).GetProtoFileSetForBucket(
 		context.Background(),
 		bucket,
 		nil,
@@ -184,8 +183,8 @@ func testGetProtoFileSetGoogleapis(t *testing.T, bucket storage.ReadBucket) bufb
 	return protoFileSet
 }
 
-func testBuild(t *testing.T, includeSourceInfo bool, bucket storage.ReadBucket, protoFileSet bufbuild.ProtoFileSet) (bufpb.Image, []*analysis.Annotation) {
-	image, annotations, err := bufbuild.NewRunner(zap.NewNop()).Run(
+func testBuild(t *testing.T, includeSourceInfo bool, bucket storage.ReadBucket, protoFileSet ProtoFileSet) (bufpb.Image, []*analysis.Annotation) {
+	image, annotations, err := newRunner(zap.NewNop()).Run(
 		context.Background(),
 		bucket,
 		protoFileSet,
@@ -196,7 +195,7 @@ func testBuild(t *testing.T, includeSourceInfo bool, bucket storage.ReadBucket, 
 	return image, annotations
 }
 
-func testBuildProtoc(t *testing.T, includeSourceInfo bool, baseDirPath string, protoFileSet bufbuild.ProtoFileSet) bufpb.Image {
+func testBuildProtoc(t *testing.T, includeSourceInfo bool, baseDirPath string, protoFileSet ProtoFileSet) bufpb.Image {
 	realFilePaths := protoFileSet.RealFilePaths()
 	realFilePathsCopy := make([]string, len(realFilePaths))
 	for i, realFilePath := range realFilePaths {

@@ -18,10 +18,11 @@ type provider struct {
 
 func newProvider(logger *zap.Logger) *provider {
 	return &provider{
-		logger: logger.Named("bufbuild"),
+		logger: logger,
 	}
 }
 
+// GetProtoFileSetForBucket gets the set for the bucket and config.
 func (p *provider) GetProtoFileSetForBucket(
 	ctx context.Context,
 	bucket storage.ReadBucket,
@@ -107,12 +108,18 @@ func (p *provider) GetProtoFileSetForBucket(
 	return newProtoFileSet(config.Roots, filteredRootFilePathToRealFilePath)
 }
 
+// GetSetForRealFilePaths gets the set for the real file paths and config.
+//
+// File paths will be validated to make sure they are within a root,
+// unique relative to roots, and that they exist. If allowNotExist
+// is true, files that do not exist will be filtered. This is useful
+// for i.e. --limit-to-input-files.
 func (p *provider) GetProtoFileSetForRealFilePaths(
 	ctx context.Context,
 	bucket storage.ReadBucket,
 	roots []string,
 	realFilePaths []string,
-	allowNotExist bool,
+	realFilePathsAllowNotExist bool,
 ) (ProtoFileSet, error) {
 	defer logutil.Defer(p.logger, "get_proto_file_set_for_real_file_paths")()
 
@@ -134,7 +141,7 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 			if !storage.IsNotExist(err) {
 				return nil, err
 			}
-			if !allowNotExist {
+			if !realFilePathsAllowNotExist {
 				return nil, buferrs.NewUserError(err.Error())
 			}
 		} else {
