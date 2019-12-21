@@ -2,7 +2,6 @@ package bufbuild
 
 import (
 	"context"
-	"sort"
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufpb"
@@ -15,62 +14,31 @@ import (
 )
 
 type handler struct {
-	logger        *zap.Logger
-	buildProvider Provider
-	buildRunner   Runner
+	logger   *zap.Logger
+	provider *provider
+	runner   *runner
 }
 
 func newHandler(
 	logger *zap.Logger,
-	buildProvider Provider,
-	buildRunner Runner,
 ) *handler {
 	return &handler{
-		logger:        logger.Named("bufbuild"),
-		buildProvider: buildProvider,
-		buildRunner:   buildRunner,
+		logger:   logger.Named("bufbuild"),
+		provider: newProvider(logger),
+		runner:   newRunner(logger),
 	}
 }
 
-func (h *handler) BuildImage(
+func (h *handler) Build(
 	ctx context.Context,
 	bucket storage.ReadBucket,
-	roots []string,
-	excludes []string,
-	specificRealFilePaths []string,
-	specificRealFilePathsAllowNotExist bool,
-	includeImports bool,
-	includeSourceInfo bool,
-) (_ bufpb.Image, _ ProtoFilePathResolver, _ []*analysis.Annotation, retErr error) {
-	var copyToMemory bool
-	var protoFileSet ProtoFileSet
-	var err error
-	if len(specificRealFilePaths) > 0 {
-		copyToMemory = false
-		protoFileSet, err = h.buildProvider.GetProtoFileSetForRealFilePaths(
-			ctx,
-			bucket,
-			roots,
-			specificRealFilePaths,
-			specificRealFilePathsAllowNotExist,
-		)
-	} else {
-		copyToMemory = true
-		protoFileSet, err = h.buildProvider.GetProtoFileSetForBucket(
-			ctx,
-			bucket,
-			roots,
-			excludes,
-		)
-	}
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	if copyToMemory {
+	protoFileSet ProtoFileSet,
+	options BuildOptions,
+) (_ bufpb.Image, _ []*analysis.Annotation, retErr error) {
+	if options.CopyToMemory {
 		memBucket, err := h.copyToMemory(ctx, bucket, protoFileSet)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, err
 		}
 		if memBucket != nil {
 			bucket = memBucket
@@ -82,39 +50,45 @@ func (h *handler) BuildImage(
 		h.logger.Debug("no_copy_to_memory_set")
 	}
 
-	image, annotations, err := h.buildRunner.Run(
+	image, annotations, err := h.runner.Run(
 		ctx,
 		bucket,
 		protoFileSet,
-		includeImports,
-		includeSourceInfo,
+		options.IncludeImports,
+		options.IncludeSourceInfo,
 	)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, err
 	}
 	if len(annotations) > 0 {
 		if err := FixAnnotationFilenames(protoFileSet, annotations); err != nil {
-			return nil, nil, nil, err
+			return nil, nil, err
 		}
-		return nil, nil, annotations, nil
+		return nil, annotations, nil
 	}
-	return image, protoFileSet, nil, nil
+	return image, nil, nil
 }
 
-func (h *handler) ListFiles(
+func (h *handler) Files(
 	ctx context.Context,
 	bucket storage.ReadBucket,
-	roots []string,
-	excludes []string,
-) ([]string, error) {
-	protoFileSet, err := h.buildProvider.GetProtoFileSetForBucket(ctx, bucket, roots, excludes)
-	if err != nil {
-		return nil, err
+	options FilesOptions,
+) (ProtoFileSet, error) {
+	if len(options.SpecificRealFilePaths) > 0 {
+		return h.provider.GetProtoFileSetForRealFilePaths(
+			ctx,
+			bucket,
+			options.Roots,
+			options.SpecificRealFilePaths,
+			options.SpecificRealFilePathsAllowNotExist,
+		)
 	}
-	files := protoFileSet.RealFilePaths()
-	// The files are in the order of the root file paths, we want to sort them for output.
-	sort.Strings(files)
-	return files, nil
+	return h.provider.GetProtoFileSetForBucket(
+		ctx,
+		bucket,
+		options.Roots,
+		options.Excludes,
+	)
 }
 
 // copyToMemory copies the bucket to memory.

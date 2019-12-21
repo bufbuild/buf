@@ -68,8 +68,8 @@ func NewConfigOverrideParser(
 // - Make the path relative to pwd if the path is relative, or return the path if it is absolute.
 func NewRelProtoFilePathResolver(
 	dirPath string,
-	chainedResolver bufbuild.ProtoFilePathResolver,
-) (bufbuild.ProtoFilePathResolver, error) {
+	chainedResolver bufbuild.ProtoRealFilePathResolver,
+) (bufbuild.ProtoRealFilePathResolver, error) {
 	return newRelProtoFilePathResolver(
 		dirPath,
 		chainedResolver,

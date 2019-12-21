@@ -11,12 +11,12 @@ import (
 type relProtoFilePathResolver struct {
 	pwd             string
 	dirPath         string
-	chainedResolver bufbuild.ProtoFilePathResolver
+	chainedResolver bufbuild.ProtoRealFilePathResolver
 }
 
 func newRelProtoFilePathResolver(
 	dirPath string,
-	chainedResolver bufbuild.ProtoFilePathResolver,
+	chainedResolver bufbuild.ProtoRealFilePathResolver,
 ) (*relProtoFilePathResolver, error) {
 	pwd, err := os.Getwd()
 	if err != nil {
@@ -29,19 +29,17 @@ func newRelProtoFilePathResolver(
 	}, nil
 }
 
-func (p *relProtoFilePathResolver) GetFilePath(inputFilePath string) (string, error) {
+func (p *relProtoFilePathResolver) GetRealFilePath(inputFilePath string) (string, error) {
 	if inputFilePath == "" {
 		return "", nil
 	}
 
 	// if there is a chained resolver, apply it first
 	if p.chainedResolver != nil {
-		chainedFilePath, err := p.chainedResolver.GetFilePath(inputFilePath)
+		chainedFilePath, err := p.chainedResolver.GetRealFilePath(inputFilePath)
 		if err != nil {
-			if err != bufbuild.ErrFilePathUnknown {
-				return "", err
-			}
-		} else {
+			return "", err
+		} else if chainedFilePath != "" {
 			inputFilePath = chainedFilePath
 		}
 	}

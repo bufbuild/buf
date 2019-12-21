@@ -181,7 +181,7 @@ func testNewProtoFileSet(
 	bucket, err := storageos.NewReadBucket(relDir)
 	require.NoError(t, err)
 
-	set, err := NewProvider(zap.NewNop()).GetProtoFileSetForBucket(
+	set, err := newProvider(zap.NewNop()).GetProtoFileSetForBucket(
 		context.Background(),
 		bucket,
 		relRoots,
@@ -196,7 +196,7 @@ func testNewProtoFileSet(
 	)
 	if len(expectedRelFiles) > 1 {
 		expectedRelFiles = expectedRelFiles[:len(expectedRelFiles)-1]
-		set, err := NewProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
+		set, err := newProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
 			context.Background(),
 			bucket,
 			relRoots,
@@ -225,7 +225,7 @@ func testNewProtoFileSetError(
 	bucket, err := storageos.NewReadBucket(relDir)
 	require.NoError(t, err)
 
-	_, err = NewProvider(zap.NewNop()).GetProtoFileSetForBucket(
+	_, err = newProvider(zap.NewNop()).GetProtoFileSetForBucket(
 		context.Background(),
 		bucket,
 		relRoots,
@@ -234,7 +234,7 @@ func testNewProtoFileSetError(
 	assert.Error(t, err)
 	if len(allRelFiles) > 1 {
 		allRelFiles = allRelFiles[:len(allRelFiles)-1]
-		_, err = NewProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
+		_, err = newProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
 			context.Background(),
 			bucket,
 			relRoots,

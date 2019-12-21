@@ -28,11 +28,7 @@ func NewBufosEnvReader(
 		logger,
 		defaultHTTPClient,
 		bufconfig.NewProvider(logger),
-		bufbuild.NewHandler(
-			logger,
-			bufbuild.NewProvider(logger),
-			bufbuild.NewRunner(logger),
-		),
+		bufbuild.NewHandler(logger),
 		inputFlagName,
 		configOverrideFlagName,
 	)
