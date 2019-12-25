@@ -692,15 +692,15 @@ func TestRunIgnores3(t *testing.T) {
 		"ignores",
 		func(externalConfig *bufconfig.ExternalConfig) {
 			externalConfig.Lint.IgnoreOnly = map[string][]string{
-				"ENUM_PASCAL_CASE": []string{
+				"ENUM_PASCAL_CASE": {
 					"buf/bar/bar.proto",
 					"buf/foo/bar",
 					"buf/foo/bar",
 				},
-				"MESSAGE_PASCAL_CASE": []string{
+				"MESSAGE_PASCAL_CASE": {
 					"buf/bar/bar.proto",
 				},
-				"STYLE_BASIC": []string{
+				"STYLE_BASIC": {
 					"buf/foo/bar",
 				},
 			}

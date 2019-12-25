@@ -72,200 +72,200 @@ var (
 	}
 	// v1IDToCategories are the ID to categories.
 	v1IDToCategories = map[string][]string{
-		"COMMENT_ENUM": []string{
+		"COMMENT_ENUM": {
 			"COMMENTS",
 		},
-		"COMMENT_ENUM_VALUE": []string{
+		"COMMENT_ENUM_VALUE": {
 			"COMMENTS",
 		},
-		"COMMENT_FIELD": []string{
+		"COMMENT_FIELD": {
 			"COMMENTS",
 		},
-		"COMMENT_MESSAGE": []string{
+		"COMMENT_MESSAGE": {
 			"COMMENTS",
 		},
-		"COMMENT_ONEOF": []string{
+		"COMMENT_ONEOF": {
 			"COMMENTS",
 		},
-		"COMMENT_RPC": []string{
+		"COMMENT_RPC": {
 			"COMMENTS",
 		},
-		"COMMENT_SERVICE": []string{
+		"COMMENT_SERVICE": {
 			"COMMENTS",
 		},
-		"DIRECTORY_SAME_PACKAGE": []string{
+		"DIRECTORY_SAME_PACKAGE": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"FILE_LAYOUT",
 		},
-		"ENUM_NO_ALLOW_ALIAS": []string{
+		"ENUM_NO_ALLOW_ALIAS": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"SENSIBLE",
 		},
-		"ENUM_PASCAL_CASE": []string{
+		"ENUM_PASCAL_CASE": {
 			"BASIC",
 			"DEFAULT",
 			"STYLE_BASIC",
 			"STYLE_DEFAULT",
 		},
-		"ENUM_VALUE_PREFIX": []string{
+		"ENUM_VALUE_PREFIX": {
 			"DEFAULT",
 			"STYLE_DEFAULT",
 		},
-		"ENUM_VALUE_UPPER_SNAKE_CASE": []string{
+		"ENUM_VALUE_UPPER_SNAKE_CASE": {
 			"BASIC",
 			"DEFAULT",
 			"STYLE_BASIC",
 			"STYLE_DEFAULT",
 		},
-		"ENUM_ZERO_VALUE_SUFFIX": []string{
+		"ENUM_ZERO_VALUE_SUFFIX": {
 			"DEFAULT",
 			"STYLE_DEFAULT",
 		},
-		"FIELD_LOWER_SNAKE_CASE": []string{
+		"FIELD_LOWER_SNAKE_CASE": {
 			"BASIC",
 			"DEFAULT",
 			"STYLE_BASIC",
 			"STYLE_DEFAULT",
 		},
-		"FIELD_NO_DESCRIPTOR": []string{
+		"FIELD_NO_DESCRIPTOR": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"SENSIBLE",
 		},
-		"FILE_LOWER_SNAKE_CASE": []string{
+		"FILE_LOWER_SNAKE_CASE": {
 			"DEFAULT",
 			"STYLE_DEFAULT",
 		},
-		"IMPORT_NO_PUBLIC": []string{
+		"IMPORT_NO_PUBLIC": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"SENSIBLE",
 		},
-		"IMPORT_NO_WEAK": []string{
+		"IMPORT_NO_WEAK": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"SENSIBLE",
 		},
-		"MESSAGE_PASCAL_CASE": []string{
+		"MESSAGE_PASCAL_CASE": {
 			"BASIC",
 			"DEFAULT",
 			"STYLE_BASIC",
 			"STYLE_DEFAULT",
 		},
-		"ONEOF_LOWER_SNAKE_CASE": []string{
+		"ONEOF_LOWER_SNAKE_CASE": {
 			"BASIC",
 			"DEFAULT",
 			"STYLE_BASIC",
 			"STYLE_DEFAULT",
 		},
-		"PACKAGE_DEFINED": []string{
+		"PACKAGE_DEFINED": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"SENSIBLE",
 		},
-		"PACKAGE_DIRECTORY_MATCH": []string{
+		"PACKAGE_DIRECTORY_MATCH": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"FILE_LAYOUT",
 		},
-		"PACKAGE_LOWER_SNAKE_CASE": []string{
+		"PACKAGE_LOWER_SNAKE_CASE": {
 			"BASIC",
 			"DEFAULT",
 			"STYLE_BASIC",
 			"STYLE_DEFAULT",
 		},
-		"PACKAGE_SAME_CSHARP_NAMESPACE": []string{
+		"PACKAGE_SAME_CSHARP_NAMESPACE": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"PACKAGE_AFFINITY",
 		},
-		"PACKAGE_SAME_DIRECTORY": []string{
+		"PACKAGE_SAME_DIRECTORY": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"FILE_LAYOUT",
 		},
-		"PACKAGE_SAME_GO_PACKAGE": []string{
+		"PACKAGE_SAME_GO_PACKAGE": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"PACKAGE_AFFINITY",
 		},
-		"PACKAGE_SAME_JAVA_MULTIPLE_FILES": []string{
+		"PACKAGE_SAME_JAVA_MULTIPLE_FILES": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"PACKAGE_AFFINITY",
 		},
-		"PACKAGE_SAME_JAVA_PACKAGE": []string{
+		"PACKAGE_SAME_JAVA_PACKAGE": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"PACKAGE_AFFINITY",
 		},
-		"PACKAGE_SAME_PHP_NAMESPACE": []string{
+		"PACKAGE_SAME_PHP_NAMESPACE": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"PACKAGE_AFFINITY",
 		},
-		"PACKAGE_SAME_RUBY_PACKAGE": []string{
+		"PACKAGE_SAME_RUBY_PACKAGE": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"PACKAGE_AFFINITY",
 		},
-		"PACKAGE_SAME_SWIFT_PREFIX": []string{
+		"PACKAGE_SAME_SWIFT_PREFIX": {
 			"MINIMAL",
 			"BASIC",
 			"DEFAULT",
 			"PACKAGE_AFFINITY",
 		},
-		"PACKAGE_VERSION_SUFFIX": []string{
+		"PACKAGE_VERSION_SUFFIX": {
 			"DEFAULT",
 			"STYLE_DEFAULT",
 		},
-		"RPC_NO_CLIENT_STREAMING": []string{
+		"RPC_NO_CLIENT_STREAMING": {
 			"UNARY_RPC",
 		},
-		"RPC_NO_SERVER_STREAMING": []string{
+		"RPC_NO_SERVER_STREAMING": {
 			"UNARY_RPC",
 		},
-		"RPC_PASCAL_CASE": []string{
+		"RPC_PASCAL_CASE": {
 			"BASIC",
 			"DEFAULT",
 			"STYLE_BASIC",
 			"STYLE_DEFAULT",
 		},
-		"RPC_REQUEST_RESPONSE_UNIQUE": []string{
+		"RPC_REQUEST_RESPONSE_UNIQUE": {
 			"DEFAULT",
 			"STYLE_DEFAULT",
 		},
-		"RPC_REQUEST_STANDARD_NAME": []string{
+		"RPC_REQUEST_STANDARD_NAME": {
 			"DEFAULT",
 			"STYLE_DEFAULT",
 		},
-		"RPC_RESPONSE_STANDARD_NAME": []string{
+		"RPC_RESPONSE_STANDARD_NAME": {
 			"DEFAULT",
 			"STYLE_DEFAULT",
 		},
-		"SERVICE_PASCAL_CASE": []string{
+		"SERVICE_PASCAL_CASE": {
 			"BASIC",
 			"DEFAULT",
 			"STYLE_BASIC",
 			"STYLE_DEFAULT",
 		},
-		"SERVICE_SUFFIX": []string{
+		"SERVICE_SUFFIX": {
 			"DEFAULT",
 			"STYLE_DEFAULT",
 		},

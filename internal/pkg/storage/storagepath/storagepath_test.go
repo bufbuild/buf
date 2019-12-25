@@ -262,12 +262,12 @@ func TestByDir(t *testing.T) {
 	assert.Equal(
 		t,
 		map[string][]string{
-			"one": []string{
+			"one": {
 				"one/1.txt",
 				"one/2.txt",
 				"one/3.txt",
 			},
-			"two": []string{
+			"two": {
 				"two/1.txt",
 				"two/2.txt",
 				"two/3.txt",
@@ -285,12 +285,12 @@ func TestByDir(t *testing.T) {
 	assert.Equal(
 		t,
 		map[string][]string{
-			".": []string{
+			".": {
 				"1.txt",
 				"2.txt",
 				"3.txt",
 			},
-			"two": []string{
+			"two": {
 				"two/1.txt",
 				"two/2.txt",
 				"two/3.txt",

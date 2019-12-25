@@ -77,234 +77,234 @@ var (
 	}
 	// v1IDToCategories are the revision 1 ID to categories.
 	v1IDToCategories = map[string][]string{
-		"ENUM_NO_DELETE": []string{
+		"ENUM_NO_DELETE": {
 			"FILE",
 		},
-		"ENUM_VALUE_NO_DELETE": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED": []string{
-			"WIRE_JSON",
-		},
-		"ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED": []string{
-			"WIRE_JSON",
-			"WIRE",
-		},
-		"ENUM_VALUE_SAME_NAME": []string{
-			"FILE",
-			"PACKAGE",
-			"WIRE_JSON",
-		},
-		"EXTENSION_MESSAGE_NO_DELETE": []string{
+		"ENUM_VALUE_NO_DELETE": {
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_NO_DELETE": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FIELD_NO_DELETE_UNLESS_NAME_RESERVED": []string{
+		"ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED": {
 			"WIRE_JSON",
 		},
-		"FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED": []string{
+		"ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED": {
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"FIELD_SAME_CTYPE": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FIELD_SAME_JSON_NAME": []string{
+		"ENUM_VALUE_SAME_NAME": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 		},
-		"FIELD_SAME_JSTYPE": []string{
+		"EXTENSION_MESSAGE_NO_DELETE": {
 			"FILE",
 			"PACKAGE",
 		},
-		"FIELD_SAME_LABEL": []string{
+		"FIELD_NO_DELETE": {
 			"FILE",
 			"PACKAGE",
+		},
+		"FIELD_NO_DELETE_UNLESS_NAME_RESERVED": {
+			"WIRE_JSON",
+		},
+		"FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED": {
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"FIELD_SAME_NAME": []string{
+		"FIELD_SAME_CTYPE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FIELD_SAME_JSON_NAME": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 		},
-		"FIELD_SAME_ONEOF": []string{
+		"FIELD_SAME_JSTYPE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FIELD_SAME_LABEL": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"FIELD_SAME_TYPE": []string{
+		"FIELD_SAME_NAME": {
+			"FILE",
+			"PACKAGE",
+			"WIRE_JSON",
+		},
+		"FIELD_SAME_ONEOF": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"FILE_NO_DELETE": []string{
-			"FILE",
-		},
-		"FILE_SAME_CSHARP_NAMESPACE": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_GO_PACKAGE": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_JAVA_MULTIPLE_FILES": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_JAVA_OUTER_CLASSNAME": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_JAVA_PACKAGE": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_JAVA_STRING_CHECK_UTF8": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_OBJC_CLASS_PREFIX": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_PACKAGE": []string{
-			"FILE",
-		},
-		"FILE_SAME_PHP_CLASS_PREFIX": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_PHP_METADATA_NAMESPACE": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_PHP_NAMESPACE": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_RUBY_PACKAGE": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_SWIFT_PREFIX": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_OPTIMIZE_FOR": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_CC_GENERIC_SERVICES": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_JAVA_GENERIC_SERVICES": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_PY_GENERIC_SERVICES": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_PHP_GENERIC_SERVICES": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_CC_ENABLE_ARENAS": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"FILE_SAME_SYNTAX": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"MESSAGE_NO_DELETE": []string{
-			"FILE",
-		},
-		"MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT": []string{
+		"FIELD_SAME_TYPE": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"ONEOF_NO_DELETE": []string{
+		"FILE_NO_DELETE": {
+			"FILE",
+		},
+		"FILE_SAME_CSHARP_NAMESPACE": {
 			"FILE",
 			"PACKAGE",
 		},
-		"PACKAGE_ENUM_NO_DELETE": []string{
+		"FILE_SAME_GO_PACKAGE": {
+			"FILE",
 			"PACKAGE",
 		},
-		"PACKAGE_MESSAGE_NO_DELETE": []string{
+		"FILE_SAME_JAVA_MULTIPLE_FILES": {
+			"FILE",
 			"PACKAGE",
 		},
-		"PACKAGE_NO_DELETE": []string{
+		"FILE_SAME_JAVA_OUTER_CLASSNAME": {
+			"FILE",
 			"PACKAGE",
 		},
-		"PACKAGE_SERVICE_NO_DELETE": []string{
+		"FILE_SAME_JAVA_PACKAGE": {
+			"FILE",
 			"PACKAGE",
 		},
-		"RESERVED_ENUM_NO_DELETE": []string{
+		"FILE_SAME_JAVA_STRING_CHECK_UTF8": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_OBJC_CLASS_PREFIX": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_PACKAGE": {
+			"FILE",
+		},
+		"FILE_SAME_PHP_CLASS_PREFIX": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_PHP_METADATA_NAMESPACE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_PHP_NAMESPACE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_RUBY_PACKAGE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_SWIFT_PREFIX": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_OPTIMIZE_FOR": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_CC_GENERIC_SERVICES": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_JAVA_GENERIC_SERVICES": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_PY_GENERIC_SERVICES": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_PHP_GENERIC_SERVICES": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_CC_ENABLE_ARENAS": {
+			"FILE",
+			"PACKAGE",
+		},
+		"FILE_SAME_SYNTAX": {
+			"FILE",
+			"PACKAGE",
+		},
+		"MESSAGE_NO_DELETE": {
+			"FILE",
+		},
+		"MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR": {
+			"FILE",
+			"PACKAGE",
+		},
+		"MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"RESERVED_MESSAGE_NO_DELETE": []string{
+		"ONEOF_NO_DELETE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"PACKAGE_ENUM_NO_DELETE": {
+			"PACKAGE",
+		},
+		"PACKAGE_MESSAGE_NO_DELETE": {
+			"PACKAGE",
+		},
+		"PACKAGE_NO_DELETE": {
+			"PACKAGE",
+		},
+		"PACKAGE_SERVICE_NO_DELETE": {
+			"PACKAGE",
+		},
+		"RESERVED_ENUM_NO_DELETE": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"RPC_NO_DELETE": []string{
-			"FILE",
-			"PACKAGE",
-		},
-		"RPC_SAME_CLIENT_STREAMING": []string{
+		"RESERVED_MESSAGE_NO_DELETE": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"RPC_SAME_IDEMPOTENCY_LEVEL": []string{
+		"RPC_NO_DELETE": {
+			"FILE",
+			"PACKAGE",
+		},
+		"RPC_SAME_CLIENT_STREAMING": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"RPC_SAME_REQUEST_TYPE": []string{
+		"RPC_SAME_IDEMPOTENCY_LEVEL": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"RPC_SAME_RESPONSE_TYPE": []string{
+		"RPC_SAME_REQUEST_TYPE": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"RPC_SAME_SERVER_STREAMING": []string{
+		"RPC_SAME_RESPONSE_TYPE": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",
 			"WIRE",
 		},
-		"SERVICE_NO_DELETE": []string{
+		"RPC_SAME_SERVER_STREAMING": {
+			"FILE",
+			"PACKAGE",
+			"WIRE_JSON",
+			"WIRE",
+		},
+		"SERVICE_NO_DELETE": {
 			"FILE",
 		},
 	}

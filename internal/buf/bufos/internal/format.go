@@ -50,24 +50,24 @@ var (
 	}
 
 	formatToIsSource = map[Format]struct{}{
-		FormatDir:   struct{}{},
-		FormatTar:   struct{}{},
-		FormatTarGz: struct{}{},
-		FormatGit:   struct{}{},
+		FormatDir:   {},
+		FormatTar:   {},
+		FormatTarGz: {},
+		FormatGit:   {},
 	}
 	formatToIsImage = map[Format]struct{}{
-		FormatBin:    struct{}{},
-		FormatBinGz:  struct{}{},
-		FormatJSON:   struct{}{},
-		FormatJSONGz: struct{}{},
+		FormatBin:    {},
+		FormatBinGz:  {},
+		FormatJSON:   {},
+		FormatJSONGz: {},
 	}
 	formatToIsFile = map[Format]struct{}{
-		FormatTar:    struct{}{},
-		FormatTarGz:  struct{}{},
-		FormatBin:    struct{}{},
-		FormatBinGz:  struct{}{},
-		FormatJSON:   struct{}{},
-		FormatJSONGz: struct{}{},
+		FormatTar:    {},
+		FormatTarGz:  {},
+		FormatBin:    {},
+		FormatBinGz:  {},
+		FormatJSON:   {},
+		FormatJSONGz: {},
 	}
 )
 
