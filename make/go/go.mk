@@ -61,7 +61,7 @@ godeps: deps
 
 .PHONY: gofmtmodtidy
 gofmtmodtidy:
-	go fmt ./...
+	gofmt -s -w $(shell find . -name '*.go')
 	go mod tidy -v
 
 postgenerate:: gofmtmodtidy

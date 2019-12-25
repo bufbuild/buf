@@ -80,7 +80,7 @@ func SliceToChunks(s []string, chunkSize int) [][]string {
 // SnakeCaseOption is an option for snake_case conversions.
 type SnakeCaseOption func(*snakeCaseOptions)
 
-// SnakeCaseWithNewWordOnDigits is a SnakeCaseOption that signfies
+// SnakeCaseWithNewWordOnDigits is a SnakeCaseOption that signifies
 // to split on digits, ie foo_bar_1 instead of foo_bar1.
 func SnakeCaseWithNewWordOnDigits() SnakeCaseOption {
 	return func(snakeCaseOptions *snakeCaseOptions) {

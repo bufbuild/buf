@@ -7,6 +7,7 @@ require (
 	github.com/golang/protobuf v1.3.2
 	github.com/jhump/protoreflect v1.6.0
 	github.com/pkg/profile v1.4.0 // indirect
+	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0
@@ -16,9 +17,9 @@ require (
 	golang.org/x/crypto v0.0.0-20191219195013-becbf705a915 // indirect
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553 // indirect
-	golang.org/x/sys v0.0.0-20191220220014-0732a990476f // indirect
-	golang.org/x/tools v0.0.0-20191220234730-f13409bbebaf // indirect
-	google.golang.org/genproto v0.0.0-20191220175831-5c49e3ecc1c1 // indirect
+	golang.org/x/sys v0.0.0-20191224085550-c709ea063b76 // indirect
+	golang.org/x/tools v0.0.0-20191224055732-dd894d0a8a40 // indirect
+	google.golang.org/genproto v0.0.0-20191223191004-3caeed10a8bf // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.7 // indirect
