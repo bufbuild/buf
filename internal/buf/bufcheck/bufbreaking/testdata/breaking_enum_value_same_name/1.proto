@@ -32,3 +32,17 @@ message Three {
     EIGHT_TWO = 2;
   }
 }
+
+enum Ten {
+  option allow_alias = true;
+  TEN_UNSPECIFIED = 0;
+  TEN_ONE = 1;
+  TEN_TWO = 1;
+}
+
+enum Eleven {
+  option allow_alias = true;
+  ELEVEN_UNSPECIFIED = 0;
+  ELEVEN_ONE = 1;
+  ELEVEN_THREE = 1;
+}

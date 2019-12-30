@@ -77,6 +77,29 @@ func SliceToChunks(s []string, chunkSize int) [][]string {
 	return append(chunks, c)
 }
 
+// SliceElementsEqual returns true if the two slices have equal elements.
+//
+// Nil and empty slices are treated as equals.
+func SliceElementsEqual(one []string, two []string) bool {
+	if len(one) != len(two) {
+		return false
+	}
+	for i, elem := range one {
+		if two[i] != elem {
+			return false
+		}
+	}
+	return true
+}
+
+// JoinSliceQuoted joins the slice with quotes.
+func JoinSliceQuoted(s []string, sep string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	return `"` + strings.Join(s, `"`+sep+`"`) + `"`
+}
+
 // SnakeCaseOption is an option for snake_case conversions.
 type SnakeCaseOption func(*snakeCaseOptions)
 

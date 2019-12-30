@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
@@ -75,22 +76,24 @@ func newEnumPairCheckFunc(
 	)
 }
 
+// compares all the enums that are of the same number
+// map is from name to EnumValue for the given number
 func newEnumValuePairCheckFunc(
-	f func(addFunc, protodesc.EnumValue, protodesc.EnumValue) error,
+	f func(addFunc, map[string]protodesc.EnumValue, map[string]protodesc.EnumValue) error,
 ) func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error) {
 	return newEnumPairCheckFunc(
 		func(add addFunc, previousEnum protodesc.Enum, enum protodesc.Enum) error {
-			previousNumberToEnumValue, err := protodesc.NumberToEnumValue(previousEnum)
+			previousNumberToNameToEnumValue, err := protodesc.NumberToNameToEnumValue(previousEnum)
 			if err != nil {
 				return err
 			}
-			numberToEnumValue, err := protodesc.NumberToEnumValue(enum)
+			numberToNameToEnumValue, err := protodesc.NumberToNameToEnumValue(enum)
 			if err != nil {
 				return err
 			}
-			for previousNumber, previousEnumValue := range previousNumberToEnumValue {
-				if enumValue, ok := numberToEnumValue[previousNumber]; ok {
-					if err := f(add, previousEnumValue, enumValue); err != nil {
+			for previousNumber, previousNameToEnumValue := range previousNumberToNameToEnumValue {
+				if nameToEnumValue, ok := numberToNameToEnumValue[previousNumber]; ok {
+					if err := f(add, previousNameToEnumValue, nameToEnumValue); err != nil {
 						return err
 					}
 				}
@@ -226,6 +229,15 @@ func getDescriptorAndLocationForDeletedMessage(file protodesc.File, nestedNameTo
 		}
 	}
 	return file, nil
+}
+
+func getSortedEnumValueNames(nameToEnumValue map[string]protodesc.EnumValue) []string {
+	names := make([]string, 0, len(nameToEnumValue))
+	for name := range nameToEnumValue {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
 }
 
 func withBackupLocation(primary protodesc.Location, secondary protodesc.Location) protodesc.Location {

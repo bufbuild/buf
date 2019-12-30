@@ -7,6 +7,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
 // CheckEnumNoDelete is a check function.
@@ -56,26 +57,30 @@ func checkEnumValueNoDeleteUnlessNameReserved(add addFunc, previousEnum protodes
 }
 
 func checkEnumValueNoDeleteWithRules(add addFunc, previousEnum protodesc.Enum, enum protodesc.Enum, allowIfNumberReserved bool, allowIfNameReserved bool) error {
-	previousNumberToEnumValue, err := protodesc.NumberToEnumValue(previousEnum)
+	previousNumberToNameToEnumValue, err := protodesc.NumberToNameToEnumValue(previousEnum)
 	if err != nil {
 		return err
 	}
-	numberToEnumValue, err := protodesc.NumberToEnumValue(enum)
+	numberToNameToEnumValue, err := protodesc.NumberToNameToEnumValue(enum)
 	if err != nil {
 		return err
 	}
-	for previousNumber, previousEnumValue := range previousNumberToEnumValue {
-		if _, ok := numberToEnumValue[previousNumber]; !ok {
-			if !isDeletedEnumValueAllowedWithRules(previousEnumValue, enum, allowIfNumberReserved, allowIfNameReserved) {
+	for previousNumber, previousNameToEnumValue := range previousNumberToNameToEnumValue {
+		if _, ok := numberToNameToEnumValue[previousNumber]; !ok {
+			if !isDeletedEnumValueAllowedWithRules(previousNumber, previousNameToEnumValue, enum, allowIfNumberReserved, allowIfNameReserved) {
 				suffix := ""
 				if allowIfNumberReserved && allowIfNameReserved {
 					return buferrs.NewSystemError("both allowIfNumberReserved and allowIfNameReserved set")
 				}
 				if allowIfNumberReserved {
-					suffix = fmt.Sprintf(` without reserving the number "%d"`, previousEnumValue.Number())
+					suffix = fmt.Sprintf(` without reserving the number "%d"`, previousNumber)
 				}
 				if allowIfNameReserved {
-					suffix = fmt.Sprintf(` without reserving the name %q`, previousEnumValue.Name())
+					nameSuffix := ""
+					if len(previousNameToEnumValue) > 1 {
+						nameSuffix = "s"
+					}
+					suffix = fmt.Sprintf(` without reserving the name%s %s`, nameSuffix, stringutil.JoinSliceQuoted(getSortedEnumValueNames(previousNameToEnumValue), ", "))
 				}
 				add(enum, enum.Location(), `Previously present enum value "%d" on enum %q was deleted%s.`, previousNumber, enum.Name(), suffix)
 			}
@@ -84,17 +89,38 @@ func checkEnumValueNoDeleteWithRules(add addFunc, previousEnum protodesc.Enum, e
 	return nil
 }
 
-func isDeletedEnumValueAllowedWithRules(previousEnumValue protodesc.EnumValue, enum protodesc.Enum, allowIfNumberReserved bool, allowIfNameReserved bool) bool {
-	return (allowIfNumberReserved && protodesc.NumberInReservedRanges(previousEnumValue.Number(), enum.ReservedRanges()...)) ||
-		(allowIfNameReserved && protodesc.NameInReservedNames(previousEnumValue.Name(), enum.ReservedNames()...))
+func isDeletedEnumValueAllowedWithRules(previousNumber int, previousNameToEnumValue map[string]protodesc.EnumValue, enum protodesc.Enum, allowIfNumberReserved bool, allowIfNameReserved bool) bool {
+	if allowIfNumberReserved {
+		return protodesc.NumberInReservedRanges(previousNumber, enum.ReservedRanges()...)
+	}
+	if allowIfNameReserved {
+		// if true for all names, then ok
+		for previousName := range previousNameToEnumValue {
+			if !protodesc.NameInReservedNames(previousName, enum.ReservedNames()...) {
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }
 
 // CheckEnumValueSameName is a check function.
 var CheckEnumValueSameName = newEnumValuePairCheckFunc(checkEnumValueSameName)
 
-func checkEnumValueSameName(add addFunc, previousEnumValue protodesc.EnumValue, enumValue protodesc.EnumValue) error {
-	if previousEnumValue.Name() != enumValue.Name() {
-		add(enumValue, enumValue.NumberLocation(), `Enum value "%d" on enum %q changed name from %q to %q.`, enumValue.Number(), enumValue.Enum().Name(), previousEnumValue.Name(), enumValue.Name())
+func checkEnumValueSameName(add addFunc, previousNameToEnumValue map[string]protodesc.EnumValue, nameToEnumValue map[string]protodesc.EnumValue) error {
+	previousNames := getSortedEnumValueNames(previousNameToEnumValue)
+	names := getSortedEnumValueNames(nameToEnumValue)
+	if !stringutil.SliceElementsEqual(previousNames, names) {
+		previousNamesString := stringutil.JoinSliceQuoted(previousNames, ", ")
+		namesString := stringutil.JoinSliceQuoted(names, ", ")
+		nameSuffix := ""
+		if len(previousNames) > 1 && len(names) > 1 {
+			nameSuffix = "s"
+		}
+		for _, enumValue := range nameToEnumValue {
+			add(enumValue, enumValue.NumberLocation(), `Enum value "%d" on enum %q changed name%s from %s to %s.`, enumValue.Number(), enumValue.Enum().Name(), nameSuffix, previousNamesString, namesString)
+		}
 	}
 	return nil
 }

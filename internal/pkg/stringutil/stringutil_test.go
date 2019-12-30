@@ -160,6 +160,15 @@ func TestToPascalCase(t *testing.T) {
 	assert.Equal(t, "FooBarBaz", ToPascalCase("  Foo  Bar  _Baz"))
 }
 
+func TestJoinSliceQuoted(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, ``, JoinSliceQuoted(nil, ", "))
+	assert.Equal(t, ``, JoinSliceQuoted([]string{}, ", "))
+	assert.Equal(t, `"a"`, JoinSliceQuoted([]string{"a"}, ", "))
+	assert.Equal(t, `"a", "b"`, JoinSliceQuoted([]string{"a", "b"}, ", "))
+	assert.Equal(t, `"a", "b", "c"`, JoinSliceQuoted([]string{"a", "b", "c"}, ", "))
+}
+
 func TestSliceToUniqueSortedSlice(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t, []string{}, SliceToUniqueSortedSlice(nil))

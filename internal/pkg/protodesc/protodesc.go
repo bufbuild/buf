@@ -484,27 +484,35 @@ func NameToEnumValue(enum Enum) (map[string]EnumValue, error) {
 	for _, enumValue := range enum.Values() {
 		name := enumValue.Name()
 		if _, ok := nameToEnumValue[name]; ok {
-			return nil, fmt.Errorf("duplicate enum value: %q", name)
+			return nil, fmt.Errorf("duplicate enum value name for enum %q: %q", enum.NestedName(), name)
 		}
 		nameToEnumValue[name] = enumValue
 	}
 	return nameToEnumValue, nil
 }
 
-// NumberToEnumValue maps the EnumValues in the Enum to a map from number to EnumValue.
+// NumberToNameToEnumValue maps the EnumValues in the Enum to a map from number to name to EnumValue.
 //
-// Returns error if the EnumValues do not have unique numbers within the Enum,
+// Duplicates by number may occur if allow_alias = true.
+//
+// Returns error if the EnumValues do not have unique names within the Enum for a given number,
 // which should generally never happen for properly-formed Enums.
-func NumberToEnumValue(enum Enum) (map[int]EnumValue, error) {
-	numberToEnumValue := make(map[int]EnumValue)
+func NumberToNameToEnumValue(enum Enum) (map[int]map[string]EnumValue, error) {
+	numberToNameToEnumValue := make(map[int]map[string]EnumValue)
 	for _, enumValue := range enum.Values() {
 		number := enumValue.Number()
-		if _, ok := numberToEnumValue[number]; ok {
-			return nil, fmt.Errorf("duplicate enum value: %q", number)
+		nameToEnumValue, ok := numberToNameToEnumValue[number]
+		if !ok {
+			nameToEnumValue = make(map[string]EnumValue)
+			numberToNameToEnumValue[number] = nameToEnumValue
 		}
-		numberToEnumValue[number] = enumValue
+		name := enumValue.Name()
+		if _, ok := nameToEnumValue[name]; ok {
+			return nil, fmt.Errorf("duplicate enum value name for enum %q: %q", enum.NestedName(), name)
+		}
+		nameToEnumValue[name] = enumValue
 	}
-	return numberToEnumValue, nil
+	return numberToNameToEnumValue, nil
 }
 
 // NestedNameToMessage maps the Messages in the ContainerDescriptor to a map from
