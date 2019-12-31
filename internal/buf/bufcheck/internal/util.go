@@ -1,12 +1,12 @@
 package internal
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
-	"github.com/bufbuild/buf/internal/buf/buferrs"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 )
 
 // GetCheckersForCategories filters the given Checkers to the categories.
@@ -16,7 +16,7 @@ func GetCheckersForCategories(checkers []bufcheck.Checker, allKnownCategories []
 	if len(categories) == 0 {
 		return nil, nil
 	}
-	categoriesMap := stringutil.SliceToMap(categories)
+	categoriesMap := utilstring.SliceToMap(categories)
 	if err := checkCategories(allKnownCategories, categoriesMap); err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func checkCategories(knownCategories []string, categoriesMap map[string]struct{}
 	if len(categoriesMap) == 0 {
 		return nil
 	}
-	knownCategoriesMap := stringutil.SliceToMap(knownCategories)
+	knownCategoriesMap := utilstring.SliceToMap(knownCategories)
 	var unknownCategories []string
 	for category := range categoriesMap {
 		if _, ok := knownCategoriesMap[category]; !ok {
@@ -44,10 +44,10 @@ func checkCategories(knownCategories []string, categoriesMap map[string]struct{}
 	case 0:
 		return nil
 	case 1:
-		return buferrs.NewUserErrorf("%q is not a known category", unknownCategories[0])
+		return fmt.Errorf("%q is not a known category", unknownCategories[0])
 	default:
 		sort.Strings(unknownCategories)
-		return buferrs.NewUserErrorf("%q are not known categories", strings.Join(unknownCategories, ", "))
+		return fmt.Errorf("%q are not known categories", strings.Join(unknownCategories, ", "))
 	}
 }
 

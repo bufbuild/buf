@@ -1,5 +1,5 @@
-// Package logutil implements log utilities.
-package logutil
+// Package utillog implements log utilities.
+package utillog
 
 import (
 	"time"
@@ -9,7 +9,7 @@ import (
 
 // Defer returns a function to defer that logs at the debug level.
 //
-// defer logutil.Defer(logger, "foo")()
+// defer utillog.Defer(logger, "foo")()
 func Defer(logger *zap.Logger, name string, fields ...zap.Field) func() {
 	start := time.Now()
 	return func() {
@@ -20,7 +20,7 @@ func Defer(logger *zap.Logger, name string, fields ...zap.Field) func() {
 
 // DeferWithError returns a function to defer that logs at the debug level.
 //
-// defer logutil.DeferWithError(logger, "foo", &retErr)()
+// defer utillog.DeferWithError(logger, "foo", &retErr)()
 func DeferWithError(logger *zap.Logger, name string, retErrPtr *error, fields ...zap.Field) func() {
 	start := time.Now()
 	return func() {

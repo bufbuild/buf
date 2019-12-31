@@ -1,17 +1,22 @@
 package bufos
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"io"
 
 	"github.com/bufbuild/buf/internal/buf/bufos/internal"
-	"github.com/bufbuild/buf/internal/buf/bufpb"
-	"github.com/bufbuild/buf/internal/pkg/protodescpb"
+	"github.com/bufbuild/buf/internal/buf/ext/extimage"
+	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/cli/clios"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
+
+var jsonMarshaler = &jsonpb.Marshaler{}
 
 type imageWriter struct {
 	logger         *zap.Logger
@@ -35,8 +40,11 @@ func (i *imageWriter) WriteImage(
 	stdout io.Writer,
 	value string,
 	asFileDescriptorSet bool,
-	image bufpb.Image,
+	image *imagev1beta1.Image,
 ) (retErr error) {
+	if err := extimage.ValidateImage(image); err != nil {
+		return err
+	}
 	// stop short if we have /dev/null equivalent for performance
 	if value == clios.DevNull {
 		return nil
@@ -48,9 +56,9 @@ func (i *imageWriter) WriteImage(
 	i.logger.Debug("parse", zap.Any("input_ref", inputRef), zap.Stringer("format", inputRef.Format))
 	// we now know the format this is only one of FormatBin, FormatBinGz, FormatJSON, FormatJSONGz
 
-	var marshaler protodescpb.Marshaler = image
+	var message proto.Message = image
 	if asFileDescriptorSet {
-		marshaler, err = image.ToFileDescriptorSet()
+		message, err = extimage.ImageToFileDescriptorSet(image)
 		if err != nil {
 			return err
 		}
@@ -59,12 +67,12 @@ func (i *imageWriter) WriteImage(
 	var data []byte
 	switch inputRef.Format {
 	case internal.FormatJSON, internal.FormatJSONGz:
-		data, err = marshaler.MarshalJSON()
+		data, err = marshalJSON(message)
 		if err != nil {
 			return err
 		}
 	default:
-		data, err = marshaler.MarshalWire()
+		data, err = proto.Marshal(message)
 		if err != nil {
 			return err
 		}
@@ -90,4 +98,12 @@ func (i *imageWriter) WriteImage(
 		_, err = writeCloser.Write(data)
 		return err
 	}
+}
+
+func marshalJSON(message proto.Message) ([]byte, error) {
+	buffer := bytes.NewBuffer(nil)
+	if err := jsonMarshaler.Marshal(buffer, message); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }

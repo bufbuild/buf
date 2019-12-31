@@ -8,7 +8,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/bufpb"
+	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"go.uber.org/zap"
@@ -28,8 +28,8 @@ type Handler interface {
 	BreakingCheck(
 		ctx context.Context,
 		breakingConfig *Config,
-		previousImage bufpb.Image,
-		image bufpb.Image,
+		previousImage *imagev1beta1.Image,
+		image *imagev1beta1.Image,
 	) ([]*analysis.Annotation, error)
 }
 

@@ -12,9 +12,9 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
+	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"gopkg.in/src-d/go-billy.v4"
@@ -41,7 +41,7 @@ func Clone(
 	bucket storage.Bucket,
 	options ...storagepath.TransformerOption,
 ) error {
-	defer logutil.Defer(logger, "git_clone")()
+	defer utillog.Defer(logger, "git_clone")()
 
 	if gitBranch == "" {
 		// we detect this outside of this function so this is a system error
@@ -71,7 +71,7 @@ func copyBillyFilesystemToBucket(
 	bucket storage.Bucket,
 	options ...storagepath.TransformerOption,
 ) error {
-	defer logutil.Defer(logger, "git_clone_copy")()
+	defer utillog.Defer(logger, "git_clone_copy")()
 
 	transformer := storagepath.NewTransformer(options...)
 	semaphoreC := make(chan struct{}, runtime.NumCPU())

@@ -1,5 +1,5 @@
-// Package encodingutil provides encoding utilities.
-package encodingutil
+// Package utilencoding provides encoding utilities.
+package utilencoding
 
 import (
 	"bytes"

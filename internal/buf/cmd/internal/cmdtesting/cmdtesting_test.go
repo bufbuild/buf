@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/buf/buftesting"
 	lint "github.com/bufbuild/buf/internal/buf/cmd/protoc-gen-buf-check-lint"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/ext/extdescriptor"
+	"github.com/bufbuild/buf/internal/pkg/util/utilproto/utilprototesting"
+	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 	"github.com/bufbuild/cli/clienv"
 	"github.com/bufbuild/cli/cliproto"
 	"github.com/golang/protobuf/proto"
@@ -169,11 +170,11 @@ func testRunHandlerFunc(
 		),
 	)
 
-	require.Equal(t, expectedExitCode, exitCode, stringutil.TrimLines(stderr.String()))
+	require.Equal(t, expectedExitCode, exitCode, utilstring.TrimLines(stderr.String()))
 	if exitCode == 0 {
 		response := &plugin_go.CodeGeneratorResponse{}
 		require.NoError(t, proto.Unmarshal(stdout.Bytes(), response))
-		require.Equal(t, stringutil.TrimLines(expectedErrorString), response.GetError(), stringutil.TrimLines(stderr.String()))
+		require.Equal(t, utilstring.TrimLines(expectedErrorString), response.GetError(), utilstring.TrimLines(stderr.String()))
 	}
 }
 
@@ -184,7 +185,7 @@ func testBuildCodeGeneratorRequest(
 	parameter string,
 	fileToGenerate []string,
 ) *plugin_go.CodeGeneratorRequest {
-	image, err := buftesting.GetProtocImage(
+	fileDescriptorSet, err := utilprototesting.GetProtocFileDescriptorSet(
 		context.Background(),
 		[]string{root},
 		realFilePaths,
@@ -192,7 +193,7 @@ func testBuildCodeGeneratorRequest(
 		true,
 	)
 	require.NoError(t, err)
-	request, err := image.ToCodeGeneratorRequest(parameter, fileToGenerate...)
+	request, err := extdescriptor.FileDescriptorSetToCodeGeneratorRequest(fileDescriptorSet, parameter, fileToGenerate...)
 	require.NoError(t, err)
 	return request
 }

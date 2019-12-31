@@ -11,7 +11,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufos/internal"
-	"github.com/bufbuild/buf/internal/buf/bufpb"
+	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"go.uber.org/zap"
 )
@@ -19,7 +19,9 @@ import (
 // Env is an environment.
 type Env struct {
 	// Image is the image to use.
-	Image bufpb.Image
+	//
+	// Validated.
+	Image *imagev1beta1.Image
 	// Resolver is the resolver to apply before printing paths or annotations.
 	// Can be nil.
 	Resolver bufbuild.ProtoRealFilePathResolver
@@ -118,12 +120,14 @@ type ImageWriter interface {
 	//
 	// The file must be an image format.
 	// This is a no-np if value is the equivalent of /dev/null.
+	//
+	// Validates the image before writing.
 	WriteImage(
 		ctx context.Context,
 		stdout io.Writer,
 		value string,
 		asFileDescriptorSet bool,
-		image bufpb.Image,
+		image *imagev1beta1.Image,
 	) error
 }
 

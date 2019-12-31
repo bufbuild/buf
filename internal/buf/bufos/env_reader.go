@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -14,21 +16,27 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/buf/bufos/internal"
-	"github.com/bufbuild/buf/internal/buf/bufpb"
+	"github.com/bufbuild/buf/internal/buf/ext/extimage"
+	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"github.com/bufbuild/cli/clios"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
+
+var jsonUnmarshaler = &jsonpb.Unmarshaler{
+	AllowUnknownFields: true,
+}
 
 type envReader struct {
 	logger               *zap.Logger
@@ -136,7 +144,7 @@ func (e *envReader) ReadImageEnv(
 	}
 	if len(annotations) > 0 {
 		// TODO: need to refactor this
-		return nil, buferrs.NewSystemError("got annotations for ReadImageEnv which should be impossible")
+		return nil, errors.New("got annotations for ReadImageEnv which should be impossible")
 	}
 	return env, nil
 }
@@ -219,7 +227,7 @@ func (e *envReader) ListFiles(
 		resolvedFilePath, err := resolver.GetRealFilePath(filePath)
 		if err != nil {
 			// This is an internal error if we cannot resolve this file path.
-			return nil, buferrs.NewSystemError(err.Error())
+			return nil, err
 		}
 		filePaths[i] = resolvedFilePath
 	}
@@ -428,13 +436,13 @@ func (e *envReader) readEnvFromImage(
 	if len(specificFilePaths) > 0 {
 		// note this must include imports if these are required for whatever operation
 		// you are doing
-		image, err = image.WithSpecificNames(specificFilePathsAllowNotExist, specificFilePaths...)
+		image, err = extimage.ImageWithSpecificNames(image, specificFilePathsAllowNotExist, specificFilePaths...)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if !includeImports {
-		image, err = image.WithoutImports()
+		image, err = extimage.ImageWithoutImports(image)
 		if err != nil {
 			return nil, err
 		}
@@ -468,7 +476,7 @@ func (e *envReader) getBucket(
 			inputRef.GitBranch,
 		)
 	default:
-		return nil, buferrs.NewSystemErrorf("unknown format outside of parse: %v", inputRef.Format)
+		return nil, fmt.Errorf("unknown format outside of parse: %v", inputRef.Format)
 	}
 }
 
@@ -476,12 +484,12 @@ func (e *envReader) getImage(
 	ctx context.Context,
 	stdin io.Reader,
 	inputRef *internal.InputRef,
-) (bufpb.Image, error) {
+) (*imagev1beta1.Image, error) {
 	switch inputRef.Format {
 	case internal.FormatBin, internal.FormatBinGz, internal.FormatJSON, internal.FormatJSONGz:
 		return e.getImageFromLocalFile(ctx, stdin, inputRef.Format, inputRef.Path)
 	default:
-		return nil, buferrs.NewSystemErrorf("unknown format outside of parse: %v", inputRef.Format)
+		return nil, fmt.Errorf("unknown format outside of parse: %v", inputRef.Format)
 	}
 }
 
@@ -492,7 +500,7 @@ func (e *envReader) getBucketFromLocalDir(
 	bucket, err := storageos.NewBucket(path)
 	if err != nil {
 		if storage.IsNotExist(err) || storageos.IsNotDir(err) {
-			return nil, buferrs.NewUserError(err.Error())
+			return nil, err
 		}
 		return nil, err
 	}
@@ -528,11 +536,11 @@ func (e *envReader) getBucketFromLocalTarball(
 	case internal.FormatTarGz:
 		err = storageutil.Untargz(ctx, bytes.NewReader(data), bucket, transformerOptions...)
 	default:
-		return nil, buferrs.NewSystemErrorf("got image format %v outside of parse", format)
+		return nil, fmt.Errorf("got image format %v outside of parse", format)
 	}
 	if err != nil {
 		// TODO: this isn't really an invalid argument
-		return nil, multierr.Append(buferrs.NewUserErrorf("untar error: %v", err), bucket.Close())
+		return nil, multierr.Append(fmt.Errorf("untar error: %v", err), bucket.Close())
 	}
 	return bucket, nil
 }
@@ -543,7 +551,7 @@ func (e *envReader) getBucketFromGitRepo(
 	gitRepo string,
 	gitBranch string,
 ) (_ storage.ReadBucket, retErr error) {
-	defer logutil.Defer(e.logger, "get_git_bucket_memory")()
+	defer utillog.Defer(e.logger, "get_git_bucket_memory")()
 
 	if !strings.Contains(gitRepo, "://") {
 		absGitRepo, err := filepath.Abs(gitRepo)
@@ -564,7 +572,7 @@ func (e *envReader) getBucketFromGitRepo(
 	); err != nil {
 		return nil, multierr.Append(
 			// TODO: not really an invalid argument
-			buferrs.NewUserErrorf("could not clone %s: %v", gitRepo, err),
+			fmt.Errorf("could not clone %s: %v", gitRepo, err),
 			bucket.Close(),
 		)
 	}
@@ -577,7 +585,7 @@ func (e *envReader) getImageFromLocalFile(
 	stdin io.Reader,
 	format internal.Format,
 	path string,
-) (_ bufpb.Image, retErr error) {
+) (_ *imagev1beta1.Image, retErr error) {
 	data, err := e.getFileData(ctx, stdin, path)
 	if err != nil {
 		return nil, err
@@ -612,13 +620,11 @@ func (e *envReader) getFileDataFromHTTP(
 		retErr = multierr.Append(retErr, response.Body.Close())
 	}()
 	if response.StatusCode != http.StatusOK {
-		// TODO: not really an invalid argument
-		return nil, buferrs.NewUserErrorf("got HTTP status code %d for %s", response.StatusCode, path)
+		return nil, fmt.Errorf("got HTTP status code %d for %s", response.StatusCode, path)
 	}
 	data, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		// TODO: not really an invalid argument
-		return nil, buferrs.NewUserErrorf("could not read %s: %v", path, err)
+		return nil, fmt.Errorf("could not read %s: %v", path, err)
 	}
 	return data, nil
 }
@@ -640,7 +646,7 @@ func (e *envReader) getFileDataFromOS(
 	data, err := ioutil.ReadAll(readCloser)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, buferrs.NewUserError(err.Error())
+			return nil, err
 		}
 		return nil, err
 	}
@@ -651,39 +657,43 @@ func (e *envReader) getFileDataFromOS(
 func (e *envReader) getImageFromData(
 	format internal.Format,
 	data []byte,
-) (_ bufpb.Image, retErr error) {
+) (_ *imagev1beta1.Image, retErr error) {
 	if format == internal.FormatBinGz || format == internal.FormatJSONGz {
 		// TODO: this has to be woefully inefficient
 		// we can prob do a non-copy
 		gzipReader, err := gzip.NewReader(bytes.NewReader(data))
 		if err != nil {
-			// TODO: not really an invalid argument
-			return nil, buferrs.NewUserErrorf("gzip error: %v", err)
+			return nil, fmt.Errorf("gzip error: %v", err)
 		}
 		defer func() {
 			retErr = multierr.Append(retErr, gzipReader.Close())
 		}()
 		uncompressedData, err := ioutil.ReadAll(gzipReader)
 		if err != nil {
-			// TODO: not really an invalid argument
-			return nil, buferrs.NewUserErrorf("gzip error: %v", err)
+			return nil, fmt.Errorf("gzip error: %v", err)
 		}
 		data = uncompressedData
 	}
 
-	var image bufpb.Image
+	image := &imagev1beta1.Image{}
 	var err error
 	switch format {
 	case internal.FormatBin, internal.FormatBinGz:
-		image, err = bufpb.UnmarshalWireDataImage(data)
+		err = proto.Unmarshal(data, image)
 	case internal.FormatJSON, internal.FormatJSONGz:
-		image, err = bufpb.UnmarshalJSONDataImage(data)
+		err = unmarshalJSON(data, image)
 	default:
-		return nil, buferrs.NewSystemErrorf("got image format %v outside of parse", format)
+		return nil, fmt.Errorf("got image format %v outside of parse", format)
 	}
 	if err != nil {
-		// TODO: not really an invalid argument
-		return nil, buferrs.NewUserErrorf("could not unmarshal Image: %v", err)
+		return nil, fmt.Errorf("could not unmarshal Image: %v", err)
+	}
+	if err := extimage.ValidateImage(image); err != nil {
+		return nil, err
 	}
 	return image, nil
+}
+
+func unmarshalJSON(data []byte, message proto.Message) error {
+	return jsonUnmarshaler.Unmarshal(bytes.NewReader(data), message)
 }

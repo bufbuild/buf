@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/bufbuild/buf/internal/buf/bufpb"
+	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
@@ -34,7 +34,7 @@ func (h *handler) Build(
 	bucket storage.ReadBucket,
 	protoFileSet ProtoFileSet,
 	options BuildOptions,
-) (_ bufpb.Image, _ []*analysis.Annotation, retErr error) {
+) (_ *imagev1beta1.Image, _ []*analysis.Annotation, retErr error) {
 	if options.CopyToMemory {
 		memBucket, err := h.copyToMemory(ctx, bucket, protoFileSet)
 		if err != nil {

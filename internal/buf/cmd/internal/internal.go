@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/buf/bufos"
 	"go.uber.org/zap"
 )
@@ -76,7 +76,7 @@ func IsFormatJSON(flagName string, format string) (bool, error) {
 	case "json":
 		return true, nil
 	default:
-		return false, buferrs.NewUserErrorf("--%s: unknown format: %q", flagName, s)
+		return false, fmt.Errorf("--%s: unknown format: %q", flagName, s)
 	}
 }
 
@@ -92,7 +92,7 @@ func IsLintFormatJSON(flagName string, format string) (bool, error) {
 	case "config-ignore-yaml":
 		return false, nil
 	default:
-		return false, buferrs.NewUserErrorf("--%s: unknown format: %q", flagName, s)
+		return false, fmt.Errorf("--%s: unknown format: %q", flagName, s)
 	}
 }
 
@@ -106,6 +106,6 @@ func IsLintFormatConfigIgnoreYAML(flagName string, format string) (bool, error) 
 	case "config-ignore-yaml":
 		return true, nil
 	default:
-		return false, buferrs.NewUserErrorf("--%s: unknown format: %q", flagName, s)
+		return false, fmt.Errorf("--%s: unknown format: %q", flagName, s)
 	}
 }

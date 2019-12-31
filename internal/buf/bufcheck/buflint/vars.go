@@ -1,9 +1,10 @@
 package buflint
 
 import (
+	"errors"
+
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/internal"
 	bufcheckinternal "github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 )
@@ -335,13 +336,13 @@ var (
 		"ENUM_ZERO_VALUE_SUFFIX",
 		func(configBuilder bufcheckinternal.ConfigBuilder) (string, error) {
 			if configBuilder.EnumZeroValueSuffix == "" {
-				return "", buferrs.NewSystemError("enum_zero_value_suffix is empty")
+				return "", errors.New("enum_zero_value_suffix is empty")
 			}
 			return "enum zero values are suffixed with " + configBuilder.EnumZeroValueSuffix + " (suffix is configurable)", nil
 		},
 		func(configBuilder bufcheckinternal.ConfigBuilder) (bufcheckinternal.CheckFunc, error) {
 			if configBuilder.EnumZeroValueSuffix == "" {
-				return nil, buferrs.NewSystemError("enum_zero_value_suffix is empty")
+				return nil, errors.New("enum_zero_value_suffix is empty")
 			}
 			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*analysis.Annotation, error) {
 				return internal.CheckEnumZeroValueSuffix(id, files, configBuilder.EnumZeroValueSuffix)
@@ -514,13 +515,13 @@ var (
 		"SERVICE_SUFFIX",
 		func(configBuilder bufcheckinternal.ConfigBuilder) (string, error) {
 			if configBuilder.ServiceSuffix == "" {
-				return "", buferrs.NewSystemError("service_suffix is empty")
+				return "", errors.New("service_suffix is empty")
 			}
 			return "services are suffixed with " + configBuilder.ServiceSuffix + " (suffix is configurable)", nil
 		},
 		func(configBuilder bufcheckinternal.ConfigBuilder) (bufcheckinternal.CheckFunc, error) {
 			if configBuilder.ServiceSuffix == "" {
-				return nil, buferrs.NewSystemError("service_suffix is empty")
+				return nil, errors.New("service_suffix is empty")
 			}
 			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*analysis.Annotation, error) {
 				return internal.CheckServiceSuffix(id, files, configBuilder.ServiceSuffix)

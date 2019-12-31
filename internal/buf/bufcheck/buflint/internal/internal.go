@@ -1,14 +1,14 @@
 package internal
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 )
 
 var (
@@ -82,7 +82,7 @@ func checkDirectorySamePackage(add addFunc, dirPath string, files []protodesc.Fi
 		pkgMap[file.Package()] = struct{}{}
 	}
 	if len(pkgMap) > 1 {
-		pkgs := stringutil.MapToSortedSlice(pkgMap)
+		pkgs := utilstring.MapToSortedSlice(pkgMap)
 		for _, file := range files {
 			add(file, file.PackageLocation(), "Multiple packages %q detected within directory %q.", strings.Join(pkgs, ","), dirPath)
 		}
@@ -105,7 +105,7 @@ var CheckEnumPascalCase = newEnumCheckFunc(checkEnumPascalCase)
 
 func checkEnumPascalCase(add addFunc, enum protodesc.Enum) error {
 	name := enum.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := utilstring.ToPascalCase(name)
 	if name != expectedName {
 		add(enum, enum.NameLocation(), "Enum name %q should be PascalCase, such as %q.", name, expectedName)
 	}
@@ -163,7 +163,7 @@ func checkFieldLowerSnakeCase(add addFunc, field protodesc.Field) error {
 	message := field.Message()
 	if message == nil {
 		// just a sanity check
-		return buferrs.NewSystemError("field.Message() was nil")
+		return errors.New("field.Message() was nil")
 	}
 	if message.IsMapEntry() {
 		// this check should always pass anyways but just in case
@@ -196,7 +196,7 @@ func checkFileLowerSnakeCase(add addFunc, file protodesc.File) error {
 	base := storagepath.Base(filename)
 	ext := storagepath.Ext(filename)
 	baseWithoutExt := strings.TrimSuffix(base, ext)
-	expectedBaseWithoutExt := stringutil.ToLowerSnakeCase(baseWithoutExt)
+	expectedBaseWithoutExt := utilstring.ToLowerSnakeCase(baseWithoutExt)
 	if baseWithoutExt != expectedBaseWithoutExt {
 		add(file, nil, `Filename %q should be lower_snake_case%s, such as "%s%s".`, base, ext, expectedBaseWithoutExt, ext)
 	}
@@ -234,7 +234,7 @@ func checkMessagePascalCase(add addFunc, message protodesc.Message) error {
 		return nil
 	}
 	name := message.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := utilstring.ToPascalCase(name)
 	if name != expectedName {
 		add(message, message.NameLocation(), "Message name %q should be PascalCase, such as %q.", name, expectedName)
 	}
@@ -291,7 +291,7 @@ func checkPackageLowerSnakeCase(add addFunc, file protodesc.File) error {
 	}
 	split := strings.Split(pkg, ".")
 	for i, elem := range split {
-		split[i] = stringutil.ToLowerSnakeCase(elem)
+		split[i] = utilstring.ToLowerSnakeCase(elem)
 	}
 	expectedPkg := strings.Join(split, ".")
 	if pkg != expectedPkg {
@@ -309,7 +309,7 @@ func checkPackageSameDirectory(add addFunc, pkg string, files []protodesc.File) 
 		dirMap[storagepath.Dir(file.FilePath())] = struct{}{}
 	}
 	if len(dirMap) > 1 {
-		dirs := stringutil.MapToSortedSlice(dirMap)
+		dirs := utilstring.MapToSortedSlice(dirMap)
 		for _, file := range files {
 			add(file, file.PackageLocation(), "Multiple directories %q contain files with package %q.", strings.Join(dirs, ","), pkg)
 		}
@@ -386,7 +386,7 @@ func checkPackageSameOptionValue(
 	if len(optionValueMap) > 1 {
 		_, noOptionValue := optionValueMap[""]
 		delete(optionValueMap, "")
-		optionValues := stringutil.MapToSortedSlice(optionValueMap)
+		optionValues := utilstring.MapToSortedSlice(optionValueMap)
 		for _, file := range files {
 			if noOptionValue {
 				add(file, getOptionLocation(file), "Files in package %q have both values %q and no value for option %q and all values must be equal.", pkg, strings.Join(optionValues, ","), name)
@@ -437,7 +437,7 @@ var CheckRPCPascalCase = newMethodCheckFunc(checkRPCPascalCase)
 
 func checkRPCPascalCase(add addFunc, method protodesc.Method) error {
 	name := method.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := utilstring.ToPascalCase(name)
 	if name != expectedName {
 		add(method, method.NameLocation(), "RPC name %q should be PascalCase, such as %q.", name, expectedName)
 	}
@@ -557,7 +557,7 @@ var CheckRPCRequestStandardName = func(id string, files []protodesc.File, allowG
 func checkRPCRequestStandardName(add addFunc, method protodesc.Method, allowGoogleProtobufEmptyRequests bool) error {
 	service := method.Service()
 	if service == nil {
-		return buferrs.NewSystemError("method.Service() is nil")
+		return errors.New("method.Service() is nil")
 	}
 	name := method.InputTypeName()
 	if allowGoogleProtobufEmptyRequests && name == ".google.protobuf.Empty" {
@@ -567,8 +567,8 @@ func checkRPCRequestStandardName(add addFunc, method protodesc.Method, allowGoog
 		split := strings.Split(name, ".")
 		name = split[len(split)-1]
 	}
-	expectedName1 := stringutil.ToPascalCase(method.Name()) + "Request"
-	expectedName2 := stringutil.ToPascalCase(service.Name()) + expectedName1
+	expectedName1 := utilstring.ToPascalCase(method.Name()) + "Request"
+	expectedName2 := utilstring.ToPascalCase(service.Name()) + expectedName1
 	if name != expectedName1 && name != expectedName2 {
 		add(method, method.InputTypeLocation(), "RPC request type %q should be named %q or %q.", name, expectedName1, expectedName2)
 	}
@@ -587,7 +587,7 @@ var CheckRPCResponseStandardName = func(id string, files []protodesc.File, allow
 func checkRPCResponseStandardName(add addFunc, method protodesc.Method, allowGoogleProtobufEmptyResponses bool) error {
 	service := method.Service()
 	if service == nil {
-		return buferrs.NewSystemError("method.Service() is nil")
+		return errors.New("method.Service() is nil")
 	}
 	name := method.OutputTypeName()
 	if allowGoogleProtobufEmptyResponses && name == ".google.protobuf.Empty" {
@@ -597,8 +597,8 @@ func checkRPCResponseStandardName(add addFunc, method protodesc.Method, allowGoo
 		split := strings.Split(name, ".")
 		name = split[len(split)-1]
 	}
-	expectedName1 := stringutil.ToPascalCase(method.Name()) + "Response"
-	expectedName2 := stringutil.ToPascalCase(service.Name()) + expectedName1
+	expectedName1 := utilstring.ToPascalCase(method.Name()) + "Response"
+	expectedName2 := utilstring.ToPascalCase(service.Name()) + expectedName1
 	if name != expectedName1 && name != expectedName2 {
 		add(method, method.OutputTypeLocation(), "RPC response type %q should be named %q or %q.", name, expectedName1, expectedName2)
 	}
@@ -610,7 +610,7 @@ var CheckServicePascalCase = newServiceCheckFunc(checkServicePascalCase)
 
 func checkServicePascalCase(add addFunc, service protodesc.Service) error {
 	name := service.Name()
-	expectedName := stringutil.ToPascalCase(name)
+	expectedName := utilstring.ToPascalCase(name)
 	if name != expectedName {
 		add(service, service.NameLocation(), "Service name %q should be PascalCase, such as %q.", name, expectedName)
 	}

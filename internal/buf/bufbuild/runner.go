@@ -2,18 +2,19 @@ package bufbuild
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"runtime"
 	"sync"
 
-	"github.com/bufbuild/buf/internal/buf/buferrs"
-	"github.com/bufbuild/buf/internal/buf/bufpb"
+	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/logutil"
-	"github.com/bufbuild/buf/internal/pkg/protodescpb"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utillog"
+	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
+	"github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"go.uber.org/multierr"
@@ -44,21 +45,21 @@ func (r *runner) Run(
 	protoFileSet ProtoFileSet,
 	includeImports bool,
 	includeSourceInfo bool,
-) (_ bufpb.Image, _ []*analysis.Annotation, retErr error) {
+) (_ *imagev1beta1.Image, _ []*analysis.Annotation, retErr error) {
 	roots := protoFileSet.Roots()
 	rootFilePaths := protoFileSet.RootFilePaths()
 
-	defer logutil.DeferWithError(r.logger, "run", &retErr, zap.Int("num_files", len(rootFilePaths)))()
+	defer utillog.DeferWithError(r.logger, "run", &retErr, zap.Int("num_files", len(rootFilePaths)))()
 
 	if len(roots) == 0 {
-		return nil, nil, buferrs.NewUserError("no roots specified")
+		return nil, nil, errors.New("no roots specified")
 	}
 	if len(rootFilePaths) == 0 {
-		return nil, nil, buferrs.NewUserError("no input files specified")
+		return nil, nil, errors.New("no input files specified")
 	}
-	if uniqueLen := len(stringutil.SliceToMap(rootFilePaths)); uniqueLen != len(rootFilePaths) {
+	if uniqueLen := len(utilstring.SliceToMap(rootFilePaths)); uniqueLen != len(rootFilePaths) {
 		// this is a system error, we should have verified this elsewhere
-		return nil, nil, buferrs.NewSystemError("rootFilePaths has duplicate values")
+		return nil, nil, errors.New("rootFilePaths has duplicate values")
 	}
 
 	results := r.parse(
@@ -95,7 +96,7 @@ func (r *runner) Run(
 		// as the number of input files
 		// https://godoc.org/github.com/jhump/protoreflect/desc/protoparse#Parser.ParseFiles
 		if len(iDescFileDescriptors) != len(iRootFilePaths) {
-			return nil, nil, buferrs.NewSystemErrorf("expected FileDescriptors to be of length %d but was %d", len(iRootFilePaths), len(iDescFileDescriptors))
+			return nil, nil, fmt.Errorf("expected FileDescriptors to be of length %d but was %d", len(iRootFilePaths), len(iDescFileDescriptors))
 		}
 		for i, iDescFileDescriptor := range iDescFileDescriptors {
 			iRootFilePath := iRootFilePaths[i]
@@ -104,7 +105,7 @@ func (r *runner) Run(
 			// NO LONGER NEED TO DO SUFFIX SINCE WE KNOW THE ROOT FILE NAME
 			//if !strings.HasSuffix(iRootFilePath, iFilename) {
 			if iRootFilePath != iFilename {
-				return nil, nil, buferrs.NewSystemErrorf("expected fileDescriptor name %s to be a equal to %s", iFilename, iRootFilePath)
+				return nil, nil, fmt.Errorf("expected fileDescriptor name %s to be a equal to %s", iFilename, iRootFilePath)
 			}
 		}
 		descFileDescriptors = append(descFileDescriptors, iDescFileDescriptors...)
@@ -125,13 +126,13 @@ func (r *runner) parse(
 	includeImports bool,
 	includeSourceInfo bool,
 ) []*result {
-	defer logutil.Defer(r.logger, "parse", zap.Int("num_files", len(rootFilePaths)))()
+	defer utillog.Defer(r.logger, "parse", zap.Int("num_files", len(rootFilePaths)))()
 
 	accessor := func(filename string) (io.ReadCloser, error) {
 		return bucket.Get(ctx, filename)
 	}
 	var results []*result
-	chunks := stringutil.SliceToChunks(rootFilePaths, len(rootFilePaths)/runtime.NumCPU())
+	chunks := utilstring.SliceToChunks(rootFilePaths, len(rootFilePaths)/runtime.NumCPU())
 	resultC := make(chan *result, len(chunks))
 	for _, rootFilePaths := range chunks {
 		rootFilePaths := rootFilePaths
@@ -194,7 +195,7 @@ func (r *runner) getResult(
 	if err != nil {
 		if err == protoparse.ErrInvalidSource {
 			if len(errorsWithPos) == 0 {
-				return newResult(rootFilePaths, nil, nil, buferrs.NewSystemError("got invalid source error but no errors reported"))
+				return newResult(rootFilePaths, nil, nil, errors.New("got invalid source error but no errors reported"))
 			}
 			annotations := make([]*analysis.Annotation, 0, len(errorsWithPos))
 			for _, errorWithPos := range errorsWithPos {
@@ -247,7 +248,7 @@ func getImage(
 	rootFilePaths []string,
 	includeImports bool,
 	includeSourceInfo bool,
-) (bufpb.Image, error) {
+) (*imagev1beta1.Image, error) {
 	fileDescriptors, err := checkAndSortDescFileDescriptors(fileDescriptors, rootFilePaths)
 	if err != nil {
 		return nil, err
@@ -284,7 +285,10 @@ func getImage(
 			return nil, err
 		}
 	}
-	return bufpb.NewImage(image)
+	if err := extimage.ValidateImage(image); err != nil {
+		return nil, err
+	}
+	return image, nil
 }
 
 func getImageRec(
@@ -296,7 +300,7 @@ func getImageRec(
 	includeSourceInfo bool,
 ) error {
 	if descFileDescriptor == nil {
-		return buferrs.NewSystemError("nil FileDescriptor")
+		return errors.New("nil FileDescriptor")
 	}
 	if _, ok := alreadySeen[descFileDescriptor.GetName()]; ok {
 		return nil
@@ -324,7 +328,7 @@ func getImageRec(
 
 	file := descFileDescriptor.AsFileDescriptorProto()
 	if file == nil {
-		return buferrs.NewSystemError("nil File")
+		return errors.New("nil File")
 	}
 	if !includeSourceInfo {
 		file.SourceCodeInfo = nil
@@ -336,7 +340,7 @@ func getImageRec(
 		image.BufbuildImageExtension.ImageImportRefs = append(
 			image.BufbuildImageExtension.ImageImportRefs,
 			&imagev1beta1.ImageImportRef{
-				FileIndex: protodescpb.Uint32(fileIndex),
+				FileIndex: proto.Uint32(fileIndex),
 			},
 		)
 	}
@@ -351,7 +355,7 @@ func checkAndSortDescFileDescriptors(
 	rootFilePaths []string,
 ) ([]*desc.FileDescriptor, error) {
 	if len(descFileDescriptors) != len(rootFilePaths) {
-		return nil, buferrs.NewSystemErrorf("rootFilePath length was %d but FileDescriptor length was %d", len(rootFilePaths), len(descFileDescriptors))
+		return nil, fmt.Errorf("rootFilePath length was %d but FileDescriptor length was %d", len(rootFilePaths), len(descFileDescriptors))
 	}
 	nameToDescFileDescriptor := make(map[string]*desc.FileDescriptor, len(descFileDescriptors))
 	for _, descFileDescriptor := range descFileDescriptors {
@@ -361,13 +365,13 @@ func checkAndSortDescFileDescriptors(
 		// https://github.com/jhump/protoreflect/blob/master/desc/descriptor.go#L82
 		name := descFileDescriptor.GetName()
 		if name == "" {
-			return nil, buferrs.NewSystemError("no name on FileDescriptor")
+			return nil, errors.New("no name on FileDescriptor")
 		}
 		if name != descFileDescriptor.AsFileDescriptorProto().GetName() {
-			return nil, buferrs.NewSystemError("name not equal on FileDescriptorProto")
+			return nil, errors.New("name not equal on FileDescriptorProto")
 		}
 		if _, ok := nameToDescFileDescriptor[name]; ok {
-			return nil, buferrs.NewSystemErrorf("duplicate FileDescriptor: %s", name)
+			return nil, fmt.Errorf("duplicate FileDescriptor: %s", name)
 		}
 		nameToDescFileDescriptor[name] = descFileDescriptor
 	}
@@ -378,7 +382,7 @@ func checkAndSortDescFileDescriptors(
 	for _, rootFilePath := range rootFilePaths {
 		descFileDescriptor, ok := nameToDescFileDescriptor[rootFilePath]
 		if !ok {
-			return nil, buferrs.NewSystemErrorf("no FileDescriptor for rootFilePath: %q", rootFilePath)
+			return nil, fmt.Errorf("no FileDescriptor for rootFilePath: %q", rootFilePath)
 		}
 		sortedDescFileDescriptors = append(sortedDescFileDescriptors, descFileDescriptor)
 	}

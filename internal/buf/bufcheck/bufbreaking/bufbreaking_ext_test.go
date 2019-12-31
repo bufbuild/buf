@@ -9,6 +9,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/analysis/analysistesting"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -580,7 +581,7 @@ func testBreakingExternalConfigModifier(
 	)
 	require.NoError(t, err)
 	require.Empty(t, previousAnnotations)
-	previousImage, err = previousImage.WithoutImports()
+	previousImage, err = extimage.ImageWithoutImports(previousImage)
 	require.NoError(t, err)
 	protoFileSet, err := buildHandler.Files(
 		ctx,
@@ -602,7 +603,7 @@ func testBreakingExternalConfigModifier(
 	)
 	require.NoError(t, err)
 	require.Empty(t, annotations)
-	image, err = image.WithoutImports()
+	image, err = extimage.ImageWithoutImports(image)
 	require.NoError(t, err)
 
 	handler := bufbreaking.NewHandler(

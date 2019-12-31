@@ -1,4 +1,4 @@
-// Package diff implements diffing.
+// Package utildiff implements diffing.
 //
 // Should primarily be used for testing.
 //
@@ -9,7 +9,7 @@
 // license that can be found in the LICENSE file.
 //
 // https://github.com/golang/go/blob/master/LICENSE
-package diff
+package utildiff
 
 import (
 	"bytes"
@@ -21,8 +21,8 @@ import (
 	"runtime"
 )
 
-// Do does a diff.
-func Do(b1, b2 []byte, filename string) ([]byte, error) {
+// Diff does a diff.
+func Diff(b1, b2 []byte, filename string) ([]byte, error) {
 	f1, err := writeTempFile("", "", b1)
 	if err != nil {
 		return nil, err

@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
+	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -29,7 +29,7 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	if len(checkers) == 0 {
 		return nil, nil
 	}
-	defer logutil.Defer(r.logger, "check", zap.Int("num_files", len(files)), zap.Int("num_checkers", len(checkers)))()
+	defer utillog.Defer(r.logger, "check", zap.Int("num_files", len(files)), zap.Int("num_checkers", len(checkers)))()
 
 	var annotations []*analysis.Annotation
 	resultC := make(chan *result, len(checkers))

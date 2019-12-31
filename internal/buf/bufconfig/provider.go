@@ -6,10 +6,9 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/buferrs"
-	"github.com/bufbuild/buf/internal/pkg/encodingutil"
-	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/util/utilencoding"
+	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -30,7 +29,7 @@ func newProvider(logger *zap.Logger, options ...ProviderOption) *provider {
 }
 
 func (p *provider) GetConfigForBucket(ctx context.Context, bucket storage.ReadBucket) (_ *Config, retErr error) {
-	defer logutil.Defer(p.logger, "get_config_for_bucket")()
+	defer utillog.Defer(p.logger, "get_config_for_bucket")()
 
 	externalConfig := &ExternalConfig{}
 	readObject, err := bucket.Get(ctx, ConfigFilePath)
@@ -47,18 +46,18 @@ func (p *provider) GetConfigForBucket(ctx context.Context, bucket storage.ReadBu
 	if err != nil {
 		return nil, err
 	}
-	if err := encodingutil.UnmarshalYAMLStrict(data, externalConfig); err != nil {
-		return nil, buferrs.NewUserError(err.Error())
+	if err := utilencoding.UnmarshalYAMLStrict(data, externalConfig); err != nil {
+		return nil, err
 	}
 	return p.newConfig(externalConfig)
 }
 
 func (p *provider) GetConfigForData(data []byte) (*Config, error) {
-	defer logutil.Defer(p.logger, "get_config_for_data")()
+	defer utillog.Defer(p.logger, "get_config_for_data")()
 
 	externalConfig := &ExternalConfig{}
-	if err := encodingutil.UnmarshalJSONOrYAMLStrict(data, externalConfig); err != nil {
-		return nil, buferrs.NewUserError(err.Error())
+	if err := utilencoding.UnmarshalJSONOrYAMLStrict(data, externalConfig); err != nil {
+		return nil, err
 	}
 	return p.newConfig(externalConfig)
 }
