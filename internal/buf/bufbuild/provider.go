@@ -2,13 +2,14 @@ package bufbuild
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sort"
 
-	"github.com/bufbuild/buf/internal/buf/buferrs"
-	"github.com/bufbuild/buf/internal/pkg/logutil"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utillog"
+	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 	"go.uber.org/zap"
 )
 
@@ -29,7 +30,7 @@ func (p *provider) GetProtoFileSetForBucket(
 	roots []string,
 	excludes []string,
 ) (ProtoFileSet, error) {
-	defer logutil.Defer(p.logger, "get_proto_file_set_for_bucket")()
+	defer utillog.Defer(p.logger, "get_proto_file_set_for_bucket")()
 
 	config, err := newConfig(roots, excludes)
 	if err != nil {
@@ -52,10 +53,9 @@ func (p *provider) GetProtoFileSetForBucket(
 					return err
 				}
 				// just in case
-				// return system error as this would be an issue
 				rootFilePath, err = storagepath.NormalizeAndValidate(rootFilePath)
 				if err != nil {
-					return buferrs.NewSystemError(err.Error())
+					return err
 				}
 				realFilePathMap, ok := rootFilePathToRealFilePathMap[rootFilePath]
 				if !ok {
@@ -79,31 +79,31 @@ func (p *provider) GetProtoFileSetForBucket(
 		switch len(realFilePaths) {
 		case 0:
 			// we expect to always have at least one value, this is a system error
-			return nil, buferrs.NewSystemErrorf("no real file path for file path %q", rootFilePath)
+			return nil, fmt.Errorf("no real file path for file path %q", rootFilePath)
 		case 1:
 			rootFilePathToRealFilePath[rootFilePath] = realFilePaths[0]
 		default:
 			sort.Strings(realFilePaths)
-			return nil, buferrs.NewUserErrorf("file with path %s is within multiple roots at %v", rootFilePath, realFilePaths)
+			return nil, fmt.Errorf("file with path %s is within multiple roots at %v", rootFilePath, realFilePaths)
 		}
 	}
 
 	if len(config.Excludes) == 0 {
 		if len(rootFilePathToRealFilePath) == 0 {
-			return nil, buferrs.NewUserError("no input files found that match roots")
+			return nil, errors.New("no input files found that match roots")
 		}
 		return newProtoFileSet(config.Roots, rootFilePathToRealFilePath)
 	}
 
 	filteredRootFilePathToRealFilePath := make(map[string]string, len(rootFilePathToRealFilePath))
-	excludeMap := stringutil.SliceToMap(config.Excludes)
+	excludeMap := utilstring.SliceToMap(config.Excludes)
 	for rootFilePath, realFilePath := range rootFilePathToRealFilePath {
 		if !storagepath.MapContainsMatch(excludeMap, storagepath.Dir(realFilePath)) {
 			filteredRootFilePathToRealFilePath[rootFilePath] = realFilePath
 		}
 	}
 	if len(filteredRootFilePathToRealFilePath) == 0 {
-		return nil, buferrs.NewUserError("no input files found that match roots and excludes")
+		return nil, errors.New("no input files found that match roots and excludes")
 	}
 	return newProtoFileSet(config.Roots, filteredRootFilePathToRealFilePath)
 }
@@ -121,7 +121,7 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 	realFilePaths []string,
 	realFilePathsAllowNotExist bool,
 ) (ProtoFileSet, error) {
-	defer logutil.Defer(p.logger, "get_proto_file_set_for_real_file_paths")()
+	defer utillog.Defer(p.logger, "get_proto_file_set_for_real_file_paths")()
 
 	config, err := newConfig(roots, nil)
 	if err != nil {
@@ -134,7 +134,7 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 			return nil, err
 		}
 		if _, ok := normalizedRealFilePaths[normalizedRealFilePath]; ok {
-			return nil, buferrs.NewUserErrorf("duplicate normalized file path %s", normalizedRealFilePath)
+			return nil, fmt.Errorf("duplicate normalized file path %s", normalizedRealFilePath)
 		}
 		// check that the file exists primarily
 		if _, err := bucket.Stat(ctx, normalizedRealFilePath); err != nil {
@@ -142,14 +142,14 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 				return nil, err
 			}
 			if !realFilePathsAllowNotExist {
-				return nil, buferrs.NewUserError(err.Error())
+				return nil, err
 			}
 		} else {
 			normalizedRealFilePaths[normalizedRealFilePath] = struct{}{}
 		}
 	}
 
-	rootMap := stringutil.SliceToMap(config.Roots)
+	rootMap := utilstring.SliceToMap(config.Roots)
 	rootFilePathToRealFilePath := make(map[string]string, len(normalizedRealFilePaths))
 	for normalizedRealFilePath := range normalizedRealFilePaths {
 		matchingRootMap := storagepath.MapMatches(rootMap, normalizedRealFilePath)
@@ -159,7 +159,7 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 		}
 		switch len(matchingRoots) {
 		case 0:
-			return nil, buferrs.NewUserErrorf("file %s is not within any root %v", normalizedRealFilePath, config.Roots)
+			return nil, fmt.Errorf("file %s is not within any root %v", normalizedRealFilePath, config.Roots)
 		case 1:
 			normalizedRootFilePath, err := storagepath.Rel(matchingRoots[0], normalizedRealFilePath)
 			if err != nil {
@@ -170,21 +170,21 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 			normalizedRootFilePath, err = storagepath.NormalizeAndValidate(normalizedRootFilePath)
 			if err != nil {
 				// This is a system error
-				return nil, buferrs.NewSystemError(err.Error())
+				return nil, err
 			}
 			if otherRealFilePath, ok := rootFilePathToRealFilePath[normalizedRootFilePath]; ok {
-				return nil, buferrs.NewUserErrorf("file with path %s is within another root as %s at %s", normalizedRealFilePath, normalizedRootFilePath, otherRealFilePath)
+				return nil, fmt.Errorf("file with path %s is within another root as %s at %s", normalizedRealFilePath, normalizedRootFilePath, otherRealFilePath)
 			}
 			rootFilePathToRealFilePath[normalizedRootFilePath] = normalizedRealFilePath
 		default:
 			sort.Strings(matchingRoots)
 			// this should probably never happen due to how we are doing this with matching roots but just in case
-			return nil, buferrs.NewUserErrorf("file with path %s is within multiple roots at %v", normalizedRealFilePath, matchingRoots)
+			return nil, fmt.Errorf("file with path %s is within multiple roots at %v", normalizedRealFilePath, matchingRoots)
 		}
 	}
 
 	if len(rootFilePathToRealFilePath) == 0 {
-		return nil, buferrs.NewUserError("no input files specified")
+		return nil, errors.New("no input files specified")
 	}
 	return newProtoFileSet(config.Roots, rootFilePathToRealFilePath)
 }

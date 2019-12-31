@@ -14,7 +14,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -359,7 +359,7 @@ func testBasicBucket(
 			return nil
 		},
 	))
-	require.Equal(t, len(paths), len(stringutil.SliceToUniqueSortedSlice(paths)))
+	require.Equal(t, len(paths), len(utilstring.SliceToUniqueSortedSlice(paths)))
 	assert.Equal(t, len(expectedPathToContent), len(paths), paths)
 	for _, path := range paths {
 		expectedContent, ok := expectedPathToContent[path]

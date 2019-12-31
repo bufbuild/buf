@@ -3,12 +3,12 @@ package protodesc
 import (
 	"fmt"
 
-	"github.com/bufbuild/buf/internal/pkg/protodescpb"
+	"github.com/bufbuild/buf/internal/pkg/ext/extdescriptor"
 	protobufdescriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
 type fileBuilder struct {
-	fileDescriptor protodescpb.FileDescriptor
+	fileDescriptorProto *protobufdescriptor.FileDescriptorProto
 
 	descriptor  descriptor
 	syntax      Syntax
@@ -18,25 +18,28 @@ type fileBuilder struct {
 	services    []Service
 }
 
-func newFileBuilder(fileDescriptor protodescpb.FileDescriptor) *fileBuilder {
+func newFileBuilder(fileDescriptorProto *protobufdescriptor.FileDescriptorProto) *fileBuilder {
 	return &fileBuilder{
-		fileDescriptor: fileDescriptor,
+		fileDescriptorProto: fileDescriptorProto,
 	}
 }
 
 // TODO: does no duplicate checking by name, add? could just have maps ie importToFileImport, enumNameToEnum, etc
 func (f *fileBuilder) toFile() (*file, error) {
+	if err := extdescriptor.ValidateFileDescriptorProto(f.fileDescriptorProto); err != nil {
+		return nil, err
+	}
 	descriptor, err := newDescriptor(
-		f.fileDescriptor.GetName(),
-		f.fileDescriptor.GetPackage(),
-		newLocationStore(f.fileDescriptor.GetSourceCodeInfo().GetLocation()),
+		f.fileDescriptorProto.GetName(),
+		f.fileDescriptorProto.GetPackage(),
+		newLocationStore(f.fileDescriptorProto.GetSourceCodeInfo().GetLocation()),
 	)
 	if err != nil {
 		return nil, err
 	}
 	f.descriptor = descriptor
 
-	syntaxString := f.fileDescriptor.GetSyntax()
+	syntaxString := f.fileDescriptorProto.GetSyntax()
 	if syntaxString == "" || syntaxString == "proto2" {
 		f.syntax = SyntaxProto2
 	} else if syntaxString == "proto3" {
@@ -45,7 +48,7 @@ func (f *fileBuilder) toFile() (*file, error) {
 		return nil, fmt.Errorf("unknown syntax: %q", syntaxString)
 	}
 
-	for dependencyIndex, dependency := range f.fileDescriptor.GetDependency() {
+	for dependencyIndex, dependency := range f.fileDescriptorProto.GetDependency() {
 		fileImport, err := newFileImport(
 			f.descriptor,
 			dependency,
@@ -56,7 +59,7 @@ func (f *fileBuilder) toFile() (*file, error) {
 		}
 		f.fileImports = append(f.fileImports, fileImport)
 	}
-	for _, dependencyIndex := range f.fileDescriptor.GetPublicDependency() {
+	for _, dependencyIndex := range f.fileDescriptorProto.GetPublicDependency() {
 		if len(f.fileImports) <= int(dependencyIndex) {
 			return nil, fmt.Errorf("got dependency index of %d but length of imports is %d", dependencyIndex, len(f.fileImports))
 		}
@@ -66,7 +69,7 @@ func (f *fileBuilder) toFile() (*file, error) {
 		}
 		fileImport.setIsPublic()
 	}
-	for _, dependencyIndex := range f.fileDescriptor.GetWeakDependency() {
+	for _, dependencyIndex := range f.fileDescriptorProto.GetWeakDependency() {
 		if len(f.fileImports) <= int(dependencyIndex) {
 			return nil, fmt.Errorf("got dependency index of %d but length of imports is %d", dependencyIndex, len(f.fileImports))
 		}
@@ -76,7 +79,7 @@ func (f *fileBuilder) toFile() (*file, error) {
 		}
 		fileImport.setIsWeak()
 	}
-	for enumIndex, enumDescriptorProto := range f.fileDescriptor.GetEnumType() {
+	for enumIndex, enumDescriptorProto := range f.fileDescriptorProto.GetEnumType() {
 		enum, err := f.populateEnum(
 			enumDescriptorProto,
 			enumIndex,
@@ -88,7 +91,7 @@ func (f *fileBuilder) toFile() (*file, error) {
 		}
 		f.enums = append(f.enums, enum)
 	}
-	for messageIndex, descriptorProto := range f.fileDescriptor.GetMessageType() {
+	for messageIndex, descriptorProto := range f.fileDescriptorProto.GetMessageType() {
 		message, err := f.populateMessage(
 			descriptorProto,
 			messageIndex,
@@ -101,7 +104,7 @@ func (f *fileBuilder) toFile() (*file, error) {
 		}
 		f.messages = append(f.messages, message)
 	}
-	for serviceIndex, serviceDescriptorProto := range f.fileDescriptor.GetService() {
+	for serviceIndex, serviceDescriptorProto := range f.fileDescriptorProto.GetService() {
 		service, err := f.populateService(
 			serviceDescriptorProto,
 			serviceIndex,
@@ -111,19 +114,19 @@ func (f *fileBuilder) toFile() (*file, error) {
 		}
 		f.services = append(f.services, service)
 	}
-	optimizeMode, err := getFileOptionsOptimizeMode(f.fileDescriptor.GetOptions().GetOptimizeFor())
+	optimizeMode, err := getFileOptionsOptimizeMode(f.fileDescriptorProto.GetOptions().GetOptimizeFor())
 	if err != nil {
 		return nil, err
 	}
 	return &file{
-		descriptor:     f.descriptor,
-		fileDescriptor: f.fileDescriptor,
-		syntax:         f.syntax,
-		fileImports:    f.fileImports,
-		messages:       f.messages,
-		enums:          f.enums,
-		services:       f.services,
-		optimizeMode:   optimizeMode,
+		descriptor:          f.descriptor,
+		fileDescriptorProto: f.fileDescriptorProto,
+		syntax:              f.syntax,
+		fileImports:         f.fileImports,
+		messages:            f.messages,
+		enums:               f.enums,
+		services:            f.services,
+		optimizeMode:        optimizeMode,
 	}, nil
 }
 

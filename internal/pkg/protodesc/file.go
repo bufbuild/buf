@@ -1,11 +1,13 @@
 package protodesc
 
-import "github.com/bufbuild/buf/internal/pkg/protodescpb"
+import (
+	protobufdescriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
+)
 
 type file struct {
 	descriptor
 
-	fileDescriptor protodescpb.FileDescriptor
+	fileDescriptorProto *protobufdescriptor.FileDescriptorProto
 
 	syntax      Syntax
 	fileImports []FileImport
@@ -16,8 +18,8 @@ type file struct {
 	optimizeMode FileOptionsOptimizeMode
 }
 
-func newFile(fileDescriptor protodescpb.FileDescriptor) (*file, error) {
-	return newFileBuilder(fileDescriptor).toFile()
+func newFile(fileDescriptorProto *protobufdescriptor.FileDescriptorProto) (*file, error) {
+	return newFileBuilder(fileDescriptorProto).toFile()
 }
 
 func (f *file) Syntax() Syntax {
@@ -41,51 +43,51 @@ func (f *file) Services() []Service {
 }
 
 func (f *file) CsharpNamespace() string {
-	return f.fileDescriptor.GetOptions().GetCsharpNamespace()
+	return f.fileDescriptorProto.GetOptions().GetCsharpNamespace()
 }
 
 func (f *file) GoPackage() string {
-	return f.fileDescriptor.GetOptions().GetGoPackage()
+	return f.fileDescriptorProto.GetOptions().GetGoPackage()
 }
 
 func (f *file) JavaMultipleFiles() bool {
-	return f.fileDescriptor.GetOptions().GetJavaMultipleFiles()
+	return f.fileDescriptorProto.GetOptions().GetJavaMultipleFiles()
 }
 
 func (f *file) JavaOuterClassname() string {
-	return f.fileDescriptor.GetOptions().GetJavaOuterClassname()
+	return f.fileDescriptorProto.GetOptions().GetJavaOuterClassname()
 }
 
 func (f *file) JavaPackage() string {
-	return f.fileDescriptor.GetOptions().GetJavaPackage()
+	return f.fileDescriptorProto.GetOptions().GetJavaPackage()
 }
 
 func (f *file) JavaStringCheckUtf8() bool {
-	return f.fileDescriptor.GetOptions().GetJavaStringCheckUtf8()
+	return f.fileDescriptorProto.GetOptions().GetJavaStringCheckUtf8()
 }
 
 func (f *file) ObjcClassPrefix() string {
-	return f.fileDescriptor.GetOptions().GetObjcClassPrefix()
+	return f.fileDescriptorProto.GetOptions().GetObjcClassPrefix()
 }
 
 func (f *file) PhpClassPrefix() string {
-	return f.fileDescriptor.GetOptions().GetPhpClassPrefix()
+	return f.fileDescriptorProto.GetOptions().GetPhpClassPrefix()
 }
 
 func (f *file) PhpNamespace() string {
-	return f.fileDescriptor.GetOptions().GetPhpNamespace()
+	return f.fileDescriptorProto.GetOptions().GetPhpNamespace()
 }
 
 func (f *file) PhpMetadataNamespace() string {
-	return f.fileDescriptor.GetOptions().GetPhpMetadataNamespace()
+	return f.fileDescriptorProto.GetOptions().GetPhpMetadataNamespace()
 }
 
 func (f *file) RubyPackage() string {
-	return f.fileDescriptor.GetOptions().GetRubyPackage()
+	return f.fileDescriptorProto.GetOptions().GetRubyPackage()
 }
 
 func (f *file) SwiftPrefix() string {
-	return f.fileDescriptor.GetOptions().GetSwiftPrefix()
+	return f.fileDescriptorProto.GetOptions().GetSwiftPrefix()
 }
 
 func (f *file) OptimizeFor() FileOptionsOptimizeMode {
@@ -93,23 +95,23 @@ func (f *file) OptimizeFor() FileOptionsOptimizeMode {
 }
 
 func (f *file) CcGenericServices() bool {
-	return f.fileDescriptor.GetOptions().GetCcGenericServices()
+	return f.fileDescriptorProto.GetOptions().GetCcGenericServices()
 }
 
 func (f *file) JavaGenericServices() bool {
-	return f.fileDescriptor.GetOptions().GetJavaGenericServices()
+	return f.fileDescriptorProto.GetOptions().GetJavaGenericServices()
 }
 
 func (f *file) PyGenericServices() bool {
-	return f.fileDescriptor.GetOptions().GetPyGenericServices()
+	return f.fileDescriptorProto.GetOptions().GetPyGenericServices()
 }
 
 func (f *file) PhpGenericServices() bool {
-	return f.fileDescriptor.GetOptions().GetPhpGenericServices()
+	return f.fileDescriptorProto.GetOptions().GetPhpGenericServices()
 }
 
 func (f *file) CcEnableArenas() bool {
-	return f.fileDescriptor.GetOptions().GetCcEnableArenas()
+	return f.fileDescriptorProto.GetOptions().GetCcEnableArenas()
 }
 
 func (f *file) PackageLocation() Location {

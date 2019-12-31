@@ -1,4 +1,4 @@
-package buftesting
+package utilgithubtesting
 
 import (
 	"context"
@@ -6,17 +6,26 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
-	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 	"go.uber.org/multierr"
 )
 
-func getGithubArchive(
+var testHTTPClient = &http.Client{
+	Timeout: 10 * time.Second,
+}
+
+// GetGithubArchive gets the GitHub archive and untars it to the output directory path.
+//
+// The root directory within the tarball is stripped.
+// If the directory already exists, this is a no-op.
+//
+// Only use for testing.
+func GetGithubArchive(
 	ctx context.Context,
-	httpClient *http.Client,
 	outputDirPath string,
 	owner string,
 	repository string,
@@ -24,12 +33,12 @@ func getGithubArchive(
 ) (retErr error) {
 	outputDirPath = filepath.Clean(outputDirPath)
 	if outputDirPath == "" || outputDirPath == "." || outputDirPath == "/" {
-		return buferrs.NewSystemErrorf("bad output dir path: %s", outputDirPath)
+		return fmt.Errorf("bad output dir path: %s", outputDirPath)
 	}
 	// check if already exists
 	if fileInfo, err := os.Stat(outputDirPath); err == nil {
 		if !fileInfo.IsDir() {
-			return buferrs.NewSystemErrorf("expected %s to be a directory", outputDirPath)
+			return fmt.Errorf("expected %s to be a directory", outputDirPath)
 		}
 		return nil
 	}
@@ -38,7 +47,7 @@ func getGithubArchive(
 	if err != nil {
 		return err
 	}
-	response, err := httpClient.Do(request)
+	response, err := testHTTPClient.Do(request)
 	if err != nil {
 		return err
 	}
@@ -46,7 +55,7 @@ func getGithubArchive(
 		retErr = multierr.Append(retErr, response.Body.Close())
 	}()
 	if response.StatusCode != http.StatusOK {
-		return buferrs.NewSystemErrorf("expected HTTP status code %d to be %d", response.StatusCode, http.StatusOK)
+		return fmt.Errorf("expected HTTP status code %d to be %d", response.StatusCode, http.StatusOK)
 	}
 
 	if err := os.MkdirAll(outputDirPath, 0755); err != nil {

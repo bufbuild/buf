@@ -2,6 +2,7 @@ package buf
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
@@ -9,7 +10,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/cli/clienv"
@@ -23,7 +23,7 @@ func imageBuild(
 	logger *zap.Logger,
 ) (retErr error) {
 	if flags.Output == "" {
-		return buferrs.NewUserErrorf("--%s is required", imageBuildOutputFlagName)
+		return fmt.Errorf("--%s is required", imageBuildOutputFlagName)
 	}
 	asJSON, err := internal.IsFormatJSON(errorFormatFlagName, flags.ErrorFormat)
 	if err != nil {
@@ -52,7 +52,7 @@ func imageBuild(
 		if err := analysis.PrintAnnotations(cliEnv.Stderr(), annotations, asJSON); err != nil {
 			return err
 		}
-		return buferrs.NewSystemError("")
+		return errors.New("")
 	}
 	return internal.NewBufosImageWriter(
 		logger,
@@ -101,7 +101,7 @@ func checkLint(
 		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
 			return err
 		}
-		return buferrs.NewSystemError("")
+		return errors.New("")
 	}
 	annotations, err = internal.NewBuflintHandler(logger).LintCheck(
 		ctx,
@@ -124,7 +124,7 @@ func checkLint(
 				return err
 			}
 		}
-		return buferrs.NewSystemError("")
+		return errors.New("")
 	}
 	return nil
 }
@@ -136,7 +136,7 @@ func checkBreaking(
 	logger *zap.Logger,
 ) (retErr error) {
 	if flags.AgainstInput == "" {
-		return buferrs.NewUserErrorf("--%s is required", checkBreakingAgainstInputFlagName)
+		return fmt.Errorf("--%s is required", checkBreakingAgainstInputFlagName)
 	}
 	asJSON, err := internal.IsFormatJSON(errorFormatFlagName, flags.ErrorFormat)
 	if err != nil {
@@ -163,7 +163,7 @@ func checkBreaking(
 		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
 			return err
 		}
-		return buferrs.NewSystemError("")
+		return errors.New("")
 	}
 
 	files := flags.Files
@@ -204,7 +204,7 @@ func checkBreaking(
 		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
 			return err
 		}
-		return buferrs.NewSystemError("")
+		return errors.New("")
 	}
 	annotations, err = internal.NewBufbreakingHandler(logger).BreakingCheck(
 		ctx,
@@ -222,7 +222,7 @@ func checkBreaking(
 		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
 			return err
 		}
-		return buferrs.NewSystemError("")
+		return errors.New("")
 	}
 	return nil
 }

@@ -1,5 +1,5 @@
-// Package stringutil implements string utilities.
-package stringutil
+// Package utilstring implements string utilities.
+package utilstring
 
 import (
 	"sort"

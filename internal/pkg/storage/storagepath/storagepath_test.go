@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -322,7 +322,7 @@ func TestMapContainsMatch(t *testing.T) {
 }
 
 func testMapContainsMatch(t *testing.T, expected bool, path string, keys ...string) {
-	keyMap := stringutil.SliceToMap(keys)
+	keyMap := utilstring.SliceToMap(keys)
 	assert.Equal(t, expected, MapContainsMatch(keyMap, path), fmt.Sprintf("%s %v", path, keys))
 }
 
@@ -342,7 +342,7 @@ func TestMapMatches(t *testing.T) {
 }
 
 func testMapMatches(t *testing.T, expected []string, path string, keys ...string) {
-	expectedMap := stringutil.SliceToMap(expected)
-	keyMap := stringutil.SliceToMap(keys)
+	expectedMap := utilstring.SliceToMap(expected)
+	keyMap := utilstring.SliceToMap(keys)
 	assert.Equal(t, expectedMap, MapMatches(keyMap, path), fmt.Sprintf("%s %v", path, keys))
 }

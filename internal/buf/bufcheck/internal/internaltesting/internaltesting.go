@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,15 +32,15 @@ func RunTestCheckerBuilders(
 		assert.False(t, ok, "duplicated id %q", checkerBuilder.ID())
 		idsMap[checkerBuilder.ID()] = struct{}{}
 	}
-	allCategoriesMap := stringutil.SliceToMap(allCategories)
+	allCategoriesMap := utilstring.SliceToMap(allCategories)
 	for id := range idsMap {
-		expectedID := stringutil.ToUpperSnakeCase(id)
+		expectedID := utilstring.ToUpperSnakeCase(id)
 		assert.Equal(t, expectedID, id)
 		categories, ok := idToCategories[id]
 		assert.True(t, ok, "id %q categories are not configured", id)
 		assert.True(t, len(categories) > 0, "id %q must have categories", id)
 		for _, category := range categories {
-			expectedCategory := stringutil.ToUpperSnakeCase(category)
+			expectedCategory := utilstring.ToUpperSnakeCase(category)
 			assert.Equal(t, expectedCategory, category)
 			_, ok := allCategoriesMap[category]
 			assert.True(t, ok, "category %q configured for id %q is not a known category", category, id)

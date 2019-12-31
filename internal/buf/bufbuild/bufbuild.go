@@ -4,7 +4,7 @@ package bufbuild
 import (
 	"context"
 
-	"github.com/bufbuild/buf/internal/buf/bufpb"
+	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
@@ -80,7 +80,7 @@ type Handler interface {
 		bucket storage.ReadBucket,
 		protoFileSet ProtoFileSet,
 		options BuildOptions,
-	) (bufpb.Image, []*analysis.Annotation, error)
+	) (*imagev1beta1.Image, []*analysis.Annotation, error)
 	// Files get the files for the bucket by returning a ProtoFileSet.
 	Files(
 		ctx context.Context,

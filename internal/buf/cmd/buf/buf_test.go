@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 	"github.com/bufbuild/cli/clicobra"
 	"github.com/bufbuild/cli/clienv"
 	"github.com/bufbuild/cli/clios"
@@ -371,8 +371,8 @@ func testRunCmd(t *testing.T, cmd *clicobra.Command, expectedExitCode int, expec
 			nil,
 		),
 	)
-	assert.Equal(t, expectedExitCode, exitCode, stringutil.TrimLines(stderr.String()))
+	assert.Equal(t, expectedExitCode, exitCode, utilstring.TrimLines(stderr.String()))
 	if exitCode == expectedExitCode {
-		assert.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()), stringutil.TrimLines(stderr.String()))
+		assert.Equal(t, utilstring.TrimLines(expectedStdout), utilstring.TrimLines(stdout.String()), utilstring.TrimLines(stderr.String()))
 	}
 }

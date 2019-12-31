@@ -1,12 +1,13 @@
 package internal
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/buferrs"
 )
 
 type configOverrideParser struct {
@@ -27,7 +28,7 @@ func newConfigOverrideParser(
 func (c *configOverrideParser) ParseConfigOverride(value string) (*bufconfig.Config, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {
-		return nil, buferrs.NewSystemError("config override value is empty")
+		return nil, errors.New("config override value is empty")
 	}
 	var data []byte
 	var err error
@@ -48,9 +49,9 @@ func (c *configOverrideParser) ParseConfigOverride(value string) (*bufconfig.Con
 }
 
 func newConfigOverrideCouldNotReadFileError(configOverrideFlagName string, err error) error {
-	return buferrs.NewUserErrorf("%s: could not read file: %v", configOverrideFlagName, err)
+	return fmt.Errorf("%s: could not read file: %v", configOverrideFlagName, err)
 }
 
 func newConfigOverrideCouldNotParseError(configOverrideFlagName string, err error) error {
-	return buferrs.NewUserErrorf("%s: %v", configOverrideFlagName, err)
+	return fmt.Errorf("%s: %v", configOverrideFlagName, err)
 }

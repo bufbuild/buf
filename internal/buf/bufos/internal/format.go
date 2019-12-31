@@ -1,11 +1,10 @@
 package internal
 
 import (
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/bufbuild/buf/internal/buf/buferrs"
 )
 
 const (
@@ -184,5 +183,5 @@ func sortFormats(formats []Format) {
 }
 
 func newFormatOverrideUnknownError(formatOverrideFlagName string, formatOverride string) error {
-	return buferrs.NewUserErrorf("%s: unknown format: %q", formatOverrideFlagName, formatOverride)
+	return fmt.Errorf("%s: unknown format: %q", formatOverrideFlagName, formatOverride)
 }

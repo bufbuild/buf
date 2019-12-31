@@ -7,7 +7,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 )
 
 // addFunc adds an annotation.
@@ -18,15 +18,15 @@ type addFunc func(protodesc.Descriptor, protodesc.Location, string, ...interface
 func fieldToLowerSnakeCase(s string) string {
 	// Try running this on googleapis and watch
 	// We allow both effectively by not passing the option
-	//return stringutil.ToLowerSnakeCase(s, stringutil.SnakeCaseWithNewWordOnDigits())
-	return stringutil.ToLowerSnakeCase(s)
+	//return utilstring.ToLowerSnakeCase(s, utilstring.SnakeCaseWithNewWordOnDigits())
+	return utilstring.ToLowerSnakeCase(s)
 }
 
 func fieldToUpperSnakeCase(s string) string {
 	// Try running this on googleapis and watch
 	// We allow both effectively by not passing the option
-	//return stringutil.ToUpperSnakeCase(s, stringutil.SnakeCaseWithNewWordOnDigits())
-	return stringutil.ToUpperSnakeCase(s)
+	//return utilstring.ToUpperSnakeCase(s, utilstring.SnakeCaseWithNewWordOnDigits())
+	return utilstring.ToUpperSnakeCase(s)
 }
 
 // https://cloud.google.com/apis/design/versioning

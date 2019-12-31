@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufpb"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
+	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	"github.com/bufbuild/buf/internal/pkg/analysis"
-	"github.com/bufbuild/buf/internal/pkg/encodingutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utilencoding"
 	"github.com/bufbuild/cli/cliproto"
 	"github.com/bufbuild/cli/clizap"
 	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
@@ -33,7 +33,7 @@ func Handle(
 	request *plugin_go.CodeGeneratorRequest,
 ) {
 	externalConfig := &externalConfig{}
-	if err := encodingutil.UnmarshalJSONOrYAMLStrict(
+	if err := utilencoding.UnmarshalJSONOrYAMLStrict(
 		[]byte(request.GetParameter()),
 		externalConfig,
 	); err != nil {
@@ -52,12 +52,12 @@ func Handle(
 		return
 	}
 	envReader := internal.NewBufosEnvReader(logger, "", "input_config")
-	config, err := envReader.GetConfig(ctx, encodingutil.GetJSONStringOrStringValue(externalConfig.InputConfig))
+	config, err := envReader.GetConfig(ctx, utilencoding.GetJSONStringOrStringValue(externalConfig.InputConfig))
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	image, err := bufpb.CodeGeneratorRequestToImage(request)
+	image, err := extimage.CodeGeneratorRequestToImage(request)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return

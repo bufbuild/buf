@@ -1,13 +1,13 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/internal/buf/buferrs"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 )
 
 // CheckEnumNoDelete is a check function.
@@ -70,7 +70,7 @@ func checkEnumValueNoDeleteWithRules(add addFunc, previousEnum protodesc.Enum, e
 			if !isDeletedEnumValueAllowedWithRules(previousNumber, previousNameToEnumValue, enum, allowIfNumberReserved, allowIfNameReserved) {
 				suffix := ""
 				if allowIfNumberReserved && allowIfNameReserved {
-					return buferrs.NewSystemError("both allowIfNumberReserved and allowIfNameReserved set")
+					return errors.New("both allowIfNumberReserved and allowIfNameReserved set")
 				}
 				if allowIfNumberReserved {
 					suffix = fmt.Sprintf(` without reserving the number "%d"`, previousNumber)
@@ -80,7 +80,7 @@ func checkEnumValueNoDeleteWithRules(add addFunc, previousEnum protodesc.Enum, e
 					if len(previousNameToEnumValue) > 1 {
 						nameSuffix = "s"
 					}
-					suffix = fmt.Sprintf(` without reserving the name%s %s`, nameSuffix, stringutil.JoinSliceQuoted(getSortedEnumValueNames(previousNameToEnumValue), ", "))
+					suffix = fmt.Sprintf(` without reserving the name%s %s`, nameSuffix, utilstring.JoinSliceQuoted(getSortedEnumValueNames(previousNameToEnumValue), ", "))
 				}
 				add(enum, enum.Location(), `Previously present enum value "%d" on enum %q was deleted%s.`, previousNumber, enum.Name(), suffix)
 			}
@@ -111,9 +111,9 @@ var CheckEnumValueSameName = newEnumValuePairCheckFunc(checkEnumValueSameName)
 func checkEnumValueSameName(add addFunc, previousNameToEnumValue map[string]protodesc.EnumValue, nameToEnumValue map[string]protodesc.EnumValue) error {
 	previousNames := getSortedEnumValueNames(previousNameToEnumValue)
 	names := getSortedEnumValueNames(nameToEnumValue)
-	if !stringutil.SliceElementsEqual(previousNames, names) {
-		previousNamesString := stringutil.JoinSliceQuoted(previousNames, ", ")
-		namesString := stringutil.JoinSliceQuoted(names, ", ")
+	if !utilstring.SliceElementsEqual(previousNames, names) {
+		previousNamesString := utilstring.JoinSliceQuoted(previousNames, ", ")
+		namesString := utilstring.JoinSliceQuoted(names, ", ")
 		nameSuffix := ""
 		if len(previousNames) > 1 && len(names) > 1 {
 			nameSuffix = "s"
@@ -176,7 +176,7 @@ func checkFieldNoDeleteWithRules(add addFunc, previousMessage protodesc.Message,
 				previousNumberString := strconv.FormatInt(int64(previousNumber), 10)
 				suffix := ""
 				if allowIfNumberReserved && allowIfNameReserved {
-					return buferrs.NewSystemError("both allowIfNumberReserved and allowIfNameReserved set")
+					return errors.New("both allowIfNumberReserved and allowIfNameReserved set")
 				}
 				if allowIfNumberReserved {
 					suffix = fmt.Sprintf(` without reserving the number "%d"`, previousField.Number())
