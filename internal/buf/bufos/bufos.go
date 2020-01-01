@@ -47,6 +47,7 @@ type EnvReader interface {
 	ReadEnv(
 		ctx context.Context,
 		stdin io.Reader,
+		getenv func(string) string,
 		value string,
 		configOverride string,
 		specificFilePaths []string,
@@ -60,6 +61,7 @@ type EnvReader interface {
 	ReadSourceEnv(
 		ctx context.Context,
 		stdin io.Reader,
+		getenv func(string) string,
 		value string,
 		configOverride string,
 		specificFilePaths []string,
@@ -73,6 +75,7 @@ type EnvReader interface {
 	ReadImageEnv(
 		ctx context.Context,
 		stdin io.Reader,
+		getenv func(string) string,
 		value string,
 		configOverride string,
 		specificFilePaths []string,
@@ -84,6 +87,7 @@ type EnvReader interface {
 	ListFiles(
 		ctx context.Context,
 		stdin io.Reader,
+		getenv func(string) string,
 		value string,
 		configOverride string,
 	) ([]string, error)
@@ -103,6 +107,8 @@ func NewEnvReader(
 	buildHandler bufbuild.Handler,
 	valueFlagName string,
 	configOverrideFlagName string,
+	httpsUsernameEnvKey string,
+	httpsPasswordEnvKey string,
 ) EnvReader {
 	return newEnvReader(
 		logger,
@@ -111,6 +117,8 @@ func NewEnvReader(
 		buildHandler,
 		valueFlagName,
 		configOverrideFlagName,
+		httpsUsernameEnvKey,
+		httpsPasswordEnvKey,
 	)
 }
 

@@ -14,6 +14,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	inputHTTPSUsernameEnvKey = "BUF_INPUT_HTTPS_USERNAME"
+	inputHTTPSPasswordEnvKey = "BUF_INPUT_HTTPS_PASSWORD"
+)
+
 var defaultHTTPClient = &http.Client{
 	Timeout: 5 * time.Second,
 }
@@ -31,6 +36,8 @@ func NewBufosEnvReader(
 		bufbuild.NewHandler(logger),
 		inputFlagName,
 		configOverrideFlagName,
+		inputHTTPSUsernameEnvKey,
+		inputHTTPSPasswordEnvKey,
 	)
 }
 

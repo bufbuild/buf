@@ -3,7 +3,7 @@ module github.com/bufbuild/buf
 go 1.13
 
 require (
-	github.com/bufbuild/cli v0.0.0-20191205000408-f0fa67d08b50
+	github.com/bufbuild/cli v0.0.0-20200101183612-3c6d81ed8354
 	github.com/golang/protobuf v1.3.2
 	github.com/jhump/protoreflect v1.6.0
 	github.com/pkg/profile v1.4.0 // indirect

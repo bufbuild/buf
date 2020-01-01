@@ -10,6 +10,7 @@ import (
 	"io"
 	"math"
 	"runtime"
+	"strings"
 	"sync"
 
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -21,6 +22,7 @@ import (
 	"gopkg.in/src-d/go-billy.v4/memfs"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
 
@@ -31,6 +33,9 @@ import (
 //
 // Branch is required.
 //
+// If the gitURL begins with https:// and the httpsUsername and httpsPassword are both
+// non-empty, basic auth will be used,
+//
 // This really needs more testing and cleanup
 // Only use for local CLI checking
 func Clone(
@@ -38,6 +43,8 @@ func Clone(
 	logger *zap.Logger,
 	gitURL string,
 	gitBranch string,
+	httpsUsername string,
+	httpsPassword string,
 	bucket storage.Bucket,
 	options ...storagepath.TransformerOption,
 ) error {
@@ -47,18 +54,20 @@ func Clone(
 		// we detect this outside of this function so this is a system error
 		return errors.New("gitBranch is empty")
 	}
+	cloneOptions := &git.CloneOptions{
+		URL:           gitURL,
+		ReferenceName: plumbing.NewBranchReferenceName(gitBranch),
+		SingleBranch:  true,
+		Depth:         1,
+	}
+	if strings.HasPrefix(gitURL, "https://") && httpsUsername != "" && httpsPassword != "" {
+		cloneOptions.Auth = &http.BasicAuth{
+			Username: httpsUsername,
+			Password: httpsPassword,
+		}
+	}
 	filesystem := memfs.New()
-	if _, err := git.CloneContext(
-		ctx,
-		memory.NewStorage(),
-		filesystem,
-		&git.CloneOptions{
-			URL:           gitURL,
-			ReferenceName: plumbing.NewBranchReferenceName(gitBranch),
-			SingleBranch:  true,
-			Depth:         1,
-		},
-	); err != nil {
+	if _, err := git.CloneContext(ctx, memory.NewStorage(), filesystem, cloneOptions); err != nil {
 		return err
 	}
 	return copyBillyFilesystemToBucket(ctx, logger, filesystem, bucket, options...)

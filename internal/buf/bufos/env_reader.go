@@ -45,6 +45,8 @@ type envReader struct {
 	buildHandler         bufbuild.Handler
 	inputRefParser       internal.InputRefParser
 	configOverrideParser internal.ConfigOverrideParser
+	httpsUsernameEnvKey  string
+	httpsPasswordEnvKey  string
 }
 
 func newEnvReader(
@@ -54,6 +56,8 @@ func newEnvReader(
 	buildHandler bufbuild.Handler,
 	valueFlagName string,
 	configOverrideFlagName string,
+	httpsUsernameEnvKey string,
+	httpsPasswordEnvKey string,
 ) *envReader {
 	return &envReader{
 		logger:         logger.Named("bufos"),
@@ -67,12 +71,15 @@ func newEnvReader(
 			configProvider,
 			configOverrideFlagName,
 		),
+		httpsUsernameEnvKey: httpsUsernameEnvKey,
+		httpsPasswordEnvKey: httpsPasswordEnvKey,
 	}
 }
 
 func (e *envReader) ReadEnv(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	value string,
 	configOverride string,
 	specificFilePaths []string,
@@ -83,6 +90,7 @@ func (e *envReader) ReadEnv(
 	return e.readEnv(
 		ctx,
 		stdin,
+		getenv,
 		value,
 		configOverride,
 		specificFilePaths,
@@ -97,6 +105,7 @@ func (e *envReader) ReadEnv(
 func (e *envReader) ReadSourceEnv(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	value string,
 	configOverride string,
 	specificFilePaths []string,
@@ -107,6 +116,7 @@ func (e *envReader) ReadSourceEnv(
 	return e.readEnv(
 		ctx,
 		stdin,
+		getenv,
 		value,
 		configOverride,
 		specificFilePaths,
@@ -121,6 +131,7 @@ func (e *envReader) ReadSourceEnv(
 func (e *envReader) ReadImageEnv(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	value string,
 	configOverride string,
 	specificFilePaths []string,
@@ -130,6 +141,7 @@ func (e *envReader) ReadImageEnv(
 	env, annotations, err := e.readEnv(
 		ctx,
 		stdin,
+		getenv,
 		value,
 		configOverride,
 		specificFilePaths,
@@ -152,6 +164,7 @@ func (e *envReader) ReadImageEnv(
 func (e *envReader) ListFiles(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	value string,
 	configOverride string,
 ) (_ []string, retErr error) {
@@ -163,7 +176,7 @@ func (e *envReader) ListFiles(
 
 	if inputRef.Format.IsImage() {
 		// if we have an image, list the files in the image
-		image, err := e.getImage(ctx, stdin, inputRef)
+		image, err := e.getImage(ctx, stdin, getenv, inputRef)
 		if err != nil {
 			return nil, err
 		}
@@ -177,7 +190,7 @@ func (e *envReader) ListFiles(
 	}
 
 	// we have a source, we need to get everything
-	bucket, err := e.getBucket(ctx, stdin, inputRef)
+	bucket, err := e.getBucket(ctx, stdin, getenv, inputRef)
 	if err != nil {
 		return nil, err
 	}
@@ -261,6 +274,7 @@ func (e *envReader) GetConfig(
 func (e *envReader) readEnv(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	value string,
 	configOverride string,
 	specificFilePaths []string,
@@ -280,6 +294,7 @@ func (e *envReader) readEnv(
 		env, err := e.readEnvFromImage(
 			ctx,
 			stdin,
+			getenv,
 			configOverride,
 			specificFilePaths,
 			specificFilePathsAllowNotExist,
@@ -291,6 +306,7 @@ func (e *envReader) readEnv(
 	return e.readEnvFromBucket(
 		ctx,
 		stdin,
+		getenv,
 		configOverride,
 		specificFilePaths,
 		specificFilePathsAllowNotExist,
@@ -303,6 +319,7 @@ func (e *envReader) readEnv(
 func (e *envReader) readEnvFromBucket(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	configOverride string,
 	specificFilePaths []string,
 	specificFilePathsAllowNotExist bool,
@@ -310,7 +327,7 @@ func (e *envReader) readEnvFromBucket(
 	includeSourceInfo bool,
 	inputRef *internal.InputRef,
 ) (_ *Env, _ []*analysis.Annotation, retErr error) {
-	bucket, err := e.getBucket(ctx, stdin, inputRef)
+	bucket, err := e.getBucket(ctx, stdin, getenv, inputRef)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -419,13 +436,14 @@ func (e *envReader) readEnvFromBucket(
 func (e *envReader) readEnvFromImage(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	configOverride string,
 	specificFilePaths []string,
 	specificFilePathsAllowNotExist bool,
 	includeImports bool,
 	inputRef *internal.InputRef,
 ) (_ *Env, retErr error) {
-	image, err := e.getImage(ctx, stdin, inputRef)
+	image, err := e.getImage(ctx, stdin, getenv, inputRef)
 	if err != nil {
 		return nil, err
 	}
@@ -456,6 +474,7 @@ func (e *envReader) readEnvFromImage(
 func (e *envReader) getBucket(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	inputRef *internal.InputRef,
 ) (storage.ReadBucket, error) {
 	switch inputRef.Format {
@@ -465,6 +484,7 @@ func (e *envReader) getBucket(
 		return e.getBucketFromLocalTarball(
 			ctx,
 			stdin,
+			getenv,
 			inputRef.Format,
 			inputRef.Path,
 			inputRef.StripComponents,
@@ -472,6 +492,7 @@ func (e *envReader) getBucket(
 	case internal.FormatGit:
 		return e.getBucketFromGitRepo(
 			ctx,
+			getenv,
 			inputRef.Path,
 			inputRef.GitBranch,
 		)
@@ -483,11 +504,12 @@ func (e *envReader) getBucket(
 func (e *envReader) getImage(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	inputRef *internal.InputRef,
 ) (*imagev1beta1.Image, error) {
 	switch inputRef.Format {
 	case internal.FormatBin, internal.FormatBinGz, internal.FormatJSON, internal.FormatJSONGz:
-		return e.getImageFromLocalFile(ctx, stdin, inputRef.Format, inputRef.Path)
+		return e.getImageFromLocalFile(ctx, stdin, getenv, inputRef.Format, inputRef.Path)
 	default:
 		return nil, fmt.Errorf("unknown format outside of parse: %v", inputRef.Format)
 	}
@@ -511,11 +533,12 @@ func (e *envReader) getBucketFromLocalDir(
 func (e *envReader) getBucketFromLocalTarball(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	format internal.Format,
 	path string,
 	stripComponents uint32,
 ) (_ storage.ReadBucket, retErr error) {
-	data, err := e.getFileData(ctx, stdin, path)
+	data, err := e.getFileData(ctx, stdin, getenv, path)
 	if err != nil {
 		return nil, err
 	}
@@ -548,6 +571,7 @@ func (e *envReader) getBucketFromLocalTarball(
 // For FormatGit
 func (e *envReader) getBucketFromGitRepo(
 	ctx context.Context,
+	getenv func(string) string,
 	gitRepo string,
 	gitBranch string,
 ) (_ storage.ReadBucket, retErr error) {
@@ -560,12 +584,20 @@ func (e *envReader) getBucketFromGitRepo(
 		}
 		gitRepo = "file://" + absGitRepo
 	}
+	var httpsUsername string
+	var httpsPassword string
+	if getenv != nil && e.httpsUsernameEnvKey != "" && e.httpsPasswordEnvKey != "" {
+		httpsUsername = getenv(e.httpsUsernameEnvKey)
+		httpsPassword = getenv(e.httpsPasswordEnvKey)
+	}
 	bucket := storagemem.NewBucket()
 	if err := storagegit.Clone(
 		ctx,
 		e.logger,
 		gitRepo,
 		gitBranch,
+		httpsUsername,
+		httpsPassword,
 		bucket,
 		storagepath.WithExt(".proto"),
 		storagepath.WithExactPath(bufconfig.ConfigFilePath),
@@ -583,10 +615,11 @@ func (e *envReader) getBucketFromGitRepo(
 func (e *envReader) getImageFromLocalFile(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	format internal.Format,
 	path string,
 ) (_ *imagev1beta1.Image, retErr error) {
-	data, err := e.getFileData(ctx, stdin, path)
+	data, err := e.getFileData(ctx, stdin, getenv, path)
 	if err != nil {
 		return nil, err
 	}
@@ -596,21 +629,30 @@ func (e *envReader) getImageFromLocalFile(
 func (e *envReader) getFileData(
 	ctx context.Context,
 	stdin io.Reader,
+	getenv func(string) string,
 	path string,
 ) ([]byte, error) {
 	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
-		return e.getFileDataFromHTTP(ctx, path)
+		return e.getFileDataFromHTTP(ctx, getenv, path)
 	}
 	return e.getFileDataFromOS(stdin, path)
 }
 
 func (e *envReader) getFileDataFromHTTP(
 	ctx context.Context,
+	getenv func(string) string,
 	path string,
 ) (_ []byte, retErr error) {
 	request, err := http.NewRequestWithContext(ctx, "GET", path, nil)
 	if err != nil {
 		return nil, err
+	}
+	if getenv != nil && strings.HasPrefix(path, "https://") && e.httpsUsernameEnvKey != "" && e.httpsPasswordEnvKey != "" {
+		httpsUsername := getenv(e.httpsUsernameEnvKey)
+		httpsPassword := getenv(e.httpsPasswordEnvKey)
+		if httpsUsername != "" && httpsPassword != "" {
+			request.SetBasicAuth(httpsUsername, httpsPassword)
+		}
 	}
 	response, err := e.httpClient.Do(request)
 	if err != nil {
