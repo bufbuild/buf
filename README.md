@@ -56,7 +56,7 @@ If you've found us today, we'll assume you're already relatively convinced of th
 We'll add a reference document for those new to Protobuf in the future.
 
 If Protobuf is so great, the question is: why do so many companies still choose JSON as their
-data format in 2019? Usually, the answer comes down to difficulty in adoption:
+data format in 2020? Usually, the answer comes down to difficulty in adoption:
 
 - **API Structure**: Writing maintainable, consistent Protobuf APIs isn't as widely
   understood as writing maintainable JSON/REST-based APIs, which makes sense - Protobuf
