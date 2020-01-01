@@ -8,7 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
+	"os"
+	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -18,13 +22,18 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/ssh/knownhosts"
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-billy.v4/memfs"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
+	srcdssh "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
 )
+
+var gitURLSSHRegex = regexp.MustCompile("^(ssh://)?([^/:]*?)@[^@]+$")
 
 // Clone clones the url into the bucket.
 //
@@ -33,18 +42,23 @@ import (
 //
 // Branch is required.
 //
-// If the gitURL begins with https:// and the httpsUsername and httpsPassword are both
-// non-empty, basic auth will be used,
+// If the gitURL begins with https:// and there is an HTTPS username and password, basic auth will be used.
+// If the gitURL begins with ssh:// and there is a valid SSH configuration, ssh will be used.
 //
-// This really needs more testing and cleanup
-// Only use for local CLI checking
+// This really needs more testing and cleanup.
+// Only use for local CLI checking.
 func Clone(
 	ctx context.Context,
 	logger *zap.Logger,
+	getenv func(string) string,
+	homeDirPath string,
 	gitURL string,
 	gitBranch string,
-	httpsUsername string,
-	httpsPassword string,
+	httpsUsernameEnvKey string,
+	httpsPasswordEnvKey string,
+	sshKeyFileEnvKey string,
+	sshKeyPassphraseEnvKey string,
+	sshKnownHostsFilesEnvKey string,
 	bucket storage.Bucket,
 	options ...storagepath.TransformerOption,
 ) error {
@@ -54,23 +68,166 @@ func Clone(
 		// we detect this outside of this function so this is a system error
 		return errors.New("gitBranch is empty")
 	}
+	gitURL, err := normalizeGitURL(gitURL)
+	if err != nil {
+		return err
+	}
+	authMethod, err := getAuthMethod(
+		logger,
+		getenv,
+		homeDirPath,
+		gitURL,
+		httpsUsernameEnvKey,
+		httpsPasswordEnvKey,
+		sshKeyFileEnvKey,
+		sshKeyPassphraseEnvKey,
+		sshKnownHostsFilesEnvKey,
+	)
+	if err != nil {
+		return err
+	}
 	cloneOptions := &git.CloneOptions{
 		URL:           gitURL,
+		Auth:          authMethod,
 		ReferenceName: plumbing.NewBranchReferenceName(gitBranch),
 		SingleBranch:  true,
 		Depth:         1,
-	}
-	if strings.HasPrefix(gitURL, "https://") && httpsUsername != "" && httpsPassword != "" {
-		cloneOptions.Auth = &http.BasicAuth{
-			Username: httpsUsername,
-			Password: httpsPassword,
-		}
 	}
 	filesystem := memfs.New()
 	if _, err := git.CloneContext(ctx, memory.NewStorage(), filesystem, cloneOptions); err != nil {
 		return err
 	}
 	return copyBillyFilesystemToBucket(ctx, logger, filesystem, bucket, options...)
+}
+
+func normalizeGitURL(gitURL string) (string, error) {
+	switch {
+	case isHTTPGitURL(gitURL), isHTTPSGitURL(gitURL), isSSHGitURL(gitURL):
+		return gitURL, nil
+	case isLocalFileGitURL(gitURL):
+		absGitPath, err := filepath.Abs(gitURL)
+		if err != nil {
+			return "", err
+		}
+		return "file://" + absGitPath, nil
+	default:
+		return "", fmt.Errorf("invalid git url: %v", gitURL)
+	}
+}
+
+func isHTTPGitURL(gitURL string) bool {
+	return strings.HasPrefix(gitURL, "http://")
+}
+func isHTTPSGitURL(gitURL string) bool {
+	return strings.HasPrefix(gitURL, "https://")
+}
+
+func isSSHGitURL(gitURL string) bool {
+	_, ok := getSSHGitUser(gitURL)
+	return ok
+}
+
+func isLocalFileGitURL(gitURL string) bool {
+	return !strings.Contains(gitURL, "://")
+}
+
+func getSSHGitUser(gitURL string) (string, bool) {
+	if matches := gitURLSSHRegex.FindStringSubmatch(gitURL); len(matches) > 2 {
+		return matches[2], true
+	}
+	return "", false
+}
+
+func getAuthMethod(
+	logger *zap.Logger,
+	getenv func(string) string,
+	homeDirPath string,
+	gitURL string,
+	httpsUsernameEnvKey string,
+	httpsPasswordEnvKey string,
+	sshKeyFileEnvKey string,
+	sshKeyPassphraseEnvKey string,
+	sshKnownHostsFilesEnvKey string,
+) (transport.AuthMethod, error) {
+	if isHTTPSGitURL(gitURL) {
+		if getenv == nil || httpsUsernameEnvKey == "" || httpsPasswordEnvKey == "" {
+			return nil, nil
+		}
+		httpsUsername := getenv(httpsUsernameEnvKey)
+		httpsPassword := getenv(httpsPasswordEnvKey)
+		if httpsUsername != "" && httpsPassword != "" {
+			logger.Debug("git_https_basic_auth_enabled")
+			return &http.BasicAuth{
+				Username: httpsUsername,
+				Password: httpsPassword,
+			}, nil
+		}
+		return nil, nil
+	}
+	if sshUser, ok := getSSHGitUser(gitURL); ok {
+		var sshKeyFile string
+		if getenv != nil && sshKeyFileEnvKey != "" {
+			sshKeyFile = getenv(sshKeyFileEnvKey)
+		}
+		if sshKeyFile == "" && homeDirPath != "" {
+			sshKeyFile = filepath.Join(homeDirPath, ".ssh", "id_rsa")
+		}
+		if sshKeyFile == "" {
+			return nil, errors.New("cannot set up ssh auth")
+		}
+		sshKeyData, err := ioutil.ReadFile(sshKeyFile)
+		if err != nil {
+			return nil, err
+		}
+		var sshKeyPassphrase string
+		if getenv != nil && sshKeyPassphraseEnvKey != "" {
+			sshKeyPassphrase = getenv(sshKeyPassphraseEnvKey)
+		}
+		publicKeys, err := srcdssh.NewPublicKeys(sshUser, sshKeyData, sshKeyPassphrase)
+		if err != nil {
+			return nil, err
+		}
+		var knownHostsFilePaths []string
+		if getenv != nil && sshKnownHostsFilesEnvKey != "" {
+			knownHostsFilePaths = filepath.SplitList(getenv(sshKnownHostsFilesEnvKey))
+		}
+		if len(knownHostsFilePaths) == 0 && homeDirPath != "" {
+			knownHostsFilePaths = []string{
+				filepath.Join(homeDirPath, ".ssh", "known_hosts"),
+				filepath.Join(string(os.PathSeparator), "etc", "ssh", "ssh_known_hosts"),
+			}
+		}
+		knownHostsFilePaths, err = filterKnownHostsFilePaths(knownHostsFilePaths)
+		if err != nil {
+			return nil, err
+		}
+		if len(knownHostsFilePaths) == 0 {
+			return nil, fmt.Errorf("cannot find ssh known_hosts at $%s, ~/.ssh/known_hosts, or /etc/ssh/ssh_known_hosts", sshKnownHostsFilesEnvKey)
+		}
+		hostKeyCallback, err := knownhosts.New(knownHostsFilePaths...)
+		if err != nil {
+			return nil, err
+		}
+		publicKeys.HostKeyCallback = hostKeyCallback
+		logger.Debug("git_ssh_public_key_auth_enabled")
+		return publicKeys, nil
+	}
+	return nil, nil
+}
+
+func filterKnownHostsFilePaths(knownHostsFilePaths []string) ([]string, error) {
+	var out []string
+	for _, knownHostsFilePath := range knownHostsFilePaths {
+		_, err := os.Stat(knownHostsFilePath)
+		if err == nil {
+			out = append(out, knownHostsFilePath)
+			continue
+		}
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+	}
+	return out, nil
 }
 
 func copyBillyFilesystemToBucket(

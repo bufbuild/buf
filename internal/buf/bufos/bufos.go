@@ -109,6 +109,9 @@ func NewEnvReader(
 	configOverrideFlagName string,
 	httpsUsernameEnvKey string,
 	httpsPasswordEnvKey string,
+	sshKeyFileEnvKey string,
+	sshKeyPassphraseEnvKey string,
+	sshKnownHostsFilesEnvKey string,
 ) EnvReader {
 	return newEnvReader(
 		logger,
@@ -119,6 +122,9 @@ func NewEnvReader(
 		configOverrideFlagName,
 		httpsUsernameEnvKey,
 		httpsPasswordEnvKey,
+		sshKeyFileEnvKey,
+		sshKeyPassphraseEnvKey,
+		sshKnownHostsFilesEnvKey,
 	)
 }
 
