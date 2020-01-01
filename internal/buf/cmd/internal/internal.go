@@ -15,8 +15,11 @@ import (
 )
 
 const (
-	inputHTTPSUsernameEnvKey = "BUF_INPUT_HTTPS_USERNAME"
-	inputHTTPSPasswordEnvKey = "BUF_INPUT_HTTPS_PASSWORD"
+	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
+	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
+	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
+	inputSSHKeyPassphraseEnvKey   = "BUF_INPUT_SSH_KEY_PASSPHRASE"
+	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
 )
 
 var defaultHTTPClient = &http.Client{
@@ -38,6 +41,9 @@ func NewBufosEnvReader(
 		configOverrideFlagName,
 		inputHTTPSUsernameEnvKey,
 		inputHTTPSPasswordEnvKey,
+		inputSSHKeyFileEnvKey,
+		inputSSHKeyPassphraseEnvKey,
+		inputSSHKnownHostsFilesEnvKey,
 	)
 }
 

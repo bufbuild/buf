@@ -39,14 +39,17 @@ var jsonUnmarshaler = &jsonpb.Unmarshaler{
 }
 
 type envReader struct {
-	logger               *zap.Logger
-	httpClient           *http.Client
-	configProvider       bufconfig.Provider
-	buildHandler         bufbuild.Handler
-	inputRefParser       internal.InputRefParser
-	configOverrideParser internal.ConfigOverrideParser
-	httpsUsernameEnvKey  string
-	httpsPasswordEnvKey  string
+	logger                   *zap.Logger
+	httpClient               *http.Client
+	configProvider           bufconfig.Provider
+	buildHandler             bufbuild.Handler
+	inputRefParser           internal.InputRefParser
+	configOverrideParser     internal.ConfigOverrideParser
+	httpsUsernameEnvKey      string
+	httpsPasswordEnvKey      string
+	sshKeyFileEnvKey         string
+	sshKeyPassphraseEnvKey   string
+	sshKnownHostsFilesEnvKey string
 }
 
 func newEnvReader(
@@ -58,6 +61,9 @@ func newEnvReader(
 	configOverrideFlagName string,
 	httpsUsernameEnvKey string,
 	httpsPasswordEnvKey string,
+	sshKeyFileEnvKey string,
+	sshKeyPassphraseEnvKey string,
+	sshKnownHostsFilesEnvKey string,
 ) *envReader {
 	return &envReader{
 		logger:         logger.Named("bufos"),
@@ -71,8 +77,11 @@ func newEnvReader(
 			configProvider,
 			configOverrideFlagName,
 		),
-		httpsUsernameEnvKey: httpsUsernameEnvKey,
-		httpsPasswordEnvKey: httpsPasswordEnvKey,
+		httpsUsernameEnvKey:      httpsUsernameEnvKey,
+		httpsPasswordEnvKey:      httpsPasswordEnvKey,
+		sshKeyFileEnvKey:         sshKeyFileEnvKey,
+		sshKeyPassphraseEnvKey:   sshKeyPassphraseEnvKey,
+		sshKnownHostsFilesEnvKey: sshKnownHostsFilesEnvKey,
 	}
 }
 
@@ -577,33 +586,28 @@ func (e *envReader) getBucketFromGitRepo(
 ) (_ storage.ReadBucket, retErr error) {
 	defer utillog.Defer(e.logger, "get_git_bucket_memory")()
 
-	if !strings.Contains(gitRepo, "://") {
-		absGitRepo, err := filepath.Abs(gitRepo)
-		if err != nil {
-			return nil, err
-		}
-		gitRepo = "file://" + absGitRepo
-	}
-	var httpsUsername string
-	var httpsPassword string
-	if getenv != nil && e.httpsUsernameEnvKey != "" && e.httpsPasswordEnvKey != "" {
-		httpsUsername = getenv(e.httpsUsernameEnvKey)
-		httpsPassword = getenv(e.httpsPasswordEnvKey)
+	homeDirPath, err := clios.Home(getenv)
+	if err != nil {
+		return nil, err
 	}
 	bucket := storagemem.NewBucket()
 	if err := storagegit.Clone(
 		ctx,
 		e.logger,
+		getenv,
+		homeDirPath,
 		gitRepo,
 		gitBranch,
-		httpsUsername,
-		httpsPassword,
+		e.httpsUsernameEnvKey,
+		e.httpsPasswordEnvKey,
+		e.sshKeyFileEnvKey,
+		e.sshKeyPassphraseEnvKey,
+		e.sshKnownHostsFilesEnvKey,
 		bucket,
 		storagepath.WithExt(".proto"),
 		storagepath.WithExactPath(bufconfig.ConfigFilePath),
 	); err != nil {
 		return nil, multierr.Append(
-			// TODO: not really an invalid argument
 			fmt.Errorf("could not clone %s: %v", gitRepo, err),
 			bucket.Close(),
 		)
