@@ -195,6 +195,8 @@ func TestGitClone(t *testing.T) {
 		zap.NewNop(),
 		"file://"+absGitPath,
 		"master",
+		"",
+		"",
 		bucket,
 		storagepath.WithExt(".proto"),
 		storagepath.WithExt(".go"),

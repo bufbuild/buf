@@ -37,6 +37,7 @@ func imageBuild(
 	).ReadSourceEnv(
 		ctx,
 		cliEnv.Stdin(),
+		cliEnv.Getenv,
 		flags.Input,
 		flags.Config,
 		nil,   // we do not filter files for images
@@ -87,6 +88,7 @@ func checkLint(
 	).ReadEnv(
 		ctx,
 		cliEnv.Stdin(),
+		cliEnv.Getenv,
 		flags.Input,
 		flags.Config,
 		flags.Files, // we filter checks for files
@@ -149,6 +151,7 @@ func checkBreaking(
 	).ReadEnv(
 		ctx,
 		cliEnv.Stdin(),
+		cliEnv.Getenv,
 		flags.Input,
 		flags.Config,
 		flags.Files, // we filter checks for files
@@ -184,6 +187,7 @@ func checkBreaking(
 	).ReadEnv(
 		ctx,
 		cliEnv.Stdin(),
+		cliEnv.Getenv,
 		flags.AgainstInput,
 		flags.AgainstConfig,
 		files, // we filter checks for files
@@ -312,6 +316,7 @@ func lsFiles(
 	).ListFiles(
 		ctx,
 		cliEnv.Stdin(),
+		cliEnv.Getenv,
 		flags.Input,
 		flags.Config,
 	)

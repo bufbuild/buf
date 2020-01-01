@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
@@ -27,7 +26,7 @@ func Main() {
 //
 // Public so this can be used in the cmdtesting package.
 func Handle(
-	stderr io.Writer,
+	env cliproto.Env,
 	responseWriter cliproto.ResponseWriter,
 	request *plugin_go.CodeGeneratorRequest,
 ) {
@@ -50,7 +49,7 @@ func Handle(
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	logger, err := clizap.NewLogger(stderr, externalConfig.LogLevel, externalConfig.LogFormat)
+	logger, err := clizap.NewLogger(env.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return
@@ -64,6 +63,7 @@ func Handle(
 	againstEnv, err := envReader.ReadImageEnv(
 		ctx,
 		nil, // cannot read against input from stdin, this is for the CodeGeneratorRequest
+		env.Getenv,
 		externalConfig.AgainstInput,
 		utilencoding.GetJSONStringOrStringValue(externalConfig.AgainstInputConfig),
 		files, // limit to the input files if specified
