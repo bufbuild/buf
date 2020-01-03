@@ -172,7 +172,7 @@ Features of Buf's include:
 
 - **Docker image**. You can use Buf from the provided Docker image [bufbuild/buf](https://hub.docker.com/r/bufbuild/buf) as well.
 
-## Buf Image Registry
+## Buf Schema Registry
 
 We'll work through the beta over the next couple months, and hope to hit a stable v1.0 by
 the end of the year or early next year.
@@ -180,7 +180,7 @@ the end of the year or early next year.
 Simultaneously, we'll be working on our next goal, which is to solve the bigger problem:
 now that you have consistent and compatible APIs, how do you, and your customers, consume them?
 
-Phase 2 is the **Buf Image Registry**, Our goal is for the Buf Image Registry to be a
+Phase 2 is the **Buf Schema Registry**, Our goal is for the Buf Schema Registry to be a
 publicly hosted and on-prem service that will receive [Images](https://buf.build/docs/build-images)
 built by `buf`, and let you produce and consume various generated artifacts such as:
 
@@ -188,10 +188,10 @@ built by `buf`, and let you produce and consume various generated artifacts such
 - Tarballs that contain your `.proto` files alongside Bazel build rules.
 - Hosted documentation for your Protobuf APIs.
 
-There's a lot we are planning with the Buf Image Registry. For a quick overview, see our
+There's a lot we are planning with the Buf Schema Registry. For a quick overview, see our
 [roadmap](https://buf.build/docs/roadmap).
 
-Phase 3+ will build on top of `buf` and the Buf Image Registry, and we'll announce these at
+Phase 3+ will build on top of `buf` and the Buf Schema Registry, and we'll announce these at
 at a later date.
 
 ## Where to go from here
