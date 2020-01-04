@@ -17,6 +17,8 @@ RUN apk add --update --no-cache \
     bash \
     build-base \
     ca-certificates \
+    tzdata \
+    openssh-client \
     curl \
     git \
     unzip \
