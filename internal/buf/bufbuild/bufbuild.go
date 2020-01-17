@@ -4,8 +4,8 @@ package bufbuild
 import (
 	"context"
 
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -71,16 +71,16 @@ type ProtoFileSet interface {
 type Handler interface {
 	// Build builds an image for the bucket.
 	//
-	// If annotations or an error is returned, no image or resolver is returned.
+	// If FileAnnotations or an error is returned, no image or resolver is returned.
 	//
-	// Annotations will be relative to the root of the bucket before returning, ie the
+	// FileAnnotations will be relative to the root of the bucket before returning, ie the
 	// real file paths that already have the GetRealFilePath from the ProtoFileSet applied.
 	Build(
 		ctx context.Context,
 		bucket storage.ReadBucket,
 		protoFileSet ProtoFileSet,
 		options BuildOptions,
-	) (*imagev1beta1.Image, []*analysis.Annotation, error)
+	) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation, error)
 	// Files get the files for the bucket by returning a ProtoFileSet.
 	Files(
 		ctx context.Context,
@@ -142,34 +142,34 @@ func NewHandler(logger *zap.Logger) Handler {
 	return newHandler(logger)
 }
 
-// FixAnnotationFilenames attempts to make all filenames into real file paths.
+// FixFileAnnotationPaths attempts to make all paths into real file paths.
 //
 // If the resolver is nil, this does nothing.
-func FixAnnotationFilenames(resolver ProtoRealFilePathResolver, annotations []*analysis.Annotation) error {
+func FixFileAnnotationPaths(resolver ProtoRealFilePathResolver, fileAnnotations []*filev1beta1.FileAnnotation) error {
 	if resolver == nil {
 		return nil
 	}
-	if len(annotations) == 0 {
+	if len(fileAnnotations) == 0 {
 		return nil
 	}
-	for _, annotation := range annotations {
-		if err := fixAnnotationFilename(resolver, annotation); err != nil {
+	for _, fileAnnotation := range fileAnnotations {
+		if err := fixFileAnnotationPath(resolver, fileAnnotation); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func fixAnnotationFilename(resolver ProtoRealFilePathResolver, annotation *analysis.Annotation) error {
-	if annotation.Filename == "" {
+func fixFileAnnotationPath(resolver ProtoRealFilePathResolver, fileAnnotation *filev1beta1.FileAnnotation) error {
+	if fileAnnotation.Path == "" {
 		return nil
 	}
-	filePath, err := resolver.GetRealFilePath(annotation.Filename)
+	filePath, err := resolver.GetRealFilePath(fileAnnotation.Path)
 	if err != nil {
 		return err
 	}
 	if filePath != "" {
-		annotation.Filename = filePath
+		fileAnnotation.Path = filePath
 	}
 	return nil
 }

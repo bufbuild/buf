@@ -5,30 +5,30 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 )
 
-// addFunc adds an annotation.
+// addFunc adds a FileAnnotation.
 //
 // Both the Descriptor and Location can be nil.
 type addFunc func(protodesc.Descriptor, protodesc.Location, string, ...interface{})
 
 func newFilesCheckFunc(
 	f func(addFunc, []protodesc.File, []protodesc.File) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error) {
-	return func(id string, previousFiles []protodesc.File, files []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+	return func(id string, previousFiles []protodesc.File, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 		helper := internal.NewHelper(id)
-		if err := f(helper.AddAnnotationf, previousFiles, files); err != nil {
+		if err := f(helper.AddFileAnnotationf, previousFiles, files); err != nil {
 			return nil, err
 		}
-		return helper.Annotations(), nil
+		return helper.FileAnnotations(), nil
 	}
 }
 
 func newFilePairCheckFunc(
 	f func(addFunc, protodesc.File, protodesc.File) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, previousFiles []protodesc.File, files []protodesc.File) error {
 			previousFilePathToFile, err := protodesc.FilePathToFile(previousFiles...)
@@ -53,7 +53,7 @@ func newFilePairCheckFunc(
 
 func newEnumPairCheckFunc(
 	f func(addFunc, protodesc.Enum, protodesc.Enum) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, previousFiles []protodesc.File, files []protodesc.File) error {
 			previousFullNameToEnum, err := protodesc.FullNameToEnum(previousFiles...)
@@ -80,7 +80,7 @@ func newEnumPairCheckFunc(
 // map is from name to EnumValue for the given number
 func newEnumValuePairCheckFunc(
 	f func(addFunc, map[string]protodesc.EnumValue, map[string]protodesc.EnumValue) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newEnumPairCheckFunc(
 		func(add addFunc, previousEnum protodesc.Enum, enum protodesc.Enum) error {
 			previousNumberToNameToEnumValue, err := protodesc.NumberToNameToEnumValue(previousEnum)
@@ -105,7 +105,7 @@ func newEnumValuePairCheckFunc(
 
 func newMessagePairCheckFunc(
 	f func(addFunc, protodesc.Message, protodesc.Message) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, previousFiles []protodesc.File, files []protodesc.File) error {
 			previousFullNameToMessage, err := protodesc.FullNameToMessage(previousFiles...)
@@ -130,7 +130,7 @@ func newMessagePairCheckFunc(
 
 func newFieldPairCheckFunc(
 	f func(addFunc, protodesc.Field, protodesc.Field) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newMessagePairCheckFunc(
 		func(add addFunc, previousMessage protodesc.Message, message protodesc.Message) error {
 			previousNumberToField, err := protodesc.NumberToMessageField(previousMessage)
@@ -155,7 +155,7 @@ func newFieldPairCheckFunc(
 
 func newServicePairCheckFunc(
 	f func(addFunc, protodesc.Service, protodesc.Service) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, previousFiles []protodesc.File, files []protodesc.File) error {
 			previousFullNameToService, err := protodesc.FullNameToService(previousFiles...)
@@ -180,7 +180,7 @@ func newServicePairCheckFunc(
 
 func newMethodPairCheckFunc(
 	f func(addFunc, protodesc.Method, protodesc.Method) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newServicePairCheckFunc(
 		func(add addFunc, previousService protodesc.Service, service protodesc.Service) error {
 			previousNameToMethod, err := protodesc.NameToMethod(previousService)

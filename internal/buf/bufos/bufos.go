@@ -11,8 +11,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufos/internal"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"go.uber.org/zap"
 )
 
@@ -22,7 +22,7 @@ type Env struct {
 	//
 	// Validated.
 	Image *imagev1beta1.Image
-	// Resolver is the resolver to apply before printing paths or annotations.
+	// Resolver is the resolver to apply before printing paths or FileAnnotations.
 	// Can be nil.
 	Resolver bufbuild.ProtoRealFilePathResolver
 	// Config is the config to use.
@@ -42,7 +42,7 @@ type EnvReader interface {
 	// Note that includeSourceInfo will only be respected for Sources. We make
 	// no modifications for Images.
 	//
-	// Annotations will be fixed per the resolver before returning.
+	// FileAnnotations will be fixed per the resolver before returning.
 	// If stdin is nil and this tries to read from stdin, returns user error.
 	ReadEnv(
 		ctx context.Context,
@@ -54,7 +54,7 @@ type EnvReader interface {
 		specificFilePathsAllowNotExist bool,
 		includeImports bool,
 		includeSourceInfo bool,
-	) (*Env, []*analysis.Annotation, error)
+	) (*Env, []*filev1beta1.FileAnnotation, error)
 	// ReadSourceEnv reads an source environment.
 	//
 	// This is the same as ReadEnv but disallows image values and always builds.
@@ -68,7 +68,7 @@ type EnvReader interface {
 		specificFilePathsAllowNotExist bool,
 		includeImports bool,
 		includeSourceInfo bool,
-	) (*Env, []*analysis.Annotation, error)
+	) (*Env, []*filev1beta1.FileAnnotation, error)
 	// ReadImageEnv reads an image environment.
 	//
 	// This is the same as ReadEnv but disallows source values and never builds.

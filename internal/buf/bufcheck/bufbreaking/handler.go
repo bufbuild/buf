@@ -3,8 +3,8 @@ package bufbreaking
 import (
 	"context"
 
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"go.uber.org/zap"
 )
@@ -29,7 +29,7 @@ func (h *handler) BreakingCheck(
 	breakingConfig *Config,
 	previousImage *imagev1beta1.Image,
 	image *imagev1beta1.Image,
-) ([]*analysis.Annotation, error) {
+) ([]*filev1beta1.FileAnnotation, error) {
 	previousFiles, err := protodesc.NewFilesUnstable(ctx, previousImage.GetFile()...)
 	if err != nil {
 		return nil, err

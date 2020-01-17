@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
@@ -34,7 +34,7 @@ func (h *handler) Build(
 	bucket storage.ReadBucket,
 	protoFileSet ProtoFileSet,
 	options BuildOptions,
-) (_ *imagev1beta1.Image, _ []*analysis.Annotation, retErr error) {
+) (_ *imagev1beta1.Image, _ []*filev1beta1.FileAnnotation, retErr error) {
 	if options.CopyToMemory {
 		memBucket, err := h.copyToMemory(ctx, bucket, protoFileSet)
 		if err != nil {
@@ -50,7 +50,7 @@ func (h *handler) Build(
 		h.logger.Debug("no_copy_to_memory_set")
 	}
 
-	image, annotations, err := h.runner.Run(
+	image, fileAnnotations, err := h.runner.Run(
 		ctx,
 		bucket,
 		protoFileSet,
@@ -60,11 +60,11 @@ func (h *handler) Build(
 	if err != nil {
 		return nil, nil, err
 	}
-	if len(annotations) > 0 {
-		if err := FixAnnotationFilenames(protoFileSet, annotations); err != nil {
+	if len(fileAnnotations) > 0 {
+		if err := FixFileAnnotationPaths(protoFileSet, fileAnnotations); err != nil {
 			return nil, nil, err
 		}
-		return nil, annotations, nil
+		return nil, fileAnnotations, nil
 	}
 	return image, nil, nil
 }

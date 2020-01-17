@@ -3,14 +3,14 @@ package internal
 import (
 	"fmt"
 
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 )
 
 // Helper is a helper for checkers.
 type Helper struct {
-	id          string
-	annotations []*analysis.Annotation
+	id              string
+	fileAnnotations []*filev1beta1.FileAnnotation
 }
 
 // NewHelper returns a new Helper for the given id.
@@ -20,19 +20,19 @@ func NewHelper(id string) *Helper {
 	}
 }
 
-// AddAnnotationf adds an annotation with the id as the Type.
+// AddFileAnnotationf adds a FileAnnotation with the id as the Type.
 //
 // If descriptor is nil, no filename information is added.
 // If location is nil, no line or column information will be added.
-func (h *Helper) AddAnnotationf(
+func (h *Helper) AddFileAnnotationf(
 	descriptor protodesc.Descriptor,
 	location protodesc.Location,
 	format string,
 	args ...interface{},
 ) {
-	h.annotations = append(
-		h.annotations,
-		newAnnotationf(
+	h.fileAnnotations = append(
+		h.fileAnnotations,
+		newFileAnnotationf(
 			h.id,
 			descriptor,
 			location,
@@ -42,26 +42,26 @@ func (h *Helper) AddAnnotationf(
 	)
 }
 
-// Annotations returns the added annotations.
-func (h *Helper) Annotations() []*analysis.Annotation {
-	return h.annotations
+// FileAnnotations returns the added FileAnnotations.
+func (h *Helper) FileAnnotations() []*filev1beta1.FileAnnotation {
+	return h.fileAnnotations
 }
 
-// newAnnotationf adds an annotation with the id as the Type.
+// newFileAnnotationf adds a FileAnnotation with the id as the Type.
 //
 // If descriptor is nil, no filename information is added.
 // If location is nil, no line or column information will be added.
-func newAnnotationf(
+func newFileAnnotationf(
 	id string,
 	descriptor protodesc.Descriptor,
 	location protodesc.Location,
 	format string,
 	args ...interface{},
-) *analysis.Annotation {
-	filename := ""
+) *filev1beta1.FileAnnotation {
+	path := ""
 	if descriptor != nil {
 		// this is a root file path
-		filename = descriptor.FilePath()
+		path = descriptor.FilePath()
 	}
 	startLine := 0
 	startColumn := 0
@@ -73,12 +73,12 @@ func newAnnotationf(
 		endLine = location.EndLine()
 		endColumn = location.EndColumn()
 	}
-	return &analysis.Annotation{
-		Filename:    filename,
-		StartLine:   startLine,
-		StartColumn: startColumn,
-		EndLine:     endLine,
-		EndColumn:   endColumn,
+	return &filev1beta1.FileAnnotation{
+		Path:        path,
+		StartLine:   uint32(startLine),
+		StartColumn: uint32(startColumn),
+		EndLine:     uint32(endLine),
+		EndColumn:   uint32(endColumn),
 		Type:        id,
 		Message:     fmt.Sprintf(format, args...),
 	}

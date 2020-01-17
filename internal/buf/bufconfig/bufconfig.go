@@ -9,7 +9,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -102,25 +102,25 @@ type ExternalLintConfig struct {
 	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
 }
 
-// PrintAnnotationsLintConfigIgnoreYAML prints the annotations to the Writer as config-ignore-yaml.
+// PrintFileAnnotationsLintConfigIgnoreYAML prints the FileAnnotations to the Writer as config-ignore-yaml.
 //
 // TODO: this probably belongs in buflint, but since ExternalConfig is not supposed to be used
 // outside of this package, we put it here for now.
-func PrintAnnotationsLintConfigIgnoreYAML(writer io.Writer, annotations []*analysis.Annotation) error {
-	if len(annotations) == 0 {
+func PrintFileAnnotationsLintConfigIgnoreYAML(writer io.Writer, fileAnnotations []*filev1beta1.FileAnnotation) error {
+	if len(fileAnnotations) == 0 {
 		return nil
 	}
 	ignoreIDToRootPathMap := make(map[string]map[string]struct{})
-	for _, annotation := range annotations {
-		if annotation.Filename == "" || annotation.Type == "" {
+	for _, fileAnnotation := range fileAnnotations {
+		if fileAnnotation.Path == "" || fileAnnotation.Type == "" {
 			continue
 		}
-		rootPathMap, ok := ignoreIDToRootPathMap[annotation.Type]
+		rootPathMap, ok := ignoreIDToRootPathMap[fileAnnotation.Type]
 		if !ok {
 			rootPathMap = make(map[string]struct{})
-			ignoreIDToRootPathMap[annotation.Type] = rootPathMap
+			ignoreIDToRootPathMap[fileAnnotation.Type] = rootPathMap
 		}
-		rootPathMap[annotation.Filename] = struct{}{}
+		rootPathMap[fileAnnotation.Path] = struct{}{}
 	}
 	if len(ignoreIDToRootPathMap) == 0 {
 		return nil
