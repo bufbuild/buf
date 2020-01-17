@@ -8,7 +8,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	"github.com/bufbuild/buf/internal/pkg/ext/extfile"
 	"github.com/bufbuild/buf/internal/pkg/util/utilencoding"
 	"github.com/bufbuild/cli/cliproto"
 	"github.com/bufbuild/cli/clizap"
@@ -85,7 +85,7 @@ func Handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	annotations, err := internal.NewBufbreakingHandler(logger).BreakingCheck(
+	fileAnnotations, err := internal.NewBufbreakingHandler(logger).BreakingCheck(
 		ctx,
 		config.Breaking,
 		againstEnv.Image,
@@ -101,7 +101,7 @@ func Handle(
 		return
 	}
 	buffer := bytes.NewBuffer(nil)
-	if err := analysis.PrintAnnotations(buffer, annotations, asJSON); err != nil {
+	if err := extfile.PrintFileAnnotations(buffer, fileAnnotations, asJSON); err != nil {
 		responseWriter.WriteError(err.Error())
 		return
 	}

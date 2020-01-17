@@ -3,7 +3,8 @@ package internal
 import (
 	"context"
 
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
+	"github.com/bufbuild/buf/internal/pkg/ext/extfile"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/util/utillog"
@@ -24,20 +25,20 @@ func NewRunner(logger *zap.Logger) *Runner {
 }
 
 // Check runs the Checkers.
-func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protodesc.File, files []protodesc.File) ([]*analysis.Annotation, error) {
+func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protodesc.File, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	checkers := config.Checkers
 	if len(checkers) == 0 {
 		return nil, nil
 	}
 	defer utillog.Defer(r.logger, "check", zap.Int("num_files", len(files)), zap.Int("num_checkers", len(checkers)))()
 
-	var annotations []*analysis.Annotation
+	var fileAnnotations []*filev1beta1.FileAnnotation
 	resultC := make(chan *result, len(checkers))
 	for _, checker := range checkers {
 		checker := checker
 		go func() {
-			iAnnotations, iErr := checker.check(previousFiles, files)
-			resultC <- newResult(iAnnotations, iErr)
+			iFileAnnotations, iErr := checker.check(previousFiles, files)
+			resultC <- newResult(iFileAnnotations, iErr)
 		}()
 	}
 	var err error
@@ -46,7 +47,7 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case result := <-resultC:
-			annotations = append(annotations, result.Annotations...)
+			fileAnnotations = append(fileAnnotations, result.FileAnnotations...)
 			err = multierr.Append(err, result.Err)
 		}
 	}
@@ -55,45 +56,45 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	}
 
 	if len(config.IgnoreRootPaths) == 0 && len(config.IgnoreIDToRootPaths) == 0 {
-		analysis.SortAnnotations(annotations)
-		return annotations, nil
+		extfile.SortFileAnnotations(fileAnnotations)
+		return fileAnnotations, nil
 	}
 
-	filteredAnnotations := make([]*analysis.Annotation, 0, len(annotations))
-	for _, annotation := range annotations {
-		if !shouldIgnoreAnnotation(annotation, config.IgnoreRootPaths, config.IgnoreIDToRootPaths) {
-			filteredAnnotations = append(filteredAnnotations, annotation)
+	filteredFileAnnotations := make([]*filev1beta1.FileAnnotation, 0, len(fileAnnotations))
+	for _, fileAnnotation := range fileAnnotations {
+		if !shouldIgnoreFileAnnotation(fileAnnotation, config.IgnoreRootPaths, config.IgnoreIDToRootPaths) {
+			filteredFileAnnotations = append(filteredFileAnnotations, fileAnnotation)
 		}
 	}
-	analysis.SortAnnotations(filteredAnnotations)
-	return filteredAnnotations, nil
+	extfile.SortFileAnnotations(filteredFileAnnotations)
+	return filteredFileAnnotations, nil
 }
 
-func shouldIgnoreAnnotation(annotation *analysis.Annotation, ignoreAllRootPaths map[string]struct{}, ignoreIDToRootPaths map[string]map[string]struct{}) bool {
-	if annotation.Filename == "" {
+func shouldIgnoreFileAnnotation(fileAnnotation *filev1beta1.FileAnnotation, ignoreAllRootPaths map[string]struct{}, ignoreIDToRootPaths map[string]map[string]struct{}) bool {
+	if fileAnnotation.Path == "" {
 		return false
 	}
-	if storagepath.MapContainsMatch(ignoreAllRootPaths, annotation.Filename) {
+	if storagepath.MapContainsMatch(ignoreAllRootPaths, fileAnnotation.Path) {
 		return true
 	}
-	if annotation.Type == "" {
+	if fileAnnotation.Type == "" {
 		return false
 	}
-	ignoreRootPaths, ok := ignoreIDToRootPaths[annotation.Type]
+	ignoreRootPaths, ok := ignoreIDToRootPaths[fileAnnotation.Type]
 	if !ok {
 		return false
 	}
-	return storagepath.MapContainsMatch(ignoreRootPaths, annotation.Filename)
+	return storagepath.MapContainsMatch(ignoreRootPaths, fileAnnotation.Path)
 }
 
 type result struct {
-	Annotations []*analysis.Annotation
-	Err         error
+	FileAnnotations []*filev1beta1.FileAnnotation
+	Err             error
 }
 
-func newResult(annotations []*analysis.Annotation, err error) *result {
+func newResult(fileAnnotations []*filev1beta1.FileAnnotation, err error) *result {
 	return &result{
-		Annotations: annotations,
-		Err:         err,
+		FileAnnotations: fileAnnotations,
+		Err:             err,
 	}
 }

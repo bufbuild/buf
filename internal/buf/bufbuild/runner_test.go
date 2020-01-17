@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -81,10 +81,10 @@ func TestCompareGoogleapis(t *testing.T) {
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Image {
 	bucket := testGetBucketGoogleapis(t)
 	protoFileSet := testGetProtoFileSetGoogleapis(t, bucket)
-	image, annotations := testBuild(t, includeSourceInfo, bucket, protoFileSet)
+	image, fileAnnotations := testBuild(t, includeSourceInfo, bucket, protoFileSet)
 	assert.NoError(t, bucket.Close())
 
-	assert.Equal(t, 0, len(annotations), annotations)
+	assert.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	assert.Equal(t, 1585, len(image.GetFile()))
 	importNames, err := extimage.ImageImportNames(image)
 	assert.NoError(t, err)
@@ -190,8 +190,8 @@ func testGetProtoFileSetGoogleapis(t *testing.T, bucket storage.ReadBucket) Prot
 	return protoFileSet
 }
 
-func testBuild(t *testing.T, includeSourceInfo bool, bucket storage.ReadBucket, protoFileSet ProtoFileSet) (*imagev1beta1.Image, []*analysis.Annotation) {
-	image, annotations, err := newRunner(zap.NewNop()).Run(
+func testBuild(t *testing.T, includeSourceInfo bool, bucket storage.ReadBucket, protoFileSet ProtoFileSet) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation) {
+	image, fileAnnotations, err := newRunner(zap.NewNop()).Run(
 		context.Background(),
 		bucket,
 		protoFileSet,
@@ -199,7 +199,7 @@ func testBuild(t *testing.T, includeSourceInfo bool, bucket storage.ReadBucket, 
 		includeSourceInfo,
 	)
 	require.NoError(t, err)
-	return image, annotations
+	return image, fileAnnotations
 }
 
 func testBuildProtoc(t *testing.T, includeSourceInfo bool, baseDirPath string, protoFileSet ProtoFileSet) *descriptor.FileDescriptorSet {

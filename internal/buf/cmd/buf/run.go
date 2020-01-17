@@ -11,7 +11,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	"github.com/bufbuild/buf/internal/pkg/ext/extfile"
 	"github.com/bufbuild/cli/clienv"
 	"go.uber.org/zap"
 )
@@ -29,7 +29,7 @@ func imageBuild(
 	if err != nil {
 		return err
 	}
-	env, annotations, err := internal.NewBufosEnvReader(
+	env, fileAnnotations, err := internal.NewBufosEnvReader(
 		logger,
 		imageBuildInputFlagName,
 		imageBuildConfigFlagName,
@@ -48,9 +48,9 @@ func imageBuild(
 	if err != nil {
 		return err
 	}
-	if len(annotations) > 0 {
+	if len(fileAnnotations) > 0 {
 		// stderr since we do output to stdout potentially
-		if err := analysis.PrintAnnotations(cliEnv.Stderr(), annotations, asJSON); err != nil {
+		if err := extfile.PrintFileAnnotations(cliEnv.Stderr(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
@@ -81,7 +81,7 @@ func checkLint(
 	if err != nil {
 		return err
 	}
-	env, annotations, err := internal.NewBufosEnvReader(
+	env, fileAnnotations, err := internal.NewBufosEnvReader(
 		logger,
 		checkLintInputFlagName,
 		checkLintConfigFlagName,
@@ -99,13 +99,13 @@ func checkLint(
 	if err != nil {
 		return err
 	}
-	if len(annotations) > 0 {
-		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
+	if len(fileAnnotations) > 0 {
+		if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
 	}
-	annotations, err = internal.NewBuflintHandler(logger).LintCheck(
+	fileAnnotations, err = internal.NewBuflintHandler(logger).LintCheck(
 		ctx,
 		env.Config.Lint,
 		env.Image,
@@ -113,16 +113,16 @@ func checkLint(
 	if err != nil {
 		return err
 	}
-	if len(annotations) > 0 {
+	if len(fileAnnotations) > 0 {
 		if asConfigIgnoreYAML {
-			if err := bufconfig.PrintAnnotationsLintConfigIgnoreYAML(cliEnv.Stdout(), annotations); err != nil {
+			if err := bufconfig.PrintFileAnnotationsLintConfigIgnoreYAML(cliEnv.Stdout(), fileAnnotations); err != nil {
 				return err
 			}
 		} else {
-			if err := bufbuild.FixAnnotationFilenames(env.Resolver, annotations); err != nil {
+			if err := bufbuild.FixFileAnnotationPaths(env.Resolver, fileAnnotations); err != nil {
 				return err
 			}
-			if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
+			if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {
 				return err
 			}
 		}
@@ -144,7 +144,7 @@ func checkBreaking(
 	if err != nil {
 		return err
 	}
-	env, annotations, err := internal.NewBufosEnvReader(
+	env, fileAnnotations, err := internal.NewBufosEnvReader(
 		logger,
 		checkBreakingInputFlagName,
 		checkBreakingConfigFlagName,
@@ -162,8 +162,8 @@ func checkBreaking(
 	if err != nil {
 		return err
 	}
-	if len(annotations) > 0 {
-		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
+	if len(fileAnnotations) > 0 {
+		if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
@@ -180,7 +180,7 @@ func checkBreaking(
 		}
 	}
 
-	againstEnv, annotations, err := internal.NewBufosEnvReader(
+	againstEnv, fileAnnotations, err := internal.NewBufosEnvReader(
 		logger,
 		checkBreakingAgainstInputFlagName,
 		checkBreakingAgainstConfigFlagName,
@@ -198,19 +198,19 @@ func checkBreaking(
 	if err != nil {
 		return err
 	}
-	if len(annotations) > 0 {
+	if len(fileAnnotations) > 0 {
 		// TODO: formalize this somewhere
-		for _, annotation := range annotations {
-			if annotation.Filename != "" {
-				annotation.Filename = annotation.Filename + "@against"
+		for _, fileAnnotation := range fileAnnotations {
+			if fileAnnotation.Path != "" {
+				fileAnnotation.Path = fileAnnotation.Path + "@against"
 			}
 		}
-		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
+		if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
 	}
-	annotations, err = internal.NewBufbreakingHandler(logger).BreakingCheck(
+	fileAnnotations, err = internal.NewBufbreakingHandler(logger).BreakingCheck(
 		ctx,
 		env.Config.Breaking,
 		againstEnv.Image,
@@ -219,11 +219,11 @@ func checkBreaking(
 	if err != nil {
 		return err
 	}
-	if len(annotations) > 0 {
-		if err := bufbuild.FixAnnotationFilenames(env.Resolver, annotations); err != nil {
+	if len(fileAnnotations) > 0 {
+		if err := bufbuild.FixFileAnnotationPaths(env.Resolver, fileAnnotations); err != nil {
 			return err
 		}
-		if err := analysis.PrintAnnotations(cliEnv.Stdout(), annotations, asJSON); err != nil {
+		if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")

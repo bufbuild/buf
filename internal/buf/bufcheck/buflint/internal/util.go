@@ -5,12 +5,12 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 )
 
-// addFunc adds an annotation.
+// addFunc adds a FileAnnotation.
 //
 // Both the Descriptor and Location can be nil.
 type addFunc func(protodesc.Descriptor, protodesc.Location, string, ...interface{})
@@ -101,19 +101,19 @@ func stringIsPositiveNumber(s string) bool {
 
 func newFilesCheckFunc(
 	f func(addFunc, []protodesc.File) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
-	return func(id string, files []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+	return func(id string, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 		helper := internal.NewHelper(id)
-		if err := f(helper.AddAnnotationf, files); err != nil {
+		if err := f(helper.AddFileAnnotationf, files); err != nil {
 			return nil, err
 		}
-		return helper.Annotations(), nil
+		return helper.FileAnnotations(), nil
 	}
 }
 
 func newPackageToFilesCheckFunc(
 	f func(add addFunc, pkg string, files []protodesc.File) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, files []protodesc.File) error {
 			packageToFiles, err := protodesc.PackageToFiles(files...)
@@ -132,7 +132,7 @@ func newPackageToFilesCheckFunc(
 
 func newDirToFilesCheckFunc(
 	f func(add addFunc, dirPath string, files []protodesc.File) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, files []protodesc.File) error {
 			dirPathToFiles, err := protodesc.DirPathToFiles(files...)
@@ -151,7 +151,7 @@ func newDirToFilesCheckFunc(
 
 func newFileCheckFunc(
 	f func(addFunc, protodesc.File) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, files []protodesc.File) error {
 			for _, file := range files {
@@ -166,7 +166,7 @@ func newFileCheckFunc(
 
 func newFileImportCheckFunc(
 	f func(addFunc, protodesc.FileImport) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFileCheckFunc(
 		func(add addFunc, file protodesc.File) error {
 			for _, fileImport := range file.FileImports() {
@@ -181,7 +181,7 @@ func newFileImportCheckFunc(
 
 func newEnumCheckFunc(
 	f func(addFunc, protodesc.Enum) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFileCheckFunc(
 		func(add addFunc, file protodesc.File) error {
 			return protodesc.ForEachEnum(
@@ -196,7 +196,7 @@ func newEnumCheckFunc(
 
 func newEnumValueCheckFunc(
 	f func(addFunc, protodesc.EnumValue) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newEnumCheckFunc(
 		func(add addFunc, enum protodesc.Enum) error {
 			for _, enumValue := range enum.Values() {
@@ -211,7 +211,7 @@ func newEnumValueCheckFunc(
 
 func newMessageCheckFunc(
 	f func(addFunc, protodesc.Message) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFileCheckFunc(
 		func(add addFunc, file protodesc.File) error {
 			return protodesc.ForEachMessage(
@@ -226,7 +226,7 @@ func newMessageCheckFunc(
 
 func newFieldCheckFunc(
 	f func(addFunc, protodesc.Field) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newMessageCheckFunc(
 		func(add addFunc, message protodesc.Message) error {
 			for _, field := range message.Fields() {
@@ -247,7 +247,7 @@ func newFieldCheckFunc(
 
 func newOneofCheckFunc(
 	f func(addFunc, protodesc.Oneof) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newMessageCheckFunc(
 		func(add addFunc, message protodesc.Message) error {
 			for _, oneof := range message.Oneofs() {
@@ -262,7 +262,7 @@ func newOneofCheckFunc(
 
 func newServiceCheckFunc(
 	f func(addFunc, protodesc.Service) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFileCheckFunc(
 		func(add addFunc, file protodesc.File) error {
 			for _, service := range file.Services() {
@@ -277,7 +277,7 @@ func newServiceCheckFunc(
 
 func newMethodCheckFunc(
 	f func(addFunc, protodesc.Method) error,
-) func(string, []protodesc.File) ([]*analysis.Annotation, error) {
+) func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newServiceCheckFunc(
 		func(add addFunc, service protodesc.Service) error {
 			for _, method := range service.Methods() {

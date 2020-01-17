@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package bufbuild.buf.file.v1beta1;
+
+option go_package = "filev1beta1";
+
+// FileSet is a set of files.
+message FileSet {
+  // files are the files that make up the file set.
+  //
+  // All files must have unique paths for a FileSet to be valid.
+  repeated File files = 1;
+}
+
+// File is an individual file.
+message File {
+  // path is the path of the file.
+  //
+  // This path must be relative and use '/' as the separator character .
+  string path = 1;
+  // content is the file content.
+  //
+  // This can potentially be empty.
+  bytes content = 2;
+}
+
+// FileAnnotation is an annotation for a specific file location.
+message FileAnnotation {
+  // path is the path of the file.
+  //
+  // This path must be relative and use '/' as the separator character .
+  string path = 1;
+  // start_line is the starting line.
+  //
+  // If the starting line is not known, this will be 0.
+  uint32 start_line = 2;
+  // start_column is the starting column.
+  //
+  // If the starting column is not known, this will be 0.
+  uint32 start_column = 3;
+  // end_line is the ending line.
+  //
+  // If the ending line is not known, this will be 0.
+  // If the ending line is the same as the starting line, this will be explicitly set
+  // to the same value as start_line.
+  uint32 end_line = 4;
+  // end_column is the ending column.
+  //
+  // If the ending column is not known, this will be 0.
+  // If the ending column is the same as the starting column, this will be explicitly set
+  // to the same value as start_column.
+  uint32 end_column = 5;
+  // type is the type of annotation, typically and ID representing a failure type.
+  string type = 6;
+  // message is the message of the annotation.
+  string message = 7;
+}

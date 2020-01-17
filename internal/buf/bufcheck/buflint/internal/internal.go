@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
@@ -137,7 +137,7 @@ func checkEnumValueUpperSnakeCase(add addFunc, enumValue protodesc.EnumValue) er
 }
 
 // CheckEnumZeroValueSuffix is a check function.
-var CheckEnumZeroValueSuffix = func(id string, files []protodesc.File, suffix string) ([]*analysis.Annotation, error) {
+var CheckEnumZeroValueSuffix = func(id string, files []protodesc.File, suffix string) ([]*filev1beta1.FileAnnotation, error) {
 	return newEnumValueCheckFunc(
 		func(add addFunc, enumValue protodesc.EnumValue) error {
 			return checkEnumZeroValueSuffix(add, enumValue, suffix)
@@ -451,7 +451,7 @@ var CheckRPCRequestResponseUnique = func(
 	allowSameRequestResponse bool,
 	allowGoogleProtobufEmptyRequests bool,
 	allowGoogleProtobufEmptyResponses bool,
-) ([]*analysis.Annotation, error) {
+) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, files []protodesc.File) error {
 			return checkRPCRequestResponseUnique(
@@ -482,7 +482,7 @@ func checkRPCRequestResponseUnique(
 	if !allowSameRequestResponse {
 		for _, method := range allFullNameToMethod {
 			if method.InputTypeName() == method.OutputTypeName() {
-				// if we allow both empty requests and responses, we do not want to add an Annotation
+				// if we allow both empty requests and responses, we do not want to add a FileAnnotation
 				if !(method.InputTypeName() == ".google.protobuf.Empty" && allowGoogleProtobufEmptyRequests && allowGoogleProtobufEmptyResponses) {
 					add(method, method.Location(), "RPC %q has the same type %q for the request and response.", method.Name(), method.InputTypeName())
 				}
@@ -536,7 +536,7 @@ func checkRPCRequestResponseUnique(
 				}
 			}
 		} else {
-			// else, we have a duplicate usage of requestResponseType, add an Annotation to each method
+			// else, we have a duplicate usage of requestResponseType, add an FileAnnotation to each method
 			for _, method := range fullNameToMethod {
 				add(method, method.Location(), "%q is used as the request or response type for multiple RPCs.", requestResponseType)
 			}
@@ -546,7 +546,7 @@ func checkRPCRequestResponseUnique(
 }
 
 // CheckRPCRequestStandardName is a check function.
-var CheckRPCRequestStandardName = func(id string, files []protodesc.File, allowGoogleProtobufEmptyRequests bool) ([]*analysis.Annotation, error) {
+var CheckRPCRequestStandardName = func(id string, files []protodesc.File, allowGoogleProtobufEmptyRequests bool) ([]*filev1beta1.FileAnnotation, error) {
 	return newMethodCheckFunc(
 		func(add addFunc, method protodesc.Method) error {
 			return checkRPCRequestStandardName(add, method, allowGoogleProtobufEmptyRequests)
@@ -576,7 +576,7 @@ func checkRPCRequestStandardName(add addFunc, method protodesc.Method, allowGoog
 }
 
 // CheckRPCResponseStandardName is a check function.
-var CheckRPCResponseStandardName = func(id string, files []protodesc.File, allowGoogleProtobufEmptyResponses bool) ([]*analysis.Annotation, error) {
+var CheckRPCResponseStandardName = func(id string, files []protodesc.File, allowGoogleProtobufEmptyResponses bool) ([]*filev1beta1.FileAnnotation, error) {
 	return newMethodCheckFunc(
 		func(add addFunc, method protodesc.Method) error {
 			return checkRPCResponseStandardName(add, method, allowGoogleProtobufEmptyResponses)
@@ -618,7 +618,7 @@ func checkServicePascalCase(add addFunc, service protodesc.Service) error {
 }
 
 // CheckServiceSuffix is a check function.
-var CheckServiceSuffix = func(id string, files []protodesc.File, suffix string) ([]*analysis.Annotation, error) {
+var CheckServiceSuffix = func(id string, files []protodesc.File, suffix string) ([]*filev1beta1.FileAnnotation, error) {
 	return newServiceCheckFunc(
 		func(add addFunc, service protodesc.Service) error {
 			return checkServiceSuffix(add, service, suffix)

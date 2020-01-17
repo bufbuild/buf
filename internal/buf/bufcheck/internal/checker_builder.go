@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 )
 
@@ -74,7 +74,7 @@ func newNopPurpose(purpose string) func(ConfigBuilder) (string, error) {
 }
 
 func newNopCheckFunc(
-	f func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error),
+	f func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error),
 ) func(ConfigBuilder) (CheckFunc, error) {
 	return func(ConfigBuilder) (CheckFunc, error) {
 		return f, nil

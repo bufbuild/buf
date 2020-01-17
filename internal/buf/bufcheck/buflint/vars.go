@@ -5,7 +5,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/internal"
 	bufcheckinternal "github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
 )
 
@@ -344,7 +344,7 @@ var (
 			if configBuilder.EnumZeroValueSuffix == "" {
 				return nil, errors.New("enum_zero_value_suffix is empty")
 			}
-			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*analysis.Annotation, error) {
+			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 				return internal.CheckEnumZeroValueSuffix(id, files, configBuilder.EnumZeroValueSuffix)
 			}), nil
 		},
@@ -465,7 +465,7 @@ var (
 			return "RPCs request and response types are only used in one RPC (configurable)", nil
 		},
 		func(configBuilder bufcheckinternal.ConfigBuilder) (bufcheckinternal.CheckFunc, error) {
-			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*analysis.Annotation, error) {
+			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 				return internal.CheckRPCRequestResponseUnique(
 					id,
 					files,
@@ -482,7 +482,7 @@ var (
 			return "RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable)", nil
 		},
 		func(configBuilder bufcheckinternal.ConfigBuilder) (bufcheckinternal.CheckFunc, error) {
-			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*analysis.Annotation, error) {
+			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 				return internal.CheckRPCRequestStandardName(
 					id,
 					files,
@@ -497,7 +497,7 @@ var (
 			return "RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable)", nil
 		},
 		func(configBuilder bufcheckinternal.ConfigBuilder) (bufcheckinternal.CheckFunc, error) {
-			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*analysis.Annotation, error) {
+			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 				return internal.CheckRPCResponseStandardName(
 					id,
 					files,
@@ -523,7 +523,7 @@ var (
 			if configBuilder.ServiceSuffix == "" {
 				return nil, errors.New("service_suffix is empty")
 			}
-			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*analysis.Annotation, error) {
+			return bufcheckinternal.CheckFunc(func(id string, _ []protodesc.File, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 				return internal.CheckServiceSuffix(id, files, configBuilder.ServiceSuffix)
 			}), nil
 		},
@@ -531,9 +531,9 @@ var (
 )
 
 func newAdapter(
-	f func(string, []protodesc.File) ([]*analysis.Annotation, error),
-) func(string, []protodesc.File, []protodesc.File) ([]*analysis.Annotation, error) {
-	return func(id string, _ []protodesc.File, files []protodesc.File) ([]*analysis.Annotation, error) {
+	f func(string, []protodesc.File) ([]*filev1beta1.FileAnnotation, error),
+) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+	return func(id string, _ []protodesc.File, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
 		return f(id, files)
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	"github.com/bufbuild/buf/internal/pkg/ext/extfile"
 	"github.com/bufbuild/buf/internal/pkg/util/utilencoding"
 	"github.com/bufbuild/cli/cliproto"
 	"github.com/bufbuild/cli/clizap"
@@ -61,7 +61,7 @@ func Handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	annotations, err := internal.NewBuflintHandler(logger).LintCheck(
+	fileAnnotations, err := internal.NewBuflintHandler(logger).LintCheck(
 		ctx,
 		config.Lint,
 		image,
@@ -82,12 +82,12 @@ func Handle(
 	}
 	buffer := bytes.NewBuffer(nil)
 	if asConfigIgnoreYAML {
-		if err := bufconfig.PrintAnnotationsLintConfigIgnoreYAML(buffer, annotations); err != nil {
+		if err := bufconfig.PrintFileAnnotationsLintConfigIgnoreYAML(buffer, fileAnnotations); err != nil {
 			responseWriter.WriteError(err.Error())
 			return
 		}
 	} else {
-		if err := analysis.PrintAnnotations(buffer, annotations, asJSON); err != nil {
+		if err := extfile.PrintFileAnnotations(buffer, fileAnnotations, asJSON); err != nil {
 			responseWriter.WriteError(err.Error())
 			return
 		}

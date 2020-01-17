@@ -9,8 +9,9 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
+	"github.com/bufbuild/buf/internal/pkg/ext/extfile"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
@@ -34,9 +35,9 @@ func newRunner(logger *zap.Logger) *runner {
 // Run runs compilation.
 //
 // If an error is returned, it is a system error.
-// Only one of Image and annotations will be returned.
+// Only one of Image and FileAnnotations will be returned.
 //
-// Annotations will be sorted, but Filenames will not have the roots as a prefix, instead
+// FileAnnotations will be sorted, but Paths will not have the roots as a prefix, instead
 // they will be relative to the roots. This should be fixed for linter outputs if image
 // mode is not used.
 func (r *runner) Run(
@@ -45,7 +46,7 @@ func (r *runner) Run(
 	protoFileSet ProtoFileSet,
 	includeImports bool,
 	includeSourceInfo bool,
-) (_ *imagev1beta1.Image, _ []*analysis.Annotation, retErr error) {
+) (_ *imagev1beta1.Image, _ []*filev1beta1.FileAnnotation, retErr error) {
 	roots := protoFileSet.Roots()
 	rootFilePaths := protoFileSet.RootFilePaths()
 
@@ -78,13 +79,13 @@ func (r *runner) Run(
 	if resultErr != nil {
 		return nil, nil, resultErr
 	}
-	var annotations []*analysis.Annotation
+	var fileAnnotations []*filev1beta1.FileAnnotation
 	for _, result := range results {
-		annotations = append(annotations, result.Annotations...)
+		fileAnnotations = append(fileAnnotations, result.FileAnnotations...)
 	}
-	if len(annotations) > 0 {
-		analysis.SortAnnotations(annotations)
-		return nil, annotations, nil
+	if len(fileAnnotations) > 0 {
+		extfile.SortFileAnnotations(fileAnnotations)
+		return nil, fileAnnotations, nil
 	}
 
 	var descFileDescriptors []*desc.FileDescriptor
@@ -197,45 +198,46 @@ func (r *runner) getResult(
 			if len(errorsWithPos) == 0 {
 				return newResult(rootFilePaths, nil, nil, errors.New("got invalid source error but no errors reported"))
 			}
-			annotations := make([]*analysis.Annotation, 0, len(errorsWithPos))
+			fileAnnotations := make([]*filev1beta1.FileAnnotation, 0, len(errorsWithPos))
 			for _, errorWithPos := range errorsWithPos {
-				annotation, err := getAnnotation(errorWithPos)
+				fileAnnotation, err := getFileAnnotation(errorWithPos)
 				if err != nil {
 					return newResult(rootFilePaths, nil, nil, err)
 				}
-				annotations = append(annotations, annotation)
+				fileAnnotations = append(fileAnnotations, fileAnnotation)
 			}
-			return newResult(rootFilePaths, nil, annotations, nil)
+			return newResult(rootFilePaths, nil, fileAnnotations, nil)
 		}
 		return newResult(rootFilePaths, nil, nil, err)
 	}
 	return newResult(rootFilePaths, descFileDescriptors, nil, nil)
 }
 
-func getAnnotation(errorWithPos protoparse.ErrorWithPos) (*analysis.Annotation, error) {
-	annotation := &analysis.Annotation{
+func getFileAnnotation(errorWithPos protoparse.ErrorWithPos) (*filev1beta1.FileAnnotation, error) {
+	fileAnnotation := &filev1beta1.FileAnnotation{
 		Type: "COMPILE",
 	}
 	// this should never happen
 	// maybe we should error
 	if errorWithPos.Unwrap() != nil {
-		annotation.Message = errorWithPos.Unwrap().Error()
+		fileAnnotation.Message = errorWithPos.Unwrap().Error()
 	} else {
-		annotation.Message = "Compile error."
+		fileAnnotation.Message = "Compile error."
 	}
 	sourcePos := errorWithPos.GetPosition()
 	if sourcePos.Filename != "" {
-		annotation.Filename = sourcePos.Filename
+		// TODO: make sure this is normalized
+		fileAnnotation.Path = sourcePos.Filename
 	}
 	if sourcePos.Line > 0 {
-		annotation.StartLine = sourcePos.Line
-		annotation.EndLine = sourcePos.Line
+		fileAnnotation.StartLine = uint32(sourcePos.Line)
+		fileAnnotation.EndLine = uint32(sourcePos.Line)
 	}
 	if sourcePos.Col > 0 {
-		annotation.StartColumn = sourcePos.Col
-		annotation.EndColumn = sourcePos.Col
+		fileAnnotation.StartColumn = uint32(sourcePos.Col)
+		fileAnnotation.EndColumn = uint32(sourcePos.Col)
 	}
-	return annotation, nil
+	return fileAnnotation, nil
 }
 
 // getImage gets the imagev1beta1.Image for the desc.FileDescriptor.
@@ -392,20 +394,20 @@ func checkAndSortDescFileDescriptors(
 type result struct {
 	RootFilePaths       []string
 	DescFileDescriptors []*desc.FileDescriptor
-	Annotations         []*analysis.Annotation
+	FileAnnotations     []*filev1beta1.FileAnnotation
 	Err                 error
 }
 
 func newResult(
 	rootFilePaths []string,
 	descFileDescriptors []*desc.FileDescriptor,
-	annotations []*analysis.Annotation,
+	fileAnnotations []*filev1beta1.FileAnnotation,
 	err error,
 ) *result {
 	return &result{
 		RootFilePaths:       rootFilePaths,
 		DescFileDescriptors: descFileDescriptors,
-		Annotations:         annotations,
+		FileAnnotations:     fileAnnotations,
 		Err:                 err,
 	}
 }

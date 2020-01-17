@@ -14,12 +14,12 @@ require (
 	go.uber.org/atomic v1.5.1 // indirect
 	go.uber.org/multierr v1.4.0
 	go.uber.org/zap v1.13.0
-	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
+	golang.org/x/crypto v0.0.0-20200115085410-6d4e4cb37c7d
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
-	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553 // indirect
-	golang.org/x/sys v0.0.0-20200106162015-b016eb3dc98e // indirect
-	golang.org/x/tools v0.0.0-20200103221440-774c71fcf114 // indirect
-	google.golang.org/genproto v0.0.0-20191230161307-f3c370f40bfb // indirect
+	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa // indirect
+	golang.org/x/sys v0.0.0-20200117145432-59e60aa80a0c // indirect
+	golang.org/x/tools v0.0.0-20200117065230-39095c1d176c // indirect
+	google.golang.org/genproto v0.0.0-20200115191322-ca5a22157cba // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.7 // indirect

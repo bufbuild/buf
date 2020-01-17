@@ -18,8 +18,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufos/internal"
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
+	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/analysis"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
@@ -95,7 +95,7 @@ func (e *envReader) ReadEnv(
 	specificFilePathsAllowNotExist bool,
 	includeImports bool,
 	includeSourceInfo bool,
-) (*Env, []*analysis.Annotation, error) {
+) (*Env, []*filev1beta1.FileAnnotation, error) {
 	return e.readEnv(
 		ctx,
 		stdin,
@@ -121,7 +121,7 @@ func (e *envReader) ReadSourceEnv(
 	specificFilePathsAllowNotExist bool,
 	includeImports bool,
 	includeSourceInfo bool,
-) (*Env, []*analysis.Annotation, error) {
+) (*Env, []*filev1beta1.FileAnnotation, error) {
 	return e.readEnv(
 		ctx,
 		stdin,
@@ -147,7 +147,7 @@ func (e *envReader) ReadImageEnv(
 	specificFilePathsAllowNotExist bool,
 	includeImports bool,
 ) (*Env, error) {
-	env, annotations, err := e.readEnv(
+	env, fileAnnotations, err := e.readEnv(
 		ctx,
 		stdin,
 		getenv,
@@ -163,9 +163,9 @@ func (e *envReader) ReadImageEnv(
 	if err != nil {
 		return nil, err
 	}
-	if len(annotations) > 0 {
+	if len(fileAnnotations) > 0 {
 		// TODO: need to refactor this
-		return nil, errors.New("got annotations for ReadImageEnv which should be impossible")
+		return nil, errors.New("got fileAnnotations for ReadImageEnv which should be impossible")
 	}
 	return env, nil
 }
@@ -292,7 +292,7 @@ func (e *envReader) readEnv(
 	includeSourceInfo bool,
 	onlySources bool,
 	onlyImages bool,
-) (_ *Env, _ []*analysis.Annotation, retErr error) {
+) (_ *Env, _ []*filev1beta1.FileAnnotation, retErr error) {
 	inputRef, err := e.inputRefParser.ParseInputRef(value, onlySources, onlyImages)
 	if err != nil {
 		return nil, nil, err
@@ -335,7 +335,7 @@ func (e *envReader) readEnvFromBucket(
 	includeImports bool,
 	includeSourceInfo bool,
 	inputRef *internal.InputRef,
-) (_ *Env, _ []*analysis.Annotation, retErr error) {
+) (_ *Env, _ []*filev1beta1.FileAnnotation, retErr error) {
 	bucket, err := e.getBucket(ctx, stdin, getenv, inputRef)
 	if err != nil {
 		return nil, nil, err
@@ -418,7 +418,7 @@ func (e *envReader) readEnvFromBucket(
 			return nil, nil, err
 		}
 	}
-	image, annotations, err := e.buildHandler.Build(
+	image, fileAnnotations, err := e.buildHandler.Build(
 		ctx,
 		bucket,
 		protoFileSet,
@@ -432,12 +432,12 @@ func (e *envReader) readEnvFromBucket(
 	if err != nil {
 		return nil, nil, err
 	}
-	if len(annotations) > 0 {
+	if len(fileAnnotations) > 0 {
 		// the documentation for EnvReader says we will resolve before returning
-		if err := bufbuild.FixAnnotationFilenames(resolver, annotations); err != nil {
+		if err := bufbuild.FixFileAnnotationPaths(resolver, fileAnnotations); err != nil {
 			return nil, nil, err
 		}
-		return nil, annotations, nil
+		return nil, fileAnnotations, nil
 	}
 	return &Env{Image: image, Resolver: resolver, Config: config}, nil, nil
 }
