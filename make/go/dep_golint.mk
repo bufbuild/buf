@@ -7,8 +7,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,GOBIN)
 
 # Settable
-# https://github.com/golang/lint/commits/master 20190409
-GOLINT_VERSION ?= 959b441ac422379a43da2230f62be024250818b0
+# https://github.com/golang/lint/commits/master 20191125
+GOLINT_VERSION ?= fdd1cda4f05fd1fd86124f0ef9ce31a0b72c8448
 
 GOLINT := $(CACHE_VERSIONS)/golint/$(GOLINT_VERSION)
 $(GOLINT):

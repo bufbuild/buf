@@ -8,7 +8,7 @@ $(call _assert_var,GOBIN)
 
 # Settable
 # https://github.com/dominikh/go-tools/commits/master 20191201
-STATICCHECK_VERSION ?= 32de78dc1c6c931f2bf017870750b0ca80006601
+STATICCHECK_VERSION ?= 2774002210e8cbf35b5445a3805e6f173c6bec1f
 
 STATICCHECK := $(CACHE_VERSIONS)/staticcheck/$(STATICCHECK_VERSION)
 $(STATICCHECK):
