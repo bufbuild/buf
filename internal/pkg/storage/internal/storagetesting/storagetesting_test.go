@@ -196,7 +196,7 @@ func TestGitClone(t *testing.T) {
 		nil,
 		"",
 		absGitPath,
-		"master",
+		storagegit.NewBranchRefName("master"),
 		"",
 		"",
 		"",

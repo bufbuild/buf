@@ -82,6 +82,15 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		&InputRef{
+			Format: FormatGit,
+			Path:   "path/to/dir.git",
+			GitTag: "master",
+		},
+		"path/to/dir.git#tag=master",
+	)
+	testParseInputRefSuccess(
+		t,
+		&InputRef{
 			Format: FormatBin,
 			Path:   "path/to/file.bin",
 		},
@@ -164,6 +173,24 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		&InputRef{
+			Format: FormatGit,
+			Path:   "path/to/dir",
+			GitTag: "master/foo",
+		},
+		"path/to/dir#tag=master/foo,format=git",
+	)
+	testParseInputRefSuccess(
+		t,
+		&InputRef{
+			Format: FormatGit,
+			Path:   "path/to/dir",
+			GitTag: "master/foo",
+		},
+		"path/to/dir#format=git,tag=master/foo",
+	)
+	testParseInputRefSuccess(
+		t,
+		&InputRef{
 			Format:          FormatTarGz,
 			Path:            "path/to/file",
 			StripComponents: 1,
@@ -219,13 +246,18 @@ func TestParseInputRefError(t *testing.T) {
 	)
 	testParseInputRefErrorBasic(
 		t,
-		newMustSpecifyGitBranchError(testValueFlagName, "path/to/foo.git"),
+		newMustSpecifyGitBranchOrGitTagError(testValueFlagName, "path/to/foo.git"),
 		"path/to/foo.git",
 	)
 	testParseInputRefErrorBasic(
 		t,
-		newMustSpecifyGitBranchError(testValueFlagName, "path/to/foo#format=git"),
+		newMustSpecifyGitBranchOrGitTagError(testValueFlagName, "path/to/foo#format=git"),
 		"path/to/foo#format=git",
+	)
+	testParseInputRefErrorBasic(
+		t,
+		newCannotSpecifyGitBranchAndGitTagError(testValueFlagName),
+		"path/to/foo#format=git,branch=foo,tag=bar",
 	)
 	testParseInputRefErrorBasic(
 		t,

@@ -503,7 +503,7 @@ func (e *envReader) getBucket(
 			ctx,
 			getenv,
 			inputRef.Path,
-			inputRef.GitBranch,
+			getGitRefName(inputRef),
 		)
 	default:
 		return nil, fmt.Errorf("unknown format outside of parse: %v", inputRef.Format)
@@ -582,7 +582,7 @@ func (e *envReader) getBucketFromGitRepo(
 	ctx context.Context,
 	getenv func(string) string,
 	gitRepo string,
-	gitBranch string,
+	gitRefName storagegit.RefName,
 ) (_ storage.ReadBucket, retErr error) {
 	defer utillog.Defer(e.logger, "get_git_bucket_memory")()
 
@@ -597,7 +597,7 @@ func (e *envReader) getBucketFromGitRepo(
 		getenv,
 		homeDirPath,
 		gitRepo,
-		gitBranch,
+		gitRefName,
 		e.httpsUsernameEnvKey,
 		e.httpsPasswordEnvKey,
 		e.sshKeyFileEnvKey,
@@ -738,6 +738,16 @@ func (e *envReader) getImageFromData(
 		return nil, err
 	}
 	return image, nil
+}
+
+func getGitRefName(inputRef *internal.InputRef) storagegit.RefName {
+	if inputRef.GitBranch != "" {
+		return storagegit.NewBranchRefName(inputRef.GitBranch)
+	}
+	if inputRef.GitTag != "" {
+		return storagegit.NewTagRefName(inputRef.GitTag)
+	}
+	return nil
 }
 
 func unmarshalJSON(data []byte, message proto.Message) error {

@@ -18,8 +18,14 @@ type InputRef struct {
 
 	// GitBranch is the branch of the git repository.
 	// This will only be set if Format == FormatGit.
+	// Only one of GitBranch and GitTag will be set.
 	// Optional regardless.
 	GitBranch string
+	// GitTag is the tag of the git repository.
+	// This will only be set if Format == FormatGit.
+	// Only one of GitBranch and GitTag will be set.
+	// Optional regardless.
+	GitTag string
 	// StripComponents is the number of components to strip from a tarball.
 	// This will only be set if Format == FormatTar, FormatTarGz
 	StripComponents uint32
