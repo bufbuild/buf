@@ -128,7 +128,7 @@ Features of Buf's include:
   locally as `.proto` files, but allows you to check many different [Inputs](https://buf.build/docs/inputs):
 
   - Tarballs containing `.proto` files, both local and remote.
-  - Git repository branches containing `.proto` files, both local and remote.
+  - Git repository branches or tags containing `.proto` files, both local and remote.
   - Pre-built [Images](https://buf.build/docs/build-images) or FileDescriptorSets from `protoc`, from both local and remote
     (http/https) locations.
 
