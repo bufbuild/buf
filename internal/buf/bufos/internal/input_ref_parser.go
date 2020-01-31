@@ -60,11 +60,14 @@ func (i *inputRefParser) ParseInputRef(value string, onlySources bool, onlyImage
 		inputRef.Format = format
 	}
 
-	if inputRef.Format == FormatGit && inputRef.GitBranch == "" {
-		return nil, newMustSpecifyGitBranchError(i.valueFlagName, value)
+	if inputRef.Format == FormatGit && inputRef.GitBranch == "" && inputRef.GitTag == "" {
+		return nil, newMustSpecifyGitBranchOrGitTagError(i.valueFlagName, value)
 	}
-	if inputRef.Format != FormatGit && inputRef.GitBranch != "" {
+	if inputRef.Format != FormatGit && (inputRef.GitBranch != "" || inputRef.GitTag != "") {
 		return nil, newOptionsInvalidForFormatError(i.valueFlagName, inputRef.Format, options)
+	}
+	if inputRef.GitBranch != "" && inputRef.GitTag != "" {
+		return nil, newCannotSpecifyGitBranchAndGitTagError(i.valueFlagName)
 	}
 	if inputRef.Format != FormatTar && inputRef.Format != FormatTarGz && inputRef.StripComponents > 0 {
 		return nil, newOptionsInvalidForFormatError(i.valueFlagName, inputRef.Format, options)
@@ -144,6 +147,8 @@ func (i *inputRefParser) applyInputRefOptions(inputRef *InputRef, options string
 			inputRef.Format = format
 		case "branch":
 			inputRef.GitBranch = value
+		case "tag":
+			inputRef.GitTag = value
 		case "strip_components":
 			stripComponents, err := strconv.ParseUint(value, 10, 32)
 			if err != nil {
@@ -185,8 +190,12 @@ func newFormatMustBeImageError(format Format) error {
 	return fmt.Errorf("format was %q but must be a image format (allowed formats are %s)", format.String(), formatsToString(imageFormats()))
 }
 
-func newMustSpecifyGitBranchError(valueFlagName string, path string) error {
-	return fmt.Errorf(`%s: must specify git branch (example: "%s#branch=master")`, valueFlagName, path)
+func newMustSpecifyGitBranchOrGitTagError(valueFlagName string, path string) error {
+	return fmt.Errorf(`%s: must specify git branch or git tag (example: "%s#branch=master" or "%s#tag=v1.0.0")`, valueFlagName, path, path)
+}
+
+func newCannotSpecifyGitBranchAndGitTagError(valueFlagName string) error {
+	return fmt.Errorf(`%s: cannot specify both git branch and git tag`, valueFlagName)
 }
 
 func newPathUnknownGzError(valueFlagName string, path string) error {

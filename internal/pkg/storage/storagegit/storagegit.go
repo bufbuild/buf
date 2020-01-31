@@ -35,6 +35,21 @@ import (
 
 var gitURLSSHRegex = regexp.MustCompile("^(ssh://)?([^/:]*?)@[^@]+$")
 
+// RefName is a git reference name.
+type RefName interface {
+	referenceName() plumbing.ReferenceName
+}
+
+// NewBranchRefName returns a new branch RefName.
+func NewBranchRefName(branch string) RefName {
+	return newRefName(plumbing.NewBranchReferenceName(branch))
+}
+
+// NewTagRefName returns a new tag RefName.
+func NewTagRefName(tag string) RefName {
+	return newRefName(plumbing.NewTagReferenceName(tag))
+}
+
 // Clone clones the url into the bucket.
 //
 // This is roughly equivalent to git clone --branch gitBranch --single-branch --depth 1 gitUrl.
@@ -53,7 +68,7 @@ func Clone(
 	getenv func(string) string,
 	homeDirPath string,
 	gitURL string,
-	gitBranch string,
+	refName RefName,
 	httpsUsernameEnvKey string,
 	httpsPasswordEnvKey string,
 	sshKeyFileEnvKey string,
@@ -64,9 +79,9 @@ func Clone(
 ) error {
 	defer utillog.Defer(logger, "git_clone")()
 
-	if gitBranch == "" {
+	if refName == nil {
 		// we detect this outside of this function so this is a system error
-		return errors.New("gitBranch is empty")
+		return errors.New("refName is nil")
 	}
 	gitURL, err := normalizeGitURL(gitURL)
 	if err != nil {
@@ -89,7 +104,7 @@ func Clone(
 	cloneOptions := &git.CloneOptions{
 		URL:           gitURL,
 		Auth:          authMethod,
-		ReferenceName: plumbing.NewBranchReferenceName(gitBranch),
+		ReferenceName: refName.referenceName(),
 		SingleBranch:  true,
 		Depth:         1,
 	}
@@ -347,4 +362,18 @@ func walkBillyFilesystemDir(
 		}
 	}
 	return nil
+}
+
+type refName struct {
+	value plumbing.ReferenceName
+}
+
+func newRefName(value plumbing.ReferenceName) *refName {
+	return &refName{
+		value: value,
+	}
+}
+
+func (r *refName) referenceName() plumbing.ReferenceName {
+	return r.value
 }
