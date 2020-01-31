@@ -49,6 +49,7 @@ if [ -z "${INSIDE_DOCKER}" ]; then
     -e INSIDE_DOCKER=1 \
     "${DOCKER_IMAGE}" \
     bash -x make/buf/scripts/release.bash
+  exit 0
 fi
 
 BASE_NAME="buf"
