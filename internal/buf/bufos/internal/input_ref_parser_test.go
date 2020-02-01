@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
 	"github.com/bufbuild/cli/clios"
 	"github.com/stretchr/testify/assert"
 )
@@ -73,18 +74,18 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		&InputRef{
-			Format:    FormatGit,
-			Path:      "path/to/dir.git",
-			GitBranch: "master",
+			Format:     FormatGit,
+			Path:       "path/to/dir.git",
+			GitRefName: storagegitplumbing.NewBranchRefName("master"),
 		},
 		"path/to/dir.git#branch=master",
 	)
 	testParseInputRefSuccess(
 		t,
 		&InputRef{
-			Format: FormatGit,
-			Path:   "path/to/dir.git",
-			GitTag: "master",
+			Format:     FormatGit,
+			Path:       "path/to/dir.git",
+			GitRefName: storagegitplumbing.NewTagRefName("master"),
 		},
 		"path/to/dir.git#tag=master",
 	)
@@ -155,36 +156,36 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		&InputRef{
-			Format:    FormatGit,
-			Path:      "path/to/dir",
-			GitBranch: "master/foo",
+			Format:     FormatGit,
+			Path:       "path/to/dir",
+			GitRefName: storagegitplumbing.NewBranchRefName("master/foo"),
 		},
 		"path/to/dir#branch=master/foo,format=git",
 	)
 	testParseInputRefSuccess(
 		t,
 		&InputRef{
-			Format:    FormatGit,
-			Path:      "path/to/dir",
-			GitBranch: "master/foo",
+			Format:     FormatGit,
+			Path:       "path/to/dir",
+			GitRefName: storagegitplumbing.NewBranchRefName("master/foo"),
 		},
 		"path/to/dir#format=git,branch=master/foo",
 	)
 	testParseInputRefSuccess(
 		t,
 		&InputRef{
-			Format: FormatGit,
-			Path:   "path/to/dir",
-			GitTag: "master/foo",
+			Format:     FormatGit,
+			Path:       "path/to/dir",
+			GitRefName: storagegitplumbing.NewTagRefName("master/foo"),
 		},
 		"path/to/dir#tag=master/foo,format=git",
 	)
 	testParseInputRefSuccess(
 		t,
 		&InputRef{
-			Format: FormatGit,
-			Path:   "path/to/dir",
-			GitTag: "master/foo",
+			Format:     FormatGit,
+			Path:       "path/to/dir",
+			GitRefName: storagegitplumbing.NewTagRefName("master/foo"),
 		},
 		"path/to/dir#format=git,tag=master/foo",
 	)
@@ -246,18 +247,23 @@ func TestParseInputRefError(t *testing.T) {
 	)
 	testParseInputRefErrorBasic(
 		t,
-		newMustSpecifyGitBranchOrGitTagError(testValueFlagName, "path/to/foo.git"),
+		newMustSpecifyGitRefNameError(testValueFlagName, "path/to/foo.git"),
 		"path/to/foo.git",
 	)
 	testParseInputRefErrorBasic(
 		t,
-		newMustSpecifyGitBranchOrGitTagError(testValueFlagName, "path/to/foo#format=git"),
+		newMustSpecifyGitRefNameError(testValueFlagName, "path/to/foo#format=git"),
 		"path/to/foo#format=git",
 	)
 	testParseInputRefErrorBasic(
 		t,
-		newCannotSpecifyGitBranchAndGitTagError(testValueFlagName),
+		newCannotSpecifyMultipleGitRefNamesError(testValueFlagName),
 		"path/to/foo#format=git,branch=foo,tag=bar",
+	)
+	testParseInputRefErrorBasic(
+		t,
+		newCannotSpecifyMultipleGitRefNamesError(testValueFlagName),
+		"path/to/foo#format=git,branch=foo,branch=bar",
 	)
 	testParseInputRefErrorBasic(
 		t,

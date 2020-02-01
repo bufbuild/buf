@@ -22,6 +22,7 @@ import (
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
@@ -503,7 +504,7 @@ func (e *envReader) getBucket(
 			ctx,
 			getenv,
 			inputRef.Path,
-			getGitRefName(inputRef),
+			inputRef.GitRefName,
 		)
 	default:
 		return nil, fmt.Errorf("unknown format outside of parse: %v", inputRef.Format)
@@ -582,7 +583,7 @@ func (e *envReader) getBucketFromGitRepo(
 	ctx context.Context,
 	getenv func(string) string,
 	gitRepo string,
-	gitRefName storagegit.RefName,
+	gitRefName storagegitplumbing.RefName,
 ) (_ storage.ReadBucket, retErr error) {
 	defer utillog.Defer(e.logger, "get_git_bucket_memory")()
 
@@ -738,16 +739,6 @@ func (e *envReader) getImageFromData(
 		return nil, err
 	}
 	return image, nil
-}
-
-func getGitRefName(inputRef *internal.InputRef) storagegit.RefName {
-	if inputRef.GitBranch != "" {
-		return storagegit.NewBranchRefName(inputRef.GitBranch)
-	}
-	if inputRef.GitTag != "" {
-		return storagegit.NewTagRefName(inputRef.GitTag)
-	}
-	return nil
 }
 
 func unmarshalJSON(data []byte, message proto.Message) error {

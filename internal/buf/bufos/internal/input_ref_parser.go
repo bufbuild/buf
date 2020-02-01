@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
 	"github.com/bufbuild/cli/clios"
 )
 
@@ -60,14 +61,11 @@ func (i *inputRefParser) ParseInputRef(value string, onlySources bool, onlyImage
 		inputRef.Format = format
 	}
 
-	if inputRef.Format == FormatGit && inputRef.GitBranch == "" && inputRef.GitTag == "" {
-		return nil, newMustSpecifyGitBranchOrGitTagError(i.valueFlagName, value)
+	if inputRef.Format == FormatGit && inputRef.GitRefName == nil {
+		return nil, newMustSpecifyGitRefNameError(i.valueFlagName, value)
 	}
-	if inputRef.Format != FormatGit && (inputRef.GitBranch != "" || inputRef.GitTag != "") {
+	if inputRef.Format != FormatGit && inputRef.GitRefName != nil {
 		return nil, newOptionsInvalidForFormatError(i.valueFlagName, inputRef.Format, options)
-	}
-	if inputRef.GitBranch != "" && inputRef.GitTag != "" {
-		return nil, newCannotSpecifyGitBranchAndGitTagError(i.valueFlagName)
 	}
 	if inputRef.Format != FormatTar && inputRef.Format != FormatTarGz && inputRef.StripComponents > 0 {
 		return nil, newOptionsInvalidForFormatError(i.valueFlagName, inputRef.Format, options)
@@ -146,9 +144,15 @@ func (i *inputRefParser) applyInputRefOptions(inputRef *InputRef, options string
 			}
 			inputRef.Format = format
 		case "branch":
-			inputRef.GitBranch = value
+			if inputRef.GitRefName != nil {
+				return newCannotSpecifyMultipleGitRefNamesError(i.valueFlagName)
+			}
+			inputRef.GitRefName = storagegitplumbing.NewBranchRefName(value)
 		case "tag":
-			inputRef.GitTag = value
+			if inputRef.GitRefName != nil {
+				return newCannotSpecifyMultipleGitRefNamesError(i.valueFlagName)
+			}
+			inputRef.GitRefName = storagegitplumbing.NewTagRefName(value)
 		case "strip_components":
 			stripComponents, err := strconv.ParseUint(value, 10, 32)
 			if err != nil {
@@ -190,12 +194,12 @@ func newFormatMustBeImageError(format Format) error {
 	return fmt.Errorf("format was %q but must be a image format (allowed formats are %s)", format.String(), formatsToString(imageFormats()))
 }
 
-func newMustSpecifyGitBranchOrGitTagError(valueFlagName string, path string) error {
-	return fmt.Errorf(`%s: must specify git branch or git tag (example: "%s#branch=master" or "%s#tag=v1.0.0")`, valueFlagName, path, path)
+func newMustSpecifyGitRefNameError(valueFlagName string, path string) error {
+	return fmt.Errorf(`%s: must specify git reference (example: "%s#branch=master" or "%s#tag=v1.0.0")`, valueFlagName, path, path)
 }
 
-func newCannotSpecifyGitBranchAndGitTagError(valueFlagName string) error {
-	return fmt.Errorf(`%s: cannot specify both git branch and git tag`, valueFlagName)
+func newCannotSpecifyMultipleGitRefNamesError(valueFlagName string) error {
+	return fmt.Errorf(`%s: must specify only one of "branch", "tag"`, valueFlagName)
 }
 
 func newPathUnknownGzError(valueFlagName string, path string) error {

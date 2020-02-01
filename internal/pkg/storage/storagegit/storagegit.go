@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"go.uber.org/multierr"
@@ -26,7 +27,6 @@ import (
 	"gopkg.in/src-d/go-billy.v4"
 	"gopkg.in/src-d/go-billy.v4/memfs"
 	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 	srcdssh "gopkg.in/src-d/go-git.v4/plumbing/transport/ssh"
@@ -34,21 +34,6 @@ import (
 )
 
 var gitURLSSHRegex = regexp.MustCompile("^(ssh://)?([^/:]*?)@[^@]+$")
-
-// RefName is a git reference name.
-type RefName interface {
-	referenceName() plumbing.ReferenceName
-}
-
-// NewBranchRefName returns a new branch RefName.
-func NewBranchRefName(branch string) RefName {
-	return newRefName(plumbing.NewBranchReferenceName(branch))
-}
-
-// NewTagRefName returns a new tag RefName.
-func NewTagRefName(tag string) RefName {
-	return newRefName(plumbing.NewTagReferenceName(tag))
-}
 
 // Clone clones the url into the bucket.
 //
@@ -68,7 +53,7 @@ func Clone(
 	getenv func(string) string,
 	homeDirPath string,
 	gitURL string,
-	refName RefName,
+	refName storagegitplumbing.RefName,
 	httpsUsernameEnvKey string,
 	httpsPasswordEnvKey string,
 	sshKeyFileEnvKey string,
@@ -104,7 +89,7 @@ func Clone(
 	cloneOptions := &git.CloneOptions{
 		URL:           gitURL,
 		Auth:          authMethod,
-		ReferenceName: refName.referenceName(),
+		ReferenceName: refName.ReferenceName(),
 		SingleBranch:  true,
 		Depth:         1,
 	}
@@ -362,18 +347,4 @@ func walkBillyFilesystemDir(
 		}
 	}
 	return nil
-}
-
-type refName struct {
-	value plumbing.ReferenceName
-}
-
-func newRefName(value plumbing.ReferenceName) *refName {
-	return &refName{
-		value: value,
-	}
-}
-
-func (r *refName) referenceName() plumbing.ReferenceName {
-	return r.value
 }
