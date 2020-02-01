@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
 )
 
 // InputRef is a parsed input reference.
@@ -16,19 +17,12 @@ type InputRef struct {
 	// Required.
 	Path string
 
-	// GitBranch is the branch of the git repository.
-	// This will only be set if Format == FormatGit.
-	// Only one of GitBranch and GitTag will be set.
-	// Optional regardless.
-	GitBranch string
-	// GitTag is the tag of the git repository.
-	// This will only be set if Format == FormatGit.
-	// Only one of GitBranch and GitTag will be set.
-	// Optional regardless.
-	GitTag string
 	// StripComponents is the number of components to strip from a tarball.
 	// This will only be set if Format == FormatTar, FormatTarGz
 	StripComponents uint32
+	// GitRefName is the git reference name.
+	// This will only and always be set if Format == FormatGit.
+	GitRefName storagegitplumbing.RefName
 }
 
 // InputRefParser parses InputRefs.

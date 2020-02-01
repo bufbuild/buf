@@ -10,6 +10,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
@@ -196,7 +197,7 @@ func TestGitClone(t *testing.T) {
 		nil,
 		"",
 		absGitPath,
-		storagegit.NewBranchRefName("master"),
+		storagegitplumbing.NewBranchRefName("master"),
 		"",
 		"",
 		"",
