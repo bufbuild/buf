@@ -175,7 +175,7 @@ Features of Buf's include:
 ## Buf Schema Registry
 
 We'll work through the beta over the next couple months, and hope to hit a stable v1.0 by
-the end of the 2019 or early 2020.
+early 2020.
 
 Simultaneously, we'll be working on our next goal, which is to solve the bigger problem:
 now that you have consistent and compatible APIs, how do you, and your customers, consume them?
