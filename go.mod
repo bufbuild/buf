@@ -1,6 +1,6 @@
 module github.com/bufbuild/buf
 
-go 1.13
+go 1.14
 
 require (
 	github.com/bufbuild/cli v0.0.0-20200130190020-2009ccb4e7a8
@@ -16,7 +16,7 @@ require (
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
-	golang.org/x/tools v0.0.0-20200305140159-d7d444866696 // indirect
+	golang.org/x/tools v0.0.0-20200305214444-d1d1f200c626 // indirect
 	google.golang.org/genproto v0.0.0-20200305110556-506484158171 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2
 	gopkg.in/src-d/go-git.v4 v4.13.1
