@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
@@ -22,9 +21,8 @@ const (
 	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
 )
 
-var defaultHTTPClient = &http.Client{
-	Timeout: 5 * time.Second,
-}
+// Timeout should be set through context for calls to EnvReader, not through http.Client
+var defaultHTTPClient = &http.Client{}
 
 // NewBufosEnvReader returns a new bufos.EnvReader.
 func NewBufosEnvReader(
