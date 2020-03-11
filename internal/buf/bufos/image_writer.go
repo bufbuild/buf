@@ -9,7 +9,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufos/internal"
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/cli/clios"
+	"github.com/bufbuild/buf/internal/pkg/cli/clios"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"go.uber.org/multierr"

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bufbuild/buf/internal/pkg/cli/clios"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
-	"github.com/bufbuild/cli/clios"
 )
 
 type inputRefParser struct {

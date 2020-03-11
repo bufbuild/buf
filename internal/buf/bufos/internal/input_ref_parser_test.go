@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/bufbuild/buf/internal/pkg/cli/clios"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
-	"github.com/bufbuild/cli/clios"
 	"github.com/stretchr/testify/assert"
 )
 

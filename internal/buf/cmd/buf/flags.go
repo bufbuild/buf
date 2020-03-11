@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufos"
-	"github.com/bufbuild/cli/clienv"
-	"github.com/bufbuild/cli/clipflag"
+	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
+	"github.com/bufbuild/buf/internal/pkg/cli/clipflag"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )

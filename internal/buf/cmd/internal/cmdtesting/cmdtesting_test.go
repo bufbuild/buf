@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	lint "github.com/bufbuild/buf/internal/buf/cmd/protoc-gen-buf-check-lint"
+	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
+	"github.com/bufbuild/buf/internal/pkg/cli/cliproto"
 	"github.com/bufbuild/buf/internal/pkg/ext/extdescriptor"
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto/utilprototesting"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
-	"github.com/bufbuild/cli/clienv"
-	"github.com/bufbuild/cli/cliproto"
 	"github.com/golang/protobuf/proto"
 	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/stretchr/testify/require"
