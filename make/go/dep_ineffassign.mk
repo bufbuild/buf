@@ -7,8 +7,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,GOBIN)
 
 # Settable
-# https://github.com/gordonklaus/ineffassign/commits/master 20190601
-INEFFASSIGN_VERSION ?= ed7b1b5ee0f816bbc0ff35bf7c6fdb4f53b6c59a
+# https://github.com/gordonklaus/ineffassign/commits/master 20200309 checked 20200311
+INEFFASSIGN_VERSION ?= 7953dde2c7bf4ce700d9f14c2e41c0966763760c
 
 INEFFASSIGN := $(CACHE_VERSIONS)/ineffassign/$(INEFFASSIGN_VERSION)
 $(INEFFASSIGN):
