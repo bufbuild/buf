@@ -16,8 +16,8 @@ require (
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
-	golang.org/x/tools v0.0.0-20200305214444-d1d1f200c626 // indirect
-	google.golang.org/genproto v0.0.0-20200305110556-506484158171 // indirect
+	golang.org/x/tools v0.0.0-20200311090712-aafaee8bce8c // indirect
+	google.golang.org/genproto v0.0.0-20200311144346-b662892dd51b // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v3 v3.0.0-20200121175148-a6ecf24a6d71

@@ -10,8 +10,8 @@ $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf/releases 20191213
-PROTOC_VERSION ?= 3.11.2
+# https://github.com/protocolbuffers/protobuf/releases 20200214 checked 20200311
+PROTOC_VERSION ?= 3.11.4
 
 ifeq ($(UNAME_OS),Darwin)
 PROTOC_OS := osx
