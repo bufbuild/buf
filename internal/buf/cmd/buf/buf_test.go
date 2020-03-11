@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/internal/pkg/cli/clicobra"
+	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
+	"github.com/bufbuild/buf/internal/pkg/cli/clios"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
-	"github.com/bufbuild/cli/clicobra"
-	"github.com/bufbuild/cli/clienv"
-	"github.com/bufbuild/cli/clios"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

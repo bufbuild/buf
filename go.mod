@@ -3,9 +3,9 @@ module github.com/bufbuild/buf
 go 1.14
 
 require (
-	github.com/bufbuild/cli v0.0.0-20200130190020-2009ccb4e7a8
 	github.com/golang/protobuf v1.3.4
 	github.com/jhump/protoreflect v1.6.1-0.20200207004746-e0a00a57842f
+	github.com/pkg/profile v1.4.0
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/pflag v1.0.5
@@ -20,5 +20,6 @@ require (
 	google.golang.org/genproto v0.0.0-20200311144346-b662892dd51b // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2
 	gopkg.in/src-d/go-git.v4 v4.13.1
+	gopkg.in/yaml.v2 v2.2.8 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200121175148-a6ecf24a6d71
 )
