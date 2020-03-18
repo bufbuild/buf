@@ -1,6 +1,6 @@
 package storagegitplumbing
 
-import "gopkg.in/src-d/go-git.v4/plumbing"
+import "github.com/go-git/go-git/v5/plumbing"
 
 // RefName is a git reference name.
 type RefName interface {
