@@ -9,6 +9,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
 	"github.com/bufbuild/buf/internal/pkg/cli/internal/output"
+	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 	"github.com/golang/protobuf/proto"
 	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
 )
@@ -102,7 +103,7 @@ func runHandler(handler Handler, env clienv.Env) error {
 	responseWriter := newResponseWriter()
 	handler.Handle(env, responseWriter, request)
 	response := responseWriter.ToCodeGeneratorResponse()
-	data, err := proto.Marshal(response)
+	data, err := utilproto.MarshalWire(response)
 	if err != nil {
 		return err
 	}
