@@ -1,7 +1,6 @@
 package bufos
 
 import (
-	"bytes"
 	"compress/gzip"
 	"context"
 	"io"
@@ -10,13 +9,11 @@ import (
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/cli/clios"
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 	"github.com/golang/protobuf/proto"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
-
-var jsonMarshaler = &jsonpb.Marshaler{}
 
 type imageWriter struct {
 	logger         *zap.Logger
@@ -67,12 +64,12 @@ func (i *imageWriter) WriteImage(
 	var data []byte
 	switch inputRef.Format {
 	case internal.FormatJSON, internal.FormatJSONGz:
-		data, err = marshalJSON(message)
+		data, err = utilproto.MarshalJSON(message)
 		if err != nil {
 			return err
 		}
 	default:
-		data, err = proto.Marshal(message)
+		data, err = utilproto.MarshalWireDeterministic(message)
 		if err != nil {
 			return err
 		}
@@ -98,12 +95,4 @@ func (i *imageWriter) WriteImage(
 		_, err = writeCloser.Write(data)
 		return err
 	}
-}
-
-func marshalJSON(message proto.Message) ([]byte, error) {
-	buffer := bytes.NewBuffer(nil)
-	if err := jsonMarshaler.Marshal(buffer, message); err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
 }
