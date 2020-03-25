@@ -14,6 +14,7 @@ import (
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/ext/extfile"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 	"github.com/golang/protobuf/proto"
@@ -136,7 +137,16 @@ func (r *runner) parse(
 			if !storage.IsNotExist(err) {
 				return nil, err
 			}
-			return wkt.ReadBucket.Get(ctx, filename)
+			for _, root := range roots {
+				relFilename, relErr := storagepath.Rel(root, filename)
+				if relErr != nil {
+					return nil, relErr
+				}
+				if wktReadCloser, wktErr := wkt.ReadBucket.Get(ctx, relFilename); wktErr == nil {
+					return wktReadCloser, nil
+				}
+			}
+			return nil, err
 		}
 		return readCloser, nil
 	}
