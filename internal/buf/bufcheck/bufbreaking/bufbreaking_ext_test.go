@@ -537,9 +537,9 @@ func testBreakingExternalConfigModifier(
 	t.Parallel()
 	logger := zap.NewNop()
 
-	previousBucket, err := storageos.NewReadBucket(filepath.Join("testdata_previous", dirPath))
+	previousReadWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(filepath.Join("testdata_previous", dirPath))
 	require.NoError(t, err)
-	bucket, err := storageos.NewReadBucket(filepath.Join("testdata", dirPath))
+	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(filepath.Join("testdata", dirPath))
 	require.NoError(t, err)
 
 	var configProviderOptions []bufconfig.ProviderOption
@@ -555,15 +555,15 @@ func testBreakingExternalConfigModifier(
 		)
 	}
 	configProvider := bufconfig.NewProvider(logger, configProviderOptions...)
-	previousConfig := testGetConfig(t, configProvider, previousBucket)
-	config := testGetConfig(t, configProvider, bucket)
+	previousConfig := testGetConfig(t, configProvider, previousReadWriteBucketCloser)
+	config := testGetConfig(t, configProvider, readWriteBucketCloser)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	buildHandler := bufbuild.NewHandler(logger)
 	previousProtoFileSet, err := buildHandler.Files(
 		ctx,
-		previousBucket,
+		previousReadWriteBucketCloser,
 		bufbuild.FilesOptions{
 			Roots:    previousConfig.Build.Roots,
 			Excludes: previousConfig.Build.Excludes,
@@ -572,7 +572,7 @@ func testBreakingExternalConfigModifier(
 	require.NoError(t, err)
 	previousImage, previousFileAnnotations, err := buildHandler.Build(
 		ctx,
-		previousBucket,
+		previousReadWriteBucketCloser,
 		previousProtoFileSet,
 		bufbuild.BuildOptions{
 			IncludeImports:    true, // just to make sure this works properly
@@ -585,7 +585,7 @@ func testBreakingExternalConfigModifier(
 	require.NoError(t, err)
 	protoFileSet, err := buildHandler.Files(
 		ctx,
-		bucket,
+		readWriteBucketCloser,
 		bufbuild.FilesOptions{
 			Roots:    config.Build.Roots,
 			Excludes: config.Build.Excludes,
@@ -594,7 +594,7 @@ func testBreakingExternalConfigModifier(
 	require.NoError(t, err)
 	image, fileAnnotations, err := buildHandler.Build(
 		ctx,
-		bucket,
+		readWriteBucketCloser,
 		protoFileSet,
 		bufbuild.BuildOptions{
 			IncludeImports:    false, // just to make sure this works properly
@@ -619,17 +619,18 @@ func testBreakingExternalConfigModifier(
 	assert.NoError(t, err)
 	assert.NoError(t, bufbuild.FixFileAnnotationPaths(protoFileSet, fileAnnotations))
 	extfiletesting.AssertFileAnnotationsEqual(t, expectedFileAnnotations, fileAnnotations)
-	assert.NoError(t, bucket.Close())
+	assert.NoError(t, previousReadWriteBucketCloser.Close())
+	assert.NoError(t, readWriteBucketCloser.Close())
 }
 func testGetConfig(
 	t *testing.T,
 	configProvider bufconfig.Provider,
-	bucket storage.ReadBucket,
+	readBucket storage.ReadBucket,
 ) *bufconfig.Config {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	data, err := storageutil.ReadPath(ctx, bucket, bufconfig.ConfigFilePath)
+	data, err := storageutil.ReadPath(ctx, readBucket, bufconfig.ConfigFilePath)
 	if err != nil && !storage.IsNotExist(err) {
 		require.NoError(t, err)
 	}

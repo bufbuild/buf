@@ -42,7 +42,7 @@ func newRunner(logger *zap.Logger) *runner {
 // mode is not used.
 func (r *runner) Run(
 	ctx context.Context,
-	bucket storage.ReadBucket,
+	readBucket storage.ReadBucket,
 	protoFileSet ProtoFileSet,
 	includeImports bool,
 	includeSourceInfo bool,
@@ -65,7 +65,7 @@ func (r *runner) Run(
 
 	results := r.parse(
 		ctx,
-		bucket,
+		readBucket,
 		roots,
 		rootFilePaths,
 		includeImports,
@@ -121,7 +121,7 @@ func (r *runner) Run(
 
 func (r *runner) parse(
 	ctx context.Context,
-	bucket storage.ReadBucket,
+	readBucket storage.ReadBucket,
 	roots []string,
 	rootFilePaths []string,
 	includeImports bool,
@@ -130,7 +130,7 @@ func (r *runner) parse(
 	defer utillog.Defer(r.logger, "parse", zap.Int("num_files", len(rootFilePaths)))()
 
 	accessor := func(filename string) (io.ReadCloser, error) {
-		return bucket.Get(ctx, filename)
+		return readBucket.Get(ctx, filename)
 	}
 	var results []*result
 	chunks := utilstring.SliceToChunks(rootFilePaths, len(rootFilePaths)/runtime.NumCPU())
@@ -140,7 +140,6 @@ func (r *runner) parse(
 		go func() {
 			resultC <- r.getResult(
 				ctx,
-				bucket,
 				accessor,
 				roots,
 				rootFilePaths,
@@ -161,7 +160,6 @@ func (r *runner) parse(
 
 func (r *runner) getResult(
 	ctx context.Context,
-	bucket storage.ReadBucket,
 	accessor protoparse.FileAccessor,
 	roots []string,
 	rootFilePaths []string,

@@ -5,10 +5,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
 
-// BucketType is the bucket type.
-const BucketType = "mem"
-
-// NewBucket returns a new in-memory bucket.
-func NewBucket() storage.Bucket {
+// NewReadWriteBucketCloser returns a new in-memory bucket.
+func NewReadWriteBucketCloser() storage.ReadWriteBucketCloser {
 	return newBucket()
 }

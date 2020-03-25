@@ -24,9 +24,9 @@ func newProvider(logger *zap.Logger) *provider {
 }
 
 // GetProtoFileSetForBucket gets the set for the bucket and config.
-func (p *provider) GetProtoFileSetForBucket(
+func (p *provider) GetProtoFileSetForReadBucket(
 	ctx context.Context,
-	bucket storage.ReadBucket,
+	readBucket storage.ReadBucket,
 	roots []string,
 	excludes []string,
 ) (ProtoFileSet, error) {
@@ -39,7 +39,7 @@ func (p *provider) GetProtoFileSetForBucket(
 	// map from file path relative to root, to all actual file paths
 	rootFilePathToRealFilePathMap := make(map[string]map[string]struct{})
 	for _, root := range config.Roots {
-		if walkErr := bucket.Walk(
+		if walkErr := readBucket.Walk(
 			ctx,
 			root,
 			// all realFilePath values are already normalized and validated
@@ -116,7 +116,7 @@ func (p *provider) GetProtoFileSetForBucket(
 // for i.e. --limit-to-input-files.
 func (p *provider) GetProtoFileSetForRealFilePaths(
 	ctx context.Context,
-	bucket storage.ReadBucket,
+	readBucket storage.ReadBucket,
 	roots []string,
 	realFilePaths []string,
 	realFilePathsAllowNotExist bool,
@@ -137,7 +137,7 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 			return nil, fmt.Errorf("duplicate normalized file path %s", normalizedRealFilePath)
 		}
 		// check that the file exists primarily
-		if _, err := bucket.Stat(ctx, normalizedRealFilePath); err != nil {
+		if _, err := readBucket.Stat(ctx, normalizedRealFilePath); err != nil {
 			if !storage.IsNotExist(err) {
 				return nil, err
 			}

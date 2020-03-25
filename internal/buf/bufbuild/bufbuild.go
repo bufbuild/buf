@@ -77,14 +77,14 @@ type Handler interface {
 	// real file paths that already have the GetRealFilePath from the ProtoFileSet applied.
 	Build(
 		ctx context.Context,
-		bucket storage.ReadBucket,
+		readBucket storage.ReadBucket,
 		protoFileSet ProtoFileSet,
 		options BuildOptions,
 	) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation, error)
 	// Files get the files for the bucket by returning a ProtoFileSet.
 	Files(
 		ctx context.Context,
-		bucket storage.ReadBucket,
+		readBucket storage.ReadBucket,
 		options FilesOptions,
 	) (ProtoFileSet, error)
 }

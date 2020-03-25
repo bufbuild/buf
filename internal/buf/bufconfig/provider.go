@@ -28,11 +28,11 @@ func newProvider(logger *zap.Logger, options ...ProviderOption) *provider {
 	return provider
 }
 
-func (p *provider) GetConfigForBucket(ctx context.Context, bucket storage.ReadBucket) (_ *Config, retErr error) {
+func (p *provider) GetConfigForReadBucket(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
 	defer utillog.Defer(p.logger, "get_config_for_bucket")()
 
 	externalConfig := &ExternalConfig{}
-	readObject, err := bucket.Get(ctx, ConfigFilePath)
+	readObject, err := readBucket.Get(ctx, ConfigFilePath)
 	if err != nil {
 		if storage.IsNotExist(err) {
 			return p.newConfig(externalConfig)

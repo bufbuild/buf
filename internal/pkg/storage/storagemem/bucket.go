@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/internal"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"go.uber.org/multierr"
 )
@@ -23,10 +24,6 @@ func newBucket() *bucket {
 	return &bucket{
 		pathToBuffer: make(map[string]*buffer),
 	}
-}
-
-func (b *bucket) Type() string {
-	return BucketType
 }
 
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, error) {
@@ -56,27 +53,25 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
 	path, err := storagepath.NormalizeAndValidate(path)
 	if err != nil {
-		return storage.ObjectInfo{}, err
+		return nil, err
 	}
 	if path == "." {
-		return storage.ObjectInfo{}, errors.New("cannot check root")
+		return nil, errors.New("cannot check root")
 	}
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	if b.closed {
-		return storage.ObjectInfo{}, storage.ErrClosed
+		return nil, storage.ErrClosed
 	}
 	buffer, ok := b.pathToBuffer[path]
 	if !ok {
-		return storage.ObjectInfo{}, storage.NewErrNotExist(path)
+		return nil, storage.NewErrNotExist(path)
 	}
 	size, err := buffer.Len()
 	if err != nil {
-		return storage.ObjectInfo{}, err
+		return nil, err
 	}
-	return storage.ObjectInfo{
-		Size: uint32(size),
-	}, nil
+	return internal.NewObjectInfo(uint32(size)), nil
 }
 
 func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) error {
@@ -143,6 +138,10 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 	return newWriteObject(buffer, size), nil
 }
 
+func (b *bucket) Info() storage.BucketInfo {
+	return internal.NewBucketInfo(true)
+}
+
 func (b *bucket) Close() error {
 	b.lock.Lock()
 	defer b.lock.Unlock()
@@ -207,8 +206,8 @@ func (r *readObject) Close() error {
 	return nil
 }
 
-func (r *readObject) Size() uint32 {
-	return r.size
+func (r *readObject) Info() storage.ObjectInfo {
+	return internal.NewObjectInfo(r.size)
 }
 
 type writeObject struct {
@@ -226,35 +225,35 @@ func newWriteObject(buffer *buffer, size uint32) *writeObject {
 	}
 }
 
-func (r *writeObject) Write(p []byte) (int, error) {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-	if r.closed {
+func (w *writeObject) Write(p []byte) (int, error) {
+	w.lock.Lock()
+	defer w.lock.Unlock()
+	if w.closed {
 		return 0, storage.ErrClosed
 	}
-	if uint32(r.written+len(p)) > r.size {
+	if uint32(w.written+len(p)) > w.size {
 		return 0, io.EOF
 	}
-	n, err := r.buffer.CopyFrom(p, r.written)
-	r.written += n
+	n, err := w.buffer.CopyFrom(p, w.written)
+	w.written += n
 	return n, err
 }
 
-func (r *writeObject) Close() error {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-	if r.closed {
+func (w *writeObject) Close() error {
+	w.lock.Lock()
+	defer w.lock.Unlock()
+	if w.closed {
 		return storage.ErrClosed
 	}
-	r.closed = true
-	if uint32(r.written) != r.size {
+	w.closed = true
+	if uint32(w.written) != w.size {
 		return storage.ErrIncompleteWrite
 	}
 	return nil
 }
 
-func (r *writeObject) Size() uint32 {
-	return r.size
+func (w *writeObject) Info() storage.ObjectInfo {
+	return internal.NewObjectInfo(w.size)
 }
 
 type buffer struct {

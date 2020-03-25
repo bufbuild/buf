@@ -34,14 +34,22 @@ func IsNotExist(err error) bool {
 	return storagepath.ErrorEquals(err, errNotExist)
 }
 
+// ObjectInfo contains object info.
+type ObjectInfo interface {
+	// Size is the size of the object.
+	//
+	// For writes, the write size must sum up to this size when closed, otherwise ErrIncompleteWrite is returned.
+	// For writes, any write over this size will return io.EOF.
+	Size() uint32
+}
+
 // ReadObject is a read-only object.
 //
 // It must be closed when done.
 type ReadObject interface {
 	io.ReadCloser
 
-	// Size is the size of the object.
-	Size() uint32
+	Info() ObjectInfo
 }
 
 // WriteObject is a write-only object.
@@ -50,11 +58,13 @@ type ReadObject interface {
 type WriteObject interface {
 	io.WriteCloser
 
-	// Size is the size of the object.
-	//
-	// When closed, the writes must sum up to this size, otherwise ErrIncompleteWrite is returned.
-	// Any writes over the size will return io.EOF.
-	Size() uint32
+	Info() ObjectInfo
+}
+
+// BucketInfo contains bucket info.
+type BucketInfo interface {
+	// InMemory returns true if the bucket is in memory.
+	InMemory() bool
 }
 
 // ReadBucket is a simple read-only bucket.
@@ -65,10 +75,6 @@ type WriteObject interface {
 // Paths must not jump the bucket context, that is after clean, they
 // cannot contain "..".
 type ReadBucket interface {
-	io.Closer
-
-	// Type returns the type of bucket.
-	Type() string
 	// Get gets the path.
 	//
 	// Returns ErrNotExist if the path does not exist, other error
@@ -88,10 +94,18 @@ type ReadBucket interface {
 	// If f returns error, Walk will stop short and return this error.
 	// Returns other error on system error.
 	Walk(ctx context.Context, prefix string, f func(string) error) error
+
+	Info() BucketInfo
 }
 
-// Bucket is a simple read/write bucket.
-type Bucket interface {
+// ReadBucketCloser is a read-only bucket that must be closed.
+type ReadBucketCloser interface {
+	io.Closer
+	ReadBucket
+}
+
+// ReadWriteBucket is a simple read/write bucket.
+type ReadWriteBucket interface {
 	ReadBucket
 
 	// Put returns a WriteCloser to write to the path.
@@ -102,7 +116,8 @@ type Bucket interface {
 	Put(ctx context.Context, path string, size uint32) (WriteObject, error)
 }
 
-// ObjectInfo is info on an object.
-type ObjectInfo struct {
-	Size uint32
+// ReadWriteBucketCloser is a read/write bucket that must be closed.
+type ReadWriteBucketCloser interface {
+	io.Closer
+	ReadWriteBucket
 }

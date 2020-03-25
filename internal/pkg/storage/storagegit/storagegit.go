@@ -59,7 +59,7 @@ func Clone(
 	sshKeyFileEnvKey string,
 	sshKeyPassphraseEnvKey string,
 	sshKnownHostsFilesEnvKey string,
-	bucket storage.Bucket,
+	readWriteBucket storage.ReadWriteBucket,
 	options ...storagepath.TransformerOption,
 ) error {
 	defer utillog.Defer(logger, "git_clone")()
@@ -97,7 +97,7 @@ func Clone(
 	if _, err := git.CloneContext(ctx, memory.NewStorage(), filesystem, cloneOptions); err != nil {
 		return err
 	}
-	return copyBillyFilesystemToBucket(ctx, logger, filesystem, bucket, options...)
+	return copyBillyFilesystemToBucket(ctx, logger, filesystem, readWriteBucket, options...)
 }
 
 func normalizeGitURL(gitURL string) (string, error) {
@@ -234,7 +234,7 @@ func copyBillyFilesystemToBucket(
 	ctx context.Context,
 	logger *zap.Logger,
 	filesystem billy.Filesystem,
-	bucket storage.Bucket,
+	readWriteBucket storage.ReadWriteBucket,
 	options ...storagepath.TransformerOption,
 ) error {
 	defer utillog.Defer(logger, "git_clone_copy")()
@@ -263,7 +263,7 @@ func copyBillyFilesystemToBucket(
 			wg.Add(1)
 			semaphoreC <- struct{}{}
 			go func() {
-				err := copyBillyPath(ctx, filesystem, bucket, regularFilePath, regularFileSize, path)
+				err := copyBillyPath(ctx, filesystem, readWriteBucket, regularFilePath, regularFileSize, path)
 				lock.Lock()
 				retErr = multierr.Append(retErr, err)
 				lock.Unlock()
@@ -283,7 +283,7 @@ func copyBillyFilesystemToBucket(
 func copyBillyPath(
 	ctx context.Context,
 	from billy.Filesystem,
-	to storage.Bucket,
+	to storage.ReadWriteBucket,
 	fromPath string,
 	fromSize uint32,
 	toPath string,

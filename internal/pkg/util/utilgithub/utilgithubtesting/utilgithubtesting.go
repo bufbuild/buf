@@ -69,17 +69,17 @@ func GetGithubArchive(
 	//}
 	//}()
 
-	bucket, err := storageos.NewBucket(outputDirPath)
+	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(outputDirPath)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, bucket.Close())
+		retErr = multierr.Append(retErr, readWriteBucketCloser.Close())
 	}()
 	return storageutil.Untargz(
 		ctx,
 		response.Body,
-		bucket,
+		readWriteBucketCloser,
 		storagepath.WithStripComponents(1),
 	)
 }
