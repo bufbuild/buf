@@ -10,8 +10,17 @@ FILE_IGNORES := $(FILE_IGNORES) .build/ internal/buf/bufbuild/cache/
 include make/go/bootstrap.mk
 include make/go/go.mk
 include make/go/codecov.mk
+include make/go/dep_protoc.mk
 include make/go/docker.mk
 include make/go/protoc_gen_go.mk
+
+.PHONY: embed
+embed: $(PROTOC)
+	rm -rf internal/gen/embed
+	mkdir -p internal/gen/embed/wkt
+	go run internal/cmd/embed/main.go $(CACHE_INCLUDE) wkt .proto > internal/gen/embed/wkt/wkt.gen.go
+
+pregenerate:: embed
 
 .PHONY: buflint
 buflint: installbuf

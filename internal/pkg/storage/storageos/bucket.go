@@ -47,7 +47,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 	if path == "." {
 		return nil, errors.New("cannot get root")
 	}
-	path = storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
+	actualPath := storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
 	if b.closed {
 		return nil, storage.ErrClosed
 	}
@@ -55,7 +55,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 	// instead of one, ie we do both Stat and Open as opposed
 	// to just Open
 	// we do this to make sure we are only reading regular files
-	fileInfo, err := os.Stat(path)
+	fileInfo, err := os.Stat(actualPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, storage.NewErrNotExist(path)
@@ -67,7 +67,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 		// by the user, since we only call the function for Walk on regular files
 		return nil, fmt.Errorf("%q is not a regular file", path)
 	}
-	file, err := os.Open(path)
+	file, err := os.Open(actualPath)
 	if err != nil {
 		return nil, err
 	}
@@ -85,11 +85,11 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 	if path == "." {
 		return nil, errors.New("cannot check root")
 	}
-	path = storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
+	actualPath := storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
 	if b.closed {
 		return nil, storage.ErrClosed
 	}
-	fileInfo, err := os.Stat(path)
+	fileInfo, err := os.Stat(actualPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, storage.NewErrNotExist(path)

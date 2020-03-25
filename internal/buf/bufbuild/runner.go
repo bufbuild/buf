@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
+	"github.com/bufbuild/buf/internal/gen/embed/wkt"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/ext/extfile"
@@ -130,7 +131,14 @@ func (r *runner) parse(
 	defer utillog.Defer(r.logger, "parse", zap.Int("num_files", len(rootFilePaths)))()
 
 	accessor := func(filename string) (io.ReadCloser, error) {
-		return readBucket.Get(ctx, filename)
+		readCloser, err := readBucket.Get(ctx, filename)
+		if err != nil {
+			if !storage.IsNotExist(err) {
+				return nil, err
+			}
+			return wkt.ReadBucket.Get(ctx, filename)
+		}
+		return readCloser, nil
 	}
 	var results []*result
 	chunks := utilstring.SliceToChunks(rootFilePaths, len(rootFilePaths)/runtime.NumCPU())
