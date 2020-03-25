@@ -9,10 +9,12 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
+	"github.com/bufbuild/buf/internal/gen/embed/wkt"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/ext/extfile"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 	"github.com/golang/protobuf/proto"
@@ -130,7 +132,23 @@ func (r *runner) parse(
 	defer utillog.Defer(r.logger, "parse", zap.Int("num_files", len(rootFilePaths)))()
 
 	accessor := func(filename string) (io.ReadCloser, error) {
-		return readBucket.Get(ctx, filename)
+		readCloser, err := readBucket.Get(ctx, filename)
+		if err != nil {
+			if !storage.IsNotExist(err) {
+				return nil, err
+			}
+			for _, root := range roots {
+				relFilename, relErr := storagepath.Rel(root, filename)
+				if relErr != nil {
+					return nil, relErr
+				}
+				if wktReadCloser, wktErr := wkt.ReadBucket.Get(ctx, relFilename); wktErr == nil {
+					return wktReadCloser, nil
+				}
+			}
+			return nil, err
+		}
+		return readCloser, nil
 	}
 	var results []*result
 	chunks := utilstring.SliceToChunks(rootFilePaths, len(rootFilePaths)/runtime.NumCPU())
