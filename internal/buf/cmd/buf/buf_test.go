@@ -182,7 +182,7 @@ func TestFail11(t *testing.T) {
 	testRun(
 		t,
 		1,
-		`testdata/fail2/buf/buf2.proto:5:8:testdata/buf/buf.proto: does not exist`,
+		`testdata/fail2/buf/buf2.proto:5:8:buf/buf.proto: does not exist`,
 		"check",
 		"lint",
 		"--file",
