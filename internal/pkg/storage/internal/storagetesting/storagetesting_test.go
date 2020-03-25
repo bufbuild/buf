@@ -227,6 +227,14 @@ func testBasic(
 	transformerOptions ...storagepath.TransformerOption,
 ) {
 	t.Parallel()
+	t.Run("static", func(t *testing.T) {
+		testBasicStatic(
+			t,
+			walkPrefix,
+			expectedPathToContent,
+			transformerOptions...,
+		)
+	})
 	t.Run("mem", func(t *testing.T) {
 		t.Parallel()
 		testBasicMem(
@@ -271,6 +279,21 @@ func testBasic(
 			transformerOptions...,
 		)
 	})
+}
+
+func testBasicStatic(
+	t *testing.T,
+	walkPrefix string,
+	expectedPathToContent map[string]string,
+	transformerOptions ...storagepath.TransformerOption,
+) {
+	pathToData := make(map[string][]byte)
+	for path, content := range expectedPathToContent {
+		pathToData[path] = []byte(content)
+	}
+	readBucket, err := storagemem.NewImmutableReadBucket(pathToData)
+	require.NoError(t, err)
+	assertExpectedPathToContent(t, readBucket, walkPrefix, expectedPathToContent)
 }
 
 func testBasicMem(
@@ -358,8 +381,18 @@ func testBasicBucket(
 		require.NoError(t, err)
 	}
 	require.NoError(t, inputReadWriteBucketCloser.Close())
+	assertExpectedPathToContent(t, readWriteBucketCloser, walkPrefix, expectedPathToContent)
+	assert.NoError(t, readWriteBucketCloser.Close())
+}
+
+func assertExpectedPathToContent(
+	t *testing.T,
+	readBucket storage.ReadBucket,
+	walkPrefix string,
+	expectedPathToContent map[string]string,
+) {
 	var paths []string
-	require.NoError(t, readWriteBucketCloser.Walk(
+	require.NoError(t, readBucket.Walk(
 		context.Background(),
 		walkPrefix,
 		func(path string) error {
@@ -373,7 +406,7 @@ func testBasicBucket(
 		expectedContent, ok := expectedPathToContent[path]
 		assert.True(t, ok, path)
 		expectedSize := len(expectedContent)
-		objectInfo, err := readWriteBucketCloser.Stat(context.Background(), path)
+		objectInfo, err := readBucket.Stat(context.Background(), path)
 		assert.NoError(t, err, path)
 		// weird issue with int vs uint64
 		if expectedSize == 0 {
@@ -381,12 +414,11 @@ func testBasicBucket(
 		} else {
 			assert.Equal(t, expectedSize, int(objectInfo.Size()), path)
 		}
-		readerCloser, err := readWriteBucketCloser.Get(context.Background(), path)
+		readerCloser, err := readBucket.Get(context.Background(), path)
 		assert.NoError(t, err, path)
 		data, err := ioutil.ReadAll(readerCloser)
 		assert.NoError(t, err, path)
 		assert.NoError(t, readerCloser.Close())
 		assert.Equal(t, expectedContent, string(data))
 	}
-	assert.NoError(t, readWriteBucketCloser.Close())
 }
