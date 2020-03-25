@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/internal"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 )
 
@@ -36,10 +37,6 @@ func newBucket(rootPath string) (*bucket, error) {
 	return &bucket{
 		rootPath: rootPath,
 	}, nil
-}
-
-func (b *bucket) Type() string {
-	return BucketType
 }
 
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, error) {
@@ -83,21 +80,21 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
 	path, err := storagepath.NormalizeAndValidate(path)
 	if err != nil {
-		return storage.ObjectInfo{}, err
+		return nil, err
 	}
 	if path == "." {
-		return storage.ObjectInfo{}, errors.New("cannot check root")
+		return nil, errors.New("cannot check root")
 	}
 	path = storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
 	if b.closed {
-		return storage.ObjectInfo{}, storage.ErrClosed
+		return nil, storage.ErrClosed
 	}
 	fileInfo, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return storage.ObjectInfo{}, storage.NewErrNotExist(path)
+			return nil, storage.NewErrNotExist(path)
 		}
-		return storage.ObjectInfo{}, err
+		return nil, err
 	}
 	if !fileInfo.Mode().IsRegular() {
 		// should this be an error, or just return false?
@@ -106,11 +103,9 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 		// filter non-regular files
 		// making this a user error as any access means this was generally requested
 		// by the user, since we only call the function for Walk on regular files
-		return storage.ObjectInfo{}, fmt.Errorf("%q is not a regular file", path)
+		return nil, fmt.Errorf("%q is not a regular file", path)
 	}
-	return storage.ObjectInfo{
-		Size: uint32(fileInfo.Size()),
-	}, nil
+	return internal.NewObjectInfo(uint32(fileInfo.Size())), nil
 }
 
 func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) error {
@@ -191,6 +186,10 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 	return newWriteObject(file, size), nil
 }
 
+func (b *bucket) Info() storage.BucketInfo {
+	return internal.NewBucketInfo(false)
+}
+
 func (b *bucket) Close() error {
 	if b.closed {
 		return storage.ErrClosed
@@ -219,8 +218,8 @@ func (r *readObject) Close() error {
 	return r.file.Close()
 }
 
-func (r *readObject) Size() uint32 {
-	return r.size
+func (r *readObject) Info() storage.ObjectInfo {
+	return internal.NewObjectInfo(r.size)
 }
 
 type writeObject struct {
@@ -236,25 +235,25 @@ func newWriteObject(file *os.File, size uint32) *writeObject {
 	}
 }
 
-func (r *writeObject) Write(p []byte) (int, error) {
-	if uint32(r.written+len(p)) > r.size {
+func (w *writeObject) Write(p []byte) (int, error) {
+	if uint32(w.written+len(p)) > w.size {
 		return 0, io.EOF
 	}
-	n, err := r.file.Write(p)
-	r.written += n
+	n, err := w.file.Write(p)
+	w.written += n
 	return n, err
 }
 
-func (r *writeObject) Close() error {
-	err := r.file.Close()
-	if uint32(r.written) != r.size {
+func (w *writeObject) Close() error {
+	err := w.file.Close()
+	if uint32(w.written) != w.size {
 		return storage.ErrIncompleteWrite
 	}
 	return err
 }
 
-func (r *writeObject) Size() uint32 {
-	return r.size
+func (w *writeObject) Info() storage.ObjectInfo {
+	return internal.NewObjectInfo(w.size)
 }
 
 // newErrNotDir returns a new Error for a path not being a directory.

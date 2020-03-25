@@ -34,10 +34,10 @@ type Config struct {
 
 // Provider is a provider.
 type Provider interface {
-	// GetConfigForBucket gets the Config for the given JSON or YAML data.
+	// GetConfigForReadBucket gets the Config for the given JSON or YAML data.
 	//
 	// If the data is of length 0, returns the default config.
-	GetConfigForBucket(ctx context.Context, bucket storage.ReadBucket) (*Config, error)
+	GetConfigForReadBucket(ctx context.Context, readBucket storage.ReadBucket) (*Config, error)
 	// GetConfig gets the Config for the given JSON or YAML data.
 	//
 	// If the data is of length 0, returns the default config.

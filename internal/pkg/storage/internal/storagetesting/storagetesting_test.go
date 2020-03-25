@@ -190,7 +190,7 @@ func TestGitClone(t *testing.T) {
 	require.NoError(t, err)
 	relFilePathError1 := "Makefile"
 
-	bucket := storagemem.NewBucket()
+	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
 	err = storagegit.Clone(
 		context.Background(),
 		zap.NewNop(),
@@ -203,20 +203,20 @@ func TestGitClone(t *testing.T) {
 		"",
 		"",
 		"",
-		bucket,
+		readWriteBucketCloser,
 		storagepath.WithExt(".proto"),
 		storagepath.WithExt(".go"),
 	)
 	assert.NoError(t, err)
 
-	_, err = bucket.Stat(context.Background(), relFilePathSuccess1)
+	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathSuccess1)
 	assert.NoError(t, err)
-	_, err = bucket.Stat(context.Background(), relFilePathSuccess2)
+	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathSuccess2)
 	assert.NoError(t, err)
-	_, err = bucket.Stat(context.Background(), relFilePathError1)
+	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathError1)
 	assert.True(t, storage.IsNotExist(err))
 
-	assert.NoError(t, bucket.Close())
+	assert.NoError(t, readWriteBucketCloser.Close())
 }
 
 func testBasic(
@@ -281,10 +281,10 @@ func testBasicMem(
 	expectedPathToContent map[string]string,
 	transformerOptions ...storagepath.TransformerOption,
 ) {
-	bucket := storagemem.NewBucket()
+	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
 	testBasicBucket(
 		t,
-		bucket,
+		readWriteBucketCloser,
 		dirPath,
 		doAsTar,
 		walkPrefix,
@@ -308,11 +308,11 @@ func testBasicOS(
 		// won't work with requires but just temporary directory
 		require.NoError(t, os.RemoveAll(tempDirPath))
 	}()
-	bucket, err := storageos.NewBucket(tempDirPath)
+	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(tempDirPath)
 	require.NoError(t, err)
 	testBasicBucket(
 		t,
-		bucket,
+		readWriteBucketCloser,
 		dirPath,
 		doAsTar,
 		walkPrefix,
@@ -323,43 +323,43 @@ func testBasicOS(
 
 func testBasicBucket(
 	t *testing.T,
-	bucket storage.Bucket,
+	readWriteBucketCloser storage.ReadWriteBucketCloser,
 	dirPath string,
 	doAsTar bool,
 	walkPrefix string,
 	expectedPathToContent map[string]string,
 	transformerOptions ...storagepath.TransformerOption,
 ) {
-	inputBucket, err := storageos.NewBucket(dirPath)
+	inputReadWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(dirPath)
 	require.NoError(t, err)
 	if doAsTar {
 		buffer := bytes.NewBuffer(nil)
 		require.NoError(t, storageutil.Targz(
 			context.Background(),
 			buffer,
-			inputBucket,
+			inputReadWriteBucketCloser,
 			"",
 		))
 		require.NoError(t, err)
 		require.NoError(t, storageutil.Untargz(
 			context.Background(),
 			buffer,
-			bucket,
+			readWriteBucketCloser,
 			transformerOptions...,
 		))
 	} else {
 		_, err := storageutil.Copy(
 			context.Background(),
-			inputBucket,
-			bucket,
+			inputReadWriteBucketCloser,
+			readWriteBucketCloser,
 			"",
 			transformerOptions...,
 		)
 		require.NoError(t, err)
 	}
-	require.NoError(t, inputBucket.Close())
+	require.NoError(t, inputReadWriteBucketCloser.Close())
 	var paths []string
-	require.NoError(t, bucket.Walk(
+	require.NoError(t, readWriteBucketCloser.Walk(
 		context.Background(),
 		walkPrefix,
 		func(path string) error {
@@ -373,20 +373,20 @@ func testBasicBucket(
 		expectedContent, ok := expectedPathToContent[path]
 		assert.True(t, ok, path)
 		expectedSize := len(expectedContent)
-		objectInfo, err := bucket.Stat(context.Background(), path)
+		objectInfo, err := readWriteBucketCloser.Stat(context.Background(), path)
 		assert.NoError(t, err, path)
 		// weird issue with int vs uint64
 		if expectedSize == 0 {
-			assert.Equal(t, 0, int(objectInfo.Size), path)
+			assert.Equal(t, 0, int(objectInfo.Size()), path)
 		} else {
-			assert.Equal(t, expectedSize, int(objectInfo.Size), path)
+			assert.Equal(t, expectedSize, int(objectInfo.Size()), path)
 		}
-		readerCloser, err := bucket.Get(context.Background(), path)
+		readerCloser, err := readWriteBucketCloser.Get(context.Background(), path)
 		assert.NoError(t, err, path)
 		data, err := ioutil.ReadAll(readerCloser)
 		assert.NoError(t, err, path)
 		assert.NoError(t, readerCloser.Close())
 		assert.Equal(t, expectedContent, string(data))
 	}
-	assert.NoError(t, bucket.Close())
+	assert.NoError(t, readWriteBucketCloser.Close())
 }

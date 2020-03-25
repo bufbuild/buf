@@ -178,12 +178,12 @@ func testNewProtoFileSet(
 	expectedRelFiles []string,
 ) {
 	t.Parallel()
-	bucket, err := storageos.NewReadBucket(relDir)
+	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(relDir)
 	require.NoError(t, err)
 
-	set, err := newProvider(zap.NewNop()).GetProtoFileSetForBucket(
+	set, err := newProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
 		context.Background(),
-		bucket,
+		readWriteBucketCloser,
 		relRoots,
 		relExcludes,
 	)
@@ -198,7 +198,7 @@ func testNewProtoFileSet(
 		expectedRelFiles = expectedRelFiles[:len(expectedRelFiles)-1]
 		set, err := newProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
 			context.Background(),
-			bucket,
+			readWriteBucketCloser,
 			relRoots,
 			expectedRelFiles,
 			false,
@@ -211,7 +211,7 @@ func testNewProtoFileSet(
 			set.RealFilePaths(),
 		)
 	}
-	assert.NoError(t, bucket.Close())
+	assert.NoError(t, readWriteBucketCloser.Close())
 }
 
 func testNewProtoFileSetError(
@@ -222,12 +222,12 @@ func testNewProtoFileSetError(
 	allRelFiles []string,
 ) {
 	t.Parallel()
-	bucket, err := storageos.NewReadBucket(relDir)
+	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(relDir)
 	require.NoError(t, err)
 
-	_, err = newProvider(zap.NewNop()).GetProtoFileSetForBucket(
+	_, err = newProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
 		context.Background(),
-		bucket,
+		readWriteBucketCloser,
 		relRoots,
 		relExcludes,
 	)
@@ -236,12 +236,12 @@ func testNewProtoFileSetError(
 		allRelFiles = allRelFiles[:len(allRelFiles)-1]
 		_, err = newProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
 			context.Background(),
-			bucket,
+			readWriteBucketCloser,
 			relRoots,
 			allRelFiles,
 			false,
 		)
 		assert.Error(t, err)
 	}
-	assert.NoError(t, bucket.Close())
+	assert.NoError(t, readWriteBucketCloser.Close())
 }

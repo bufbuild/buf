@@ -24,7 +24,7 @@ import (
 func Copy(
 	ctx context.Context,
 	from storage.ReadBucket,
-	to storage.Bucket,
+	to storage.ReadWriteBucket,
 	prefix string,
 	options ...storagepath.TransformerOption,
 ) (int, error) {
@@ -74,7 +74,7 @@ func Copy(
 func CopyPaths(
 	ctx context.Context,
 	from storage.ReadBucket,
-	to storage.Bucket,
+	to storage.ReadWriteBucket,
 	paths ...string,
 ) (int, error) {
 	semaphoreC := make(chan struct{}, runtime.NumCPU())
@@ -109,7 +109,7 @@ func CopyPaths(
 func copyPath(
 	ctx context.Context,
 	from storage.ReadBucket,
-	to storage.Bucket,
+	to storage.ReadWriteBucket,
 	fromPath string,
 	toPath string,
 ) error {
@@ -117,7 +117,7 @@ func copyPath(
 	if err != nil {
 		return err
 	}
-	writeObject, err := to.Put(ctx, toPath, readObject.Size())
+	writeObject, err := to.Put(ctx, toPath, readObject.Info().Size())
 	if err != nil {
 		return multierr.Append(err, readObject.Close())
 	}
@@ -133,10 +133,10 @@ func copyPath(
 func Untar(
 	ctx context.Context,
 	reader io.Reader,
-	bucket storage.Bucket,
+	readWriteBucket storage.ReadWriteBucket,
 	options ...storagepath.TransformerOption,
 ) error {
-	return untar(ctx, reader, bucket, false, options...)
+	return untar(ctx, reader, readWriteBucket, false, options...)
 }
 
 // Untargz untars the given targz archive from the reader into the bucket.
@@ -147,16 +147,16 @@ func Untar(
 func Untargz(
 	ctx context.Context,
 	reader io.Reader,
-	bucket storage.Bucket,
+	readWriteBucket storage.ReadWriteBucket,
 	options ...storagepath.TransformerOption,
 ) error {
-	return untar(ctx, reader, bucket, true, options...)
+	return untar(ctx, reader, readWriteBucket, true, options...)
 }
 
 func untar(
 	ctx context.Context,
 	reader io.Reader,
-	bucket storage.Bucket,
+	readWriteBucket storage.ReadWriteBucket,
 	gzipped bool,
 	options ...storagepath.TransformerOption,
 ) error {
@@ -192,7 +192,7 @@ func untar(
 			continue
 		}
 		if tarHeader.FileInfo().Mode().IsRegular() {
-			writeObject, err := bucket.Put(ctx, path, uint32(tarHeader.Size))
+			writeObject, err := readWriteBucket.Put(ctx, path, uint32(tarHeader.Size))
 			if err != nil {
 				return err
 			}
@@ -217,11 +217,11 @@ func untar(
 func Tar(
 	ctx context.Context,
 	writer io.Writer,
-	bucket storage.Bucket,
+	readBucket storage.ReadBucket,
 	prefix string,
 	options ...storagepath.TransformerOption,
 ) error {
-	return doTar(ctx, writer, bucket, prefix, false, options...)
+	return doTar(ctx, writer, readBucket, prefix, false, options...)
 }
 
 // Targz tars and gzips the given bucket to the writer.
@@ -233,17 +233,17 @@ func Tar(
 func Targz(
 	ctx context.Context,
 	writer io.Writer,
-	bucket storage.Bucket,
+	readBucket storage.ReadBucket,
 	prefix string,
 	options ...storagepath.TransformerOption,
 ) error {
-	return doTar(ctx, writer, bucket, prefix, true, options...)
+	return doTar(ctx, writer, readBucket, prefix, true, options...)
 }
 
 func doTar(
 	ctx context.Context,
 	writer io.Writer,
-	bucket storage.Bucket,
+	readBucket storage.ReadBucket,
 	prefix string,
 	gzipped bool,
 	options ...storagepath.TransformerOption,
@@ -260,7 +260,7 @@ func doTar(
 	defer func() {
 		retErr = multierr.Append(retErr, tarWriter.Close())
 	}()
-	return bucket.Walk(
+	return readBucket.Walk(
 		ctx,
 		prefix,
 		func(path string) error {
@@ -268,7 +268,7 @@ func doTar(
 			if !ok {
 				return nil
 			}
-			readObject, err := bucket.Get(ctx, path)
+			readObject, err := readBucket.Get(ctx, path)
 			if err != nil {
 				return err
 			}
@@ -276,7 +276,7 @@ func doTar(
 				&tar.Header{
 					Typeflag: tar.TypeReg,
 					Name:     newPath,
-					Size:     int64(readObject.Size()),
+					Size:     int64(readObject.Info().Size()),
 					// If we ever use this outside of testing, we will want to do something about this
 					Mode: 0644,
 				},
@@ -292,8 +292,8 @@ func doTar(
 // ReadPath is analogous to ioutil.ReadFile.
 //
 // Returns an error that fufills storage.IsNotExist if the path does not exist.
-func ReadPath(ctx context.Context, bucket storage.ReadBucket, path string) (_ []byte, retErr error) {
-	readObject, err := bucket.Get(ctx, path)
+func ReadPath(ctx context.Context, readBucket storage.ReadBucket, path string) (_ []byte, retErr error) {
+	readObject, err := readBucket.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}

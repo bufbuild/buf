@@ -200,12 +200,12 @@ func (e *envReader) ListFiles(
 	}
 
 	// we have a source, we need to get everything
-	bucket, err := e.getBucket(ctx, stdin, getenv, inputRef)
+	readBucketCloser, err := e.getReadBucketCloser(ctx, stdin, getenv, inputRef)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, bucket.Close())
+		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
 	var config *bufconfig.Config
 	if configOverride != "" {
@@ -216,7 +216,7 @@ func (e *envReader) ListFiles(
 	} else {
 		// if there is no config override, we read the config from the bucket
 		// if there was no file, this just returns default config
-		config, err = e.configProvider.GetConfigForBucket(ctx, bucket)
+		config, err = e.configProvider.GetConfigForReadBucket(ctx, readBucketCloser)
 		if err != nil {
 			return nil, err
 		}
@@ -224,7 +224,7 @@ func (e *envReader) ListFiles(
 
 	protoFileSet, err := e.buildHandler.Files(
 		ctx,
-		bucket,
+		readBucketCloser,
 		bufbuild.FilesOptions{
 			Roots:    config.Build.Roots,
 			Excludes: config.Build.Excludes,
@@ -337,12 +337,12 @@ func (e *envReader) readEnvFromBucket(
 	includeSourceInfo bool,
 	inputRef *internal.InputRef,
 ) (_ *Env, _ []*filev1beta1.FileAnnotation, retErr error) {
-	bucket, err := e.getBucket(ctx, stdin, getenv, inputRef)
+	readBucketCloser, err := e.getReadBucketCloser(ctx, stdin, getenv, inputRef)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, bucket.Close())
+		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
 
 	var config *bufconfig.Config
@@ -354,7 +354,7 @@ func (e *envReader) readEnvFromBucket(
 	} else {
 		// if there is no config override, we read the config from the bucket
 		// if there was no file, this just returns default config
-		config, err = e.configProvider.GetConfigForBucket(ctx, bucket)
+		config, err = e.configProvider.GetConfigForReadBucket(ctx, readBucketCloser)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -401,7 +401,7 @@ func (e *envReader) readEnvFromBucket(
 	// we now have everything we need, actually build the image
 	protoFileSet, err := e.buildHandler.Files(
 		ctx,
-		bucket,
+		readBucketCloser,
 		bufbuild.FilesOptions{
 			Roots:                              config.Build.Roots,
 			Excludes:                           config.Build.Excludes,
@@ -421,7 +421,7 @@ func (e *envReader) readEnvFromBucket(
 	}
 	image, fileAnnotations, err := e.buildHandler.Build(
 		ctx,
-		bucket,
+		readBucketCloser,
 		protoFileSet,
 		bufbuild.BuildOptions{
 			IncludeImports:    includeImports,
@@ -481,17 +481,17 @@ func (e *envReader) readEnvFromImage(
 	}, nil
 }
 
-func (e *envReader) getBucket(
+func (e *envReader) getReadBucketCloser(
 	ctx context.Context,
 	stdin io.Reader,
 	getenv func(string) string,
 	inputRef *internal.InputRef,
-) (storage.ReadBucket, error) {
+) (storage.ReadBucketCloser, error) {
 	switch inputRef.Format {
 	case internal.FormatDir:
-		return e.getBucketFromLocalDir(inputRef.Path)
+		return e.getReadBucketCloserFromLocalDir(inputRef.Path)
 	case internal.FormatTar, internal.FormatTarGz:
-		return e.getBucketFromLocalTarball(
+		return e.getReadBucketCloserFromLocalTarball(
 			ctx,
 			stdin,
 			getenv,
@@ -500,7 +500,7 @@ func (e *envReader) getBucket(
 			inputRef.StripComponents,
 		)
 	case internal.FormatGit:
-		return e.getBucketFromGitRepo(
+		return e.getReadBucketCloserFromGitRepo(
 			ctx,
 			getenv,
 			inputRef.Path,
@@ -526,28 +526,28 @@ func (e *envReader) getImage(
 }
 
 // Can handle formats FormatDir
-func (e *envReader) getBucketFromLocalDir(
+func (e *envReader) getReadBucketCloserFromLocalDir(
 	path string,
-) (storage.ReadBucket, error) {
-	bucket, err := storageos.NewBucket(path)
+) (storage.ReadBucketCloser, error) {
+	readBucketCloser, err := storageos.NewReadWriteBucketCloser(path)
 	if err != nil {
 		if storage.IsNotExist(err) || storageos.IsNotDir(err) {
 			return nil, err
 		}
 		return nil, err
 	}
-	return bucket, nil
+	return readBucketCloser, nil
 }
 
 // Can handle formats FormatTar, FormatTarGz
-func (e *envReader) getBucketFromLocalTarball(
+func (e *envReader) getReadBucketCloserFromLocalTarball(
 	ctx context.Context,
 	stdin io.Reader,
 	getenv func(string) string,
 	format internal.Format,
 	path string,
 	stripComponents uint32,
-) (_ storage.ReadBucket, retErr error) {
+) (_ storage.ReadBucketCloser, retErr error) {
 	data, err := e.getFileData(ctx, stdin, getenv, path)
 	if err != nil {
 		return nil, err
@@ -562,36 +562,36 @@ func (e *envReader) getBucketFromLocalTarball(
 			storagepath.WithStripComponents(stripComponents),
 		)
 	}
-	bucket := storagemem.NewBucket()
+	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
 	switch format {
 	case internal.FormatTar:
-		err = storageutil.Untar(ctx, bytes.NewReader(data), bucket, transformerOptions...)
+		err = storageutil.Untar(ctx, bytes.NewReader(data), readWriteBucketCloser, transformerOptions...)
 	case internal.FormatTarGz:
-		err = storageutil.Untargz(ctx, bytes.NewReader(data), bucket, transformerOptions...)
+		err = storageutil.Untargz(ctx, bytes.NewReader(data), readWriteBucketCloser, transformerOptions...)
 	default:
 		return nil, fmt.Errorf("got image format %v outside of parse", format)
 	}
 	if err != nil {
 		// TODO: this isn't really an invalid argument
-		return nil, multierr.Append(fmt.Errorf("untar error: %v", err), bucket.Close())
+		return nil, multierr.Append(fmt.Errorf("untar error: %v", err), readWriteBucketCloser.Close())
 	}
-	return bucket, nil
+	return readWriteBucketCloser, nil
 }
 
 // For FormatGit
-func (e *envReader) getBucketFromGitRepo(
+func (e *envReader) getReadBucketCloserFromGitRepo(
 	ctx context.Context,
 	getenv func(string) string,
 	gitRepo string,
 	gitRefName storagegitplumbing.RefName,
-) (_ storage.ReadBucket, retErr error) {
+) (_ storage.ReadBucketCloser, retErr error) {
 	defer utillog.Defer(e.logger, "get_git_bucket_memory")()
 
 	homeDirPath, err := clios.Home(getenv)
 	if err != nil {
 		return nil, err
 	}
-	bucket := storagemem.NewBucket()
+	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
 	if err := storagegit.Clone(
 		ctx,
 		e.logger,
@@ -604,16 +604,16 @@ func (e *envReader) getBucketFromGitRepo(
 		e.sshKeyFileEnvKey,
 		e.sshKeyPassphraseEnvKey,
 		e.sshKnownHostsFilesEnvKey,
-		bucket,
+		readWriteBucketCloser,
 		storagepath.WithExt(".proto"),
 		storagepath.WithExactPath(bufconfig.ConfigFilePath),
 	); err != nil {
 		return nil, multierr.Append(
 			fmt.Errorf("could not clone %s: %v", gitRepo, err),
-			bucket.Close(),
+			readWriteBucketCloser.Close(),
 		)
 	}
-	return bucket, nil
+	return readWriteBucketCloser, nil
 }
 
 // Can handle formats FormatBin, FormatBinGz, FormatJSON, FormatJSONGz

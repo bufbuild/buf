@@ -14,10 +14,10 @@ import (
 const stringOSPathSeparator = string(os.PathSeparator)
 
 var (
-	// ErrNotRelative is the error returned if the path is not relative.
-	ErrNotRelative = errors.New("expected to be relative")
-	// ErrOutsideContextDir is the error returned if the path is outside the context directory.
-	ErrOutsideContextDir = errors.New("is outside the context directory")
+	// errNotRelative is the error returned if the path is not relative.
+	errNotRelative = errors.New("expected to be relative")
+	// errOutsideContextDir is the error returned if the path is outside the context directory.
+	errOutsideContextDir = errors.New("is outside the context directory")
 )
 
 // Error is a path error.
@@ -61,16 +61,16 @@ func ErrorEquals(err error, target error) bool {
 // NormalizeAndValidate normalizes and validates the given path.
 //
 // This calls Normalize on the path.
-// Returns error if the path is not relative or jumps context.
+// Returns Error if the path is not relative or jumps context.
 // This can be used to validate that paths are valid to use with Buckets.
 // The error message is safe to pass to users.
 func NormalizeAndValidate(path string) (string, error) {
 	path = Normalize(path)
 	if filepath.IsAbs(path) {
-		return "", NewError(path, ErrNotRelative)
+		return "", NewError(path, errNotRelative)
 	}
 	if strings.Contains(path, "..") {
-		return "", NewError(path, ErrOutsideContextDir)
+		return "", NewError(path, errOutsideContextDir)
 	}
 	return path, nil
 }

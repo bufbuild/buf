@@ -79,10 +79,10 @@ func TestCompareGoogleapis(t *testing.T) {
 }
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Image {
-	bucket := testGetBucketGoogleapis(t)
-	protoFileSet := testGetProtoFileSetGoogleapis(t, bucket)
-	image, fileAnnotations := testBuild(t, includeSourceInfo, bucket, protoFileSet)
-	assert.NoError(t, bucket.Close())
+	readBucketCloser := testGetReadBucketCloserGoogleapis(t)
+	protoFileSet := testGetProtoFileSetGoogleapis(t, readBucketCloser)
+	image, fileAnnotations := testBuild(t, includeSourceInfo, readBucketCloser, protoFileSet)
+	assert.NoError(t, readBucketCloser.Close())
 
 	assert.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	assert.Equal(t, 1585, len(image.GetFile()))
@@ -164,25 +164,25 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Ima
 }
 
 func testBuildProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptor.FileDescriptorSet {
-	bucket := testGetBucketGoogleapis(t)
-	protoFileSet := testGetProtoFileSetGoogleapis(t, bucket)
+	readBucketCloser := testGetReadBucketCloserGoogleapis(t)
+	protoFileSet := testGetProtoFileSetGoogleapis(t, readBucketCloser)
 	fileDescriptorSet := testBuildProtoc(t, includeSourceInfo, testGoogleapisDirPath, protoFileSet)
-	assert.NoError(t, bucket.Close())
+	assert.NoError(t, readBucketCloser.Close())
 	assert.Equal(t, 1585, len(fileDescriptorSet.GetFile()))
 	return fileDescriptorSet
 }
 
-func testGetBucketGoogleapis(t *testing.T) storage.ReadBucket {
+func testGetReadBucketCloserGoogleapis(t *testing.T) storage.ReadBucketCloser {
 	testGetGoogleapis(t)
-	bucket, err := storageos.NewReadBucket(testGoogleapisDirPath)
+	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(testGoogleapisDirPath)
 	require.NoError(t, err)
-	return bucket
+	return readWriteBucketCloser
 }
 
-func testGetProtoFileSetGoogleapis(t *testing.T, bucket storage.ReadBucket) ProtoFileSet {
-	protoFileSet, err := newProvider(zap.NewNop()).GetProtoFileSetForBucket(
+func testGetProtoFileSetGoogleapis(t *testing.T, readBucket storage.ReadBucket) ProtoFileSet {
+	protoFileSet, err := newProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
 		context.Background(),
-		bucket,
+		readBucket,
 		nil,
 		nil,
 	)
@@ -190,10 +190,10 @@ func testGetProtoFileSetGoogleapis(t *testing.T, bucket storage.ReadBucket) Prot
 	return protoFileSet
 }
 
-func testBuild(t *testing.T, includeSourceInfo bool, bucket storage.ReadBucket, protoFileSet ProtoFileSet) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation) {
+func testBuild(t *testing.T, includeSourceInfo bool, readBucket storage.ReadBucket, protoFileSet ProtoFileSet) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation) {
 	image, fileAnnotations, err := newRunner(zap.NewNop()).Run(
 		context.Background(),
-		bucket,
+		readBucket,
 		protoFileSet,
 		true,
 		includeSourceInfo,

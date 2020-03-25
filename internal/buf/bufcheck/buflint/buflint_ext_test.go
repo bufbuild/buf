@@ -743,7 +743,7 @@ func testLintExternalConfigModifier(
 	t.Parallel()
 	logger := zap.NewNop()
 
-	bucket, err := storageos.NewReadBucket(filepath.Join("testdata", dirPath))
+	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(filepath.Join("testdata", dirPath))
 	require.NoError(t, err)
 
 	var configProviderOptions []bufconfig.ProviderOption
@@ -759,14 +759,14 @@ func testLintExternalConfigModifier(
 		)
 	}
 	configProvider := bufconfig.NewProvider(logger, configProviderOptions...)
-	config := testGetConfig(t, configProvider, bucket)
+	config := testGetConfig(t, configProvider, readWriteBucketCloser)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	buildHandler := bufbuild.NewHandler(logger)
 	protoFileSet, err := buildHandler.Files(
 		ctx,
-		bucket,
+		readWriteBucketCloser,
 		bufbuild.FilesOptions{
 			Roots:    config.Build.Roots,
 			Excludes: config.Build.Excludes,
@@ -775,7 +775,7 @@ func testLintExternalConfigModifier(
 	require.NoError(t, err)
 	image, fileAnnotations, err := buildHandler.Build(
 		ctx,
-		bucket,
+		readWriteBucketCloser,
 		protoFileSet,
 		bufbuild.BuildOptions{
 			IncludeImports:    true, // just to make sure this works properly
@@ -797,18 +797,18 @@ func testLintExternalConfigModifier(
 	assert.NoError(t, err)
 	assert.NoError(t, bufbuild.FixFileAnnotationPaths(protoFileSet, fileAnnotations))
 	extfiletesting.AssertFileAnnotationsEqual(t, expectedFileAnnotations, fileAnnotations)
-	assert.NoError(t, bucket.Close())
+	assert.NoError(t, readWriteBucketCloser.Close())
 }
 
 func testGetConfig(
 	t *testing.T,
 	configProvider bufconfig.Provider,
-	bucket storage.ReadBucket,
+	readBucket storage.ReadBucket,
 ) *bufconfig.Config {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	data, err := storageutil.ReadPath(ctx, bucket, bufconfig.ConfigFilePath)
+	data, err := storageutil.ReadPath(ctx, readBucket, bufconfig.ConfigFilePath)
 	if err != nil && !storage.IsNotExist(err) {
 		require.NoError(t, err)
 	}

@@ -31,19 +31,19 @@ func newHandler(
 
 func (h *handler) Build(
 	ctx context.Context,
-	bucket storage.ReadBucket,
+	readBucket storage.ReadBucket,
 	protoFileSet ProtoFileSet,
 	options BuildOptions,
 ) (_ *imagev1beta1.Image, _ []*filev1beta1.FileAnnotation, retErr error) {
 	if options.CopyToMemory {
-		memBucket, err := h.copyToMemory(ctx, bucket, protoFileSet)
+		memReadWriteBucketCloser, err := h.copyToMemory(ctx, readBucket, protoFileSet)
 		if err != nil {
 			return nil, nil, err
 		}
-		if memBucket != nil {
-			bucket = memBucket
+		if memReadWriteBucketCloser != nil {
+			readBucket = memReadWriteBucketCloser
 			defer func() {
-				retErr = multierr.Append(retErr, memBucket.Close())
+				retErr = multierr.Append(retErr, memReadWriteBucketCloser.Close())
 			}()
 		}
 	} else {
@@ -52,7 +52,7 @@ func (h *handler) Build(
 
 	image, fileAnnotations, err := h.runner.Run(
 		ctx,
-		bucket,
+		readBucket,
 		protoFileSet,
 		options.IncludeImports,
 		options.IncludeSourceInfo,
@@ -71,21 +71,21 @@ func (h *handler) Build(
 
 func (h *handler) Files(
 	ctx context.Context,
-	bucket storage.ReadBucket,
+	readBucket storage.ReadBucket,
 	options FilesOptions,
 ) (ProtoFileSet, error) {
 	if len(options.SpecificRealFilePaths) > 0 {
 		return h.provider.GetProtoFileSetForRealFilePaths(
 			ctx,
-			bucket,
+			readBucket,
 			options.Roots,
 			options.SpecificRealFilePaths,
 			options.SpecificRealFilePathsAllowNotExist,
 		)
 	}
-	return h.provider.GetProtoFileSetForBucket(
+	return h.provider.GetProtoFileSetForReadBucket(
 		ctx,
-		bucket,
+		readBucket,
 		options.Roots,
 		options.Excludes,
 	)
@@ -97,30 +97,30 @@ func (h *handler) Files(
 // Returns error on system error.
 func (h *handler) copyToMemory(
 	ctx context.Context,
-	bucket storage.ReadBucket,
+	readBucket storage.ReadBucket,
 	protoFileSet ProtoFileSet,
-) (storage.ReadBucket, error) {
+) (storage.ReadWriteBucketCloser, error) {
 	start := time.Now()
 
-	if bucket.Type() == storagemem.BucketType {
+	if readBucket.Info().InMemory() {
 		h.logger.Debug("already_in_memory")
 		return nil, nil
 	}
 
-	memBucket := storagemem.NewBucket()
+	memReadWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
 	count, err := storageutil.CopyPaths(
 		ctx,
-		bucket,
-		memBucket,
+		readBucket,
+		memReadWriteBucketCloser,
 		protoFileSet.RealFilePaths()...,
 	)
 	if err != nil {
-		return nil, multierr.Append(err, memBucket.Close())
+		return nil, multierr.Append(err, memReadWriteBucketCloser.Close())
 	}
 	h.logger.Debug(
 		"copy_to_memory",
 		zap.Int("num_files", count),
 		zap.Duration("duration", time.Since(start)),
 	)
-	return memBucket, nil
+	return memReadWriteBucketCloser, nil
 }
