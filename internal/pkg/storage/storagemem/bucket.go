@@ -14,8 +14,11 @@ import (
 	"go.uber.org/multierr"
 )
 
+var errImmutable = errors.New("immutable")
+
 type bucket struct {
 	pathToBuffer map[string]*buffer
+	immutable    bool
 	closed       bool
 	lock         sync.RWMutex
 }
@@ -24,6 +27,27 @@ func newBucket() *bucket {
 	return &bucket{
 		pathToBuffer: make(map[string]*buffer),
 	}
+}
+
+func newImmutableBucket(pathToData map[string][]byte) (*bucket, error) {
+	pathToBuffer := make(map[string]*buffer, len(pathToData))
+	for path, data := range pathToData {
+		path, err := storagepath.NormalizeAndValidate(path)
+		if err != nil {
+			return nil, err
+		}
+		if path == "." {
+			return nil, errors.New("cannot put root")
+		}
+		if _, ok := pathToBuffer[path]; ok {
+			return nil, fmt.Errorf("duplicate static data path: %v", path)
+		}
+		pathToBuffer[path] = newImmutableBuffer(data)
+	}
+	return &bucket{
+		pathToBuffer: pathToBuffer,
+		immutable:    true,
+	}, nil
 }
 
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, error) {
@@ -111,6 +135,9 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) 
 }
 
 func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.WriteObject, error) {
+	if b.immutable {
+		return nil, errImmutable
+	}
 	path, err := storagepath.NormalizeAndValidate(path)
 	if err != nil {
 		return nil, err
@@ -143,6 +170,9 @@ func (b *bucket) Info() storage.BucketInfo {
 }
 
 func (b *bucket) Close() error {
+	if b.immutable {
+		return errImmutable
+	}
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if b.closed {
@@ -259,6 +289,8 @@ func (w *writeObject) Info() storage.ObjectInfo {
 type buffer struct {
 	data   []byte
 	curLen int
+	// protect against mutating static data
+	immutable bool
 	// protect against outstanding readers or writers
 	// if we overwrite a file
 	deleted bool
@@ -271,10 +303,21 @@ func newBuffer(size uint32) *buffer {
 	}
 }
 
+func newImmutableBuffer(data []byte) *buffer {
+	return &buffer{
+		data:      data,
+		curLen:    len(data),
+		immutable: true,
+	}
+}
+
 // CopyFrom copies from the byte slice to the buffer starting at the offset.
 //
 // Returns io.EOF if len(from) + offset is greater than the buffer size.
 func (b *buffer) CopyFrom(from []byte, offset int) (int, error) {
+	if b.immutable {
+		return 0, errImmutable
+	}
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if b.deleted {
@@ -320,6 +363,9 @@ func (b *buffer) Len() (int, error) {
 
 // MarkDeleted marks the buffer as deleted.
 func (b *buffer) MarkDeleted() error {
+	if b.immutable {
+		return errImmutable
+	}
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if b.deleted {
