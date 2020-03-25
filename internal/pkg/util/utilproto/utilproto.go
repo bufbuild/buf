@@ -22,6 +22,16 @@ func MarshalWire(message proto.Message) ([]byte, error) {
 	return proto.Marshal(message)
 }
 
+// MarshalWireDeterministic marshals the message to wire format deterministically.
+func MarshalWireDeterministic(message proto.Message) ([]byte, error) {
+	buffer := proto.NewBuffer(nil)
+	buffer.SetDeterministic(true)
+	if err := buffer.Marshal(message); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
 // MarshalJSON marshals the message to JSON format.
 func MarshalJSON(message proto.Message) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)

@@ -10,22 +10,18 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/pkg/util/utildiff"
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
-var jsonMarshalerIndent = &jsonpb.Marshaler{
-	Indent: "  ",
-}
-
 // DiffMessagesJSON diffs the two Messages using jsonpb.
 func DiffMessagesJSON(one proto.Message, two proto.Message, name string) (string, error) {
-	oneData, err := marshalJSONIndent(one)
+	oneData, err := utilproto.MarshalJSONIndent(one)
 	if err != nil {
 		return "", err
 	}
-	twoData, err := marshalJSONIndent(two)
+	twoData, err := utilproto.MarshalJSONIndent(two)
 	if err != nil {
 		return "", err
 	}
@@ -38,11 +34,11 @@ func DiffMessagesJSON(one proto.Message, two proto.Message, name string) (string
 
 // DiffMessagesText diffs the two Messages using proto.MarshalText.
 func DiffMessagesText(one proto.Message, two proto.Message, name string) (string, error) {
-	oneData, err := marshalText(one)
+	oneData, err := utilproto.MarshalText(one)
 	if err != nil {
 		return "", err
 	}
-	twoData, err := marshalText(two)
+	twoData, err := utilproto.MarshalText(two)
 	if err != nil {
 		return "", err
 	}
@@ -137,24 +133,8 @@ func GetProtocFileDescriptorSet(
 		return nil, err
 	}
 	fileDescriptorSet := &descriptor.FileDescriptorSet{}
-	if err := proto.Unmarshal(data, fileDescriptorSet); err != nil {
+	if err := utilproto.UnmarshalWire(data, fileDescriptorSet); err != nil {
 		return nil, err
 	}
 	return fileDescriptorSet, nil
-}
-
-func marshalJSONIndent(message proto.Message) ([]byte, error) {
-	buffer := bytes.NewBuffer(nil)
-	if err := jsonMarshalerIndent.Marshal(buffer, message); err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
-}
-
-func marshalText(message proto.Message) ([]byte, error) {
-	buffer := bytes.NewBuffer(nil)
-	if err := proto.MarshalText(buffer, message); err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
 }
