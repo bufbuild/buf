@@ -134,9 +134,9 @@ Features of Buf's include:
 
 - **Speed**. Buf's [internal Protobuf compiler](https://buf.build/docs/build-compiler) utilizes all available cores to compile
   your Protobuf schema, while still maintaining deterministic output. Additionally files are copied into
-  memory before processing. As an unscientific example, Buf can compile all 1,590 `.proto` files in
-  [googleapis](https://github.com/googleapis/googleapis) in about **0.7s** on a four-core machine,
-  as opposed to about 2s for `protoc` on the same machine. While both are very fast, this allows for
+  memory before processing. As an unscientific example, Buf can compile all 2,311 `.proto` files in
+  [googleapis](https://github.com/googleapis/googleapis) in about **0.8s** on a four-core machine,
+  as opposed to about 4.3s for `protoc` on the same machine. While both are very fast, this allows for
   instantaneous feedback, which is especially useful with editor integration. Buf's speed is
   directly proportional to the input size, so checking a single file only takes a few milliseconds.
 
