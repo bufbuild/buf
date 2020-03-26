@@ -222,10 +222,10 @@ func (e *envReader) ListFiles(
 		}
 	}
 
-	protoFileSet, err := e.buildHandler.Files(
+	protoFileSet, err := e.buildHandler.GetProtoFileSet(
 		ctx,
 		readBucketCloser,
-		bufbuild.FilesOptions{
+		bufbuild.GetProtoFileSetOptions{
 			Roots:    config.Build.Roots,
 			Excludes: config.Build.Excludes,
 		},
@@ -398,19 +398,34 @@ func (e *envReader) readEnvFromBucket(
 			}
 		}
 	}
+
 	// we now have everything we need, actually build the image
-	protoFileSet, err := e.buildHandler.Files(
-		ctx,
-		readBucketCloser,
-		bufbuild.FilesOptions{
-			Roots:                              config.Build.Roots,
-			Excludes:                           config.Build.Excludes,
-			SpecificRealFilePaths:              specificRealFilePaths,
-			SpecificRealFilePathsAllowNotExist: specificFilePathsAllowNotExist,
-		},
-	)
-	if err != nil {
-		return nil, nil, err
+	var protoFileSet bufbuild.ProtoFileSet
+	if len(specificRealFilePaths) > 0 {
+		protoFileSet, err = e.buildHandler.GetProtoFileSetForFiles(
+			ctx,
+			readBucketCloser,
+			specificRealFilePaths,
+			bufbuild.GetProtoFileSetForFilesOptions{
+				Roots:         config.Build.Roots,
+				AllowNotExist: specificFilePathsAllowNotExist,
+			},
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		protoFileSet, err = e.buildHandler.GetProtoFileSet(
+			ctx,
+			readBucketCloser,
+			bufbuild.GetProtoFileSetOptions{
+				Roots:    config.Build.Roots,
+				Excludes: config.Build.Excludes,
+			},
+		)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 	var resolver bufbuild.ProtoRealFilePathResolver = protoFileSet
 	if inputRef.Format == internal.FormatDir {
@@ -426,8 +441,6 @@ func (e *envReader) readEnvFromBucket(
 		bufbuild.BuildOptions{
 			IncludeImports:    includeImports,
 			IncludeSourceInfo: includeSourceInfo,
-			// If we specified specific file paths, do not copy to memory
-			CopyToMemory: len(specificRealFilePaths) == 0,
 		},
 	)
 	if err != nil {
@@ -435,7 +448,7 @@ func (e *envReader) readEnvFromBucket(
 	}
 	if len(fileAnnotations) > 0 {
 		// the documentation for EnvReader says we will resolve before returning
-		if err := bufbuild.FixFileAnnotationPaths(resolver, fileAnnotations); err != nil {
+		if err := bufbuild.FixFileAnnotationPaths(resolver, fileAnnotations...); err != nil {
 			return nil, nil, err
 		}
 		return nil, fileAnnotations, nil

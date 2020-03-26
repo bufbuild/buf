@@ -40,6 +40,10 @@ func newProtoFileSet(roots []string, rootFilePathToRealFilePath map[string]strin
 			},
 		)
 	}
+	if len(rootFilePathToRealFilePath) != len(realFilePathToRootFilePath) ||
+		len(rootFilePathToRealFilePath) != len(rootRealFilePaths) {
+		return nil, errors.New("inconsistent count of real to root file paths")
+	}
 	sort.Slice(
 		rootRealFilePaths,
 		func(i int, j int) bool {
@@ -76,6 +80,10 @@ func (s *protoFileSet) RealFilePaths() []string {
 		l[i] = rootRealFilePath.realFilePath
 	}
 	return l
+}
+
+func (s *protoFileSet) Size() int {
+	return len(s.sortedRootRealFilePaths)
 }
 
 func (s *protoFileSet) GetRootFilePath(realFilePath string) (string, error) {

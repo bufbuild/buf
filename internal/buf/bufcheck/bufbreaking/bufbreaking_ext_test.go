@@ -561,10 +561,10 @@ func testBreakingExternalConfigModifier(
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	buildHandler := bufbuild.NewHandler(logger)
-	previousProtoFileSet, err := buildHandler.Files(
+	previousProtoFileSet, err := buildHandler.GetProtoFileSet(
 		ctx,
 		previousReadWriteBucketCloser,
-		bufbuild.FilesOptions{
+		bufbuild.GetProtoFileSetOptions{
 			Roots:    previousConfig.Build.Roots,
 			Excludes: previousConfig.Build.Excludes,
 		},
@@ -583,10 +583,10 @@ func testBreakingExternalConfigModifier(
 	require.Empty(t, previousFileAnnotations)
 	previousImage, err = extimage.ImageWithoutImports(previousImage)
 	require.NoError(t, err)
-	protoFileSet, err := buildHandler.Files(
+	protoFileSet, err := buildHandler.GetProtoFileSet(
 		ctx,
 		readWriteBucketCloser,
-		bufbuild.FilesOptions{
+		bufbuild.GetProtoFileSetOptions{
 			Roots:    config.Build.Roots,
 			Excludes: config.Build.Excludes,
 		},
@@ -617,7 +617,7 @@ func testBreakingExternalConfigModifier(
 		image,
 	)
 	assert.NoError(t, err)
-	assert.NoError(t, bufbuild.FixFileAnnotationPaths(protoFileSet, fileAnnotations))
+	assert.NoError(t, bufbuild.FixFileAnnotationPaths(protoFileSet, fileAnnotations...))
 	extfiletesting.AssertFileAnnotationsEqual(t, expectedFileAnnotations, fileAnnotations)
 	assert.NoError(t, previousReadWriteBucketCloser.Close())
 	assert.NoError(t, readWriteBucketCloser.Close())

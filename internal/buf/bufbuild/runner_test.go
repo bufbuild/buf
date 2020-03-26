@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"testing"
 
@@ -191,7 +192,7 @@ func testGetProtoFileSetGoogleapis(t *testing.T, readBucket storage.ReadBucket) 
 }
 
 func testBuild(t *testing.T, includeSourceInfo bool, readBucket storage.ReadBucket, protoFileSet ProtoFileSet) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation) {
-	image, fileAnnotations, err := newRunner(zap.NewNop()).Run(
+	image, fileAnnotations, err := newRunner(zap.NewNop(), runtime.NumCPU()).Run(
 		context.Background(),
 		readBucket,
 		protoFileSet,

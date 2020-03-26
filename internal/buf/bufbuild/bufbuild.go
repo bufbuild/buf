@@ -3,11 +3,23 @@ package bufbuild
 
 import (
 	"context"
+	"runtime"
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
+	"github.com/bufbuild/buf/internal/pkg/ext/extfile"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
+)
+
+const (
+	// DefaultCopyToMemoryFileThreshold is the default copy to memory threshold.
+	DefaultCopyToMemoryFileThreshold = 16
+)
+
+var (
+	// DefaultParallelism is the default parallelism.
+	DefaultParallelism = runtime.NumCPU()
 )
 
 // ProtoRootFilePathResolver resolves root file paths from real file paths.
@@ -65,6 +77,11 @@ type ProtoFileSet interface {
 	// Non-empty.
 	// Returns a copy.
 	RealFilePaths() []string
+
+	// Size returns the size of the set.
+	//
+	// This is equal to len(RootFilePaths()) and len(RealFilePaths()).
+	Size() int
 }
 
 // Handler handles the build functionality.
@@ -81,11 +98,18 @@ type Handler interface {
 		protoFileSet ProtoFileSet,
 		options BuildOptions,
 	) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation, error)
-	// Files get the files for the bucket by returning a ProtoFileSet.
-	Files(
+	// GetProtoFileSet get the files for the entire bucket.
+	GetProtoFileSet(
 		ctx context.Context,
 		readBucket storage.ReadBucket,
-		options FilesOptions,
+		options GetProtoFileSetOptions,
+	) (ProtoFileSet, error)
+	// GetProtoFileSetForFiles gets the specific files within the bucket.
+	GetProtoFileSetForFiles(
+		ctx context.Context,
+		readBucket storage.ReadBucket,
+		realFilePaths []string,
+		options GetProtoFileSetForFilesOptions,
 	) (ProtoFileSet, error)
 }
 
@@ -95,14 +119,10 @@ type BuildOptions struct {
 	IncludeImports bool
 	// IncludeSourceInfo says to include source info.
 	IncludeSourceInfo bool
-	// CopyToMemory says to copy the bucket to a memory bucket before building.
-	//
-	// If the bucket is already a memory bucket, this will result in a no-op.
-	CopyToMemory bool
 }
 
-// FilesOptions are options for Files.
-type FilesOptions struct {
+// GetProtoFileSetOptions are options for Files.
+type GetProtoFileSetOptions struct {
 	// Roots are the root directories within a bucket to search for Protobuf files.
 	// If roots is empty, the default is ["."].
 	//
@@ -122,54 +142,58 @@ type FilesOptions struct {
 	// All excludes must be relative.
 	// All excludes will be normalized and validated.
 	Excludes []string
-	// SpecificRealFilePaths are the specific real file paths to get.
+}
+
+// GetProtoFileSetForFilesOptions are options for GetProtoFileSetForFiles.
+type GetProtoFileSetForFilesOptions struct {
+	// Roots are the root directories within a bucket to search for Protobuf files.
+	// If roots is empty, the default is ["."].
 	//
-	// All paths must be within a root.
+	// There should be no overlap between the roots, ie foo/bar and foo are not allowed.
+	// All Protobuf files must be unique relative to the roots, ie if foo and bar
+	// are roots, then foo/baz.proto and bar/baz.proto are not allowed.
 	//
-	// If SpecificRealFilePaths is empty, this gets all the files under Buf control.
-	// If specificRealFilePaths is not empty, this uses these specific files, and Excludes is ignored.
+	// All roots must be relative.
+	// All roots will be normalized and validated.
 	//
-	// All paths must be relative.
-	// All paths will be normalized and validated.
-	SpecificRealFilePaths []string
-	// SpecificRealFilePathsAllowNotExist allows file paths within SpecificRealFilePaths
-	// to not exist without returning error.
-	SpecificRealFilePathsAllowNotExist bool
+	Roots []string
+	// AllowNotExist allows file paths within realFilePaths to not exist
+	// without returning error.
+	AllowNotExist bool
 }
 
 // NewHandler returns a new Handler.
-func NewHandler(logger *zap.Logger) Handler {
-	return newHandler(logger)
+func NewHandler(logger *zap.Logger, options ...HandlerOption) Handler {
+	return newHandler(logger, options...)
+}
+
+// HandlerOption is an option for a new Handler.
+type HandlerOption func(*handler)
+
+// HandlerWithParallelism says how many threads to compile with in parallel.
+//
+// Serial compilation is performed if this value is <=1.
+// The default is to use DefaultParallelism.
+func HandlerWithParallelism(parallelism int) HandlerOption {
+	return func(handler *handler) {
+		handler.parallelism = parallelism
+	}
+}
+
+// HandlerWithCopyToMemoryFileThreshold says to copy files to memory before compilation if
+// at least this many files are present.
+//
+// If this value is <=0, files are never copied.
+// The default is to use DefaultCopyToMemoryFileThreshold.
+func HandlerWithCopyToMemoryFileThreshold(copyToMemoryFileThreshold int) HandlerOption {
+	return func(handler *handler) {
+		handler.copyToMemoryFileThreshold = copyToMemoryFileThreshold
+	}
 }
 
 // FixFileAnnotationPaths attempts to make all paths into real file paths.
 //
 // If the resolver is nil, this does nothing.
-func FixFileAnnotationPaths(resolver ProtoRealFilePathResolver, fileAnnotations []*filev1beta1.FileAnnotation) error {
-	if resolver == nil {
-		return nil
-	}
-	if len(fileAnnotations) == 0 {
-		return nil
-	}
-	for _, fileAnnotation := range fileAnnotations {
-		if err := fixFileAnnotationPath(resolver, fileAnnotation); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func fixFileAnnotationPath(resolver ProtoRealFilePathResolver, fileAnnotation *filev1beta1.FileAnnotation) error {
-	if fileAnnotation.Path == "" {
-		return nil
-	}
-	filePath, err := resolver.GetRealFilePath(fileAnnotation.Path)
-	if err != nil {
-		return err
-	}
-	if filePath != "" {
-		fileAnnotation.Path = filePath
-	}
-	return nil
+func FixFileAnnotationPaths(resolver ProtoRealFilePathResolver, fileAnnotations ...*filev1beta1.FileAnnotation) error {
+	return extfile.ResolveFileAnnotationPaths(resolver.GetRealFilePath, fileAnnotations...)
 }
