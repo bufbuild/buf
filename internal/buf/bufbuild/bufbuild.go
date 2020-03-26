@@ -195,5 +195,8 @@ func HandlerWithCopyToMemoryFileThreshold(copyToMemoryFileThreshold int) Handler
 //
 // If the resolver is nil, this does nothing.
 func FixFileAnnotationPaths(resolver ProtoRealFilePathResolver, fileAnnotations ...*filev1beta1.FileAnnotation) error {
+	if resolver == nil {
+		return nil
+	}
 	return extfile.ResolveFileAnnotationPaths(resolver.GetRealFilePath, fileAnnotations...)
 }
