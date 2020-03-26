@@ -2,6 +2,7 @@ package bufbuild
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
@@ -17,16 +18,26 @@ type handler struct {
 	logger   *zap.Logger
 	provider *provider
 	runner   *runner
+
+	parallelism               int
+	copyToMemoryFileThreshold int
 }
 
 func newHandler(
 	logger *zap.Logger,
+	options ...HandlerOption,
 ) *handler {
-	return &handler{
-		logger:   logger.Named("bufbuild"),
-		provider: newProvider(logger),
-		runner:   newRunner(logger),
+	handler := &handler{
+		logger:                    logger.Named("bufbuild"),
+		parallelism:               DefaultParallelism,
+		copyToMemoryFileThreshold: DefaultCopyToMemoryFileThreshold,
 	}
+	for _, option := range options {
+		option(handler)
+	}
+	handler.provider = newProvider(logger)
+	handler.runner = newRunner(logger, handler.parallelism)
+	return handler
 }
 
 func (h *handler) Build(
@@ -35,7 +46,7 @@ func (h *handler) Build(
 	protoFileSet ProtoFileSet,
 	options BuildOptions,
 ) (_ *imagev1beta1.Image, _ []*filev1beta1.FileAnnotation, retErr error) {
-	if options.CopyToMemory {
+	if h.copyToMemoryFileThreshold > 0 && protoFileSet.Size() >= h.copyToMemoryFileThreshold {
 		memReadWriteBucketCloser, err := h.copyToMemory(ctx, readBucket, protoFileSet)
 		if err != nil {
 			return nil, nil, err
@@ -61,7 +72,7 @@ func (h *handler) Build(
 		return nil, nil, err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := FixFileAnnotationPaths(protoFileSet, fileAnnotations); err != nil {
+		if err := FixFileAnnotationPaths(protoFileSet, fileAnnotations...); err != nil {
 			return nil, nil, err
 		}
 		return nil, fileAnnotations, nil
@@ -69,25 +80,34 @@ func (h *handler) Build(
 	return image, nil, nil
 }
 
-func (h *handler) Files(
+func (h *handler) GetProtoFileSet(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
-	options FilesOptions,
+	options GetProtoFileSetOptions,
 ) (ProtoFileSet, error) {
-	if len(options.SpecificRealFilePaths) > 0 {
-		return h.provider.GetProtoFileSetForRealFilePaths(
-			ctx,
-			readBucket,
-			options.Roots,
-			options.SpecificRealFilePaths,
-			options.SpecificRealFilePathsAllowNotExist,
-		)
-	}
 	return h.provider.GetProtoFileSetForReadBucket(
 		ctx,
 		readBucket,
 		options.Roots,
 		options.Excludes,
+	)
+}
+
+func (h *handler) GetProtoFileSetForFiles(
+	ctx context.Context,
+	readBucket storage.ReadBucket,
+	realFilePaths []string,
+	options GetProtoFileSetForFilesOptions,
+) (ProtoFileSet, error) {
+	if len(realFilePaths) == 0 {
+		return nil, errors.New("no input files")
+	}
+	return h.provider.GetProtoFileSetForRealFilePaths(
+		ctx,
+		readBucket,
+		options.Roots,
+		realFilePaths,
+		options.AllowNotExist,
 	)
 }
 

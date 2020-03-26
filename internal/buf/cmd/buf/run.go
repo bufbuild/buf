@@ -119,7 +119,7 @@ func checkLint(
 				return err
 			}
 		} else {
-			if err := bufbuild.FixFileAnnotationPaths(env.Resolver, fileAnnotations); err != nil {
+			if err := bufbuild.FixFileAnnotationPaths(env.Resolver, fileAnnotations...); err != nil {
 				return err
 			}
 			if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {
@@ -220,7 +220,7 @@ func checkBreaking(
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := bufbuild.FixFileAnnotationPaths(env.Resolver, fileAnnotations); err != nil {
+		if err := bufbuild.FixFileAnnotationPaths(env.Resolver, fileAnnotations...); err != nil {
 			return err
 		}
 		if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {

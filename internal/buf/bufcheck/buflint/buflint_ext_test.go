@@ -764,10 +764,10 @@ func testLintExternalConfigModifier(
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	buildHandler := bufbuild.NewHandler(logger)
-	protoFileSet, err := buildHandler.Files(
+	protoFileSet, err := buildHandler.GetProtoFileSet(
 		ctx,
 		readWriteBucketCloser,
-		bufbuild.FilesOptions{
+		bufbuild.GetProtoFileSetOptions{
 			Roots:    config.Build.Roots,
 			Excludes: config.Build.Excludes,
 		},
@@ -795,7 +795,7 @@ func testLintExternalConfigModifier(
 		image,
 	)
 	assert.NoError(t, err)
-	assert.NoError(t, bufbuild.FixFileAnnotationPaths(protoFileSet, fileAnnotations))
+	assert.NoError(t, bufbuild.FixFileAnnotationPaths(protoFileSet, fileAnnotations...))
 	extfiletesting.AssertFileAnnotationsEqual(t, expectedFileAnnotations, fileAnnotations)
 	assert.NoError(t, readWriteBucketCloser.Close())
 }

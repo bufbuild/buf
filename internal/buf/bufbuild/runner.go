@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"runtime"
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
@@ -25,12 +24,14 @@ import (
 )
 
 type runner struct {
-	logger *zap.Logger
+	logger      *zap.Logger
+	parallelism int
 }
 
-func newRunner(logger *zap.Logger) *runner {
+func newRunner(logger *zap.Logger, parallelism int) *runner {
 	return &runner{
-		logger: logger,
+		logger:      logger,
+		parallelism: parallelism,
 	}
 }
 
@@ -51,7 +52,6 @@ func (r *runner) Run(
 ) (_ *imagev1beta1.Image, _ []*filev1beta1.FileAnnotation, retErr error) {
 	roots := protoFileSet.Roots()
 	rootFilePaths := protoFileSet.RootFilePaths()
-
 	defer utillog.DeferWithError(r.logger, "run", &retErr, zap.Int("num_files", len(rootFilePaths)))()
 
 	if len(roots) == 0 {
@@ -73,7 +73,6 @@ func (r *runner) Run(
 		includeImports,
 		includeSourceInfo,
 	)
-
 	var resultErr error
 	for _, result := range results {
 		resultErr = multierr.Append(resultErr, result.Err)
@@ -90,30 +89,10 @@ func (r *runner) Run(
 		return nil, fileAnnotations, nil
 	}
 
-	var descFileDescriptors []*desc.FileDescriptor
-	for _, result := range results {
-		iRootFilePaths := result.RootFilePaths
-		iDescFileDescriptors := result.DescFileDescriptors
-		// do a rough verification that rootFilePaths <-> fileDescriptors
-		// parser.ParseFiles is documented to return the same number of FileDescriptors
-		// as the number of input files
-		// https://godoc.org/github.com/jhump/protoreflect/desc/protoparse#Parser.ParseFiles
-		if len(iDescFileDescriptors) != len(iRootFilePaths) {
-			return nil, nil, fmt.Errorf("expected FileDescriptors to be of length %d but was %d", len(iRootFilePaths), len(iDescFileDescriptors))
-		}
-		for i, iDescFileDescriptor := range iDescFileDescriptors {
-			iRootFilePath := iRootFilePaths[i]
-			iFilename := iDescFileDescriptor.GetName()
-			// doing another rough verification
-			// NO LONGER NEED TO DO SUFFIX SINCE WE KNOW THE ROOT FILE NAME
-			//if !strings.HasSuffix(iRootFilePath, iFilename) {
-			if iRootFilePath != iFilename {
-				return nil, nil, fmt.Errorf("expected fileDescriptor name %s to be a equal to %s", iFilename, iRootFilePath)
-			}
-		}
-		descFileDescriptors = append(descFileDescriptors, iDescFileDescriptors...)
+	descFileDescriptors, err := getDescFileDescriptors(results)
+	if err != nil {
+		return nil, nil, err
 	}
-
 	image, err := getImage(descFileDescriptors, rootFilePaths, includeImports, includeSourceInfo)
 	if err != nil {
 		return nil, nil, err
@@ -131,27 +110,13 @@ func (r *runner) parse(
 ) []*result {
 	defer utillog.Defer(r.logger, "parse", zap.Int("num_files", len(rootFilePaths)))()
 
-	accessor := func(filename string) (io.ReadCloser, error) {
-		readCloser, err := readBucket.Get(ctx, filename)
-		if err != nil {
-			if !storage.IsNotExist(err) {
-				return nil, err
-			}
-			for _, root := range roots {
-				relFilename, relErr := storagepath.Rel(root, filename)
-				if relErr != nil {
-					return nil, relErr
-				}
-				if wktReadCloser, wktErr := wkt.ReadBucket.Get(ctx, relFilename); wktErr == nil {
-					return wktReadCloser, nil
-				}
-			}
-			return nil, err
-		}
-		return readCloser, nil
-	}
+	accessor := newParserAccessor(ctx, readBucket, roots)
 	var results []*result
-	chunks := utilstring.SliceToChunks(rootFilePaths, len(rootFilePaths)/runtime.NumCPU())
+	chunkSize := 0
+	if r.parallelism > 1 {
+		chunkSize = len(rootFilePaths) / r.parallelism
+	}
+	chunks := utilstring.SliceToChunks(rootFilePaths, chunkSize)
 	resultC := make(chan *result, len(chunks))
 	for _, rootFilePaths := range chunks {
 		rootFilePaths := rootFilePaths
@@ -183,13 +148,6 @@ func (r *runner) getResult(
 	rootFilePaths []string,
 	includeSourceInfo bool,
 ) *result {
-	// DO NOT NEED THIS ANYMORE
-	// TODO: test ResolveFilenames in protofile against the output
-	//filenames, err := protoparse.ResolveFilenames(roots, filePaths...)
-	//if err != nil {
-	//return newResult(filePaths, nil, nil, err)
-	//}
-
 	var errorsWithPos []protoparse.ErrorWithPos
 	var lock sync.Mutex
 
@@ -405,6 +363,58 @@ func checkAndSortDescFileDescriptors(
 		sortedDescFileDescriptors = append(sortedDescFileDescriptors, descFileDescriptor)
 	}
 	return sortedDescFileDescriptors, nil
+}
+
+func getDescFileDescriptors(results []*result) ([]*desc.FileDescriptor, error) {
+	var descFileDescriptors []*desc.FileDescriptor
+	for _, result := range results {
+		iRootFilePaths := result.RootFilePaths
+		iDescFileDescriptors := result.DescFileDescriptors
+		// do a rough verification that rootFilePaths <-> fileDescriptors
+		// parser.ParseFiles is documented to return the same number of FileDescriptors
+		// as the number of input files
+		// https://godoc.org/github.com/jhump/protoreflect/desc/protoparse#Parser.ParseFiles
+		if len(iDescFileDescriptors) != len(iRootFilePaths) {
+			return nil, fmt.Errorf("expected FileDescriptors to be of length %d but was %d", len(iRootFilePaths), len(iDescFileDescriptors))
+		}
+		for i, iDescFileDescriptor := range iDescFileDescriptors {
+			iRootFilePath := iRootFilePaths[i]
+			iFilename := iDescFileDescriptor.GetName()
+			// doing another rough verification
+			// NO LONGER NEED TO DO SUFFIX SINCE WE KNOW THE ROOT FILE NAME
+			if iRootFilePath != iFilename {
+				return nil, fmt.Errorf("expected fileDescriptor name %s to be a equal to %s", iFilename, iRootFilePath)
+			}
+		}
+		descFileDescriptors = append(descFileDescriptors, iDescFileDescriptors...)
+	}
+	return descFileDescriptors, nil
+}
+
+func newParserAccessor(
+	ctx context.Context,
+	readBucket storage.ReadBucket,
+	roots []string,
+) func(string) (io.ReadCloser, error) {
+	return func(rootFilePath string) (io.ReadCloser, error) {
+		readCloser, err := readBucket.Get(ctx, rootFilePath)
+		if err != nil {
+			if !storage.IsNotExist(err) {
+				return nil, err
+			}
+			for _, root := range roots {
+				relFilePath, relErr := storagepath.Rel(root, rootFilePath)
+				if relErr != nil {
+					return nil, relErr
+				}
+				if wktReadCloser, wktErr := wkt.ReadBucket.Get(ctx, relFilePath); wktErr == nil {
+					return wktReadCloser, nil
+				}
+			}
+			return nil, err
+		}
+		return readCloser, nil
+	}
 }
 
 type result struct {

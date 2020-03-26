@@ -142,3 +142,36 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []*filev1beta1.FileA
 	}
 	return nil
 }
+
+// ResolveFileAnnotationPaths attempts to resolve file paths using the given resolver function.
+//
+// If the resolver is nil, this does nothing.
+// If the resolver function returns an empty string for a given path, no modifications are made.
+func ResolveFileAnnotationPaths(resolver func(string) (string, error), fileAnnotations ...*filev1beta1.FileAnnotation) error {
+	if resolver == nil {
+		return nil
+	}
+	if len(fileAnnotations) == 0 {
+		return nil
+	}
+	for _, fileAnnotation := range fileAnnotations {
+		if err := resolveFileAnnotationPath(resolver, fileAnnotation); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func resolveFileAnnotationPath(resolver func(string) (string, error), fileAnnotation *filev1beta1.FileAnnotation) error {
+	if fileAnnotation.Path == "" {
+		return nil
+	}
+	filePath, err := resolver(fileAnnotation.Path)
+	if err != nil {
+		return err
+	}
+	if filePath != "" {
+		fileAnnotation.Path = filePath
+	}
+	return nil
+}
