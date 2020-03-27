@@ -17,23 +17,23 @@ import (
 )
 
 func TestSuccess1(t *testing.T) {
-	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--source", filepath.Join("testdata", "success"))
+	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--input", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess2(t *testing.T) {
-	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-imports", "--source", filepath.Join("testdata", "success"))
+	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-imports", "--input", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess3(t *testing.T) {
-	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-source-info", "--input", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess4(t *testing.T) {
-	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-imports", "--exclude-source-info", "--input", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess5(t *testing.T) {
-	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-imports", "--exclude-source-info", "-o", clios.DevNull, "--source", filepath.Join("testdata", "success"))
+	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-imports", "--exclude-source-info", "-o", clios.DevNull, "--input", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess6(t *testing.T) {
@@ -41,7 +41,7 @@ func TestSuccess6(t *testing.T) {
 }
 
 func TestSuccessProfile1(t *testing.T) {
-	testRunProfile(t, 0, ``, "image", "build", "-o", clios.DevNull, "--source", filepath.Join("testdata", "success"))
+	testRunProfile(t, 0, ``, "image", "build", "-o", clios.DevNull, "--input", filepath.Join("testdata", "success"))
 }
 
 func TestFail1(t *testing.T) {
@@ -50,7 +50,7 @@ func TestFail1(t *testing.T) {
 		0,
 		``,
 		"image", "build", "-o", clios.DevNull,
-		"--source",
+		"--input",
 		filepath.Join("testdata", "fail"),
 	)
 }
@@ -62,7 +62,7 @@ func TestFail2(t *testing.T) {
 		``,
 		"image", "build", "-o", clios.DevNull,
 		"--exclude-imports",
-		"--source",
+		"--input",
 		filepath.Join("testdata", "fail"),
 	)
 }
@@ -74,7 +74,7 @@ func TestFail3(t *testing.T) {
 		``,
 		"image", "build", "-o", clios.DevNull,
 		"--exclude-source-info",
-		"--source",
+		"--input",
 		filepath.Join("testdata", "fail"),
 	)
 }
@@ -87,7 +87,7 @@ func TestFail4(t *testing.T) {
 		"image", "build", "-o", clios.DevNull,
 		"--exclude-imports",
 		"--exclude-source-info",
-		"--source",
+		"--input",
 		filepath.Join("testdata", "fail"),
 	)
 }

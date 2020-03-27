@@ -33,8 +33,7 @@ func imageBuild(
 		logger,
 		imageBuildInputFlagName,
 		imageBuildConfigFlagName,
-		// must be source only
-	).ReadSourceEnv(
+	).ReadEnv(
 		ctx,
 		cliEnv.Stdin(),
 		cliEnv.Getenv,

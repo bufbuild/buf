@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	imageBuildInputFlagName  = "source"
-	imageBuildConfigFlagName = "source-config"
+	imageBuildInputFlagName  = "input"
+	imageBuildConfigFlagName = "input-config"
 	imageBuildOutputFlagName = "output"
 
 	checkLintInputFlagName  = "input"
@@ -101,7 +101,7 @@ func (f *Flags) bindRootCommandFlags(flagSet *pflag.FlagSet) {
 }
 
 func (f *Flags) bindImageBuildInput(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.Input, imageBuildInputFlagName, ".", fmt.Sprintf(`The source to build. Must be one of format %s.`, bufos.SourceFormatsToString()))
+	flagSet.StringVar(&f.Input, imageBuildInputFlagName, ".", fmt.Sprintf(`The source or image to build or convert. Must be one of format %s.`, bufos.AllFormatsToString()))
 }
 
 func (f *Flags) bindImageBuildConfig(flagSet *pflag.FlagSet) {
