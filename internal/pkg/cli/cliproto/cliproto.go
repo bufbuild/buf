@@ -97,7 +97,7 @@ func runHandler(handler Handler, env clienv.Env) error {
 		return err
 	}
 	request := &plugin_go.CodeGeneratorRequest{}
-	if err := proto.Unmarshal(input, request); err != nil {
+	if err := utilproto.UnmarshalWire(input, request); err != nil {
 		return err
 	}
 	responseWriter := newResponseWriter()

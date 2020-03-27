@@ -1,11 +1,11 @@
 package extfiletesting
 
 import (
-	"encoding/json"
 	"strings"
 	"testing"
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
+	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -38,7 +38,7 @@ func NewFileAnnotation(path string, startLine int, startColumn int, endLine int,
 func AssertFileAnnotationsEqual(t *testing.T, expected []*filev1beta1.FileAnnotation, actual []*filev1beta1.FileAnnotation) {
 	s := make([]string, len(actual))
 	for i, fileAnnotation := range actual {
-		data, err := json.Marshal(fileAnnotation)
+		data, err := utilproto.MarshalJSONOrigName(fileAnnotation)
 		require.NoError(t, err)
 		s[i] = string(data)
 	}
