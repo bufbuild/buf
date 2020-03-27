@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -97,78 +96,36 @@ func (e *envReader) ReadEnv(
 	includeImports bool,
 	includeSourceInfo bool,
 ) (*Env, []*filev1beta1.FileAnnotation, error) {
-	return e.readEnv(
-		ctx,
-		stdin,
-		getenv,
-		value,
-		configOverride,
-		specificFilePaths,
-		specificFilePathsAllowNotExist,
-		includeImports,
-		includeSourceInfo,
-		false,
-		false,
-	)
-}
-
-func (e *envReader) ReadSourceEnv(
-	ctx context.Context,
-	stdin io.Reader,
-	getenv func(string) string,
-	value string,
-	configOverride string,
-	specificFilePaths []string,
-	specificFilePathsAllowNotExist bool,
-	includeImports bool,
-	includeSourceInfo bool,
-) (*Env, []*filev1beta1.FileAnnotation, error) {
-	return e.readEnv(
-		ctx,
-		stdin,
-		getenv,
-		value,
-		configOverride,
-		specificFilePaths,
-		specificFilePathsAllowNotExist,
-		includeImports,
-		includeSourceInfo,
-		true,
-		false,
-	)
-}
-
-func (e *envReader) ReadImageEnv(
-	ctx context.Context,
-	stdin io.Reader,
-	getenv func(string) string,
-	value string,
-	configOverride string,
-	specificFilePaths []string,
-	specificFilePathsAllowNotExist bool,
-	includeImports bool,
-) (*Env, error) {
-	env, fileAnnotations, err := e.readEnv(
-		ctx,
-		stdin,
-		getenv,
-		value,
-		configOverride,
-		specificFilePaths,
-		specificFilePathsAllowNotExist,
-		includeImports,
-		false,
-		false,
-		true,
-	)
+	inputRef, err := e.inputRefParser.ParseInputRef(value, false, false)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	if len(fileAnnotations) > 0 {
-		// TODO: need to refactor this
-		return nil, errors.New("got fileAnnotations for ReadImageEnv which should be impossible")
+	e.logger.Debug("parse", zap.Any("input_ref", inputRef), zap.Stringer("format", inputRef.Format))
+
+	if inputRef.Format.IsImage() {
+		env, err := e.readEnvFromImage(
+			ctx,
+			stdin,
+			getenv,
+			configOverride,
+			specificFilePaths,
+			specificFilePathsAllowNotExist,
+			includeImports,
+			inputRef,
+		)
+		return env, nil, err
 	}
-	return env, nil
+	return e.readEnvFromBucket(
+		ctx,
+		stdin,
+		getenv,
+		configOverride,
+		specificFilePaths,
+		specificFilePathsAllowNotExist,
+		includeImports,
+		includeSourceInfo,
+		inputRef,
+	)
 }
 
 func (e *envReader) ListFiles(
@@ -279,51 +236,6 @@ func (e *envReader) GetConfig(
 	}
 	// if there was no file, this just returns default config
 	return e.configProvider.GetConfigForData(data)
-}
-
-func (e *envReader) readEnv(
-	ctx context.Context,
-	stdin io.Reader,
-	getenv func(string) string,
-	value string,
-	configOverride string,
-	specificFilePaths []string,
-	specificFilePathsAllowNotExist bool,
-	includeImports bool,
-	includeSourceInfo bool,
-	onlySources bool,
-	onlyImages bool,
-) (_ *Env, _ []*filev1beta1.FileAnnotation, retErr error) {
-	inputRef, err := e.inputRefParser.ParseInputRef(value, onlySources, onlyImages)
-	if err != nil {
-		return nil, nil, err
-	}
-	e.logger.Debug("parse", zap.Any("input_ref", inputRef), zap.Stringer("format", inputRef.Format))
-
-	if inputRef.Format.IsImage() {
-		env, err := e.readEnvFromImage(
-			ctx,
-			stdin,
-			getenv,
-			configOverride,
-			specificFilePaths,
-			specificFilePathsAllowNotExist,
-			includeImports,
-			inputRef,
-		)
-		return env, nil, err
-	}
-	return e.readEnvFromBucket(
-		ctx,
-		stdin,
-		getenv,
-		configOverride,
-		specificFilePaths,
-		specificFilePathsAllowNotExist,
-		includeImports,
-		includeSourceInfo,
-		inputRef,
-	)
 }
 
 func (e *envReader) readEnvFromBucket(

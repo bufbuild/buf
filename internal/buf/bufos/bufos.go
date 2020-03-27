@@ -55,34 +55,6 @@ type EnvReader interface {
 		includeImports bool,
 		includeSourceInfo bool,
 	) (*Env, []*filev1beta1.FileAnnotation, error)
-	// ReadSourceEnv reads an source environment.
-	//
-	// This is the same as ReadEnv but disallows image values and always builds.
-	ReadSourceEnv(
-		ctx context.Context,
-		stdin io.Reader,
-		getenv func(string) string,
-		value string,
-		configOverride string,
-		specificFilePaths []string,
-		specificFilePathsAllowNotExist bool,
-		includeImports bool,
-		includeSourceInfo bool,
-	) (*Env, []*filev1beta1.FileAnnotation, error)
-	// ReadImageEnv reads an image environment.
-	//
-	// This is the same as ReadEnv but disallows source values and never builds.
-	ReadImageEnv(
-		ctx context.Context,
-		stdin io.Reader,
-		getenv func(string) string,
-		value string,
-		configOverride string,
-		specificFilePaths []string,
-		specificFilePathsAllowNotExist bool,
-		includeImports bool,
-	) (*Env, error)
-
 	// ListFiles lists the files.
 	ListFiles(
 		ctx context.Context,

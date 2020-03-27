@@ -39,7 +39,7 @@ func Handle(
 		return
 	}
 	if externalConfig.AgainstInput == "" {
-		// this is actually checked as part of ReadImageEnv but just in case
+		// this is actually checked as part of ReadEnv but just in case
 		responseWriter.WriteError(`"against_input" is required`)
 		return
 	}
@@ -54,13 +54,18 @@ func Handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
+	asJSON, err := internal.IsFormatJSON("error_format", externalConfig.ErrorFormat)
+	if err != nil {
+		responseWriter.WriteError(err.Error())
+		return
+	}
 
 	files := request.FileToGenerate
 	if !externalConfig.LimitToInputFiles {
 		files = nil
 	}
 	envReader := internal.NewBufosEnvReader(logger, "against_input", "against_input_config")
-	againstEnv, err := envReader.ReadImageEnv(
+	againstEnv, againstFileAnnotations, err := envReader.ReadEnv(
 		ctx,
 		nil, // cannot read against input from stdin, this is for the CodeGeneratorRequest
 		env.Getenv,
@@ -69,10 +74,25 @@ func Handle(
 		files, // limit to the input files if specified
 		true,  // allow files in the against input to not exist
 		!externalConfig.ExcludeImports,
+		false, // do not need source code info for against input
 	)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return
+	}
+	if len(againstFileAnnotations) > 0 {
+		// TODO: formalize this somewhere
+		for _, againstFileAnnotation := range againstFileAnnotations {
+			if againstFileAnnotation.Path != "" {
+				againstFileAnnotation.Path = againstFileAnnotation.Path + "@against"
+			}
+		}
+		buffer := bytes.NewBuffer(nil)
+		if err := extfile.PrintFileAnnotations(buffer, againstFileAnnotations, asJSON); err != nil {
+			responseWriter.WriteError(err.Error())
+			return
+		}
+		responseWriter.WriteError(buffer.String())
 	}
 	envReader = internal.NewBufosEnvReader(logger, "", "input_config")
 	config, err := envReader.GetConfig(ctx, utilencoding.GetJSONStringOrStringValue(externalConfig.InputConfig))
@@ -91,11 +111,6 @@ func Handle(
 		againstEnv.Image,
 		image,
 	)
-	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
-	}
-	asJSON, err := internal.IsFormatJSON("error_format", externalConfig.ErrorFormat)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return
