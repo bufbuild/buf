@@ -8,11 +8,8 @@ import (
 	"strconv"
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	"github.com/golang/protobuf/jsonpb"
+	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 )
-
-// TODO: use OrigName in other locations?
-var jsonMarshaler = &jsonpb.Marshaler{OrigName: true}
 
 // FileAnnotationToString returns the basic string representation of the FileAnnotation.
 func FileAnnotationToString(fileAnnotation *filev1beta1.FileAnnotation) string {
@@ -127,12 +124,13 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []*filev1beta1.FileA
 	}
 	for _, fileAnnotation := range fileAnnotations {
 		s := ""
-		var err error
 		if asJSON {
-			s, err = jsonMarshaler.MarshalToString(fileAnnotation)
+			// TODO: change to camelCase?
+			data, err := utilproto.MarshalJSONOrigName(fileAnnotation)
 			if err != nil {
 				return err
 			}
+			s = string(data)
 		} else {
 			s = FileAnnotationToString(fileAnnotation)
 		}

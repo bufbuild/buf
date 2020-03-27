@@ -15,7 +15,7 @@ import (
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 )
 
-// DiffMessagesJSON diffs the two Messages using jsonpb.
+// DiffMessagesJSON diffs the two Messages using JSON.
 func DiffMessagesJSON(one proto.Message, two proto.Message, name string) (string, error) {
 	oneData, err := utilproto.MarshalJSONIndent(one)
 	if err != nil {

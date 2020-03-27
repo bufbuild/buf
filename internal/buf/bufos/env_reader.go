@@ -29,15 +29,10 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 	"github.com/bufbuild/buf/internal/pkg/util/utillog"
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
-
-var jsonUnmarshaler = &jsonpb.Unmarshaler{
-	AllowUnknownFields: true,
-}
 
 type envReader struct {
 	logger                   *zap.Logger
@@ -739,9 +734,9 @@ func (e *envReader) getImageFromData(
 	var err error
 	switch format {
 	case internal.FormatBin, internal.FormatBinGz:
-		err = proto.Unmarshal(data, image)
+		err = utilproto.UnmarshalWire(data, image)
 	case internal.FormatJSON, internal.FormatJSONGz:
-		err = unmarshalJSON(data, image)
+		err = utilproto.UnmarshalJSON(data, image)
 	default:
 		return nil, fmt.Errorf("got image format %v outside of parse", format)
 	}
@@ -752,8 +747,4 @@ func (e *envReader) getImageFromData(
 		return nil, err
 	}
 	return image, nil
-}
-
-func unmarshalJSON(data []byte, message proto.Message) error {
-	return jsonUnmarshaler.Unmarshal(bytes.NewReader(data), message)
 }

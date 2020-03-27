@@ -8,7 +8,10 @@ import (
 )
 
 var (
-	jsonMarshaler       = &jsonpb.Marshaler{}
+	jsonMarshaler         = &jsonpb.Marshaler{}
+	jsonMarshalerOrigName = &jsonpb.Marshaler{
+		OrigName: true,
+	}
 	jsonMarshalerIndent = &jsonpb.Marshaler{
 		Indent: "  ",
 	}
@@ -36,6 +39,15 @@ func MarshalWireDeterministic(message proto.Message) ([]byte, error) {
 func MarshalJSON(message proto.Message) ([]byte, error) {
 	buffer := bytes.NewBuffer(nil)
 	if err := jsonMarshaler.Marshal(buffer, message); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
+// MarshalJSONOrigName marshals the message to JSON format with original .proto names as keys.
+func MarshalJSONOrigName(message proto.Message) ([]byte, error) {
+	buffer := bytes.NewBuffer(nil)
+	if err := jsonMarshalerOrigName.Marshal(buffer, message); err != nil {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
