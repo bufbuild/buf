@@ -192,6 +192,25 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		&InputRef{
+			Format:               FormatGit,
+			Path:                 "path/to/dir",
+			GitRefName:           storagegitplumbing.NewTagRefName("master/foo"),
+			GitRecurseSubmodules: true,
+		},
+		"path/to/dir#format=git,tag=master/foo,recurse_submodules=true",
+	)
+	testParseInputRefSuccess(
+		t,
+		&InputRef{
+			Format:     FormatGit,
+			Path:       "path/to/dir",
+			GitRefName: storagegitplumbing.NewTagRefName("master/foo"),
+		},
+		"path/to/dir#format=git,tag=master/foo,recurse_submodules=false",
+	)
+	testParseInputRefSuccess(
+		t,
+		&InputRef{
 			Format:          FormatTarGz,
 			Path:            "path/to/file",
 			StripComponents: 1,
@@ -262,7 +281,7 @@ func TestParseInputRefError(t *testing.T) {
 	)
 	testParseInputRefErrorBasic(
 		t,
-		newCannotSpecifyMultipleGitRefNamesError(testValueFlagName),
+		newOptionsDuplicateKeyError(testValueFlagName, "branch"),
 		"path/to/foo#format=git,branch=foo,branch=bar",
 	)
 	testParseInputRefErrorBasic(
@@ -324,6 +343,11 @@ func TestParseInputRefError(t *testing.T) {
 		t,
 		newOptionsInvalidForFormatError(testValueFlagName, FormatDir, "strip_components=1"),
 		"path/to/foo#strip_components=1",
+	)
+	testParseInputRefErrorBasic(
+		t,
+		newOptionsDuplicateKeyError(testValueFlagName, "strip_components"),
+		"path/to/foo.tar#strip_components=0,strip_components=1",
 	)
 }
 

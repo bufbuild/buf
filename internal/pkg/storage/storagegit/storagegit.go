@@ -54,6 +54,7 @@ func Clone(
 	homeDirPath string,
 	gitURL string,
 	refName storagegitplumbing.RefName,
+	recurseSubmodules bool,
 	httpsUsernameEnvKey string,
 	httpsPasswordEnvKey string,
 	sshKeyFileEnvKey string,
@@ -86,12 +87,18 @@ func Clone(
 	if err != nil {
 		return err
 	}
+	submoduleRecursivity := git.NoRecurseSubmodules
+	if recurseSubmodules {
+		// TODO: this only does 10 depth, compare to git
+		submoduleRecursivity = git.DefaultSubmoduleRecursionDepth
+	}
 	cloneOptions := &git.CloneOptions{
-		URL:           gitURL,
-		Auth:          authMethod,
-		ReferenceName: refName.ReferenceName(),
-		SingleBranch:  true,
-		Depth:         1,
+		URL:               gitURL,
+		Auth:              authMethod,
+		ReferenceName:     refName.ReferenceName(),
+		RecurseSubmodules: submoduleRecursivity,
+		SingleBranch:      true,
+		Depth:             1,
 	}
 	filesystem := memfs.New()
 	if _, err := git.CloneContext(ctx, memory.NewStorage(), filesystem, cloneOptions); err != nil {

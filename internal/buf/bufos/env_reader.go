@@ -518,6 +518,7 @@ func (e *envReader) getReadBucketCloser(
 			getenv,
 			inputRef.Path,
 			inputRef.GitRefName,
+			inputRef.GitRecurseSubmodules,
 		)
 	default:
 		return nil, fmt.Errorf("unknown format outside of parse: %v", inputRef.Format)
@@ -597,6 +598,7 @@ func (e *envReader) getReadBucketCloserFromGitRepo(
 	getenv func(string) string,
 	gitRepo string,
 	gitRefName storagegitplumbing.RefName,
+	gitRecurseSubmodules bool,
 ) (_ storage.ReadBucketCloser, retErr error) {
 	defer utillog.Defer(e.logger, "get_git_bucket_memory")()
 
@@ -612,6 +614,7 @@ func (e *envReader) getReadBucketCloserFromGitRepo(
 		homeDirPath,
 		gitRepo,
 		gitRefName,
+		gitRecurseSubmodules,
 		e.httpsUsernameEnvKey,
 		e.httpsPasswordEnvKey,
 		e.sshKeyFileEnvKey,
