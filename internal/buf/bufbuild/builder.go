@@ -23,19 +23,19 @@ import (
 	"go.uber.org/zap"
 )
 
-type runner struct {
+type builder struct {
 	logger      *zap.Logger
 	parallelism int
 }
 
-func newRunner(logger *zap.Logger, parallelism int) *runner {
-	return &runner{
+func newBuilder(logger *zap.Logger, parallelism int) *builder {
+	return &builder{
 		logger:      logger,
 		parallelism: parallelism,
 	}
 }
 
-// Run runs compilation.
+// Build runs compilation.
 //
 // If an error is returned, it is a system error.
 // Only one of Image and FileAnnotations will be returned.
@@ -43,16 +43,15 @@ func newRunner(logger *zap.Logger, parallelism int) *runner {
 // FileAnnotations will be sorted, but Paths will not have the roots as a prefix, instead
 // they will be relative to the roots. This should be fixed for linter outputs if image
 // mode is not used.
-func (r *runner) Run(
+func (b *builder) Build(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
-	protoFileSet ProtoFileSet,
+	roots []string,
+	rootFilePaths []string,
 	includeImports bool,
 	includeSourceInfo bool,
 ) (_ *imagev1beta1.Image, _ []*filev1beta1.FileAnnotation, retErr error) {
-	roots := protoFileSet.Roots()
-	rootFilePaths := protoFileSet.RootFilePaths()
-	defer utillog.DeferWithError(r.logger, "run", &retErr, zap.Int("num_files", len(rootFilePaths)))()
+	defer utillog.DeferWithError(b.logger, "run", &retErr, zap.Int("num_files", len(rootFilePaths)))()
 
 	if len(roots) == 0 {
 		return nil, nil, errors.New("no roots specified")
@@ -65,7 +64,7 @@ func (r *runner) Run(
 		return nil, nil, errors.New("rootFilePaths has duplicate values")
 	}
 
-	results := r.parse(
+	results := b.parse(
 		ctx,
 		readBucket,
 		roots,
@@ -100,7 +99,7 @@ func (r *runner) Run(
 	return image, nil, nil
 }
 
-func (r *runner) parse(
+func (b *builder) parse(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	roots []string,
@@ -108,20 +107,20 @@ func (r *runner) parse(
 	includeImports bool,
 	includeSourceInfo bool,
 ) []*result {
-	defer utillog.Defer(r.logger, "parse", zap.Int("num_files", len(rootFilePaths)))()
+	defer utillog.Defer(b.logger, "parse", zap.Int("num_files", len(rootFilePaths)))()
 
 	accessor := newParserAccessor(ctx, readBucket, roots)
 	var results []*result
 	chunkSize := 0
-	if r.parallelism > 1 {
-		chunkSize = len(rootFilePaths) / r.parallelism
+	if b.parallelism > 1 {
+		chunkSize = len(rootFilePaths) / b.parallelism
 	}
 	chunks := utilstring.SliceToChunks(rootFilePaths, chunkSize)
 	resultC := make(chan *result, len(chunks))
 	for _, rootFilePaths := range chunks {
 		rootFilePaths := rootFilePaths
 		go func() {
-			resultC <- r.getResult(
+			resultC <- b.getResult(
 				ctx,
 				accessor,
 				roots,
@@ -141,7 +140,7 @@ func (r *runner) parse(
 	return results
 }
 
-func (r *runner) getResult(
+func (b *builder) getResult(
 	ctx context.Context,
 	accessor protoparse.FileAccessor,
 	roots []string,

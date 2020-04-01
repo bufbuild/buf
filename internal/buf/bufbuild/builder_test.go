@@ -181,7 +181,7 @@ func testGetReadBucketCloserGoogleapis(t *testing.T) storage.ReadBucketCloser {
 }
 
 func testGetProtoFileSetGoogleapis(t *testing.T, readBucket storage.ReadBucket) ProtoFileSet {
-	protoFileSet, err := newProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
+	protoFileSet, err := newProtoFileSetProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
 		context.Background(),
 		readBucket,
 		nil,
@@ -192,10 +192,11 @@ func testGetProtoFileSetGoogleapis(t *testing.T, readBucket storage.ReadBucket) 
 }
 
 func testBuild(t *testing.T, includeSourceInfo bool, readBucket storage.ReadBucket, protoFileSet ProtoFileSet) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation) {
-	image, fileAnnotations, err := newRunner(zap.NewNop(), runtime.NumCPU()).Run(
+	image, fileAnnotations, err := newBuilder(zap.NewNop(), runtime.NumCPU()).Build(
 		context.Background(),
 		readBucket,
-		protoFileSet,
+		protoFileSet.Roots(),
+		protoFileSet.RootFilePaths(),
 		true,
 		includeSourceInfo,
 	)

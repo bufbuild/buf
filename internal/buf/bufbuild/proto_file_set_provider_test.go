@@ -181,22 +181,22 @@ func testNewProtoFileSet(
 	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(relDir)
 	require.NoError(t, err)
 
-	set, err := newProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
+	protoFileSet, err := newProtoFileSetProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
 		context.Background(),
 		readWriteBucketCloser,
 		relRoots,
 		relExcludes,
 	)
 	assert.NoError(t, err)
-	assert.NotNil(t, set)
+	assert.NotNil(t, protoFileSet)
 	assert.Equal(
 		t,
 		expectedRelFiles,
-		set.RealFilePaths(),
+		protoFileSet.RealFilePaths(),
 	)
 	if len(expectedRelFiles) > 1 {
 		expectedRelFiles = expectedRelFiles[:len(expectedRelFiles)-1]
-		set, err := newProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
+		protoFileSet, err := newProtoFileSetProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
 			context.Background(),
 			readWriteBucketCloser,
 			relRoots,
@@ -204,11 +204,11 @@ func testNewProtoFileSet(
 			false,
 		)
 		assert.NoError(t, err)
-		assert.NotNil(t, set)
+		assert.NotNil(t, protoFileSet)
 		assert.Equal(
 			t,
 			expectedRelFiles,
-			set.RealFilePaths(),
+			protoFileSet.RealFilePaths(),
 		)
 	}
 	assert.NoError(t, readWriteBucketCloser.Close())
@@ -225,7 +225,7 @@ func testNewProtoFileSetError(
 	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(relDir)
 	require.NoError(t, err)
 
-	_, err = newProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
+	_, err = newProtoFileSetProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
 		context.Background(),
 		readWriteBucketCloser,
 		relRoots,
@@ -234,7 +234,7 @@ func testNewProtoFileSetError(
 	assert.Error(t, err)
 	if len(allRelFiles) > 1 {
 		allRelFiles = allRelFiles[:len(allRelFiles)-1]
-		_, err = newProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
+		_, err = newProtoFileSetProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
 			context.Background(),
 			readWriteBucketCloser,
 			relRoots,
