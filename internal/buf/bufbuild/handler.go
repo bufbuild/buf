@@ -15,9 +15,9 @@ import (
 )
 
 type handler struct {
-	logger   *zap.Logger
-	provider *provider
-	runner   *runner
+	logger               *zap.Logger
+	protoFileSetProvider *protoFileSetProvider
+	builder              *builder
 
 	parallelism               int
 	copyToMemoryFileThreshold int
@@ -35,8 +35,8 @@ func newHandler(
 	for _, option := range options {
 		option(handler)
 	}
-	handler.provider = newProvider(logger)
-	handler.runner = newRunner(logger, handler.parallelism)
+	handler.protoFileSetProvider = newProtoFileSetProvider(logger)
+	handler.builder = newBuilder(logger, handler.parallelism)
 	return handler
 }
 
@@ -61,10 +61,11 @@ func (h *handler) Build(
 		h.logger.Debug("no_copy_to_memory_set")
 	}
 
-	image, fileAnnotations, err := h.runner.Run(
+	image, fileAnnotations, err := h.builder.Build(
 		ctx,
 		readBucket,
-		protoFileSet,
+		protoFileSet.Roots(),
+		protoFileSet.RootFilePaths(),
 		options.IncludeImports,
 		options.IncludeSourceInfo,
 	)
@@ -85,7 +86,7 @@ func (h *handler) GetProtoFileSet(
 	readBucket storage.ReadBucket,
 	options GetProtoFileSetOptions,
 ) (ProtoFileSet, error) {
-	return h.provider.GetProtoFileSetForReadBucket(
+	return h.protoFileSetProvider.GetProtoFileSetForReadBucket(
 		ctx,
 		readBucket,
 		options.Roots,
@@ -102,7 +103,7 @@ func (h *handler) GetProtoFileSetForFiles(
 	if len(realFilePaths) == 0 {
 		return nil, errors.New("no input files")
 	}
-	return h.provider.GetProtoFileSetForRealFilePaths(
+	return h.protoFileSetProvider.GetProtoFileSetForRealFilePaths(
 		ctx,
 		readBucket,
 		options.Roots,

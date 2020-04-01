@@ -1,4 +1,4 @@
-package cmdtesting
+package lint
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	lint "github.com/bufbuild/buf/internal/buf/cmd/protoc-gen-buf-check-lint"
 	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
 	"github.com/bufbuild/buf/internal/pkg/cli/cliproto"
 	"github.com/bufbuild/buf/internal/pkg/ext/extdescriptor"
@@ -133,7 +132,7 @@ func testRunLint(
 
 	testRunHandlerFunc(
 		t,
-		cliproto.HandlerFunc(lint.Handle),
+		cliproto.HandlerFunc(Handle),
 		testBuildCodeGeneratorRequest(
 			t,
 			root,

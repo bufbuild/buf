@@ -9,50 +9,47 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 )
 
-type config struct {
-	Roots    []string
-	Excludes []string
-}
-
-func newConfig(inputRoots []string, inputExcludes []string) (*config, error) {
+func normalizeAndValidateRoots(inputRoots []string) ([]string, error) {
 	if len(inputRoots) == 0 {
 		inputRoots = []string{"."}
 	}
-	roots, err := transformFileListForConfig(inputRoots, "root")
-	if err != nil {
-		return nil, err
-	}
-	var excludes []string
-	if len(inputExcludes) > 0 {
-		excludes, err = transformFileListForConfig(inputExcludes, "exclude")
-		if err != nil {
-			return nil, err
-		}
-
-		rootMap := utilstring.SliceToMap(roots)
-		excludeMap := utilstring.SliceToMap(excludes)
-
-		// verify that no exclude equals a root directly
-		for exclude := range excludeMap {
-			if _, ok := rootMap[exclude]; ok {
-				return nil, fmt.Errorf("%s is both a root and exclude, which means the entire root is excluded, which is not valid", exclude)
-			}
-		}
-		// verify that all excludes are within a root
-		for exclude := range excludeMap {
-			if !storagepath.MapContainsMatch(rootMap, exclude) {
-				return nil, fmt.Errorf("exclude %s is not contained in any root, which is not valid", exclude)
-			}
-		}
-	}
-
-	return &config{
-		Roots:    roots,
-		Excludes: excludes,
-	}, nil
+	return normalizeAndValidateFileList(inputRoots, "root")
 }
 
-func transformFileListForConfig(inputs []string, name string) ([]string, error) {
+func normalizeAndValidateRootsExcludes(inputRoots []string, inputExcludes []string) ([]string, []string, error) {
+	roots, err := normalizeAndValidateRoots(inputRoots)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(inputExcludes) == 0 {
+		return roots, nil, nil
+	}
+
+	excludes, err := normalizeAndValidateFileList(inputExcludes, "exclude")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rootMap := utilstring.SliceToMap(roots)
+	excludeMap := utilstring.SliceToMap(excludes)
+
+	// verify that no exclude equals a root directly
+	for exclude := range excludeMap {
+		if _, ok := rootMap[exclude]; ok {
+			return nil, nil, fmt.Errorf("%s is both a root and exclude, which means the entire root is excluded, which is not valid", exclude)
+		}
+	}
+	// verify that all excludes are within a root
+	for exclude := range excludeMap {
+		if !storagepath.MapContainsMatch(rootMap, exclude) {
+			return nil, nil, fmt.Errorf("exclude %s is not contained in any root, which is not valid", exclude)
+		}
+	}
+	return roots, excludes, nil
+}
+
+func normalizeAndValidateFileList(inputs []string, name string) ([]string, error) {
 	if len(inputs) == 0 {
 		return inputs, nil
 	}

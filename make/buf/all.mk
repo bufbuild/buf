@@ -18,7 +18,7 @@ include make/go/protoc_gen_go.mk
 embed: $(PROTOC)
 	rm -rf internal/gen/embed
 	mkdir -p internal/gen/embed/wkt
-	go run internal/cmd/embed/main.go $(CACHE_INCLUDE) wkt .proto > internal/gen/embed/wkt/wkt.gen.go
+	go run internal/buf/cmd/embed/main.go $(CACHE_INCLUDE) wkt .proto > internal/gen/embed/wkt/wkt.gen.go
 
 pregenerate:: embed
 

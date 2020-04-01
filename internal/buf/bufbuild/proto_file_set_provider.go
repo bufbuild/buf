@@ -13,32 +13,32 @@ import (
 	"go.uber.org/zap"
 )
 
-type provider struct {
+type protoFileSetProvider struct {
 	logger *zap.Logger
 }
 
-func newProvider(logger *zap.Logger) *provider {
-	return &provider{
+func newProtoFileSetProvider(logger *zap.Logger) *protoFileSetProvider {
+	return &protoFileSetProvider{
 		logger: logger,
 	}
 }
 
 // GetProtoFileSetForBucket gets the set for the bucket and config.
-func (p *provider) GetProtoFileSetForReadBucket(
+func (p *protoFileSetProvider) GetProtoFileSetForReadBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
-	roots []string,
-	excludes []string,
+	inputRoots []string,
+	inputExcludes []string,
 ) (ProtoFileSet, error) {
 	defer utillog.Defer(p.logger, "get_proto_file_set_for_bucket")()
 
-	config, err := newConfig(roots, excludes)
+	roots, excludes, err := normalizeAndValidateRootsExcludes(inputRoots, inputExcludes)
 	if err != nil {
 		return nil, err
 	}
 	// map from file path relative to root, to all actual file paths
 	rootFilePathToRealFilePathMap := make(map[string]map[string]struct{})
-	for _, root := range config.Roots {
+	for _, root := range roots {
 		if walkErr := readBucket.Walk(
 			ctx,
 			root,
@@ -88,15 +88,15 @@ func (p *provider) GetProtoFileSetForReadBucket(
 		}
 	}
 
-	if len(config.Excludes) == 0 {
+	if len(excludes) == 0 {
 		if len(rootFilePathToRealFilePath) == 0 {
 			return nil, errors.New("no input files found that match roots")
 		}
-		return newProtoFileSet(config.Roots, rootFilePathToRealFilePath)
+		return newProtoFileSet(roots, rootFilePathToRealFilePath)
 	}
 
 	filteredRootFilePathToRealFilePath := make(map[string]string, len(rootFilePathToRealFilePath))
-	excludeMap := utilstring.SliceToMap(config.Excludes)
+	excludeMap := utilstring.SliceToMap(excludes)
 	for rootFilePath, realFilePath := range rootFilePathToRealFilePath {
 		if !storagepath.MapContainsMatch(excludeMap, storagepath.Dir(realFilePath)) {
 			filteredRootFilePathToRealFilePath[rootFilePath] = realFilePath
@@ -105,7 +105,7 @@ func (p *provider) GetProtoFileSetForReadBucket(
 	if len(filteredRootFilePathToRealFilePath) == 0 {
 		return nil, errors.New("no input files found that match roots and excludes")
 	}
-	return newProtoFileSet(config.Roots, filteredRootFilePathToRealFilePath)
+	return newProtoFileSet(roots, filteredRootFilePathToRealFilePath)
 }
 
 // GetSetForRealFilePaths gets the set for the real file paths and config.
@@ -114,16 +114,16 @@ func (p *provider) GetProtoFileSetForReadBucket(
 // unique relative to roots, and that they exist. If allowNotExist
 // is true, files that do not exist will be filtered. This is useful
 // for i.e. --limit-to-input-files.
-func (p *provider) GetProtoFileSetForRealFilePaths(
+func (p *protoFileSetProvider) GetProtoFileSetForRealFilePaths(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
-	roots []string,
+	inputRoots []string,
 	realFilePaths []string,
 	realFilePathsAllowNotExist bool,
 ) (ProtoFileSet, error) {
 	defer utillog.Defer(p.logger, "get_proto_file_set_for_real_file_paths")()
 
-	config, err := newConfig(roots, nil)
+	roots, err := normalizeAndValidateRoots(inputRoots)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 		}
 	}
 
-	rootMap := utilstring.SliceToMap(config.Roots)
+	rootMap := utilstring.SliceToMap(roots)
 	rootFilePathToRealFilePath := make(map[string]string, len(normalizedRealFilePaths))
 	for normalizedRealFilePath := range normalizedRealFilePaths {
 		matchingRootMap := storagepath.MapMatches(rootMap, normalizedRealFilePath)
@@ -159,7 +159,7 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 		}
 		switch len(matchingRoots) {
 		case 0:
-			return nil, fmt.Errorf("file %s is not within any root %v", normalizedRealFilePath, config.Roots)
+			return nil, fmt.Errorf("file %s is not within any root %v", normalizedRealFilePath, roots)
 		case 1:
 			normalizedRootFilePath, err := storagepath.Rel(matchingRoots[0], normalizedRealFilePath)
 			if err != nil {
@@ -186,5 +186,5 @@ func (p *provider) GetProtoFileSetForRealFilePaths(
 	if len(rootFilePathToRealFilePath) == 0 {
 		return nil, errors.New("no input files specified")
 	}
-	return newProtoFileSet(config.Roots, rootFilePathToRealFilePath)
+	return newProtoFileSet(roots, rootFilePathToRealFilePath)
 }
