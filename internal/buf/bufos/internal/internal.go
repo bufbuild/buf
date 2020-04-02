@@ -23,6 +23,9 @@ type InputRef struct {
 	// GitRefName is the git reference name.
 	// This will only and always be set if Format == FormatGit.
 	GitRefName storagegitplumbing.RefName
+	// GitRecurseSubmodules says to check out submodules recursively.
+	// This will only be set if Format == FormatGit.
+	GitRecurseSubmodules bool
 }
 
 // InputRefParser parses InputRefs.

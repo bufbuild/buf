@@ -67,6 +67,9 @@ func (i *inputRefParser) ParseInputRef(value string, onlySources bool, onlyImage
 	if inputRef.Format != FormatGit && inputRef.GitRefName != nil {
 		return nil, newOptionsInvalidForFormatError(i.valueFlagName, inputRef.Format, options)
 	}
+	if inputRef.Format != FormatGit && inputRef.GitRecurseSubmodules {
+		return nil, newOptionsInvalidForFormatError(i.valueFlagName, inputRef.Format, options)
+	}
 	if inputRef.Format != FormatTar && inputRef.Format != FormatTarGz && inputRef.StripComponents > 0 {
 		return nil, newOptionsInvalidForFormatError(i.valueFlagName, inputRef.Format, options)
 	}
@@ -123,6 +126,7 @@ func (i *inputRefParser) applyInputRefOptions(inputRef *InputRef, options string
 	if options == "" {
 		return nil
 	}
+	keys := make(map[string]struct{})
 	for _, pair := range strings.Split(options, ",") {
 		split := strings.Split(pair, "=")
 		if len(split) != 2 {
@@ -133,6 +137,10 @@ func (i *inputRefParser) applyInputRefOptions(inputRef *InputRef, options string
 		if key == "" || value == "" {
 			return newOptionsInvalidError(i.valueFlagName, options)
 		}
+		if _, ok := keys[key]; ok {
+			return newOptionsDuplicateKeyError(i.valueFlagName, key)
+		}
+		keys[key] = struct{}{}
 		switch key {
 		case "format":
 			if inputRef.Path == clios.DevNull {
@@ -153,7 +161,19 @@ func (i *inputRefParser) applyInputRefOptions(inputRef *InputRef, options string
 				return newCannotSpecifyMultipleGitRefNamesError(i.valueFlagName)
 			}
 			inputRef.GitRefName = storagegitplumbing.NewTagRefName(value)
+		case "recurse_submodules":
+			// TODO: need to refactor to make sure this is not set for any non-git input
+			// ie right now recurse_submodules=false will not error
+			switch value {
+			case "true":
+				inputRef.GitRecurseSubmodules = true
+			case "false":
+			default:
+				return newOptionsCouldNotParseRecurseSubmodulesError(i.valueFlagName, value)
+			}
 		case "strip_components":
+			// TODO: need to refactor to make sure this is not set for any non-tarball
+			// ie right now strip_components=0 will not error
 			stripComponents, err := strconv.ParseUint(value, 10, 32)
 			if err != nil {
 				return newOptionsCouldNotParseStripComponentsError(i.valueFlagName, value)
@@ -214,12 +234,20 @@ func newOptionsInvalidKeyError(valueFlagName string, key string) error {
 	return fmt.Errorf("%s: invalid options key: %q", valueFlagName, key)
 }
 
+func newOptionsDuplicateKeyError(valueFlagName string, key string) error {
+	return fmt.Errorf("%s: duplicate options key: %q", valueFlagName, key)
+}
+
 func newOptionsInvalidForFormatError(valueFlagName string, format Format, s string) error {
 	return fmt.Errorf("%s: invalid options for format %q: %q", valueFlagName, format.String(), s)
 }
 
 func newOptionsCouldNotParseStripComponentsError(valueFlagName string, s string) error {
 	return fmt.Errorf("%s: could not parse strip_components value %q", valueFlagName, s)
+}
+
+func newOptionsCouldNotParseRecurseSubmodulesError(valueFlagName string, s string) error {
+	return fmt.Errorf("%s: could not parse recurse_submodules value %q", valueFlagName, s)
 }
 
 func newFormatOverrideNotAllowedForDevNullError(valueFlagName string, devNull string) error {
