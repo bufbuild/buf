@@ -44,6 +44,9 @@ func TestNormalize(t *testing.T) {
 	assert.Equal(t, "../foo", Normalize("../foo"))
 	assert.Equal(t, "foo", Normalize("foo/"))
 	assert.Equal(t, "foo", Normalize("./foo/"))
+	assert.Equal(t, "/foo", Normalize("/foo"))
+	assert.Equal(t, "/foo", Normalize("/foo/"))
+	assert.Equal(t, "/foo/bar", Normalize("/foo/../foo/bar"))
 }
 
 func TestUnnormalize(t *testing.T) {

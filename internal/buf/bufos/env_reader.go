@@ -16,10 +16,11 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufos/internal"
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
+	"github.com/bufbuild/buf/internal/buf/ext/extio"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
+	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/cli/clios"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
@@ -28,7 +29,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
-	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -39,8 +39,8 @@ type envReader struct {
 	httpClient               *http.Client
 	configProvider           bufconfig.Provider
 	buildHandler             bufbuild.Handler
-	inputRefParser           internal.InputRefParser
-	configOverrideParser     internal.ConfigOverrideParser
+	valueFlagName            string
+	configOverrideFlagName   string
 	httpsUsernameEnvKey      string
 	httpsPasswordEnvKey      string
 	sshKeyFileEnvKey         string
@@ -62,17 +62,12 @@ func newEnvReader(
 	sshKnownHostsFilesEnvKey string,
 ) *envReader {
 	return &envReader{
-		logger:         logger.Named("bufos"),
-		httpClient:     httpClient,
-		configProvider: configProvider,
-		buildHandler:   buildHandler,
-		inputRefParser: internal.NewInputRefParser(
-			valueFlagName,
-		),
-		configOverrideParser: internal.NewConfigOverrideParser(
-			configProvider,
-			configOverrideFlagName,
-		),
+		logger:                   logger.Named("bufos"),
+		httpClient:               httpClient,
+		configProvider:           configProvider,
+		buildHandler:             buildHandler,
+		valueFlagName:            valueFlagName,
+		configOverrideFlagName:   configOverrideFlagName,
 		httpsUsernameEnvKey:      httpsUsernameEnvKey,
 		httpsPasswordEnvKey:      httpsPasswordEnvKey,
 		sshKeyFileEnvKey:         sshKeyFileEnvKey,
@@ -92,19 +87,37 @@ func (e *envReader) ReadEnv(
 	includeImports bool,
 	includeSourceInfo bool,
 ) (*Env, []*filev1beta1.FileAnnotation, error) {
-	return e.readEnv(
-		ctx,
-		stdin,
-		getenv,
-		value,
-		configOverride,
-		specificFilePaths,
-		specificFilePathsAllowNotExist,
-		includeImports,
-		includeSourceInfo,
-		false,
-		false,
-	)
+	inputRef, err := e.parseInputRef(value)
+	if err != nil {
+		return nil, nil, err
+	}
+	if imageRef := inputRef.GetImageRef(); imageRef != nil {
+		env, err := e.readEnvFromImage(
+			ctx,
+			stdin,
+			getenv,
+			configOverride,
+			specificFilePaths,
+			specificFilePathsAllowNotExist,
+			includeImports,
+			imageRef,
+		)
+		return env, nil, err
+	}
+	if sourceRef := inputRef.GetSourceRef(); sourceRef != nil {
+		return e.readEnvFromSource(
+			ctx,
+			stdin,
+			getenv,
+			configOverride,
+			specificFilePaths,
+			specificFilePathsAllowNotExist,
+			includeImports,
+			includeSourceInfo,
+			sourceRef,
+		)
+	}
+	return nil, nil, errors.New("invalid InputRef")
 }
 
 func (e *envReader) ReadSourceEnv(
@@ -118,18 +131,20 @@ func (e *envReader) ReadSourceEnv(
 	includeImports bool,
 	includeSourceInfo bool,
 ) (*Env, []*filev1beta1.FileAnnotation, error) {
-	return e.readEnv(
+	sourceRef, err := e.parseSourceRef(value)
+	if err != nil {
+		return nil, nil, err
+	}
+	return e.readEnvFromSource(
 		ctx,
 		stdin,
 		getenv,
-		value,
 		configOverride,
 		specificFilePaths,
 		specificFilePathsAllowNotExist,
 		includeImports,
 		includeSourceInfo,
-		true,
-		false,
+		sourceRef,
 	)
 }
 
@@ -143,27 +158,20 @@ func (e *envReader) ReadImageEnv(
 	specificFilePathsAllowNotExist bool,
 	includeImports bool,
 ) (*Env, error) {
-	env, fileAnnotations, err := e.readEnv(
+	imageRef, err := e.parseImageRef(value)
+	if err != nil {
+		return nil, err
+	}
+	return e.readEnvFromImage(
 		ctx,
 		stdin,
 		getenv,
-		value,
 		configOverride,
 		specificFilePaths,
 		specificFilePathsAllowNotExist,
 		includeImports,
-		false,
-		false,
-		true,
+		imageRef,
 	)
-	if err != nil {
-		return nil, err
-	}
-	if len(fileAnnotations) > 0 {
-		// TODO: need to refactor this
-		return nil, errors.New("got fileAnnotations for ReadImageEnv which should be impossible")
-	}
-	return env, nil
 }
 
 func (e *envReader) ListFiles(
@@ -173,15 +181,14 @@ func (e *envReader) ListFiles(
 	value string,
 	configOverride string,
 ) (_ []string, retErr error) {
-	inputRef, err := e.inputRefParser.ParseInputRef(value, false, false)
+	inputRef, err := e.parseInputRef(value)
 	if err != nil {
 		return nil, err
 	}
-	e.logger.Debug("parse", zap.Any("input_ref", inputRef), zap.Stringer("format", inputRef.Format))
 
-	if inputRef.Format.IsImage() {
+	if imageRef := inputRef.GetImageRef(); imageRef != nil {
 		// if we have an image, list the files in the image
-		image, err := e.getImage(ctx, stdin, getenv, inputRef)
+		image, err := e.getImage(ctx, stdin, getenv, imageRef)
 		if err != nil {
 			return nil, err
 		}
@@ -193,9 +200,13 @@ func (e *envReader) ListFiles(
 		sort.Strings(filePaths)
 		return filePaths, nil
 	}
+	sourceRef := inputRef.GetSourceRef()
+	if sourceRef == nil {
+		return nil, errors.New("invalid InputRef")
+	}
 
 	// we have a source, we need to get everything
-	readBucketCloser, err := e.getReadBucketCloser(ctx, stdin, getenv, inputRef)
+	readBucketCloser, err := e.getReadBucketCloser(ctx, stdin, getenv, sourceRef)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +215,7 @@ func (e *envReader) ListFiles(
 	}()
 	var config *bufconfig.Config
 	if configOverride != "" {
-		config, err = e.configOverrideParser.ParseConfigOverride(configOverride)
+		config, err = e.parseConfigOverride(configOverride)
 		if err != nil {
 			return nil, err
 		}
@@ -231,13 +242,14 @@ func (e *envReader) ListFiles(
 	filePaths := protoFileSet.RealFilePaths()
 	//// The files are in the order of the root file paths, we want to sort them for output.
 	sort.Strings(filePaths)
-	if inputRef.Format != internal.FormatDir {
+	bucketDirPath := getBucketDirPath(sourceRef)
+	if bucketDirPath == "" {
 		// if format is not a directory, just output the file paths
 		return filePaths, nil
 	}
 
 	// if we built a directory, we need to resolve file paths
-	resolver, err := internal.NewRelProtoFilePathResolver(inputRef.Path, nil)
+	resolver, err := newRelRealProtoFilePathResolver(bucketDirPath, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +269,7 @@ func (e *envReader) GetConfig(
 	configOverride string,
 ) (*bufconfig.Config, error) {
 	if configOverride != "" {
-		return e.configOverrideParser.ParseConfigOverride(configOverride)
+		return e.parseConfigOverride(configOverride)
 	}
 	// if there is no config override, we read the config from the current directory
 	pwd, err := os.Getwd()
@@ -276,52 +288,7 @@ func (e *envReader) GetConfig(
 	return e.configProvider.GetConfigForData(data)
 }
 
-func (e *envReader) readEnv(
-	ctx context.Context,
-	stdin io.Reader,
-	getenv func(string) string,
-	value string,
-	configOverride string,
-	specificFilePaths []string,
-	specificFilePathsAllowNotExist bool,
-	includeImports bool,
-	includeSourceInfo bool,
-	onlySources bool,
-	onlyImages bool,
-) (_ *Env, _ []*filev1beta1.FileAnnotation, retErr error) {
-	inputRef, err := e.inputRefParser.ParseInputRef(value, onlySources, onlyImages)
-	if err != nil {
-		return nil, nil, err
-	}
-	e.logger.Debug("parse", zap.Any("input_ref", inputRef), zap.Stringer("format", inputRef.Format))
-
-	if inputRef.Format.IsImage() {
-		env, err := e.readEnvFromImage(
-			ctx,
-			stdin,
-			getenv,
-			configOverride,
-			specificFilePaths,
-			specificFilePathsAllowNotExist,
-			includeImports,
-			inputRef,
-		)
-		return env, nil, err
-	}
-	return e.readEnvFromBucket(
-		ctx,
-		stdin,
-		getenv,
-		configOverride,
-		specificFilePaths,
-		specificFilePathsAllowNotExist,
-		includeImports,
-		includeSourceInfo,
-		inputRef,
-	)
-}
-
-func (e *envReader) readEnvFromBucket(
+func (e *envReader) readEnvFromSource(
 	ctx context.Context,
 	stdin io.Reader,
 	getenv func(string) string,
@@ -330,9 +297,9 @@ func (e *envReader) readEnvFromBucket(
 	specificFilePathsAllowNotExist bool,
 	includeImports bool,
 	includeSourceInfo bool,
-	inputRef *internal.InputRef,
+	sourceRef *iov1beta1.SourceRef,
 ) (_ *Env, _ []*filev1beta1.FileAnnotation, retErr error) {
-	readBucketCloser, err := e.getReadBucketCloser(ctx, stdin, getenv, inputRef)
+	readBucketCloser, err := e.getReadBucketCloser(ctx, stdin, getenv, sourceRef)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -342,7 +309,7 @@ func (e *envReader) readEnvFromBucket(
 
 	var config *bufconfig.Config
 	if configOverride != "" {
-		config, err = e.configOverrideParser.ParseConfigOverride(configOverride)
+		config, err = e.parseConfigOverride(configOverride)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -354,15 +321,16 @@ func (e *envReader) readEnvFromBucket(
 			return nil, nil, err
 		}
 	}
+	bucketDirPath := getBucketDirPath(sourceRef)
 	var specificRealFilePaths []string
 	if len(specificFilePaths) > 0 {
 		// since we are doing a build, we filter before doing the build
 		// via bufbuild.Provider
 		// this will include imports if necessary
 		specificRealFilePaths = make([]string, len(specificFilePaths))
-		if inputRef.Format == internal.FormatDir {
+		if bucketDirPath != "" {
 			// if we had a directory input, then we need to make everything relative to that directory
-			absDirPath, err := filepath.Abs(inputRef.Path)
+			absDirPath, err := filepath.Abs(bucketDirPath)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -423,8 +391,8 @@ func (e *envReader) readEnvFromBucket(
 		}
 	}
 	var resolver bufbuild.ProtoRealFilePathResolver = protoFileSet
-	if inputRef.Format == internal.FormatDir {
-		resolver, err = internal.NewRelProtoFilePathResolver(inputRef.Path, resolver)
+	if bucketDirPath != "" {
+		resolver, err = newRelRealProtoFilePathResolver(bucketDirPath, resolver)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -459,9 +427,9 @@ func (e *envReader) readEnvFromImage(
 	specificFilePaths []string,
 	specificFilePathsAllowNotExist bool,
 	includeImports bool,
-	inputRef *internal.InputRef,
+	imageRef *iov1beta1.ImageRef,
 ) (_ *Env, retErr error) {
-	image, err := e.getImage(ctx, stdin, getenv, inputRef)
+	image, err := e.getImage(ctx, stdin, getenv, imageRef)
 	if err != nil {
 		return nil, err
 	}
@@ -493,71 +461,63 @@ func (e *envReader) getReadBucketCloser(
 	ctx context.Context,
 	stdin io.Reader,
 	getenv func(string) string,
-	inputRef *internal.InputRef,
+	sourceRef *iov1beta1.SourceRef,
 ) (storage.ReadBucketCloser, error) {
-	switch inputRef.Format {
-	case internal.FormatDir:
-		return e.getReadBucketCloserFromLocalDir(inputRef.Path)
-	case internal.FormatTar, internal.FormatTarGz:
-		return e.getReadBucketCloserFromLocalTarball(
+	if archiveRef := sourceRef.GetArchiveRef(); archiveRef != nil {
+		return e.getReadBucketCloserFromArchive(
 			ctx,
 			stdin,
 			getenv,
-			inputRef.Format,
-			inputRef.Path,
-			inputRef.StripComponents,
+			archiveRef,
 		)
-	case internal.FormatGit:
-		return e.getReadBucketCloserFromGitRepo(
-			ctx,
-			getenv,
-			inputRef.Path,
-			inputRef.GitRefName,
-			inputRef.GitRecurseSubmodules,
-		)
-	default:
-		return nil, fmt.Errorf("unknown format outside of parse: %v", inputRef.Format)
 	}
+	if gitRef := sourceRef.GetGitRef(); gitRef != nil {
+		return e.getReadBucketCloserFromGit(
+			ctx,
+			stdin,
+			getenv,
+			gitRef,
+		)
+	}
+	if bucketRef := sourceRef.GetBucketRef(); bucketRef != nil {
+		return e.getReadBucketCloserFromBucket(
+			ctx,
+			stdin,
+			getenv,
+			bucketRef,
+		)
+	}
+	return nil, errors.New("invalid SourceRef")
 }
 
-func (e *envReader) getImage(
+func (e *envReader) getReadBucketCloserFromBucket(
 	ctx context.Context,
 	stdin io.Reader,
 	getenv func(string) string,
-	inputRef *internal.InputRef,
-) (*imagev1beta1.Image, error) {
-	switch inputRef.Format {
-	case internal.FormatBin, internal.FormatBinGz, internal.FormatJSON, internal.FormatJSONGz:
-		return e.getImageFromLocalFile(ctx, stdin, getenv, inputRef.Format, inputRef.Path)
-	default:
-		return nil, fmt.Errorf("unknown format outside of parse: %v", inputRef.Format)
-	}
-}
-
-// Can handle formats FormatDir
-func (e *envReader) getReadBucketCloserFromLocalDir(
-	path string,
+	bucketRef *iov1beta1.BucketRef,
 ) (storage.ReadBucketCloser, error) {
-	readBucketCloser, err := storageos.NewReadWriteBucketCloser(path)
-	if err != nil {
-		if storage.IsNotExist(err) || storageos.IsNotDir(err) {
+	switch bucketRef.BucketScheme {
+	case iov1beta1.BucketScheme_BUCKET_SCHEME_DIR:
+		readBucketCloser, err := storageos.NewReadWriteBucketCloser(bucketRef.Path)
+		if err != nil {
+			if storage.IsNotExist(err) || storageos.IsNotDir(err) {
+				return nil, err
+			}
 			return nil, err
 		}
-		return nil, err
+		return readBucketCloser, nil
+	default:
+		return nil, fmt.Errorf("unknown BucketScheme: %v", bucketRef.BucketScheme)
 	}
-	return readBucketCloser, nil
 }
 
-// Can handle formats FormatTar, FormatTarGz
-func (e *envReader) getReadBucketCloserFromLocalTarball(
+func (e *envReader) getReadBucketCloserFromArchive(
 	ctx context.Context,
 	stdin io.Reader,
 	getenv func(string) string,
-	format internal.Format,
-	path string,
-	stripComponents uint32,
+	archiveRef *iov1beta1.ArchiveRef,
 ) (_ storage.ReadBucketCloser, retErr error) {
-	data, err := e.getFileData(ctx, stdin, getenv, path)
+	data, err := e.getFileData(ctx, stdin, getenv, archiveRef.FileScheme, archiveRef.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -565,39 +525,46 @@ func (e *envReader) getReadBucketCloserFromLocalTarball(
 		storagepath.WithExt(".proto"),
 		storagepath.WithExactPath(bufconfig.ConfigFilePath),
 	}
-	if stripComponents > 0 {
+	if archiveRef.StripComponents > 0 {
 		transformerOptions = append(
 			transformerOptions,
-			storagepath.WithStripComponents(stripComponents),
+			storagepath.WithStripComponents(archiveRef.StripComponents),
 		)
 	}
 	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
-	switch format {
-	case internal.FormatTar:
+	switch archiveRef.ArchiveFormat {
+	case iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TAR:
 		err = storageutil.Untar(ctx, bytes.NewReader(data), readWriteBucketCloser, transformerOptions...)
-	case internal.FormatTarGz:
+	case iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TARGZ:
 		err = storageutil.Untargz(ctx, bytes.NewReader(data), readWriteBucketCloser, transformerOptions...)
 	default:
-		return nil, fmt.Errorf("got image format %v outside of parse", format)
+		return nil, fmt.Errorf("unknown ArchiveFormat: %v", archiveRef.ArchiveFormat)
 	}
 	if err != nil {
-		// TODO: this isn't really an invalid argument
 		return nil, multierr.Append(fmt.Errorf("untar error: %v", err), readWriteBucketCloser.Close())
 	}
 	return readWriteBucketCloser, nil
 }
 
-// For FormatGit
-func (e *envReader) getReadBucketCloserFromGitRepo(
+func (e *envReader) getReadBucketCloserFromGit(
 	ctx context.Context,
+	stdin io.Reader,
 	getenv func(string) string,
-	gitRepo string,
-	gitRefName storagegitplumbing.RefName,
-	gitRecurseSubmodules bool,
+	gitRef *iov1beta1.GitRef,
 ) (_ storage.ReadBucketCloser, retErr error) {
-	defer utillog.Defer(e.logger, "get_git_bucket_memory")()
-
 	homeDirPath, err := clios.Home(getenv)
+	if err != nil {
+		return nil, err
+	}
+	gitURL, err := getGitURL(gitRef)
+	if err != nil {
+		return nil, err
+	}
+	gitRefName, err := getGitRefName(gitRef)
+	if err != nil {
+		return nil, err
+	}
+	gitRecurseSubmodules, err := getGitRecurseSubmodules(gitRef)
 	if err != nil {
 		return nil, err
 	}
@@ -607,7 +574,7 @@ func (e *envReader) getReadBucketCloserFromGitRepo(
 		e.logger,
 		getenv,
 		homeDirPath,
-		gitRepo,
+		gitURL,
 		gitRefName,
 		gitRecurseSubmodules,
 		e.httpsUsernameEnvKey,
@@ -620,38 +587,47 @@ func (e *envReader) getReadBucketCloserFromGitRepo(
 		storagepath.WithExactPath(bufconfig.ConfigFilePath),
 	); err != nil {
 		return nil, multierr.Append(
-			fmt.Errorf("could not clone %s: %v", gitRepo, err),
+			fmt.Errorf("could not clone %s: %v", gitURL, err),
 			readWriteBucketCloser.Close(),
 		)
 	}
 	return readWriteBucketCloser, nil
 }
 
-// Can handle formats FormatBin, FormatBinGz, FormatJSON, FormatJSONGz
-func (e *envReader) getImageFromLocalFile(
+func (e *envReader) getImage(
 	ctx context.Context,
 	stdin io.Reader,
 	getenv func(string) string,
-	format internal.Format,
-	path string,
+	imageRef *iov1beta1.ImageRef,
 ) (_ *imagev1beta1.Image, retErr error) {
-	data, err := e.getFileData(ctx, stdin, getenv, path)
+	data, err := e.getFileData(ctx, stdin, getenv, imageRef.FileScheme, imageRef.Path)
 	if err != nil {
 		return nil, err
 	}
-	return e.getImageFromData(format, data)
+	return e.getImageFromData(imageRef.ImageFormat, data)
 }
 
 func (e *envReader) getFileData(
 	ctx context.Context,
 	stdin io.Reader,
 	getenv func(string) string,
+	fileScheme iov1beta1.FileScheme,
 	path string,
 ) ([]byte, error) {
-	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
-		return e.getFileDataFromHTTP(ctx, getenv, path)
+	switch fileScheme {
+	case iov1beta1.FileScheme_FILE_SCHEME_HTTP:
+		return e.getFileDataFromHTTP(ctx, getenv, "http://"+path)
+	case iov1beta1.FileScheme_FILE_SCHEME_HTTPS:
+		return e.getFileDataFromHTTP(ctx, getenv, "https://"+path)
+	case iov1beta1.FileScheme_FILE_SCHEME_STDIO:
+		return ioutil.ReadAll(stdin)
+	case iov1beta1.FileScheme_FILE_SCHEME_NULL:
+		return nil, errors.New("cannot read file data from /dev/null equivalent")
+	case iov1beta1.FileScheme_FILE_SCHEME_FILE:
+		return ioutil.ReadFile(path)
+	default:
+		return nil, fmt.Errorf("uknown FileScheme: %v", fileScheme)
 	}
-	return e.getFileDataFromOS(stdin, path)
 }
 
 func (e *envReader) getFileDataFromHTTP(
@@ -687,36 +663,11 @@ func (e *envReader) getFileDataFromHTTP(
 	return data, nil
 }
 
-func (e *envReader) getFileDataFromOS(
-	stdin io.Reader,
-	path string,
-) (_ []byte, retErr error) {
-	if strings.HasPrefix(path, "file://") {
-		path = strings.TrimPrefix(path, "file://")
-	}
-	readCloser, err := clios.ReadCloserForFilePath(stdin, path)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, readCloser.Close())
-	}()
-	data, err := ioutil.ReadAll(readCloser)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, err
-		}
-		return nil, err
-	}
-	return data, nil
-}
-
-// Can handle formats FormatBin, FormatBinGz, FormatJSON, FormatJSONGz
 func (e *envReader) getImageFromData(
-	format internal.Format,
+	imageFormat iov1beta1.ImageFormat,
 	data []byte,
 ) (_ *imagev1beta1.Image, retErr error) {
-	if format == internal.FormatBinGz || format == internal.FormatJSONGz {
+	if imageFormat == iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ || imageFormat == iov1beta1.ImageFormat_IMAGE_FORMAT_JSONGZ {
 		// TODO: this has to be woefully inefficient
 		// we can prob do a non-copy
 		gzipReader, err := gzip.NewReader(bytes.NewReader(data))
@@ -735,13 +686,13 @@ func (e *envReader) getImageFromData(
 
 	image := &imagev1beta1.Image{}
 	var err error
-	switch format {
-	case internal.FormatBin, internal.FormatBinGz:
+	switch imageFormat {
+	case iov1beta1.ImageFormat_IMAGE_FORMAT_BIN, iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ:
 		err = utilproto.UnmarshalWire(data, image)
-	case internal.FormatJSON, internal.FormatJSONGz:
+	case iov1beta1.ImageFormat_IMAGE_FORMAT_JSON, iov1beta1.ImageFormat_IMAGE_FORMAT_JSONGZ:
 		err = utilproto.UnmarshalJSON(data, image)
 	default:
-		return nil, fmt.Errorf("got image format %v outside of parse", format)
+		return nil, fmt.Errorf("unknown ImageFormat: %v", imageFormat)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal Image: %v", err)
@@ -750,4 +701,105 @@ func (e *envReader) getImageFromData(
 		return nil, err
 	}
 	return image, nil
+}
+
+func (e *envReader) parseInputRef(value string) (*iov1beta1.InputRef, error) {
+	inputRef, err := extio.ParseInputRef(value)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %v", e.valueFlagName, err)
+	}
+	e.logger.Debug("read", zap.Any("input_ref", inputRef))
+	return inputRef, nil
+}
+
+func (e *envReader) parseImageRef(value string) (*iov1beta1.ImageRef, error) {
+	imageRef, err := extio.ParseImageRef(value)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %v", e.valueFlagName, err)
+	}
+	e.logger.Debug("read", zap.Any("image_ref", imageRef))
+	return imageRef, nil
+}
+
+func (e *envReader) parseSourceRef(value string) (*iov1beta1.SourceRef, error) {
+	sourceRef, err := extio.ParseSourceRef(value)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %v", e.valueFlagName, err)
+	}
+	e.logger.Debug("read", zap.Any("source_ref", sourceRef))
+	return sourceRef, nil
+}
+
+func (e *envReader) parseConfigOverride(value string) (*bufconfig.Config, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil, errors.New("config override value is empty")
+	}
+	var data []byte
+	var err error
+	switch filepath.Ext(value) {
+	case ".json", ".yaml":
+		data, err = ioutil.ReadFile(value)
+		if err != nil {
+			return nil, fmt.Errorf("%s: could not read file: %v", e.configOverrideFlagName, err)
+		}
+	default:
+		data = []byte(value)
+	}
+	config, err := e.configProvider.GetConfigForData(data)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %v", e.configOverrideFlagName, err)
+	}
+	return config, nil
+}
+
+func getBucketDirPath(sourceRef *iov1beta1.SourceRef) string {
+	bucketRef := sourceRef.GetBucketRef()
+	if bucketRef == nil {
+		return ""
+	}
+	if bucketRef.BucketScheme != iov1beta1.BucketScheme_BUCKET_SCHEME_DIR {
+		return ""
+	}
+	return bucketRef.Path
+}
+
+func getGitURL(gitRef *iov1beta1.GitRef) (string, error) {
+	switch gitRef.GitScheme {
+	case iov1beta1.GitScheme_GIT_SCHEME_HTTP:
+		return "http://" + gitRef.Path, nil
+	case iov1beta1.GitScheme_GIT_SCHEME_HTTPS:
+		return "https://" + gitRef.Path, nil
+	case iov1beta1.GitScheme_GIT_SCHEME_SSH:
+		return "ssh://" + gitRef.Path, nil
+	case iov1beta1.GitScheme_GIT_SCHEME_FILE:
+		absPath, err := filepath.Abs(gitRef.Path)
+		if err != nil {
+			return "", err
+		}
+		return "file://" + absPath, nil
+	default:
+		return "", fmt.Errorf("unknown GitScheme: %v", gitRef.GitScheme)
+	}
+}
+
+func getGitRefName(gitRef *iov1beta1.GitRef) (storagegitplumbing.RefName, error) {
+	if branch := gitRef.GetBranch(); branch != "" {
+		return storagegitplumbing.NewBranchRefName(branch), nil
+	}
+	if tag := gitRef.GetTag(); tag != "" {
+		return storagegitplumbing.NewTagRefName(tag), nil
+	}
+	return nil, errors.New("invalid GitRef")
+}
+
+func getGitRecurseSubmodules(gitRef *iov1beta1.GitRef) (bool, error) {
+	switch gitRef.GitSubmoduleBehavior {
+	case iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE:
+		return false, nil
+	case iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_RECURSIVE:
+		return true, nil
+	default:
+		return false, fmt.Errorf("unknown GitSubmoduleBehavior: %v", gitRef.GitSubmoduleBehavior)
+	}
 }

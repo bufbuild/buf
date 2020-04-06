@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
+	"github.com/bufbuild/buf/internal/buf/ext/extfile"
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	"github.com/bufbuild/buf/internal/pkg/cli/cliproto"
 	"github.com/bufbuild/buf/internal/pkg/cli/clizap"
-	"github.com/bufbuild/buf/internal/pkg/ext/extfile"
 	"github.com/bufbuild/buf/internal/pkg/util/utilencoding"
 	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
 )
