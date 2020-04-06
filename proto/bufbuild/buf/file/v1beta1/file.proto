@@ -4,14 +4,6 @@ package bufbuild.buf.file.v1beta1;
 
 option go_package = "filev1beta1";
 
-// FileSet is a set of files.
-message FileSet {
-  // files are the files that make up the file set.
-  //
-  // All files must have unique paths for a FileSet to be valid.
-  repeated File files = 1;
-}
-
 // File is an individual file.
 message File {
   // path is the path of the file.
@@ -22,6 +14,14 @@ message File {
   //
   // This can potentially be empty.
   bytes content = 2;
+}
+
+// FileSet is a set of files.
+message FileSet {
+  // files are the files that make up the file set.
+  //
+  // All files must have unique paths for a FileSet to be valid.
+  repeated File files = 1;
 }
 
 // FileAnnotation is an annotation for a specific file location.

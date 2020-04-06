@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bufbuild/buf/internal/buf/bufos"
+	"github.com/bufbuild/buf/internal/buf/ext/extio"
 	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
 	"github.com/bufbuild/buf/internal/pkg/cli/clipflag"
 	"github.com/spf13/pflag"
@@ -101,7 +101,7 @@ func (f *Flags) bindRootCommandFlags(flagSet *pflag.FlagSet) {
 }
 
 func (f *Flags) bindImageBuildInput(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.Input, imageBuildInputFlagName, ".", fmt.Sprintf(`The source to build. Must be one of format %s.`, bufos.SourceFormatsToString()))
+	flagSet.StringVar(&f.Input, imageBuildInputFlagName, ".", fmt.Sprintf(`The source to build. Must be one of format %s.`, extio.SourceFormatsToString()))
 }
 
 func (f *Flags) bindImageBuildConfig(flagSet *pflag.FlagSet) {
@@ -109,7 +109,7 @@ func (f *Flags) bindImageBuildConfig(flagSet *pflag.FlagSet) {
 }
 
 func (f *Flags) bindImageBuildOutput(flagSet *pflag.FlagSet) {
-	flagSet.StringVarP(&f.Output, imageBuildOutputFlagName, "o", "", fmt.Sprintf(`Required. The location to write the image. Must be one of format %s.`, bufos.ImageFormatsToString()))
+	flagSet.StringVarP(&f.Output, imageBuildOutputFlagName, "o", "", fmt.Sprintf(`Required. The location to write the image. Must be one of format %s.`, extio.ImageFormatsToString()))
 }
 
 func (f *Flags) bindImageBuildAsFileDescriptorSet(flagSet *pflag.FlagSet) {
@@ -132,7 +132,7 @@ func (f *Flags) bindImageBuildErrorFormat(flagSet *pflag.FlagSet) {
 }
 
 func (f *Flags) bindCheckLintInput(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.Input, checkLintInputFlagName, ".", fmt.Sprintf(`The source or image to lint. Must be one of format %s.`, bufos.AllFormatsToString()))
+	flagSet.StringVar(&f.Input, checkLintInputFlagName, ".", fmt.Sprintf(`The source or image to lint. Must be one of format %s.`, extio.InputFormatsToString()))
 }
 
 func (f *Flags) bindCheckLintConfig(flagSet *pflag.FlagSet) {
@@ -140,7 +140,7 @@ func (f *Flags) bindCheckLintConfig(flagSet *pflag.FlagSet) {
 }
 
 func (f *Flags) bindCheckBreakingInput(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.Input, checkBreakingInputFlagName, ".", fmt.Sprintf(`The source or image to check for breaking changes. Must be one of format %s.`, bufos.AllFormatsToString()))
+	flagSet.StringVar(&f.Input, checkBreakingInputFlagName, ".", fmt.Sprintf(`The source or image to check for breaking changes. Must be one of format %s.`, extio.InputFormatsToString()))
 }
 
 func (f *Flags) bindCheckBreakingConfig(flagSet *pflag.FlagSet) {
@@ -148,7 +148,7 @@ func (f *Flags) bindCheckBreakingConfig(flagSet *pflag.FlagSet) {
 }
 
 func (f *Flags) bindCheckBreakingAgainstInput(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.AgainstInput, checkBreakingAgainstInputFlagName, "", fmt.Sprintf(`Required. The source or image to check against. Must be one of format %s.`, bufos.AllFormatsToString()))
+	flagSet.StringVar(&f.AgainstInput, checkBreakingAgainstInputFlagName, "", fmt.Sprintf(`Required. The source or image to check against. Must be one of format %s.`, extio.InputFormatsToString()))
 }
 
 func (f *Flags) bindCheckBreakingAgainstConfig(flagSet *pflag.FlagSet) {
@@ -178,7 +178,7 @@ func (f *Flags) bindCheckLintErrorFormat(flagSet *pflag.FlagSet) {
 }
 
 func (f *Flags) bindLsFilesInput(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.Input, lsFilesInputFlagName, ".", fmt.Sprintf(`The source or image to list the files from. Must be one of format %s.`, bufos.AllFormatsToString()))
+	flagSet.StringVar(&f.Input, lsFilesInputFlagName, ".", fmt.Sprintf(`The source or image to list the files from. Must be one of format %s.`, extio.InputFormatsToString()))
 }
 
 func (f *Flags) bindLsFilesConfig(flagSet *pflag.FlagSet) {

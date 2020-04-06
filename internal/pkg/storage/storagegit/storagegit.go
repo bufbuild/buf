@@ -109,7 +109,7 @@ func Clone(
 
 func normalizeGitURL(gitURL string) (string, error) {
 	switch {
-	case isHTTPGitURL(gitURL), isHTTPSGitURL(gitURL), isSSHGitURL(gitURL):
+	case isHTTPGitURL(gitURL), isHTTPSGitURL(gitURL), isSSHGitURL(gitURL), isFileGitURL(gitURL):
 		return gitURL, nil
 	case isLocalFileGitURL(gitURL):
 		absGitPath, err := filepath.Abs(gitURL)
@@ -132,6 +132,10 @@ func isHTTPSGitURL(gitURL string) bool {
 func isSSHGitURL(gitURL string) bool {
 	_, ok := getSSHGitUser(gitURL)
 	return ok
+}
+
+func isFileGitURL(gitURL string) bool {
+	return strings.HasPrefix(gitURL, "file://")
 }
 
 func isLocalFileGitURL(gitURL string) bool {

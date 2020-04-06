@@ -1,4 +1,4 @@
-package internal
+package bufos
 
 import (
 	"os"
@@ -8,28 +8,33 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 )
 
-type relProtoFilePathResolver struct {
+type relRealProtoFilePathResolver struct {
 	pwd             string
 	dirPath         string
 	chainedResolver bufbuild.ProtoRealFilePathResolver
 }
 
-func newRelProtoFilePathResolver(
+// newRelRealProtoFilePathResolver returns a new ProtoRealFilePathResolver that will:
+//
+// - Apply the chained resolver, if it is not nil.
+// - Add the dirPath as a prefix.
+// - Make the path relative to pwd if the path is relative, or return the path if it is absolute.
+func newRelRealProtoFilePathResolver(
 	dirPath string,
 	chainedResolver bufbuild.ProtoRealFilePathResolver,
-) (*relProtoFilePathResolver, error) {
+) (*relRealProtoFilePathResolver, error) {
 	pwd, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
-	return &relProtoFilePathResolver{
+	return &relRealProtoFilePathResolver{
 		pwd:             pwd,
 		dirPath:         dirPath,
 		chainedResolver: chainedResolver,
 	}, nil
 }
 
-func (p *relProtoFilePathResolver) GetRealFilePath(inputFilePath string) (string, error) {
+func (p *relRealProtoFilePathResolver) GetRealFilePath(inputFilePath string) (string, error) {
 	if inputFilePath == "" {
 		return "", nil
 	}

@@ -11,8 +11,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
+	"github.com/bufbuild/buf/internal/buf/ext/extfile"
 	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
-	"github.com/bufbuild/buf/internal/pkg/ext/extfile"
 	"go.uber.org/zap"
 )
 
