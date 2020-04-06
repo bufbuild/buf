@@ -65,7 +65,7 @@ for os in Darwin Linux; do
     mkdir -p "${dir}/bin"
     for binary in buf protoc-gen-buf-check-breaking protoc-gen-buf-check-lint; do
       CGO_ENABLED=0 GOOS=$(goos "${os}") GOARCH=$(goarch "${arch}") \
-        go build -a -ldflags "-s -w" -trimpath -o "${dir}/bin/${binary}" $(find "${DIR}/cmd/${binary}" -name '*.go')
+        go build -a -ldflags "-s -w" -trimpath -o "${dir}/bin/${binary}" "./cmd/${binary}"
       cp "${dir}/bin/${binary}" "${binary}-${os}-${arch}"
     done
   done
@@ -98,41 +98,6 @@ for file in $(find . -maxdepth 1 -type f | sed 's/^\.\///' | sort | uniq); do
   sha256 "${file}" >> sha256.txt
 done
 sha256 -c sha256.txt
-
-VERSION="$(./${BASE_NAME}-$(uname -s)-$(uname -m) --version 2>&1)"
-DARWIN_SHA256="$(grep "${BASE_NAME}-Darwin-x86_64.tar.gz" sha256.txt | cut -f 1 -d ' ')"
-LINUX_SHA256="$(grep "${BASE_NAME}-Linux-x86_64.tar.gz" sha256.txt | cut -f 1 -d ' ')"
-
-mkdir -p Formula
-cat <<EOF >Formula/buf.rb
-class Buf < Formula
-  desc "A new way of working with Protocol Buffers."
-  homepage "https://buf.build"
-  version "${VERSION}"
-  bottle :unneeded
-
-  if OS.mac?
-    url "https://github.com/bufbuild/buf/releases/download/v${VERSION}/buf-Darwin-x86_64.tar.gz"
-    sha256 "${DARWIN_SHA256}"
-  elsif OS.linux?
-    url "https://github.com/bufbuild/buf/releases/download/v${VERSION}/buf-Linux-x86_64.tar.gz"
-    sha256 "${LINUX_SHA256}"
-  end
-
-  def install
-    bin.install "bin/buf"
-    bin.install "bin/protoc-gen-buf-check-breaking"
-    bin.install "bin/protoc-gen-buf-check-lint"
-    bash_completion.install "etc/bash_completion.d/buf"
-    zsh_completion.install "etc/zsh/site-functions/_buf"
-    prefix.install "LICENSE"
-  end
-
-  test do
-    system "#{bin}/buf --version"
-  end
-end
-EOF
 
 mkdir -p assets
 for file in $(find . -maxdepth 1 -type f | sed 's/^\.\///' | sort | uniq); do
