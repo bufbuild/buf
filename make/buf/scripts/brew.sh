@@ -18,9 +18,9 @@ mkdir -p "${OUT_DIR}/share/zsh/site-functions"
 
 set -x
 
-go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/buf" "./cmd/buf"
-go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/protoc-gen-buf-check-breaking" "./cmd/protoc-gen-buf-check-breaking"
-go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/protoc-gen-buf-check-lint" "./cmd/protoc-gen-buf-check-lint"
+go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/buf" "cmd/buf/main.go"
+go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/protoc-gen-buf-check-breaking" "cmd/protoc-gen-buf-check-breaking/main.go"
+go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/protoc-gen-buf-check-lint" "cmd/protoc-gen-buf-check-lint/main.go"
 "${OUT_DIR}/bin/buf" bash-completion > "${OUT_DIR}/etc/bash_completion.d/buf"
 "${OUT_DIR}/bin/buf" zsh-completion > "${OUT_DIR}/share/zsh/site-functions/_buf"
 cp "LICENSE" "${OUT_DIR}/LICENSE"
