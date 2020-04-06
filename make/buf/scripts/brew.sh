@@ -14,7 +14,7 @@ OUT_DIR="${1}"
 rm -rf "${OUT_DIR}"
 mkdir -p "${OUT_DIR}/bin"
 mkdir -p "${OUT_DIR}/etc/bash_completion.d"
-mkdir -p "${OUT_DIR}/etc/zsh/site-functions"
+mkdir -p "${OUT_DIR}/share/zsh/site-functions"
 
 set -x
 
