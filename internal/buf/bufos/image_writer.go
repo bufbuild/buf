@@ -3,12 +3,14 @@ package bufos
 import (
 	"compress/gzip"
 	"context"
+	"fmt"
 	"io"
+	"os"
 
-	"github.com/bufbuild/buf/internal/buf/bufos/internal"
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
+	"github.com/bufbuild/buf/internal/buf/ext/extio"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/cli/clios"
+	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 	"github.com/golang/protobuf/proto"
 	"go.uber.org/multierr"
@@ -16,8 +18,8 @@ import (
 )
 
 type imageWriter struct {
-	logger         *zap.Logger
-	inputRefParser internal.InputRefParser
+	logger        *zap.Logger
+	valueFlagName string
 }
 
 func newImageWriter(
@@ -25,10 +27,8 @@ func newImageWriter(
 	valueFlagName string,
 ) *imageWriter {
 	return &imageWriter{
-		logger: logger.Named("bufos"),
-		inputRefParser: internal.NewInputRefParser(
-			valueFlagName,
-		),
+		logger:        logger.Named("bufos"),
+		valueFlagName: valueFlagName,
 	}
 }
 
@@ -42,16 +42,11 @@ func (i *imageWriter) WriteImage(
 	if err := extimage.ValidateImage(image); err != nil {
 		return err
 	}
-	// stop short if we have /dev/null equivalent for performance
-	if value == clios.DevNull {
-		return nil
-	}
-	inputRef, err := i.inputRefParser.ParseInputRef(value, false, true)
+	imageRef, err := extio.ParseImageRef(value)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s: %v", i.valueFlagName, err)
 	}
-	i.logger.Debug("parse", zap.Any("input_ref", inputRef), zap.Stringer("format", inputRef.Format))
-	// we now know the format this is only one of FormatBin, FormatBinGz, FormatJSON, FormatJSONGz
+	i.logger.Debug("write", zap.Any("image_ref", imageRef))
 
 	var message proto.Message = image
 	if asFileDescriptorSet {
@@ -60,39 +55,56 @@ func (i *imageWriter) WriteImage(
 			return err
 		}
 	}
-
 	var data []byte
-	switch inputRef.Format {
-	case internal.FormatJSON, internal.FormatJSONGz:
+	switch imageRef.ImageFormat {
+	case iov1beta1.ImageFormat_IMAGE_FORMAT_BIN, iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ:
+		data, err = utilproto.MarshalWireDeterministic(message)
+		if err != nil {
+			return err
+		}
+	case iov1beta1.ImageFormat_IMAGE_FORMAT_JSON, iov1beta1.ImageFormat_IMAGE_FORMAT_JSONGZ:
 		data, err = utilproto.MarshalJSON(message)
 		if err != nil {
 			return err
 		}
 	default:
-		data, err = utilproto.MarshalWireDeterministic(message)
+		return fmt.Errorf("unknown image format: %v", imageRef.ImageFormat)
+	}
+
+	var writer io.Writer
+	switch imageRef.FileScheme {
+	case iov1beta1.FileScheme_FILE_SCHEME_HTTP:
+		return fmt.Errorf("%s: cannot write to http", i.valueFlagName)
+	case iov1beta1.FileScheme_FILE_SCHEME_HTTPS:
+		return fmt.Errorf("%s: cannot write to https", i.valueFlagName)
+	case iov1beta1.FileScheme_FILE_SCHEME_NULL:
+		// stop short if we have /dev/null equivalent for performance
+		return nil
+	case iov1beta1.FileScheme_FILE_SCHEME_STDIO:
+		writer = stdout
+	case iov1beta1.FileScheme_FILE_SCHEME_FILE:
+		file, err := os.Create(imageRef.Path)
 		if err != nil {
 			return err
 		}
+		defer func() {
+			retErr = multierr.Append(retErr, file.Close())
+		}()
+		writer = file
+	default:
+		return fmt.Errorf("unknown file scheme: %v", imageRef.FileScheme)
 	}
 
-	writeCloser, err := clios.WriteCloserForFilePath(stdout, inputRef.Path)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, writeCloser.Close())
-	}()
-
-	switch inputRef.Format {
-	case internal.FormatBinGz, internal.FormatJSONGz:
-		gzipWriteCloser := gzip.NewWriter(writeCloser)
+	switch imageRef.ImageFormat {
+	case iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ, iov1beta1.ImageFormat_IMAGE_FORMAT_JSONGZ:
+		gzipWriteCloser := gzip.NewWriter(writer)
 		defer func() {
 			retErr = multierr.Append(retErr, gzipWriteCloser.Close())
 		}()
 		_, err = gzipWriteCloser.Write(data)
 		return err
 	default:
-		_, err = writeCloser.Write(data)
+		_, err = writer.Write(data)
 		return err
 	}
 }

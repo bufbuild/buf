@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package bufbuild.buf.io.v1beta1;
+
+option go_package = "iov1beta1";
+
+
+enum FileScheme {
+  FILE_SCHEME_UNSPECIFIED = 0;
+  FILE_SCHEME_HTTP = 1;
+  FILE_SCHEME_HTTPS = 2;
+  FILE_SCHEME_FILE = 3;
+  FILE_SCHEME_STDIO = 4;
+  FILE_SCHEME_NULL = 5;
+}
+
+enum ImageFormat {
+  IMAGE_FORMAT_UNSPECIFIED = 0;
+  IMAGE_FORMAT_BIN = 1;
+  IMAGE_FORMAT_BINGZ = 2;
+  IMAGE_FORMAT_JSON = 3;
+  IMAGE_FORMAT_JSONGZ = 4;
+}
+
+message ImageRef {
+  FileScheme file_scheme = 1;
+  ImageFormat image_format = 2;
+  // path is the path of the image.
+  //
+  // This path will be local to the system and not normalized.
+  // This path will not include the scheme, if any.
+  // If the type is stdio or null, this will be empty.
+  string path = 3;
+}
+
+enum ArchiveFormat {
+  ARCHIVE_FORMAT_UNSPECIFIED = 0;
+  ARCHIVE_FORMAT_TAR = 1;
+  ARCHIVE_FORMAT_TARGZ = 2;
+}
+
+message ArchiveRef {
+  FileScheme file_scheme = 1;
+  ArchiveFormat archive_format = 2;
+  // path is the path of the archive.
+  //
+  // This path will be local to the system and not normalized.
+  // This path will not include the scheme, if any.
+  // If the type is stdio or devnull, this will be empty.
+  string path = 3;
+  uint32 strip_components = 4;
+}
+
+enum GitScheme {
+  GIT_SCHEME_UNSPECIFIED = 0;
+  GIT_SCHEME_HTTP = 1;
+  GIT_SCHEME_HTTPS = 2;
+  GIT_SCHEME_FILE = 3;
+  GIT_SCHEME_SSH = 4;
+}
+
+enum GitSubmoduleBehavior {
+  GIT_SUBMODULE_BEHAVIOR_UNSPECIFIED = 0;
+  GIT_SUBMODULE_BEHAVIOR_NONE = 1;
+  GIT_SUBMODULE_BEHAVIOR_RECURSIVE = 2;
+}
+
+message GitRef {
+  GitScheme git_scheme = 1;
+  // path is the path of the archive.
+  //
+  // This path will be local to the system and not normalized.
+  // This path will not include the scheme, if any.
+  string path = 2;
+  oneof reference {
+    string branch = 3;
+    string tag = 4;
+  }
+  GitSubmoduleBehavior git_submodule_behavior = 5;
+}
+
+enum BucketScheme {
+  BUCKET_SCHEME_UNSPECIFIED = 0;
+  BUCKET_SCHEME_DIR = 1;
+}
+
+message BucketRef {
+  BucketScheme bucket_scheme = 1;
+  // path is the path of the bucket.
+  //
+  // This path will be local to the system and not normalized.
+  // This path will not include the scheme, if any.
+  string path = 2;
+}
+
+message SourceRef {
+  oneof value {
+    ArchiveRef archive_ref = 1;
+    GitRef git_ref = 2;
+    BucketRef bucket_ref = 3;
+  }
+}
+
+message InputRef {
+  oneof value {
+    ImageRef image_ref = 1;
+    SourceRef source_ref = 2;
+  }
+}

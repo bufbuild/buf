@@ -10,7 +10,6 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufos/internal"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"go.uber.org/zap"
@@ -154,19 +153,4 @@ func NewImageWriter(
 		logger,
 		valueFlagName,
 	)
-}
-
-// AllFormatsToString returns all format strings.
-func AllFormatsToString() string {
-	return internal.AllFormatsToString()
-}
-
-// SourceFormatsToString returns source format strings.
-func SourceFormatsToString() string {
-	return internal.SourceFormatsToString()
-}
-
-// ImageFormatsToString returns image format strings.
-func ImageFormatsToString() string {
-	return internal.ImageFormatsToString()
 }
