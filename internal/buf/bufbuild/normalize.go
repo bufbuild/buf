@@ -45,6 +45,9 @@ func normalizeAndValidateRootsExcludes(inputRoots []string, inputExcludes []stri
 		if !storagepath.MapContainsMatch(rootMap, exclude) {
 			return nil, nil, fmt.Errorf("exclude %s is not contained in any root, which is not valid", exclude)
 		}
+		if storagepath.Ext(exclude) == ".proto" {
+			return nil, nil, fmt.Errorf("excludes can only be directories but file %s discovered", exclude)
+		}
 	}
 	return roots, excludes, nil
 }

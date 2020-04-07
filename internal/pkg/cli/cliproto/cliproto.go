@@ -37,6 +37,10 @@ type Env interface {
 	//
 	// If no value was passed when the Env was created, this will return io.EOF on any call.
 	Stderr() io.Writer
+	// Environ is the equivalent os os.Environ.
+	//
+	// Do not modify.
+	Environ() []string
 	// Getenv is the equivalent of os.Getenv.
 	Getenv(key string) string
 }

@@ -29,6 +29,7 @@ func NewBufosEnvReader(
 	logger *zap.Logger,
 	inputFlagName string,
 	configOverrideFlagName string,
+	experimentalGitClone bool,
 ) bufos.EnvReader {
 	return bufos.NewEnvReader(
 		logger,
@@ -42,6 +43,7 @@ func NewBufosEnvReader(
 		inputSSHKeyFileEnvKey,
 		inputSSHKeyPassphraseEnvKey,
 		inputSSHKnownHostsFilesEnvKey,
+		experimentalGitClone,
 	)
 }
 

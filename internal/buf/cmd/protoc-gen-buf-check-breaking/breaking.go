@@ -59,11 +59,12 @@ func Handle(
 	if !externalConfig.LimitToInputFiles {
 		files = nil
 	}
-	envReader := internal.NewBufosEnvReader(logger, "against_input", "against_input_config")
+	envReader := internal.NewBufosEnvReader(logger, "against_input", "against_input_config", false)
 	againstEnv, err := envReader.ReadImageEnv(
 		ctx,
 		nil, // cannot read against input from stdin, this is for the CodeGeneratorRequest
-		env.Getenv,
+		// TODO: cleanup on cli refactor
+		env,
 		externalConfig.AgainstInput,
 		utilencoding.GetJSONStringOrStringValue(externalConfig.AgainstInputConfig),
 		files, // limit to the input files if specified
@@ -74,7 +75,7 @@ func Handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	envReader = internal.NewBufosEnvReader(logger, "", "input_config")
+	envReader = internal.NewBufosEnvReader(logger, "", "input_config", false)
 	config, err := envReader.GetConfig(ctx, utilencoding.GetJSONStringOrStringValue(externalConfig.InputConfig))
 	if err != nil {
 		responseWriter.WriteError(err.Error())
