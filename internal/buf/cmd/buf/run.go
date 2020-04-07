@@ -33,11 +33,13 @@ func imageBuild(
 		logger,
 		imageBuildInputFlagName,
 		imageBuildConfigFlagName,
+		flags.ExperimentalGitClone,
 		// must be source only
 	).ReadSourceEnv(
 		ctx,
 		cliEnv.Stdin(),
-		cliEnv.Getenv,
+		// TODO: this needs to be cleaned up everywhere when we do cli refactor
+		cliEnv,
 		flags.Input,
 		flags.Config,
 		nil,   // we do not filter files for images
@@ -85,10 +87,11 @@ func checkLint(
 		logger,
 		checkLintInputFlagName,
 		checkLintConfigFlagName,
+		flags.ExperimentalGitClone,
 	).ReadEnv(
 		ctx,
 		cliEnv.Stdin(),
-		cliEnv.Getenv,
+		cliEnv,
 		flags.Input,
 		flags.Config,
 		flags.Files, // we filter checks for files
@@ -148,10 +151,11 @@ func checkBreaking(
 		logger,
 		checkBreakingInputFlagName,
 		checkBreakingConfigFlagName,
+		flags.ExperimentalGitClone,
 	).ReadEnv(
 		ctx,
 		cliEnv.Stdin(),
-		cliEnv.Getenv,
+		cliEnv,
 		flags.Input,
 		flags.Config,
 		flags.Files, // we filter checks for files
@@ -184,10 +188,11 @@ func checkBreaking(
 		logger,
 		checkBreakingAgainstInputFlagName,
 		checkBreakingAgainstConfigFlagName,
+		flags.ExperimentalGitClone,
 	).ReadEnv(
 		ctx,
 		cliEnv.Stdin(),
-		cliEnv.Getenv,
+		cliEnv,
 		flags.AgainstInput,
 		flags.AgainstConfig,
 		files, // we filter checks for files
@@ -252,6 +257,7 @@ func checkLsLintCheckers(
 			logger,
 			"",
 			checkLsCheckersConfigFlagName,
+			flags.ExperimentalGitClone,
 		).GetConfig(
 			ctx,
 			flags.Config,
@@ -288,6 +294,7 @@ func checkLsBreakingCheckers(
 			logger,
 			"",
 			checkLsCheckersConfigFlagName,
+			flags.ExperimentalGitClone,
 		).GetConfig(
 			ctx,
 			flags.Config,
@@ -313,10 +320,11 @@ func lsFiles(
 		logger,
 		lsFilesInputFlagName,
 		lsFilesConfigFlagName,
+		flags.ExperimentalGitClone,
 	).ListFiles(
 		ctx,
 		cliEnv.Stdin(),
-		cliEnv.Getenv,
+		cliEnv,
 		flags.Input,
 		flags.Config,
 	)

@@ -50,7 +50,7 @@ func Handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	envReader := internal.NewBufosEnvReader(logger, "", "input_config")
+	envReader := internal.NewBufosEnvReader(logger, "", "input_config", false)
 	config, err := envReader.GetConfig(ctx, utilencoding.GetJSONStringOrStringValue(externalConfig.InputConfig))
 	if err != nil {
 		responseWriter.WriteError(err.Error())

@@ -168,6 +168,14 @@ func TestBasic7(t *testing.T) {
 }
 
 func TestGitClone(t *testing.T) {
+	testGitClone(t, false)
+}
+
+func TestGitCloneExperimental(t *testing.T) {
+	testGitClone(t, true)
+}
+
+func testGitClone(t *testing.T, experimental bool) {
 	t.Parallel()
 	absGitPath, err := filepath.Abs("../../../../../.git")
 	require.NoError(t, err)
@@ -191,23 +199,38 @@ func TestGitClone(t *testing.T) {
 	relFilePathError1 := "Makefile"
 
 	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
-	err = storagegit.Clone(
-		context.Background(),
-		zap.NewNop(),
-		nil,
-		"",
-		absGitPath,
-		storagegitplumbing.NewBranchRefName("master"),
-		false,
-		"",
-		"",
-		"",
-		"",
-		"",
-		readWriteBucketCloser,
-		storagepath.WithExt(".proto"),
-		storagepath.WithExt(".go"),
-	)
+	if experimental {
+		err = storagegit.ExperimentalClone(
+			context.Background(),
+			zap.NewNop(),
+			nil,
+			absGitPath,
+			"master",
+			"",
+			false,
+			readWriteBucketCloser,
+			storagepath.WithExt(".proto"),
+			storagepath.WithExt(".go"),
+		)
+	} else {
+		err = storagegit.Clone(
+			context.Background(),
+			zap.NewNop(),
+			nil,
+			"",
+			absGitPath,
+			storagegitplumbing.NewBranchRefName("master"),
+			false,
+			"",
+			"",
+			"",
+			"",
+			"",
+			readWriteBucketCloser,
+			storagepath.WithExt(".proto"),
+			storagepath.WithExt(".go"),
+		)
+	}
 	assert.NoError(t, err)
 
 	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathSuccess1)

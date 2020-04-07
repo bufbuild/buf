@@ -104,7 +104,8 @@ func TestNewProtoFileSet4(t *testing.T) {
 }
 
 func TestNewProtoFileSet5(t *testing.T) {
-	testNewProtoFileSet(
+	t.Parallel()
+	testNewProtoFileSetErrorReadBucket(
 		t,
 		"testdata/1",
 		[]string{
@@ -112,19 +113,8 @@ func TestNewProtoFileSet5(t *testing.T) {
 		},
 		[]string{
 			"proto/a/c",
-			// will not result in anything excluded as we do storagepath.Dir on the input file
+			// error
 			"proto/d/1.proto",
-		},
-		[]string{
-			"proto/a/1.proto",
-			"proto/a/2.proto",
-			"proto/a/3.proto",
-			"proto/b/1.proto",
-			"proto/b/2.proto",
-			"proto/b/3.proto",
-			"proto/d/1.proto",
-			"proto/d/2.proto",
-			"proto/d/3.proto",
 		},
 	)
 }
@@ -189,11 +179,13 @@ func testNewProtoFileSet(
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, protoFileSet)
-	assert.Equal(
-		t,
-		expectedRelFiles,
-		protoFileSet.RealFilePaths(),
-	)
+	if protoFileSet != nil {
+		assert.Equal(
+			t,
+			expectedRelFiles,
+			protoFileSet.RealFilePaths(),
+		)
+	}
 	if len(expectedRelFiles) > 1 {
 		expectedRelFiles = expectedRelFiles[:len(expectedRelFiles)-1]
 		protoFileSet, err := newProtoFileSetProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
@@ -205,11 +197,13 @@ func testNewProtoFileSet(
 		)
 		assert.NoError(t, err)
 		assert.NotNil(t, protoFileSet)
-		assert.Equal(
-			t,
-			expectedRelFiles,
-			protoFileSet.RealFilePaths(),
-		)
+		if protoFileSet != nil {
+			assert.Equal(
+				t,
+				expectedRelFiles,
+				protoFileSet.RealFilePaths(),
+			)
+		}
 	}
 	assert.NoError(t, readWriteBucketCloser.Close())
 }
@@ -222,9 +216,20 @@ func testNewProtoFileSetError(
 	allRelFiles []string,
 ) {
 	t.Parallel()
+	testNewProtoFileSetErrorReadBucket(t, relDir, relRoots, relExcludes)
+	if len(allRelFiles) > 1 {
+		testNewProtoFileSetErrorRealFilePaths(t, relDir, relRoots, relExcludes, allRelFiles)
+	}
+}
+
+func testNewProtoFileSetErrorReadBucket(
+	t *testing.T,
+	relDir string,
+	relRoots []string,
+	relExcludes []string,
+) {
 	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(relDir)
 	require.NoError(t, err)
-
 	_, err = newProtoFileSetProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
 		context.Background(),
 		readWriteBucketCloser,
@@ -232,16 +237,26 @@ func testNewProtoFileSetError(
 		relExcludes,
 	)
 	assert.Error(t, err)
-	if len(allRelFiles) > 1 {
-		allRelFiles = allRelFiles[:len(allRelFiles)-1]
-		_, err = newProtoFileSetProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
-			context.Background(),
-			readWriteBucketCloser,
-			relRoots,
-			allRelFiles,
-			false,
-		)
-		assert.Error(t, err)
-	}
+	assert.NoError(t, readWriteBucketCloser.Close())
+}
+
+func testNewProtoFileSetErrorRealFilePaths(
+	t *testing.T,
+	relDir string,
+	relRoots []string,
+	relExcludes []string,
+	allRelFiles []string,
+) {
+	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(relDir)
+	require.NoError(t, err)
+	allRelFiles = allRelFiles[:len(allRelFiles)-1]
+	_, err = newProtoFileSetProvider(zap.NewNop()).GetProtoFileSetForRealFilePaths(
+		context.Background(),
+		readWriteBucketCloser,
+		relRoots,
+		allRelFiles,
+		false,
+	)
+	assert.Error(t, err)
 	assert.NoError(t, readWriteBucketCloser.Close())
 }

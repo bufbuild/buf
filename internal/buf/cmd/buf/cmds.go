@@ -47,6 +47,7 @@ func newImageBuildCmd(flags *Flags) *clicobra.Command {
 			flags.bindImageBuildExcludeImports(flagSet)
 			flags.bindImageBuildExcludeSourceInfo(flagSet)
 			flags.bindImageBuildErrorFormat(flagSet)
+			flags.bindExperimentalGitClone(flagSet)
 		},
 	}
 }
@@ -75,6 +76,7 @@ func newCheckLintCmd(flags *Flags) *clicobra.Command {
 			flags.bindCheckLintConfig(flagSet)
 			flags.bindCheckFiles(flagSet)
 			flags.bindCheckLintErrorFormat(flagSet)
+			flags.bindExperimentalGitClone(flagSet)
 		},
 	}
 }
@@ -94,6 +96,7 @@ func newCheckBreakingCmd(flags *Flags) *clicobra.Command {
 			flags.bindCheckBreakingExcludeImports(flagSet)
 			flags.bindCheckFiles(flagSet)
 			flags.bindCheckBreakingErrorFormat(flagSet)
+			flags.bindExperimentalGitClone(flagSet)
 		},
 	}
 }
@@ -137,6 +140,7 @@ func newLsFilesCmd(flags *Flags) *clicobra.Command {
 		BindFlags: func(flagSet *pflag.FlagSet) {
 			flags.bindLsFilesInput(flagSet)
 			flags.bindLsFilesConfig(flagSet)
+			flags.bindExperimentalGitClone(flagSet)
 		},
 	}
 }

@@ -32,6 +32,8 @@ const (
 
 	errorFormatFlagName           = "error-format"
 	checkLsCheckersFormatFlagName = "format"
+
+	experimentalGitCloneFlagName = "experimental-git-clone"
 )
 
 // Flags are flags for the buf CLI.
@@ -58,6 +60,8 @@ type Flags struct {
 
 	ErrorFormat string
 	Format      string
+
+	ExperimentalGitClone bool
 }
 
 // newFlags returns a new Flags.
@@ -98,6 +102,10 @@ func (f *Flags) newRunFunc(
 
 func (f *Flags) bindRootCommandFlags(flagSet *pflag.FlagSet) {
 	f.baseFlags.BindRootCommandFlags(flagSet)
+}
+
+func (f *Flags) bindExperimentalGitClone(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&f.ExperimentalGitClone, experimentalGitCloneFlagName, false, "Use the git binary to clone instead of the internal git library.")
 }
 
 func (f *Flags) bindImageBuildInput(flagSet *pflag.FlagSet) {

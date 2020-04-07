@@ -8,11 +8,12 @@ import (
 )
 
 type env struct {
-	args      []string
-	stdin     io.Reader
-	stdout    io.Writer
-	stderr    io.Writer
-	variables map[string]string
+	args       []string
+	stdin      io.Reader
+	stdout     io.Writer
+	stderr     io.Writer
+	environ    []string
+	environMap map[string]string
 }
 
 func newEnv(
@@ -20,14 +21,16 @@ func newEnv(
 	stdin io.Reader,
 	stdout io.Writer,
 	stderr io.Writer,
-	variables map[string]string,
+	environ []string,
+	environMap map[string]string,
 ) *env {
 	env := &env{
-		args:      args,
-		stdin:     stdin,
-		stdout:    stdout,
-		stderr:    stderr,
-		variables: variables,
+		args:       args,
+		stdin:      stdin,
+		stdout:     stdout,
+		stderr:     stderr,
+		environ:    environ,
+		environMap: environMap,
 	}
 	if env.args == nil {
 		env.args = []string{}
@@ -41,8 +44,11 @@ func newEnv(
 	if env.stderr == nil {
 		env.stderr = ioutil.Discard
 	}
-	if env.variables == nil {
-		env.variables = make(map[string]string)
+	if env.environ == nil {
+		env.environ = make([]string, 0)
+	}
+	if env.environMap == nil {
+		env.environMap = make(map[string]string)
 	}
 	return env
 }
@@ -63,8 +69,12 @@ func (e *env) Stderr() io.Writer {
 	return e.stderr
 }
 
+func (e *env) Environ() []string {
+	return e.environ
+}
+
 func (e *env) Getenv(key string) string {
-	return e.variables[key]
+	return e.environMap[key]
 }
 
 func (e *env) WithArgs(args []string) Env {
@@ -73,6 +83,7 @@ func (e *env) WithArgs(args []string) Env {
 		e.stdin,
 		e.stdout,
 		e.stderr,
-		e.variables,
+		e.environ,
+		e.environMap,
 	)
 }

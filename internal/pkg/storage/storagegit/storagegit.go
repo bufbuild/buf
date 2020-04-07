@@ -4,6 +4,7 @@
 package storagegit
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -19,7 +21,9 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/memfs"
@@ -28,12 +32,95 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	srcdssh "github.com/go-git/go-git/v5/plumbing/transport/ssh"
 	"github.com/go-git/go-git/v5/storage/memory"
+	"github.com/gofrs/uuid"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh/knownhosts"
 )
 
 var gitURLSSHRegex = regexp.MustCompile("^(ssh://)?([^/:]*?)@[^@]+$")
+
+// ExperimentalClone clones the url into the bucket.
+//
+// This calls git clone --branch [branch/tag] --single-branch --depth 1 [--recurse-submodules]
+// Only regular files are added to the bucket.
+//
+// Branch is required.
+//
+// Only use for local CLI checking.
+func ExperimentalClone(
+	ctx context.Context,
+	logger *zap.Logger,
+	environ []string,
+	path string,
+	branch string,
+	tag string,
+	recurseSubmodules bool,
+	readWriteBucket storage.ReadWriteBucket,
+	options ...storagepath.TransformerOption,
+) (retErr error) {
+	defer utillog.Defer(logger, "git_experimental_clone")()
+	var err error
+	switch {
+	case strings.HasPrefix(path, "http://"),
+		strings.HasPrefix(path, "https://"),
+		strings.HasPrefix(path, "ssh://"),
+		strings.HasPrefix(path, "file://"):
+	case !strings.Contains(path, "//"):
+		path, err = filepath.Abs(filepath.Clean(path))
+		if err != nil {
+			return err
+		}
+		path = "file://" + path
+	default:
+		return fmt.Errorf("invalid git path: %q", path)
+	}
+	args := []string{"clone", "--depth", "1"}
+	if branch == "" {
+		branch = tag
+	}
+	if branch == "" {
+		return errors.New("must set branch or tag")
+	}
+	args = append(args, "--branch", branch, "--single-branch")
+	if recurseSubmodules {
+		args = append(args, "--recurse-submodules")
+	}
+	id, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+	tempDirPath, err := ioutil.TempDir("", id.String())
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, os.RemoveAll(tempDirPath))
+	}()
+	// just in case
+	absTempDirPath, err := filepath.Abs(filepath.Clean(tempDirPath))
+	if err != nil {
+		return err
+	}
+	args = append(args, path, absTempDirPath)
+	buffer := bytes.NewBuffer(nil)
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Env = environ
+	cmd.Stderr = buffer
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%v\n%v", err, strings.Replace(buffer.String(), absTempDirPath, "", -1))
+	}
+	tempReadBucketCloser, err := storageos.NewReadBucketCloser(absTempDirPath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, tempReadBucketCloser.Close())
+	}()
+	defer utillog.Defer(logger, "git_experimental_clone_copy")()
+	_, err = storageutil.Copy(ctx, tempReadBucketCloser, readWriteBucket, "", options...)
+	return err
+}
 
 // Clone clones the url into the bucket.
 //
