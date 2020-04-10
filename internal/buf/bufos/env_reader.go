@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -22,6 +23,7 @@ import (
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
+	"github.com/bufbuild/buf/internal/pkg/cli/clinetrc"
 	"github.com/bufbuild/buf/internal/pkg/cli/clios"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
@@ -663,10 +665,24 @@ func (e *envReader) getFileDataFromHTTP(
 		return nil, err
 	}
 	if environ != nil && strings.HasPrefix(path, "https://") && e.httpsUsernameEnvKey != "" && e.httpsPasswordEnvKey != "" {
-		httpsUsername := environ.Getenv(e.httpsUsernameEnvKey)
-		httpsPassword := environ.Getenv(e.httpsPasswordEnvKey)
-		if httpsUsername != "" && httpsPassword != "" {
-			request.SetBasicAuth(httpsUsername, httpsPassword)
+		u, err := url.Parse(path)
+		if err != nil {
+			return nil, err
+		}
+		if u.User == nil || u.User.Username() == "" {
+			httpsUsername := environ.Getenv(e.httpsUsernameEnvKey)
+			httpsPassword := environ.Getenv(e.httpsPasswordEnvKey)
+			if httpsUsername != "" && httpsPassword != "" {
+				request.SetBasicAuth(httpsUsername, httpsPassword)
+			} else {
+				machine, err := clinetrc.GetMachineByName(u.Host, environ.Getenv)
+				if err != nil {
+					return nil, err
+				}
+				if machine != nil && machine.Login != "" && machine.Password != "" {
+					request.SetBasicAuth(machine.Login, machine.Password)
+				}
+			}
 		}
 	}
 	response, err := e.httpClient.Do(request)

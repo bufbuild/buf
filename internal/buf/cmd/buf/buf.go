@@ -2,7 +2,7 @@ package buf
 
 import "github.com/bufbuild/buf/internal/pkg/cli/clicobra"
 
-const version = "0.11.0"
+const version = "0.12.0-dev"
 
 // Main is the main.
 func Main(use string, options ...RootCommandOption) {
