@@ -5,14 +5,13 @@ package bufos
 
 import (
 	"context"
-	"io"
 	"net/http"
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
+	"github.com/bufbuild/buf/internal/pkg/app"
 	"go.uber.org/zap"
 )
 
@@ -46,8 +45,7 @@ type EnvReader interface {
 	// If stdin is nil and this tries to read from stdin, returns user error.
 	ReadEnv(
 		ctx context.Context,
-		stdin io.Reader,
-		environ clienv.Environ,
+		container app.EnvStdinContainer,
 		value string,
 		configOverride string,
 		specificFilePaths []string,
@@ -60,8 +58,7 @@ type EnvReader interface {
 	// This is the same as ReadEnv but disallows image values and always builds.
 	ReadSourceEnv(
 		ctx context.Context,
-		stdin io.Reader,
-		environ clienv.Environ,
+		container app.EnvStdinContainer,
 		value string,
 		configOverride string,
 		specificFilePaths []string,
@@ -74,8 +71,7 @@ type EnvReader interface {
 	// This is the same as ReadEnv but disallows source values and never builds.
 	ReadImageEnv(
 		ctx context.Context,
-		stdin io.Reader,
-		environ clienv.Environ,
+		container app.EnvStdinContainer,
 		value string,
 		configOverride string,
 		specificFilePaths []string,
@@ -86,8 +82,7 @@ type EnvReader interface {
 	// ListFiles lists the files.
 	ListFiles(
 		ctx context.Context,
-		stdin io.Reader,
-		environ clienv.Environ,
+		container app.EnvStdinContainer,
 		value string,
 		configOverride string,
 	) ([]string, error)
@@ -140,7 +135,7 @@ type ImageWriter interface {
 	// Validates the image before writing.
 	WriteImage(
 		ctx context.Context,
-		stdout io.Writer,
+		stdoutContainer app.StdoutContainer,
 		value string,
 		asFileDescriptorSet bool,
 		image *imagev1beta1.Image,

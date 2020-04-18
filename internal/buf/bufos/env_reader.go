@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -22,9 +21,8 @@ import (
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
-	"github.com/bufbuild/buf/internal/pkg/cli/clinetrc"
-	"github.com/bufbuild/buf/internal/pkg/cli/clios"
+	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/appnetrc"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
@@ -84,8 +82,7 @@ func newEnvReader(
 
 func (e *envReader) ReadEnv(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
+	container app.EnvStdinContainer,
 	value string,
 	configOverride string,
 	specificFilePaths []string,
@@ -100,8 +97,7 @@ func (e *envReader) ReadEnv(
 	if imageRef := inputRef.GetImageRef(); imageRef != nil {
 		env, err := e.readEnvFromImage(
 			ctx,
-			stdin,
-			environ,
+			container,
 			configOverride,
 			specificFilePaths,
 			specificFilePathsAllowNotExist,
@@ -113,8 +109,7 @@ func (e *envReader) ReadEnv(
 	if sourceRef := inputRef.GetSourceRef(); sourceRef != nil {
 		return e.readEnvFromSource(
 			ctx,
-			stdin,
-			environ,
+			container,
 			configOverride,
 			specificFilePaths,
 			specificFilePathsAllowNotExist,
@@ -128,8 +123,7 @@ func (e *envReader) ReadEnv(
 
 func (e *envReader) ReadSourceEnv(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
+	container app.EnvStdinContainer,
 	value string,
 	configOverride string,
 	specificFilePaths []string,
@@ -143,8 +137,7 @@ func (e *envReader) ReadSourceEnv(
 	}
 	return e.readEnvFromSource(
 		ctx,
-		stdin,
-		environ,
+		container,
 		configOverride,
 		specificFilePaths,
 		specificFilePathsAllowNotExist,
@@ -156,8 +149,7 @@ func (e *envReader) ReadSourceEnv(
 
 func (e *envReader) ReadImageEnv(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
+	container app.EnvStdinContainer,
 	value string,
 	configOverride string,
 	specificFilePaths []string,
@@ -170,8 +162,7 @@ func (e *envReader) ReadImageEnv(
 	}
 	return e.readEnvFromImage(
 		ctx,
-		stdin,
-		environ,
+		container,
 		configOverride,
 		specificFilePaths,
 		specificFilePathsAllowNotExist,
@@ -182,8 +173,7 @@ func (e *envReader) ReadImageEnv(
 
 func (e *envReader) ListFiles(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
+	container app.EnvStdinContainer,
 	value string,
 	configOverride string,
 ) (_ []string, retErr error) {
@@ -194,7 +184,7 @@ func (e *envReader) ListFiles(
 
 	if imageRef := inputRef.GetImageRef(); imageRef != nil {
 		// if we have an image, list the files in the image
-		image, err := e.getImage(ctx, stdin, environ, imageRef)
+		image, err := e.getImage(ctx, container, imageRef)
 		if err != nil {
 			return nil, err
 		}
@@ -212,7 +202,7 @@ func (e *envReader) ListFiles(
 	}
 
 	// we have a source, we need to get everything
-	readBucketCloser, err := e.getReadBucketCloser(ctx, stdin, environ, sourceRef)
+	readBucketCloser, err := e.getReadBucketCloser(ctx, container, sourceRef)
 	if err != nil {
 		return nil, err
 	}
@@ -296,8 +286,7 @@ func (e *envReader) GetConfig(
 
 func (e *envReader) readEnvFromSource(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
+	container app.EnvStdinContainer,
 	configOverride string,
 	specificFilePaths []string,
 	specificFilePathsAllowNotExist bool,
@@ -305,7 +294,7 @@ func (e *envReader) readEnvFromSource(
 	includeSourceInfo bool,
 	sourceRef *iov1beta1.SourceRef,
 ) (_ *Env, _ []*filev1beta1.FileAnnotation, retErr error) {
-	readBucketCloser, err := e.getReadBucketCloser(ctx, stdin, environ, sourceRef)
+	readBucketCloser, err := e.getReadBucketCloser(ctx, container, sourceRef)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -427,15 +416,14 @@ func (e *envReader) readEnvFromSource(
 
 func (e *envReader) readEnvFromImage(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
+	container app.EnvStdinContainer,
 	configOverride string,
 	specificFilePaths []string,
 	specificFilePathsAllowNotExist bool,
 	includeImports bool,
 	imageRef *iov1beta1.ImageRef,
 ) (_ *Env, retErr error) {
-	image, err := e.getImage(ctx, stdin, environ, imageRef)
+	image, err := e.getImage(ctx, container, imageRef)
 	if err != nil {
 		return nil, err
 	}
@@ -465,31 +453,26 @@ func (e *envReader) readEnvFromImage(
 
 func (e *envReader) getReadBucketCloser(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
+	container app.EnvStdinContainer,
 	sourceRef *iov1beta1.SourceRef,
 ) (storage.ReadBucketCloser, error) {
 	if archiveRef := sourceRef.GetArchiveRef(); archiveRef != nil {
 		return e.getReadBucketCloserFromArchive(
 			ctx,
-			stdin,
-			environ,
+			container,
 			archiveRef,
 		)
 	}
 	if gitRef := sourceRef.GetGitRef(); gitRef != nil {
 		return e.getReadBucketCloserFromGit(
 			ctx,
-			stdin,
-			environ,
+			container,
 			gitRef,
 		)
 	}
 	if bucketRef := sourceRef.GetBucketRef(); bucketRef != nil {
 		return e.getReadBucketCloserFromBucket(
 			ctx,
-			stdin,
-			environ,
 			bucketRef,
 		)
 	}
@@ -498,8 +481,6 @@ func (e *envReader) getReadBucketCloser(
 
 func (e *envReader) getReadBucketCloserFromBucket(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
 	bucketRef *iov1beta1.BucketRef,
 ) (storage.ReadBucketCloser, error) {
 	switch bucketRef.BucketScheme {
@@ -519,11 +500,10 @@ func (e *envReader) getReadBucketCloserFromBucket(
 
 func (e *envReader) getReadBucketCloserFromArchive(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
+	container app.EnvStdinContainer,
 	archiveRef *iov1beta1.ArchiveRef,
 ) (_ storage.ReadBucketCloser, retErr error) {
-	data, err := e.getFileData(ctx, stdin, environ, archiveRef.FileScheme, archiveRef.Path)
+	data, err := e.getFileData(ctx, container, archiveRef.FileScheme, archiveRef.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -554,11 +534,10 @@ func (e *envReader) getReadBucketCloserFromArchive(
 
 func (e *envReader) getReadBucketCloserFromGit(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
+	envContainer app.EnvContainer,
 	gitRef *iov1beta1.GitRef,
 ) (_ storage.ReadBucketCloser, retErr error) {
-	homeDirPath, err := clios.Home(environ.Getenv)
+	homeDirPath, err := app.HomeDirPath(envContainer)
 	if err != nil {
 		return nil, err
 	}
@@ -579,7 +558,7 @@ func (e *envReader) getReadBucketCloserFromGit(
 		err = storagegit.ExperimentalClone(
 			ctx,
 			e.logger,
-			environ.Environ(),
+			app.Environ(envContainer),
 			gitURL,
 			gitRef.GetBranch(),
 			gitRef.GetTag(),
@@ -596,7 +575,7 @@ func (e *envReader) getReadBucketCloserFromGit(
 		err = storagegit.Clone(
 			ctx,
 			e.logger,
-			environ.Getenv,
+			envContainer.Env,
 			homeDirPath,
 			gitURL,
 			gitRefName,
@@ -621,11 +600,10 @@ func (e *envReader) getReadBucketCloserFromGit(
 
 func (e *envReader) getImage(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
+	container app.EnvStdinContainer,
 	imageRef *iov1beta1.ImageRef,
 ) (_ *imagev1beta1.Image, retErr error) {
-	data, err := e.getFileData(ctx, stdin, environ, imageRef.FileScheme, imageRef.Path)
+	data, err := e.getFileData(ctx, container, imageRef.FileScheme, imageRef.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -634,18 +612,17 @@ func (e *envReader) getImage(
 
 func (e *envReader) getFileData(
 	ctx context.Context,
-	stdin io.Reader,
-	environ clienv.Environ,
+	container app.EnvStdinContainer,
 	fileScheme iov1beta1.FileScheme,
 	path string,
 ) ([]byte, error) {
 	switch fileScheme {
 	case iov1beta1.FileScheme_FILE_SCHEME_HTTP:
-		return e.getFileDataFromHTTP(ctx, environ, "http://"+path)
+		return e.getFileDataFromHTTP(ctx, container, "http://"+path)
 	case iov1beta1.FileScheme_FILE_SCHEME_HTTPS:
-		return e.getFileDataFromHTTP(ctx, environ, "https://"+path)
+		return e.getFileDataFromHTTP(ctx, container, "https://"+path)
 	case iov1beta1.FileScheme_FILE_SCHEME_STDIO:
-		return ioutil.ReadAll(stdin)
+		return ioutil.ReadAll(container.Stdin())
 	case iov1beta1.FileScheme_FILE_SCHEME_NULL:
 		return nil, errors.New("cannot read file data from /dev/null equivalent")
 	case iov1beta1.FileScheme_FILE_SCHEME_FILE:
@@ -657,30 +634,30 @@ func (e *envReader) getFileData(
 
 func (e *envReader) getFileDataFromHTTP(
 	ctx context.Context,
-	environ clienv.Environ,
+	envContainer app.EnvContainer,
 	path string,
 ) (_ []byte, retErr error) {
 	request, err := http.NewRequestWithContext(ctx, "GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
-	if environ != nil && strings.HasPrefix(path, "https://") && e.httpsUsernameEnvKey != "" && e.httpsPasswordEnvKey != "" {
+	if envContainer != nil && strings.HasPrefix(path, "https://") && e.httpsUsernameEnvKey != "" && e.httpsPasswordEnvKey != "" {
 		u, err := url.Parse(path)
 		if err != nil {
 			return nil, err
 		}
 		if u.User == nil || u.User.Username() == "" {
-			httpsUsername := environ.Getenv(e.httpsUsernameEnvKey)
-			httpsPassword := environ.Getenv(e.httpsPasswordEnvKey)
+			httpsUsername := envContainer.Env(e.httpsUsernameEnvKey)
+			httpsPassword := envContainer.Env(e.httpsPasswordEnvKey)
 			if httpsUsername != "" && httpsPassword != "" {
 				request.SetBasicAuth(httpsUsername, httpsPassword)
 			} else {
-				machine, err := clinetrc.GetMachineByName(u.Host, environ.Getenv)
+				machine, err := appnetrc.GetMachineForName(envContainer, u.Host)
 				if err != nil {
 					return nil, err
 				}
-				if machine != nil && machine.Login != "" && machine.Password != "" {
-					request.SetBasicAuth(machine.Login, machine.Password)
+				if machine != nil && machine.Login() != "" && machine.Password() != "" {
+					request.SetBasicAuth(machine.Login(), machine.Password())
 				}
 			}
 		}

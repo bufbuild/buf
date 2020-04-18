@@ -9,8 +9,9 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/buf/ext/extfile"
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
-	"github.com/bufbuild/buf/internal/pkg/cli/cliproto"
-	"github.com/bufbuild/buf/internal/pkg/cli/clizap"
+	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/applog"
+	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/util/utilencoding"
 	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
 )
@@ -19,15 +20,13 @@ const defaultTimeout = 10 * time.Second
 
 // Main is the main.
 func Main() {
-	cliproto.Main(cliproto.HandlerFunc(Handle))
+	appproto.Main(context.Background(), handle)
 }
 
-// Handle implements the handler.
-//
-// Public so this can be used in the cmdtesting package.
-func Handle(
-	env cliproto.Env,
-	responseWriter cliproto.ResponseWriter,
+func handle(
+	ctx context.Context,
+	container app.EnvStderrContainer,
+	responseWriter appproto.ResponseWriter,
 	request *plugin_go.CodeGeneratorRequest,
 ) {
 	externalConfig := &externalConfig{}
@@ -47,9 +46,9 @@ func Handle(
 	if timeout == 0 {
 		timeout = defaultTimeout
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	logger, err := clizap.NewLogger(env.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
+	logger, err := applog.NewLogger(container.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return
@@ -62,9 +61,7 @@ func Handle(
 	envReader := internal.NewBufosEnvReader(logger, "against_input", "against_input_config", false)
 	againstEnv, err := envReader.ReadImageEnv(
 		ctx,
-		nil, // cannot read against input from stdin, this is for the CodeGeneratorRequest
-		// TODO: cleanup on cli refactor
-		env,
+		newContainer(container),
 		externalConfig.AgainstInput,
 		utilencoding.GetJSONStringOrStringValue(externalConfig.AgainstInputConfig),
 		files, // limit to the input files if specified
@@ -119,4 +116,17 @@ type externalConfig struct {
 	LogFormat          string          `json:"log_format,omitempty" yaml:"log_format,omitempty"`
 	ErrorFormat        string          `json:"error_format,omitempty" yaml:"error_format,omitempty"`
 	Timeout            time.Duration   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+}
+
+type container struct {
+	app.EnvContainer
+	app.StdinContainer
+}
+
+func newContainer(envContainer app.EnvContainer) *container {
+	return &container{
+		EnvContainer: envContainer,
+		// cannot read against input from stdin, this is for the CodeGeneratorRequest
+		StdinContainer: app.NewStdinContainer(nil),
+	}
 }

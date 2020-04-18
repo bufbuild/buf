@@ -1,146 +1,145 @@
 package buf
 
 import (
-	"github.com/bufbuild/buf/internal/pkg/cli/clicobra"
+	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
-func newRootCommand(use string, options ...RootCommandOption) *clicobra.Command {
-	flags := newFlags()
-	rootCommand := &clicobra.Command{
+func newRootCommand(use string, options ...RootCommandOption) *appcmd.Command {
+	builder := newBuilder()
+	rootCommand := &appcmd.Command{
 		Use: use,
-		SubCommands: []*clicobra.Command{
-			newImageCmd(flags),
-			newCheckCmd(flags),
-			newLsFilesCmd(flags),
+		SubCommands: []*appcmd.Command{
+			newImageCmd(builder),
+			newCheckCmd(builder),
+			newLsFilesCmd(builder),
 		},
-		BindFlags: flags.bindRootCommandFlags,
+		BindFlags: builder.BindRoot,
 	}
 	for _, option := range options {
-		option(rootCommand, flags)
+		option(rootCommand, builder)
 	}
 	return rootCommand
 }
 
-func newImageCmd(flags *Flags) *clicobra.Command {
-	return &clicobra.Command{
+func newImageCmd(builder *builder) *appcmd.Command {
+	return &appcmd.Command{
 		Use:   "image",
 		Short: "Work with Images and FileDescriptorSets.",
-		SubCommands: []*clicobra.Command{
-			newImageBuildCmd(flags),
+		SubCommands: []*appcmd.Command{
+			newImageBuildCmd(builder),
 		},
 	}
 }
 
-func newImageBuildCmd(flags *Flags) *clicobra.Command {
-	return &clicobra.Command{
+func newImageBuildCmd(builder *builder) *appcmd.Command {
+	return &appcmd.Command{
 		Use:   "build",
 		Short: "Build all files from the input location  and output an Image or FileDescriptorSet.",
 		Args:  cobra.NoArgs,
-		Run:   flags.newRunFunc(imageBuild),
-		BindFlags: func(flagSet *pflag.FlagSet) {
-			flags.bindImageBuildInput(flagSet)
-			flags.bindImageBuildConfig(flagSet)
-			flags.bindImageBuildOutput(flagSet)
-			flags.bindImageBuildAsFileDescriptorSet(flagSet)
-			flags.bindImageBuildExcludeImports(flagSet)
-			flags.bindImageBuildExcludeSourceInfo(flagSet)
-			flags.bindImageBuildErrorFormat(flagSet)
-			flags.bindExperimentalGitClone(flagSet)
-		},
+		Run:   builder.newRunFunc(imageBuild),
+		BindFlags: appcmd.BindMultiple(
+			builder.bindImageBuildInput,
+			builder.bindImageBuildConfig,
+			builder.bindImageBuildOutput,
+			builder.bindImageBuildAsFileDescriptorSet,
+			builder.bindImageBuildExcludeImports,
+			builder.bindImageBuildExcludeSourceInfo,
+			builder.bindImageBuildErrorFormat,
+			builder.bindExperimentalGitClone,
+		),
 	}
 }
 
-func newCheckCmd(flags *Flags) *clicobra.Command {
-	return &clicobra.Command{
+func newCheckCmd(builder *builder) *appcmd.Command {
+	return &appcmd.Command{
 		Use:   "check",
 		Short: "Run lint or breaking change checks.",
-		SubCommands: []*clicobra.Command{
-			newCheckLintCmd(flags),
-			newCheckBreakingCmd(flags),
-			newCheckLsLintCheckersCmd(flags),
-			newCheckLsBreakingCheckersCmd(flags),
+		SubCommands: []*appcmd.Command{
+			newCheckLintCmd(builder),
+			newCheckBreakingCmd(builder),
+			newCheckLsLintCheckersCmd(builder),
+			newCheckLsBreakingCheckersCmd(builder),
 		},
 	}
 }
 
-func newCheckLintCmd(flags *Flags) *clicobra.Command {
-	return &clicobra.Command{
+func newCheckLintCmd(builder *builder) *appcmd.Command {
+	return &appcmd.Command{
 		Use:   "lint",
 		Short: "Check that the input location passes lint checks.",
 		Args:  cobra.NoArgs,
-		Run:   flags.newRunFunc(checkLint),
-		BindFlags: func(flagSet *pflag.FlagSet) {
-			flags.bindCheckLintInput(flagSet)
-			flags.bindCheckLintConfig(flagSet)
-			flags.bindCheckFiles(flagSet)
-			flags.bindCheckLintErrorFormat(flagSet)
-			flags.bindExperimentalGitClone(flagSet)
-		},
+		Run:   builder.newRunFunc(checkLint),
+		BindFlags: appcmd.BindMultiple(
+			builder.bindCheckLintInput,
+			builder.bindCheckLintConfig,
+			builder.bindCheckFiles,
+			builder.bindCheckLintErrorFormat,
+			builder.bindExperimentalGitClone,
+		),
 	}
 }
 
-func newCheckBreakingCmd(flags *Flags) *clicobra.Command {
-	return &clicobra.Command{
+func newCheckBreakingCmd(builder *builder) *appcmd.Command {
+	return &appcmd.Command{
 		Use:   "breaking",
 		Short: "Check that the input location has no breaking changes compared to the against location.",
 		Args:  cobra.NoArgs,
-		Run:   flags.newRunFunc(checkBreaking),
-		BindFlags: func(flagSet *pflag.FlagSet) {
-			flags.bindCheckBreakingInput(flagSet)
-			flags.bindCheckBreakingConfig(flagSet)
-			flags.bindCheckBreakingAgainstInput(flagSet)
-			flags.bindCheckBreakingAgainstConfig(flagSet)
-			flags.bindCheckBreakingLimitToInputFiles(flagSet)
-			flags.bindCheckBreakingExcludeImports(flagSet)
-			flags.bindCheckFiles(flagSet)
-			flags.bindCheckBreakingErrorFormat(flagSet)
-			flags.bindExperimentalGitClone(flagSet)
-		},
+		Run:   builder.newRunFunc(checkBreaking),
+		BindFlags: appcmd.BindMultiple(
+			builder.bindCheckBreakingInput,
+			builder.bindCheckBreakingConfig,
+			builder.bindCheckBreakingAgainstInput,
+			builder.bindCheckBreakingAgainstConfig,
+			builder.bindCheckBreakingLimitToInputFiles,
+			builder.bindCheckBreakingExcludeImports,
+			builder.bindCheckFiles,
+			builder.bindCheckBreakingErrorFormat,
+			builder.bindExperimentalGitClone,
+		),
 	}
 }
 
-func newCheckLsLintCheckersCmd(flags *Flags) *clicobra.Command {
-	return &clicobra.Command{
+func newCheckLsLintCheckersCmd(builder *builder) *appcmd.Command {
+	return &appcmd.Command{
 		Use:   "ls-lint-checkers",
 		Short: "List lint checkers.",
 		Args:  cobra.NoArgs,
-		Run:   flags.newRunFunc(checkLsLintCheckers),
-		BindFlags: func(flagSet *pflag.FlagSet) {
-			flags.bindCheckLsCheckersConfig(flagSet)
-			flags.bindCheckLsCheckersAll(flagSet)
-			flags.bindCheckLsCheckersCategories(flagSet)
-			flags.bindCheckLsCheckersFormat(flagSet)
-		},
+		Run:   builder.newRunFunc(checkLsLintCheckers),
+		BindFlags: appcmd.BindMultiple(
+			builder.bindCheckLsCheckersConfig,
+			builder.bindCheckLsCheckersAll,
+			builder.bindCheckLsCheckersCategories,
+			builder.bindCheckLsCheckersFormat,
+		),
 	}
 }
 
-func newCheckLsBreakingCheckersCmd(flags *Flags) *clicobra.Command {
-	return &clicobra.Command{
+func newCheckLsBreakingCheckersCmd(builder *builder) *appcmd.Command {
+	return &appcmd.Command{
 		Use:   "ls-breaking-checkers",
 		Short: "List breaking checkers.",
 		Args:  cobra.NoArgs,
-		Run:   flags.newRunFunc(checkLsBreakingCheckers),
-		BindFlags: func(flagSet *pflag.FlagSet) {
-			flags.bindCheckLsCheckersConfig(flagSet)
-			flags.bindCheckLsCheckersAll(flagSet)
-			flags.bindCheckLsCheckersCategories(flagSet)
-			flags.bindCheckLsCheckersFormat(flagSet)
-		},
+		Run:   builder.newRunFunc(checkLsBreakingCheckers),
+		BindFlags: appcmd.BindMultiple(
+			builder.bindCheckLsCheckersConfig,
+			builder.bindCheckLsCheckersAll,
+			builder.bindCheckLsCheckersCategories,
+			builder.bindCheckLsCheckersFormat,
+		),
 	}
 }
 
-func newLsFilesCmd(flags *Flags) *clicobra.Command {
-	return &clicobra.Command{
+func newLsFilesCmd(builder *builder) *appcmd.Command {
+	return &appcmd.Command{
 		Use:   "ls-files",
 		Short: "List all Protobuf files for the input location.",
 		Args:  cobra.NoArgs,
-		Run:   flags.newRunFunc(lsFiles),
-		BindFlags: func(flagSet *pflag.FlagSet) {
-			flags.bindLsFilesInput(flagSet)
-			flags.bindLsFilesConfig(flagSet)
-			flags.bindExperimentalGitClone(flagSet)
-		},
+		Run:   builder.newRunFunc(lsFiles),
+		BindFlags: appcmd.BindMultiple(
+			builder.bindLsFilesInput,
+			builder.bindLsFilesConfig,
+			builder.bindExperimentalGitClone,
+		),
 	}
 }
