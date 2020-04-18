@@ -1,11 +1,12 @@
-package clicobra
+package appcmd
 
 import (
+	"context"
 	"io/ioutil"
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
+	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,40 +33,62 @@ func TestBasic(t *testing.T) {
 				BindFlags: func(flagSet *pflag.FlagSet) {
 					flagSet.IntVar(&bar, "bar", 1, "Bar.")
 				},
-				Run: func(env clienv.Env) error {
-					actualArgs = env.Args()
+				Run: func(ctx context.Context, container app.Container) error {
+					actualArgs = app.Args(container)
 					actualFoo = foo
 					actualBar = bar
-					data, err := ioutil.ReadAll(env.Stdin())
+					data, err := ioutil.ReadAll(container.Stdin())
 					if err != nil {
 						return err
 					}
 					actualStdin = string(data)
-					actualEnvValue = env.Getenv("KEY")
+					actualEnvValue = container.Env("KEY")
 					return nil
 				},
 			},
 		},
 	}
-	env := clienv.NewEnv(
-		[]string{
-			"sub",
-			"one",
-			"two",
-			"--foo",
-			"hello",
+	container := app.NewContainer(
+		map[string]string{
+			"KEY": "VALUE",
 		},
 		strings.NewReader("world"),
 		nil,
 		nil,
-		map[string]string{
-			"KEY": "VALUE",
-		},
+		"test",
+		"sub",
+		"one",
+		"two",
+		"--foo",
+		"hello",
 	)
-	require.Equal(t, Run(rootCommand, "0.1.0", env), 0)
+	require.NoError(t, Run(context.Background(), container, rootCommand, "0.1.0"))
 	assert.Equal(t, []string{"one", "two"}, actualArgs)
 	assert.Equal(t, "hello", actualFoo)
 	assert.Equal(t, 1, actualBar)
 	assert.Equal(t, "world", actualStdin)
 	assert.Equal(t, "VALUE", actualEnvValue)
+}
+
+func TestError(t *testing.T) {
+	rootCommand := &Command{
+		Use: "test",
+		SubCommands: []*Command{
+			{
+				Use: "sub",
+				Run: func(ctx context.Context, container app.Container) error {
+					return app.NewError(5, "bar")
+				},
+			},
+		},
+	}
+	container := app.NewContainer(
+		nil,
+		nil,
+		nil,
+		nil,
+		"test",
+		"sub",
+	)
+	require.Equal(t, app.NewError(5, "bar"), Run(context.Background(), container, rootCommand, "0.1.0"))
 }

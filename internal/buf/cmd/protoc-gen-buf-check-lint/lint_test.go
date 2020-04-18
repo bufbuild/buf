@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
-	"github.com/bufbuild/buf/internal/pkg/cli/cliproto"
+	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/ext/extdescriptor"
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto/utilprototesting"
@@ -132,7 +132,7 @@ func testRunLint(
 
 	testRunHandlerFunc(
 		t,
-		cliproto.HandlerFunc(Handle),
+		handle,
 		testBuildCodeGeneratorRequest(
 			t,
 			root,
@@ -147,7 +147,12 @@ func testRunLint(
 
 func testRunHandlerFunc(
 	t *testing.T,
-	handlerFunc cliproto.HandlerFunc,
+	handlerFunc func(
+		context.Context,
+		app.EnvStderrContainer,
+		appproto.ResponseWriter,
+		*plugin_go.CodeGeneratorRequest,
+	),
 	request *plugin_go.CodeGeneratorRequest,
 	expectedExitCode int,
 	expectedErrorString string,
@@ -158,14 +163,16 @@ func testRunHandlerFunc(
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 
-	exitCode := cliproto.Run(
-		handlerFunc,
-		clienv.NewEnv(
-			nil,
-			stdin,
-			stdout,
-			stderr,
-			nil,
+	exitCode := app.GetExitCode(
+		appproto.Run(
+			context.Background(),
+			app.NewContainer(
+				nil,
+				stdin,
+				stdout,
+				stderr,
+			),
+			handlerFunc,
 		),
 	)
 

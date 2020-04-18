@@ -1,6 +1,6 @@
 // +build windows
 
-package clinetrc
+package appnetrc
 
 // netrcFilename is the netrc filename.
 //

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/cli/clios"
+	"github.com/bufbuild/buf/internal/pkg/app"
 )
 
 var (
@@ -218,7 +218,7 @@ func getFileSchemeAndPath(rawPath string) (iov1beta1.FileScheme, string, error) 
 	if rawPath == "-" {
 		return iov1beta1.FileScheme_FILE_SCHEME_STDIO, "", nil
 	}
-	if rawPath == clios.DevNull {
+	if rawPath == app.DevNullFilePath {
 		return iov1beta1.FileScheme_FILE_SCHEME_NULL, "", nil
 	}
 	for prefix, fileScheme := range fileSchemePrefixToFileScheme {
@@ -236,7 +236,7 @@ func getGitSchemeAndPath(rawPath string) (iov1beta1.GitScheme, string, error) {
 	if rawPath == "-" {
 		return 0, "", newInvalidGitPathError(rawPath)
 	}
-	if rawPath == clios.DevNull {
+	if rawPath == app.DevNullFilePath {
 		return 0, "", newInvalidGitPathError(rawPath)
 	}
 	for prefix, gitScheme := range gitSchemePrefixToGitScheme {
@@ -254,7 +254,7 @@ func getBucketSchemeAndPath(rawPath string) (iov1beta1.BucketScheme, string, err
 	if rawPath == "-" {
 		return 0, "", newInvalidDirPathError(rawPath)
 	}
-	if rawPath == clios.DevNull {
+	if rawPath == app.DevNullFilePath {
 		return 0, "", newInvalidDirPathError(rawPath)
 	}
 	return iov1beta1.BucketScheme_BUCKET_SCHEME_DIR, filepath.Clean(rawPath), nil
@@ -286,8 +286,8 @@ func getRawRef(value string) (*rawRef, error) {
 	for key, value := range options {
 		switch key {
 		case "format":
-			if rawPath == clios.DevNull {
-				return nil, newFormatOverrideNotAllowedForDevNullError(clios.DevNull)
+			if rawPath == app.DevNullFilePath {
+				return nil, newFormatOverrideNotAllowedForDevNullError(app.DevNullFilePath)
 			}
 			format, err := parseFormat(value)
 			if err != nil {
@@ -387,7 +387,7 @@ func getRawPathAndOptions(value string) (string, map[string]string, error) {
 
 func getImpliedFormat(rawPath string) (format, error) {
 	// if format option is not set and path is "-", default to formatBin
-	if rawPath == "-" || rawPath == clios.DevNull {
+	if rawPath == "-" || rawPath == app.DevNullFilePath {
 		return formatBin, nil
 	}
 	switch filepath.Ext(rawPath) {

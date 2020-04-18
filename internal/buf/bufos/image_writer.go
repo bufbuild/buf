@@ -11,6 +11,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/ext/extio"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
+	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 	"github.com/golang/protobuf/proto"
 	"go.uber.org/multierr"
@@ -34,7 +35,7 @@ func newImageWriter(
 
 func (i *imageWriter) WriteImage(
 	ctx context.Context,
-	stdout io.Writer,
+	stdoutContainer app.StdoutContainer,
 	value string,
 	asFileDescriptorSet bool,
 	image *imagev1beta1.Image,
@@ -81,7 +82,7 @@ func (i *imageWriter) WriteImage(
 		// stop short if we have /dev/null equivalent for performance
 		return nil
 	case iov1beta1.FileScheme_FILE_SCHEME_STDIO:
-		writer = stdout
+		writer = stdoutContainer.Stdout()
 	case iov1beta1.FileScheme_FILE_SCHEME_FILE:
 		file, err := os.Create(imageRef.Path)
 		if err != nil {
