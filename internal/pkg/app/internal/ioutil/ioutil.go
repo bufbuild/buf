@@ -1,3 +1,4 @@
+// Package ioutil provides io utilities.
 package ioutil
 
 import (
@@ -14,16 +15,16 @@ func NopWriteCloser(writer io.Writer) io.WriteCloser {
 	return nopWriteCloser{Writer: writer}
 }
 
+type discardReader struct{}
+
+func (discardReader) Read([]byte) (int, error) {
+	return 0, io.EOF
+}
+
 type nopWriteCloser struct {
 	io.Writer
 }
 
 func (nopWriteCloser) Close() error {
 	return nil
-}
-
-type discardReader struct{}
-
-func (discardReader) Read([]byte) (int, error) {
-	return 0, io.EOF
 }

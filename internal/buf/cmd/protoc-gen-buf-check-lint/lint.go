@@ -10,8 +10,9 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/buf/ext/extfile"
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
-	"github.com/bufbuild/buf/internal/pkg/cli/cliproto"
-	"github.com/bufbuild/buf/internal/pkg/cli/clizap"
+	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/applog"
+	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/util/utilencoding"
 	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
 )
@@ -20,15 +21,13 @@ const defaultTimeout = 10 * time.Second
 
 // Main is the main.
 func Main() {
-	cliproto.Main(cliproto.HandlerFunc(Handle))
+	appproto.Main(context.Background(), handle)
 }
 
-// Handle implements the handler.
-//
-// Public so this can be used in the cmdtesting package.
-func Handle(
-	env cliproto.Env,
-	responseWriter cliproto.ResponseWriter,
+func handle(
+	ctx context.Context,
+	container app.EnvStderrContainer,
+	responseWriter appproto.ResponseWriter,
 	request *plugin_go.CodeGeneratorRequest,
 ) {
 	externalConfig := &externalConfig{}
@@ -43,9 +42,9 @@ func Handle(
 	if timeout == 0 {
 		timeout = defaultTimeout
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	logger, err := clizap.NewLogger(env.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
+	logger, err := applog.NewLogger(container.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return

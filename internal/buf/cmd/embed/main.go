@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"go/format"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 )
@@ -19,25 +21,21 @@ const sliceLength = math.MaxInt64
 var errUsage = errors.New("usage: embed path/to/dir package [ext]")
 
 func main() {
-	if err := run(); err != nil {
-		if errString := err.Error(); errString != "" {
-			fmt.Fprintln(os.Stderr, errString)
-		}
-		os.Exit(1)
-	}
+	app.Main(context.Background(), run)
 }
 
-func run() error {
-	if len(os.Args) != 3 && len(os.Args) != 4 {
+func run(ctx context.Context, container app.Container) error {
+	numArgs := container.NumArgs()
+	if numArgs != 3 && numArgs != 4 {
 		return errUsage
 	}
-	absDirPath, err := getAbsDirPath(os.Args[1])
+	absDirPath, err := getAbsDirPath(container.Arg(1))
 	if err != nil {
 		return err
 	}
 	ext := ""
-	if len(os.Args) == 4 {
-		ext = os.Args[3]
+	if numArgs == 4 {
+		ext = container.Arg(3)
 	}
 	storageFilePathMap, err := getStorageFilePathMap(absDirPath, ext)
 	if err != nil {
@@ -47,16 +45,16 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	golangFileData, err := getGolangFileData(storageFilePathMap, storageFilePathToData, os.Args[2])
+	golangFileData, err := getGolangFileData(storageFilePathMap, storageFilePathToData, container.Arg(2))
 	if err != nil {
 		return err
 	}
-	_, err = os.Stdout.Write(golangFileData)
+	_, err = container.Stdout().Write(golangFileData)
 	return err
 }
 
 func getAbsDirPath(dirPath string) (string, error) {
-	absDirPath, err := filepath.Abs(os.Args[1])
+	absDirPath, err := filepath.Abs(dirPath)
 	if err != nil {
 		return "", err
 	}

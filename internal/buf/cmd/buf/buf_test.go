@@ -2,38 +2,38 @@ package buf
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/pkg/cli/clicobra"
-	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
-	"github.com/bufbuild/buf/internal/pkg/cli/clios"
+	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSuccess1(t *testing.T) {
-	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--source", filepath.Join("testdata", "success"))
+	testRun(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess2(t *testing.T) {
-	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-imports", "--source", filepath.Join("testdata", "success"))
+	testRun(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess3(t *testing.T) {
-	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRun(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess4(t *testing.T) {
-	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRun(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess5(t *testing.T) {
-	testRun(t, 0, ``, "image", "build", "-o", clios.DevNull, "--exclude-imports", "--exclude-source-info", "-o", clios.DevNull, "--source", filepath.Join("testdata", "success"))
+	testRun(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--exclude-source-info", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess6(t *testing.T) {
@@ -41,7 +41,7 @@ func TestSuccess6(t *testing.T) {
 }
 
 func TestSuccessProfile1(t *testing.T) {
-	testRunProfile(t, 0, ``, "image", "build", "-o", clios.DevNull, "--source", filepath.Join("testdata", "success"))
+	testRunProfile(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
 }
 
 func TestFail1(t *testing.T) {
@@ -49,7 +49,7 @@ func TestFail1(t *testing.T) {
 		t,
 		0,
 		``,
-		"image", "build", "-o", clios.DevNull,
+		"image", "build", "-o", app.DevNullFilePath,
 		"--source",
 		filepath.Join("testdata", "fail"),
 	)
@@ -60,7 +60,7 @@ func TestFail2(t *testing.T) {
 		t,
 		0,
 		``,
-		"image", "build", "-o", clios.DevNull,
+		"image", "build", "-o", app.DevNullFilePath,
 		"--exclude-imports",
 		"--source",
 		filepath.Join("testdata", "fail"),
@@ -72,7 +72,7 @@ func TestFail3(t *testing.T) {
 		t,
 		0,
 		``,
-		"image", "build", "-o", clios.DevNull,
+		"image", "build", "-o", app.DevNullFilePath,
 		"--exclude-source-info",
 		"--source",
 		filepath.Join("testdata", "fail"),
@@ -84,7 +84,7 @@ func TestFail4(t *testing.T) {
 		t,
 		0,
 		``,
-		"image", "build", "-o", clios.DevNull,
+		"image", "build", "-o", app.DevNullFilePath,
 		"--exclude-imports",
 		"--exclude-source-info",
 		"--source",
@@ -356,19 +356,22 @@ func testRunProfile(t *testing.T, expectedExitCode int, expectedStdout string, a
 	)
 }
 
-func testRunCmd(t *testing.T, cmd *clicobra.Command, expectedExitCode int, expectedStdout string, args ...string) {
+func testRunCmd(t *testing.T, cmd *appcmd.Command, expectedExitCode int, expectedStdout string, args ...string) {
 	t.Parallel()
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	exitCode := clicobra.Run(
-		cmd,
-		"test",
-		clienv.NewEnv(
-			args,
-			nil,
-			stdout,
-			stderr,
-			nil,
+	exitCode := app.GetExitCode(
+		appcmd.Run(
+			context.Background(),
+			app.NewContainer(
+				nil,
+				nil,
+				stdout,
+				stderr,
+				append([]string{"test"}, args...)...,
+			),
+			cmd,
+			"test",
 		),
 	)
 	assert.Equal(t, expectedExitCode, exitCode, utilstring.TrimLines(stderr.String()))

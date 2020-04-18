@@ -12,103 +12,88 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/buf/ext/extfile"
-	"github.com/bufbuild/buf/internal/pkg/cli/clienv"
-	"go.uber.org/zap"
 )
 
-func imageBuild(
-	ctx context.Context,
-	cliEnv clienv.Env,
-	flags *Flags,
-	logger *zap.Logger,
-) (retErr error) {
-	if flags.Output == "" {
+func imageBuild(ctx context.Context, container *container) (retErr error) {
+	if container.Output == "" {
 		return fmt.Errorf("--%s is required", imageBuildOutputFlagName)
 	}
-	asJSON, err := internal.IsFormatJSON(errorFormatFlagName, flags.ErrorFormat)
+	asJSON, err := internal.IsFormatJSON(errorFormatFlagName, container.ErrorFormat)
 	if err != nil {
 		return err
 	}
 	env, fileAnnotations, err := internal.NewBufosEnvReader(
-		logger,
+		container.Logger(),
 		imageBuildInputFlagName,
 		imageBuildConfigFlagName,
-		flags.ExperimentalGitClone,
+		container.ExperimentalGitClone,
 		// must be source only
 	).ReadSourceEnv(
 		ctx,
-		cliEnv.Stdin(),
-		// TODO: this needs to be cleaned up everywhere when we do cli refactor
-		cliEnv,
-		flags.Input,
-		flags.Config,
+		container,
+		container.Input,
+		container.Config,
 		nil,   // we do not filter files for images
 		false, // this is ignored since we do not specify specific files
-		!flags.ExcludeImports,
-		!flags.ExcludeSourceInfo,
+		!container.ExcludeImports,
+		!container.ExcludeSourceInfo,
 	)
 	if err != nil {
 		return err
 	}
 	if len(fileAnnotations) > 0 {
 		// stderr since we do output to stdout potentially
-		if err := extfile.PrintFileAnnotations(cliEnv.Stderr(), fileAnnotations, asJSON); err != nil {
+		if err := extfile.PrintFileAnnotations(container.Stderr(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
 	}
 	return internal.NewBufosImageWriter(
-		logger,
+		container.Logger(),
 		imageBuildOutputFlagName,
 	).WriteImage(
 		ctx,
-		cliEnv.Stdout(),
-		flags.Output,
-		flags.AsFileDescriptorSet,
+		container,
+		container.Output,
+		container.AsFileDescriptorSet,
 		env.Image,
 	)
 }
 
-func checkLint(
-	ctx context.Context,
-	cliEnv clienv.Env,
-	flags *Flags,
-	logger *zap.Logger,
-) (retErr error) {
-	asJSON, err := internal.IsLintFormatJSON(errorFormatFlagName, flags.ErrorFormat)
+func checkLint(ctx context.Context, container *container) (retErr error) {
+	asJSON, err := internal.IsLintFormatJSON(errorFormatFlagName, container.ErrorFormat)
 	if err != nil {
 		return err
 	}
-	asConfigIgnoreYAML, err := internal.IsLintFormatConfigIgnoreYAML(errorFormatFlagName, flags.ErrorFormat)
+	asConfigIgnoreYAML, err := internal.IsLintFormatConfigIgnoreYAML(errorFormatFlagName, container.ErrorFormat)
 	if err != nil {
 		return err
 	}
 	env, fileAnnotations, err := internal.NewBufosEnvReader(
-		logger,
+		container.Logger(),
 		checkLintInputFlagName,
 		checkLintConfigFlagName,
-		flags.ExperimentalGitClone,
+		container.ExperimentalGitClone,
 	).ReadEnv(
 		ctx,
-		cliEnv.Stdin(),
-		cliEnv,
-		flags.Input,
-		flags.Config,
-		flags.Files, // we filter checks for files
-		false,       // input files must exist
-		false,       // do not want to include imports
-		true,        // we must include source info for linting
+		container,
+		container.Input,
+		container.Config,
+		container.Files, // we filter checks for files
+		false,           // input files must exist
+		false,           // do not want to include imports
+		true,            // we must include source info for linting
 	)
 	if err != nil {
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {
+		if err := extfile.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
 	}
-	fileAnnotations, err = internal.NewBuflintHandler(logger).LintCheck(
+	fileAnnotations, err = internal.NewBuflintHandler(container.Logger()).LintCheck(
 		ctx,
 		env.Config.Lint,
 		env.Image,
@@ -118,14 +103,14 @@ func checkLint(
 	}
 	if len(fileAnnotations) > 0 {
 		if asConfigIgnoreYAML {
-			if err := bufconfig.PrintFileAnnotationsLintConfigIgnoreYAML(cliEnv.Stdout(), fileAnnotations); err != nil {
+			if err := bufconfig.PrintFileAnnotationsLintConfigIgnoreYAML(container.Stdout(), fileAnnotations); err != nil {
 				return err
 			}
 		} else {
 			if err := bufbuild.FixFileAnnotationPaths(env.Resolver, fileAnnotations...); err != nil {
 				return err
 			}
-			if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {
+			if err := extfile.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
 				return err
 			}
 		}
@@ -134,47 +119,41 @@ func checkLint(
 	return nil
 }
 
-func checkBreaking(
-	ctx context.Context,
-	cliEnv clienv.Env,
-	flags *Flags,
-	logger *zap.Logger,
-) (retErr error) {
-	if flags.AgainstInput == "" {
+func checkBreaking(ctx context.Context, container *container) (retErr error) {
+	if container.AgainstInput == "" {
 		return fmt.Errorf("--%s is required", checkBreakingAgainstInputFlagName)
 	}
-	asJSON, err := internal.IsFormatJSON(errorFormatFlagName, flags.ErrorFormat)
+	asJSON, err := internal.IsFormatJSON(errorFormatFlagName, container.ErrorFormat)
 	if err != nil {
 		return err
 	}
 	env, fileAnnotations, err := internal.NewBufosEnvReader(
-		logger,
+		container.Logger(),
 		checkBreakingInputFlagName,
 		checkBreakingConfigFlagName,
-		flags.ExperimentalGitClone,
+		container.ExperimentalGitClone,
 	).ReadEnv(
 		ctx,
-		cliEnv.Stdin(),
-		cliEnv,
-		flags.Input,
-		flags.Config,
-		flags.Files, // we filter checks for files
-		false,       // files specified must exist on the main input
-		!flags.ExcludeImports,
+		container,
+		container.Input,
+		container.Config,
+		container.Files, // we filter checks for files
+		false,           // files specified must exist on the main input
+		!container.ExcludeImports,
 		true, // we must include source info for this side of the check
 	)
 	if err != nil {
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {
+		if err := extfile.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
 	}
 
-	files := flags.Files
-	if flags.LimitToInputFiles {
+	files := container.Files
+	if container.LimitToInputFiles {
 		fileDescriptors := env.Image.GetFile()
 		// we know that the file descriptors have unique names from validation
 		files = make([]string, len(fileDescriptors))
@@ -185,19 +164,18 @@ func checkBreaking(
 	}
 
 	againstEnv, fileAnnotations, err := internal.NewBufosEnvReader(
-		logger,
+		container.Logger(),
 		checkBreakingAgainstInputFlagName,
 		checkBreakingAgainstConfigFlagName,
-		flags.ExperimentalGitClone,
+		container.ExperimentalGitClone,
 	).ReadEnv(
 		ctx,
-		cliEnv.Stdin(),
-		cliEnv,
-		flags.AgainstInput,
-		flags.AgainstConfig,
+		container,
+		container.AgainstInput,
+		container.AgainstConfig,
 		files, // we filter checks for files
 		true,  // files are allowed to not exist on the against input
-		!flags.ExcludeImports,
+		!container.ExcludeImports,
 		false, // no need to include source info for against
 	)
 	if err != nil {
@@ -210,12 +188,12 @@ func checkBreaking(
 				fileAnnotation.Path = fileAnnotation.Path + "@against"
 			}
 		}
-		if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {
+		if err := extfile.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
 	}
-	fileAnnotations, err = internal.NewBufbreakingHandler(logger).BreakingCheck(
+	fileAnnotations, err = internal.NewBufbreakingHandler(container.Logger()).BreakingCheck(
 		ctx,
 		env.Config.Breaking,
 		againstEnv.Image,
@@ -228,7 +206,7 @@ func checkBreaking(
 		if err := bufbuild.FixFileAnnotationPaths(env.Resolver, fileAnnotations...); err != nil {
 			return err
 		}
-		if err := extfile.PrintFileAnnotations(cliEnv.Stdout(), fileAnnotations, asJSON); err != nil {
+		if err := extfile.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
@@ -236,103 +214,87 @@ func checkBreaking(
 	return nil
 }
 
-func checkLsLintCheckers(
-	ctx context.Context,
-	cliEnv clienv.Env,
-	flags *Flags,
-	logger *zap.Logger,
-) (retErr error) {
-	asJSON, err := internal.IsFormatJSON(checkLsCheckersFormatFlagName, flags.Format)
+func checkLsLintCheckers(ctx context.Context, container *container) (retErr error) {
+	asJSON, err := internal.IsFormatJSON(checkLsCheckersFormatFlagName, container.Format)
 	if err != nil {
 		return err
 	}
 	var checkers []bufcheck.Checker
-	if flags.CheckerAll {
-		checkers, err = buflint.GetAllCheckers(flags.CheckerCategories...)
+	if container.CheckerAll {
+		checkers, err = buflint.GetAllCheckers(container.CheckerCategories...)
 		if err != nil {
 			return err
 		}
 	} else {
 		config, err := internal.NewBufosEnvReader(
-			logger,
+			container.Logger(),
 			"",
 			checkLsCheckersConfigFlagName,
-			flags.ExperimentalGitClone,
+			container.ExperimentalGitClone,
 		).GetConfig(
 			ctx,
-			flags.Config,
+			container.Config,
 		)
 		if err != nil {
 			return err
 		}
-		checkers, err = config.Lint.GetCheckers(flags.CheckerCategories...)
+		checkers, err = config.Lint.GetCheckers(container.CheckerCategories...)
 		if err != nil {
 			return err
 		}
 	}
-	return bufcheck.PrintCheckers(cliEnv.Stdout(), checkers, asJSON)
+	return bufcheck.PrintCheckers(container.Stdout(), checkers, asJSON)
 }
 
-func checkLsBreakingCheckers(
-	ctx context.Context,
-	cliEnv clienv.Env,
-	flags *Flags,
-	logger *zap.Logger,
-) (retErr error) {
-	asJSON, err := internal.IsFormatJSON(checkLsCheckersFormatFlagName, flags.Format)
+func checkLsBreakingCheckers(ctx context.Context, container *container) (retErr error) {
+	asJSON, err := internal.IsFormatJSON(checkLsCheckersFormatFlagName, container.Format)
 	if err != nil {
 		return err
 	}
 	var checkers []bufcheck.Checker
-	if flags.CheckerAll {
-		checkers, err = bufbreaking.GetAllCheckers(flags.CheckerCategories...)
+	if container.CheckerAll {
+		checkers, err = bufbreaking.GetAllCheckers(container.CheckerCategories...)
 		if err != nil {
 			return err
 		}
 	} else {
 		config, err := internal.NewBufosEnvReader(
-			logger,
+			container.Logger(),
 			"",
 			checkLsCheckersConfigFlagName,
-			flags.ExperimentalGitClone,
+			container.ExperimentalGitClone,
 		).GetConfig(
 			ctx,
-			flags.Config,
+			container.Config,
 		)
 		if err != nil {
 			return err
 		}
-		checkers, err = config.Breaking.GetCheckers(flags.CheckerCategories...)
+		checkers, err = config.Breaking.GetCheckers(container.CheckerCategories...)
 		if err != nil {
 			return err
 		}
 	}
-	return bufcheck.PrintCheckers(cliEnv.Stdout(), checkers, asJSON)
+	return bufcheck.PrintCheckers(container.Stdout(), checkers, asJSON)
 }
 
-func lsFiles(
-	ctx context.Context,
-	cliEnv clienv.Env,
-	flags *Flags,
-	logger *zap.Logger,
-) (retErr error) {
+func lsFiles(ctx context.Context, container *container) (retErr error) {
 	filePaths, err := internal.NewBufosEnvReader(
-		logger,
+		container.Logger(),
 		lsFilesInputFlagName,
 		lsFilesConfigFlagName,
-		flags.ExperimentalGitClone,
+		container.ExperimentalGitClone,
 	).ListFiles(
 		ctx,
-		cliEnv.Stdin(),
-		cliEnv,
-		flags.Input,
-		flags.Config,
+		container,
+		container.Input,
+		container.Config,
 	)
 	if err != nil {
 		return err
 	}
 	for _, filePath := range filePaths {
-		if _, err := fmt.Fprintln(cliEnv.Stdout(), filePath); err != nil {
+		if _, err := fmt.Fprintln(container.Stdout(), filePath); err != nil {
 			return err
 		}
 	}

@@ -1,16 +1,17 @@
 // +build darwin linux
 
-package clinetrc
+package appnetrc
 
 import (
 	"testing"
 
+	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetMachineByName(t *testing.T) {
-	testGetMachineByNameSuccess(
+func TestGetMachineForName(t *testing.T) {
+	testGetMachineForNameSuccess(
 		t,
 		"foo.com",
 		"testdata/unix/home1",
@@ -19,17 +20,17 @@ func TestGetMachineByName(t *testing.T) {
 		"baz",
 		"bat",
 	)
-	testGetMachineByNameNil(
+	testGetMachineForNameNil(
 		t,
 		"api.foo.com",
 		"testdata/unix/home1",
 	)
-	testGetMachineByNameNil(
+	testGetMachineForNameNil(
 		t,
 		"bar.com",
 		"testdata/unix/home1",
 	)
-	testGetMachineByNameSuccess(
+	testGetMachineForNameSuccess(
 		t,
 		"foo.com",
 		"testdata/unix/home2",
@@ -38,7 +39,7 @@ func TestGetMachineByName(t *testing.T) {
 		"baz",
 		"",
 	)
-	testGetMachineByNameSuccess(
+	testGetMachineForNameSuccess(
 		t,
 		"api.foo.com",
 		"testdata/unix/home2",
@@ -47,7 +48,7 @@ func TestGetMachineByName(t *testing.T) {
 		"baz",
 		"",
 	)
-	testGetMachineByNameSuccess(
+	testGetMachineForNameSuccess(
 		t,
 		"bar.com",
 		"testdata/unix/home2",
@@ -56,56 +57,47 @@ func TestGetMachineByName(t *testing.T) {
 		"baz",
 		"",
 	)
-	testGetMachineByNameNil(
+	testGetMachineForNameNil(
 		t,
 		"foo.com",
 		"testdata/unix/home3",
 	)
-	testGetMachineByNameNil(
+	testGetMachineForNameNil(
 		t,
 		"api.foo.com",
 		"testdata/unix/home3",
 	)
-	testGetMachineByNameNil(
+	testGetMachineForNameNil(
 		t,
 		"bar.com",
 		"testdata/unix/home1",
 	)
 }
 
-func testGetMachineByNameSuccess(
+func testGetMachineForNameSuccess(
 	t *testing.T,
 	name string,
-	home string,
+	homeDirPath string,
 	expectedName string,
 	expectedLogin string,
 	expectedPassword string,
 	expectedAccount string,
 ) {
-	machine, err := GetMachineByName(name, testNewGetenv(home))
+	machine, err := GetMachineForName(app.NewEnvContainer(map[string]string{"HOME": homeDirPath}), name)
 	require.NoError(t, err)
 	require.NotNil(t, machine)
-	assert.Equal(t, expectedName, machine.Name)
-	assert.Equal(t, expectedLogin, machine.Login)
-	assert.Equal(t, expectedPassword, machine.Password)
-	assert.Equal(t, expectedAccount, machine.Account)
+	assert.Equal(t, expectedName, machine.Name())
+	assert.Equal(t, expectedLogin, machine.Login())
+	assert.Equal(t, expectedPassword, machine.Password())
+	assert.Equal(t, expectedAccount, machine.Account())
 }
 
-func testGetMachineByNameNil(
+func testGetMachineForNameNil(
 	t *testing.T,
 	name string,
-	home string,
+	homeDirPath string,
 ) {
-	machine, err := GetMachineByName(name, testNewGetenv(home))
+	machine, err := GetMachineForName(app.NewEnvContainer(map[string]string{"HOME": homeDirPath}), name)
 	require.NoError(t, err)
 	require.Nil(t, machine)
-}
-
-func testNewGetenv(home string) func(string) string {
-	return func(key string) string {
-		if key == "HOME" {
-			return home
-		}
-		return ""
-	}
 }

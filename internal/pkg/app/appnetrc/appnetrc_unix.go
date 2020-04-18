@@ -1,6 +1,6 @@
 // +build darwin linux
 
-package clinetrc
+package appnetrc
 
 // netrcFilename is the netrc filename.
 //

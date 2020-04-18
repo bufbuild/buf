@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/cli/clios"
+	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -234,7 +234,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 			iov1beta1.ImageFormat_IMAGE_FORMAT_BIN,
 			"",
 		),
-		clios.DevNull,
+		app.DevNullFilePath,
 	)
 	testParseInputRefSuccess(
 		t,
@@ -406,8 +406,8 @@ func TestParseInputRefError(t *testing.T) {
 	)
 	testParseInputRefError(
 		t,
-		newFormatOverrideNotAllowedForDevNullError(clios.DevNull),
-		fmt.Sprintf("%s#format=bin", clios.DevNull),
+		newFormatOverrideNotAllowedForDevNullError(app.DevNullFilePath),
+		fmt.Sprintf("%s#format=bin", app.DevNullFilePath),
 	)
 	testParseInputRefError(
 		t,
