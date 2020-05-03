@@ -96,10 +96,14 @@ pregenerate::
 .PHONY: postgenerate
 postgenerate::
 
+.PHONY: licensegenerate
+licensegenerate::
+
 .PHONY: generate
 generate:
 	@$(MAKE) pregenerate
 	@$(MAKE) postgenerate
+	@$(MAKE) licensegenerate
 
 .PHONY: checknodiffgenerated
 checknodiffgenerated:
