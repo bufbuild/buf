@@ -366,7 +366,7 @@ func TestRunBreakingFileSameValues(t *testing.T) {
 		extfiletesting.NewFileAnnotation("2.proto", 20, 1, 20, 37, "FILE_SAME_JAVA_GENERIC_SERVICES"),
 		extfiletesting.NewFileAnnotation("2.proto", 21, 1, 21, 35, "FILE_SAME_PY_GENERIC_SERVICES"),
 		extfiletesting.NewFileAnnotation("2.proto", 22, 1, 22, 36, "FILE_SAME_PHP_GENERIC_SERVICES"),
-		extfiletesting.NewFileAnnotation("2.proto", 23, 1, 23, 32, "FILE_SAME_CC_ENABLE_ARENAS"),
+		extfiletesting.NewFileAnnotation("2.proto", 23, 1, 23, 33, "FILE_SAME_CC_ENABLE_ARENAS"),
 	)
 }
 

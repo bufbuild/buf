@@ -15,84 +15,68 @@
 package utilproto
 
 import (
-	"bytes"
-
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/prototext"
+	"google.golang.org/protobuf/proto"
 )
 
 var (
-	jsonMarshaler         = &jsonpb.Marshaler{}
-	jsonMarshalerOrigName = &jsonpb.Marshaler{
-		OrigName: true,
+	marshalOptions              = proto.MarshalOptions{}
+	marshalOptionsDeterministic = proto.MarshalOptions{
+		Deterministic: true,
 	}
-	jsonMarshalerIndent = &jsonpb.Marshaler{
+	unmarshalOptions           = proto.UnmarshalOptions{}
+	jsonMarshalOptions         = protojson.MarshalOptions{}
+	jsonMarshalOptionsOrigName = protojson.MarshalOptions{
+		UseProtoNames: true,
+	}
+	jsonMarshalOptionsIndent = protojson.MarshalOptions{
 		Indent: "  ",
 	}
-	jsonUnmarshaler = &jsonpb.Unmarshaler{
-		AllowUnknownFields: true,
+	jsonUnmarshalOptions = protojson.UnmarshalOptions{
+		DiscardUnknown: true,
 	}
+	textMarshalOptions = prototext.MarshalOptions{}
 )
 
 // MarshalWire marshals the message to wire format.
 func MarshalWire(message proto.Message) ([]byte, error) {
-	return proto.Marshal(message)
+	return marshalOptions.Marshal(message)
 }
 
 // MarshalWireDeterministic marshals the message to wire format deterministically.
 func MarshalWireDeterministic(message proto.Message) ([]byte, error) {
-	buffer := proto.NewBuffer(nil)
-	buffer.SetDeterministic(true)
-	if err := buffer.Marshal(message); err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
+	return marshalOptionsDeterministic.Marshal(message)
 }
 
 // MarshalJSON marshals the message to JSON format.
 func MarshalJSON(message proto.Message) ([]byte, error) {
-	buffer := bytes.NewBuffer(nil)
-	if err := jsonMarshaler.Marshal(buffer, message); err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
+	return jsonMarshalOptions.Marshal(message)
 }
 
 // MarshalJSONOrigName marshals the message to JSON format with original .proto names as keys.
 func MarshalJSONOrigName(message proto.Message) ([]byte, error) {
-	buffer := bytes.NewBuffer(nil)
-	if err := jsonMarshalerOrigName.Marshal(buffer, message); err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
+	return jsonMarshalOptionsOrigName.Marshal(message)
 }
 
 // MarshalJSONIndent marshals the message to JSON format with indents.
 func MarshalJSONIndent(message proto.Message) ([]byte, error) {
-	buffer := bytes.NewBuffer(nil)
-	if err := jsonMarshalerIndent.Marshal(buffer, message); err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
+	return jsonMarshalOptionsIndent.Marshal(message)
 }
 
 // MarshalText marshals the message to text format.
 func MarshalText(message proto.Message) ([]byte, error) {
-	buffer := bytes.NewBuffer(nil)
-	if err := proto.MarshalText(buffer, message); err != nil {
-		return nil, err
-	}
-	return buffer.Bytes(), nil
+	return textMarshalOptions.Marshal(message)
 }
 
 // UnmarshalWire unmarshals the message from wire format.
 func UnmarshalWire(data []byte, message proto.Message) error {
-	return proto.Unmarshal(data, message)
+	return unmarshalOptions.Unmarshal(data, message)
 }
 
 // UnmarshalJSON unmarshals the message from JSON format.
 func UnmarshalJSON(data []byte, message proto.Message) error {
-	return jsonUnmarshaler.Unmarshal(bytes.NewReader(data), message)
+	return jsonUnmarshalOptions.Unmarshal(data, message)
 }
 
 // Equal checks if the two messages are equal.

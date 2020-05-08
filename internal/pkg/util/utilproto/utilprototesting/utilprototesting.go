@@ -25,8 +25,8 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/util/utildiff"
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // DiffMessagesJSON diffs the two Messages using JSON.
@@ -73,7 +73,7 @@ func GetProtocFileDescriptorSet(
 	realFilePaths []string,
 	includeImports bool,
 	includeSourceInfo bool,
-) (_ *descriptor.FileDescriptorSet, retErr error) {
+) (_ *descriptorpb.FileDescriptorSet, retErr error) {
 	protocBinPath, err := exec.LookPath("protoc")
 	if err != nil {
 		return nil, err
@@ -146,7 +146,7 @@ func GetProtocFileDescriptorSet(
 	if err != nil {
 		return nil, err
 	}
-	fileDescriptorSet := &descriptor.FileDescriptorSet{}
+	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
 	if err := utilproto.UnmarshalWire(data, fileDescriptorSet); err != nil {
 		return nil, err
 	}

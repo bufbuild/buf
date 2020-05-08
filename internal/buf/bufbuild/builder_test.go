@@ -32,10 +32,10 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/util/utilgithub/utilgithubtesting"
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto/utilprototesting"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -178,7 +178,7 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Ima
 	return image
 }
 
-func testBuildProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptor.FileDescriptorSet {
+func testBuildProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
 	readBucketCloser := testGetReadBucketCloserGoogleapis(t)
 	protoFileSet := testGetProtoFileSetGoogleapis(t, readBucketCloser)
 	fileDescriptorSet := testBuildProtoc(t, includeSourceInfo, testGoogleapisDirPath, protoFileSet)
@@ -218,7 +218,7 @@ func testBuild(t *testing.T, includeSourceInfo bool, readBucket storage.ReadBuck
 	return image, fileAnnotations
 }
 
-func testBuildProtoc(t *testing.T, includeSourceInfo bool, baseDirPath string, protoFileSet ProtoFileSet) *descriptor.FileDescriptorSet {
+func testBuildProtoc(t *testing.T, includeSourceInfo bool, baseDirPath string, protoFileSet ProtoFileSet) *descriptorpb.FileDescriptorSet {
 	realFilePaths := protoFileSet.RealFilePaths()
 	realFilePathsCopy := make([]string, len(realFilePaths))
 	for i, realFilePath := range realFilePaths {
@@ -257,7 +257,7 @@ func testGetGoogleapis(t *testing.T) {
 	)
 }
 
-func assertFileDescriptorSetsEqual(t *testing.T, one *descriptor.FileDescriptorSet, two *descriptor.FileDescriptorSet) {
+func assertFileDescriptorSetsEqual(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
 	// This also has the effect of verifying output order
 	diffOne, err := utilprototesting.DiffMessagesJSON(one, two, "protoparse-protoc")
 	assert.NoError(t, err)

@@ -27,9 +27,9 @@ import (
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
-	"github.com/golang/protobuf/proto"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 type imageWriter struct {

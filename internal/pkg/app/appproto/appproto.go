@@ -22,8 +22,8 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
-	"github.com/golang/protobuf/proto"
-	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // ResponseWriter is a response writer.
@@ -33,7 +33,7 @@ type ResponseWriter interface {
 	// WriteCodeGeneratorResponseFile adds the file to the response.
 	//
 	// Can be called multiple times.
-	WriteCodeGeneratorResponseFile(*plugin_go.CodeGeneratorResponse_File)
+	WriteCodeGeneratorResponseFile(*pluginpb.CodeGeneratorResponse_File)
 	// WriteError writes the error to the response.
 	//
 	// Can be called multiple times. Errors will be concatenated by newlines.
@@ -48,7 +48,7 @@ func Main(
 		ctx context.Context,
 		container app.EnvStderrContainer,
 		responseWriter ResponseWriter,
-		request *plugin_go.CodeGeneratorRequest,
+		request *pluginpb.CodeGeneratorRequest,
 	),
 ) {
 	app.Main(ctx, newRunFunc(f))
@@ -62,7 +62,7 @@ func Run(
 		ctx context.Context,
 		container app.EnvStderrContainer,
 		responseWriter ResponseWriter,
-		request *plugin_go.CodeGeneratorRequest,
+		request *pluginpb.CodeGeneratorRequest,
 	),
 ) error {
 	return app.Run(ctx, container, newRunFunc(f))
@@ -73,7 +73,7 @@ func newRunFunc(
 		ctx context.Context,
 		container app.EnvStderrContainer,
 		responseWriter ResponseWriter,
-		request *plugin_go.CodeGeneratorRequest,
+		request *pluginpb.CodeGeneratorRequest,
 	),
 ) func(context.Context, app.Container) error {
 	return func(ctx context.Context, container app.Container) error {
@@ -88,14 +88,14 @@ func run(
 		ctx context.Context,
 		container app.EnvStderrContainer,
 		responseWriter ResponseWriter,
-		request *plugin_go.CodeGeneratorRequest,
+		request *pluginpb.CodeGeneratorRequest,
 	),
 ) error {
 	input, err := ioutil.ReadAll(container.Stdin())
 	if err != nil {
 		return err
 	}
-	request := &plugin_go.CodeGeneratorRequest{}
+	request := &pluginpb.CodeGeneratorRequest{}
 	if err := utilproto.UnmarshalWire(input, request); err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func run(
 }
 
 type responseWriter struct {
-	files         []*plugin_go.CodeGeneratorResponse_File
+	files         []*pluginpb.CodeGeneratorResponse_File
 	errorMessages []string
 }
 
@@ -119,7 +119,7 @@ func newResponseWriter() *responseWriter {
 	return &responseWriter{}
 }
 
-func (r *responseWriter) WriteCodeGeneratorResponseFile(file *plugin_go.CodeGeneratorResponse_File) {
+func (r *responseWriter) WriteCodeGeneratorResponseFile(file *pluginpb.CodeGeneratorResponse_File) {
 	r.files = append(r.files, file)
 }
 
@@ -127,12 +127,12 @@ func (r *responseWriter) WriteError(errorMessage string) {
 	r.errorMessages = append(r.errorMessages, errorMessage)
 }
 
-func (r *responseWriter) ToCodeGeneratorResponse() *plugin_go.CodeGeneratorResponse {
+func (r *responseWriter) ToCodeGeneratorResponse() *pluginpb.CodeGeneratorResponse {
 	var err *string
 	if errorMessage := strings.TrimSpace(strings.Join(r.errorMessages, "\n")); errorMessage != "" {
 		err = proto.String(errorMessage)
 	}
-	return &plugin_go.CodeGeneratorResponse{
+	return &pluginpb.CodeGeneratorResponse{
 		File:  r.files,
 		Error: err,
 	}

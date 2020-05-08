@@ -26,8 +26,8 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 	"github.com/bufbuild/buf/internal/pkg/util/utilproto/utilprototesting"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
-	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 func TestRunLint1(t *testing.T) {
@@ -165,9 +165,9 @@ func testRunHandlerFunc(
 		context.Context,
 		app.EnvStderrContainer,
 		appproto.ResponseWriter,
-		*plugin_go.CodeGeneratorRequest,
+		*pluginpb.CodeGeneratorRequest,
 	),
-	request *plugin_go.CodeGeneratorRequest,
+	request *pluginpb.CodeGeneratorRequest,
 	expectedExitCode int,
 	expectedErrorString string,
 ) {
@@ -192,7 +192,7 @@ func testRunHandlerFunc(
 
 	require.Equal(t, expectedExitCode, exitCode, utilstring.TrimLines(stderr.String()))
 	if exitCode == 0 {
-		response := &plugin_go.CodeGeneratorResponse{}
+		response := &pluginpb.CodeGeneratorResponse{}
 		require.NoError(t, utilproto.UnmarshalWire(stdout.Bytes(), response))
 		require.Equal(t, utilstring.TrimLines(expectedErrorString), response.GetError(), utilstring.TrimLines(stderr.String()))
 	}
@@ -204,7 +204,7 @@ func testBuildCodeGeneratorRequest(
 	realFilePaths []string,
 	parameter string,
 	fileToGenerate []string,
-) *plugin_go.CodeGeneratorRequest {
+) *pluginpb.CodeGeneratorRequest {
 	fileDescriptorSet, err := utilprototesting.GetProtocFileDescriptorSet(
 		context.Background(),
 		[]string{root},

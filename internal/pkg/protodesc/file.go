@@ -14,14 +14,12 @@
 
 package protodesc
 
-import (
-	protobufdescriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
-)
+import "google.golang.org/protobuf/types/descriptorpb"
 
 type file struct {
 	descriptor
 
-	fileDescriptorProto *protobufdescriptor.FileDescriptorProto
+	fileDescriptorProto *descriptorpb.FileDescriptorProto
 
 	syntax      Syntax
 	fileImports []FileImport
@@ -32,7 +30,7 @@ type file struct {
 	optimizeMode FileOptionsOptimizeMode
 }
 
-func newFile(fileDescriptorProto *protobufdescriptor.FileDescriptorProto) (*file, error) {
+func newFile(fileDescriptorProto *descriptorpb.FileDescriptorProto) (*file, error) {
 	return newFileBuilder(fileDescriptorProto).toFile()
 }
 
