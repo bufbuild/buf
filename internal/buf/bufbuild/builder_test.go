@@ -148,6 +148,9 @@ func TestCompareCustomOptions(t *testing.T) {
 	require.NoError(t, err)
 	protocFileDescriptorSet := testBuildProtoc(t, false, false, dirPath, dirPath)
 	assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, protocFileDescriptorSet)
+	assertFileDescriptorSetsEqualText(t, fileDescriptorSet, protocFileDescriptorSet)
+	assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, protocFileDescriptorSet)
+	assertFileDescriptorSetsEqualWireDeterministic(t, fileDescriptorSet, protocFileDescriptorSet)
 }
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Image {
@@ -322,16 +325,19 @@ func assertFileDescriptorSetsEqualJSON(t *testing.T, one *descriptorpb.FileDescr
 	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
 }
 
-//lint:ignore U1000 will use in the future
 func assertFileDescriptorSetsEqualText(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
-	// Cannot compare others due to unknown field issue
 	diffTwo, err := utilprototesting.DiffMessagesText(one, two, "protoparse-protoc")
 	assert.NoError(t, err)
 	assert.Equal(t, "", diffTwo, "Text diff:\n%s", diffTwo)
 }
 
-//lint:ignore U1000 will use in the future
 func assertFileDescriptorSetsEqualProto(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
 	equal := proto.Equal(one, two)
 	assert.True(t, equal, "proto.Equal returned false")
+}
+
+func assertFileDescriptorSetsEqualWireDeterministic(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
+	diffTwo, err := utilprototesting.DiffMessagesWireDeterministic(one, two, "protoparse-protoc")
+	assert.NoError(t, err)
+	assert.Equal(t, "", diffTwo, "Wire diff:\n%s", diffTwo)
 }

@@ -63,6 +63,23 @@ func DiffMessagesText(one proto.Message, two proto.Message, name string) (string
 	return string(output), nil
 }
 
+// DiffMessagesWireDeterministic diffs the two Messages using proto.MarshalWireDeterministic.
+func DiffMessagesWireDeterministic(one proto.Message, two proto.Message, name string) (string, error) {
+	oneData, err := utilproto.MarshalWireDeterministic(one)
+	if err != nil {
+		return "", err
+	}
+	twoData, err := utilproto.MarshalWireDeterministic(two)
+	if err != nil {
+		return "", err
+	}
+	output, err := utildiff.Diff(oneData, twoData, name)
+	if err != nil {
+		return "", err
+	}
+	return string(output), nil
+}
+
 // GetProtocFileDescriptorSet gets the validated FileDescriptorSet using
 // protoc and the Well-Known Types on the current PATH.
 //
