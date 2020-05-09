@@ -104,7 +104,11 @@ func TestCompareGoogleapis(t *testing.T) {
 				fileDescriptorSet, err := extimage.ImageToFileDescriptorSet(image)
 				assert.NoError(t, err)
 				protocFileDescriptorSet := testBuildProtocGoogleapis(t, includeSourceInfo)
-				assertFileDescriptorSetsEqual(t, fileDescriptorSet, protocFileDescriptorSet)
+				assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, protocFileDescriptorSet)
+				// Cannot compare due to unknown field issue
+				//assertFileDescriptorSetsEqualText(t, fileDescriptorSet, protocFileDescriptorSet)
+				// Cannot compare due to unknown field issue
+				//assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, protocFileDescriptorSet)
 			},
 		)
 	}
@@ -133,6 +137,17 @@ func TestCustomOptions(t *testing.T) {
 	require.True(t, ok)
 	require.NotNil(t, valueInt32)
 	require.Equal(t, int32(42), *valueInt32)
+}
+
+func TestCompareCustomOptions(t *testing.T) {
+	t.Parallel()
+	dirPath := filepath.Join("testdata", "customoptions1")
+	image, fileAnnotations := testBuild(t, false, false, dirPath)
+	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
+	fileDescriptorSet, err := extimage.ImageToFileDescriptorSet(image)
+	require.NoError(t, err)
+	protocFileDescriptorSet := testBuildProtoc(t, false, false, dirPath, dirPath)
+	assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, protocFileDescriptorSet)
 }
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Image {
@@ -220,7 +235,7 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Ima
 
 func testBuildProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
 	testGetGoogleapis(t)
-	fileDescriptorSet := testBuildProtoc(t, true, includeSourceInfo, testGoogleapisDirPath)
+	fileDescriptorSet := testBuildProtoc(t, true, includeSourceInfo, testGoogleapisDirPath, testGoogleapisDirPath)
 	assert.Equal(t, 1585, len(fileDescriptorSet.GetFile()))
 	return fileDescriptorSet
 }
@@ -241,7 +256,7 @@ func testBuild(t *testing.T, includeImports bool, includeSourceInfo bool, dirPat
 	return image, fileAnnotations
 }
 
-func testBuildProtoc(t *testing.T, includeImports bool, includeSourceInfo bool, dirPath string) *descriptorpb.FileDescriptorSet {
+func testBuildProtoc(t *testing.T, includeImports bool, includeSourceInfo bool, includeDirPath string, dirPath string) *descriptorpb.FileDescriptorSet {
 	readBucketCloser := testGetReadBucketCloser(t, dirPath)
 	protoFileSet := testGetProtoFileSet(t, readBucketCloser)
 	realFilePaths := protoFileSet.RealFilePaths()
@@ -251,7 +266,7 @@ func testBuildProtoc(t *testing.T, includeImports bool, includeSourceInfo bool, 
 	}
 	fileDescriptorSet, err := utilprototesting.GetProtocFileDescriptorSet(
 		context.Background(),
-		[]string{testGoogleapisDirPath},
+		[]string{includeDirPath},
 		realFilePathsCopy,
 		includeImports,
 		includeSourceInfo,
@@ -300,16 +315,23 @@ func testGetGoogleapis(t *testing.T) {
 	)
 }
 
-func assertFileDescriptorSetsEqual(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
+func assertFileDescriptorSetsEqualJSON(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
 	// This also has the effect of verifying output order
 	diffOne, err := utilprototesting.DiffMessagesJSON(one, two, "protoparse-protoc")
 	assert.NoError(t, err)
 	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
+}
+
+//lint:ignore U1000 will use in the future
+func assertFileDescriptorSetsEqualText(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
 	// Cannot compare others due to unknown field issue
-	//diffTwo, err := utilprototesting.DiffMessagesText(one, two, "protoparse-protoc")
-	//assert.NoError(t, err)
-	//assert.Equal(t, "", diffTwo, "Text diff:\n%s", diffTwo)
-	//equal, err := proto.Equal(one, two)
-	//assert.NoError(t, err)
-	//assert.True(t, equal, "proto.Equal returned false")
+	diffTwo, err := utilprototesting.DiffMessagesText(one, two, "protoparse-protoc")
+	assert.NoError(t, err)
+	assert.Equal(t, "", diffTwo, "Text diff:\n%s", diffTwo)
+}
+
+//lint:ignore U1000 will use in the future
+func assertFileDescriptorSetsEqualProto(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
+	equal := proto.Equal(one, two)
+	assert.True(t, equal, "proto.Equal returned false")
 }
