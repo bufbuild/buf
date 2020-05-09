@@ -45,6 +45,7 @@ const (
 )
 
 var (
+	//lint:ignore U1000 testing
 	testEBaz = &protoimpl.ExtensionInfo{
 		ExtendedType:  (*descriptorpb.FieldOptions)(nil),
 		ExtensionType: (*int32)(nil),
