@@ -36,6 +36,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/runtime/protoimpl"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -45,7 +46,6 @@ const (
 )
 
 var (
-	//lint:ignore U1000 testing
 	testEBaz = &protoimpl.ExtensionInfo{
 		ExtendedType:  (*descriptorpb.FieldOptions)(nil),
 		ExtensionType: (*int32)(nil),
@@ -58,9 +58,11 @@ var (
 	testLock              sync.Mutex
 )
 
-//func init() {
-//proto.RegisterExtension(testEBaz)
-//}
+func init() {
+	if err := protoregistry.GlobalTypes.RegisterExtension(testEBaz); err != nil {
+		panic(err.Error())
+	}
+}
 
 func TestGoogleapis(t *testing.T) {
 	t.Parallel()
