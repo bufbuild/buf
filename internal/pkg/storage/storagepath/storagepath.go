@@ -25,7 +25,10 @@ import (
 	"strings"
 )
 
-const stringOSPathSeparator = string(os.PathSeparator)
+const (
+	stringOSPathSeparator    = string(os.PathSeparator)
+	relPathJumpContextPrefix = ".." + stringOSPathSeparator
+)
 
 var (
 	// errNotRelative is the error returned if the path is not relative.
@@ -83,7 +86,8 @@ func NormalizeAndValidate(path string) (string, error) {
 	if filepath.IsAbs(path) {
 		return "", NewError(path, errNotRelative)
 	}
-	if strings.Contains(path, "..") {
+	// https://github.com/bufbuild/buf/issues/51
+	if strings.HasPrefix(path, relPathJumpContextPrefix) {
 		return "", NewError(path, errOutsideContextDir)
 	}
 	return path, nil
