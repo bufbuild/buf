@@ -109,6 +109,7 @@ func TestCompareGoogleapis(t *testing.T) {
 
 func TestCustomOptions(t *testing.T) {
 	// https://github.com/bufbuild/buf/issues/52
+	t.Skip()
 
 	t.Parallel()
 	image, fileAnnotations := testBuild(t, false, false, filepath.Join("testdata", "customoptions1"))
