@@ -35,6 +35,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/runtime/protoimpl"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -43,9 +45,21 @@ const (
 )
 
 var (
+	testEBaz = &protoimpl.ExtensionInfo{
+		ExtendedType:  (*descriptorpb.FieldOptions)(nil),
+		ExtensionType: (*int32)(nil),
+		Field:         50007,
+		Name:          "baz",
+		Tag:           "varint,50007,opt,name=baz",
+		Filename:      "a.proto",
+	}
 	testGoogleapisDirPath = filepath.Join("cache", "googleapis")
 	testLock              sync.Mutex
 )
+
+//func init() {
+//proto.RegisterExtension(testEBaz)
+//}
 
 func TestGoogleapis(t *testing.T) {
 	t.Parallel()
@@ -93,11 +107,33 @@ func TestCompareGoogleapis(t *testing.T) {
 	}
 }
 
+func TestCustomOptions(t *testing.T) {
+	// https://github.com/bufbuild/buf/issues/52
+
+	t.Parallel()
+	image, fileAnnotations := testBuild(t, false, false, filepath.Join("testdata", "customoptions1"))
+	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
+
+	require.NotNil(t, image)
+	require.Equal(t, 1, len(image.File))
+	fileDescriptorProto := image.File[0]
+	require.Equal(t, 1, len(fileDescriptorProto.MessageType))
+	messageDescriptorProto := fileDescriptorProto.MessageType[0]
+	require.Equal(t, 1, len(messageDescriptorProto.Field))
+	fieldDescriptorProto := messageDescriptorProto.Field[0]
+	fieldOptions := fieldDescriptorProto.Options
+	require.NotNil(t, fieldOptions)
+	require.True(t, proto.HasExtension(fieldOptions, testEBaz))
+	value := proto.GetExtension(fieldOptions, testEBaz)
+	valueInt32, ok := value.(*int32)
+	require.True(t, ok)
+	require.NotNil(t, valueInt32)
+	require.Equal(t, int32(42), *valueInt32)
+}
+
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Image {
-	readBucketCloser := testGetReadBucketCloserGoogleapis(t)
-	protoFileSet := testGetProtoFileSetGoogleapis(t, readBucketCloser)
-	image, fileAnnotations := testBuild(t, includeSourceInfo, readBucketCloser, protoFileSet)
-	assert.NoError(t, readBucketCloser.Close())
+	testGetGoogleapis(t)
+	image, fileAnnotations := testBuild(t, true, includeSourceInfo, testGoogleapisDirPath)
 
 	assert.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	assert.Equal(t, 1585, len(image.GetFile()))
@@ -179,22 +215,55 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Ima
 }
 
 func testBuildProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
-	readBucketCloser := testGetReadBucketCloserGoogleapis(t)
-	protoFileSet := testGetProtoFileSetGoogleapis(t, readBucketCloser)
-	fileDescriptorSet := testBuildProtoc(t, includeSourceInfo, testGoogleapisDirPath, protoFileSet)
-	assert.NoError(t, readBucketCloser.Close())
+	testGetGoogleapis(t)
+	fileDescriptorSet := testBuildProtoc(t, true, includeSourceInfo, testGoogleapisDirPath)
 	assert.Equal(t, 1585, len(fileDescriptorSet.GetFile()))
 	return fileDescriptorSet
 }
 
-func testGetReadBucketCloserGoogleapis(t *testing.T) storage.ReadBucketCloser {
-	testGetGoogleapis(t)
-	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(testGoogleapisDirPath)
+func testBuild(t *testing.T, includeImports bool, includeSourceInfo bool, dirPath string) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation) {
+	readBucketCloser := testGetReadBucketCloser(t, dirPath)
+	protoFileSet := testGetProtoFileSet(t, readBucketCloser)
+	image, fileAnnotations, err := newBuilder(zap.NewNop(), runtime.NumCPU()).Build(
+		context.Background(),
+		readBucketCloser,
+		protoFileSet.Roots(),
+		protoFileSet.RootFilePaths(),
+		includeImports,
+		includeSourceInfo,
+	)
+	require.NoError(t, err)
+	require.NoError(t, readBucketCloser.Close())
+	return image, fileAnnotations
+}
+
+func testBuildProtoc(t *testing.T, includeImports bool, includeSourceInfo bool, dirPath string) *descriptorpb.FileDescriptorSet {
+	readBucketCloser := testGetReadBucketCloser(t, dirPath)
+	protoFileSet := testGetProtoFileSet(t, readBucketCloser)
+	realFilePaths := protoFileSet.RealFilePaths()
+	realFilePathsCopy := make([]string, len(realFilePaths))
+	for i, realFilePath := range realFilePaths {
+		realFilePathsCopy[i] = storagepath.Unnormalize(storagepath.Join(dirPath, realFilePath))
+	}
+	fileDescriptorSet, err := utilprototesting.GetProtocFileDescriptorSet(
+		context.Background(),
+		[]string{testGoogleapisDirPath},
+		realFilePathsCopy,
+		includeImports,
+		includeSourceInfo,
+	)
+	require.NoError(t, err)
+	require.NoError(t, readBucketCloser.Close())
+	return fileDescriptorSet
+}
+
+func testGetReadBucketCloser(t *testing.T, dirPath string) storage.ReadBucketCloser {
+	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(dirPath)
 	require.NoError(t, err)
 	return readWriteBucketCloser
 }
 
-func testGetProtoFileSetGoogleapis(t *testing.T, readBucket storage.ReadBucket) ProtoFileSet {
+func testGetProtoFileSet(t *testing.T, readBucket storage.ReadBucket) ProtoFileSet {
 	protoFileSet, err := newProtoFileSetProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
 		context.Background(),
 		readBucket,
@@ -203,36 +272,6 @@ func testGetProtoFileSetGoogleapis(t *testing.T, readBucket storage.ReadBucket) 
 	)
 	require.NoError(t, err)
 	return protoFileSet
-}
-
-func testBuild(t *testing.T, includeSourceInfo bool, readBucket storage.ReadBucket, protoFileSet ProtoFileSet) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation) {
-	image, fileAnnotations, err := newBuilder(zap.NewNop(), runtime.NumCPU()).Build(
-		context.Background(),
-		readBucket,
-		protoFileSet.Roots(),
-		protoFileSet.RootFilePaths(),
-		true,
-		includeSourceInfo,
-	)
-	require.NoError(t, err)
-	return image, fileAnnotations
-}
-
-func testBuildProtoc(t *testing.T, includeSourceInfo bool, baseDirPath string, protoFileSet ProtoFileSet) *descriptorpb.FileDescriptorSet {
-	realFilePaths := protoFileSet.RealFilePaths()
-	realFilePathsCopy := make([]string, len(realFilePaths))
-	for i, realFilePath := range realFilePaths {
-		realFilePathsCopy[i] = storagepath.Unnormalize(storagepath.Join(baseDirPath, realFilePath))
-	}
-	fileDescriptorSet, err := utilprototesting.GetProtocFileDescriptorSet(
-		context.Background(),
-		[]string{testGoogleapisDirPath},
-		realFilePathsCopy,
-		true,
-		includeSourceInfo,
-	)
-	require.NoError(t, err)
-	return fileDescriptorSet
 }
 
 func testGetGoogleapis(t *testing.T) {
