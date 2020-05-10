@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
+	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -96,13 +96,14 @@ func run(
 		return err
 	}
 	request := &pluginpb.CodeGeneratorRequest{}
-	if err := utilproto.UnmarshalWire(input, request); err != nil {
+	// We do not know the FileDescriptorSet before unmarshaling this
+	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(input, request); err != nil {
 		return err
 	}
 	responseWriter := newResponseWriter()
 	f(ctx, container, responseWriter, request)
 	response := responseWriter.ToCodeGeneratorResponse()
-	data, err := utilproto.MarshalWire(response)
+	data, err := protoencoding.NewWireMarshaler().Marshal(response)
 	if err != nil {
 		return err
 	}

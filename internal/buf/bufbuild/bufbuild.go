@@ -98,11 +98,25 @@ type ProtoFileSet interface {
 	Size() int
 }
 
+// BuildResult is the result of a successful build.
+type BuildResult struct {
+	// Image is the requested output image.
+	Image *imagev1beta1.Image
+	// ImageWithImports is a full Image with imports.
+	//
+	// This will be the same as Image if the IncludeImports option was set.
+	// The FileDescriptorProtos will be shared.
+	// This means if IncludeSourceInfo was false, SourceCodeInfo will be on neither.
+	// This is needed to create protoencoding.Resolvers.
+	// TODO: make this optional?
+	ImageWithImports *imagev1beta1.Image
+}
+
 // Handler handles the build functionality.
 type Handler interface {
 	// Build builds an image for the bucket.
 	//
-	// If FileAnnotations or an error is returned, no image or resolver is returned.
+	// If FileAnnotations or an error is returned, no build result is returned.
 	//
 	// FileAnnotations will be relative to the root of the bucket before returning, ie the
 	// real file paths that already have the GetRealFilePath from the ProtoFileSet applied.
@@ -111,7 +125,7 @@ type Handler interface {
 		readBucket storage.ReadBucket,
 		protoFileSet ProtoFileSet,
 		options BuildOptions,
-	) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation, error)
+	) (*BuildResult, []*filev1beta1.FileAnnotation, error)
 	// GetProtoFileSet get the files for the entire bucket.
 	GetProtoFileSet(
 		ctx context.Context,

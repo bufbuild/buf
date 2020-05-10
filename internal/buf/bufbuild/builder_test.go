@@ -27,11 +27,11 @@ import (
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
+	"github.com/bufbuild/buf/internal/pkg/prototesting"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/util/utilgithub/utilgithubtesting"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto/utilprototesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -90,8 +90,6 @@ func TestCompareGoogleapis(t *testing.T) {
 				protocFileDescriptorSet := testBuildProtocGoogleapis(t, includeSourceInfo)
 				assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, protocFileDescriptorSet)
 				// Cannot compare due to unknown field issue
-				//assertFileDescriptorSetsEqualText(t, fileDescriptorSet, protocFileDescriptorSet)
-				// Cannot compare due to unknown field issue
 				//assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, protocFileDescriptorSet)
 			},
 		)
@@ -106,10 +104,9 @@ func TestCompareCustomOptions(t *testing.T) {
 	fileDescriptorSet, err := extimage.ImageToFileDescriptorSet(image)
 	require.NoError(t, err)
 	protocFileDescriptorSet := testBuildProtoc(t, false, false, dirPath, dirPath)
+	assertFileDescriptorSetsEqualWire(t, fileDescriptorSet, protocFileDescriptorSet)
 	assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, protocFileDescriptorSet)
-	assertFileDescriptorSetsEqualText(t, fileDescriptorSet, protocFileDescriptorSet)
 	assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, protocFileDescriptorSet)
-	assertFileDescriptorSetsEqualWireDeterministic(t, fileDescriptorSet, protocFileDescriptorSet)
 }
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Image {
@@ -205,7 +202,7 @@ func testBuildProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptor
 func testBuild(t *testing.T, includeImports bool, includeSourceInfo bool, dirPath string) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation) {
 	readBucketCloser := testGetReadBucketCloser(t, dirPath)
 	protoFileSet := testGetProtoFileSet(t, readBucketCloser)
-	image, fileAnnotations, err := newBuilder(zap.NewNop(), runtime.NumCPU()).Build(
+	buildResult, fileAnnotations, err := newBuilder(zap.NewNop(), runtime.NumCPU()).Build(
 		context.Background(),
 		readBucketCloser,
 		protoFileSet.Roots(),
@@ -215,7 +212,8 @@ func testBuild(t *testing.T, includeImports bool, includeSourceInfo bool, dirPat
 	)
 	require.NoError(t, err)
 	require.NoError(t, readBucketCloser.Close())
-	return image, fileAnnotations
+	// this drops the ImageWithImports as we are not using it
+	return buildResult.Image, fileAnnotations
 }
 
 func testBuildProtoc(t *testing.T, includeImports bool, includeSourceInfo bool, includeDirPath string, dirPath string) *descriptorpb.FileDescriptorSet {
@@ -226,7 +224,7 @@ func testBuildProtoc(t *testing.T, includeImports bool, includeSourceInfo bool, 
 	for i, realFilePath := range realFilePaths {
 		realFilePathsCopy[i] = storagepath.Unnormalize(storagepath.Join(dirPath, realFilePath))
 	}
-	fileDescriptorSet, err := utilprototesting.GetProtocFileDescriptorSet(
+	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
 		[]string{includeDirPath},
 		realFilePathsCopy,
@@ -277,26 +275,21 @@ func testGetGoogleapis(t *testing.T) {
 	)
 }
 
-func assertFileDescriptorSetsEqualJSON(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
-	// This also has the effect of verifying output order
-	diffOne, err := utilprototesting.DiffMessagesJSON(one, two, "protoparse-protoc")
+func assertFileDescriptorSetsEqualWire(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
+	diffTwo, err := prototesting.DiffFileDescriptorSetsWire(one, two, "protoparse-protoc")
 	assert.NoError(t, err)
-	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
+	assert.Equal(t, "", diffTwo, "Wire diff:\n%s", diffTwo)
 }
 
-func assertFileDescriptorSetsEqualText(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
-	diffTwo, err := utilprototesting.DiffMessagesText(one, two, "protoparse-protoc")
+func assertFileDescriptorSetsEqualJSON(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
+	// TODO: test with resolver?
+	// This also has the effect of verifying output order
+	diffOne, err := prototesting.DiffFileDescriptorSetsJSON(one, two, "protoparse-protoc")
 	assert.NoError(t, err)
-	assert.Equal(t, "", diffTwo, "Text diff:\n%s", diffTwo)
+	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
 }
 
 func assertFileDescriptorSetsEqualProto(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
 	equal := proto.Equal(one, two)
 	assert.True(t, equal, "proto.Equal returned false")
-}
-
-func assertFileDescriptorSetsEqualWireDeterministic(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
-	diffTwo, err := utilprototesting.DiffMessagesWireDeterministic(one, two, "protoparse-protoc")
-	assert.NoError(t, err)
-	assert.Equal(t, "", diffTwo, "Wire diff:\n%s", diffTwo)
 }

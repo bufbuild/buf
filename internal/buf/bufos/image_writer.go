@@ -17,16 +17,18 @@ package bufos
 import (
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	"github.com/bufbuild/buf/internal/buf/ext/extio"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
+	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -53,6 +55,7 @@ func (i *imageWriter) WriteImage(
 	value string,
 	asFileDescriptorSet bool,
 	image *imagev1beta1.Image,
+	imageWithImports *imagev1beta1.Image,
 ) (retErr error) {
 	if err := extimage.ValidateImage(image); err != nil {
 		return err
@@ -71,20 +74,29 @@ func (i *imageWriter) WriteImage(
 		}
 	}
 	var data []byte
+	start := time.Now()
 	switch imageRef.ImageFormat {
 	case iov1beta1.ImageFormat_IMAGE_FORMAT_BIN, iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ:
-		data, err = utilproto.MarshalWireDeterministic(message)
+		data, err = protoencoding.NewWireMarshaler().Marshal(message)
 		if err != nil {
 			return err
 		}
 	case iov1beta1.ImageFormat_IMAGE_FORMAT_JSON, iov1beta1.ImageFormat_IMAGE_FORMAT_JSONGZ:
-		data, err = utilproto.MarshalJSON(message)
+		if imageWithImports == nil {
+			return errors.New("cannot serialize image to json without imports present")
+		}
+		resolver, err := protoencoding.NewResolver(imageWithImports.File...)
+		if err != nil {
+			return err
+		}
+		data, err = protoencoding.NewJSONMarshaler(resolver).Marshal(message)
 		if err != nil {
 			return err
 		}
 	default:
 		return fmt.Errorf("unknown image format: %v", imageRef.ImageFormat)
 	}
+	i.logger.Debug("image_marshal", zap.Duration("duration", time.Since(start)))
 
 	var writer io.Writer
 	switch imageRef.FileScheme {

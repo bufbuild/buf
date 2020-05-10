@@ -35,6 +35,12 @@ type Env struct {
 	//
 	// Validated.
 	Image *imagev1beta1.Image
+	// ImageWithImports is a full Image with imports.
+	//
+	// Can be nil. This will only be present from source reads.
+	// See bufbuild.Handler.
+	// Validated.
+	ImageWithImports *imagev1beta1.Image
 	// Resolver is the resolver to apply before printing paths or FileAnnotations.
 	// Can be nil.
 	Resolver bufbuild.ProtoRealFilePathResolver
@@ -153,6 +159,7 @@ type ImageWriter interface {
 		value string,
 		asFileDescriptorSet bool,
 		image *imagev1beta1.Image,
+		imageWithImports *imagev1beta1.Image,
 	) error
 }
 

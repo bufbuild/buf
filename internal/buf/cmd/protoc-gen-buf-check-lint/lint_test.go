@@ -23,8 +23,8 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/ext/extdescriptor"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto/utilprototesting"
+	"github.com/bufbuild/buf/internal/pkg/protoencoding"
+	"github.com/bufbuild/buf/internal/pkg/prototesting"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -172,7 +172,7 @@ func testRunHandlerFunc(
 	expectedExitCode int,
 	expectedErrorString string,
 ) {
-	requestData, err := utilproto.MarshalWire(request)
+	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
 	require.NoError(t, err)
 	stdin := bytes.NewReader(requestData)
 	stdout := bytes.NewBuffer(nil)
@@ -194,7 +194,9 @@ func testRunHandlerFunc(
 	require.Equal(t, expectedExitCode, exitCode, utilstring.TrimLines(stderr.String()))
 	if exitCode == 0 {
 		response := &pluginpb.CodeGeneratorResponse{}
-		require.NoError(t, utilproto.UnmarshalWire(stdout.Bytes(), response))
+		// we do not need fileDescriptorProtos as there are no extensions
+		unmarshaler := protoencoding.NewWireUnmarshaler(nil)
+		require.NoError(t, unmarshaler.Unmarshal(stdout.Bytes(), response))
 		require.Equal(t, utilstring.TrimLines(expectedErrorString), response.GetError(), utilstring.TrimLines(stderr.String()))
 	}
 }
@@ -206,7 +208,7 @@ func testBuildCodeGeneratorRequest(
 	parameter string,
 	fileToGenerate []string,
 ) *pluginpb.CodeGeneratorRequest {
-	fileDescriptorSet, err := utilprototesting.GetProtocFileDescriptorSet(
+	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
 		[]string{root},
 		realFilePaths,

@@ -20,7 +20,6 @@ import (
 	"time"
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
@@ -59,7 +58,7 @@ func (h *handler) Build(
 	readBucket storage.ReadBucket,
 	protoFileSet ProtoFileSet,
 	options BuildOptions,
-) (_ *imagev1beta1.Image, _ []*filev1beta1.FileAnnotation, retErr error) {
+) (_ *BuildResult, _ []*filev1beta1.FileAnnotation, retErr error) {
 	if h.copyToMemoryFileThreshold > 0 && protoFileSet.Size() >= h.copyToMemoryFileThreshold {
 		memReadWriteBucketCloser, err := h.copyToMemory(ctx, readBucket, protoFileSet)
 		if err != nil {
@@ -75,7 +74,7 @@ func (h *handler) Build(
 		h.logger.Debug("no_copy_to_memory_set")
 	}
 
-	image, fileAnnotations, err := h.builder.Build(
+	buildResult, fileAnnotations, err := h.builder.Build(
 		ctx,
 		readBucket,
 		protoFileSet.Roots(),
@@ -92,7 +91,7 @@ func (h *handler) Build(
 		}
 		return nil, fileAnnotations, nil
 	}
-	return image, nil, nil
+	return buildResult, nil, nil
 }
 
 func (h *handler) GetProtoFileSet(

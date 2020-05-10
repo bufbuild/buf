@@ -16,13 +16,12 @@ package extfile
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"sort"
 	"strconv"
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
+	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 )
 
 // FileAnnotationToString returns the basic string representation of the FileAnnotation.
@@ -136,19 +135,27 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []*filev1beta1.FileA
 	if len(fileAnnotations) == 0 {
 		return nil
 	}
-	for _, fileAnnotation := range fileAnnotations {
-		s := ""
-		if asJSON {
-			// TODO: change to camelCase?
-			data, err := utilproto.MarshalJSONOrigName(fileAnnotation)
+	values := make([][]byte, 0, len(fileAnnotations))
+	if asJSON {
+		// we do not use extensions so we do not need fileDescriptorProtos
+		marshaler := protoencoding.NewJSONMarshalerUseProtoNames(nil)
+		for _, fileAnnotation := range fileAnnotations {
+			data, err := marshaler.Marshal(fileAnnotation)
 			if err != nil {
 				return err
 			}
-			s = string(data)
-		} else {
-			s = FileAnnotationToString(fileAnnotation)
+			values = append(values, data)
 		}
-		if _, err := fmt.Fprintln(writer, s); err != nil {
+	} else {
+		for _, fileAnnotation := range fileAnnotations {
+			values = append(values, []byte(FileAnnotationToString(fileAnnotation)))
+		}
+	}
+	for _, value := range values {
+		if _, err := writer.Write(value); err != nil {
+			return err
+		}
+		if _, err := writer.Write([]byte{'\n'}); err != nil {
 			return err
 		}
 	}
