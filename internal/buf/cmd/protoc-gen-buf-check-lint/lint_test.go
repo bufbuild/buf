@@ -115,7 +115,7 @@ func TestRunLint4(t *testing.T) {
 }
 
 func TestRunLint5(t *testing.T) {
-	t.Skip("https://github.com/golang/protobuf/issues/1121")
+	// specifically testing that output is stable
 	testRunLint(
 		t,
 		filepath.Join("testdata", "fail"),

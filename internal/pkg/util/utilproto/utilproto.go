@@ -15,6 +15,9 @@
 package utilproto
 
 import (
+	"bytes"
+	"encoding/json"
+
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
@@ -51,17 +54,17 @@ func MarshalWireDeterministic(message proto.Message) ([]byte, error) {
 
 // MarshalJSON marshals the message to JSON format.
 func MarshalJSON(message proto.Message) ([]byte, error) {
-	return jsonMarshalOptions.Marshal(message)
+	return marshalJSON(jsonMarshalOptions, message)
 }
 
 // MarshalJSONOrigName marshals the message to JSON format with original .proto names as keys.
 func MarshalJSONOrigName(message proto.Message) ([]byte, error) {
-	return jsonMarshalOptionsOrigName.Marshal(message)
+	return marshalJSON(jsonMarshalOptionsOrigName, message)
 }
 
 // MarshalJSONIndent marshals the message to JSON format with indents.
 func MarshalJSONIndent(message proto.Message) ([]byte, error) {
-	return jsonMarshalOptionsIndent.Marshal(message)
+	return marshalJSON(jsonMarshalOptionsIndent, message)
 }
 
 // MarshalText marshals the message to text format.
@@ -82,4 +85,28 @@ func UnmarshalJSON(data []byte, message proto.Message) error {
 // Equal checks if the two messages are equal.
 func Equal(one proto.Message, two proto.Message) bool {
 	return proto.Equal(one, two)
+}
+
+// marshalJSON marshals the message as JSON with the given MarshalOptions.
+//
+// This is needed due to the instability of protojson output.
+//
+// https://github.com/golang/protobuf/issues/1121
+// https://go-review.googlesource.com/c/protobuf/+/151340
+// https://developers.google.com/protocol-buffers/docs/reference/go/faq#unstable-json
+//
+// We may need to do a full encoding/json encode/decode in the future if protojson
+// produces non-deterministic output.
+//
+// Naming "options" to make sure there is no overlap with the global variables
+func marshalJSON(options protojson.MarshalOptions, message proto.Message) ([]byte, error) {
+	data, err := options.Marshal(message)
+	if err != nil {
+		return nil, err
+	}
+	buffer := bytes.NewBuffer(nil)
+	if err := json.Compact(buffer, data); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
 }
