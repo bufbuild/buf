@@ -36,8 +36,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/runtime/protoimpl"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -46,23 +44,9 @@ const (
 )
 
 var (
-	testEBaz = &protoimpl.ExtensionInfo{
-		ExtendedType:  (*descriptorpb.FieldOptions)(nil),
-		ExtensionType: (*int32)(nil),
-		Field:         50007,
-		Name:          "baz",
-		Tag:           "varint,50007,opt,name=baz",
-		Filename:      "a.proto",
-	}
 	testGoogleapisDirPath = filepath.Join("cache", "googleapis")
 	testLock              sync.Mutex
 )
-
-func init() {
-	if err := protoregistry.GlobalTypes.RegisterExtension(testEBaz); err != nil {
-		panic(err.Error())
-	}
-}
 
 func TestGoogleapis(t *testing.T) {
 	t.Parallel()
@@ -112,31 +96,6 @@ func TestCompareGoogleapis(t *testing.T) {
 			},
 		)
 	}
-}
-
-func TestCustomOptions(t *testing.T) {
-	// https://github.com/bufbuild/buf/issues/52
-	t.Skip()
-
-	t.Parallel()
-	image, fileAnnotations := testBuild(t, false, false, filepath.Join("testdata", "customoptions1"))
-	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
-
-	require.NotNil(t, image)
-	require.Equal(t, 1, len(image.File))
-	fileDescriptorProto := image.File[0]
-	require.Equal(t, 1, len(fileDescriptorProto.MessageType))
-	messageDescriptorProto := fileDescriptorProto.MessageType[0]
-	require.Equal(t, 1, len(messageDescriptorProto.Field))
-	fieldDescriptorProto := messageDescriptorProto.Field[0]
-	fieldOptions := fieldDescriptorProto.Options
-	require.NotNil(t, fieldOptions)
-	require.True(t, proto.HasExtension(fieldOptions, testEBaz))
-	value := proto.GetExtension(fieldOptions, testEBaz)
-	valueInt32, ok := value.(*int32)
-	require.True(t, ok)
-	require.NotNil(t, valueInt32)
-	require.Equal(t, int32(42), *valueInt32)
 }
 
 func TestCompareCustomOptions(t *testing.T) {

@@ -1,7 +1,7 @@
 BUF_BIN ?= cmd/buf
 
 GO_BINS := $(GO_BINS) $(BUF_BIN) cmd/protoc-gen-buf-check-breaking cmd/protoc-gen-buf-check-lint
-GO_GET_PKGS := $(GO_GET_PKGS) github.com/jhump/protoreflect@master
+GO_GET_PKGS := $(GO_GET_PKGS) github.com/jhump/protoreflect@706a6d0046fe771f799a651a346c85eb946f696f
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto/go/v1
