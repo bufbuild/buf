@@ -32,7 +32,7 @@ CACHE_VERSIONS := $(CACHE)/versions
 CACHE_ENV := $(CACHE)/env
 CACHE_GO := $(CACHE)/go
 
-# Runtime MAKEGOALL
+# Runtime ALL
 
 export GO111MODULE := on
 ifdef GOPRIVATE
@@ -115,14 +115,14 @@ checknodiffgenerated:
 
 .PHONY: updatemakego
 updatemakego:
-ifndef DESTRUCTIVE
-	$(error Set DESTRUCTIVE=1 to acknowledge this is potentially destructive to your current makego files)
+ifndef CONFIRM
+	$(error Set CONFIRM=1 to acknowledge this is potentially destructive to your current makego files)
 else
 	@rm -rf $(TMP)/makego
 	@mkdir -p $(TMP)
 	git clone $(MAKEGO_REMOTE) $(TMP)/makego
 	rm -rf $(MAKEGO)
-ifdef MAKEGOALL
+ifdef ALL
 	cp -R $(TMP)/makego/make/go $(MAKEGO)
 else
 	mkdir -p $(MAKEGO)

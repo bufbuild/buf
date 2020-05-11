@@ -787,7 +787,7 @@ func testLintExternalConfigModifier(
 		},
 	)
 	require.NoError(t, err)
-	image, fileAnnotations, err := buildHandler.Build(
+	buildResult, fileAnnotations, err := buildHandler.Build(
 		ctx,
 		readWriteBucketCloser,
 		protoFileSet,
@@ -806,7 +806,7 @@ func testLintExternalConfigModifier(
 	fileAnnotations, err = handler.LintCheck(
 		ctx,
 		config.Lint,
-		image,
+		buildResult.Image,
 	)
 	assert.NoError(t, err)
 	assert.NoError(t, bufbuild.FixFileAnnotationPaths(protoFileSet, fileAnnotations...))

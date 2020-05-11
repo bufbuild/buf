@@ -20,4 +20,4 @@ option cc_generic_services = true;
 option java_generic_services = true;
 option py_generic_services = true;
 option php_generic_services = true;
-option cc_enable_arenas = true;
+option cc_enable_arenas = false; // the default option is true as of 3.12, so this should be changed now

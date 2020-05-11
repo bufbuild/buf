@@ -18,11 +18,11 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/pkg/ext/extdescriptor"
-	protobufdescriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type fileBuilder struct {
-	fileDescriptorProto *protobufdescriptor.FileDescriptorProto
+	fileDescriptorProto *descriptorpb.FileDescriptorProto
 
 	descriptor  descriptor
 	syntax      Syntax
@@ -32,7 +32,7 @@ type fileBuilder struct {
 	services    []Service
 }
 
-func newFileBuilder(fileDescriptorProto *protobufdescriptor.FileDescriptorProto) *fileBuilder {
+func newFileBuilder(fileDescriptorProto *descriptorpb.FileDescriptorProto) *fileBuilder {
 	return &fileBuilder{
 		fileDescriptorProto: fileDescriptorProto,
 	}
@@ -145,7 +145,7 @@ func (f *fileBuilder) toFile() (*file, error) {
 }
 
 func (f *fileBuilder) populateEnum(
-	enumDescriptorProto *protobufdescriptor.EnumDescriptorProto,
+	enumDescriptorProto *descriptorpb.EnumDescriptorProto,
 	enumIndex int,
 	// all message indexes leading to this enum
 	nestedMessageIndexes []int,
@@ -223,7 +223,7 @@ func (f *fileBuilder) populateEnum(
 }
 
 func (f *fileBuilder) populateMessage(
-	descriptorProto *protobufdescriptor.DescriptorProto,
+	descriptorProto *descriptorpb.DescriptorProto,
 	// always stays the same on every recursive call
 	topLevelMessageIndex int,
 	// includes descriptorProto index
@@ -454,7 +454,7 @@ func (f *fileBuilder) populateMessage(
 }
 
 func (f *fileBuilder) populateService(
-	serviceDescriptorProto *protobufdescriptor.ServiceDescriptorProto,
+	serviceDescriptorProto *descriptorpb.ServiceDescriptorProto,
 	serviceIndex int,
 ) (Service, error) {
 	serviceNamedDescriptor, err := newNamedDescriptor(

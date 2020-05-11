@@ -37,6 +37,7 @@ import (
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appnetrc"
+	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
@@ -44,7 +45,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -406,7 +406,7 @@ func (e *envReader) readEnvFromSource(
 			return nil, nil, err
 		}
 	}
-	image, fileAnnotations, err := e.buildHandler.Build(
+	buildResult, fileAnnotations, err := e.buildHandler.Build(
 		ctx,
 		readBucketCloser,
 		protoFileSet,
@@ -425,7 +425,12 @@ func (e *envReader) readEnvFromSource(
 		}
 		return nil, fileAnnotations, nil
 	}
-	return &Env{Image: image, Resolver: resolver, Config: config}, nil, nil
+	return &Env{
+		Image:            buildResult.Image,
+		ImageWithImports: buildResult.ImageWithImports,
+		Resolver:         resolver,
+		Config:           config,
+	}, nil, nil
 }
 
 func (e *envReader) readEnvFromImage(
@@ -454,6 +459,8 @@ func (e *envReader) readEnvFromImage(
 		}
 	}
 	if !includeImports {
+		// TODO: check if image is self-contained, if so, set ImageWithImports
+		// need logic to check if image is self-contained in extimage
 		image, err = extimage.ImageWithoutImports(image)
 		if err != nil {
 			return nil, err
@@ -707,13 +714,15 @@ func (e *envReader) getImageFromData(
 		data = uncompressedData
 	}
 
+	// we cannot determine fileDescriptorProtos ahead of time so we cannot handle extensions
+	// TODO: we do not happen to need them for our use case with linting, but we need to dicuss this
 	image := &imagev1beta1.Image{}
 	var err error
 	switch imageFormat {
 	case iov1beta1.ImageFormat_IMAGE_FORMAT_BIN, iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ:
-		err = utilproto.UnmarshalWire(data, image)
+		err = protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, image)
 	case iov1beta1.ImageFormat_IMAGE_FORMAT_JSON, iov1beta1.ImageFormat_IMAGE_FORMAT_JSONGZ:
-		err = utilproto.UnmarshalJSON(data, image)
+		err = protoencoding.NewJSONUnmarshaler(nil).Unmarshal(data, image)
 	default:
 		return nil, fmt.Errorf("unknown ImageFormat: %v", imageFormat)
 	}

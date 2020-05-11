@@ -23,11 +23,11 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/ext/extdescriptor"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto/utilprototesting"
+	"github.com/bufbuild/buf/internal/pkg/protoencoding"
+	"github.com/bufbuild/buf/internal/pkg/prototesting"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
-	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 func TestRunLint1(t *testing.T) {
@@ -115,6 +115,7 @@ func TestRunLint4(t *testing.T) {
 }
 
 func TestRunLint5(t *testing.T) {
+	// specifically testing that output is stable
 	testRunLint(
 		t,
 		filepath.Join("testdata", "fail"),
@@ -165,13 +166,13 @@ func testRunHandlerFunc(
 		context.Context,
 		app.EnvStderrContainer,
 		appproto.ResponseWriter,
-		*plugin_go.CodeGeneratorRequest,
+		*pluginpb.CodeGeneratorRequest,
 	),
-	request *plugin_go.CodeGeneratorRequest,
+	request *pluginpb.CodeGeneratorRequest,
 	expectedExitCode int,
 	expectedErrorString string,
 ) {
-	requestData, err := utilproto.MarshalWire(request)
+	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
 	require.NoError(t, err)
 	stdin := bytes.NewReader(requestData)
 	stdout := bytes.NewBuffer(nil)
@@ -192,8 +193,10 @@ func testRunHandlerFunc(
 
 	require.Equal(t, expectedExitCode, exitCode, utilstring.TrimLines(stderr.String()))
 	if exitCode == 0 {
-		response := &plugin_go.CodeGeneratorResponse{}
-		require.NoError(t, utilproto.UnmarshalWire(stdout.Bytes(), response))
+		response := &pluginpb.CodeGeneratorResponse{}
+		// we do not need fileDescriptorProtos as there are no extensions
+		unmarshaler := protoencoding.NewWireUnmarshaler(nil)
+		require.NoError(t, unmarshaler.Unmarshal(stdout.Bytes(), response))
 		require.Equal(t, utilstring.TrimLines(expectedErrorString), response.GetError(), utilstring.TrimLines(stderr.String()))
 	}
 }
@@ -204,8 +207,8 @@ func testBuildCodeGeneratorRequest(
 	realFilePaths []string,
 	parameter string,
 	fileToGenerate []string,
-) *plugin_go.CodeGeneratorRequest {
-	fileDescriptorSet, err := utilprototesting.GetProtocFileDescriptorSet(
+) *pluginpb.CodeGeneratorRequest {
+	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
 		[]string{root},
 		realFilePaths,

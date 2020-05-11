@@ -17,19 +17,19 @@ package protodesc
 import (
 	"sync"
 
-	protobufdescriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 type locationStore struct {
-	sourceCodeInfoLocations []*protobufdescriptor.SourceCodeInfo_Location
+	sourceCodeInfoLocations []*descriptorpb.SourceCodeInfo_Location
 
 	pathToLocation               map[string]Location
-	pathToSourceCodeInfoLocation map[string]*protobufdescriptor.SourceCodeInfo_Location
+	pathToSourceCodeInfoLocation map[string]*descriptorpb.SourceCodeInfo_Location
 	locationLock                 sync.RWMutex
 	sourceCodeInfoLocationLock   sync.RWMutex
 }
 
-func newLocationStore(sourceCodeInfoLocations []*protobufdescriptor.SourceCodeInfo_Location) *locationStore {
+func newLocationStore(sourceCodeInfoLocations []*descriptorpb.SourceCodeInfo_Location) *locationStore {
 	return &locationStore{
 		sourceCodeInfoLocations: sourceCodeInfoLocations,
 		pathToLocation:          make(map[string]Location),
@@ -58,7 +58,7 @@ func (l *locationStore) getLocationByPathKey(pathKey string) Location {
 		l.sourceCodeInfoLocationLock.Lock()
 		pathToSourceCodeInfoLocation = l.pathToSourceCodeInfoLocation
 		if pathToSourceCodeInfoLocation == nil {
-			pathToSourceCodeInfoLocation = make(map[string]*protobufdescriptor.SourceCodeInfo_Location)
+			pathToSourceCodeInfoLocation = make(map[string]*descriptorpb.SourceCodeInfo_Location)
 			for _, sourceCodeInfoLocation := range l.sourceCodeInfoLocations {
 				pathKey := getPathKey(sourceCodeInfoLocation.Path)
 				// - Multiple locations may have the same path.  This happens when a single

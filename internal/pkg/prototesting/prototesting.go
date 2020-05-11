@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utilprototesting
+package prototesting
 
 import (
 	"bytes"
@@ -23,19 +23,18 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"github.com/bufbuild/buf/internal/pkg/util/utildiff"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// DiffMessagesJSON diffs the two Messages using JSON.
-func DiffMessagesJSON(one proto.Message, two proto.Message, name string) (string, error) {
-	oneData, err := utilproto.MarshalJSONIndent(one)
+// DiffFileDescriptorSetsWire diffs the two FileDescriptorSets using proto.MarshalWire.
+func DiffFileDescriptorSetsWire(one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet, name string) (string, error) {
+	oneData, err := protoencoding.NewWireMarshaler().Marshal(one)
 	if err != nil {
 		return "", err
 	}
-	twoData, err := utilproto.MarshalJSONIndent(two)
+	twoData, err := protoencoding.NewWireMarshaler().Marshal(two)
 	if err != nil {
 		return "", err
 	}
@@ -46,13 +45,15 @@ func DiffMessagesJSON(one proto.Message, two proto.Message, name string) (string
 	return string(output), nil
 }
 
-// DiffMessagesText diffs the two Messages using proto.MarshalText.
-func DiffMessagesText(one proto.Message, two proto.Message, name string) (string, error) {
-	oneData, err := utilproto.MarshalText(one)
+// DiffFileDescriptorSetsJSON diffs the two FileDescriptorSets using JSON.
+//
+// TODO: this does NOT use any resolver, so extensions will be dropped. This needs to be updated.
+func DiffFileDescriptorSetsJSON(one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet, name string) (string, error) {
+	oneData, err := protoencoding.NewJSONMarshalerIndent(nil).Marshal(one)
 	if err != nil {
 		return "", err
 	}
-	twoData, err := utilproto.MarshalText(two)
+	twoData, err := protoencoding.NewJSONMarshalerIndent(nil).Marshal(two)
 	if err != nil {
 		return "", err
 	}
@@ -73,7 +74,7 @@ func GetProtocFileDescriptorSet(
 	realFilePaths []string,
 	includeImports bool,
 	includeSourceInfo bool,
-) (_ *descriptor.FileDescriptorSet, retErr error) {
+) (_ *descriptorpb.FileDescriptorSet, retErr error) {
 	protocBinPath, err := exec.LookPath("protoc")
 	if err != nil {
 		return nil, err
@@ -146,8 +147,9 @@ func GetProtocFileDescriptorSet(
 	if err != nil {
 		return nil, err
 	}
-	fileDescriptorSet := &descriptor.FileDescriptorSet{}
-	if err := utilproto.UnmarshalWire(data, fileDescriptorSet); err != nil {
+	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
+	// we do not know the FileDescriptorSet ahead of time so we cannot use it for extensions
+	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, fileDescriptorSet); err != nil {
 		return nil, err
 	}
 	return fileDescriptorSet, nil

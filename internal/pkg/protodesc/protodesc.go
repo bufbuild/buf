@@ -30,7 +30,7 @@ import (
 	"strconv"
 
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	protobufdescriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -322,7 +322,7 @@ type Method interface {
 }
 
 // NewFile returns a new File.
-func NewFile(fileDescriptorProto *protobufdescriptor.FileDescriptorProto) (File, error) {
+func NewFile(fileDescriptorProto *descriptorpb.FileDescriptorProto) (File, error) {
 	return newFile(fileDescriptorProto)
 }
 
@@ -331,7 +331,7 @@ func NewFile(fileDescriptorProto *protobufdescriptor.FileDescriptorProto) (File,
 // This may be done concurrently and the returned Files may not be in the same
 // order as the input FileDescriptorProtos on the FileDescriptorSet. If ordering
 // matters, use NewFile.
-func NewFilesUnstable(ctx context.Context, fileDescriptorProtos ...*protobufdescriptor.FileDescriptorProto) ([]File, error) {
+func NewFilesUnstable(ctx context.Context, fileDescriptorProtos ...*descriptorpb.FileDescriptorProto) ([]File, error) {
 	return newFilesUnstable(ctx, fileDescriptorProtos...)
 }
 

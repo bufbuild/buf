@@ -28,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/util/utilencoding"
-	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const defaultTimeout = 10 * time.Second
@@ -42,7 +42,7 @@ func handle(
 	ctx context.Context,
 	container app.EnvStderrContainer,
 	responseWriter appproto.ResponseWriter,
-	request *plugin_go.CodeGeneratorRequest,
+	request *pluginpb.CodeGeneratorRequest,
 ) {
 	externalConfig := &externalConfig{}
 	if err := utilencoding.UnmarshalJSONOrYAMLStrict(

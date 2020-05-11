@@ -18,13 +18,13 @@ import (
 	"context"
 	"runtime"
 
-	protobufdescriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"go.uber.org/multierr"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const defaultChunkSizeThreshold = 8
 
-func newFilesUnstable(ctx context.Context, fileDescriptorProtos ...*protobufdescriptor.FileDescriptorProto) ([]File, error) {
+func newFilesUnstable(ctx context.Context, fileDescriptorProtos ...*descriptorpb.FileDescriptorProto) ([]File, error) {
 	if len(fileDescriptorProtos) == 0 {
 		return nil, nil
 	}
@@ -76,15 +76,15 @@ func newFilesUnstable(ctx context.Context, fileDescriptorProtos ...*protobufdesc
 	return files, nil
 }
 
-func fileDescriptorProtosToChunks(s []*protobufdescriptor.FileDescriptorProto, chunkSize int) [][]*protobufdescriptor.FileDescriptorProto {
-	var chunks [][]*protobufdescriptor.FileDescriptorProto
+func fileDescriptorProtosToChunks(s []*descriptorpb.FileDescriptorProto, chunkSize int) [][]*descriptorpb.FileDescriptorProto {
+	var chunks [][]*descriptorpb.FileDescriptorProto
 	if len(s) == 0 {
 		return chunks
 	}
 	if chunkSize <= 0 {
-		return [][]*protobufdescriptor.FileDescriptorProto{s}
+		return [][]*descriptorpb.FileDescriptorProto{s}
 	}
-	c := make([]*protobufdescriptor.FileDescriptorProto, len(s))
+	c := make([]*descriptorpb.FileDescriptorProto, len(s))
 	copy(c, s)
 	// https://github.com/golang/go/wiki/SliceTricks#batching-with-minimal-allocation
 	for chunkSize < len(c) {
