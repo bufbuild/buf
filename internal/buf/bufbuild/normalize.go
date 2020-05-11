@@ -17,7 +17,6 @@ package bufbuild
 import (
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
@@ -93,10 +92,10 @@ func normalizeAndValidateFileList(inputs []string, name string) ([]string, error
 			if output1 == output2 {
 				return nil, fmt.Errorf("duplicate %s %s", name, output1)
 			}
-			if strings.HasPrefix(output1, output2) {
+			if storagepath.IsMatch(output2, output1) {
 				return nil, fmt.Errorf("%s %s is within %s %s which is not allowed", name, output1, name, output2)
 			}
-			if strings.HasPrefix(output2, output1) {
+			if storagepath.IsMatch(output1, output2) {
 				return nil, fmt.Errorf("%s %s is within %s %s which is not allowed", name, output2, name, output1)
 			}
 		}

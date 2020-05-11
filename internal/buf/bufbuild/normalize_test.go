@@ -21,6 +21,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNormalizeAndValidateRootsExcludesSuccess1(t *testing.T) {
+	// https://github.com/bufbuild/buf/issues/56
+	testNormalizeAndValidateRootsExcludesSuccess(
+		t,
+		[]string{
+			"proto",
+			"proto-vendor",
+		},
+		[]string{},
+	)
+}
+
 func TestNormalizeAndValidateRootsExcludesError1(t *testing.T) {
 	testNormalizeAndValidateRootsExcludesError(
 		t,
@@ -84,6 +96,12 @@ func TestNormalizeAndValidateRootsExcludesError6(t *testing.T) {
 		},
 		[]string{},
 	)
+}
+
+func testNormalizeAndValidateRootsExcludesSuccess(t *testing.T, roots []string, excludes []string) {
+	t.Parallel()
+	_, _, err := normalizeAndValidateRootsExcludes(roots, excludes)
+	assert.NoError(t, err, fmt.Sprintf("%v %v", roots, excludes))
 }
 
 func testNormalizeAndValidateRootsExcludesError(t *testing.T, roots []string, excludes []string) {

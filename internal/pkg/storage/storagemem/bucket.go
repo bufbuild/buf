@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
 	"sync"
 
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -117,10 +116,6 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) 
 	if err != nil {
 		return err
 	}
-	// without this, "internal/buf/proto" would call f for "internal/buf/protocompile"
-	if prefix != "." {
-		prefix = prefix + "/"
-	}
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	if b.closed {
@@ -138,8 +133,8 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) 
 			return err
 		default:
 		}
-		if prefix == "." || strings.HasPrefix(path, prefix) {
-			// only normalized and validated paths can be put into the map
+		// only normalized and validated paths can be put into the map
+		if storagepath.IsMatch(prefix, path) {
 			if err := f(path); err != nil {
 				return err
 			}
