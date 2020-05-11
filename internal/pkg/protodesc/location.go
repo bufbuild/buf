@@ -14,13 +14,13 @@
 
 package protodesc
 
-import protobufdescriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
+import "google.golang.org/protobuf/types/descriptorpb"
 
 type location struct {
-	sourceCodeInfoLocation *protobufdescriptor.SourceCodeInfo_Location
+	sourceCodeInfoLocation *descriptorpb.SourceCodeInfo_Location
 }
 
-func newLocation(sourceCodeInfoLocation *protobufdescriptor.SourceCodeInfo_Location) *location {
+func newLocation(sourceCodeInfoLocation *descriptorpb.SourceCodeInfo_Location) *location {
 	return &location{
 		sourceCodeInfoLocation: sourceCodeInfoLocation,
 	}

@@ -19,9 +19,9 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // TODO: evaluate the normalization of names
@@ -29,7 +29,7 @@ import (
 // This is always the case with buf input, but may not be the case with protoc input.
 
 // ValidateFileDescriptorSet validates a FileDescriptorSet.
-func ValidateFileDescriptorSet(fileDescriptorSet *descriptor.FileDescriptorSet) error {
+func ValidateFileDescriptorSet(fileDescriptorSet *descriptorpb.FileDescriptorSet) error {
 	if fileDescriptorSet == nil {
 		return errors.New("validate error: nil FileDescriptorSet")
 	}
@@ -37,7 +37,7 @@ func ValidateFileDescriptorSet(fileDescriptorSet *descriptor.FileDescriptorSet) 
 }
 
 // ValidateFileDescriptorProtos validates multiple FileDescriptorProtos.
-func ValidateFileDescriptorProtos(fileDescriptorProtos []*descriptor.FileDescriptorProto) error {
+func ValidateFileDescriptorProtos(fileDescriptorProtos []*descriptorpb.FileDescriptorProto) error {
 	if len(fileDescriptorProtos) == 0 {
 		return errors.New("validate error: empty FileDescriptorProtos")
 	}
@@ -56,7 +56,7 @@ func ValidateFileDescriptorProtos(fileDescriptorProtos []*descriptor.FileDescrip
 }
 
 // ValidateFileDescriptorProto validates a FileDescriptorProto.
-func ValidateFileDescriptorProto(fileDescriptorProto *descriptor.FileDescriptorProto) error {
+func ValidateFileDescriptorProto(fileDescriptorProto *descriptorpb.FileDescriptorProto) error {
 	if fileDescriptorProto == nil {
 		return errors.New("validate error: nil FileDescriptorProto")
 	}
@@ -85,10 +85,10 @@ func ValidateFileDescriptorProto(fileDescriptorProto *descriptor.FileDescriptorP
 //
 // Validates the input and output.
 func FileDescriptorSetWithSpecificNames(
-	fileDescriptorSet *descriptor.FileDescriptorSet,
+	fileDescriptorSet *descriptorpb.FileDescriptorSet,
 	allowNotExist bool,
 	specificNames ...string,
-) (*descriptor.FileDescriptorSet, error) {
+) (*descriptorpb.FileDescriptorSet, error) {
 	if err := ValidateFileDescriptorSet(fileDescriptorSet); err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func FileDescriptorSetWithSpecificNames(
 		return fileDescriptorSet, nil
 	}
 
-	newFileDescriptorSet := &descriptor.FileDescriptorSet{}
+	newFileDescriptorSet := &descriptorpb.FileDescriptorSet{}
 
 	specificNamesMap := make(map[string]struct{}, len(specificNames))
 	for _, specificName := range specificNames {
@@ -143,10 +143,10 @@ func FileDescriptorSetWithSpecificNames(
 //
 // Validates the input.
 func FileDescriptorSetToCodeGeneratorRequest(
-	fileDescriptorSet *descriptor.FileDescriptorSet,
+	fileDescriptorSet *descriptorpb.FileDescriptorSet,
 	parameter string,
 	fileToGenerate ...string,
-) (*plugin_go.CodeGeneratorRequest, error) {
+) (*pluginpb.CodeGeneratorRequest, error) {
 	if err := ValidateFileDescriptorSet(fileDescriptorSet); err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func FileDescriptorSetToCodeGeneratorRequest(
 	if parameter != "" {
 		parameterPtr = proto.String(parameter)
 	}
-	return &plugin_go.CodeGeneratorRequest{
+	return &pluginpb.CodeGeneratorRequest{
 		FileToGenerate: normalizedFileToGenerate,
 		Parameter:      parameterPtr,
 		ProtoFile:      fileDescriptorSet.File,
@@ -184,8 +184,8 @@ func FileDescriptorSetToCodeGeneratorRequest(
 // CodeGeneratorRequestToFileDescriptorSet converts the CodeGeneratorRequest to an FileDescriptorSet.
 //
 // Validates the output.
-func CodeGeneratorRequestToFileDescriptorSet(request *plugin_go.CodeGeneratorRequest) (*descriptor.FileDescriptorSet, error) {
-	fileDescriptorSet := &descriptor.FileDescriptorSet{
+func CodeGeneratorRequestToFileDescriptorSet(request *pluginpb.CodeGeneratorRequest) (*descriptorpb.FileDescriptorSet, error) {
+	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
 		File: request.GetProtoFile(),
 	}
 	return FileDescriptorSetWithSpecificNames(fileDescriptorSet, false, request.FileToGenerate...)

@@ -366,7 +366,7 @@ func TestRunBreakingFileSameValues(t *testing.T) {
 		extfiletesting.NewFileAnnotation("2.proto", 20, 1, 20, 37, "FILE_SAME_JAVA_GENERIC_SERVICES"),
 		extfiletesting.NewFileAnnotation("2.proto", 21, 1, 21, 35, "FILE_SAME_PY_GENERIC_SERVICES"),
 		extfiletesting.NewFileAnnotation("2.proto", 22, 1, 22, 36, "FILE_SAME_PHP_GENERIC_SERVICES"),
-		extfiletesting.NewFileAnnotation("2.proto", 23, 1, 23, 32, "FILE_SAME_CC_ENABLE_ARENAS"),
+		extfiletesting.NewFileAnnotation("2.proto", 23, 1, 23, 33, "FILE_SAME_CC_ENABLE_ARENAS"),
 	)
 }
 
@@ -584,7 +584,7 @@ func testBreakingExternalConfigModifier(
 		},
 	)
 	require.NoError(t, err)
-	previousImage, previousFileAnnotations, err := buildHandler.Build(
+	previousBuildResult, previousFileAnnotations, err := buildHandler.Build(
 		ctx,
 		previousReadWriteBucketCloser,
 		previousProtoFileSet,
@@ -595,7 +595,7 @@ func testBreakingExternalConfigModifier(
 	)
 	require.NoError(t, err)
 	require.Empty(t, previousFileAnnotations)
-	previousImage, err = extimage.ImageWithoutImports(previousImage)
+	previousImage, err := extimage.ImageWithoutImports(previousBuildResult.Image)
 	require.NoError(t, err)
 	protoFileSet, err := buildHandler.GetProtoFileSet(
 		ctx,
@@ -606,7 +606,7 @@ func testBreakingExternalConfigModifier(
 		},
 	)
 	require.NoError(t, err)
-	image, fileAnnotations, err := buildHandler.Build(
+	buildResult, fileAnnotations, err := buildHandler.Build(
 		ctx,
 		readWriteBucketCloser,
 		protoFileSet,
@@ -617,7 +617,7 @@ func testBreakingExternalConfigModifier(
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)
-	image, err = extimage.ImageWithoutImports(image)
+	image, err := extimage.ImageWithoutImports(buildResult.Image)
 	require.NoError(t, err)
 
 	handler := bufbreaking.NewHandler(

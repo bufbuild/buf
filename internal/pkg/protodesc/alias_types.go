@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strconv"
 
-	protobufdescriptor "github.com/golang/protobuf/protoc-gen-go/descriptor"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -193,7 +193,7 @@ var (
 	}
 )
 
-// FieldDescriptorProtoType aliases protobufdescriptor.FieldDescriptorProto_Type.
+// FieldDescriptorProtoType aliases descriptorpb.FieldDescriptorProto_Type.
 type FieldDescriptorProtoType int32
 
 // String returns the string representation of the FieldDescriptorProtoType.
@@ -205,7 +205,7 @@ func (t FieldDescriptorProtoType) String() string {
 	return s
 }
 
-func getFieldDescriptorProtoType(v protobufdescriptor.FieldDescriptorProto_Type) (FieldDescriptorProtoType, error) {
+func getFieldDescriptorProtoType(v descriptorpb.FieldDescriptorProto_Type) (FieldDescriptorProtoType, error) {
 	t, ok := numberToFieldDescriptorProtoType[int32(v)]
 	if !ok {
 		return 0, fmt.Errorf("no FieldDescriptorProtoType for %v", v)
@@ -213,7 +213,7 @@ func getFieldDescriptorProtoType(v protobufdescriptor.FieldDescriptorProto_Type)
 	return t, nil
 }
 
-// FieldDescriptorProtoLabel aliases protobufdescriptor.FieldDescriptorProto_Label.
+// FieldDescriptorProtoLabel aliases descriptorpb.FieldDescriptorProto_Label.
 type FieldDescriptorProtoLabel int32
 
 // String returns the string representation of the FieldDescriptorProtoLabel.
@@ -225,7 +225,7 @@ func (l FieldDescriptorProtoLabel) String() string {
 	return s
 }
 
-func getFieldDescriptorProtoLabel(v protobufdescriptor.FieldDescriptorProto_Label) (FieldDescriptorProtoLabel, error) {
+func getFieldDescriptorProtoLabel(v descriptorpb.FieldDescriptorProto_Label) (FieldDescriptorProtoLabel, error) {
 	t, ok := numberToFieldDescriptorProtoLabel[int32(v)]
 	if !ok {
 		return 0, fmt.Errorf("no FieldDescriptorProtoLabel for %v", v)
@@ -233,7 +233,7 @@ func getFieldDescriptorProtoLabel(v protobufdescriptor.FieldDescriptorProto_Labe
 	return t, nil
 }
 
-// FieldOptionsCType aliases protobufdescriptor.FieldOptions_CType.
+// FieldOptionsCType aliases descriptorpb.FieldOptions_CType.
 type FieldOptionsCType int32
 
 // String returns the string representation of the FieldOptionsCType.
@@ -245,7 +245,7 @@ func (c FieldOptionsCType) String() string {
 	return s
 }
 
-func getFieldOptionsCType(v protobufdescriptor.FieldOptions_CType) (FieldOptionsCType, error) {
+func getFieldOptionsCType(v descriptorpb.FieldOptions_CType) (FieldOptionsCType, error) {
 	t, ok := numberToFieldOptionsCType[int32(v)]
 	if !ok {
 		return 0, fmt.Errorf("no FieldOptionsCType for %v", v)
@@ -253,7 +253,7 @@ func getFieldOptionsCType(v protobufdescriptor.FieldOptions_CType) (FieldOptions
 	return t, nil
 }
 
-// FieldOptionsJSType aliases protobufdescriptor.FieldOptions_JSType.
+// FieldOptionsJSType aliases descriptorpb.FieldOptions_JSType.
 type FieldOptionsJSType int32
 
 // String returns the string representation of the FieldOptionsJSType.
@@ -265,7 +265,7 @@ func (j FieldOptionsJSType) String() string {
 	return s
 }
 
-func getFieldOptionsJSType(v protobufdescriptor.FieldOptions_JSType) (FieldOptionsJSType, error) {
+func getFieldOptionsJSType(v descriptorpb.FieldOptions_JSType) (FieldOptionsJSType, error) {
 	t, ok := numberToFieldOptionsJSType[int32(v)]
 	if !ok {
 		return 0, fmt.Errorf("no FieldOptionsJSType for %v", v)
@@ -273,7 +273,7 @@ func getFieldOptionsJSType(v protobufdescriptor.FieldOptions_JSType) (FieldOptio
 	return t, nil
 }
 
-// FileOptionsOptimizeMode aliases protobufdescriptor.FileOptions_OptimizeMode.
+// FileOptionsOptimizeMode aliases descriptorpb.FileOptions_OptimizeMode.
 type FileOptionsOptimizeMode int32
 
 // String returns the string representation of the FileOptionsOptimizeMode.
@@ -285,7 +285,7 @@ func (t FileOptionsOptimizeMode) String() string {
 	return s
 }
 
-func getFileOptionsOptimizeMode(v protobufdescriptor.FileOptions_OptimizeMode) (FileOptionsOptimizeMode, error) {
+func getFileOptionsOptimizeMode(v descriptorpb.FileOptions_OptimizeMode) (FileOptionsOptimizeMode, error) {
 	t, ok := numberToFileOptionsOptimizeMode[int32(v)]
 	if !ok {
 		return 0, fmt.Errorf("no FileOptionsOptimizeMode for %v", v)
@@ -293,7 +293,7 @@ func getFileOptionsOptimizeMode(v protobufdescriptor.FileOptions_OptimizeMode) (
 	return t, nil
 }
 
-// MethodOptionsIdempotencyLevel aliases protobufdescriptor.MethodOptions_IdempotencyLevel.
+// MethodOptionsIdempotencyLevel aliases descriptorpb.MethodOptions_IdempotencyLevel.
 type MethodOptionsIdempotencyLevel int32
 
 // String returns the string representation of the MethodOptionsIdempotencyLevel.
@@ -305,7 +305,7 @@ func (t MethodOptionsIdempotencyLevel) String() string {
 	return s
 }
 
-func getMethodOptionsIdempotencyLevel(v protobufdescriptor.MethodOptions_IdempotencyLevel) (MethodOptionsIdempotencyLevel, error) {
+func getMethodOptionsIdempotencyLevel(v descriptorpb.MethodOptions_IdempotencyLevel) (MethodOptionsIdempotencyLevel, error) {
 	t, ok := numberToMethodOptionsIdempotencyLevel[int32(v)]
 	if !ok {
 		return 0, fmt.Errorf("no MethodOptionsIdempotencyLevel for %v", v)

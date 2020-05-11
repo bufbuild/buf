@@ -62,6 +62,10 @@ func imageBuild(ctx context.Context, container *container) (retErr error) {
 		}
 		return errors.New("")
 	}
+	// TODO: this is just an extra check, but we need to refactor so this is impossible
+	if env.ImageWithImports == nil {
+		return errors.New("system error: ImageWithImports is nil after source build")
+	}
 	return internal.NewBufosImageWriter(
 		container.Logger(),
 		imageBuildOutputFlagName,
@@ -71,6 +75,7 @@ func imageBuild(ctx context.Context, container *container) (retErr error) {
 		container.Output,
 		container.AsFileDescriptorSet,
 		env.Image,
+		env.ImageWithImports,
 	)
 }
 

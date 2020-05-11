@@ -27,16 +27,16 @@ import (
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/protodesc"
+	"github.com/bufbuild/buf/internal/pkg/prototesting"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/util/utilgithub/utilgithubtesting"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto/utilprototesting"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const (
@@ -44,21 +44,9 @@ const (
 )
 
 var (
-	testEBaz = &proto.ExtensionDesc{
-		ExtendedType:  (*descriptor.FieldOptions)(nil),
-		ExtensionType: (*int32)(nil),
-		Field:         50007,
-		Name:          "baz",
-		Tag:           "varint,50007,opt,name=baz",
-		Filename:      "a.proto",
-	}
 	testGoogleapisDirPath = filepath.Join("cache", "googleapis")
 	testLock              sync.Mutex
 )
-
-func init() {
-	proto.RegisterExtension(testEBaz)
-}
 
 func TestGoogleapis(t *testing.T) {
 	t.Parallel()
@@ -102,37 +90,10 @@ func TestCompareGoogleapis(t *testing.T) {
 				protocFileDescriptorSet := testBuildProtocGoogleapis(t, includeSourceInfo)
 				assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, protocFileDescriptorSet)
 				// Cannot compare due to unknown field issue
-				//assertFileDescriptorSetsEqualText(t, fileDescriptorSet, protocFileDescriptorSet)
-				// Cannot compare due to unknown field issue
 				//assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, protocFileDescriptorSet)
 			},
 		)
 	}
-}
-
-func TestCustomOptions(t *testing.T) {
-	// https://github.com/bufbuild/buf/issues/52
-
-	t.Parallel()
-	image, fileAnnotations := testBuild(t, false, false, filepath.Join("testdata", "customoptions1"))
-	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
-
-	require.NotNil(t, image)
-	require.Equal(t, 1, len(image.File))
-	fileDescriptorProto := image.File[0]
-	require.Equal(t, 1, len(fileDescriptorProto.MessageType))
-	messageDescriptorProto := fileDescriptorProto.MessageType[0]
-	require.Equal(t, 1, len(messageDescriptorProto.Field))
-	fieldDescriptorProto := messageDescriptorProto.Field[0]
-	fieldOptions := fieldDescriptorProto.Options
-	require.NotNil(t, fieldOptions)
-	require.True(t, proto.HasExtension(fieldOptions, testEBaz))
-	value, err := proto.GetExtension(fieldOptions, testEBaz)
-	require.NoError(t, err)
-	valueInt32, ok := value.(*int32)
-	require.True(t, ok)
-	require.NotNil(t, valueInt32)
-	require.Equal(t, int32(42), *valueInt32)
 }
 
 func TestCompareCustomOptions(t *testing.T) {
@@ -143,7 +104,9 @@ func TestCompareCustomOptions(t *testing.T) {
 	fileDescriptorSet, err := extimage.ImageToFileDescriptorSet(image)
 	require.NoError(t, err)
 	protocFileDescriptorSet := testBuildProtoc(t, false, false, dirPath, dirPath)
+	assertFileDescriptorSetsEqualWire(t, fileDescriptorSet, protocFileDescriptorSet)
 	assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, protocFileDescriptorSet)
+	assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, protocFileDescriptorSet)
 }
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Image {
@@ -229,7 +192,7 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Ima
 	return image
 }
 
-func testBuildProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptor.FileDescriptorSet {
+func testBuildProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
 	testGetGoogleapis(t)
 	fileDescriptorSet := testBuildProtoc(t, true, includeSourceInfo, testGoogleapisDirPath, testGoogleapisDirPath)
 	assert.Equal(t, 1585, len(fileDescriptorSet.GetFile()))
@@ -239,7 +202,7 @@ func testBuildProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptor
 func testBuild(t *testing.T, includeImports bool, includeSourceInfo bool, dirPath string) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation) {
 	readBucketCloser := testGetReadBucketCloser(t, dirPath)
 	protoFileSet := testGetProtoFileSet(t, readBucketCloser)
-	image, fileAnnotations, err := newBuilder(zap.NewNop(), runtime.NumCPU()).Build(
+	buildResult, fileAnnotations, err := newBuilder(zap.NewNop(), runtime.NumCPU()).Build(
 		context.Background(),
 		readBucketCloser,
 		protoFileSet.Roots(),
@@ -249,10 +212,11 @@ func testBuild(t *testing.T, includeImports bool, includeSourceInfo bool, dirPat
 	)
 	require.NoError(t, err)
 	require.NoError(t, readBucketCloser.Close())
-	return image, fileAnnotations
+	// this drops the ImageWithImports as we are not using it
+	return buildResult.Image, fileAnnotations
 }
 
-func testBuildProtoc(t *testing.T, includeImports bool, includeSourceInfo bool, includeDirPath string, dirPath string) *descriptor.FileDescriptorSet {
+func testBuildProtoc(t *testing.T, includeImports bool, includeSourceInfo bool, includeDirPath string, dirPath string) *descriptorpb.FileDescriptorSet {
 	readBucketCloser := testGetReadBucketCloser(t, dirPath)
 	protoFileSet := testGetProtoFileSet(t, readBucketCloser)
 	realFilePaths := protoFileSet.RealFilePaths()
@@ -260,7 +224,7 @@ func testBuildProtoc(t *testing.T, includeImports bool, includeSourceInfo bool, 
 	for i, realFilePath := range realFilePaths {
 		realFilePathsCopy[i] = storagepath.Unnormalize(storagepath.Join(dirPath, realFilePath))
 	}
-	fileDescriptorSet, err := utilprototesting.GetProtocFileDescriptorSet(
+	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
 		[]string{includeDirPath},
 		realFilePathsCopy,
@@ -311,23 +275,21 @@ func testGetGoogleapis(t *testing.T) {
 	)
 }
 
-func assertFileDescriptorSetsEqualJSON(t *testing.T, one *descriptor.FileDescriptorSet, two *descriptor.FileDescriptorSet) {
+func assertFileDescriptorSetsEqualWire(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
+	diffTwo, err := prototesting.DiffFileDescriptorSetsWire(one, two, "protoparse-protoc")
+	assert.NoError(t, err)
+	assert.Equal(t, "", diffTwo, "Wire diff:\n%s", diffTwo)
+}
+
+func assertFileDescriptorSetsEqualJSON(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
+	// TODO: test with resolver?
 	// This also has the effect of verifying output order
-	diffOne, err := utilprototesting.DiffMessagesJSON(one, two, "protoparse-protoc")
+	diffOne, err := prototesting.DiffFileDescriptorSetsJSON(one, two, "protoparse-protoc")
 	assert.NoError(t, err)
 	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
 }
 
-//lint:ignore U1000 will use in the future
-func assertFileDescriptorSetsEqualText(t *testing.T, one *descriptor.FileDescriptorSet, two *descriptor.FileDescriptorSet) {
-	// Cannot compare others due to unknown field issue
-	diffTwo, err := utilprototesting.DiffMessagesText(one, two, "protoparse-protoc")
-	assert.NoError(t, err)
-	assert.Equal(t, "", diffTwo, "Text diff:\n%s", diffTwo)
-}
-
-//lint:ignore U1000 will use in the future
-func assertFileDescriptorSetsEqualProto(t *testing.T, one *descriptor.FileDescriptorSet, two *descriptor.FileDescriptorSet) {
+func assertFileDescriptorSetsEqualProto(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
 	equal := proto.Equal(one, two)
 	assert.True(t, equal, "proto.Equal returned false")
 }

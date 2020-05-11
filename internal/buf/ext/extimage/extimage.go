@@ -22,9 +22,9 @@ import (
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/ext/extdescriptor"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	plugin_go "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // ValidateImage validates an Image.
@@ -226,11 +226,11 @@ func ImageWithSpecificNames(
 // the backing FileDescriptorProtos.
 //
 // Validates the input and output.
-func ImageToFileDescriptorSet(image *imagev1beta1.Image) (*descriptor.FileDescriptorSet, error) {
+func ImageToFileDescriptorSet(image *imagev1beta1.Image) (*descriptorpb.FileDescriptorSet, error) {
 	if err := ValidateImage(image); err != nil {
 		return nil, err
 	}
-	fileDescriptorSet := &descriptor.FileDescriptorSet{
+	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
 		File: image.File,
 	}
 	if err := extdescriptor.ValidateFileDescriptorSet(fileDescriptorSet); err != nil {
@@ -249,7 +249,7 @@ func ImageToCodeGeneratorRequest(
 	image *imagev1beta1.Image,
 	parameter string,
 	fileToGenerate ...string,
-) (*plugin_go.CodeGeneratorRequest, error) {
+) (*pluginpb.CodeGeneratorRequest, error) {
 	if err := ValidateImage(image); err != nil {
 		return nil, err
 	}
@@ -277,7 +277,7 @@ func ImageToCodeGeneratorRequest(
 	if parameter != "" {
 		parameterPtr = proto.String(parameter)
 	}
-	return &plugin_go.CodeGeneratorRequest{
+	return &pluginpb.CodeGeneratorRequest{
 		FileToGenerate: normalizedFileToGenerate,
 		Parameter:      parameterPtr,
 		ProtoFile:      image.File,
@@ -287,7 +287,7 @@ func ImageToCodeGeneratorRequest(
 // CodeGeneratorRequestToImage converts the CodeGeneratorRequest to an Image.
 //
 // Validates the output.
-func CodeGeneratorRequestToImage(request *plugin_go.CodeGeneratorRequest) (*imagev1beta1.Image, error) {
+func CodeGeneratorRequestToImage(request *pluginpb.CodeGeneratorRequest) (*imagev1beta1.Image, error) {
 	image := &imagev1beta1.Image{
 		File: request.GetProtoFile(),
 	}

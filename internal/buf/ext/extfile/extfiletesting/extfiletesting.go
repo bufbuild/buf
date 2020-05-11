@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/util/utilproto"
+	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -51,8 +51,10 @@ func NewFileAnnotation(path string, startLine int, startColumn int, endLine int,
 // AssertFileAnnotationsEqual asserts that the annotations are equal minus the Message field.
 func AssertFileAnnotationsEqual(t *testing.T, expected []*filev1beta1.FileAnnotation, actual []*filev1beta1.FileAnnotation) {
 	s := make([]string, len(actual))
+	// we do not use extensions so we do not need fileDescriptorProtos
+	marshaler := protoencoding.NewJSONMarshalerUseProtoNames(nil)
 	for i, fileAnnotation := range actual {
-		data, err := utilproto.MarshalJSONOrigName(fileAnnotation)
+		data, err := marshaler.Marshal(fileAnnotation)
 		require.NoError(t, err)
 		s[i] = string(data)
 	}
