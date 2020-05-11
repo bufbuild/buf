@@ -8,7 +8,7 @@ require (
 	github.com/go-git/go-git/v5 v5.0.0
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/protobuf v1.4.1
-	github.com/jhump/protoreflect v1.6.1-0.20200511133244-e52bab97a7ad
+	github.com/jhump/protoreflect v1.6.1
 	github.com/pkg/profile v1.4.0
 	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
