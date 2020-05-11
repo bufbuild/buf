@@ -85,11 +85,15 @@ func (i *imageWriter) WriteImage(
 		if imageWithImports == nil {
 			return errors.New("cannot serialize image to json without imports present")
 		}
-		resolver, err := protoencoding.NewResolver(imageWithImports.File...)
-		if err != nil {
-			return err
-		}
-		data, err = protoencoding.NewJSONMarshaler(resolver).Marshal(message)
+		// TODO: evaluate whether to turn this on, this only affects google.protobuf.Any
+		// which can be either https://developers.google.com/protocol-buffers/docs/proto3#json
+		//resolver, err := protoencoding.NewResolver(imageWithImports.File...)
+		//if err != nil {
+		//return err
+		//}
+		//data, err = protoencoding.NewJSONMarshaler(resolver).Marshal(message)
+
+		data, err = protoencoding.NewJSONMarshaler(nil).Marshal(message)
 		if err != nil {
 			return err
 		}
