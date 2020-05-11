@@ -224,7 +224,7 @@ func Components(path string) []string {
 //
 // If the map is empty, returns false.
 //
-// All files are directories in the map are expected to be normalized.
+// All files and directories in the map are expected to be normalized.
 // The path is normalized within this call.
 func MapContainsMatch(m map[string]struct{}, path string) bool {
 	if len(m) == 0 {
@@ -235,6 +235,30 @@ func MapContainsMatch(m map[string]struct{}, path string) bool {
 	}
 	for curPath := path; curPath != "."; curPath = Dir(curPath) {
 		if _, ok := m[curPath]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+// IsMatch returns true if the value is equal to or contains the path.
+//
+// The path and value are expected to be normalized and validated.
+//
+// For a given value:
+//
+//   - If value == ".", the value contains the path.
+//   - If value == path, the value is equal to the path.
+//   - If value is a directory that contains path, this returns true.
+//
+// The path is normalized within this call.
+func IsMatch(value string, path string) bool {
+	if value == "." {
+		return true
+	}
+	// TODO: can we optimize this with strings.HasPrefix(path, value + "/") somehow?
+	for curPath := path; curPath != "."; curPath = Dir(curPath) {
+		if value == curPath {
 			return true
 		}
 	}
@@ -253,7 +277,7 @@ func MapContainsMatch(m map[string]struct{}, path string) bool {
 //
 // If the map is empty, returns empty map.
 //
-// All files are directories in the map are expected to be normalized.
+// All files and directories in the map are expected to be normalized.
 // The path is normalized within this call.
 func MapMatches(m map[string]struct{}, path string) map[string]struct{} {
 	n := make(map[string]struct{})
