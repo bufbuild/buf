@@ -26,10 +26,10 @@ import (
 	"github.com/bufbuild/buf/internal/gen/embed/wkt"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
+	"github.com/bufbuild/buf/internal/pkg/instrument"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"github.com/bufbuild/buf/internal/pkg/util/utillog"
-	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"go.uber.org/multierr"
@@ -64,8 +64,8 @@ func (b *builder) Build(
 	rootFilePaths []string,
 	includeImports bool,
 	includeSourceInfo bool,
-) (_ *BuildResult, _ []*filev1beta1.FileAnnotation, retErr error) {
-	defer utillog.DeferWithError(b.logger, "run", &retErr, zap.Int("num_files", len(rootFilePaths)))()
+) (*BuildResult, []*filev1beta1.FileAnnotation, error) {
+	defer instrument.Start(b.logger, "run", zap.Int("num_files", len(rootFilePaths))).End()
 
 	if len(roots) == 0 {
 		return nil, nil, errors.New("no roots specified")
@@ -73,7 +73,7 @@ func (b *builder) Build(
 	if len(rootFilePaths) == 0 {
 		return nil, nil, errors.New("no input files specified")
 	}
-	if uniqueLen := len(utilstring.SliceToMap(rootFilePaths)); uniqueLen != len(rootFilePaths) {
+	if uniqueLen := len(stringutil.SliceToMap(rootFilePaths)); uniqueLen != len(rootFilePaths) {
 		// this is a system error, we should have verified this elsewhere
 		return nil, nil, errors.New("rootFilePaths has duplicate values")
 	}
@@ -132,7 +132,7 @@ func (b *builder) parse(
 	includeImports bool,
 	includeSourceInfo bool,
 ) []*result {
-	defer utillog.Defer(b.logger, "parse", zap.Int("num_files", len(rootFilePaths)))()
+	defer instrument.Start(b.logger, "parse", zap.Int("num_files", len(rootFilePaths))).End()
 
 	accessor := newParserAccessor(ctx, readBucket, roots)
 	var results []*result
@@ -140,7 +140,7 @@ func (b *builder) parse(
 	if b.parallelism > 1 {
 		chunkSize = len(rootFilePaths) / b.parallelism
 	}
-	chunks := utilstring.SliceToChunks(rootFilePaths, chunkSize)
+	chunks := stringutil.SliceToChunks(rootFilePaths, chunkSize)
 	resultC := make(chan *result, len(chunks))
 	for _, rootFilePaths := range chunks {
 		rootFilePaths := rootFilePaths
@@ -250,7 +250,7 @@ func getImage(
 	includeImports bool,
 	includeSourceInfo bool,
 ) (*imagev1beta1.Image, error) {
-	defer utillog.Defer(logger, "get_image")()
+	defer instrument.Start(logger, "get_image").End()
 
 	// if we aren't including imports, then we need a set of file names that
 	// are included so we can create a topologically sorted list w/out
@@ -425,7 +425,7 @@ func newParserAccessor(
 				return nil, err
 			}
 			for _, root := range roots {
-				relFilePath, relErr := storagepath.Rel(root, rootFilePath)
+				relFilePath, relErr := normalpath.Rel(root, rootFilePath)
 				if relErr != nil {
 					return nil, relErr
 				}

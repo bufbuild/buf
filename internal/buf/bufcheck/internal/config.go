@@ -19,8 +19,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
 const (
@@ -75,8 +75,8 @@ func newConfig(
 	idToCategories map[string][]string,
 	defaultCategories []string,
 ) (*Config, error) {
-	configBuilder.Use = utilstring.SliceToUniqueSortedSliceFilterEmptyStrings(configBuilder.Use)
-	configBuilder.Except = utilstring.SliceToUniqueSortedSliceFilterEmptyStrings(configBuilder.Except)
+	configBuilder.Use = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(configBuilder.Use)
+	configBuilder.Except = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(configBuilder.Except)
 	if len(configBuilder.Use) == 0 {
 		// default behavior
 		configBuilder.Use = defaultCategories
@@ -162,7 +162,7 @@ func newConfigForCheckerBuilders(
 			if rootPath == "" {
 				continue
 			}
-			rootPath, err := storagepath.NormalizeAndValidate(rootPath)
+			rootPath, err := normalpath.NormalizeAndValidate(rootPath)
 			if err != nil {
 				return nil, err
 			}
@@ -183,7 +183,7 @@ func newConfigForCheckerBuilders(
 		if rootPath == "" {
 			continue
 		}
-		rootPath, err := storagepath.NormalizeAndValidate(rootPath)
+		rootPath, err := normalpath.NormalizeAndValidate(rootPath)
 		if err != nil {
 			return nil, err
 		}

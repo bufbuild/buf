@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 )
 
 type relRealProtoFilePathResolver struct {
@@ -70,7 +70,7 @@ func (p *relRealProtoFilePathResolver) GetRealFilePath(inputFilePath string) (st
 
 	// add the prefix directory
 	// Normalize and Join call filepath.Clean
-	inputFilePath = storagepath.Unnormalize(storagepath.Join(storagepath.Normalize(p.dirPath), storagepath.Normalize(inputFilePath)))
+	inputFilePath = normalpath.Unnormalize(normalpath.Join(normalpath.Normalize(p.dirPath), normalpath.Normalize(inputFilePath)))
 
 	// if the directory was absolute, we can output absolute paths
 	if filepath.IsAbs(p.dirPath) {

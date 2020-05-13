@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/protodesc"
+	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
 )
 
 // Helper is a helper for checkers.
@@ -39,8 +39,8 @@ func NewHelper(id string) *Helper {
 // If descriptor is nil, no filename information is added.
 // If location is nil, no line or column information will be added.
 func (h *Helper) AddFileAnnotationf(
-	descriptor protodesc.Descriptor,
-	location protodesc.Location,
+	descriptor protosrc.Descriptor,
+	location protosrc.Location,
 	format string,
 	args ...interface{},
 ) {
@@ -67,8 +67,8 @@ func (h *Helper) FileAnnotations() []*filev1beta1.FileAnnotation {
 // If location is nil, no line or column information will be added.
 func newFileAnnotationf(
 	id string,
-	descriptor protodesc.Descriptor,
-	location protodesc.Location,
+	descriptor protosrc.Descriptor,
+	location protosrc.Location,
 	format string,
 	args ...interface{},
 ) *filev1beta1.FileAnnotation {

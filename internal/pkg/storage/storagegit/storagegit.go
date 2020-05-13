@@ -33,12 +33,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bufbuild/buf/internal/pkg/instrument"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
-	"github.com/bufbuild/buf/internal/pkg/util/utillog"
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/memfs"
 	"github.com/go-git/go-git/v5"
@@ -71,9 +71,9 @@ func ExperimentalClone(
 	tag string,
 	recurseSubmodules bool,
 	readWriteBucket storage.ReadWriteBucket,
-	options ...storagepath.TransformerOption,
+	options ...normalpath.TransformerOption,
 ) (retErr error) {
-	defer utillog.Defer(logger, "git_experimental_clone")()
+	defer instrument.Start(logger, "git_experimental_clone").End()
 	var err error
 	switch {
 	case strings.HasPrefix(path, "http://"),
@@ -131,7 +131,7 @@ func ExperimentalClone(
 	defer func() {
 		retErr = multierr.Append(retErr, tempReadBucketCloser.Close())
 	}()
-	defer utillog.Defer(logger, "git_experimental_clone_copy")()
+	defer instrument.Start(logger, "git_experimental_clone_copy").End()
 	_, err = storageutil.Copy(ctx, tempReadBucketCloser, readWriteBucket, "", options...)
 	return err
 }
@@ -162,9 +162,9 @@ func Clone(
 	sshKeyPassphraseEnvKey string,
 	sshKnownHostsFilesEnvKey string,
 	readWriteBucket storage.ReadWriteBucket,
-	options ...storagepath.TransformerOption,
+	options ...normalpath.TransformerOption,
 ) error {
-	defer utillog.Defer(logger, "git_clone")()
+	defer instrument.Start(logger, "git_clone").End()
 
 	if refName == nil {
 		// we detect this outside of this function so this is a system error
@@ -347,11 +347,11 @@ func copyBillyFilesystemToBucket(
 	logger *zap.Logger,
 	filesystem billy.Filesystem,
 	readWriteBucket storage.ReadWriteBucket,
-	options ...storagepath.TransformerOption,
+	options ...normalpath.TransformerOption,
 ) error {
-	defer utillog.Defer(logger, "git_clone_copy")()
+	defer instrument.Start(logger, "git_clone_copy").End()
 
-	transformer := storagepath.NewTransformer(options...)
+	transformer := normalpath.NewTransformer(options...)
 	semaphoreC := make(chan struct{}, runtime.NumCPU())
 	var retErr error
 	var wg sync.WaitGroup
@@ -364,7 +364,7 @@ func copyBillyFilesystemToBucket(
 				return fmt.Errorf("invalid regularFilePath: %q", regularFilePath)
 			}
 			// just to make sure
-			path, err := storagepath.NormalizeAndValidate(regularFilePath[1:])
+			path, err := normalpath.NormalizeAndValidate(regularFilePath[1:])
 			if err != nil {
 				return err
 			}
@@ -447,13 +447,13 @@ func walkBillyFilesystemDir(
 				return fmt.Errorf("size %d is greater than uint32", size)
 			}
 			// TODO: check to make sure normalization matches up with billy package
-			if err := f(storagepath.Join(dirPath, name), uint32(size)); err != nil {
+			if err := f(normalpath.Join(dirPath, name), uint32(size)); err != nil {
 				return err
 			}
 		}
 		if fileInfo.Mode().IsDir() {
 			// TODO: check to make sure normalization matches up with billy package
-			if err := walkBillyFilesystemDir(ctx, filesystem, f, storagepath.Join(dirPath, name)); err != nil {
+			if err := walkBillyFilesystemDir(ctx, filesystem, f, normalpath.Join(dirPath, name)); err != nil {
 				return err
 			}
 		}

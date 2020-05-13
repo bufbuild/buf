@@ -37,13 +37,13 @@ import (
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appnetrc"
-	"github.com/bufbuild/buf/internal/pkg/protoencoding"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -352,7 +352,7 @@ func (e *envReader) readEnvFromSource(
 				if err != nil {
 					return nil, nil, err
 				}
-				specificRealFilePath, err := storagepath.NormalizeAndValidate(rel)
+				specificRealFilePath, err := normalpath.NormalizeAndValidate(rel)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -362,7 +362,7 @@ func (e *envReader) readEnvFromSource(
 			// if we did not have a directory input, then we need to make sure all paths are normalized
 			// and relative
 			for i, specificFilePath := range specificFilePaths {
-				specificRealFilePath, err := storagepath.NormalizeAndValidate(specificFilePath)
+				specificRealFilePath, err := normalpath.NormalizeAndValidate(specificFilePath)
 				if err != nil {
 					return nil, nil, err
 				}
@@ -521,14 +521,14 @@ func (e *envReader) getReadBucketCloserFromArchive(
 	if err != nil {
 		return nil, err
 	}
-	transformerOptions := []storagepath.TransformerOption{
-		storagepath.WithExt(".proto"),
-		storagepath.WithExactPath(bufconfig.ConfigFilePath),
+	transformerOptions := []normalpath.TransformerOption{
+		normalpath.WithExt(".proto"),
+		normalpath.WithExactPath(bufconfig.ConfigFilePath),
 	}
 	if archiveRef.StripComponents > 0 {
 		transformerOptions = append(
 			transformerOptions,
-			storagepath.WithStripComponents(archiveRef.StripComponents),
+			normalpath.WithStripComponents(archiveRef.StripComponents),
 		)
 	}
 	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
@@ -564,9 +564,9 @@ func (e *envReader) getReadBucketCloserFromGit(
 		return nil, err
 	}
 	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
-	transformerOptions := []storagepath.TransformerOption{
-		storagepath.WithExt(".proto"),
-		storagepath.WithExactPath(bufconfig.ConfigFilePath),
+	transformerOptions := []normalpath.TransformerOption{
+		normalpath.WithExt(".proto"),
+		normalpath.WithExactPath(bufconfig.ConfigFilePath),
 	}
 	if e.experimentalGitClone {
 		err = storagegit.ExperimentalClone(

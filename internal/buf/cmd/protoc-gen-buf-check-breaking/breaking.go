@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
-	"github.com/bufbuild/buf/internal/pkg/util/utilencoding"
+	"github.com/bufbuild/buf/internal/pkg/encoding"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -44,7 +44,7 @@ func handle(
 	request *pluginpb.CodeGeneratorRequest,
 ) {
 	externalConfig := &externalConfig{}
-	if err := utilencoding.UnmarshalJSONOrYAMLStrict(
+	if err := encoding.UnmarshalJSONOrYAMLStrict(
 		[]byte(request.GetParameter()),
 		externalConfig,
 	); err != nil {
@@ -77,7 +77,7 @@ func handle(
 		ctx,
 		newContainer(container),
 		externalConfig.AgainstInput,
-		utilencoding.GetJSONStringOrStringValue(externalConfig.AgainstInputConfig),
+		encoding.GetJSONStringOrStringValue(externalConfig.AgainstInputConfig),
 		files, // limit to the input files if specified
 		true,  // allow files in the against input to not exist
 		!externalConfig.ExcludeImports,
@@ -87,7 +87,7 @@ func handle(
 		return
 	}
 	envReader = internal.NewBufosEnvReader(logger, "", "input_config", false)
-	config, err := envReader.GetConfig(ctx, utilencoding.GetJSONStringOrStringValue(externalConfig.InputConfig))
+	config, err := envReader.GetConfig(ctx, encoding.GetJSONStringOrStringValue(externalConfig.InputConfig))
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return

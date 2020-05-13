@@ -16,22 +16,8 @@
 package storageos
 
 import (
-	"errors"
-
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 )
-
-// errNotDir is the error returned if a path does not dir.
-var errNotDir = errors.New("not a directory")
-
-// IsNotDir returns true for a Error that is for a root path not being a directory.
-//
-// This is only returned when creating a Bucket, or when putting a file into a directory
-// path - paths within buckets are all regular files.
-func IsNotDir(err error) bool {
-	return storagepath.ErrorEquals(err, errNotDir)
-}
 
 // NewReadWriteBucketCloser returns a new OS bucket.
 //

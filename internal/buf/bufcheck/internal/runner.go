@@ -19,9 +19,9 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/ext/extfile"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/protodesc"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"github.com/bufbuild/buf/internal/pkg/util/utillog"
+	"github.com/bufbuild/buf/internal/pkg/instrument"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -39,12 +39,12 @@ func NewRunner(logger *zap.Logger) *Runner {
 }
 
 // Check runs the Checkers.
-func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protodesc.File, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protosrc.File, files []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
 	checkers := config.Checkers
 	if len(checkers) == 0 {
 		return nil, nil
 	}
-	defer utillog.Defer(r.logger, "check", zap.Int("num_files", len(files)), zap.Int("num_checkers", len(checkers)))()
+	defer instrument.Start(r.logger, "check", zap.Int("num_files", len(files)), zap.Int("num_checkers", len(checkers))).End()
 
 	var fileAnnotations []*filev1beta1.FileAnnotation
 	resultC := make(chan *result, len(checkers))
@@ -88,7 +88,7 @@ func shouldIgnoreFileAnnotation(fileAnnotation *filev1beta1.FileAnnotation, igno
 	if fileAnnotation.Path == "" {
 		return false
 	}
-	if storagepath.MapContainsMatch(ignoreAllRootPaths, fileAnnotation.Path) {
+	if normalpath.MapContainsMatch(ignoreAllRootPaths, fileAnnotation.Path) {
 		return true
 	}
 	if fileAnnotation.Type == "" {
@@ -98,7 +98,7 @@ func shouldIgnoreFileAnnotation(fileAnnotation *filev1beta1.FileAnnotation, igno
 	if !ok {
 		return false
 	}
-	return storagepath.MapContainsMatch(ignoreRootPaths, fileAnnotation.Path)
+	return normalpath.MapContainsMatch(ignoreRootPaths, fileAnnotation.Path)
 }
 
 type result struct {

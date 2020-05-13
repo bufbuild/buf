@@ -19,7 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/protodesc"
+	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
 	"go.uber.org/zap"
 )
 
@@ -33,6 +33,6 @@ func newRunner(logger *zap.Logger) *runner {
 	}
 }
 
-func (r *runner) Check(ctx context.Context, config *Config, previousFiles []protodesc.File, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+func (r *runner) Check(ctx context.Context, config *Config, previousFiles []protosrc.File, files []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return r.delegate.Check(ctx, configToInternalConfig(config), previousFiles, files)
 }

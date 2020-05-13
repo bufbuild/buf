@@ -26,8 +26,8 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
 const sliceLength = math.MaxInt64
@@ -96,7 +96,7 @@ func getStorageFilePathMap(absDirPath string, ext string) (map[string]struct{}, 
 					if err != nil {
 						return err
 					}
-					storageFilePath, err := storagepath.NormalizeAndValidate(relFilePath)
+					storageFilePath, err := normalpath.NormalizeAndValidate(relFilePath)
 					if err != nil {
 						return err
 					}
@@ -117,7 +117,7 @@ func getStorageFilePathMap(absDirPath string, ext string) (map[string]struct{}, 
 func getStorageFilePathToData(absDirPath string, storageFilePathMap map[string]struct{}) (map[string][]byte, error) {
 	storageFilePathToData := make(map[string][]byte, len(storageFilePathMap))
 	for storageFilePath := range storageFilePathMap {
-		data, err := ioutil.ReadFile(filepath.Join(absDirPath, storagepath.Unnormalize(storageFilePath)))
+		data, err := ioutil.ReadFile(filepath.Join(absDirPath, normalpath.Unnormalize(storageFilePath)))
 		if err != nil {
 			return nil, err
 		}
@@ -150,7 +150,7 @@ var (
 	pathToData = map[string][]byte{
 `)
 
-	for _, storageFilePath := range utilstring.MapToSortedSlice(storageFilePathMap) {
+	for _, storageFilePath := range stringutil.MapToSortedSlice(storageFilePathMap) {
 		_, _ = buffer.WriteString(`"`)
 		_, _ = buffer.WriteString(storageFilePath)
 		_, _ = buffer.WriteString(`": {

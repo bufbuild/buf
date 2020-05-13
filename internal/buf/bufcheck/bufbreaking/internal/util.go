@@ -20,18 +20,18 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/protodesc"
+	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
 )
 
 // addFunc adds a FileAnnotation.
 //
 // Both the Descriptor and Location can be nil.
-type addFunc func(protodesc.Descriptor, protodesc.Location, string, ...interface{})
+type addFunc func(protosrc.Descriptor, protosrc.Location, string, ...interface{})
 
 func newFilesCheckFunc(
-	f func(addFunc, []protodesc.File, []protodesc.File) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
-	return func(id string, previousFiles []protodesc.File, files []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+	f func(addFunc, []protosrc.File, []protosrc.File) error,
+) func(string, []protosrc.File, []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
+	return func(id string, previousFiles []protosrc.File, files []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
 		helper := internal.NewHelper(id)
 		if err := f(helper.AddFileAnnotationf, previousFiles, files); err != nil {
 			return nil, err
@@ -41,15 +41,15 @@ func newFilesCheckFunc(
 }
 
 func newFilePairCheckFunc(
-	f func(addFunc, protodesc.File, protodesc.File) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+	f func(addFunc, protosrc.File, protosrc.File) error,
+) func(string, []protosrc.File, []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
-		func(add addFunc, previousFiles []protodesc.File, files []protodesc.File) error {
-			previousFilePathToFile, err := protodesc.FilePathToFile(previousFiles...)
+		func(add addFunc, previousFiles []protosrc.File, files []protosrc.File) error {
+			previousFilePathToFile, err := protosrc.FilePathToFile(previousFiles...)
 			if err != nil {
 				return err
 			}
-			filePathToFile, err := protodesc.FilePathToFile(files...)
+			filePathToFile, err := protosrc.FilePathToFile(files...)
 			if err != nil {
 				return err
 			}
@@ -66,15 +66,15 @@ func newFilePairCheckFunc(
 }
 
 func newEnumPairCheckFunc(
-	f func(addFunc, protodesc.Enum, protodesc.Enum) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+	f func(addFunc, protosrc.Enum, protosrc.Enum) error,
+) func(string, []protosrc.File, []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
-		func(add addFunc, previousFiles []protodesc.File, files []protodesc.File) error {
-			previousFullNameToEnum, err := protodesc.FullNameToEnum(previousFiles...)
+		func(add addFunc, previousFiles []protosrc.File, files []protosrc.File) error {
+			previousFullNameToEnum, err := protosrc.FullNameToEnum(previousFiles...)
 			if err != nil {
 				return err
 			}
-			fullNameToEnum, err := protodesc.FullNameToEnum(files...)
+			fullNameToEnum, err := protosrc.FullNameToEnum(files...)
 			if err != nil {
 				return err
 			}
@@ -93,15 +93,15 @@ func newEnumPairCheckFunc(
 // compares all the enums that are of the same number
 // map is from name to EnumValue for the given number
 func newEnumValuePairCheckFunc(
-	f func(addFunc, map[string]protodesc.EnumValue, map[string]protodesc.EnumValue) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+	f func(addFunc, map[string]protosrc.EnumValue, map[string]protosrc.EnumValue) error,
+) func(string, []protosrc.File, []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newEnumPairCheckFunc(
-		func(add addFunc, previousEnum protodesc.Enum, enum protodesc.Enum) error {
-			previousNumberToNameToEnumValue, err := protodesc.NumberToNameToEnumValue(previousEnum)
+		func(add addFunc, previousEnum protosrc.Enum, enum protosrc.Enum) error {
+			previousNumberToNameToEnumValue, err := protosrc.NumberToNameToEnumValue(previousEnum)
 			if err != nil {
 				return err
 			}
-			numberToNameToEnumValue, err := protodesc.NumberToNameToEnumValue(enum)
+			numberToNameToEnumValue, err := protosrc.NumberToNameToEnumValue(enum)
 			if err != nil {
 				return err
 			}
@@ -118,15 +118,15 @@ func newEnumValuePairCheckFunc(
 }
 
 func newMessagePairCheckFunc(
-	f func(addFunc, protodesc.Message, protodesc.Message) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+	f func(addFunc, protosrc.Message, protosrc.Message) error,
+) func(string, []protosrc.File, []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
-		func(add addFunc, previousFiles []protodesc.File, files []protodesc.File) error {
-			previousFullNameToMessage, err := protodesc.FullNameToMessage(previousFiles...)
+		func(add addFunc, previousFiles []protosrc.File, files []protosrc.File) error {
+			previousFullNameToMessage, err := protosrc.FullNameToMessage(previousFiles...)
 			if err != nil {
 				return err
 			}
-			fullNameToMessage, err := protodesc.FullNameToMessage(files...)
+			fullNameToMessage, err := protosrc.FullNameToMessage(files...)
 			if err != nil {
 				return err
 			}
@@ -143,15 +143,15 @@ func newMessagePairCheckFunc(
 }
 
 func newFieldPairCheckFunc(
-	f func(addFunc, protodesc.Field, protodesc.Field) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+	f func(addFunc, protosrc.Field, protosrc.Field) error,
+) func(string, []protosrc.File, []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newMessagePairCheckFunc(
-		func(add addFunc, previousMessage protodesc.Message, message protodesc.Message) error {
-			previousNumberToField, err := protodesc.NumberToMessageField(previousMessage)
+		func(add addFunc, previousMessage protosrc.Message, message protosrc.Message) error {
+			previousNumberToField, err := protosrc.NumberToMessageField(previousMessage)
 			if err != nil {
 				return err
 			}
-			numberToField, err := protodesc.NumberToMessageField(message)
+			numberToField, err := protosrc.NumberToMessageField(message)
 			if err != nil {
 				return err
 			}
@@ -168,15 +168,15 @@ func newFieldPairCheckFunc(
 }
 
 func newServicePairCheckFunc(
-	f func(addFunc, protodesc.Service, protodesc.Service) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+	f func(addFunc, protosrc.Service, protosrc.Service) error,
+) func(string, []protosrc.File, []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newFilesCheckFunc(
-		func(add addFunc, previousFiles []protodesc.File, files []protodesc.File) error {
-			previousFullNameToService, err := protodesc.FullNameToService(previousFiles...)
+		func(add addFunc, previousFiles []protosrc.File, files []protosrc.File) error {
+			previousFullNameToService, err := protosrc.FullNameToService(previousFiles...)
 			if err != nil {
 				return err
 			}
-			fullNameToService, err := protodesc.FullNameToService(files...)
+			fullNameToService, err := protosrc.FullNameToService(files...)
 			if err != nil {
 				return err
 			}
@@ -193,15 +193,15 @@ func newServicePairCheckFunc(
 }
 
 func newMethodPairCheckFunc(
-	f func(addFunc, protodesc.Method, protodesc.Method) error,
-) func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error) {
+	f func(addFunc, protosrc.Method, protosrc.Method) error,
+) func(string, []protosrc.File, []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
 	return newServicePairCheckFunc(
-		func(add addFunc, previousService protodesc.Service, service protodesc.Service) error {
-			previousNameToMethod, err := protodesc.NameToMethod(previousService)
+		func(add addFunc, previousService protosrc.Service, service protosrc.Service) error {
+			previousNameToMethod, err := protosrc.NameToMethod(previousService)
 			if err != nil {
 				return err
 			}
-			nameToMethod, err := protodesc.NameToMethod(service)
+			nameToMethod, err := protosrc.NameToMethod(service)
 			if err != nil {
 				return err
 			}
@@ -217,9 +217,9 @@ func newMethodPairCheckFunc(
 	)
 }
 
-func getDescriptorAndLocationForDeletedEnum(file protodesc.File, previousNestedName string) (protodesc.Descriptor, protodesc.Location, error) {
+func getDescriptorAndLocationForDeletedEnum(file protosrc.File, previousNestedName string) (protosrc.Descriptor, protosrc.Location, error) {
 	if strings.Contains(previousNestedName, ".") {
-		nestedNameToMessage, err := protodesc.NestedNameToMessage(file)
+		nestedNameToMessage, err := protosrc.NestedNameToMessage(file)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -233,7 +233,7 @@ func getDescriptorAndLocationForDeletedEnum(file protodesc.File, previousNestedN
 	return file, nil, nil
 }
 
-func getDescriptorAndLocationForDeletedMessage(file protodesc.File, nestedNameToMessage map[string]protodesc.Message, previousNestedName string) (protodesc.Descriptor, protodesc.Location) {
+func getDescriptorAndLocationForDeletedMessage(file protosrc.File, nestedNameToMessage map[string]protosrc.Message, previousNestedName string) (protosrc.Descriptor, protosrc.Location) {
 	if strings.Contains(previousNestedName, ".") {
 		split := strings.Split(previousNestedName, ".")
 		for i := len(split) - 1; i > 0; i-- {
@@ -245,7 +245,7 @@ func getDescriptorAndLocationForDeletedMessage(file protodesc.File, nestedNameTo
 	return file, nil
 }
 
-func getSortedEnumValueNames(nameToEnumValue map[string]protodesc.EnumValue) []string {
+func getSortedEnumValueNames(nameToEnumValue map[string]protosrc.EnumValue) []string {
 	names := make([]string, 0, len(nameToEnumValue))
 	for name := range nameToEnumValue {
 		names = append(names, name)
@@ -254,7 +254,7 @@ func getSortedEnumValueNames(nameToEnumValue map[string]protodesc.EnumValue) []s
 	return names
 }
 
-func withBackupLocation(primary protodesc.Location, secondary protodesc.Location) protodesc.Location {
+func withBackupLocation(primary protosrc.Location, secondary protosrc.Location) protosrc.Location {
 	if primary != nil {
 		return primary
 	}

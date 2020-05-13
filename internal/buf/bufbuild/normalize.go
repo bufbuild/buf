@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
 func normalizeAndValidateRoots(inputRoots []string) ([]string, error) {
@@ -44,8 +44,8 @@ func normalizeAndValidateRootsExcludes(inputRoots []string, inputExcludes []stri
 		return nil, nil, err
 	}
 
-	rootMap := utilstring.SliceToMap(roots)
-	excludeMap := utilstring.SliceToMap(excludes)
+	rootMap := stringutil.SliceToMap(roots)
+	excludeMap := stringutil.SliceToMap(excludes)
 
 	// verify that no exclude equals a root directly
 	for exclude := range excludeMap {
@@ -55,10 +55,10 @@ func normalizeAndValidateRootsExcludes(inputRoots []string, inputExcludes []stri
 	}
 	// verify that all excludes are within a root
 	for exclude := range excludeMap {
-		if !storagepath.MapContainsMatch(rootMap, exclude) {
+		if !normalpath.MapContainsMatch(rootMap, exclude) {
 			return nil, nil, fmt.Errorf("exclude %s is not contained in any root, which is not valid", exclude)
 		}
-		if storagepath.Ext(exclude) == ".proto" {
+		if normalpath.Ext(exclude) == ".proto" {
 			return nil, nil, fmt.Errorf("excludes can only be directories but file %s discovered", exclude)
 		}
 	}
@@ -75,7 +75,7 @@ func normalizeAndValidateFileList(inputs []string, name string) ([]string, error
 		if input == "" {
 			return nil, fmt.Errorf("%s value is empty", name)
 		}
-		output, err := storagepath.NormalizeAndValidate(input)
+		output, err := normalpath.NormalizeAndValidate(input)
 		if err != nil {
 			// user error
 			return nil, err
@@ -92,10 +92,10 @@ func normalizeAndValidateFileList(inputs []string, name string) ([]string, error
 			if output1 == output2 {
 				return nil, fmt.Errorf("duplicate %s %s", name, output1)
 			}
-			if storagepath.IsMatch(output2, output1) {
+			if normalpath.IsMatch(output2, output1) {
 				return nil, fmt.Errorf("%s %s is within %s %s which is not allowed", name, output1, name, output2)
 			}
-			if storagepath.IsMatch(output1, output2) {
+			if normalpath.IsMatch(output1, output2) {
 				return nil, fmt.Errorf("%s %s is within %s %s which is not allowed", name, output2, name, output1)
 			}
 		}

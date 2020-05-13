@@ -22,14 +22,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
-	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -125,8 +125,8 @@ func TestBasic4(t *testing.T) {
 			"one/1.proto":     testProtoContent,
 			"one/foo.yaml":    "",
 		},
-		storagepath.WithExt(".proto"),
-		storagepath.WithExactPath("one/foo.yaml"),
+		normalpath.WithExt(".proto"),
+		normalpath.WithExactPath("one/foo.yaml"),
 	)
 }
 
@@ -140,8 +140,8 @@ func TestBasic5(t *testing.T) {
 			"one/a/b/2.proto": testProtoContent,
 			"one/a/1.proto":   "",
 		},
-		storagepath.WithExt(".proto"),
-		storagepath.WithExactPath("foo.yaml"),
+		normalpath.WithExt(".proto"),
+		normalpath.WithExactPath("foo.yaml"),
 	)
 }
 
@@ -155,8 +155,8 @@ func TestBasic6(t *testing.T) {
 			"one/a/b/2.proto": testProtoContent,
 			"one/a/1.proto":   "",
 		},
-		storagepath.WithExt(".proto"),
-		storagepath.WithExactPath("foo.yaml"),
+		normalpath.WithExt(".proto"),
+		normalpath.WithExactPath("foo.yaml"),
 	)
 }
 
@@ -175,9 +175,9 @@ func TestBasic7(t *testing.T) {
 			"1.proto":     testProtoContent,
 			"a/bar.yaml":  "",
 		},
-		storagepath.WithExt(".proto"),
-		storagepath.WithExactPath("a/bar.yaml"),
-		storagepath.WithStripComponents(1),
+		normalpath.WithExt(".proto"),
+		normalpath.WithExactPath("a/bar.yaml"),
+		normalpath.WithStripComponents(1),
 	)
 }
 
@@ -223,8 +223,8 @@ func testGitClone(t *testing.T, experimental bool) {
 			"",
 			false,
 			readWriteBucketCloser,
-			storagepath.WithExt(".proto"),
-			storagepath.WithExt(".go"),
+			normalpath.WithExt(".proto"),
+			normalpath.WithExt(".go"),
 		)
 	} else {
 		err = storagegit.Clone(
@@ -241,8 +241,8 @@ func testGitClone(t *testing.T, experimental bool) {
 			"",
 			"",
 			readWriteBucketCloser,
-			storagepath.WithExt(".proto"),
-			storagepath.WithExt(".go"),
+			normalpath.WithExt(".proto"),
+			normalpath.WithExt(".go"),
 		)
 	}
 	assert.NoError(t, err)
@@ -262,7 +262,7 @@ func testBasic(
 	dirPath string,
 	walkPrefix string,
 	expectedPathToContent map[string]string,
-	transformerOptions ...storagepath.TransformerOption,
+	transformerOptions ...normalpath.TransformerOption,
 ) {
 	t.Parallel()
 	t.Run("static", func(t *testing.T) {
@@ -323,7 +323,7 @@ func testBasicStatic(
 	t *testing.T,
 	walkPrefix string,
 	expectedPathToContent map[string]string,
-	transformerOptions ...storagepath.TransformerOption,
+	transformerOptions ...normalpath.TransformerOption,
 ) {
 	pathToData := make(map[string][]byte)
 	for path, content := range expectedPathToContent {
@@ -340,7 +340,7 @@ func testBasicMem(
 	doAsTar bool,
 	walkPrefix string,
 	expectedPathToContent map[string]string,
-	transformerOptions ...storagepath.TransformerOption,
+	transformerOptions ...normalpath.TransformerOption,
 ) {
 	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
 	testBasicBucket(
@@ -360,7 +360,7 @@ func testBasicOS(
 	doAsTar bool,
 	walkPrefix string,
 	expectedPathToContent map[string]string,
-	transformerOptions ...storagepath.TransformerOption,
+	transformerOptions ...normalpath.TransformerOption,
 ) {
 	tempDirPath, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
@@ -389,7 +389,7 @@ func testBasicBucket(
 	doAsTar bool,
 	walkPrefix string,
 	expectedPathToContent map[string]string,
-	transformerOptions ...storagepath.TransformerOption,
+	transformerOptions ...normalpath.TransformerOption,
 ) {
 	inputReadWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(dirPath)
 	require.NoError(t, err)
@@ -438,7 +438,7 @@ func assertExpectedPathToContent(
 			return nil
 		},
 	))
-	require.Equal(t, len(paths), len(utilstring.SliceToUniqueSortedSlice(paths)))
+	require.Equal(t, len(paths), len(stringutil.SliceToUniqueSortedSlice(paths)))
 	assert.Equal(t, len(expectedPathToContent), len(paths), paths)
 	for _, path := range paths {
 		expectedContent, ok := expectedPathToContent[path]

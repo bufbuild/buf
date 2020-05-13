@@ -20,8 +20,8 @@ import (
 	"sort"
 
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/ext/extdescriptor"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/proto/protodescriptorutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -32,7 +32,7 @@ func ValidateImage(image *imagev1beta1.Image) error {
 	if image == nil {
 		return errors.New("validate error: nil Image")
 	}
-	if err := extdescriptor.ValidateFileDescriptorProtos(image.File); err != nil {
+	if err := protodescriptorutil.ValidateFileDescriptorProtos(image.File); err != nil {
 		return err
 	}
 
@@ -173,7 +173,7 @@ func ImageWithSpecificNames(
 
 	specificNamesMap := make(map[string]struct{}, len(specificNames))
 	for _, specificName := range specificNames {
-		normalizedName, err := storagepath.NormalizeAndValidate(specificName)
+		normalizedName, err := normalpath.NormalizeAndValidate(specificName)
 		if err != nil {
 			return nil, err
 		}
@@ -217,7 +217,7 @@ func ImageWithSpecificNames(
 	return newImage, nil
 }
 
-// ImageToFileDescriptorSet converts the Image to a native FileDescriptorSet.
+// ImageToFileDescriptorSet converts the Image to a FileDescriptorSet.
 //
 // This strips the backing ImageExtension.
 //
@@ -233,10 +233,32 @@ func ImageToFileDescriptorSet(image *imagev1beta1.Image) (*descriptorpb.FileDesc
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{
 		File: image.File,
 	}
-	if err := extdescriptor.ValidateFileDescriptorSet(fileDescriptorSet); err != nil {
+	if err := protodescriptorutil.ValidateFileDescriptorSet(fileDescriptorSet); err != nil {
 		return nil, err
 	}
 	return fileDescriptorSet, nil
+}
+
+// FileDescriptorSetToImage converts the FileDescriptorSet to an Image.
+//
+// This does not set the ImageExtension.
+//
+// Backing FileDescriptorProtos are not copied, only the references are copied.
+// This will result in unknown fields being dropped from the backing FileDescriptorSet, but not
+// the backing FileDescriptorProtos.
+//
+// Validates the input and output.
+func FileDescriptorSetToImage(fileDescriptorSet *descriptorpb.FileDescriptorSet) (*imagev1beta1.Image, error) {
+	if err := protodescriptorutil.ValidateFileDescriptorSet(fileDescriptorSet); err != nil {
+		return nil, err
+	}
+	image := &imagev1beta1.Image{
+		File: fileDescriptorSet.File,
+	}
+	if err := ValidateImage(image); err != nil {
+		return nil, err
+	}
+	return image, nil
 }
 
 // ImageToCodeGeneratorRequest converts the Image to a CodeGeneratorRequest.
@@ -244,7 +266,7 @@ func ImageToFileDescriptorSet(image *imagev1beta1.Image) (*descriptorpb.FileDesc
 // The files to generate must be within the Image.
 // Files to generate are normalized and validated.
 //
-// Validates the input.
+// Validates the input and output.
 func ImageToCodeGeneratorRequest(
 	image *imagev1beta1.Image,
 	parameter string,
@@ -258,7 +280,7 @@ func ImageToCodeGeneratorRequest(
 	}
 	normalizedFileToGenerate := make([]string, len(fileToGenerate))
 	for i, elem := range fileToGenerate {
-		normalized, err := storagepath.NormalizeAndValidate(elem)
+		normalized, err := normalpath.NormalizeAndValidate(elem)
 		if err != nil {
 			return nil, err
 		}
@@ -277,17 +299,24 @@ func ImageToCodeGeneratorRequest(
 	if parameter != "" {
 		parameterPtr = proto.String(parameter)
 	}
-	return &pluginpb.CodeGeneratorRequest{
+	request := &pluginpb.CodeGeneratorRequest{
 		FileToGenerate: normalizedFileToGenerate,
 		Parameter:      parameterPtr,
 		ProtoFile:      image.File,
-	}, nil
+	}
+	if err := protodescriptorutil.ValidateCodeGeneratorRequest(request); err != nil {
+		return nil, err
+	}
+	return request, nil
 }
 
 // CodeGeneratorRequestToImage converts the CodeGeneratorRequest to an Image.
 //
-// Validates the output.
+// Validates the input and output.
 func CodeGeneratorRequestToImage(request *pluginpb.CodeGeneratorRequest) (*imagev1beta1.Image, error) {
+	if err := protodescriptorutil.ValidateCodeGeneratorRequest(request); err != nil {
+		return nil, err
+	}
 	image := &imagev1beta1.Image{
 		File: request.GetProtoFile(),
 	}

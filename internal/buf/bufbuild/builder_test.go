@@ -26,12 +26,13 @@ import (
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/protodesc"
-	"github.com/bufbuild/buf/internal/pkg/prototesting"
+	"github.com/bufbuild/buf/internal/pkg/github"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/proto/protoc"
+	"github.com/bufbuild/buf/internal/pkg/proto/protodiff"
+	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"github.com/bufbuild/buf/internal/pkg/util/utilgithub/utilgithubtesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -187,7 +188,7 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Ima
 
 	assert.Equal(t, 1585, len(image.GetFile()))
 	// basic check to make sure there is no error at this scale
-	_, err = protodesc.NewFilesUnstable(context.Background(), image.GetFile()...)
+	_, err = protosrc.NewFilesUnstable(context.Background(), image.GetFile()...)
 	assert.NoError(t, err)
 	return image
 }
@@ -222,9 +223,9 @@ func testBuildProtoc(t *testing.T, includeImports bool, includeSourceInfo bool, 
 	realFilePaths := protoFileSet.RealFilePaths()
 	realFilePathsCopy := make([]string, len(realFilePaths))
 	for i, realFilePath := range realFilePaths {
-		realFilePathsCopy[i] = storagepath.Unnormalize(storagepath.Join(dirPath, realFilePath))
+		realFilePathsCopy[i] = normalpath.Unnormalize(normalpath.Join(dirPath, realFilePath))
 	}
-	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
+	fileDescriptorSet, err := protoc.GetFileDescriptorSet(
 		context.Background(),
 		[]string{includeDirPath},
 		realFilePathsCopy,
@@ -265,7 +266,7 @@ func testGetGoogleapis(t *testing.T) {
 
 	require.NoError(
 		t,
-		utilgithubtesting.GetGithubArchive(
+		github.GetArchive(
 			context.Background(),
 			testGoogleapisDirPath,
 			"googleapis",
@@ -276,7 +277,7 @@ func testGetGoogleapis(t *testing.T) {
 }
 
 func assertFileDescriptorSetsEqualWire(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
-	diffTwo, err := prototesting.DiffFileDescriptorSetsWire(one, two, "protoparse-protoc")
+	diffTwo, err := protodiff.DiffFileDescriptorSetsWire(one, two, "protoparse-protoc")
 	assert.NoError(t, err)
 	assert.Equal(t, "", diffTwo, "Wire diff:\n%s", diffTwo)
 }
@@ -284,7 +285,7 @@ func assertFileDescriptorSetsEqualWire(t *testing.T, one *descriptorpb.FileDescr
 func assertFileDescriptorSetsEqualJSON(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
 	// TODO: test with resolver?
 	// This also has the effect of verifying output order
-	diffOne, err := prototesting.DiffFileDescriptorSetsJSON(one, two, "protoparse-protoc")
+	diffOne, err := protodiff.DiffFileDescriptorSetsJSON(one, two, "protoparse-protoc")
 	assert.NoError(t, err)
 	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
 }

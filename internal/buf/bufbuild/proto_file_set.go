@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 )
 
 type protoFileSet struct {
@@ -104,7 +104,7 @@ func (s *protoFileSet) GetRootFilePath(realFilePath string) (string, error) {
 	if realFilePath == "" {
 		return "", errors.New("file path empty")
 	}
-	realFilePath, err := storagepath.NormalizeAndValidate(realFilePath)
+	realFilePath, err := normalpath.NormalizeAndValidate(realFilePath)
 	if err != nil {
 		return "", err
 	}
@@ -119,7 +119,7 @@ func (s *protoFileSet) GetRealFilePath(rootFilePath string) (string, error) {
 	if rootFilePath == "" {
 		return "", errors.New("file path empty")
 	}
-	rootFilePath, err := storagepath.NormalizeAndValidate(rootFilePath)
+	rootFilePath, err := normalpath.NormalizeAndValidate(rootFilePath)
 	if err != nil {
 		return "", err
 	}

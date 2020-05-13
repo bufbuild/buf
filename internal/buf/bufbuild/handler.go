@@ -17,9 +17,9 @@ package bufbuild
 import (
 	"context"
 	"errors"
-	"time"
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
+	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
@@ -134,13 +134,11 @@ func (h *handler) copyToMemory(
 	readBucket storage.ReadBucket,
 	protoFileSet ProtoFileSet,
 ) (storage.ReadWriteBucketCloser, error) {
-	start := time.Now()
-
 	if readBucket.Info().InMemory() {
 		h.logger.Debug("already_in_memory")
 		return nil, nil
 	}
-
+	timer := instrument.Start(h.logger, "copy_to_memory")
 	memReadWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
 	count, err := storageutil.CopyPaths(
 		ctx,
@@ -151,10 +149,6 @@ func (h *handler) copyToMemory(
 	if err != nil {
 		return nil, multierr.Append(err, memReadWriteBucketCloser.Close())
 	}
-	h.logger.Debug(
-		"copy_to_memory",
-		zap.Int("num_files", count),
-		zap.Duration("duration", time.Since(start)),
-	)
+	timer.End(zap.Int("num_files", count))
 	return memReadWriteBucketCloser, nil
 }

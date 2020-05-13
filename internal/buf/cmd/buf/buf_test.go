@@ -25,7 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
-	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -388,8 +388,8 @@ func testRunCmd(t *testing.T, cmd *appcmd.Command, expectedExitCode int, expecte
 			"test",
 		),
 	)
-	assert.Equal(t, expectedExitCode, exitCode, utilstring.TrimLines(stderr.String()))
+	assert.Equal(t, expectedExitCode, exitCode, stringutil.TrimLines(stderr.String()))
 	if exitCode == expectedExitCode {
-		assert.Equal(t, utilstring.TrimLines(expectedStdout), utilstring.TrimLines(stdout.String()), utilstring.TrimLines(stderr.String()))
+		assert.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()), stringutil.TrimLines(stderr.String()))
 	}
 }
