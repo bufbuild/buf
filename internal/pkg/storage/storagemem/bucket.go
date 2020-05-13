@@ -21,9 +21,9 @@ import (
 	"io"
 	"sync"
 
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/internal"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"go.uber.org/multierr"
 )
 
@@ -45,7 +45,7 @@ func newBucket() *bucket {
 func newImmutableBucket(pathToData map[string][]byte) (*bucket, error) {
 	pathToBuffer := make(map[string]*buffer, len(pathToData))
 	for path, data := range pathToData {
-		path, err := storagepath.NormalizeAndValidate(path)
+		path, err := normalpath.NormalizeAndValidate(path)
 		if err != nil {
 			return nil, err
 		}
@@ -64,7 +64,7 @@ func newImmutableBucket(pathToData map[string][]byte) (*bucket, error) {
 }
 
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, error) {
-	path, err := storagepath.NormalizeAndValidate(path)
+	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 }
 
 func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
-	path, err := storagepath.NormalizeAndValidate(path)
+	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 }
 
 func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) error {
-	prefix, err := storagepath.NormalizeAndValidate(prefix)
+	prefix, err := normalpath.NormalizeAndValidate(prefix)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) 
 		default:
 		}
 		// only normalized and validated paths can be put into the map
-		if storagepath.IsMatch(prefix, path) {
+		if normalpath.IsMatch(prefix, path) {
 			if err := f(path); err != nil {
 				return err
 			}
@@ -147,7 +147,7 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 	if b.immutable {
 		return nil, errImmutable
 	}
-	path, err := storagepath.NormalizeAndValidate(path)
+	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return nil, err
 	}

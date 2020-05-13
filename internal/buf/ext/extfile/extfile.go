@@ -21,7 +21,7 @@ import (
 	"strconv"
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/protoencoding"
+	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
 )
 
 // FileAnnotationToString returns the basic string representation of the FileAnnotation.

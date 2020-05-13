@@ -25,7 +25,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 )
 
 var (
@@ -38,14 +38,14 @@ var (
 	errNotExist = errors.New("does not exist")
 )
 
-// NewErrNotExist returns a new Error for a path not existing.
-func NewErrNotExist(path string) *storagepath.Error {
-	return storagepath.NewError(path, errNotExist)
+// NewErrNotExist returns a new error for a path not existing.
+func NewErrNotExist(path string) error {
+	return normalpath.NewError(path, errNotExist)
 }
 
-// IsNotExist returns true for a Error that is for a path not existing.
+// IsNotExist returns true for a error that is for a path not existing.
 func IsNotExist(err error) bool {
-	return storagepath.ErrorEquals(err, errNotExist)
+	return normalpath.ErrorEquals(err, errNotExist)
 }
 
 // ObjectInfo contains object info.

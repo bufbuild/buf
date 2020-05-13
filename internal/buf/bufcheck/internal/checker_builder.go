@@ -16,7 +16,7 @@ package internal
 
 import (
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/protodesc"
+	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
 )
 
 // CheckerBuilder is a checker builder.
@@ -88,7 +88,7 @@ func newNopPurpose(purpose string) func(ConfigBuilder) (string, error) {
 }
 
 func newNopCheckFunc(
-	f func(string, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error),
+	f func(string, []protosrc.File, []protosrc.File) ([]*filev1beta1.FileAnnotation, error),
 ) func(ConfigBuilder) (CheckFunc, error) {
 	return func(ConfigBuilder) (CheckFunc, error) {
 		return f, nil

@@ -24,7 +24,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/protodesc"
+	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
 	"go.uber.org/zap"
 )
 
@@ -75,7 +75,7 @@ type Runner interface {
 	// FileAnnotations will be sorted, but Paths will not have the roots as a prefix, instead
 	// they will be relative to the roots. This should be fixed for linter outputs if image
 	// mode is not used.
-	Check(context.Context, *Config, []protodesc.File, []protodesc.File) ([]*filev1beta1.FileAnnotation, error)
+	Check(context.Context, *Config, []protosrc.File, []protosrc.File) ([]*filev1beta1.FileAnnotation, error)
 }
 
 // NewRunner returns a new Runner.

@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
-	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
 // GetCheckersForCategories filters the given Checkers to the categories.
@@ -30,7 +30,7 @@ func GetCheckersForCategories(checkers []bufcheck.Checker, allKnownCategories []
 	if len(categories) == 0 {
 		return nil, nil
 	}
-	categoriesMap := utilstring.SliceToMap(categories)
+	categoriesMap := stringutil.SliceToMap(categories)
 	if err := checkCategories(allKnownCategories, categoriesMap); err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func checkCategories(knownCategories []string, categoriesMap map[string]struct{}
 	if len(categoriesMap) == 0 {
 		return nil
 	}
-	knownCategoriesMap := utilstring.SliceToMap(knownCategories)
+	knownCategoriesMap := stringutil.SliceToMap(knownCategories)
 	var unknownCategories []string
 	for category := range categoriesMap {
 		if _, ok := knownCategoriesMap[category]; !ok {

@@ -21,14 +21,14 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
 
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	"github.com/bufbuild/buf/internal/buf/ext/extio"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/protoencoding"
+	"github.com/bufbuild/buf/internal/pkg/instrument"
+	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -74,7 +74,7 @@ func (i *imageWriter) WriteImage(
 		}
 	}
 	var data []byte
-	start := time.Now()
+	marshalTimer := instrument.Start(i.logger, "image_marshal")
 	switch imageRef.ImageFormat {
 	case iov1beta1.ImageFormat_IMAGE_FORMAT_BIN, iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ:
 		data, err = protoencoding.NewWireMarshaler().Marshal(message)
@@ -85,22 +85,20 @@ func (i *imageWriter) WriteImage(
 		if imageWithImports == nil {
 			return errors.New("cannot serialize image to json without imports present")
 		}
-		// TODO: evaluate whether to turn this on, this only affects google.protobuf.Any
-		// which can be either https://developers.google.com/protocol-buffers/docs/proto3#json
-		//resolver, err := protoencoding.NewResolver(imageWithImports.File...)
-		//if err != nil {
-		//return err
-		//}
-		//data, err = protoencoding.NewJSONMarshaler(resolver).Marshal(message)
-
-		data, err = protoencoding.NewJSONMarshaler(nil).Marshal(message)
+		resolverTimer := instrument.Start(i.logger, "image_marshal.new_marshaler")
+		resolver, err := protoencoding.NewResolver(imageWithImports.File...)
+		if err != nil {
+			return err
+		}
+		resolverTimer.End()
+		data, err = protoencoding.NewJSONMarshaler(resolver).Marshal(message)
 		if err != nil {
 			return err
 		}
 	default:
 		return fmt.Errorf("unknown image format: %v", imageRef.ImageFormat)
 	}
-	i.logger.Debug("image_marshal", zap.Duration("duration", time.Since(start)))
+	marshalTimer.End()
 
 	var writer io.Writer
 	switch imageRef.FileScheme {

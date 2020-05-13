@@ -20,12 +20,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
-	"github.com/bufbuild/buf/internal/pkg/ext/extdescriptor"
-	"github.com/bufbuild/buf/internal/pkg/protoencoding"
-	"github.com/bufbuild/buf/internal/pkg/prototesting"
-	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
+	"github.com/bufbuild/buf/internal/pkg/proto/protoc"
+	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -191,13 +191,13 @@ func testRunHandlerFunc(
 		),
 	)
 
-	require.Equal(t, expectedExitCode, exitCode, utilstring.TrimLines(stderr.String()))
+	require.Equal(t, expectedExitCode, exitCode, stringutil.TrimLines(stderr.String()))
 	if exitCode == 0 {
 		response := &pluginpb.CodeGeneratorResponse{}
 		// we do not need fileDescriptorProtos as there are no extensions
 		unmarshaler := protoencoding.NewWireUnmarshaler(nil)
 		require.NoError(t, unmarshaler.Unmarshal(stdout.Bytes(), response))
-		require.Equal(t, utilstring.TrimLines(expectedErrorString), response.GetError(), utilstring.TrimLines(stderr.String()))
+		require.Equal(t, stringutil.TrimLines(expectedErrorString), response.GetError(), stringutil.TrimLines(stderr.String()))
 	}
 }
 
@@ -208,7 +208,7 @@ func testBuildCodeGeneratorRequest(
 	parameter string,
 	fileToGenerate []string,
 ) *pluginpb.CodeGeneratorRequest {
-	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
+	fileDescriptorSet, err := protoc.GetFileDescriptorSet(
 		context.Background(),
 		[]string{root},
 		realFilePaths,
@@ -216,7 +216,9 @@ func testBuildCodeGeneratorRequest(
 		true,
 	)
 	require.NoError(t, err)
-	request, err := extdescriptor.FileDescriptorSetToCodeGeneratorRequest(fileDescriptorSet, parameter, fileToGenerate...)
+	image, err := extimage.FileDescriptorSetToImage(fileDescriptorSet)
+	require.NoError(t, err)
+	request, err := extimage.ImageToCodeGeneratorRequest(image, parameter, fileToGenerate...)
 	require.NoError(t, err)
 	return request
 }

@@ -19,7 +19,7 @@ import (
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/protodesc"
+	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
 	"go.uber.org/zap"
 )
 
@@ -44,11 +44,11 @@ func (h *handler) BreakingCheck(
 	previousImage *imagev1beta1.Image,
 	image *imagev1beta1.Image,
 ) ([]*filev1beta1.FileAnnotation, error) {
-	previousFiles, err := protodesc.NewFilesUnstable(ctx, previousImage.GetFile()...)
+	previousFiles, err := protosrc.NewFilesUnstable(ctx, previousImage.GetFile()...)
 	if err != nil {
 		return nil, err
 	}
-	files, err := protodesc.NewFilesUnstable(ctx, image.GetFile()...)
+	files, err := protosrc.NewFilesUnstable(ctx, image.GetFile()...)
 	if err != nil {
 		return nil, err
 	}

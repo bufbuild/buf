@@ -19,7 +19,7 @@ import (
 
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/protodesc"
+	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
 	"go.uber.org/zap"
 )
 
@@ -43,7 +43,7 @@ func (h *handler) LintCheck(
 	lintConfig *Config,
 	image *imagev1beta1.Image,
 ) ([]*filev1beta1.FileAnnotation, error) {
-	files, err := protodesc.NewFilesUnstable(ctx, image.GetFile()...)
+	files, err := protosrc.NewFilesUnstable(ctx, image.GetFile()...)
 	if err != nil {
 		return nil, err
 	}

@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/bufbuild/buf/internal/pkg/instrument"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
-	"github.com/bufbuild/buf/internal/pkg/util/utillog"
-	"github.com/bufbuild/buf/internal/pkg/util/utilstring"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"go.uber.org/zap"
 )
 
@@ -44,7 +44,7 @@ func (p *protoFileSetProvider) GetProtoFileSetForReadBucket(
 	inputRoots []string,
 	inputExcludes []string,
 ) (ProtoFileSet, error) {
-	defer utillog.Defer(p.logger, "get_proto_file_set_for_bucket")()
+	defer instrument.Start(p.logger, "get_proto_file_set_for_bucket").End()
 
 	roots, excludes, err := normalizeAndValidateRootsExcludes(inputRoots, inputExcludes)
 	if err != nil {
@@ -58,16 +58,16 @@ func (p *protoFileSetProvider) GetProtoFileSetForReadBucket(
 			root,
 			// all realFilePath values are already normalized and validated
 			func(realFilePath string) error {
-				if storagepath.Ext(realFilePath) != ".proto" {
+				if normalpath.Ext(realFilePath) != ".proto" {
 					return nil
 				}
 				// get relative to root
-				rootFilePath, err := storagepath.Rel(root, realFilePath)
+				rootFilePath, err := normalpath.Rel(root, realFilePath)
 				if err != nil {
 					return err
 				}
 				// just in case
-				rootFilePath, err = storagepath.NormalizeAndValidate(rootFilePath)
+				rootFilePath, err = normalpath.NormalizeAndValidate(rootFilePath)
 				if err != nil {
 					return err
 				}
@@ -110,9 +110,9 @@ func (p *protoFileSetProvider) GetProtoFileSetForReadBucket(
 	}
 
 	filteredRootFilePathToRealFilePath := make(map[string]string, len(rootFilePathToRealFilePath))
-	excludeMap := utilstring.SliceToMap(excludes)
+	excludeMap := stringutil.SliceToMap(excludes)
 	for rootFilePath, realFilePath := range rootFilePathToRealFilePath {
-		if !storagepath.MapContainsMatch(excludeMap, storagepath.Dir(realFilePath)) {
+		if !normalpath.MapContainsMatch(excludeMap, normalpath.Dir(realFilePath)) {
 			filteredRootFilePathToRealFilePath[rootFilePath] = realFilePath
 		}
 	}
@@ -135,7 +135,7 @@ func (p *protoFileSetProvider) GetProtoFileSetForRealFilePaths(
 	realFilePaths []string,
 	realFilePathsAllowNotExist bool,
 ) (ProtoFileSet, error) {
-	defer utillog.Defer(p.logger, "get_proto_file_set_for_real_file_paths")()
+	defer instrument.Start(p.logger, "get_proto_file_set_for_real_file_paths").End()
 
 	roots, err := normalizeAndValidateRoots(inputRoots)
 	if err != nil {
@@ -143,7 +143,7 @@ func (p *protoFileSetProvider) GetProtoFileSetForRealFilePaths(
 	}
 	normalizedRealFilePaths := make(map[string]struct{}, len(realFilePaths))
 	for _, realFilePath := range realFilePaths {
-		normalizedRealFilePath, err := storagepath.NormalizeAndValidate(realFilePath)
+		normalizedRealFilePath, err := normalpath.NormalizeAndValidate(realFilePath)
 		if err != nil {
 			return nil, err
 		}
@@ -163,10 +163,10 @@ func (p *protoFileSetProvider) GetProtoFileSetForRealFilePaths(
 		}
 	}
 
-	rootMap := utilstring.SliceToMap(roots)
+	rootMap := stringutil.SliceToMap(roots)
 	rootFilePathToRealFilePath := make(map[string]string, len(normalizedRealFilePaths))
 	for normalizedRealFilePath := range normalizedRealFilePaths {
-		matchingRootMap := storagepath.MapMatches(rootMap, normalizedRealFilePath)
+		matchingRootMap := normalpath.MapMatches(rootMap, normalizedRealFilePath)
 		matchingRoots := make([]string, 0, len(matchingRootMap))
 		for matchingRoot := range matchingRootMap {
 			matchingRoots = append(matchingRoots, matchingRoot)
@@ -175,13 +175,13 @@ func (p *protoFileSetProvider) GetProtoFileSetForRealFilePaths(
 		case 0:
 			return nil, fmt.Errorf("file %s is not within any root %v", normalizedRealFilePath, roots)
 		case 1:
-			normalizedRootFilePath, err := storagepath.Rel(matchingRoots[0], normalizedRealFilePath)
+			normalizedRootFilePath, err := normalpath.Rel(matchingRoots[0], normalizedRealFilePath)
 			if err != nil {
 				return nil, err
 			}
 			// just in case
 			// return system error as this would be an issue
-			normalizedRootFilePath, err = storagepath.NormalizeAndValidate(normalizedRootFilePath)
+			normalizedRootFilePath, err = normalpath.NormalizeAndValidate(normalizedRootFilePath)
 			if err != nil {
 				// This is a system error
 				return nil, err

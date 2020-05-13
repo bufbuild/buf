@@ -23,10 +23,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/internal"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 )
+
+// errNotDir is the error returned if a path does not dir.
+var errNotDir = errors.New("not a directory")
 
 type bucket struct {
 	rootPath string
@@ -34,7 +37,7 @@ type bucket struct {
 }
 
 func newBucket(rootPath string) (*bucket, error) {
-	rootPath = storagepath.Unnormalize(rootPath)
+	rootPath = normalpath.Unnormalize(rootPath)
 	fileInfo, err := os.Stat(rootPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -47,21 +50,21 @@ func newBucket(rootPath string) (*bucket, error) {
 	}
 	// allow anything with OS buckets including absolute paths
 	// and jumping context
-	rootPath = storagepath.Normalize(rootPath)
+	rootPath = normalpath.Normalize(rootPath)
 	return &bucket{
 		rootPath: rootPath,
 	}, nil
 }
 
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, error) {
-	path, err := storagepath.NormalizeAndValidate(path)
+	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return nil, err
 	}
 	if path == "." {
 		return nil, errors.New("cannot get root")
 	}
-	actualPath := storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
+	actualPath := normalpath.Unnormalize(normalpath.Join(b.rootPath, path))
 	if b.closed {
 		return nil, storage.ErrClosed
 	}
@@ -92,14 +95,14 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, erro
 }
 
 func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
-	path, err := storagepath.NormalizeAndValidate(path)
+	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return nil, err
 	}
 	if path == "." {
 		return nil, errors.New("cannot check root")
 	}
-	actualPath := storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
+	actualPath := normalpath.Unnormalize(normalpath.Join(b.rootPath, path))
 	if b.closed {
 		return nil, storage.ErrClosed
 	}
@@ -123,11 +126,11 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 }
 
 func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) error {
-	prefix, err := storagepath.NormalizeAndValidate(prefix)
+	prefix, err := normalpath.NormalizeAndValidate(prefix)
 	if err != nil {
 		return err
 	}
-	prefix = storagepath.Unnormalize(storagepath.Join(b.rootPath, prefix))
+	prefix = normalpath.Unnormalize(normalpath.Join(b.rootPath, prefix))
 	if b.closed {
 		return storage.ErrClosed
 	}
@@ -150,12 +153,12 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) 
 			default:
 			}
 			if fileInfo.Mode().IsRegular() {
-				rel, err := storagepath.Rel(b.rootPath, storagepath.Normalize(path))
+				rel, err := normalpath.Rel(b.rootPath, normalpath.Normalize(path))
 				if err != nil {
 					return err
 				}
 				// just in case
-				rel, err = storagepath.NormalizeAndValidate(rel)
+				rel, err = normalpath.NormalizeAndValidate(rel)
 				if err != nil {
 					return err
 				}
@@ -169,18 +172,18 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(string) error) 
 }
 
 func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.WriteObject, error) {
-	path, err := storagepath.NormalizeAndValidate(path)
+	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return nil, err
 	}
 	if path == "." {
 		return nil, errors.New("cannot put root")
 	}
-	path = storagepath.Unnormalize(storagepath.Join(b.rootPath, path))
+	path = normalpath.Unnormalize(normalpath.Join(b.rootPath, path))
 	if b.closed {
 		return nil, storage.ErrClosed
 	}
-	dir := storagepath.Unnormalize(storagepath.Dir(storagepath.Normalize(path)))
+	dir := normalpath.Unnormalize(normalpath.Dir(normalpath.Normalize(path)))
 	fileInfo, err := os.Stat(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -271,6 +274,6 @@ func (w *writeObject) Info() storage.ObjectInfo {
 }
 
 // newErrNotDir returns a new Error for a path not being a directory.
-func newErrNotDir(path string) *storagepath.Error {
-	return storagepath.NewError(path, errNotDir)
+func newErrNotDir(path string) *normalpath.Error {
+	return normalpath.NewError(path, errNotDir)
 }

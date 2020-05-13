@@ -24,8 +24,8 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagepath"
 	"go.uber.org/multierr"
 )
 
@@ -40,9 +40,9 @@ func Copy(
 	from storage.ReadBucket,
 	to storage.ReadWriteBucket,
 	prefix string,
-	options ...storagepath.TransformerOption,
+	options ...normalpath.TransformerOption,
 ) (int, error) {
-	transformer := storagepath.NewTransformer(options...)
+	transformer := normalpath.NewTransformer(options...)
 	semaphoreC := make(chan struct{}, runtime.NumCPU())
 	var retErr error
 	var count int
@@ -148,7 +148,7 @@ func Untar(
 	ctx context.Context,
 	reader io.Reader,
 	readWriteBucket storage.ReadWriteBucket,
-	options ...storagepath.TransformerOption,
+	options ...normalpath.TransformerOption,
 ) error {
 	return untar(ctx, reader, readWriteBucket, false, options...)
 }
@@ -162,7 +162,7 @@ func Untargz(
 	ctx context.Context,
 	reader io.Reader,
 	readWriteBucket storage.ReadWriteBucket,
-	options ...storagepath.TransformerOption,
+	options ...normalpath.TransformerOption,
 ) error {
 	return untar(ctx, reader, readWriteBucket, true, options...)
 }
@@ -172,9 +172,9 @@ func untar(
 	reader io.Reader,
 	readWriteBucket storage.ReadWriteBucket,
 	gzipped bool,
-	options ...storagepath.TransformerOption,
+	options ...normalpath.TransformerOption,
 ) error {
-	transformer := storagepath.NewTransformer(options...)
+	transformer := normalpath.NewTransformer(options...)
 	var err error
 	if gzipped {
 		reader, err = gzip.NewReader(reader)
@@ -194,7 +194,7 @@ func untar(
 			return ctx.Err()
 		default:
 		}
-		path, err := storagepath.NormalizeAndValidate(tarHeader.Name)
+		path, err := normalpath.NormalizeAndValidate(tarHeader.Name)
 		if err != nil {
 			return err
 		}
@@ -233,7 +233,7 @@ func Tar(
 	writer io.Writer,
 	readBucket storage.ReadBucket,
 	prefix string,
-	options ...storagepath.TransformerOption,
+	options ...normalpath.TransformerOption,
 ) error {
 	return doTar(ctx, writer, readBucket, prefix, false, options...)
 }
@@ -249,7 +249,7 @@ func Targz(
 	writer io.Writer,
 	readBucket storage.ReadBucket,
 	prefix string,
-	options ...storagepath.TransformerOption,
+	options ...normalpath.TransformerOption,
 ) error {
 	return doTar(ctx, writer, readBucket, prefix, true, options...)
 }
@@ -260,9 +260,9 @@ func doTar(
 	readBucket storage.ReadBucket,
 	prefix string,
 	gzipped bool,
-	options ...storagepath.TransformerOption,
+	options ...normalpath.TransformerOption,
 ) (retErr error) {
-	transformer := storagepath.NewTransformer(options...)
+	transformer := normalpath.NewTransformer(options...)
 	if gzipped {
 		gzipWriter := gzip.NewWriter(writer)
 		defer func() {
