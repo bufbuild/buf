@@ -36,6 +36,7 @@ import (
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
+	"github.com/bufbuild/buf/internal/pkg/httputil"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -653,13 +654,18 @@ func (e *envReader) getFileDataFromHTTP(
 	envContainer app.EnvContainer,
 	path string,
 ) (_ []byte, retErr error) {
-	return apphttp.Get(
-		ctx,
-		e.httpClient,
-		e.httpAuthenticator,
-		envContainer,
-		path,
-	)
+	request, err := http.NewRequestWithContext(ctx, "GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := e.httpAuthenticator.SetAuth(envContainer, request); err != nil {
+		return nil, err
+	}
+	response, err := e.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	return httputil.ReadCloseResponseBody(response)
 }
 
 func (e *envReader) getImageFromData(

@@ -15,6 +15,7 @@
 package apphttp
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -26,6 +27,15 @@ func setBasicAuth(
 	usernameKey string,
 	passwordKey string,
 ) (bool, error) {
+	if request.URL == nil {
+		return false, errors.New("malformed request: no url")
+	}
+	if request.URL.Scheme == "" {
+		return false, errors.New("malformed request: no url scheme")
+	}
+	if request.URL.Scheme != "https" {
+		return false, nil
+	}
 	if username != "" && password != "" {
 		request.SetBasicAuth(username, password)
 		return true, nil
