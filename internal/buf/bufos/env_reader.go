@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -36,7 +35,7 @@ import (
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/appnetrc"
+	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -52,6 +51,7 @@ import (
 type envReader struct {
 	logger                   *zap.Logger
 	httpClient               *http.Client
+	httpAuthenticator        apphttp.Authenticator
 	configProvider           bufconfig.Provider
 	buildHandler             bufbuild.Handler
 	valueFlagName            string
@@ -67,6 +67,7 @@ type envReader struct {
 func newEnvReader(
 	logger *zap.Logger,
 	httpClient *http.Client,
+	httpAuthenticator apphttp.Authenticator,
 	configProvider bufconfig.Provider,
 	buildHandler bufbuild.Handler,
 	valueFlagName string,
@@ -81,6 +82,7 @@ func newEnvReader(
 	return &envReader{
 		logger:                   logger.Named("bufos"),
 		httpClient:               httpClient,
+		httpAuthenticator:        httpAuthenticator,
 		configProvider:           configProvider,
 		buildHandler:             buildHandler,
 		valueFlagName:            valueFlagName,
@@ -651,46 +653,13 @@ func (e *envReader) getFileDataFromHTTP(
 	envContainer app.EnvContainer,
 	path string,
 ) (_ []byte, retErr error) {
-	request, err := http.NewRequestWithContext(ctx, "GET", path, nil)
-	if err != nil {
-		return nil, err
-	}
-	if envContainer != nil && strings.HasPrefix(path, "https://") && e.httpsUsernameEnvKey != "" && e.httpsPasswordEnvKey != "" {
-		u, err := url.Parse(path)
-		if err != nil {
-			return nil, err
-		}
-		if u.User == nil || u.User.Username() == "" {
-			httpsUsername := envContainer.Env(e.httpsUsernameEnvKey)
-			httpsPassword := envContainer.Env(e.httpsPasswordEnvKey)
-			if httpsUsername != "" && httpsPassword != "" {
-				request.SetBasicAuth(httpsUsername, httpsPassword)
-			} else {
-				machine, err := appnetrc.GetMachineForName(envContainer, u.Host)
-				if err != nil {
-					return nil, err
-				}
-				if machine != nil && machine.Login() != "" && machine.Password() != "" {
-					request.SetBasicAuth(machine.Login(), machine.Password())
-				}
-			}
-		}
-	}
-	response, err := e.httpClient.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, response.Body.Close())
-	}()
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("got HTTP status code %d for %s", response.StatusCode, path)
-	}
-	data, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, fmt.Errorf("could not read %s: %v", path, err)
-	}
-	return data, nil
+	return apphttp.Get(
+		ctx,
+		e.httpClient,
+		e.httpAuthenticator,
+		envContainer,
+		path,
+	)
 }
 
 func (e *envReader) getImageFromData(
