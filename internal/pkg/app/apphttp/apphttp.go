@@ -15,14 +15,9 @@
 package apphttp
 
 import (
-	"context"
-	"fmt"
-	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"go.uber.org/multierr"
 )
 
 // Authenticator adds authentication to request.
@@ -36,6 +31,7 @@ type Authenticator interface {
 	//
 	// Returns true if authentication successfully set.
 	// Does nothing and returns false if no authentication available for the given request.
+	// Does nothing and returns false if the request scheme is not https.
 	SetAuth(envContainer app.EnvContainer, request *http.Request) (bool, error)
 }
 
@@ -57,38 +53,4 @@ func NewNetrcAuthenticator() Authenticator {
 // Stops on first matching SetAuth request.
 func NewMultiAuthenticator(authenticators ...Authenticator) Authenticator {
 	return newMultiAuthenticator(authenticators...)
-}
-
-// Get is a convenience function to call http GET.
-func Get(
-	ctx context.Context,
-	httpClient *http.Client,
-	authenticator Authenticator,
-	envContainer app.EnvContainer,
-	path string,
-) (_ []byte, retErr error) {
-	request, err := http.NewRequestWithContext(ctx, "GET", path, nil)
-	if err != nil {
-		return nil, err
-	}
-	if strings.HasPrefix(path, "https://") {
-		if _, err := authenticator.SetAuth(envContainer, request); err != nil {
-			return nil, err
-		}
-	}
-	response, err := httpClient.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, response.Body.Close())
-	}()
-	if response.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("got HTTP status code %d for %s", response.StatusCode, path)
-	}
-	data, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, fmt.Errorf("could not read %s: %v", path, err)
-	}
-	return data, nil
 }
