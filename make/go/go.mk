@@ -24,10 +24,17 @@ GO_LINT_IGNORES := $(GO_LINT_IGNORES) \/gen\/
 
 # Runtime
 GOPKGS ?= ./...
+# Runtime GONOTESTCACHE
 # Runtime COVEROPEN
 
 COVER_HTML := $(TMP)/cover.html
 COVER_TXT := $(TMP)/cover.txt
+
+ifdef GONOTESTCACHE
+GO_TEST_FLAGS := -count=1
+else
+GO_TEST_FLAGS :=
+endif
 
 .DEFAULT_GOAL := all
 
@@ -107,7 +114,7 @@ pretest::
 
 .PHONY: test
 test: pretest
-	go test $(GOPKGS)
+	go test $(GO_TEST_FLAGS) $(GOPKGS)
 
 .PHONY: deppkgs
 deppkgs:

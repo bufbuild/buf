@@ -26,6 +26,7 @@ import (
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
 	"go.uber.org/zap"
 )
 
@@ -118,6 +119,7 @@ type EnvReader interface {
 func NewEnvReader(
 	logger *zap.Logger,
 	httpClient *http.Client,
+	httpAuthenticator apphttp.Authenticator,
 	configProvider bufconfig.Provider,
 	buildHandler bufbuild.Handler,
 	valueFlagName string,
@@ -132,6 +134,7 @@ func NewEnvReader(
 	return newEnvReader(
 		logger,
 		httpClient,
+		httpAuthenticator,
 		configProvider,
 		buildHandler,
 		valueFlagName,

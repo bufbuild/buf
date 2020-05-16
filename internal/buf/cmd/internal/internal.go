@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufos"
+	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
 	"go.uber.org/zap"
 )
 
@@ -35,8 +36,18 @@ const (
 	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
 )
 
-// Timeout should be set through context for calls to EnvReader, not through http.Client
-var defaultHTTPClient = &http.Client{}
+var (
+	// Timeout should be set through context for calls to EnvReader, not through http.Client
+	defaultHTTPClient        = &http.Client{}
+	defaultHTTPAuthenticator = apphttp.NewMultiAuthenticator(
+		apphttp.NewNetrcAuthenticator(),
+		// must keep this for legacy purposes
+		apphttp.NewEnvAuthenticator(
+			inputHTTPSPasswordEnvKey,
+			inputHTTPSPasswordEnvKey,
+		),
+	)
+)
 
 // NewBufosEnvReader returns a new bufos.EnvReader.
 func NewBufosEnvReader(
@@ -48,6 +59,7 @@ func NewBufosEnvReader(
 	return bufos.NewEnvReader(
 		logger,
 		defaultHTTPClient,
+		defaultHTTPAuthenticator,
 		bufconfig.NewProvider(logger),
 		bufbuild.NewHandler(logger),
 		inputFlagName,
