@@ -29,13 +29,13 @@ var (
 	fileSchemePrefixToFileScheme = map[string]iov1beta1.FileScheme{
 		"http://":  iov1beta1.FileScheme_FILE_SCHEME_HTTP,
 		"https://": iov1beta1.FileScheme_FILE_SCHEME_HTTPS,
-		"file://":  iov1beta1.FileScheme_FILE_SCHEME_FILE,
+		"file://":  iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 	}
-	gitSchemePrefixToGitScheme = map[string]iov1beta1.GitScheme{
-		"http://":  iov1beta1.GitScheme_GIT_SCHEME_HTTP,
-		"https://": iov1beta1.GitScheme_GIT_SCHEME_HTTPS,
-		"file://":  iov1beta1.GitScheme_GIT_SCHEME_FILE,
-		"ssh://":   iov1beta1.GitScheme_GIT_SCHEME_SSH,
+	gitRepositorySchemePrefixToGitRepositoryScheme = map[string]iov1beta1.GitRepositoryScheme{
+		"http://":  iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_HTTP,
+		"https://": iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_HTTPS,
+		"file://":  iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL,
+		"ssh://":   iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_SSH,
 	}
 )
 
@@ -106,14 +106,13 @@ func getImageRef(rawRef *rawRef) (*iov1beta1.ImageRef, error) {
 	default:
 		return nil, fmt.Errorf("unexpected format: %v", rawRef.Format)
 	}
-	fileScheme, path, err := getFileSchemeAndPath(rawRef.RawPath)
+	fileRef, err := getFileRef(rawRef.RawPath)
 	if err != nil {
 		return nil, err
 	}
 	return &iov1beta1.ImageRef{
-		FileScheme:  fileScheme,
-		ImageFormat: imageFormat,
-		Path:        path,
+		FileRef: fileRef,
+		Format:  imageFormat,
 	}, nil
 }
 
@@ -130,13 +129,13 @@ func getSourceRef(rawRef *rawRef) (*iov1beta1.SourceRef, error) {
 			},
 		}, nil
 	case formatGit:
-		gitRef, err := getGitRef(rawRef)
+		gitRepositoryRef, err := getGitRepositoryRef(rawRef)
 		if err != nil {
 			return nil, err
 		}
 		return &iov1beta1.SourceRef{
-			Value: &iov1beta1.SourceRef_GitRef{
-				GitRef: gitRef,
+			Value: &iov1beta1.SourceRef_GitRepositoryRef{
+				GitRepositoryRef: gitRepositoryRef,
 			},
 		}, nil
 	case formatDir:
@@ -166,52 +165,51 @@ func getArchiveRef(rawRef *rawRef) (*iov1beta1.ArchiveRef, error) {
 	default:
 		return nil, fmt.Errorf("unexpected format: %v", rawRef.Format)
 	}
-	fileScheme, path, err := getFileSchemeAndPath(rawRef.RawPath)
+	fileRef, err := getFileRef(rawRef.RawPath)
 	if err != nil {
 		return nil, err
 	}
 	return &iov1beta1.ArchiveRef{
-		FileScheme:      fileScheme,
-		ArchiveFormat:   archiveFormat,
-		Path:            path,
+		FileRef:         fileRef,
+		Format:          archiveFormat,
 		StripComponents: rawRef.ArchiveStripComponents,
 	}, nil
 }
 
-func getGitRef(rawRef *rawRef) (*iov1beta1.GitRef, error) {
-	gitScheme, path, err := getGitSchemeAndPath(rawRef.RawPath)
+func getGitRepositoryRef(rawRef *rawRef) (*iov1beta1.GitRepositoryRef, error) {
+	gitRepositoryScheme, path, err := getGitRepositorySchemeAndPath(rawRef.RawPath)
 	if err != nil {
 		return nil, err
 	}
-	gitRef := &iov1beta1.GitRef{
-		GitScheme: gitScheme,
-		Path:      path,
+	gitRepositoryRef := &iov1beta1.GitRepositoryRef{
+		Scheme: gitRepositoryScheme,
+		Path:   path,
 	}
 
 	if rawRef.GitBranch == "" && rawRef.GitTag == "" {
 		// already did this in getRawRef but just in case:
-		return nil, newMustSpecifyGitRefNameError(path)
+		return nil, newMustSpecifyGitRepositoryRefNameError(path)
 	}
 	if rawRef.GitBranch != "" && rawRef.GitTag != "" {
-		return nil, newCannotSpecifyMultipleGitRefNamesError()
+		return nil, newCannotSpecifyMultipleGitRepositoryRefNamesError()
 	}
 	if rawRef.GitBranch != "" {
-		gitRef.Reference = &iov1beta1.GitRef_Branch{
+		gitRepositoryRef.Reference = &iov1beta1.GitRepositoryRef_Branch{
 			Branch: rawRef.GitBranch,
 		}
 	} else {
-		gitRef.Reference = &iov1beta1.GitRef_Tag{
+		gitRepositoryRef.Reference = &iov1beta1.GitRepositoryRef_Tag{
 			Tag: rawRef.GitTag,
 		}
 	}
 
 	if rawRef.GitRecurseSubmodules {
-		gitRef.GitSubmoduleBehavior = iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_RECURSIVE
+		gitRepositoryRef.SubmoduleBehavior = iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_RECURSIVE
 	} else {
-		gitRef.GitSubmoduleBehavior = iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE
+		gitRepositoryRef.SubmoduleBehavior = iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE
 	}
 
-	return gitRef, nil
+	return gitRepositoryRef, nil
 }
 
 func getBucketRef(rawRef *rawRef) (*iov1beta1.BucketRef, error) {
@@ -220,45 +218,53 @@ func getBucketRef(rawRef *rawRef) (*iov1beta1.BucketRef, error) {
 		return nil, err
 	}
 	return &iov1beta1.BucketRef{
-		BucketScheme: bucketScheme,
-		Path:         path,
+		Scheme: bucketScheme,
+		Path:   path,
 	}, nil
 }
 
-func getFileSchemeAndPath(rawPath string) (iov1beta1.FileScheme, string, error) {
+func getFileRef(rawPath string) (*iov1beta1.FileRef, error) {
 	// TODO: do we want to normalize to absolute path at all?
 	// this is tricky
-
 	if rawPath == "-" {
-		return iov1beta1.FileScheme_FILE_SCHEME_STDIO, "", nil
+		return &iov1beta1.FileRef{
+			Scheme: iov1beta1.FileScheme_FILE_SCHEME_STDIO,
+		}, nil
 	}
 	if rawPath == app.DevNullFilePath {
-		return iov1beta1.FileScheme_FILE_SCHEME_NULL, "", nil
+		return &iov1beta1.FileRef{
+			Scheme: iov1beta1.FileScheme_FILE_SCHEME_NULL,
+		}, nil
 	}
 	for prefix, fileScheme := range fileSchemePrefixToFileScheme {
 		if strings.HasPrefix(rawPath, prefix) {
-			return fileScheme, filepath.Clean(strings.TrimPrefix(rawPath, prefix)), nil
+			return &iov1beta1.FileRef{
+				Scheme: fileScheme,
+				Path:   filepath.Clean(strings.TrimPrefix(rawPath, prefix)),
+			}, nil
 		}
 	}
-	return iov1beta1.FileScheme_FILE_SCHEME_FILE, filepath.Clean(rawPath), nil
+	return &iov1beta1.FileRef{
+		Scheme: iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
+		Path:   filepath.Clean(rawPath),
+	}, nil
 }
 
-func getGitSchemeAndPath(rawPath string) (iov1beta1.GitScheme, string, error) {
+func getGitRepositorySchemeAndPath(rawPath string) (iov1beta1.GitRepositoryScheme, string, error) {
 	// TODO: do we want to normalize to absolute path at all, and ssh user?
 	// this is tricky
-
 	if rawPath == "-" {
 		return 0, "", newInvalidGitPathError(rawPath)
 	}
 	if rawPath == app.DevNullFilePath {
 		return 0, "", newInvalidGitPathError(rawPath)
 	}
-	for prefix, gitScheme := range gitSchemePrefixToGitScheme {
+	for prefix, gitRepositoryScheme := range gitRepositorySchemePrefixToGitRepositoryScheme {
 		if strings.HasPrefix(rawPath, prefix) {
-			return gitScheme, filepath.Clean(strings.TrimPrefix(rawPath, prefix)), nil
+			return gitRepositoryScheme, filepath.Clean(strings.TrimPrefix(rawPath, prefix)), nil
 		}
 	}
-	return iov1beta1.GitScheme_GIT_SCHEME_FILE, filepath.Clean(rawPath), nil
+	return iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL, filepath.Clean(rawPath), nil
 }
 
 func getBucketSchemeAndPath(rawPath string) (iov1beta1.BucketScheme, string, error) {
@@ -271,7 +277,7 @@ func getBucketSchemeAndPath(rawPath string) (iov1beta1.BucketScheme, string, err
 	if rawPath == app.DevNullFilePath {
 		return 0, "", newInvalidDirPathError(rawPath)
 	}
-	return iov1beta1.BucketScheme_BUCKET_SCHEME_DIR, filepath.Clean(rawPath), nil
+	return iov1beta1.BucketScheme_BUCKET_SCHEME_LOCAL, filepath.Clean(rawPath), nil
 }
 
 type rawRef struct {
@@ -310,12 +316,12 @@ func getRawRef(value string) (*rawRef, error) {
 			rawRef.Format = format
 		case "branch":
 			if rawRef.GitBranch != "" || rawRef.GitTag != "" {
-				return nil, newCannotSpecifyMultipleGitRefNamesError()
+				return nil, newCannotSpecifyMultipleGitRepositoryRefNamesError()
 			}
 			rawRef.GitBranch = value
 		case "tag":
 			if rawRef.GitBranch != "" || rawRef.GitTag != "" {
-				return nil, newCannotSpecifyMultipleGitRefNamesError()
+				return nil, newCannotSpecifyMultipleGitRepositoryRefNamesError()
 			}
 			rawRef.GitTag = value
 		case "recurse_submodules":
@@ -455,11 +461,11 @@ func newFormatMustBeImageError(format format) error {
 	return fmt.Errorf("format was %q but must be a image format (allowed formats are %s)", format.String(), formatsToString(imageFormats()))
 }
 
-func newMustSpecifyGitRefNameError(path string) error {
+func newMustSpecifyGitRepositoryRefNameError(path string) error {
 	return fmt.Errorf(`must specify git reference (example: "%s#branch=master" or "%s#tag=v1.0.0")`, path, path)
 }
 
-func newCannotSpecifyMultipleGitRefNamesError() error {
+func newCannotSpecifyMultipleGitRepositoryRefNamesError() error {
 	return fmt.Errorf(`must specify only one of "branch", "tag"`)
 }
 
