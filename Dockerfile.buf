@@ -6,14 +6,12 @@ COPY cmd ./cmd
 COPY internal ./internal
 RUN go build -o /go/bin/buf ./cmd/buf
 
-FROM alpine:3.10
+FROM alpine:3.11
 
 RUN apk add --update --no-cache \
     ca-certificates \
-    # TODO remove when file protocol implementation does not shell out to git in src-d/go-git
-    # https://github.com/src-d/go-git/issues/847
-    # https://github.com/bufbuild/buf/issues/14
-    git && \
+    git \
+    openssh-client && \
   rm -rf /var/cache/apk/*
 
 COPY --from=builder /go/bin/buf /usr/local/bin/buf
