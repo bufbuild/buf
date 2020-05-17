@@ -487,11 +487,11 @@ func (e *envReader) getReadBucketCloser(
 			archiveRef,
 		)
 	}
-	if gitRef := sourceRef.GetGitRef(); gitRef != nil {
+	if gitRepositoryRef := sourceRef.GetGitRepositoryRef(); gitRepositoryRef != nil {
 		return e.getReadBucketCloserFromGit(
 			ctx,
 			container,
-			gitRef,
+			gitRepositoryRef,
 		)
 	}
 	if bucketRef := sourceRef.GetBucketRef(); bucketRef != nil {
@@ -507,11 +507,11 @@ func (e *envReader) getReadBucketCloserFromBucket(
 	ctx context.Context,
 	bucketRef *iov1beta1.BucketRef,
 ) (storage.ReadBucketCloser, error) {
-	switch bucketRef.BucketScheme {
-	case iov1beta1.BucketScheme_BUCKET_SCHEME_DIR:
+	switch bucketRef.Scheme {
+	case iov1beta1.BucketScheme_BUCKET_SCHEME_LOCAL:
 		return storageos.NewReadWriteBucketCloser(bucketRef.Path)
 	default:
-		return nil, fmt.Errorf("unknown BucketScheme: %v", bucketRef.BucketScheme)
+		return nil, fmt.Errorf("unknown BucketScheme: %v", bucketRef.Scheme)
 	}
 }
 
@@ -520,7 +520,7 @@ func (e *envReader) getReadBucketCloserFromArchive(
 	container app.EnvStdinContainer,
 	archiveRef *iov1beta1.ArchiveRef,
 ) (_ storage.ReadBucketCloser, retErr error) {
-	data, err := e.getFileData(ctx, container, archiveRef.FileScheme, archiveRef.Path)
+	data, err := e.getFileData(ctx, container, archiveRef.FileRef)
 	if err != nil {
 		return nil, err
 	}
@@ -535,13 +535,13 @@ func (e *envReader) getReadBucketCloserFromArchive(
 		)
 	}
 	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
-	switch archiveRef.ArchiveFormat {
+	switch archiveRef.Format {
 	case iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TAR:
 		err = storageutil.Untar(ctx, bytes.NewReader(data), readWriteBucketCloser, transformerOptions...)
 	case iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TARGZ:
 		err = storageutil.Untargz(ctx, bytes.NewReader(data), readWriteBucketCloser, transformerOptions...)
 	default:
-		return nil, fmt.Errorf("unknown ArchiveFormat: %v", archiveRef.ArchiveFormat)
+		return nil, fmt.Errorf("unknown ArchiveFormat: %v", archiveRef.Format)
 	}
 	if err != nil {
 		return nil, multierr.Append(fmt.Errorf("untar error: %v", err), readWriteBucketCloser.Close())
@@ -552,17 +552,17 @@ func (e *envReader) getReadBucketCloserFromArchive(
 func (e *envReader) getReadBucketCloserFromGit(
 	ctx context.Context,
 	envContainer app.EnvContainer,
-	gitRef *iov1beta1.GitRef,
+	gitRepositoryRef *iov1beta1.GitRepositoryRef,
 ) (_ storage.ReadBucketCloser, retErr error) {
 	homeDirPath, err := app.HomeDirPath(envContainer)
 	if err != nil {
 		return nil, err
 	}
-	gitURL, err := getGitURL(gitRef)
+	gitURL, err := getGitURL(gitRepositoryRef)
 	if err != nil {
 		return nil, err
 	}
-	gitRecurseSubmodules, err := getGitRecurseSubmodules(gitRef)
+	gitRecurseSubmodules, err := getGitRecurseSubmodules(gitRepositoryRef)
 	if err != nil {
 		return nil, err
 	}
@@ -577,15 +577,15 @@ func (e *envReader) getReadBucketCloserFromGit(
 			e.logger,
 			app.Environ(envContainer),
 			gitURL,
-			gitRef.GetBranch(),
-			gitRef.GetTag(),
+			gitRepositoryRef.GetBranch(),
+			gitRepositoryRef.GetTag(),
 			gitRecurseSubmodules,
 			readWriteBucketCloser,
 			transformerOptions...,
 		)
 	} else {
-		var gitRefName storagegitplumbing.RefName
-		gitRefName, err = getGitRefName(gitRef)
+		var gitRepositoryRefName storagegitplumbing.RefName
+		gitRepositoryRefName, err = getGitRepositoryRefName(gitRepositoryRef)
 		if err != nil {
 			return nil, err
 		}
@@ -595,7 +595,7 @@ func (e *envReader) getReadBucketCloserFromGit(
 			envContainer.Env,
 			homeDirPath,
 			gitURL,
-			gitRefName,
+			gitRepositoryRefName,
 			gitRecurseSubmodules,
 			e.httpsUsernameEnvKey,
 			e.httpsPasswordEnvKey,
@@ -620,32 +620,44 @@ func (e *envReader) getImage(
 	container app.EnvStdinContainer,
 	imageRef *iov1beta1.ImageRef,
 ) (_ *imagev1beta1.Image, retErr error) {
-	data, err := e.getFileData(ctx, container, imageRef.FileScheme, imageRef.Path)
+	data, err := e.getFileData(ctx, container, imageRef.FileRef)
 	if err != nil {
 		return nil, err
 	}
-	return e.getImageFromData(imageRef.ImageFormat, data)
+	return e.getImageFromData(imageRef.Format, data)
 }
 
 func (e *envReader) getFileData(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	fileScheme iov1beta1.FileScheme,
-	path string,
+	fileRef *iov1beta1.FileRef,
 ) ([]byte, error) {
-	switch fileScheme {
+	if fileRef == nil {
+		return nil, errors.New("nil FileRef")
+	}
+	switch fileRef.Scheme {
 	case iov1beta1.FileScheme_FILE_SCHEME_HTTP:
-		return e.getFileDataFromHTTP(ctx, container, "http://"+path)
+		// should do validation elsewhere
+		if fileRef.Path == "" {
+			return nil, errors.New("empty FileRef.Path")
+		}
+		return e.getFileDataFromHTTP(ctx, container, "http://"+fileRef.Path)
 	case iov1beta1.FileScheme_FILE_SCHEME_HTTPS:
-		return e.getFileDataFromHTTP(ctx, container, "https://"+path)
+		if fileRef.Path == "" {
+			return nil, errors.New("empty FileRef.Path")
+		}
+		return e.getFileDataFromHTTP(ctx, container, "https://"+fileRef.Path)
 	case iov1beta1.FileScheme_FILE_SCHEME_STDIO:
 		return ioutil.ReadAll(container.Stdin())
 	case iov1beta1.FileScheme_FILE_SCHEME_NULL:
 		return nil, errors.New("cannot read file data from /dev/null equivalent")
-	case iov1beta1.FileScheme_FILE_SCHEME_FILE:
-		return ioutil.ReadFile(path)
+	case iov1beta1.FileScheme_FILE_SCHEME_LOCAL:
+		if fileRef.Path == "" {
+			return nil, errors.New("empty FileRef.Path")
+		}
+		return ioutil.ReadFile(fileRef.Path)
 	default:
-		return nil, fmt.Errorf("uknown FileScheme: %v", fileScheme)
+		return nil, fmt.Errorf("uknown FileScheme: %v", fileRef.Scheme)
 	}
 }
 
@@ -765,48 +777,48 @@ func getBucketDirPath(sourceRef *iov1beta1.SourceRef) string {
 	if bucketRef == nil {
 		return ""
 	}
-	if bucketRef.BucketScheme != iov1beta1.BucketScheme_BUCKET_SCHEME_DIR {
+	if bucketRef.Scheme != iov1beta1.BucketScheme_BUCKET_SCHEME_LOCAL {
 		return ""
 	}
 	return bucketRef.Path
 }
 
-func getGitURL(gitRef *iov1beta1.GitRef) (string, error) {
-	switch gitRef.GitScheme {
-	case iov1beta1.GitScheme_GIT_SCHEME_HTTP:
-		return "http://" + gitRef.Path, nil
-	case iov1beta1.GitScheme_GIT_SCHEME_HTTPS:
-		return "https://" + gitRef.Path, nil
-	case iov1beta1.GitScheme_GIT_SCHEME_SSH:
-		return "ssh://" + gitRef.Path, nil
-	case iov1beta1.GitScheme_GIT_SCHEME_FILE:
-		absPath, err := filepath.Abs(gitRef.Path)
+func getGitURL(gitRepositoryRef *iov1beta1.GitRepositoryRef) (string, error) {
+	switch gitRepositoryRef.Scheme {
+	case iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_HTTP:
+		return "http://" + gitRepositoryRef.Path, nil
+	case iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_HTTPS:
+		return "https://" + gitRepositoryRef.Path, nil
+	case iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_SSH:
+		return "ssh://" + gitRepositoryRef.Path, nil
+	case iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL:
+		absPath, err := filepath.Abs(gitRepositoryRef.Path)
 		if err != nil {
 			return "", err
 		}
 		return "file://" + absPath, nil
 	default:
-		return "", fmt.Errorf("unknown GitScheme: %v", gitRef.GitScheme)
+		return "", fmt.Errorf("unknown GitRepositoryScheme: %v", gitRepositoryRef.Scheme)
 	}
 }
 
-func getGitRefName(gitRef *iov1beta1.GitRef) (storagegitplumbing.RefName, error) {
-	if branch := gitRef.GetBranch(); branch != "" {
+func getGitRepositoryRefName(gitRepositoryRef *iov1beta1.GitRepositoryRef) (storagegitplumbing.RefName, error) {
+	if branch := gitRepositoryRef.GetBranch(); branch != "" {
 		return storagegitplumbing.NewBranchRefName(branch), nil
 	}
-	if tag := gitRef.GetTag(); tag != "" {
+	if tag := gitRepositoryRef.GetTag(); tag != "" {
 		return storagegitplumbing.NewTagRefName(tag), nil
 	}
-	return nil, errors.New("invalid GitRef")
+	return nil, errors.New("invalid GitRepositoryRef")
 }
 
-func getGitRecurseSubmodules(gitRef *iov1beta1.GitRef) (bool, error) {
-	switch gitRef.GitSubmoduleBehavior {
-	case iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE:
+func getGitRecurseSubmodules(gitRepositoryRef *iov1beta1.GitRepositoryRef) (bool, error) {
+	switch gitRepositoryRef.SubmoduleBehavior {
+	case iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE:
 		return false, nil
-	case iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_RECURSIVE:
+	case iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_RECURSIVE:
 		return true, nil
 	default:
-		return false, fmt.Errorf("unknown GitSubmoduleBehavior: %v", gitRef.GitSubmoduleBehavior)
+		return false, fmt.Errorf("unknown GitRepositorySubmoduleBehavior: %v", gitRepositoryRef.SubmoduleBehavior)
 	}
 }

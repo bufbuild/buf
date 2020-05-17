@@ -75,7 +75,7 @@ func (i *imageWriter) WriteImage(
 	}
 	var data []byte
 	marshalTimer := instrument.Start(i.logger, "image_marshal")
-	switch imageRef.ImageFormat {
+	switch imageRef.Format {
 	case iov1beta1.ImageFormat_IMAGE_FORMAT_BIN, iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ:
 		data, err = protoencoding.NewWireMarshaler().Marshal(message)
 		if err != nil {
@@ -96,12 +96,18 @@ func (i *imageWriter) WriteImage(
 			return err
 		}
 	default:
-		return fmt.Errorf("unknown image format: %v", imageRef.ImageFormat)
+		return fmt.Errorf("unknown image format: %v", imageRef.Format)
 	}
 	marshalTimer.End()
 
+	fileRef := imageRef.FileRef
+	if fileRef == nil {
+		// should really do validation elsewhere
+		return errors.New("nil FileRef")
+	}
+
 	var writer io.Writer
-	switch imageRef.FileScheme {
+	switch fileRef.Scheme {
 	case iov1beta1.FileScheme_FILE_SCHEME_HTTP:
 		return fmt.Errorf("%s: cannot write to http", i.valueFlagName)
 	case iov1beta1.FileScheme_FILE_SCHEME_HTTPS:
@@ -111,8 +117,11 @@ func (i *imageWriter) WriteImage(
 		return nil
 	case iov1beta1.FileScheme_FILE_SCHEME_STDIO:
 		writer = stdoutContainer.Stdout()
-	case iov1beta1.FileScheme_FILE_SCHEME_FILE:
-		file, err := os.Create(imageRef.Path)
+	case iov1beta1.FileScheme_FILE_SCHEME_LOCAL:
+		if fileRef.Path == "" {
+			return errors.New("empty FileRef.Path")
+		}
+		file, err := os.Create(fileRef.Path)
 		if err != nil {
 			return err
 		}
@@ -121,10 +130,10 @@ func (i *imageWriter) WriteImage(
 		}()
 		writer = file
 	default:
-		return fmt.Errorf("unknown file scheme: %v", imageRef.FileScheme)
+		return fmt.Errorf("unknown file scheme: %v", fileRef.Scheme)
 	}
 
-	switch imageRef.ImageFormat {
+	switch imageRef.Format {
 	case iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ, iov1beta1.ImageFormat_IMAGE_FORMAT_JSONGZ:
 		gzipWriteCloser := gzip.NewWriter(writer)
 		defer func() {

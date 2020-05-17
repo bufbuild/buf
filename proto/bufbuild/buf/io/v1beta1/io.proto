@@ -23,9 +23,20 @@ enum FileScheme {
   FILE_SCHEME_UNSPECIFIED = 0;
   FILE_SCHEME_HTTP = 1;
   FILE_SCHEME_HTTPS = 2;
-  FILE_SCHEME_FILE = 3;
+  FILE_SCHEME_LOCAL = 3;
   FILE_SCHEME_STDIO = 4;
   FILE_SCHEME_NULL = 5;
+}
+
+message FileRef {
+  FileScheme scheme = 1;
+
+  // path is the path of the image.
+  //
+  // This will be the path minus the scheme for http and https.
+  // This will be the unnormalized file path for local.
+  // This will be empty for stdio and null.
+  string path = 3;
 }
 
 enum ImageFormat {
@@ -37,14 +48,8 @@ enum ImageFormat {
 }
 
 message ImageRef {
-  FileScheme file_scheme = 1;
-  ImageFormat image_format = 2;
-  // path is the path of the image.
-  //
-  // This path will be local to the system and not normalized.
-  // This path will not include the scheme, if any.
-  // If the type is stdio or null, this will be empty.
-  string path = 3;
+  FileRef file_ref = 1;
+  ImageFormat format = 2;
 }
 
 enum ArchiveFormat {
@@ -54,63 +59,56 @@ enum ArchiveFormat {
 }
 
 message ArchiveRef {
-  FileScheme file_scheme = 1;
-  ArchiveFormat archive_format = 2;
-  // path is the path of the archive.
+  FileRef file_ref = 1;
+  ArchiveFormat format = 2;
+  uint32 strip_components = 3;
+}
+
+enum GitRepositoryScheme {
+  GIT_REPOSITORY_SCHEME_UNSPECIFIED = 0;
+  GIT_REPOSITORY_SCHEME_HTTP = 1;
+  GIT_REPOSITORY_SCHEME_HTTPS = 2;
+  GIT_REPOSITORY_SCHEME_LOCAL = 3;
+  GIT_REPOSITORY_SCHEME_SSH = 4;
+}
+
+enum GitRepositorySubmoduleBehavior {
+  GIT_REPOSITORY_SUBMODULE_BEHAVIOR_UNSPECIFIED = 0;
+  GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE = 1;
+  GIT_REPOSITORY_SUBMODULE_BEHAVIOR_RECURSIVE = 2;
+}
+
+message GitRepositoryRef {
+  GitRepositoryScheme scheme = 1;
+  // path is the path of the git repository.
   //
-  // This path will be local to the system and not normalized.
-  // This path will not include the scheme, if any.
-  // If the type is stdio or devnull, this will be empty.
-  string path = 3;
-  uint32 strip_components = 4;
-}
-
-enum GitScheme {
-  GIT_SCHEME_UNSPECIFIED = 0;
-  GIT_SCHEME_HTTP = 1;
-  GIT_SCHEME_HTTPS = 2;
-  GIT_SCHEME_FILE = 3;
-  GIT_SCHEME_SSH = 4;
-}
-
-enum GitSubmoduleBehavior {
-  GIT_SUBMODULE_BEHAVIOR_UNSPECIFIED = 0;
-  GIT_SUBMODULE_BEHAVIOR_NONE = 1;
-  GIT_SUBMODULE_BEHAVIOR_RECURSIVE = 2;
-}
-
-message GitRef {
-  GitScheme git_scheme = 1;
-  // path is the path of the archive.
-  //
-  // This path will be local to the system and not normalized.
-  // This path will not include the scheme, if any.
+  // This will be the path minus the scheme for http, https, and ssh.
+  // This will be the unnormalized direcotry path for local.
   string path = 2;
   oneof reference {
     string branch = 3;
     string tag = 4;
   }
-  GitSubmoduleBehavior git_submodule_behavior = 5;
+  GitRepositorySubmoduleBehavior submodule_behavior = 5;
 }
 
 enum BucketScheme {
   BUCKET_SCHEME_UNSPECIFIED = 0;
-  BUCKET_SCHEME_DIR = 1;
+  BUCKET_SCHEME_LOCAL = 1;
 }
 
 message BucketRef {
-  BucketScheme bucket_scheme = 1;
+  BucketScheme scheme = 1;
   // path is the path of the bucket.
   //
-  // This path will be local to the system and not normalized.
-  // This path will not include the scheme, if any.
+  // This will be the unnormalized directory path for local.
   string path = 2;
 }
 
 message SourceRef {
   oneof value {
     ArchiveRef archive_ref = 1;
-    GitRef git_ref = 2;
+    GitRepositoryRef git_repository_ref = 2;
     BucketRef bucket_ref = 3;
   }
 }

@@ -34,7 +34,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		testNewInputArchiveRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TAR,
 			"path/to/file.tar",
 			0,
@@ -44,7 +44,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		testNewInputArchiveRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TAR,
 			"/path/to/file.tar",
 			0,
@@ -54,7 +54,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		testNewInputArchiveRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TAR,
 			"path/to/file.tar",
 			1,
@@ -64,7 +64,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		testNewInputArchiveRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TARGZ,
 			"path/to/file.tar.gz",
 			0,
@@ -74,7 +74,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		testNewInputArchiveRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TARGZ,
 			"path/to/file.tar.gz",
 			1,
@@ -84,7 +84,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		testNewInputArchiveRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TARGZ,
 			"path/to/file.tgz",
 			0,
@@ -94,7 +94,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		testNewInputArchiveRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TARGZ,
 			"path/to/file.tgz",
 			1,
@@ -123,74 +123,74 @@ func TestParseInputRefSuccess(t *testing.T) {
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_FILE,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL,
 			"path/to/dir.git",
 			"master",
 			"",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE,
 		),
 		"path/to/dir.git#branch=master",
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_FILE,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL,
 			"/path/to/dir.git",
 			"master",
 			"",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE,
 		),
 		"file:///path/to/dir.git#branch=master",
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_FILE,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL,
 			"path/to/dir.git",
 			"",
 			"master",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE,
 		),
 		"path/to/dir.git#tag=master",
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_HTTP,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_HTTP,
 			"hello.com/path/to/dir.git",
 			"master",
 			"",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE,
 		),
 		"http://hello.com/path/to/dir.git#branch=master",
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_HTTPS,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_HTTPS,
 			"hello.com/path/to/dir.git",
 			"master",
 			"",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE,
 		),
 		"https://hello.com/path/to/dir.git#branch=master",
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_SSH,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_SSH,
 			"user@hello.com:path/to/dir.git",
 			"master",
 			"",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE,
 		),
 		"ssh://user@hello.com:path/to/dir.git#branch=master",
 	)
 	testParseInputRefSuccess(
 		t,
 		testNewInputImageRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ImageFormat_IMAGE_FORMAT_BIN,
 			"path/to/file.bin",
 		),
@@ -199,7 +199,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		testNewInputImageRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ,
 			"path/to/file.bin.gz",
 		),
@@ -208,7 +208,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		testNewInputImageRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ImageFormat_IMAGE_FORMAT_JSON,
 			"path/to/file.json",
 		),
@@ -217,7 +217,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		testNewInputImageRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ImageFormat_IMAGE_FORMAT_JSONGZ,
 			"path/to/file.json.gz",
 		),
@@ -253,7 +253,7 @@ func TestParseInputRefSuccess(t *testing.T) {
 	testParseInputRefSuccess(
 		t,
 		testNewInputImageRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ImageFormat_IMAGE_FORMAT_BIN,
 			"path/to/dir",
 		),
@@ -261,74 +261,74 @@ func TestParseInputRefSuccess(t *testing.T) {
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_FILE,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL,
 			"/path/to/dir",
 			"master",
 			"",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE,
 		),
 		"/path/to/dir#branch=master,format=git",
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_FILE,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL,
 			"/path/to/dir",
 			"master/foo",
 			"",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE,
 		),
 		"/path/to/dir#format=git,branch=master/foo",
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_FILE,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL,
 			"path/to/dir",
 			"",
 			"master/foo",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE,
 		),
 		"path/to/dir#tag=master/foo,format=git",
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_FILE,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL,
 			"path/to/dir",
 			"",
 			"master/foo",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE,
 		),
 		"path/to/dir#format=git,tag=master/foo",
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_FILE,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL,
 			"path/to/dir",
 			"",
 			"master/foo",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_RECURSIVE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_RECURSIVE,
 		),
 		"path/to/dir#format=git,tag=master/foo,recurse_submodules=true",
 	)
 	testParseInputRefSuccess(
 		t,
-		testNewInputGitRef(
-			iov1beta1.GitScheme_GIT_SCHEME_FILE,
+		testNewInputGitRepositoryRef(
+			iov1beta1.GitRepositoryScheme_GIT_REPOSITORY_SCHEME_LOCAL,
 			"path/to/dir",
 			"",
 			"master/foo",
-			iov1beta1.GitSubmoduleBehavior_GIT_SUBMODULE_BEHAVIOR_NONE,
+			iov1beta1.GitRepositorySubmoduleBehavior_GIT_REPOSITORY_SUBMODULE_BEHAVIOR_NONE,
 		),
 		"path/to/dir#format=git,tag=master/foo,recurse_submodules=false",
 	)
 	testParseInputRefSuccess(
 		t,
 		testNewInputArchiveRef(
-			iov1beta1.FileScheme_FILE_SCHEME_FILE,
+			iov1beta1.FileScheme_FILE_SCHEME_LOCAL,
 			iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TARGZ,
 			"path/to/file",
 			1,
@@ -370,17 +370,17 @@ func TestParseInputRefError(t *testing.T) {
 	)
 	testParseInputRefError(
 		t,
-		newMustSpecifyGitRefNameError("path/to/foo.git"),
+		newMustSpecifyGitRepositoryRefNameError("path/to/foo.git"),
 		"path/to/foo.git",
 	)
 	testParseInputRefError(
 		t,
-		newMustSpecifyGitRefNameError("path/to/foo"),
+		newMustSpecifyGitRepositoryRefNameError("path/to/foo"),
 		"path/to/foo#format=git",
 	)
 	testParseInputRefError(
 		t,
-		newCannotSpecifyMultipleGitRefNamesError(),
+		newCannotSpecifyMultipleGitRepositoryRefNamesError(),
 		"path/to/foo#format=git,branch=foo,tag=bar",
 	)
 	testParseInputRefError(
@@ -507,9 +507,11 @@ func testNewInputImageRef(
 	return &iov1beta1.InputRef{
 		Value: &iov1beta1.InputRef_ImageRef{
 			ImageRef: &iov1beta1.ImageRef{
-				FileScheme:  fileScheme,
-				ImageFormat: imageFormat,
-				Path:        path,
+				FileRef: &iov1beta1.FileRef{
+					Scheme: fileScheme,
+					Path:   path,
+				},
+				Format: imageFormat,
 			},
 		},
 	}
@@ -526,9 +528,11 @@ func testNewInputArchiveRef(
 			SourceRef: &iov1beta1.SourceRef{
 				Value: &iov1beta1.SourceRef_ArchiveRef{
 					ArchiveRef: &iov1beta1.ArchiveRef{
-						FileScheme:      fileScheme,
-						ArchiveFormat:   archiveFormat,
-						Path:            path,
+						FileRef: &iov1beta1.FileRef{
+							Scheme: fileScheme,
+							Path:   path,
+						},
+						Format:          archiveFormat,
 						StripComponents: stripComponents,
 					},
 				},
@@ -537,32 +541,32 @@ func testNewInputArchiveRef(
 	}
 }
 
-func testNewInputGitRef(
-	gitScheme iov1beta1.GitScheme,
+func testNewInputGitRepositoryRef(
+	gitRepositoryScheme iov1beta1.GitRepositoryScheme,
 	path string,
 	branch string,
 	tag string,
-	gitSubmoduleBehavior iov1beta1.GitSubmoduleBehavior,
+	gitSubmoduleBehavior iov1beta1.GitRepositorySubmoduleBehavior,
 ) *iov1beta1.InputRef {
-	gitRef := &iov1beta1.GitRef{
-		GitScheme:            gitScheme,
-		Path:                 path,
-		GitSubmoduleBehavior: gitSubmoduleBehavior,
+	gitRepositoryRef := &iov1beta1.GitRepositoryRef{
+		Scheme:            gitRepositoryScheme,
+		Path:              path,
+		SubmoduleBehavior: gitSubmoduleBehavior,
 	}
 	if branch != "" {
-		gitRef.Reference = &iov1beta1.GitRef_Branch{
+		gitRepositoryRef.Reference = &iov1beta1.GitRepositoryRef_Branch{
 			Branch: branch,
 		}
 	} else if tag != "" {
-		gitRef.Reference = &iov1beta1.GitRef_Tag{
+		gitRepositoryRef.Reference = &iov1beta1.GitRepositoryRef_Tag{
 			Tag: tag,
 		}
 	}
 	return &iov1beta1.InputRef{
 		Value: &iov1beta1.InputRef_SourceRef{
 			SourceRef: &iov1beta1.SourceRef{
-				Value: &iov1beta1.SourceRef_GitRef{
-					GitRef: gitRef,
+				Value: &iov1beta1.SourceRef_GitRepositoryRef{
+					GitRepositoryRef: gitRepositoryRef,
 				},
 			},
 		},
@@ -577,8 +581,8 @@ func testNewInputBucketRef(
 			SourceRef: &iov1beta1.SourceRef{
 				Value: &iov1beta1.SourceRef_BucketRef{
 					BucketRef: &iov1beta1.BucketRef{
-						BucketScheme: iov1beta1.BucketScheme_BUCKET_SCHEME_DIR,
-						Path:         path,
+						Scheme: iov1beta1.BucketScheme_BUCKET_SCHEME_LOCAL,
+						Path:   path,
 					},
 				},
 			},
