@@ -19,20 +19,16 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 const (
@@ -179,82 +175,6 @@ func TestBasic7(t *testing.T) {
 		normalpath.WithExactPath("a/bar.yaml"),
 		normalpath.WithStripComponents(1),
 	)
-}
-
-func TestGitClone(t *testing.T) {
-	testGitClone(t, false)
-}
-
-func TestGitCloneExperimental(t *testing.T) {
-	testGitClone(t, true)
-}
-
-func testGitClone(t *testing.T, experimental bool) {
-	t.Parallel()
-	absGitPath, err := filepath.Abs("../../../../../.git")
-	require.NoError(t, err)
-	_, err = os.Stat(absGitPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			t.Skip("no .git repository")
-			return
-		}
-		require.NoError(t, err)
-	}
-
-	absFilePathSuccess1, err := filepath.Abs("storagetesting.go")
-	require.NoError(t, err)
-	relFilePathSuccess1, err := filepath.Rel(filepath.Dir(absGitPath), absFilePathSuccess1)
-	require.NoError(t, err)
-	absFilePathSuccess2, err := filepath.Abs("testdata/one/1.proto")
-	require.NoError(t, err)
-	relFilePathSuccess2, err := filepath.Rel(filepath.Dir(absGitPath), absFilePathSuccess2)
-	require.NoError(t, err)
-	relFilePathError1 := "Makefile"
-
-	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
-	if experimental {
-		err = storagegit.ExperimentalClone(
-			context.Background(),
-			zap.NewNop(),
-			nil,
-			absGitPath,
-			"master",
-			"",
-			false,
-			readWriteBucketCloser,
-			normalpath.WithExt(".proto"),
-			normalpath.WithExt(".go"),
-		)
-	} else {
-		err = storagegit.Clone(
-			context.Background(),
-			zap.NewNop(),
-			nil,
-			"",
-			absGitPath,
-			storagegitplumbing.NewBranchRefName("master"),
-			false,
-			"",
-			"",
-			"",
-			"",
-			"",
-			readWriteBucketCloser,
-			normalpath.WithExt(".proto"),
-			normalpath.WithExt(".go"),
-		)
-	}
-	assert.NoError(t, err)
-
-	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathSuccess1)
-	assert.NoError(t, err)
-	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathSuccess2)
-	assert.NoError(t, err)
-	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathError1)
-	assert.True(t, storage.IsNotExist(err))
-
-	assert.NoError(t, readWriteBucketCloser.Close())
 }
 
 func testBasic(
