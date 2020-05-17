@@ -40,25 +40,73 @@ func TestEnvContainer(t *testing.T) {
 		},
 		Environ(envContainer),
 	)
+	assert.Equal(
+		t,
+		map[string]string{
+			"foo1": "bar1",
+			"foo2": "bar2",
+		},
+		EnvironMap(envContainer),
+	)
 
 	envContainer, err := newEnvContainerForEnviron(
 		[]string{
 			"foo1=bar1",
 			"foo2=bar2",
-			"foo3=",
+			"foo3=bar3",
+			"foo4=",
 		},
 	)
 	require.NoError(t, err)
 	assert.Equal(t, "bar1", envContainer.Env("foo1"))
 	assert.Equal(t, "bar2", envContainer.Env("foo2"))
-	assert.Equal(t, "", envContainer.Env("foo3"))
+	assert.Equal(t, "bar3", envContainer.Env("foo3"))
+	assert.Equal(t, "", envContainer.Env("foo4"))
 	assert.Equal(
 		t,
 		[]string{
 			"foo1=bar1",
 			"foo2=bar2",
+			"foo3=bar3",
 		},
 		Environ(envContainer),
+	)
+	assert.Equal(
+		t,
+		map[string]string{
+			"foo1": "bar1",
+			"foo2": "bar2",
+			"foo3": "bar3",
+		},
+		EnvironMap(envContainer),
+	)
+
+	envContainer = NewEnvContainerWithOverrides(
+		envContainer,
+		map[string]string{
+			"foo1": "",
+			"foo2": "baz2",
+		},
+	)
+	assert.Equal(t, "", envContainer.Env("foo1"))
+	assert.Equal(t, "baz2", envContainer.Env("foo2"))
+	assert.Equal(t, "bar3", envContainer.Env("foo3"))
+	assert.Equal(t, "", envContainer.Env("foo4"))
+	assert.Equal(
+		t,
+		[]string{
+			"foo2=baz2",
+			"foo3=bar3",
+		},
+		Environ(envContainer),
+	)
+	assert.Equal(
+		t,
+		map[string]string{
+			"foo2": "baz2",
+			"foo3": "bar3",
+		},
+		EnvironMap(envContainer),
 	)
 
 	_, err = newEnvContainerForEnviron(

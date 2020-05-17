@@ -31,17 +31,33 @@ type EnvContainer interface {
 	Env(key string) string
 
 	// ForEachEnv iterates over all non-empty environment variables and calls the function.
+	//
+	// The value will never be empty.
 	ForEachEnv(func(string, string))
 }
 
 // NewEnvContainer returns a new EnvContainer.
-func NewEnvContainer(env map[string]string) EnvContainer {
-	return newEnvContainer(env)
+//
+// Empty values are effectively ignored.
+func NewEnvContainer(m map[string]string) EnvContainer {
+	return newEnvContainer(m)
 }
 
 // NewEnvContainerForOS returns a new EnvContainer for the operating system.
 func NewEnvContainerForOS() (EnvContainer, error) {
 	return newEnvContainerForEnviron(os.Environ())
+}
+
+// NewEnvContainerWithOverrides returns a new EnvContainer with the values of the input
+// EnvContainer, overridden by the values in overrides.
+//
+// Empty values are effectively ignored. To unset a key, set the value to "" in overrides.
+func NewEnvContainerWithOverrides(envContainer EnvContainer, overrides map[string]string) EnvContainer {
+	m := EnvironMap(envContainer)
+	for key, value := range overrides {
+		m[key] = value
+	}
+	return newEnvContainer(m)
 }
 
 // StdinContainer provides stdin.
@@ -213,6 +229,20 @@ func Environ(envContainer EnvContainer) []string {
 	})
 	sort.Strings(environ)
 	return environ
+}
+
+// EnvironMap returns all environment variables in a map.
+//
+// No key will have an empty value.
+func EnvironMap(envContainer EnvContainer) map[string]string {
+	m := make(map[string]string)
+	envContainer.ForEachEnv(func(key string, value string) {
+		// This should be done anyways per the EnvContainer documentation but just to make sure
+		if value != "" {
+			m[key] = value
+		}
+	})
+	return m
 }
 
 // Args returns all arguments.

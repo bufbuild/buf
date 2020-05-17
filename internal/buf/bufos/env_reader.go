@@ -36,12 +36,11 @@ import (
 	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
+	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httputil"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagegit"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagegit/storagegitplumbing"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
@@ -50,50 +49,35 @@ import (
 )
 
 type envReader struct {
-	logger                   *zap.Logger
-	httpClient               *http.Client
-	httpAuthenticator        apphttp.Authenticator
-	configProvider           bufconfig.Provider
-	buildHandler             bufbuild.Handler
-	valueFlagName            string
-	configOverrideFlagName   string
-	httpsUsernameEnvKey      string
-	httpsPasswordEnvKey      string
-	sshKeyFileEnvKey         string
-	sshKeyPassphraseEnvKey   string
-	sshKnownHostsFilesEnvKey string
-	experimentalGitClone     bool
+	logger                 *zap.Logger
+	httpClient             *http.Client
+	httpAuthenticator      apphttp.Authenticator
+	gitCloner              git.Cloner
+	configProvider         bufconfig.Provider
+	buildHandler           bufbuild.Handler
+	valueFlagName          string
+	configOverrideFlagName string
 }
 
 func newEnvReader(
 	logger *zap.Logger,
 	httpClient *http.Client,
 	httpAuthenticator apphttp.Authenticator,
+	gitCloner git.Cloner,
 	configProvider bufconfig.Provider,
 	buildHandler bufbuild.Handler,
 	valueFlagName string,
 	configOverrideFlagName string,
-	httpsUsernameEnvKey string,
-	httpsPasswordEnvKey string,
-	sshKeyFileEnvKey string,
-	sshKeyPassphraseEnvKey string,
-	sshKnownHostsFilesEnvKey string,
-	experimentalGitClone bool,
 ) *envReader {
 	return &envReader{
-		logger:                   logger.Named("bufos"),
-		httpClient:               httpClient,
-		httpAuthenticator:        httpAuthenticator,
-		configProvider:           configProvider,
-		buildHandler:             buildHandler,
-		valueFlagName:            valueFlagName,
-		configOverrideFlagName:   configOverrideFlagName,
-		httpsUsernameEnvKey:      httpsUsernameEnvKey,
-		httpsPasswordEnvKey:      httpsPasswordEnvKey,
-		sshKeyFileEnvKey:         sshKeyFileEnvKey,
-		sshKeyPassphraseEnvKey:   sshKeyPassphraseEnvKey,
-		sshKnownHostsFilesEnvKey: sshKnownHostsFilesEnvKey,
-		experimentalGitClone:     experimentalGitClone,
+		logger:                 logger.Named("bufos"),
+		httpClient:             httpClient,
+		httpAuthenticator:      httpAuthenticator,
+		gitCloner:              gitCloner,
+		configProvider:         configProvider,
+		buildHandler:           buildHandler,
+		valueFlagName:          valueFlagName,
+		configOverrideFlagName: configOverrideFlagName,
 	}
 }
 
@@ -554,11 +538,11 @@ func (e *envReader) getReadBucketCloserFromGit(
 	envContainer app.EnvContainer,
 	gitRepositoryRef *iov1beta1.GitRepositoryRef,
 ) (_ storage.ReadBucketCloser, retErr error) {
-	homeDirPath, err := app.HomeDirPath(envContainer)
+	gitURL, err := getGitURL(gitRepositoryRef)
 	if err != nil {
 		return nil, err
 	}
-	gitURL, err := getGitURL(gitRepositoryRef)
+	gitRefName, err := getGitRefName(gitRepositoryRef)
 	if err != nil {
 		return nil, err
 	}
@@ -571,42 +555,17 @@ func (e *envReader) getReadBucketCloserFromGit(
 		normalpath.WithExt(".proto"),
 		normalpath.WithExactPath(bufconfig.ConfigFilePath),
 	}
-	if e.experimentalGitClone {
-		err = storagegit.ExperimentalClone(
-			ctx,
-			e.logger,
-			app.Environ(envContainer),
-			gitURL,
-			gitRepositoryRef.GetBranch(),
-			gitRepositoryRef.GetTag(),
-			gitRecurseSubmodules,
-			readWriteBucketCloser,
-			transformerOptions...,
-		)
-	} else {
-		var gitRepositoryRefName storagegitplumbing.RefName
-		gitRepositoryRefName, err = getGitRepositoryRefName(gitRepositoryRef)
-		if err != nil {
-			return nil, err
-		}
-		err = storagegit.Clone(
-			ctx,
-			e.logger,
-			envContainer.Env,
-			homeDirPath,
-			gitURL,
-			gitRepositoryRefName,
-			gitRecurseSubmodules,
-			e.httpsUsernameEnvKey,
-			e.httpsPasswordEnvKey,
-			e.sshKeyFileEnvKey,
-			e.sshKeyPassphraseEnvKey,
-			e.sshKnownHostsFilesEnvKey,
-			readWriteBucketCloser,
-			transformerOptions...,
-		)
-	}
-	if err != nil {
+	if err := e.gitCloner.CloneToBucket(
+		ctx,
+		envContainer,
+		gitURL,
+		gitRefName,
+		readWriteBucketCloser,
+		git.CloneToBucketOptions{
+			RecurseSubmodules:  gitRecurseSubmodules,
+			TransformerOptions: transformerOptions,
+		},
+	); err != nil {
 		return nil, multierr.Append(
 			fmt.Errorf("could not clone %s: %v", gitURL, err),
 			readWriteBucketCloser.Close(),
@@ -802,12 +761,12 @@ func getGitURL(gitRepositoryRef *iov1beta1.GitRepositoryRef) (string, error) {
 	}
 }
 
-func getGitRepositoryRefName(gitRepositoryRef *iov1beta1.GitRepositoryRef) (storagegitplumbing.RefName, error) {
+func getGitRefName(gitRepositoryRef *iov1beta1.GitRepositoryRef) (git.RefName, error) {
 	if branch := gitRepositoryRef.GetBranch(); branch != "" {
-		return storagegitplumbing.NewBranchRefName(branch), nil
+		return git.NewBranchRefName(branch), nil
 	}
 	if tag := gitRepositoryRef.GetTag(); tag != "" {
-		return storagegitplumbing.NewTagRefName(tag), nil
+		return git.NewTagRefName(tag), nil
 	}
 	return nil, errors.New("invalid GitRepositoryRef")
 }

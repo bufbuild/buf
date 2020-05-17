@@ -72,7 +72,7 @@ func handle(
 	if !externalConfig.LimitToInputFiles {
 		files = nil
 	}
-	envReader := internal.NewBufosEnvReader(logger, "against_input", "against_input_config", false)
+	envReader := internal.NewBufosEnvReader(logger, "against_input", "against_input_config")
 	againstEnv, err := envReader.ReadImageEnv(
 		ctx,
 		newContainer(container),
@@ -86,7 +86,7 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	envReader = internal.NewBufosEnvReader(logger, "", "input_config", false)
+	envReader = internal.NewBufosEnvReader(logger, "", "input_config")
 	config, err := envReader.GetConfig(ctx, encoding.GetJSONStringOrStringValue(externalConfig.InputConfig))
 	if err != nil {
 		responseWriter.WriteError(err.Error())

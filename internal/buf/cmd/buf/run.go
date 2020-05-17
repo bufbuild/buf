@@ -40,7 +40,6 @@ func imageBuild(ctx context.Context, container *container) (retErr error) {
 		container.Logger(),
 		imageBuildInputFlagName,
 		imageBuildConfigFlagName,
-		container.ExperimentalGitClone,
 		// must be source only
 	).ReadSourceEnv(
 		ctx,
@@ -92,7 +91,6 @@ func checkLint(ctx context.Context, container *container) (retErr error) {
 		container.Logger(),
 		checkLintInputFlagName,
 		checkLintConfigFlagName,
-		container.ExperimentalGitClone,
 	).ReadEnv(
 		ctx,
 		container,
@@ -150,7 +148,6 @@ func checkBreaking(ctx context.Context, container *container) (retErr error) {
 		container.Logger(),
 		checkBreakingInputFlagName,
 		checkBreakingConfigFlagName,
-		container.ExperimentalGitClone,
 	).ReadEnv(
 		ctx,
 		container,
@@ -186,7 +183,6 @@ func checkBreaking(ctx context.Context, container *container) (retErr error) {
 		container.Logger(),
 		checkBreakingAgainstInputFlagName,
 		checkBreakingAgainstConfigFlagName,
-		container.ExperimentalGitClone,
 	).ReadEnv(
 		ctx,
 		container,
@@ -249,7 +245,6 @@ func checkLsLintCheckers(ctx context.Context, container *container) (retErr erro
 			container.Logger(),
 			"",
 			checkLsCheckersConfigFlagName,
-			container.ExperimentalGitClone,
 		).GetConfig(
 			ctx,
 			container.Config,
@@ -281,7 +276,6 @@ func checkLsBreakingCheckers(ctx context.Context, container *container) (retErr 
 			container.Logger(),
 			"",
 			checkLsCheckersConfigFlagName,
-			container.ExperimentalGitClone,
 		).GetConfig(
 			ctx,
 			container.Config,
@@ -302,7 +296,6 @@ func lsFiles(ctx context.Context, container *container) (retErr error) {
 		container.Logger(),
 		lsFilesInputFlagName,
 		lsFilesConfigFlagName,
-		container.ExperimentalGitClone,
 	).ListFiles(
 		ctx,
 		container,
