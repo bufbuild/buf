@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufos"
 	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
+	"github.com/bufbuild/buf/internal/pkg/git"
 	"go.uber.org/zap"
 )
 
@@ -32,7 +33,6 @@ const (
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
-	inputSSHKeyPassphraseEnvKey   = "BUF_INPUT_SSH_KEY_PASSPHRASE"
 	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
 )
 
@@ -47,6 +47,12 @@ var (
 			inputHTTPSPasswordEnvKey,
 		),
 	)
+	defaultGitClonerOptions = git.ClonerOptions{
+		HTTPSUsernameEnvKey:      inputHTTPSUsernameEnvKey,
+		HTTPSPasswordEnvKey:      inputHTTPSPasswordEnvKey,
+		SSHKeyFileEnvKey:         inputSSHKeyFileEnvKey,
+		SSHKnownHostsFilesEnvKey: inputSSHKnownHostsFilesEnvKey,
+	}
 )
 
 // NewBufosEnvReader returns a new bufos.EnvReader.
@@ -54,22 +60,16 @@ func NewBufosEnvReader(
 	logger *zap.Logger,
 	inputFlagName string,
 	configOverrideFlagName string,
-	experimentalGitClone bool,
 ) bufos.EnvReader {
 	return bufos.NewEnvReader(
 		logger,
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,
+		git.NewCloner(logger, defaultGitClonerOptions),
 		bufconfig.NewProvider(logger),
 		bufbuild.NewHandler(logger),
 		inputFlagName,
 		configOverrideFlagName,
-		inputHTTPSUsernameEnvKey,
-		inputHTTPSPasswordEnvKey,
-		inputSSHKeyFileEnvKey,
-		inputSSHKeyPassphraseEnvKey,
-		inputSSHKnownHostsFilesEnvKey,
-		experimentalGitClone,
 	)
 }
 

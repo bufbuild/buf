@@ -62,6 +62,9 @@ func (e *envContainer) Env(key string) string {
 
 func (e *envContainer) ForEachEnv(f func(string, string)) {
 	for key, value := range e.variables {
-		f(key, value)
+		// This should be done anyways but just to make sure
+		if value != "" {
+			f(key, value)
+		}
 	}
 }

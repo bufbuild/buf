@@ -27,6 +27,7 @@ import (
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
+	"github.com/bufbuild/buf/internal/pkg/git"
 	"go.uber.org/zap"
 )
 
@@ -120,31 +121,21 @@ func NewEnvReader(
 	logger *zap.Logger,
 	httpClient *http.Client,
 	httpAuthenticator apphttp.Authenticator,
+	gitCloner git.Cloner,
 	configProvider bufconfig.Provider,
 	buildHandler bufbuild.Handler,
 	valueFlagName string,
 	configOverrideFlagName string,
-	httpsUsernameEnvKey string,
-	httpsPasswordEnvKey string,
-	sshKeyFileEnvKey string,
-	sshKeyPassphraseEnvKey string,
-	sshKnownHostsFilesEnvKey string,
-	experimentalGitClone bool,
 ) EnvReader {
 	return newEnvReader(
 		logger,
 		httpClient,
 		httpAuthenticator,
+		gitCloner,
 		configProvider,
 		buildHandler,
 		valueFlagName,
 		configOverrideFlagName,
-		httpsUsernameEnvKey,
-		httpsPasswordEnvKey,
-		sshKeyFileEnvKey,
-		sshKeyPassphraseEnvKey,
-		sshKnownHostsFilesEnvKey,
-		experimentalGitClone,
 	)
 }
 

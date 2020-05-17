@@ -208,4 +208,5 @@ func (b *builder) bindCheckLsCheckersFormat(flagSet *pflag.FlagSet) {
 
 func (b *builder) bindExperimentalGitClone(flagSet *pflag.FlagSet) {
 	flagSet.BoolVar(&b.ExperimentalGitClone, experimentalGitCloneFlagName, false, "Use the git binary to clone instead of the internal git library.")
+	_ = flagSet.MarkHidden(experimentalGitCloneFlagName)
 }
