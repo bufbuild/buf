@@ -42,7 +42,7 @@ func TestCloneToBucket(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	absFilePathSuccess1, err := filepath.Abs("git_test.go")
+	absFilePathSuccess1, err := filepath.Abs("../app/app.go")
 	require.NoError(t, err)
 	relFilePathSuccess1, err := filepath.Rel(filepath.Dir(absGitPath), absFilePathSuccess1)
 	require.NoError(t, err)
