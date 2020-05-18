@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 	"github.com/bufbuild/buf/internal/pkg/tmp"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -111,7 +110,7 @@ func (c *cloner) CloneToBucket(
 	}()
 
 	defer instrument.Start(c.logger, "git_clone_to_bucket_copy").End()
-	_, err = storageutil.Copy(ctx, tmpReadBucketCloser, readWriteBucket, "", options.TransformerOptions...)
+	_, err = storage.Copy(ctx, tmpReadBucketCloser, readWriteBucket, options.TransformerOptions...)
 	return err
 }
 

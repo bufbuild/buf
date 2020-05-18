@@ -27,7 +27,6 @@ import (
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -822,7 +821,7 @@ func testGetConfig(
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	data, err := storageutil.ReadPath(ctx, readBucket, bufconfig.ConfigFilePath)
+	data, err := storage.ReadPath(ctx, readBucket, bufconfig.ConfigFilePath)
 	if err != nil && !storage.IsNotExist(err) {
 		require.NoError(t, err)
 	}

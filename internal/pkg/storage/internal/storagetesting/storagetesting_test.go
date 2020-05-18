@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagetar"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -315,25 +315,24 @@ func testBasicBucket(
 	require.NoError(t, err)
 	if doAsTar {
 		buffer := bytes.NewBuffer(nil)
-		require.NoError(t, storageutil.Targz(
+		require.NoError(t, storagetar.Targz(
 			context.Background(),
 			buffer,
 			inputReadWriteBucketCloser,
 			"",
 		))
 		require.NoError(t, err)
-		require.NoError(t, storageutil.Untargz(
+		require.NoError(t, storagetar.Untargz(
 			context.Background(),
 			buffer,
 			readWriteBucketCloser,
 			transformerOptions...,
 		))
 	} else {
-		_, err := storageutil.Copy(
+		_, err := storage.Copy(
 			context.Background(),
 			inputReadWriteBucketCloser,
 			readWriteBucketCloser,
-			"",
 			transformerOptions...,
 		)
 		require.NoError(t, err)

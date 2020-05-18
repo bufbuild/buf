@@ -24,7 +24,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagetar"
 	"go.uber.org/multierr"
 )
 
@@ -83,6 +83,8 @@ func GetArchive(
 	//}
 	//}()
 
+	// TODO: this isn't really the way we should be adding to an OS path
+	// refactor this
 	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(outputDirPath)
 	if err != nil {
 		return err
@@ -90,7 +92,7 @@ func GetArchive(
 	defer func() {
 		retErr = multierr.Append(retErr, readWriteBucketCloser.Close())
 	}()
-	return storageutil.Untargz(
+	return storagetar.Untargz(
 		ctx,
 		response.Body,
 		readWriteBucketCloser,
