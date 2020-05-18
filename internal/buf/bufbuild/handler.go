@@ -144,7 +144,8 @@ func (h *handler) copyToMemory(
 		ctx,
 		readBucket,
 		memReadWriteBucketCloser,
-		protoFileSet.RealFilePaths()...,
+		// note we are not copying the configuration file here
+		protoFileSet.RealFilePaths(),
 	)
 	if err != nil {
 		return nil, multierr.Append(err, memReadWriteBucketCloser.Close())

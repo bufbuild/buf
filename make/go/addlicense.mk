@@ -24,6 +24,7 @@ licensegenerate:: addlicense
 __addlicense_files:
 ifdef ADDLICENSE_IGNORES
 	$(eval ADDLICENSE_FILES := $(shell git ls-files | grep -v $(patsubst %,-e %,$(sort $(ADDLICENSE_IGNORES)))))
+	$(eval ADDLICENSE_FILES := $(ADDLICENSE_FILES) $(shell git status --short | grep '^?' | cut -f 2 -d ' ' | sort | uniq | grep -v $(patsubst %,-e %,$(sort $(ADDLICENSE_IGNORES)))))
 else
 	$(eval ADDLICENSE_FILES := .)
 endif
