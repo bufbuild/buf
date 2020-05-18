@@ -204,7 +204,7 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 }
 
 func (b *bucket) Info() storage.BucketInfo {
-	return internal.NewBucketInfo(false)
+	return internal.NewBucketInfo(storage.BucketTypeDir, b.rootPath)
 }
 
 func (b *bucket) Close() error {

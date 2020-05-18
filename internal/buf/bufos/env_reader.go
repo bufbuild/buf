@@ -43,7 +43,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagetar"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -521,9 +521,9 @@ func (e *envReader) getReadBucketCloserFromArchive(
 	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
 	switch archiveRef.Format {
 	case iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TAR:
-		err = storageutil.Untar(ctx, bytes.NewReader(data), readWriteBucketCloser, transformerOptions...)
+		err = storagetar.Untar(ctx, bytes.NewReader(data), readWriteBucketCloser, transformerOptions...)
 	case iov1beta1.ArchiveFormat_ARCHIVE_FORMAT_TARGZ:
-		err = storageutil.Untargz(ctx, bytes.NewReader(data), readWriteBucketCloser, transformerOptions...)
+		err = storagetar.Untargz(ctx, bytes.NewReader(data), readWriteBucketCloser, transformerOptions...)
 	default:
 		return nil, fmt.Errorf("unknown ArchiveFormat: %v", archiveRef.Format)
 	}

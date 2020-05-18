@@ -30,14 +30,22 @@ func (o objectInfo) Size() uint32 {
 }
 
 // NewBucketInfo returns a new BucketInfo.
-func NewBucketInfo(inMemory bool) storage.BucketInfo {
-	return bucketInfo{inMemory: inMemory}
+func NewBucketInfo(bucketType storage.BucketType, typeSpecificPath string) storage.BucketInfo {
+	return bucketInfo{
+		bucketType:       bucketType,
+		typeSpecificPath: typeSpecificPath,
+	}
 }
 
 type bucketInfo struct {
-	inMemory bool
+	bucketType       storage.BucketType
+	typeSpecificPath string
 }
 
-func (b bucketInfo) InMemory() bool {
-	return b.inMemory
+func (b bucketInfo) Type() storage.BucketType {
+	return b.bucketType
+}
+
+func (b bucketInfo) TypeSpecificPath() string {
+	return b.typeSpecificPath
 }

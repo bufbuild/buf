@@ -24,9 +24,22 @@ import (
 	"context"
 	"errors"
 	"io"
+	"io/ioutil"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 )
+
+const (
+	// BucketTypeUnspecified says that a bucket's type is unspecified.
+	BucketTypeUnspecified BucketType = iota
+	// BucketTypeMem says that a bucket is in-memory.
+	BucketTypeMem
+	// BucketTypeDir says that a bucket is a local filesystem directory.
+	BucketTypeDir
+)
+
+// BucketType is a bucket type.
+type BucketType int
 
 var (
 	// ErrIncompleteWrite is the error returned if a write is not complete
@@ -77,8 +90,18 @@ type WriteObject interface {
 
 // BucketInfo contains bucket info.
 type BucketInfo interface {
-	// InMemory returns true if the bucket is in memory.
-	InMemory() bool
+	// Type is the bucket type.
+	//
+	// Returns BucketTypeUnspecified if the bucket type is unspecified.
+	Type() BucketType
+
+	// TypeSpecificPath is the type-specific path to the bucket.
+	//
+	// This should be used to translate paths to a path appropriate to display to users.
+	//
+	// For BucketTypeDir, this will be the normalized path to the bucket on the local filesystem.
+	// For BucketTypeMem, this will be empty.
+	TypeSpecificPath() string
 }
 
 // ReadBucket is a simple read-only bucket.
@@ -134,4 +157,82 @@ type ReadWriteBucket interface {
 type ReadWriteBucketCloser interface {
 	io.Closer
 	ReadWriteBucket
+}
+
+// ReadPath is analogous to ioutil.ReadFile.
+//
+// Returns an error that fufills IsNotExist if the path does not exist.
+func ReadPath(ctx context.Context, readBucket ReadBucket, path string) (_ []byte, retErr error) {
+	readObject, err := readBucket.Get(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := readObject.Close(); err != nil && retErr == nil {
+			retErr = err
+		}
+	}()
+	return ioutil.ReadAll(readObject)
+}
+
+// TODO: Refactor copy functions to take selector and matcher
+
+// Copy copies the bucket at from to the bucket at to.
+//
+// Copies done concurrently.
+// Paths from the source bucket will be transformed before being added to the destination bucket.
+// Returns the number of files copied.
+func Copy(
+	ctx context.Context,
+	from ReadBucket,
+	to ReadWriteBucket,
+	options ...normalpath.TransformerOption,
+) (int, error) {
+	return CopyPrefix(ctx, from, to, "", options...)
+}
+
+// CopyPrefix copies the bucket at from to the bucket at to for the given prefix.
+//
+// Copies done concurrently.
+// Paths from the source bucket will be transformed before being added to the destination bucket.
+// Returns the number of files copied.
+func CopyPrefix(
+	ctx context.Context,
+	from ReadBucket,
+	to ReadWriteBucket,
+	prefix string,
+	options ...normalpath.TransformerOption,
+) (int, error) {
+	return copyPaths(
+		ctx,
+		from,
+		to,
+		walkBucketFunc(from, prefix),
+		options,
+		false,
+	)
+}
+
+// CopyPaths copies the paths from the bucket at from to the bucket at to.
+//
+// Paths ignored if they do not exists in from.
+// Copies done concurrently.
+// Paths from the source bucket will be transformed before being added to the destination bucket.
+// Paths will be normalized within this function.
+// Returns the number of files copied.
+func CopyPaths(
+	ctx context.Context,
+	from ReadBucket,
+	to ReadWriteBucket,
+	paths []string,
+	options ...normalpath.TransformerOption,
+) (int, error) {
+	return copyPaths(
+		ctx,
+		from,
+		to,
+		walkPathsFunc(paths),
+		options,
+		true,
+	)
 }

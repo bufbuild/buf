@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storageutil
+package storage
 
 import (
 	"context"
@@ -22,15 +22,14 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/multierr"
 )
 
 // transformer can be nil
 func copyPaths(
 	ctx context.Context,
-	from storage.ReadBucket,
-	to storage.ReadWriteBucket,
+	from ReadBucket,
+	to ReadWriteBucket,
 	walk func(context.Context, func(string) error) error,
 	options []normalpath.TransformerOption,
 	allowNotExist bool,
@@ -58,7 +57,7 @@ func copyPaths(
 				err := copyPath(ctx, from, to, path, newPath)
 				lock.Lock()
 				if err != nil {
-					if !allowNotExist || !storage.IsNotExist(err) {
+					if !allowNotExist || !IsNotExist(err) {
 						retErr = multierr.Append(retErr, err)
 					}
 				} else {
@@ -77,11 +76,11 @@ func copyPaths(
 	return count, retErr
 }
 
-// returns storage.ErrNotExist if fromPath does not exist
+// returns ErrNotExist if fromPath does not exist
 func copyPath(
 	ctx context.Context,
-	from storage.ReadBucket,
-	to storage.ReadWriteBucket,
+	from ReadBucket,
+	to ReadWriteBucket,
 	fromPath string,
 	toPath string,
 ) error {
@@ -97,7 +96,7 @@ func copyPath(
 	return multierr.Append(err, multierr.Append(writeObject.Close(), readObject.Close()))
 }
 
-func walkBucketFunc(bucket storage.ReadBucket, prefix string) func(context.Context, func(string) error) error {
+func walkBucketFunc(bucket ReadBucket, prefix string) func(context.Context, func(string) error) error {
 	return func(ctx context.Context, f func(string) error) error {
 		return bucket.Walk(ctx, prefix, f)
 	}

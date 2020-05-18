@@ -22,7 +22,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -134,13 +133,13 @@ func (h *handler) copyToMemory(
 	readBucket storage.ReadBucket,
 	protoFileSet ProtoFileSet,
 ) (storage.ReadWriteBucketCloser, error) {
-	if readBucket.Info().InMemory() {
+	if readBucket.Info().Type() == storage.BucketTypeMem {
 		h.logger.Debug("already_in_memory")
 		return nil, nil
 	}
 	timer := instrument.Start(h.logger, "copy_to_memory")
 	memReadWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
-	count, err := storageutil.CopyPaths(
+	count, err := storage.CopyPaths(
 		ctx,
 		readBucket,
 		memReadWriteBucketCloser,
