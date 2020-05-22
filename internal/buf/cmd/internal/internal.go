@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufos"
 	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
 	"github.com/bufbuild/buf/internal/pkg/git"
@@ -63,9 +64,15 @@ func NewBufosEnvReader(
 ) bufos.EnvReader {
 	return bufos.NewEnvReader(
 		logger,
-		defaultHTTPClient,
-		defaultHTTPAuthenticator,
-		git.NewCloner(logger, defaultGitClonerOptions),
+		buffetch.NewRefParser(
+			logger,
+		),
+		buffetch.NewReader(
+			logger,
+			defaultHTTPClient,
+			defaultHTTPAuthenticator,
+			git.NewCloner(logger, defaultGitClonerOptions),
+		),
 		bufconfig.NewProvider(logger),
 		bufbuild.NewHandler(logger),
 		inputFlagName,
@@ -76,11 +83,15 @@ func NewBufosEnvReader(
 // NewBufosImageWriter returns a new bufos.ImageWriter.
 func NewBufosImageWriter(
 	logger *zap.Logger,
-	outputFlagName string,
 ) bufos.ImageWriter {
 	return bufos.NewImageWriter(
 		logger,
-		outputFlagName,
+		buffetch.NewRefParser(
+			logger,
+		),
+		buffetch.NewWriter(
+			logger,
+		),
 	)
 }
 

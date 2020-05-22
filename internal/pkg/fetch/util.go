@@ -12,27 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package app
+package fetch
 
 import (
-	"io"
-
-	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
+	"sort"
+	"strings"
 )
 
-type stdinContainer struct {
-	reader io.Reader
+func normalizeFormat(format string) string {
+	return strings.ToLower(strings.TrimSpace(format))
 }
 
-func newStdinContainer(reader io.Reader) *stdinContainer {
-	if reader == nil {
-		reader = ioutilextended.DiscardReader
+func formatsToString(formats map[string]struct{}) string {
+	if len(formats) == 0 {
+		return "[]"
 	}
-	return &stdinContainer{
-		reader: reader,
+	s := make([]string, 0, len(formats))
+	for format := range formats {
+		s = append(s, format)
 	}
-}
-
-func (s *stdinContainer) Stdin() io.Reader {
-	return s.reader
+	sort.Strings(s)
+	return "[" + strings.Join(s, ",") + "]"
 }

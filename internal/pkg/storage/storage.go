@@ -74,34 +74,16 @@ type ObjectInfo interface {
 //
 // It must be closed when done.
 type ReadObject interface {
+	ObjectInfo
 	io.ReadCloser
-
-	Info() ObjectInfo
 }
 
 // WriteObject is a write-only object.
 //
 // It must be closed when done.
 type WriteObject interface {
+	ObjectInfo
 	io.WriteCloser
-
-	Info() ObjectInfo
-}
-
-// BucketInfo contains bucket info.
-type BucketInfo interface {
-	// Type is the bucket type.
-	//
-	// Returns BucketTypeUnspecified if the bucket type is unspecified.
-	Type() BucketType
-
-	// TypeSpecificPath is the type-specific path to the bucket.
-	//
-	// This should be used to translate paths to a path appropriate to display to users.
-	//
-	// For BucketTypeDir, this will be the normalized path to the bucket on the local filesystem.
-	// For BucketTypeMem, this will be empty.
-	TypeSpecificPath() string
 }
 
 // ReadBucket is a simple read-only bucket.
@@ -112,6 +94,11 @@ type BucketInfo interface {
 // Paths must not jump the bucket context, that is after clean, they
 // cannot contain "..".
 type ReadBucket interface {
+	// Type is the bucket type.
+	//
+	// Returns BucketTypeUnspecified if the bucket type is unspecified.
+	Type() BucketType
+
 	// Get gets the path.
 	//
 	// Returns ErrNotExist if the path does not exist, other error
@@ -131,8 +118,6 @@ type ReadBucket interface {
 	// If f returns error, Walk will stop short and return this error.
 	// Returns other error on system error.
 	Walk(ctx context.Context, prefix string, f func(string) error) error
-
-	Info() BucketInfo
 }
 
 // ReadBucketCloser is a read-only bucket that must be closed.

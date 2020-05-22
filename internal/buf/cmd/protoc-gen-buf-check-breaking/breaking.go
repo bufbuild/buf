@@ -87,7 +87,10 @@ func handle(
 		return
 	}
 	envReader = internal.NewBufosEnvReader(logger, "", "input_config")
-	config, err := envReader.GetConfig(ctx, encoding.GetJSONStringOrStringValue(externalConfig.InputConfig))
+	config, err := envReader.GetConfig(
+		ctx,
+		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
+	)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return
@@ -137,9 +140,9 @@ type container struct {
 	app.StdinContainer
 }
 
-func newContainer(envContainer app.EnvContainer) *container {
+func newContainer(c app.EnvContainer) *container {
 	return &container{
-		EnvContainer: envContainer,
+		EnvContainer: c,
 		// cannot read against input from stdin, this is for the CodeGeneratorRequest
 		StdinContainer: app.NewStdinContainer(nil),
 	}

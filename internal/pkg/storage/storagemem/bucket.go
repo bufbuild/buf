@@ -63,6 +63,10 @@ func newImmutableBucket(pathToData map[string][]byte) (*bucket, error) {
 	}, nil
 }
 
+func (b *bucket) Type() storage.BucketType {
+	return storage.BucketTypeMem
+}
+
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, error) {
 	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
@@ -174,10 +178,6 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 	return newWriteObject(buffer, size), nil
 }
 
-func (b *bucket) Info() storage.BucketInfo {
-	return internal.NewBucketInfo(storage.BucketTypeMem, "")
-}
-
 func (b *bucket) Close() error {
 	if b.immutable {
 		return errImmutable
@@ -214,6 +214,10 @@ func newReadObject(buffer *buffer, size uint32) *readObject {
 	}
 }
 
+func (r *readObject) Size() uint32 {
+	return r.size
+}
+
 func (r *readObject) Read(p []byte) (int, error) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
@@ -245,10 +249,6 @@ func (r *readObject) Close() error {
 	return nil
 }
 
-func (r *readObject) Info() storage.ObjectInfo {
-	return internal.NewObjectInfo(r.size)
-}
-
 type writeObject struct {
 	buffer  *buffer
 	size    uint32
@@ -262,6 +262,10 @@ func newWriteObject(buffer *buffer, size uint32) *writeObject {
 		buffer: buffer,
 		size:   size,
 	}
+}
+
+func (w *writeObject) Size() uint32 {
+	return w.size
 }
 
 func (w *writeObject) Write(p []byte) (int, error) {
@@ -289,10 +293,6 @@ func (w *writeObject) Close() error {
 		return storage.ErrIncompleteWrite
 	}
 	return nil
-}
-
-func (w *writeObject) Info() storage.ObjectInfo {
-	return internal.NewObjectInfo(w.size)
 }
 
 type buffer struct {

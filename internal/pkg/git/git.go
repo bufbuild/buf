@@ -30,12 +30,12 @@ type RefName interface {
 
 // NewBranchRefName returns a new RefName for the branch.
 func NewBranchRefName(branch string) RefName {
-	return newRefName(branch)
+	return newRefName(branch, false)
 }
 
 // NewTagRefName returns a new RefName for the tag.
 func NewTagRefName(tag string) RefName {
-	return newRefName(tag)
+	return newRefName(tag, true)
 }
 
 // Cloner clones git repositories to buckets.

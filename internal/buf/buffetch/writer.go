@@ -12,27 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package app
+package buffetch
 
 import (
+	"context"
 	"io"
 
-	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
+	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/fetch"
+	"go.uber.org/zap"
 )
 
-type stdinContainer struct {
-	reader io.Reader
+type writer struct {
+	fetchWriter fetch.Writer
 }
 
-func newStdinContainer(reader io.Reader) *stdinContainer {
-	if reader == nil {
-		reader = ioutilextended.DiscardReader
-	}
-	return &stdinContainer{
-		reader: reader,
+func newWriter(
+	logger *zap.Logger,
+) *writer {
+	return &writer{
+		fetchWriter: fetch.NewWriter(
+			logger,
+		),
 	}
 }
 
-func (s *stdinContainer) Stdin() io.Reader {
-	return s.reader
+func (w *writer) PutImage(
+	ctx context.Context,
+	container app.EnvStdoutContainer,
+	imageRef ImageRef,
+) (io.WriteCloser, error) {
+	return w.fetchWriter.PutFile(ctx, container, imageRef.fetchFileRef())
 }

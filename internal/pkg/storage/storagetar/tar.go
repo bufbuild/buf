@@ -116,7 +116,7 @@ func doTar(
 				&tar.Header{
 					Typeflag: tar.TypeReg,
 					Name:     newPath,
-					Size:     int64(readObject.Info().Size()),
+					Size:     int64(readObject.Size()),
 					// If we ever use this outside of testing, we will want to do something about this
 					Mode: 0644,
 				},

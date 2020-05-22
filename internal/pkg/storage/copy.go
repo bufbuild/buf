@@ -88,7 +88,7 @@ func copyPath(
 	if err != nil {
 		return err
 	}
-	writeObject, err := to.Put(ctx, toPath, readObject.Info().Size())
+	writeObject, err := to.Put(ctx, toPath, readObject.Size())
 	if err != nil {
 		return multierr.Append(err, readObject.Close())
 	}

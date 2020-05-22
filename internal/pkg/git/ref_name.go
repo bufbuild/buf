@@ -16,11 +16,13 @@ package git
 
 type refName struct {
 	branchValue string
+	isTag       bool
 }
 
-func newRefName(branchValue string) *refName {
+func newRefName(branchValue string, isTag bool) *refName {
 	return &refName{
 		branchValue: branchValue,
+		isTag:       isTag,
 	}
 }
 
