@@ -64,7 +64,10 @@ func handle(
 		return
 	}
 	envReader := internal.NewBufosEnvReader(logger, "", "input_config")
-	config, err := envReader.GetConfig(ctx, encoding.GetJSONStringOrStringValue(externalConfig.InputConfig))
+	config, err := envReader.GetConfig(
+		ctx,
+		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
+	)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return

@@ -56,6 +56,10 @@ func newBucket(rootPath string) (*bucket, error) {
 	}, nil
 }
 
+func (b *bucket) Type() storage.BucketType {
+	return storage.BucketTypeDir
+}
+
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObject, error) {
 	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
@@ -203,10 +207,6 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 	return newWriteObject(file, size), nil
 }
 
-func (b *bucket) Info() storage.BucketInfo {
-	return internal.NewBucketInfo(storage.BucketTypeDir, b.rootPath)
-}
-
 func (b *bucket) Close() error {
 	if b.closed {
 		return storage.ErrClosed
@@ -227,16 +227,16 @@ func newReadObject(file *os.File, size uint32) *readObject {
 	}
 }
 
+func (r *readObject) Size() uint32 {
+	return r.size
+}
+
 func (r *readObject) Read(p []byte) (int, error) {
 	return r.file.Read(p)
 }
 
 func (r *readObject) Close() error {
 	return r.file.Close()
-}
-
-func (r *readObject) Info() storage.ObjectInfo {
-	return internal.NewObjectInfo(r.size)
 }
 
 type writeObject struct {
@@ -250,6 +250,10 @@ func newWriteObject(file *os.File, size uint32) *writeObject {
 		file: file,
 		size: size,
 	}
+}
+
+func (w *writeObject) Size() uint32 {
+	return w.size
 }
 
 func (w *writeObject) Write(p []byte) (int, error) {
@@ -267,10 +271,6 @@ func (w *writeObject) Close() error {
 		return storage.ErrIncompleteWrite
 	}
 	return err
-}
-
-func (w *writeObject) Info() storage.ObjectInfo {
-	return internal.NewObjectInfo(w.size)
 }
 
 // newErrNotDir returns a new Error for a path not being a directory.
