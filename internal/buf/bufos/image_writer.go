@@ -15,17 +15,13 @@
 package bufos
 
 import (
-	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 
+	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
-	"github.com/bufbuild/buf/internal/buf/ext/extio"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	iov1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/io/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
@@ -35,37 +31,43 @@ import (
 )
 
 type imageWriter struct {
-	logger        *zap.Logger
-	valueFlagName string
+	logger         *zap.Logger
+	fetchRefParser buffetch.RefParser
+	fetchWriter    buffetch.Writer
 }
 
 func newImageWriter(
 	logger *zap.Logger,
-	valueFlagName string,
+	fetchRefParser buffetch.RefParser,
+	fetchWriter buffetch.Writer,
 ) *imageWriter {
 	return &imageWriter{
-		logger:        logger.Named("bufos"),
-		valueFlagName: valueFlagName,
+		logger:         logger.Named("bufos"),
+		fetchRefParser: fetchRefParser,
+		fetchWriter:    fetchWriter,
 	}
 }
 
 func (i *imageWriter) WriteImage(
 	ctx context.Context,
-	stdoutContainer app.StdoutContainer,
+	container app.EnvStdoutContainer,
 	value string,
 	asFileDescriptorSet bool,
 	image *imagev1beta1.Image,
 	imageWithImports *imagev1beta1.Image,
 ) (retErr error) {
+	defer instrument.Start(i.logger, "write_image").End()
 	if err := extimage.ValidateImage(image); err != nil {
 		return err
 	}
-	imageRef, err := extio.ParseImageRef(value)
+	imageRef, err := i.fetchRefParser.GetImageRef(ctx, value)
 	if err != nil {
-		return fmt.Errorf("%s: %v", i.valueFlagName, err)
+		return err
 	}
-	i.logger.Debug("write", zap.Any("image_ref", imageRef))
-
+	// stop short for performance
+	if imageRef.IsNull() {
+		return nil
+	}
 	var message proto.Message = image
 	if asFileDescriptorSet {
 		message, err = extimage.ImageToFileDescriptorSet(image)
@@ -73,76 +75,40 @@ func (i *imageWriter) WriteImage(
 			return err
 		}
 	}
-	var data []byte
-	marshalTimer := instrument.Start(i.logger, "image_marshal")
-	switch imageRef.Format {
-	case iov1beta1.ImageFormat_IMAGE_FORMAT_BIN, iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ:
-		data, err = protoencoding.NewWireMarshaler().Marshal(message)
-		if err != nil {
-			return err
-		}
-	case iov1beta1.ImageFormat_IMAGE_FORMAT_JSON, iov1beta1.ImageFormat_IMAGE_FORMAT_JSONGZ:
+	data, err := i.imageMarshal(message, imageWithImports, imageRef.ImageEncoding())
+	if err != nil {
+		return err
+	}
+	writeCloser, err := i.fetchWriter.PutImage(ctx, container, imageRef)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, writeCloser.Close())
+	}()
+	_, err = writeCloser.Write(data)
+	return err
+}
+
+func (i *imageWriter) imageMarshal(
+	message proto.Message,
+	imageWithImports *imagev1beta1.Image,
+	imageEncoding buffetch.ImageEncoding,
+) ([]byte, error) {
+	defer instrument.Start(i.logger, "image_marshal").End()
+	switch imageEncoding {
+	case buffetch.ImageEncodingBin:
+		return protoencoding.NewWireMarshaler().Marshal(message)
+	case buffetch.ImageEncodingJSON:
 		if imageWithImports == nil {
-			return errors.New("cannot serialize image to json without imports present")
+			return nil, errors.New("cannot serialize image to json without imports present")
 		}
-		resolverTimer := instrument.Start(i.logger, "image_marshal.new_marshaler")
 		resolver, err := protoencoding.NewResolver(imageWithImports.File...)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		resolverTimer.End()
-		data, err = protoencoding.NewJSONMarshaler(resolver).Marshal(message)
-		if err != nil {
-			return err
-		}
+		return protoencoding.NewJSONMarshaler(resolver).Marshal(message)
 	default:
-		return fmt.Errorf("unknown image format: %v", imageRef.Format)
-	}
-	marshalTimer.End()
-
-	fileRef := imageRef.FileRef
-	if fileRef == nil {
-		// should really do validation elsewhere
-		return errors.New("nil FileRef")
-	}
-
-	var writer io.Writer
-	switch fileRef.Scheme {
-	case iov1beta1.FileScheme_FILE_SCHEME_HTTP:
-		return fmt.Errorf("%s: cannot write to http", i.valueFlagName)
-	case iov1beta1.FileScheme_FILE_SCHEME_HTTPS:
-		return fmt.Errorf("%s: cannot write to https", i.valueFlagName)
-	case iov1beta1.FileScheme_FILE_SCHEME_NULL:
-		// stop short if we have /dev/null equivalent for performance
-		return nil
-	case iov1beta1.FileScheme_FILE_SCHEME_STDIO:
-		writer = stdoutContainer.Stdout()
-	case iov1beta1.FileScheme_FILE_SCHEME_LOCAL:
-		if fileRef.Path == "" {
-			return errors.New("empty FileRef.Path")
-		}
-		file, err := os.Create(fileRef.Path)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			retErr = multierr.Append(retErr, file.Close())
-		}()
-		writer = file
-	default:
-		return fmt.Errorf("unknown file scheme: %v", fileRef.Scheme)
-	}
-
-	switch imageRef.Format {
-	case iov1beta1.ImageFormat_IMAGE_FORMAT_BINGZ, iov1beta1.ImageFormat_IMAGE_FORMAT_JSONGZ:
-		gzipWriteCloser := gzip.NewWriter(writer)
-		defer func() {
-			retErr = multierr.Append(retErr, gzipWriteCloser.Close())
-		}()
-		_, err = gzipWriteCloser.Write(data)
-		return err
-	default:
-		_, err = writer.Write(data)
-		return err
+		return nil, fmt.Errorf("unknown image encoding: %v", imageEncoding)
 	}
 }

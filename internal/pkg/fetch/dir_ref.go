@@ -12,33 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ioutil provides io utilities.
-package ioutil
-
-import (
-	"io"
-)
+package fetch
 
 var (
-	// DiscardReader is an io.Reader in which all calls return 0 and io.EOF.
-	DiscardReader io.Reader = discardReader{}
+	_ DirRef = &dirRef{}
 )
 
-// NopWriteCloser returns an io.WriteCloser with a no-op Close method wrapping the provided io.Writer.
-func NopWriteCloser(writer io.Writer) io.WriteCloser {
-	return nopWriteCloser{Writer: writer}
+type dirRef struct {
+	format string
+	path   string
 }
 
-type discardReader struct{}
-
-func (discardReader) Read([]byte) (int, error) {
-	return 0, io.EOF
+func newDirRef(
+	format string,
+	path string,
+) *dirRef {
+	return &dirRef{
+		format: format,
+		path:   path,
+	}
 }
 
-type nopWriteCloser struct {
-	io.Writer
+func (r *dirRef) Format() string {
+	return r.format
 }
 
-func (nopWriteCloser) Close() error {
-	return nil
+func (r *dirRef) Path() string {
+	return r.path
 }
+
+func (*dirRef) ref()       {}
+func (*dirRef) bucketRef() {}
+func (*dirRef) dirRef()    {}

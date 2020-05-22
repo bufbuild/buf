@@ -19,15 +19,13 @@ package bufos
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/buffetch"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
-	"github.com/bufbuild/buf/internal/pkg/git"
 	"go.uber.org/zap"
 )
 
@@ -119,9 +117,8 @@ type EnvReader interface {
 // NewEnvReader returns a new EnvReader.
 func NewEnvReader(
 	logger *zap.Logger,
-	httpClient *http.Client,
-	httpAuthenticator apphttp.Authenticator,
-	gitCloner git.Cloner,
+	fetchRefParser buffetch.RefParser,
+	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
 	buildHandler bufbuild.Handler,
 	valueFlagName string,
@@ -129,9 +126,8 @@ func NewEnvReader(
 ) EnvReader {
 	return newEnvReader(
 		logger,
-		httpClient,
-		httpAuthenticator,
-		gitCloner,
+		fetchRefParser,
+		fetchReader,
 		configProvider,
 		buildHandler,
 		valueFlagName,
@@ -149,7 +145,7 @@ type ImageWriter interface {
 	// Validates the image before writing.
 	WriteImage(
 		ctx context.Context,
-		stdoutContainer app.StdoutContainer,
+		container app.EnvStdoutContainer,
 		value string,
 		asFileDescriptorSet bool,
 		image *imagev1beta1.Image,
@@ -160,10 +156,12 @@ type ImageWriter interface {
 // NewImageWriter returns a new ImageWriter.
 func NewImageWriter(
 	logger *zap.Logger,
-	valueFlagName string,
+	fetchRefParser buffetch.RefParser,
+	fetchWriter buffetch.Writer,
 ) ImageWriter {
 	return newImageWriter(
 		logger,
-		valueFlagName,
+		fetchRefParser,
+		fetchWriter,
 	)
 }

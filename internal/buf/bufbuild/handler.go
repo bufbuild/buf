@@ -133,7 +133,7 @@ func (h *handler) copyToMemory(
 	readBucket storage.ReadBucket,
 	protoFileSet ProtoFileSet,
 ) (storage.ReadWriteBucketCloser, error) {
-	if readBucket.Info().Type() == storage.BucketTypeMem {
+	if readBucket.Type() == storage.BucketTypeMem {
 		h.logger.Debug("already_in_memory")
 		return nil, nil
 	}

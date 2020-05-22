@@ -67,7 +67,6 @@ func imageBuild(ctx context.Context, container *container) (retErr error) {
 	}
 	return internal.NewBufosImageWriter(
 		container.Logger(),
-		imageBuildOutputFlagName,
 	).WriteImage(
 		ctx,
 		container,

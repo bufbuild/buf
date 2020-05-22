@@ -28,24 +28,3 @@ type objectInfo struct {
 func (o objectInfo) Size() uint32 {
 	return o.size
 }
-
-// NewBucketInfo returns a new BucketInfo.
-func NewBucketInfo(bucketType storage.BucketType, typeSpecificPath string) storage.BucketInfo {
-	return bucketInfo{
-		bucketType:       bucketType,
-		typeSpecificPath: typeSpecificPath,
-	}
-}
-
-type bucketInfo struct {
-	bucketType       storage.BucketType
-	typeSpecificPath string
-}
-
-func (b bucketInfo) Type() storage.BucketType {
-	return b.bucketType
-}
-
-func (b bucketInfo) TypeSpecificPath() string {
-	return b.typeSpecificPath
-}
