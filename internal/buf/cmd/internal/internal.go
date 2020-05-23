@@ -25,8 +25,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufos"
-	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
 	"github.com/bufbuild/buf/internal/pkg/git"
+	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"go.uber.org/zap"
 )
 
@@ -40,10 +40,10 @@ const (
 var (
 	// Timeout should be set through context for calls to EnvReader, not through http.Client
 	defaultHTTPClient        = &http.Client{}
-	defaultHTTPAuthenticator = apphttp.NewMultiAuthenticator(
-		apphttp.NewNetrcAuthenticator(),
+	defaultHTTPAuthenticator = httpauth.NewMultiAuthenticator(
+		httpauth.NewNetrcAuthenticator(),
 		// must keep this for legacy purposes
-		apphttp.NewEnvAuthenticator(
+		httpauth.NewEnvAuthenticator(
 			inputHTTPSPasswordEnvKey,
 			inputHTTPSPasswordEnvKey,
 		),

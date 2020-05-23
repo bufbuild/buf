@@ -29,8 +29,8 @@ import (
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
 	"github.com/bufbuild/buf/internal/pkg/github"
+	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/proto/protoc"
 	"github.com/bufbuild/buf/internal/pkg/proto/protodiff"
@@ -52,7 +52,7 @@ var (
 	testHTTPClient = &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	testHTTPAuthenticator = apphttp.NewNopAuthenticator()
+	testHTTPAuthenticator = httpauth.NewNopAuthenticator()
 	testGoogleapisDirPath = filepath.Join("cache", "googleapis")
 	testLock              sync.Mutex
 )

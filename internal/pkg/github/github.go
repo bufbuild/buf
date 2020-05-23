@@ -22,7 +22,7 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
+	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"go.uber.org/zap"
 )
 
@@ -48,7 +48,7 @@ type ArchiveReader interface {
 func NewArchiveReader(
 	logger *zap.Logger,
 	httpClient *http.Client,
-	httpAuthenticator apphttp.Authenticator,
+	httpAuthenticator httpauth.Authenticator,
 ) ArchiveReader {
 	return newArchiveReader(
 		logger,

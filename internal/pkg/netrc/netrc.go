@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package appnetrc contains functionality to work with netrc.
-package appnetrc
+// Package netrc contains functionality to work with netrc.
+package netrc
 
 import (
 	"os"

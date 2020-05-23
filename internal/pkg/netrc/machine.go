@@ -12,12 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build darwin linux
+package netrc
 
-package appnetrc
+type machine struct {
+	name     string
+	login    string
+	password string
+	account  string
+}
 
-// netrcFilename is the netrc filename.
-//
-// This will be .netrc for darwin and linux.
-// This will be _netrc for windows.
-const netrcFilename = ".netrc"
+func newMachine(
+	name string,
+	login string,
+	password string,
+	account string,
+) *machine {
+	return &machine{
+		name:     name,
+		login:    login,
+		password: password,
+		account:  account,
+	}
+}
+
+func (m *machine) Name() string {
+	return m.name
+}
+
+func (m *machine) Login() string {
+	return m.login
+}
+
+func (m *machine) Password() string {
+	return m.password
+}
+
+func (m *machine) Account() string {
+	return m.account
+}

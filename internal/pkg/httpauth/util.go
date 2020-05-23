@@ -12,41 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apphttp
+package httpauth
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
-
-	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/appnetrc"
 )
 
-type netrcAuthenticator struct{}
-
-func newNetrcAuthenticator() *netrcAuthenticator {
-	return &netrcAuthenticator{}
-}
-
-func (a *netrcAuthenticator) SetAuth(envContainer app.EnvContainer, request *http.Request) (bool, error) {
+func setBasicAuth(
+	request *http.Request,
+	username string,
+	password string,
+	usernameKey string,
+	passwordKey string,
+) (bool, error) {
 	if request.URL == nil {
 		return false, errors.New("malformed request: no url")
 	}
-	if request.URL.Host == "" {
-		return false, errors.New("malformed request: no url host")
+	if request.URL.Scheme == "" {
+		return false, errors.New("malformed request: no url scheme")
 	}
-	machine, err := appnetrc.GetMachineForName(envContainer, request.URL.Host)
-	if err != nil {
-		return false, err
-	}
-	if machine == nil {
+	if request.URL.Scheme != "https" {
 		return false, nil
 	}
-	return setBasicAuth(
-		request,
-		machine.Login(),
-		machine.Password(),
-		"netrc login for host",
-		"netrc password for host",
-	)
+	if username != "" && password != "" {
+		request.SetBasicAuth(username, password)
+		return true, nil
+	}
+	if username == "" && password == "" {
+		return false, nil
+	}
+	if password == "" {
+		return false, fmt.Errorf("%s set but %s not set", usernameKey, passwordKey)
+	}
+	return false, fmt.Errorf("%s set but %s not set", passwordKey, usernameKey)
 }
