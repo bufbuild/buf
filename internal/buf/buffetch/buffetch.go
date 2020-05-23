@@ -20,9 +20,9 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
 	"github.com/bufbuild/buf/internal/pkg/fetch"
 	"github.com/bufbuild/buf/internal/pkg/git"
+	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -152,7 +152,7 @@ type Reader interface {
 func NewReader(
 	logger *zap.Logger,
 	httpClient *http.Client,
-	httpAuthenticator apphttp.Authenticator,
+	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
 ) Reader {
 	return newReader(

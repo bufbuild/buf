@@ -20,8 +20,8 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
 	"github.com/bufbuild/buf/internal/pkg/git"
+	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
@@ -383,7 +383,7 @@ type GitFormatOption func(*gitFormatInfo)
 type ReaderOption func(*reader)
 
 // WithReaderHTTP enables HTTP.
-func WithReaderHTTP(httpClient *http.Client, httpAuthenticator apphttp.Authenticator) ReaderOption {
+func WithReaderHTTP(httpClient *http.Client, httpAuthenticator httpauth.Authenticator) ReaderOption {
 	return func(reader *reader) {
 		reader.httpEnabled = true
 		reader.httpClient = httpClient

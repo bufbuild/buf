@@ -22,8 +22,8 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
 	"github.com/bufbuild/buf/internal/pkg/fetch"
+	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/multierr"
@@ -38,7 +38,7 @@ type archiveReader struct {
 func newArchiveReader(
 	logger *zap.Logger,
 	httpClient *http.Client,
-	httpAuthenticator apphttp.Authenticator,
+	httpAuthenticator httpauth.Authenticator,
 ) *archiveReader {
 	return &archiveReader{
 		logger: logger.Named("github"),

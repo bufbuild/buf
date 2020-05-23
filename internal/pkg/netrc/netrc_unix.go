@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build windows
+// +build darwin linux
 
-package appnetrc
+package netrc
 
 // netrcFilename is the netrc filename.
 //
 // This will be .netrc for darwin and linux.
 // This will be _netrc for windows.
-const netrcFilename = "_netrc"
+const netrcFilename = ".netrc"
