@@ -82,7 +82,7 @@ func (a *refParser) GetRef(
 	value string,
 ) (Ref, error) {
 	defer instrument.Start(a.logger, "get_ref").End()
-	fetchRef, err := a.fetchRefParser.GetRef(
+	parsedRef, err := a.fetchRefParser.GetParsedRef(
 		ctx,
 		value,
 		fetch.WithAllowedFormats(allFormats...),
@@ -90,33 +90,21 @@ func (a *refParser) GetRef(
 	if err != nil {
 		return nil, err
 	}
-	switch t := fetchRef.(type) {
-	case fetch.SingleRef:
+	switch t := parsedRef.(type) {
+	case fetch.ParsedSingleRef:
 		imageEncoding, err := parseImageEncoding(t.Format())
 		if err != nil {
 			return nil, err
 		}
 		return newImageRef(t, imageEncoding), nil
-	case fetch.ArchiveRef:
-		workdir, err := a.getWorkdir()
-		if err != nil {
-			return nil, err
-		}
-		return newSourceRef(t, workdir), nil
-	case fetch.DirRef:
-		workdir, err := a.getWorkdir()
-		if err != nil {
-			return nil, err
-		}
-		return newSourceRef(t, workdir), nil
-	case fetch.GitRef:
-		workdir, err := a.getWorkdir()
-		if err != nil {
-			return nil, err
-		}
-		return newSourceRef(t, workdir), nil
+	case fetch.ParsedArchiveRef:
+		return a.newSourceRef(t)
+	case fetch.ParsedDirRef:
+		return a.newSourceRef(t)
+	case fetch.ParsedGitRef:
+		return a.newSourceRef(t)
 	default:
-		return nil, fmt.Errorf("known Ref type: %T", fetchRef)
+		return nil, fmt.Errorf("known ParsedRef type: %T", parsedRef)
 	}
 }
 
@@ -125,7 +113,7 @@ func (a *refParser) GetImageRef(
 	value string,
 ) (ImageRef, error) {
 	defer instrument.Start(a.logger, "get_image_ref").End()
-	ref, err := a.fetchRefParser.GetRef(
+	parsedRef, err := a.fetchRefParser.GetParsedRef(
 		ctx,
 		value,
 		fetch.WithAllowedFormats(imageFormats...),
@@ -133,16 +121,16 @@ func (a *refParser) GetImageRef(
 	if err != nil {
 		return nil, err
 	}
-	singleRef, ok := ref.(fetch.SingleRef)
+	parsedSingleRef, ok := parsedRef.(fetch.ParsedSingleRef)
 	if !ok {
 		// this should never happen
-		return nil, fmt.Errorf("invalid Ref type for image: %T", ref)
+		return nil, fmt.Errorf("invalid ParsedRef type for image: %T", parsedRef)
 	}
-	imageEncoding, err := parseImageEncoding(singleRef.Format())
+	imageEncoding, err := parseImageEncoding(parsedSingleRef.Format())
 	if err != nil {
 		return nil, err
 	}
-	return newImageRef(singleRef, imageEncoding), nil
+	return newImageRef(parsedSingleRef, imageEncoding), nil
 }
 
 func (a *refParser) GetSourceRef(
@@ -150,7 +138,7 @@ func (a *refParser) GetSourceRef(
 	value string,
 ) (SourceRef, error) {
 	defer instrument.Start(a.logger, "get_source_ref").End()
-	ref, err := a.fetchRefParser.GetRef(
+	parsedRef, err := a.fetchRefParser.GetParsedRef(
 		ctx,
 		value,
 		fetch.WithAllowedFormats(sourceFormats...),
@@ -158,11 +146,15 @@ func (a *refParser) GetSourceRef(
 	if err != nil {
 		return nil, err
 	}
-	bucketRef, ok := ref.(fetch.BucketRef)
+	parsedBucketRef, ok := parsedRef.(fetch.ParsedBucketRef)
 	if !ok {
 		// this should never happen
-		return nil, fmt.Errorf("invalid Ref type for source: %T", ref)
+		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
 	}
+	return a.newSourceRef(parsedBucketRef)
+}
+
+func (a *refParser) newSourceRef(bucketRef fetch.BucketRef) (*sourceRef, error) {
 	workdir, err := a.getWorkdir()
 	if err != nil {
 		return nil, err

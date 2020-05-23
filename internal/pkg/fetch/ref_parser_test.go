@@ -39,7 +39,7 @@ const (
 )
 
 var (
-	testGetRefOptions = []GetRefOption{
+	testGetParsedRefOptions = []GetParsedRefOption{
 		WithAllowedFormats(
 			testFormatBin,
 			testFormatJSON,
@@ -53,58 +53,58 @@ var (
 	}
 )
 
-func TestGetRefSuccess(t *testing.T) {
-	testGetRefSuccess(
+func TestGetParsedRefSuccess(t *testing.T) {
+	testGetParsedRefSuccess(
 		t,
-		newDirRef(
+		buildDirRef(
 			testFormatDir,
 			"path/to/dir",
 		),
 		"path/to/dir",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newDirRef(
+		buildDirRef(
 			testFormatDir,
 			".",
 		),
 		".",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newDirRef(
+		buildDirRef(
 			testFormatDir,
 			"/",
 		),
 		"/",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newDirRef(
+		buildDirRef(
 			testFormatDir,
 			".",
 		),
 		"foo/..",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newDirRef(
+		buildDirRef(
 			testFormatDir,
 			"../foo",
 		),
 		"../foo",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newDirRef(
+		buildDirRef(
 			testFormatDir,
 			"/foo",
 		),
 		"/foo/bar/..",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newArchiveRef(
+		buildArchiveRef(
 			testFormatTar,
 			"path/to/file.tar",
 			FileSchemeLocal,
@@ -114,9 +114,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/file.tar",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newArchiveRef(
+		buildArchiveRef(
 			testFormatTar,
 			"/path/to/file.tar",
 			FileSchemeLocal,
@@ -126,9 +126,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"file:///path/to/file.tar",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newArchiveRef(
+		buildArchiveRef(
 			testFormatTar,
 			"path/to/file.tar",
 			FileSchemeLocal,
@@ -138,9 +138,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/file.tar#strip_components=1",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newArchiveRef(
+		buildArchiveRef(
 			testFormatTargz,
 			"path/to/file.tar.gz",
 			FileSchemeLocal,
@@ -150,9 +150,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/file.tar.gz",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newArchiveRef(
+		buildArchiveRef(
 			testFormatTargz,
 			"path/to/file.tar.gz",
 			FileSchemeLocal,
@@ -162,9 +162,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/file.tar.gz#strip_components=1",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newArchiveRef(
+		buildArchiveRef(
 			testFormatTargz,
 			"path/to/file.tgz",
 			FileSchemeLocal,
@@ -174,9 +174,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/file.tgz",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newArchiveRef(
+		buildArchiveRef(
 			testFormatTargz,
 			"path/to/file.tgz",
 			FileSchemeLocal,
@@ -186,9 +186,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/file.tgz#strip_components=1",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newArchiveRef(
+		buildArchiveRef(
 			testFormatTar,
 			"path/to/file.tar",
 			FileSchemeHTTP,
@@ -198,9 +198,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"http://path/to/file.tar",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newArchiveRef(
+		buildArchiveRef(
 			testFormatTar,
 			"path/to/file.tar",
 			FileSchemeHTTPS,
@@ -210,9 +210,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"https://path/to/file.tar",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"path/to/dir.git",
 			GitSchemeLocal,
@@ -221,9 +221,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/dir.git#branch=master",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"/path/to/dir.git",
 			GitSchemeLocal,
@@ -232,9 +232,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"file:///path/to/dir.git#branch=master",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"path/to/dir.git",
 			GitSchemeLocal,
@@ -243,9 +243,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/dir.git#tag=v1.0.0",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"hello.com/path/to/dir.git",
 			GitSchemeHTTP,
@@ -254,9 +254,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"http://hello.com/path/to/dir.git#branch=master",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"hello.com/path/to/dir.git",
 			GitSchemeHTTPS,
@@ -265,9 +265,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"https://hello.com/path/to/dir.git#branch=master",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"user@hello.com:path/to/dir.git",
 			GitSchemeSSH,
@@ -276,9 +276,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"ssh://user@hello.com:path/to/dir.git#branch=master",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newSingleRef(
+		buildSingleRef(
 			testFormatBin,
 			"path/to/file.bin",
 			FileSchemeLocal,
@@ -286,9 +286,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/file.bin",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newSingleRef(
+		buildSingleRef(
 			testFormatBingz,
 			"path/to/file.bin.gz",
 			FileSchemeLocal,
@@ -296,9 +296,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/file.bin.gz",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newSingleRef(
+		buildSingleRef(
 			testFormatJSON,
 			"path/to/file.json",
 			FileSchemeLocal,
@@ -306,9 +306,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/file.json",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newSingleRef(
+		buildSingleRef(
 			testFormatJSONGZ,
 			"path/to/file.json.gz",
 			FileSchemeLocal,
@@ -316,9 +316,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/file.json.gz",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newSingleRef(
+		buildSingleRef(
 			testFormatBin,
 			"",
 			FileSchemeStdio,
@@ -326,9 +326,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"-",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newSingleRef(
+		buildSingleRef(
 			testFormatJSON,
 			"",
 			FileSchemeStdio,
@@ -336,9 +336,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"-#format=json",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newSingleRef(
+		buildSingleRef(
 			testFormatBin,
 			"",
 			FileSchemeNull,
@@ -346,9 +346,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		app.DevNullFilePath,
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newSingleRef(
+		buildSingleRef(
 			testFormatBin,
 			"path/to/dir",
 			FileSchemeLocal,
@@ -356,9 +356,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/dir#format=bin",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"/path/to/dir",
 			GitSchemeLocal,
@@ -367,9 +367,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"/path/to/dir#branch=master,format=git",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"/path/to/dir",
 			GitSchemeLocal,
@@ -378,9 +378,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"/path/to/dir#format=git,branch=master/foo",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"path/to/dir",
 			GitSchemeLocal,
@@ -389,9 +389,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/dir#tag=master/foo,format=git",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"path/to/dir",
 			GitSchemeLocal,
@@ -400,9 +400,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/dir#format=git,tag=master/foo",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"path/to/dir",
 			GitSchemeLocal,
@@ -411,9 +411,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/dir#format=git,tag=master/foo,recurse_submodules=true",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newGitRef(
+		buildGitRef(
 			testFormatGit,
 			"path/to/dir",
 			GitSchemeLocal,
@@ -422,9 +422,9 @@ func TestGetRefSuccess(t *testing.T) {
 		),
 		"path/to/dir#format=git,tag=master/foo,recurse_submodules=false",
 	)
-	testGetRefSuccess(
+	testGetParsedRefSuccess(
 		t,
-		newArchiveRef(
+		buildArchiveRef(
 			testFormatTargz,
 			"path/to/file",
 			FileSchemeLocal,
@@ -436,130 +436,130 @@ func TestGetRefSuccess(t *testing.T) {
 	)
 }
 
-func TestGetRefError(t *testing.T) {
-	testGetRefError(
+func TestGetParsedRefError(t *testing.T) {
+	testGetParsedRefError(
 		t,
 		newValueEmptyError(),
 		"",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newValueMultipleHashtagsError("foo#format=git#branch=master"),
 		"foo#format=git#branch=master",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newValueStartsWithHashtagError("#path/to/dir"),
 		"#path/to/dir",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newValueEndsWithHashtagError("path/to/dir#"),
 		"path/to/dir#",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newInvalidDirPathError("-"),
 		"-#format=dir",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newInvalidGitPathError("-"),
 		"-#format=git,branch=master",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newMustSpecifyGitRepositoryRefNameError("path/to/foo.git"),
 		"path/to/foo.git",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newMustSpecifyGitRepositoryRefNameError("path/to/foo"),
 		"path/to/foo#format=git",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newCannotSpecifyMultipleGitRepositoryRefNamesError(),
 		"path/to/foo#format=git,branch=foo,tag=bar",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newOptionsDuplicateKeyError("branch"),
 		"path/to/foo#format=git,branch=foo,branch=bar",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newPathUnknownGzError("path/to/foo.gz"),
 		"path/to/foo.gz",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newPathUnknownGzError("path/to/foo.bar.gz"),
 		"path/to/foo.bar.gz",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newOptionsInvalidError("bar"),
 		"path/to/foo#bar",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newOptionsInvalidError("bar="),
 		"path/to/foo#bar=",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newOptionsInvalidError("format=bin,bar="),
 		"path/to/foo#format=bin,bar=",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newOptionsInvalidError("format=bin,=bar"),
 		"path/to/foo#format=bin,=bar",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newFormatOverrideNotAllowedForDevNullError(app.DevNullFilePath),
 		fmt.Sprintf("%s#format=bin", app.DevNullFilePath),
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newFormatUnknownError("bar"),
 		"path/to/foo#format=bar",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newOptionsCouldNotParseStripComponentsError("foo"),
 		"path/to/foo.tar.gz#strip_components=foo",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newOptionsInvalidKeyError("foo"),
 		"path/to/foo.tar.gz#foo=bar",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newOptionsInvalidForFormatError(testFormatTargz, "path/to/foo.tar.gz#branch=master"),
 		"path/to/foo.tar.gz#branch=master",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newOptionsInvalidForFormatError(testFormatDir, "path/to/foo#strip_components=1"),
 		"path/to/foo#strip_components=1",
 	)
-	testGetRefError(
+	testGetParsedRefError(
 		t,
 		newOptionsDuplicateKeyError("strip_components"),
 		"path/to/foo.tar#strip_components=0,strip_components=1",
 	)
 }
 
-func testGetRefSuccess(
+func testGetParsedRefSuccess(
 	t *testing.T,
-	expectedRef Ref,
+	expectedRef ParsedRef,
 	value string,
 ) {
-	testGetRef(
+	testGetParsedRef(
 		t,
 		expectedRef,
 		nil,
@@ -567,12 +567,12 @@ func testGetRefSuccess(
 	)
 }
 
-func testGetRefError(
+func testGetParsedRefError(
 	t *testing.T,
 	expectedErr error,
 	value string,
 ) {
-	testGetRef(
+	testGetParsedRef(
 		t,
 		nil,
 		expectedErr,
@@ -580,24 +580,24 @@ func testGetRefError(
 	)
 }
 
-func testGetRef(
+func testGetParsedRef(
 	t *testing.T,
-	expectedRef Ref,
+	expectedParsedRef ParsedRef,
 	expectedErr error,
 	value string,
 ) {
 	t.Run(value, func(t *testing.T) {
 		t.Parallel()
-		ref, err := testNewRefParser(zap.NewNop()).GetRef(
+		parsedRef, err := testNewRefParser(zap.NewNop()).GetParsedRef(
 			context.Background(),
 			value,
-			testGetRefOptions...,
+			testGetParsedRefOptions...,
 		)
 		if expectedErr != nil {
 			assert.Equal(t, expectedErr, err)
 		} else {
 			assert.NoError(t, err)
-			assert.Equal(t, expectedRef, ref)
+			assert.Equal(t, expectedParsedRef, parsedRef)
 		}
 	})
 }

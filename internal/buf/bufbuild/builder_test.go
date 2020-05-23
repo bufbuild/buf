@@ -18,14 +18,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"runtime"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
+	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
 	"github.com/bufbuild/buf/internal/pkg/github"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/proto/protoc"
@@ -45,6 +49,10 @@ const (
 )
 
 var (
+	testHTTPClient = &http.Client{
+		Timeout: 10 * time.Second,
+	}
+	testHTTPAuthenticator = apphttp.NewNopAuthenticator()
 	testGoogleapisDirPath = filepath.Join("cache", "googleapis")
 	testLock              sync.Mutex
 )
@@ -264,10 +272,16 @@ func testGetGoogleapis(t *testing.T) {
 	}()
 	defer testLock.Unlock()
 
+	archiveReader := github.NewArchiveReader(
+		zap.NewNop(),
+		testHTTPClient,
+		testHTTPAuthenticator,
+	)
 	require.NoError(
 		t,
-		github.GetArchive(
+		archiveReader.GetArchive(
 			context.Background(),
+			app.NewContainer(nil, nil, nil, nil),
 			testGoogleapisDirPath,
 			"googleapis",
 			"googleapis",

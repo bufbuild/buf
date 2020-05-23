@@ -16,11 +16,13 @@
 package storagetar
 
 import (
+	"archive/tar"
 	"context"
 	"io"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"go.uber.org/multierr"
 )
 
 // Untar untars the given tar archive from the reader into the bucket.
@@ -34,21 +36,43 @@ func Untar(
 	readWriteBucket storage.ReadWriteBucket,
 	options ...normalpath.TransformerOption,
 ) error {
-	return doUntar(ctx, reader, readWriteBucket, false, options)
-}
-
-// Untargz untars the given targz archive from the reader into the bucket.
-//
-// Only regular files are added to the bucket.
-//
-// Paths from the targz archive will be transformed before adding to the bucket.
-func Untargz(
-	ctx context.Context,
-	reader io.Reader,
-	readWriteBucket storage.ReadWriteBucket,
-	options ...normalpath.TransformerOption,
-) error {
-	return doUntar(ctx, reader, readWriteBucket, true, options)
+	transformer := normalpath.NewTransformer(options...)
+	tarReader := tar.NewReader(reader)
+	for tarHeader, err := tarReader.Next(); err != io.EOF; tarHeader, err = tarReader.Next() {
+		if err != nil {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+		path, err := normalpath.NormalizeAndValidate(tarHeader.Name)
+		if err != nil {
+			return err
+		}
+		if path == "." {
+			continue
+		}
+		path, ok := transformer.Transform(path)
+		if !ok {
+			continue
+		}
+		if tarHeader.FileInfo().Mode().IsRegular() {
+			writeObject, err := readWriteBucket.Put(ctx, path, uint32(tarHeader.Size))
+			if err != nil {
+				return err
+			}
+			_, writeErr := io.Copy(writeObject, tarReader)
+			if err := writeObject.Close(); err != nil {
+				return err
+			}
+			if writeErr != nil {
+				return writeErr
+			}
+		}
+	}
+	return nil
 }
 
 // Tar tars the given bucket to the writer.
@@ -61,24 +85,38 @@ func Tar(
 	ctx context.Context,
 	writer io.Writer,
 	readBucket storage.ReadBucket,
-	prefix string,
 	options ...normalpath.TransformerOption,
-) error {
-	return doTar(ctx, writer, readBucket, prefix, false, options)
-}
-
-// Targz tars and gzips the given bucket to the writer.
-//
-// Only regular files are added to the writer.
-// All files are written as 0644.
-//
-// Paths from the bucket will be transformed before adding to the writer.
-func Targz(
-	ctx context.Context,
-	writer io.Writer,
-	readBucket storage.ReadBucket,
-	prefix string,
-	options ...normalpath.TransformerOption,
-) error {
-	return doTar(ctx, writer, readBucket, prefix, true, options)
+) (retErr error) {
+	transformer := normalpath.NewTransformer(options...)
+	tarWriter := tar.NewWriter(writer)
+	defer func() {
+		retErr = multierr.Append(retErr, tarWriter.Close())
+	}()
+	return readBucket.Walk(
+		ctx,
+		"",
+		func(path string) error {
+			newPath, ok := transformer.Transform(path)
+			if !ok {
+				return nil
+			}
+			readObject, err := readBucket.Get(ctx, path)
+			if err != nil {
+				return err
+			}
+			if err := tarWriter.WriteHeader(
+				&tar.Header{
+					Typeflag: tar.TypeReg,
+					Name:     newPath,
+					Size:     int64(readObject.Size()),
+					// If we ever use this outside of testing, we will want to do something about this
+					Mode: 0644,
+				},
+			); err != nil {
+				return multierr.Append(err, readObject.Close())
+			}
+			_, err = io.Copy(tarWriter, readObject)
+			return multierr.Append(err, readObject.Close())
+		},
+	)
 }

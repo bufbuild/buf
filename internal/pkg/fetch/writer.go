@@ -29,6 +29,11 @@ import (
 
 type writer struct {
 	logger *zap.Logger
+
+	// never set for now (no corresponding option)
+	httpEnabled  bool
+	localEnabled bool
+	stdioEnabled bool
 }
 
 func newWriter(
@@ -134,12 +139,24 @@ func (w *writer) putFileWriteCloserPotentiallyUncompressed(
 ) (io.WriteCloser, error) {
 	switch fileScheme := fileRef.FileScheme(); fileScheme {
 	case FileSchemeHTTP:
+		if !w.httpEnabled {
+			return nil, newWriteHTTPDisabledError()
+		}
 		return nil, fmt.Errorf("http not supported for writes: %v", fileRef.Path())
 	case FileSchemeHTTPS:
+		if !w.httpEnabled {
+			return nil, newWriteHTTPDisabledError()
+		}
 		return nil, fmt.Errorf("https not supported for writes: %v", fileRef.Path())
 	case FileSchemeLocal:
+		if !w.localEnabled {
+			return nil, newWriteLocalDisabledError()
+		}
 		return os.Create(fileRef.Path())
 	case FileSchemeStdio:
+		if !w.stdioEnabled {
+			return nil, newWriteStdioDisabledError()
+		}
 		return ioutilextended.NopWriteCloser(container.Stdout()), nil
 	case FileSchemeNull:
 		return ioutilextended.DiscardWriteCloser, nil
