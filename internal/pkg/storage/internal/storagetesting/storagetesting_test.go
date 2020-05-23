@@ -315,14 +315,13 @@ func testBasicBucket(
 	require.NoError(t, err)
 	if doAsTar {
 		buffer := bytes.NewBuffer(nil)
-		require.NoError(t, storagetar.Targz(
+		require.NoError(t, storagetar.Tar(
 			context.Background(),
 			buffer,
 			inputReadWriteBucketCloser,
-			"",
 		))
 		require.NoError(t, err)
-		require.NoError(t, storagetar.Untargz(
+		require.NoError(t, storagetar.Untar(
 			context.Background(),
 			buffer,
 			readWriteBucketCloser,

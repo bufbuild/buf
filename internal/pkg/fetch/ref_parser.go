@@ -21,22 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/git"
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"go.uber.org/zap"
-)
-
-var (
-	fileSchemePrefixToFileScheme = map[string]FileScheme{
-		"http://":  FileSchemeHTTP,
-		"https://": FileSchemeHTTPS,
-		"file://":  FileSchemeLocal,
-	}
-	gitSchemePrefixToGitScheme = map[string]GitScheme{
-		"http://":  GitSchemeHTTP,
-		"https://": GitSchemeHTTPS,
-		"file://":  GitSchemeLocal,
-		"ssh://":   GitSchemeSSH,
-	}
 )
 
 type refParser struct {
@@ -62,23 +47,23 @@ func newRefParser(logger *zap.Logger, options ...RefParserOption) *refParser {
 	return refParser
 }
 
-func (a *refParser) GetRef(
+func (a *refParser) GetParsedRef(
 	ctx context.Context,
 	value string,
-	options ...GetRefOption,
-) (Ref, error) {
-	getRefOptions := newGetRefOptions()
+	options ...GetParsedRefOption,
+) (ParsedRef, error) {
+	getParsedRefOptions := newGetParsedRefOptions()
 	for _, option := range options {
-		option(getRefOptions)
+		option(getParsedRefOptions)
 	}
-	return a.getRef(ctx, value, getRefOptions.allowedFormats)
+	return a.getParsedRef(ctx, value, getParsedRefOptions.allowedFormats)
 }
 
-func (a *refParser) getRef(
+func (a *refParser) getParsedRef(
 	ctx context.Context,
 	value string,
 	allowedFormats map[string]struct{},
-) (Ref, error) {
+) (ParsedRef, error) {
 	rawRef, err := a.getRawRef(value)
 	if err != nil {
 		return nil, err
@@ -96,180 +81,24 @@ func (a *refParser) getRef(
 		}
 	}
 	if singleOK {
-		return a.getSingleRef(ctx, rawRef, singleFormatInfo.defaultCompressionType)
+		return getSingleRef(rawRef, singleFormatInfo.defaultCompressionType)
 	}
 	if archiveOK {
-		return a.getArchiveRef(ctx, rawRef, archiveFormatInfo.archiveType, archiveFormatInfo.defaultCompressionType)
+		return getArchiveRef(rawRef, archiveFormatInfo.archiveType, archiveFormatInfo.defaultCompressionType)
 	}
 	if dirOK {
-		return a.getDirRef(ctx, rawRef)
+		return getDirRef(rawRef)
 
 	}
 	if gitOK {
-		return a.getGitRef(ctx, rawRef)
+		return getGitRef(rawRef)
 	}
 	return nil, newFormatUnknownError(rawRef.Format)
-}
-
-func (a *refParser) getSingleRef(
-	ctx context.Context,
-	rawRef *rawRef,
-	defaultCompressionType CompressionType,
-) (SingleRef, error) {
-	if rawRef.Path == "-" {
-		return newSingleRef(
-			rawRef.Format,
-			"",
-			FileSchemeStdio,
-			defaultCompressionType,
-		), nil
-	}
-	if rawRef.Path == app.DevNullFilePath {
-		return newSingleRef(
-			rawRef.Format,
-			"",
-			FileSchemeNull,
-			defaultCompressionType,
-		), nil
-	}
-	for prefix, fileScheme := range fileSchemePrefixToFileScheme {
-		if strings.HasPrefix(rawRef.Path, prefix) {
-			path := strings.TrimPrefix(rawRef.Path, prefix)
-			if fileScheme == FileSchemeLocal {
-				path = normalpath.Normalize(path)
-			}
-			if path == "" {
-				return nil, newNoPathError(rawRef.Value)
-			}
-			return newSingleRef(
-				rawRef.Format,
-				path,
-				fileScheme,
-				defaultCompressionType,
-			), nil
-		}
-	}
-	path := normalpath.Normalize(rawRef.Path)
-	if path == "" {
-		return nil, newNoPathError(rawRef.Value)
-	}
-	return newSingleRef(
-		rawRef.Format,
-		path,
-		FileSchemeLocal,
-		defaultCompressionType,
-	), nil
-}
-
-func (a *refParser) getArchiveRef(
-	ctx context.Context,
-	rawRef *rawRef,
-	archiveType ArchiveType,
-	defaultCompressionType CompressionType,
-) (ArchiveRef, error) {
-	singleRef, err := a.getSingleRef(ctx, rawRef, defaultCompressionType)
-	if err != nil {
-		return nil, err
-	}
-	return newArchiveRef(
-		singleRef.Format(),
-		singleRef.Path(),
-		singleRef.FileScheme(),
-		archiveType,
-		singleRef.CompressionType(),
-		rawRef.ArchiveStripComponents,
-	), nil
-}
-
-func (a *refParser) getDirRef(
-	ctx context.Context,
-	rawRef *rawRef,
-) (DirRef, error) {
-	if rawRef.Path == "-" {
-		return nil, newInvalidDirPathError(rawRef.Path)
-	}
-	if rawRef.Path == app.DevNullFilePath {
-		return nil, newInvalidDirPathError(rawRef.Path)
-	}
-	path := normalpath.Normalize(rawRef.Path)
-	if path == "" {
-		return nil, newNoPathError(rawRef.Value)
-	}
-	return newDirRef(
-		rawRef.Format,
-		path,
-	), nil
-}
-
-func (a *refParser) getGitRef(
-	ctx context.Context,
-	rawRef *rawRef,
-) (GitRef, error) {
-	if rawRef.Path == "-" {
-		return nil, newInvalidGitPathError(rawRef.Path)
-	}
-	if rawRef.Path == app.DevNullFilePath {
-		return nil, newInvalidGitPathError(rawRef.Path)
-	}
-	if rawRef.GitBranch == "" && rawRef.GitTag == "" {
-		// already did this in getRawRef but just in case
-		return nil, newMustSpecifyGitRepositoryRefNameError(rawRef.Path)
-	}
-	if rawRef.GitBranch != "" && rawRef.GitTag != "" {
-		// already did this in getRawRef but just in case
-		return nil, newCannotSpecifyMultipleGitRepositoryRefNamesError()
-	}
-	var gitRefName git.RefName
-	if rawRef.GitBranch != "" {
-		gitRefName = git.NewBranchRefName(rawRef.GitBranch)
-	} else {
-		gitRefName = git.NewTagRefName(rawRef.GitTag)
-	}
-	gitScheme, path, err := getGitSchemeAndPath(rawRef)
-	if err != nil {
-		return nil, err
-	}
-	return newGitRef(
-		rawRef.Format,
-		path,
-		gitScheme,
-		gitRefName,
-		rawRef.GitRecurseSubmodules,
-	), nil
-}
-
-func getGitSchemeAndPath(rawRef *rawRef) (GitScheme, string, error) {
-	if rawRef.Path == "-" {
-		return 0, "", newInvalidGitPathError(rawRef.Path)
-	}
-	if rawRef.Path == app.DevNullFilePath {
-		return 0, "", newInvalidGitPathError(rawRef.Path)
-	}
-	for prefix, gitScheme := range gitSchemePrefixToGitScheme {
-		if strings.HasPrefix(rawRef.Path, prefix) {
-			path := strings.TrimPrefix(rawRef.Path, prefix)
-			if gitScheme == GitSchemeLocal {
-				path = normalpath.Normalize(path)
-			}
-			if path == "" {
-				return 0, "", newNoPathError(rawRef.Value)
-			}
-			return gitScheme, path, nil
-		}
-	}
-	path := normalpath.Normalize(rawRef.Path)
-	if path == "" {
-		return 0, "", newNoPathError(rawRef.Value)
-	}
-	return GitSchemeLocal, path, nil
 }
 
 // create with getRawRef
 // a validated rawRef per the below rules is returned
 type rawRef struct {
-	// The original value
-	// Will always be set
-	Value string
 	// Will always be set
 	// Not normalized yet
 	Path string
@@ -296,8 +125,7 @@ func (a *refParser) getRawRef(value string) (*rawRef, error) {
 		return nil, err
 	}
 	rawRef := &rawRef{
-		Value: value,
-		Path:  path,
+		Path: path,
 	}
 	if a.formatParser != nil {
 		impliedFormat, err := a.formatParser(path)
@@ -409,6 +237,70 @@ func getRawPathAndOptions(value string) (string, map[string]string, error) {
 	}
 }
 
+func getSingleRef(
+	rawRef *rawRef,
+	defaultCompressionType CompressionType,
+) (ParsedSingleRef, error) {
+	return newSingleRef(
+		rawRef.Format,
+		rawRef.Path,
+		defaultCompressionType,
+	)
+}
+
+func getArchiveRef(
+	rawRef *rawRef,
+	archiveType ArchiveType,
+	defaultCompressionType CompressionType,
+) (ParsedArchiveRef, error) {
+	return newArchiveRef(
+		rawRef.Format,
+		rawRef.Path,
+		archiveType,
+		defaultCompressionType,
+		rawRef.ArchiveStripComponents,
+	)
+}
+
+func getDirRef(
+	rawRef *rawRef,
+) (ParsedDirRef, error) {
+	return newDirRef(
+		rawRef.Format,
+		rawRef.Path,
+	)
+}
+
+func getGitRef(
+	rawRef *rawRef,
+) (ParsedGitRef, error) {
+	gitRefName, err := getGitRefName(rawRef.Path, rawRef.GitBranch, rawRef.GitTag)
+	if err != nil {
+		return nil, err
+	}
+	return newGitRef(
+		rawRef.Format,
+		rawRef.Path,
+		gitRefName,
+		rawRef.GitRecurseSubmodules,
+	)
+}
+
+func getGitRefName(path string, branch string, tag string) (git.RefName, error) {
+	if branch == "" && tag == "" {
+		// already did this in getRawRef but just in case
+		return nil, newMustSpecifyGitRepositoryRefNameError(path)
+	}
+	if branch != "" && tag != "" {
+		// already did this in getRawRef but just in case
+		return nil, newCannotSpecifyMultipleGitRepositoryRefNamesError()
+	}
+	if branch != "" {
+		return git.NewBranchRefName(branch), nil
+	}
+	return git.NewTagRefName(tag), nil
+}
+
 // options
 
 type singleFormatInfo struct {
@@ -445,12 +337,12 @@ func newGitFormatInfo() *gitFormatInfo {
 	return &gitFormatInfo{}
 }
 
-type getRefOptions struct {
+type getParsedRefOptions struct {
 	allowedFormats map[string]struct{}
 }
 
-func newGetRefOptions() *getRefOptions {
-	return &getRefOptions{
+func newGetParsedRefOptions() *getParsedRefOptions {
+	return &getParsedRefOptions{
 		allowedFormats: make(map[string]struct{}),
 	}
 }

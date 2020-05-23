@@ -14,8 +14,15 @@
 
 package fetch
 
+import (
+	"strings"
+
+	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
+)
+
 var (
-	_ DirRef = &dirRef{}
+	_ ParsedDirRef = &dirRef{}
 )
 
 type dirRef struct {
@@ -24,6 +31,28 @@ type dirRef struct {
 }
 
 func newDirRef(
+	format string,
+	path string,
+) (*dirRef, error) {
+	if path == "" {
+		return nil, newNoPathError()
+	}
+	if path == "-" {
+		return nil, newInvalidDirPathError(path)
+	}
+	if path == app.DevNullFilePath {
+		return nil, newInvalidDirPathError(path)
+	}
+	if strings.Contains(path, "://") {
+		return nil, newInvalidDirPathError(path)
+	}
+	return buildDirRef(
+		format,
+		normalpath.Normalize(path),
+	), nil
+}
+
+func buildDirRef(
 	format string,
 	path string,
 ) *dirRef {

@@ -15,7 +15,7 @@
 package fetch
 
 var (
-	_ ArchiveRef = &archiveRef{}
+	_ ParsedArchiveRef = &archiveRef{}
 )
 
 type archiveRef struct {
@@ -28,6 +28,31 @@ type archiveRef struct {
 }
 
 func newArchiveRef(
+	format string,
+	path string,
+	archiveType ArchiveType,
+	compressionType CompressionType,
+	stripComponents uint32,
+) (*archiveRef, error) {
+	singleRef, err := newSingleRef(
+		format,
+		path,
+		compressionType,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return buildArchiveRef(
+		singleRef.Format(),
+		singleRef.Path(),
+		singleRef.FileScheme(),
+		archiveType,
+		singleRef.CompressionType(),
+		stripComponents,
+	), nil
+}
+
+func buildArchiveRef(
 	format string,
 	path string,
 	fileScheme FileScheme,

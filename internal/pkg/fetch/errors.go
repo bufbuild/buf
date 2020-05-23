@@ -55,8 +55,8 @@ func newPathUnknownGzError(path string) error {
 	return fmt.Errorf("path %q had .gz extension with unknown format", path)
 }
 
-func newNoPathError(value string) error {
-	return fmt.Errorf("%q has no path once processed", value)
+func newNoPathError() error {
+	return errors.New("value has no path once processed")
 }
 
 func newOptionsInvalidError(s string) error {
@@ -95,6 +95,46 @@ func newInvalidDirPathError(path string) error {
 	return fmt.Errorf("invalid dir path: %q", path)
 }
 
+func newInvalidFilePathError(path string) error {
+	return fmt.Errorf("invalid file path: %q", path)
+}
+
 func newFormatUnknownError(formatString string) error {
 	return fmt.Errorf("unknown format: %q", formatString)
+}
+
+func newReadDisabledError(scheme string) error {
+	return fmt.Errorf("reading assets from %s disabled", scheme)
+}
+
+func newReadHTTPDisabledError() error {
+	return newReadDisabledError("http")
+}
+
+func newReadGitDisabledError() error {
+	return newReadDisabledError("git")
+}
+
+func newReadLocalDisabledError() error {
+	return newReadDisabledError("local")
+}
+
+func newReadStdioDisabledError() error {
+	return newReadDisabledError("stdin")
+}
+
+func newWriteDisabledError(scheme string) error {
+	return fmt.Errorf("writing assets to %s disabled", scheme)
+}
+
+func newWriteHTTPDisabledError() error {
+	return newWriteDisabledError("http")
+}
+
+func newWriteLocalDisabledError() error {
+	return newWriteDisabledError("local")
+}
+
+func newWriteStdioDisabledError() error {
+	return newWriteDisabledError("stdout")
 }

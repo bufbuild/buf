@@ -48,6 +48,13 @@ func NewNetrcAuthenticator() Authenticator {
 	return newNetrcAuthenticator()
 }
 
+// NewNopAuthenticator returns a new nop Authenticator.
+//
+// Always returns false and nil.
+func NewNopAuthenticator() Authenticator {
+	return newNopAuthenticator()
+}
+
 // NewMultiAuthenticator returns a new multi Authenticator.
 //
 // Stops on first matching SetAuth request.

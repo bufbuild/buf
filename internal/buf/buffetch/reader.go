@@ -40,9 +40,15 @@ func newReader(
 	return &reader{
 		fetchReader: fetch.NewReader(
 			logger,
-			httpClient,
-			httpAuthenticator,
-			gitCloner,
+			fetch.WithReaderHTTP(
+				httpClient,
+				httpAuthenticator,
+			),
+			fetch.WithReaderGit(
+				gitCloner,
+			),
+			fetch.WithReaderLocal(),
+			fetch.WithReaderStdio(),
 		),
 	}
 }
