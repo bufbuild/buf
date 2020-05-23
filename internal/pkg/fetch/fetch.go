@@ -71,7 +71,6 @@ type CompressionType int
 
 // Ref is a reference.
 type Ref interface {
-	Format() string
 	// Path is the path to.
 	//
 	// This will be the non-empty path minus the scheme for http and https files.
@@ -104,6 +103,11 @@ type SingleRef interface {
 	singleRef()
 }
 
+// NewSingleRef returns a new SingleRef.
+func NewSingleRef(path string, compressionType CompressionType) (SingleRef, error) {
+	return newSingleRef("", path, compressionType)
+}
+
 // ArchiveRef is an archive reference.
 //
 // An ArchiveRef is a special type of reference that can be either a FileRef or a BucketRef.
@@ -115,10 +119,25 @@ type ArchiveRef interface {
 	archiveRef()
 }
 
+// NewArchiveRef returns a new ArchiveRef.
+func NewArchiveRef(
+	path string,
+	archiveType ArchiveType,
+	compressionType CompressionType,
+	stripComponents uint32,
+) (ArchiveRef, error) {
+	return newArchiveRef("", path, archiveType, compressionType, stripComponents)
+}
+
 // DirRef is a local directory reference.
 type DirRef interface {
 	BucketRef
 	dirRef()
+}
+
+// NewDirRef returns a new DirRef.
+func NewDirRef(path string) (DirRef, error) {
+	return newDirRef("", path)
 }
 
 // GitRef is a git reference.
@@ -130,14 +149,70 @@ type GitRef interface {
 	gitRef()
 }
 
-// RefParser provies references.
+// NewGitRef returns a new GitRef.
+func NewGitRef(
+	path string,
+	gitRefName git.RefName,
+	recurseSubmodules bool,
+) (GitRef, error) {
+	return newGitRef("", path, gitRefName, recurseSubmodules)
+}
+
+// HasFormat is an object that has a format.
+type HasFormat interface {
+	Format() string
+}
+
+// ParsedRef is a parsed Ref.
+type ParsedRef interface {
+	Ref
+	HasFormat
+}
+
+// ParsedFileRef is a parsed FileRef.
+type ParsedFileRef interface {
+	FileRef
+	HasFormat
+}
+
+// ParsedBucketRef is a parsed BucketRef.
+type ParsedBucketRef interface {
+	BucketRef
+	HasFormat
+}
+
+// ParsedSingleRef is a parsed SingleRef.
+type ParsedSingleRef interface {
+	SingleRef
+	HasFormat
+}
+
+// ParsedArchiveRef is a parsed ArchiveRef.
+type ParsedArchiveRef interface {
+	ArchiveRef
+	HasFormat
+}
+
+// ParsedDirRef is a parsed DirRef.
+type ParsedDirRef interface {
+	DirRef
+	HasFormat
+}
+
+// ParsedGitRef is a parsed GitRef.
+type ParsedGitRef interface {
+	GitRef
+	HasFormat
+}
+
+// RefParser parses references.
 type RefParser interface {
-	// GetRef gets the Ref for the value.
+	// GetParsedRef gets the ParsedRef for the value.
 	//
-	// The returned Ref will be either a SingleRef, ArchiveRef, DirRef, or GitRef.
+	// The returned ParsedRef will be either a ParsedSingleRef, ParsedArchiveRef, ParsedDirRef, or ParsedGitRef.
 	//
 	// The options should be used to validate that you are getting one of the correct formats.
-	GetRef(ctx context.Context, value string, options ...GetRefOption) (Ref, error)
+	GetParsedRef(ctx context.Context, value string, options ...GetParsedRefOption) (ParsedRef, error)
 }
 
 // NewRefParser returns a new RefParser.
@@ -167,16 +242,10 @@ type Reader interface {
 // NewReader returns a new Reader.
 func NewReader(
 	logger *zap.Logger,
-	httpClient *http.Client,
-	httpAuthenticator apphttp.Authenticator,
-	gitCloner git.Cloner,
 	options ...ReaderOption,
 ) Reader {
 	return newReader(
 		logger,
-		httpClient,
-		httpAuthenticator,
-		gitCloner,
 		options...,
 	)
 }
@@ -313,17 +382,62 @@ type GitFormatOption func(*gitFormatInfo)
 // ReaderOption is an Reader option.
 type ReaderOption func(*reader)
 
+// WithReaderHTTP enables HTTP.
+func WithReaderHTTP(httpClient *http.Client, httpAuthenticator apphttp.Authenticator) ReaderOption {
+	return func(reader *reader) {
+		reader.httpEnabled = true
+		reader.httpClient = httpClient
+		reader.httpAuthenticator = httpAuthenticator
+	}
+}
+
+// WithReaderGit enables Git.
+func WithReaderGit(gitCloner git.Cloner) ReaderOption {
+	return func(reader *reader) {
+		reader.gitEnabled = true
+		reader.gitCloner = gitCloner
+	}
+}
+
+// WithReaderLocal enables local.
+func WithReaderLocal() ReaderOption {
+	return func(reader *reader) {
+		reader.localEnabled = true
+	}
+}
+
+// WithReaderStdio enables stdio.
+func WithReaderStdio() ReaderOption {
+	return func(reader *reader) {
+		reader.stdioEnabled = true
+	}
+}
+
 // WriterOption is an Writer option.
 type WriterOption func(*writer)
 
-// GetRefOption is a GetRef option
-type GetRefOption func(*getRefOptions)
+// WithWriterLocal enables local.
+func WithWriterLocal() WriterOption {
+	return func(writer *writer) {
+		writer.localEnabled = true
+	}
+}
+
+// WithWriterStdio enables stdio.
+func WithWriterStdio() WriterOption {
+	return func(writer *writer) {
+		writer.stdioEnabled = true
+	}
+}
+
+// GetParsedRefOption is a GetParsedRef option
+type GetParsedRefOption func(*getParsedRefOptions)
 
 // WithAllowedFormats limits the allowed formats to the given formats.
-func WithAllowedFormats(formats ...string) GetRefOption {
-	return func(getRefOptions *getRefOptions) {
+func WithAllowedFormats(formats ...string) GetParsedRefOption {
+	return func(getParsedRefOptions *getParsedRefOptions) {
 		for _, format := range formats {
-			getRefOptions.allowedFormats[normalizeFormat(format)] = struct{}{}
+			getParsedRefOptions.allowedFormats[normalizeFormat(format)] = struct{}{}
 		}
 	}
 }

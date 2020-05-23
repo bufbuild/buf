@@ -38,24 +38,25 @@ import (
 )
 
 type reader struct {
-	logger            *zap.Logger
+	logger *zap.Logger
+
+	localEnabled bool
+	stdioEnabled bool
+
+	httpEnabled       bool
 	httpClient        *http.Client
 	httpAuthenticator apphttp.Authenticator
-	gitCloner         git.Cloner
+
+	gitEnabled bool
+	gitCloner  git.Cloner
 }
 
 func newReader(
 	logger *zap.Logger,
-	httpClient *http.Client,
-	httpAuthenticator apphttp.Authenticator,
-	gitCloner git.Cloner,
 	options ...ReaderOption,
 ) *reader {
 	reader := &reader{
-		logger:            logger,
-		httpClient:        httpClient,
-		httpAuthenticator: httpAuthenticator,
-		gitCloner:         gitCloner,
+		logger: logger,
 	}
 	for _, option := range options {
 		option(reader)
@@ -190,6 +191,9 @@ func (r *reader) getDirBucket(
 	dirRef DirRef,
 	transformerOptions []normalpath.TransformerOption,
 ) (storage.ReadBucketCloser, error) {
+	if !r.localEnabled {
+		return nil, newReadLocalDisabledError()
+	}
 	return storageos.NewReadBucketCloser(dirRef.Path())
 }
 
@@ -199,6 +203,9 @@ func (r *reader) getGitBucket(
 	gitRef GitRef,
 	transformerOptions []normalpath.TransformerOption,
 ) (_ storage.ReadBucketCloser, retErr error) {
+	if !r.gitEnabled {
+		return nil, newReadGitDisabledError()
+	}
 	gitURL, err := getGitURL(gitRef)
 	if err != nil {
 		return nil, err
@@ -264,12 +271,24 @@ func (r *reader) getFileReadCloserPotentiallyCompressed(
 ) (io.ReadCloser, error) {
 	switch fileScheme := fileRef.FileScheme(); fileScheme {
 	case FileSchemeHTTP:
+		if !r.httpEnabled {
+			return nil, newReadHTTPDisabledError()
+		}
 		return r.getFileReadCloserPotentiallyCompressedHTTP(ctx, container, "http://"+fileRef.Path())
 	case FileSchemeHTTPS:
+		if !r.httpEnabled {
+			return nil, newReadHTTPDisabledError()
+		}
 		return r.getFileReadCloserPotentiallyCompressedHTTP(ctx, container, "https://"+fileRef.Path())
 	case FileSchemeLocal:
+		if !r.localEnabled {
+			return nil, newReadLocalDisabledError()
+		}
 		return os.Open(fileRef.Path())
 	case FileSchemeStdio:
+		if !r.stdioEnabled {
+			return nil, newReadStdioDisabledError()
+		}
 		return ioutil.NopCloser(container.Stdin()), nil
 	case FileSchemeNull:
 		return ioutilextended.DiscardReadCloser, nil

@@ -14,8 +14,21 @@
 
 package fetch
 
+import (
+	"strings"
+
+	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
+)
+
 var (
-	_ SingleRef = &singleRef{}
+	_ ParsedSingleRef = &singleRef{}
+
+	fileSchemePrefixToFileScheme = map[string]FileScheme{
+		"http://":  FileSchemeHTTP,
+		"https://": FileSchemeHTTPS,
+		"file://":  FileSchemeLocal,
+	}
 )
 
 type singleRef struct {
@@ -26,6 +39,58 @@ type singleRef struct {
 }
 
 func newSingleRef(
+	format string,
+	path string,
+	compressionType CompressionType,
+) (*singleRef, error) {
+	if path == "" {
+		return nil, newNoPathError()
+	}
+	if path == "-" {
+		return buildSingleRef(
+			format,
+			"",
+			FileSchemeStdio,
+			compressionType,
+		), nil
+	}
+	if path == app.DevNullFilePath {
+		return buildSingleRef(
+			format,
+			"",
+			FileSchemeNull,
+			compressionType,
+		), nil
+	}
+	for prefix, fileScheme := range fileSchemePrefixToFileScheme {
+		if strings.HasPrefix(path, prefix) {
+			path = strings.TrimPrefix(path, prefix)
+			if fileScheme == FileSchemeLocal {
+				path = normalpath.Normalize(path)
+			}
+			if path == "" {
+				return nil, newNoPathError()
+			}
+			return buildSingleRef(
+				format,
+				path,
+				fileScheme,
+				compressionType,
+			), nil
+		}
+	}
+	if strings.Contains(path, "://") {
+		return nil, newInvalidFilePathError(path)
+	}
+	return buildSingleRef(
+		format,
+		normalpath.Normalize(path),
+		FileSchemeLocal,
+		compressionType,
+	), nil
+}
+
+func buildSingleRef(
 	format string,
 	path string,
 	fileScheme FileScheme,

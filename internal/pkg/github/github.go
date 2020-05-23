@@ -12,90 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package github provides TESTING functionality for GitHub.
+//
+// This should eventually be refactored to provide universal functionality.
 package github
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
-	"time"
 
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagetar"
-	"go.uber.org/multierr"
+	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
+	"go.uber.org/zap"
 )
 
-var testHTTPClient = &http.Client{
-	Timeout: 10 * time.Second,
+// ArchiveReader reads GitHub archives.
+type ArchiveReader interface {
+	// GetArchive gets the GitHub archive and untars it to the output directory path.
+	//
+	// The root directory within the tarball is stripped.
+	// If the directory already exists, this is a no-op.
+	//
+	// Only use for testing.
+	GetArchive(
+		ctx context.Context,
+		container app.EnvStdinContainer,
+		outputDirPath string,
+		owner string,
+		repository string,
+		ref string,
+	) error
 }
 
-// GetArchive gets the GitHub archive and untars it to the output directory path.
-//
-// The root directory within the tarball is stripped.
-// If the directory already exists, this is a no-op.
-//
-// Only use for testing.
-func GetArchive(
-	ctx context.Context,
-	outputDirPath string,
-	owner string,
-	repository string,
-	ref string,
-) (retErr error) {
-	outputDirPath = filepath.Clean(outputDirPath)
-	if outputDirPath == "" || outputDirPath == "." || outputDirPath == "/" {
-		return fmt.Errorf("bad output dir path: %s", outputDirPath)
-	}
-	// check if already exists
-	if fileInfo, err := os.Stat(outputDirPath); err == nil {
-		if !fileInfo.IsDir() {
-			return fmt.Errorf("expected %s to be a directory", outputDirPath)
-		}
-		return nil
-	}
-
-	request, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("https://github.com/%s/%s/archive/%s.tar.gz", owner, repository, ref), nil)
-	if err != nil {
-		return err
-	}
-	response, err := testHTTPClient.Do(request)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, response.Body.Close())
-	}()
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("expected HTTP status code %d to be %d", response.StatusCode, http.StatusOK)
-	}
-
-	if err := os.MkdirAll(outputDirPath, 0755); err != nil {
-		return err
-	}
-	// only re-add this if this starts to be a problem
-	// this is dangerous
-	//defer func() {
-	//if retErr != nil {
-	//retErr = os.RemoveAll(outputDirPath)
-	//}
-	//}()
-
-	// TODO: this isn't really the way we should be adding to an OS path
-	// refactor this
-	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(outputDirPath)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, readWriteBucketCloser.Close())
-	}()
-	return storagetar.Untargz(
-		ctx,
-		response.Body,
-		readWriteBucketCloser,
-		normalpath.WithStripComponents(1),
+// NewArchiveReader returns a new ArchiveReader.
+func NewArchiveReader(
+	logger *zap.Logger,
+	httpClient *http.Client,
+	httpAuthenticator apphttp.Authenticator,
+) ArchiveReader {
+	return newArchiveReader(
+		logger,
+		httpClient,
+		httpAuthenticator,
 	)
 }

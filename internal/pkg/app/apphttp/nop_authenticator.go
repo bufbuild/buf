@@ -12,37 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buffetch
+package apphttp
 
 import (
-	"context"
-	"io"
+	"net/http"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/fetch"
-	"go.uber.org/zap"
 )
 
-type writer struct {
-	fetchWriter fetch.Writer
+type nopAuthenticator struct{}
+
+func newNopAuthenticator() *nopAuthenticator {
+	return &nopAuthenticator{}
 }
 
-func newWriter(
-	logger *zap.Logger,
-) *writer {
-	return &writer{
-		fetchWriter: fetch.NewWriter(
-			logger,
-			fetch.WithWriterLocal(),
-			fetch.WithWriterStdio(),
-		),
-	}
-}
-
-func (w *writer) PutImage(
-	ctx context.Context,
-	container app.EnvStdoutContainer,
-	imageRef ImageRef,
-) (io.WriteCloser, error) {
-	return w.fetchWriter.PutFile(ctx, container, imageRef.fetchFileRef())
+func (*nopAuthenticator) SetAuth(app.EnvContainer, *http.Request) (bool, error) {
+	return false, nil
 }
