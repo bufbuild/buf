@@ -14,7 +14,7 @@
 
 // +build darwin linux
 
-package appnetrc
+package netrc
 
 import (
 	"testing"

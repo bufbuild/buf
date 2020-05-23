@@ -25,8 +25,8 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/apphttp"
 	"github.com/bufbuild/buf/internal/pkg/git"
+	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -45,7 +45,7 @@ type reader struct {
 
 	httpEnabled       bool
 	httpClient        *http.Client
-	httpAuthenticator apphttp.Authenticator
+	httpAuthenticator httpauth.Authenticator
 
 	gitEnabled bool
 	gitCloner  git.Cloner
