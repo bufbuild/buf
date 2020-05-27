@@ -40,24 +40,12 @@ jobs:
         if: success()
         run: make ci
       - name: codecov
-        if: success()
+        if: success() && matrix.os == 'ubuntu-latest'
         run: make codecov
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  docker:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        if: success()
-        uses: actions/checkout@v1
-      - name: setup
-        if: success()
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.14.3
       - name: docker
-        if: success()
+        if: success() && matrix.os == 'ubuntu-latest'
         run: bash .github/scripts/docker.bash
         env:
           DOCKER_BUILD_MAKE_TARGET: dockerbuildbuf
