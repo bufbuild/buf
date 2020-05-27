@@ -72,16 +72,16 @@ jobs:
       - name: ci
         if: success()
         run: make ci
-  windows:
-    runs-on: windows-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v1
-      - name: setup
-        if: success()
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.14.3
-      - name: test
-        if: success()
-        run: go test ./...
+  #windows:
+    #runs-on: windows-latest
+    #steps:
+      #- name: checkout
+        #uses: actions/checkout@v1
+      #- name: setup
+        #if: success()
+        #uses: actions/setup-go@v1
+        #with:
+          #go-version: 1.14.3
+      #- name: test
+        #if: success()
+        #run: go test ./...
