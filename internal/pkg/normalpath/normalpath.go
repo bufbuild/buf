@@ -27,8 +27,9 @@ import (
 )
 
 const (
-	stringOSPathSeparator    = string(os.PathSeparator)
-	relPathJumpContextPrefix = ".." + stringOSPathSeparator
+	stringOSPathSeparator = string(os.PathSeparator)
+	// This has to be with "/" instead of os.PathSeparator as we use this on normalized paths
+	normalizedRelPathJumpContextPrefix = "../"
 )
 
 var (
@@ -88,7 +89,7 @@ func NormalizeAndValidate(path string) (string, error) {
 		return "", NewError(path, errNotRelative)
 	}
 	// https://github.com/bufbuild/buf/issues/51
-	if strings.HasPrefix(path, relPathJumpContextPrefix) {
+	if strings.HasPrefix(path, normalizedRelPathJumpContextPrefix) {
 		return "", NewError(path, errOutsideContextDir)
 	}
 	return path, nil
