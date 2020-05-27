@@ -16,7 +16,10 @@ name: ci
 on: push
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, mac-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: checkout
         if: success()
