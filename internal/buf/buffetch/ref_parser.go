@@ -156,7 +156,7 @@ func (a *refParser) checkDeprecated(parsedRef fetch.ParsedRef) {
 	format := parsedRef.Format()
 	if replacementFormat, ok := deprecatedCompressionFormatToReplacementFormat[format]; ok {
 		a.logger.Sugar().Warnf(
-			"Format %q is deprecated. Use format=%s,compression=gz instead. This will continue to work forever, but updating is recommended.",
+			`Format %q is deprecated. Use "format=%s,compression=gz" instead. This will continue to work forever, but updating is recommended.`,
 			format,
 			replacementFormat,
 		)
