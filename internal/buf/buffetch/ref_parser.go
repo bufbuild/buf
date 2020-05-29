@@ -35,10 +35,10 @@ func newRefParser(
 	logger *zap.Logger,
 ) *refParser {
 	return &refParser{
-		logger: logger.Named("buffetch"),
+		logger: logger,
 		fetchRefParser: fetch.NewRefParser(
 			logger,
-			fetch.WithFormatParser(parseFormat),
+			fetch.WithRawRefProcessor(processRawRef),
 			fetch.WithSingleFormat(formatBin),
 			fetch.WithSingleFormat(formatJSON),
 			fetch.WithSingleFormat(
@@ -75,11 +75,7 @@ func (a *refParser) GetRef(
 	value string,
 ) (Ref, error) {
 	defer instrument.Start(a.logger, "get_ref").End()
-	parsedRef, err := a.fetchRefParser.GetParsedRef(
-		ctx,
-		value,
-		fetch.WithAllowedFormats(allFormats...),
-	)
+	parsedRef, err := a.getParsedRef(ctx, value, allFormats)
 	if err != nil {
 		return nil, err
 	}
@@ -106,11 +102,7 @@ func (a *refParser) GetImageRef(
 	value string,
 ) (ImageRef, error) {
 	defer instrument.Start(a.logger, "get_image_ref").End()
-	parsedRef, err := a.fetchRefParser.GetParsedRef(
-		ctx,
-		value,
-		fetch.WithAllowedFormats(imageFormats...),
-	)
+	parsedRef, err := a.getParsedRef(ctx, value, imageFormats)
 	if err != nil {
 		return nil, err
 	}
@@ -131,11 +123,7 @@ func (a *refParser) GetSourceRef(
 	value string,
 ) (SourceRef, error) {
 	defer instrument.Start(a.logger, "get_source_ref").End()
-	parsedRef, err := a.fetchRefParser.GetParsedRef(
-		ctx,
-		value,
-		fetch.WithAllowedFormats(sourceFormats...),
-	)
+	parsedRef, err := a.getParsedRef(ctx, value, sourceFormats)
 	if err != nil {
 		return nil, err
 	}
@@ -147,36 +135,72 @@ func (a *refParser) GetSourceRef(
 	return newSourceRef(parsedBucketRef), nil
 }
 
-func parseFormat(rawPath string) (string, error) {
+func (a *refParser) getParsedRef(
+	ctx context.Context,
+	value string,
+	allowedFormats []string,
+) (fetch.ParsedRef, error) {
+	parsedRef, err := a.fetchRefParser.GetParsedRef(
+		ctx,
+		value,
+		fetch.WithAllowedFormats(allowedFormats...),
+	)
+	if err != nil {
+		return nil, err
+	}
+	a.checkDeprecated(parsedRef)
+	return parsedRef, nil
+}
+
+func (a *refParser) checkDeprecated(parsedRef fetch.ParsedRef) {
+	format := parsedRef.Format()
+	if replacementFormat, ok := deprecatedCompressionFormatToReplacementFormat[format]; ok {
+		a.logger.Sugar().Warnf(
+			`Format %q is deprecated. Use "format=%s,compression=gz" instead. This will continue to work forever, but updating is recommended.`,
+			format,
+			replacementFormat,
+		)
+	}
+}
+
+func processRawRef(rawRef *fetch.RawRef) error {
 	// if format option is not set and path is "-", default to bin
-	if rawPath == "-" || rawPath == app.DevNullFilePath {
-		return formatBin, nil
-	}
-	switch filepath.Ext(rawPath) {
-	case ".bin":
-		return formatBin, nil
-	case ".json":
-		return formatJSON, nil
-	case ".tar":
-		return formatTar, nil
-	case ".gz":
-		switch filepath.Ext(strings.TrimSuffix(rawPath, filepath.Ext(rawPath))) {
+	var format string
+	var compressionType fetch.CompressionType
+	if rawRef.Path == "-" || rawRef.Path == app.DevNullFilePath {
+		format = formatBin
+	} else {
+		switch filepath.Ext(rawRef.Path) {
 		case ".bin":
-			return formatBingz, nil
+			format = formatBin
 		case ".json":
-			return formatJSONGZ, nil
+			format = formatJSON
 		case ".tar":
-			return formatTargz, nil
+			format = formatTar
+		case ".gz":
+			compressionType = fetch.CompressionTypeGzip
+			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+			case ".bin":
+				format = formatBin
+			case ".json":
+				format = formatJSON
+			case ".tar":
+				format = formatTar
+			default:
+				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
+			}
+		case ".tgz":
+			format = formatTar
+			compressionType = fetch.CompressionTypeGzip
+		case ".git":
+			format = formatGit
 		default:
-			return "", fmt.Errorf("path %q had .gz extension with unknown format", rawPath)
+			format = formatDir
 		}
-	case ".tgz":
-		return formatTargz, nil
-	case ".git":
-		return formatGit, nil
-	default:
-		return formatDir, nil
 	}
+	rawRef.Format = format
+	rawRef.CompressionType = compressionType
+	return nil
 }
 
 func parseImageEncoding(format string) (ImageEncoding, error) {

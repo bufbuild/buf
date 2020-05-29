@@ -33,7 +33,7 @@ func newHandler(
 	breakingRunner Runner,
 ) *handler {
 	return &handler{
-		logger:         logger.Named("bufbreaking"),
+		logger:         logger,
 		breakingRunner: breakingRunner,
 	}
 }

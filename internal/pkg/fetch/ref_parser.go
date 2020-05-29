@@ -26,7 +26,7 @@ import (
 
 type refParser struct {
 	logger              *zap.Logger
-	formatParser        func(string) (string, error)
+	rawRefProcessor     func(*RawRef) error
 	singleFormatToInfo  map[string]*singleFormatInfo
 	archiveFormatToInfo map[string]*archiveFormatInfo
 	dirFormatToInfo     map[string]*dirFormatInfo
@@ -96,43 +96,20 @@ func (a *refParser) getParsedRef(
 	return nil, newFormatUnknownError(rawRef.Format)
 }
 
-// create with getRawRef
-// a validated rawRef per the below rules is returned
-type rawRef struct {
-	// Will always be set
-	// Not normalized yet
-	Path string
-	// Will always be set
-	// Set via formatParser if not explicitly set
-	Format string
-	// Only set for git formats
-	// Only one of GitBranch and GitTag will be set
-	GitBranch string
-	// Only set for git formats
-	// Only one of GitBranch and GitTag will be set
-	GitTag string
-	// Only set for git formats
-	GitRecurseSubmodules bool
-	// Only set for archive formats
-	ArchiveStripComponents uint32
-}
-
 // validated per rules on rawRef
-func (a *refParser) getRawRef(value string) (*rawRef, error) {
+func (a *refParser) getRawRef(value string) (*RawRef, error) {
 	// path is never empty after returning from this function
 	path, options, err := getRawPathAndOptions(value)
 	if err != nil {
 		return nil, err
 	}
-	rawRef := &rawRef{
+	rawRef := &RawRef{
 		Path: path,
 	}
-	if a.formatParser != nil {
-		impliedFormat, err := a.formatParser(path)
-		if err != nil {
+	if a.rawRefProcessor != nil {
+		if err := a.rawRefProcessor(rawRef); err != nil {
 			return nil, err
 		}
-		rawRef.Format = impliedFormat
 	}
 	for key, value := range options {
 		switch key {
@@ -141,6 +118,15 @@ func (a *refParser) getRawRef(value string) (*rawRef, error) {
 				return nil, newFormatOverrideNotAllowedForDevNullError(app.DevNullFilePath)
 			}
 			rawRef.Format = value
+		case "compression":
+			switch value {
+			case "none":
+				rawRef.CompressionType = CompressionTypeNone
+			case "gz":
+				rawRef.CompressionType = CompressionTypeGzip
+			default:
+				return nil, newCompressionUnknownError(value, "none", "gz")
+			}
 		case "branch":
 			if rawRef.GitBranch != "" || rawRef.GitTag != "" {
 				return nil, newCannotSpecifyMultipleGitRepositoryRefNamesError()
@@ -177,19 +163,27 @@ func (a *refParser) getRawRef(value string) (*rawRef, error) {
 	if rawRef.Format == "" {
 		return nil, newFormatCannotBeDeterminedError(value)
 	}
-	// not a git format
-	if _, ok := a.gitFormatToInfo[rawRef.Format]; !ok {
-		if rawRef.GitBranch != "" || rawRef.GitTag != "" || rawRef.GitRecurseSubmodules {
-			return nil, newOptionsInvalidForFormatError(rawRef.Format, value)
-		}
-	} else {
+
+	_, gitOK := a.gitFormatToInfo[rawRef.Format]
+	_, archiveOK := a.archiveFormatToInfo[rawRef.Format]
+	_, singleOK := a.singleFormatToInfo[rawRef.Format]
+	if gitOK {
 		if rawRef.GitBranch == "" && rawRef.GitTag == "" {
 			return nil, newMustSpecifyGitRepositoryRefNameError(rawRef.Path)
 		}
+	} else {
+		if rawRef.GitBranch != "" || rawRef.GitTag != "" || rawRef.GitRecurseSubmodules {
+			return nil, newOptionsInvalidForFormatError(rawRef.Format, value)
+		}
 	}
 	// not an archive format
-	if _, ok := a.archiveFormatToInfo[rawRef.Format]; !ok {
+	if !archiveOK {
 		if rawRef.ArchiveStripComponents > 0 {
+			return nil, newOptionsInvalidForFormatError(rawRef.Format, value)
+		}
+	}
+	if !singleOK && !archiveOK {
+		if rawRef.CompressionType != 0 {
 			return nil, newOptionsInvalidForFormatError(rawRef.Format, value)
 		}
 	}
@@ -238,32 +232,40 @@ func getRawPathAndOptions(value string) (string, map[string]string, error) {
 }
 
 func getSingleRef(
-	rawRef *rawRef,
+	rawRef *RawRef,
 	defaultCompressionType CompressionType,
 ) (ParsedSingleRef, error) {
+	compressionType := rawRef.CompressionType
+	if compressionType == 0 {
+		compressionType = defaultCompressionType
+	}
 	return newSingleRef(
 		rawRef.Format,
 		rawRef.Path,
-		defaultCompressionType,
+		compressionType,
 	)
 }
 
 func getArchiveRef(
-	rawRef *rawRef,
+	rawRef *RawRef,
 	archiveType ArchiveType,
 	defaultCompressionType CompressionType,
 ) (ParsedArchiveRef, error) {
+	compressionType := rawRef.CompressionType
+	if compressionType == 0 {
+		compressionType = defaultCompressionType
+	}
 	return newArchiveRef(
 		rawRef.Format,
 		rawRef.Path,
 		archiveType,
-		defaultCompressionType,
+		compressionType,
 		rawRef.ArchiveStripComponents,
 	)
 }
 
 func getDirRef(
-	rawRef *rawRef,
+	rawRef *RawRef,
 ) (ParsedDirRef, error) {
 	return newDirRef(
 		rawRef.Format,
@@ -272,7 +274,7 @@ func getDirRef(
 }
 
 func getGitRef(
-	rawRef *rawRef,
+	rawRef *RawRef,
 ) (ParsedGitRef, error) {
 	gitRefName, err := getGitRefName(rawRef.Path, rawRef.GitBranch, rawRef.GitTag)
 	if err != nil {

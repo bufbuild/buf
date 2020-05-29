@@ -37,11 +37,17 @@ const (
 
 var (
 	// ImageFormatsString is the string representation of all image formats.
-	ImageFormatsString = formatsToString(imageFormats)
+	//
+	// This does not include deprecated formats.
+	ImageFormatsString = formatsToString(imageFormatsNotDeprecated)
 	// SourceFormatsString is the string representation of all source formats.
-	SourceFormatsString = formatsToString(sourceFormats)
+	//
+	// This does not include deprecated formats.
+	SourceFormatsString = formatsToString(sourceFormatsNotDeprecated)
 	// AllFormatsString is the string representation of all formats.
-	AllFormatsString = formatsToString(allFormats)
+	//
+	// This does not include deprecated formats.
+	AllFormatsString = formatsToString(allFormatsNotDeprecated)
 )
 
 // ImageEncoding is the encoding of the image.
