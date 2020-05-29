@@ -40,7 +40,7 @@ func newImageWriter(
 	fetchWriter buffetch.Writer,
 ) *imageWriter {
 	return &imageWriter{
-		logger:         logger.Named("bufcli"),
+		logger:         logger,
 		fetchRefParser: fetchRefParser,
 		fetchWriter:    fetchWriter,
 	}

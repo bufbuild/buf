@@ -43,12 +43,22 @@ var (
 		formatJSON,
 		formatJSONGZ,
 	}
+	imageFormatsNotDeprecated = []string{
+		formatBin,
+		formatJSON,
+	}
 	// sorted
 	sourceFormats = []string{
 		formatDir,
 		formatGit,
 		formatTar,
 		formatTargz,
+	}
+	// sorted
+	sourceFormatsNotDeprecated = []string{
+		formatDir,
+		formatGit,
+		formatTar,
 	}
 	// sorted
 	allFormats = []string{
@@ -60,6 +70,20 @@ var (
 		formatJSONGZ,
 		formatTar,
 		formatTargz,
+	}
+	// sorted
+	allFormatsNotDeprecated = []string{
+		formatBin,
+		formatDir,
+		formatGit,
+		formatJSON,
+		formatTar,
+	}
+
+	deprecatedCompressionFormatToReplacementFormat = map[string]string{
+		formatBingz:  formatBin,
+		formatJSONGZ: formatJSON,
+		formatTargz:  formatTar,
 	}
 )
 

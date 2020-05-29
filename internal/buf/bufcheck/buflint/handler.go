@@ -33,7 +33,7 @@ func newHandler(
 	lintRunner Runner,
 ) *handler {
 	return &handler{
-		logger:     logger.Named("buflint"),
+		logger:     logger,
 		lintRunner: lintRunner,
 	}
 }

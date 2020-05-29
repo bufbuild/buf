@@ -34,7 +34,7 @@ type provider struct {
 
 func newProvider(logger *zap.Logger, options ...ProviderOption) *provider {
 	provider := &provider{
-		logger: logger.Named("config"),
+		logger: logger,
 	}
 	for _, option := range options {
 		option(provider)

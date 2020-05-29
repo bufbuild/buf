@@ -29,7 +29,7 @@ type runner struct {
 
 func newRunner(logger *zap.Logger) *runner {
 	return &runner{
-		delegate: internal.NewRunner(logger.Named("breaking")),
+		delegate: internal.NewRunner(logger),
 	}
 }
 
