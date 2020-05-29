@@ -15,7 +15,6 @@
 package fetch
 
 import (
-	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -27,12 +26,14 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
+	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagetar"
+	"github.com/klauspost/pgzip"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -176,6 +177,7 @@ func (r *reader) getArchiveBucket(
 	}()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
 	case ArchiveTypeTar:
+		defer instrument.Start(r.logger, "untar").End()
 		if err := storagetar.Untar(ctx, readCloser, readWriteBucketCloser, transformerOptions...); err != nil {
 			return nil, err
 		}
@@ -254,7 +256,7 @@ func (r *reader) getFileReadCloser(
 	case CompressionTypeNone:
 		return readCloser, nil
 	case CompressionTypeGzip:
-		gzipReader, err := gzip.NewReader(readCloser)
+		gzipReader, err := pgzip.NewReader(readCloser)
 		if err != nil {
 			return nil, err
 		}
