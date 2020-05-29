@@ -17,6 +17,7 @@ package fetch
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 func newValueEmptyError() error {
@@ -53,6 +54,10 @@ func newCannotSpecifyMultipleGitRepositoryRefNamesError() error {
 
 func newPathUnknownGzError(path string) error {
 	return fmt.Errorf("path %q had .gz extension with unknown format", path)
+}
+
+func newCompressionUnknownError(compression string, valid ...string) error {
+	return fmt.Errorf("unknown compression: %q (valid values are %q)", compression, strings.Join(valid, ","))
 }
 
 func newNoPathError() error {

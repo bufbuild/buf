@@ -272,16 +272,44 @@ func NewWriter(
 	)
 }
 
+// RawRef is an unprocessed ref used for WithRefProcessor.
+//
+// A RawRefProcessor will allow modifications to a RawRef before continuing parsing.
+// This allows defaults to be inferred from the path.
+//
+// The Path will be the only value set when the RawRefProcessor is invoked, and is not normalized.
+// After the RawRefProcessor is called, options will be parsed.
+type RawRef struct {
+	// Will always be set
+	// Not normalized yet
+	Path string
+	// Will always be set
+	// Set via RawRefProcessor if not explicitly set
+	Format string
+	// Only set for single, archive formats
+	CompressionType CompressionType
+	// Only set for git formats
+	// Only one of GitBranch and GitTag will be set
+	GitBranch string
+	// Only set for git formats
+	// Only one of GitBranch and GitTag will be set
+	GitTag string
+	// Only set for git formats
+	GitRecurseSubmodules bool
+	// Only set for archive formats
+	ArchiveStripComponents uint32
+}
+
 // RefParserOption is an RefParser option.
 type RefParserOption func(*refParser)
 
-// WithFormatParser attaches the given format parser.
+// WithRawRefProcessor attaches the given RawRefProcessor.
 //
 // If format is not manually specified, the RefParser will use this format parser
 // with the raw path, that is not normalized.
-func WithFormatParser(formatParser func(string) (string, error)) RefParserOption {
+func WithRawRefProcessor(rawRefProcessor func(*RawRef) error) RefParserOption {
 	return func(refParser *refParser) {
-		refParser.formatParser = formatParser
+		refParser.rawRefProcessor = rawRefProcessor
 	}
 }
 

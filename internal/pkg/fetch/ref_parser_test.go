@@ -141,7 +141,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		buildArchiveRef(
-			testFormatTargz,
+			testFormatTar,
 			"path/to/file.tar.gz",
 			FileSchemeLocal,
 			ArchiveTypeTar,
@@ -153,7 +153,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		buildArchiveRef(
-			testFormatTargz,
+			testFormatTar,
 			"path/to/file.tar.gz",
 			FileSchemeLocal,
 			ArchiveTypeTar,
@@ -165,7 +165,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		buildArchiveRef(
-			testFormatTargz,
+			testFormatTar,
 			"path/to/file.tgz",
 			FileSchemeLocal,
 			ArchiveTypeTar,
@@ -177,7 +177,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		buildArchiveRef(
-			testFormatTargz,
+			testFormatTar,
 			"path/to/file.tgz",
 			FileSchemeLocal,
 			ArchiveTypeTar,
@@ -289,7 +289,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		buildSingleRef(
-			testFormatBingz,
+			testFormatBin,
 			"path/to/file.bin.gz",
 			FileSchemeLocal,
 			CompressionTypeGzip,
@@ -309,12 +309,32 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
 		buildSingleRef(
-			testFormatJSONGZ,
+			testFormatJSON,
 			"path/to/file.json.gz",
 			FileSchemeLocal,
 			CompressionTypeGzip,
 		),
 		"path/to/file.json.gz",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildSingleRef(
+			testFormatJSON,
+			"path/to/file.json.gz",
+			FileSchemeLocal,
+			CompressionTypeNone,
+		),
+		"path/to/file.json.gz#compression=none",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildSingleRef(
+			testFormatJSON,
+			"path/to/file.json.gz",
+			FileSchemeLocal,
+			CompressionTypeGzip,
+		),
+		"path/to/file.json.gz#compression=gz",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -355,6 +375,26 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			CompressionTypeNone,
 		),
 		"path/to/dir#format=bin",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildSingleRef(
+			testFormatBin,
+			"path/to/dir",
+			FileSchemeLocal,
+			CompressionTypeNone,
+		),
+		"path/to/dir#format=bin,compression=none",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildSingleRef(
+			testFormatBin,
+			"path/to/dir",
+			FileSchemeLocal,
+			CompressionTypeGzip,
+		),
+		"path/to/dir#format=bin,compression=gz",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -433,6 +473,42 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			1,
 		),
 		"path/to/file#format=targz,strip_components=1",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildArchiveRef(
+			testFormatTar,
+			"path/to/file",
+			FileSchemeLocal,
+			ArchiveTypeTar,
+			CompressionTypeNone,
+			1,
+		),
+		"path/to/file#format=tar,strip_components=1",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildArchiveRef(
+			testFormatTar,
+			"path/to/file",
+			FileSchemeLocal,
+			ArchiveTypeTar,
+			CompressionTypeNone,
+			1,
+		),
+		"path/to/file#format=tar,strip_components=1,compression=none",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildArchiveRef(
+			testFormatTar,
+			"path/to/file",
+			FileSchemeLocal,
+			ArchiveTypeTar,
+			CompressionTypeGzip,
+			1,
+		),
+		"path/to/file#format=tar,strip_components=1,compression=gz",
 	)
 }
 
@@ -534,12 +610,17 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
+		newCompressionUnknownError("foo", "none", "gz"),
+		"path/to/foo.tar.gz#compression=foo",
+	)
+	testGetParsedRefError(
+		t,
 		newOptionsInvalidKeyError("foo"),
 		"path/to/foo.tar.gz#foo=bar",
 	)
 	testGetParsedRefError(
 		t,
-		newOptionsInvalidForFormatError(testFormatTargz, "path/to/foo.tar.gz#branch=master"),
+		newOptionsInvalidForFormatError(testFormatTar, "path/to/foo.tar.gz#branch=master"),
 		"path/to/foo.tar.gz#branch=master",
 	)
 	testGetParsedRefError(
@@ -551,6 +632,11 @@ func TestGetParsedRefError(t *testing.T) {
 		t,
 		newOptionsDuplicateKeyError("strip_components"),
 		"path/to/foo.tar#strip_components=0,strip_components=1",
+	)
+	testGetParsedRefError(
+		t,
+		newOptionsInvalidForFormatError(testFormatDir, "path/to/foo#compression=none"),
+		"path/to/foo#compression=none",
 	)
 }
 
@@ -605,7 +691,7 @@ func testGetParsedRef(
 func testNewRefParser(logger *zap.Logger) RefParser {
 	return NewRefParser(
 		logger,
-		WithFormatParser(testFormatParser),
+		WithRawRefProcessor(testRawRefProcessor),
 		WithSingleFormat(testFormatBin),
 		WithSingleFormat(testFormatJSON),
 		WithSingleFormat(
@@ -630,34 +716,42 @@ func testNewRefParser(logger *zap.Logger) RefParser {
 	)
 }
 
-func testFormatParser(rawPath string) (string, error) {
+func testRawRefProcessor(rawRef *RawRef) error {
 	// if format option is not set and path is "-", default to bin
-	if rawPath == "-" || rawPath == app.DevNullFilePath {
-		return testFormatBin, nil
-	}
-	switch filepath.Ext(rawPath) {
-	case ".bin":
-		return testFormatBin, nil
-	case ".json":
-		return testFormatJSON, nil
-	case ".tar":
-		return testFormatTar, nil
-	case ".gz":
-		switch filepath.Ext(strings.TrimSuffix(rawPath, filepath.Ext(rawPath))) {
+	var format string
+	var compressionType CompressionType
+	if rawRef.Path == "-" || rawRef.Path == app.DevNullFilePath {
+		format = testFormatBin
+	} else {
+		switch filepath.Ext(rawRef.Path) {
 		case ".bin":
-			return testFormatBingz, nil
+			format = testFormatBin
 		case ".json":
-			return testFormatJSONGZ, nil
+			format = testFormatJSON
 		case ".tar":
-			return testFormatTargz, nil
+			format = testFormatTar
+		case ".gz":
+			compressionType = CompressionTypeGzip
+			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+			case ".bin":
+				format = testFormatBin
+			case ".json":
+				format = testFormatJSON
+			case ".tar":
+				format = testFormatTar
+			default:
+				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
+			}
+		case ".tgz":
+			format = testFormatTar
+			compressionType = CompressionTypeGzip
+		case ".git":
+			format = testFormatGit
 		default:
-			return "", fmt.Errorf("path %q had .gz extension with unknown format", rawPath)
+			format = testFormatDir
 		}
-	case ".tgz":
-		return testFormatTargz, nil
-	case ".git":
-		return testFormatGit, nil
-	default:
-		return testFormatDir, nil
 	}
+	rawRef.Format = format
+	rawRef.CompressionType = compressionType
+	return nil
 }

@@ -59,7 +59,7 @@ func newEnvReader(
 	configOverrideFlagName string,
 ) *envReader {
 	return &envReader{
-		logger:                 logger.Named("bufcli"),
+		logger:                 logger,
 		fetchRefParser:         fetchRefParser,
 		fetchReader:            fetchReader,
 		configProvider:         configProvider,
