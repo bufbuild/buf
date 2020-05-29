@@ -52,7 +52,7 @@ func ChainCloser(closers ...io.Closer) io.Closer {
 	return chainCloser{closers: closers}
 }
 
-// ReaderAtForReader converts an io.Reader to an io.ReadreAt.
+// ReaderAtForReader converts an io.Reader to an io.ReaderAt.
 func ReaderAtForReader(reader io.Reader) (io.ReaderAt, error) {
 	if readerAt, ok := reader.(io.ReaderAt); ok {
 		return readerAt, nil
