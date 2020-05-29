@@ -34,6 +34,9 @@ func newArchiveRef(
 	compressionType CompressionType,
 	stripComponents uint32,
 ) (*archiveRef, error) {
+	if archiveType == ArchiveTypeZip && compressionType != CompressionTypeNone {
+		return nil, newCannotSpecifyCompressionForZipError()
+	}
 	singleRef, err := newSingleRef(
 		format,
 		path,
@@ -47,7 +50,7 @@ func newArchiveRef(
 		singleRef.Path(),
 		singleRef.FileScheme(),
 		archiveType,
-		singleRef.CompressionType(),
+		compressionType,
 		stripComponents,
 	), nil
 }

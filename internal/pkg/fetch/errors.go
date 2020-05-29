@@ -60,6 +60,10 @@ func newCompressionUnknownError(compression string, valid ...string) error {
 	return fmt.Errorf("unknown compression: %q (valid values are %q)", compression, strings.Join(valid, ","))
 }
 
+func newCannotSpecifyCompressionForZipError() error {
+	return errors.New("cannot specify compression type for zip files")
+}
+
 func newNoPathError() error {
 	return errors.New("value has no path once processed")
 }

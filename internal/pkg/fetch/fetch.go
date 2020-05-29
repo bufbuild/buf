@@ -50,6 +50,8 @@ const (
 
 	// ArchiveTypeTar is a tar archive.
 	ArchiveTypeTar ArchiveType = iota + 1
+	// ArchiveTypeZip is a zip archive.
+	ArchiveTypeZip
 
 	// CompressionTypeNone is no compression.
 	CompressionTypeNone CompressionType = iota + 1
@@ -111,6 +113,7 @@ func NewSingleRef(path string, compressionType CompressionType) (SingleRef, erro
 // ArchiveRef is an archive reference.
 //
 // An ArchiveRef is a special type of reference that can be either a FileRef or a BucketRef.
+// Note that if ArchiveType is ArchiveTypeZip, CompressionType will always be CompressionTypeNone.
 type ArchiveRef interface {
 	FileRef
 	BucketRef
@@ -287,6 +290,7 @@ type RawRef struct {
 	// Set via RawRefProcessor if not explicitly set
 	Format string
 	// Only set for single, archive formats
+	// Cannot be set for zip archives
 	CompressionType CompressionType
 	// Only set for git formats
 	// Only one of GitBranch and GitTag will be set
@@ -395,6 +399,8 @@ func WithSingleDefaultCompressionType(defaultCompressionType CompressionType) Si
 type ArchiveFormatOption func(*archiveFormatInfo)
 
 // WithArchiveDefaultCompressionType sets the default compression type.
+//
+// Note this should never be set for zip.
 func WithArchiveDefaultCompressionType(defaultCompressionType CompressionType) ArchiveFormatOption {
 	return func(archiveFormatInfo *archiveFormatInfo) {
 		archiveFormatInfo.defaultCompressionType = defaultCompressionType

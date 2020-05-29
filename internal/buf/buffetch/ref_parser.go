@@ -64,6 +64,10 @@ func newRefParser(
 					fetch.CompressionTypeGzip,
 				),
 			),
+			fetch.WithArchiveFormat(
+				formatZip,
+				fetch.ArchiveTypeZip,
+			),
 			fetch.WithGitFormat(formatGit),
 			fetch.WithDirFormat(formatDir),
 		),
@@ -177,6 +181,8 @@ func processRawRef(rawRef *fetch.RawRef) error {
 			format = formatJSON
 		case ".tar":
 			format = formatTar
+		case ".zip":
+			format = formatZip
 		case ".gz":
 			compressionType = fetch.CompressionTypeGzip
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
