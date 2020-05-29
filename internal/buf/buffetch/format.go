@@ -29,10 +29,12 @@ const (
 	formatJSON = "json"
 	// formatJSONGZ is the JSON gzipped format.
 	formatJSONGZ = "jsongz"
-	// formatTar is the tar format
+	// formatTar is the tar format.
 	formatTar = "tar"
-	// formatTargz is the tar gzipped format
+	// formatTargz is the tar gzipped format.
 	formatTargz = "targz"
+	// formatZip is the zip format.
+	formatZip = "zip"
 )
 
 var (
@@ -53,12 +55,14 @@ var (
 		formatGit,
 		formatTar,
 		formatTargz,
+		formatZip,
 	}
 	// sorted
 	sourceFormatsNotDeprecated = []string{
 		formatDir,
 		formatGit,
 		formatTar,
+		formatZip,
 	}
 	// sorted
 	allFormats = []string{
@@ -70,6 +74,7 @@ var (
 		formatJSONGZ,
 		formatTar,
 		formatTargz,
+		formatZip,
 	}
 	// sorted
 	allFormatsNotDeprecated = []string{
@@ -78,6 +83,7 @@ var (
 		formatGit,
 		formatJSON,
 		formatTar,
+		formatZip,
 	}
 
 	deprecatedCompressionFormatToReplacementFormat = map[string]string{

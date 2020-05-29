@@ -24,6 +24,13 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	knownCompressionTypeStrings = []string{
+		"none",
+		"gzip",
+	}
+)
+
 type refParser struct {
 	logger              *zap.Logger
 	rawRefProcessor     func(*RawRef) error
@@ -125,7 +132,7 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 			case "gz":
 				rawRef.CompressionType = CompressionTypeGzip
 			default:
-				return nil, newCompressionUnknownError(value, "none", "gz")
+				return nil, newCompressionUnknownError(value, knownCompressionTypeStrings...)
 			}
 		case "branch":
 			if rawRef.GitBranch != "" || rawRef.GitTag != "" {
@@ -165,7 +172,7 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 	}
 
 	_, gitOK := a.gitFormatToInfo[rawRef.Format]
-	_, archiveOK := a.archiveFormatToInfo[rawRef.Format]
+	archiveFormatInfo, archiveOK := a.archiveFormatToInfo[rawRef.Format]
 	_, singleOK := a.singleFormatToInfo[rawRef.Format]
 	if gitOK {
 		if rawRef.GitBranch == "" && rawRef.GitTag == "" {
@@ -180,6 +187,10 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 	if !archiveOK {
 		if rawRef.ArchiveStripComponents > 0 {
 			return nil, newOptionsInvalidForFormatError(rawRef.Format, value)
+		}
+	} else {
+		if archiveFormatInfo.archiveType == ArchiveTypeZip && rawRef.CompressionType != 0 {
+			return nil, newCannotSpecifyCompressionForZipError()
 		}
 	}
 	if !singleOK && !archiveOK {
