@@ -17,9 +17,9 @@ package buflint
 import (
 	"context"
 
-	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"go.uber.org/zap"
 )
 
@@ -41,9 +41,9 @@ func newHandler(
 func (h *handler) LintCheck(
 	ctx context.Context,
 	lintConfig *Config,
-	image *imagev1beta1.Image,
-) ([]*filev1beta1.FileAnnotation, error) {
-	files, err := protosrc.NewFilesUnstable(ctx, image.GetFile()...)
+	image bufimage.Image,
+) ([]bufanalysis.FileAnnotation, error) {
+	files, err := bufsrc.NewFilesUnstable(ctx, image.Files()...)
 	if err != nil {
 		return nil, err
 	}

@@ -12,145 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufbuild drives the building of Protobuf files.
 package bufbuild
 
 import (
 	"context"
-	"runtime"
 
-	"github.com/bufbuild/buf/internal/buf/ext/extfile"
-	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
 
-const (
-	// DefaultCopyToMemoryFileThreshold is the default copy to memory threshold.
-	DefaultCopyToMemoryFileThreshold = 16
-)
-
-var (
-	// DefaultParallelism is the default parallelism.
-	DefaultParallelism = runtime.NumCPU()
-)
-
-// ProtoRootFilePathResolver resolves root file paths from real file paths.
-type ProtoRootFilePathResolver interface {
-	// GetRootFilePath returns the root file path for the real file path, if it exists.
-	// If it does not exist, the empty string is returned.
+// Builder builds Protobuf files into Images.
+type Builder interface {
+	// Build runs compilation.
 	//
-	// The input path is normalized and validated, and checked for empty.
-	GetRootFilePath(realFilePath string) (string, error)
-}
-
-// ProtoRealFilePathResolver resolves real file paths from root file paths.
-//
-// Real file paths are actual file paths within a bucket,  while root file paths
-// are those as referenced within an Image, i.e relatve to the roots.
-type ProtoRealFilePathResolver interface {
-	// GetRealFilePath returns the real file path for the root file path, if it exists.
-	// If it does not exist, the empty string is returned, and linters should fall back
-	// to the root file path for output.
+	// The FileRefs are assumed to have been created by a FileRefProvider, that is
+	// they are unique relative to the roots.
 	//
-	// The input path is normalized and validated, and checked for empty.
-	GetRealFilePath(rootFilePath string) (string, error)
-}
-
-// ProtoFileSet is a set of .proto files.
-type ProtoFileSet interface {
-	ProtoRootFilePathResolver
-	ProtoRealFilePathResolver
-
-	// Roots returns the proto_paths.
+	// If an error is returned, it is a system error.
+	// Only one of Image and FileAnnotations will be returned.
 	//
-	// There must be no overlap between the roots, ie foo/bar and foo are not allowed.
-	// All Protobuf files must be unique relative to the roots, ie if foo and bar
-	// are roots, then foo/baz.proto and bar/baz.proto are not allowed.
-	//
-	// Relative.
-	// Normalized and validated.
-	// Non-empty.
-	// Returns a copy.
-	Roots() []string
-	// RootFilePaths returns the sorted list of file paths for the .proto files
-	// that are relative to the roots.
-	//
-	// Relative.
-	// Normalized and validated.
-	// Non-empty.
-	// Returns a copy.
-	RootFilePaths() []string
-	// RealFilePaths returns the list of real file paths for the .proto files.
-	// These will be sorted in the same order as RootFilePaths(), that is
-	// each index will match the index of the same file in RootFilePaths().
-	//
-	// Relative.
-	// Normalized and validated.
-	// Non-empty.
-	// Returns a copy.
-	RealFilePaths() []string
-
-	// Size returns the size of the set.
-	//
-	// This is equal to len(RootFilePaths()) and len(RealFilePaths()).
-	Size() int
-}
-
-// BuildResult is the result of a successful build.
-type BuildResult struct {
-	// Image is the requested output image.
-	Image *imagev1beta1.Image
-	// ImageWithImports is a full Image with imports.
-	//
-	// This will be the same as Image if the IncludeImports option was set.
-	// The FileDescriptorProtos will be shared.
-	// This means if IncludeSourceInfo was false, SourceCodeInfo will be on neither.
-	// This is needed to create protoencoding.Resolvers.
-	// TODO: make this optional?
-	ImageWithImports *imagev1beta1.Image
-}
-
-// Handler handles the build functionality.
-type Handler interface {
-	// Build builds an image for the bucket.
-	//
-	// If FileAnnotations or an error is returned, no build result is returned.
-	//
-	// FileAnnotations will be relative to the root of the bucket before returning, ie the
-	// real file paths that already have the GetRealFilePath from the ProtoFileSet applied.
+	// FileAnnotations will use external file paths.
 	Build(
 		ctx context.Context,
 		readBucket storage.ReadBucket,
-		protoFileSet ProtoFileSet,
-		options BuildOptions,
-	) (*BuildResult, []*filev1beta1.FileAnnotation, error)
-	// GetProtoFileSet get the files for the entire bucket.
-	GetProtoFileSet(
-		ctx context.Context,
-		readBucket storage.ReadBucket,
-		options GetProtoFileSetOptions,
-	) (ProtoFileSet, error)
-	// GetProtoFileSetForFiles gets the specific files within the bucket.
-	GetProtoFileSetForFiles(
-		ctx context.Context,
-		readBucket storage.ReadBucket,
-		realFilePaths []string,
-		options GetProtoFileSetForFilesOptions,
-	) (ProtoFileSet, error)
+		externalPathResolver bufpath.ExternalPathResolver,
+		fileRefs []bufimage.FileRef,
+		options ...BuildOption,
+	) (bufimage.Image, []bufanalysis.FileAnnotation, error)
 }
 
-// BuildOptions are options for Build.
-type BuildOptions struct {
-	// IncludeImports says to include imports.
-	IncludeImports bool
-	// IncludeSourceInfo says to include source info.
-	IncludeSourceInfo bool
+// NewBuilder returns a new Builder.
+func NewBuilder(logger *zap.Logger, options ...BuilderOption) Builder {
+	return newBuilder(logger, options...)
 }
 
-// GetProtoFileSetOptions are options for Files.
-type GetProtoFileSetOptions struct {
+// FileRefProvider provides bufimage.FileRefs.
+type FileRefProvider interface {
+	// GetAllFileRefs gets all the FileRefs for the bucket.
+	//
 	// Roots are the root directories within a bucket to search for Protobuf files.
 	// If roots is empty, the default is ["."].
 	//
@@ -161,7 +63,6 @@ type GetProtoFileSetOptions struct {
 	// All roots must be relative.
 	// All roots will be normalized and validated.
 	//
-	Roots []string
 	// Excludes are the directories within a bucket to exclude.
 	//
 	// There should be no overlap between the excludes, ie foo/bar and foo are not allowed.
@@ -169,11 +70,20 @@ type GetProtoFileSetOptions struct {
 	// All excludes must reside within a root, but none willbe equal to a root.
 	// All excludes must be relative.
 	// All excludes will be normalized and validated.
-	Excludes []string
-}
-
-// GetProtoFileSetForFilesOptions are options for GetProtoFileSetForFiles.
-type GetProtoFileSetForFilesOptions struct {
+	//
+	// FileRefs will be unique by root relative file path.
+	// FileRefs will be sorted by root relative file path.
+	GetAllFileRefs(
+		ctx context.Context,
+		readBucket storage.ReadBucket,
+		externalPathResolver bufpath.ExternalPathResolver,
+		roots []string,
+		excludes []string,
+	) ([]bufimage.FileRef, error)
+	// GetFileRefsForExternalFilePaths gets the FileRefs for the specific files within the bucket.
+	//
+	// The externalFilePaths will be resolved to file paths relative to the bucket via the PathResolver.
+	//
 	// Roots are the root directories within a bucket to search for Protobuf files.
 	// If roots is empty, the default is ["."].
 	//
@@ -184,47 +94,42 @@ type GetProtoFileSetForFilesOptions struct {
 	// All roots must be relative.
 	// All roots will be normalized and validated.
 	//
-	Roots []string
-	// AllowNotExist allows file paths within realFilePaths to not exist
-	// without returning error.
-	AllowNotExist bool
+	// FileRefs will be unique by root relative file path.
+	// FileRefs will be sorted by root relative file path.
+	GetFileRefsForExternalFilePaths(
+		ctx context.Context,
+		readBucket storage.ReadBucket,
+		pathResolver bufpath.PathResolver,
+		roots []string,
+		externalFilePaths []string,
+		options ...GetFileRefsForExternalFilePathsOption,
+	) ([]bufimage.FileRef, error)
 }
 
-// NewHandler returns a new Handler.
-func NewHandler(logger *zap.Logger, options ...HandlerOption) Handler {
-	return newHandler(logger, options...)
+// NewFileRefProvider returns a new FileRefProvider.
+func NewFileRefProvider(logger *zap.Logger) FileRefProvider {
+	return newFileRefProvider(logger)
 }
 
-// HandlerOption is an option for a new Handler.
-type HandlerOption func(*handler)
+// BuilderOption is an option for a new Builder.
+type BuilderOption func(*builder)
 
-// HandlerWithParallelism says how many threads to compile with in parallel.
-//
-// Serial compilation is performed if this value is <=1.
-// The default is to use DefaultParallelism.
-func HandlerWithParallelism(parallelism int) HandlerOption {
-	return func(handler *handler) {
-		handler.parallelism = parallelism
+// BuildOption is an option for Build.
+type BuildOption func(*buildOptions)
+
+// WithExcludeSourceCodeInfo returns a BuildOption that excludes sourceCodeInfo.
+func WithExcludeSourceCodeInfo() BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.excludeSourceCodeInfo = true
 	}
 }
 
-// HandlerWithCopyToMemoryFileThreshold says to copy files to memory before compilation if
-// at least this many files are present.
-//
-// If this value is <=0, files are never copied.
-// The default is to use DefaultCopyToMemoryFileThreshold.
-func HandlerWithCopyToMemoryFileThreshold(copyToMemoryFileThreshold int) HandlerOption {
-	return func(handler *handler) {
-		handler.copyToMemoryFileThreshold = copyToMemoryFileThreshold
-	}
-}
+// GetFileRefsForExternalFilePathsOption is an option for GetFileRefsForExternalFilePaths.
+type GetFileRefsForExternalFilePathsOption func(*getFileRefsForExternalFilePathsOptions)
 
-// FixFileAnnotationPaths attempts to make all paths into real file paths.
-//
-// If the resolver is nil, this does nothing.
-func FixFileAnnotationPaths(resolver ProtoRealFilePathResolver, fileAnnotations ...*filev1beta1.FileAnnotation) error {
-	if resolver == nil {
-		return nil
+// WithAllowNotExist says that a given external file path may not exist without error.
+func WithAllowNotExist() GetFileRefsForExternalFilePathsOption {
+	return func(getFileRefsForExternalFilePathsOptions *getFileRefsForExternalFilePathsOptions) {
+		getFileRefsForExternalFilePathsOptions.allowNotExist = true
 	}
-	return extfile.ResolveFileAnnotationPaths(resolver.GetRealFilePath, fileAnnotations...)
 }

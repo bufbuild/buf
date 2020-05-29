@@ -22,9 +22,9 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/bufos"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"go.uber.org/zap"
@@ -56,13 +56,13 @@ var (
 	}
 )
 
-// NewBufosEnvReader returns a new bufos.EnvReader.
-func NewBufosEnvReader(
+// NewBufcliEnvReader returns a new bufos.EnvReader.
+func NewBufcliEnvReader(
 	logger *zap.Logger,
 	inputFlagName string,
 	configOverrideFlagName string,
-) bufos.EnvReader {
-	return bufos.NewEnvReader(
+) bufcli.EnvReader {
+	return bufcli.NewEnvReader(
 		logger,
 		buffetch.NewRefParser(
 			logger,
@@ -74,17 +74,18 @@ func NewBufosEnvReader(
 			git.NewCloner(logger, defaultGitClonerOptions),
 		),
 		bufconfig.NewProvider(logger),
-		bufbuild.NewHandler(logger),
+		bufbuild.NewFileRefProvider(logger),
+		bufbuild.NewBuilder(logger),
 		inputFlagName,
 		configOverrideFlagName,
 	)
 }
 
-// NewBufosImageWriter returns a new bufos.ImageWriter.
-func NewBufosImageWriter(
+// NewBufcliImageWriter returns a new bufos.ImageWriter.
+func NewBufcliImageWriter(
 	logger *zap.Logger,
-) bufos.ImageWriter {
-	return bufos.NewImageWriter(
+) bufcli.ImageWriter {
+	return bufcli.NewImageWriter(
 		logger,
 		buffetch.NewRefParser(
 			logger,

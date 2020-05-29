@@ -55,6 +55,7 @@ func newImageBuildCmd(builder *builder) *appcmd.Command {
 		BindFlags: appcmd.BindMultiple(
 			builder.bindImageBuildInput,
 			builder.bindImageBuildConfig,
+			builder.bindImageBuildFiles,
 			builder.bindImageBuildOutput,
 			builder.bindImageBuildAsFileDescriptorSet,
 			builder.bindImageBuildExcludeImports,

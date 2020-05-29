@@ -53,7 +53,7 @@ func newReader(
 	}
 }
 
-func (a *reader) GetImage(
+func (a *reader) GetImageFile(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	imageRef ImageRef,
@@ -61,7 +61,7 @@ func (a *reader) GetImage(
 	return a.fetchReader.GetFile(ctx, container, imageRef.fetchFileRef())
 }
 
-func (a *reader) GetSource(
+func (a *reader) GetSourceBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceRef SourceRef,

@@ -19,13 +19,13 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/internal/buf/bufbuild"
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
-	"github.com/bufbuild/buf/internal/buf/ext/extfile"
 )
 
 func imageBuild(ctx context.Context, container *container) (retErr error) {
@@ -36,44 +36,39 @@ func imageBuild(ctx context.Context, container *container) (retErr error) {
 	if err != nil {
 		return err
 	}
-	env, fileAnnotations, err := internal.NewBufosEnvReader(
+	env, fileAnnotations, err := internal.NewBufcliEnvReader(
 		container.Logger(),
 		imageBuildInputFlagName,
 		imageBuildConfigFlagName,
 		// must be source only
-	).ReadSourceEnv(
+	).GetSourceEnv(
 		ctx,
 		container,
 		container.Input,
 		container.Config,
-		nil,   // we do not filter files for images
-		false, // this is ignored since we do not specify specific files
-		!container.ExcludeImports,
-		!container.ExcludeSourceInfo,
+		container.Files,
+		false,
+		container.ExcludeSourceInfo,
 	)
 	if err != nil {
 		return err
 	}
 	if len(fileAnnotations) > 0 {
 		// stderr since we do output to stdout potentially
-		if err := extfile.PrintFileAnnotations(container.Stderr(), fileAnnotations, asJSON); err != nil {
+		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
 	}
-	// TODO: this is just an extra check, but we need to refactor so this is impossible
-	if env.ImageWithImports == nil {
-		return errors.New("system error: ImageWithImports is nil after source build")
-	}
-	return internal.NewBufosImageWriter(
+	return internal.NewBufcliImageWriter(
 		container.Logger(),
-	).WriteImage(
+	).PutImage(
 		ctx,
 		container,
 		container.Output,
+		env.Image(),
 		container.AsFileDescriptorSet,
-		env.Image,
-		env.ImageWithImports,
+		container.ExcludeImports,
 	)
 }
 
@@ -86,33 +81,32 @@ func checkLint(ctx context.Context, container *container) (retErr error) {
 	if err != nil {
 		return err
 	}
-	env, fileAnnotations, err := internal.NewBufosEnvReader(
+	env, fileAnnotations, err := internal.NewBufcliEnvReader(
 		container.Logger(),
 		checkLintInputFlagName,
 		checkLintConfigFlagName,
-	).ReadEnv(
+	).GetEnv(
 		ctx,
 		container,
 		container.Input,
 		container.Config,
 		container.Files, // we filter checks for files
 		false,           // input files must exist
-		false,           // do not want to include imports
-		true,            // we must include source info for linting
+		false,           // we must include source info for linting
 	)
 	if err != nil {
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := extfile.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
+		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
 	}
 	fileAnnotations, err = internal.NewBuflintHandler(container.Logger()).LintCheck(
 		ctx,
-		env.Config.Lint,
-		env.Image,
+		env.Config().Lint,
+		bufimage.ImageWithoutImports(env.Image()),
 	)
 	if err != nil {
 		return err
@@ -123,10 +117,7 @@ func checkLint(ctx context.Context, container *container) (retErr error) {
 				return err
 			}
 		} else {
-			if err := bufbuild.FixFileAnnotationPaths(env.Resolver, fileAnnotations...); err != nil {
-				return err
-			}
-			if err := extfile.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
+			if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
 				return err
 			}
 		}
@@ -143,84 +134,82 @@ func checkBreaking(ctx context.Context, container *container) (retErr error) {
 	if err != nil {
 		return err
 	}
-	env, fileAnnotations, err := internal.NewBufosEnvReader(
+	env, fileAnnotations, err := internal.NewBufcliEnvReader(
 		container.Logger(),
 		checkBreakingInputFlagName,
 		checkBreakingConfigFlagName,
-	).ReadEnv(
+	).GetEnv(
 		ctx,
 		container,
 		container.Input,
 		container.Config,
 		container.Files, // we filter checks for files
 		false,           // files specified must exist on the main input
-		!container.ExcludeImports,
-		true, // we must include source info for this side of the check
+		false,           // we must include source info for this side of the check
 	)
 	if err != nil {
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := extfile.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
+		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
 	}
+	image := env.Image()
+	if container.ExcludeImports {
+		image = bufimage.ImageWithoutImports(image)
+	}
 
-	files := container.Files
+	// TODO: this doesn't actually work because we're using the same file paths for both sides
+	// if the roots change, then we're torched
+	externalFilePaths := container.Files
 	if container.LimitToInputFiles {
-		fileDescriptors := env.Image.GetFile()
+		files := image.Files()
 		// we know that the file descriptors have unique names from validation
-		files = make([]string, len(fileDescriptors))
-		for i, fileDescriptor := range fileDescriptors {
-			// we know that the name is non-empty from validation
-			files[i] = fileDescriptor.GetName()
+		externalFilePaths = make([]string, len(files))
+		for i, file := range files {
+			externalFilePaths[i] = file.ExternalFilePath()
 		}
 	}
 
-	againstEnv, fileAnnotations, err := internal.NewBufosEnvReader(
+	againstEnv, fileAnnotations, err := internal.NewBufcliEnvReader(
 		container.Logger(),
 		checkBreakingAgainstInputFlagName,
 		checkBreakingAgainstConfigFlagName,
-	).ReadEnv(
+	).GetEnv(
 		ctx,
 		container,
 		container.AgainstInput,
 		container.AgainstConfig,
-		files, // we filter checks for files
-		true,  // files are allowed to not exist on the against input
-		!container.ExcludeImports,
-		false, // no need to include source info for against
+		externalFilePaths, // we filter checks for files
+		true,              // files are allowed to not exist on the against input
+		true,              // no need to include source info for against
 	)
 	if err != nil {
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		// TODO: formalize this somewhere
-		for _, fileAnnotation := range fileAnnotations {
-			if fileAnnotation.Path != "" {
-				fileAnnotation.Path = fileAnnotation.Path + "@against"
-			}
-		}
-		if err := extfile.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
+		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
 	}
+	againstImage := againstEnv.Image()
+	if container.ExcludeImports {
+		againstImage = bufimage.ImageWithoutImports(againstImage)
+	}
 	fileAnnotations, err = internal.NewBufbreakingHandler(container.Logger()).BreakingCheck(
 		ctx,
-		env.Config.Breaking,
-		againstEnv.Image,
-		env.Image,
+		env.Config().Breaking,
+		againstImage,
+		image,
 	)
 	if err != nil {
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := bufbuild.FixFileAnnotationPaths(env.Resolver, fileAnnotations...); err != nil {
-			return err
-		}
-		if err := extfile.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
+		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
 			return err
 		}
 		return errors.New("")
@@ -240,7 +229,7 @@ func checkLsLintCheckers(ctx context.Context, container *container) (retErr erro
 			return err
 		}
 	} else {
-		config, err := internal.NewBufosEnvReader(
+		config, err := internal.NewBufcliEnvReader(
 			container.Logger(),
 			"",
 			checkLsCheckersConfigFlagName,
@@ -271,7 +260,7 @@ func checkLsBreakingCheckers(ctx context.Context, container *container) (retErr 
 			return err
 		}
 	} else {
-		config, err := internal.NewBufosEnvReader(
+		config, err := internal.NewBufcliEnvReader(
 			container.Logger(),
 			"",
 			checkLsCheckersConfigFlagName,
@@ -291,7 +280,7 @@ func checkLsBreakingCheckers(ctx context.Context, container *container) (retErr 
 }
 
 func lsFiles(ctx context.Context, container *container) (retErr error) {
-	filePaths, err := internal.NewBufosEnvReader(
+	fileRefs, err := internal.NewBufcliEnvReader(
 		container.Logger(),
 		lsFilesInputFlagName,
 		lsFilesConfigFlagName,
@@ -304,8 +293,8 @@ func lsFiles(ctx context.Context, container *container) (retErr error) {
 	if err != nil {
 		return err
 	}
-	for _, filePath := range filePaths {
-		if _, err := fmt.Fprintln(container.Stdout(), filePath); err != nil {
+	for _, fileRef := range fileRefs {
+		if _, err := fmt.Fprintln(container.Stdout(), fileRef.ExternalFilePath()); err != nil {
 			return err
 		}
 	}

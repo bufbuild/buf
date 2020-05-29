@@ -20,7 +20,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/buf/ext/extimage"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufpath"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/proto/protoc"
@@ -216,9 +217,23 @@ func testBuildCodeGeneratorRequest(
 		true,
 	)
 	require.NoError(t, err)
-	image, err := extimage.FileDescriptorSetToImage(fileDescriptorSet)
+	nonImportRootRelFilePaths := make(map[string]struct{}, len(fileToGenerate))
+	for _, fileToGenerateFilePath := range fileToGenerate {
+		nonImportRootRelFilePaths[fileToGenerateFilePath] = struct{}{}
+	}
+	files := make([]bufimage.File, len(fileDescriptorSet.File))
+	for i, fileDescriptorProto := range fileDescriptorSet.File {
+		_, isNotImport := nonImportRootRelFilePaths[fileDescriptorProto.GetName()]
+		file, err := bufimage.NewFile(
+			fileDescriptorProto,
+			".",
+			bufpath.NopPathResolver,
+			!isNotImport,
+		)
+		require.NoError(t, err)
+		files[i] = file
+	}
+	image, err := bufimage.NewImage(files)
 	require.NoError(t, err)
-	request, err := extimage.ImageToCodeGeneratorRequest(image, parameter, fileToGenerate...)
-	require.NoError(t, err)
-	return request
+	return bufimage.ImageToCodeGeneratorRequest(image, parameter)
 }

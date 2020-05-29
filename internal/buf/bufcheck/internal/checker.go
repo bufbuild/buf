@@ -18,12 +18,12 @@ import (
 	"encoding/json"
 	"sort"
 
-	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufsrc"
 )
 
 // CheckFunc is a check function.
-type CheckFunc func(id string, previousFiles []protosrc.File, files []protosrc.File) ([]*filev1beta1.FileAnnotation, error)
+type CheckFunc func(id string, previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error)
 
 // Checker provides a base embeddable checker.
 type Checker struct {
@@ -79,7 +79,7 @@ func (c *Checker) MarshalJSON() ([]byte, error) {
 	return json.Marshal(checkerJSON{ID: c.id, Categories: c.categories, Purpose: c.purpose})
 }
 
-func (c *Checker) check(previousFiles []protosrc.File, files []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
+func (c *Checker) check(previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return c.checkFunc(c.ID(), previousFiles, files)
 }
 

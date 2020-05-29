@@ -16,12 +16,9 @@ package buffetch
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/fetch"
@@ -32,10 +29,6 @@ import (
 type refParser struct {
 	logger         *zap.Logger
 	fetchRefParser fetch.RefParser
-
-	workdir     string
-	workdirErr  error
-	workdirOnce sync.Once
 }
 
 func newRefParser(
@@ -98,11 +91,11 @@ func (a *refParser) GetRef(
 		}
 		return newImageRef(t, imageEncoding), nil
 	case fetch.ParsedArchiveRef:
-		return a.newSourceRef(t)
+		return newSourceRef(t), nil
 	case fetch.ParsedDirRef:
-		return a.newSourceRef(t)
+		return newSourceRef(t), nil
 	case fetch.ParsedGitRef:
-		return a.newSourceRef(t)
+		return newSourceRef(t), nil
 	default:
 		return nil, fmt.Errorf("known ParsedRef type: %T", parsedRef)
 	}
@@ -151,30 +144,7 @@ func (a *refParser) GetSourceRef(
 		// this should never happen
 		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
 	}
-	return a.newSourceRef(parsedBucketRef)
-}
-
-func (a *refParser) newSourceRef(bucketRef fetch.BucketRef) (*sourceRef, error) {
-	workdir, err := a.getWorkdir()
-	if err != nil {
-		return nil, err
-	}
-	return newSourceRef(bucketRef, workdir), nil
-}
-
-func (a *refParser) getWorkdir() (string, error) {
-	a.workdirOnce.Do(a.populateWorkdir)
-	if a.workdirErr != nil {
-		return "", a.workdirErr
-	}
-	if a.workdir == "" {
-		return "", errors.New("could not determine working directory")
-	}
-	return a.workdir, nil
-}
-
-func (a *refParser) populateWorkdir() {
-	a.workdir, a.workdirErr = os.Getwd()
+	return newSourceRef(parsedBucketRef), nil
 }
 
 func parseFormat(rawPath string) (string, error) {
