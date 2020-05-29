@@ -23,7 +23,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/internal/pkg/proto/protodescriptorutil"
 	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -114,9 +113,6 @@ func GetFileDescriptorSet(
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
 	// we do not know the FileDescriptorSet ahead of time so we cannot use it for extensions
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, fileDescriptorSet); err != nil {
-		return nil, err
-	}
-	if err := protodescriptorutil.ValidateFileDescriptorSet(fileDescriptorSet); err != nil {
 		return nil, err
 	}
 	return fileDescriptorSet, nil

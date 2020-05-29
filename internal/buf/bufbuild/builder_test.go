@@ -20,21 +20,21 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
-	"runtime"
+	"sort"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/internal/buf/ext/extimage"
-	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufpath"
+	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/github"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/proto/protoc"
 	"github.com/bufbuild/buf/internal/pkg/proto/protodiff"
-	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
@@ -94,8 +94,7 @@ func TestCompareGoogleapis(t *testing.T) {
 			func(t *testing.T) {
 				t.Parallel()
 				image := testBuildGoogleapis(t, includeSourceInfo)
-				fileDescriptorSet, err := extimage.ImageToFileDescriptorSet(image)
-				assert.NoError(t, err)
+				fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
 				protocFileDescriptorSet := testBuildProtocGoogleapis(t, includeSourceInfo)
 				assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, protocFileDescriptorSet)
 				// Cannot compare due to unknown field issue
@@ -108,24 +107,22 @@ func TestCompareGoogleapis(t *testing.T) {
 func TestCompareCustomOptions(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "customoptions1")
-	image, fileAnnotations := testBuild(t, false, false, dirPath)
+	image, fileAnnotations := testBuild(t, false, dirPath)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
-	fileDescriptorSet, err := extimage.ImageToFileDescriptorSet(image)
-	require.NoError(t, err)
-	protocFileDescriptorSet := testBuildProtoc(t, false, false, dirPath, dirPath)
+	image = bufimage.ImageWithoutImports(image)
+	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
+	protocFileDescriptorSet := testBuildProtoc(t, false, false, dirPath)
 	assertFileDescriptorSetsEqualWire(t, fileDescriptorSet, protocFileDescriptorSet)
 	assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, protocFileDescriptorSet)
 	assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, protocFileDescriptorSet)
 }
 
-func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Image {
+func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
 	testGetGoogleapis(t)
-	image, fileAnnotations := testBuild(t, true, includeSourceInfo, testGoogleapisDirPath)
+	image, fileAnnotations := testBuild(t, includeSourceInfo, testGoogleapisDirPath)
 
 	assert.Equal(t, 0, len(fileAnnotations), fileAnnotations)
-	assert.Equal(t, 1585, len(image.GetFile()))
-	importNames, err := extimage.ImageImportNames(image)
-	assert.NoError(t, err)
+	assert.Equal(t, 1585, len(image.Files()))
 	assert.Equal(
 		t,
 		[]string{
@@ -141,102 +138,110 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) *imagev1beta1.Ima
 			"google/protobuf/type.proto",
 			"google/protobuf/wrappers.proto",
 		},
-		importNames,
+		testGetImageImportNames(image),
 	)
 
-	imageWithoutImports, err := extimage.ImageWithoutImports(image)
-	assert.NoError(t, err)
-	assert.Equal(t, 1574, len(imageWithoutImports.GetFile()))
-	importNames, err = extimage.ImageImportNames(imageWithoutImports)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(importNames))
+	imageWithoutImports := bufimage.ImageWithoutImports(image)
+	assert.Equal(t, 1574, len(imageWithoutImports.Files()))
+	imageWithoutImports = bufimage.ImageWithoutImports(imageWithoutImports)
+	assert.Equal(t, 1574, len(imageWithoutImports.Files()))
 
-	imageWithoutImports, err = extimage.ImageWithoutImports(imageWithoutImports)
-	assert.NoError(t, err)
-	assert.Equal(t, 1574, len(imageWithoutImports.GetFile()))
-	importNames, err = extimage.ImageImportNames(imageWithoutImports)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(importNames))
-
-	imageWithSpecificNames, err := extimage.ImageWithSpecificNames(
+	imageWithSpecificNames, err := bufimage.ImageWithOnlyRootRelFilePathsAllowNotExist(
 		image,
-		true,
-		"google/protobuf/descriptor.proto",
-		"google/protobuf/api.proto",
-		"google/../google/type/date.proto",
-		"google/foo/nonsense.proto",
+		[]string{
+			"google/protobuf/descriptor.proto",
+			"google/protobuf/api.proto",
+			"google/type/date.proto",
+			"google/foo/nonsense.proto",
+		},
 	)
 	assert.NoError(t, err)
-	assert.Equal(t, 3, len(imageWithSpecificNames.GetFile()))
-	_, err = extimage.ImageWithSpecificNames(
-		image,
-		false,
-		"google/protobuf/descriptor.proto",
-		"google/protobuf/api.proto",
-		"google/../google/type/date.proto",
-		"google/foo/nonsense.proto",
+	assert.Equal(
+		t,
+		[]string{
+			"google/protobuf/any.proto",
+			"google/protobuf/api.proto",
+			"google/protobuf/descriptor.proto",
+			"google/protobuf/source_context.proto",
+			"google/protobuf/type.proto",
+			"google/type/date.proto",
+		},
+		testGetImageFileNames(imageWithSpecificNames),
 	)
-	assert.Equal(t, errors.New("google/foo/nonsense.proto is not present in the Image"), err)
-	importNames, err = extimage.ImageImportNames(imageWithSpecificNames)
-	assert.NoError(t, err)
+	imageWithoutImports = bufimage.ImageWithoutImports(imageWithSpecificNames)
 	assert.Equal(
 		t,
 		[]string{
 			"google/protobuf/api.proto",
 			"google/protobuf/descriptor.proto",
+			"google/type/date.proto",
 		},
-		importNames,
+		testGetImageFileNames(imageWithoutImports),
 	)
-	imageWithoutImports, err = extimage.ImageWithoutImports(imageWithSpecificNames)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(imageWithoutImports.GetFile()))
-	importNames, err = extimage.ImageImportNames(imageWithoutImports)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, len(importNames))
+	_, err = bufimage.ImageWithOnlyRootRelFilePaths(
+		image,
+		[]string{
+			"google/protobuf/descriptor.proto",
+			"google/protobuf/api.proto",
+			"google/type/date.proto",
+			"google/foo/nonsense.proto",
+		},
+	)
+	// TODO
+	assert.Equal(t, errors.New("google/foo/nonsense.proto is not present in the Image"), err)
 
-	assert.Equal(t, 1585, len(image.GetFile()))
+	assert.Equal(t, 1585, len(image.Files()))
 	// basic check to make sure there is no error at this scale
-	_, err = protosrc.NewFilesUnstable(context.Background(), image.GetFile()...)
+	_, err = bufsrc.NewFilesUnstable(context.Background(), image.Files()...)
 	assert.NoError(t, err)
 	return image
 }
 
 func testBuildProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
 	testGetGoogleapis(t)
-	fileDescriptorSet := testBuildProtoc(t, true, includeSourceInfo, testGoogleapisDirPath, testGoogleapisDirPath)
+	fileDescriptorSet := testBuildProtoc(t, true, includeSourceInfo, testGoogleapisDirPath)
 	assert.Equal(t, 1585, len(fileDescriptorSet.GetFile()))
 	return fileDescriptorSet
 }
 
-func testBuild(t *testing.T, includeImports bool, includeSourceInfo bool, dirPath string) (*imagev1beta1.Image, []*filev1beta1.FileAnnotation) {
+func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation) {
 	readBucketCloser := testGetReadBucketCloser(t, dirPath)
-	protoFileSet := testGetProtoFileSet(t, readBucketCloser)
-	buildResult, fileAnnotations, err := newBuilder(zap.NewNop(), runtime.NumCPU()).Build(
+	pathResolver := bufpath.NewDirPathResolver(dirPath)
+	fileRefs := testGetAllFileRefs(t, readBucketCloser, pathResolver)
+	var options []BuildOption
+	if !includeSourceInfo {
+		options = append(options, WithExcludeSourceCodeInfo())
+	}
+	image, fileAnnotations, err := NewBuilder(zap.NewNop()).Build(
 		context.Background(),
 		readBucketCloser,
-		protoFileSet.Roots(),
-		protoFileSet.RootFilePaths(),
-		includeImports,
-		includeSourceInfo,
+		pathResolver,
+		fileRefs,
+		options...,
 	)
 	require.NoError(t, err)
 	require.NoError(t, readBucketCloser.Close())
 	// this drops the ImageWithImports as we are not using it
-	return buildResult.Image, fileAnnotations
+	return image, fileAnnotations
 }
 
-func testBuildProtoc(t *testing.T, includeImports bool, includeSourceInfo bool, includeDirPath string, dirPath string) *descriptorpb.FileDescriptorSet {
+func testBuildProtoc(
+	t *testing.T,
+	includeImports bool,
+	includeSourceInfo bool,
+	dirPath string,
+) *descriptorpb.FileDescriptorSet {
 	readBucketCloser := testGetReadBucketCloser(t, dirPath)
-	protoFileSet := testGetProtoFileSet(t, readBucketCloser)
-	realFilePaths := protoFileSet.RealFilePaths()
-	realFilePathsCopy := make([]string, len(realFilePaths))
-	for i, realFilePath := range realFilePaths {
-		realFilePathsCopy[i] = normalpath.Unnormalize(normalpath.Join(dirPath, realFilePath))
+	pathResolver := bufpath.NewDirPathResolver(dirPath)
+	fileRefs := testGetAllFileRefs(t, readBucketCloser, pathResolver)
+	realFilePaths := make([]string, len(fileRefs))
+	for i, fileRef := range fileRefs {
+		realFilePaths[i] = normalpath.Unnormalize(normalpath.Join(dirPath, fileRef.RootDirPath(), fileRef.RootRelFilePath()))
 	}
 	fileDescriptorSet, err := protoc.GetFileDescriptorSet(
 		context.Background(),
-		[]string{includeDirPath},
-		realFilePathsCopy,
+		[]string{dirPath},
+		realFilePaths,
 		includeImports,
 		includeSourceInfo,
 	)
@@ -251,15 +256,20 @@ func testGetReadBucketCloser(t *testing.T, dirPath string) storage.ReadBucketClo
 	return readWriteBucketCloser
 }
 
-func testGetProtoFileSet(t *testing.T, readBucket storage.ReadBucket) ProtoFileSet {
-	protoFileSet, err := newProtoFileSetProvider(zap.NewNop()).GetProtoFileSetForReadBucket(
+func testGetAllFileRefs(
+	t *testing.T,
+	readBucket storage.ReadBucket,
+	externalPathResolver bufpath.ExternalPathResolver,
+) []bufimage.FileRef {
+	fileRefs, err := NewFileRefProvider(zap.NewNop()).GetAllFileRefs(
 		context.Background(),
 		readBucket,
+		externalPathResolver,
 		nil,
 		nil,
 	)
 	require.NoError(t, err)
-	return protoFileSet
+	return fileRefs
 }
 
 func testGetGoogleapis(t *testing.T) {
@@ -288,6 +298,26 @@ func testGetGoogleapis(t *testing.T) {
 			testGoogleapisCommit,
 		),
 	)
+}
+
+func testGetImageFileNames(image bufimage.Image) []string {
+	var fileNames []string
+	for _, file := range image.Files() {
+		fileNames = append(fileNames, file.RootRelFilePath())
+	}
+	sort.Strings(fileNames)
+	return fileNames
+}
+
+func testGetImageImportNames(image bufimage.Image) []string {
+	var importNames []string
+	for _, file := range image.Files() {
+		if file.IsImport() {
+			importNames = append(importNames, file.RootRelFilePath())
+		}
+	}
+	sort.Strings(importNames)
+	return importNames
 }
 
 func assertFileDescriptorSetsEqualWire(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {

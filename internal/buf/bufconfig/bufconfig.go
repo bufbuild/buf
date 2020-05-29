@@ -21,9 +21,9 @@ import (
 	"io"
 	"sort"
 
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -120,21 +120,22 @@ type ExternalLintConfig struct {
 //
 // TODO: this probably belongs in buflint, but since ExternalConfig is not supposed to be used
 // outside of this package, we put it here for now.
-func PrintFileAnnotationsLintConfigIgnoreYAML(writer io.Writer, fileAnnotations []*filev1beta1.FileAnnotation) error {
+func PrintFileAnnotationsLintConfigIgnoreYAML(writer io.Writer, fileAnnotations []bufanalysis.FileAnnotation) error {
 	if len(fileAnnotations) == 0 {
 		return nil
 	}
 	ignoreIDToRootPathMap := make(map[string]map[string]struct{})
 	for _, fileAnnotation := range fileAnnotations {
-		if fileAnnotation.Path == "" || fileAnnotation.Type == "" {
+		fileRef := fileAnnotation.FileRef()
+		if fileRef == nil || fileAnnotation.Type() == "" {
 			continue
 		}
-		rootPathMap, ok := ignoreIDToRootPathMap[fileAnnotation.Type]
+		rootPathMap, ok := ignoreIDToRootPathMap[fileAnnotation.Type()]
 		if !ok {
 			rootPathMap = make(map[string]struct{})
-			ignoreIDToRootPathMap[fileAnnotation.Type] = rootPathMap
+			ignoreIDToRootPathMap[fileAnnotation.Type()] = rootPathMap
 		}
-		rootPathMap[fileAnnotation.Path] = struct{}{}
+		rootPathMap[fileRef.RootRelFilePath()] = struct{}{}
 	}
 	if len(ignoreIDToRootPathMap) == 0 {
 		return nil

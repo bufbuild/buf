@@ -39,7 +39,7 @@ func newWriter(
 	}
 }
 
-func (w *writer) PutImage(
+func (w *writer) PutImageFile(
 	ctx context.Context,
 	container app.EnvStdoutContainer,
 	imageRef ImageRef,

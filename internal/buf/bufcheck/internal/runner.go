@@ -17,11 +17,10 @@ package internal
 import (
 	"context"
 
-	"github.com/bufbuild/buf/internal/buf/ext/extfile"
-	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -39,14 +38,14 @@ func NewRunner(logger *zap.Logger) *Runner {
 }
 
 // Check runs the Checkers.
-func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protosrc.File, files []protosrc.File) ([]*filev1beta1.FileAnnotation, error) {
+func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	checkers := config.Checkers
 	if len(checkers) == 0 {
 		return nil, nil
 	}
 	defer instrument.Start(r.logger, "check", zap.Int("num_files", len(files)), zap.Int("num_checkers", len(checkers))).End()
 
-	var fileAnnotations []*filev1beta1.FileAnnotation
+	var fileAnnotations []bufanalysis.FileAnnotation
 	resultC := make(chan *result, len(checkers))
 	for _, checker := range checkers {
 		checker := checker
@@ -70,43 +69,45 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	}
 
 	if len(config.IgnoreRootPaths) == 0 && len(config.IgnoreIDToRootPaths) == 0 {
-		extfile.SortFileAnnotations(fileAnnotations)
+		bufanalysis.SortFileAnnotations(fileAnnotations)
 		return fileAnnotations, nil
 	}
 
-	filteredFileAnnotations := make([]*filev1beta1.FileAnnotation, 0, len(fileAnnotations))
+	filteredFileAnnotations := make([]bufanalysis.FileAnnotation, 0, len(fileAnnotations))
 	for _, fileAnnotation := range fileAnnotations {
 		if !shouldIgnoreFileAnnotation(fileAnnotation, config.IgnoreRootPaths, config.IgnoreIDToRootPaths) {
 			filteredFileAnnotations = append(filteredFileAnnotations, fileAnnotation)
 		}
 	}
-	extfile.SortFileAnnotations(filteredFileAnnotations)
+	bufanalysis.SortFileAnnotations(filteredFileAnnotations)
 	return filteredFileAnnotations, nil
 }
 
-func shouldIgnoreFileAnnotation(fileAnnotation *filev1beta1.FileAnnotation, ignoreAllRootPaths map[string]struct{}, ignoreIDToRootPaths map[string]map[string]struct{}) bool {
-	if fileAnnotation.Path == "" {
+func shouldIgnoreFileAnnotation(fileAnnotation bufanalysis.FileAnnotation, ignoreAllRootPaths map[string]struct{}, ignoreIDToRootPaths map[string]map[string]struct{}) bool {
+	fileRef := fileAnnotation.FileRef()
+	if fileRef == nil {
 		return false
 	}
-	if normalpath.MapContainsMatch(ignoreAllRootPaths, fileAnnotation.Path) {
+	path := fileRef.RootRelFilePath()
+	if normalpath.MapContainsMatch(ignoreAllRootPaths, path) {
 		return true
 	}
-	if fileAnnotation.Type == "" {
+	if fileAnnotation.Type() == "" {
 		return false
 	}
-	ignoreRootPaths, ok := ignoreIDToRootPaths[fileAnnotation.Type]
+	ignoreRootPaths, ok := ignoreIDToRootPaths[fileAnnotation.Type()]
 	if !ok {
 		return false
 	}
-	return normalpath.MapContainsMatch(ignoreRootPaths, fileAnnotation.Path)
+	return normalpath.MapContainsMatch(ignoreRootPaths, path)
 }
 
 type result struct {
-	FileAnnotations []*filev1beta1.FileAnnotation
+	FileAnnotations []bufanalysis.FileAnnotation
 	Err             error
 }
 
-func newResult(fileAnnotations []*filev1beta1.FileAnnotation, err error) *result {
+func newResult(fileAnnotations []bufanalysis.FileAnnotation, err error) *result {
 	return &result{
 		FileAnnotations: fileAnnotations,
 		Err:             err,
