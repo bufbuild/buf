@@ -23,9 +23,9 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagetar"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -198,7 +198,7 @@ func testBasic(
 		testBasicMem(
 			t,
 			dirPath,
-			false,
+			"none",
 			walkPrefix,
 			expectedPathToContent,
 			transformerOptions...,
@@ -209,7 +209,7 @@ func testBasic(
 		testBasicOS(
 			t,
 			dirPath,
-			false,
+			"none",
 			walkPrefix,
 			expectedPathToContent,
 			transformerOptions...,
@@ -220,7 +220,7 @@ func testBasic(
 		testBasicMem(
 			t,
 			dirPath,
-			true,
+			"tar",
 			walkPrefix,
 			expectedPathToContent,
 			transformerOptions...,
@@ -231,7 +231,29 @@ func testBasic(
 		testBasicOS(
 			t,
 			dirPath,
-			true,
+			"tar",
+			walkPrefix,
+			expectedPathToContent,
+			transformerOptions...,
+		)
+	})
+	t.Run("mem-zip", func(t *testing.T) {
+		t.Parallel()
+		testBasicMem(
+			t,
+			dirPath,
+			"zip",
+			walkPrefix,
+			expectedPathToContent,
+			transformerOptions...,
+		)
+	})
+	t.Run("os-zip", func(t *testing.T) {
+		t.Parallel()
+		testBasicOS(
+			t,
+			dirPath,
+			"zip",
 			walkPrefix,
 			expectedPathToContent,
 			transformerOptions...,
@@ -257,7 +279,7 @@ func testBasicStatic(
 func testBasicMem(
 	t *testing.T,
 	dirPath string,
-	doAsTar bool,
+	archiveType string,
 	walkPrefix string,
 	expectedPathToContent map[string]string,
 	transformerOptions ...normalpath.TransformerOption,
@@ -267,7 +289,7 @@ func testBasicMem(
 		t,
 		readWriteBucketCloser,
 		dirPath,
-		doAsTar,
+		archiveType,
 		walkPrefix,
 		expectedPathToContent,
 		transformerOptions...,
@@ -277,7 +299,7 @@ func testBasicMem(
 func testBasicOS(
 	t *testing.T,
 	dirPath string,
-	doAsTar bool,
+	archiveType string,
 	walkPrefix string,
 	expectedPathToContent map[string]string,
 	transformerOptions ...normalpath.TransformerOption,
@@ -295,7 +317,7 @@ func testBasicOS(
 		t,
 		readWriteBucketCloser,
 		dirPath,
-		doAsTar,
+		archiveType,
 		walkPrefix,
 		expectedPathToContent,
 		transformerOptions...,
@@ -306,28 +328,15 @@ func testBasicBucket(
 	t *testing.T,
 	readWriteBucketCloser storage.ReadWriteBucketCloser,
 	dirPath string,
-	doAsTar bool,
+	archiveType string,
 	walkPrefix string,
 	expectedPathToContent map[string]string,
 	transformerOptions ...normalpath.TransformerOption,
 ) {
 	inputReadWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(dirPath)
 	require.NoError(t, err)
-	if doAsTar {
-		buffer := bytes.NewBuffer(nil)
-		require.NoError(t, storagetar.Tar(
-			context.Background(),
-			buffer,
-			inputReadWriteBucketCloser,
-		))
-		require.NoError(t, err)
-		require.NoError(t, storagetar.Untar(
-			context.Background(),
-			buffer,
-			readWriteBucketCloser,
-			transformerOptions...,
-		))
-	} else {
+	switch archiveType {
+	case "none":
 		_, err := storage.Copy(
 			context.Background(),
 			inputReadWriteBucketCloser,
@@ -335,6 +344,36 @@ func testBasicBucket(
 			transformerOptions...,
 		)
 		require.NoError(t, err)
+	case "tar":
+		buffer := bytes.NewBuffer(nil)
+		require.NoError(t, storagearchive.Tar(
+			context.Background(),
+			buffer,
+			inputReadWriteBucketCloser,
+		))
+		require.NoError(t, err)
+		require.NoError(t, storagearchive.Untar(
+			context.Background(),
+			buffer,
+			readWriteBucketCloser,
+			transformerOptions...,
+		))
+	case "zip":
+		buffer := bytes.NewBuffer(nil)
+		require.NoError(t, storagearchive.Zip(
+			context.Background(),
+			buffer,
+			inputReadWriteBucketCloser,
+		))
+		data := buffer.Bytes()
+		require.NoError(t, err)
+		require.NoError(t, storagearchive.Unzip(
+			context.Background(),
+			bytes.NewReader(data),
+			int64(len(data)),
+			readWriteBucketCloser,
+			transformerOptions...,
+		))
 	}
 	require.NoError(t, inputReadWriteBucketCloser.Close())
 	assertExpectedPathToContent(t, readWriteBucketCloser, walkPrefix, expectedPathToContent)

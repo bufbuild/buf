@@ -16,6 +16,7 @@
 package ioutilextended
 
 import (
+	"bytes"
 	"io"
 	"io/ioutil"
 
@@ -49,6 +50,18 @@ func CompositeWriteCloser(writer io.Writer, closer io.Closer) io.WriteCloser {
 // ChainCloser chains the closers by calling them in order.
 func ChainCloser(closers ...io.Closer) io.Closer {
 	return chainCloser{closers: closers}
+}
+
+// ReaderAtForReader converts an io.Reader to an io.ReadreAt.
+func ReaderAtForReader(reader io.Reader) (io.ReaderAt, error) {
+	if readerAt, ok := reader.(io.ReaderAt); ok {
+		return readerAt, nil
+	}
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(data), nil
 }
 
 type discardReader struct{}

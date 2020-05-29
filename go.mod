@@ -7,7 +7,7 @@ require (
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/protobuf v1.4.2
 	github.com/jhump/protoreflect v1.6.2-0.20200529043331-b0c184e143c4
-	github.com/klauspost/compress v1.10.6 // indirect
+	github.com/klauspost/compress v1.10.6
 	github.com/klauspost/pgzip v1.2.4
 	github.com/pkg/profile v1.5.0
 	github.com/spf13/cobra v1.0.0

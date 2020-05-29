@@ -34,6 +34,7 @@ const (
 	testFormatJSONGZ = "jsongz"
 	testFormatTar    = "tar"
 	testFormatTargz  = "targz"
+	testFormatZip    = "zip"
 	testFormatGit    = "git"
 	testFormatDir    = "dir"
 )
@@ -47,6 +48,7 @@ var (
 			testFormatJSONGZ,
 			testFormatTar,
 			testFormatTargz,
+			testFormatZip,
 			testFormatGit,
 			testFormatDir,
 		),
@@ -209,6 +211,42 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			0,
 		),
 		"https://path/to/file.tar",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildArchiveRef(
+			testFormatZip,
+			"path/to/file.zip",
+			FileSchemeLocal,
+			ArchiveTypeZip,
+			CompressionTypeNone,
+			0,
+		),
+		"path/to/file.zip",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildArchiveRef(
+			testFormatZip,
+			"/path/to/file.zip",
+			FileSchemeLocal,
+			ArchiveTypeZip,
+			CompressionTypeNone,
+			0,
+		),
+		"file:///path/to/file.zip",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildArchiveRef(
+			testFormatZip,
+			"path/to/file.zip",
+			FileSchemeLocal,
+			ArchiveTypeZip,
+			CompressionTypeNone,
+			1,
+		),
+		"path/to/file.zip#strip_components=1",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -510,6 +548,18 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		),
 		"path/to/file#format=tar,strip_components=1,compression=gz",
 	)
+	testGetParsedRefSuccess(
+		t,
+		buildArchiveRef(
+			testFormatZip,
+			"path/to/file",
+			FileSchemeLocal,
+			ArchiveTypeZip,
+			CompressionTypeNone,
+			1,
+		),
+		"path/to/file#format=zip,strip_components=1",
+	)
 }
 
 func TestGetParsedRefError(t *testing.T) {
@@ -610,7 +660,7 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		newCompressionUnknownError("foo", "none", "gz"),
+		newCompressionUnknownError("foo", knownCompressionTypeStrings...),
 		"path/to/foo.tar.gz#compression=foo",
 	)
 	testGetParsedRefError(
@@ -637,6 +687,26 @@ func TestGetParsedRefError(t *testing.T) {
 		t,
 		newOptionsInvalidForFormatError(testFormatDir, "path/to/foo#compression=none"),
 		"path/to/foo#compression=none",
+	)
+	testGetParsedRefError(
+		t,
+		newCannotSpecifyCompressionForZipError(),
+		"path/to/foo.zip#compression=none",
+	)
+	testGetParsedRefError(
+		t,
+		newCannotSpecifyCompressionForZipError(),
+		"path/to/foo.zip#compression=gz",
+	)
+	testGetParsedRefError(
+		t,
+		newCannotSpecifyCompressionForZipError(),
+		"path/to/foo#format=zip,compression=none",
+	)
+	testGetParsedRefError(
+		t,
+		newCannotSpecifyCompressionForZipError(),
+		"path/to/foo#format=zip,compression=gz",
 	)
 }
 
@@ -711,6 +781,10 @@ func testNewRefParser(logger *zap.Logger) RefParser {
 			ArchiveTypeTar,
 			WithArchiveDefaultCompressionType(CompressionTypeGzip),
 		),
+		WithArchiveFormat(
+			testFormatZip,
+			ArchiveTypeZip,
+		),
 		WithGitFormat(testFormatGit),
 		WithDirFormat(testFormatDir),
 	)
@@ -730,6 +804,8 @@ func testRawRefProcessor(rawRef *RawRef) error {
 			format = testFormatJSON
 		case ".tar":
 			format = testFormatTar
+		case ".zip":
+			format = testFormatZip
 		case ".gz":
 			compressionType = CompressionTypeGzip
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
