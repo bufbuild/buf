@@ -20,10 +20,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
-	"github.com/bufbuild/buf/internal/buf/ext/extfile"
-	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
@@ -63,7 +63,7 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	envReader := internal.NewBufosEnvReader(logger, "", "input_config")
+	envReader := internal.NewBufcliEnvReader(logger, "", "input_config")
 	config, err := envReader.GetConfig(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
@@ -72,7 +72,7 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	image, err := extimage.CodeGeneratorRequestToImage(request)
+	image, err := bufimage.NewImageForCodeGeneratorRequest(request)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return
@@ -103,7 +103,7 @@ func handle(
 			return
 		}
 	} else {
-		if err := extfile.PrintFileAnnotations(buffer, fileAnnotations, asJSON); err != nil {
+		if err := bufanalysis.PrintFileAnnotations(buffer, fileAnnotations, asJSON); err != nil {
 			responseWriter.WriteError(err.Error())
 			return
 		}

@@ -20,9 +20,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
-	"github.com/bufbuild/buf/internal/buf/ext/extfile"
-	"github.com/bufbuild/buf/internal/buf/ext/extimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
@@ -72,21 +72,24 @@ func handle(
 	if !externalConfig.LimitToInputFiles {
 		files = nil
 	}
-	envReader := internal.NewBufosEnvReader(logger, "against_input", "against_input_config")
-	againstEnv, err := envReader.ReadImageEnv(
+	envReader := internal.NewBufcliEnvReader(logger, "against_input", "against_input_config")
+	againstEnv, err := envReader.GetImageEnv(
 		ctx,
 		newContainer(container),
 		externalConfig.AgainstInput,
 		encoding.GetJSONStringOrStringValue(externalConfig.AgainstInputConfig),
 		files, // limit to the input files if specified
 		true,  // allow files in the against input to not exist
-		!externalConfig.ExcludeImports,
 	)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	envReader = internal.NewBufosEnvReader(logger, "", "input_config")
+	againstImage := againstEnv.Image()
+	if externalConfig.ExcludeImports {
+		againstImage = bufimage.ImageWithoutImports(againstImage)
+	}
+	envReader = internal.NewBufcliEnvReader(logger, "", "input_config")
 	config, err := envReader.GetConfig(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
@@ -95,7 +98,7 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	image, err := extimage.CodeGeneratorRequestToImage(request)
+	image, err := bufimage.NewImageForCodeGeneratorRequest(request)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return
@@ -103,7 +106,7 @@ func handle(
 	fileAnnotations, err := internal.NewBufbreakingHandler(logger).BreakingCheck(
 		ctx,
 		config.Breaking,
-		againstEnv.Image,
+		againstImage,
 		image,
 	)
 	if err != nil {
@@ -116,7 +119,7 @@ func handle(
 		return
 	}
 	buffer := bytes.NewBuffer(nil)
-	if err := extfile.PrintFileAnnotations(buffer, fileAnnotations, asJSON); err != nil {
+	if err := bufanalysis.PrintFileAnnotations(buffer, fileAnnotations, asJSON); err != nil {
 		responseWriter.WriteError(err.Error())
 		return
 	}

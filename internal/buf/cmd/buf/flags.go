@@ -113,6 +113,10 @@ func (b *builder) bindImageBuildConfig(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(&b.Config, imageBuildConfigFlagName, "", `The config file or data to use.`)
 }
 
+func (b *builder) bindImageBuildFiles(flagSet *pflag.FlagSet) {
+	flagSet.StringSliceVar(&b.Files, "file", nil, `Limit to specific files. This is an advanced feature and is not recommended.`)
+}
+
 func (b *builder) bindImageBuildOutput(flagSet *pflag.FlagSet) {
 	flagSet.StringVarP(&b.Output, imageBuildOutputFlagName, "o", "", fmt.Sprintf(`Required. The location to write the image. Must be one of format %s.`, buffetch.ImageFormatsString))
 }

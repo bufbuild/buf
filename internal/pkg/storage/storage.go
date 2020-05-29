@@ -160,6 +160,20 @@ func ReadPath(ctx context.Context, readBucket ReadBucket, path string) (_ []byte
 	return ioutil.ReadAll(readObject)
 }
 
+// Exists returns true if the path exists, false otherwise.
+//
+// Returns error on system error.
+func Exists(ctx context.Context, readBucket ReadBucket, path string) (bool, error) {
+	_, err := readBucket.Stat(ctx, path)
+	if err != nil {
+		if IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 // TODO: Refactor copy functions to take selector and matcher
 
 // Copy copies the bucket at from to the bucket at to.

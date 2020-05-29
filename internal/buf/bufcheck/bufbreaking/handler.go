@@ -17,9 +17,9 @@ package bufbreaking
 import (
 	"context"
 
-	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"go.uber.org/zap"
 )
 
@@ -41,14 +41,14 @@ func newHandler(
 func (h *handler) BreakingCheck(
 	ctx context.Context,
 	breakingConfig *Config,
-	previousImage *imagev1beta1.Image,
-	image *imagev1beta1.Image,
-) ([]*filev1beta1.FileAnnotation, error) {
-	previousFiles, err := protosrc.NewFilesUnstable(ctx, previousImage.GetFile()...)
+	previousImage bufimage.Image,
+	image bufimage.Image,
+) ([]bufanalysis.FileAnnotation, error) {
+	previousFiles, err := bufsrc.NewFilesUnstable(ctx, previousImage.Files()...)
 	if err != nil {
 		return nil, err
 	}
-	files, err := protosrc.NewFilesUnstable(ctx, image.GetFile()...)
+	files, err := bufsrc.NewFilesUnstable(ctx, image.Files()...)
 	if err != nil {
 		return nil, err
 	}

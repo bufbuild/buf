@@ -17,14 +17,14 @@ package internal
 import (
 	"fmt"
 
-	filev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/file/v1beta1"
-	"github.com/bufbuild/buf/internal/pkg/proto/protosrc"
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufsrc"
 )
 
 // Helper is a helper for checkers.
 type Helper struct {
 	id              string
-	fileAnnotations []*filev1beta1.FileAnnotation
+	fileAnnotations []bufanalysis.FileAnnotation
 }
 
 // NewHelper returns a new Helper for the given id.
@@ -39,8 +39,8 @@ func NewHelper(id string) *Helper {
 // If descriptor is nil, no filename information is added.
 // If location is nil, no line or column information will be added.
 func (h *Helper) AddFileAnnotationf(
-	descriptor protosrc.Descriptor,
-	location protosrc.Location,
+	descriptor bufsrc.Descriptor,
+	location bufsrc.Location,
 	format string,
 	args ...interface{},
 ) {
@@ -57,7 +57,7 @@ func (h *Helper) AddFileAnnotationf(
 }
 
 // FileAnnotations returns the added FileAnnotations.
-func (h *Helper) FileAnnotations() []*filev1beta1.FileAnnotation {
+func (h *Helper) FileAnnotations() []bufanalysis.FileAnnotation {
 	return h.fileAnnotations
 }
 
@@ -67,16 +67,11 @@ func (h *Helper) FileAnnotations() []*filev1beta1.FileAnnotation {
 // If location is nil, no line or column information will be added.
 func newFileAnnotationf(
 	id string,
-	descriptor protosrc.Descriptor,
-	location protosrc.Location,
+	descriptor bufsrc.Descriptor,
+	location bufsrc.Location,
 	format string,
 	args ...interface{},
-) *filev1beta1.FileAnnotation {
-	path := ""
-	if descriptor != nil {
-		// this is a root file path
-		path = descriptor.FilePath()
-	}
+) bufanalysis.FileAnnotation {
 	startLine := 0
 	startColumn := 0
 	endLine := 0
@@ -87,13 +82,13 @@ func newFileAnnotationf(
 		endLine = location.EndLine()
 		endColumn = location.EndColumn()
 	}
-	return &filev1beta1.FileAnnotation{
-		Path:        path,
-		StartLine:   uint32(startLine),
-		StartColumn: uint32(startColumn),
-		EndLine:     uint32(endLine),
-		EndColumn:   uint32(endColumn),
-		Type:        id,
-		Message:     fmt.Sprintf(format, args...),
-	}
+	return bufanalysis.NewFileAnnotation(
+		descriptor,
+		startLine,
+		startColumn,
+		endLine,
+		endColumn,
+		id,
+		fmt.Sprintf(format, args...),
+	)
 }

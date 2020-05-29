@@ -19,6 +19,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bufbuild/buf/internal/buf/bufpath"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/fetch"
 	"github.com/bufbuild/buf/internal/pkg/git"
@@ -46,43 +47,9 @@ var (
 // ImageEncoding is the encoding of the image.
 type ImageEncoding int
 
-// PathResolver resolves paths within assets.
-type PathResolver interface {
-	// ExternalPathToRelPath takes a path external to the asset and converts it to
-	// a path that is relative to the asset.
-	//
-	// The returned path will be normalized and validated.
-	//
-	// Example:
-	//   Directory: /foo/bar
-	//   ExternalPath: /foo/bar/baz/bat.proto
-	//   RelPath: baz/bat.proto
-	ExternalPathToRelPath(externalPath string) (string, error)
-	// RelPathToExternalPath takes a path relative to the asset and converts it
-	// to a path that is external to the asset.
-	//
-	// This path is not necessarily a file path, and should only be used to
-	// uniquely identify this file as compared to other assets, and for display
-	// to users.
-	//
-	// The input path will be normalized and validated.
-	// The output path will be unnormalized, if it is a file path.
-	//
-	// Example:
-	//   Directory: /foo/bar
-	//   RelPath: baz/bat.proto
-	//   ExternalPath: /foo/bar/baz/bat.proto
-	//
-	// Example:
-	//   Directory: .
-	//   RelPath: baz/bat.proto
-	//   ExternalPath: baz/bat.proto
-	RelPathToExternalPath(relPath string) (string, error)
-}
-
 // Ref is an image file or source bucket reference.
 type Ref interface {
-	PathResolver
+	PathResolver() bufpath.PathResolver
 	fetchRef() fetch.Ref
 }
 
@@ -130,10 +97,10 @@ func NewRefParser(
 
 // Reader is a reader for Buf.
 type Reader interface {
-	// GetImage gets the image file.
+	// GetImageFile gets the image file.
 	//
 	// The returned file will be uncompressed.
-	GetImage(
+	GetImageFile(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		imageRef ImageRef,
@@ -141,7 +108,7 @@ type Reader interface {
 	// GetSource gets the source bucket.
 	//
 	// The returned bucket will only have .proto and configuration files.
-	GetSource(
+	GetSourceBucket(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		sourceRef SourceRef,
@@ -165,8 +132,8 @@ func NewReader(
 
 // Writer is a writer for Buf.
 type Writer interface {
-	// PutImage puts the image file.
-	PutImage(
+	// PutImageFile puts the image file.
+	PutImageFile(
 		ctx context.Context,
 		container app.EnvStdoutContainer,
 		imageRef ImageRef,

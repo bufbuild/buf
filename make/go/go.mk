@@ -5,13 +5,11 @@ $(call _assert_var,MAKEGO)
 $(call _conditional_include,$(MAKEGO)/base.mk)
 $(call _conditional_include,$(MAKEGO)/dep_errcheck.mk)
 $(call _conditional_include,$(MAKEGO)/dep_golint.mk)
-$(call _conditional_include,$(MAKEGO)/dep_ineffassign.mk)
 $(call _conditional_include,$(MAKEGO)/dep_staticcheck.mk)
 # Must be set
 $(call _assert_var,GO_MODULE)
 $(call _assert_var,GOLINT)
 $(call _assert_var,ERRCHECK)
-$(call _assert_var,INEFFASSIGN)
 $(call _assert_var,STATICCHECK)
 $(call _assert_var,TMP)
 
@@ -85,10 +83,6 @@ vet: __go_lint_pkgs
 errcheck: __go_lint_pkgs $(ERRCHECK)
 	errcheck $(GO_LINT_PKGS)
 
-.PHONY:
-ineffassign: $(INEFFASSIGN)
-	ineffassign .
-
 .PHONY: staticcheck
 staticcheck: __go_lint_pkgs $(STATICCHECK)
 	staticcheck $(GO_LINT_PKGS)
@@ -99,7 +93,7 @@ postlint::
 .PHONY: lint
 lint:
 	@$(MAKE) checknodiffgenerated
-	@$(MAKE) golint vet errcheck ineffassign staticcheck
+	@$(MAKE) golint vet errcheck staticcheck
 	@$(MAKE) postlint
 
 .PHONY: prebuild

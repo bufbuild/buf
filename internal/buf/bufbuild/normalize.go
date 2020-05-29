@@ -22,24 +22,24 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
-func normalizeAndValidateRoots(inputRoots []string) ([]string, error) {
-	if len(inputRoots) == 0 {
-		inputRoots = []string{"."}
+func normalizeAndValidateRoots(roots []string) ([]string, error) {
+	if len(roots) == 0 {
+		roots = []string{"."}
 	}
-	return normalizeAndValidateFileList(inputRoots, "root")
+	return normalizeAndValidateFileList(roots, "root")
 }
 
-func normalizeAndValidateRootsExcludes(inputRoots []string, inputExcludes []string) ([]string, []string, error) {
-	roots, err := normalizeAndValidateRoots(inputRoots)
+func normalizeAndValidateRootsExcludes(roots []string, excludes []string) ([]string, []string, error) {
+	roots, err := normalizeAndValidateRoots(roots)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if len(inputExcludes) == 0 {
+	if len(excludes) == 0 {
 		return roots, nil, nil
 	}
 
-	excludes, err := normalizeAndValidateFileList(inputExcludes, "exclude")
+	excludes, err = normalizeAndValidateFileList(excludes, "exclude")
 	if err != nil {
 		return nil, nil, err
 	}

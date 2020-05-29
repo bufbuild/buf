@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"runtime"
 	"sync"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/thread"
 	"go.uber.org/multierr"
 )
 
@@ -35,7 +35,7 @@ func copyPaths(
 	allowNotExist bool,
 ) (int, error) {
 	transformer := normalpath.NewTransformer(options...)
-	semaphoreC := make(chan struct{}, runtime.NumCPU())
+	semaphoreC := make(chan struct{}, thread.Parallelism())
 	var retErr error
 	var count int
 	var wg sync.WaitGroup
