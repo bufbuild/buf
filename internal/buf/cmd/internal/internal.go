@@ -102,7 +102,6 @@ func NewBuflintHandler(
 ) buflint.Handler {
 	return buflint.NewHandler(
 		logger,
-		buflint.NewRunner(logger),
 	)
 }
 
@@ -112,7 +111,6 @@ func NewBufbreakingHandler(
 ) bufbreaking.Handler {
 	return bufbreaking.NewHandler(
 		logger,
-		bufbreaking.NewRunner(logger),
 	)
 }
 

@@ -22,40 +22,31 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking/bufbreakingcfg"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/buf/bufimage"
-	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"go.uber.org/zap"
 )
 
 // Handler handles the main breaking functionality.
 type Handler interface {
-	// BreakingCheck runs the breaking checks.
+	// Check runs the breaking checks.
 	//
 	// The image should have source code info for this to work properly. The previousImage
 	// does not need to have source code info.
 	//
 	// Images should be filtered with regards to imports before passing to this function.
-	//
-	// FileAnnotations will use the image file paths, if these should be relative, use
-	// FixFileAnnotationPaths.
-	BreakingCheck(
+	Check(
 		ctx context.Context,
-		breakingConfig *Config,
+		config *Config,
 		previousImage bufimage.Image,
 		image bufimage.Image,
 	) ([]bufanalysis.FileAnnotation, error)
 }
 
 // NewHandler returns a new Handler.
-func NewHandler(
-	logger *zap.Logger,
-	breakingRunner Runner,
-) Handler {
-	return newHandler(
-		logger,
-		breakingRunner,
-	)
+func NewHandler(logger *zap.Logger) Handler {
+	return newHandler(logger)
 }
 
 // Checker is a checker.
@@ -63,24 +54,6 @@ type Checker interface {
 	bufcheck.Checker
 
 	internalBreaking() *internal.Checker
-}
-
-// Runner is a runner.
-type Runner interface {
-	// Check runs the breaking checkers, returning a system error if any system error occurs
-	// or returning the FileAnnotations otherwise.
-	//
-	// previousFiles do not need to have Locations, and BreakingCheckers cannot rely on this.
-	//
-	// FileAnnotations will be sorted, but Paths will not have the roots as a prefix, instead
-	// they will be relative to the roots. This should be fixed for linter outputs if image
-	// mode is not used.
-	Check(context.Context, *Config, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error)
-}
-
-// NewRunner returns a new Runner.
-func NewRunner(logger *zap.Logger) Runner {
-	return newRunner(logger)
 }
 
 // Config is the check config.
@@ -103,21 +76,13 @@ func (c *Config) GetCheckers(categories ...string) ([]bufcheck.Checker, error) {
 	return checkersToBufcheckCheckers(c.Checkers, categories)
 }
 
-// ConfigBuilder is a config builder.
-type ConfigBuilder struct {
-	Use                           []string
-	Except                        []string
-	IgnoreIDOrCategoryToRootPaths map[string][]string
-	IgnoreRootPaths               []string
-}
-
 // NewConfig returns a new Config.
-func (b ConfigBuilder) NewConfig() (*Config, error) {
+func NewConfig(externalConfig bufbreakingcfg.ExternalConfig) (*Config, error) {
 	internalConfig, err := internal.ConfigBuilder{
-		Use:                           b.Use,
-		Except:                        b.Except,
-		IgnoreIDOrCategoryToRootPaths: b.IgnoreIDOrCategoryToRootPaths,
-		IgnoreRootPaths:               b.IgnoreRootPaths,
+		Use:                           externalConfig.Use,
+		Except:                        externalConfig.Except,
+		IgnoreRootPaths:               externalConfig.Ignore,
+		IgnoreIDOrCategoryToRootPaths: externalConfig.IgnoreOnly,
 	}.NewConfig(
 		v1CheckerBuilders,
 		v1IDToCategories,
@@ -135,9 +100,7 @@ func (b ConfigBuilder) NewConfig() (*Config, error) {
 //
 // Should only be used for printing.
 func GetAllCheckers(categories ...string) ([]bufcheck.Checker, error) {
-	config, err := ConfigBuilder{
-		Use: v1AllCategories,
-	}.NewConfig()
+	config, err := NewConfig(bufbreakingcfg.ExternalConfig{Use: v1AllCategories})
 	if err != nil {
 		return nil, err
 	}

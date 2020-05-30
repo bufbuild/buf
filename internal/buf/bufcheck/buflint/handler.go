@@ -18,34 +18,32 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"go.uber.org/zap"
 )
 
 type handler struct {
-	logger     *zap.Logger
-	lintRunner Runner
+	logger *zap.Logger
+	runner *internal.Runner
 }
 
-func newHandler(
-	logger *zap.Logger,
-	lintRunner Runner,
-) *handler {
+func newHandler(logger *zap.Logger) *handler {
 	return &handler{
-		logger:     logger,
-		lintRunner: lintRunner,
+		logger: logger,
+		runner: internal.NewRunner(logger),
 	}
 }
 
-func (h *handler) LintCheck(
+func (h *handler) Check(
 	ctx context.Context,
-	lintConfig *Config,
+	config *Config,
 	image bufimage.Image,
 ) ([]bufanalysis.FileAnnotation, error) {
 	files, err := bufsrc.NewFilesUnstable(ctx, image.Files()...)
 	if err != nil {
 		return nil, err
 	}
-	return h.lintRunner.Check(ctx, lintConfig, files)
+	return h.runner.Check(ctx, configToInternalConfig(config), nil, files)
 }

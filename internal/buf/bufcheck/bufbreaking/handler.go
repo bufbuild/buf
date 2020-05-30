@@ -18,29 +18,29 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"go.uber.org/zap"
 )
 
 type handler struct {
-	logger         *zap.Logger
-	breakingRunner Runner
+	logger *zap.Logger
+	runner *internal.Runner
 }
 
 func newHandler(
 	logger *zap.Logger,
-	breakingRunner Runner,
 ) *handler {
 	return &handler{
-		logger:         logger,
-		breakingRunner: breakingRunner,
+		logger: logger,
+		runner: internal.NewRunner(logger),
 	}
 }
 
-func (h *handler) BreakingCheck(
+func (h *handler) Check(
 	ctx context.Context,
-	breakingConfig *Config,
+	config *Config,
 	previousImage bufimage.Image,
 	image bufimage.Image,
 ) ([]bufanalysis.FileAnnotation, error) {
@@ -52,5 +52,5 @@ func (h *handler) BreakingCheck(
 	if err != nil {
 		return nil, err
 	}
-	return h.breakingRunner.Check(ctx, breakingConfig, previousFiles, files)
+	return h.runner.Check(ctx, configToInternalConfig(config), previousFiles, files)
 }

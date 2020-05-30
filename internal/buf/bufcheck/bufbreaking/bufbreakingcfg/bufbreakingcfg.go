@@ -12,21 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buf
+package bufbreakingcfg
 
-import (
-	"context"
-
-	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
-	"github.com/bufbuild/buf/internal/pkg/app/appflag"
-)
-
-const version = "0.15.0-dev"
-
-// Main is the main.
-func Main(use string, options ...RootCommandOption) {
-	appcmd.Main(context.Background(), newRootCommand(use, options...), version)
+// ExternalConfig is an external config.
+type ExternalConfig struct {
+	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
+	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
+	// IgnoreRootPaths
+	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
+	// IgnoreIDOrCategoryToRootPaths
+	IgnoreOnly map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 }
-
-// RootCommandOption is an option for a root Command.
-type RootCommandOption func(*appcmd.Command, appflag.Builder)
