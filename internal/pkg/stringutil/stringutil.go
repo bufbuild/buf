@@ -30,7 +30,8 @@ func TrimLines(output string) string {
 
 // SplitTrimLines splits the output into individual lines and trims the spaces from each line.
 func SplitTrimLines(output string) []string {
-	split := strings.Split(output, lineSplit)
+	// this should work for windows as well as \r will be trimmed
+	split := strings.Split(output, "\n")
 	lines := make([]string, len(split))
 	for i, line := range split {
 		lines[i] = strings.TrimSpace(line)
@@ -42,7 +43,8 @@ func SplitTrimLines(output string) []string {
 //
 // This removes any empty lines.
 func SplitTrimLinesNoEmpty(output string) []string {
-	split := strings.Split(output, lineSplit)
+	// this should work for windows as well as \r will be trimmed
+	split := strings.Split(output, "\n")
 	lines := make([]string, 0, len(split))
 	for _, line := range split {
 		line = strings.TrimSpace(line)
