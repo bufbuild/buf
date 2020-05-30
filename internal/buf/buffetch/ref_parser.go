@@ -160,7 +160,7 @@ func (a *refParser) checkDeprecated(parsedRef fetch.ParsedRef) {
 	format := parsedRef.Format()
 	if replacementFormat, ok := deprecatedCompressionFormatToReplacementFormat[format]; ok {
 		a.logger.Sugar().Warnf(
-			`Format %q is deprecated. Use "format=%s,compression=gz" instead. This will continue to work forever, but updating is recommended.`,
+			`Format %q is deprecated. Use "format=%s,compression=gzip" instead. This will continue to work forever, but updating is recommended.`,
 			format,
 			replacementFormat,
 		)
@@ -194,6 +194,18 @@ func processRawRef(rawRef *fetch.RawRef) error {
 				format = formatTar
 			default:
 				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
+			}
+		case ".zst":
+			compressionType = fetch.CompressionTypeZstd
+			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+			case ".bin":
+				format = formatBin
+			case ".json":
+				format = formatJSON
+			case ".tar":
+				format = formatTar
+			default:
+				return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
 			}
 		case ".tgz":
 			format = formatTar
