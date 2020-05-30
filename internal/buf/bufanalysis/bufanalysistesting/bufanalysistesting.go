@@ -15,6 +15,7 @@
 package bufanalysistesting
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
@@ -114,7 +115,7 @@ func AssertFileAnnotationsEqual(
 ) {
 	expected = normalizeFileAnnotations(t, expected)
 	actual = normalizeFileAnnotations(t, actual)
-	assert.Equal(t, len(expected), len(actual))
+	assert.Equal(t, len(expected), len(actual), fmt.Sprint(actual))
 	if len(expected) == len(actual) {
 		for i, a := range actual {
 			e := expected[i]

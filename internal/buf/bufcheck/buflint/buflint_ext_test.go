@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/bufpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -31,6 +32,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
+
+// Hint on how to get these:
+// 1. cd into the specific diriectory
+// 2. buf check lint --error-format=json | jq '[.path, ".", .start_line, .start_column, .end_line, .end_column, .type] | @csv' --raw-output
 
 func TestRunComments(t *testing.T) {
 	testLint(
@@ -734,6 +739,55 @@ func TestRunIgnores3(t *testing.T) {
 	)
 }
 
+func TestCommentDrivenIgnoresOff(t *testing.T) {
+	testLint(
+		t,
+		"comment_driven_ignores",
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 9, 1, 9, 11, "PACKAGE_DIRECTORY_MATCH"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 9, 1, 9, 11, "PACKAGE_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 9, 1, 9, 11, "PACKAGE_VERSION_SUFFIX"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 12, 1, 12, 45, "IMPORT_NO_PUBLIC"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 15, 6, 15, 13, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 17, 3, 17, 29, "ENUM_NO_ALLOW_ALIAS"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 20, 3, 20, 14, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 20, 3, 20, 14, "ENUM_ZERO_VALUE_SUFFIX"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 22, 3, 22, 13, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 24, 3, 24, 13, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 28, 9, 28, 19, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 30, 11, 30, 21, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 32, 13, 32, 23, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 34, 12, 34, 19, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 36, 9, 36, 35, "ENUM_NO_ALLOW_ALIAS"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 39, 9, 39, 20, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 39, 9, 39, 20, "ENUM_ZERO_VALUE_SUFFIX"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 41, 9, 41, 19, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 43, 9, 43, 19, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 46, 13, 46, 16, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 48, 13, 48, 16, "ONEOF_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 50, 15, 50, 18, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 54, 11, 54, 14, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 56, 11, 56, 14, "ONEOF_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 58, 13, 58, 16, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 62, 9, 62, 12, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 64, 9, 64, 12, "ONEOF_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 66, 11, 66, 14, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 71, 9, 71, 19, "SERVICE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 74, 7, 74, 16, "RPC_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 76, 7, 76, 28, "RPC_REQUEST_STANDARD_NAME"),
+		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 79, 7, 79, 28, "RPC_RESPONSE_STANDARD_NAME"),
+	)
+}
+
+func TestCommentDrivenIgnoresOn(t *testing.T) {
+	testLintExternalConfigModifier(
+		t,
+		"comment_driven_ignores",
+		func(externalConfig *bufconfig.ExternalConfig) {
+			externalConfig.Lint.AllowCommentDrivenIgnores = true
+		},
+	)
+}
+
 func testLint(
 	t *testing.T,
 	relDirPath string,
@@ -797,6 +851,7 @@ func testLintExternalConfigModifier(
 	)
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)
+	image = bufimage.ImageWithoutImports(image)
 
 	handler := buflint.NewHandler(logger)
 	fileAnnotations, err = handler.Check(
