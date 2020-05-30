@@ -12,27 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buflint
+package bufbuildcfg
 
-import (
-	"context"
-
-	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/bufsrc"
-	"go.uber.org/zap"
-)
-
-type runner struct {
-	delegate *internal.Runner
-}
-
-func newRunner(logger *zap.Logger) *runner {
-	return &runner{
-		delegate: internal.NewRunner(logger),
-	}
-}
-
-func (r *runner) Check(ctx context.Context, config *Config, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
-	return r.delegate.Check(ctx, configToInternalConfig(config), nil, files)
+// ExternalConfig is an external config.
+type ExternalConfig struct {
+	Roots    []string `json:"roots,omitempty" yaml:"roots,omitempty"`
+	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }

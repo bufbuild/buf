@@ -585,8 +585,8 @@ func testBreakingExternalConfigModifier(
 		ctx,
 		previousReadWriteBucketCloser,
 		previousPathResolver,
-		previousConfig.Build.Roots,
-		previousConfig.Build.Excludes,
+		previousConfig.Roots,
+		previousConfig.Excludes,
 	)
 	require.NoError(t, err)
 	previousImage, previousFileAnnotations, err := builder.Build(
@@ -604,8 +604,8 @@ func testBreakingExternalConfigModifier(
 		ctx,
 		readWriteBucketCloser,
 		pathResolver,
-		config.Build.Roots,
-		config.Build.Excludes,
+		config.Roots,
+		config.Excludes,
 	)
 	require.NoError(t, err)
 	image, fileAnnotations, err := builder.Build(
@@ -618,11 +618,8 @@ func testBreakingExternalConfigModifier(
 	require.Empty(t, fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 
-	handler := bufbreaking.NewHandler(
-		logger,
-		bufbreaking.NewRunner(logger),
-	)
-	fileAnnotations, err = handler.BreakingCheck(
+	handler := bufbreaking.NewHandler(logger)
+	fileAnnotations, err = handler.Check(
 		ctx,
 		config.Breaking,
 		previousImage,

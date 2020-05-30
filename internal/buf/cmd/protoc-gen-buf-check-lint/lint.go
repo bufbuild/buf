@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/buflintcfg"
 	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -77,7 +77,7 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	fileAnnotations, err := internal.NewBuflintHandler(logger).LintCheck(
+	fileAnnotations, err := internal.NewBuflintHandler(logger).Check(
 		ctx,
 		config.Lint,
 		image,
@@ -98,7 +98,7 @@ func handle(
 	}
 	buffer := bytes.NewBuffer(nil)
 	if asConfigIgnoreYAML {
-		if err := bufconfig.PrintFileAnnotationsLintConfigIgnoreYAML(buffer, fileAnnotations); err != nil {
+		if err := buflintcfg.PrintFileAnnotationsLintConfigIgnoreYAML(buffer, fileAnnotations); err != nil {
 			responseWriter.WriteError(err.Error())
 			return
 		}
