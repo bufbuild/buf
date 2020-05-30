@@ -57,6 +57,8 @@ const (
 	CompressionTypeNone CompressionType = iota + 1
 	// CompressionTypeGzip is gzip compression.
 	CompressionTypeGzip
+	// CompressionTypeZstd is zstd compression.
+	CompressionTypeZstd
 )
 
 // FileScheme is a file scheme.
