@@ -28,6 +28,7 @@ var (
 	knownCompressionTypeStrings = []string{
 		"none",
 		"gzip",
+		"zstd",
 	}
 )
 
@@ -129,8 +130,10 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 			switch value {
 			case "none":
 				rawRef.CompressionType = CompressionTypeNone
-			case "gz":
+			case "gzip":
 				rawRef.CompressionType = CompressionTypeGzip
+			case "zstd":
+				rawRef.CompressionType = CompressionTypeZstd
 			default:
 				return nil, newCompressionUnknownError(value, knownCompressionTypeStrings...)
 			}

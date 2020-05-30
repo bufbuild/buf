@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
+	"github.com/klauspost/compress/zstd"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -124,6 +125,18 @@ func (w *writer) putFileWriteCloser(
 			gzipWriteCloser,
 			ioutilextended.ChainCloser(
 				gzipWriteCloser,
+				writeCloser,
+			),
+		), nil
+	case CompressionTypeZstd:
+		zstdWriteCloser, err := zstd.NewWriter(writeCloser)
+		if err != nil {
+			return nil, err
+		}
+		return ioutilextended.CompositeWriteCloser(
+			zstdWriteCloser,
+			ioutilextended.ChainCloser(
+				zstdWriteCloser,
 				writeCloser,
 			),
 		), nil

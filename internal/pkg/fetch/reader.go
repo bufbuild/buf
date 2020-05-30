@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/klauspost/compress/zstd"
 	"github.com/klauspost/pgzip"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -288,11 +289,30 @@ func (r *reader) getFileReadCloserAndSize(
 	case CompressionTypeNone:
 		return readCloser, size, nil
 	case CompressionTypeGzip:
-		gzipReader, err := pgzip.NewReader(readCloser)
+		gzipReadCloser, err := pgzip.NewReader(readCloser)
 		if err != nil {
 			return nil, -1, err
 		}
-		return ioutilextended.CompositeReadCloser(gzipReader, readCloser), -1, nil
+		return ioutilextended.CompositeReadCloser(
+			gzipReadCloser,
+			ioutilextended.ChainCloser(
+				gzipReadCloser,
+				readCloser,
+			),
+		), -1, nil
+	case CompressionTypeZstd:
+		zstdDecoder, err := zstd.NewReader(readCloser)
+		if err != nil {
+			return nil, -1, err
+		}
+		zstdReadCloser := zstdDecoder.IOReadCloser()
+		return ioutilextended.CompositeReadCloser(
+			zstdReadCloser,
+			ioutilextended.ChainCloser(
+				zstdReadCloser,
+				readCloser,
+			),
+		), -1, nil
 	default:
 		return nil, -1, fmt.Errorf("unknown CompressionType: %v", compressionType)
 	}
