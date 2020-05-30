@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/buflintcfg"
 	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 )
@@ -103,7 +103,7 @@ func checkLint(ctx context.Context, container *container) (retErr error) {
 		}
 		return errors.New("")
 	}
-	fileAnnotations, err = internal.NewBuflintHandler(container.Logger()).LintCheck(
+	fileAnnotations, err = internal.NewBuflintHandler(container.Logger()).Check(
 		ctx,
 		env.Config().Lint,
 		bufimage.ImageWithoutImports(env.Image()),
@@ -113,7 +113,7 @@ func checkLint(ctx context.Context, container *container) (retErr error) {
 	}
 	if len(fileAnnotations) > 0 {
 		if asConfigIgnoreYAML {
-			if err := bufconfig.PrintFileAnnotationsLintConfigIgnoreYAML(container.Stdout(), fileAnnotations); err != nil {
+			if err := buflintcfg.PrintFileAnnotationsLintConfigIgnoreYAML(container.Stdout(), fileAnnotations); err != nil {
 				return err
 			}
 		} else {
@@ -199,7 +199,7 @@ func checkBreaking(ctx context.Context, container *container) (retErr error) {
 	if container.ExcludeImports {
 		againstImage = bufimage.ImageWithoutImports(againstImage)
 	}
-	fileAnnotations, err = internal.NewBufbreakingHandler(container.Logger()).BreakingCheck(
+	fileAnnotations, err = internal.NewBufbreakingHandler(container.Logger()).Check(
 		ctx,
 		env.Config().Breaking,
 		againstImage,

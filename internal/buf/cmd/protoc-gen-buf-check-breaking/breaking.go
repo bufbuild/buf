@@ -103,7 +103,7 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	fileAnnotations, err := internal.NewBufbreakingHandler(logger).BreakingCheck(
+	fileAnnotations, err := internal.NewBufbreakingHandler(logger).Check(
 		ctx,
 		config.Breaking,
 		againstImage,

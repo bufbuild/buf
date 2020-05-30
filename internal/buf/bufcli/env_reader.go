@@ -216,8 +216,8 @@ func (e *envReader) ListFiles(
 			ctx,
 			readBucketCloser,
 			t.PathResolver(),
-			config.Build.Roots,
-			config.Build.Excludes,
+			config.Roots,
+			config.Excludes,
 		)
 	default:
 		return nil, fmt.Errorf("invalid ref: %T", ref)
@@ -306,8 +306,8 @@ func (e *envReader) getEnvFromSource(
 			ctx,
 			readBucketCloser,
 			sourceRef.PathResolver(),
-			config.Build.Roots,
-			config.Build.Excludes,
+			config.Roots,
+			config.Excludes,
 		)
 		if err != nil {
 			return nil, nil, err
@@ -321,7 +321,7 @@ func (e *envReader) getEnvFromSource(
 			ctx,
 			readBucketCloser,
 			sourceRef.PathResolver(),
-			config.Build.Roots,
+			config.Roots,
 			externalFilePaths,
 			options...,
 		)
@@ -404,7 +404,7 @@ func (e *envReader) getSourceBucketAndConfig(
 	} else {
 		// if there is no config override, we read the config from the bucket
 		// if there was no file, this just returns default config
-		config, err = e.configProvider.GetConfigForReadBucket(ctx, readBucketCloser)
+		config, err = e.configProvider.GetConfig(ctx, readBucketCloser)
 	}
 	if err != nil {
 		return nil, nil, err

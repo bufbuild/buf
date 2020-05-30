@@ -42,8 +42,8 @@ func newProvider(logger *zap.Logger, options ...ProviderOption) *provider {
 	return provider
 }
 
-func (p *provider) GetConfigForReadBucket(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
-	defer instrument.Start(p.logger, "get_config_for_bucket").End()
+func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
+	defer instrument.Start(p.logger, "get_config").End()
 
 	externalConfig := &ExternalConfig{}
 	readObject, err := readBucket.Get(ctx, ConfigFilePath)
@@ -82,31 +82,17 @@ func (p *provider) newConfig(externalConfig *ExternalConfig) (*Config, error) {
 			return nil, err
 		}
 	}
-	breakingConfig, err := bufbreaking.ConfigBuilder{
-		Use:                           externalConfig.Breaking.Use,
-		Except:                        externalConfig.Breaking.Except,
-		IgnoreRootPaths:               externalConfig.Breaking.Ignore,
-		IgnoreIDOrCategoryToRootPaths: externalConfig.Breaking.IgnoreOnly,
-	}.NewConfig()
+	breakingConfig, err := bufbreaking.NewConfig(externalConfig.Breaking)
 	if err != nil {
 		return nil, err
 	}
-	lintConfig, err := buflint.ConfigBuilder{
-		Use:                                  externalConfig.Lint.Use,
-		Except:                               externalConfig.Lint.Except,
-		IgnoreRootPaths:                      externalConfig.Lint.Ignore,
-		IgnoreIDOrCategoryToRootPaths:        externalConfig.Lint.IgnoreOnly,
-		EnumZeroValueSuffix:                  externalConfig.Lint.EnumZeroValueSuffix,
-		RPCAllowSameRequestResponse:          externalConfig.Lint.RPCAllowSameRequestResponse,
-		RPCAllowGoogleProtobufEmptyRequests:  externalConfig.Lint.RPCAllowGoogleProtobufEmptyRequests,
-		RPCAllowGoogleProtobufEmptyResponses: externalConfig.Lint.RPCAllowGoogleProtobufEmptyResponses,
-		ServiceSuffix:                        externalConfig.Lint.ServiceSuffix,
-	}.NewConfig()
+	lintConfig, err := buflint.NewConfig(externalConfig.Lint)
 	if err != nil {
 		return nil, err
 	}
 	return &Config{
-		Build:    externalConfig.Build,
+		Roots:    externalConfig.Build.Roots,
+		Excludes: externalConfig.Build.Excludes,
 		Breaking: breakingConfig,
 		Lint:     lintConfig,
 	}, nil

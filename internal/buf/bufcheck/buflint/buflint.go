@@ -22,38 +22,29 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/buflintcfg"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/buf/bufimage"
-	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"go.uber.org/zap"
 )
 
 // Handler handles the main lint functionality.
 type Handler interface {
-	// LintCheck runs the lint checks.
+	// Check runs the lint checks.
 	//
 	// The image should have source code info for this to work properly.
 	//
 	// Images should be filtered with regards to imports before passing to this function.
-	//
-	// FileAnnotations will use the image file paths, if these should be relative, use
-	// FixFileAnnotationPaths.
-	LintCheck(
+	Check(
 		ctx context.Context,
-		lintConfig *Config,
+		config *Config,
 		image bufimage.Image,
 	) ([]bufanalysis.FileAnnotation, error)
 }
 
 // NewHandler returns a new Handler.
-func NewHandler(
-	logger *zap.Logger,
-	lintRunner Runner,
-) Handler {
-	return newHandler(
-		logger,
-		lintRunner,
-	)
+func NewHandler(logger *zap.Logger) Handler {
+	return newHandler(logger)
 }
 
 // Checker is a checker.
@@ -61,22 +52,6 @@ type Checker interface {
 	bufcheck.Checker
 
 	internalLint() *internal.Checker
-}
-
-// Runner is a runner.
-type Runner interface {
-	// Check runs lint checkers, returning a system error if any system error occurs
-	// or returning the FileAnnotations otherwise.
-	//
-	// FileAnnotations will be sorted, but Paths will not have the roots as a prefix, instead
-	// they will be relative to the roots. This should be fixed for linter outputs if image
-	// mode is not used.
-	Check(context.Context, *Config, []bufsrc.File) ([]bufanalysis.FileAnnotation, error)
-}
-
-// NewRunner returns a new Runner.
-func NewRunner(logger *zap.Logger) Runner {
-	return newRunner(logger)
 }
 
 // Config is the check config.
@@ -99,31 +74,18 @@ func (c *Config) GetCheckers(categories ...string) ([]bufcheck.Checker, error) {
 	return checkersToBufcheckCheckers(c.Checkers, categories)
 }
 
-// ConfigBuilder is a config builder.
-type ConfigBuilder struct {
-	Use                                  []string
-	Except                               []string
-	IgnoreIDOrCategoryToRootPaths        map[string][]string
-	IgnoreRootPaths                      []string
-	EnumZeroValueSuffix                  string
-	RPCAllowSameRequestResponse          bool
-	RPCAllowGoogleProtobufEmptyRequests  bool
-	RPCAllowGoogleProtobufEmptyResponses bool
-	ServiceSuffix                        string
-}
-
 // NewConfig returns a new Config.
-func (b ConfigBuilder) NewConfig() (*Config, error) {
+func NewConfig(externalConfig buflintcfg.ExternalConfig) (*Config, error) {
 	internalConfig, err := internal.ConfigBuilder{
-		Use:                                  b.Use,
-		Except:                               b.Except,
-		IgnoreIDOrCategoryToRootPaths:        b.IgnoreIDOrCategoryToRootPaths,
-		IgnoreRootPaths:                      b.IgnoreRootPaths,
-		EnumZeroValueSuffix:                  b.EnumZeroValueSuffix,
-		RPCAllowSameRequestResponse:          b.RPCAllowSameRequestResponse,
-		RPCAllowGoogleProtobufEmptyRequests:  b.RPCAllowGoogleProtobufEmptyRequests,
-		RPCAllowGoogleProtobufEmptyResponses: b.RPCAllowGoogleProtobufEmptyResponses,
-		ServiceSuffix:                        b.ServiceSuffix,
+		Use:                                  externalConfig.Use,
+		Except:                               externalConfig.Except,
+		IgnoreRootPaths:                      externalConfig.Ignore,
+		IgnoreIDOrCategoryToRootPaths:        externalConfig.IgnoreOnly,
+		EnumZeroValueSuffix:                  externalConfig.EnumZeroValueSuffix,
+		RPCAllowSameRequestResponse:          externalConfig.RPCAllowSameRequestResponse,
+		RPCAllowGoogleProtobufEmptyRequests:  externalConfig.RPCAllowGoogleProtobufEmptyRequests,
+		RPCAllowGoogleProtobufEmptyResponses: externalConfig.RPCAllowGoogleProtobufEmptyResponses,
+		ServiceSuffix:                        externalConfig.ServiceSuffix,
 	}.NewConfig(
 		v1CheckerBuilders,
 		v1IDToCategories,
@@ -141,9 +103,7 @@ func (b ConfigBuilder) NewConfig() (*Config, error) {
 //
 // Should only be used for printing.
 func GetAllCheckers(categories ...string) ([]bufcheck.Checker, error) {
-	config, err := ConfigBuilder{
-		Use: v1AllCategories,
-	}.NewConfig()
+	config, err := NewConfig(buflintcfg.ExternalConfig{Use: v1AllCategories})
 	if err != nil {
 		return nil, err
 	}

@@ -785,8 +785,8 @@ func testLintExternalConfigModifier(
 		ctx,
 		readWriteBucketCloser,
 		pathResolver,
-		config.Build.Roots,
-		config.Build.Excludes,
+		config.Roots,
+		config.Excludes,
 	)
 	require.NoError(t, err)
 	image, fileAnnotations, err := builder.Build(
@@ -798,11 +798,8 @@ func testLintExternalConfigModifier(
 	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)
 
-	handler := buflint.NewHandler(
-		logger,
-		buflint.NewRunner(logger),
-	)
-	fileAnnotations, err = handler.LintCheck(
+	handler := buflint.NewHandler(logger)
+	fileAnnotations, err = handler.Check(
 		ctx,
 		config.Lint,
 		image,
