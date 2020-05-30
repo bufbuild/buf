@@ -25,12 +25,32 @@ import (
 //
 // This also trims the start and end spaces from the original output.
 func TrimLines(output string) string {
-	split := strings.Split(strings.TrimSpace(output), "\n")
+	return strings.TrimSpace(strings.Join(SplitTrimLines(output), "\n"))
+}
+
+// SplitTrimLines splits the output into individual lines and trims the spaces from each line.
+func SplitTrimLines(output string) []string {
+	split := strings.Split(output, lineSplit)
+	lines := make([]string, len(split))
+	for i, line := range split {
+		lines[i] = strings.TrimSpace(line)
+	}
+	return lines
+}
+
+// SplitTrimLinesNoEmpty splits the output into individual lines and trims the spaces from each line.
+//
+// This removes any empty lines.
+func SplitTrimLinesNoEmpty(output string) []string {
+	split := strings.Split(output, lineSplit)
 	lines := make([]string, 0, len(split))
 	for _, line := range split {
-		lines = append(lines, strings.TrimSpace(line))
+		line = strings.TrimSpace(line)
+		if line != "" {
+			lines = append(lines, line)
+		}
 	}
-	return strings.TrimSpace(strings.Join(lines, "\n"))
+	return lines
 }
 
 // MapToSortedSlice transforms m to a sorted slice.

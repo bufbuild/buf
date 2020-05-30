@@ -115,9 +115,9 @@ func stringIsPositiveNumber(s string) bool {
 
 func newFilesCheckFunc(
 	f func(addFunc, []bufsrc.File) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
-	return func(id string, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
-		helper := internal.NewHelper(id)
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+		helper := internal.NewHelper(id, ignoreFunc)
 		if err := f(helper.AddFileAnnotationf, files); err != nil {
 			return nil, err
 		}
@@ -127,7 +127,7 @@ func newFilesCheckFunc(
 
 func newPackageToFilesCheckFunc(
 	f func(add addFunc, pkg string, files []bufsrc.File) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, files []bufsrc.File) error {
 			packageToFiles, err := bufsrc.PackageToFiles(files...)
@@ -146,7 +146,7 @@ func newPackageToFilesCheckFunc(
 
 func newDirToFilesCheckFunc(
 	f func(add addFunc, dirPath string, files []bufsrc.File) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, files []bufsrc.File) error {
 			dirPathToFiles, err := bufsrc.DirPathToFiles(files...)
@@ -165,7 +165,7 @@ func newDirToFilesCheckFunc(
 
 func newFileCheckFunc(
 	f func(addFunc, bufsrc.File) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, files []bufsrc.File) error {
 			for _, file := range files {
@@ -180,7 +180,7 @@ func newFileCheckFunc(
 
 func newFileImportCheckFunc(
 	f func(addFunc, bufsrc.FileImport) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
 		func(add addFunc, file bufsrc.File) error {
 			for _, fileImport := range file.FileImports() {
@@ -195,7 +195,7 @@ func newFileImportCheckFunc(
 
 func newEnumCheckFunc(
 	f func(addFunc, bufsrc.Enum) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
 		func(add addFunc, file bufsrc.File) error {
 			return bufsrc.ForEachEnum(
@@ -210,7 +210,7 @@ func newEnumCheckFunc(
 
 func newEnumValueCheckFunc(
 	f func(addFunc, bufsrc.EnumValue) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newEnumCheckFunc(
 		func(add addFunc, enum bufsrc.Enum) error {
 			for _, enumValue := range enum.Values() {
@@ -225,7 +225,7 @@ func newEnumValueCheckFunc(
 
 func newMessageCheckFunc(
 	f func(addFunc, bufsrc.Message) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
 		func(add addFunc, file bufsrc.File) error {
 			return bufsrc.ForEachMessage(
@@ -240,7 +240,7 @@ func newMessageCheckFunc(
 
 func newFieldCheckFunc(
 	f func(addFunc, bufsrc.Field) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newMessageCheckFunc(
 		func(add addFunc, message bufsrc.Message) error {
 			for _, field := range message.Fields() {
@@ -261,7 +261,7 @@ func newFieldCheckFunc(
 
 func newOneofCheckFunc(
 	f func(addFunc, bufsrc.Oneof) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newMessageCheckFunc(
 		func(add addFunc, message bufsrc.Message) error {
 			for _, oneof := range message.Oneofs() {
@@ -276,7 +276,7 @@ func newOneofCheckFunc(
 
 func newServiceCheckFunc(
 	f func(addFunc, bufsrc.Service) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
 		func(add addFunc, file bufsrc.File) error {
 			for _, service := range file.Services() {
@@ -291,7 +291,7 @@ func newServiceCheckFunc(
 
 func newMethodCheckFunc(
 	f func(addFunc, bufsrc.Method) error,
-) func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newServiceCheckFunc(
 		func(add addFunc, service bufsrc.Service) error {
 			for _, method := range service.Methods() {

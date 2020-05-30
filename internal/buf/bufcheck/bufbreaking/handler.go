@@ -34,7 +34,7 @@ func newHandler(
 ) *handler {
 	return &handler{
 		logger: logger,
-		runner: internal.NewRunner(logger),
+		runner: internal.NewRunner(logger, ""),
 	}
 }
 
