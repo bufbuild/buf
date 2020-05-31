@@ -99,8 +99,10 @@ func newBuilder() *builder {
 // newRunFunc creates a new run function.
 func (b *builder) newRunFunc(fn func(context.Context, *container) error) func(context.Context, app.Container) error {
 	return b.Builder.NewRunFunc(
-		func(ctx context.Context, container applog.Container) error {
-			return fn(ctx, newContainer(container, b.flags))
+		func(ctx context.Context, applogContainer applog.Container) error {
+			container := newContainer(applogContainer, b.flags)
+			checkDeprecated(ctx, container)
+			return fn(ctx, container)
 		},
 	)
 }
@@ -213,4 +215,13 @@ func (b *builder) bindCheckLsCheckersFormat(flagSet *pflag.FlagSet) {
 func (b *builder) bindExperimentalGitClone(flagSet *pflag.FlagSet) {
 	flagSet.BoolVar(&b.ExperimentalGitClone, experimentalGitCloneFlagName, false, "Use the git binary to clone instead of the internal git library.")
 	_ = flagSet.MarkHidden(experimentalGitCloneFlagName)
+}
+
+func checkDeprecated(ctx context.Context, container *container) {
+	if container.ExperimentalGitClone {
+		container.Logger().Sugar().Warnf(
+			"Flag --%s is deprecated. The formerly-experimental git clone functionality is now the only clone functionality used, and this flag has no effect.",
+			experimentalGitCloneFlagName,
+		)
+	}
 }
