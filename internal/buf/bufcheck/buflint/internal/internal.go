@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
@@ -151,12 +152,17 @@ func checkEnumValueUpperSnakeCase(add addFunc, enumValue bufsrc.EnumValue) error
 }
 
 // CheckEnumZeroValueSuffix is a check function.
-var CheckEnumZeroValueSuffix = func(id string, files []bufsrc.File, suffix string) ([]bufanalysis.FileAnnotation, error) {
+var CheckEnumZeroValueSuffix = func(
+	id string,
+	ignoreFunc internal.IgnoreFunc,
+	files []bufsrc.File,
+	suffix string,
+) ([]bufanalysis.FileAnnotation, error) {
 	return newEnumValueCheckFunc(
 		func(add addFunc, enumValue bufsrc.EnumValue) error {
 			return checkEnumZeroValueSuffix(add, enumValue, suffix)
 		},
-	)(id, files)
+	)(id, ignoreFunc, files)
 }
 
 func checkEnumZeroValueSuffix(add addFunc, enumValue bufsrc.EnumValue, suffix string) error {
@@ -461,6 +467,7 @@ func checkRPCPascalCase(add addFunc, method bufsrc.Method) error {
 // CheckRPCRequestResponseUnique is a check function.
 var CheckRPCRequestResponseUnique = func(
 	id string,
+	ignoreFunc internal.IgnoreFunc,
 	files []bufsrc.File,
 	allowSameRequestResponse bool,
 	allowGoogleProtobufEmptyRequests bool,
@@ -476,7 +483,7 @@ var CheckRPCRequestResponseUnique = func(
 				allowGoogleProtobufEmptyResponses,
 			)
 		},
-	)(id, files)
+	)(id, ignoreFunc, files)
 }
 
 func checkRPCRequestResponseUnique(
@@ -560,12 +567,17 @@ func checkRPCRequestResponseUnique(
 }
 
 // CheckRPCRequestStandardName is a check function.
-var CheckRPCRequestStandardName = func(id string, files []bufsrc.File, allowGoogleProtobufEmptyRequests bool) ([]bufanalysis.FileAnnotation, error) {
+var CheckRPCRequestStandardName = func(
+	id string,
+	ignoreFunc internal.IgnoreFunc,
+	files []bufsrc.File,
+	allowGoogleProtobufEmptyRequests bool,
+) ([]bufanalysis.FileAnnotation, error) {
 	return newMethodCheckFunc(
 		func(add addFunc, method bufsrc.Method) error {
 			return checkRPCRequestStandardName(add, method, allowGoogleProtobufEmptyRequests)
 		},
-	)(id, files)
+	)(id, ignoreFunc, files)
 }
 
 func checkRPCRequestStandardName(add addFunc, method bufsrc.Method, allowGoogleProtobufEmptyRequests bool) error {
@@ -590,12 +602,17 @@ func checkRPCRequestStandardName(add addFunc, method bufsrc.Method, allowGoogleP
 }
 
 // CheckRPCResponseStandardName is a check function.
-var CheckRPCResponseStandardName = func(id string, files []bufsrc.File, allowGoogleProtobufEmptyResponses bool) ([]bufanalysis.FileAnnotation, error) {
+var CheckRPCResponseStandardName = func(
+	id string,
+	ignoreFunc internal.IgnoreFunc,
+	files []bufsrc.File,
+	allowGoogleProtobufEmptyResponses bool,
+) ([]bufanalysis.FileAnnotation, error) {
 	return newMethodCheckFunc(
 		func(add addFunc, method bufsrc.Method) error {
 			return checkRPCResponseStandardName(add, method, allowGoogleProtobufEmptyResponses)
 		},
-	)(id, files)
+	)(id, ignoreFunc, files)
 }
 
 func checkRPCResponseStandardName(add addFunc, method bufsrc.Method, allowGoogleProtobufEmptyResponses bool) error {
@@ -632,12 +649,17 @@ func checkServicePascalCase(add addFunc, service bufsrc.Service) error {
 }
 
 // CheckServiceSuffix is a check function.
-var CheckServiceSuffix = func(id string, files []bufsrc.File, suffix string) ([]bufanalysis.FileAnnotation, error) {
+var CheckServiceSuffix = func(
+	id string,
+	ignoreFunc internal.IgnoreFunc,
+	files []bufsrc.File,
+	suffix string,
+) ([]bufanalysis.FileAnnotation, error) {
 	return newServiceCheckFunc(
 		func(add addFunc, service bufsrc.Service) error {
 			return checkServiceSuffix(add, service, suffix)
 		},
-	)(id, files)
+	)(id, ignoreFunc, files)
 }
 
 func checkServiceSuffix(add addFunc, service bufsrc.Service, suffix string) error {

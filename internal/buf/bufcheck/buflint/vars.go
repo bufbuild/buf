@@ -358,8 +358,8 @@ var (
 			if configBuilder.EnumZeroValueSuffix == "" {
 				return nil, errors.New("enum_zero_value_suffix is empty")
 			}
-			return bufcheckinternal.CheckFunc(func(id string, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
-				return internal.CheckEnumZeroValueSuffix(id, files, configBuilder.EnumZeroValueSuffix)
+			return bufcheckinternal.CheckFunc(func(id string, ignoreFunc bufcheckinternal.IgnoreFunc, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+				return internal.CheckEnumZeroValueSuffix(id, ignoreFunc, files, configBuilder.EnumZeroValueSuffix)
 			}), nil
 		},
 	)
@@ -479,9 +479,10 @@ var (
 			return "RPCs request and response types are only used in one RPC (configurable)", nil
 		},
 		func(configBuilder bufcheckinternal.ConfigBuilder) (bufcheckinternal.CheckFunc, error) {
-			return bufcheckinternal.CheckFunc(func(id string, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+			return bufcheckinternal.CheckFunc(func(id string, ignoreFunc bufcheckinternal.IgnoreFunc, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 				return internal.CheckRPCRequestResponseUnique(
 					id,
+					ignoreFunc,
 					files,
 					configBuilder.RPCAllowSameRequestResponse,
 					configBuilder.RPCAllowGoogleProtobufEmptyRequests,
@@ -496,9 +497,10 @@ var (
 			return "RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable)", nil
 		},
 		func(configBuilder bufcheckinternal.ConfigBuilder) (bufcheckinternal.CheckFunc, error) {
-			return bufcheckinternal.CheckFunc(func(id string, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+			return bufcheckinternal.CheckFunc(func(id string, ignoreFunc bufcheckinternal.IgnoreFunc, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 				return internal.CheckRPCRequestStandardName(
 					id,
+					ignoreFunc,
 					files,
 					configBuilder.RPCAllowGoogleProtobufEmptyRequests,
 				)
@@ -511,9 +513,10 @@ var (
 			return "RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable)", nil
 		},
 		func(configBuilder bufcheckinternal.ConfigBuilder) (bufcheckinternal.CheckFunc, error) {
-			return bufcheckinternal.CheckFunc(func(id string, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+			return bufcheckinternal.CheckFunc(func(id string, ignoreFunc bufcheckinternal.IgnoreFunc, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 				return internal.CheckRPCResponseStandardName(
 					id,
+					ignoreFunc,
 					files,
 					configBuilder.RPCAllowGoogleProtobufEmptyResponses,
 				)
@@ -537,17 +540,17 @@ var (
 			if configBuilder.ServiceSuffix == "" {
 				return nil, errors.New("service_suffix is empty")
 			}
-			return bufcheckinternal.CheckFunc(func(id string, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
-				return internal.CheckServiceSuffix(id, files, configBuilder.ServiceSuffix)
+			return bufcheckinternal.CheckFunc(func(id string, ignoreFunc bufcheckinternal.IgnoreFunc, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+				return internal.CheckServiceSuffix(id, ignoreFunc, files, configBuilder.ServiceSuffix)
 			}), nil
 		},
 	)
 )
 
 func newAdapter(
-	f func(string, []bufsrc.File) ([]bufanalysis.FileAnnotation, error),
-) func(string, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
-	return func(id string, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
-		return f(id, files)
+	f func(string, bufcheckinternal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error),
+) func(string, bufcheckinternal.IgnoreFunc, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc bufcheckinternal.IgnoreFunc, _ []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+		return f(id, ignoreFunc, files)
 	}
 }

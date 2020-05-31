@@ -24,13 +24,15 @@ import (
 // Helper is a helper for checkers.
 type Helper struct {
 	id              string
+	ignoreFunc      IgnoreFunc
 	fileAnnotations []bufanalysis.FileAnnotation
 }
 
 // NewHelper returns a new Helper for the given id.
-func NewHelper(id string) *Helper {
+func NewHelper(id string, ignoreFunc IgnoreFunc) *Helper {
 	return &Helper{
-		id: id,
+		id:         id,
+		ignoreFunc: ignoreFunc,
 	}
 }
 
@@ -44,6 +46,9 @@ func (h *Helper) AddFileAnnotationf(
 	format string,
 	args ...interface{},
 ) {
+	if h.ignoreFunc != nil && h.ignoreFunc(h.id, descriptor, location) {
+		return
+	}
 	h.fileAnnotations = append(
 		h.fileAnnotations,
 		newFileAnnotationf(

@@ -24,6 +24,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const globalIgnorePrefix = "buf:lint:ignore"
+
 type handler struct {
 	logger *zap.Logger
 	runner *internal.Runner
@@ -32,7 +34,7 @@ type handler struct {
 func newHandler(logger *zap.Logger) *handler {
 	return &handler{
 		logger: logger,
-		runner: internal.NewRunner(logger),
+		runner: internal.NewRunner(logger, globalIgnorePrefix),
 	}
 }
 

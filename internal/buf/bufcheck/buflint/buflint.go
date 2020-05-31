@@ -63,6 +63,7 @@ type Config struct {
 	Checkers            []Checker
 	IgnoreIDToRootPaths map[string]map[string]struct{}
 	IgnoreRootPaths     map[string]struct{}
+	AllowCommentIgnores bool
 }
 
 // GetCheckers returns the checkers for the given categories.
@@ -81,6 +82,7 @@ func NewConfig(externalConfig buflintcfg.ExternalConfig) (*Config, error) {
 		Except:                               externalConfig.Except,
 		IgnoreRootPaths:                      externalConfig.Ignore,
 		IgnoreIDOrCategoryToRootPaths:        externalConfig.IgnoreOnly,
+		AllowCommentIgnores:                  externalConfig.AllowCommentIgnores,
 		EnumZeroValueSuffix:                  externalConfig.EnumZeroValueSuffix,
 		RPCAllowSameRequestResponse:          externalConfig.RPCAllowSameRequestResponse,
 		RPCAllowGoogleProtobufEmptyRequests:  externalConfig.RPCAllowGoogleProtobufEmptyRequests,
@@ -115,6 +117,7 @@ func internalConfigToConfig(internalConfig *internal.Config) *Config {
 		Checkers:            internalCheckersToCheckers(internalConfig.Checkers),
 		IgnoreIDToRootPaths: internalConfig.IgnoreIDToRootPaths,
 		IgnoreRootPaths:     internalConfig.IgnoreRootPaths,
+		AllowCommentIgnores: internalConfig.AllowCommentIgnores,
 	}
 }
 
@@ -123,6 +126,7 @@ func configToInternalConfig(config *Config) *internal.Config {
 		Checkers:            checkersToInternalCheckers(config.Checkers),
 		IgnoreIDToRootPaths: config.IgnoreIDToRootPaths,
 		IgnoreRootPaths:     config.IgnoreRootPaths,
+		AllowCommentIgnores: config.AllowCommentIgnores,
 	}
 }
 
