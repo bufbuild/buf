@@ -30,9 +30,9 @@ type addFunc func(bufsrc.Descriptor, bufsrc.Location, string, ...interface{})
 
 func newFilesCheckFunc(
 	f func(addFunc, []bufsrc.File, []bufsrc.File) error,
-) func(string, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
-	return func(id string, previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
-		helper := internal.NewHelper(id)
+) func(string, internal.IgnoreFunc, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+		helper := internal.NewHelper(id, ignoreFunc)
 		if err := f(helper.AddFileAnnotationf, previousFiles, files); err != nil {
 			return nil, err
 		}
@@ -42,7 +42,7 @@ func newFilesCheckFunc(
 
 func newFilePairCheckFunc(
 	f func(addFunc, bufsrc.File, bufsrc.File) error,
-) func(string, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, previousFiles []bufsrc.File, files []bufsrc.File) error {
 			previousFilePathToFile, err := bufsrc.FilePathToFile(previousFiles...)
@@ -67,7 +67,7 @@ func newFilePairCheckFunc(
 
 func newEnumPairCheckFunc(
 	f func(addFunc, bufsrc.Enum, bufsrc.Enum) error,
-) func(string, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, previousFiles []bufsrc.File, files []bufsrc.File) error {
 			previousFullNameToEnum, err := bufsrc.FullNameToEnum(previousFiles...)
@@ -94,7 +94,7 @@ func newEnumPairCheckFunc(
 // map is from name to EnumValue for the given number
 func newEnumValuePairCheckFunc(
 	f func(addFunc, map[string]bufsrc.EnumValue, map[string]bufsrc.EnumValue) error,
-) func(string, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newEnumPairCheckFunc(
 		func(add addFunc, previousEnum bufsrc.Enum, enum bufsrc.Enum) error {
 			previousNumberToNameToEnumValue, err := bufsrc.NumberToNameToEnumValue(previousEnum)
@@ -119,7 +119,7 @@ func newEnumValuePairCheckFunc(
 
 func newMessagePairCheckFunc(
 	f func(addFunc, bufsrc.Message, bufsrc.Message) error,
-) func(string, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, previousFiles []bufsrc.File, files []bufsrc.File) error {
 			previousFullNameToMessage, err := bufsrc.FullNameToMessage(previousFiles...)
@@ -144,7 +144,7 @@ func newMessagePairCheckFunc(
 
 func newFieldPairCheckFunc(
 	f func(addFunc, bufsrc.Field, bufsrc.Field) error,
-) func(string, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newMessagePairCheckFunc(
 		func(add addFunc, previousMessage bufsrc.Message, message bufsrc.Message) error {
 			previousNumberToField, err := bufsrc.NumberToMessageField(previousMessage)
@@ -169,7 +169,7 @@ func newFieldPairCheckFunc(
 
 func newServicePairCheckFunc(
 	f func(addFunc, bufsrc.Service, bufsrc.Service) error,
-) func(string, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
 		func(add addFunc, previousFiles []bufsrc.File, files []bufsrc.File) error {
 			previousFullNameToService, err := bufsrc.FullNameToService(previousFiles...)
@@ -194,7 +194,7 @@ func newServicePairCheckFunc(
 
 func newMethodPairCheckFunc(
 	f func(addFunc, bufsrc.Method, bufsrc.Method) error,
-) func(string, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+) func(string, internal.IgnoreFunc, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
 	return newServicePairCheckFunc(
 		func(add addFunc, previousService bufsrc.Service, service bufsrc.Service) error {
 			previousNameToMethod, err := bufsrc.NameToMethod(previousService)

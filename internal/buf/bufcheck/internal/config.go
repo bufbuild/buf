@@ -36,8 +36,10 @@ type Config struct {
 	// created from this package, i.e. created wth ConfigBuilder.NewConfig.
 	Checkers []*Checker
 
-	IgnoreIDToRootPaths map[string]map[string]struct{}
 	IgnoreRootPaths     map[string]struct{}
+	IgnoreIDToRootPaths map[string]map[string]struct{}
+
+	AllowCommentIgnores bool
 }
 
 // ConfigBuilder is a config builder.
@@ -45,8 +47,10 @@ type ConfigBuilder struct {
 	Use    []string
 	Except []string
 
-	IgnoreIDOrCategoryToRootPaths map[string][]string
 	IgnoreRootPaths               []string
+	IgnoreIDOrCategoryToRootPaths map[string][]string
+
+	AllowCommentIgnores bool
 
 	EnumZeroValueSuffix                  string
 	RPCAllowSameRequestResponse          bool
@@ -197,6 +201,7 @@ func newConfigForCheckerBuilders(
 		Checkers:            resultCheckers,
 		IgnoreIDToRootPaths: ignoreIDToRootPaths,
 		IgnoreRootPaths:     ignoreRootPaths,
+		AllowCommentIgnores: configBuilder.AllowCommentIgnores,
 	}, nil
 }
 

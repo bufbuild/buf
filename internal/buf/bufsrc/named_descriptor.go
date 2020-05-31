@@ -63,5 +63,13 @@ func (n *namedDescriptor) Name() string {
 }
 
 func (n *namedDescriptor) NameLocation() Location {
-	return n.getLocation(n.namePath)
+	nameLocation := n.getLocation(n.namePath)
+	location := n.getLocation(n.path)
+	if nameLocation != nil {
+		if location != nil {
+			return newMergeCommentLocation(nameLocation, location)
+		}
+		return nameLocation
+	}
+	return location
 }

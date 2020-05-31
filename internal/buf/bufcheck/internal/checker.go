@@ -22,8 +22,11 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufsrc"
 )
 
+// IgnoreFunc is an ignore function.
+type IgnoreFunc func(id string, descriptor bufsrc.Descriptor, location bufsrc.Location) bool
+
 // CheckFunc is a check function.
-type CheckFunc func(id string, previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error)
+type CheckFunc func(id string, ignoreFunc IgnoreFunc, previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error)
 
 // Checker provides a base embeddable checker.
 type Checker struct {
@@ -79,8 +82,8 @@ func (c *Checker) MarshalJSON() ([]byte, error) {
 	return json.Marshal(checkerJSON{ID: c.id, Categories: c.categories, Purpose: c.purpose})
 }
 
-func (c *Checker) check(previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
-	return c.checkFunc(c.ID(), previousFiles, files)
+func (c *Checker) check(ignoreFunc IgnoreFunc, previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	return c.checkFunc(c.ID(), ignoreFunc, previousFiles, files)
 }
 
 type checkerJSON struct {

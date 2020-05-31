@@ -16,24 +16,30 @@ package internal
 
 import (
 	"context"
+	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
 // Runner is a runner.
 type Runner struct {
-	logger *zap.Logger
+	logger       *zap.Logger
+	ignorePrefix string
 }
 
 // NewRunner returns a new Runner.
-func NewRunner(logger *zap.Logger) *Runner {
+//
+// ignorePrefix should be empty if comment ignores are not allowed
+func NewRunner(logger *zap.Logger, ignorePrefix string) *Runner {
 	return &Runner{
-		logger: logger,
+		logger:       logger,
+		ignorePrefix: ignorePrefix,
 	}
 }
 
@@ -45,12 +51,13 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []bufs
 	}
 	defer instrument.Start(r.logger, "check", zap.Int("num_files", len(files)), zap.Int("num_checkers", len(checkers))).End()
 
+	ignoreFunc := r.newIgnoreFunc(config)
 	var fileAnnotations []bufanalysis.FileAnnotation
 	resultC := make(chan *result, len(checkers))
 	for _, checker := range checkers {
 		checker := checker
 		go func() {
-			iFileAnnotations, iErr := checker.check(previousFiles, files)
+			iFileAnnotations, iErr := checker.check(ignoreFunc, previousFiles, files)
 			resultC <- newResult(iFileAnnotations, iErr)
 		}()
 	}
@@ -67,39 +74,58 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []bufs
 	if err != nil {
 		return nil, err
 	}
+	bufanalysis.SortFileAnnotations(fileAnnotations)
+	return fileAnnotations, nil
 
-	if len(config.IgnoreRootPaths) == 0 && len(config.IgnoreIDToRootPaths) == 0 {
-		bufanalysis.SortFileAnnotations(fileAnnotations)
-		return fileAnnotations, nil
-	}
-
-	filteredFileAnnotations := make([]bufanalysis.FileAnnotation, 0, len(fileAnnotations))
-	for _, fileAnnotation := range fileAnnotations {
-		if !shouldIgnoreFileAnnotation(fileAnnotation, config.IgnoreRootPaths, config.IgnoreIDToRootPaths) {
-			filteredFileAnnotations = append(filteredFileAnnotations, fileAnnotation)
-		}
-	}
-	bufanalysis.SortFileAnnotations(filteredFileAnnotations)
-	return filteredFileAnnotations, nil
 }
 
-func shouldIgnoreFileAnnotation(fileAnnotation bufanalysis.FileAnnotation, ignoreAllRootPaths map[string]struct{}, ignoreIDToRootPaths map[string]map[string]struct{}) bool {
-	fileRef := fileAnnotation.FileRef()
-	if fileRef == nil {
+func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
+	if r.ignorePrefix == "" || !config.AllowCommentIgnores {
+		return func(id string, descriptor bufsrc.Descriptor, location bufsrc.Location) bool {
+			return idIsIgnored(id, descriptor, config)
+		}
+	}
+	return func(id string, descriptor bufsrc.Descriptor, location bufsrc.Location) bool {
+		return locationIsIgnored(id, r.ignorePrefix, location, config) || idIsIgnored(id, descriptor, config)
+	}
+}
+
+func idIsIgnored(id string, descriptor bufsrc.Descriptor, config *Config) bool {
+	if descriptor == nil {
 		return false
 	}
-	path := fileRef.RootRelFilePath()
-	if normalpath.MapContainsMatch(ignoreAllRootPaths, path) {
+	path := descriptor.RootRelFilePath()
+	if normalpath.MapContainsMatch(config.IgnoreRootPaths, path) {
 		return true
 	}
-	if fileAnnotation.Type() == "" {
+	if id == "" {
 		return false
 	}
-	ignoreRootPaths, ok := ignoreIDToRootPaths[fileAnnotation.Type()]
+	ignoreRootPaths, ok := config.IgnoreIDToRootPaths[id]
 	if !ok {
 		return false
 	}
 	return normalpath.MapContainsMatch(ignoreRootPaths, path)
+}
+
+func locationIsIgnored(id string, ignorePrefix string, location bufsrc.Location, config *Config) bool {
+	if id == "" || ignorePrefix == "" {
+		return false
+	}
+	if location == nil {
+		return false
+	}
+	leadingComments := location.LeadingComments()
+	if leadingComments == "" {
+		return false
+	}
+	fullIgnorePrefix := ignorePrefix + " " + id
+	for _, line := range stringutil.SplitTrimLinesNoEmpty(leadingComments) {
+		if strings.HasPrefix(line, fullIgnorePrefix) {
+			return true
+		}
+	}
+	return false
 }
 
 type result struct {

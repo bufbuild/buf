@@ -97,6 +97,9 @@ type NamedDescriptor interface {
 	// If the backing descriptor does not have name-level resolution, this will
 	// attempt to return a location of the entire descriptor.
 	//
+	// If the backing descriptor has comments for the entire descriptor, these
+	// will be added to the named location.
+	//
 	// Can return nil.
 	NameLocation() Location
 }

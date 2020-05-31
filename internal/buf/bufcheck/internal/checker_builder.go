@@ -88,7 +88,7 @@ func newNopPurpose(purpose string) func(ConfigBuilder) (string, error) {
 }
 
 func newNopCheckFunc(
-	f func(string, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error),
+	f func(string, IgnoreFunc, []bufsrc.File, []bufsrc.File) ([]bufanalysis.FileAnnotation, error),
 ) func(ConfigBuilder) (CheckFunc, error) {
 	return func(ConfigBuilder) (CheckFunc, error) {
 		return f, nil
