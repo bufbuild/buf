@@ -739,10 +739,10 @@ func TestRunIgnores3(t *testing.T) {
 	)
 }
 
-func TestCommentDrivenIgnoresOff(t *testing.T) {
+func TestCommentIgnoresOff(t *testing.T) {
 	testLint(
 		t,
-		"comment_driven_ignores",
+		"comment_ignores",
 		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 9, 1, 9, 11, "PACKAGE_DIRECTORY_MATCH"),
 		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 9, 1, 9, 11, "PACKAGE_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotationFunc("a.proto", ".", 9, 1, 9, 11, "PACKAGE_VERSION_SUFFIX"),
@@ -778,12 +778,12 @@ func TestCommentDrivenIgnoresOff(t *testing.T) {
 	)
 }
 
-func TestCommentDrivenIgnoresOn(t *testing.T) {
+func TestCommentIgnoresOn(t *testing.T) {
 	testLintExternalConfigModifier(
 		t,
-		"comment_driven_ignores",
+		"comment_ignores",
 		func(externalConfig *bufconfig.ExternalConfig) {
-			externalConfig.Lint.AllowCommentDrivenIgnores = true
+			externalConfig.Lint.AllowCommentIgnores = true
 		},
 	)
 }

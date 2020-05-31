@@ -80,7 +80,7 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []bufs
 }
 
 func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
-	if r.ignorePrefix == "" || !config.AllowCommentDrivenIgnores {
+	if r.ignorePrefix == "" || !config.AllowCommentIgnores {
 		return func(id string, descriptor bufsrc.Descriptor, location bufsrc.Location) bool {
 			return idIsIgnored(id, descriptor, config)
 		}

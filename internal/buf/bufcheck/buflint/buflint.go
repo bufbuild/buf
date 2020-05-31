@@ -60,10 +60,10 @@ type Config struct {
 	//
 	// Checkers will be sorted by first categories, then id when Configs are
 	// created from this package, i.e. created wth ConfigBuilder.NewConfig.
-	Checkers                  []Checker
-	IgnoreIDToRootPaths       map[string]map[string]struct{}
-	IgnoreRootPaths           map[string]struct{}
-	AllowCommentDrivenIgnores bool
+	Checkers            []Checker
+	IgnoreIDToRootPaths map[string]map[string]struct{}
+	IgnoreRootPaths     map[string]struct{}
+	AllowCommentIgnores bool
 }
 
 // GetCheckers returns the checkers for the given categories.
@@ -82,7 +82,7 @@ func NewConfig(externalConfig buflintcfg.ExternalConfig) (*Config, error) {
 		Except:                               externalConfig.Except,
 		IgnoreRootPaths:                      externalConfig.Ignore,
 		IgnoreIDOrCategoryToRootPaths:        externalConfig.IgnoreOnly,
-		AllowCommentDrivenIgnores:            externalConfig.AllowCommentDrivenIgnores,
+		AllowCommentIgnores:                  externalConfig.AllowCommentIgnores,
 		EnumZeroValueSuffix:                  externalConfig.EnumZeroValueSuffix,
 		RPCAllowSameRequestResponse:          externalConfig.RPCAllowSameRequestResponse,
 		RPCAllowGoogleProtobufEmptyRequests:  externalConfig.RPCAllowGoogleProtobufEmptyRequests,
@@ -114,19 +114,19 @@ func GetAllCheckers(categories ...string) ([]bufcheck.Checker, error) {
 
 func internalConfigToConfig(internalConfig *internal.Config) *Config {
 	return &Config{
-		Checkers:                  internalCheckersToCheckers(internalConfig.Checkers),
-		IgnoreIDToRootPaths:       internalConfig.IgnoreIDToRootPaths,
-		IgnoreRootPaths:           internalConfig.IgnoreRootPaths,
-		AllowCommentDrivenIgnores: internalConfig.AllowCommentDrivenIgnores,
+		Checkers:            internalCheckersToCheckers(internalConfig.Checkers),
+		IgnoreIDToRootPaths: internalConfig.IgnoreIDToRootPaths,
+		IgnoreRootPaths:     internalConfig.IgnoreRootPaths,
+		AllowCommentIgnores: internalConfig.AllowCommentIgnores,
 	}
 }
 
 func configToInternalConfig(config *Config) *internal.Config {
 	return &internal.Config{
-		Checkers:                  checkersToInternalCheckers(config.Checkers),
-		IgnoreIDToRootPaths:       config.IgnoreIDToRootPaths,
-		IgnoreRootPaths:           config.IgnoreRootPaths,
-		AllowCommentDrivenIgnores: config.AllowCommentDrivenIgnores,
+		Checkers:            checkersToInternalCheckers(config.Checkers),
+		IgnoreIDToRootPaths: config.IgnoreIDToRootPaths,
+		IgnoreRootPaths:     config.IgnoreRootPaths,
+		AllowCommentIgnores: config.AllowCommentIgnores,
 	}
 }
 
