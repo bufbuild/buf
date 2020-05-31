@@ -215,6 +215,7 @@ func testBuildCodeGeneratorRequest(
 		realFilePaths,
 		true,
 		true,
+		true,
 	)
 	require.NoError(t, err)
 	nonImportRootRelFilePaths := make(map[string]struct{}, len(fileToGenerate))

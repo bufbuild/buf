@@ -1,6 +1,6 @@
 BUF_BIN ?= cmd/buf
 
-PROTOREFLECT_VERSION := b0c184e143c46b66d6a7a84dfe2756858cd5bdc4
+PROTOREFLECT_VERSION := b1eb09894abbaf4e27a82de2875b03f49266afd6
 GO_GET_PKGS := $(GO_GET_PKGS) github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
 GO_BINS := $(GO_BINS) $(BUF_BIN) cmd/protoc-gen-buf-check-breaking cmd/protoc-gen-buf-check-lint
 DOCKER_BINS := $(DOCKER_BINS) buf
