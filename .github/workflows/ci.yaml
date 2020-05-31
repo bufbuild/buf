@@ -14,8 +14,11 @@
 
 name: ci
 on: push
+env:
+  MAKEFLAGS: "-j 2"
 jobs:
-  linux:
+  #linux:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -51,27 +54,27 @@ jobs:
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
           DOCKER_LATEST_BRANCH: master
           DOCKER_VERSION_TAG_PREFIX: v
-  mac:
-    runs-on: macos-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v1
-        with:
-          ref: master
-      - name: checkout-master
-        if: success()
-        run: git checkout master
-      - name: checkout
-        if: success()
-        uses: actions/checkout@v1
-      - name: setup
-        if: success()
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.14.3
-      - name: ci
-        if: success()
-        run: make ci
+  #mac:
+    #runs-on: macos-latest
+    #steps:
+      #- name: checkout
+        #uses: actions/checkout@v1
+        #with:
+          #ref: master
+      #- name: checkout-master
+        #if: success()
+        #run: git checkout master
+      #- name: checkout
+        #if: success()
+        #uses: actions/checkout@v1
+      #- name: setup
+        #if: success()
+        #uses: actions/setup-go@v1
+        #with:
+          #go-version: 1.14.3
+      #- name: ci
+        #if: success()
+        #run: make ci
   #windows:
     #runs-on: windows-latest
     #steps:
