@@ -7,7 +7,7 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,GOBIN)
 
 # Settable
-# https://github.com/kisielk/errcheck/commits/master 20200103 checked 20200311
+# https://github.com/kisielk/errcheck/commits/master 20200103 checked 20200531
 ERRCHECK_VERSION ?= e14f8d59a22d460d56c5ee92507cd94c78fbf274
 
 ERRCHECK := $(CACHE_VERSIONS)/errcheck/$(ERRCHECK_VERSION)
