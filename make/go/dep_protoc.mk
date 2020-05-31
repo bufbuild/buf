@@ -10,8 +10,8 @@ $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf/releases 20200214 checked 20200311
-PROTOC_VERSION ?= 3.11.4
+# https://github.com/protocolbuffers/protobuf/releases 20200526 checked 20200531
+PROTOC_VERSION ?= 3.12.2
 
 ifeq ($(UNAME_OS),Darwin)
 PROTOC_OS := osx
@@ -37,3 +37,6 @@ $(PROTOC):
 	@touch $(PROTOC)
 
 dockerdeps:: $(PROTOC)
+
+.PHONY: protocpre
+protocpre::

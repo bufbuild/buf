@@ -23,7 +23,7 @@ protocgengoclean:
 	rm -rf "$(PROTOC_GEN_GO_OUT)"
 
 .PHONY: protocgengo
-protocgengo: protocgengoclean $(PROTOC) $(PROTOC_GEN_GO)
+protocgengo: protocpre protocgengoclean $(PROTOC) $(PROTOC_GEN_GO)
 	bash $(MAKEGO)/scripts/protoc_gen_plugin.bash \
 		"--proto_path=$(PROTO_PATH)" \
 		"--proto_include_path=$(CACHE_INCLUDE)" \
