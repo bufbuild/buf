@@ -6,7 +6,7 @@ require (
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/protobuf v1.4.2
-	github.com/jhump/protoreflect v1.6.2-0.20200531070432-b1eb09894abb
+	github.com/jhump/protoreflect v1.6.2-0.20200531235624-8ea9118c58b9
 	github.com/klauspost/compress v1.10.6
 	github.com/klauspost/pgzip v1.2.4
 	github.com/pkg/profile v1.5.0
