@@ -21,7 +21,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 )
 
-const version = "0.16.0-dev"
+const version = "0.16.0"
 
 // Main is the main.
 func Main(use string, options ...RootCommandOption) {
