@@ -105,8 +105,16 @@ func TestCompareGoogleapis(t *testing.T) {
 }
 
 func TestCompareCustomOptions(t *testing.T) {
+	testCompare(t, "customoptions1")
+}
+
+func TestCompareProto3Optional(t *testing.T) {
+	testCompare(t, "proto3optional1")
+}
+
+func testCompare(t *testing.T, relDirPath string) {
 	t.Parallel()
-	dirPath := filepath.Join("testdata", "customoptions1")
+	dirPath := filepath.Join("testdata", relDirPath)
 	image, fileAnnotations := testBuild(t, false, dirPath)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
@@ -244,6 +252,7 @@ func testBuildProtoc(
 		realFilePaths,
 		includeImports,
 		includeSourceInfo,
+		true,
 	)
 	require.NoError(t, err)
 	require.NoError(t, readBucketCloser.Close())

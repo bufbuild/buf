@@ -37,6 +37,7 @@ func GetFileDescriptorSet(
 	realFilePaths []string,
 	includeImports bool,
 	includeSourceInfo bool,
+	experimentalAllowProto3Optional bool,
 ) (_ *descriptorpb.FileDescriptorSet, retErr error) {
 	protocBinPath, err := exec.LookPath("protoc")
 	if err != nil {
@@ -78,6 +79,9 @@ func GetFileDescriptorSet(
 	}
 	if includeSourceInfo {
 		args = append(args, "--include_source_info")
+	}
+	if experimentalAllowProto3Optional {
+		args = append(args, "--experimental_allow_proto3_optional")
 	}
 	args = append(args, fmt.Sprintf("--descriptor_set_out=%s", tempFilePath))
 	args = append(args, realFilePaths...)
