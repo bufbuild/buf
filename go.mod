@@ -17,5 +17,5 @@ require (
 	go.uber.org/zap v1.15.0
 	google.golang.org/genproto v0.0.0-20200602104108-2bb8d6132df6 // indirect
 	google.golang.org/protobuf v1.24.0
-	gopkg.in/yaml.v3 v3.0.0-20200602140019-6ec2bf8d378b
+	gopkg.in/yaml.v3 v3.0.0-20200602154603-c1a7af8cc6cd
 )
