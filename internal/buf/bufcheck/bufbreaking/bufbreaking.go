@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
-	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking/bufbreakingcfg"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"go.uber.org/zap"
@@ -77,7 +76,7 @@ func (c *Config) GetCheckers(categories ...string) ([]bufcheck.Checker, error) {
 }
 
 // NewConfig returns a new Config.
-func NewConfig(externalConfig bufbreakingcfg.ExternalConfig) (*Config, error) {
+func NewConfig(externalConfig ExternalConfig) (*Config, error) {
 	internalConfig, err := internal.ConfigBuilder{
 		Use:                           externalConfig.Use,
 		Except:                        externalConfig.Except,
@@ -100,11 +99,21 @@ func NewConfig(externalConfig bufbreakingcfg.ExternalConfig) (*Config, error) {
 //
 // Should only be used for printing.
 func GetAllCheckers(categories ...string) ([]bufcheck.Checker, error) {
-	config, err := NewConfig(bufbreakingcfg.ExternalConfig{Use: v1AllCategories})
+	config, err := NewConfig(ExternalConfig{Use: v1AllCategories})
 	if err != nil {
 		return nil, err
 	}
 	return checkersToBufcheckCheckers(config.Checkers, categories)
+}
+
+// ExternalConfig is an external config.
+type ExternalConfig struct {
+	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
+	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
+	// IgnoreRootPaths
+	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
+	// IgnoreIDOrCategoryToRootPaths
+	IgnoreOnly map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 }
 
 func internalConfigToConfig(internalConfig *internal.Config) *Config {

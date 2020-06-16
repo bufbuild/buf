@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
+	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -51,7 +51,7 @@ func validateFileDescriptorProto(fileDescriptorProto *descriptorpb.FileDescripto
 }
 
 // we validate the FileDescriptorProtos as part of NewFile
-func validateProtoImageExceptFileDescriptorProtos(protoImage *imagev1beta1.Image) error {
+func validateProtoImageExceptFileDescriptorProtos(protoImage *imagev1.Image) error {
 	if protoImage == nil {
 		return errors.New("nil Image")
 	}
@@ -65,7 +65,7 @@ func validateProtoImageExceptFileDescriptorProtos(protoImage *imagev1beta1.Image
 }
 
 func validateProtoImageExtension(
-	protoImageExtension *imagev1beta1.ImageExtension,
+	protoImageExtension *imagev1.ImageExtension,
 	numFiles uint32,
 ) error {
 	seenFileIndexes := make(map[uint32]struct{}, len(protoImageExtension.ImageImportRefs))

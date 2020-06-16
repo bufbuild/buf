@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package bufimage
 import (
 	"errors"
 
-	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
+	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
 )
 
-func getImportFileIndexes(protoImage *imagev1beta1.Image) (map[int]struct{}, error) {
+func getImportFileIndexes(protoImage *imagev1.Image) (map[int]struct{}, error) {
 	imageImportRefs := protoImage.GetBufbuildImageExtension().GetImageImportRefs()
 	importFileIndexes := make(map[int]struct{}, len(imageImportRefs))
 	for _, imageImportRef := range imageImportRefs {

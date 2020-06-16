@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@ package bufconfig
 import (
 	"context"
 
-	"github.com/bufbuild/buf/internal/buf/bufbuild/bufbuildcfg"
+	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking/bufbreakingcfg"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/buflintcfg"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -72,7 +70,7 @@ func NewProvider(logger *zap.Logger, options ...ProviderOption) Provider {
 
 // ExternalConfig is an external config.
 type ExternalConfig struct {
-	Build    bufbuildcfg.ExternalConfig    `json:"build,omitempty" yaml:"build,omitempty"`
-	Breaking bufbreakingcfg.ExternalConfig `json:"breaking,omitempty" yaml:"breaking,omitempty"`
-	Lint     buflintcfg.ExternalConfig     `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Build    bufbuild.ExternalConfig    `json:"build,omitempty" yaml:"build,omitempty"`
+	Breaking bufbreaking.ExternalConfig `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Lint     buflint.ExternalConfig     `json:"lint,omitempty" yaml:"lint,omitempty"`
 }

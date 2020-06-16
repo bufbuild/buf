@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 syntax = "proto2";
 
-package bufbuild.buf.image.v1beta1;
+package bufbuild.buf.image.v1;
 
 import "google/protobuf/descriptor.proto";
 
