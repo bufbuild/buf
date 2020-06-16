@@ -5,6 +5,7 @@
 [![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)](https://github.com/bufbuild/buf/actions?workflow=ci)
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)](https://hub.docker.com/r/bufbuild/buf)
 [![Google Group](https://img.shields.io/badge/Google%20Group-bufbuild--announce-blue)](https://groups.google.com/forum/#!forum/bufbuild-announce)
+[![Slack](https://img.shields.io/badge/Slack-Buf-%23e01563)](https://join.slack.com/t/bufbuild/shared_invite/zt-f5k547ki-VDs_iC4TblNCu7ubhRD17w)
 
 **All documentation is hosted at [https://buf.build](https://buf.build). Please head over there for
 more details.**

@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/buflintcfg"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -98,7 +98,7 @@ func handle(
 	}
 	buffer := bytes.NewBuffer(nil)
 	if asConfigIgnoreYAML {
-		if err := buflintcfg.PrintFileAnnotationsLintConfigIgnoreYAML(buffer, fileAnnotations); err != nil {
+		if err := buflint.PrintFileAnnotationsLintConfigIgnoreYAML(buffer, fileAnnotations); err != nil {
 			responseWriter.WriteError(err.Error())
 			return
 		}

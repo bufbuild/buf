@@ -12,6 +12,7 @@ $(call _assert_var,GOLINT)
 $(call _assert_var,ERRCHECK)
 $(call _assert_var,STATICCHECK)
 $(call _assert_var,TMP)
+$(call _assert_var,OPEN_CMD)
 
 # Settable
 GO_BINS ?=
@@ -128,9 +129,9 @@ cover: pretest
 	@go tool cover -func=$(COVER_TXT) | grep total
 	@echo
 ifndef COVEROPEN
-	@echo open $(COVER_HTML)
+	@echo $(OPEN_CMD) $(COVER_HTML)
 else
-	open $(COVER_HTML)
+	$(OPEN_CMD) $(COVER_HTML)
 endif
 
 .PHONY: install

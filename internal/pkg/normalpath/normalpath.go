@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 // Package normalpath provides functions similar to filepath.
 //
 // A normalized path is a cleaned and to-slash'ed path.
-// A validated path validates that a path is relative and does not jump conteext.
+// A validated path validates that a path is relative and does not jump context.
 package normalpath
 
 import (

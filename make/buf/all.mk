@@ -1,4 +1,4 @@
-COPYRIGHT_OWNER := Buf Technologies Inc.
+COPYRIGHT_OWNER := Buf Technologies, Inc.
 COPYRIGHT_YEAR := 2020
 LICENSE_TYPE := apache
 ADDLICENSE_IGNORES := \/testdata

@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -257,7 +257,7 @@ func NewReader(
 
 // Writer is a writer.
 type Writer interface {
-	// PutFile puts the file .
+	// PutFile puts the file.
 	PutFile(
 		ctx context.Context,
 		container app.EnvStdoutContainer,
