@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufimage"
-	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
+	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
@@ -368,7 +368,7 @@ func (e *envReader) getImage(
 	}
 	// we cannot determine fileDescriptorProtos ahead of time so we cannot handle extensions
 	// TODO: we do not happen to need them for our use case with linting, but we need to dicuss this
-	protoImage := &imagev1beta1.Image{}
+	protoImage := &imagev1.Image{}
 	switch imageEncoding := imageRef.ImageEncoding(); imageEncoding {
 	case buffetch.ImageEncodingBin:
 		err = protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, protoImage)

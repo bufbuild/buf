@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@ func (b *builder) run(
 	}
 
 	if !b.profile {
-		return f(ctx, newContainer(appContainer, logger))
+		return f(ctx, applog.NewContainer(appContainer, logger))
 	}
 	return runProfile(
 		logger,
@@ -108,7 +108,7 @@ func (b *builder) run(
 		b.profileLoops,
 		b.profileAllowError,
 		func() error {
-			return f(ctx, newContainer(appContainer, logger))
+			return f(ctx, applog.NewContainer(appContainer, logger))
 		},
 	)
 }

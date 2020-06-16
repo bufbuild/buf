@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 )
 
-const version = "0.16.0"
+const version = "0.17.0-dev"
 
 // Main is the main.
 func Main(use string, options ...RootCommandOption) {

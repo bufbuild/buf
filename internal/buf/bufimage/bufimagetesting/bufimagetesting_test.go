@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/bufpath"
-	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
+	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -179,7 +179,7 @@ func TestBasic(t *testing.T) {
 		image.Files(),
 	)
 
-	protoImage := &imagev1beta1.Image{
+	protoImage := &imagev1.Image{
 		File: []*descriptorpb.FileDescriptorProto{
 			fileDescriptorProtoAA,
 			fileDescriptorProtoImport,
@@ -187,8 +187,8 @@ func TestBasic(t *testing.T) {
 			fileDescriptorProtoBA,
 			fileDescriptorProtoBB,
 		},
-		BufbuildImageExtension: &imagev1beta1.ImageExtension{
-			ImageImportRefs: []*imagev1beta1.ImageImportRef{
+		BufbuildImageExtension: &imagev1.ImageExtension{
+			ImageImportRefs: []*imagev1.ImageImportRef{
 				{
 					FileIndex: proto.Uint32(1),
 				},

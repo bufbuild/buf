@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/buflintcfg"
 	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 )
@@ -113,7 +112,7 @@ func checkLint(ctx context.Context, container *container) (retErr error) {
 	}
 	if len(fileAnnotations) > 0 {
 		if asConfigIgnoreYAML {
-			if err := buflintcfg.PrintFileAnnotationsLintConfigIgnoreYAML(container.Stdout(), fileAnnotations); err != nil {
+			if err := buflint.PrintFileAnnotationsLintConfigIgnoreYAML(container.Stdout(), fileAnnotations); err != nil {
 				return err
 			}
 		} else {

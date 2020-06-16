@@ -32,6 +32,15 @@ CACHE_VERSIONS := $(CACHE)/versions
 CACHE_ENV := $(CACHE)/env
 CACHE_GO := $(CACHE)/go
 
+ifeq ($(UNAME_ARCH),x86_64)
+ifeq ($(UNAME_OS),Darwin)
+OPEN_CMD := open
+endif
+ifeq ($(UNAME_OS),Linux)
+OPEN_CMD := xdg-open
+endif
+endif
+
 # Runtime ALL
 
 export GO111MODULE := on

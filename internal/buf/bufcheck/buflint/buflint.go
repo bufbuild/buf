@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@
 package buflint
 
 import (
+	"bytes"
 	"context"
+	"io"
+	"sort"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
-	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/buflintcfg"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"go.uber.org/zap"
@@ -76,7 +78,7 @@ func (c *Config) GetCheckers(categories ...string) ([]bufcheck.Checker, error) {
 }
 
 // NewConfig returns a new Config.
-func NewConfig(externalConfig buflintcfg.ExternalConfig) (*Config, error) {
+func NewConfig(externalConfig ExternalConfig) (*Config, error) {
 	internalConfig, err := internal.ConfigBuilder{
 		Use:                                  externalConfig.Use,
 		Except:                               externalConfig.Except,
@@ -105,11 +107,80 @@ func NewConfig(externalConfig buflintcfg.ExternalConfig) (*Config, error) {
 //
 // Should only be used for printing.
 func GetAllCheckers(categories ...string) ([]bufcheck.Checker, error) {
-	config, err := NewConfig(buflintcfg.ExternalConfig{Use: v1AllCategories})
+	config, err := NewConfig(ExternalConfig{Use: v1AllCategories})
 	if err != nil {
 		return nil, err
 	}
 	return checkersToBufcheckCheckers(config.Checkers, categories)
+}
+
+// ExternalConfig is an external config.
+type ExternalConfig struct {
+	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
+	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
+	// IgnoreRootPaths
+	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
+	// IgnoreIDOrCategoryToRootPaths
+	IgnoreOnly                           map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
+	EnumZeroValueSuffix                  string              `json:"enum_zero_value_suffix,omitempty" yaml:"enum_zero_value_suffix,omitempty"`
+	RPCAllowSameRequestResponse          bool                `json:"rpc_allow_same_request_response,omitempty" yaml:"rpc_allow_same_request_response,omitempty"`
+	RPCAllowGoogleProtobufEmptyRequests  bool                `json:"rpc_allow_google_protobuf_empty_requests,omitempty" yaml:"rpc_allow_google_protobuf_empty_requests,omitempty"`
+	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
+	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
+	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
+}
+
+// PrintFileAnnotationsLintConfigIgnoreYAML prints the FileAnnotations to the Writer as config-ignore-yaml.
+func PrintFileAnnotationsLintConfigIgnoreYAML(writer io.Writer, fileAnnotations []bufanalysis.FileAnnotation) error {
+	if len(fileAnnotations) == 0 {
+		return nil
+	}
+	ignoreIDToRootPathMap := make(map[string]map[string]struct{})
+	for _, fileAnnotation := range fileAnnotations {
+		fileRef := fileAnnotation.FileRef()
+		if fileRef == nil || fileAnnotation.Type() == "" {
+			continue
+		}
+		rootPathMap, ok := ignoreIDToRootPathMap[fileAnnotation.Type()]
+		if !ok {
+			rootPathMap = make(map[string]struct{})
+			ignoreIDToRootPathMap[fileAnnotation.Type()] = rootPathMap
+		}
+		rootPathMap[fileRef.RootRelFilePath()] = struct{}{}
+	}
+	if len(ignoreIDToRootPathMap) == 0 {
+		return nil
+	}
+
+	sortedIgnoreIDs := make([]string, 0, len(ignoreIDToRootPathMap))
+	ignoreIDToSortedRootPaths := make(map[string][]string, len(ignoreIDToRootPathMap))
+	for id, rootPathMap := range ignoreIDToRootPathMap {
+		sortedIgnoreIDs = append(sortedIgnoreIDs, id)
+		rootPaths := make([]string, 0, len(rootPathMap))
+		for rootPath := range rootPathMap {
+			rootPaths = append(rootPaths, rootPath)
+		}
+		sort.Strings(rootPaths)
+		ignoreIDToSortedRootPaths[id] = rootPaths
+	}
+	sort.Strings(sortedIgnoreIDs)
+
+	buffer := bytes.NewBuffer(nil)
+	_, _ = buffer.WriteString(`lint:
+  ignore_only:
+`)
+	for _, id := range sortedIgnoreIDs {
+		_, _ = buffer.WriteString("    ")
+		_, _ = buffer.WriteString(id)
+		_, _ = buffer.WriteString(":\n")
+		for _, rootPath := range ignoreIDToSortedRootPaths[id] {
+			_, _ = buffer.WriteString("      - ")
+			_, _ = buffer.WriteString(rootPath)
+			_, _ = buffer.WriteString("\n")
+		}
+	}
+	_, err := writer.Write(buffer.Bytes())
+	return err
 }
 
 func internalConfigToConfig(internalConfig *internal.Config) *Config {

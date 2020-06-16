@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -132,4 +132,10 @@ func WithAllowNotExist() GetFileRefsForExternalFilePathsOption {
 	return func(getFileRefsForExternalFilePathsOptions *getFileRefsForExternalFilePathsOptions) {
 		getFileRefsForExternalFilePathsOptions.allowNotExist = true
 	}
+}
+
+// ExternalConfig is an external config.
+type ExternalConfig struct {
+	Roots    []string `json:"roots,omitempty" yaml:"roots,omitempty"`
+	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }

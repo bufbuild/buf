@@ -1,4 +1,4 @@
-// Copyright 2020 Buf Technologies Inc.
+// Copyright 2020 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufpath"
-	imagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1beta1"
+	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -43,9 +43,10 @@ type FileRef interface {
 	// ExternalFilePath returns the path that identifies this file externally.
 	//
 	// Example:
+	//	 Assume we had the input path /foo/bar which is a local directory.
+
 	//   RootRelFilePath: one/one.proto
 	//   RootDirPath: proto
-	//   DirectoryPath: /foo/bar
 	//   ExternalFilePath: /foo/bar/proto/one/one.proto
 	ExternalFilePath() string
 	isFileRef()
@@ -157,7 +158,7 @@ func NewImage(files []File) (Image, error) {
 //
 // The input Files are expected to be in correct DAG order!
 // TODO: Consider checking the above, and if not, reordering the Files.
-func NewImageForProto(protoImage *imagev1beta1.Image) (Image, error) {
+func NewImageForProto(protoImage *imagev1.Image) (Image, error) {
 	if err := validateProtoImageExceptFileDescriptorProtos(protoImage); err != nil {
 		return nil, err
 	}
@@ -188,7 +189,7 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) (Im
 		return nil, err
 	}
 	image, err := NewImageForProto(
-		&imagev1beta1.Image{
+		&imagev1.Image{
 			File: request.GetProtoFile(),
 		},
 	)
@@ -250,12 +251,12 @@ func ImageWithOnlyRootRelFilePathsAllowNotExist(
 }
 
 // ImageToProtoImage returns a new ProtoImage for the Image.
-func ImageToProtoImage(image Image) *imagev1beta1.Image {
+func ImageToProtoImage(image Image) *imagev1.Image {
 	files := image.Files()
-	protoImage := &imagev1beta1.Image{
+	protoImage := &imagev1.Image{
 		File: make([]*descriptorpb.FileDescriptorProto, len(files)),
-		BufbuildImageExtension: &imagev1beta1.ImageExtension{
-			ImageImportRefs: make([]*imagev1beta1.ImageImportRef, 0),
+		BufbuildImageExtension: &imagev1.ImageExtension{
+			ImageImportRefs: make([]*imagev1.ImageImportRef, 0),
 		},
 	}
 	for i, file := range files {
@@ -263,7 +264,7 @@ func ImageToProtoImage(image Image) *imagev1beta1.Image {
 		if file.IsImport() {
 			protoImage.BufbuildImageExtension.ImageImportRefs = append(
 				protoImage.BufbuildImageExtension.ImageImportRefs,
-				&imagev1beta1.ImageImportRef{
+				&imagev1.ImageImportRef{
 					FileIndex: proto.Uint32(uint32(i)),
 				},
 			)
