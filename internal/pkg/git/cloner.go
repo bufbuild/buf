@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -47,7 +48,7 @@ func (c *cloner) CloneToBucket(
 	ctx context.Context,
 	envContainer app.EnvContainer,
 	url string,
-	refName RefName,
+	depth uint32,
 	readWriteBucket storage.ReadWriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
@@ -62,15 +63,20 @@ func (c *cloner) CloneToBucket(
 	default:
 		return fmt.Errorf("invalid git url: %q", url)
 	}
-	args := []string{"clone", "--depth", "1"}
-	branch := refName.branch()
-	if branch == "" {
-		return errors.New("must set git repository branch or tag")
+
+	if depth == 0 {
+		return errors.New("depth must be > 0")
 	}
-	args = append(args, "--branch", branch, "--single-branch")
-	if options.RecurseSubmodules {
-		args = append(args, "--recurse-submodules")
+
+	depthArg := strconv.Itoa(int(depth))
+	args := []string{"clone", "--depth", depthArg}
+
+	if options.Name != nil {
+		if cloneBranch := options.Name.cloneBranch(); cloneBranch != "" {
+			args = append(args, "--branch", cloneBranch, "--single-branch")
+		}
 	}
+
 	tmpDir, err := tmp.NewDir()
 	if err != nil {
 		return err
@@ -99,8 +105,46 @@ func (c *cloner) CloneToBucket(
 	cmd.Env = app.Environ(envContainer)
 	cmd.Stderr = buffer
 	if err := cmd.Run(); err != nil {
+		// Suppress printing of temp path
 		return fmt.Errorf("%v\n%v", err, strings.Replace(buffer.String(), tmpDir.AbsPath(), "", -1))
 	}
+
+	if options.Name != nil && options.Name.checkout() != "" {
+		args = []string{
+			"checkout",
+			options.Name.checkout(),
+		}
+		buffer.Reset()
+		cmd = exec.CommandContext(ctx, "git", args...)
+		cmd.Env = app.Environ(envContainer)
+		cmd.Dir = tmpDir.AbsPath()
+		cmd.Stderr = buffer
+		if err := cmd.Run(); err != nil {
+			// Suppress printing of temp path
+			return fmt.Errorf("%v\n%v", err, strings.Replace(buffer.String(), tmpDir.AbsPath(), "", -1))
+		}
+	}
+
+	if options.RecurseSubmodules {
+		args = []string{
+			"submodule",
+			"update",
+			"--init",
+			"--recursive",
+			"--depth",
+			depthArg,
+		}
+		buffer.Reset()
+		cmd = exec.CommandContext(ctx, "git", args...)
+		cmd.Env = app.Environ(envContainer)
+		cmd.Dir = tmpDir.AbsPath()
+		cmd.Stderr = buffer
+		if err := cmd.Run(); err != nil {
+			// Suppress printing of temp path
+			return fmt.Errorf("%v\n%v", err, strings.Replace(buffer.String(), tmpDir.AbsPath(), "", -1))
+		}
+	}
+
 	tmpReadBucketCloser, err := storageos.NewReadBucketCloser(tmpDir.AbsPath())
 	if err != nil {
 		return err

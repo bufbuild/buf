@@ -127,6 +127,7 @@ func (r *reader) GetBucket(
 			ctx,
 			container,
 			t,
+			t.Depth(),
 			getBucketOptions.transformerOptions,
 		)
 	default:
@@ -236,6 +237,7 @@ func (r *reader) getGitBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	gitRef GitRef,
+	depth uint32,
 	transformerOptions []normalpath.TransformerOption,
 ) (_ storage.ReadBucketCloser, retErr error) {
 	if !r.gitEnabled {
@@ -255,9 +257,10 @@ func (r *reader) getGitBucket(
 		ctx,
 		container,
 		gitURL,
-		gitRef.GitRefName(),
+		depth,
 		readWriteBucketCloser,
 		git.CloneToBucketOptions{
+			Name:               gitRef.GitName(),
 			RecurseSubmodules:  gitRef.RecurseSubmodules(),
 			TransformerOptions: transformerOptions,
 		},

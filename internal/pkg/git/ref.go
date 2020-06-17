@@ -14,29 +14,32 @@
 
 package git
 
-type refName struct {
-	branchValue string
-	isTag       bool
+type ref struct {
+	ref string
 }
 
-func newRefName(branchValue string, isTag bool) *refName {
-	return &refName{
-		branchValue: branchValue,
-		isTag:       isTag,
+func newRef(name string) *ref {
+	return &ref{
+		ref: name,
 	}
 }
 
-func (r *refName) branch() string {
+func (r *ref) cloneBranch() string {
+	return ""
+}
+
+func (r *ref) checkout() string {
 	if r == nil {
 		return ""
 	}
-	return r.branchValue
+	return r.ref
 }
 
-func (r *refName) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + r.branch() + `"`), nil
+// Used for logging
+func (r *ref) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + r.checkout() + `"`), nil
 }
 
-func (r *refName) String() string {
-	return r.branch()
+func (r *ref) String() string {
+	return r.checkout()
 }
