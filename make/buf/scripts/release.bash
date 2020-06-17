@@ -49,6 +49,9 @@ if [ -z "${INSIDE_DOCKER}" ]; then
     -e INSIDE_DOCKER=1 \
     "${DOCKER_IMAGE}" \
     bash -x make/buf/scripts/release.bash
+  if [ "$(uname -s)" == "Linux" ]; then
+    sudo chown -R "$(whoami):$(whoami)" .build
+  fi
   exit 0
 fi
 

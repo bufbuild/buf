@@ -23,19 +23,32 @@ import (
 	"go.uber.org/zap"
 )
 
-// RefName is a reference name.
-type RefName interface {
-	branch() string
+// Name is a name identifiable by git.
+type Name interface {
+	// If cloneBranch returns a non-empty string, any clones will be performed with --branch set to the value.
+	cloneBranch() string
+	// If checkout returns a non-empty string, a checkout of the value will be performed after cloning.
+	checkout() string
 }
 
-// NewBranchRefName returns a new RefName for the branch.
-func NewBranchRefName(branch string) RefName {
-	return newRefName(branch, false)
+// NewBranchName returns a new Name for the branch.
+func NewBranchName(branch string) Name {
+	return newBranch(branch)
 }
 
-// NewTagRefName returns a new RefName for the tag.
-func NewTagRefName(tag string) RefName {
-	return newRefName(tag, true)
+// NewTagName returns a new Name for the tag.
+func NewTagName(tag string) Name {
+	return newBranch(tag)
+}
+
+// NewRefName returns a new Name for the ref.
+func NewRefName(ref string) Name {
+	return newRef(ref)
+}
+
+// NewRefNameWithBranch returns a new Name for the ref while setting branch as the clone target.
+func NewRefNameWithBranch(ref string, branch string) Name {
+	return newRefWithBranch(ref, branch)
 }
 
 // Cloner clones git repositories to buckets.
@@ -43,11 +56,12 @@ type Cloner interface {
 	// CloneToBucket clones the repository to the bucket.
 	//
 	// The url must contain the scheme, including file:// if necessary.
+	// depth must be > 0.
 	CloneToBucket(
 		ctx context.Context,
 		envContainer app.EnvContainer,
 		url string,
-		refName RefName,
+		depth uint32,
 		readWriteBucket storage.ReadWriteBucket,
 		options CloneToBucketOptions,
 	) error
@@ -56,6 +70,7 @@ type Cloner interface {
 // CloneToBucketOptions are options for Clone.
 type CloneToBucketOptions struct {
 	TransformerOptions []normalpath.TransformerOption
+	Name               Name
 	RecurseSubmodules  bool
 }
 

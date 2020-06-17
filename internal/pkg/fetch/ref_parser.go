@@ -139,14 +139,25 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 			}
 		case "branch":
 			if rawRef.GitBranch != "" || rawRef.GitTag != "" {
-				return nil, newCannotSpecifyMultipleGitRepositoryRefNamesError()
+				return nil, newCannotSpecifyGitBranchAndTagError()
 			}
 			rawRef.GitBranch = value
 		case "tag":
 			if rawRef.GitBranch != "" || rawRef.GitTag != "" {
-				return nil, newCannotSpecifyMultipleGitRepositoryRefNamesError()
+				return nil, newCannotSpecifyGitBranchAndTagError()
 			}
 			rawRef.GitTag = value
+		case "ref":
+			rawRef.GitRef = value
+		case "depth":
+			depth, err := strconv.ParseUint(value, 10, 32)
+			if err != nil {
+				return nil, newDepthParseError(value)
+			}
+			if depth == 0 {
+				return nil, newDepthZeroError()
+			}
+			rawRef.GitDepth = uint32(depth)
 		case "recurse_submodules":
 			// TODO: need to refactor to make sure this is not set for any non-git input
 			// ie right now recurse_submodules=false will not error
@@ -178,11 +189,19 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 	archiveFormatInfo, archiveOK := a.archiveFormatToInfo[rawRef.Format]
 	_, singleOK := a.singleFormatToInfo[rawRef.Format]
 	if gitOK {
-		if rawRef.GitBranch == "" && rawRef.GitTag == "" {
-			return nil, newMustSpecifyGitRepositoryRefNameError(rawRef.Path)
+		if rawRef.GitRef != "" && rawRef.GitTag != "" {
+			return nil, newCannotSpecifyTagWithRefError()
+		}
+		if rawRef.GitDepth == 0 {
+			// Default to 1
+			rawRef.GitDepth = 1
+			if rawRef.GitRef != "" {
+				// Default to 50 when using ref
+				rawRef.GitDepth = 50
+			}
 		}
 	} else {
-		if rawRef.GitBranch != "" || rawRef.GitTag != "" || rawRef.GitRecurseSubmodules {
+		if rawRef.GitBranch != "" || rawRef.GitTag != "" || rawRef.GitRef != "" || rawRef.GitRecurseSubmodules || rawRef.GitDepth > 0 {
 			return nil, newOptionsInvalidForFormatError(rawRef.Format, value)
 		}
 	}
@@ -290,7 +309,7 @@ func getDirRef(
 func getGitRef(
 	rawRef *RawRef,
 ) (ParsedGitRef, error) {
-	gitRefName, err := getGitRefName(rawRef.Path, rawRef.GitBranch, rawRef.GitTag)
+	gitRefName, err := getGitRefName(rawRef.Path, rawRef.GitBranch, rawRef.GitTag, rawRef.GitRef)
 	if err != nil {
 		return nil, err
 	}
@@ -298,23 +317,33 @@ func getGitRef(
 		rawRef.Format,
 		rawRef.Path,
 		gitRefName,
+		rawRef.GitDepth,
 		rawRef.GitRecurseSubmodules,
 	)
 }
 
-func getGitRefName(path string, branch string, tag string) (git.RefName, error) {
-	if branch == "" && tag == "" {
-		// already did this in getRawRef but just in case
-		return nil, newMustSpecifyGitRepositoryRefNameError(path)
+func getGitRefName(path string, branch string, tag string, ref string) (git.Name, error) {
+	if branch == "" && tag == "" && ref == "" {
+		return nil, nil
 	}
 	if branch != "" && tag != "" {
 		// already did this in getRawRef but just in case
-		return nil, newCannotSpecifyMultipleGitRepositoryRefNamesError()
+		return nil, newCannotSpecifyGitBranchAndTagError()
+	}
+	if ref != "" && tag != "" {
+		// already did this in getRawRef but just in case
+		return nil, newCannotSpecifyTagWithRefError()
+	}
+	if ref != "" && branch != "" {
+		return git.NewRefNameWithBranch(ref, branch), nil
+	}
+	if ref != "" {
+		return git.NewRefName(ref), nil
 	}
 	if branch != "" {
-		return git.NewBranchRefName(branch), nil
+		return git.NewBranchName(branch), nil
 	}
-	return git.NewTagRefName(tag), nil
+	return git.NewTagName(tag), nil
 }
 
 // options

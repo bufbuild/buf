@@ -37,26 +37,32 @@ type gitRef struct {
 	format            string
 	path              string
 	gitScheme         GitScheme
-	gitRefName        git.RefName
+	gitName           git.Name
+	depth             uint32
 	recurseSubmodules bool
 }
 
 func newGitRef(
 	format string,
 	path string,
-	gitRefName git.RefName,
+	gitName git.Name,
+	depth uint32,
 	recurseSubmodules bool,
 ) (*gitRef, error) {
 	gitScheme, path, err := getGitSchemeAndPath(path)
 	if err != nil {
 		return nil, err
 	}
+	if depth == 0 {
+		return nil, newDepthZeroError()
+	}
 	return buildGitRef(
 		format,
 		path,
 		gitScheme,
-		gitRefName,
+		gitName,
 		recurseSubmodules,
+		depth,
 	), nil
 }
 
@@ -64,14 +70,16 @@ func buildGitRef(
 	format string,
 	path string,
 	gitScheme GitScheme,
-	gitRefName git.RefName,
+	gitName git.Name,
 	recurseSubmodules bool,
+	depth uint32,
 ) *gitRef {
 	return &gitRef{
 		format:            format,
 		path:              path,
 		gitScheme:         gitScheme,
-		gitRefName:        gitRefName,
+		gitName:           gitName,
+		depth:             depth,
 		recurseSubmodules: recurseSubmodules,
 	}
 }
@@ -88,8 +96,12 @@ func (r *gitRef) GitScheme() GitScheme {
 	return r.gitScheme
 }
 
-func (r *gitRef) GitRefName() git.RefName {
-	return r.gitRefName
+func (r *gitRef) GitName() git.Name {
+	return r.gitName
+}
+
+func (r *gitRef) Depth() uint32 {
+	return r.depth
 }
 
 func (r *gitRef) RecurseSubmodules() bool {

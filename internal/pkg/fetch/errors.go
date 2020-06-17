@@ -44,12 +44,20 @@ func newFormatCannotBeDeterminedError(value string) error {
 	return fmt.Errorf("format cannot be determined from %q", value)
 }
 
-func newMustSpecifyGitRepositoryRefNameError(path string) error {
-	return fmt.Errorf(`must specify git reference (example: "%s#branch=master" or "%s#tag=v1.0.0")`, path, path)
+func newCannotSpecifyGitBranchAndTagError() error {
+	return fmt.Errorf(`must specify only one of "branch", "tag"`)
 }
 
-func newCannotSpecifyMultipleGitRepositoryRefNamesError() error {
-	return fmt.Errorf(`must specify only one of "branch", "tag"`)
+func newCannotSpecifyTagWithRefError() error {
+	return fmt.Errorf(`cannot specify "tag" with "ref"`)
+}
+
+func newDepthParseError(s string) error {
+	return fmt.Errorf(`could not parse "depth" value %q`, s)
+}
+
+func newDepthZeroError() error {
+	return fmt.Errorf(`"depth" must be >0 if specified`)
 }
 
 func newPathUnknownGzError(path string) error {
