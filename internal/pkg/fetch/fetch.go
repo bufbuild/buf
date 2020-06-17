@@ -149,7 +149,10 @@ func NewDirRef(path string) (DirRef, error) {
 type GitRef interface {
 	BucketRef
 	GitScheme() GitScheme
-	GitRefName() git.RefName
+	// Optional. May be nil, in which case clone the default branch.
+	GitName() git.Name
+	// Will always be >= 1
+	Depth() uint32
 	RecurseSubmodules() bool
 	gitRef()
 }
@@ -157,10 +160,11 @@ type GitRef interface {
 // NewGitRef returns a new GitRef.
 func NewGitRef(
 	path string,
-	gitRefName git.RefName,
+	gitName git.Name,
+	depth uint32,
 	recurseSubmodules bool,
 ) (GitRef, error) {
-	return newGitRef("", path, gitRefName, recurseSubmodules)
+	return newGitRef("", path, gitName, depth, recurseSubmodules)
 }
 
 // HasFormat is an object that has a format.
@@ -301,7 +305,16 @@ type RawRef struct {
 	// Only one of GitBranch and GitTag will be set
 	GitTag string
 	// Only set for git formats
+	// Specifies an exact git reference to use with git checkout.
+	// Can be used on its own or with GitBranch. Not allowed with GitTag.
+	// This is defined as anything that can be given to git checkout.
+	GitRef string
+	// Only set for git formats
 	GitRecurseSubmodules bool
+	// Only set for git formats.
+	// The depth to use when cloning a repository. Only allowed when GitRef
+	// is set. Defaults to 50 if unset.
+	GitDepth uint32
 	// Only set for archive formats
 	ArchiveStripComponents uint32
 }

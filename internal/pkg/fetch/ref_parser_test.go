@@ -254,8 +254,33 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"path/to/dir.git",
 			GitSchemeLocal,
-			git.NewBranchRefName("master"),
+			nil,
 			false,
+			1,
+		),
+		"path/to/dir.git",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildGitRef(
+			testFormatGit,
+			"path/to/dir.git",
+			GitSchemeLocal,
+			nil,
+			false,
+			40,
+		),
+		"path/to/dir.git#depth=40",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildGitRef(
+			testFormatGit,
+			"path/to/dir.git",
+			GitSchemeLocal,
+			git.NewBranchName("master"),
+			false,
+			1,
 		),
 		"path/to/dir.git#branch=master",
 	)
@@ -265,8 +290,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"/path/to/dir.git",
 			GitSchemeLocal,
-			git.NewBranchRefName("master"),
+			git.NewBranchName("master"),
 			false,
+			1,
 		),
 		"file:///path/to/dir.git#branch=master",
 	)
@@ -276,8 +302,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"path/to/dir.git",
 			GitSchemeLocal,
-			git.NewTagRefName("v1.0.0"),
+			git.NewTagName("v1.0.0"),
 			false,
+			1,
 		),
 		"path/to/dir.git#tag=v1.0.0",
 	)
@@ -287,8 +314,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"hello.com/path/to/dir.git",
 			GitSchemeHTTP,
-			git.NewBranchRefName("master"),
+			git.NewBranchName("master"),
 			false,
+			1,
 		),
 		"http://hello.com/path/to/dir.git#branch=master",
 	)
@@ -298,8 +326,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"hello.com/path/to/dir.git",
 			GitSchemeHTTPS,
-			git.NewBranchRefName("master"),
+			git.NewBranchName("master"),
 			false,
+			1,
 		),
 		"https://hello.com/path/to/dir.git#branch=master",
 	)
@@ -309,10 +338,59 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"user@hello.com:path/to/dir.git",
 			GitSchemeSSH,
-			git.NewBranchRefName("master"),
+			git.NewBranchName("master"),
 			false,
+			1,
 		),
 		"ssh://user@hello.com:path/to/dir.git#branch=master",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildGitRef(
+			testFormatGit,
+			"user@hello.com:path/to/dir.git",
+			GitSchemeSSH,
+			git.NewRefName("refs/remotes/origin/HEAD"),
+			false,
+			50,
+		),
+		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildGitRef(
+			testFormatGit,
+			"user@hello.com:path/to/dir.git",
+			GitSchemeSSH,
+			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "master"),
+			false,
+			50,
+		),
+		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,branch=master",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildGitRef(
+			testFormatGit,
+			"user@hello.com:path/to/dir.git",
+			GitSchemeSSH,
+			git.NewRefName("refs/remotes/origin/HEAD"),
+			false,
+			10,
+		),
+		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,depth=10",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildGitRef(
+			testFormatGit,
+			"user@hello.com:path/to/dir.git",
+			GitSchemeSSH,
+			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "master"),
+			false,
+			10,
+		),
+		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,branch=master,depth=10",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -440,8 +518,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"/path/to/dir",
 			GitSchemeLocal,
-			git.NewBranchRefName("master"),
+			git.NewBranchName("master"),
 			false,
+			1,
 		),
 		"/path/to/dir#branch=master,format=git",
 	)
@@ -451,8 +530,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"/path/to/dir",
 			GitSchemeLocal,
-			git.NewBranchRefName("master/foo"),
+			git.NewBranchName("master/foo"),
 			false,
+			1,
 		),
 		"/path/to/dir#format=git,branch=master/foo",
 	)
@@ -462,8 +542,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"path/to/dir",
 			GitSchemeLocal,
-			git.NewTagRefName("master/foo"),
+			git.NewTagName("master/foo"),
 			false,
+			1,
 		),
 		"path/to/dir#tag=master/foo,format=git",
 	)
@@ -473,8 +554,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"path/to/dir",
 			GitSchemeLocal,
-			git.NewTagRefName("master/foo"),
+			git.NewTagName("master/foo"),
 			false,
+			1,
 		),
 		"path/to/dir#format=git,tag=master/foo",
 	)
@@ -484,8 +566,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"path/to/dir",
 			GitSchemeLocal,
-			git.NewTagRefName("master/foo"),
+			git.NewTagName("master/foo"),
 			true,
+			1,
 		),
 		"path/to/dir#format=git,tag=master/foo,recurse_submodules=true",
 	)
@@ -495,10 +578,35 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testFormatGit,
 			"path/to/dir",
 			GitSchemeLocal,
-			git.NewTagRefName("master/foo"),
+			git.NewTagName("master/foo"),
 			false,
+			1,
 		),
 		"path/to/dir#format=git,tag=master/foo,recurse_submodules=false",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildGitRef(
+			testFormatGit,
+			"path/to/dir",
+			GitSchemeLocal,
+			git.NewRefName("refs/remotes/origin/HEAD"),
+			false,
+			50,
+		),
+		"path/to/dir#format=git,ref=refs/remotes/origin/HEAD",
+	)
+	testGetParsedRefSuccess(
+		t,
+		buildGitRef(
+			testFormatGit,
+			"path/to/dir",
+			GitSchemeLocal,
+			git.NewRefName("refs/remotes/origin/HEAD"),
+			false,
+			10,
+		),
+		"path/to/dir#format=git,ref=refs/remotes/origin/HEAD,depth=10",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -651,18 +759,28 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		newMustSpecifyGitRepositoryRefNameError("path/to/foo.git"),
-		"path/to/foo.git",
-	)
-	testGetParsedRefError(
-		t,
-		newMustSpecifyGitRepositoryRefNameError("path/to/foo"),
-		"path/to/foo#format=git",
-	)
-	testGetParsedRefError(
-		t,
-		newCannotSpecifyMultipleGitRepositoryRefNamesError(),
+		newCannotSpecifyGitBranchAndTagError(),
 		"path/to/foo#format=git,branch=foo,tag=bar",
+	)
+	testGetParsedRefError(
+		t,
+		newCannotSpecifyGitBranchAndTagError(),
+		"path/to/foo#format=git,branch=foo,tag=bar,ref=baz",
+	)
+	testGetParsedRefError(
+		t,
+		newCannotSpecifyTagWithRefError(),
+		"path/to/foo#format=git,tag=foo,ref=bar",
+	)
+	testGetParsedRefError(
+		t,
+		newDepthParseError("bar"),
+		"path/to/foo#format=git,depth=bar",
+	)
+	testGetParsedRefError(
+		t,
+		newDepthZeroError(),
+		"path/to/foo#format=git,ref=foor,depth=0",
 	)
 	testGetParsedRefError(
 		t,
