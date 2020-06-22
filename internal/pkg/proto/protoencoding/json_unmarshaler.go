@@ -32,6 +32,8 @@ func newJSONUnmarshaler(resolver Resolver) Unmarshaler {
 func (m *jsonUnmarshaler) Unmarshal(data []byte, message proto.Message) error {
 	options := protojson.UnmarshalOptions{
 		Resolver: m.resolver,
+		// TODO: make this an option
+		DiscardUnknown: true,
 	}
 	return options.Unmarshal(data, message)
 }

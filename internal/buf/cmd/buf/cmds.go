@@ -27,6 +27,7 @@ func newRootCommand(use string, options ...RootCommandOption) *appcmd.Command {
 			newImageCmd(builder),
 			newCheckCmd(builder),
 			newLsFilesCmd(builder),
+			newExperimentalCmd(builder),
 		},
 		BindFlags: builder.BindRoot,
 	}
@@ -34,6 +35,16 @@ func newRootCommand(use string, options ...RootCommandOption) *appcmd.Command {
 		option(rootCommand, builder)
 	}
 	return rootCommand
+}
+
+func newExperimentalCmd(builder *builder) *appcmd.Command {
+	return &appcmd.Command{
+		Use:   "experimental",
+		Short: "Experimental commands. Unstable and will likely change.",
+		SubCommands: []*appcmd.Command{
+			newExperimentalImageCmd(builder),
+		},
+	}
 }
 
 func newImageCmd(builder *builder) *appcmd.Command {
@@ -46,10 +57,20 @@ func newImageCmd(builder *builder) *appcmd.Command {
 	}
 }
 
+func newExperimentalImageCmd(builder *builder) *appcmd.Command {
+	return &appcmd.Command{
+		Use:   "image",
+		Short: "Work with Images and FileDescriptorSets.",
+		SubCommands: []*appcmd.Command{
+			newImageConvertCmd(builder),
+		},
+	}
+}
+
 func newImageBuildCmd(builder *builder) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   "build",
-		Short: "Build all files from the input location  and output an Image or FileDescriptorSet.",
+		Short: "Build all files from the input location and output an Image or FileDescriptorSet.",
 		Args:  cobra.NoArgs,
 		Run:   builder.newRunFunc(imageBuild),
 		BindFlags: appcmd.BindMultiple(
@@ -62,6 +83,23 @@ func newImageBuildCmd(builder *builder) *appcmd.Command {
 			builder.bindImageBuildExcludeSourceInfo,
 			builder.bindImageBuildErrorFormat,
 			builder.bindExperimentalGitClone,
+		),
+	}
+}
+
+func newImageConvertCmd(builder *builder) *appcmd.Command {
+	return &appcmd.Command{
+		Use:   "convert",
+		Short: "Convert the input Image to an output Image with the specified format and filters.",
+		Args:  cobra.NoArgs,
+		Run:   builder.newRunFunc(imageConvert),
+		BindFlags: appcmd.BindMultiple(
+			builder.bindImageConvertInput,
+			builder.bindImageConvertFiles,
+			builder.bindImageConvertOutput,
+			builder.bindImageConvertAsFileDescriptorSet,
+			builder.bindImageConvertExcludeImports,
+			builder.bindImageConvertExcludeSourceInfo,
 		),
 	}
 }

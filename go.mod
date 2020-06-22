@@ -15,7 +15,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.15.0
-	google.golang.org/genproto v0.0.0-20200617032506-f1bdc9086088 // indirect
+	google.golang.org/genproto v0.0.0-20200622133129-d0ee0c36e670 // indirect
 	google.golang.org/protobuf v1.24.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
