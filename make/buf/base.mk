@@ -43,4 +43,4 @@ postlint:: buflint bufbreaking
 
 .PHONY: bufrelease
 bufrelease:
-	DOCKER_IMAGE=golang:1.14.3-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.14.4-buster bash make/buf/scripts/release.bash
