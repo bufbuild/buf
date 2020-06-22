@@ -26,7 +26,10 @@ func newResolver(fileDescriptorProtos ...*descriptorpb.FileDescriptorProto) (Res
 	if len(fileDescriptorProtos) == 0 {
 		return nil, nil
 	}
-	files, err := protodesc.NewFiles(
+	// TODO: handle if resolvable
+	files, err := protodesc.FileOptions{
+		AllowUnresolvable: true,
+	}.NewFiles(
 		&descriptorpb.FileDescriptorSet{
 			File: fileDescriptorProtos,
 		},

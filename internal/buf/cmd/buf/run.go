@@ -71,6 +71,37 @@ func imageBuild(ctx context.Context, container *container) (retErr error) {
 	)
 }
 
+func imageConvert(ctx context.Context, container *container) (retErr error) {
+	if container.Output == "" {
+		return fmt.Errorf("--%s is required", imageBuildOutputFlagName)
+	}
+	image, err := internal.NewBufcliEnvReader(
+		container.Logger(),
+		imageConvertInputFlagName,
+		"",
+	).GetImage(
+		ctx,
+		container,
+		container.ConvertInput,
+		container.Files,
+		false,
+		container.ExcludeSourceInfo,
+	)
+	if err != nil {
+		return err
+	}
+	return internal.NewBufcliImageWriter(
+		container.Logger(),
+	).PutImage(
+		ctx,
+		container,
+		container.Output,
+		image,
+		container.AsFileDescriptorSet,
+		container.ExcludeImports,
+	)
+}
+
 func checkLint(ctx context.Context, container *container) (retErr error) {
 	asJSON, err := internal.IsLintFormatJSON(errorFormatFlagName, container.ErrorFormat)
 	if err != nil {

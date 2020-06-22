@@ -98,6 +98,7 @@ func (e *envReader) GetEnv(
 			configOverride,
 			externalFilePaths,
 			externalFilePathsAllowNotExist,
+			excludeSourceCodeInfo,
 			t,
 		)
 		return env, nil, err
@@ -123,6 +124,7 @@ func (e *envReader) GetImageEnv(
 	configOverride string,
 	externalFilePaths []string,
 	externalFilePathsAllowNotExist bool,
+	excludeSourceCodeInfo bool,
 ) (_ Env, retErr error) {
 	defer instrument.Start(e.logger, "get_image_env").End()
 	defer func() {
@@ -141,6 +143,7 @@ func (e *envReader) GetImageEnv(
 		configOverride,
 		externalFilePaths,
 		externalFilePathsAllowNotExist,
+		excludeSourceCodeInfo,
 		imageRef,
 	)
 }
@@ -176,6 +179,35 @@ func (e *envReader) GetSourceEnv(
 	)
 }
 
+func (e *envReader) GetImage(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	value string,
+	externalFilePaths []string,
+	externalFilePathsAllowNotExist bool,
+	excludeSourceCodeInfo bool,
+) (_ bufimage.Image, retErr error) {
+	defer instrument.Start(e.logger, "get_image").End()
+	defer func() {
+		if retErr != nil {
+			retErr = fmt.Errorf("%v: %w", e.valueFlagName, retErr)
+		}
+	}()
+
+	imageRef, err := e.fetchRefParser.GetImageRef(ctx, value)
+	if err != nil {
+		return nil, err
+	}
+	return e.getImage(
+		ctx,
+		container,
+		externalFilePaths,
+		externalFilePathsAllowNotExist,
+		excludeSourceCodeInfo,
+		imageRef,
+	)
+}
+
 func (e *envReader) ListFiles(
 	ctx context.Context,
 	container app.EnvStdinContainer,
@@ -194,7 +226,14 @@ func (e *envReader) ListFiles(
 	switch t := ref.(type) {
 	case buffetch.ImageRef:
 		// if we have an image, list the files in the image
-		image, err := e.getImage(ctx, container, t)
+		image, err := e.getImage(
+			ctx,
+			container,
+			nil,
+			false,
+			true,
+			t,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -250,35 +289,23 @@ func (e *envReader) getEnvFromImage(
 	configOverride string,
 	externalFilePaths []string,
 	externalFilePathsAllowNotExist bool,
+	excludeSourceCodeInfo bool,
 	imageRef buffetch.ImageRef,
 ) (_ Env, retErr error) {
-	image, err := e.getImage(ctx, container, imageRef)
+	image, err := e.getImage(
+		ctx,
+		container,
+		externalFilePaths,
+		externalFilePathsAllowNotExist,
+		excludeSourceCodeInfo,
+		imageRef,
+	)
 	if err != nil {
 		return nil, err
 	}
 	config, err := e.GetConfig(ctx, configOverride)
 	if err != nil {
 		return nil, err
-	}
-	if len(externalFilePaths) > 0 {
-		// this is usually a full rel file path, but because this is a read image,
-		// the root is always ".", so this is OK, although awkward
-		rootRelFilePaths := make([]string, len(externalFilePaths))
-		for i, externalFilePath := range externalFilePaths {
-			rootRelFilePath, err := imageRef.PathResolver().ExternalPathToRelPath(externalFilePath)
-			if err != nil {
-				return nil, err
-			}
-			rootRelFilePaths[i] = rootRelFilePath
-		}
-		if externalFilePathsAllowNotExist {
-			image, err = bufimage.ImageWithOnlyRootRelFilePathsAllowNotExist(image, rootRelFilePaths)
-		} else {
-			image, err = bufimage.ImageWithOnlyRootRelFilePaths(image, rootRelFilePaths)
-		}
-		if err != nil {
-			return nil, err
-		}
 	}
 	return newEnv(image, config), nil
 }
@@ -353,6 +380,9 @@ func (e *envReader) getEnvFromSource(
 func (e *envReader) getImage(
 	ctx context.Context,
 	container app.EnvStdinContainer,
+	externalFilePaths []string,
+	externalFilePathsAllowNotExist bool,
+	excludeSourceCodeInfo bool,
 	imageRef buffetch.ImageRef,
 ) (_ bufimage.Image, retErr error) {
 	readCloser, err := e.fetchReader.GetImageFile(ctx, container, imageRef)
@@ -366,21 +396,84 @@ func (e *envReader) getImage(
 	if err != nil {
 		return nil, err
 	}
-	// we cannot determine fileDescriptorProtos ahead of time so we cannot handle extensions
-	// TODO: we do not happen to need them for our use case with linting, but we need to dicuss this
 	protoImage := &imagev1.Image{}
 	switch imageEncoding := imageRef.ImageEncoding(); imageEncoding {
+	// we have to double parse due to custom options
+	// See https://github.com/golang/protobuf/issues/1123
+	// TODO: revisit
 	case buffetch.ImageEncodingBin:
-		err = protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, protoImage)
+		firstProtoImage := &imagev1.Image{}
+		timer := instrument.Start(e.logger, "first_wire_unmarshal")
+		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
+			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
+		}
+		timer.End()
+		timer = instrument.Start(e.logger, "new_resolver")
+		// TODO right now, NewResolver sets AllowUnresolvable to true all the time
+		// we want to make this into a check, and we verify if we need this for the individual command
+		resolver, err := protoencoding.NewResolver(
+			firstProtoImage.File...,
+		)
+		if err != nil {
+			return nil, err
+		}
+		timer.End()
+		timer = instrument.Start(e.logger, "second_wire_unmarshal")
+		if err := protoencoding.NewWireUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
+			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
+		}
+		timer.End()
 	case buffetch.ImageEncodingJSON:
-		err = protoencoding.NewJSONUnmarshaler(nil).Unmarshal(data, protoImage)
+		firstProtoImage := &imagev1.Image{}
+		timer := instrument.Start(e.logger, "first_json_unmarshal")
+		if err := protoencoding.NewJSONUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
+			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
+		}
+		// TODO right now, NewResolver sets AllowUnresolvable to true all the time
+		// we want to make this into a check, and we verify if we need this for the individual command
+		timer.End()
+		timer = instrument.Start(e.logger, "new_resolver")
+		resolver, err := protoencoding.NewResolver(
+			firstProtoImage.File...,
+		)
+		if err != nil {
+			return nil, err
+		}
+		timer.End()
+		timer = instrument.Start(e.logger, "second_json_unmarshal")
+		if err := protoencoding.NewJSONUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
+			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
+		}
+		timer.End()
 	default:
 		return nil, fmt.Errorf("unknown image encoding: %v", imageEncoding)
 	}
-	if err != nil {
-		return nil, fmt.Errorf("could not unmarshal Image: %v", err)
+	if excludeSourceCodeInfo {
+		for _, fileDescriptorProto := range protoImage.File {
+			fileDescriptorProto.SourceCodeInfo = nil
+		}
 	}
-	return bufimage.NewImageForProto(protoImage)
+	image, err := bufimage.NewImageForProto(protoImage)
+	if err != nil {
+		return nil, err
+	}
+	if len(externalFilePaths) == 0 {
+		return image, nil
+	}
+	// this is usually a full rel file path, but because this is a read image,
+	// the root is always ".", so this is OK, although awkward
+	rootRelFilePaths := make([]string, len(externalFilePaths))
+	for i, externalFilePath := range externalFilePaths {
+		rootRelFilePath, err := imageRef.PathResolver().ExternalPathToRelPath(externalFilePath)
+		if err != nil {
+			return nil, err
+		}
+		rootRelFilePaths[i] = rootRelFilePath
+	}
+	if externalFilePathsAllowNotExist {
+		return bufimage.ImageWithOnlyRootRelFilePathsAllowNotExist(image, rootRelFilePaths)
+	}
+	return bufimage.ImageWithOnlyRootRelFilePaths(image, rootRelFilePaths)
 }
 
 func (e *envReader) getSourceBucketAndConfig(
