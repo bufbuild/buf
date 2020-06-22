@@ -80,6 +80,7 @@ func handle(
 		encoding.GetJSONStringOrStringValue(externalConfig.AgainstInputConfig),
 		files, // limit to the input files if specified
 		true,  // allow files in the against input to not exist
+		false, // keep for now
 	)
 	if err != nil {
 		responseWriter.WriteError(err.Error())

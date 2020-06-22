@@ -44,7 +44,7 @@ type EnvReader interface {
 		configOverride string,
 		externalFilePaths []string,
 		externalFileFilePathsAllowNotExist bool,
-		excludeSourceInfo bool,
+		excludeSourceCodeInfo bool,
 	) (Env, []bufanalysis.FileAnnotation, error)
 	// GetImageEnv is the same as GetEnv but only allows image values and never builds.
 	GetImageEnv(
@@ -54,6 +54,7 @@ type EnvReader interface {
 		configOverride string,
 		externalFilePaths []string,
 		externalFileFilePathsAllowNotExist bool,
+		excludeSourceCodeInfo bool,
 	) (Env, error)
 	// GetSourceEnv is the same as GetEnv but only allows source values and always builds.
 	GetSourceEnv(
@@ -63,8 +64,17 @@ type EnvReader interface {
 		configOverride string,
 		externalFilePaths []string,
 		externalFileFilePathsAllowNotExist bool,
-		excludeSourceInfo bool,
+		excludeSourceCodeInfo bool,
 	) (Env, []bufanalysis.FileAnnotation, error)
+	// GetImage is the same as GetImageEnv but does not get a configuration.
+	GetImage(
+		ctx context.Context,
+		container app.EnvStdinContainer,
+		value string,
+		externalFilePaths []string,
+		externalFileFilePathsAllowNotExist bool,
+		excludeSourceCodeInfo bool,
+	) (bufimage.Image, error)
 	// ListFiles lists the files.
 	ListFiles(
 		ctx context.Context,

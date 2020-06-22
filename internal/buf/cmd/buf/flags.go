@@ -30,6 +30,8 @@ const (
 	imageBuildInputFlagName            = "source"
 	imageBuildConfigFlagName           = "source-config"
 	imageBuildOutputFlagName           = "output"
+	imageConvertInputFlagName          = "image"
+	imageConvertOutputFlagName         = "output"
 	checkLintInputFlagName             = "input"
 	checkLintConfigFlagName            = "input-config"
 	checkBreakingInputFlagName         = "input"
@@ -50,6 +52,7 @@ type flags struct {
 	AgainstConfig        string
 	Input                string
 	AgainstInput         string
+	ConvertInput         string
 	Output               string
 	AsFileDescriptorSet  bool
 	ExcludeImports       bool
@@ -140,6 +143,35 @@ func (b *builder) bindImageBuildExcludeSourceInfo(flagSet *pflag.FlagSet) {
 
 func (b *builder) bindImageBuildErrorFormat(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(&b.ErrorFormat, errorFormatFlagName, "text", "The format for build errors, printed to stderr. Must be one of [text,json].")
+}
+
+func (b *builder) bindImageConvertInput(flagSet *pflag.FlagSet) {
+	// TODO: cobra cannot have the same variable with different inputs, we need
+	// to refactor the variables to have different binds per function
+	flagSet.StringVarP(&b.ConvertInput, imageConvertInputFlagName, "i", "", fmt.Sprintf(`The image to convert. Must be one of format %s.`, buffetch.ImageFormatsString))
+}
+
+func (b *builder) bindImageConvertFiles(flagSet *pflag.FlagSet) {
+	flagSet.StringSliceVar(&b.Files, "file", nil, `Limit to specific files. This is an advanced feature and is not recommended.`)
+}
+
+func (b *builder) bindImageConvertOutput(flagSet *pflag.FlagSet) {
+	flagSet.StringVarP(&b.Output, imageConvertOutputFlagName, "o", "", fmt.Sprintf(`Required. The location to write the image to. Must be one of format %s.`, buffetch.ImageFormatsString))
+}
+
+func (b *builder) bindImageConvertAsFileDescriptorSet(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&b.AsFileDescriptorSet, "as-file-descriptor-set", false, `Output as a google.protobuf.FileDescriptorSet instead of an image.
+
+Note that images are wire-compatible with FileDescriptorSets, however this flag will strip
+the additional metadata added for Buf usage.`)
+}
+
+func (b *builder) bindImageConvertExcludeImports(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&b.ExcludeImports, "exclude-imports", false, "Exclude imports.")
+}
+
+func (b *builder) bindImageConvertExcludeSourceInfo(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&b.ExcludeSourceInfo, "exclude-source-info", false, "Exclude source info.")
 }
 
 func (b *builder) bindCheckLintInput(flagSet *pflag.FlagSet) {
