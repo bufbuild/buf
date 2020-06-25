@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/zaputil"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -41,22 +42,16 @@ func NewContainer(appContainer app.Container, logger *zap.Logger) Container {
 //
 // The level can be [debug,info,warn,error]. The default is info.
 // The format can be [text,color,json]. The default is color.
-func NewLogger(writer io.Writer, level string, format string) (*zap.Logger, error) {
-	zapLevel, err := getZapLevel(level)
+func NewLogger(writer io.Writer, levelString string, format string) (*zap.Logger, error) {
+	level, err := getZapLevel(levelString)
 	if err != nil {
 		return nil, err
 	}
-	zapEncoder, err := getZapEncoder(format)
+	encoder, err := getZapEncoder(format)
 	if err != nil {
 		return nil, err
 	}
-	return zap.New(
-		zapcore.NewCore(
-			zapEncoder,
-			zapcore.Lock(zapcore.AddSync(writer)),
-			zap.NewAtomicLevelAt(zapLevel),
-		),
-	), nil
+	return zaputil.NewLogger(writer, level, encoder), nil
 }
 
 func getZapLevel(level string) (zapcore.Level, error) {
@@ -79,11 +74,11 @@ func getZapEncoder(format string) (zapcore.Encoder, error) {
 	format = strings.TrimSpace(strings.ToLower(format))
 	switch format {
 	case "text":
-		return zapcore.NewConsoleEncoder(textEncoderConfig), nil
+		return zaputil.NewTextEncoder(), nil
 	case "color", "":
-		return zapcore.NewConsoleEncoder(colortextEncoderConfig), nil
+		return zaputil.NewColortextEncoder(), nil
 	case "json":
-		return zapcore.NewJSONEncoder(jsonEncoderConfig), nil
+		return zaputil.NewJSONEncoder(), nil
 	default:
 		return nil, fmt.Errorf("unknown log format [text,color,json]: %q", format)
 	}

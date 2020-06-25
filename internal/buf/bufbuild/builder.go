@@ -215,28 +215,56 @@ func getBuildResult(
 					rootRelFilePaths,
 					nil,
 					nil,
-					errors.New("got invalid source error but no errors reported"),
+					errors.New("got invalid source error from parse but no errors reported"),
 				)
 			}
-			fileAnnotations := make([]bufanalysis.FileAnnotation, 0, len(errorsWithPos))
-			for _, errorWithPos := range errorsWithPos {
-				fileAnnotation, err := getFileAnnotation(
-					ctx,
-					readBucket,
-					externalPathResolver,
-					roots,
-					errorWithPos,
-				)
-				if err != nil {
-					return newBuildResult(rootRelFilePaths, nil, nil, err)
-				}
-				fileAnnotations = append(fileAnnotations, fileAnnotation)
+			fileAnnotations, err := getFileAnnotations(
+				ctx,
+				readBucket,
+				externalPathResolver,
+				roots,
+				errorsWithPos,
+			)
+			if err != nil {
+				return newBuildResult(rootRelFilePaths, nil, nil, err)
 			}
 			return newBuildResult(rootRelFilePaths, nil, fileAnnotations, nil)
 		}
 		return newBuildResult(rootRelFilePaths, nil, nil, err)
+	} else if len(errorsWithPos) > 0 {
+		// https://github.com/jhump/protoreflect/pull/331
+		return newBuildResult(
+			rootRelFilePaths,
+			nil,
+			nil,
+			errors.New("got no error from parse but errors reported"),
+		)
 	}
 	return newBuildResult(rootRelFilePaths, descFileDescriptors, nil, nil)
+}
+
+func getFileAnnotations(
+	ctx context.Context,
+	readBucket storage.ReadBucket,
+	externalPathResolver bufpath.ExternalPathResolver,
+	roots []string,
+	errorsWithPos []protoparse.ErrorWithPos,
+) ([]bufanalysis.FileAnnotation, error) {
+	fileAnnotations := make([]bufanalysis.FileAnnotation, 0, len(errorsWithPos))
+	for _, errorWithPos := range errorsWithPos {
+		fileAnnotation, err := getFileAnnotation(
+			ctx,
+			readBucket,
+			externalPathResolver,
+			roots,
+			errorWithPos,
+		)
+		if err != nil {
+			return nil, err
+		}
+		fileAnnotations = append(fileAnnotations, fileAnnotation)
+	}
+	return fileAnnotations, nil
 }
 
 func getFileAnnotation(
