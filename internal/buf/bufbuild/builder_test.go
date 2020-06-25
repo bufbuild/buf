@@ -104,12 +104,23 @@ func TestCompareGoogleapis(t *testing.T) {
 	}
 }
 
-func TestCompareCustomOptions(t *testing.T) {
+func TestCompareCustomOptions1(t *testing.T) {
 	testCompare(t, "customoptions1")
 }
 
-func TestCompareProto3Optional(t *testing.T) {
+func TestCompareProto3Optional1(t *testing.T) {
 	testCompare(t, "proto3optional1")
+}
+
+func TestCustomOptionsError1(t *testing.T) {
+	t.Parallel()
+	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", "customoptionserror1"))
+	require.Equal(t, 1, len(fileAnnotations), fileAnnotations)
+	require.Equal(
+		t,
+		"testdata/customoptionserror1/b.proto:9:27:field a.Baz.bat: option (a.foo).bat: field bat of a.Foo does not exist",
+		fileAnnotations[0].String(),
+	)
 }
 
 func testCompare(t *testing.T, relDirPath string) {
