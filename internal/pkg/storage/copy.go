@@ -16,25 +16,57 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"sync"
 
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/thread"
 	"go.uber.org/multierr"
 )
 
-// transformer can be nil
+// Copy copies the bucket at from to the bucket at to.
+//
+// Copies done concurrently.
+// Returns the number of files copied.
+func Copy(
+	ctx context.Context,
+	from ReadBucket,
+	to WriteBucket,
+	options ...CopyOption,
+) (int, error) {
+	copyOptions := &copyOptions{}
+	for _, option := range options {
+		option(copyOptions)
+	}
+	return copyPaths(
+		ctx,
+		from,
+		to,
+		walkBucketFunc(from, ""),
+		copyOptions.externalPaths,
+		false,
+	)
+}
+
+// CopyOption is an option for Copy.
+type CopyOption func(*copyOptions)
+
+// CopyWithExternalPaths returns a new CopyOption that says to copy external paths.
+//
+// The to WriteBucket must support setting external paths.
+func CopyWithExternalPaths() CopyOption {
+	return func(copyOptions *copyOptions) {
+		copyOptions.externalPaths = true
+	}
+}
+
 func copyPaths(
 	ctx context.Context,
 	from ReadBucket,
-	to ReadWriteBucket,
+	to WriteBucket,
 	walk func(context.Context, func(string) error) error,
-	options []normalpath.TransformerOption,
+	copyExternalPaths bool,
 	allowNotExist bool,
 ) (int, error) {
-	transformer := normalpath.NewTransformer(options...)
 	semaphoreC := make(chan struct{}, thread.Parallelism())
 	var retErr error
 	var count int
@@ -44,17 +76,10 @@ func copyPaths(
 		ctx,
 		func(path string) error {
 			newPath := path
-			if transformer != nil {
-				var ok bool
-				newPath, ok = transformer.Transform(path)
-				if !ok {
-					return nil
-				}
-			}
 			wg.Add(1)
 			semaphoreC <- struct{}{}
 			go func() {
-				err := copyPath(ctx, from, to, path, newPath)
+				err := copyPath(ctx, from, to, path, newPath, copyExternalPaths)
 				lock.Lock()
 				if err != nil {
 					if !allowNotExist || !IsNotExist(err) {
@@ -76,50 +101,43 @@ func copyPaths(
 	return count, retErr
 }
 
-// returns ErrNotExist if fromPath does not exist
+// copyPath copies the path from the bucket at from to the bucket at to using the given paths.
+//
+// Paths will be normalized within this function.
 func copyPath(
 	ctx context.Context,
 	from ReadBucket,
-	to ReadWriteBucket,
+	to WriteBucket,
 	fromPath string,
 	toPath string,
+	copyExternalPaths bool,
 ) error {
-	readObject, err := from.Get(ctx, fromPath)
+	readObjectCloser, err := from.Get(ctx, fromPath)
 	if err != nil {
 		return err
 	}
-	writeObject, err := to.Put(ctx, toPath, readObject.Size())
+	writeObjectCloser, err := to.Put(ctx, toPath, readObjectCloser.Size())
 	if err != nil {
-		return multierr.Append(err, readObject.Close())
+		return multierr.Append(err, readObjectCloser.Close())
 	}
-	_, err = io.Copy(writeObject, readObject)
-	return multierr.Append(err, multierr.Append(writeObject.Close(), readObject.Close()))
+	if copyExternalPaths {
+		// do this before copying so that writeObjectCloser.Close() will fail due to incomplete write
+		if err := writeObjectCloser.SetExternalPath(readObjectCloser.ExternalPath()); err != nil {
+			return multierr.Append(err, multierr.Append(writeObjectCloser.Close(), readObjectCloser.Close()))
+		}
+	}
+	_, err = io.Copy(writeObjectCloser, readObjectCloser)
+	return multierr.Append(err, multierr.Append(writeObjectCloser.Close(), readObjectCloser.Close()))
 }
 
 func walkBucketFunc(bucket ReadBucket, prefix string) func(context.Context, func(string) error) error {
 	return func(ctx context.Context, f func(string) error) error {
-		return bucket.Walk(ctx, prefix, f)
+		return bucket.Walk(ctx, prefix, func(objectInfo ObjectInfo) error {
+			return f(objectInfo.Path())
+		})
 	}
 }
 
-func walkPathsFunc(paths []string) func(context.Context, func(string) error) error {
-	return func(ctx context.Context, f func(string) error) error {
-		fileCount := 0
-		for _, path := range paths {
-			fileCount++
-			select {
-			case <-ctx.Done():
-				err := ctx.Err()
-				if err == context.DeadlineExceeded {
-					return fmt.Errorf("timed out after walking %d files: %v", fileCount, err)
-				}
-				return err
-			default:
-			}
-			if err := f(path); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
+type copyOptions struct {
+	externalPaths bool
 }

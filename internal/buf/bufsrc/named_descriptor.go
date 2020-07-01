@@ -34,7 +34,7 @@ func newNamedDescriptor(
 	nestedNames []string,
 ) (namedDescriptor, error) {
 	if name == "" {
-		return namedDescriptor{}, fmt.Errorf("no name in %q", locationDescriptor.RootRelFilePath())
+		return namedDescriptor{}, fmt.Errorf("no name in %q", locationDescriptor.File().Path())
 	}
 	return namedDescriptor{
 		locationDescriptor: locationDescriptor,
@@ -45,8 +45,8 @@ func newNamedDescriptor(
 }
 
 func (n *namedDescriptor) FullName() string {
-	if n.Package() != "" {
-		return n.Package() + "." + n.NestedName()
+	if n.File().Package() != "" {
+		return n.File().Package() + "." + n.NestedName()
 	}
 	return n.NestedName()
 }

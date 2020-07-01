@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -62,16 +61,16 @@ type Cloner interface {
 		envContainer app.EnvContainer,
 		url string,
 		depth uint32,
-		readWriteBucket storage.ReadWriteBucket,
+		writeBucket storage.WriteBucket,
 		options CloneToBucketOptions,
 	) error
 }
 
 // CloneToBucketOptions are options for Clone.
 type CloneToBucketOptions struct {
-	TransformerOptions []normalpath.TransformerOption
-	Name               Name
-	RecurseSubmodules  bool
+	Mapper            storage.Mapper
+	Name              Name
+	RecurseSubmodules bool
 }
 
 // NewCloner returns a new Cloner.

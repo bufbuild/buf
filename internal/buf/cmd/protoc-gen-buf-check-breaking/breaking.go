@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
@@ -88,7 +88,7 @@ func handle(
 	}
 	againstImage := againstEnv.Image()
 	if externalConfig.ExcludeImports {
-		againstImage = bufimage.ImageWithoutImports(againstImage)
+		againstImage = bufcore.ImageWithoutImports(againstImage)
 	}
 	envReader = internal.NewBufcliEnvReader(logger, "", "input_config")
 	config, err := envReader.GetConfig(
@@ -99,7 +99,7 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	image, err := bufimage.NewImageForCodeGeneratorRequest(request)
+	image, err := bufcore.NewImageForCodeGeneratorRequest(request)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return

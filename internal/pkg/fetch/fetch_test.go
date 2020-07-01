@@ -73,7 +73,7 @@ func testRoundTripLocalFile(
 	ctx := context.Background()
 	container := app.NewContainer(nil, nil, nil, nil)
 
-	tmpDir, err := tmp.NewDir()
+	tmpDir, err := tmp.NewDir("")
 	require.NoError(t, err)
 	filePath := filepath.Join(tmpDir.AbsPath(), filename)
 

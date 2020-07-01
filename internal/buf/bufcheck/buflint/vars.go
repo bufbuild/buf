@@ -34,6 +34,7 @@ var (
 		v1CommentRPCCheckerBuilder,
 		v1CommentServiceCheckerBuilder,
 		v1DirectorySamePackageCheckerBuilder,
+		v1EnumFirstValueZeroCheckerBuilder,
 		v1EnumNoAllowAliasCheckerBuilder,
 		v1EnumPascalCaseCheckerBuilder,
 		v1EnumValuePrefixCheckerBuilder,
@@ -84,6 +85,7 @@ var (
 		"SENSIBLE",
 		"STYLE_BASIC",
 		"STYLE_DEFAULT",
+		"OTHER",
 	}
 	// v1IDToCategories are the ID to categories.
 	v1IDToCategories = map[string][]string{
@@ -113,6 +115,9 @@ var (
 			"BASIC",
 			"DEFAULT",
 			"FILE_LAYOUT",
+		},
+		"ENUM_FIRST_VALUE_ZERO": {
+			"OTHER",
 		},
 		"ENUM_NO_ALLOW_ALIAS": {
 			"MINIMAL",
@@ -325,6 +330,11 @@ var (
 		"DIRECTORY_SAME_PACKAGE",
 		"all files in a given directory are in the same package",
 		newAdapter(internal.CheckDirectorySamePackage),
+	)
+	v1EnumFirstValueZeroCheckerBuilder = bufcheckinternal.NewNopCheckerBuilder(
+		"ENUM_FIRST_VALUE_ZERO",
+		"all first values of enums have a numeric value of 0",
+		newAdapter(internal.CheckEnumFirstValueZero),
 	)
 	v1EnumNoAllowAliasCheckerBuilder = bufcheckinternal.NewNopCheckerBuilder(
 		"ENUM_NO_ALLOW_ALIAS",

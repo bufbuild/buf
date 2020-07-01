@@ -22,7 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
@@ -72,7 +72,7 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	image, err := bufimage.NewImageForCodeGeneratorRequest(request)
+	image, err := bufcore.NewImageForCodeGeneratorRequest(request)
 	if err != nil {
 		responseWriter.WriteError(err.Error())
 		return

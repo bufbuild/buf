@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
@@ -50,7 +50,7 @@ func (i *imageWriter) PutImage(
 	ctx context.Context,
 	container app.EnvStdoutContainer,
 	value string,
-	image bufimage.Image,
+	image bufcore.Image,
 	asFileDescriptorSet bool,
 	excludeImports bool,
 ) (retErr error) {
@@ -66,13 +66,13 @@ func (i *imageWriter) PutImage(
 	}
 	writeImage := image
 	if excludeImports {
-		writeImage = bufimage.ImageWithoutImports(image)
+		writeImage = bufcore.ImageWithoutImports(image)
 	}
 	var message proto.Message
 	if asFileDescriptorSet {
-		message = bufimage.ImageToFileDescriptorSet(writeImage)
+		message = bufcore.ImageToFileDescriptorSet(writeImage)
 	} else {
-		message = bufimage.ImageToProtoImage(writeImage)
+		message = bufcore.ImageToProtoImage(writeImage)
 	}
 	data, err := i.imageMarshal(message, image, imageRef.ImageEncoding())
 	if err != nil {
@@ -91,7 +91,7 @@ func (i *imageWriter) PutImage(
 
 func (i *imageWriter) imageMarshal(
 	message proto.Message,
-	image bufimage.Image,
+	image bufcore.Image,
 	imageEncoding buffetch.ImageEncoding,
 ) ([]byte, error) {
 	defer instrument.Start(i.logger, "image_marshal").End()
@@ -101,7 +101,7 @@ func (i *imageWriter) imageMarshal(
 	case buffetch.ImageEncodingJSON:
 		// TODO: verify that image is complete
 		resolver, err := protoencoding.NewResolver(
-			bufimage.ImageToFileDescriptorProtos(
+			bufcore.ImageToFileDescriptorProtos(
 				image,
 			)...,
 		)

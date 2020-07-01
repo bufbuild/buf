@@ -94,8 +94,8 @@ func idIsIgnored(id string, descriptor bufsrc.Descriptor, config *Config) bool {
 	if descriptor == nil {
 		return false
 	}
-	path := descriptor.RootRelFilePath()
-	if normalpath.MapContainsMatch(config.IgnoreRootPaths, path) {
+	path := descriptor.File().Path()
+	if normalpath.MapHasEqualOrContainingPath(config.IgnoreRootPaths, path) {
 		return true
 	}
 	if id == "" {
@@ -105,7 +105,7 @@ func idIsIgnored(id string, descriptor bufsrc.Descriptor, config *Config) bool {
 	if !ok {
 		return false
 	}
-	return normalpath.MapContainsMatch(ignoreRootPaths, path)
+	return normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path)
 }
 
 func locationIsIgnored(id string, ignorePrefix string, location bufsrc.Location, config *Config) bool {

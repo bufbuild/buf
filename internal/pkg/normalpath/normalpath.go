@@ -24,6 +24,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
 const (
@@ -214,7 +216,45 @@ func Components(path string) []string {
 	return components
 }
 
-// MapContainsMatch returns true if the path matches any file or directory in the map.
+// ContainsPath returns true if the dirPath contains the path.
+//
+// The path and dirPath are expected to be normalized and validated.
+//
+// For a given dirPath:
+//
+//   - If path == ".", dirPathPath does not contain the path.
+//   - If dirPath == ".", the dirPath contains the path.
+//   - If dirPath is a directory that contains path, this returns true.
+func ContainsPath(dirPath string, path string) bool {
+	if path == "." {
+		return false
+	}
+	return EqualsOrContainsPath(dirPath, Dir(path))
+}
+
+// EqualsOrContainsPath returns true if the value is equal to or contains the path.
+//
+// The path and value are expected to be normalized and validated.
+//
+// For a given value:
+//
+//   - If value == ".", the value contains the path.
+//   - If value == path, the value is equal to the path.
+//   - If value is a directory that contains path, this returns true.
+func EqualsOrContainsPath(value string, path string) bool {
+	if value == "." {
+		return true
+	}
+	// TODO: can we optimize this with strings.HasPrefix(path, value + "/") somehow?
+	for curPath := path; curPath != "."; curPath = Dir(curPath) {
+		if value == curPath {
+			return true
+		}
+	}
+	return false
+}
+
+// MapHasEqualOrContainingPath returns true if the path matches any file or directory in the map.
 //
 // The path and all keys in m are expected to be normalized and validated.
 //
@@ -227,8 +267,7 @@ func Components(path string) []string {
 // If the map is empty, returns false.
 //
 // All files and directories in the map are expected to be normalized.
-// The path is normalized within this call.
-func MapContainsMatch(m map[string]struct{}, path string) bool {
+func MapHasEqualOrContainingPath(m map[string]struct{}, path string) bool {
 	if len(m) == 0 {
 		return false
 	}
@@ -243,31 +282,7 @@ func MapContainsMatch(m map[string]struct{}, path string) bool {
 	return false
 }
 
-// IsMatch returns true if the value is equal to or contains the path.
-//
-// The path and value are expected to be normalized and validated.
-//
-// For a given value:
-//
-//   - If value == ".", the value contains the path.
-//   - If value == path, the value is equal to the path.
-//   - If value is a directory that contains path, this returns true.
-//
-// The path is normalized within this call.
-func IsMatch(value string, path string) bool {
-	if value == "." {
-		return true
-	}
-	// TODO: can we optimize this with strings.HasPrefix(path, value + "/") somehow?
-	for curPath := path; curPath != "."; curPath = Dir(curPath) {
-		if value == curPath {
-			return true
-		}
-	}
-	return false
-}
-
-// MapMatches returns the matching paths in the map.
+// MapAllEqualOrContainingPaths returns the matching paths in the map.
 //
 // The path and all keys in m are expected to be normalized and validated.
 //
@@ -277,15 +292,15 @@ func IsMatch(value string, path string) bool {
 //   - If x == path, the path matches.
 //   - If x is a directory that contains path, the path matches.
 //
-// If the map is empty, returns empty map.
+// If the map is empty, returns nil.
 //
 // All files and directories in the map are expected to be normalized.
 // The path is normalized within this call.
-func MapMatches(m map[string]struct{}, path string) map[string]struct{} {
-	n := make(map[string]struct{})
+func MapAllEqualOrContainingPaths(m map[string]struct{}, path string) []string {
 	if len(m) == 0 {
-		return n
+		return nil
 	}
+	n := make(map[string]struct{})
 	if _, ok := m["."]; ok {
 		// also covers if path == ".".
 		n["."] = struct{}{}
@@ -298,92 +313,15 @@ func MapMatches(m map[string]struct{}, path string) map[string]struct{} {
 			}
 		}
 	}
-	return n
+	return stringutil.MapToSortedSlice(n)
 }
 
-// Transformer transforms and filters paths.
-type Transformer interface {
-	// Transform transforms and filters the path.
-	//
-	// If the path is filtered, this will return empty and false.
-	// Returns the potentially transformed path.
-	//
-	// The path is expected to be normalized.
-	Transform(path string) (string, bool)
-}
-
-// TransformerOption is an option for a new Transformer.
-type TransformerOption func(*transformer)
-
-// WithMatcher returns a TransformerOption with the given matcher.
-//
-// Transform will return false and no path if no matcher returns true.
-// If there are no matchers, there is no processing of match rules.
-// Multiple matchers are or'ed.
-// Applied after strip components.
-// Paths are normalized before passing to a matcher.
-//
-// The default is no matchers.
-func WithMatcher(matcher func(name string) bool) TransformerOption {
-	return func(transformer *transformer) {
-		transformer.matchers = append(transformer.matchers, matcher)
-	}
-}
-
-// WithExt returns WithMatcher() for Ext(path) == ext.
-func WithExt(ext string) TransformerOption {
-	return WithMatcher(func(path string) bool { return Ext(path) == ext })
-}
-
-// WithExactPath returns WithMatcher() for path == exactPath.
-//
-// exactPath is normalized within this call.
-func WithExactPath(exactPath string) TransformerOption {
-	exactPath = Normalize(exactPath)
-	return WithMatcher(func(path string) bool { return path == exactPath })
-}
-
-// WithStripComponents strips the given number of components from a path.
-//
-// ApplyOptions will return false and no path if a file does not have this many components.
-//
-// The default is 0.
-func WithStripComponents(stripComponentCount uint32) TransformerOption {
-	return func(transformer *transformer) {
-		transformer.stripComponentCount = stripComponentCount
-	}
-}
-
-// NewTransformer returns a new Transformer.
-func NewTransformer(options ...TransformerOption) Transformer {
-	transformer := &transformer{}
-	for _, option := range options {
-		option(transformer)
-	}
-	return transformer
-}
-
-type transformer struct {
-	matchers            []func(string) bool
-	stripComponentCount uint32
-}
-
-func (t *transformer) Transform(path string) (string, bool) {
-	path, ok := stripComponents(path, int(t.stripComponentCount))
-	if !ok {
-		return "", false
-	}
-	if !matches(path, t.matchers...) {
-		return "", false
-	}
-	return path, true
-}
-
-// stripComponents strips the specified number of components.
+// StripComponents strips the specified number of components.
 //
 // Path expected to be normalized.
 // Returns false if the path does not have more than the specified number of components.
-func stripComponents(path string, count int) (string, bool) {
+func StripComponents(path string, countUint32 uint32) (string, bool) {
+	count := int(countUint32)
 	if count == 0 {
 		return path, true
 	}
@@ -392,20 +330,4 @@ func stripComponents(path string, count int) (string, bool) {
 		return "", false
 	}
 	return Join(components[count:]...), true
-}
-
-// matches returns true if any matcher returns true for the path.
-//
-// Path expected to be normalized.
-// If matchers is empty, returns true.
-func matches(path string, matchers ...func(string) bool) bool {
-	if len(matchers) == 0 {
-		return true
-	}
-	for _, matcher := range matchers {
-		if matcher(path) {
-			return true
-		}
-	}
-	return false
 }

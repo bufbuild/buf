@@ -618,7 +618,7 @@ func checkPackageEnumNoDelete(add addFunc, previousFiles []bufsrc.File, files []
 						}
 					}
 					// check if the file still exists
-					file, ok := filePathToFile[previousEnum.RootRelFilePath()]
+					file, ok := filePathToFile[previousEnum.File().Path()]
 					if ok {
 						// file exists, try to get a location to attach the error to
 						descriptor, location, err := getDescriptorAndLocationForDeletedEnum(file, previousNestedName)
@@ -663,7 +663,7 @@ func checkPackageMessageNoDelete(add addFunc, previousFiles []bufsrc.File, files
 						}
 					}
 					// check if the file still exists
-					file, ok := filePathToFile[previousMessage.RootRelFilePath()]
+					file, ok := filePathToFile[previousMessage.File().Path()]
 					if ok {
 						// file exists, try to get a location to attach the error to
 						descriptor, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
@@ -725,7 +725,7 @@ func checkPackageServiceNoDelete(add addFunc, previousFiles []bufsrc.File, files
 						}
 					}
 					// check if the file still exists
-					file, ok := filePathToFile[previousService.RootRelFilePath()]
+					file, ok := filePathToFile[previousService.File().Path()]
 					if ok {
 						// file exists
 						add(file, nil, `Previously present service %q was deleted from package %q.`, previousName, previousPackage)

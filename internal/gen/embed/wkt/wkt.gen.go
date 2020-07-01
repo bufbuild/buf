@@ -66,7 +66,7 @@ var (
 )
 
 func init() {
-	readBucket, err := storagemem.NewImmutableReadBucket(pathToData)
+	readBucket, err := storagemem.NewReadBucket(pathToData)
 	if err != nil {
 		panic(err.Error())
 	}

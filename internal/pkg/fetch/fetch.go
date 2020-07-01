@@ -22,7 +22,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -504,23 +503,10 @@ func WithGetFileKeepFileCompression() GetFileOption {
 // GetBucketOption is a GetBucket option
 type GetBucketOption func(*getBucketOptions)
 
-// WithGetBucketExt is equivalent to normalpath.WithExt.
-func WithGetBucketExt(ext string) GetBucketOption {
+// WithGetBucketMapper returns a GetBucketOption that adds the Mapper.
+func WithGetBucketMapper(mapper storage.Mapper) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
-		getBucketOptions.transformerOptions = append(
-			getBucketOptions.transformerOptions,
-			normalpath.WithExt(ext),
-		)
-	}
-}
-
-// WithGetBucketExactPath is equivalent to normalpath.WithExactPath.
-func WithGetBucketExactPath(exactPath string) GetBucketOption {
-	return func(getBucketOptions *getBucketOptions) {
-		getBucketOptions.transformerOptions = append(
-			getBucketOptions.transformerOptions,
-			normalpath.WithExactPath(exactPath),
-		)
+		getBucketOptions.mapper = mapper
 	}
 }
 

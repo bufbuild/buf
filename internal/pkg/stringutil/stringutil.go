@@ -57,11 +57,17 @@ func SplitTrimLinesNoEmpty(output string) []string {
 
 // MapToSortedSlice transforms m to a sorted slice.
 func MapToSortedSlice(m map[string]struct{}) []string {
+	s := MapToSlice(m)
+	sort.Strings(s)
+	return s
+}
+
+// MapToSlice transforms m to a slice.
+func MapToSlice(m map[string]struct{}) []string {
 	s := make([]string, 0, len(m))
 	for e := range m {
 		s = append(s, e)
 	}
-	sort.Strings(s)
 	return s
 }
 

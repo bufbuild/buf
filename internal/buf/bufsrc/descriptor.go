@@ -14,28 +14,23 @@
 
 package bufsrc
 
-import "github.com/bufbuild/buf/internal/buf/bufimage"
-
 type descriptor struct {
-	bufimage.FileRef
-	pkg           string
+	file          File
 	locationStore *locationStore
 }
 
 func newDescriptor(
-	fileRef bufimage.FileRef,
-	pkg string,
+	file File,
 	locationStore *locationStore,
 ) descriptor {
 	return descriptor{
-		FileRef:       fileRef,
-		pkg:           pkg,
+		file:          file,
 		locationStore: locationStore,
 	}
 }
 
-func (d *descriptor) Package() string {
-	return d.pkg
+func (d *descriptor) File() File {
+	return d.file
 }
 
 func (d *descriptor) getLocation(path []int32) Location {

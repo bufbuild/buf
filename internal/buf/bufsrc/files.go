@@ -17,14 +17,14 @@ package bufsrc
 import (
 	"context"
 
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/pkg/thread"
 	"go.uber.org/multierr"
 )
 
 const defaultChunkSizeThreshold = 8
 
-func newFilesUnstable(ctx context.Context, imageFiles ...bufimage.File) ([]File, error) {
+func newFilesUnstable(ctx context.Context, imageFiles ...bufcore.ImageFile) ([]File, error) {
 	if len(imageFiles) == 0 {
 		return nil, nil
 	}
@@ -76,15 +76,15 @@ func newFilesUnstable(ctx context.Context, imageFiles ...bufimage.File) ([]File,
 	return files, nil
 }
 
-func imageFilesToChunks(s []bufimage.File, chunkSize int) [][]bufimage.File {
-	var chunks [][]bufimage.File
+func imageFilesToChunks(s []bufcore.ImageFile, chunkSize int) [][]bufcore.ImageFile {
+	var chunks [][]bufcore.ImageFile
 	if len(s) == 0 {
 		return chunks
 	}
 	if chunkSize <= 0 {
-		return [][]bufimage.File{s}
+		return [][]bufcore.ImageFile{s}
 	}
-	c := make([]bufimage.File, len(s))
+	c := make([]bufcore.ImageFile, len(s))
 	copy(c, s)
 	// https://github.com/golang/go/wiki/SliceTricks#batching-with-minimal-allocation
 	for chunkSize < len(c) {

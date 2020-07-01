@@ -127,6 +127,19 @@ func checkEnumPascalCase(add addFunc, enum bufsrc.Enum) error {
 	return nil
 }
 
+// CheckEnumFirstValueZero is a check function.
+var CheckEnumFirstValueZero = newEnumCheckFunc(checkEnumFirstValueZero)
+
+func checkEnumFirstValueZero(add addFunc, enum bufsrc.Enum) error {
+	if values := enum.Values(); len(values) > 0 {
+		if firstEnumValue := values[0]; firstEnumValue.Number() != 0 {
+			// proto3 compilation references the number
+			add(firstEnumValue, firstEnumValue.NumberLocation(), "First enum value %q should have a numeric value of 0", firstEnumValue.Name())
+		}
+	}
+	return nil
+}
+
 // CheckEnumValuePrefix is a check function.
 var CheckEnumValuePrefix = newEnumValueCheckFunc(checkEnumValuePrefix)
 
@@ -212,7 +225,7 @@ func checkFieldNoDescriptor(add addFunc, field bufsrc.Field) error {
 var CheckFileLowerSnakeCase = newFileCheckFunc(checkFileLowerSnakeCase)
 
 func checkFileLowerSnakeCase(add addFunc, file bufsrc.File) error {
-	filename := file.RootRelFilePath()
+	filename := file.Path()
 	base := normalpath.Base(filename)
 	ext := normalpath.Ext(filename)
 	baseWithoutExt := strings.TrimSuffix(base, ext)
@@ -292,7 +305,7 @@ func checkPackageDirectoryMatch(add addFunc, file bufsrc.File) error {
 		return nil
 	}
 	expectedDirPath := strings.ReplaceAll(pkg, ".", "/")
-	dirPath := normalpath.Dir(file.RootRelFilePath())
+	dirPath := normalpath.Dir(file.Path())
 	// need to check case where in root relative directory and no package defined
 	// this should be valid although if SENSIBLE is turned on this will be invalid
 	if dirPath != expectedDirPath {
@@ -326,7 +339,7 @@ var CheckPackageSameDirectory = newPackageToFilesCheckFunc(checkPackageSameDirec
 func checkPackageSameDirectory(add addFunc, pkg string, files []bufsrc.File) error {
 	dirMap := make(map[string]struct{})
 	for _, file := range files {
-		dirMap[normalpath.Dir(file.RootRelFilePath())] = struct{}{}
+		dirMap[normalpath.Dir(file.Path())] = struct{}{}
 	}
 	if len(dirMap) > 1 {
 		dirs := stringutil.MapToSortedSlice(dirMap)

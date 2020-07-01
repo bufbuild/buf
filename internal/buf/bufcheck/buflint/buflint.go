@@ -26,7 +26,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"go.uber.org/zap"
 )
 
@@ -40,7 +40,7 @@ type Handler interface {
 	Check(
 		ctx context.Context,
 		config *Config,
-		image bufimage.Image,
+		image bufcore.Image,
 	) ([]bufanalysis.FileAnnotation, error)
 }
 
@@ -137,8 +137,8 @@ func PrintFileAnnotationsLintConfigIgnoreYAML(writer io.Writer, fileAnnotations 
 	}
 	ignoreIDToRootPathMap := make(map[string]map[string]struct{})
 	for _, fileAnnotation := range fileAnnotations {
-		fileRef := fileAnnotation.FileRef()
-		if fileRef == nil || fileAnnotation.Type() == "" {
+		fileInfo := fileAnnotation.FileInfo()
+		if fileInfo == nil || fileAnnotation.Type() == "" {
 			continue
 		}
 		rootPathMap, ok := ignoreIDToRootPathMap[fileAnnotation.Type()]
@@ -146,7 +146,7 @@ func PrintFileAnnotationsLintConfigIgnoreYAML(writer io.Writer, fileAnnotations 
 			rootPathMap = make(map[string]struct{})
 			ignoreIDToRootPathMap[fileAnnotation.Type()] = rootPathMap
 		}
-		rootPathMap[fileRef.RootRelFilePath()] = struct{}{}
+		rootPathMap[fileInfo.Path()] = struct{}{}
 	}
 	if len(ignoreIDToRootPathMap) == 0 {
 		return nil
