@@ -18,17 +18,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"sort"
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
-	"github.com/bufbuild/buf/internal/buf/bufpath"
-	"github.com/bufbuild/buf/internal/gen/embed/wkt"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/bufbuild/buf/internal/pkg/thread"
 	"github.com/jhump/protoreflect/desc"
@@ -37,58 +32,53 @@ import (
 	"go.uber.org/zap"
 )
 
-// TODO: make special rules for wkt
-var wktPathResolver = bufpath.NopPathResolver
-
 type builder struct {
 	logger *zap.Logger
 }
 
-func newBuilder(logger *zap.Logger, options ...BuilderOption) *builder {
-	builder := &builder{
+func newBuilder(logger *zap.Logger) *builder {
+	return &builder{
 		logger: logger,
 	}
-	for _, option := range options {
-		option(builder)
-	}
-	return builder
 
 }
 
 func (b *builder) Build(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
-	externalPathResolver bufpath.ExternalPathResolver,
-	fileRefs []bufimage.FileRef,
+	module bufcore.Module,
 	options ...BuildOption,
-) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
+) (bufcore.Image, []bufanalysis.FileAnnotation, error) {
 	buildOptions := newBuildOptions()
 	for _, option := range options {
 		option(buildOptions)
 	}
-	return b.build(ctx, readBucket, externalPathResolver, fileRefs, buildOptions.excludeSourceCodeInfo)
+	return b.build(ctx, module, buildOptions.excludeSourceCodeInfo)
 }
 
 func (b *builder) build(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
-	externalPathResolver bufpath.ExternalPathResolver,
-	fileRefs []bufimage.FileRef,
+	module bufcore.Module,
 	excludeSourceCodeInfo bool,
-) (bufimage.Image, []bufanalysis.FileAnnotation, error) {
-	defer instrument.Start(b.logger, "build", zap.Int("num_files", len(fileRefs))).End()
+) (bufcore.Image, []bufanalysis.FileAnnotation, error) {
+	defer instrument.Start(b.logger, "build").End()
 
-	if len(fileRefs) == 0 {
+	parserAccessorHandler := newParserAccessorHandler(ctx, module)
+	targetFileInfos, err := module.TargetFileInfos(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(targetFileInfos) == 0 {
 		return nil, nil, errors.New("no input files specified")
 	}
+	paths := make([]string, len(targetFileInfos))
+	for i, targetFileInfo := range targetFileInfos {
+		paths[i] = targetFileInfo.Path()
+	}
 
-	roots, rootRelFilePaths := getRootsAndRootRelFilePathsForFileRefs(fileRefs)
 	buildResults := b.getBuildResults(
 		ctx,
-		readBucket,
-		externalPathResolver,
-		roots,
-		rootRelFilePaths,
+		parserAccessorHandler,
+		paths,
 		excludeSourceCodeInfo,
 	)
 	var buildResultErr error
@@ -107,17 +97,15 @@ func (b *builder) build(
 		return nil, fileAnnotations, nil
 	}
 
-	descFileDescriptors, err := getDescFileDescriptors(buildResults, rootRelFilePaths)
+	descFileDescriptors, err := getDescFileDescriptorsFromBuildResults(buildResults, paths)
 	if err != nil {
 		return nil, nil, err
 	}
 	image, err := b.getImage(
 		ctx,
-		readBucket,
-		externalPathResolver,
-		roots,
 		excludeSourceCodeInfo,
 		descFileDescriptors,
+		parserAccessorHandler,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -127,30 +115,26 @@ func (b *builder) build(
 
 func (b *builder) getBuildResults(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
-	externalPathResolver bufpath.ExternalPathResolver,
-	roots []string,
-	rootRelFilePaths []string,
+	parserAccessorHandler *parserAccessorHandler,
+	paths []string,
 	excludeSourceCodeInfo bool,
 ) []*buildResult {
-	defer instrument.Start(b.logger, "parse", zap.Int("num_files", len(rootRelFilePaths))).End()
+	defer instrument.Start(b.logger, "parse").End()
 
 	var buildResults []*buildResult
 	chunkSize := 0
 	if parallelism := thread.Parallelism(); parallelism > 1 {
-		chunkSize = len(rootRelFilePaths) / parallelism
+		chunkSize = len(paths) / parallelism
 	}
-	chunks := stringutil.SliceToChunks(rootRelFilePaths, chunkSize)
+	chunks := stringutil.SliceToChunks(paths, chunkSize)
 	buildResultC := make(chan *buildResult, len(chunks))
-	for _, rootRelFilePaths := range chunks {
-		rootRelFilePaths := rootRelFilePaths
+	for _, iPaths := range chunks {
+		iPaths := iPaths
 		go func() {
 			buildResultC <- getBuildResult(
 				ctx,
-				readBucket,
-				externalPathResolver,
-				roots,
-				rootRelFilePaths,
+				parserAccessorHandler,
+				iPaths,
 				excludeSourceCodeInfo,
 			)
 		}()
@@ -158,7 +142,7 @@ func (b *builder) getBuildResults(
 	for i := 0; i < len(chunks); i++ {
 		select {
 		case <-ctx.Done():
-			return []*buildResult{newBuildResult(nil, nil, nil, ctx.Err())}
+			return []*buildResult{newBuildResult(nil, nil, ctx.Err())}
 		case buildResult := <-buildResultC:
 			buildResults = append(buildResults, buildResult)
 		}
@@ -166,36 +150,17 @@ func (b *builder) getBuildResults(
 	return buildResults
 }
 
-func getRootsAndRootRelFilePathsForFileRefs(fileRefs []bufimage.FileRef) ([]string, []string) {
-	rootMap := make(map[string]struct{})
-	rootRelFilePaths := make([]string, len(fileRefs))
-	for i, fileRef := range fileRefs {
-		rootMap[fileRef.RootDirPath()] = struct{}{}
-		rootRelFilePaths[i] = fileRef.RootRelFilePath()
-	}
-	roots := make([]string, 0, len(rootMap))
-	for root := range rootMap {
-		roots = append(roots, root)
-	}
-	sort.Strings(roots)
-	return roots, rootRelFilePaths
-}
-
 func getBuildResult(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
-	externalPathResolver bufpath.ExternalPathResolver,
-	roots []string,
-	rootRelFilePaths []string,
+	parserAccessorHandler *parserAccessorHandler,
+	paths []string,
 	excludeSourceCodeInfo bool,
 ) *buildResult {
 	var errorsWithPos []protoparse.ErrorWithPos
 	var lock sync.Mutex
-
 	parser := protoparse.Parser{
-		ImportPaths:           roots,
 		IncludeSourceCodeInfo: !excludeSourceCodeInfo,
-		Accessor:              newParserAccessor(ctx, readBucket, roots),
+		Accessor:              parserAccessorHandler.Open,
 		ErrorReporter: func(errorWithPos protoparse.ErrorWithPos) error {
 			// protoparse isn't concurrent right now but just to be safe
 			// for the future
@@ -206,13 +171,12 @@ func getBuildResult(
 			return nil
 		},
 	}
-	// fileDescriptors are in the same order as rootRelFilePaths per the documentation
-	descFileDescriptors, err := parser.ParseFiles(rootRelFilePaths...)
+	// fileDescriptors are in the same order as paths per the documentation
+	descFileDescriptors, err := parser.ParseFiles(paths...)
 	if err != nil {
 		if err == protoparse.ErrInvalidSource {
 			if len(errorsWithPos) == 0 {
 				return newBuildResult(
-					rootRelFilePaths,
 					nil,
 					nil,
 					errors.New("got invalid source error from parse but no errors reported"),
@@ -220,43 +184,56 @@ func getBuildResult(
 			}
 			fileAnnotations, err := getFileAnnotations(
 				ctx,
-				readBucket,
-				externalPathResolver,
-				roots,
+				parserAccessorHandler,
 				errorsWithPos,
 			)
 			if err != nil {
-				return newBuildResult(rootRelFilePaths, nil, nil, err)
+				return newBuildResult(nil, nil, err)
 			}
-			return newBuildResult(rootRelFilePaths, nil, fileAnnotations, nil)
+			return newBuildResult(nil, fileAnnotations, nil)
 		}
-		return newBuildResult(rootRelFilePaths, nil, nil, err)
+		return newBuildResult(nil, nil, err)
 	} else if len(errorsWithPos) > 0 {
 		// https://github.com/jhump/protoreflect/pull/331
 		return newBuildResult(
-			rootRelFilePaths,
 			nil,
 			nil,
 			errors.New("got no error from parse but errors reported"),
 		)
 	}
-	return newBuildResult(rootRelFilePaths, descFileDescriptors, nil, nil)
+	if len(descFileDescriptors) != len(paths) {
+		return newBuildResult(
+			nil,
+			nil,
+			fmt.Errorf("expected FileDescriptors to be of length %d but was %d", len(paths), len(descFileDescriptors)),
+		)
+	}
+	for i, descFileDescriptor := range descFileDescriptors {
+		path := paths[i]
+		filename := descFileDescriptor.GetName()
+		// doing another rough verification
+		// NO LONGER NEED TO DO SUFFIX SINCE WE KNOW THE ROOT FILE NAME
+		if path != filename {
+			return newBuildResult(
+				nil,
+				nil,
+				fmt.Errorf("expected fileDescriptor name %s to be a equal to %s", filename, path),
+			)
+		}
+	}
+	return newBuildResult(descFileDescriptors, nil, nil)
 }
 
 func getFileAnnotations(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
-	externalPathResolver bufpath.ExternalPathResolver,
-	roots []string,
+	parserAccessorHandler *parserAccessorHandler,
 	errorsWithPos []protoparse.ErrorWithPos,
 ) ([]bufanalysis.FileAnnotation, error) {
 	fileAnnotations := make([]bufanalysis.FileAnnotation, 0, len(errorsWithPos))
 	for _, errorWithPos := range errorsWithPos {
 		fileAnnotation, err := getFileAnnotation(
 			ctx,
-			readBucket,
-			externalPathResolver,
-			roots,
+			parserAccessorHandler,
 			errorWithPos,
 		)
 		if err != nil {
@@ -269,12 +246,10 @@ func getFileAnnotations(
 
 func getFileAnnotation(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
-	externalPathResolver bufpath.ExternalPathResolver,
-	roots []string,
+	parserAccessorHandler *parserAccessorHandler,
 	errorWithPos protoparse.ErrorWithPos,
 ) (bufanalysis.FileAnnotation, error) {
-	var fileRef bufimage.FileRef
+	var fileInfo bufcore.FileInfo
 	var startLine int
 	var startColumn int
 	var endLine int
@@ -292,20 +267,16 @@ func getFileAnnotation(
 			sourcePos = *pos
 		}
 	}
-	//sourcePos := errorWithPos.GetPosition()
 	if sourcePos.Filename != "" {
-		rootRelFilePath, err := normalpath.NormalizeAndValidate(sourcePos.Filename)
+		path, err := normalpath.NormalizeAndValidate(sourcePos.Filename)
 		if err != nil {
 			return nil, err
 		}
-		root, isWKT, err := getRootWKTForRootRelFilePath(ctx, readBucket, roots, rootRelFilePath)
-		if err != nil {
-			return nil, err
-		}
-		if isWKT {
-			externalPathResolver = wktPathResolver
-		}
-		fileRef, err = bufimage.NewFileRef(rootRelFilePath, root, externalPathResolver)
+		fileInfo, err = bufcore.NewFileInfo(
+			path,
+			parserAccessorHandler.ExternalPath(path),
+			parserAccessorHandler.IsImport(path),
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -319,7 +290,7 @@ func getFileAnnotation(
 		endColumn = sourcePos.Col
 	}
 	return bufanalysis.NewFileAnnotation(
-		fileRef,
+		fileInfo,
 		startLine,
 		startColumn,
 		endLine,
@@ -329,91 +300,13 @@ func getFileAnnotation(
 	), nil
 }
 
-func getReadCloserForFullRelFilePath(
-	ctx context.Context,
-	readBucket storage.ReadBucket,
-	roots []string,
-	fullRelFilePath string,
-) (io.ReadCloser, error) {
-	readCloser, readErr := readBucket.Get(ctx, fullRelFilePath)
-	if readErr != nil {
-		if !storage.IsNotExist(readErr) {
-			return nil, readErr
-		}
-		for _, root := range roots {
-			rootRelFilePath, err := normalpath.Rel(root, fullRelFilePath)
-			if err != nil {
-				return nil, err
-			}
-			if wktReadCloser, err := wkt.ReadBucket.Get(ctx, rootRelFilePath); err == nil {
-				return wktReadCloser, nil
-			}
-		}
-		return nil, readErr
-	}
-	return readCloser, nil
-}
-
-func getRootWKTForRootRelFilePath(
-	ctx context.Context,
-	readBucket storage.ReadBucket,
-	roots []string,
-	rootRelFilePath string,
-) (string, bool, error) {
-	for _, root := range roots {
-		exists, err := storage.Exists(ctx, readBucket, normalpath.Join(root, rootRelFilePath))
-		if err != nil {
-			return "", false, err
-		}
-		if exists {
-			return root, false, nil
-		}
-	}
-	exists, err := storage.Exists(ctx, wkt.ReadBucket, rootRelFilePath)
-	if err != nil {
-		return "", false, err
-	}
-	if exists {
-		return ".", true, nil
-	}
-	return "", false, fmt.Errorf("cannot determine root for file %s", rootRelFilePath)
-}
-
-func newParserAccessor(
-	ctx context.Context,
-	readBucket storage.ReadBucket,
-	roots []string,
-) func(string) (io.ReadCloser, error) {
-	return func(fullRelFilePath string) (io.ReadCloser, error) {
-		return getReadCloserForFullRelFilePath(ctx, readBucket, roots, fullRelFilePath)
-	}
-}
-
-func getDescFileDescriptors(
+func getDescFileDescriptorsFromBuildResults(
 	buildResults []*buildResult,
 	rootRelFilePaths []string,
 ) ([]*desc.FileDescriptor, error) {
 	var descFileDescriptors []*desc.FileDescriptor
 	for _, buildResult := range buildResults {
-		iRootRelFilePaths := buildResult.RootRelFilePaths
-		iDescFileDescriptors := buildResult.DescFileDescriptors
-		// do a rough verification that rootRelFilePaths <-> fileDescriptors
-		// parser.ParseFiles is documented to return the same number of FileDescriptors
-		// as the number of input files
-		// https://godoc.org/github.com/jhump/protoreflect/desc/protoparse#Parser.ParseFiles
-		if len(iDescFileDescriptors) != len(iRootRelFilePaths) {
-			return nil, fmt.Errorf("expected FileDescriptors to be of length %d but was %d", len(iRootRelFilePaths), len(iDescFileDescriptors))
-		}
-		for i, iDescFileDescriptor := range iDescFileDescriptors {
-			iRootRelFilePath := iRootRelFilePaths[i]
-			iFilename := iDescFileDescriptor.GetName()
-			// doing another rough verification
-			// NO LONGER NEED TO DO SUFFIX SINCE WE KNOW THE ROOT FILE NAME
-			if iRootRelFilePath != iFilename {
-				return nil, fmt.Errorf("expected fileDescriptor name %s to be a equal to %s", iFilename, iRootRelFilePath)
-			}
-		}
-		descFileDescriptors = append(descFileDescriptors, iDescFileDescriptors...)
+		descFileDescriptors = append(descFileDescriptors, buildResult.DescFileDescriptors...)
 	}
 	return checkAndSortDescFileDescriptors(descFileDescriptors, rootRelFilePaths)
 }
@@ -466,12 +359,10 @@ func checkAndSortDescFileDescriptors(
 // This assumes checkAndSortDescFileDescriptors was called.
 func (b *builder) getImage(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
-	externalPathResolver bufpath.ExternalPathResolver,
-	roots []string,
 	excludeSourceCodeInfo bool,
 	sortedFileDescriptors []*desc.FileDescriptor,
-) (bufimage.Image, error) {
+	parserAccessorHandler *parserAccessorHandler,
+) (bufcore.Image, error) {
 	defer instrument.Start(b.logger, "get_image").End()
 
 	// if we aren't including imports, then we need a set of file names that
@@ -487,60 +378,54 @@ func (b *builder) getImage(
 		nonImportFilenames[fileDescriptor.GetName()] = struct{}{}
 	}
 
-	var files []bufimage.File
+	var imageFiles []bufcore.ImageFile
 	var err error
 	alreadySeen := map[string]struct{}{}
 	for _, fileDescriptor := range sortedFileDescriptors {
-		files, err = getFilesRec(
+		imageFiles, err = getImageFilesRec(
 			ctx,
-			readBucket,
-			externalPathResolver,
-			roots,
 			excludeSourceCodeInfo,
 			fileDescriptor,
+			parserAccessorHandler,
 			alreadySeen,
 			nonImportFilenames,
-			files,
+			imageFiles,
 		)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return bufimage.NewImage(files)
+	return bufcore.NewImage(imageFiles)
 }
 
-func getFilesRec(
+func getImageFilesRec(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
-	externalPathResolver bufpath.ExternalPathResolver,
-	roots []string,
 	excludeSourceCodeInfo bool,
 	descFileDescriptor *desc.FileDescriptor,
+	parserAccessorHandler *parserAccessorHandler,
 	alreadySeen map[string]struct{},
 	nonImportFilenames map[string]struct{},
-	files []bufimage.File,
-) ([]bufimage.File, error) {
+	imageFiles []bufcore.ImageFile,
+) ([]bufcore.ImageFile, error) {
 	if descFileDescriptor == nil {
 		return nil, errors.New("nil FileDescriptor")
 	}
-	rootRelFilePath := descFileDescriptor.GetName()
-	if _, ok := alreadySeen[rootRelFilePath]; ok {
-		return files, nil
+	path := descFileDescriptor.GetName()
+	if _, ok := alreadySeen[path]; ok {
+		return imageFiles, nil
 	}
-	alreadySeen[rootRelFilePath] = struct{}{}
+	alreadySeen[path] = struct{}{}
 
 	var err error
 	for _, dependency := range descFileDescriptor.GetDependencies() {
-		files, err = getFilesRec(
+		imageFiles, err = getImageFilesRec(
 			ctx,
-			readBucket,
-			externalPathResolver,
-			roots,
 			excludeSourceCodeInfo,
 			dependency,
+			parserAccessorHandler,
 			alreadySeen,
 			nonImportFilenames,
-			files,
+			imageFiles,
 		)
 		if err != nil {
 			return nil, err
@@ -555,46 +440,31 @@ func getFilesRec(
 		// need to do this anyways as Parser does not respect this for FileDescriptorProtos
 		fileDescriptorProto.SourceCodeInfo = nil
 	}
-	root, isWKT, err := getRootWKTForRootRelFilePath(
-		ctx,
-		readBucket,
-		roots,
-		rootRelFilePath,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if isWKT {
-		externalPathResolver = wktPathResolver
-	}
-	_, isNotImport := nonImportFilenames[rootRelFilePath]
-	file, err := bufimage.NewFile(
+	_, isNotImport := nonImportFilenames[path]
+	imageFile, err := bufcore.NewImageFile(
 		fileDescriptorProto,
-		root,
-		externalPathResolver,
+		// if empty, defaults to path
+		parserAccessorHandler.ExternalPath(path),
 		!isNotImport,
 	)
 	if err != nil {
 		return nil, err
 	}
-	return append(files, file), nil
+	return append(imageFiles, imageFile), nil
 }
 
 type buildResult struct {
-	RootRelFilePaths    []string
 	DescFileDescriptors []*desc.FileDescriptor
 	FileAnnotations     []bufanalysis.FileAnnotation
 	Err                 error
 }
 
 func newBuildResult(
-	rootRelFilePaths []string,
 	descFileDescriptors []*desc.FileDescriptor,
 	fileAnnotations []bufanalysis.FileAnnotation,
 	err error,
 ) *buildResult {
 	return &buildResult{
-		RootRelFilePaths:    rootRelFilePaths,
 		DescFileDescriptors: descFileDescriptors,
 		FileAnnotations:     fileAnnotations,
 		Err:                 err,

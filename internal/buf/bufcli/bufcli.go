@@ -20,15 +20,16 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufmod"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"go.uber.org/zap"
 )
 
 // Env is an environment.
 type Env interface {
-	Image() bufimage.Image
+	Image() bufcore.Image
 	Config() *bufconfig.Config
 }
 
@@ -74,14 +75,14 @@ type EnvReader interface {
 		externalFilePaths []string,
 		externalFileFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
-	) (bufimage.Image, error)
+	) (bufcore.Image, error)
 	// ListFiles lists the files.
 	ListFiles(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		value string,
 		configOverride string,
-	) ([]bufimage.FileRef, error)
+	) ([]bufcore.FileInfo, error)
 	// GetConfig gets the config.
 	GetConfig(
 		ctx context.Context,
@@ -95,7 +96,7 @@ func NewEnvReader(
 	fetchRefParser buffetch.RefParser,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
-	buildFileRefProvider bufbuild.FileRefProvider,
+	modBuilder bufmod.Builder,
 	buildBuilder bufbuild.Builder,
 	valueFlagName string,
 	configOverrideFlagName string,
@@ -105,7 +106,7 @@ func NewEnvReader(
 		fetchRefParser,
 		fetchReader,
 		configProvider,
-		buildFileRefProvider,
+		modBuilder,
 		buildBuilder,
 		valueFlagName,
 		configOverrideFlagName,
@@ -122,7 +123,7 @@ type ImageWriter interface {
 		ctx context.Context,
 		container app.EnvStdoutContainer,
 		value string,
-		image bufimage.Image,
+		image bufcore.Image,
 		asFileDescriptorSet bool,
 		excludeImports bool,
 	) error

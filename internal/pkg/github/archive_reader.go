@@ -90,13 +90,10 @@ func (a *archiveReader) GetArchive(
 	if err := os.MkdirAll(outputDirPath, 0755); err != nil {
 		return err
 	}
-	readWriteBucketCloser, err := storageos.NewReadWriteBucketCloser(outputDirPath)
+	readWriteBucket, err := storageos.NewReadWriteBucket(outputDirPath)
 	if err != nil {
 		return err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, readWriteBucketCloser.Close())
-	}()
-	_, err = storage.Copy(ctx, readBucketCloser, readWriteBucketCloser)
+	_, err = storage.Copy(ctx, readBucketCloser, readWriteBucket)
 	return err
 }

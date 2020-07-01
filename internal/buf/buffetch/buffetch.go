@@ -19,7 +19,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/bufbuild/buf/internal/buf/bufpath"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/fetch"
 	"github.com/bufbuild/buf/internal/pkg/git"
@@ -53,9 +52,29 @@ var (
 // ImageEncoding is the encoding of the image.
 type ImageEncoding int
 
+// PathResolver resolves external paths to paths.
+type PathResolver interface {
+	// PathForExternalPath takes a path external to the asset and converts it to
+	// a path that is relative to the asset.
+	//
+	// The returned path will be normalized and validated.
+	//
+	// Example:
+	//   Directory: /foo/bar
+	//   ExternalPath: /foo/bar/baz/bat.proto
+	//   Path: baz/bat.proto
+	//
+	// Example:
+	//   Directory: .
+	//   ExternalPath: baz/bat.proto
+	//   Path: baz/bat.proto
+	PathForExternalPath(externalPath string) (string, error)
+}
+
 // Ref is an image file or source bucket reference.
 type Ref interface {
-	PathResolver() bufpath.PathResolver
+	PathResolver
+
 	fetchRef() fetch.Ref
 }
 

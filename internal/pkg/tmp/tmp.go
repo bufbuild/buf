@@ -67,7 +67,9 @@ type Dir interface {
 }
 
 // NewDir returns a new Dir.
-func NewDir() (Dir, error) {
+//
+// baseDirPath can be empty, in which case os.TempDir() is used.
+func NewDir(baseDirPath string) (Dir, error) {
 	id, err := uuid.NewV4()
 	if err != nil {
 		return nil, err

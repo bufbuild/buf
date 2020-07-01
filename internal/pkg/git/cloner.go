@@ -49,7 +49,7 @@ func (c *cloner) CloneToBucket(
 	envContainer app.EnvContainer,
 	url string,
 	depth uint32,
-	readWriteBucket storage.ReadWriteBucket,
+	writeBucket storage.WriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
 	defer instrument.Start(c.logger, "git_clone_to_bucket").End()
@@ -77,7 +77,7 @@ func (c *cloner) CloneToBucket(
 		}
 	}
 
-	tmpDir, err := tmp.NewDir()
+	tmpDir, err := tmp.NewDir("")
 	if err != nil {
 		return err
 	}
@@ -145,16 +145,17 @@ func (c *cloner) CloneToBucket(
 		}
 	}
 
-	tmpReadBucketCloser, err := storageos.NewReadBucketCloser(tmpDir.AbsPath())
+	tmpReadWriteBucket, err := storageos.NewReadWriteBucket(tmpDir.AbsPath())
 	if err != nil {
 		return err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, tmpReadBucketCloser.Close())
-	}()
-
+	var readBucket storage.ReadBucket = tmpReadWriteBucket
+	if options.Mapper != nil {
+		readBucket = storage.Map(readBucket, options.Mapper)
+	}
 	defer instrument.Start(c.logger, "git_clone_to_bucket_copy").End()
-	_, err = storage.Copy(ctx, tmpReadBucketCloser, readWriteBucket, options.TransformerOptions...)
+	// do NOT copy external paths
+	_, err = storage.Copy(ctx, readBucket, writeBucket)
 	return err
 }
 

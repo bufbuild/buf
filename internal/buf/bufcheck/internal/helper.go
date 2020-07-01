@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufsrc"
 )
 
@@ -87,8 +88,12 @@ func newFileAnnotationf(
 		endLine = location.EndLine()
 		endColumn = location.EndColumn()
 	}
+	var fileInfo bufcore.FileInfo
+	if descriptor != nil {
+		fileInfo = descriptor.File()
+	}
 	return bufanalysis.NewFileAnnotation(
-		descriptor,
+		fileInfo,
 		startLine,
 		startColumn,
 		endLine,

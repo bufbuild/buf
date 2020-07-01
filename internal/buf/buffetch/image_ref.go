@@ -15,8 +15,8 @@
 package buffetch
 
 import (
-	"github.com/bufbuild/buf/internal/buf/bufpath"
 	"github.com/bufbuild/buf/internal/pkg/fetch"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 )
 
 var _ ImageRef = &imageRef{}
@@ -36,8 +36,8 @@ func newImageRef(
 	}
 }
 
-func (*imageRef) PathResolver() bufpath.PathResolver {
-	return bufpath.NopPathResolver
+func (r *imageRef) PathForExternalPath(externalPath string) (string, error) {
+	return normalpath.NormalizeAndValidate(externalPath)
 }
 
 func (r *imageRef) ImageEncoding() ImageEncoding {

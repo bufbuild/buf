@@ -21,6 +21,7 @@ var topLevelCategoryToPriority = map[string]int{
 	"DEFAULT":   3,
 	"COMMENTS":  4,
 	"UNARY_RPC": 5,
+	"OTHER":     6,
 	"FILE":      1,
 	"PACKAGE":   2,
 	"WIRE_JSON": 3,

@@ -113,14 +113,14 @@ func (r *reader) GetBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.transformerOptions,
+			getBucketOptions.mapper,
 		)
 	case DirRef:
 		return r.getDirBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.transformerOptions,
+			getBucketOptions.mapper,
 		)
 	case GitRef:
 		return r.getGitBucket(
@@ -128,7 +128,7 @@ func (r *reader) GetBucket(
 			container,
 			t,
 			t.Depth(),
-			getBucketOptions.transformerOptions,
+			getBucketOptions.mapper,
 		)
 	default:
 		return nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
@@ -159,7 +159,7 @@ func (r *reader) getArchiveBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
-	transformerOptions []normalpath.TransformerOption,
+	mapper storage.Mapper,
 ) (_ storage.ReadBucketCloser, retErr error) {
 	readCloser, size, err := r.getFileReadCloserAndSize(ctx, container, archiveRef, false)
 	if err != nil {
@@ -168,26 +168,16 @@ func (r *reader) getArchiveBucket(
 	defer func() {
 		retErr = multierr.Append(retErr, readCloser.Close())
 	}()
-	if stripComponents := archiveRef.StripComponents(); stripComponents > 0 {
-		transformerOptions = append(
-			transformerOptions,
-			normalpath.WithStripComponents(stripComponents),
-		)
-	}
-	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
-	defer func() {
-		if retErr != nil {
-			retErr = multierr.Append(retErr, readWriteBucketCloser.Close())
-		}
-	}()
+	readBucketBuilder := storagemem.NewReadBucketBuilder()
 	defer instrument.Start(r.logger, "unarchive").End()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
 	case ArchiveTypeTar:
 		if err := storagearchive.Untar(
 			ctx,
 			readCloser,
-			readWriteBucketCloser,
-			transformerOptions...,
+			readBucketBuilder,
+			mapper,
+			archiveRef.StripComponents(),
 		); err != nil {
 			return nil, err
 		}
@@ -210,27 +200,36 @@ func (r *reader) getArchiveBucket(
 			ctx,
 			readerAt,
 			size,
-			readWriteBucketCloser,
-			transformerOptions...,
+			readBucketBuilder,
+			mapper,
+			archiveRef.StripComponents(),
 		); err != nil {
 			return nil, err
 		}
 	default:
 		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	return readWriteBucketCloser, nil
+	readBucket, err := readBucketBuilder.ToReadBucket()
+	if err != nil {
+		return nil, err
+	}
+	return storage.NopReadBucketCloser(readBucket), nil
 }
 
 func (r *reader) getDirBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
-	transformerOptions []normalpath.TransformerOption,
+	mapper storage.Mapper,
 ) (storage.ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, newReadLocalDisabledError()
 	}
-	return storageos.NewReadBucketCloser(dirRef.Path())
+	readWriteBucket, err := storageos.NewReadWriteBucket(dirRef.Path())
+	if err != nil {
+		return nil, err
+	}
+	return storage.NopReadBucketCloser(readWriteBucket), nil
 }
 
 func (r *reader) getGitBucket(
@@ -238,7 +237,7 @@ func (r *reader) getGitBucket(
 	container app.EnvStdinContainer,
 	gitRef GitRef,
 	depth uint32,
-	transformerOptions []normalpath.TransformerOption,
+	mapper storage.Mapper,
 ) (_ storage.ReadBucketCloser, retErr error) {
 	if !r.gitEnabled {
 		return nil, newReadGitDisabledError()
@@ -247,27 +246,26 @@ func (r *reader) getGitBucket(
 	if err != nil {
 		return nil, err
 	}
-	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
-	defer func() {
-		if retErr != nil {
-			retErr = multierr.Append(retErr, readWriteBucketCloser.Close())
-		}
-	}()
+	readBucketBuilder := storagemem.NewReadBucketBuilder()
 	if err := r.gitCloner.CloneToBucket(
 		ctx,
 		container,
 		gitURL,
 		depth,
-		readWriteBucketCloser,
+		readBucketBuilder,
 		git.CloneToBucketOptions{
-			Name:               gitRef.GitName(),
-			RecurseSubmodules:  gitRef.RecurseSubmodules(),
-			TransformerOptions: transformerOptions,
+			Name:              gitRef.GitName(),
+			RecurseSubmodules: gitRef.RecurseSubmodules(),
+			Mapper:            mapper,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	return readWriteBucketCloser, nil
+	readBucket, err := readBucketBuilder.ToReadBucket()
+	if err != nil {
+		return nil, err
+	}
+	return storage.NopReadBucketCloser(readBucket), nil
 }
 
 func (r *reader) getFileReadCloserAndSize(
@@ -419,7 +417,7 @@ func newGetFileOptions() *getFileOptions {
 }
 
 type getBucketOptions struct {
-	transformerOptions []normalpath.TransformerOption
+	mapper storage.Mapper
 }
 
 func newGetBucketOptions() *getBucketOptions {

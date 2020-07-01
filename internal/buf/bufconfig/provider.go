@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/buf/bufmod"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
 	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -82,6 +83,10 @@ func (p *provider) newConfig(externalConfig *ExternalConfig) (*Config, error) {
 			return nil, err
 		}
 	}
+	buildConfig, err := bufmod.NewConfig(externalConfig.Build)
+	if err != nil {
+		return nil, err
+	}
 	breakingConfig, err := bufbreaking.NewConfig(externalConfig.Breaking)
 	if err != nil {
 		return nil, err
@@ -91,8 +96,7 @@ func (p *provider) newConfig(externalConfig *ExternalConfig) (*Config, error) {
 		return nil, err
 	}
 	return &Config{
-		Roots:    externalConfig.Build.Roots,
-		Excludes: externalConfig.Build.Excludes,
+		Build:    buildConfig,
 		Breaking: breakingConfig,
 		Lint:     lintConfig,
 	}, nil
