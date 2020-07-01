@@ -15,33 +15,48 @@
 package buffetch
 
 import (
-	"github.com/bufbuild/buf/internal/buf/bufpath"
+	"path/filepath"
+
 	"github.com/bufbuild/buf/internal/pkg/fetch"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 )
 
 var _ SourceRef = &sourceRef{}
 
 type sourceRef struct {
-	bucketRef       fetch.BucketRef
-	dirPathResolver bufpath.PathResolver
+	bucketRef fetch.BucketRef
+	dirPath   string
 }
 
 func newSourceRef(bucketRef fetch.BucketRef) *sourceRef {
-	var dirPathResolver bufpath.PathResolver
+	var dirPath string
 	if dirRef, ok := bucketRef.(fetch.DirRef); ok {
-		dirPathResolver = bufpath.NewDirPathResolver(dirRef.Path())
+		dirPath = dirRef.Path()
 	}
 	return &sourceRef{
-		bucketRef:       bucketRef,
-		dirPathResolver: dirPathResolver,
+		bucketRef: bucketRef,
+		dirPath:   dirPath,
 	}
 }
 
-func (r *sourceRef) PathResolver() bufpath.PathResolver {
-	if r.dirPathResolver != nil {
-		return r.dirPathResolver
+func (r *sourceRef) PathForExternalPath(externalPath string) (string, error) {
+	if r.dirPath == "" {
+		return normalpath.NormalizeAndValidate(externalPath)
 	}
-	return bufpath.NopPathResolver
+	absDirPath, err := filepath.Abs(normalpath.Unnormalize(r.dirPath))
+	if err != nil {
+		return "", err
+	}
+	// we don't actually need to unnormalize externalPath but we do anyways
+	absExternalPath, err := filepath.Abs(normalpath.Unnormalize(externalPath))
+	if err != nil {
+		return "", err
+	}
+	path, err := filepath.Rel(absDirPath, absExternalPath)
+	if err != nil {
+		return "", err
+	}
+	return normalpath.NormalizeAndValidate(path)
 }
 
 func (r *sourceRef) fetchRef() fetch.Ref {

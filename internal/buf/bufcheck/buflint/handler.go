@@ -19,7 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"go.uber.org/zap"
 )
@@ -41,7 +41,7 @@ func newHandler(logger *zap.Logger) *handler {
 func (h *handler) Check(
 	ctx context.Context,
 	config *Config,
-	image bufimage.Image,
+	image bufcore.Image,
 ) ([]bufanalysis.FileAnnotation, error) {
 	files, err := bufsrc.NewFilesUnstable(ctx, image.Files()...)
 	if err != nil {

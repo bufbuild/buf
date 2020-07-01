@@ -26,8 +26,9 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufmod"
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/instrument"
@@ -42,7 +43,7 @@ type envReader struct {
 	fetchRefParser         buffetch.RefParser
 	fetchReader            buffetch.Reader
 	configProvider         bufconfig.Provider
-	buildFileRefProvider   bufbuild.FileRefProvider
+	modBuilder             bufmod.Builder
 	buildBuilder           bufbuild.Builder
 	valueFlagName          string
 	configOverrideFlagName string
@@ -53,7 +54,7 @@ func newEnvReader(
 	fetchRefParser buffetch.RefParser,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
-	buildFileRefProvider bufbuild.FileRefProvider,
+	modBuilder bufmod.Builder,
 	buildBuilder bufbuild.Builder,
 	valueFlagName string,
 	configOverrideFlagName string,
@@ -63,7 +64,7 @@ func newEnvReader(
 		fetchRefParser:         fetchRefParser,
 		fetchReader:            fetchReader,
 		configProvider:         configProvider,
-		buildFileRefProvider:   buildFileRefProvider,
+		modBuilder:             modBuilder,
 		buildBuilder:           buildBuilder,
 		valueFlagName:          valueFlagName,
 		configOverrideFlagName: configOverrideFlagName,
@@ -186,7 +187,7 @@ func (e *envReader) GetImage(
 	externalFilePaths []string,
 	externalFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
-) (_ bufimage.Image, retErr error) {
+) (_ bufcore.Image, retErr error) {
 	defer instrument.Start(e.logger, "get_image").End()
 	defer func() {
 		if retErr != nil {
@@ -213,7 +214,7 @@ func (e *envReader) ListFiles(
 	container app.EnvStdinContainer,
 	value string,
 	configOverride string,
-) (_ []bufimage.FileRef, retErr error) {
+) (_ []bufcore.FileInfo, retErr error) {
 	defer func() {
 		if retErr != nil {
 			retErr = fmt.Errorf("%v: %w", e.valueFlagName, retErr)
@@ -238,11 +239,11 @@ func (e *envReader) ListFiles(
 			return nil, err
 		}
 		files := image.Files()
-		fileRefs := make([]bufimage.FileRef, len(files))
+		fileInfos := make([]bufcore.FileInfo, len(files))
 		for i, file := range files {
-			fileRefs[i] = file
+			fileInfos[i] = file
 		}
-		return fileRefs, nil
+		return fileInfos, nil
 	case buffetch.SourceRef:
 		readBucketCloser, config, err := e.getSourceBucketAndConfig(ctx, container, t, configOverride)
 		if err != nil {
@@ -251,13 +252,15 @@ func (e *envReader) ListFiles(
 		defer func() {
 			retErr = multierr.Append(retErr, readBucketCloser.Close())
 		}()
-		return e.buildFileRefProvider.GetAllFileRefs(
+		module, err := e.modBuilder.BuildForBucket(
 			ctx,
 			readBucketCloser,
-			t.PathResolver(),
-			config.Roots,
-			config.Excludes,
+			config.Build,
 		)
+		if err != nil {
+			return nil, err
+		}
+		return module.TargetFileInfos(ctx)
 	default:
 		return nil, fmt.Errorf("invalid ref: %T", ref)
 	}
@@ -327,45 +330,43 @@ func (e *envReader) getEnvFromSource(
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
 
-	var fileRefs []bufimage.FileRef
-	if len(externalFilePaths) == 0 {
-		fileRefs, err = e.buildFileRefProvider.GetAllFileRefs(
-			ctx,
-			readBucketCloser,
-			sourceRef.PathResolver(),
-			config.Roots,
-			config.Excludes,
+	var buildForBucketOptions []bufmod.BuildForBucketOption
+	if len(externalFilePaths) > 0 {
+		bucketRelPaths := make([]string, len(externalFilePaths))
+		for i, externalFilePath := range externalFilePaths {
+			bucketRelPath, err := sourceRef.PathForExternalPath(externalFilePath)
+			if err != nil {
+				return nil, nil, err
+			}
+			bucketRelPaths[i] = bucketRelPath
+		}
+		buildForBucketOptions = append(
+			buildForBucketOptions,
+			bufmod.WithBucketRelPaths(bucketRelPaths...),
 		)
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		var options []bufbuild.GetFileRefsForExternalFilePathsOption
-		if externalFilePathsAllowNotExist {
-			options = append(options, bufbuild.WithAllowNotExist())
-		}
-		fileRefs, err = e.buildFileRefProvider.GetFileRefsForExternalFilePaths(
-			ctx,
-			readBucketCloser,
-			sourceRef.PathResolver(),
-			config.Roots,
-			externalFilePaths,
-			options...,
-		)
-		if err != nil {
-			return nil, nil, err
-		}
 	}
-
+	if externalFilePathsAllowNotExist {
+		buildForBucketOptions = append(
+			buildForBucketOptions,
+			bufmod.WithBucketRelPathsAllowNotExistOnWalk(),
+		)
+	}
+	module, err := e.modBuilder.BuildForBucket(
+		ctx,
+		readBucketCloser,
+		config.Build,
+		buildForBucketOptions...,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
 	var options []bufbuild.BuildOption
 	if excludeSourceCodeInfo {
 		options = append(options, bufbuild.WithExcludeSourceCodeInfo())
 	}
 	image, fileAnnotations, err := e.buildBuilder.Build(
 		ctx,
-		readBucketCloser,
-		sourceRef.PathResolver(),
-		fileRefs,
+		module,
 		options...,
 	)
 	if err != nil {
@@ -384,7 +385,7 @@ func (e *envReader) getImage(
 	externalFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 	imageRef buffetch.ImageRef,
-) (_ bufimage.Image, retErr error) {
+) (_ bufcore.Image, retErr error) {
 	readCloser, err := e.fetchReader.GetImageFile(ctx, container, imageRef)
 	if err != nil {
 		return nil, err
@@ -453,27 +454,27 @@ func (e *envReader) getImage(
 			fileDescriptorProto.SourceCodeInfo = nil
 		}
 	}
-	image, err := bufimage.NewImageForProto(protoImage)
+	image, err := bufcore.NewImageForProto(protoImage)
 	if err != nil {
 		return nil, err
 	}
 	if len(externalFilePaths) == 0 {
 		return image, nil
 	}
-	// this is usually a full rel file path, but because this is a read image,
-	// the root is always ".", so this is OK, although awkward
-	rootRelFilePaths := make([]string, len(externalFilePaths))
+	imagePaths := make([]string, len(externalFilePaths))
 	for i, externalFilePath := range externalFilePaths {
-		rootRelFilePath, err := imageRef.PathResolver().ExternalPathToRelPath(externalFilePath)
+		imagePath, err := imageRef.PathForExternalPath(externalFilePath)
 		if err != nil {
 			return nil, err
 		}
-		rootRelFilePaths[i] = rootRelFilePath
+		imagePaths[i] = imagePath
 	}
 	if externalFilePathsAllowNotExist {
-		return bufimage.ImageWithOnlyRootRelFilePathsAllowNotExist(image, rootRelFilePaths)
+		// externalFilePaths have to be targetPaths
+		// TODO: evaluate this
+		return bufcore.ImageWithOnlyPathsAllowNotExist(image, imagePaths)
 	}
-	return bufimage.ImageWithOnlyRootRelFilePaths(image, rootRelFilePaths)
+	return bufcore.ImageWithOnlyPaths(image, imagePaths)
 }
 
 func (e *envReader) getSourceBucketAndConfig(

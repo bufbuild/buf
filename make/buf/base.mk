@@ -6,7 +6,7 @@ GO_BINS := $(GO_BINS) $(BUF_BIN) cmd/protoc-gen-buf-check-breaking cmd/protoc-ge
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto/go/v1
-FILE_IGNORES := $(FILE_IGNORES) .build/ internal/buf/bufbuild/cache/
+FILE_IGNORES := $(FILE_IGNORES) .build/ .vscode/ internal/buf/bufbuild/cache/ internal/pkg/storage/storageos/tmp/
 
 include make/go/bootstrap.mk
 include make/go/go.mk

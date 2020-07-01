@@ -24,7 +24,6 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/stretchr/testify/assert"
@@ -56,28 +55,26 @@ func TestCloneBranchToBucket(t *testing.T) {
 	cloner := NewCloner(zap.NewNop(), ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
-	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
+	readBucketBuilder := storagemem.NewReadBucketBuilder()
 	err = cloner.CloneToBucket(
 		context.Background(),
 		envContainer,
 		"file://"+absGitPath,
 		1,
-		readWriteBucketCloser,
+		readBucketBuilder,
 		CloneToBucketOptions{
-			Name: NewBranchName("master"),
-			TransformerOptions: []normalpath.TransformerOption{
-				normalpath.WithExt(".go"),
-			},
+			Mapper: storage.MatchPathExt(".go"),
+			Name:   NewBranchName("master"),
 		},
 	)
 	require.NoError(t, err)
+	readBucket, err := readBucketBuilder.ToReadBucket()
+	require.NoError(t, err)
 
-	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathSuccess1)
+	_, err = readBucket.Stat(context.Background(), relFilePathSuccess1)
 	assert.NoError(t, err)
-	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathError1)
+	_, err = readBucket.Stat(context.Background(), relFilePathError1)
 	assert.True(t, storage.IsNotExist(err))
-
-	assert.NoError(t, readWriteBucketCloser.Close())
 }
 
 func TestCloneRefToBucket(t *testing.T) {
@@ -102,28 +99,26 @@ func TestCloneRefToBucket(t *testing.T) {
 	cloner := NewCloner(zap.NewNop(), ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
-	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
+	readBucketBuilder := storagemem.NewReadBucketBuilder()
 	err = cloner.CloneToBucket(
 		context.Background(),
 		envContainer,
 		"file://"+absGitPath,
 		1,
-		readWriteBucketCloser,
+		readBucketBuilder,
 		CloneToBucketOptions{
-			Name: NewRefName(testGetLastGitCommit(t)),
-			TransformerOptions: []normalpath.TransformerOption{
-				normalpath.WithExt(".go"),
-			},
+			Mapper: storage.MatchPathExt(".go"),
+			Name:   NewRefName(testGetLastGitCommit(t)),
 		},
 	)
 	require.NoError(t, err)
+	readBucket, err := readBucketBuilder.ToReadBucket()
+	require.NoError(t, err)
 
-	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathSuccess1)
+	_, err = readBucket.Stat(context.Background(), relFilePathSuccess1)
 	assert.NoError(t, err)
-	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathError1)
+	_, err = readBucket.Stat(context.Background(), relFilePathError1)
 	assert.True(t, storage.IsNotExist(err))
-
-	assert.NoError(t, readWriteBucketCloser.Close())
 }
 
 func TestCloneBranchAndRefToBucket(t *testing.T) {
@@ -148,28 +143,26 @@ func TestCloneBranchAndRefToBucket(t *testing.T) {
 	cloner := NewCloner(zap.NewNop(), ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
-	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
+	readBucketBuilder := storagemem.NewReadBucketBuilder()
 	err = cloner.CloneToBucket(
 		context.Background(),
 		envContainer,
 		"file://"+absGitPath,
 		50,
-		readWriteBucketCloser,
+		readBucketBuilder,
 		CloneToBucketOptions{
-			Name: newRefWithBranch("refs/remotes/origin/master", "master"), // Should hopefully always exist
-			TransformerOptions: []normalpath.TransformerOption{
-				normalpath.WithExt(".go"),
-			},
+			Mapper: storage.MatchPathExt(".go"),
+			Name:   newRefWithBranch("refs/remotes/origin/master", "master"), // Should hopefully always exist
 		},
 	)
 	require.NoError(t, err)
+	readBucket, err := readBucketBuilder.ToReadBucket()
+	require.NoError(t, err)
 
-	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathSuccess1)
+	_, err = readBucket.Stat(context.Background(), relFilePathSuccess1)
 	assert.NoError(t, err)
-	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathError1)
+	_, err = readBucket.Stat(context.Background(), relFilePathError1)
 	assert.True(t, storage.IsNotExist(err))
-
-	assert.NoError(t, readWriteBucketCloser.Close())
 }
 
 func TestCloneDefault(t *testing.T) {
@@ -194,27 +187,25 @@ func TestCloneDefault(t *testing.T) {
 	cloner := NewCloner(zap.NewNop(), ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
-	readWriteBucketCloser := storagemem.NewReadWriteBucketCloser()
+	readBucketBuilder := storagemem.NewReadBucketBuilder()
 	err = cloner.CloneToBucket(
 		context.Background(),
 		envContainer,
 		"file://"+absGitPath,
 		1,
-		readWriteBucketCloser,
+		readBucketBuilder,
 		CloneToBucketOptions{
-			TransformerOptions: []normalpath.TransformerOption{
-				normalpath.WithExt(".go"),
-			},
+			Mapper: storage.MatchPathExt(".go"),
 		},
 	)
 	require.NoError(t, err)
+	readBucket, err := readBucketBuilder.ToReadBucket()
+	require.NoError(t, err)
 
-	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathSuccess1)
+	_, err = readBucket.Stat(context.Background(), relFilePathSuccess1)
 	assert.NoError(t, err)
-	_, err = readWriteBucketCloser.Stat(context.Background(), relFilePathError1)
+	_, err = readBucket.Stat(context.Background(), relFilePathError1)
 	assert.True(t, storage.IsNotExist(err))
-
-	assert.NoError(t, readWriteBucketCloser.Close())
 }
 
 func testGetLastGitCommit(t *testing.T) string {

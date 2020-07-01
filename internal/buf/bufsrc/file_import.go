@@ -31,7 +31,7 @@ func newFileImport(
 	path []int32,
 ) (*fileImport, error) {
 	if imp == "" {
-		return nil, fmt.Errorf("no dependency value in %q", descriptor.RootRelFilePath())
+		return nil, fmt.Errorf("no dependency value in %q", descriptor.File().Path())
 	}
 	return &fileImport{
 		descriptor: descriptor,

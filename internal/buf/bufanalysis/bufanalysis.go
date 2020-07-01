@@ -20,7 +20,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/pkg/stringjson"
 )
 
@@ -28,10 +28,10 @@ import (
 type FileAnnotation interface {
 	fmt.Stringer
 	json.Marshaler
-	// FileRef is the FileRef for this annotation.
+	// FileInfo is the FileInfo for this annotation.
 	//
 	// This may be nil.
-	FileRef() bufimage.FileRef
+	FileInfo() bufcore.FileInfo
 
 	// StartLine is the starting line.
 	//
@@ -61,7 +61,7 @@ type FileAnnotation interface {
 
 // NewFileAnnotation returns a new FileAnnotation.
 func NewFileAnnotation(
-	fileRef bufimage.FileRef,
+	fileInfo bufcore.FileInfo,
 	startLine int,
 	startColumn int,
 	endLine int,
@@ -70,7 +70,7 @@ func NewFileAnnotation(
 	message string,
 ) FileAnnotation {
 	return newFileAnnotation(
-		fileRef,
+		fileInfo,
 		startLine,
 		startColumn,
 		endLine,
@@ -84,7 +84,7 @@ func NewFileAnnotation(
 //
 // The order of sorting is:
 //
-//   ExternalFilePath
+//   ExternalPath
 //   StartLine
 //   StartColumn
 //   Type
@@ -123,19 +123,19 @@ func fileAnnotationCompareTo(a FileAnnotation, b FileAnnotation) int {
 	if a != nil && b == nil {
 		return 1
 	}
-	aFileRef := a.FileRef()
-	bFileRef := b.FileRef()
-	if aFileRef == nil && bFileRef != nil {
+	aFileInfo := a.FileInfo()
+	bFileInfo := b.FileInfo()
+	if aFileInfo == nil && bFileInfo != nil {
 		return -1
 	}
-	if aFileRef != nil && bFileRef == nil {
+	if aFileInfo != nil && bFileInfo == nil {
 		return 1
 	}
-	if aFileRef != nil && bFileRef != nil {
-		if aFileRef.ExternalFilePath() < bFileRef.ExternalFilePath() {
+	if aFileInfo != nil && bFileInfo != nil {
+		if aFileInfo.ExternalPath() < bFileInfo.ExternalPath() {
 			return -1
 		}
-		if aFileRef.ExternalFilePath() > bFileRef.ExternalFilePath() {
+		if aFileInfo.ExternalPath() > bFileInfo.ExternalPath() {
 			return 1
 		}
 	}

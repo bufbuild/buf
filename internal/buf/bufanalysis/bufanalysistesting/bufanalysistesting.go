@@ -19,35 +19,34 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
-	"github.com/bufbuild/buf/internal/buf/bufpath"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// FileAnnotationFunc is a function that creates a new FileAnnotation with a resolver.
-type FileAnnotationFunc func(*testing.T, bufpath.ExternalPathResolver) bufanalysis.FileAnnotation
-
-// NewFileAnnotationNoLocationOrPathFunc returns a new FileAnnotationFunc with no location or FileRef.
-func NewFileAnnotationNoLocationOrPathFunc(typeString string) FileAnnotationFunc {
-	return NewFileAnnotationNoLocationFunc(
-		"",
-		"",
-		typeString,
-	)
-}
-
-// NewFileAnnotationNoLocationFunc returns a new FileAnnotationFunc with no location.
-//
-// If rootRelFilePath == "", FileRef will be nil.
-func NewFileAnnotationNoLocationFunc(
-	rootRelFilePath string,
-	rootDirPath string,
+// NewFileAnnotationNoLocationOrPath returns a new FileAnnotation with no location or FileInfo.
+func NewFileAnnotationNoLocationOrPath(
+	t *testing.T,
 	typeString string,
-) FileAnnotationFunc {
-	return NewFileAnnotationFunc(
-		rootRelFilePath,
-		rootDirPath,
+) bufanalysis.FileAnnotation {
+	return NewFileAnnotationNoLocation(
+		t,
+		"",
+		typeString,
+	)
+}
+
+// NewFileAnnotationNoLocation returns a new FileAnnotation with no location.
+//
+// fileInfo can be nil.
+func NewFileAnnotationNoLocation(
+	t *testing.T,
+	path string,
+	typeString string,
+) bufanalysis.FileAnnotation {
+	return NewFileAnnotation(
+		t,
+		path,
 		0,
 		0,
 		0,
@@ -56,55 +55,35 @@ func NewFileAnnotationNoLocationFunc(
 	)
 }
 
-// NewFileAnnotationFunc returns a new FileAnnotationFunc.
-//
-// If rootRelFilePath == "", FileRef will be nil.
-func NewFileAnnotationFunc(
-	rootRelFilePath string,
-	rootDirPath string,
+// NewFileAnnotation returns a new FileAnnotation.
+func NewFileAnnotation(
+	t *testing.T,
+	path string,
 	startLine int,
 	startColumn int,
 	endLine int,
 	endColumn int,
 	typeString string,
-) FileAnnotationFunc {
-	return func(
-		t *testing.T,
-		externalPathResolver bufpath.ExternalPathResolver,
-	) bufanalysis.FileAnnotation {
-		var fileRef bufimage.FileRef
-		var err error
-		if rootRelFilePath != "" {
-			fileRef, err = bufimage.NewFileRef(
-				rootRelFilePath,
-				rootDirPath,
-				externalPathResolver,
-			)
-			require.NoError(t, err)
-		}
-		return bufanalysis.NewFileAnnotation(
-			fileRef,
-			startLine,
-			startColumn,
-			endLine,
-			endColumn,
-			typeString,
+) bufanalysis.FileAnnotation {
+	var fileInfo bufcore.FileInfo
+	var err error
+	if path != "" {
+		fileInfo, err = bufcore.NewFileInfo(
+			path,
 			"",
+			false,
 		)
+		require.NoError(t, err)
 	}
-}
-
-// FileAnnotations returns the FileAnnotations.
-func FileAnnotations(
-	t *testing.T,
-	fileAnnotationFuncs []FileAnnotationFunc,
-	externalPathResolver bufpath.ExternalPathResolver,
-) []bufanalysis.FileAnnotation {
-	fileAnnotations := make([]bufanalysis.FileAnnotation, len(fileAnnotationFuncs))
-	for i, fileAnnotationFunc := range fileAnnotationFuncs {
-		fileAnnotations[i] = fileAnnotationFunc(t, externalPathResolver)
-	}
-	return fileAnnotations
+	return bufanalysis.NewFileAnnotation(
+		fileInfo,
+		startLine,
+		startColumn,
+		endLine,
+		endColumn,
+		typeString,
+		"",
+	)
 }
 
 // AssertFileAnnotationsEqual asserts that the annotations are equal minus the message.
@@ -119,9 +98,9 @@ func AssertFileAnnotationsEqual(
 	if len(expected) == len(actual) {
 		for i, a := range actual {
 			e := expected[i]
-			expectedFileRef := e.FileRef()
-			actualFileRef := a.FileRef()
-			assert.Equal(t, expectedFileRef, actualFileRef)
+			expectedFileInfo := e.FileInfo()
+			actualFileInfo := a.FileInfo()
+			assert.Equal(t, expectedFileInfo, actualFileInfo)
 			assert.Equal(t, e, a)
 		}
 	}
@@ -136,18 +115,18 @@ func normalizeFileAnnotations(
 	}
 	normalizedFileAnnotations := make([]bufanalysis.FileAnnotation, len(fileAnnotations))
 	for i, a := range fileAnnotations {
-		fileRef := a.FileRef()
+		fileInfo := a.FileInfo()
 		var err error
-		if fileRef != nil {
-			fileRef, err = bufimage.NewDirectFileRef(
-				fileRef.RootRelFilePath(),
-				fileRef.RootDirPath(),
-				fileRef.ExternalFilePath(),
+		if fileInfo != nil {
+			fileInfo, err = bufcore.NewFileInfo(
+				fileInfo.Path(),
+				"",
+				false,
 			)
 			require.NoError(t, err)
 		}
 		normalizedFileAnnotations[i] = bufanalysis.NewFileAnnotation(
-			fileRef,
+			fileInfo,
 			a.StartLine(),
 			a.StartColumn(),
 			a.EndLine(),

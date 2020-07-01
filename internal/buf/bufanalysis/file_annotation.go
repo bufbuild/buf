@@ -19,11 +19,11 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 )
 
 type fileAnnotation struct {
-	fileRef     bufimage.FileRef
+	fileInfo    bufcore.FileInfo
 	startLine   int
 	startColumn int
 	endLine     int
@@ -33,7 +33,7 @@ type fileAnnotation struct {
 }
 
 func newFileAnnotation(
-	fileRef bufimage.FileRef,
+	fileInfo bufcore.FileInfo,
 	startLine int,
 	startColumn int,
 	endLine int,
@@ -42,7 +42,7 @@ func newFileAnnotation(
 	message string,
 ) *fileAnnotation {
 	return &fileAnnotation{
-		fileRef:     fileRef,
+		fileInfo:    fileInfo,
 		startLine:   startLine,
 		startColumn: startColumn,
 		endLine:     endLine,
@@ -52,8 +52,8 @@ func newFileAnnotation(
 	}
 }
 
-func (f *fileAnnotation) FileRef() bufimage.FileRef {
-	return f.fileRef
+func (f *fileAnnotation) FileInfo() bufcore.FileInfo {
+	return f.fileInfo
 }
 
 func (f *fileAnnotation) StartLine() int {
@@ -88,8 +88,8 @@ func (f *fileAnnotation) String() string {
 	line := f.startLine
 	column := f.startColumn
 	message := f.message
-	if f.fileRef != nil {
-		path = f.fileRef.ExternalFilePath()
+	if f.fileInfo != nil {
+		path = f.fileInfo.ExternalPath()
 	}
 	if line == 0 {
 		line = 1
@@ -124,8 +124,8 @@ func (f *fileAnnotation) MarshalJSON() ([]byte, error) {
 
 func (f *fileAnnotation) toExternalFileAnnotation() externalFileAnnotation {
 	path := ""
-	if f.fileRef != nil {
-		path = f.fileRef.ExternalFilePath()
+	if f.fileInfo != nil {
+		path = f.fileInfo.ExternalPath()
 	}
 	return externalFileAnnotation{
 		Path:        path,

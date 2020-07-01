@@ -19,27 +19,16 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
 
-// NewReadWriteBucketCloser returns a new OS bucket.
+// NewReadWriteBucket returns a new OS bucket.
 //
 // Only regular files are handled, that is Exists should only be called
 // for regular files, Get and Put only work for regular files, Put
 // automatically calls Mkdir, and Walk only calls f on regular files.
 //
-// Not thread-safe.
-func NewReadWriteBucketCloser(rootPath string) (storage.ReadWriteBucketCloser, error) {
-	return newBucket(rootPath)
-}
-
-// NewReadBucketCloser returns a new read-only OS bucket.
-//
-// It is better to use this if you want to make sure your callers are not writing
-// to the filesystem.
-//
-// Only regular files are handled, that is Exists should only be called
-// for regular files, Get and Put only work for regular files, Put
-// automatically calls Mkdir, and Walk only calls f on regular files.
+// The root path is expected to be normalized, however the root path
+// can be absolute or jump context.
 //
 // Not thread-safe.
-func NewReadBucketCloser(rootPath string) (storage.ReadBucketCloser, error) {
+func NewReadWriteBucket(rootPath string) (storage.ReadWriteBucket, error) {
 	return newBucket(rootPath)
 }

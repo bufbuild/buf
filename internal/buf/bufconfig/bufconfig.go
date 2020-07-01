@@ -18,9 +18,9 @@ package bufconfig
 import (
 	"context"
 
-	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/buf/bufmod"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -32,8 +32,7 @@ const ConfigFilePath = "buf.yaml"
 
 // Config is the user config.
 type Config struct {
-	Roots    []string
-	Excludes []string
+	Build    *bufmod.Config
 	Breaking *bufbreaking.Config
 	Lint     *buflint.Config
 }
@@ -70,7 +69,7 @@ func NewProvider(logger *zap.Logger, options ...ProviderOption) Provider {
 
 // ExternalConfig is an external config.
 type ExternalConfig struct {
-	Build    bufbuild.ExternalConfig    `json:"build,omitempty" yaml:"build,omitempty"`
+	Build    bufmod.ExternalConfig      `json:"build,omitempty" yaml:"build,omitempty"`
 	Breaking bufbreaking.ExternalConfig `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 	Lint     buflint.ExternalConfig     `json:"lint,omitempty" yaml:"lint,omitempty"`
 }

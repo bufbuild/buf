@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 )
 
@@ -136,7 +136,7 @@ func checkLint(ctx context.Context, container *container) (retErr error) {
 	fileAnnotations, err = internal.NewBuflintHandler(container.Logger()).Check(
 		ctx,
 		env.Config().Lint,
-		bufimage.ImageWithoutImports(env.Image()),
+		bufcore.ImageWithoutImports(env.Image()),
 	)
 	if err != nil {
 		return err
@@ -188,18 +188,18 @@ func checkBreaking(ctx context.Context, container *container) (retErr error) {
 	}
 	image := env.Image()
 	if container.ExcludeImports {
-		image = bufimage.ImageWithoutImports(image)
+		image = bufcore.ImageWithoutImports(image)
 	}
 
 	// TODO: this doesn't actually work because we're using the same file paths for both sides
 	// if the roots change, then we're torched
-	externalFilePaths := container.Files
+	externalPaths := container.Files
 	if container.LimitToInputFiles {
 		files := image.Files()
 		// we know that the file descriptors have unique names from validation
-		externalFilePaths = make([]string, len(files))
+		externalPaths = make([]string, len(files))
 		for i, file := range files {
-			externalFilePaths[i] = file.ExternalFilePath()
+			externalPaths[i] = file.ExternalPath()
 		}
 	}
 
@@ -212,9 +212,9 @@ func checkBreaking(ctx context.Context, container *container) (retErr error) {
 		container,
 		container.AgainstInput,
 		container.AgainstConfig,
-		externalFilePaths, // we filter checks for files
-		true,              // files are allowed to not exist on the against input
-		true,              // no need to include source info for against
+		externalPaths, // we filter checks for files
+		true,          // files are allowed to not exist on the against input
+		true,          // no need to include source info for against
 	)
 	if err != nil {
 		return err
@@ -227,7 +227,7 @@ func checkBreaking(ctx context.Context, container *container) (retErr error) {
 	}
 	againstImage := againstEnv.Image()
 	if container.ExcludeImports {
-		againstImage = bufimage.ImageWithoutImports(againstImage)
+		againstImage = bufcore.ImageWithoutImports(againstImage)
 	}
 	fileAnnotations, err = internal.NewBufbreakingHandler(container.Logger()).Check(
 		ctx,
@@ -324,7 +324,7 @@ func lsFiles(ctx context.Context, container *container) (retErr error) {
 		return err
 	}
 	for _, fileRef := range fileRefs {
-		if _, err := fmt.Fprintln(container.Stdout(), fileRef.ExternalFilePath()); err != nil {
+		if _, err := fmt.Fprintln(container.Stdout(), fileRef.ExternalPath()); err != nil {
 			return err
 		}
 	}

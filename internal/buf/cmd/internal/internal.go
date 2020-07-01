@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufmod"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"go.uber.org/zap"
@@ -74,7 +75,7 @@ func NewBufcliEnvReader(
 			git.NewCloner(logger, defaultGitClonerOptions),
 		),
 		bufconfig.NewProvider(logger),
-		bufbuild.NewFileRefProvider(logger),
+		bufmod.NewBuilder(logger),
 		bufbuild.NewBuilder(logger),
 		inputFlagName,
 		configOverrideFlagName,
