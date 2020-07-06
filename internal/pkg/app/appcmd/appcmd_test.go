@@ -38,7 +38,7 @@ func TestBasic(t *testing.T) {
 
 	rootCommand := &Command{
 		Use: "test",
-		BindFlags: func(flagSet *pflag.FlagSet) {
+		BindPersistentFlags: func(flagSet *pflag.FlagSet) {
 			flagSet.StringVar(&foo, "foo", "", "Foo.")
 		},
 		SubCommands: []*Command{

@@ -18,8 +18,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufcore"
-	"github.com/bufbuild/buf/internal/buf/bufsrc"
+	"github.com/bufbuild/buf/internal/pkg/protosource"
 )
 
 // Helper is a helper for checkers.
@@ -42,8 +41,8 @@ func NewHelper(id string, ignoreFunc IgnoreFunc) *Helper {
 // If descriptor is nil, no filename information is added.
 // If location is nil, no line or column information will be added.
 func (h *Helper) AddFileAnnotationf(
-	descriptor bufsrc.Descriptor,
-	location bufsrc.Location,
+	descriptor protosource.Descriptor,
+	location protosource.Location,
 	format string,
 	args ...interface{},
 ) {
@@ -73,8 +72,8 @@ func (h *Helper) FileAnnotations() []bufanalysis.FileAnnotation {
 // If location is nil, no line or column information will be added.
 func newFileAnnotationf(
 	id string,
-	descriptor bufsrc.Descriptor,
-	location bufsrc.Location,
+	descriptor protosource.Descriptor,
+	location protosource.Location,
 	format string,
 	args ...interface{},
 ) bufanalysis.FileAnnotation {
@@ -88,7 +87,7 @@ func newFileAnnotationf(
 		endLine = location.EndLine()
 		endColumn = location.EndColumn()
 	}
-	var fileInfo bufcore.FileInfo
+	var fileInfo bufanalysis.FileInfo
 	if descriptor != nil {
 		fileInfo = descriptor.File()
 	}

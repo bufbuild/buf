@@ -97,6 +97,9 @@ func (m *module) TargetFileInfos(ctx context.Context) ([]FileInfo, error) {
 			return nil, err
 		}
 	}
+	if len(fileInfos) == 0 {
+		return nil, ErrNoTargetFiles
+	}
 	sortFileInfos(fileInfos)
 	return fileInfos, nil
 }

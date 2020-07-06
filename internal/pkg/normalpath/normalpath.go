@@ -20,6 +20,7 @@ package normalpath
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -29,6 +30,11 @@ import (
 )
 
 const (
+	// Relative is the PathType for normalized and validated paths.
+	Relative PathType = 1
+	// Absolute is the PathType for normalized and absolute paths.
+	Absolute PathType = 2
+
 	stringOSPathSeparator = string(os.PathSeparator)
 	// This has to be with "/" instead of os.PathSeparator as we use this on normalized paths
 	normalizedRelPathJumpContextPrefix = "../"
@@ -40,6 +46,25 @@ var (
 	// errOutsideContextDir is the error returned if the path is outside the context directory.
 	errOutsideContextDir = errors.New("is outside the context directory")
 )
+
+// PathType is a terminate type for path comparisons.
+type PathType int
+
+// Separator gets the string value of the separator.
+//
+// TODO: rename to Terminator if we keep this
+// TODO: we should probably refactor so we never need to use absolute paths at all
+// this could be accomplished if we could for ExternalPathToRelPath on buckets
+func (t PathType) Separator() string {
+	switch t {
+	case Relative:
+		return "."
+	case Absolute:
+		return "/"
+	default:
+		return ""
+	}
+}
 
 // Error is a path error.
 type Error struct {
@@ -95,6 +120,28 @@ func NormalizeAndValidate(path string) (string, error) {
 		return "", NewError(path, errOutsideContextDir)
 	}
 	return path, nil
+}
+
+// NormalizeAndAbsolute normalizes the path and makes it absolute.
+func NormalizeAndAbsolute(path string) (string, error) {
+	absPath, err := filepath.Abs(Unnormalize(path))
+	if err != nil {
+		return "", err
+	}
+	return Normalize(absPath), nil
+}
+
+// NormalizeAndTransformForPathType calls NormalizeAndValidate for relative
+// paths, and NormalizeAndAbsolute for absolute paths.
+func NormalizeAndTransformForPathType(path string, pathType PathType) (string, error) {
+	switch pathType {
+	case Relative:
+		return NormalizeAndValidate(path)
+	case Absolute:
+		return NormalizeAndAbsolute(path)
+	default:
+		return "", fmt.Errorf("unknown PathType: %v", pathType)
+	}
 }
 
 // Normalize normalizes the given path.
@@ -218,35 +265,41 @@ func Components(path string) []string {
 
 // ContainsPath returns true if the dirPath contains the path.
 //
-// The path and dirPath are expected to be normalized and validated.
+// The path and value are expected to be normalized and validated if Relative is used.
+// The path and value are expected to be normalized and absolute if Absolute is used.
 //
 // For a given dirPath:
 //
-//   - If path == ".", dirPathPath does not contain the path.
-//   - If dirPath == ".", the dirPath contains the path.
+//   - If path == PathType, dirPath does not contain the path.
+//   - If dirPath == PathType, the dirPath contains the path.
 //   - If dirPath is a directory that contains path, this returns true.
-func ContainsPath(dirPath string, path string) bool {
-	if path == "." {
+func ContainsPath(dirPath string, path string, pathType PathType) bool {
+	if dirPath == path {
 		return false
 	}
-	return EqualsOrContainsPath(dirPath, Dir(path))
+	return EqualsOrContainsPath(dirPath, Dir(path), pathType)
 }
 
 // EqualsOrContainsPath returns true if the value is equal to or contains the path.
 //
-// The path and value are expected to be normalized and validated.
+// The path and value are expected to be normalized and validated if Relative is used.
+// The path and value are expected to be normalized and absolute if Absolute is used.
 //
 // For a given value:
 //
-//   - If value == ".", the value contains the path.
+//   - If value == PathType, the value contains the path.
 //   - If value == path, the value is equal to the path.
 //   - If value is a directory that contains path, this returns true.
-func EqualsOrContainsPath(value string, path string) bool {
-	if value == "." {
+func EqualsOrContainsPath(value string, path string, pathType PathType) bool {
+	separator := pathType.Separator()
+	if separator == "" {
+		return false
+	}
+	if value == separator {
 		return true
 	}
 	// TODO: can we optimize this with strings.HasPrefix(path, value + "/") somehow?
-	for curPath := path; curPath != "."; curPath = Dir(curPath) {
+	for curPath := path; curPath != separator; curPath = Dir(curPath) {
 		if value == curPath {
 			return true
 		}
@@ -256,25 +309,28 @@ func EqualsOrContainsPath(value string, path string) bool {
 
 // MapHasEqualOrContainingPath returns true if the path matches any file or directory in the map.
 //
-// The path and all keys in m are expected to be normalized and validated.
+// The path and value are expected to be normalized and validated if Relative is used.
+// The path and value are expected to be normalized and absolute if Absolute is used.
 //
 // For a given key x:
 //
-//   - If x == ".", the path always matches.
+//   - If x == PathType, the path always matches.
 //   - If x == path, the path matches.
 //   - If x is a directory that contains path, the path matches.
 //
 // If the map is empty, returns false.
-//
-// All files and directories in the map are expected to be normalized.
-func MapHasEqualOrContainingPath(m map[string]struct{}, path string) bool {
+func MapHasEqualOrContainingPath(m map[string]struct{}, path string, pathType PathType) bool {
+	separator := pathType.Separator()
+	if separator == "" {
+		return false
+	}
 	if len(m) == 0 {
 		return false
 	}
-	if _, ok := m["."]; ok {
+	if _, ok := m[separator]; ok {
 		return true
 	}
-	for curPath := path; curPath != "."; curPath = Dir(curPath) {
+	for curPath := path; curPath != separator; curPath = Dir(curPath) {
 		if _, ok := m[curPath]; ok {
 			return true
 		}
@@ -288,25 +344,26 @@ func MapHasEqualOrContainingPath(m map[string]struct{}, path string) bool {
 //
 // For a given key x:
 //
-//   - If x == ".", the path always matches.
+//   - If x == PathType, the path always matches.
 //   - If x == path, the path matches.
 //   - If x is a directory that contains path, the path matches.
 //
 // If the map is empty, returns nil.
-//
-// All files and directories in the map are expected to be normalized.
-// The path is normalized within this call.
-func MapAllEqualOrContainingPaths(m map[string]struct{}, path string) []string {
+func MapAllEqualOrContainingPaths(m map[string]struct{}, path string, pathType PathType) []string {
+	separator := pathType.Separator()
+	if separator == "" {
+		return nil
+	}
 	if len(m) == 0 {
 		return nil
 	}
 	n := make(map[string]struct{})
-	if _, ok := m["."]; ok {
-		// also covers if path == ".".
-		n["."] = struct{}{}
+	if _, ok := m[separator]; ok {
+		// also covers if path == separator.
+		n[separator] = struct{}{}
 	}
 	for potentialMatch := range m {
-		for curPath := path; curPath != "."; curPath = Dir(curPath) {
+		for curPath := path; curPath != separator; curPath = Dir(curPath) {
 			if potentialMatch == curPath {
 				n[potentialMatch] = struct{}{}
 				break

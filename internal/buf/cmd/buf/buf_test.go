@@ -16,7 +16,6 @@ package buf
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -26,7 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -505,9 +504,14 @@ func testRunStdoutProfile(t *testing.T, expectedExitCode int, expectedStdout str
 }
 
 func testRunStdoutInternal(t *testing.T, expectedExitCode int, expectedStdout string, args ...string) {
-	stdout := bytes.NewBuffer(nil)
-	testRun(t, expectedExitCode, nil, stdout, args...)
-	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
+	appcmdtesting.RunCommandExitCodeStdout(
+		t,
+		func(use string) *appcmd.Command { return newRootCommand(use) },
+		expectedExitCode,
+		expectedStdout,
+		nil,
+		args...,
+	)
 }
 
 func testRun(
@@ -517,20 +521,12 @@ func testRun(
 	stdout io.Writer,
 	args ...string,
 ) {
-	stderr := bytes.NewBuffer(nil)
-	exitCode := app.GetExitCode(
-		appcmd.Run(
-			context.Background(),
-			app.NewContainer(
-				nil,
-				stdin,
-				stdout,
-				stderr,
-				append([]string{"test"}, args...)...,
-			),
-			newRootCommand("test"),
-			"test",
-		),
+	appcmdtesting.RunCommandExitCode(
+		t,
+		func(use string) *appcmd.Command { return newRootCommand(use) },
+		expectedExitCode,
+		stdin,
+		stdout,
+		args...,
 	)
-	require.Equal(t, expectedExitCode, exitCode, stringutil.TrimLines(stderr.String()))
 }

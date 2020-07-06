@@ -22,16 +22,19 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufmod"
+	"github.com/bufbuild/buf/internal/buf/bufwire"
+	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
+	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
 
 const (
+	experimentalGitCloneFlagName  = "experimental-git-clone"
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
@@ -57,13 +60,13 @@ var (
 	}
 )
 
-// NewBufcliEnvReader returns a new bufos.EnvReader.
-func NewBufcliEnvReader(
+// NewBufwireEnvReader returns a new bufos.EnvReader.
+func NewBufwireEnvReader(
 	logger *zap.Logger,
 	inputFlagName string,
 	configOverrideFlagName string,
-) bufcli.EnvReader {
-	return bufcli.NewEnvReader(
+) bufwire.EnvReader {
+	return bufwire.NewEnvReader(
 		logger,
 		buffetch.NewRefParser(
 			logger,
@@ -75,18 +78,18 @@ func NewBufcliEnvReader(
 			git.NewCloner(logger, defaultGitClonerOptions),
 		),
 		bufconfig.NewProvider(logger),
-		bufmod.NewBuilder(logger),
+		bufmod.NewBucketBuilder(logger),
 		bufbuild.NewBuilder(logger),
 		inputFlagName,
 		configOverrideFlagName,
 	)
 }
 
-// NewBufcliImageWriter returns a new bufos.ImageWriter.
-func NewBufcliImageWriter(
+// NewBufwireImageWriter returns a new bufos.ImageWriter.
+func NewBufwireImageWriter(
 	logger *zap.Logger,
-) bufcli.ImageWriter {
-	return bufcli.NewImageWriter(
+) bufwire.ImageWriter {
+	return bufwire.NewImageWriter(
 		logger,
 		buffetch.NewRefParser(
 			logger,
@@ -158,4 +161,27 @@ func IsLintFormatConfigIgnoreYAML(flagName string, format string) (bool, error) 
 	default:
 		return false, fmt.Errorf("--%s: unknown format: %q", flagName, s)
 	}
+}
+
+// WarnExperimental warns that the command is experimental.
+func WarnExperimental(container applog.Container) {
+	container.Logger().Warn(`This command has been released for early evaluation only and is experimental. It is not ready for production, and is likely to to have significant changes.`)
+}
+
+// BindExperimentalGitClone binds the experimental-git-clone flag
+func BindExperimentalGitClone(flagSet *pflag.FlagSet, value *bool) {
+	flagSet.BoolVar(
+		value,
+		experimentalGitCloneFlagName,
+		false,
+		"Use the git binary to clone instead of the internal git library.",
+	)
+	_ = flagSet.MarkHidden(experimentalGitCloneFlagName)
+	_ = flagSet.MarkDeprecated(
+		experimentalGitCloneFlagName,
+		fmt.Sprintf(
+			"Flag --%s is deprecated. The formerly-experimental git clone functionality is now the only clone functionality used, and this flag has no effect.",
+			experimentalGitCloneFlagName,
+		),
+	)
 }

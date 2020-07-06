@@ -91,7 +91,7 @@ func (b *readBucket) Walk(ctx context.Context, prefix string, f func(storage.Obj
 		if err := walkChecker.Check(ctx); err != nil {
 			return err
 		}
-		if !normalpath.EqualsOrContainsPath(prefix, path) {
+		if !normalpath.EqualsOrContainsPath(prefix, path, normalpath.Relative) {
 			continue
 		}
 		if err := f(object); err != nil {

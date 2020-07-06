@@ -33,3 +33,10 @@ message Three {
   }
   int32 one = 1;
 }
+
+message Ten {
+  reserved 2 to 3;
+  reserved 5 to max;
+  int32 one = 1;
+  int32 four = 4;
+}

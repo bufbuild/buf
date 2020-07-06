@@ -63,7 +63,7 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	envReader := internal.NewBufcliEnvReader(logger, "", "input_config")
+	envReader := internal.NewBufwireEnvReader(logger, "", "input_config")
 	config, err := envReader.GetConfig(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),

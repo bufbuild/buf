@@ -43,6 +43,12 @@ type Command struct {
 	Args cobra.PositionalArgs
 	// BindFlags allows binding of flags on build.
 	BindFlags func(*pflag.FlagSet)
+	// BindPersistentFlags allows binding of flags on build.
+	BindPersistentFlags func(*pflag.FlagSet)
+	// NormalizeFlag allows for normalization of flag names.
+	NormalizeFlag func(*pflag.FlagSet, string) string
+	// NormalizePersistentFlag allows for normalization of flag names.
+	NormalizePersistentFlag func(*pflag.FlagSet, string) string
 	// Run is the command to run.
 	// Required if there are no sub-commands.
 	// Must be unset if there are sub-commands.
@@ -142,7 +148,16 @@ func commandToCobra(
 		cobraCommand.Long = cobraCommand.Short + "\n" + strings.TrimSpace(command.Long)
 	}
 	if command.BindFlags != nil {
-		command.BindFlags(cobraCommand.PersistentFlags())
+		command.BindFlags(cobraCommand.Flags())
+	}
+	if command.BindPersistentFlags != nil {
+		command.BindPersistentFlags(cobraCommand.PersistentFlags())
+	}
+	if command.NormalizeFlag != nil {
+		cobraCommand.Flags().SetNormalizeFunc(normalizeFunc(command.NormalizeFlag))
+	}
+	if command.NormalizePersistentFlag != nil {
+		cobraCommand.PersistentFlags().SetNormalizeFunc(normalizeFunc(command.NormalizePersistentFlag))
 	}
 	if command.Run != nil {
 		cobraCommand.Run = func(_ *cobra.Command, args []string) {
@@ -173,4 +188,10 @@ func commandValidate(command *Command) error {
 		return errors.New("cannot set both Command.Run and Command.SubCommands")
 	}
 	return nil
+}
+
+func normalizeFunc(f func(*pflag.FlagSet, string) string) func(*pflag.FlagSet, string) pflag.NormalizedName {
+	return func(flagSet *pflag.FlagSet, name string) pflag.NormalizedName {
+		return pflag.NormalizedName(f(flagSet, name))
+	}
 }

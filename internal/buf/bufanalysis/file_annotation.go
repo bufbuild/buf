@@ -18,12 +18,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"strconv"
-
-	"github.com/bufbuild/buf/internal/buf/bufcore"
 )
 
 type fileAnnotation struct {
-	fileInfo    bufcore.FileInfo
+	fileInfo    FileInfo
 	startLine   int
 	startColumn int
 	endLine     int
@@ -33,7 +31,7 @@ type fileAnnotation struct {
 }
 
 func newFileAnnotation(
-	fileInfo bufcore.FileInfo,
+	fileInfo FileInfo,
 	startLine int,
 	startColumn int,
 	endLine int,
@@ -52,7 +50,7 @@ func newFileAnnotation(
 	}
 }
 
-func (f *fileAnnotation) FileInfo() bufcore.FileInfo {
+func (f *fileAnnotation) FileInfo() FileInfo {
 	return f.fileInfo
 }
 

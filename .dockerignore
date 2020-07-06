@@ -6,5 +6,5 @@
 cmd/buf/buf
 cmd/protoc-gen-buf-check-breaking/protoc-gen-buf-check-breaking
 cmd/protoc-gen-buf-check-lint/protoc-gen-buf-check-lint
-internal/buf/bufbuild/cache/
+internal/buf/internal/buftesting/cache/
 internal/pkg/storage/storageos/tmp/

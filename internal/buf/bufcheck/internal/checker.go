@@ -19,14 +19,14 @@ import (
 	"sort"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufsrc"
+	"github.com/bufbuild/buf/internal/pkg/protosource"
 )
 
 // IgnoreFunc is an ignore function.
-type IgnoreFunc func(id string, descriptor bufsrc.Descriptor, location bufsrc.Location) bool
+type IgnoreFunc func(id string, descriptor protosource.Descriptor, location protosource.Location) bool
 
 // CheckFunc is a check function.
-type CheckFunc func(id string, ignoreFunc IgnoreFunc, previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error)
+type CheckFunc func(id string, ignoreFunc IgnoreFunc, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error)
 
 // Checker provides a base embeddable checker.
 type Checker struct {
@@ -82,7 +82,7 @@ func (c *Checker) MarshalJSON() ([]byte, error) {
 	return json.Marshal(checkerJSON{ID: c.id, Categories: c.categories, Purpose: c.purpose})
 }
 
-func (c *Checker) check(ignoreFunc IgnoreFunc, previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+func (c *Checker) check(ignoreFunc IgnoreFunc, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return c.checkFunc(c.ID(), ignoreFunc, previousFiles, files)
 }
 

@@ -92,32 +92,37 @@ type SourceRef interface {
 	fetchBucketRef() fetch.BucketRef
 }
 
-// RefParser is an  ref parser for Buf.
-type RefParser interface {
-	// GetRef gets the reference for the image file or source bucket.
-	GetRef(
-		ctx context.Context,
-		value string,
-	) (Ref, error)
+// ImageRefParser is an image ref parser for Buf.
+type ImageRefParser interface {
 	// GetImageRef gets the reference for the image file.
-	GetImageRef(
-		ctx context.Context,
-		value string,
-	) (ImageRef, error)
-	// GetSourceRef gets the reference for the source bucket.
-	GetSourceRef(
-		ctx context.Context,
-		value string,
-	) (SourceRef, error)
+	GetImageRef(ctx context.Context, value string) (ImageRef, error)
+}
+
+// SourceRefParser is a source ref parser for Buf.
+type SourceRefParser interface {
+	// GetSourceRef gets the reference for the source file.
+	GetSourceRef(ctx context.Context, value string) (SourceRef, error)
+}
+
+// RefParser is a ref parser for Buf.
+type RefParser interface {
+	ImageRefParser
+	SourceRefParser
+
+	// GetRef gets the reference for the image file or source bucket.
+	GetRef(ctx context.Context, value string) (Ref, error)
 }
 
 // NewRefParser returns a new RefParser.
-func NewRefParser(
-	logger *zap.Logger,
-) RefParser {
-	return newRefParser(
-		logger,
-	)
+func NewRefParser(logger *zap.Logger) RefParser {
+	return newRefParser(logger)
+}
+
+// NewProtocOutputImageRefParser returns a new RefParser for protoc output.
+//
+// This defaults to binary.
+func NewProtocOutputImageRefParser(logger *zap.Logger) ImageRefParser {
+	return newProtocOutputRefParser(logger)
 }
 
 // Reader is a reader for Buf.

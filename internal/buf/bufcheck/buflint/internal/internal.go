@@ -21,8 +21,8 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/protosource"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
@@ -43,37 +43,37 @@ var (
 	CheckCommentRPC = newMethodCheckFunc(checkCommentRPC)
 )
 
-func checkCommentEnum(add addFunc, value bufsrc.Enum) error {
+func checkCommentEnum(add addFunc, value protosource.Enum) error {
 	return checkCommentNamedDescriptor(add, value, "Enum")
 }
 
-func checkCommentEnumValue(add addFunc, value bufsrc.EnumValue) error {
+func checkCommentEnumValue(add addFunc, value protosource.EnumValue) error {
 	return checkCommentNamedDescriptor(add, value, "Enum value")
 }
 
-func checkCommentField(add addFunc, value bufsrc.Field) error {
+func checkCommentField(add addFunc, value protosource.Field) error {
 	return checkCommentNamedDescriptor(add, value, "Field")
 }
 
-func checkCommentMessage(add addFunc, value bufsrc.Message) error {
+func checkCommentMessage(add addFunc, value protosource.Message) error {
 	return checkCommentNamedDescriptor(add, value, "Message")
 }
 
-func checkCommentOneof(add addFunc, value bufsrc.Oneof) error {
+func checkCommentOneof(add addFunc, value protosource.Oneof) error {
 	return checkCommentNamedDescriptor(add, value, "Oneof")
 }
 
-func checkCommentRPC(add addFunc, value bufsrc.Method) error {
+func checkCommentRPC(add addFunc, value protosource.Method) error {
 	return checkCommentNamedDescriptor(add, value, "RPC")
 }
 
-func checkCommentService(add addFunc, value bufsrc.Service) error {
+func checkCommentService(add addFunc, value protosource.Service) error {
 	return checkCommentNamedDescriptor(add, value, "Service")
 }
 
 func checkCommentNamedDescriptor(
 	add addFunc,
-	namedDescriptor bufsrc.NamedDescriptor,
+	namedDescriptor protosource.NamedDescriptor,
 	typeName string,
 ) error {
 	location := namedDescriptor.Location()
@@ -90,7 +90,7 @@ func checkCommentNamedDescriptor(
 // CheckDirectorySamePackage is a check function.
 var CheckDirectorySamePackage = newDirToFilesCheckFunc(checkDirectorySamePackage)
 
-func checkDirectorySamePackage(add addFunc, dirPath string, files []bufsrc.File) error {
+func checkDirectorySamePackage(add addFunc, dirPath string, files []protosource.File) error {
 	pkgMap := make(map[string]struct{})
 	for _, file := range files {
 		// works for no package set as this will result in "" which is a valid map key
@@ -108,7 +108,7 @@ func checkDirectorySamePackage(add addFunc, dirPath string, files []bufsrc.File)
 // CheckEnumNoAllowAlias is a check function.
 var CheckEnumNoAllowAlias = newEnumCheckFunc(checkEnumNoAllowAlias)
 
-func checkEnumNoAllowAlias(add addFunc, enum bufsrc.Enum) error {
+func checkEnumNoAllowAlias(add addFunc, enum protosource.Enum) error {
 	if enum.AllowAlias() {
 		add(enum, enum.AllowAliasLocation(), `Enum option "allow_alias" on enum %q must be false.`, enum.Name())
 	}
@@ -118,7 +118,7 @@ func checkEnumNoAllowAlias(add addFunc, enum bufsrc.Enum) error {
 // CheckEnumPascalCase is a check function.
 var CheckEnumPascalCase = newEnumCheckFunc(checkEnumPascalCase)
 
-func checkEnumPascalCase(add addFunc, enum bufsrc.Enum) error {
+func checkEnumPascalCase(add addFunc, enum protosource.Enum) error {
 	name := enum.Name()
 	expectedName := stringutil.ToPascalCase(name)
 	if name != expectedName {
@@ -130,7 +130,7 @@ func checkEnumPascalCase(add addFunc, enum bufsrc.Enum) error {
 // CheckEnumFirstValueZero is a check function.
 var CheckEnumFirstValueZero = newEnumCheckFunc(checkEnumFirstValueZero)
 
-func checkEnumFirstValueZero(add addFunc, enum bufsrc.Enum) error {
+func checkEnumFirstValueZero(add addFunc, enum protosource.Enum) error {
 	if values := enum.Values(); len(values) > 0 {
 		if firstEnumValue := values[0]; firstEnumValue.Number() != 0 {
 			// proto3 compilation references the number
@@ -143,7 +143,7 @@ func checkEnumFirstValueZero(add addFunc, enum bufsrc.Enum) error {
 // CheckEnumValuePrefix is a check function.
 var CheckEnumValuePrefix = newEnumValueCheckFunc(checkEnumValuePrefix)
 
-func checkEnumValuePrefix(add addFunc, enumValue bufsrc.EnumValue) error {
+func checkEnumValuePrefix(add addFunc, enumValue protosource.EnumValue) error {
 	name := enumValue.Name()
 	expectedPrefix := fieldToUpperSnakeCase(enumValue.Enum().Name()) + "_"
 	if !strings.HasPrefix(name, expectedPrefix) {
@@ -155,7 +155,7 @@ func checkEnumValuePrefix(add addFunc, enumValue bufsrc.EnumValue) error {
 // CheckEnumValueUpperSnakeCase is a check function.
 var CheckEnumValueUpperSnakeCase = newEnumValueCheckFunc(checkEnumValueUpperSnakeCase)
 
-func checkEnumValueUpperSnakeCase(add addFunc, enumValue bufsrc.EnumValue) error {
+func checkEnumValueUpperSnakeCase(add addFunc, enumValue protosource.EnumValue) error {
 	name := enumValue.Name()
 	expectedName := fieldToUpperSnakeCase(name)
 	if name != expectedName {
@@ -168,17 +168,17 @@ func checkEnumValueUpperSnakeCase(add addFunc, enumValue bufsrc.EnumValue) error
 var CheckEnumZeroValueSuffix = func(
 	id string,
 	ignoreFunc internal.IgnoreFunc,
-	files []bufsrc.File,
+	files []protosource.File,
 	suffix string,
 ) ([]bufanalysis.FileAnnotation, error) {
 	return newEnumValueCheckFunc(
-		func(add addFunc, enumValue bufsrc.EnumValue) error {
+		func(add addFunc, enumValue protosource.EnumValue) error {
 			return checkEnumZeroValueSuffix(add, enumValue, suffix)
 		},
 	)(id, ignoreFunc, files)
 }
 
-func checkEnumZeroValueSuffix(add addFunc, enumValue bufsrc.EnumValue, suffix string) error {
+func checkEnumZeroValueSuffix(add addFunc, enumValue protosource.EnumValue, suffix string) error {
 	if enumValue.Number() != 0 {
 		return nil
 	}
@@ -192,7 +192,7 @@ func checkEnumZeroValueSuffix(add addFunc, enumValue bufsrc.EnumValue, suffix st
 // CheckFieldLowerSnakeCase is a check function.
 var CheckFieldLowerSnakeCase = newFieldCheckFunc(checkFieldLowerSnakeCase)
 
-func checkFieldLowerSnakeCase(add addFunc, field bufsrc.Field) error {
+func checkFieldLowerSnakeCase(add addFunc, field protosource.Field) error {
 	message := field.Message()
 	if message == nil {
 		// just a sanity check
@@ -213,7 +213,7 @@ func checkFieldLowerSnakeCase(add addFunc, field bufsrc.Field) error {
 // CheckFieldNoDescriptor is a check function.
 var CheckFieldNoDescriptor = newFieldCheckFunc(checkFieldNoDescriptor)
 
-func checkFieldNoDescriptor(add addFunc, field bufsrc.Field) error {
+func checkFieldNoDescriptor(add addFunc, field protosource.Field) error {
 	name := field.Name()
 	if strings.ToLower(strings.Trim(name, "_")) == "descriptor" {
 		add(field, field.NameLocation(), `Field name %q cannot be any capitalization of "descriptor" with any number of prefix or suffix underscores.`, name)
@@ -224,7 +224,7 @@ func checkFieldNoDescriptor(add addFunc, field bufsrc.Field) error {
 // CheckFileLowerSnakeCase is a check function.
 var CheckFileLowerSnakeCase = newFileCheckFunc(checkFileLowerSnakeCase)
 
-func checkFileLowerSnakeCase(add addFunc, file bufsrc.File) error {
+func checkFileLowerSnakeCase(add addFunc, file protosource.File) error {
 	filename := file.Path()
 	base := normalpath.Base(filename)
 	ext := normalpath.Ext(filename)
@@ -243,15 +243,15 @@ var (
 	CheckImportNoWeak = newFileImportCheckFunc(checkImportNoWeak)
 )
 
-func checkImportNoPublic(add addFunc, fileImport bufsrc.FileImport) error {
+func checkImportNoPublic(add addFunc, fileImport protosource.FileImport) error {
 	return checkImportNoPublicWeak(add, fileImport, fileImport.IsPublic(), "public")
 }
 
-func checkImportNoWeak(add addFunc, fileImport bufsrc.FileImport) error {
+func checkImportNoWeak(add addFunc, fileImport protosource.FileImport) error {
 	return checkImportNoPublicWeak(add, fileImport, fileImport.IsWeak(), "weak")
 }
 
-func checkImportNoPublicWeak(add addFunc, fileImport bufsrc.FileImport, value bool, name string) error {
+func checkImportNoPublicWeak(add addFunc, fileImport protosource.FileImport, value bool, name string) error {
 	if value {
 		add(fileImport, fileImport.Location(), `Import %q must not be %s.`, fileImport.Import(), name)
 	}
@@ -261,7 +261,7 @@ func checkImportNoPublicWeak(add addFunc, fileImport bufsrc.FileImport, value bo
 // CheckMessagePascalCase is a check function.
 var CheckMessagePascalCase = newMessageCheckFunc(checkMessagePascalCase)
 
-func checkMessagePascalCase(add addFunc, message bufsrc.Message) error {
+func checkMessagePascalCase(add addFunc, message protosource.Message) error {
 	if message.IsMapEntry() {
 		// map entries should always be pascal case but we don't want to check them anyways
 		return nil
@@ -277,7 +277,7 @@ func checkMessagePascalCase(add addFunc, message bufsrc.Message) error {
 // CheckOneofLowerSnakeCase is a check function.
 var CheckOneofLowerSnakeCase = newOneofCheckFunc(checkOneofLowerSnakeCase)
 
-func checkOneofLowerSnakeCase(add addFunc, oneof bufsrc.Oneof) error {
+func checkOneofLowerSnakeCase(add addFunc, oneof protosource.Oneof) error {
 	name := oneof.Name()
 	expectedName := fieldToLowerSnakeCase(name)
 	if name != expectedName {
@@ -289,7 +289,7 @@ func checkOneofLowerSnakeCase(add addFunc, oneof bufsrc.Oneof) error {
 // CheckPackageDefined is a check function.
 var CheckPackageDefined = newFileCheckFunc(checkPackageDefined)
 
-func checkPackageDefined(add addFunc, file bufsrc.File) error {
+func checkPackageDefined(add addFunc, file protosource.File) error {
 	if file.Package() == "" {
 		add(file, nil, "Files must have a package defined.")
 	}
@@ -299,7 +299,7 @@ func checkPackageDefined(add addFunc, file bufsrc.File) error {
 // CheckPackageDirectoryMatch is a check function.
 var CheckPackageDirectoryMatch = newFileCheckFunc(checkPackageDirectoryMatch)
 
-func checkPackageDirectoryMatch(add addFunc, file bufsrc.File) error {
+func checkPackageDirectoryMatch(add addFunc, file protosource.File) error {
 	pkg := file.Package()
 	if pkg == "" {
 		return nil
@@ -317,7 +317,7 @@ func checkPackageDirectoryMatch(add addFunc, file bufsrc.File) error {
 // CheckPackageLowerSnakeCase is a check function.
 var CheckPackageLowerSnakeCase = newFileCheckFunc(checkPackageLowerSnakeCase)
 
-func checkPackageLowerSnakeCase(add addFunc, file bufsrc.File) error {
+func checkPackageLowerSnakeCase(add addFunc, file protosource.File) error {
 	pkg := file.Package()
 	if pkg == "" {
 		return nil
@@ -336,7 +336,7 @@ func checkPackageLowerSnakeCase(add addFunc, file bufsrc.File) error {
 // CheckPackageSameDirectory is a check function.
 var CheckPackageSameDirectory = newPackageToFilesCheckFunc(checkPackageSameDirectory)
 
-func checkPackageSameDirectory(add addFunc, pkg string, files []bufsrc.File) error {
+func checkPackageSameDirectory(add addFunc, pkg string, files []protosource.File) error {
 	dirMap := make(map[string]struct{})
 	for _, file := range files {
 		dirMap[normalpath.Dir(file.Path())] = struct{}{}
@@ -367,49 +367,49 @@ var (
 	CheckPackageSameSwiftPrefix = newPackageToFilesCheckFunc(checkPackageSameSwiftPrefix)
 )
 
-func checkPackageSameCsharpNamespace(add addFunc, pkg string, files []bufsrc.File) error {
-	return checkPackageSameOptionValue(add, pkg, files, bufsrc.File.CsharpNamespace, bufsrc.File.CsharpNamespaceLocation, "csharp_namespace")
+func checkPackageSameCsharpNamespace(add addFunc, pkg string, files []protosource.File) error {
+	return checkPackageSameOptionValue(add, pkg, files, protosource.File.CsharpNamespace, protosource.File.CsharpNamespaceLocation, "csharp_namespace")
 }
 
-func checkPackageSameGoPackage(add addFunc, pkg string, files []bufsrc.File) error {
-	return checkPackageSameOptionValue(add, pkg, files, bufsrc.File.GoPackage, bufsrc.File.GoPackageLocation, "go_package")
+func checkPackageSameGoPackage(add addFunc, pkg string, files []protosource.File) error {
+	return checkPackageSameOptionValue(add, pkg, files, protosource.File.GoPackage, protosource.File.GoPackageLocation, "go_package")
 }
 
-func checkPackageSameJavaMultipleFiles(add addFunc, pkg string, files []bufsrc.File) error {
+func checkPackageSameJavaMultipleFiles(add addFunc, pkg string, files []protosource.File) error {
 	return checkPackageSameOptionValue(
 		add,
 		pkg,
 		files,
-		func(file bufsrc.File) string {
+		func(file protosource.File) string {
 			return strconv.FormatBool(file.JavaMultipleFiles())
 		},
-		bufsrc.File.JavaMultipleFilesLocation,
+		protosource.File.JavaMultipleFilesLocation,
 		"java_multiple_files",
 	)
 }
 
-func checkPackageSameJavaPackage(add addFunc, pkg string, files []bufsrc.File) error {
-	return checkPackageSameOptionValue(add, pkg, files, bufsrc.File.JavaPackage, bufsrc.File.JavaPackageLocation, "java_package")
+func checkPackageSameJavaPackage(add addFunc, pkg string, files []protosource.File) error {
+	return checkPackageSameOptionValue(add, pkg, files, protosource.File.JavaPackage, protosource.File.JavaPackageLocation, "java_package")
 }
 
-func checkPackageSamePhpNamespace(add addFunc, pkg string, files []bufsrc.File) error {
-	return checkPackageSameOptionValue(add, pkg, files, bufsrc.File.PhpNamespace, bufsrc.File.PhpNamespaceLocation, "php_namespace")
+func checkPackageSamePhpNamespace(add addFunc, pkg string, files []protosource.File) error {
+	return checkPackageSameOptionValue(add, pkg, files, protosource.File.PhpNamespace, protosource.File.PhpNamespaceLocation, "php_namespace")
 }
 
-func checkPackageSameRubyPackage(add addFunc, pkg string, files []bufsrc.File) error {
-	return checkPackageSameOptionValue(add, pkg, files, bufsrc.File.RubyPackage, bufsrc.File.RubyPackageLocation, "ruby_package")
+func checkPackageSameRubyPackage(add addFunc, pkg string, files []protosource.File) error {
+	return checkPackageSameOptionValue(add, pkg, files, protosource.File.RubyPackage, protosource.File.RubyPackageLocation, "ruby_package")
 }
 
-func checkPackageSameSwiftPrefix(add addFunc, pkg string, files []bufsrc.File) error {
-	return checkPackageSameOptionValue(add, pkg, files, bufsrc.File.SwiftPrefix, bufsrc.File.SwiftPrefixLocation, "swift_prefix")
+func checkPackageSameSwiftPrefix(add addFunc, pkg string, files []protosource.File) error {
+	return checkPackageSameOptionValue(add, pkg, files, protosource.File.SwiftPrefix, protosource.File.SwiftPrefixLocation, "swift_prefix")
 }
 
 func checkPackageSameOptionValue(
 	add addFunc,
 	pkg string,
-	files []bufsrc.File,
-	getOptionValue func(bufsrc.File) string,
-	getOptionLocation func(bufsrc.File) bufsrc.Location,
+	files []protosource.File,
+	getOptionValue func(protosource.File) string,
+	getOptionLocation func(protosource.File) protosource.Location,
 	name string,
 ) error {
 	optionValueMap := make(map[string]struct{})
@@ -434,7 +434,7 @@ func checkPackageSameOptionValue(
 // CheckPackageVersionSuffix is a check function.
 var CheckPackageVersionSuffix = newFileCheckFunc(checkPackageVersionSuffix)
 
-func checkPackageVersionSuffix(add addFunc, file bufsrc.File) error {
+func checkPackageVersionSuffix(add addFunc, file protosource.File) error {
 	pkg := file.Package()
 	if pkg == "" {
 		return nil
@@ -448,7 +448,7 @@ func checkPackageVersionSuffix(add addFunc, file bufsrc.File) error {
 // CheckRPCNoClientStreaming is a check function.
 var CheckRPCNoClientStreaming = newMethodCheckFunc(checkRPCNoClientStreaming)
 
-func checkRPCNoClientStreaming(add addFunc, method bufsrc.Method) error {
+func checkRPCNoClientStreaming(add addFunc, method protosource.Method) error {
 	if method.ClientStreaming() {
 		add(method, method.Location(), "RPC %q is client streaming.", method.Name())
 	}
@@ -458,7 +458,7 @@ func checkRPCNoClientStreaming(add addFunc, method bufsrc.Method) error {
 // CheckRPCNoServerStreaming is a check function.
 var CheckRPCNoServerStreaming = newMethodCheckFunc(checkRPCNoServerStreaming)
 
-func checkRPCNoServerStreaming(add addFunc, method bufsrc.Method) error {
+func checkRPCNoServerStreaming(add addFunc, method protosource.Method) error {
 	if method.ServerStreaming() {
 		add(method, method.Location(), "RPC %q is server streaming.", method.Name())
 	}
@@ -468,7 +468,7 @@ func checkRPCNoServerStreaming(add addFunc, method bufsrc.Method) error {
 // CheckRPCPascalCase is a check function.
 var CheckRPCPascalCase = newMethodCheckFunc(checkRPCPascalCase)
 
-func checkRPCPascalCase(add addFunc, method bufsrc.Method) error {
+func checkRPCPascalCase(add addFunc, method protosource.Method) error {
 	name := method.Name()
 	expectedName := stringutil.ToPascalCase(name)
 	if name != expectedName {
@@ -481,13 +481,13 @@ func checkRPCPascalCase(add addFunc, method bufsrc.Method) error {
 var CheckRPCRequestResponseUnique = func(
 	id string,
 	ignoreFunc internal.IgnoreFunc,
-	files []bufsrc.File,
+	files []protosource.File,
 	allowSameRequestResponse bool,
 	allowGoogleProtobufEmptyRequests bool,
 	allowGoogleProtobufEmptyResponses bool,
 ) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
-		func(add addFunc, files []bufsrc.File) error {
+		func(add addFunc, files []protosource.File) error {
 			return checkRPCRequestResponseUnique(
 				add,
 				files,
@@ -501,12 +501,12 @@ var CheckRPCRequestResponseUnique = func(
 
 func checkRPCRequestResponseUnique(
 	add addFunc,
-	files []bufsrc.File,
+	files []protosource.File,
 	allowSameRequestResponse bool,
 	allowGoogleProtobufEmptyRequests bool,
 	allowGoogleProtobufEmptyResponses bool,
 ) error {
-	allFullNameToMethod, err := bufsrc.FullNameToMethod(files...)
+	allFullNameToMethod, err := protosource.FullNameToMethod(files...)
 	if err != nil {
 		return err
 	}
@@ -525,12 +525,12 @@ func checkRPCRequestResponseUnique(
 	}
 	// we have now added errors for the same request and response type if applicable
 	// we can now check methods for unique usage of a given type
-	requestResponseTypeToFullNameToMethod := make(map[string]map[string]bufsrc.Method)
+	requestResponseTypeToFullNameToMethod := make(map[string]map[string]protosource.Method)
 	for fullName, method := range allFullNameToMethod {
 		for _, requestResponseType := range []string{method.InputTypeName(), method.OutputTypeName()} {
 			fullNameToMethod, ok := requestResponseTypeToFullNameToMethod[requestResponseType]
 			if !ok {
-				fullNameToMethod = make(map[string]bufsrc.Method)
+				fullNameToMethod = make(map[string]protosource.Method)
 				requestResponseTypeToFullNameToMethod[requestResponseType] = fullNameToMethod
 			}
 			fullNameToMethod[fullName] = method
@@ -548,8 +548,8 @@ func checkRPCRequestResponseUnique(
 			// else, we check
 			if !(allowGoogleProtobufEmptyRequests && allowGoogleProtobufEmptyResponses) {
 				// inside this if statement, one of allowGoogleProtobufEmptyRequests or allowGoogleProtobufEmptyResponses is true
-				var requestMethods []bufsrc.Method
-				var responseMethods []bufsrc.Method
+				var requestMethods []protosource.Method
+				var responseMethods []protosource.Method
 				for _, method := range fullNameToMethod {
 					if method.InputTypeName() == ".google.protobuf.Empty" {
 						requestMethods = append(requestMethods, method)
@@ -583,17 +583,17 @@ func checkRPCRequestResponseUnique(
 var CheckRPCRequestStandardName = func(
 	id string,
 	ignoreFunc internal.IgnoreFunc,
-	files []bufsrc.File,
+	files []protosource.File,
 	allowGoogleProtobufEmptyRequests bool,
 ) ([]bufanalysis.FileAnnotation, error) {
 	return newMethodCheckFunc(
-		func(add addFunc, method bufsrc.Method) error {
+		func(add addFunc, method protosource.Method) error {
 			return checkRPCRequestStandardName(add, method, allowGoogleProtobufEmptyRequests)
 		},
 	)(id, ignoreFunc, files)
 }
 
-func checkRPCRequestStandardName(add addFunc, method bufsrc.Method, allowGoogleProtobufEmptyRequests bool) error {
+func checkRPCRequestStandardName(add addFunc, method protosource.Method, allowGoogleProtobufEmptyRequests bool) error {
 	service := method.Service()
 	if service == nil {
 		return errors.New("method.Service() is nil")
@@ -618,17 +618,17 @@ func checkRPCRequestStandardName(add addFunc, method bufsrc.Method, allowGoogleP
 var CheckRPCResponseStandardName = func(
 	id string,
 	ignoreFunc internal.IgnoreFunc,
-	files []bufsrc.File,
+	files []protosource.File,
 	allowGoogleProtobufEmptyResponses bool,
 ) ([]bufanalysis.FileAnnotation, error) {
 	return newMethodCheckFunc(
-		func(add addFunc, method bufsrc.Method) error {
+		func(add addFunc, method protosource.Method) error {
 			return checkRPCResponseStandardName(add, method, allowGoogleProtobufEmptyResponses)
 		},
 	)(id, ignoreFunc, files)
 }
 
-func checkRPCResponseStandardName(add addFunc, method bufsrc.Method, allowGoogleProtobufEmptyResponses bool) error {
+func checkRPCResponseStandardName(add addFunc, method protosource.Method, allowGoogleProtobufEmptyResponses bool) error {
 	service := method.Service()
 	if service == nil {
 		return errors.New("method.Service() is nil")
@@ -652,7 +652,7 @@ func checkRPCResponseStandardName(add addFunc, method bufsrc.Method, allowGoogle
 // CheckServicePascalCase is a check function.
 var CheckServicePascalCase = newServiceCheckFunc(checkServicePascalCase)
 
-func checkServicePascalCase(add addFunc, service bufsrc.Service) error {
+func checkServicePascalCase(add addFunc, service protosource.Service) error {
 	name := service.Name()
 	expectedName := stringutil.ToPascalCase(name)
 	if name != expectedName {
@@ -665,17 +665,17 @@ func checkServicePascalCase(add addFunc, service bufsrc.Service) error {
 var CheckServiceSuffix = func(
 	id string,
 	ignoreFunc internal.IgnoreFunc,
-	files []bufsrc.File,
+	files []protosource.File,
 	suffix string,
 ) ([]bufanalysis.FileAnnotation, error) {
 	return newServiceCheckFunc(
-		func(add addFunc, service bufsrc.Service) error {
+		func(add addFunc, service protosource.Service) error {
 			return checkServiceSuffix(add, service, suffix)
 		},
 	)(id, ignoreFunc, files)
 }
 
-func checkServiceSuffix(add addFunc, service bufsrc.Service, suffix string) error {
+func checkServiceSuffix(add addFunc, service protosource.Service, suffix string) error {
 	name := service.Name()
 	if !strings.HasSuffix(name, suffix) {
 		add(service, service.NameLocation(), "Service name %q should be suffixed with %q.", name, suffix)

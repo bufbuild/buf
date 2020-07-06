@@ -17,6 +17,7 @@ package bufcore
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
@@ -25,6 +26,9 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
+
+// ErrNoTargetFiles is the error returned if there are no target files found.
+var ErrNoTargetFiles = errors.New("no .proto target files found")
 
 // FileInfo contains protobuf file info.
 type FileInfo interface {

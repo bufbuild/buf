@@ -72,7 +72,7 @@ func handle(
 	if !externalConfig.LimitToInputFiles {
 		files = nil
 	}
-	envReader := internal.NewBufcliEnvReader(logger, "against_input", "against_input_config")
+	envReader := internal.NewBufwireEnvReader(logger, "against_input", "against_input_config")
 	againstEnv, err := envReader.GetImageEnv(
 		ctx,
 		newContainer(container),
@@ -90,7 +90,7 @@ func handle(
 	if externalConfig.ExcludeImports {
 		againstImage = bufcore.ImageWithoutImports(againstImage)
 	}
-	envReader = internal.NewBufcliEnvReader(logger, "", "input_config")
+	envReader = internal.NewBufwireEnvReader(logger, "", "input_config")
 	config, err := envReader.GetConfig(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),

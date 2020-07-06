@@ -20,9 +20,14 @@ import (
 	"io"
 	"sort"
 
-	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/pkg/stringjson"
 )
+
+// FileInfo is a minimal FileInfo interface.
+type FileInfo interface {
+	Path() string
+	ExternalPath() string
+}
 
 // FileAnnotation is a file annotation.
 type FileAnnotation interface {
@@ -31,7 +36,7 @@ type FileAnnotation interface {
 	// FileInfo is the FileInfo for this annotation.
 	//
 	// This may be nil.
-	FileInfo() bufcore.FileInfo
+	FileInfo() FileInfo
 
 	// StartLine is the starting line.
 	//
@@ -61,7 +66,7 @@ type FileAnnotation interface {
 
 // NewFileAnnotation returns a new FileAnnotation.
 func NewFileAnnotation(
-	fileInfo bufcore.FileInfo,
+	fileInfo FileInfo,
 	startLine int,
 	startColumn int,
 	endLine int,
