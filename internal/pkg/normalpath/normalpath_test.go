@@ -302,7 +302,7 @@ func TestContainsPath(t *testing.T) {
 }
 
 func testContainsPath(t *testing.T, expected bool, value string, path string) {
-	assert.Equal(t, expected, ContainsPath(value, path), fmt.Sprintf("%s %s", value, path))
+	assert.Equal(t, expected, ContainsPath(value, path, Relative), fmt.Sprintf("%s %s", value, path))
 }
 
 func TestEqualsOrContainsPath(t *testing.T) {
@@ -319,7 +319,7 @@ func TestEqualsOrContainsPath(t *testing.T) {
 }
 
 func testEqualsOrContainsPath(t *testing.T, expected bool, value string, path string) {
-	assert.Equal(t, expected, EqualsOrContainsPath(value, path), fmt.Sprintf("%s %s", value, path))
+	assert.Equal(t, expected, EqualsOrContainsPath(value, path, Relative), fmt.Sprintf("%s %s", value, path))
 }
 
 func TestMapHasEqualOrContainingPath(t *testing.T) {
@@ -338,7 +338,7 @@ func TestMapHasEqualOrContainingPath(t *testing.T) {
 
 func testMapHasEqualOrContainingPath(t *testing.T, expected bool, path string, keys ...string) {
 	keyMap := stringutil.SliceToMap(keys)
-	assert.Equal(t, expected, MapHasEqualOrContainingPath(keyMap, path), fmt.Sprintf("%s %v", path, keys))
+	assert.Equal(t, expected, MapHasEqualOrContainingPath(keyMap, path, Relative), fmt.Sprintf("%s %v", path, keys))
 }
 
 func TestMapAllEqualOrContainingPaths(t *testing.T) {
@@ -362,5 +362,83 @@ func testMapAllEqualOrContainingPaths(t *testing.T, expected []string, path stri
 	}
 	sort.Strings(expected)
 	keyMap := stringutil.SliceToMap(keys)
-	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keyMap, path), fmt.Sprintf("%s %v", path, keys))
+	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keyMap, path, Relative), fmt.Sprintf("%s %v", path, keys))
+}
+
+func TestContainsPathAbs(t *testing.T) {
+	testContainsPathAbs(t, false, "/a.proto", "/a.proto")
+	testContainsPathAbs(t, true, "/", "/a.proto")
+	testContainsPathAbs(t, false, "/a.proto", "/")
+	testContainsPathAbs(t, false, "/", "/")
+	testContainsPathAbs(t, true, "/", "/a/b.proto")
+	testContainsPathAbs(t, true, "/", "a/b")
+	testContainsPathAbs(t, false, "/a", "/ab/c")
+	testContainsPathAbs(t, true, "/a", "/a/b/c")
+	testContainsPathAbs(t, false, "/b", "/a/b/c")
+	testContainsPathAbs(t, true, "/b", "/b/b/c")
+	testContainsPathAbs(t, true, "/b", "/b/a/c")
+}
+
+func testContainsPathAbs(t *testing.T, expected bool, value string, path string) {
+	assert.Equal(t, expected, ContainsPath(value, path, Absolute), fmt.Sprintf("%s %s", value, path))
+}
+
+func TestEqualsOrContainsPathAbs(t *testing.T) {
+	testEqualsOrContainsPathAbs(t, true, "/a.proto", "/a.proto")
+	testEqualsOrContainsPathAbs(t, true, "/", "/a.proto")
+	testEqualsOrContainsPathAbs(t, false, "a.proto", "/")
+	testEqualsOrContainsPathAbs(t, true, "/", "a/b.proto")
+	testEqualsOrContainsPathAbs(t, true, "/", "/a/b")
+	testEqualsOrContainsPathAbs(t, false, "/a", "/ab/c")
+	testEqualsOrContainsPathAbs(t, true, "/a", "/a/b/c")
+	testEqualsOrContainsPathAbs(t, false, "/b", "/a/b/c")
+	testEqualsOrContainsPathAbs(t, true, "/b", "/b/b/c")
+	testEqualsOrContainsPathAbs(t, true, "/b", "/b/a/c")
+}
+
+func testEqualsOrContainsPathAbs(t *testing.T, expected bool, value string, path string) {
+	assert.Equal(t, expected, EqualsOrContainsPath(value, path, Absolute), fmt.Sprintf("%s %s", value, path))
+}
+
+func TestMapHasEqualOrContainingPathAbs(t *testing.T) {
+	testMapHasEqualOrContainingPathAbs(t, true, "/a.proto", "/a.proto")
+	testMapHasEqualOrContainingPathAbs(t, false, "/", "/a.proto")
+	testMapHasEqualOrContainingPathAbs(t, true, "/a.proto", "/")
+	testMapHasEqualOrContainingPathAbs(t, true, "/a/b.proto", "/")
+	testMapHasEqualOrContainingPathAbs(t, true, "/a/b", "/")
+	testMapHasEqualOrContainingPathAbs(t, false, "/ab/c", "/a", "/b")
+	testMapHasEqualOrContainingPathAbs(t, true, "/a/b/c", "/a", "/b")
+	testMapHasEqualOrContainingPathAbs(t, false, "/a/b/c", "/b")
+	testMapHasEqualOrContainingPathAbs(t, true, "/b/b/c", "/b")
+	testMapHasEqualOrContainingPathAbs(t, true, "/b/a/c", "/b")
+	testMapHasEqualOrContainingPathAbs(t, true, "/b/b/c", "/b", "/")
+}
+
+func testMapHasEqualOrContainingPathAbs(t *testing.T, expected bool, path string, keys ...string) {
+	keyMap := stringutil.SliceToMap(keys)
+	assert.Equal(t, expected, MapHasEqualOrContainingPath(keyMap, path, Absolute), fmt.Sprintf("%s %v", path, keys))
+}
+
+func TestMapAllEqualOrContainingPathsAbs(t *testing.T) {
+	testMapAllEqualOrContainingPathsAbs(t, []string{"/a.proto"}, "/a.proto", "/a.proto")
+	testMapAllEqualOrContainingPathsAbs(t, nil, "/", "/a.proto")
+	testMapAllEqualOrContainingPathsAbs(t, []string{"/"}, "/a.proto", "/")
+	testMapAllEqualOrContainingPathsAbs(t, []string{"/"}, "/a/b.proto", "/")
+	testMapAllEqualOrContainingPathsAbs(t, []string{"/"}, "/a/b", "/")
+	testMapAllEqualOrContainingPathsAbs(t, nil, "/ab/c", "/a", "/b")
+	testMapAllEqualOrContainingPathsAbs(t, []string{"/a"}, "/a/b/c", "/a", "/b")
+	testMapAllEqualOrContainingPathsAbs(t, nil, "/a/b/c", "/b")
+	testMapAllEqualOrContainingPathsAbs(t, []string{"/b"}, "/b/b/c", "/b")
+	testMapAllEqualOrContainingPathsAbs(t, []string{"/b"}, "/b/a/c", "/b")
+	testMapAllEqualOrContainingPathsAbs(t, []string{"/b", "/"}, "/b/b/c", "/b", "/")
+	testMapAllEqualOrContainingPathsAbs(t, []string{"/b", "/b/b", "/"}, "/b/b/c", "/b", "/b/b", "/")
+}
+
+func testMapAllEqualOrContainingPathsAbs(t *testing.T, expected []string, path string, keys ...string) {
+	if expected == nil {
+		expected = make([]string, 0)
+	}
+	sort.Strings(expected)
+	keyMap := stringutil.SliceToMap(keys)
+	assert.Equal(t, expected, MapAllEqualOrContainingPaths(keyMap, path, Absolute), fmt.Sprintf("%s %v", path, keys))
 }

@@ -23,48 +23,65 @@ import (
 	"go.uber.org/zap"
 )
 
-// Builder builds modules.
-type Builder interface {
+// BucketBuilder builds modules for buckets.
+type BucketBuilder interface {
 	// BuildForBucket builds a module for the given bucket.
 	//
-	// If bucketRelPaths is empty, all files are built.
-	// bucketRelPaths should be relative to the bucket, not the roots.
+	// If paths is empty, all files are built.
+	// Paths should be relative to the bucket, not the roots.
 	BuildForBucket(
 		ctx context.Context,
 		readBucket storage.ReadBucket,
 		config *Config,
-		options ...BuildForBucketOption,
+		options ...BuildOption,
 	) (bufcore.Module, error)
 }
 
-// NewBuilder returns a new Builder.
-func NewBuilder(logger *zap.Logger) Builder {
-	return newBuilder(logger)
+// NewBucketBuilder returns a new BucketBuilder.
+func NewBucketBuilder(logger *zap.Logger) BucketBuilder {
+	return newBucketBuilder(logger)
 }
 
-// BuildForBucketOption is an option for BuildForBucket.
-type BuildForBucketOption func(*buildForBucketOptions)
+// IncludeBuilder builds modules for includes.
+//
+// This is used for protoc.
+type IncludeBuilder interface {
+	// BuildForIncludes builds a module for the given includes and file paths.
+	BuildForIncludes(
+		ctx context.Context,
+		includeDirPaths []string,
+		options ...BuildOption,
+	) (bufcore.Module, error)
+}
 
-// WithBucketRelPaths returns a new BuildForBucketOption that specifies specific file paths to build.
+// NewIncludeBuilder returns a new IncludeBuilder.
+func NewIncludeBuilder(logger *zap.Logger) IncludeBuilder {
+	return newIncludeBuilder(logger)
+}
+
+// BuildOption is an option for BuildForBucket.
+type BuildOption func(*buildOptions)
+
+// WithPaths returns a new BuildOption that specifies specific file paths to build.
 //
 // These paths must exist.
-// These paths must be relative to the bucket.
-// These paths will be normalized and validated.
+// These paths must be relative to the bucket or include directory paths.
+// These paths will be normalized.
 // Multiple calls to this option will override previous calls.
-func WithBucketRelPaths(bucketRelPaths ...string) BuildForBucketOption {
-	return func(buildForBucketOptions *buildForBucketOptions) {
-		buildForBucketOptions.bucketRelPaths = bucketRelPaths
+func WithPaths(paths ...string) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.paths = paths
 	}
 }
 
-// WithBucketRelPathsAllowNotExistOnWalk returns a BuildForBucketOption that says that the
-// bucket relative paths specified with WithBucketRelPaths may not exist on module TargetFileInfos
+// WithPathsAllowNotExistOnWalk returns a BuildOption that says that the
+// bucket relative paths specified with WithPaths may not exist on module TargetFileInfos
 // calls.
 //
 // GetFileInfo and GetFile will still operate as normal.
-func WithBucketRelPathsAllowNotExistOnWalk() BuildForBucketOption {
-	return func(buildForBucketOptions *buildForBucketOptions) {
-		buildForBucketOptions.bucketRelPathsAllowNotExistOnWalk = true
+func WithPathsAllowNotExistOnWalk() BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.pathsAllowNotExistOnWalk = true
 	}
 }
 

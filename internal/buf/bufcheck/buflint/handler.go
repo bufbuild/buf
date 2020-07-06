@@ -20,7 +20,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/buf/bufcore"
-	"github.com/bufbuild/buf/internal/buf/bufsrc"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufcoreutil"
+	"github.com/bufbuild/buf/internal/pkg/protosource"
 	"go.uber.org/zap"
 )
 
@@ -43,7 +44,7 @@ func (h *handler) Check(
 	config *Config,
 	image bufcore.Image,
 ) ([]bufanalysis.FileAnnotation, error) {
-	files, err := bufsrc.NewFilesUnstable(ctx, image.Files()...)
+	files, err := protosource.NewFilesUnstable(ctx, bufcoreutil.NewInputFiles(image.Files())...)
 	if err != nil {
 		return nil, err
 	}

@@ -23,8 +23,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
-	"github.com/bufbuild/buf/internal/pkg/proto/protoc"
-	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
+	"github.com/bufbuild/buf/internal/pkg/protoencoding"
+	"github.com/bufbuild/buf/internal/pkg/prototesting"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -208,7 +208,7 @@ func testBuildCodeGeneratorRequest(
 	parameter string,
 	fileToGenerate []string,
 ) *pluginpb.CodeGeneratorRequest {
-	fileDescriptorSet, err := protoc.GetFileDescriptorSet(
+	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
 		[]string{root},
 		realFilePaths,

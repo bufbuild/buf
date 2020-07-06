@@ -15,21 +15,26 @@
 package buf
 
 import (
+	"time"
+
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/internal/lsfiles"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/internal/protoc"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
+	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/spf13/cobra"
 )
 
 func newRootCommand(use string, options ...RootCommandOption) *appcmd.Command {
-	builder := newBuilder()
+	builder := appflag.NewBuilder(appflag.BuilderWithTimeout(10 * time.Second))
 	rootCommand := &appcmd.Command{
 		Use: use,
 		SubCommands: []*appcmd.Command{
 			newImageCmd(builder),
 			newCheckCmd(builder),
-			newLsFilesCmd(builder),
+			lsfiles.NewCommand("ls-files", builder),
 			newExperimentalCmd(builder),
 		},
-		BindFlags: builder.BindRoot,
+		BindPersistentFlags: builder.BindRoot,
 	}
 	for _, option := range options {
 		option(rootCommand, builder)
@@ -37,17 +42,18 @@ func newRootCommand(use string, options ...RootCommandOption) *appcmd.Command {
 	return rootCommand
 }
 
-func newExperimentalCmd(builder *builder) *appcmd.Command {
+func newExperimentalCmd(builder appflag.Builder) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   "experimental",
 		Short: "Experimental commands. Unstable and will likely change.",
 		SubCommands: []*appcmd.Command{
 			newExperimentalImageCmd(builder),
+			protoc.NewCommand("protoc", builder),
 		},
 	}
 }
 
-func newImageCmd(builder *builder) *appcmd.Command {
+func newImageCmd(builder appflag.Builder) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   "image",
 		Short: "Work with Images and FileDescriptorSets.",
@@ -57,7 +63,7 @@ func newImageCmd(builder *builder) *appcmd.Command {
 	}
 }
 
-func newExperimentalImageCmd(builder *builder) *appcmd.Command {
+func newExperimentalImageCmd(builder appflag.Builder) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   "image",
 		Short: "Work with Images and FileDescriptorSets.",
@@ -67,44 +73,46 @@ func newExperimentalImageCmd(builder *builder) *appcmd.Command {
 	}
 }
 
-func newImageBuildCmd(builder *builder) *appcmd.Command {
+func newImageBuildCmd(builder appflag.Builder) *appcmd.Command {
+	flags := newFlags()
 	return &appcmd.Command{
 		Use:   "build",
 		Short: "Build all files from the input location and output an Image or FileDescriptorSet.",
 		Args:  cobra.NoArgs,
-		Run:   builder.newRunFunc(imageBuild),
+		Run:   newRunFunc(builder, flags, imageBuild),
 		BindFlags: appcmd.BindMultiple(
-			builder.bindImageBuildInput,
-			builder.bindImageBuildConfig,
-			builder.bindImageBuildFiles,
-			builder.bindImageBuildOutput,
-			builder.bindImageBuildAsFileDescriptorSet,
-			builder.bindImageBuildExcludeImports,
-			builder.bindImageBuildExcludeSourceInfo,
-			builder.bindImageBuildErrorFormat,
-			builder.bindExperimentalGitClone,
+			flags.bindImageBuildInput,
+			flags.bindImageBuildConfig,
+			flags.bindImageBuildFiles,
+			flags.bindImageBuildOutput,
+			flags.bindImageBuildAsFileDescriptorSet,
+			flags.bindImageBuildExcludeImports,
+			flags.bindImageBuildExcludeSourceInfo,
+			flags.bindImageBuildErrorFormat,
+			flags.bindExperimentalGitClone,
 		),
 	}
 }
 
-func newImageConvertCmd(builder *builder) *appcmd.Command {
+func newImageConvertCmd(builder appflag.Builder) *appcmd.Command {
+	flags := newFlags()
 	return &appcmd.Command{
 		Use:   "convert",
 		Short: "Convert the input Image to an output Image with the specified format and filters.",
 		Args:  cobra.NoArgs,
-		Run:   builder.newRunFunc(imageConvert),
+		Run:   newRunFunc(builder, flags, imageConvert),
 		BindFlags: appcmd.BindMultiple(
-			builder.bindImageConvertInput,
-			builder.bindImageConvertFiles,
-			builder.bindImageConvertOutput,
-			builder.bindImageConvertAsFileDescriptorSet,
-			builder.bindImageConvertExcludeImports,
-			builder.bindImageConvertExcludeSourceInfo,
+			flags.bindImageConvertInput,
+			flags.bindImageConvertFiles,
+			flags.bindImageConvertOutput,
+			flags.bindImageConvertAsFileDescriptorSet,
+			flags.bindImageConvertExcludeImports,
+			flags.bindImageConvertExcludeSourceInfo,
 		),
 	}
 }
 
-func newCheckCmd(builder *builder) *appcmd.Command {
+func newCheckCmd(builder appflag.Builder) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   "check",
 		Short: "Run lint or breaking change checks.",
@@ -117,82 +125,72 @@ func newCheckCmd(builder *builder) *appcmd.Command {
 	}
 }
 
-func newCheckLintCmd(builder *builder) *appcmd.Command {
+func newCheckLintCmd(builder appflag.Builder) *appcmd.Command {
+	flags := newFlags()
 	return &appcmd.Command{
 		Use:   "lint",
 		Short: "Check that the input location passes lint checks.",
 		Args:  cobra.NoArgs,
-		Run:   builder.newRunFunc(checkLint),
+		Run:   newRunFunc(builder, flags, checkLint),
 		BindFlags: appcmd.BindMultiple(
-			builder.bindCheckLintInput,
-			builder.bindCheckLintConfig,
-			builder.bindCheckFiles,
-			builder.bindCheckLintErrorFormat,
-			builder.bindExperimentalGitClone,
+			flags.bindCheckLintInput,
+			flags.bindCheckLintConfig,
+			flags.bindCheckFiles,
+			flags.bindCheckLintErrorFormat,
+			flags.bindExperimentalGitClone,
 		),
 	}
 }
 
-func newCheckBreakingCmd(builder *builder) *appcmd.Command {
+func newCheckBreakingCmd(builder appflag.Builder) *appcmd.Command {
+	flags := newFlags()
 	return &appcmd.Command{
 		Use:   "breaking",
 		Short: "Check that the input location has no breaking changes compared to the against location.",
 		Args:  cobra.NoArgs,
-		Run:   builder.newRunFunc(checkBreaking),
+		Run:   newRunFunc(builder, flags, checkBreaking),
 		BindFlags: appcmd.BindMultiple(
-			builder.bindCheckBreakingInput,
-			builder.bindCheckBreakingConfig,
-			builder.bindCheckBreakingAgainstInput,
-			builder.bindCheckBreakingAgainstConfig,
-			builder.bindCheckBreakingLimitToInputFiles,
-			builder.bindCheckBreakingExcludeImports,
-			builder.bindCheckFiles,
-			builder.bindCheckBreakingErrorFormat,
-			builder.bindExperimentalGitClone,
+			flags.bindCheckBreakingInput,
+			flags.bindCheckBreakingConfig,
+			flags.bindCheckBreakingAgainstInput,
+			flags.bindCheckBreakingAgainstConfig,
+			flags.bindCheckBreakingLimitToInputFiles,
+			flags.bindCheckBreakingExcludeImports,
+			flags.bindCheckFiles,
+			flags.bindCheckBreakingErrorFormat,
+			flags.bindExperimentalGitClone,
 		),
 	}
 }
 
-func newCheckLsLintCheckersCmd(builder *builder) *appcmd.Command {
+func newCheckLsLintCheckersCmd(builder appflag.Builder) *appcmd.Command {
+	flags := newFlags()
 	return &appcmd.Command{
 		Use:   "ls-lint-checkers",
 		Short: "List lint checkers.",
 		Args:  cobra.NoArgs,
-		Run:   builder.newRunFunc(checkLsLintCheckers),
+		Run:   newRunFunc(builder, flags, checkLsLintCheckers),
 		BindFlags: appcmd.BindMultiple(
-			builder.bindCheckLsCheckersConfig,
-			builder.bindCheckLsCheckersAll,
-			builder.bindCheckLsCheckersCategories,
-			builder.bindCheckLsCheckersFormat,
+			flags.bindCheckLsCheckersConfig,
+			flags.bindCheckLsCheckersAll,
+			flags.bindCheckLsCheckersCategories,
+			flags.bindCheckLsCheckersFormat,
 		),
 	}
 }
 
-func newCheckLsBreakingCheckersCmd(builder *builder) *appcmd.Command {
+func newCheckLsBreakingCheckersCmd(builder appflag.Builder) *appcmd.Command {
+	flags := newFlags()
 	return &appcmd.Command{
 		Use:   "ls-breaking-checkers",
 		Short: "List breaking checkers.",
 		Args:  cobra.NoArgs,
-		Run:   builder.newRunFunc(checkLsBreakingCheckers),
+		Run:   newRunFunc(builder, flags, checkLsBreakingCheckers),
 		BindFlags: appcmd.BindMultiple(
-			builder.bindCheckLsCheckersConfig,
-			builder.bindCheckLsCheckersAll,
-			builder.bindCheckLsCheckersCategories,
-			builder.bindCheckLsCheckersFormat,
-		),
-	}
-}
-
-func newLsFilesCmd(builder *builder) *appcmd.Command {
-	return &appcmd.Command{
-		Use:   "ls-files",
-		Short: "List all Protobuf files for the input location.",
-		Args:  cobra.NoArgs,
-		Run:   builder.newRunFunc(lsFiles),
-		BindFlags: appcmd.BindMultiple(
-			builder.bindLsFilesInput,
-			builder.bindLsFilesConfig,
-			builder.bindExperimentalGitClone,
+			flags.bindCheckLsCheckersConfig,
+			flags.bindCheckLsCheckersAll,
+			flags.bindCheckLsCheckersCategories,
+			flags.bindCheckLsCheckersFormat,
 		),
 	}
 }

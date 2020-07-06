@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -71,6 +72,28 @@ func NewFileDescriptorProto(
 // AssertFileInfosEqual asserts the expected FileInfos equal the actual FileInfos.
 func AssertFileInfosEqual(t *testing.T, expected []bufcore.FileInfo, actual []bufcore.FileInfo) {
 	assert.Equal(t, expected, actual)
+}
+
+// FileInfosToAbs converts the external paths to absolute.
+func FileInfosToAbs(t *testing.T, fileInfos []bufcore.FileInfo) []bufcore.FileInfo {
+	newFileInfos := make([]bufcore.FileInfo, len(fileInfos))
+	for i, fileInfo := range fileInfos {
+		newFileInfos[i] = FileInfoToAbs(t, fileInfo)
+	}
+	return newFileInfos
+}
+
+// FileInfoToAbs converts the external path to absolute.
+func FileInfoToAbs(t *testing.T, fileInfo bufcore.FileInfo) bufcore.FileInfo {
+	absExternalPath, err := normalpath.NormalizeAndAbsolute(fileInfo.ExternalPath())
+	require.NoError(t, err)
+	newFileInfo, err := bufcore.NewFileInfo(
+		fileInfo.Path(),
+		absExternalPath,
+		fileInfo.IsImport(),
+	)
+	require.NoError(t, err)
+	return newFileInfo
 }
 
 // AssertImageFilesEqual asserts the expected ImageFiles equal the actual ImageFiles.

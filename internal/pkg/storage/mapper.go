@@ -88,7 +88,7 @@ func (p prefixMapper) MapPrefix(prefix string) (string, bool) {
 }
 
 func (p prefixMapper) UnmapFullPath(fullPath string) (string, bool, error) {
-	if !normalpath.EqualsOrContainsPath(p.prefix, fullPath) {
+	if !normalpath.EqualsOrContainsPath(p.prefix, fullPath, normalpath.Relative) {
 		return "", false, nil
 	}
 	path, err := normalpath.Rel(p.prefix, fullPath)

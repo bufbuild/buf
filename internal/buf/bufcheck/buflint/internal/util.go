@@ -20,14 +20,14 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/bufsrc"
+	"github.com/bufbuild/buf/internal/pkg/protosource"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
 // addFunc adds a FileAnnotation.
 //
 // Both the Descriptor and Location can be nil.
-type addFunc func(bufsrc.Descriptor, bufsrc.Location, string, ...interface{})
+type addFunc func(protosource.Descriptor, protosource.Location, string, ...interface{})
 
 func fieldToLowerSnakeCase(s string) string {
 	// Try running this on googleapis and watch
@@ -114,9 +114,9 @@ func stringIsPositiveNumber(s string) bool {
 }
 
 func newFilesCheckFunc(
-	f func(addFunc, []bufsrc.File) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
-	return func(id string, ignoreFunc internal.IgnoreFunc, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, []protosource.File) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+	return func(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 		helper := internal.NewHelper(id, ignoreFunc)
 		if err := f(helper.AddFileAnnotationf, files); err != nil {
 			return nil, err
@@ -126,11 +126,11 @@ func newFilesCheckFunc(
 }
 
 func newPackageToFilesCheckFunc(
-	f func(add addFunc, pkg string, files []bufsrc.File) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(add addFunc, pkg string, files []protosource.File) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
-		func(add addFunc, files []bufsrc.File) error {
-			packageToFiles, err := bufsrc.PackageToFiles(files...)
+		func(add addFunc, files []protosource.File) error {
+			packageToFiles, err := protosource.PackageToFiles(files...)
 			if err != nil {
 				return err
 			}
@@ -145,11 +145,11 @@ func newPackageToFilesCheckFunc(
 }
 
 func newDirToFilesCheckFunc(
-	f func(add addFunc, dirPath string, files []bufsrc.File) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(add addFunc, dirPath string, files []protosource.File) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
-		func(add addFunc, files []bufsrc.File) error {
-			dirPathToFiles, err := bufsrc.DirPathToFiles(files...)
+		func(add addFunc, files []protosource.File) error {
+			dirPathToFiles, err := protosource.DirPathToFiles(files...)
 			if err != nil {
 				return err
 			}
@@ -164,10 +164,10 @@ func newDirToFilesCheckFunc(
 }
 
 func newFileCheckFunc(
-	f func(addFunc, bufsrc.File) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, protosource.File) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFilesCheckFunc(
-		func(add addFunc, files []bufsrc.File) error {
+		func(add addFunc, files []protosource.File) error {
 			for _, file := range files {
 				if err := f(add, file); err != nil {
 					return err
@@ -179,10 +179,10 @@ func newFileCheckFunc(
 }
 
 func newFileImportCheckFunc(
-	f func(addFunc, bufsrc.FileImport) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, protosource.FileImport) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
-		func(add addFunc, file bufsrc.File) error {
+		func(add addFunc, file protosource.File) error {
 			for _, fileImport := range file.FileImports() {
 				if err := f(add, fileImport); err != nil {
 					return err
@@ -194,12 +194,12 @@ func newFileImportCheckFunc(
 }
 
 func newEnumCheckFunc(
-	f func(addFunc, bufsrc.Enum) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, protosource.Enum) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
-		func(add addFunc, file bufsrc.File) error {
-			return bufsrc.ForEachEnum(
-				func(enum bufsrc.Enum) error {
+		func(add addFunc, file protosource.File) error {
+			return protosource.ForEachEnum(
+				func(enum protosource.Enum) error {
 					return f(add, enum)
 				},
 				file,
@@ -209,10 +209,10 @@ func newEnumCheckFunc(
 }
 
 func newEnumValueCheckFunc(
-	f func(addFunc, bufsrc.EnumValue) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, protosource.EnumValue) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newEnumCheckFunc(
-		func(add addFunc, enum bufsrc.Enum) error {
+		func(add addFunc, enum protosource.Enum) error {
 			for _, enumValue := range enum.Values() {
 				if err := f(add, enumValue); err != nil {
 					return err
@@ -224,12 +224,12 @@ func newEnumValueCheckFunc(
 }
 
 func newMessageCheckFunc(
-	f func(addFunc, bufsrc.Message) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, protosource.Message) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
-		func(add addFunc, file bufsrc.File) error {
-			return bufsrc.ForEachMessage(
-				func(message bufsrc.Message) error {
+		func(add addFunc, file protosource.File) error {
+			return protosource.ForEachMessage(
+				func(message protosource.Message) error {
 					return f(add, message)
 				},
 				file,
@@ -239,10 +239,10 @@ func newMessageCheckFunc(
 }
 
 func newFieldCheckFunc(
-	f func(addFunc, bufsrc.Field) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, protosource.Field) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newMessageCheckFunc(
-		func(add addFunc, message bufsrc.Message) error {
+		func(add addFunc, message protosource.Message) error {
 			for _, field := range message.Fields() {
 				if err := f(add, field); err != nil {
 					return err
@@ -260,10 +260,10 @@ func newFieldCheckFunc(
 }
 
 func newOneofCheckFunc(
-	f func(addFunc, bufsrc.Oneof) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, protosource.Oneof) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newMessageCheckFunc(
-		func(add addFunc, message bufsrc.Message) error {
+		func(add addFunc, message protosource.Message) error {
 			for _, oneof := range message.Oneofs() {
 				if err := f(add, oneof); err != nil {
 					return err
@@ -275,10 +275,10 @@ func newOneofCheckFunc(
 }
 
 func newServiceCheckFunc(
-	f func(addFunc, bufsrc.Service) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, protosource.Service) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newFileCheckFunc(
-		func(add addFunc, file bufsrc.File) error {
+		func(add addFunc, file protosource.File) error {
 			for _, service := range file.Services() {
 				if err := f(add, service); err != nil {
 					return err
@@ -290,10 +290,10 @@ func newServiceCheckFunc(
 }
 
 func newMethodCheckFunc(
-	f func(addFunc, bufsrc.Method) error,
-) func(string, internal.IgnoreFunc, []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+	f func(addFunc, protosource.Method) error,
+) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return newServiceCheckFunc(
-		func(add addFunc, service bufsrc.Service) error {
+		func(add addFunc, service protosource.Service) error {
 			for _, method := range service.Methods() {
 				if err := f(add, method); err != nil {
 					return err

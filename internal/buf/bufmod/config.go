@@ -16,7 +16,6 @@ package bufmod
 
 import (
 	"fmt"
-	"sort"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
@@ -33,7 +32,7 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 	if len(roots) == 0 {
 		roots = []string{"."}
 	}
-	roots, err := normalizeAndValidateFileList(roots, "root")
+	roots, err := normalizeAndCheckPaths(roots, "root", normalpath.Relative, true)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +51,7 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 	}
 
 	// this also verifies that fullExcludes is unique
-	fullExcludes, err = normalizeAndValidateFileList(fullExcludes, "exclude")
+	fullExcludes, err = normalizeAndCheckPaths(fullExcludes, "exclude", normalpath.Relative, true)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +69,7 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 	// verify that all excludes are within a root
 	rootMap := stringutil.SliceToMap(roots)
 	for _, fullExclude := range fullExcludes {
-		switch matchingRoots := normalpath.MapAllEqualOrContainingPaths(rootMap, fullExclude); len(matchingRoots) {
+		switch matchingRoots := normalpath.MapAllEqualOrContainingPaths(rootMap, fullExclude, normalpath.Relative); len(matchingRoots) {
 		case 0:
 			return nil, fmt.Errorf("exclude %s is not contained in any root, which is not valid", fullExclude)
 		case 1:
@@ -102,68 +101,4 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 	return &Config{
 		RootToExcludes: rootToExcludes,
 	}, nil
-}
-
-// normalizeAndValidate verifies that:
-//
-//   - All inputs are normalized and validated.
-//   - All inputs are unique.
-//   - No input contains another input.
-func normalizeAndValidateFileList(inputs []string, name string) ([]string, error) {
-	if len(inputs) == 0 {
-		return inputs, nil
-	}
-
-	var outputs []string
-	for _, input := range inputs {
-		if input == "" {
-			return nil, fmt.Errorf("%s value is empty", name)
-		}
-		output, err := normalpath.NormalizeAndValidate(input)
-		if err != nil {
-			// user error
-			return nil, err
-		}
-		outputs = append(outputs, output)
-	}
-	sort.Strings(outputs)
-
-	for i := 0; i < len(outputs); i++ {
-		for j := i + 1; j < len(outputs); j++ {
-			output1 := outputs[i]
-			output2 := outputs[j]
-
-			if output1 == output2 {
-				return nil, fmt.Errorf("duplicate %s %s", name, output1)
-			}
-			if normalpath.EqualsOrContainsPath(output2, output1) {
-				return nil, fmt.Errorf("%s %s is within %s %s which is not allowed", name, output1, name, output2)
-			}
-			if normalpath.EqualsOrContainsPath(output1, output2) {
-				return nil, fmt.Errorf("%s %s is within %s %s which is not allowed", name, output2, name, output1)
-			}
-		}
-	}
-
-	// already checked duplicates, but if there are multiple directories and we have ".", then the other
-	// directories are within the output directory "."
-	var notDotDir []string
-	hasDotDir := false
-	for _, output := range outputs {
-		if output != "." {
-			notDotDir = append(notDotDir, output)
-		} else {
-			hasDotDir = true
-		}
-	}
-	if hasDotDir {
-		if len(notDotDir) == 1 {
-			return nil, fmt.Errorf("%s %s is within %s . which is not allowed", name, notDotDir[0], name)
-		}
-		if len(notDotDir) > 1 {
-			return nil, fmt.Errorf("%ss %v are within %s . which is not allowed", name, notDotDir, name)
-		}
-	}
-
-	return outputs, nil
 }
