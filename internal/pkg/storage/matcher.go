@@ -44,7 +44,7 @@ func MatchPathEqual(equalPath string) Matcher {
 // on paths equal or contained by equalOrContainingPath.
 func MatchPathEqualOrContained(equalOrContainingPath string) Matcher {
 	return pathMatcherFunc(func(path string) bool {
-		return normalpath.EqualsOrContainsPath(equalOrContainingPath, path)
+		return normalpath.EqualsOrContainsPath(equalOrContainingPath, path, normalpath.Relative)
 	})
 }
 
@@ -52,7 +52,7 @@ func MatchPathEqualOrContained(equalOrContainingPath string) Matcher {
 // on paths by contained by containingDir.
 func MatchPathContained(containingDir string) Matcher {
 	return pathMatcherFunc(func(path string) bool {
-		return normalpath.ContainsPath(containingDir, path)
+		return normalpath.ContainsPath(containingDir, path, normalpath.Relative)
 	})
 }
 

@@ -846,7 +846,7 @@ func testLintExternalConfigModifier(
 	configProvider := bufconfig.NewProvider(logger, configProviderOptions...)
 	config := testGetConfig(t, configProvider, readWriteBucket)
 
-	module, err := bufmod.NewBuilder(zap.NewNop()).BuildForBucket(
+	module, err := bufmod.NewBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config.Build,

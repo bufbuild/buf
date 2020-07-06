@@ -17,9 +17,9 @@ package buf
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
@@ -66,194 +66,148 @@ type flags struct {
 	ExperimentalGitClone bool
 }
 
-// newFlags returns a new flags.
 func newFlags() *flags {
 	return &flags{}
 }
 
-// container is a container.
-type container struct {
-	applog.Container
-	*flags
-}
-
-// newContainer returns a new container.
-func newContainer(logContainer applog.Container, flags *flags) *container {
-	return &container{
-		Container: logContainer,
-		flags:     flags,
-	}
-}
-
-// builder is a builder.
-type builder struct {
-	appflag.Builder
-	*flags
-}
-
-// newBuilder returns a new builder.
-func newBuilder() *builder {
-	return &builder{
-		Builder: appflag.NewBuilder(appflag.BuilderWithTimeout(10 * time.Second)),
-		flags:   newFlags(),
-	}
-}
-
-// newRunFunc creates a new run function.
-func (b *builder) newRunFunc(fn func(context.Context, *container) error) func(context.Context, app.Container) error {
-	return b.Builder.NewRunFunc(
-		func(ctx context.Context, applogContainer applog.Container) error {
-			container := newContainer(applogContainer, b.flags)
-			checkDeprecated(ctx, container)
-			return fn(ctx, container)
+func newRunFunc(
+	builder appflag.Builder,
+	flags *flags,
+	f func(context.Context, applog.Container, *flags) error,
+) func(context.Context, app.Container) error {
+	return builder.NewRunFunc(
+		func(ctx context.Context, container applog.Container) error {
+			return f(ctx, container, flags)
 		},
 	)
 }
 
-func (b *builder) bindImageBuildInput(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.Input, imageBuildInputFlagName, ".", fmt.Sprintf(`The source to build. Must be one of format %s.`, buffetch.SourceFormatsString))
+func (f *flags) bindImageBuildInput(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.Input, imageBuildInputFlagName, ".", fmt.Sprintf(`The source to build. Must be one of format %s.`, buffetch.SourceFormatsString))
 }
 
-func (b *builder) bindImageBuildConfig(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.Config, imageBuildConfigFlagName, "", `The config file or data to use.`)
+func (f *flags) bindImageBuildConfig(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.Config, imageBuildConfigFlagName, "", `The config file or data to use.`)
 }
 
-func (b *builder) bindImageBuildFiles(flagSet *pflag.FlagSet) {
-	flagSet.StringSliceVar(&b.Files, "file", nil, `Limit to specific files. This is an advanced feature and is not recommended.`)
+func (f *flags) bindImageBuildFiles(flagSet *pflag.FlagSet) {
+	flagSet.StringSliceVar(&f.Files, "file", nil, `Limit to specific files. This is an advanced feature and is not recommended.`)
 }
 
-func (b *builder) bindImageBuildOutput(flagSet *pflag.FlagSet) {
-	flagSet.StringVarP(&b.Output, imageBuildOutputFlagName, "o", "", fmt.Sprintf(`Required. The location to write the image. Must be one of format %s.`, buffetch.ImageFormatsString))
+func (f *flags) bindImageBuildOutput(flagSet *pflag.FlagSet) {
+	flagSet.StringVarP(&f.Output, imageBuildOutputFlagName, "o", "", fmt.Sprintf(`Required. The location to write the image. Must be one of format %s.`, buffetch.ImageFormatsString))
 }
 
-func (b *builder) bindImageBuildAsFileDescriptorSet(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(&b.AsFileDescriptorSet, "as-file-descriptor-set", false, `Output as a google.protobuf.FileDescriptorSet instead of an image.
+func (f *flags) bindImageBuildAsFileDescriptorSet(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&f.AsFileDescriptorSet, "as-file-descriptor-set", false, `Output as a google.protobuf.FileDescriptorSet instead of an image.
 
 Note that images are wire-compatible with FileDescriptorSets, however this flag will strip
 the additional metadata added for Buf usage.`)
 }
 
-func (b *builder) bindImageBuildExcludeImports(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(&b.ExcludeImports, "exclude-imports", false, "Exclude imports.")
+func (f *flags) bindImageBuildExcludeImports(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&f.ExcludeImports, "exclude-imports", false, "Exclude imports.")
 }
 
-func (b *builder) bindImageBuildExcludeSourceInfo(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(&b.ExcludeSourceInfo, "exclude-source-info", false, "Exclude source info.")
+func (f *flags) bindImageBuildExcludeSourceInfo(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&f.ExcludeSourceInfo, "exclude-source-info", false, "Exclude source info.")
 }
 
-func (b *builder) bindImageBuildErrorFormat(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.ErrorFormat, errorFormatFlagName, "text", "The format for build errors, printed to stderr. Must be one of [text,json].")
+func (f *flags) bindImageBuildErrorFormat(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.ErrorFormat, errorFormatFlagName, "text", "The format for build errors, printed to stderr. Must be one of [text,json].")
 }
 
-func (b *builder) bindImageConvertInput(flagSet *pflag.FlagSet) {
+func (f *flags) bindImageConvertInput(flagSet *pflag.FlagSet) {
 	// TODO: cobra cannot have the same variable with different inputs, we need
 	// to refactor the variables to have different binds per function
-	flagSet.StringVarP(&b.ConvertInput, imageConvertInputFlagName, "i", "", fmt.Sprintf(`The image to convert. Must be one of format %s.`, buffetch.ImageFormatsString))
+	flagSet.StringVarP(&f.ConvertInput, imageConvertInputFlagName, "i", "", fmt.Sprintf(`The image to convert. Must be one of format %s.`, buffetch.ImageFormatsString))
 }
 
-func (b *builder) bindImageConvertFiles(flagSet *pflag.FlagSet) {
-	flagSet.StringSliceVar(&b.Files, "file", nil, `Limit to specific files. This is an advanced feature and is not recommended.`)
+func (f *flags) bindImageConvertFiles(flagSet *pflag.FlagSet) {
+	flagSet.StringSliceVar(&f.Files, "file", nil, `Limit to specific files. This is an advanced feature and is not recommended.`)
 }
 
-func (b *builder) bindImageConvertOutput(flagSet *pflag.FlagSet) {
-	flagSet.StringVarP(&b.Output, imageConvertOutputFlagName, "o", "", fmt.Sprintf(`Required. The location to write the image to. Must be one of format %s.`, buffetch.ImageFormatsString))
+func (f *flags) bindImageConvertOutput(flagSet *pflag.FlagSet) {
+	flagSet.StringVarP(&f.Output, imageConvertOutputFlagName, "o", "", fmt.Sprintf(`Required. The location to write the image to. Must be one of format %s.`, buffetch.ImageFormatsString))
 }
 
-func (b *builder) bindImageConvertAsFileDescriptorSet(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(&b.AsFileDescriptorSet, "as-file-descriptor-set", false, `Output as a google.protobuf.FileDescriptorSet instead of an image.
+func (f *flags) bindImageConvertAsFileDescriptorSet(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&f.AsFileDescriptorSet, "as-file-descriptor-set", false, `Output as a google.protobuf.FileDescriptorSet instead of an image.
 
 Note that images are wire-compatible with FileDescriptorSets, however this flag will strip
 the additional metadata added for Buf usage.`)
 }
 
-func (b *builder) bindImageConvertExcludeImports(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(&b.ExcludeImports, "exclude-imports", false, "Exclude imports.")
+func (f *flags) bindImageConvertExcludeImports(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&f.ExcludeImports, "exclude-imports", false, "Exclude imports.")
 }
 
-func (b *builder) bindImageConvertExcludeSourceInfo(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(&b.ExcludeSourceInfo, "exclude-source-info", false, "Exclude source info.")
+func (f *flags) bindImageConvertExcludeSourceInfo(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&f.ExcludeSourceInfo, "exclude-source-info", false, "Exclude source info.")
 }
 
-func (b *builder) bindCheckLintInput(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.Input, checkLintInputFlagName, ".", fmt.Sprintf(`The source or image to lint. Must be one of format %s.`, buffetch.AllFormatsString))
+func (f *flags) bindCheckLintInput(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.Input, checkLintInputFlagName, ".", fmt.Sprintf(`The source or image to lint. Must be one of format %s.`, buffetch.AllFormatsString))
 }
 
-func (b *builder) bindCheckLintConfig(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.Config, checkLintConfigFlagName, "", `The config file or data to use.`)
+func (f *flags) bindCheckLintConfig(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.Config, checkLintConfigFlagName, "", `The config file or data to use.`)
 }
 
-func (b *builder) bindCheckBreakingInput(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.Input, checkBreakingInputFlagName, ".", fmt.Sprintf(`The source or image to check for breaking changes. Must be one of format %s.`, buffetch.AllFormatsString))
+func (f *flags) bindCheckBreakingInput(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.Input, checkBreakingInputFlagName, ".", fmt.Sprintf(`The source or image to check for breaking changes. Must be one of format %s.`, buffetch.AllFormatsString))
 }
 
-func (b *builder) bindCheckBreakingConfig(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.Config, checkBreakingConfigFlagName, "", `The config file or data to use.`)
+func (f *flags) bindCheckBreakingConfig(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.Config, checkBreakingConfigFlagName, "", `The config file or data to use.`)
 }
 
-func (b *builder) bindCheckBreakingAgainstInput(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.AgainstInput, checkBreakingAgainstInputFlagName, "", fmt.Sprintf(`Required. The source or image to check against. Must be one of format %s.`, buffetch.AllFormatsString))
+func (f *flags) bindCheckBreakingAgainstInput(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.AgainstInput, checkBreakingAgainstInputFlagName, "", fmt.Sprintf(`Required. The source or image to check against. Must be one of format %s.`, buffetch.AllFormatsString))
 }
 
-func (b *builder) bindCheckBreakingAgainstConfig(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.AgainstConfig, checkBreakingAgainstConfigFlagName, "", `The config file or data to use for the against source or image.`)
+func (f *flags) bindCheckBreakingAgainstConfig(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.AgainstConfig, checkBreakingAgainstConfigFlagName, "", `The config file or data to use for the against source or image.`)
 }
 
-func (b *builder) bindCheckBreakingLimitToInputFiles(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(&b.LimitToInputFiles, "limit-to-input-files", false, `Only run breaking checks against the files in the input.
+func (f *flags) bindCheckBreakingLimitToInputFiles(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&f.LimitToInputFiles, "limit-to-input-files", false, `Only run breaking checks against the files in the input.
 This has the effect of filtering the against input to only contain the files in the input.
 Overrides --file.`)
 }
 
-func (b *builder) bindCheckBreakingExcludeImports(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(&b.ExcludeImports, "exclude-imports", false, "Exclude imports from breaking change detection.")
+func (f *flags) bindCheckBreakingExcludeImports(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&f.ExcludeImports, "exclude-imports", false, "Exclude imports from breaking change detection.")
 }
 
-func (b *builder) bindCheckFiles(flagSet *pflag.FlagSet) {
-	flagSet.StringSliceVar(&b.Files, "file", nil, `Limit to specific files. This is an advanced feature and is not recommended.`)
+func (f *flags) bindCheckFiles(flagSet *pflag.FlagSet) {
+	flagSet.StringSliceVar(&f.Files, "file", nil, `Limit to specific files. This is an advanced feature and is not recommended.`)
 }
 
-func (b *builder) bindCheckBreakingErrorFormat(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.ErrorFormat, errorFormatFlagName, "text", "The format for build errors or check violations, printed to stdout. Must be one of [text,json].")
+func (f *flags) bindCheckBreakingErrorFormat(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.ErrorFormat, errorFormatFlagName, "text", "The format for build errors or check violations, printed to stdout. Must be one of [text,json].")
 }
 
-func (b *builder) bindCheckLintErrorFormat(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.ErrorFormat, errorFormatFlagName, "text", "The format for build errors or check violations, printed to stdout. Must be one of [text,json,config-ignore-yaml].")
+func (f *flags) bindCheckLintErrorFormat(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.ErrorFormat, errorFormatFlagName, "text", "The format for build errors or check violations, printed to stdout. Must be one of [text,json,config-ignore-yaml].")
 }
 
-func (b *builder) bindLsFilesInput(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.Input, lsFilesInputFlagName, ".", fmt.Sprintf(`The source or image to list the files from. Must be one of format %s.`, buffetch.AllFormatsString))
+func (f *flags) bindCheckLsCheckersConfig(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.Config, checkLsCheckersConfigFlagName, "", `The config file or data to use. If --all is specified, this is ignored.`)
 }
 
-func (b *builder) bindLsFilesConfig(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.Config, lsFilesConfigFlagName, "", `The config file or data to use.`)
+func (f *flags) bindCheckLsCheckersAll(flagSet *pflag.FlagSet) {
+	flagSet.BoolVar(&f.CheckerAll, "all", false, "List all checkers and not just those currently configured.")
 }
 
-func (b *builder) bindCheckLsCheckersConfig(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.Config, checkLsCheckersConfigFlagName, "", `The config file or data to use. If --all is specified, this is ignored.`)
+func (f *flags) bindCheckLsCheckersCategories(flagSet *pflag.FlagSet) {
+	flagSet.StringSliceVar(&f.CheckerCategories, "category", nil, "Only list the checkers in these categories.")
 }
 
-func (b *builder) bindCheckLsCheckersAll(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(&b.CheckerAll, "all", false, "List all checkers and not just those currently configured.")
+func (f *flags) bindCheckLsCheckersFormat(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(&f.Format, checkLsCheckersFormatFlagName, "text", "The format to print checkers as. Must be one of [text,json].")
 }
 
-func (b *builder) bindCheckLsCheckersCategories(flagSet *pflag.FlagSet) {
-	flagSet.StringSliceVar(&b.CheckerCategories, "category", nil, "Only list the checkers in these categories.")
-}
-
-func (b *builder) bindCheckLsCheckersFormat(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.Format, checkLsCheckersFormatFlagName, "text", "The format to print checkers as. Must be one of [text,json].")
-}
-
-func (b *builder) bindExperimentalGitClone(flagSet *pflag.FlagSet) {
-	flagSet.BoolVar(&b.ExperimentalGitClone, experimentalGitCloneFlagName, false, "Use the git binary to clone instead of the internal git library.")
-	_ = flagSet.MarkHidden(experimentalGitCloneFlagName)
-}
-
-func checkDeprecated(ctx context.Context, container *container) {
-	if container.ExperimentalGitClone {
-		container.Logger().Sugar().Warnf(
-			"Flag --%s is deprecated. The formerly-experimental git clone functionality is now the only clone functionality used, and this flag has no effect.",
-			experimentalGitCloneFlagName,
-		)
-	}
+func (f *flags) bindExperimentalGitClone(flagSet *pflag.FlagSet) {
+	internal.BindExperimentalGitClone(flagSet, &f.ExperimentalGitClone)
 }

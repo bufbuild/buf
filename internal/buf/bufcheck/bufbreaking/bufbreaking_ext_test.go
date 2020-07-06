@@ -577,7 +577,7 @@ func testBreakingExternalConfigModifier(
 	previousConfig := testGetConfig(t, configProvider, previousReadWriteBucket)
 	config := testGetConfig(t, configProvider, readWriteBucket)
 
-	previousModule, err := bufmod.NewBuilder(zap.NewNop()).BuildForBucket(
+	previousModule, err := bufmod.NewBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),
 		previousReadWriteBucket,
 		previousConfig.Build,
@@ -592,7 +592,7 @@ func testBreakingExternalConfigModifier(
 	require.Empty(t, previousFileAnnotations)
 	previousImage = bufcore.ImageWithoutImports(previousImage)
 
-	module, err := bufmod.NewBuilder(zap.NewNop()).BuildForBucket(
+	module, err := bufmod.NewBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config.Build,

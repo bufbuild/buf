@@ -18,23 +18,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"path/filepath"
 	"sort"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufcoreutil"
 	"github.com/bufbuild/buf/internal/buf/bufmod"
-	"github.com/bufbuild/buf/internal/buf/bufsrc"
-	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/github"
-	"github.com/bufbuild/buf/internal/pkg/httpauth"
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/proto/protoc"
-	"github.com/bufbuild/buf/internal/pkg/proto/protodiff"
+	"github.com/bufbuild/buf/internal/buf/internal/buftesting"
+	"github.com/bufbuild/buf/internal/pkg/protosource"
+	"github.com/bufbuild/buf/internal/pkg/prototesting"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,20 +37,13 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-const (
-	testGoogleapisCommit = "37c923effe8b002884466074f84bc4e78e6ade62"
+var buftestingDirPath = filepath.Join(
+	"..",
+	"internal",
+	"buftesting",
 )
 
-var (
-	testHTTPClient = &http.Client{
-		Timeout: 10 * time.Second,
-	}
-	testHTTPAuthenticator = httpauth.NewNopAuthenticator()
-	testGoogleapisDirPath = filepath.Join("cache", "googleapis")
-	testLock              sync.Mutex
-)
-
-func TestGoogleapis(t *testing.T) {
+func TestBuildGoogleapis(t *testing.T) {
 	t.Parallel()
 	//for _, includeSourceInfo := range []bool{true, false} {
 	for _, includeSourceInfo := range []bool{false} {
@@ -70,7 +57,7 @@ func TestGoogleapis(t *testing.T) {
 	}
 }
 
-func TestProtocGoogleapis(t *testing.T) {
+func TestBufProtocGoogleapis(t *testing.T) {
 	t.Parallel()
 	//for _, includeSourceInfo := range []bool{true, false} {
 	for _, includeSourceInfo := range []bool{false} {
@@ -78,7 +65,21 @@ func TestProtocGoogleapis(t *testing.T) {
 			fmt.Sprintf("includeSourceInfo:%v", includeSourceInfo),
 			func(t *testing.T) {
 				t.Parallel()
-				testBuildProtocGoogleapis(t, includeSourceInfo)
+				testBuildBufProtocGoogleapis(t, includeSourceInfo)
+			},
+		)
+	}
+}
+
+func TestActualProtocGoogleapis(t *testing.T) {
+	t.Parallel()
+	//for _, includeSourceInfo := range []bool{true, false} {
+	for _, includeSourceInfo := range []bool{false} {
+		t.Run(
+			fmt.Sprintf("includeSourceInfo:%v", includeSourceInfo),
+			func(t *testing.T) {
+				t.Parallel()
+				testBuildActualProtocGoogleapis(t, includeSourceInfo)
 			},
 		)
 	}
@@ -94,8 +95,26 @@ func TestCompareGoogleapis(t *testing.T) {
 				t.Parallel()
 				image := testBuildGoogleapis(t, includeSourceInfo)
 				fileDescriptorSet := bufcore.ImageToFileDescriptorSet(image)
-				protocFileDescriptorSet := testBuildProtocGoogleapis(t, includeSourceInfo)
-				assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, protocFileDescriptorSet)
+				actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, includeSourceInfo)
+				assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, actualProtocFileDescriptorSet)
+				// Cannot compare due to unknown field issue
+				//assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, protocFileDescriptorSet)
+			},
+		)
+	}
+}
+
+func TestCompareBufProtocGoogleapis(t *testing.T) {
+	t.Parallel()
+	//for _, includeSourceInfo := range []bool{true, false} {
+	for _, includeSourceInfo := range []bool{false} {
+		t.Run(
+			fmt.Sprintf("includeSourceInfo:%v", includeSourceInfo),
+			func(t *testing.T) {
+				t.Parallel()
+				bufProtocFileDescriptorSet := testBuildBufProtocGoogleapis(t, includeSourceInfo)
+				actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, includeSourceInfo)
+				assertFileDescriptorSetsEqualJSON(t, bufProtocFileDescriptorSet, actualProtocFileDescriptorSet)
 				// Cannot compare due to unknown field issue
 				//assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, protocFileDescriptorSet)
 			},
@@ -129,18 +148,18 @@ func testCompare(t *testing.T, relDirPath string) {
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	image = bufcore.ImageWithoutImports(image)
 	fileDescriptorSet := bufcore.ImageToFileDescriptorSet(image)
-	protocFileDescriptorSet := testBuildProtoc(t, false, false, dirPath)
-	assertFileDescriptorSetsEqualWire(t, fileDescriptorSet, protocFileDescriptorSet)
-	assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, protocFileDescriptorSet)
-	assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, protocFileDescriptorSet)
+	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, false, false, dirPath)
+	assertFileDescriptorSetsEqualWire(t, fileDescriptorSet, actualProtocFileDescriptorSet)
+	assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, actualProtocFileDescriptorSet)
+	assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, actualProtocFileDescriptorSet)
 }
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufcore.Image {
-	testGetGoogleapis(t)
-	image, fileAnnotations := testBuild(t, includeSourceInfo, testGoogleapisDirPath)
+	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	image, fileAnnotations := testBuild(t, includeSourceInfo, googleapisDirPath)
 
 	assert.Equal(t, 0, len(fileAnnotations), fileAnnotations)
-	assert.Equal(t, 1585, len(image.Files()))
+	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
 	assert.Equal(
 		t,
 		[]string{
@@ -160,9 +179,9 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufcore.Image {
 	)
 
 	imageWithoutImports := bufcore.ImageWithoutImports(image)
-	assert.Equal(t, 1574, len(imageWithoutImports.Files()))
+	assert.Equal(t, buftesting.NumGoogleapisFiles, len(imageWithoutImports.Files()))
 	imageWithoutImports = bufcore.ImageWithoutImports(imageWithoutImports)
-	assert.Equal(t, 1574, len(imageWithoutImports.Files()))
+	assert.Equal(t, buftesting.NumGoogleapisFiles, len(imageWithoutImports.Files()))
 
 	imageWithSpecificNames, err := bufcore.ImageWithOnlyPathsAllowNotExist(
 		image,
@@ -208,17 +227,24 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufcore.Image {
 	// TODO
 	assert.Equal(t, errors.New("google/foo/nonsense.proto is not present in the Image"), err)
 
-	assert.Equal(t, 1585, len(image.Files()))
+	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
 	// basic check to make sure there is no error at this scale
-	_, err = bufsrc.NewFilesUnstable(context.Background(), image.Files()...)
+	_, err = protosource.NewFilesUnstable(context.Background(), bufcoreutil.NewInputFiles(image.Files())...)
 	assert.NoError(t, err)
 	return image
 }
 
-func testBuildProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
-	testGetGoogleapis(t)
-	fileDescriptorSet := testBuildProtoc(t, true, includeSourceInfo, testGoogleapisDirPath)
-	assert.Equal(t, 1585, len(fileDescriptorSet.GetFile()))
+func testBuildBufProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
+	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	fileDescriptorSet := testBuildBufProtoc(t, true, includeSourceInfo, googleapisDirPath)
+	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(fileDescriptorSet.GetFile()))
+	return fileDescriptorSet
+}
+
+func testBuildActualProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
+	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	fileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, true, includeSourceInfo, googleapisDirPath)
+	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(fileDescriptorSet.GetFile()))
 	return fileDescriptorSet
 }
 
@@ -237,29 +263,28 @@ func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufcore.Im
 	return image, fileAnnotations
 }
 
-func testBuildProtoc(
+func testBuildBufProtoc(
 	t *testing.T,
 	includeImports bool,
 	includeSourceInfo bool,
 	dirPath string,
 ) *descriptorpb.FileDescriptorSet {
-	module := testGetModule(t, dirPath)
-	targetFileInfos, err := module.TargetFileInfos(context.Background())
-	require.NoError(t, err)
-	realFilePaths := make([]string, len(targetFileInfos))
-	for i, fileInfo := range targetFileInfos {
-		realFilePaths[i] = normalpath.Unnormalize(normalpath.Join(dirPath, fileInfo.Path()))
+	module := testGetModuleBufProtoc(t, dirPath)
+	var options []BuildOption
+	if !includeSourceInfo {
+		options = append(options, WithExcludeSourceCodeInfo())
 	}
-	fileDescriptorSet, err := protoc.GetFileDescriptorSet(
+	image, fileAnnotations, err := NewBuilder(zap.NewNop()).Build(
 		context.Background(),
-		[]string{dirPath},
-		realFilePaths,
-		includeImports,
-		includeSourceInfo,
-		true,
+		module,
+		options...,
 	)
 	require.NoError(t, err)
-	return fileDescriptorSet
+	require.Empty(t, fileAnnotations)
+	if !includeImports {
+		image = bufcore.ImageWithoutImports(image)
+	}
+	return bufcore.ImageToFileDescriptorSet(image)
 }
 
 func testGetModule(t *testing.T, dirPath string) bufcore.Module {
@@ -267,7 +292,7 @@ func testGetModule(t *testing.T, dirPath string) bufcore.Module {
 	require.NoError(t, err)
 	config, err := bufmod.NewConfig(bufmod.ExternalConfig{})
 	require.NoError(t, err)
-	module, err := bufmod.NewBuilder(zap.NewNop()).BuildForBucket(
+	module, err := bufmod.NewBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config,
@@ -276,32 +301,13 @@ func testGetModule(t *testing.T, dirPath string) bufcore.Module {
 	return module
 }
 
-func testGetGoogleapis(t *testing.T) {
-	testLock.Lock()
-	defer func() {
-		if r := recover(); r != nil {
-			testLock.Unlock()
-			panic(r)
-		}
-	}()
-	defer testLock.Unlock()
-
-	archiveReader := github.NewArchiveReader(
-		zap.NewNop(),
-		testHTTPClient,
-		testHTTPAuthenticator,
+func testGetModuleBufProtoc(t *testing.T, dirPath string) bufcore.Module {
+	module, err := bufmod.NewIncludeBuilder(zap.NewNop()).BuildForIncludes(
+		context.Background(),
+		[]string{dirPath},
 	)
-	require.NoError(
-		t,
-		archiveReader.GetArchive(
-			context.Background(),
-			app.NewContainer(nil, nil, nil, nil),
-			testGoogleapisDirPath,
-			"googleapis",
-			"googleapis",
-			testGoogleapisCommit,
-		),
-	)
+	require.NoError(t, err)
+	return module
 }
 
 func testGetImageFilePaths(image bufcore.Image) []string {
@@ -325,7 +331,7 @@ func testGetImageImportPaths(image bufcore.Image) []string {
 }
 
 func assertFileDescriptorSetsEqualWire(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
-	diffTwo, err := protodiff.DiffFileDescriptorSetsWire(one, two, "protoparse-protoc")
+	diffTwo, err := prototesting.DiffFileDescriptorSetsWire(one, two, "protoparse-protoc")
 	assert.NoError(t, err)
 	assert.Equal(t, "", diffTwo, "Wire diff:\n%s", diffTwo)
 }
@@ -333,7 +339,7 @@ func assertFileDescriptorSetsEqualWire(t *testing.T, one *descriptorpb.FileDescr
 func assertFileDescriptorSetsEqualJSON(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
 	// TODO: test with resolver?
 	// This also has the effect of verifying output order
-	diffOne, err := protodiff.DiffFileDescriptorSetsJSON(one, two, "protoparse-protoc")
+	diffOne, err := prototesting.DiffFileDescriptorSetsJSON(one, two, "protoparse-protoc")
 	assert.NoError(t, err)
 	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
 }

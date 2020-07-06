@@ -31,14 +31,23 @@ type refParser struct {
 	fetchRefParser fetch.RefParser
 }
 
-func newRefParser(
+func newRefParser(logger *zap.Logger) *refParser {
+	return newRefParserInternal(logger, processRawRef)
+}
+
+func newProtocOutputRefParser(logger *zap.Logger) *refParser {
+	return newRefParserInternal(logger, processRawRefProtocOutput)
+}
+
+func newRefParserInternal(
 	logger *zap.Logger,
+	rawRefProcessor func(*fetch.RawRef) error,
 ) *refParser {
 	return &refParser{
-		logger: logger,
+		logger: logger.Named("buffetch"),
 		fetchRefParser: fetch.NewRefParser(
 			logger,
-			fetch.WithRawRefProcessor(processRawRef),
+			fetch.WithRawRefProcessor(rawRefProcessor),
 			fetch.WithSingleFormat(formatBin),
 			fetch.WithSingleFormat(formatJSON),
 			fetch.WithSingleFormat(
@@ -214,6 +223,47 @@ func processRawRef(rawRef *fetch.RawRef) error {
 			format = formatGit
 		default:
 			format = formatDir
+		}
+	}
+	rawRef.Format = format
+	rawRef.CompressionType = compressionType
+	return nil
+}
+
+func processRawRefProtocOutput(rawRef *fetch.RawRef) error {
+	// if format option is not set and path is "-", default to bin
+	var format string
+	var compressionType fetch.CompressionType
+	if rawRef.Path == "-" || rawRef.Path == app.DevNullFilePath {
+		format = formatBin
+	} else {
+		switch filepath.Ext(rawRef.Path) {
+		case ".bin":
+			format = formatBin
+		case ".json":
+			format = formatJSON
+		case ".gz":
+			compressionType = fetch.CompressionTypeGzip
+			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+			case ".bin":
+				format = formatBin
+			case ".json":
+				format = formatJSON
+			default:
+				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
+			}
+		case ".zst":
+			compressionType = fetch.CompressionTypeZstd
+			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+			case ".bin":
+				format = formatBin
+			case ".json":
+				format = formatJSON
+			default:
+				return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
+			}
+		default:
+			format = formatBin
 		}
 	}
 	rawRef.Format = format

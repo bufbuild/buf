@@ -19,9 +19,9 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufsrc"
 	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/protosource"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -44,7 +44,7 @@ func NewRunner(logger *zap.Logger, ignorePrefix string) *Runner {
 }
 
 // Check runs the Checkers.
-func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []bufsrc.File, files []bufsrc.File) ([]bufanalysis.FileAnnotation, error) {
+func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	checkers := config.Checkers
 	if len(checkers) == 0 {
 		return nil, nil
@@ -81,21 +81,21 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []bufs
 
 func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
 	if r.ignorePrefix == "" || !config.AllowCommentIgnores {
-		return func(id string, descriptor bufsrc.Descriptor, location bufsrc.Location) bool {
+		return func(id string, descriptor protosource.Descriptor, location protosource.Location) bool {
 			return idIsIgnored(id, descriptor, config)
 		}
 	}
-	return func(id string, descriptor bufsrc.Descriptor, location bufsrc.Location) bool {
+	return func(id string, descriptor protosource.Descriptor, location protosource.Location) bool {
 		return locationIsIgnored(id, r.ignorePrefix, location, config) || idIsIgnored(id, descriptor, config)
 	}
 }
 
-func idIsIgnored(id string, descriptor bufsrc.Descriptor, config *Config) bool {
+func idIsIgnored(id string, descriptor protosource.Descriptor, config *Config) bool {
 	if descriptor == nil {
 		return false
 	}
 	path := descriptor.File().Path()
-	if normalpath.MapHasEqualOrContainingPath(config.IgnoreRootPaths, path) {
+	if normalpath.MapHasEqualOrContainingPath(config.IgnoreRootPaths, path, normalpath.Relative) {
 		return true
 	}
 	if id == "" {
@@ -105,10 +105,10 @@ func idIsIgnored(id string, descriptor bufsrc.Descriptor, config *Config) bool {
 	if !ok {
 		return false
 	}
-	return normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path)
+	return normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path, normalpath.Relative)
 }
 
-func locationIsIgnored(id string, ignorePrefix string, location bufsrc.Location, config *Config) bool {
+func locationIsIgnored(id string, ignorePrefix string, location protosource.Location, config *Config) bool {
 	if id == "" || ignorePrefix == "" {
 		return false
 	}

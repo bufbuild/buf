@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/proto/protoencoding"
+	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
