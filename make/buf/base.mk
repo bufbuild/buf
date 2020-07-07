@@ -1,12 +1,17 @@
 BUF_BIN ?= cmd/buf
 
-PROTOREFLECT_VERSION := 93246e23ccdf09f2739a50e980e5e9188fc67a90
+PROTOREFLECT_VERSION := 8d2d934ce5650f450ffe1f441313e26c75e1fdab
 GO_GET_PKGS := $(GO_GET_PKGS) github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
-GO_BINS := $(GO_BINS) $(BUF_BIN) cmd/protoc-gen-buf-check-breaking cmd/protoc-gen-buf-check-lint
+GO_BINS := $(GO_BINS) $(BUF_BIN) cmd/protoc-gen-buf-check-breaking cmd/protoc-gen-buf-check-lint internal/pkg/storage/cmd/storage-go-binary-data
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto/go/v1
-FILE_IGNORES := $(FILE_IGNORES) .build/ .vscode/ internal/buf/internal/buftesting/cache/ internal/pkg/storage/storageos/tmp/
+FILE_IGNORES := $(FILE_IGNORES) \
+	.build/ \
+	.vscode/ \
+	internal/buf/internal/buftesting/cache/ \
+	internal/pkg/storage/storageos/tmp/
+
 
 include make/go/bootstrap.mk
 include make/go/go.mk
@@ -14,14 +19,15 @@ include make/go/codecov.mk
 include make/go/dep_protoc.mk
 include make/go/docker.mk
 include make/go/protoc_gen_go.mk
+include make/go/dep_go_fuzz.mk
 
-.PHONY: embed
-embed: $(PROTOC)
-	rm -rf internal/gen/embed
-	mkdir -p internal/gen/embed/wkt
-	go run internal/buf/cmd/embed/main.go $(CACHE_INCLUDE) wkt .proto > internal/gen/embed/wkt/wkt.gen.go
+.PHONY: wkt
+wkt: installstorage-go-binary-data $(PROTOC)
+	rm -rf internal/gen/data
+	mkdir -p internal/gen/data/wkt
+	storage-go-binary-data $(CACHE_INCLUDE) --package wkt > internal/gen/data/wkt/wkt.gen.go
 
-pregenerate:: embed
+pregenerate:: wkt
 
 .PHONY: buflint
 buflint: installbuf
@@ -44,3 +50,10 @@ postlint:: buflint bufbreaking
 .PHONY: bufrelease
 bufrelease:
 	DOCKER_IMAGE=golang:1.14.4-buster bash make/buf/scripts/release.bash
+
+.PHONY: gofuzz
+gofuzz: $(GO_FUZZ)
+	@rm -rf $(TMP)/gofuzz
+	@mkdir -p $(TMP)/gofuzz
+	cd internal/buf/bufbuild/bufbuildtesting; go-fuzz-build -o $(abspath $(TMP))/gofuzz/gofuzz.zip
+	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz

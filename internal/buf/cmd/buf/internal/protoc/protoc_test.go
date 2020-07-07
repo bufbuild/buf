@@ -41,6 +41,7 @@ var buftestingDirPath = filepath.Join(
 )
 
 func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
+	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	actualProtocStdout := bytes.NewBuffer(nil)
 	buftesting.RunActualProtoc(
@@ -73,6 +74,7 @@ func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
 }
 
 func TestCompareOutputJSONGoogleapis(t *testing.T) {
+	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(
 		t,
@@ -80,7 +82,28 @@ func TestCompareOutputJSONGoogleapis(t *testing.T) {
 		false,
 		googleapisDirPath,
 	)
-	bufProtocStdout := bytes.NewBuffer(nil)
+	bufProtocFileDescriptorSet := testGetBufProtocFileDescriptorSet(t, googleapisDirPath)
+	diffOne, err := prototesting.DiffFileDescriptorSetsJSON(bufProtocFileDescriptorSet, actualProtocFileDescriptorSet, "buf-protoc")
+	assert.NoError(t, err)
+	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
+}
+
+func testGetBufProtocFileDescriptorSet(t *testing.T, dirPath string) *descriptorpb.FileDescriptorSet {
+	data := testGetBufProtocFileDescriptorSetBytes(t, dirPath)
+	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
+	// TODO: change to image read logic
+	require.NoError(
+		t,
+		protoencoding.NewWireUnmarshaler(nil).Unmarshal(
+			data,
+			fileDescriptorSet,
+		),
+	)
+	return fileDescriptorSet
+}
+
+func testGetBufProtocFileDescriptorSetBytes(t *testing.T, dirPath string) []byte {
+	stdout := bytes.NewBuffer(nil)
 	appcmdtesting.RunCommandSuccess(
 		t,
 		func(use string) *appcmd.Command {
@@ -90,21 +113,16 @@ func TestCompareOutputJSONGoogleapis(t *testing.T) {
 			)
 		},
 		nil,
-		bufProtocStdout,
+		stdout,
 		append(
 			[]string{
 				"-I",
-				googleapisDirPath,
+				dirPath,
 				"-o",
 				"-",
 			},
-			buftesting.GetProtocFilePaths(t, googleapisDirPath)...,
+			buftesting.GetProtocFilePaths(t, dirPath)...,
 		)...,
 	)
-	bufProtocFileDescriptorSet := &descriptorpb.FileDescriptorSet{}
-	// TODO: change to image read logic
-	require.NoError(t, protoencoding.NewWireUnmarshaler(nil).Unmarshal(bufProtocStdout.Bytes(), bufProtocFileDescriptorSet))
-	diffOne, err := prototesting.DiffFileDescriptorSetsJSON(bufProtocFileDescriptorSet, actualProtocFileDescriptorSet, "buf-protoc")
-	assert.NoError(t, err)
-	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
+	return stdout.Bytes()
 }

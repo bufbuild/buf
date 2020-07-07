@@ -37,10 +37,10 @@ func newDirRef(
 	if path == "" {
 		return nil, newNoPathError()
 	}
-	if path == "-" {
+	if app.IsDevStderr(path) {
 		return nil, newInvalidDirPathError(path)
 	}
-	if path == app.DevNullFilePath {
+	if path == "-" || app.IsDevNull(path) || app.IsDevStdin(path) || app.IsDevStdout(path) {
 		return nil, newInvalidDirPathError(path)
 	}
 	if strings.Contains(path, "://") {

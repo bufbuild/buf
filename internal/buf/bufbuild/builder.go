@@ -52,7 +52,11 @@ func (b *builder) Build(
 	for _, option := range options {
 		option(buildOptions)
 	}
-	return b.build(ctx, module, buildOptions.excludeSourceCodeInfo)
+	return b.build(
+		ctx,
+		module,
+		buildOptions.excludeSourceCodeInfo,
+	)
 }
 
 func (b *builder) build(

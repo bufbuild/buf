@@ -5,3 +5,9 @@ package other;
 message Foo {
   int64 oneTwo = 1;
 }
+
+import "google/protobuf/timestamp.proto";
+
+message Bar {
+  google.protobuf.Timestamp time = 1;
+}

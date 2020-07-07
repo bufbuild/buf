@@ -35,8 +35,8 @@ func newRefParser(logger *zap.Logger) *refParser {
 	return newRefParserInternal(logger, processRawRef)
 }
 
-func newProtocOutputRefParser(logger *zap.Logger) *refParser {
-	return newRefParserInternal(logger, processRawRefProtocOutput)
+func newImageRefParser(logger *zap.Logger) *refParser {
+	return newRefParserInternal(logger, processRawRefImage)
 }
 
 func newRefParserInternal(
@@ -180,7 +180,7 @@ func processRawRef(rawRef *fetch.RawRef) error {
 	// if format option is not set and path is "-", default to bin
 	var format string
 	var compressionType fetch.CompressionType
-	if rawRef.Path == "-" || rawRef.Path == app.DevNullFilePath {
+	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
 		format = formatBin
 	} else {
 		switch filepath.Ext(rawRef.Path) {
@@ -230,11 +230,11 @@ func processRawRef(rawRef *fetch.RawRef) error {
 	return nil
 }
 
-func processRawRefProtocOutput(rawRef *fetch.RawRef) error {
+func processRawRefImage(rawRef *fetch.RawRef) error {
 	// if format option is not set and path is "-", default to bin
 	var format string
 	var compressionType fetch.CompressionType
-	if rawRef.Path == "-" || rawRef.Path == app.DevNullFilePath {
+	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
 		format = formatBin
 	} else {
 		switch filepath.Ext(rawRef.Path) {

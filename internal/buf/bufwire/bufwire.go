@@ -70,15 +70,6 @@ type EnvReader interface {
 		externalFileFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
 	) (Env, []bufanalysis.FileAnnotation, error)
-	// GetImage is the same as GetImageEnv but does not get a configuration.
-	GetImage(
-		ctx context.Context,
-		container app.EnvStdinContainer,
-		value string,
-		externalFilePaths []string,
-		externalFileFilePathsAllowNotExist bool,
-		excludeSourceCodeInfo bool,
-	) (bufcore.Image, error)
 	// ListFiles lists the files.
 	ListFiles(
 		ctx context.Context,
@@ -113,6 +104,34 @@ func NewEnvReader(
 		buildBuilder,
 		valueFlagName,
 		configOverrideFlagName,
+	)
+}
+
+// ImageReader is an image reader.
+type ImageReader interface {
+	// GetImage reads the image from the value.
+	GetImage(
+		ctx context.Context,
+		container app.EnvStdinContainer,
+		value string,
+		externalFilePaths []string,
+		externalFileFilePathsAllowNotExist bool,
+		excludeSourceCodeInfo bool,
+	) (bufcore.Image, error)
+}
+
+// NewImageReader returns a new ImageReader.
+func NewImageReader(
+	logger *zap.Logger,
+	fetchImageRefParser buffetch.ImageRefParser,
+	fetchReader buffetch.Reader,
+	valueFlagName string,
+) ImageReader {
+	return newImageReader(
+		logger,
+		fetchImageRefParser,
+		fetchReader,
+		valueFlagName,
 	)
 }
 

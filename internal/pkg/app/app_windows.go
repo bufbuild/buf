@@ -20,11 +20,28 @@ import (
 	"errors"
 )
 
-// DevNullFilePath is the equivalent of /dev/null.
-//
-// This will be /dev/null for darwin and linux.
-// This will be nul for windows.
-const DevNullFilePath = "nul"
+const (
+	// DevStdinFilePath is the equivalent of /dev/stdin.
+	//
+	// This will be /dev/stdin for darwin and linux.
+	// This does not exist for windows.
+	DevStdinFilePath = ""
+	// DevStdoutFilePath is the equivalent of /dev/stdout.
+	//
+	// This will be /dev/stdout for darwin and linux.
+	// This does not exist for windows.
+	DevStdoutFilePath = ""
+	// DevStderrFilePath is the equivalent of /dev/stderr.
+	//
+	// This will be /dev/stderr for darwin and linux.
+	// This does not exist for windows.
+	DevStderrFilePath = ""
+	// DevNullFilePath is the equivalent of /dev/null.
+	//
+	// This will be /dev/null for darwin and linux.
+	// This will be nul for windows.
+	DevNullFilePath = "nul"
+)
 
 // HomeDirPath returns the home directory path.
 //

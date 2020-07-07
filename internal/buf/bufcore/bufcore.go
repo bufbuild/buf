@@ -120,7 +120,26 @@ type Image interface {
 // The input ImageFiles are expected to be in correct DAG order!
 // TODO: Consider checking the above, and if not, reordering the Files.
 func NewImage(imageFiles []ImageFile) (Image, error) {
-	return newImage(imageFiles)
+	return newImage(imageFiles, false)
+}
+
+// NewMultiImage returns a new Image for the given Images.
+//
+// Reorders the ImageFiles to be in DAG order.
+// Duplicates cannot exist across the Images.
+func NewMultiImage(images ...Image) (Image, error) {
+	switch len(images) {
+	case 0:
+		return nil, nil
+	case 1:
+		return images[0], nil
+	default:
+		var imageFiles []ImageFile
+		for _, image := range images {
+			imageFiles = append(imageFiles, image.Files()...)
+		}
+		return newImage(imageFiles, true)
+	}
 }
 
 // NewImageForProto returns a new Image for the given proto Image.

@@ -122,7 +122,7 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 	for key, value := range options {
 		switch key {
 		case "format":
-			if path == app.DevNullFilePath {
+			if app.IsDevNull(path) {
 				return nil, newFormatOverrideNotAllowedForDevNullError(app.DevNullFilePath)
 			}
 			rawRef.Format = value

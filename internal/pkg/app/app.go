@@ -257,6 +257,26 @@ func Args(argList ArgContainer) []string {
 	return args
 }
 
+// IsDevStdin returns true if the path is the equivalent of /dev/stdin.
+func IsDevStdin(path string) bool {
+	return path != "" && path == DevStdinFilePath
+}
+
+// IsDevStdout returns true if the path is the equivalent of /dev/stdout.
+func IsDevStdout(path string) bool {
+	return path != "" && path == DevStdoutFilePath
+}
+
+// IsDevStderr returns true if the path is the equivalent of /dev/stderr.
+func IsDevStderr(path string) bool {
+	return path != "" && path == DevStderrFilePath
+}
+
+// IsDevNull returns true if the path is the equivalent of /dev/null.
+func IsDevNull(path string) bool {
+	return path != "" && path == DevNullFilePath
+}
+
 // Main runs the application using the OS Container and calling os.Exit on the return value of Run.
 func Main(ctx context.Context, f func(context.Context, Container) error) {
 	container, err := NewContainerForOS()
