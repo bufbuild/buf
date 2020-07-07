@@ -123,3 +123,14 @@ func TestArgContainer(t *testing.T) {
 	args := []string{"foo", "bar", "baz"}
 	assert.Equal(t, args, Args(NewArgContainer(args...)))
 }
+
+func TestIsDev(t *testing.T) {
+	assert.Equal(t, DevStdinFilePath != "", IsDevStdin(DevStdinFilePath))
+	assert.Equal(t, DevStdoutFilePath != "", IsDevStdout(DevStdoutFilePath))
+	assert.Equal(t, DevStderrFilePath != "", IsDevStderr(DevStderrFilePath))
+	assert.Equal(t, DevNullFilePath != "", IsDevNull(DevNullFilePath))
+	assert.False(t, IsDevStdin("foo"))
+	assert.False(t, IsDevStdout("foo"))
+	assert.False(t, IsDevStderr("foo"))
+	assert.False(t, IsDevNull("foo"))
+}

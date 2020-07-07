@@ -7,4 +7,5 @@ cmd/buf/buf
 cmd/protoc-gen-buf-check-breaking/protoc-gen-buf-check-breaking
 cmd/protoc-gen-buf-check-lint/protoc-gen-buf-check-lint
 internal/buf/internal/buftesting/cache/
+internal/pkg/storage/cmd/storage-go-binary-data/storage-go-binary-data
 internal/pkg/storage/storageos/tmp/

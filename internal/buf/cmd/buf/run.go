@@ -83,10 +83,9 @@ func imageConvert(ctx context.Context, container applog.Container, flags *flags)
 	if flags.Output == "" {
 		return fmt.Errorf("--%s is required", imageBuildOutputFlagName)
 	}
-	image, err := internal.NewBufwireEnvReader(
+	image, err := internal.NewBufwireImageReader(
 		container.Logger(),
 		imageConvertInputFlagName,
-		"",
 	).GetImage(
 		ctx,
 		container,

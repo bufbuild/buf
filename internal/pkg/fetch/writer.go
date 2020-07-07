@@ -17,6 +17,7 @@ package fetch
 import (
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -166,11 +167,13 @@ func (w *writer) putFileWriteCloserPotentiallyUncompressed(
 			return nil, newWriteLocalDisabledError()
 		}
 		return os.Create(fileRef.Path())
-	case FileSchemeStdio:
+	case FileSchemeStdio, FileSchemeStdout:
 		if !w.stdioEnabled {
 			return nil, newWriteStdioDisabledError()
 		}
 		return ioutilextended.NopWriteCloser(container.Stdout()), nil
+	case FileSchemeStdin:
+		return nil, errors.New("cannot write to stdin")
 	case FileSchemeNull:
 		return ioutilextended.DiscardWriteCloser, nil
 	default:

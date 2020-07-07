@@ -14,7 +14,9 @@
 
 package bufcore
 
-import "fmt"
+import (
+	"fmt"
+)
 
 var _ Image = &image{}
 
@@ -23,7 +25,7 @@ type image struct {
 	pathToImageFile map[string]ImageFile
 }
 
-func newImage(files []ImageFile) (*image, error) {
+func newImage(files []ImageFile, reorder bool) (*image, error) {
 	pathToImageFile := make(map[string]ImageFile, len(files))
 	for _, file := range files {
 		path := file.Path()
@@ -31,6 +33,9 @@ func newImage(files []ImageFile) (*image, error) {
 			return nil, fmt.Errorf("duplicate file: %s", path)
 		}
 		pathToImageFile[path] = file
+	}
+	if reorder {
+		files = orderImageFiles(files, pathToImageFile)
 	}
 	return &image{
 		files:           files,
@@ -54,18 +59,51 @@ func (i *image) Files() []ImageFile {
 	return i.files
 }
 
-func (i *image) NonImportFiles() []ImageFile {
-	nonImportFiles := make([]ImageFile, 0, len(i.files))
-	for _, file := range i.files {
-		if !file.IsImport() {
-			nonImportFiles = append(nonImportFiles, file)
-		}
-	}
-	return nonImportFiles
-}
-
 func (i *image) GetFile(path string) ImageFile {
 	return i.pathToImageFile[path]
 }
 
 func (*image) isImage() {}
+
+// orderImageFiles re-orders the ImageFiles in DAG order.
+func orderImageFiles(
+	inputImageFiles []ImageFile,
+	pathToImageFile map[string]ImageFile,
+) []ImageFile {
+	outputImageFiles := make([]ImageFile, 0, len(inputImageFiles))
+	alreadySeen := map[string]struct{}{}
+	for _, inputImageFile := range inputImageFiles {
+		outputImageFiles = orderImageFilesRec(
+			inputImageFile,
+			outputImageFiles,
+			pathToImageFile,
+			alreadySeen,
+		)
+	}
+	return outputImageFiles
+}
+
+func orderImageFilesRec(
+	inputImageFile ImageFile,
+	outputImageFiles []ImageFile,
+	pathToImageFile map[string]ImageFile,
+	alreadySeen map[string]struct{},
+) []ImageFile {
+	path := inputImageFile.Path()
+	if _, ok := alreadySeen[path]; ok {
+		return outputImageFiles
+	}
+	alreadySeen[path] = struct{}{}
+	for _, dependency := range inputImageFile.Proto().GetDependency() {
+		dependencyImageFile, ok := pathToImageFile[dependency]
+		if ok {
+			outputImageFiles = orderImageFilesRec(
+				dependencyImageFile,
+				outputImageFiles,
+				pathToImageFile,
+				alreadySeen,
+			)
+		}
+	}
+	return append(outputImageFiles, inputImageFile)
+}

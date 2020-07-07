@@ -77,6 +77,7 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
+	image = bufcore.ImageWithoutImports(image)
 	fileAnnotations, err := internal.NewBuflintHandler(logger).Check(
 		ctx,
 		config.Lint,
