@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufcoreutil"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufmod"
-	"github.com/bufbuild/buf/internal/buf/bufwire"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
@@ -39,8 +38,8 @@ const (
 	includeDirPathsFlagName       = "proto_path"
 	includeImportsFlagName        = "include_imports"
 	includeSourceInfoFlagName     = "include_source_info"
-	outputFlagName                = "descriptor_set_out"
 	printFreeFieldNumbersFlagName = "print_free_field_numbers"
+	outputFlagName                = "descriptor_set_out"
 
 	pluginFakeFlagName = "protoc_plugin_fake"
 )
@@ -71,8 +70,8 @@ type controller struct {
 	includeDirPaths       []string
 	includeImports        bool
 	includeSourceInfo     bool
-	output                string
 	printFreeFieldNumbers bool
+	output                string
 
 	pluginFake        []string
 	pluginNameToValue map[string]*pluginValue
@@ -100,6 +99,12 @@ This is equivalent to roots in Buf.`,
 		false,
 		`Include source info in the resulting FileDescriptorSet.`,
 	)
+	flagSet.BoolVar(
+		&c.printFreeFieldNumbers,
+		printFreeFieldNumbersFlagName,
+		false,
+		`Print the free field numbers of all messages.`,
+	)
 	flagSet.StringVarP(
 		&c.output,
 		outputFlagName,
@@ -109,12 +114,6 @@ This is equivalent to roots in Buf.`,
 			`The location to write the FileDescriptorSet. Must be one of format %s.`,
 			buffetch.ImageFormatsString,
 		),
-	)
-	flagSet.BoolVar(
-		&c.printFreeFieldNumbers,
-		printFreeFieldNumbersFlagName,
-		false,
-		`Print the free field numbers of all messages.`,
 	)
 	flagSet.StringSliceVar(
 		&c.pluginFake,
@@ -132,6 +131,7 @@ func (c *controller) Run(ctx context.Context, container applog.Container) (retEr
 		return err
 	}
 	container.Logger().Debug("generate_flags", zap.Any("out", pluginNameToOut), zap.Any("opt", pluginNameToOpt))
+
 	filePaths := app.Args(container)
 	if len(filePaths) == 0 {
 		return errors.New("no input files specified")
@@ -178,7 +178,7 @@ func (c *controller) Run(ctx context.Context, container applog.Container) (retEr
 		}
 	}
 	if c.output != "" {
-		return newImageWriter(container.Logger()).PutImage(ctx,
+		return internal.NewBufwireImageWriter(container.Logger()).PutImage(ctx,
 			container,
 			c.output,
 			image,
@@ -239,14 +239,6 @@ func (c *controller) getOutAndOpt() (map[string]string, map[string]string, error
 		}
 	}
 	return pluginNameToOut, pluginNameToOpt, nil
-}
-
-func newImageWriter(logger *zap.Logger) bufwire.ImageWriter {
-	return bufwire.NewImageWriter(
-		logger,
-		buffetch.NewProtocOutputImageRefParser(logger),
-		buffetch.NewWriter(logger),
-	)
 }
 
 type pluginValue struct {

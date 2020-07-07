@@ -34,7 +34,14 @@ const (
 	// FileSchemeLocal is the local file scheme.
 	FileSchemeLocal
 	// FileSchemeStdio is the stdio file scheme.
+	//
+	// This can reference either stdin or stdout depending on if we are
+	// reading or writing.
 	FileSchemeStdio
+	// FileSchemeStdin is the stdin file scheme.
+	FileSchemeStdin
+	// FileSchemeStdout is the stdout file scheme.
+	FileSchemeStdout
 	// FileSchemeNull is the null file scheme.
 	FileSchemeNull
 

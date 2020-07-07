@@ -60,7 +60,7 @@ var (
 	}
 )
 
-// NewBufwireEnvReader returns a new bufos.EnvReader.
+// NewBufwireEnvReader returns a new EnvReader.
 func NewBufwireEnvReader(
 	logger *zap.Logger,
 	inputFlagName string,
@@ -85,13 +85,33 @@ func NewBufwireEnvReader(
 	)
 }
 
-// NewBufwireImageWriter returns a new bufos.ImageWriter.
+// NewBufwireImageReader returns a new ImageReader.
+func NewBufwireImageReader(
+	logger *zap.Logger,
+	imageFlagName string,
+) bufwire.ImageReader {
+	return bufwire.NewImageReader(
+		logger,
+		buffetch.NewImageRefParser(
+			logger,
+		),
+		buffetch.NewReader(
+			logger,
+			defaultHTTPClient,
+			defaultHTTPAuthenticator,
+			git.NewCloner(logger, defaultGitClonerOptions),
+		),
+		imageFlagName,
+	)
+}
+
+// NewBufwireImageWriter returns a new ImageWriter.
 func NewBufwireImageWriter(
 	logger *zap.Logger,
 ) bufwire.ImageWriter {
 	return bufwire.NewImageWriter(
 		logger,
-		buffetch.NewRefParser(
+		buffetch.NewImageRefParser(
 			logger,
 		),
 		buffetch.NewWriter(

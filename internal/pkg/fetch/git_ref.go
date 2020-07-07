@@ -116,10 +116,10 @@ func getGitSchemeAndPath(path string) (GitScheme, string, error) {
 	if path == "" {
 		return 0, "", newNoPathError()
 	}
-	if path == "-" {
+	if app.IsDevStderr(path) {
 		return 0, "", newInvalidGitPathError(path)
 	}
-	if path == app.DevNullFilePath {
+	if path == "-" || app.IsDevNull(path) || app.IsDevStdin(path) || app.IsDevStdout(path) {
 		return 0, "", newInvalidGitPathError(path)
 	}
 	for prefix, gitScheme := range gitSchemePrefixToGitScheme {

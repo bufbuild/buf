@@ -17,6 +17,7 @@ package fetch
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -349,11 +350,13 @@ func (r *reader) getFileReadCloserAndSizePotentiallyCompressed(
 			return nil, -1, err
 		}
 		return file, fileInfo.Size(), nil
-	case FileSchemeStdio:
+	case FileSchemeStdio, FileSchemeStdin:
 		if !r.stdioEnabled {
 			return nil, -1, newReadStdioDisabledError()
 		}
 		return ioutil.NopCloser(container.Stdin()), -1, nil
+	case FileSchemeStdout:
+		return nil, -1, errors.New("cannot read from stdout")
 	case FileSchemeNull:
 		return ioutilextended.DiscardReadCloser, 0, nil
 	default:

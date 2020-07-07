@@ -21,7 +21,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
-	"github.com/bufbuild/buf/internal/gen/embed/wkt"
+	"github.com/bufbuild/buf/internal/gen/data/wkt"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/multierr"
 )
@@ -30,16 +30,19 @@ type parserAccessorHandler struct {
 	ctx                context.Context
 	module             bufcore.Module
 	pathToExternalPath map[string]string
-	pathToIsNonImport  map[string]bool
+	nonImportPaths     map[string]struct{}
 	lock               sync.RWMutex
 }
 
-func newParserAccessorHandler(ctx context.Context, module bufcore.Module) *parserAccessorHandler {
+func newParserAccessorHandler(
+	ctx context.Context,
+	module bufcore.Module,
+) *parserAccessorHandler {
 	return &parserAccessorHandler{
 		ctx:                ctx,
 		module:             module,
 		pathToExternalPath: make(map[string]string),
-		pathToIsNonImport:  make(map[string]bool),
+		nonImportPaths:     make(map[string]struct{}),
 	}
 }
 
@@ -50,8 +53,13 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 			return nil, moduleErr
 		}
 		if wktModuleFile, wktErr := wkt.ReadBucket.Get(p.ctx, path); wktErr == nil {
-			// not setting external path for now
-			// we could make this an option, or have some way we do this for wkt
+			if wktModuleFile.Path() != path {
+				// this should never happen, but just in case
+				return nil, fmt.Errorf("parser accessor requested path %q but got %q", path, wktModuleFile.Path())
+			}
+			if err := p.addPath(path, path, true); err != nil {
+				return nil, err
+			}
 			return wktModuleFile, nil
 		}
 		return nil, moduleErr
@@ -65,17 +73,9 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 		// this should never happen, but just in case
 		return nil, fmt.Errorf("parser accessor requested path %q but got %q", path, moduleFile.Path())
 	}
-	p.lock.Lock()
-	defer p.lock.Unlock()
-	existingExternalPath, ok := p.pathToExternalPath[path]
-	if ok {
-		if existingExternalPath != moduleFile.ExternalPath() {
-			return nil, fmt.Errorf("parser accessor had external paths %q and %q for path %q", existingExternalPath, moduleFile.ExternalPath(), path)
-		}
-	} else {
-		p.pathToExternalPath[path] = moduleFile.ExternalPath()
+	if err := p.addPath(path, moduleFile.ExternalPath(), moduleFile.IsImport()); err != nil {
+		return nil, err
 	}
-	p.pathToIsNonImport[path] = true
 	return moduleFile, nil
 }
 
@@ -91,6 +91,23 @@ func (p *parserAccessorHandler) ExternalPath(path string) string {
 func (p *parserAccessorHandler) IsImport(path string) bool {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	_, isNotImport := p.pathToIsNonImport[path]
+	_, isNotImport := p.nonImportPaths[path]
 	return !isNotImport
+}
+
+func (p *parserAccessorHandler) addPath(path string, externalPath string, isImport bool) error {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+	existingExternalPath, ok := p.pathToExternalPath[path]
+	if ok {
+		if existingExternalPath != externalPath {
+			return fmt.Errorf("parser accessor had external paths %q and %q for path %q", existingExternalPath, externalPath, path)
+		}
+	} else {
+		p.pathToExternalPath[path] = externalPath
+	}
+	if !isImport {
+		p.nonImportPaths[path] = struct{}{}
+	}
+	return nil
 }

@@ -46,6 +46,9 @@ func newSingleRef(
 	if path == "" {
 		return nil, newNoPathError()
 	}
+	if app.IsDevStderr(path) {
+		return nil, newInvalidFilePathError(path)
+	}
 	if path == "-" {
 		return buildSingleRef(
 			format,
@@ -54,7 +57,23 @@ func newSingleRef(
 			compressionType,
 		), nil
 	}
-	if path == app.DevNullFilePath {
+	if app.IsDevStdin(path) {
+		return buildSingleRef(
+			format,
+			"",
+			FileSchemeStdin,
+			compressionType,
+		), nil
+	}
+	if app.IsDevStdout(path) {
+		return buildSingleRef(
+			format,
+			"",
+			FileSchemeStdout,
+			compressionType,
+		), nil
+	}
+	if app.IsDevNull(path) {
 		return buildSingleRef(
 			format,
 			"",

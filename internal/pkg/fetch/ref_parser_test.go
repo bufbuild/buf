@@ -482,6 +482,28 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		),
 		app.DevNullFilePath,
 	)
+	// TODO: this needs to be moved to a unix-only test
+	testGetParsedRefSuccess(
+		t,
+		buildSingleRef(
+			testFormatBin,
+			"",
+			FileSchemeStdin,
+			CompressionTypeNone,
+		),
+		app.DevStdinFilePath,
+	)
+	// TODO: this needs to be moved to a unix-only test
+	testGetParsedRefSuccess(
+		t,
+		buildSingleRef(
+			testFormatBin,
+			"",
+			FileSchemeStdout,
+			CompressionTypeNone,
+		),
+		app.DevStdoutFilePath,
+	)
 	testGetParsedRefSuccess(
 		t,
 		buildSingleRef(
@@ -968,7 +990,7 @@ func testRawRefProcessor(rawRef *RawRef) error {
 	// if format option is not set and path is "-", default to bin
 	var format string
 	var compressionType CompressionType
-	if rawRef.Path == "-" || rawRef.Path == app.DevNullFilePath {
+	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
 		format = testFormatBin
 	} else {
 		switch filepath.Ext(rawRef.Path) {

@@ -118,11 +118,11 @@ func NewRefParser(logger *zap.Logger) RefParser {
 	return newRefParser(logger)
 }
 
-// NewProtocOutputImageRefParser returns a new RefParser for protoc output.
+// NewImageRefParser returns a new RefParser for images only.
 //
 // This defaults to binary.
-func NewProtocOutputImageRefParser(logger *zap.Logger) ImageRefParser {
-	return newProtocOutputRefParser(logger)
+func NewImageRefParser(logger *zap.Logger) ImageRefParser {
+	return newImageRefParser(logger)
 }
 
 // Reader is a reader for Buf.
