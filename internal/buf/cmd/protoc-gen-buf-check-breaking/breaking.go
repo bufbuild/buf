@@ -114,17 +114,14 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	asJSON, err := internal.IsFormatJSON("error_format", externalConfig.ErrorFormat)
-	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+	if len(fileAnnotations) > 0 {
+		buffer := bytes.NewBuffer(nil)
+		if err := bufanalysis.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
+			responseWriter.WriteError(err.Error())
+			return
+		}
+		responseWriter.WriteError(buffer.String())
 	}
-	buffer := bytes.NewBuffer(nil)
-	if err := bufanalysis.PrintFileAnnotations(buffer, fileAnnotations, asJSON); err != nil {
-		responseWriter.WriteError(err.Error())
-		return
-	}
-	responseWriter.WriteError(buffer.String())
 }
 
 type externalConfig struct {

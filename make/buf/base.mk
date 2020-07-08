@@ -2,7 +2,11 @@ BUF_BIN ?= cmd/buf
 
 PROTOREFLECT_VERSION := 8d2d934ce5650f450ffe1f441313e26c75e1fdab
 GO_GET_PKGS := $(GO_GET_PKGS) github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
-GO_BINS := $(GO_BINS) $(BUF_BIN) cmd/protoc-gen-buf-check-breaking cmd/protoc-gen-buf-check-lint internal/pkg/storage/cmd/storage-go-binary-data
+GO_BINS := $(GO_BINS) $(BUF_BIN) \
+	cmd/protoc-gen-buf-check-breaking \
+	cmd/protoc-gen-buf-check-lint \
+	internal/pkg/storage/cmd/storage-go-binary-data
+GO_LINT_IGNORES := $(GO_LINT_IGNORES) /internal/buf/cmd/buf/internal/protoc
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto/go/v1

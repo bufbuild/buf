@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"go.uber.org/zap"
 )
 
@@ -38,15 +39,15 @@ var (
 	// ImageFormatsString is the string representation of all image formats.
 	//
 	// This does not include deprecated formats.
-	ImageFormatsString = formatsToString(imageFormatsNotDeprecated)
+	ImageFormatsString = stringutil.SliceToString(imageFormatsNotDeprecated)
 	// SourceFormatsString is the string representation of all source formats.
 	//
 	// This does not include deprecated formats.
-	SourceFormatsString = formatsToString(sourceFormatsNotDeprecated)
+	SourceFormatsString = stringutil.SliceToString(sourceFormatsNotDeprecated)
 	// AllFormatsString is the string representation of all formats.
 	//
 	// This does not include deprecated formats.
-	AllFormatsString = formatsToString(allFormatsNotDeprecated)
+	AllFormatsString = stringutil.SliceToString(allFormatsNotDeprecated)
 )
 
 // ImageEncoding is the encoding of the image.

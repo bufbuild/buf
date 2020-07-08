@@ -19,9 +19,78 @@ import (
 	"fmt"
 	"io"
 	"sort"
-
-	"github.com/bufbuild/buf/internal/pkg/stringjson"
+	"strconv"
+	"strings"
 )
+
+const (
+	// FormatText is the text format for FileAnnotations.
+	FormatText = iota + 1
+	// FormatJSON is the JSON format for FileAnnotations.
+	FormatJSON
+	// FormatMSVS is the MSVS format for FileAnnotations.
+	FormatMSVS
+)
+
+var (
+	// AllFormatStrings is all format strings without aliases.
+	//
+	// Sorted in the order we want to display them.
+	AllFormatStrings = []string{
+		"text",
+		"json",
+		"msvs",
+	}
+	// AllFormatStringsWithAliases is all format strings with aliases.
+	//
+	// Sorted in the order we want to display them.
+	AllFormatStringsWithAliases = []string{
+		"text",
+		"gcc",
+		"json",
+		"msvs",
+	}
+
+	stringToFormat = map[string]Format{
+		"text": FormatText,
+		// alias for text
+		"gcc":  FormatText,
+		"json": FormatJSON,
+		"msvs": FormatMSVS,
+	}
+	formatToString = map[Format]string{
+		FormatText: "text",
+		FormatJSON: "json",
+		FormatMSVS: "msvs",
+	}
+)
+
+// Format is a FileAnnotation format.
+type Format int
+
+// String implements fmt.Stringer.
+func (f Format) String() string {
+	s, ok := formatToString[f]
+	if !ok {
+		return strconv.Itoa(int(f))
+	}
+	return s
+}
+
+// ParseFormat parses the Format.
+//
+// The empty strings defaults to FormatText.
+func ParseFormat(s string) (Format, error) {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if s == "" {
+		return FormatText, nil
+	}
+	f, ok := stringToFormat[s]
+	if ok {
+		return f, nil
+	}
+	return 0, fmt.Errorf("unknown format: %q", s)
+}
 
 // FileInfo is a minimal FileInfo interface.
 type FileInfo interface {
@@ -31,8 +100,15 @@ type FileInfo interface {
 
 // FileAnnotation is a file annotation.
 type FileAnnotation interface {
+	// Stringer returns the string representation in text format.
 	fmt.Stringer
+	// Marshaler returns the string representation in JSON foramt.
 	json.Marshaler
+	// MSVSString returns the string representation in MSVS format.
+	//
+	// https://docs.microsoft.com/en-us/cpp/build/formatting-the-output-of-a-custom-build-step-or-build-event?view=vs-2019
+	MSVSString() string
+
 	// FileInfo is the FileInfo for this annotation.
 	//
 	// This may be nil.
@@ -101,13 +177,39 @@ func SortFileAnnotations(fileAnnotations []FileAnnotation) {
 }
 
 // PrintFileAnnotations prints the file annotations separated by newlines.
-func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, asJSON bool) error {
+func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, formatString string) error {
+	format, err := ParseFormat(formatString)
+	if err != nil {
+		return err
+	}
 	for _, fileAnnotation := range fileAnnotations {
-		if err := stringjson.Println(writer, fileAnnotation, asJSON); err != nil {
+		s, err := FormatFileAnnotation(fileAnnotation, format)
+		if err != nil {
+			return err
+		}
+		if _, err := writer.Write([]byte(s + "\n")); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// FormatFileAnnotation formats the FileAnnotation.
+func FormatFileAnnotation(fileAnnotation FileAnnotation, format Format) (string, error) {
+	switch format {
+	case FormatText:
+		return fileAnnotation.String(), nil
+	case FormatJSON:
+		data, err := fileAnnotation.MarshalJSON()
+		if err != nil {
+			return "", err
+		}
+		return string(data), nil
+	case FormatMSVS:
+		return fileAnnotation.MSVSString(), nil
+	default:
+		return "", fmt.Errorf("unknown FileAnnotation Format: %v", format)
+	}
 }
 
 type sortFileAnnotations []FileAnnotation

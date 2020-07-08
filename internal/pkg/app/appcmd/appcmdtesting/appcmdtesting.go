@@ -83,7 +83,6 @@ func RunCommandExitCode(
 				append([]string{"test"}, args...)...,
 			),
 			newCommand("test"),
-			"test",
 		),
 	)
 	require.Equal(t, expectedExitCode, exitCode, stringutil.TrimLines(stderr.String()))

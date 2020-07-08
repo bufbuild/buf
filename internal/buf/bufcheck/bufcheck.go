@@ -29,6 +29,12 @@ import (
 	"go.uber.org/multierr"
 )
 
+// AllCheckerFormatStrings is all checker format strings.
+var AllCheckerFormatStrings = []string{
+	"text",
+	"json",
+}
+
 // Checker is a checker.
 type Checker interface {
 	json.Marshaler
@@ -49,9 +55,20 @@ type Checker interface {
 }
 
 // PrintCheckers prints the checkers to the writer.
-func PrintCheckers(writer io.Writer, checkers []Checker, asJSON bool) (retErr error) {
+//
+// The empty string defaults to text.
+func PrintCheckers(writer io.Writer, checkers []Checker, formatString string) (retErr error) {
 	if len(checkers) == 0 {
 		return nil
+	}
+	asJSON := false
+	switch s := strings.ToLower(strings.TrimSpace(formatString)); s {
+	case "", "text":
+		asJSON = false
+	case "json":
+		asJSON = true
+	default:
+		return fmt.Errorf("unknown format: %q", s)
 	}
 	if !asJSON {
 		tabWriter := tabwriter.NewWriter(writer, 0, 0, 2, ' ', 0)
