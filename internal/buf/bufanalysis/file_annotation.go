@@ -120,6 +120,47 @@ func (f *fileAnnotation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(f.toExternalFileAnnotation())
 }
 
+func (f *fileAnnotation) MSVSString() string {
+	if f == nil {
+		return ""
+	}
+	path := "<input>"
+	line := f.startLine
+	column := f.startColumn
+	message := f.message
+	if f.fileInfo != nil {
+		path = f.fileInfo.ExternalPath()
+	}
+	if line == 0 {
+		line = 1
+	}
+	typeString := f.typeString
+	if typeString == "" {
+		// should never happen but just in case
+		typeString = "FAILURE"
+	}
+	if message == "" {
+		message = f.typeString
+		// should never happen but just in case
+		if message == "" {
+			message = "FAILURE"
+		}
+	}
+	buffer := bytes.NewBuffer(nil)
+	_, _ = buffer.WriteString(path)
+	_, _ = buffer.WriteRune('(')
+	_, _ = buffer.WriteString(strconv.Itoa(int(line)))
+	if column != 0 {
+		_, _ = buffer.WriteRune(',')
+		_, _ = buffer.WriteString(strconv.Itoa(int(column)))
+	}
+	_, _ = buffer.WriteString(") : error ")
+	_, _ = buffer.WriteString(typeString)
+	_, _ = buffer.WriteString(" : ")
+	_, _ = buffer.WriteString(message)
+	return buffer.String()
+}
+
 func (f *fileAnnotation) toExternalFileAnnotation() externalFileAnnotation {
 	path := ""
 	if f.fileInfo != nil {

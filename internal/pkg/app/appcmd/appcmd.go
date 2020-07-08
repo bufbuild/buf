@@ -53,19 +53,21 @@ type Command struct {
 	// Required if there are no sub-commands.
 	// Must be unset if there are sub-commands.
 	Run func(context.Context, app.Container) error
+	// Version is the version.
+	Version string
 	// SubCommands are the sub-commands. Optional.
 	// Must be unset if there is a run function.
 	SubCommands []*Command
 }
 
 // Main runs the application using the OS container and calling os.Exit on the return value of Run.
-func Main(ctx context.Context, command *Command, version string) {
-	app.Main(ctx, newRunFunc(command, version))
+func Main(ctx context.Context, command *Command) {
+	app.Main(ctx, newRunFunc(command))
 }
 
 // Run runs the application using the container.
-func Run(ctx context.Context, container app.Container, command *Command, version string) error {
-	return app.Run(ctx, container, newRunFunc(command, version))
+func Run(ctx context.Context, container app.Container, command *Command) error {
+	return app.Run(ctx, container, newRunFunc(command))
 }
 
 // BindMultiple is a convenience function for binding multiple flag functions.
@@ -77,9 +79,9 @@ func BindMultiple(bindFuncs ...func(*pflag.FlagSet)) func(*pflag.FlagSet) {
 	}
 }
 
-func newRunFunc(command *Command, version string) func(context.Context, app.Container) error {
+func newRunFunc(command *Command) func(context.Context, app.Container) error {
 	return func(ctx context.Context, container app.Container) error {
-		return run(ctx, container, command, version)
+		return run(ctx, container, command)
 	}
 }
 
@@ -87,7 +89,6 @@ func run(
 	ctx context.Context,
 	container app.Container,
 	command *Command,
-	version string,
 ) error {
 	var runErr error
 
@@ -95,9 +96,6 @@ func run(
 	if err != nil {
 		return err
 	}
-
-	cobraCommand.SetVersionTemplate("{{.Version}}\n")
-	cobraCommand.Version = version
 
 	// If the root command is not the only command, add hidden bash-completion
 	// and zsh-completion commands.
@@ -163,6 +161,10 @@ func commandToCobra(
 		cobraCommand.Run = func(_ *cobra.Command, args []string) {
 			*runErrAddr = command.Run(ctx, app.NewContainerForArgs(container, args...))
 		}
+	}
+	if command.Version != "" {
+		cobraCommand.SetVersionTemplate("{{.Version}}\n")
+		cobraCommand.Version = command.Version
 	}
 	for _, subCommand := range command.SubCommands {
 		subCobraCommand, err := commandToCobra(ctx, container, subCommand, runErrAddr)

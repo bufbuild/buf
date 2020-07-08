@@ -65,6 +65,28 @@ func NewFileAnnotation(
 	endColumn int,
 	typeString string,
 ) bufanalysis.FileAnnotation {
+	return newFileAnnotation(
+		t,
+		path,
+		startLine,
+		startColumn,
+		endLine,
+		endColumn,
+		typeString,
+		"",
+	)
+}
+
+func newFileAnnotation(
+	t *testing.T,
+	path string,
+	startLine int,
+	startColumn int,
+	endLine int,
+	endColumn int,
+	typeString string,
+	message string,
+) bufanalysis.FileAnnotation {
 	var fileInfo bufcore.FileInfo
 	var err error
 	if path != "" {
@@ -82,7 +104,7 @@ func NewFileAnnotation(
 		endLine,
 		endColumn,
 		typeString,
-		"",
+		message,
 	)
 }
 

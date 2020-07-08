@@ -35,6 +35,7 @@ func newRootCommand(use string, options ...RootCommandOption) *appcmd.Command {
 			newExperimentalCmd(builder),
 		},
 		BindPersistentFlags: builder.BindRoot,
+		Version:             Version,
 	}
 	for _, option := range options {
 		option(rootCommand, builder)

@@ -32,10 +32,6 @@ func imageBuild(ctx context.Context, container applog.Container, flags *flags) (
 	if flags.Output == "" {
 		return fmt.Errorf("--%s is required", imageBuildOutputFlagName)
 	}
-	asJSON, err := internal.IsFormatJSON(errorFormatFlagName, flags.ErrorFormat)
-	if err != nil {
-		return err
-	}
 	env, fileAnnotations, err := internal.NewBufwireEnvReader(
 		container.Logger(),
 		imageBuildInputFlagName,
@@ -55,7 +51,11 @@ func imageBuild(ctx context.Context, container applog.Container, flags *flags) (
 	}
 	if len(fileAnnotations) > 0 {
 		// stderr since we do output to stdout potentially
-		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, asJSON); err != nil {
+		if err := bufanalysis.PrintFileAnnotations(
+			container.Stderr(),
+			fileAnnotations,
+			flags.ErrorFormat,
+		); err != nil {
 			return err
 		}
 		// app works on the concept that an error results in a non-zero exit code
@@ -110,14 +110,6 @@ func imageConvert(ctx context.Context, container applog.Container, flags *flags)
 }
 
 func checkLint(ctx context.Context, container applog.Container, flags *flags) (retErr error) {
-	asJSON, err := internal.IsLintFormatJSON(errorFormatFlagName, flags.ErrorFormat)
-	if err != nil {
-		return err
-	}
-	asConfigIgnoreYAML, err := internal.IsLintFormatConfigIgnoreYAML(errorFormatFlagName, flags.ErrorFormat)
-	if err != nil {
-		return err
-	}
 	env, fileAnnotations, err := internal.NewBufwireEnvReader(
 		container.Logger(),
 		checkLintInputFlagName,
@@ -135,7 +127,11 @@ func checkLint(ctx context.Context, container applog.Container, flags *flags) (r
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
+		formatString := flags.ErrorFormat
+		if formatString == "config-ignore-yaml" {
+			formatString = "text"
+		}
+		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, formatString); err != nil {
 			return err
 		}
 		return errors.New("")
@@ -149,14 +145,12 @@ func checkLint(ctx context.Context, container applog.Container, flags *flags) (r
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if asConfigIgnoreYAML {
-			if err := buflint.PrintFileAnnotationsLintConfigIgnoreYAML(container.Stdout(), fileAnnotations); err != nil {
-				return err
-			}
-		} else {
-			if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
-				return err
-			}
+		if err := buflint.PrintFileAnnotations(
+			container.Stdout(),
+			fileAnnotations,
+			flags.ErrorFormat,
+		); err != nil {
+			return err
 		}
 		return errors.New("")
 	}
@@ -166,10 +160,6 @@ func checkLint(ctx context.Context, container applog.Container, flags *flags) (r
 func checkBreaking(ctx context.Context, container applog.Container, flags *flags) (retErr error) {
 	if flags.AgainstInput == "" {
 		return fmt.Errorf("--%s is required", checkBreakingAgainstInputFlagName)
-	}
-	asJSON, err := internal.IsFormatJSON(errorFormatFlagName, flags.ErrorFormat)
-	if err != nil {
-		return err
 	}
 	env, fileAnnotations, err := internal.NewBufwireEnvReader(
 		container.Logger(),
@@ -188,7 +178,11 @@ func checkBreaking(ctx context.Context, container applog.Container, flags *flags
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
+		if err := bufanalysis.PrintFileAnnotations(
+			container.Stdout(),
+			fileAnnotations,
+			flags.ErrorFormat,
+		); err != nil {
 			return err
 		}
 		return errors.New("")
@@ -227,7 +221,11 @@ func checkBreaking(ctx context.Context, container applog.Container, flags *flags
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
+		if err := bufanalysis.PrintFileAnnotations(
+			container.Stdout(),
+			fileAnnotations,
+			flags.ErrorFormat,
+		); err != nil {
 			return err
 		}
 		return errors.New("")
@@ -246,7 +244,11 @@ func checkBreaking(ctx context.Context, container applog.Container, flags *flags
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, asJSON); err != nil {
+		if err := bufanalysis.PrintFileAnnotations(
+			container.Stdout(),
+			fileAnnotations,
+			flags.ErrorFormat,
+		); err != nil {
 			return err
 		}
 		return errors.New("")
@@ -255,11 +257,8 @@ func checkBreaking(ctx context.Context, container applog.Container, flags *flags
 }
 
 func checkLsLintCheckers(ctx context.Context, container applog.Container, flags *flags) (retErr error) {
-	asJSON, err := internal.IsFormatJSON(checkLsCheckersFormatFlagName, flags.Format)
-	if err != nil {
-		return err
-	}
 	var checkers []bufcheck.Checker
+	var err error
 	if flags.CheckerAll {
 		checkers, err = buflint.GetAllCheckers(flags.CheckerCategories...)
 		if err != nil {
@@ -282,15 +281,16 @@ func checkLsLintCheckers(ctx context.Context, container applog.Container, flags 
 			return err
 		}
 	}
-	return bufcheck.PrintCheckers(container.Stdout(), checkers, asJSON)
+	return bufcheck.PrintCheckers(
+		container.Stdout(),
+		checkers,
+		flags.Format,
+	)
 }
 
 func checkLsBreakingCheckers(ctx context.Context, container applog.Container, flags *flags) (retErr error) {
-	asJSON, err := internal.IsFormatJSON(checkLsCheckersFormatFlagName, flags.Format)
-	if err != nil {
-		return err
-	}
 	var checkers []bufcheck.Checker
+	var err error
 	if flags.CheckerAll {
 		checkers, err = bufbreaking.GetAllCheckers(flags.CheckerCategories...)
 		if err != nil {
@@ -313,5 +313,9 @@ func checkLsBreakingCheckers(ctx context.Context, container applog.Container, fl
 			return err
 		}
 	}
-	return bufcheck.PrintCheckers(container.Stdout(), checkers, asJSON)
+	return bufcheck.PrintCheckers(
+		container.Stdout(),
+		checkers,
+		flags.Format,
+	)
 }

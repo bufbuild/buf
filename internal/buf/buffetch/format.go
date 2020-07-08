@@ -14,8 +14,6 @@
 
 package buffetch
 
-import "strings"
-
 const (
 	// formatBin is the binary format.
 	formatBin = "bin"
@@ -92,11 +90,3 @@ var (
 		formatTargz:  formatTar,
 	}
 )
-
-// formatsToString prints the string representation of the formats.
-func formatsToString(formats []string) string {
-	if len(formats) == 0 {
-		return ""
-	}
-	return "[" + strings.Join(formats, ",") + "]"
-}

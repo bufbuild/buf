@@ -22,12 +22,19 @@ import (
 	"context"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"go.uber.org/zap"
+)
+
+// AllFormatStrings are all format strings.
+var AllFormatStrings = append(
+	bufanalysis.AllFormatStrings,
+	"config-ignore-yaml",
 )
 
 // Handler handles the main lint functionality.
@@ -130,8 +137,26 @@ type ExternalConfig struct {
 	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
 }
 
-// PrintFileAnnotationsLintConfigIgnoreYAML prints the FileAnnotations to the Writer as config-ignore-yaml.
-func PrintFileAnnotationsLintConfigIgnoreYAML(writer io.Writer, fileAnnotations []bufanalysis.FileAnnotation) error {
+// PrintFileAnnotations prints the FileAnnotations to the Writer.
+//
+// Also accepts config-ignore-yaml.
+func PrintFileAnnotations(
+	writer io.Writer,
+	fileAnnotations []bufanalysis.FileAnnotation,
+	formatString string,
+) error {
+	switch s := strings.ToLower(strings.TrimSpace(formatString)); s {
+	case "config-ignore-yaml":
+		return printFileAnnotationsConfigIgnoreYAML(writer, fileAnnotations)
+	default:
+		return bufanalysis.PrintFileAnnotations(writer, fileAnnotations, s)
+	}
+}
+
+func printFileAnnotationsConfigIgnoreYAML(
+	writer io.Writer,
+	fileAnnotations []bufanalysis.FileAnnotation,
+) error {
 	if len(fileAnnotations) == 0 {
 		return nil
 	}

@@ -142,6 +142,14 @@ func JoinSliceQuoted(s []string, sep string) string {
 	return `"` + strings.Join(s, `"`+sep+`"`) + `"`
 }
 
+// SliceToString prints the slice as [e1,e2].
+func SliceToString(s []string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	return "[" + strings.Join(s, ",") + "]"
+}
+
 // SnakeCaseOption is an option for snake_case conversions.
 type SnakeCaseOption func(*snakeCaseOptions)
 

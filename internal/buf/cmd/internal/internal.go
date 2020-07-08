@@ -17,7 +17,6 @@ package internal
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
@@ -136,51 +135,6 @@ func NewBufbreakingHandler(
 	return bufbreaking.NewHandler(
 		logger,
 	)
-}
-
-// IsFormatJSON returns true if the format is JSON.
-//
-// This will probably eventually need to be split between the image/check flags
-// and the ls flags as we may have different formats for each.
-func IsFormatJSON(flagName string, format string) (bool, error) {
-	switch s := strings.TrimSpace(strings.ToLower(format)); s {
-	case "text", "":
-		return false, nil
-	case "json":
-		return true, nil
-	default:
-		return false, fmt.Errorf("--%s: unknown format: %q", flagName, s)
-	}
-}
-
-// IsLintFormatJSON returns true if the format is JSON for lint.
-//
-// Also allows config-ignore-yaml.
-func IsLintFormatJSON(flagName string, format string) (bool, error) {
-	switch s := strings.TrimSpace(strings.ToLower(format)); s {
-	case "text", "":
-		return false, nil
-	case "json":
-		return true, nil
-	case "config-ignore-yaml":
-		return false, nil
-	default:
-		return false, fmt.Errorf("--%s: unknown format: %q", flagName, s)
-	}
-}
-
-// IsLintFormatConfigIgnoreYAML returns true if the format is config-ignore-yaml.
-func IsLintFormatConfigIgnoreYAML(flagName string, format string) (bool, error) {
-	switch s := strings.TrimSpace(strings.ToLower(format)); s {
-	case "text", "":
-		return false, nil
-	case "json":
-		return false, nil
-	case "config-ignore-yaml":
-		return true, nil
-	default:
-		return false, fmt.Errorf("--%s: unknown format: %q", flagName, s)
-	}
 }
 
 // WarnExperimental warns that the command is experimental.

@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
@@ -30,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
@@ -40,8 +42,15 @@ const (
 	includeSourceInfoFlagName     = "include_source_info"
 	printFreeFieldNumbersFlagName = "print_free_field_numbers"
 	outputFlagName                = "descriptor_set_out"
+	pluginPathValuesFlagName      = "plugin"
+	errorFormatFlagName           = "error_format"
 
 	pluginFakeFlagName = "protoc_plugin_fake"
+
+	encodeFlagName          = "encode"
+	decodeFlagName          = "decode"
+	decodeRawFlagName       = "decode_raw"
+	descriptorSetInFlagName = "descriptor_set_in"
 )
 
 // NewCommand returns a new Command
@@ -57,6 +66,7 @@ func NewCommand(use string, builder appflag.Builder) *appcmd.Command {
 		),
 		BindFlags:     controller.Bind,
 		NormalizeFlag: controller.NormalizeFlag,
+		Version:       "3.12.3-buf",
 	}
 }
 
@@ -72,9 +82,16 @@ type controller struct {
 	includeSourceInfo     bool
 	printFreeFieldNumbers bool
 	output                string
+	errorFormat           string
+	pluginPathValues      []string
 
 	pluginFake        []string
 	pluginNameToValue map[string]*pluginValue
+
+	encode          string
+	decode          string
+	decodeRaw       bool
+	descriptorSetIn []string
 }
 
 func (c *controller) Bind(flagSet *pflag.FlagSet) {
@@ -83,9 +100,7 @@ func (c *controller) Bind(flagSet *pflag.FlagSet) {
 		includeDirPathsFlagName,
 		"I",
 		[]string{"."},
-		`The include directory paths.
-
-This is equivalent to roots in Buf.`,
+		`The include directory paths. This is equivalent to roots in Buf.`,
 	)
 	flagSet.BoolVar(
 		&c.includeImports,
@@ -115,6 +130,22 @@ This is equivalent to roots in Buf.`,
 			buffetch.ImageFormatsString,
 		),
 	)
+	flagSet.StringVar(
+		&c.errorFormat,
+		errorFormatFlagName,
+		"gcc",
+		fmt.Sprintf(
+			`The error format to use. Must be one of format %s.`,
+			stringutil.SliceToString(bufanalysis.AllFormatStringsWithAliases),
+		),
+	)
+	flagSet.StringSliceVar(
+		&c.pluginPathValues,
+		pluginPathValuesFlagName,
+		nil,
+		`The paths to the plugin executables to use, either in the form "path/to/protoc-gen-foo" or "protoc-gen-foo=path/to/binary".`,
+	)
+
 	flagSet.StringSliceVar(
 		&c.pluginFake,
 		pluginFakeFlagName,
@@ -122,15 +153,51 @@ This is equivalent to roots in Buf.`,
 		`If you are calling this, you should not be.`,
 	)
 	_ = flagSet.MarkHidden(pluginFakeFlagName)
+
+	flagSet.StringVar(
+		&c.encode,
+		encodeFlagName,
+		"",
+		`Not supported by buf.`,
+	)
+	_ = flagSet.MarkHidden(encodeFlagName)
+	flagSet.StringVar(
+		&c.decode,
+		decodeFlagName,
+		"",
+		`Not supported by buf.`,
+	)
+	_ = flagSet.MarkHidden(decodeFlagName)
+	flagSet.BoolVar(
+		&c.decodeRaw,
+		decodeRawFlagName,
+		false,
+		`Not supported by buf.`,
+	)
+	_ = flagSet.MarkHidden(decodeRawFlagName)
+	flagSet.StringSliceVar(
+		&c.descriptorSetIn,
+		descriptorSetInFlagName,
+		nil,
+		`Not supported by buf.`,
+	)
+	_ = flagSet.MarkHidden(descriptorSetInFlagName)
 }
 
 func (c *controller) Run(ctx context.Context, container applog.Container) (retErr error) {
 	internal.WarnExperimental(container)
-	pluginNameToOut, pluginNameToOpt, err := c.getOutAndOpt()
+	if err := c.checkUnsupportedFlags(); err != nil {
+		return err
+	}
+
+	pluginNameToPluginInfo, err := c.getPluginNameToPluginInfo()
 	if err != nil {
 		return err
 	}
-	container.Logger().Debug("generate_flags", zap.Any("out", pluginNameToOut), zap.Any("opt", pluginNameToOpt))
+	container.Logger().Debug("generate_flags", zap.Any("info", pluginNameToPluginInfo))
+	if len(pluginNameToPluginInfo) > 0 {
+		return fmt.Errorf("generation is not yet supported")
+	}
 
 	filePaths := app.Args(container)
 	if len(filePaths) == 0 {
@@ -158,7 +225,11 @@ func (c *controller) Run(ctx context.Context, container applog.Container) (retEr
 		return err
 	}
 	if len(fileAnnotations) > 0 {
-		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, false); err != nil {
+		if err := bufanalysis.PrintFileAnnotations(
+			container.Stderr(),
+			fileAnnotations,
+			c.errorFormat,
+		); err != nil {
 			return err
 		}
 		return errors.New("")
@@ -198,7 +269,53 @@ func (c *controller) NormalizeFlag(flagSet *pflag.FlagSet, name string) string {
 		c.pluginFakeParse(name, "_opt", false)
 		return pluginFakeFlagName
 	}
-	return name
+	return strings.Replace(name, "-", "_", -1)
+}
+
+func (c *controller) checkUnsupportedFlags() error {
+	if c.encode != "" {
+		//lint:ignore ST1005 CLI error message
+		return fmt.Errorf(
+			`--%s is not supported by buf.
+
+Buf only handles the binary and JSON formats for now, however we can support this flag if there is sufficient demand.
+Please email us at support@buf.build if this is a need for your organization.`,
+			encodeFlagName,
+		)
+	}
+	if c.decode != "" {
+		//lint:ignore ST1005 CLI error message
+		return fmt.Errorf(
+			`--%s is not supported by buf.
+
+Buf only handles the binary and JSON formats for now, however we can support this flag if there is sufficient demand.
+Please email us at support@buf.build if this is a need for your organization.`,
+			decodeFlagName,
+		)
+	}
+	if c.decodeRaw {
+		//lint:ignore ST1005 CLI error message
+		return fmt.Errorf(
+			`--%s is not supported by buf.
+
+Buf only handles the binary and JSON formats for now, however we can support this flag if there is sufficient demand.
+Please email us at support@buf.build if this is a need for your organization.`,
+			decodeRawFlagName,
+		)
+	}
+	if len(c.descriptorSetIn) > 0 {
+		//lint:ignore ST1005 CLI error message
+		return fmt.Errorf(
+			`--%s is not supported by buf.
+
+Buf will work with cross-repository imports Buf Schema Registry, which will be based on source files, not pre-compiled images.
+We think this is a much safer option that leads to less errors and more consistent results.
+
+Please email us at support@buf.build if this is a need for your organization.`,
+			descriptorSetInFlagName,
+		)
+	}
+	return nil
 }
 
 func (c *controller) pluginFakeParse(name string, suffix string, isOut bool) {
@@ -218,27 +335,62 @@ func (c *controller) pluginFakeParse(name string, suffix string, isOut bool) {
 	}
 }
 
-func (c *controller) getOutAndOpt() (map[string]string, map[string]string, error) {
-	pluginNameToOut := make(map[string]string)
-	pluginNameToOpt := make(map[string]string)
+func (c *controller) getPluginNameToPluginInfo() (map[string]*pluginInfo, error) {
+	pluginNameToPluginInfo := make(map[string]*pluginInfo)
 	for pluginName, pluginValue := range c.pluginNameToValue {
 		if pluginValue.OptIndex >= 0 && pluginValue.OutIndex < 0 {
-			return nil, nil, fmt.Errorf("cannot specify --%s_opt without --%s_out", pluginName, pluginName)
+			return nil, fmt.Errorf("cannot specify --%s_opt without --%s_out", pluginName, pluginName)
 		}
 		if pluginValue.OutIndex >= 0 {
 			if pluginValue.OutCount > 1 {
-				return nil, nil, fmt.Errorf("duplicate --%s_out", pluginName)
+				return nil, fmt.Errorf("duplicate --%s_out", pluginName)
 			}
-			pluginNameToOut[pluginName] = c.pluginFake[pluginValue.OutIndex]
+			pluginInfo, ok := pluginNameToPluginInfo[pluginName]
+			if !ok {
+				pluginInfo = newPluginInfo(pluginName)
+				pluginNameToPluginInfo[pluginName] = pluginInfo
+			}
+			pluginInfo.Out = c.pluginFake[pluginValue.OutIndex]
 		}
 		if pluginValue.OptIndex >= 0 {
 			if pluginValue.OptCount > 1 {
-				return nil, nil, fmt.Errorf("duplicate --%s_opt", pluginName)
+				return nil, fmt.Errorf("duplicate --%s_opt", pluginName)
 			}
-			pluginNameToOpt[pluginName] = c.pluginFake[pluginValue.OptIndex]
+			pluginInfo, ok := pluginNameToPluginInfo[pluginName]
+			if !ok {
+				pluginInfo = newPluginInfo(pluginName)
+				pluginNameToPluginInfo[pluginName] = pluginInfo
+			}
+			pluginInfo.Opt = c.pluginFake[pluginValue.OptIndex]
 		}
 	}
-	return pluginNameToOut, pluginNameToOpt, nil
+	for _, pluginPathValue := range c.pluginPathValues {
+		var pluginName string
+		var pluginPath string
+		switch split := strings.SplitN(pluginPathValue, "=", 2); len(split) {
+		case 0:
+			return nil, fmt.Errorf("--%s had an empty value", pluginPathValuesFlagName)
+		case 1:
+			pluginName = filepath.Base(split[0])
+			pluginPath = split[0]
+		case 2:
+			pluginName = split[0]
+			pluginPath = split[1]
+		}
+		if !strings.HasPrefix(pluginName, "protoc-gen-") {
+			return nil, fmt.Errorf(`--%s had name %q which must be prefixed by "protoc-gen-"`, pluginPathValuesFlagName, pluginName)
+		}
+		pluginName = strings.TrimPrefix(pluginName, "protoc-gen-")
+		pluginInfo, ok := pluginNameToPluginInfo[pluginName]
+		if !ok {
+			return nil, fmt.Errorf("cannot specify --%s=protoc-gen-%s without --%s_out", pluginPathValuesFlagName, pluginName, pluginName)
+		}
+		if pluginInfo.Path != "" {
+			return nil, fmt.Errorf("duplicate --%s for protoc-gen-%s", pluginPathValuesFlagName, pluginName)
+		}
+		pluginInfo.Path = pluginPath
+	}
+	return pluginNameToPluginInfo, nil
 }
 
 type pluginValue struct {
@@ -252,5 +404,22 @@ func newPluginValue() *pluginValue {
 	return &pluginValue{
 		OutIndex: -1,
 		OptIndex: -1,
+	}
+}
+
+type pluginInfo struct {
+	// required
+	Name string
+	// Required
+	Out string
+	// optional
+	Opt string
+	// optional
+	Path string
+}
+
+func newPluginInfo(name string) *pluginInfo {
+	return &pluginInfo{
+		Name: name,
 	}
 }
