@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
@@ -87,29 +86,14 @@ func handle(
 		responseWriter.WriteError(err.Error())
 		return
 	}
-	asJSON, err := internal.IsLintFormatJSON("error_format", externalConfig.ErrorFormat)
-	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
-	}
-	asConfigIgnoreYAML, err := internal.IsLintFormatConfigIgnoreYAML("error_format", externalConfig.ErrorFormat)
-	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
-	}
-	buffer := bytes.NewBuffer(nil)
-	if asConfigIgnoreYAML {
-		if err := buflint.PrintFileAnnotationsLintConfigIgnoreYAML(buffer, fileAnnotations); err != nil {
+	if len(fileAnnotations) > 0 {
+		buffer := bytes.NewBuffer(nil)
+		if err := buflint.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
 			responseWriter.WriteError(err.Error())
 			return
 		}
-	} else {
-		if err := bufanalysis.PrintFileAnnotations(buffer, fileAnnotations, asJSON); err != nil {
-			responseWriter.WriteError(err.Error())
-			return
-		}
+		responseWriter.WriteError(buffer.String())
 	}
-	responseWriter.WriteError(buffer.String())
 }
 
 type externalConfig struct {

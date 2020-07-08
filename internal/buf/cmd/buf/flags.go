@@ -18,11 +18,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufcheck"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
 
@@ -114,7 +118,15 @@ func (f *flags) bindImageBuildExcludeSourceInfo(flagSet *pflag.FlagSet) {
 }
 
 func (f *flags) bindImageBuildErrorFormat(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.ErrorFormat, errorFormatFlagName, "text", "The format for build errors, printed to stderr. Must be one of [text,json].")
+	flagSet.StringVar(
+		&f.ErrorFormat,
+		errorFormatFlagName,
+		"text",
+		fmt.Sprintf(
+			"The format for build errors, printed to stderr. Must be one of %s.",
+			stringutil.SliceToString(bufanalysis.AllFormatStrings),
+		),
+	)
 }
 
 func (f *flags) bindImageConvertInput(flagSet *pflag.FlagSet) {
@@ -185,11 +197,27 @@ func (f *flags) bindCheckFiles(flagSet *pflag.FlagSet) {
 }
 
 func (f *flags) bindCheckBreakingErrorFormat(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.ErrorFormat, errorFormatFlagName, "text", "The format for build errors or check violations, printed to stdout. Must be one of [text,json].")
+	flagSet.StringVar(
+		&f.ErrorFormat,
+		errorFormatFlagName,
+		"text",
+		fmt.Sprintf(
+			"The format for build errors or check violations, printed to stdout. Must be one of %s.",
+			stringutil.SliceToString(bufanalysis.AllFormatStrings),
+		),
+	)
 }
 
 func (f *flags) bindCheckLintErrorFormat(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.ErrorFormat, errorFormatFlagName, "text", "The format for build errors or check violations, printed to stdout. Must be one of [text,json,config-ignore-yaml].")
+	flagSet.StringVar(
+		&f.ErrorFormat,
+		errorFormatFlagName,
+		"text",
+		fmt.Sprintf(
+			"The format for build errors or check violations, printed to stdout. Must be one of %s.",
+			stringutil.SliceToString(buflint.AllFormatStrings),
+		),
+	)
 }
 
 func (f *flags) bindCheckLsCheckersConfig(flagSet *pflag.FlagSet) {
@@ -205,7 +233,15 @@ func (f *flags) bindCheckLsCheckersCategories(flagSet *pflag.FlagSet) {
 }
 
 func (f *flags) bindCheckLsCheckersFormat(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&f.Format, checkLsCheckersFormatFlagName, "text", "The format to print checkers as. Must be one of [text,json].")
+	flagSet.StringVar(
+		&f.Format,
+		checkLsCheckersFormatFlagName,
+		"text",
+		fmt.Sprintf(
+			"The format to print checkers as. Must be one of %s.",
+			stringutil.SliceToString(bufcheck.AllCheckerFormatStrings),
+		),
+	)
 }
 
 func (f *flags) bindExperimentalGitClone(flagSet *pflag.FlagSet) {

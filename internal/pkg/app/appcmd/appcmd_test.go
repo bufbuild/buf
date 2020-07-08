@@ -76,7 +76,7 @@ func TestBasic(t *testing.T) {
 		"--foo",
 		"hello",
 	)
-	require.NoError(t, Run(context.Background(), container, rootCommand, "0.1.0"))
+	require.NoError(t, Run(context.Background(), container, rootCommand))
 	assert.Equal(t, []string{"one", "two"}, actualArgs)
 	assert.Equal(t, "hello", actualFoo)
 	assert.Equal(t, 1, actualBar)
@@ -104,5 +104,5 @@ func TestError(t *testing.T) {
 		"test",
 		"sub",
 	)
-	require.Equal(t, app.NewError(5, "bar"), Run(context.Background(), container, rootCommand, "0.1.0"))
+	require.Equal(t, app.NewError(5, "bar"), Run(context.Background(), container, rootCommand))
 }

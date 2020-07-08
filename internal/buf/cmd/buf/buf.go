@@ -26,7 +26,7 @@ const Version = "0.19.0-dev"
 
 // Main is the main.
 func Main(use string, options ...RootCommandOption) {
-	appcmd.Main(context.Background(), newRootCommand(use, options...), Version)
+	appcmd.Main(context.Background(), newRootCommand(use, options...))
 }
 
 // RootCommandOption is an option for a root Command.

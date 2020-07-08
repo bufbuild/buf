@@ -39,7 +39,7 @@ const (
 )
 
 func main() {
-	appcmd.Main(context.Background(), newCommand(), version)
+	appcmd.Main(context.Background(), newCommand())
 }
 
 func newCommand() *appcmd.Command {
@@ -48,6 +48,7 @@ func newCommand() *appcmd.Command {
 		Use:       fmt.Sprintf("%s path/to/dir", programName),
 		Args:      cobra.ExactArgs(1),
 		Run:       controller.Run,
+		Version:   version,
 		BindFlags: controller.BindFlags,
 	}
 }
