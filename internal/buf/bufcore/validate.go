@@ -19,31 +19,15 @@ import (
 	"fmt"
 
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"google.golang.org/protobuf/types/descriptorpb"
-	"google.golang.org/protobuf/types/pluginpb"
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 )
 
 func validateFileInfoPath(path string) error {
-	return validatePath("root relative file path", path)
+	return protodescriptor.ValidateProtoPath("root relative file path", path)
 }
 
 func validateFileInfoPaths(paths []string) error {
-	return validatePaths("root relative file path", paths)
-}
-
-func validateFileDescriptorProto(fileDescriptorProto *descriptorpb.FileDescriptorProto) error {
-	if fileDescriptorProto == nil {
-		return errors.New("nil FileDescriptorProto")
-	}
-	// this is so we print out a different error message than the error in newFileInfo
-	if err := validatePath("FileDescriptorProto name", fileDescriptorProto.GetName()); err != nil {
-		return err
-	}
-	if err := validatePaths("FileDescriptorProto dependency", fileDescriptorProto.GetDependency()); err != nil {
-		return err
-	}
-	return nil
+	return protodescriptor.ValidateProtoPaths("root relative file path", paths)
 }
 
 // we validate the FileDescriptorProtos as part of NewFile
@@ -80,42 +64,6 @@ func validateProtoImageExtension(
 			return fmt.Errorf("duplicate file index: %d", fileIndex)
 		}
 		seenFileIndexes[fileIndex] = struct{}{}
-	}
-	return nil
-}
-
-func validateCodeGeneratorRequestExceptFileDescriptorProtos(request *pluginpb.CodeGeneratorRequest) error {
-	if request == nil {
-		return errors.New("nil CodeGeneratorRequest")
-	}
-	if len(request.ProtoFile) == 0 {
-		return errors.New("empty CodeGeneratorRequest ProtoFiles")
-	}
-	if err := validatePaths("file to generate", request.FileToGenerate); err != nil {
-		return err
-	}
-	return nil
-}
-
-func validatePaths(name string, paths []string) error {
-	for _, path := range paths {
-		if err := validatePath(name, path); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func validatePath(name string, path string) error {
-	if path == "" {
-		return fmt.Errorf("%s is empty", name)
-	}
-	normalized, err := normalpath.NormalizeAndValidate(path)
-	if err != nil {
-		return fmt.Errorf("%s had normalization error: %w", name, err)
-	}
-	if path != normalized {
-		return fmt.Errorf("%s %s was not normalized to %s", name, path, normalized)
 	}
 	return nil
 }

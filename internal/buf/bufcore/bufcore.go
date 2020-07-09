@@ -21,6 +21,7 @@ import (
 	"io"
 
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -173,7 +174,7 @@ func NewImageForProto(protoImage *imagev1.Image) (Image, error) {
 // The input Files are expected to be in correct DAG order!
 // TODO: Consider checking the above, and if not, reordering the Files.
 func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) (Image, error) {
-	if err := validateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
+	if err := protodescriptor.ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
 		return nil, err
 	}
 	image, err := NewImageForProto(

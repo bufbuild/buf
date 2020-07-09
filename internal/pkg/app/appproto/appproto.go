@@ -18,123 +18,93 @@ package appproto
 import (
 	"context"
 	"io/ioutil"
-	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-// ResponseWriter is a response writer.
-//
-// Not thread-safe.
+// ResponseWriter handles CodeGeneratorResponses.
 type ResponseWriter interface {
-	// WriteCodeGeneratorResponseFile adds the file to the response.
+	// Add adds the file to the response.
 	//
-	// Can be called multiple times.
-	WriteCodeGeneratorResponseFile(*pluginpb.CodeGeneratorResponse_File)
-	// WriteError writes the error to the response.
-	//
-	// Can be called multiple times. Errors will be concatenated by newlines.
-	// Resulting error string will have spaces trimmed before creating the response.
-	WriteError(string)
+	// Returns error if nil, the name is empty, or the name is already added.
+	Add(*pluginpb.CodeGeneratorResponse_File) error
+	// SetFeatureProto3Optional sets the proto3 optional feature.
+	SetFeatureProto3Optional()
 }
 
-// Main runs the application using the OS Container and calling os.Exit on the return value of Run.
-func Main(
-	ctx context.Context,
-	f func(
+// Handler is a protoc plugin handler
+type Handler interface {
+	// Handle handles the plugin.
+	//
+	// This function can assume the request is valid.
+	Handle(
 		ctx context.Context,
 		container app.EnvStderrContainer,
 		responseWriter ResponseWriter,
 		request *pluginpb.CodeGeneratorRequest,
-	),
-) {
-	app.Main(ctx, newRunFunc(f))
+	) error
 }
 
-// Run runs the application using the container.
-func Run(
+// HandlerFunc is a handler function.
+type HandlerFunc func(
+	context.Context,
+	app.EnvStderrContainer,
+	ResponseWriter,
+	*pluginpb.CodeGeneratorRequest,
+) error
+
+// Handle implements Handler.
+func (h HandlerFunc) Handle(
 	ctx context.Context,
-	container app.Container,
-	f func(
-		ctx context.Context,
-		container app.EnvStderrContainer,
-		responseWriter ResponseWriter,
-		request *pluginpb.CodeGeneratorRequest,
-	),
+	container app.EnvStderrContainer,
+	responseWriter ResponseWriter,
+	request *pluginpb.CodeGeneratorRequest,
 ) error {
-	return app.Run(ctx, container, newRunFunc(f))
+	return h(ctx, container, responseWriter, request)
 }
 
-func newRunFunc(
-	f func(
-		ctx context.Context,
-		container app.EnvStderrContainer,
-		responseWriter ResponseWriter,
-		request *pluginpb.CodeGeneratorRequest,
-	),
-) func(context.Context, app.Container) error {
+// NewRunFunc returns a new RunFunc for app.Main and app.Run.
+func NewRunFunc(handler Handler) func(context.Context, app.Container) error {
 	return func(ctx context.Context, container app.Container) error {
-		return run(ctx, container, f)
+		input, err := ioutil.ReadAll(container.Stdin())
+		if err != nil {
+			return err
+		}
+		request := &pluginpb.CodeGeneratorRequest{}
+		// We do not know the FileDescriptorSet before unmarshaling this
+		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(input, request); err != nil {
+			return err
+		}
+		response, err := Execute(ctx, container, handler, request)
+		if err != nil {
+			return err
+		}
+		data, err := protoencoding.NewWireMarshaler().Marshal(response)
+		if err != nil {
+			return err
+		}
+		_, err = container.Stdout().Write(data)
+		return err
 	}
 }
 
-func run(
+// Execute executes the given handler.
+func Execute(
 	ctx context.Context,
-	container app.Container,
-	f func(
-		ctx context.Context,
-		container app.EnvStderrContainer,
-		responseWriter ResponseWriter,
-		request *pluginpb.CodeGeneratorRequest,
-	),
-) error {
-	input, err := ioutil.ReadAll(container.Stdin())
-	if err != nil {
-		return err
-	}
-	request := &pluginpb.CodeGeneratorRequest{}
-	// We do not know the FileDescriptorSet before unmarshaling this
-	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(input, request); err != nil {
-		return err
+	container app.EnvStderrContainer,
+	handler Handler,
+	request *pluginpb.CodeGeneratorRequest,
+) (*pluginpb.CodeGeneratorResponse, error) {
+	if err := protodescriptor.ValidateCodeGeneratorRequest(request); err != nil {
+		return nil, err
 	}
 	responseWriter := newResponseWriter()
-	f(ctx, container, responseWriter, request)
-	response := responseWriter.ToCodeGeneratorResponse()
-	data, err := protoencoding.NewWireMarshaler().Marshal(response)
-	if err != nil {
-		return err
+	response := responseWriter.toResponse(handler.Handle(ctx, container, responseWriter, request))
+	if err := protodescriptor.ValidateCodeGeneratorResponse(response); err != nil {
+		return nil, err
 	}
-	_, err = container.Stdout().Write(data)
-	return err
-}
-
-type responseWriter struct {
-	files         []*pluginpb.CodeGeneratorResponse_File
-	errorMessages []string
-}
-
-func newResponseWriter() *responseWriter {
-	return &responseWriter{}
-}
-
-func (r *responseWriter) WriteCodeGeneratorResponseFile(file *pluginpb.CodeGeneratorResponse_File) {
-	r.files = append(r.files, file)
-}
-
-func (r *responseWriter) WriteError(errorMessage string) {
-	r.errorMessages = append(r.errorMessages, errorMessage)
-}
-
-func (r *responseWriter) ToCodeGeneratorResponse() *pluginpb.CodeGeneratorResponse {
-	var err *string
-	if errorMessage := strings.TrimSpace(strings.Join(r.errorMessages, "\n")); errorMessage != "" {
-		err = proto.String(errorMessage)
-	}
-	return &pluginpb.CodeGeneratorResponse{
-		File:  r.files,
-		Error: err,
-	}
+	return response, nil
 }

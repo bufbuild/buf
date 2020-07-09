@@ -147,7 +147,7 @@ func testRunLint(
 
 	testRunHandlerFunc(
 		t,
-		handle,
+		appproto.HandlerFunc(handle),
 		testBuildCodeGeneratorRequest(
 			t,
 			root,
@@ -162,12 +162,7 @@ func testRunLint(
 
 func testRunHandlerFunc(
 	t *testing.T,
-	handlerFunc func(
-		context.Context,
-		app.EnvStderrContainer,
-		appproto.ResponseWriter,
-		*pluginpb.CodeGeneratorRequest,
-	),
+	handler appproto.Handler,
 	request *pluginpb.CodeGeneratorRequest,
 	expectedExitCode int,
 	expectedErrorString string,
@@ -179,7 +174,7 @@ func testRunHandlerFunc(
 	stderr := bytes.NewBuffer(nil)
 
 	exitCode := app.GetExitCode(
-		appproto.Run(
+		app.Run(
 			context.Background(),
 			app.NewContainer(
 				nil,
@@ -187,7 +182,9 @@ func testRunHandlerFunc(
 				stdout,
 				stderr,
 			),
-			handlerFunc,
+			appproto.NewRunFunc(
+				handler,
+			),
 		),
 	)
 
