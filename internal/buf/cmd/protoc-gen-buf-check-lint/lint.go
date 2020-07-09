@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
@@ -34,7 +36,7 @@ const defaultTimeout = 10 * time.Second
 
 // Main is the main.
 func Main() {
-	appproto.Main(context.Background(), handle)
+	app.Main(context.Background(), appproto.NewRunFunc(appproto.HandlerFunc(handle)))
 }
 
 func handle(
@@ -42,14 +44,14 @@ func handle(
 	container app.EnvStderrContainer,
 	responseWriter appproto.ResponseWriter,
 	request *pluginpb.CodeGeneratorRequest,
-) {
+) error {
+	responseWriter.SetFeatureProto3Optional()
 	externalConfig := &externalConfig{}
 	if err := encoding.UnmarshalJSONOrYAMLStrict(
 		[]byte(request.GetParameter()),
 		externalConfig,
 	); err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+		return err
 	}
 	timeout := externalConfig.Timeout
 	if timeout == 0 {
@@ -59,8 +61,7 @@ func handle(
 	defer cancel()
 	logger, err := applog.NewLogger(container.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
 	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+		return err
 	}
 	envReader := internal.NewBufwireEnvReader(logger, "", "input_config")
 	config, err := envReader.GetConfig(
@@ -68,13 +69,11 @@ func handle(
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 	)
 	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+		return err
 	}
 	image, err := bufcore.NewImageForCodeGeneratorRequest(request)
 	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+		return err
 	}
 	image = bufcore.ImageWithoutImports(image)
 	fileAnnotations, err := internal.NewBuflintHandler(logger).Check(
@@ -83,17 +82,16 @@ func handle(
 		image,
 	)
 	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+		return err
 	}
 	if len(fileAnnotations) > 0 {
 		buffer := bytes.NewBuffer(nil)
 		if err := buflint.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
-			responseWriter.WriteError(err.Error())
-			return
+			return err
 		}
-		responseWriter.WriteError(buffer.String())
+		return errors.New(strings.TrimSpace(buffer.String()))
 	}
+	return nil
 }
 
 type externalConfig struct {

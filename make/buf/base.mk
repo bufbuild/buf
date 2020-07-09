@@ -5,7 +5,8 @@ GO_GET_PKGS := $(GO_GET_PKGS) github.com/jhump/protoreflect@$(PROTOREFLECT_VERSI
 GO_BINS := $(GO_BINS) $(BUF_BIN) \
 	cmd/protoc-gen-buf-check-breaking \
 	cmd/protoc-gen-buf-check-lint \
-	internal/pkg/storage/cmd/storage-go-binary-data
+	internal/pkg/storage/cmd/storage-go-binary-data \
+	internal/pkg/app/appproto/appprotoexec/cmd/protoc-gen-proxy
 GO_LINT_IGNORES := $(GO_LINT_IGNORES) /internal/buf/cmd/buf/internal/protoc
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto

@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
@@ -34,7 +36,7 @@ const defaultTimeout = 10 * time.Second
 
 // Main is the main.
 func Main() {
-	appproto.Main(context.Background(), handle)
+	app.Main(context.Background(), appproto.NewRunFunc(appproto.HandlerFunc(handle)))
 }
 
 func handle(
@@ -42,19 +44,18 @@ func handle(
 	container app.EnvStderrContainer,
 	responseWriter appproto.ResponseWriter,
 	request *pluginpb.CodeGeneratorRequest,
-) {
+) error {
+	responseWriter.SetFeatureProto3Optional()
 	externalConfig := &externalConfig{}
 	if err := encoding.UnmarshalJSONOrYAMLStrict(
 		[]byte(request.GetParameter()),
 		externalConfig,
 	); err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+		return err
 	}
 	if externalConfig.AgainstInput == "" {
 		// this is actually checked as part of ReadImageEnv but just in case
-		responseWriter.WriteError(`"against_input" is required`)
-		return
+		return errors.New(`"against_input" is required`)
 	}
 	timeout := externalConfig.Timeout
 	if timeout == 0 {
@@ -64,8 +65,7 @@ func handle(
 	defer cancel()
 	logger, err := applog.NewLogger(container.Stderr(), externalConfig.LogLevel, externalConfig.LogFormat)
 	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+		return err
 	}
 
 	files := request.FileToGenerate
@@ -83,8 +83,7 @@ func handle(
 		false, // keep for now
 	)
 	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+		return err
 	}
 	againstImage := againstEnv.Image()
 	if externalConfig.ExcludeImports {
@@ -96,13 +95,11 @@ func handle(
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 	)
 	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+		return err
 	}
 	image, err := bufcore.NewImageForCodeGeneratorRequest(request)
 	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+		return err
 	}
 	fileAnnotations, err := internal.NewBufbreakingHandler(logger).Check(
 		ctx,
@@ -111,17 +108,16 @@ func handle(
 		image,
 	)
 	if err != nil {
-		responseWriter.WriteError(err.Error())
-		return
+		return err
 	}
 	if len(fileAnnotations) > 0 {
 		buffer := bytes.NewBuffer(nil)
 		if err := bufanalysis.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
-			responseWriter.WriteError(err.Error())
-			return
+			return err
 		}
-		responseWriter.WriteError(buffer.String())
+		return errors.New(strings.TrimSpace(buffer.String()))
 	}
+	return nil
 }
 
 type externalConfig struct {
