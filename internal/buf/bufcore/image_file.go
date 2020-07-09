@@ -15,6 +15,7 @@
 package bufcore
 
 import (
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -31,7 +32,7 @@ func newImageFile(
 	externalPath string,
 	isImport bool,
 ) (*imageFile, error) {
-	if err := validateFileDescriptorProto(fileDescriptorProto); err != nil {
+	if err := protodescriptor.ValidateFileDescriptorProto(fileDescriptorProto); err != nil {
 		return nil, err
 	}
 	fileInfo, err := newFileInfo(
