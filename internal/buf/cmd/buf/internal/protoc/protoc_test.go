@@ -16,7 +16,9 @@ package protoc
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -26,6 +28,9 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"github.com/bufbuild/buf/internal/pkg/prototesting"
+	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/bufbuild/buf/internal/pkg/tmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -43,12 +48,15 @@ var buftestingDirPath = filepath.Join(
 func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 1000)
 	actualProtocStdout := bytes.NewBuffer(nil)
 	buftesting.RunActualProtoc(
 		t,
 		false,
 		false,
 		googleapisDirPath,
+		filePaths,
+		nil,
 		actualProtocStdout,
 		fmt.Sprintf("--%s", printFreeFieldNumbersFlagName),
 	)
@@ -62,13 +70,14 @@ func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
 		},
 		actualProtocStdout.String(),
 		nil,
+		nil,
 		append(
 			[]string{
 				"-I",
 				googleapisDirPath,
 				fmt.Sprintf("--%s", printFreeFieldNumbersFlagName),
 			},
-			buftesting.GetProtocFilePaths(t, googleapisDirPath)...,
+			filePaths...,
 		)...,
 	)
 }
@@ -76,16 +85,110 @@ func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
 func TestCompareOutputJSONGoogleapis(t *testing.T) {
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 1000)
 	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(
 		t,
 		false,
 		false,
 		googleapisDirPath,
+		filePaths,
 	)
 	bufProtocFileDescriptorSet := testGetBufProtocFileDescriptorSet(t, googleapisDirPath)
-	diffOne, err := prototesting.DiffFileDescriptorSetsJSON(bufProtocFileDescriptorSet, actualProtocFileDescriptorSet, "buf-protoc")
+	diffOne, err := prototesting.DiffFileDescriptorSetsJSON(bufProtocFileDescriptorSet, actualProtocFileDescriptorSet, "buf", "protoc")
 	assert.NoError(t, err)
 	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
+}
+
+func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	t.Parallel()
+	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	testCompareGeneratedStubs(t, googleapisDirPath, "go", "Mgoogle/api/auth.proto=foo")
+}
+
+func TestCompareGeneratedStubsGoogleapisRuby(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	t.Parallel()
+	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	testCompareGeneratedStubs(t, googleapisDirPath, "ruby", "")
+}
+
+func testCompareGeneratedStubs(
+	t *testing.T,
+	dirPath string,
+	pluginName string,
+	pluginOpt string,
+) {
+	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 1000)
+	var baseFlags []string
+	if pluginOpt != "" {
+		baseFlags = append(baseFlags, fmt.Sprintf("--%s_opt=%s", pluginName, pluginOpt))
+	}
+	actualProtocDir, err := tmp.NewDir("")
+	require.NoError(t, err)
+	defer func() {
+		_ = actualProtocDir.Close()
+	}()
+	bufProtocDir, err := tmp.NewDir("")
+	require.NoError(t, err)
+	defer func() {
+		_ = bufProtocDir.Close()
+	}()
+	buftesting.RunActualProtoc(
+		t,
+		false,
+		false,
+		dirPath,
+		filePaths,
+		map[string]string{
+			"PATH": os.Getenv("PATH"),
+		},
+		nil,
+		append(
+			baseFlags,
+			fmt.Sprintf("--%s_out=%s", pluginName, actualProtocDir.AbsPath()),
+		)...,
+	)
+	appcmdtesting.RunCommandSuccess(
+		t,
+		func(use string) *appcmd.Command {
+			return NewCommand(
+				use,
+				appflag.NewBuilder(),
+			)
+		},
+		map[string]string{
+			"PATH": os.Getenv("PATH"),
+		},
+		nil,
+		nil,
+		append(
+			append(
+				baseFlags,
+				"-I",
+				dirPath,
+				fmt.Sprintf("--%s_out=%s", pluginName, bufProtocDir.AbsPath()),
+			),
+			filePaths...,
+		)...,
+	)
+	actualReadWriteBucket, err := storageos.NewReadWriteBucket(actualProtocDir.AbsPath())
+	require.NoError(t, err)
+	bufReadWriteBucket, err := storageos.NewReadWriteBucket(bufProtocDir.AbsPath())
+	require.NoError(t, err)
+	diff, err := storage.Diff(
+		context.Background(),
+		actualReadWriteBucket,
+		bufReadWriteBucket,
+		"protoc",
+		"buf-protoc",
+	)
+	require.NoError(t, err)
+	assert.Empty(t, string(diff))
 }
 
 func testGetBufProtocFileDescriptorSet(t *testing.T, dirPath string) *descriptorpb.FileDescriptorSet {
@@ -113,6 +216,7 @@ func testGetBufProtocFileDescriptorSetBytes(t *testing.T, dirPath string) []byte
 			)
 		},
 		nil,
+		nil,
 		stdout,
 		append(
 			[]string{
@@ -121,7 +225,7 @@ func testGetBufProtocFileDescriptorSetBytes(t *testing.T, dirPath string) []byte
 				"-o",
 				"-",
 			},
-			buftesting.GetProtocFilePaths(t, dirPath)...,
+			buftesting.GetProtocFilePaths(t, dirPath, 1000)...,
 		)...,
 	)
 	return stdout.Bytes()

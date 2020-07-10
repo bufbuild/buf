@@ -58,11 +58,12 @@ func GetActualProtocFileDescriptorSet(
 	includeImports bool,
 	includeSourceInfo bool,
 	dirPath string,
+	filePaths []string,
 ) *descriptorpb.FileDescriptorSet {
 	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
 		[]string{dirPath},
-		GetProtocFilePaths(t, dirPath),
+		filePaths,
 		includeImports,
 		includeSourceInfo,
 		true,
@@ -77,16 +78,19 @@ func RunActualProtoc(
 	includeImports bool,
 	includeSourceInfo bool,
 	dirPath string,
+	filePaths []string,
+	env map[string]string,
 	stdout io.Writer,
 	extraFlags ...string,
 ) {
 	err := prototesting.RunProtoc(
 		context.Background(),
 		[]string{dirPath},
-		GetProtocFilePaths(t, dirPath),
+		filePaths,
 		includeImports,
 		includeSourceInfo,
 		true,
+		env,
 		stdout,
 		extraFlags...,
 	)
@@ -125,7 +129,10 @@ func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
 }
 
 // GetProtocFilePaths gets the file paths for protoc.
-func GetProtocFilePaths(t *testing.T, dirPath string) []string {
+//
+// Limit limits the number of files returned if > 0.
+// protoc has a fixed size for number of characters to argument list.
+func GetProtocFilePaths(t *testing.T, dirPath string, limit int) []string {
 	module, err := bufmod.NewIncludeBuilder(zap.NewNop()).BuildForIncludes(
 		context.Background(),
 		[]string{dirPath},
@@ -136,6 +143,9 @@ func GetProtocFilePaths(t *testing.T, dirPath string) []string {
 	realFilePaths := make([]string, len(targetFileInfos))
 	for i, fileInfo := range targetFileInfos {
 		realFilePaths[i] = normalpath.Unnormalize(normalpath.Join(dirPath, fileInfo.Path()))
+	}
+	if limit > 0 && len(realFilePaths) > limit {
+		return realFilePaths[:limit]
 	}
 	return realFilePaths
 }

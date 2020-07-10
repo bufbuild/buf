@@ -139,6 +139,8 @@ func RunTestSuite(
 ) {
 	oneDirPath := filepath.Join(storagetestingDirPath, "testdata", "one")
 	twoDirPath := filepath.Join(storagetestingDirPath, "testdata", "two")
+	diffDirPathA := filepath.Join(storagetestingDirPath, "testdata", "diff", "a")
+	diffDirPathB := filepath.Join(storagetestingDirPath, "testdata", "diff", "b")
 
 	for _, prefix := range []string{
 		"",
@@ -862,4 +864,31 @@ func RunTestSuite(
 			assert.NoError(t, cleanupFunc())
 		})
 	}
+
+	t.Run("diff", func(t *testing.T) {
+		t.Parallel()
+		readBucketA := newReadBucket(t, diffDirPathA)
+		readBucketB := newReadBucket(t, diffDirPathB)
+		diff, err := storage.Diff(
+			context.Background(),
+			readBucketA,
+			readBucketB,
+			"a-dir",
+			"b-dir",
+		)
+		require.NoError(t, err)
+		assert.Equal(
+			t,
+			`--- a-dir/1.txt
++++ b-dir/1.txt
+@@ -1,2 +1,2 @@
+-aaaa
+ bbbb
++cccc
+Only in a-dir: 2.txt
+Only in b-dir: 3.txt
+`,
+			string(diff),
+		)
+	})
 }

@@ -510,6 +510,7 @@ func testRunStdoutInternal(t *testing.T, expectedExitCode int, expectedStdout st
 		expectedExitCode,
 		expectedStdout,
 		nil,
+		nil,
 		args...,
 	)
 }
@@ -525,6 +526,7 @@ func testRun(
 		t,
 		func(use string) *appcmd.Command { return newRootCommand(use) },
 		expectedExitCode,
+		nil,
 		stdin,
 		stdout,
 		args...,
