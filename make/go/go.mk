@@ -42,6 +42,11 @@ all:
 	@$(MAKE) lint
 	@$(MAKE) test
 
+.PHONY: shortall
+shortall:
+	@$(MAKE) lint
+	@$(MAKE) shorttest
+
 .PHONY: ci
 ci:
 	@$(MAKE) deps
@@ -110,6 +115,10 @@ pretest::
 .PHONY: test
 test: pretest
 	go test $(GO_TEST_FLAGS) $(GOPKGS)
+
+.PHONY: shorttest
+shorttest: pretest
+	go test -test.short $(GO_TEST_FLAGS) $(GOPKGS)
 
 .PHONY: deppkgs
 deppkgs:

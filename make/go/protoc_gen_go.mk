@@ -18,13 +18,18 @@ PROTOC_GEN_GO_OPT ?=
 
 EXTRA_MAKEGO_FILES := $(EXTRA_MAKEGO_FILES) scripts/protoc_gen_plugin.bash
 
+PROTOC_GEN_GO_EXTRA_FLAGS :=
+ifdef PROTOC_USE_BUF
+PROTOC_GEN_GO_EXTRA_FLAGS := --use-buf
+endif
+
 .PHONY: protocgengoclean
 protocgengoclean:
 	rm -rf "$(PROTOC_GEN_GO_OUT)"
 
 .PHONY: protocgengo
-protocgengo: protocpre protocgengoclean $(PROTOC) $(PROTOC_GEN_GO)
-	bash $(MAKEGO)/scripts/protoc_gen_plugin.bash \
+protocgengo: protocgengoclean $(PROTOC) $(PROTOC_GEN_GO)
+	bash $(MAKEGO)/scripts/protoc_gen_plugin.bash $(PROTOC_GEN_GO_EXTRA_FLAGS) \
 		"--proto_path=$(PROTO_PATH)" \
 		"--proto_include_path=$(CACHE_INCLUDE)" \
 		$(patsubst %,--proto_include_path=%,$(PROTO_INCLUDE_PATHS)) \
@@ -32,4 +37,4 @@ protocgengo: protocpre protocgengoclean $(PROTOC) $(PROTOC_GEN_GO)
 		"--plugin_out=$(PROTOC_GEN_GO_OUT)" \
 		"--plugin_opt=$(PROTOC_GEN_GO_OPT)"
 
-pregenerate:: protocgengo
+protocgenerate:: protocgengo

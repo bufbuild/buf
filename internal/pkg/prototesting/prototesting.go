@@ -23,9 +23,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"testing"
 
 	"github.com/bufbuild/buf/internal/pkg/diff"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -70,10 +74,18 @@ func GetProtocFileDescriptorSet(
 	if err != nil {
 		return nil, err
 	}
+	firstFileDescriptorSet := &descriptorpb.FileDescriptorSet{}
+	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, firstFileDescriptorSet); err != nil {
+		return nil, err
+	}
+	resolver, err := protoencoding.NewResolver(
+		firstFileDescriptorSet.File...,
+	)
+	if err != nil {
+		return nil, err
+	}
 	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
-	// we do not know the FileDescriptorSet ahead of time so we cannot use it for extensions
-	// TODO: change to image read logic
-	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, fileDescriptorSet); err != nil {
+	if err := protoencoding.NewWireUnmarshaler(resolver).Unmarshal(data, fileDescriptorSet); err != nil {
 		return nil, err
 	}
 	return fileDescriptorSet, nil
@@ -197,4 +209,22 @@ func DiffFileDescriptorSetsJSON(
 		return "", err
 	}
 	return string(output), nil
+}
+
+// DiffFileDescriptorSetsCompare diffs the two FileDescriptorSets using the cmp package.
+func DiffFileDescriptorSetsCompare(
+	one *descriptorpb.FileDescriptorSet,
+	two *descriptorpb.FileDescriptorSet,
+) string {
+	return cmp.Diff(one, two, protocmp.Transform())
+}
+
+// AssertFileDescriptorSetsEqual asserts that the FileDescriptorSet are equal for
+// JSON and compare.
+func AssertFileDescriptorSetsEqual(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
+	diff, err := DiffFileDescriptorSetsJSON(one, two, "buf", "protoc")
+	assert.NoError(t, err)
+	assert.Empty(t, diff)
+	diff = DiffFileDescriptorSetsCompare(one, two)
+	assert.Empty(t, diff)
 }
