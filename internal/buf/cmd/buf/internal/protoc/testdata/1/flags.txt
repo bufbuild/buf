@@ -1,0 +1,10 @@
+-I
+proto
+--error_format
+text
+--go_out
+go_out
+--go_opt
+plugins=grpc
+--plugin
+/bin/protoc-gen-go

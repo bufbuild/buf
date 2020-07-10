@@ -22,7 +22,13 @@ import (
 )
 
 // Diff does a diff.
-func Diff(b1, b2 []byte, filename string) ([]byte, error) {
+func Diff(
+	b1 []byte,
+	b2 []byte,
+	filename1 string,
+	filename2 string,
+	keepTimestamps bool,
+) ([]byte, error) {
 	f1, err := writeTempFile("", "", b1)
 	if err != nil {
 		return nil, err
@@ -48,7 +54,7 @@ func Diff(b1, b2 []byte, filename string) ([]byte, error) {
 	if len(data) > 0 {
 		// diff exits with a non-zero status when the files don't match.
 		// Ignore that failure as long as we get output.
-		return replaceTempFilename(data, filename)
+		return modifyHeader(data, filename1, filename2, keepTimestamps)
 	}
 	return nil, err
 }
@@ -69,31 +75,33 @@ func writeTempFile(dir, prefix string, data []byte) (string, error) {
 	return file.Name(), nil
 }
 
-// replaceTempFilename replaces temporary filenames in diff with actual one.
-//
-// --- /tmp/gofmt316145376	2017-02-03 19:13:00.280468375 -0500
-// +++ /tmp/gofmt617882815	2017-02-03 19:13:00.280468375 -0500
-// ...
-// ->
-// --- path/to/file.go.orig	2017-02-03 19:13:00.280468375 -0500
-// +++ path/to/file.go	2017-02-03 19:13:00.280468375 -0500
-// ...
-func replaceTempFilename(diff []byte, filename string) ([]byte, error) {
+func modifyHeader(
+	diff []byte,
+	filename1 string,
+	filename2 string,
+	keepTimestamps bool,
+) ([]byte, error) {
 	bs := bytes.SplitN(diff, []byte{'\n'}, 3)
 	if len(bs) < 3 {
-		return nil, fmt.Errorf("got unexpected diff for %s", filename)
+		return nil, fmt.Errorf("got unexpected diff for %s-%s", filename1, filename2)
 	}
 	// Preserve timestamps.
 	var t0, t1 []byte
-	if i := bytes.LastIndexByte(bs[0], '\t'); i != -1 {
-		t0 = bs[0][i:]
-	}
-	if i := bytes.LastIndexByte(bs[1], '\t'); i != -1 {
-		t1 = bs[1][i:]
+	if keepTimestamps {
+		if i := bytes.LastIndexByte(bs[0], '\t'); i != -1 {
+			t0 = bs[0][i:]
+		}
+		if i := bytes.LastIndexByte(bs[1], '\t'); i != -1 {
+			t1 = bs[1][i:]
+		}
 	}
 	// Always print filepath with slash separator.
-	f := filepath.ToSlash(filename)
-	bs[0] = []byte(fmt.Sprintf("--- %s%s", f+".orig", t0))
-	bs[1] = []byte(fmt.Sprintf("+++ %s%s", f, t1))
+	filename1 = filepath.ToSlash(filename1)
+	filename2 = filepath.ToSlash(filename2)
+	if filename1 == filename2 {
+		filename1 = filename1 + ".orig"
+	}
+	bs[0] = []byte(fmt.Sprintf("--- %s%s", filename1, t0))
+	bs[1] = []byte(fmt.Sprintf("+++ %s%s", filename2, t1))
 	return bytes.Join(bs, []byte{'\n'}), nil
 }

@@ -148,7 +148,8 @@ func testCompare(t *testing.T, relDirPath string) {
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	image = bufcore.ImageWithoutImports(image)
 	fileDescriptorSet := bufcore.ImageToFileDescriptorSet(image)
-	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, false, false, dirPath)
+	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 0)
+	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, false, false, dirPath, filePaths)
 	assertFileDescriptorSetsEqualWire(t, fileDescriptorSet, actualProtocFileDescriptorSet)
 	assertFileDescriptorSetsEqualJSON(t, fileDescriptorSet, actualProtocFileDescriptorSet)
 	assertFileDescriptorSetsEqualProto(t, fileDescriptorSet, actualProtocFileDescriptorSet)
@@ -158,7 +159,7 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufcore.Image {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	image, fileAnnotations := testBuild(t, includeSourceInfo, googleapisDirPath)
 
-	assert.Equal(t, 0, len(fileAnnotations), fileAnnotations)
+	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
 	assert.Equal(
 		t,
@@ -243,7 +244,8 @@ func testBuildBufProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descrip
 
 func testBuildActualProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	fileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, true, includeSourceInfo, googleapisDirPath)
+	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 0)
+	fileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, true, includeSourceInfo, googleapisDirPath, filePaths)
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(fileDescriptorSet.GetFile()))
 	return fileDescriptorSet
 }
@@ -331,7 +333,7 @@ func testGetImageImportPaths(image bufcore.Image) []string {
 }
 
 func assertFileDescriptorSetsEqualWire(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
-	diffTwo, err := prototesting.DiffFileDescriptorSetsWire(one, two, "protoparse-protoc")
+	diffTwo, err := prototesting.DiffFileDescriptorSetsWire(one, two, "buf", "protoc")
 	assert.NoError(t, err)
 	assert.Equal(t, "", diffTwo, "Wire diff:\n%s", diffTwo)
 }
@@ -339,7 +341,7 @@ func assertFileDescriptorSetsEqualWire(t *testing.T, one *descriptorpb.FileDescr
 func assertFileDescriptorSetsEqualJSON(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
 	// TODO: test with resolver?
 	// This also has the effect of verifying output order
-	diffOne, err := prototesting.DiffFileDescriptorSetsJSON(one, two, "protoparse-protoc")
+	diffOne, err := prototesting.DiffFileDescriptorSetsJSON(one, two, "buf", "protoc")
 	assert.NoError(t, err)
 	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
 }
