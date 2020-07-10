@@ -31,10 +31,11 @@ func RunCommandSuccessStdout(
 	t *testing.T,
 	newCommand func(string) *appcmd.Command,
 	expectedStdout string,
+	env map[string]string,
 	stdin io.Reader,
 	args ...string,
 ) {
-	RunCommandExitCodeStdout(t, newCommand, 0, expectedStdout, stdin, args...)
+	RunCommandExitCodeStdout(t, newCommand, 0, expectedStdout, env, stdin, args...)
 }
 
 // RunCommandExitCodeStdout runs the command and compares the exit code and stdout output.
@@ -43,11 +44,12 @@ func RunCommandExitCodeStdout(
 	newCommand func(string) *appcmd.Command,
 	expectedExitCode int,
 	expectedStdout string,
+	env map[string]string,
 	stdin io.Reader,
 	args ...string,
 ) {
 	stdout := bytes.NewBuffer(nil)
-	RunCommandExitCode(t, newCommand, expectedExitCode, stdin, stdout, args...)
+	RunCommandExitCode(t, newCommand, expectedExitCode, env, stdin, stdout, args...)
 	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
 }
 
@@ -55,11 +57,12 @@ func RunCommandExitCodeStdout(
 func RunCommandSuccess(
 	t *testing.T,
 	newCommand func(string) *appcmd.Command,
+	env map[string]string,
 	stdin io.Reader,
 	stdout io.Writer,
 	args ...string,
 ) {
-	RunCommandExitCode(t, newCommand, 0, stdin, stdout, args...)
+	RunCommandExitCode(t, newCommand, 0, env, stdin, stdout, args...)
 }
 
 // RunCommandExitCode runs the command and compares the exit code.
@@ -67,6 +70,7 @@ func RunCommandExitCode(
 	t *testing.T,
 	newCommand func(string) *appcmd.Command,
 	expectedExitCode int,
+	env map[string]string,
 	stdin io.Reader,
 	stdout io.Writer,
 	args ...string,
@@ -76,7 +80,7 @@ func RunCommandExitCode(
 		appcmd.Run(
 			context.Background(),
 			app.NewContainer(
-				nil,
+				env,
 				stdin,
 				stdout,
 				stderr,

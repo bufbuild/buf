@@ -34,7 +34,7 @@ type Command struct {
 	// Required if Long is set.
 	Short string
 	// Long is the long message shown in the 'help <this-command>' output.
-	// The Short field will be prepended to the Long field with a newline.
+	// The Short field will be prepended to the Long field with two newlines.
 	// Must be unset if short is unset.
 	Long string
 	// Args are the expected arguments.
@@ -143,7 +143,7 @@ func commandToCobra(
 		Short: strings.TrimSpace(command.Short),
 	}
 	if command.Long != "" {
-		cobraCommand.Long = cobraCommand.Short + "\n" + strings.TrimSpace(command.Long)
+		cobraCommand.Long = cobraCommand.Short + "\n\n" + strings.TrimSpace(command.Long)
 	}
 	if command.BindFlags != nil {
 		command.BindFlags(cobraCommand.Flags())

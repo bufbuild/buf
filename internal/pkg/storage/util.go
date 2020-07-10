@@ -58,6 +58,22 @@ func WalkReadObjects(
 	)
 }
 
+// AllPaths walks the bucket and gets all the paths.
+func AllPaths(ctx context.Context, readBucket ReadBucket, prefix string) ([]string, error) {
+	var allPaths []string
+	if err := readBucket.Walk(
+		ctx,
+		prefix,
+		func(objectInfo ObjectInfo) error {
+			allPaths = append(allPaths, objectInfo.Path())
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	return allPaths, nil
+}
+
 // Exists returns true if the path exists, false otherwise.
 //
 // Returns error on system error.

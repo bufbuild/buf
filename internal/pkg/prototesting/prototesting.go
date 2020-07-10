@@ -60,6 +60,7 @@ func GetProtocFileDescriptorSet(
 		includeSourceInfo,
 		experimentalAllowProto3Optional,
 		nil,
+		nil,
 		fmt.Sprintf("--descriptor_set_out=%s", tempFilePath),
 	); err != nil {
 		return nil, err
@@ -86,6 +87,7 @@ func RunProtoc(
 	includeImports bool,
 	includeSourceInfo bool,
 	experimentalAllowProto3Optional bool,
+	env map[string]string,
 	stdout io.Writer,
 	extraFlags ...string,
 ) error {
@@ -127,27 +129,31 @@ func RunProtoc(
 
 	stderr := bytes.NewBuffer(nil)
 	cmd := exec.CommandContext(ctx, protocBinPath, args...)
-	cmd.Env = []string{}
-	cmd.Stdout = stdout
+	var environ []string
+	for key, value := range env {
+		environ = append(environ, fmt.Sprintf("%s=%s", key, value))
+	}
+	cmd.Env = environ
+	if stdout == nil {
+		cmd.Stdout = stderr
+	} else {
+		cmd.Stdout = stdout
+	}
 	cmd.Stderr = stderr
 
-	errC := make(chan error, 1)
-	go func() {
-		errC <- cmd.Run()
-	}()
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case err := <-errC:
-		if err != nil {
-			return fmt.Errorf("%s %v returned error: %v %v", protocBinPath, args, err, stderr.String())
-		}
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("%s returned error: %v %v", protocBinPath, err, stderr.String())
 	}
 	return nil
 }
 
 // DiffFileDescriptorSetsWire diffs the two FileDescriptorSets using proto.MarshalWire.
-func DiffFileDescriptorSetsWire(one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet, name string) (string, error) {
+func DiffFileDescriptorSetsWire(
+	one *descriptorpb.FileDescriptorSet,
+	two *descriptorpb.FileDescriptorSet,
+	oneName string,
+	twoName string,
+) (string, error) {
 	oneData, err := protoencoding.NewWireMarshaler().Marshal(one)
 	if err != nil {
 		return "", err
@@ -156,7 +162,7 @@ func DiffFileDescriptorSetsWire(one *descriptorpb.FileDescriptorSet, two *descri
 	if err != nil {
 		return "", err
 	}
-	output, err := diff.Diff(oneData, twoData, name)
+	output, err := diff.Diff(oneData, twoData, oneName, twoName, false)
 	if err != nil {
 		return "", err
 	}
@@ -164,7 +170,12 @@ func DiffFileDescriptorSetsWire(one *descriptorpb.FileDescriptorSet, two *descri
 }
 
 // DiffFileDescriptorSetsJSON diffs the two FileDescriptorSets using JSON.
-func DiffFileDescriptorSetsJSON(one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet, name string) (string, error) {
+func DiffFileDescriptorSetsJSON(
+	one *descriptorpb.FileDescriptorSet,
+	two *descriptorpb.FileDescriptorSet,
+	oneName string,
+	twoName string,
+) (string, error) {
 	oneResolver, err := protoencoding.NewResolver(one.File...)
 	if err != nil {
 		return "", err
@@ -181,7 +192,7 @@ func DiffFileDescriptorSetsJSON(one *descriptorpb.FileDescriptorSet, two *descri
 	if err != nil {
 		return "", err
 	}
-	output, err := diff.Diff(oneData, twoData, name)
+	output, err := diff.Diff(oneData, twoData, oneName, twoName, false)
 	if err != nil {
 		return "", err
 	}

@@ -25,13 +25,14 @@ import (
 )
 
 func newRootCommand(use string, options ...RootCommandOption) *appcmd.Command {
-	builder := appflag.NewBuilder(appflag.BuilderWithTimeout(10 * time.Second))
+	builder := appflag.NewBuilder(appflag.BuilderWithTimeout(120 * time.Second))
 	rootCommand := &appcmd.Command{
 		Use: use,
 		SubCommands: []*appcmd.Command{
 			newImageCmd(builder),
 			newCheckCmd(builder),
 			lsfiles.NewCommand("ls-files", builder),
+			protoc.NewCommand("protoc", builder),
 			newExperimentalCmd(builder),
 		},
 		BindPersistentFlags: builder.BindRoot,
@@ -49,7 +50,6 @@ func newExperimentalCmd(builder appflag.Builder) *appcmd.Command {
 		Short: "Experimental commands. Unstable and will likely change.",
 		SubCommands: []*appcmd.Command{
 			newExperimentalImageCmd(builder),
-			protoc.NewCommand("protoc", builder),
 		},
 	}
 }
