@@ -99,6 +99,9 @@ dockerdeps::
 .PHONY: deps
 deps:: dockerdeps
 
+.PHONY: preinstallgenerate
+preinstallgenerate::
+
 .PHONY: pregenerate
 pregenerate::
 
@@ -110,6 +113,7 @@ licensegenerate::
 
 .PHONY: generate
 generate:
+	@$(MAKE) preinstallgenerate
 	@$(MAKE) pregenerate
 	@$(MAKE) postgenerate
 	@$(MAKE) licensegenerate

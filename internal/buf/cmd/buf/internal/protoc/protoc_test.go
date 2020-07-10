@@ -82,7 +82,7 @@ func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
 	)
 }
 
-func TestCompareOutputJSONGoogleapis(t *testing.T) {
+func TestCompareOutputGoogleapis(t *testing.T) {
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 1000)
@@ -94,9 +94,7 @@ func TestCompareOutputJSONGoogleapis(t *testing.T) {
 		filePaths,
 	)
 	bufProtocFileDescriptorSet := testGetBufProtocFileDescriptorSet(t, googleapisDirPath)
-	diffOne, err := prototesting.DiffFileDescriptorSetsJSON(bufProtocFileDescriptorSet, actualProtocFileDescriptorSet, "buf", "protoc")
-	assert.NoError(t, err)
-	assert.Equal(t, "", diffOne, "JSON diff:\n%s", diffOne)
+	prototesting.AssertFileDescriptorSetsEqual(t, bufProtocFileDescriptorSet, actualProtocFileDescriptorSet)
 }
 
 func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {

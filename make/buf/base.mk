@@ -17,6 +17,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	internal/buf/internal/buftesting/cache/ \
 	internal/pkg/storage/storageos/tmp/
 
+PROTOC_USE_BUF := true
 
 include make/go/bootstrap.mk
 include make/go/go.mk
@@ -25,6 +26,8 @@ include make/go/dep_protoc.mk
 include make/go/docker.mk
 include make/go/protoc_gen_go.mk
 include make/go/dep_go_fuzz.mk
+
+protocpreinstall:: installbuf
 
 .PHONY: wkt
 wkt: installstorage-go-binary-data $(PROTOC)

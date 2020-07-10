@@ -54,7 +54,7 @@ func Diff(
 	if len(data) > 0 {
 		// diff exits with a non-zero status when the files don't match.
 		// Ignore that failure as long as we get output.
-		return modifyHeader(data, filename1, filename2, keepTimestamps)
+		return tryModifyHeader(data, filename1, filename2, keepTimestamps), nil
 	}
 	return nil, err
 }
@@ -75,15 +75,15 @@ func writeTempFile(dir, prefix string, data []byte) (string, error) {
 	return file.Name(), nil
 }
 
-func modifyHeader(
+func tryModifyHeader(
 	diff []byte,
 	filename1 string,
 	filename2 string,
 	keepTimestamps bool,
-) ([]byte, error) {
+) []byte {
 	bs := bytes.SplitN(diff, []byte{'\n'}, 3)
 	if len(bs) < 3 {
-		return nil, fmt.Errorf("got unexpected diff for %s-%s", filename1, filename2)
+		return diff
 	}
 	// Preserve timestamps.
 	var t0, t1 []byte
@@ -103,5 +103,5 @@ func modifyHeader(
 	}
 	bs[0] = []byte(fmt.Sprintf("--- %s%s", filename1, t0))
 	bs[1] = []byte(fmt.Sprintf("+++ %s%s", filename2, t1))
-	return bytes.Join(bs, []byte{'\n'}), nil
+	return bytes.Join(bs, []byte{'\n'})
 }

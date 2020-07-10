@@ -32,6 +32,7 @@ PROTO_INCLUDE_PATHS=()
 PLUGIN_NAME=
 PLUGIN_OUT=
 PLUGIN_OPT=
+USE_BUF=
 while test $# -gt 0; do
   case "${1}" in
     -h|--help)
@@ -56,6 +57,10 @@ while test $# -gt 0; do
       ;;
     --plugin_opt*)
       PLUGIN_OPT="$(echo ${1} | sed -e 's/^[^=]*=//g')"
+      shift
+      ;;
+    --use-buf)
+      USE_BUF=1
       shift
       ;;
     *)
@@ -84,7 +89,12 @@ fi
 mkdir -p "${PLUGIN_OUT}"
 for proto_path in "${PROTO_PATHS[@]}"; do
   for dir in $(find "${proto_path}" -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq); do
-    echo protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
-    protoc --experimental_allow_proto3_optional "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
+    if [ -n "${USE_BUF}" ]; then
+      echo buf protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
+      buf protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
+    else
+      echo protoc --experimental_allow_proto3_optional "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
+      protoc --experimental_allow_proto3_optional "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
+    fi
   done
 done

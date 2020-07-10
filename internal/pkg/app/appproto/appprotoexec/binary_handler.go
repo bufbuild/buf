@@ -17,7 +17,6 @@ package appprotoexec
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"os/exec"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -69,16 +68,15 @@ func (h *binaryHandler) Handle(
 		return err
 	}
 	h.logger.Debug("binary", zap.String("path", h.pluginPath))
-	stderrBuffer := bytes.NewBuffer(nil)
 	responseBuffer := bytes.NewBuffer(nil)
 	cmd := exec.CommandContext(ctx, h.pluginPath)
 	cmd.Env = app.Environ(container)
 	cmd.Stdin = bytes.NewReader(requestData)
 	cmd.Stdout = responseBuffer
-	cmd.Stderr = stderrBuffer
+	cmd.Stderr = container.Stderr()
 	if err := cmd.Run(); err != nil {
 		// TODO: strip binary path as well?
-		return fmt.Errorf("%v\n%v", err, stderrBuffer.String())
+		return err
 	}
 	response := &pluginpb.CodeGeneratorResponse{}
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(responseBuffer.Bytes(), response); err != nil {
