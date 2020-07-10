@@ -38,5 +38,17 @@ $(PROTOC):
 
 dockerdeps:: $(PROTOC)
 
-.PHONY: protocpre
-protocpre::
+.PHONY: protocpreinstall
+protocpreinstall::
+
+.PHONY: protocgenerate
+protocgenerate::
+
+preinstallgenerate:: protocpreinstall
+
+pregenerate:: protocgenerate
+
+.PHONY: protoc
+protoc:
+	$(MAKE) protocpreinstall
+	$(MAKE) protocgenerate

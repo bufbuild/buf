@@ -98,17 +98,14 @@ func (h *protocProxyHandler) Handle(
 		request.FileToGenerate...,
 	)
 	h.logger.Debug("protoc_proxy", zap.Strings("args", args))
-	stderrBuffer := bytes.NewBuffer(nil)
 	cmd := exec.CommandContext(ctx, h.protocPath, args...)
 	cmd.Env = app.Environ(container)
 	cmd.Stdin = bytes.NewReader(fileDescriptorSetData)
-	// do we want to do this?
-	cmd.Stdout = stderrBuffer
-	cmd.Stderr = stderrBuffer
+	cmd.Stdout = ioutil.Discard
+	cmd.Stderr = container.Stderr()
 	if err := cmd.Run(); err != nil {
-		// Suppress printing of temp path
 		// TODO: strip binary path as well?
-		return fmt.Errorf("%v\n%v", err, strings.Replace(stderrBuffer.String(), tmpDir.AbsPath(), "", -1))
+		return err
 	}
 	if featureProto3Optional {
 		responseWriter.SetFeatureProto3Optional()
