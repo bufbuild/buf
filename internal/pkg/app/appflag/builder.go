@@ -51,8 +51,8 @@ func newBuilder(options ...BuilderOption) *builder {
 }
 
 func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.logLevel, "log-level", "info", "The log level [debug,info,warn,error].")
-	flagSet.StringVar(&b.logFormat, "log-format", "color", "The log format [text,color,json].")
+	flagSet.StringVar(&b.logLevel, "log-level", "info", "The log level (debug,info,warn,error).")
+	flagSet.StringVar(&b.logFormat, "log-format", "color", "The log format (text,color,json).")
 	if b.defaultTimeout > 0 {
 		flagSet.DurationVar(&b.timeout, "timeout", b.defaultTimeout, `The duration until timing out.`)
 	}
@@ -63,7 +63,7 @@ func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
 	_ = flagSet.MarkHidden("profile-path")
 	flagSet.IntVar(&b.profileLoops, "profile-loops", 1, "The number of loops to run.")
 	_ = flagSet.MarkHidden("profile-loops")
-	flagSet.StringVar(&b.profileType, "profile-type", "cpu", "The profile type [cpu,mem,block,mutex].")
+	flagSet.StringVar(&b.profileType, "profile-type", "cpu", "The profile type (cpu,mem,block,mutex).")
 	_ = flagSet.MarkHidden("profile-type")
 	flagSet.BoolVar(&b.profileAllowError, "profile-allow-error", false, "Allow errors for profiled commands.")
 	_ = flagSet.MarkHidden("profile-allow-error")
