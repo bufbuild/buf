@@ -161,6 +161,7 @@ func RunProtoc(
 
 // DiffFileDescriptorSetsWire diffs the two FileDescriptorSets using proto.MarshalWire.
 func DiffFileDescriptorSetsWire(
+	ctx context.Context,
 	one *descriptorpb.FileDescriptorSet,
 	two *descriptorpb.FileDescriptorSet,
 	oneName string,
@@ -174,7 +175,7 @@ func DiffFileDescriptorSetsWire(
 	if err != nil {
 		return "", err
 	}
-	output, err := diff.Diff(oneData, twoData, oneName, twoName, false)
+	output, err := diff.Diff(ctx, oneData, twoData, oneName, twoName, false)
 	if err != nil {
 		return "", err
 	}
@@ -183,6 +184,7 @@ func DiffFileDescriptorSetsWire(
 
 // DiffFileDescriptorSetsJSON diffs the two FileDescriptorSets using JSON.
 func DiffFileDescriptorSetsJSON(
+	ctx context.Context,
 	one *descriptorpb.FileDescriptorSet,
 	two *descriptorpb.FileDescriptorSet,
 	oneName string,
@@ -204,7 +206,7 @@ func DiffFileDescriptorSetsJSON(
 	if err != nil {
 		return "", err
 	}
-	output, err := diff.Diff(oneData, twoData, oneName, twoName, false)
+	output, err := diff.Diff(ctx, oneData, twoData, oneName, twoName, false)
 	if err != nil {
 		return "", err
 	}
@@ -222,7 +224,7 @@ func DiffFileDescriptorSetsCompare(
 // AssertFileDescriptorSetsEqual asserts that the FileDescriptorSet are equal for
 // JSON and compare.
 func AssertFileDescriptorSetsEqual(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
-	diff, err := DiffFileDescriptorSetsJSON(one, two, "buf", "protoc")
+	diff, err := DiffFileDescriptorSetsJSON(context.Background(), one, two, "buf", "protoc")
 	assert.NoError(t, err)
 	assert.Empty(t, diff)
 	diff = DiffFileDescriptorSetsCompare(one, two)
