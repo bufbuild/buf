@@ -7,7 +7,7 @@ require (
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/protobuf v1.4.2
 	github.com/google/go-cmp v0.5.0
-	github.com/jhump/protoreflect v1.7.1-0.20200706205124-8d2d934ce565
+	github.com/jhump/protoreflect v1.7.1-0.20200713144533-3216fce50c70
 	github.com/klauspost/compress v1.10.10
 	github.com/klauspost/pgzip v1.2.4
 	github.com/pkg/profile v1.5.0
@@ -16,7 +16,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.15.0
-	google.golang.org/genproto v0.0.0-20200710124503-20a17af7bd0e // indirect
+	google.golang.org/genproto v0.0.0-20200711021454-869866162049 // indirect
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
