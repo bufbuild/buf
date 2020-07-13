@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"sync"
 
 	"go.uber.org/multierr"
 )
@@ -35,6 +36,11 @@ var (
 // NopWriteCloser returns an io.WriteCloser with a no-op Close method wrapping the provided io.Writer.
 func NopWriteCloser(writer io.Writer) io.WriteCloser {
 	return nopWriteCloser{Writer: writer}
+}
+
+// LockedWriter creates a locked Writer.
+func LockedWriter(writer io.Writer) io.Writer {
+	return &lockedWriter{writer: writer}
 }
 
 // CompositeReadCloser returns a io.ReadCloser that is a composite of the Reader and Closer.
@@ -76,6 +82,18 @@ type nopWriteCloser struct {
 
 func (nopWriteCloser) Close() error {
 	return nil
+}
+
+type lockedWriter struct {
+	writer io.Writer
+	lock   sync.Mutex
+}
+
+func (l *lockedWriter) Write(p []byte) (int, error) {
+	l.lock.Lock()
+	n, err := l.writer.Write(p)
+	l.lock.Unlock()
+	return n, err
 }
 
 type compositeReadCloser struct {
