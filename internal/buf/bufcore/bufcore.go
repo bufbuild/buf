@@ -21,6 +21,7 @@ import (
 	"io"
 
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"google.golang.org/protobuf/proto"
@@ -295,6 +296,32 @@ func ImageWithOnlyPathsAllowNotExist(
 	paths []string,
 ) (Image, error) {
 	return imageWithOnlyPaths(image, paths, true)
+}
+
+// ImageByDir returns multiple images that have non-imports split
+// by directory.
+//
+// That is, each Image will only contain a single directoy's files
+// as it's non-imports, along with all required imports for the
+// files in that directory.
+func ImageByDir(image Image) ([]Image, error) {
+	imageFiles := image.Files()
+	paths := make([]string, 0, len(imageFiles))
+	for _, imageFile := range imageFiles {
+		if !imageFile.IsImport() {
+			paths = append(paths, imageFile.Path())
+		}
+	}
+	dirToPaths := normalpath.ByDir(paths...)
+	newImages := make([]Image, 0, len(dirToPaths))
+	for _, paths := range dirToPaths {
+		newImage, err := ImageWithOnlyPaths(image, paths)
+		if err != nil {
+			return nil, err
+		}
+		newImages = append(newImages, newImage)
+	}
+	return newImages, nil
 }
 
 // ImageToProtoImage returns a new ProtoImage for the Image.

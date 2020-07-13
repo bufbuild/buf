@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/internal/pkg/interrupt"
 	"github.com/gofrs/uuid"
 	"go.uber.org/multierr"
 )
@@ -34,6 +35,8 @@ type File interface {
 }
 
 // NewFileWithData returns a new File.
+//
+// This file will be deleted on interrupt signals.
 func NewFileWithData(data []byte) (File, error) {
 	id, err := uuid.NewV4()
 	if err != nil {
@@ -44,17 +47,24 @@ func NewFileWithData(data []byte) (File, error) {
 		return nil, err
 	}
 	path := file.Name()
-	_, err = file.Write(data)
-	err = multierr.Append(err, file.Close())
-	if err != nil {
-		return nil, multierr.Append(err, os.Remove(path))
-	}
 	// just in case
 	absPath, err := filepath.Abs(filepath.Clean(path))
 	if err != nil {
-		return nil, multierr.Append(err, os.Remove(path))
+		return nil, err
 	}
-	return newFile(absPath), nil
+	signalC, closer := interrupt.NewSignalChannel()
+	go func() {
+		<-signalC
+		_ = os.Remove(absPath)
+	}()
+	_, err = file.Write(data)
+	err = multierr.Append(err, file.Close())
+	if err != nil {
+		err = multierr.Append(err, os.Remove(absPath))
+		closer()
+		return nil, err
+	}
+	return newFile(absPath, closer), nil
 }
 
 // Dir is a temporary directory.
@@ -69,6 +79,7 @@ type Dir interface {
 // NewDir returns a new Dir.
 //
 // baseDirPath can be empty, in which case os.TempDir() is used.
+// This directory will be deleted on interrupt signals.
 func NewDir(baseDirPath string) (Dir, error) {
 	id, err := uuid.NewV4()
 	if err != nil {
@@ -81,18 +92,25 @@ func NewDir(baseDirPath string) (Dir, error) {
 	// just in case
 	absPath, err := filepath.Abs(filepath.Clean(path))
 	if err != nil {
-		return nil, multierr.Append(err, os.RemoveAll(path))
+		return nil, err
 	}
-	return newDir(absPath), nil
+	signalC, closer := interrupt.NewSignalChannel()
+	go func() {
+		<-signalC
+		_ = os.RemoveAll(absPath)
+	}()
+	return newDir(absPath, closer), nil
 }
 
 type file struct {
 	absPath string
+	closer  func()
 }
 
-func newFile(absPath string) *file {
+func newFile(absPath string, closer func()) *file {
 	return &file{
 		absPath: absPath,
+		closer:  closer,
 	}
 }
 
@@ -101,16 +119,20 @@ func (f *file) AbsPath() string {
 }
 
 func (f *file) Close() error {
-	return os.Remove(f.absPath)
+	err := os.Remove(f.absPath)
+	f.closer()
+	return err
 }
 
 type dir struct {
 	absPath string
+	closer  func()
 }
 
-func newDir(absPath string) *dir {
+func newDir(absPath string, closer func()) *dir {
 	return &dir{
 		absPath: absPath,
+		closer:  closer,
 	}
 }
 
@@ -119,5 +141,7 @@ func (d *dir) AbsPath() string {
 }
 
 func (d *dir) Close() error {
-	return os.RemoveAll(d.absPath)
+	err := os.RemoveAll(d.absPath)
+	d.closer()
+	return err
 }

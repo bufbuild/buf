@@ -13,6 +13,7 @@ package diff
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -23,6 +24,7 @@ import (
 
 // Diff does a diff.
 func Diff(
+	ctx context.Context,
 	b1 []byte,
 	b2 []byte,
 	filename1 string,
@@ -45,12 +47,17 @@ func Diff(
 		_ = os.Remove(f2)
 	}()
 
-	cmd := "diff"
+	binaryPath := "diff"
 	if runtime.GOOS == "plan9" {
-		cmd = "/bin/ape/diff"
+		binaryPath = "/bin/ape/diff"
 	}
 
-	data, err := exec.Command(cmd, "-u", f1, f2).CombinedOutput()
+	buffer := bytes.NewBuffer(nil)
+	cmd := exec.CommandContext(ctx, binaryPath, "-u", f1, f2)
+	cmd.Stdout = buffer
+	cmd.Stderr = buffer
+	err = cmd.Run()
+	data := buffer.Bytes()
 	if len(data) > 0 {
 		// diff exits with a non-zero status when the files don't match.
 		// Ignore that failure as long as we get output.
