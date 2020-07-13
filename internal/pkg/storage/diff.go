@@ -55,6 +55,7 @@ func Diff(
 				return nil, err
 			}
 			diffData, err := diff.Diff(
+				ctx,
 				oneData,
 				twoData,
 				normalpath.Join(oneBucketName, path),

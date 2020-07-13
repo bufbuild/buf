@@ -26,6 +26,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
+	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -62,6 +63,7 @@ func (h *protocProxyHandler) Handle(
 	responseWriter appproto.ResponseWriter,
 	request *pluginpb.CodeGeneratorRequest,
 ) (retErr error) {
+	defer instrument.Start(h.logger, "protoc_proxy", zap.String("plugin", h.pluginName)).End()
 	if app.DevStdinFilePath == "" {
 		return errors.New("app.DevStdinFilePath is empty for this platform")
 	}
@@ -97,7 +99,6 @@ func (h *protocProxyHandler) Handle(
 		args,
 		request.FileToGenerate...,
 	)
-	h.logger.Debug("protoc_proxy", zap.Strings("args", args))
 	cmd := exec.CommandContext(ctx, h.protocPath, args...)
 	cmd.Env = app.Environ(container)
 	cmd.Stdin = bytes.NewReader(fileDescriptorSetData)

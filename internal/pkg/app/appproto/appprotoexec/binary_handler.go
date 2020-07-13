@@ -18,9 +18,11 @@ import (
 	"bytes"
 	"context"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
+	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -55,6 +57,7 @@ func (h *binaryHandler) Handle(
 	responseWriter appproto.ResponseWriter,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
+	defer instrument.Start(h.logger, "plugin_proxy", zap.String("plugin", filepath.Base(h.pluginPath))).End()
 	unsetRequestVersion := false
 	if request.CompilerVersion == nil {
 		unsetRequestVersion = true
@@ -67,7 +70,6 @@ func (h *binaryHandler) Handle(
 	if err != nil {
 		return err
 	}
-	h.logger.Debug("binary", zap.String("path", h.pluginPath))
 	responseBuffer := bytes.NewBuffer(nil)
 	cmd := exec.CommandContext(ctx, h.pluginPath)
 	cmd.Env = app.Environ(container)

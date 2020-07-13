@@ -18,12 +18,14 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/bufbuild/buf/internal/pkg/thread"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -46,7 +48,7 @@ func executePlugin(
 	ctx context.Context,
 	logger *zap.Logger,
 	container app.EnvStderrContainer,
-	image bufcore.Image,
+	images []bufcore.Image,
 	pluginName string,
 	pluginInfo *pluginInfo,
 ) error {
@@ -54,6 +56,54 @@ func executePlugin(
 	if err != nil {
 		return err
 	}
+	if len(images) == 1 {
+		return executePluginForImage(
+			ctx,
+			container,
+			images[0],
+			pluginName,
+			pluginInfo,
+			handler,
+		)
+	}
+
+	semaphoreC := make(chan struct{}, thread.Parallelism())
+	var retErr error
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	for _, image := range images {
+		image := image
+		wg.Add(1)
+		semaphoreC <- struct{}{}
+		go func() {
+			if err := executePluginForImage(
+				ctx,
+				container,
+				image,
+				pluginName,
+				pluginInfo,
+				handler,
+			); err != nil {
+				lock.Lock()
+				retErr = multierr.Append(retErr, err)
+				lock.Unlock()
+			}
+			<-semaphoreC
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	return retErr
+}
+
+func executePluginForImage(
+	ctx context.Context,
+	container app.EnvStderrContainer,
+	image bufcore.Image,
+	pluginName string,
+	pluginInfo *pluginInfo,
+	handler appproto.Handler,
+) error {
 	request := bufcore.ImageToCodeGeneratorRequest(image, pluginInfo.Opt)
 	response, err := appproto.Execute(ctx, container, handler, request)
 	if err != nil {

@@ -12,28 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package app
+// +build windows
 
-import (
-	"io"
-	"io/ioutil"
+package interrupt
 
-	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
-)
+import "os"
 
-type stdoutContainer struct {
-	writer io.Writer
-}
-
-func newStdoutContainer(writer io.Writer) *stdoutContainer {
-	if writer == nil {
-		writer = ioutil.Discard
-	}
-	return &stdoutContainer{
-		writer: ioutilextended.LockedWriter(writer),
-	}
-}
-
-func (s *stdoutContainer) Stdout() io.Writer {
-	return s.writer
+var signals = []os.Signal{
+	os.Interrupt,
 }

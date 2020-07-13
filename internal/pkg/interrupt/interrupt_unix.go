@@ -12,28 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package app
+// +build darwin linux
+
+package interrupt
 
 import (
-	"io"
-	"io/ioutil"
-
-	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
+	"os"
+	"syscall"
 )
 
-type stdoutContainer struct {
-	writer io.Writer
-}
-
-func newStdoutContainer(writer io.Writer) *stdoutContainer {
-	if writer == nil {
-		writer = ioutil.Discard
-	}
-	return &stdoutContainer{
-		writer: ioutilextended.LockedWriter(writer),
-	}
-}
-
-func (s *stdoutContainer) Stdout() io.Writer {
-	return s.writer
+var signals = []os.Signal{
+	syscall.SIGINT,
+	syscall.SIGTERM,
 }

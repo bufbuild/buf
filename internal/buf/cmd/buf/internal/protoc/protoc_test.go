@@ -170,6 +170,7 @@ func testCompareGeneratedStubs(
 				"-I",
 				dirPath,
 				fmt.Sprintf("--%s_out=%s", pluginName, bufProtocDir.AbsPath()),
+				"--by-dir",
 			),
 			filePaths...,
 		)...,

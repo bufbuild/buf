@@ -21,6 +21,8 @@ import (
 	"io"
 	"os"
 	"sort"
+
+	"github.com/bufbuild/buf/internal/pkg/interrupt"
 )
 
 // EnvContainer provides envionment variables.
@@ -288,7 +290,11 @@ func Main(ctx context.Context, f func(context.Context, Container) error) {
 }
 
 // Run runs the application using the container.
+//
+// The run will be stopped on interrupt signal.
 func Run(ctx context.Context, container Container, f func(context.Context, Container) error) error {
+	ctx, cancel := interrupt.WithCancel(ctx)
+	defer cancel()
 	if err := f(ctx, container); err != nil {
 		printError(container, err)
 		return err

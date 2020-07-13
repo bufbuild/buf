@@ -34,6 +34,7 @@ const (
 	outputFlagName                = "descriptor_set_out"
 	pluginPathValuesFlagName      = "plugin"
 	errorFormatFlagName           = "error_format"
+	byDirFlagName                 = "by-dir"
 
 	pluginFakeFlagName = "protoc_plugin_fake"
 
@@ -55,6 +56,7 @@ type flags struct {
 	PrintFreeFieldNumbers bool
 	Output                string
 	ErrorFormat           string
+	ByDir                 bool
 }
 
 type env struct {
@@ -140,6 +142,12 @@ func (f *flagsBuilder) Bind(flagSet *pflag.FlagSet) {
 		pluginPathValuesFlagName,
 		nil,
 		`The paths to the plugin executables to use, either in the form "path/to/protoc-gen-foo" or "protoc-gen-foo=path/to/binary".`,
+	)
+	flagSet.BoolVar(
+		&f.ByDir,
+		byDirFlagName,
+		false,
+		`Execute parallel plugin calls for every directory containing .proto files.`,
 	)
 
 	flagSet.StringSliceVar(
@@ -315,6 +323,9 @@ func (f *flagsBuilder) merge(subFlagsBuilder *flagsBuilder) error {
 	}
 	if subFlagsBuilder.ErrorFormat != "" {
 		f.ErrorFormat = subFlagsBuilder.ErrorFormat
+	}
+	if subFlagsBuilder.ByDir {
+		f.ByDir = true
 	}
 	f.PluginPathValues = append(f.PluginPathValues, subFlagsBuilder.PluginPathValues...)
 	if subFlagsBuilder.Encode != "" {
