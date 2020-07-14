@@ -13,14 +13,17 @@ $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,PROTOC)
 $(call _assert_var,PROTOC_GEN_GO)
 
-# Settable
-PROTOC_GEN_GO_OPT ?=
+# Not modifiable for now
+PROTOC_GEN_GO_OPT := paths=source_relative
 
 EXTRA_MAKEGO_FILES := $(EXTRA_MAKEGO_FILES) scripts/protoc_gen_plugin.bash
 
 PROTOC_GEN_GO_EXTRA_FLAGS :=
 ifdef PROTOC_USE_BUF
 PROTOC_GEN_GO_EXTRA_FLAGS := --use-buf
+endif
+ifdef PROTOC_USE_BUF_BY_DIR
+PROTOC_GEN_GO_EXTRA_FLAGS := --use-buf --by-dir
 endif
 
 .PHONY: protocgengoclean

@@ -44,8 +44,8 @@ func newDuplicateOutError(pluginName string) error {
 	return fmt.Errorf("duplicate --%s_out", pluginName)
 }
 
-func newDuplicateOptError(pluginName string) error {
-	return fmt.Errorf("duplicate --%s_opt", pluginName)
+func newEmptyOptError(pluginName string) error {
+	return fmt.Errorf("empty option value for %s", pluginName)
 }
 
 func newPluginPathValueEmptyError() error {

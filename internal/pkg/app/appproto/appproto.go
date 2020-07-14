@@ -31,6 +31,10 @@ type ResponseWriter interface {
 	//
 	// Returns error if nil, the name is empty, or the name is already added.
 	Add(*pluginpb.CodeGeneratorResponse_File) error
+	// AddError adds the error message to the response.
+	//
+	// If there is an existing error message, this will be concatenated with a newline.
+	AddError(message string) error
 	// SetFeatureProto3Optional sets the proto3 optional feature.
 	SetFeatureProto3Optional()
 }

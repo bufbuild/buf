@@ -1,7 +1,11 @@
 BUF_BIN ?= cmd/buf
 
 PROTOREFLECT_VERSION := 3216fce50c7038421461bd10ee796f1dfcc82dcc
-GO_GET_PKGS := $(GO_GET_PKGS) github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
+# Remove when https://github.com/spf13/cobra/pull/1070 is released
+COBRA_VERSION := 884edc58ad08083e6c9a505041695aa2c3ca2d7a
+GO_GET_PKGS := $(GO_GET_PKGS) \
+	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION) \
+	github.com/spf13/cobra@$(COBRA_VERSION)
 GO_BINS := $(GO_BINS) $(BUF_BIN) \
 	cmd/protoc-gen-buf-check-breaking \
 	cmd/protoc-gen-buf-check-lint \
@@ -17,7 +21,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	internal/buf/internal/buftesting/cache/ \
 	internal/pkg/storage/storageos/tmp/
 
-PROTOC_USE_BUF := true
+PROTOC_USE_BUF_BY_DIR := true
 
 include make/go/bootstrap.mk
 include make/go/go.mk

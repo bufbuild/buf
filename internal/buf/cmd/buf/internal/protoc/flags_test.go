@@ -87,7 +87,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out: "go_out",
-						Opt: "plugins=grpc",
+						Opt: []string{"plugins=grpc"},
 					},
 				},
 				FilePaths: []string{
@@ -117,7 +117,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out: "go_out",
-						Opt: "plugins=grpc",
+						Opt: []string{"plugins=grpc"},
 					},
 				},
 				FilePaths: []string{
@@ -149,7 +149,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out:  "go_out",
-						Opt:  "plugins=grpc",
+						Opt:  []string{"plugins=grpc"},
 						Path: "/bin/protoc-gen-go",
 					},
 				},
@@ -182,7 +182,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out:  "go_out",
-						Opt:  "plugins=grpc",
+						Opt:  []string{"plugins=grpc"},
 						Path: "/bin/foo",
 					},
 				},
@@ -206,7 +206,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out:  "go_out",
-						Opt:  "plugins=grpc",
+						Opt:  []string{"plugins=grpc"},
 						Path: "/bin/protoc-gen-go",
 					},
 				},
@@ -230,7 +230,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out:  "go_out",
-						Opt:  "plugins=grpc",
+						Opt:  []string{"plugins=grpc"},
 						Path: "/bin/protoc-gen-go",
 					},
 				},
@@ -245,6 +245,158 @@ func TestParseFlags(t *testing.T) {
 				"foo.proto",
 			},
 			ExpectedError: newRecursiveReferenceError(filepath.Join("testdata", "3", "flags1.txt")),
+		},
+		{
+			Args: []string{
+				"-I",
+				"proto",
+				"--error_format",
+				"text",
+				"--go_out",
+				"plugins=grpc:go_out",
+				"--go_opt",
+				"foo=bar",
+				"foo.proto",
+			},
+			Expected: &env{
+				flags: flags{
+					IncludeDirPaths: []string{
+						"proto",
+					},
+					ErrorFormat: "text",
+				},
+				PluginNameToPluginInfo: map[string]*pluginInfo{
+					"go": {
+						Out: "go_out",
+						Opt: []string{
+							"plugins=grpc",
+							"foo=bar",
+						},
+					},
+				},
+				FilePaths: []string{
+					"foo.proto",
+				},
+			},
+		},
+		{
+			Args: []string{
+				"-I",
+				"proto",
+				"--error_format",
+				"text",
+				"--go_out",
+				"plugins=grpc:go_out",
+				"--go_opt",
+				"foo=bar",
+				"--go_opt",
+				"baz=bat",
+				"foo.proto",
+			},
+			Expected: &env{
+				flags: flags{
+					IncludeDirPaths: []string{
+						"proto",
+					},
+					ErrorFormat: "text",
+				},
+				PluginNameToPluginInfo: map[string]*pluginInfo{
+					"go": {
+						Out: "go_out",
+						Opt: []string{
+							"plugins=grpc",
+							"foo=bar",
+							"baz=bat",
+						},
+					},
+				},
+				FilePaths: []string{
+					"foo.proto",
+				},
+			},
+		},
+		{
+			Args: []string{
+				"-I",
+				"proto",
+				"--error_format",
+				"text",
+				"--go_out",
+				"go_out",
+				"--go_opt",
+				"foo=bar",
+				"--go_opt",
+				"baz=bat",
+				"foo.proto",
+			},
+			Expected: &env{
+				flags: flags{
+					IncludeDirPaths: []string{
+						"proto",
+					},
+					ErrorFormat: "text",
+				},
+				PluginNameToPluginInfo: map[string]*pluginInfo{
+					"go": {
+						Out: "go_out",
+						Opt: []string{
+							"foo=bar",
+							"baz=bat",
+						},
+					},
+				},
+				FilePaths: []string{
+					"foo.proto",
+				},
+			},
+		},
+		{
+			Args: []string{
+				"-I",
+				"proto",
+				"--error_format",
+				"text",
+				"--go_out",
+				"foo=bar,baz=bat:go_out",
+				"--go_opt",
+				"one=two,three=four",
+				"--go_opt",
+				"five=six",
+				"foo.proto",
+			},
+			Expected: &env{
+				flags: flags{
+					IncludeDirPaths: []string{
+						"proto",
+					},
+					ErrorFormat: "text",
+				},
+				PluginNameToPluginInfo: map[string]*pluginInfo{
+					"go": {
+						Out: "go_out",
+						Opt: []string{
+							"foo=bar",
+							"baz=bat",
+							"one=two",
+							"three=four",
+							"five=six",
+						},
+					},
+				},
+				FilePaths: []string{
+					"foo.proto",
+				},
+			},
+		},
+		{
+			Args: []string{
+				"--go_out",
+				"go_out",
+				"--go_out",
+				"go_out",
+				"foo.proto",
+			},
+			ExpectedError: newDuplicateOutError("go"),
 		},
 	}
 	for i, testCase := range testCases {
