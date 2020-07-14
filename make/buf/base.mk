@@ -15,6 +15,7 @@ GO_LINT_IGNORES := $(GO_LINT_IGNORES) /internal/buf/cmd/buf/internal/protoc
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto/go/v1
+PROTOC_GEN_VALIDATE_OUT := internal/gen/proto/go/v1
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
 	.vscode/ \
@@ -29,6 +30,7 @@ include make/go/codecov.mk
 include make/go/dep_protoc.mk
 include make/go/docker.mk
 include make/go/protoc_gen_go.mk
+include make/go/protoc_gen_validate.mk
 include make/go/dep_go_fuzz.mk
 
 protocpreinstall:: installbuf
