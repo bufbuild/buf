@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
+	github.com/envoyproxy/protoc-gen-validate v0.4.0
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/protobuf v1.4.2
 	github.com/google/go-cmp v0.5.0
