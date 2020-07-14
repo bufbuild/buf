@@ -19,7 +19,7 @@ package bufbuild.buf.image.v1;
 import "google/protobuf/descriptor.proto";
 
 option cc_enable_arenas = true;
-option go_package = "imagev1beta1";
+option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1;imagev1";
 option optimize_for = SPEED;
 
 // Image is analogous to a FileDescriptorSet.

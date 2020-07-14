@@ -96,6 +96,12 @@ func (h *binaryHandler) Handle(
 			return err
 		}
 	}
+	// call AddError even if this is empty
+	if response.Error != nil {
+		if err := responseWriter.AddError(response.GetError()); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

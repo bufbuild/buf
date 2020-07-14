@@ -33,6 +33,7 @@ PLUGIN_NAME=
 PLUGIN_OUT=
 PLUGIN_OPT=
 USE_BUF=
+BY_DIR=
 while test $# -gt 0; do
   case "${1}" in
     -h|--help)
@@ -63,6 +64,10 @@ while test $# -gt 0; do
       USE_BUF=1
       shift
       ;;
+    --by-dir)
+      BY_DIR=1
+      shift
+      ;;
     *)
       usage
       exit 1
@@ -88,13 +93,18 @@ fi
 
 mkdir -p "${PLUGIN_OUT}"
 for proto_path in "${PROTO_PATHS[@]}"; do
-  for dir in $(find "${proto_path}" -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq); do
-    if [ -n "${USE_BUF}" ]; then
-      echo buf protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
-      buf protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
-    else
-      echo protoc --experimental_allow_proto3_optional "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
-      protoc --experimental_allow_proto3_optional "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
-    fi
-  done
+  if [ -n "${USE_BUF}" ] && [ -n "${BY_DIR}" ]; then
+      echo buf protoc --by_dir "${PROTOC_FLAGS[@]}" $(find "${proto_path}" -name '*.proto')
+      buf protoc --by_dir "${PROTOC_FLAGS[@]}" $(find "${proto_path}" -name '*.proto')
+  else
+    for dir in $(find "${proto_path}" -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq); do
+      if [ -n "${USE_BUF}" ]; then
+        echo buf protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
+        buf protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
+      else
+        echo protoc --experimental_allow_proto3_optional "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
+        protoc --experimental_allow_proto3_optional "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
+      fi
+    done
+  fi
 done

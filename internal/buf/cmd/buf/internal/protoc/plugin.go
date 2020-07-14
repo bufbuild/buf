@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
@@ -35,7 +36,7 @@ type pluginInfo struct {
 	// Required
 	Out string
 	// optional
-	Opt string
+	Opt []string
 	// optional
 	Path string
 }
@@ -104,7 +105,7 @@ func executePluginForImage(
 	pluginInfo *pluginInfo,
 	handler appproto.Handler,
 ) error {
-	request := bufcore.ImageToCodeGeneratorRequest(image, pluginInfo.Opt)
+	request := bufcore.ImageToCodeGeneratorRequest(image, strings.Join(pluginInfo.Opt, ","))
 	response, err := appproto.Execute(ctx, container, handler, request)
 	if err != nil {
 		return err

@@ -17,6 +17,7 @@ package appproto
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"google.golang.org/protobuf/proto"
@@ -26,6 +27,7 @@ import (
 type responseWriter struct {
 	files                 []*pluginpb.CodeGeneratorResponse_File
 	fileNames             map[string]struct{}
+	errorMessages         []string
 	featureProto3Optional bool
 	lock                  sync.RWMutex
 }
@@ -54,6 +56,18 @@ func (r *responseWriter) Add(file *pluginpb.CodeGeneratorResponse_File) error {
 	return nil
 }
 
+func (r *responseWriter) AddError(message string) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	if message == "" {
+		// default to an error message to make sure we pass an error
+		// if this function was called
+		message = "error"
+	}
+	r.errorMessages = append(r.errorMessages, message)
+	return nil
+}
+
 func (r *responseWriter) SetFeatureProto3Optional() {
 	r.lock.Lock()
 	defer r.lock.Unlock()
@@ -68,8 +82,18 @@ func (r *responseWriter) toResponse(err error) *pluginpb.CodeGeneratorResponse {
 	response := &pluginpb.CodeGeneratorResponse{
 		File: r.files,
 	}
+	finalErrorMessages := r.errorMessages
 	if err != nil {
-		response.Error = proto.String(err.Error())
+		errorMessage := err.Error()
+		if errorMessage == "" {
+			// default to an error message to make sure we pass an error
+			// if err != nil
+			errorMessage = "error"
+		}
+		finalErrorMessages = append(finalErrorMessages, errorMessage)
+	}
+	if len(finalErrorMessages) > 0 {
+		response.Error = proto.String(strings.Join(finalErrorMessages, "\n"))
 	}
 	if r.featureProto3Optional {
 		response.SupportedFeatures = proto.Uint64(uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL))

@@ -150,7 +150,9 @@ func (f *flagsBuilder) Bind(flagSet *pflag.FlagSet) {
 		`Execute parallel plugin calls for every directory containing .proto files.`,
 	)
 
-	flagSet.StringSliceVar(
+	// MUST be a StringArray instead of StringSlice so we do not split on commas
+	// Otherwise --go_out=foo=bar,baz=bat:out would be treated as --go_out=foo=bar --go_out=baz=bat:out
+	flagSet.StringArrayVar(
 		&f.pluginFake,
 		pluginFakeFlagName,
 		nil,
@@ -211,7 +213,7 @@ func (f *flagsBuilder) Build(args []string) (*env, error) {
 		return nil, err
 	}
 	for pluginName, pluginInfo := range pluginNameToPluginInfo {
-		if pluginInfo.Out == "" && pluginInfo.Opt != "" {
+		if pluginInfo.Out == "" && len(pluginInfo.Opt) > 0 {
 			return nil, newCannotSpecifyOptWithoutOutError(pluginName)
 		}
 		if pluginInfo.Out == "" && pluginInfo.Path != "" {
@@ -243,9 +245,9 @@ func (f *flagsBuilder) pluginFakeParse(name string, suffix string, isOut bool) {
 	}
 	index := len(f.pluginFake)
 	if isOut {
-		pluginValue.OutIndex = index
+		pluginValue.OutIndexes = append(pluginValue.OutIndexes, index)
 	} else {
-		pluginValue.OptIndex = index
+		pluginValue.OptIndexes = append(pluginValue.OptIndexes, index)
 	}
 }
 
@@ -343,8 +345,10 @@ func (f *flagsBuilder) merge(subFlagsBuilder *flagsBuilder) error {
 
 func (f *flagsBuilder) parsePluginNameToPluginInfo(pluginNameToPluginInfo map[string]*pluginInfo) error {
 	for pluginName, pluginValue := range f.pluginNameToValue {
-		if pluginValue.OutIndex >= 0 {
-			out := f.pluginFake[pluginValue.OutIndex]
+		switch len(pluginValue.OutIndexes) {
+		case 0:
+		case 1:
+			out := f.pluginFake[pluginValue.OutIndexes[0]]
 			var opt string
 			split := strings.Split(out, ":")
 			switch len(split) {
@@ -360,27 +364,34 @@ func (f *flagsBuilder) parsePluginNameToPluginInfo(pluginNameToPluginInfo map[st
 				pluginInfo = newPluginInfo()
 				pluginNameToPluginInfo[pluginName] = pluginInfo
 			}
-			if pluginInfo.Out != "" {
-				return newDuplicateOutError(pluginName)
-			}
 			pluginInfo.Out = out
 			if opt != "" {
-				if pluginInfo.Opt != "" {
-					return newDuplicateOptError(pluginName)
+				for _, value := range strings.Split(opt, ",") {
+					if value := strings.TrimSpace(value); value != "" {
+						pluginInfo.Opt = append(pluginInfo.Opt, value)
+					} else {
+						return newEmptyOptError(pluginName)
+					}
 				}
-				pluginInfo.Opt = opt
 			}
+		default:
+			return newDuplicateOutError(pluginName)
 		}
-		if pluginValue.OptIndex >= 0 {
+		if len(pluginValue.OptIndexes) > 0 {
 			pluginInfo, ok := pluginNameToPluginInfo[pluginName]
 			if !ok {
 				pluginInfo = newPluginInfo()
 				pluginNameToPluginInfo[pluginName] = pluginInfo
 			}
-			if pluginInfo.Opt != "" {
-				return newDuplicateOptError(pluginName)
+			for _, optIndex := range pluginValue.OptIndexes {
+				for _, value := range strings.Split(f.pluginFake[optIndex], ",") {
+					if value := strings.TrimSpace(value); value != "" {
+						pluginInfo.Opt = append(pluginInfo.Opt, value)
+					} else {
+						return newEmptyOptError(pluginName)
+					}
+				}
 			}
-			pluginInfo.Opt = f.pluginFake[pluginValue.OptIndex]
 		}
 	}
 	for _, pluginPathValue := range f.PluginPathValues {
@@ -432,15 +443,12 @@ func (f *flagsBuilder) checkUnsupported() error {
 }
 
 type pluginValue struct {
-	OutIndex int
-	OptIndex int
+	OutIndexes []int
+	OptIndexes []int
 }
 
 func newPluginValue() *pluginValue {
-	return &pluginValue{
-		OutIndex: -1,
-		OptIndex: -1,
-	}
+	return &pluginValue{}
 }
 
 func normalizeFunc(f func(*pflag.FlagSet, string) string) func(*pflag.FlagSet, string) pflag.NormalizedName {
