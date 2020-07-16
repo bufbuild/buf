@@ -33,7 +33,7 @@ include make/go/protoc_gen_go.mk
 include make/go/protoc_gen_validate.mk
 include make/go/dep_go_fuzz.mk
 
-protocpreinstall:: installbuf
+pretest:: $(PROTOC)
 
 .PHONY: wkt
 wkt: installstorage-go-binary-data $(PROTOC)
@@ -41,7 +41,7 @@ wkt: installstorage-go-binary-data $(PROTOC)
 	mkdir -p internal/gen/data/wkt
 	storage-go-binary-data $(CACHE_INCLUDE) --package wkt > internal/gen/data/wkt/wkt.gen.go
 
-pregenerate:: wkt
+prepostgenerate:: wkt
 
 .PHONY: buflint
 buflint: installbuf
@@ -63,7 +63,7 @@ postlint:: buflint bufbreaking
 
 .PHONY: bufrelease
 bufrelease:
-	DOCKER_IMAGE=golang:1.14.4-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.14.5-buster bash make/buf/scripts/release.bash
 
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)

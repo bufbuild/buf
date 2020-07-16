@@ -3,6 +3,7 @@
 # Must be set
 $(call _assert_var,MAKEGO)
 $(call _conditional_include,$(MAKEGO)/base.mk)
+$(call _conditional_include,$(MAKEGO)/dep_buf.mk)
 $(call _conditional_include,$(MAKEGO)/dep_protoc.mk)
 $(call _conditional_include,$(MAKEGO)/dep_protoc_gen_validate.mk)
 $(call _conditional_include,$(MAKEGO)/protoc_gen_go.mk)
@@ -29,7 +30,7 @@ PROTOC_GEN_VALIDATE_EXTRA_FLAGS := --use-buf --by-dir
 endif
 
 .PHONY: protocgenvalidate
-protocgenvalidate: protocgengoclean $(PROTOC) $(PROTOC_GEN_VALIDATE)
+protocgenvalidate: protocgengoclean $(PROTOC) $(BUF) $(PROTOC_GEN_VALIDATE)
 	bash $(MAKEGO)/scripts/protoc_gen_plugin.bash $(PROTOC_GEN_VALIDATE_EXTRA_FLAGS) \
 		"--proto_path=$(PROTO_PATH)" \
 		"--proto_include_path=$(CACHE_INCLUDE)" \

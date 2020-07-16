@@ -32,6 +32,14 @@ CACHE_VERSIONS := $(CACHE)/versions
 CACHE_ENV := $(CACHE)/env
 CACHE_GO := $(CACHE)/go
 
+# CACHE_GOBIN is the location where binaries are installed for Golang projects
+# This is as opposed to CACHE_BIN, where dependencies binaries are installed
+# The separation is needed for i.e. buf, where we need to bootstrap with a
+# download from releases, but want to have a different namespace for the
+# version of buf installed from source
+# CACHE_GOBIN takes precedence over CACHE_BIN in PATH
+CACHE_GOBIN := $(CACHE)/gobin
+
 ifeq ($(UNAME_ARCH),x86_64)
 ifeq ($(UNAME_OS),Darwin)
 OPEN_CMD := open
@@ -50,8 +58,8 @@ else
 export GOPRIVATE := $(GO_MODULE)
 endif
 export GOPATH := $(abspath $(CACHE_GO))
-export GOBIN := $(abspath $(CACHE_BIN))
-export PATH := $(GOBIN):$(PATH)
+export GOBIN := $(abspath $(CACHE_GOBIN))
+export PATH := $(GOBIN):$(abspath $(CACHE_BIN)):$(PATH)
 
 print-%:
 	@echo $($*)
@@ -77,7 +85,7 @@ direnv:
 	@echo 'export GOPRIVATE="$(GOPRIVATE)"' >> $(CACHE_ENV)/env.sh
 	@echo 'export GOPATH="$(GOPATH)"' >> $(CACHE_ENV)/env.sh
 	@echo 'export GOBIN="$(GOBIN)"' >> $(CACHE_ENV)/env.sh
-	@echo 'export PATH="$(GOBIN):$${PATH}"' >> $(CACHE_ENV)/env.sh
+	@echo 'export PATH="$(GOBIN):$(abspath $(CACHE_BIN)):$${PATH}"' >> $(CACHE_ENV)/env.sh
 	@echo '[ -f "$(abspath $(ENV_SH))" ] && . "$(abspath $(ENV_SH))"' >> $(CACHE_ENV)/env.sh
 	@echo $(CACHE_ENV)/env.sh
 
@@ -90,8 +98,9 @@ cleancache:
 	rm -rf $(CACHE_BASE)
 
 .PHONY: nuke
-nuke: clean cleancache
+nuke: clean
 	sudo rm -rf $(CACHE_GO)/pkg/mod
+	rm -rf $(CACHE_BASE)
 
 .PHONY: dockerdeps
 dockerdeps::
@@ -105,6 +114,9 @@ preinstallgenerate::
 .PHONY: pregenerate
 pregenerate::
 
+.PHONY: prepostgenerate
+prepostgenerate::
+
 .PHONY: postgenerate
 postgenerate::
 
@@ -115,6 +127,7 @@ licensegenerate::
 generate:
 	@$(MAKE) preinstallgenerate
 	@$(MAKE) pregenerate
+	@$(MAKE) prepostgenerate
 	@$(MAKE) postgenerate
 	@$(MAKE) licensegenerate
 

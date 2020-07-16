@@ -83,7 +83,10 @@ func TestActualProtocGoogleapis(t *testing.T) {
 }
 
 func TestCompareGoogleapis(t *testing.T) {
-	t.Parallel()
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	// Don't run in parallel as it allocates a lot of memory
 	for _, includeSourceInfo := range []bool{true, false} {
 		t.Run(
 			fmt.Sprintf("includeSourceInfo:%v", includeSourceInfo),
@@ -99,7 +102,10 @@ func TestCompareGoogleapis(t *testing.T) {
 }
 
 func TestCompareBufProtocGoogleapis(t *testing.T) {
-	t.Parallel()
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	// Don't run in parallel as it allocates a lot of memory
 	for _, includeSourceInfo := range []bool{true, false} {
 		t.Run(
 			fmt.Sprintf("includeSourceInfo:%v", includeSourceInfo),

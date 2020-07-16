@@ -17,6 +17,8 @@ package thread
 import (
 	"runtime"
 	"sync"
+
+	"go.uber.org/multierr"
 )
 
 var (
@@ -44,4 +46,34 @@ func SetParallelism(parallelism int) {
 	globalLock.Lock()
 	globalParallelism = parallelism
 	globalLock.Unlock()
+}
+
+// Parallelize runs the jobs in parallel.
+//
+// A max of Parallelism jobs will be run at once.
+// Returns the combined error from the jobs.
+func Parallelize(jobs ...func() error) error {
+	if len(jobs) == 1 {
+		return jobs[0]()
+	}
+	semaphoreC := make(chan struct{}, Parallelism())
+	var retErr error
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	for _, job := range jobs {
+		job := job
+		wg.Add(1)
+		semaphoreC <- struct{}{}
+		go func() {
+			if err := job(); err != nil {
+				lock.Lock()
+				retErr = multierr.Append(retErr, err)
+				lock.Unlock()
+			}
+			<-semaphoreC
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+	return retErr
 }
