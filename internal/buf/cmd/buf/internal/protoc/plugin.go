@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -57,44 +56,21 @@ func executePlugin(
 	if err != nil {
 		return err
 	}
-	if len(images) == 1 {
-		return executePluginForImage(
-			ctx,
-			container,
-			images[0],
-			pluginName,
-			pluginInfo,
-			handler,
-		)
-	}
-
-	semaphoreC := make(chan struct{}, thread.Parallelism())
-	var retErr error
-	var wg sync.WaitGroup
-	var lock sync.Mutex
-	for _, image := range images {
+	jobs := make([]func() error, len(images))
+	for i, image := range images {
 		image := image
-		wg.Add(1)
-		semaphoreC <- struct{}{}
-		go func() {
-			if err := executePluginForImage(
+		jobs[i] = func() error {
+			return executePluginForImage(
 				ctx,
 				container,
 				image,
 				pluginName,
 				pluginInfo,
 				handler,
-			); err != nil {
-				lock.Lock()
-				retErr = multierr.Append(retErr, err)
-				lock.Unlock()
-			}
-			<-semaphoreC
-			wg.Done()
-		}()
+			)
+		}
 	}
-	wg.Wait()
-	return retErr
+	return thread.Parallelize(jobs...)
 }
 
 func executePluginForImage(

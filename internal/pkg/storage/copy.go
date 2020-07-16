@@ -41,9 +41,7 @@ func Copy(
 		ctx,
 		from,
 		to,
-		walkBucketFunc(from, ""),
 		copyOptions.externalPaths,
-		false,
 	)
 }
 
@@ -63,42 +61,29 @@ func copyPaths(
 	ctx context.Context,
 	from ReadBucket,
 	to WriteBucket,
-	walk func(context.Context, func(string) error) error,
 	copyExternalPaths bool,
-	allowNotExist bool,
 ) (int, error) {
-	semaphoreC := make(chan struct{}, thread.Parallelism())
-	var retErr error
-	var count int
-	var wg sync.WaitGroup
-	var lock sync.Mutex
-	if walkErr := walk(
-		ctx,
-		func(path string) error {
-			newPath := path
-			wg.Add(1)
-			semaphoreC <- struct{}{}
-			go func() {
-				err := copyPath(ctx, from, to, path, newPath, copyExternalPaths)
-				lock.Lock()
-				if err != nil {
-					if !allowNotExist || !IsNotExist(err) {
-						retErr = multierr.Append(retErr, err)
-					}
-				} else {
-					count++
-				}
-				lock.Unlock()
-				<-semaphoreC
-				wg.Done()
-			}()
-			return nil
-		},
-	); walkErr != nil {
-		return count, walkErr
+	paths, err := AllPaths(ctx, from, "")
+	if err != nil {
+		return 0, err
 	}
-	wg.Wait()
-	return count, retErr
+	var count int
+	var lock sync.Mutex
+	jobs := make([]func() error, len(paths))
+	for i, path := range paths {
+		path := path
+		jobs[i] = func() error {
+			if err := copyPath(ctx, from, to, path, path, copyExternalPaths); err != nil {
+				return err
+			}
+			lock.Lock()
+			count++
+			lock.Unlock()
+			return nil
+		}
+	}
+	err = thread.Parallelize(jobs...)
+	return count, err
 }
 
 // copyPath copies the path from the bucket at from to the bucket at to using the given paths.
@@ -128,14 +113,6 @@ func copyPath(
 	}
 	_, err = io.Copy(writeObjectCloser, readObjectCloser)
 	return multierr.Append(err, multierr.Append(writeObjectCloser.Close(), readObjectCloser.Close()))
-}
-
-func walkBucketFunc(bucket ReadBucket, prefix string) func(context.Context, func(string) error) error {
-	return func(ctx context.Context, f func(string) error) error {
-		return bucket.Walk(ctx, prefix, func(objectInfo ObjectInfo) error {
-			return f(objectInfo.Path())
-		})
-	}
 }
 
 type copyOptions struct {

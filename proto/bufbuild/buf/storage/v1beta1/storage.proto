@@ -14,37 +14,29 @@
 
 syntax = "proto3";
 
-package bufbuild.buf.module.v1beta1;
+package bufbuild.buf.storage.v1beta1;
 
 import "validate/validate.proto";
 
-option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/module/v1beta1;modulev1beta1";
+option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/storage/v1beta1;storagev1beta1";
 
-// ModuleFileSet is a the set of files for a module.
-//
-// Max total size: 32MB
-message ModuleFileSet {
-  // module_files are the .proto files that make up the module.
+// FileSet is a the set of files for a module.
+message FileSet {
+  // files are the files that make up the set.
   //
   // Sorted by path.
   // Path must be unique.
-  repeated ModuleFile module_files = 1 [
-    (validate.rules).repeated.min_items = 1,
-    (validate.rules).repeated.max_items = 16384
-  ];
+  repeated File files = 1;
 }
 
-// ModuleFile is a .proto file within a module.
-message ModuleFile {
+// File is a file within a FileSet.
+message File {
   // path is the relative path of the file.
   // Path can only use '/' as the separator character, and includes no ".." components.
-  // Path always ends in .proto.
   string path = 1 [
     (validate.rules).string.min_len = 1,
     (validate.rules).string.max_len = 2048
   ];
   // content is the content of the file.
-  bytes content = 2 [
-    (validate.rules).bytes.max_len = 1048576
-  ];
+  bytes content = 2;
 }

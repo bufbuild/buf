@@ -891,4 +891,32 @@ Only in b-dir: 3.txt
 			string(diff),
 		)
 	})
+
+	t.Run("proto", func(t *testing.T) {
+		t.Parallel()
+		readBucketSource := newReadBucket(t, oneDirPath)
+		fileSet, err := storage.ToProtoFileSet(
+			context.Background(),
+			readBucketSource,
+		)
+		require.NoError(t, err)
+		writeBucket, cleanupFunc := newWriteBucketAndCleanup(t)
+		err = storage.FromProtoFileSet(
+			context.Background(),
+			fileSet,
+			writeBucket,
+		)
+		require.NoError(t, err)
+		readBucketRoundTrip := writeBucketToReadBucket(t, writeBucket)
+		diff, err := storage.Diff(
+			context.Background(),
+			readBucketSource,
+			readBucketRoundTrip,
+			"source",
+			"round-trip",
+		)
+		require.NoError(t, err)
+		assert.Empty(t, diff)
+		assert.NoError(t, cleanupFunc())
+	})
 }
