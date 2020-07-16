@@ -37,6 +37,21 @@ func ReadPath(ctx context.Context, readBucket ReadBucket, path string) (_ []byte
 	return ioutil.ReadAll(readObject)
 }
 
+// PutPath puts the data at the path.
+func PutPath(ctx context.Context, writeBucket WriteBucket, path string, data []byte) (retErr error) {
+	writeObject, err := writeBucket.Put(ctx, path, uint32(len(data)))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := writeObject.Close(); err != nil && retErr == nil {
+			retErr = err
+		}
+	}()
+	_, err = writeObject.Write(data)
+	return err
+}
+
 // WalkReadObjects walks the bucket and calls get on each, closing the resulting ReadObjectCloser
 // when done.
 func WalkReadObjects(
