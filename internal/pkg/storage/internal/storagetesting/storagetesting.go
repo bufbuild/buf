@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/internal"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageproto"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -139,6 +140,7 @@ func RunTestSuite(
 ) {
 	oneDirPath := filepath.Join(storagetestingDirPath, "testdata", "one")
 	twoDirPath := filepath.Join(storagetestingDirPath, "testdata", "two")
+	threeDirPath := filepath.Join(storagetestingDirPath, "testdata", "three")
 	diffDirPathA := filepath.Join(storagetestingDirPath, "testdata", "diff", "a")
 	diffDirPathB := filepath.Join(storagetestingDirPath, "testdata", "diff", "b")
 
@@ -895,13 +897,13 @@ Only in b-dir: 3.txt
 	t.Run("proto", func(t *testing.T) {
 		t.Parallel()
 		readBucketSource := newReadBucket(t, oneDirPath)
-		fileSet, err := storage.ToProtoFileSet(
+		fileSet, err := storageproto.ToFileSet(
 			context.Background(),
 			readBucketSource,
 		)
 		require.NoError(t, err)
 		writeBucket, cleanupFunc := newWriteBucketAndCleanup(t)
-		err = storage.FromProtoFileSet(
+		err = storageproto.FromFileSet(
 			context.Background(),
 			fileSet,
 			writeBucket,
@@ -918,5 +920,56 @@ Only in b-dir: 3.txt
 		require.NoError(t, err)
 		assert.Empty(t, diff)
 		assert.NoError(t, cleanupFunc())
+	})
+
+	t.Run("overlap-success", func(t *testing.T) {
+		readBucket := newReadBucket(t, threeDirPath)
+		readBucket = storage.Map(readBucket, storage.MatchPathExt(".proto"))
+		readBucket = storage.Multi(
+			storage.Map(
+				readBucket,
+				storage.MapOnPrefix("a"),
+			),
+			storage.Map(
+				readBucket,
+				storage.MapOnPrefix("b"),
+			),
+		)
+		allPaths, err := storage.AllPaths(
+			context.Background(),
+			readBucket,
+			"",
+		)
+		require.NoError(t, err)
+		assert.Equal(
+			t,
+			[]string{
+				"one.proto",
+				"two.proto",
+			},
+			allPaths,
+		)
+	})
+	t.Run("overlap-error", func(t *testing.T) {
+		readBucket := newReadBucket(t, threeDirPath)
+		readBucket = storage.Map(
+			storage.Multi(
+				storage.Map(
+					readBucket,
+					storage.MapOnPrefix("a"),
+				),
+				storage.Map(
+					readBucket,
+					storage.MapOnPrefix("b"),
+				),
+			),
+			storage.MatchPathExt(".proto"),
+		)
+		_, err := storage.AllPaths(
+			context.Background(),
+			readBucket,
+			"",
+		)
+		assert.True(t, storage.IsExistsMultipleLocations(err))
 	})
 }

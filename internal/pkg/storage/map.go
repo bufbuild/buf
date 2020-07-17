@@ -124,7 +124,10 @@ func (m *mapReadBucket) getFullPath(path string) (string, error) {
 	return fullPath, nil
 }
 
-func replaceObjectInfoPath(objectInfo ObjectInfo, path string) internal.ObjectInfo {
+func replaceObjectInfoPath(objectInfo ObjectInfo, path string) ObjectInfo {
+	if objectInfo.Path() == path {
+		return objectInfo
+	}
 	return internal.NewObjectInfo(
 		objectInfo.Size(),
 		path,
@@ -133,10 +136,13 @@ func replaceObjectInfoPath(objectInfo ObjectInfo, path string) internal.ObjectIn
 }
 
 func replaceReadObjectCloserPath(readObjectCloser ReadObjectCloser, path string) ReadObjectCloser {
+	if readObjectCloser.Path() == path {
+		return readObjectCloser
+	}
 	return compositeReadObjectCloser{replaceObjectInfoPath(readObjectCloser, path), readObjectCloser}
 }
 
 type compositeReadObjectCloser struct {
-	internal.ObjectInfo
+	ObjectInfo
 	io.ReadCloser
 }

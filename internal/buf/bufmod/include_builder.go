@@ -86,7 +86,9 @@ func (b *includeBuilder) buildForIncludes(
 		if err != nil {
 			return nil, err
 		}
-		rootBuckets = append(rootBuckets, rootBucket)
+		// need to do match extension here
+		// https://github.com/bufbuild/buf/issues/113
+		rootBuckets = append(rootBuckets, storage.Map(rootBucket, storage.MatchPathExt(".proto")))
 	}
 	moduleOptions, err := getModuleOptions(
 		absIncludeDirPaths,
