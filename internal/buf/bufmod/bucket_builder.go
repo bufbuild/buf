@@ -65,7 +65,12 @@ func (b *bucketBuilder) buildForBucket(
 	var rootBuckets []storage.ReadBucket
 	for root, excludes := range config.RootToExcludes {
 		roots = append(roots, root)
-		mappers := []storage.Mapper{storage.MapOnPrefix(root)}
+		mappers := []storage.Mapper{
+			// need to do match extension here
+			// https://github.com/bufbuild/buf/issues/113
+			storage.MatchPathExt(".proto"),
+			storage.MapOnPrefix(root),
+		}
 		if len(excludes) != 0 {
 			var notOrMatchers []storage.Matcher
 			for _, exclude := range excludes {

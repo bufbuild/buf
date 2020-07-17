@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/internal/buftesting"
+	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
@@ -44,6 +45,31 @@ var buftestingDirPath = filepath.Join(
 	"internal",
 	"buftesting",
 )
+
+func TestOverlap(t *testing.T) {
+	t.Parallel()
+	// https://github.com/bufbuild/buf/issues/113
+	appcmdtesting.RunCommandSuccess(
+		t,
+		func(use string) *appcmd.Command {
+			return NewCommand(
+				use,
+				appflag.NewBuilder(),
+			)
+		},
+		nil,
+		nil,
+		nil,
+		"-I",
+		filepath.Join("testdata", "overlap", "a"),
+		"-I",
+		filepath.Join("testdata", "overlap", "b"),
+		"-o",
+		app.DevNullFilePath,
+		filepath.Join("testdata", "overlap", "a", "1.proto"),
+		filepath.Join("testdata", "overlap", "b", "2.proto"),
+	)
+}
 
 func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
 	t.Parallel()
