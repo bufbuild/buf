@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
@@ -135,7 +136,25 @@ func (b *builder) getBuildResults(
 	for _, iPaths := range chunks {
 		iPaths := iPaths
 		go func() {
-			buildResultC <- getBuildResult(
+			var buildResult *buildResult
+			defer func() {
+				select {
+				case buildResultC <- buildResult:
+				case <-ctx.Done():
+				}
+			}()
+			defer func() {
+				// Recover any panics here since we run in a goroutine
+				v := recover()
+				if v != nil {
+					buildResult = newBuildResult(
+						nil,
+						nil,
+						fmt.Errorf("panic: %v, stack:\n%s", v, string(debug.Stack())),
+					)
+				}
+			}()
+			buildResult = getBuildResult(
 				ctx,
 				parserAccessorHandler,
 				iPaths,

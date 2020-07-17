@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,5 +28,5 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	i, err := fuzz(data)
 	require.NoError(t, err)
-	require.Equal(t, 1, i)
+	assert.Equal(t, 1, i)
 }
