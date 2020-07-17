@@ -18,7 +18,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strconv"
+	"io/ioutil"
+	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufmod"
@@ -26,7 +27,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const fileSplitter = "----------------"
+const fileSplitter = "----------------\n"
 
 // Fuzz is the entrypoint for the fuzzer.
 // We use https://github.com/dvyukov/go-fuzz for fuzzing.
@@ -40,8 +41,19 @@ func Fuzz(data []byte) int {
 func fuzz(data []byte) (int, error) {
 	files := bytes.Split(data, []byte(fileSplitter))
 	pathToData := make(map[string][]byte)
-	for i, file := range files {
-		pathToData[strconv.Itoa(i)+".proto"] = file
+	for _, file := range files {
+		buf := bytes.NewBuffer(file)
+		header, err := buf.ReadBytes('\n')
+		if err != nil {
+			return 0, err
+		}
+		content, err := ioutil.ReadAll(buf)
+		if err != nil {
+			return 0, err
+		}
+		// Trim comment prefix and newline suffix
+		fileName := strings.TrimSpace(strings.TrimPrefix(string(header), "// "))
+		pathToData[fileName] = content
 	}
 	bucket, err := storagemem.NewReadBucket(pathToData)
 	if err != nil {
@@ -62,6 +74,10 @@ func fuzz(data []byte) (int, error) {
 	builder := bufbuild.NewBuilder(zap.NewNop())
 	_, fileAnnotations, err := builder.Build(context.Background(), module)
 	if err != nil {
+		// Panic when we captured a panic in the builder
+		if strings.Contains(err.Error(), "panic: ") {
+			panic(err)
+		}
 		return 0, err
 	}
 	if len(fileAnnotations) > 0 {
