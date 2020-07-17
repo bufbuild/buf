@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storage
+package storageproto
 
 import (
 	"context"
@@ -21,18 +21,19 @@ import (
 	"sync"
 
 	storagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/storage/v1beta1"
+	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/thread"
 )
 
-// ToProtoFileSet copies the ReadBucket to the FileSet.
+// ToFileSet copies the ReadBucket to the FileSet.
 //
 // Copies done concurrently.
 // Returns a validated FileSet.
-func ToProtoFileSet(
+func ToFileSet(
 	ctx context.Context,
-	readBucket ReadBucket,
+	readBucket storage.ReadBucket,
 ) (*storagev1beta1.FileSet, error) {
-	paths, err := AllPaths(ctx, readBucket, "")
+	paths, err := storage.AllPaths(ctx, readBucket, "")
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +43,7 @@ func ToProtoFileSet(
 	for i, path := range paths {
 		path := path
 		jobs[i] = func() error {
-			data, err := ReadPath(ctx, readBucket, path)
+			data, err := storage.ReadPath(ctx, readBucket, path)
 			if err != nil {
 				return err
 			}
@@ -75,11 +76,11 @@ func ToProtoFileSet(
 	return fileSet, nil
 }
 
-// FromProtoFileSet copies the FileSet to the WriteBucket.
-func FromProtoFileSet(
+// FromFileSet copies the FileSet to the WriteBucket.
+func FromFileSet(
 	ctx context.Context,
 	fileSet *storagev1beta1.FileSet,
-	writeBucket WriteBucket,
+	writeBucket storage.WriteBucket,
 ) error {
 	if err := fileSet.Validate(); err != nil {
 		return err
@@ -95,7 +96,7 @@ func FromProtoFileSet(
 	for i, file := range fileSet.Files {
 		file := file
 		jobs[i] = func() error {
-			return PutPath(ctx, writeBucket, file.GetPath(), file.GetContent())
+			return storage.PutPath(ctx, writeBucket, file.GetPath(), file.GetContent())
 		}
 	}
 	return thread.Parallelize(jobs...)
