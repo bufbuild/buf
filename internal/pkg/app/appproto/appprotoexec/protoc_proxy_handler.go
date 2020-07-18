@@ -92,7 +92,7 @@ func (h *protocProxyHandler) Handle(
 	if parameter := request.GetParameter(); parameter != "" {
 		args = append(
 			args,
-			fmt.Sprintf("%s_opt=%s", h.pluginName, parameter),
+			fmt.Sprintf("--%s_opt=%s", h.pluginName, parameter),
 		)
 	}
 	args = append(
