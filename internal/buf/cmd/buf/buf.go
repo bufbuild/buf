@@ -22,7 +22,7 @@ import (
 )
 
 // Version is the version of buf.
-const Version = "0.20.2"
+const Version = "0.20.3"
 
 // Main is the main.
 func Main(use string, options ...RootCommandOption) {
