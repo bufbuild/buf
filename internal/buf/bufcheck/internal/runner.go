@@ -19,10 +19,10 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/protosource"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -49,7 +49,12 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	if len(checkers) == 0 {
 		return nil, nil
 	}
-	defer instrument.Start(r.logger, "check", zap.Int("num_files", len(files)), zap.Int("num_checkers", len(checkers))).End()
+	ctx, span := trace.StartSpan(ctx, "check")
+	span.AddAttributes(
+		trace.Int64Attribute("num_files", int64(len(files))),
+		trace.Int64Attribute("num_checkers", int64(len(checkers))),
+	)
+	defer span.End()
 
 	ignoreFunc := r.newIgnoreFunc(config)
 	var fileAnnotations []bufanalysis.FileAnnotation

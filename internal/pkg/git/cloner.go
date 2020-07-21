@@ -24,10 +24,10 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/tmp"
+	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -52,7 +52,8 @@ func (c *cloner) CloneToBucket(
 	writeBucket storage.WriteBucket,
 	options CloneToBucketOptions,
 ) (retErr error) {
-	defer instrument.Start(c.logger, "git_clone_to_bucket").End()
+	ctx, span := trace.StartSpan(ctx, "git_clone_to_bucket")
+	defer span.End()
 
 	var err error
 	switch {
@@ -153,7 +154,8 @@ func (c *cloner) CloneToBucket(
 	if options.Mapper != nil {
 		readBucket = storage.Map(readBucket, options.Mapper)
 	}
-	defer instrument.Start(c.logger, "git_clone_to_bucket_copy").End()
+	ctx, span2 := trace.StartSpan(ctx, "git_clone_to_bucket_copy")
+	defer span2.End()
 	// do NOT copy external paths
 	_, err = storage.Copy(ctx, readBucket, writeBucket)
 	return err

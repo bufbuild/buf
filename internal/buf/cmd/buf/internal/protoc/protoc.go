@@ -30,7 +30,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
+	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -130,12 +130,12 @@ func run(ctx context.Context, container applog.Container, env *env) (retErr erro
 	if len(env.PluginNameToPluginInfo) > 0 {
 		images := []bufcore.Image{image}
 		if env.ByDir {
-			timer := instrument.Start(container.Logger(), "image_by_dir")
+			_, span := trace.StartSpan(ctx, "image_by_dir")
 			images, err = bufcore.ImageByDir(image)
 			if err != nil {
 				return err
 			}
-			timer.End()
+			span.End()
 		}
 		for pluginName, pluginInfo := range env.PluginNameToPluginInfo {
 			if err := executePlugin(

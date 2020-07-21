@@ -138,6 +138,18 @@ func TestCustomOptionsError1(t *testing.T) {
 	)
 }
 
+func TestOptionPanic(t *testing.T) {
+	t.Parallel()
+	require.NotPanics(t, func() {
+		module := testGetModule(t, filepath.Join("testdata", "optionpanic"))
+		_, _, err := NewBuilder(zap.NewNop()).Build(
+			context.Background(),
+			module,
+		)
+		require.NoError(t, err)
+	})
+}
+
 func testCompare(t *testing.T, relDirPath string) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", relDirPath)

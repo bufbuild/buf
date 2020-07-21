@@ -44,3 +44,10 @@ func BuilderWithTimeout(defaultTimeout time.Duration) BuilderOption {
 		builder.defaultTimeout = defaultTimeout
 	}
 }
+
+// BuilderWithZapTracer enables zap tracing for the builder.
+func BuilderWithZapTracer() BuilderOption {
+	return func(builder *builder) {
+		builder.zapTracer = true
+	}
+}

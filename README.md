@@ -95,7 +95,8 @@ Buf currently contains:
 
 - A [linter](https://buf.build/docs/lint-usage) that enforces good API design choices and structure.
 - A [breaking change detector](https://buf.build/docs/breaking-usage) that enforces compatibility at the source code or wire level.
-- A configurable file [builder](https://buf.build/docs/build-overview) that produces [Images](https://buf.build/docs/build-images), our extension of
+- A configurable file [builder](https://buf.build/docs/build-overview) that produces
+  [Images](https://buf.build/docs/build-images), our extension of
   [FileDescriptorSets](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto).
 
 **Buf is designed to be extremely simple to use, while providing functionality for advanced use cases.**

@@ -22,7 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/fetch"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
+	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 )
 
@@ -87,7 +87,8 @@ func (a *refParser) GetRef(
 	ctx context.Context,
 	value string,
 ) (Ref, error) {
-	defer instrument.Start(a.logger, "get_ref").End()
+	ctx, span := trace.StartSpan(ctx, "get_ref")
+	defer span.End()
 	parsedRef, err := a.getParsedRef(ctx, value, allFormats)
 	if err != nil {
 		return nil, err
@@ -114,7 +115,8 @@ func (a *refParser) GetImageRef(
 	ctx context.Context,
 	value string,
 ) (ImageRef, error) {
-	defer instrument.Start(a.logger, "get_image_ref").End()
+	ctx, span := trace.StartSpan(ctx, "get_image_ref")
+	defer span.End()
 	parsedRef, err := a.getParsedRef(ctx, value, imageFormats)
 	if err != nil {
 		return nil, err
@@ -135,7 +137,8 @@ func (a *refParser) GetSourceRef(
 	ctx context.Context,
 	value string,
 ) (SourceRef, error) {
-	defer instrument.Start(a.logger, "get_source_ref").End()
+	ctx, span := trace.StartSpan(ctx, "get_source_ref")
+	defer span.End()
 	parsedRef, err := a.getParsedRef(ctx, value, sourceFormats)
 	if err != nil {
 		return nil, err

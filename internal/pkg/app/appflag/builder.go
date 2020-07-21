@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
+	"github.com/bufbuild/buf/internal/pkg/observability/observabilityzap"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
@@ -40,6 +41,8 @@ type builder struct {
 	timeout time.Duration
 
 	defaultTimeout time.Duration
+
+	zapTracer bool
 }
 
 func newBuilder(options ...BuilderOption) *builder {
@@ -98,6 +101,11 @@ func (b *builder) run(
 		defer cancel()
 	}
 
+	if b.zapTracer {
+		if err := observabilityzap.NewExporter(logger).Run(ctx); err != nil {
+			return err
+		}
+	}
 	if !b.profile {
 		return f(ctx, applog.NewContainer(appContainer, logger))
 	}
