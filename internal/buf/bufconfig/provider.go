@@ -22,8 +22,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufmod"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -44,7 +44,8 @@ func newProvider(logger *zap.Logger, options ...ProviderOption) *provider {
 }
 
 func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
-	defer instrument.Start(p.logger, "get_config").End()
+	ctx, span := trace.StartSpan(ctx, "get_config")
+	defer span.End()
 
 	externalConfig := &ExternalConfig{}
 	readObject, err := readBucket.Get(ctx, ConfigFilePath)
@@ -67,8 +68,9 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	return p.newConfig(externalConfig)
 }
 
-func (p *provider) GetConfigForData(data []byte) (*Config, error) {
-	defer instrument.Start(p.logger, "get_config_for_data").End()
+func (p *provider) GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
+	_, span := trace.StartSpan(ctx, "get_config_for_data")
+	defer span.End()
 
 	externalConfig := &ExternalConfig{}
 	if err := encoding.UnmarshalJSONOrYAMLStrict(data, externalConfig); err != nil {

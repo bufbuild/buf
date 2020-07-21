@@ -12,22 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buf
+package observabilityzap
 
 import (
-	"context"
-
-	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
-	"github.com/bufbuild/buf/internal/pkg/app/appflag"
+	"github.com/bufbuild/buf/internal/pkg/observability"
+	"go.uber.org/zap"
 )
 
-// Version is the version of buf.
-const Version = "0.21.0-dev"
-
-// Main is the main.
-func Main(use string, options ...RootCommandOption) {
-	appcmd.Main(context.Background(), newRootCommand(use, options...))
+// NewExporter returns a new Exporter with a zap backend.
+func NewExporter(logger *zap.Logger) observability.Exporter {
+	return newExporter(logger)
 }
-
-// RootCommandOption is an option for a root Command.
-type RootCommandOption func(*appcmd.Command, appflag.Builder)

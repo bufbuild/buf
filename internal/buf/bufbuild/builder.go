@@ -23,12 +23,12 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcore"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/bufbuild/buf/internal/pkg/thread"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
+	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -65,7 +65,8 @@ func (b *builder) build(
 	module bufcore.Module,
 	excludeSourceCodeInfo bool,
 ) (bufcore.Image, []bufanalysis.FileAnnotation, error) {
-	defer instrument.Start(b.logger, "build").End()
+	ctx, span := trace.StartSpan(ctx, "build")
+	defer span.End()
 
 	parserAccessorHandler := newParserAccessorHandler(ctx, module)
 	targetFileInfos, err := module.TargetFileInfos(ctx)
@@ -124,7 +125,8 @@ func (b *builder) getBuildResults(
 	paths []string,
 	excludeSourceCodeInfo bool,
 ) []*buildResult {
-	defer instrument.Start(b.logger, "parse").End()
+	ctx, span := trace.StartSpan(ctx, "parse")
+	defer span.End()
 
 	var buildResults []*buildResult
 	chunkSize := 0
@@ -386,7 +388,8 @@ func (b *builder) getImage(
 	sortedFileDescriptors []*desc.FileDescriptor,
 	parserAccessorHandler *parserAccessorHandler,
 ) (bufcore.Image, error) {
-	defer instrument.Start(b.logger, "get_image").End()
+	ctx, span := trace.StartSpan(ctx, "get_image")
+	defer span.End()
 
 	// if we aren't including imports, then we need a set of file names that
 	// are included so we can create a topologically sorted list w/out

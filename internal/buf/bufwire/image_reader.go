@@ -23,8 +23,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
+	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -58,7 +58,8 @@ func (i *imageReader) GetImage(
 	externalFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ bufcore.Image, retErr error) {
-	defer instrument.Start(i.logger, "get_image").End()
+	ctx, span := trace.StartSpan(ctx, "get_image")
+	defer span.End()
 	defer func() {
 		if retErr != nil {
 			retErr = fmt.Errorf("%v: %w", i.valueFlagName, retErr)
@@ -104,12 +105,12 @@ func (i *imageReader) getImageForImageRef(
 	// TODO: revisit
 	case buffetch.ImageEncodingBin:
 		firstProtoImage := &imagev1.Image{}
-		timer := instrument.Start(i.logger, "first_wire_unmarshal")
+		_, span := trace.StartSpan(ctx, "first_wire_unmarshal")
 		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
 			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
 		}
-		timer.End()
-		timer = instrument.Start(i.logger, "new_resolver")
+		span.End()
+		_, span = trace.StartSpan(ctx, "new_resolver")
 		// TODO right now, NewResolver sets AllowUnresolvable to true all the time
 		// we want to make this into a check, and we verify if we need this for the individual command
 		resolver, err := protoencoding.NewResolver(
@@ -118,34 +119,34 @@ func (i *imageReader) getImageForImageRef(
 		if err != nil {
 			return nil, err
 		}
-		timer.End()
-		timer = instrument.Start(i.logger, "second_wire_unmarshal")
+		span.End()
+		_, span = trace.StartSpan(ctx, "second_wire_unmarshal")
 		if err := protoencoding.NewWireUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
 			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
 		}
-		timer.End()
+		span.End()
 	case buffetch.ImageEncodingJSON:
 		firstProtoImage := &imagev1.Image{}
-		timer := instrument.Start(i.logger, "first_json_unmarshal")
+		_, span := trace.StartSpan(ctx, "first_json_unmarshal")
 		if err := protoencoding.NewJSONUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
 			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
 		}
 		// TODO right now, NewResolver sets AllowUnresolvable to true all the time
 		// we want to make this into a check, and we verify if we need this for the individual command
-		timer.End()
-		timer = instrument.Start(i.logger, "new_resolver")
+		span.End()
+		_, span = trace.StartSpan(ctx, "new_resolver")
 		resolver, err := protoencoding.NewResolver(
 			firstProtoImage.File...,
 		)
 		if err != nil {
 			return nil, err
 		}
-		timer.End()
-		timer = instrument.Start(i.logger, "second_json_unmarshal")
+		span.End()
+		_, span = trace.StartSpan(ctx, "second_json_unmarshal")
 		if err := protoencoding.NewJSONUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
 			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
 		}
-		timer.End()
+		span.End()
 	default:
 		return nil, fmt.Errorf("unknown image encoding: %v", imageEncoding)
 	}

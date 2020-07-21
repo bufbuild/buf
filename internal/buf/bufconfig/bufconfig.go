@@ -46,7 +46,7 @@ type Provider interface {
 	// GetConfig gets the Config for the given JSON or YAML data.
 	//
 	// If the data is of length 0, returns the default config.
-	GetConfigForData(data []byte) (*Config, error)
+	GetConfigForData(ctx context.Context, data []byte) (*Config, error)
 }
 
 // ProviderOption is an option for a new Provider.

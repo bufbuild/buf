@@ -22,8 +22,8 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
+	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -57,7 +57,9 @@ func (h *binaryHandler) Handle(
 	responseWriter appproto.ResponseWriter,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
-	defer instrument.Start(h.logger, "plugin_proxy", zap.String("plugin", filepath.Base(h.pluginPath))).End()
+	ctx, span := trace.StartSpan(ctx, "plugin_proxy")
+	span.AddAttributes(trace.StringAttribute("plugin", filepath.Base(h.pluginPath)))
+	defer span.End()
 	unsetRequestVersion := false
 	if request.CompilerVersion == nil {
 		unsetRequestVersion = true

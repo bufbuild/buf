@@ -12,22 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buf
+package observability
 
-import (
-	"context"
+import "context"
 
-	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
-	"github.com/bufbuild/buf/internal/pkg/app/appflag"
-)
-
-// Version is the version of buf.
-const Version = "0.21.0-dev"
-
-// Main is the main.
-func Main(use string, options ...RootCommandOption) {
-	appcmd.Main(context.Background(), newRootCommand(use, options...))
+// Exporter describes the interface implemented
+// by all observability exporters.
+type Exporter interface {
+	Run(context.Context) error
 }
-
-// RootCommandOption is an option for a root Command.
-type RootCommandOption func(*appcmd.Command, appflag.Builder)
