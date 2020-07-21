@@ -21,8 +21,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
+	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -54,7 +54,8 @@ func (i *imageWriter) PutImage(
 	asFileDescriptorSet bool,
 	excludeImports bool,
 ) (retErr error) {
-	defer instrument.Start(i.logger, "put_image").End()
+	ctx, span := trace.StartSpan(ctx, "put_image")
+	defer span.End()
 
 	imageRef, err := i.fetchImageRefParser.GetImageRef(ctx, value)
 	if err != nil {
@@ -74,7 +75,7 @@ func (i *imageWriter) PutImage(
 	} else {
 		message = bufcore.ImageToProtoImage(writeImage)
 	}
-	data, err := i.imageMarshal(message, image, imageRef.ImageEncoding())
+	data, err := i.imageMarshal(ctx, message, image, imageRef.ImageEncoding())
 	if err != nil {
 		return err
 	}
@@ -90,11 +91,13 @@ func (i *imageWriter) PutImage(
 }
 
 func (i *imageWriter) imageMarshal(
+	ctx context.Context,
 	message proto.Message,
 	image bufcore.Image,
 	imageEncoding buffetch.ImageEncoding,
 ) ([]byte, error) {
-	defer instrument.Start(i.logger, "image_marshal").End()
+	_, span := trace.StartSpan(ctx, "image_marshal")
+	defer span.End()
 	switch imageEncoding {
 	case buffetch.ImageEncodingBin:
 		return protoencoding.NewWireMarshaler().Marshal(message)

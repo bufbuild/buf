@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -37,6 +36,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/klauspost/compress/zstd"
 	"github.com/klauspost/pgzip"
+	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -170,7 +170,8 @@ func (r *reader) getArchiveBucket(
 		retErr = multierr.Append(retErr, readCloser.Close())
 	}()
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
-	defer instrument.Start(r.logger, "unarchive").End()
+	ctx, span := trace.StartSpan(ctx, "unarchive")
+	defer span.End()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
 	case ArchiveTypeTar:
 		if err := storagearchive.Untar(

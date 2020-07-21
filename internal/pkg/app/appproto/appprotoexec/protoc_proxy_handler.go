@@ -21,17 +21,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/tmp"
+	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -63,7 +64,9 @@ func (h *protocProxyHandler) Handle(
 	responseWriter appproto.ResponseWriter,
 	request *pluginpb.CodeGeneratorRequest,
 ) (retErr error) {
-	defer instrument.Start(h.logger, "protoc_proxy", zap.String("plugin", h.pluginName)).End()
+	ctx, span := trace.StartSpan(ctx, "protoc_proxy")
+	span.AddAttributes(trace.StringAttribute("plugin", filepath.Base(h.pluginName)))
+	defer span.End()
 	if app.DevStdinFilePath == "" {
 		return errors.New("app.DevStdinFilePath is empty for this platform")
 	}

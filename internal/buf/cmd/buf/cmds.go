@@ -25,7 +25,10 @@ import (
 )
 
 func newRootCommand(use string, options ...RootCommandOption) *appcmd.Command {
-	builder := appflag.NewBuilder(appflag.BuilderWithTimeout(120 * time.Second))
+	builder := appflag.NewBuilder(
+		appflag.BuilderWithTimeout(120*time.Second),
+		appflag.BuilderWithZapTracer(),
+	)
 	rootCommand := &appcmd.Command{
 		Use: use,
 		SubCommands: []*appcmd.Command{

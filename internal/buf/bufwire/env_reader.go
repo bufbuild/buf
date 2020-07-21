@@ -30,8 +30,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufmod"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/instrument"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -85,7 +85,8 @@ func (e *envReader) GetEnv(
 	externalFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ Env, _ []bufanalysis.FileAnnotation, retErr error) {
-	defer instrument.Start(e.logger, "get_env").End()
+	ctx, span := trace.StartSpan(ctx, "get_env")
+	defer span.End()
 	defer func() {
 		if retErr != nil {
 			retErr = fmt.Errorf("%v: %w", e.valueFlagName, retErr)
@@ -132,7 +133,8 @@ func (e *envReader) GetImageEnv(
 	externalFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ Env, retErr error) {
-	defer instrument.Start(e.logger, "get_image_env").End()
+	ctx, span := trace.StartSpan(ctx, "get_image_env")
+	defer span.End()
 	defer func() {
 		if retErr != nil {
 			retErr = fmt.Errorf("%v: %w", e.valueFlagName, retErr)
@@ -163,7 +165,8 @@ func (e *envReader) GetSourceEnv(
 	externalFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ Env, _ []bufanalysis.FileAnnotation, retErr error) {
-	defer instrument.Start(e.logger, "get_source_env").End()
+	ctx, span := trace.StartSpan(ctx, "get_source_env")
+	defer span.End()
 	defer func() {
 		if retErr != nil {
 			retErr = fmt.Errorf("%v: %w", e.valueFlagName, retErr)
@@ -247,7 +250,7 @@ func (e *envReader) GetConfig(
 	configOverride string,
 ) (*bufconfig.Config, error) {
 	if configOverride != "" {
-		return e.parseConfigOverride(configOverride)
+		return e.parseConfigOverride(ctx, configOverride)
 	}
 	// if there is no config override, we read the config from the current directory
 	data, err := ioutil.ReadFile(bufconfig.ConfigFilePath)
@@ -259,7 +262,7 @@ func (e *envReader) GetConfig(
 		data = nil
 	}
 	// if there was no file, this just returns default config
-	return e.configProvider.GetConfigForData(data)
+	return e.configProvider.GetConfigForData(ctx, data)
 }
 
 func (e *envReader) getEnvFromImage(
@@ -371,7 +374,7 @@ func (e *envReader) getSourceBucketAndConfig(
 	}()
 	var config *bufconfig.Config
 	if configOverride != "" {
-		config, err = e.parseConfigOverride(configOverride)
+		config, err = e.parseConfigOverride(ctx, configOverride)
 	} else {
 		// if there is no config override, we read the config from the bucket
 		// if there was no file, this just returns default config
@@ -383,7 +386,7 @@ func (e *envReader) getSourceBucketAndConfig(
 	return readBucketCloser, config, nil
 }
 
-func (e *envReader) parseConfigOverride(value string) (*bufconfig.Config, error) {
+func (e *envReader) parseConfigOverride(ctx context.Context, value string) (*bufconfig.Config, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {
 		return nil, errors.New("config override value is empty")
@@ -399,7 +402,7 @@ func (e *envReader) parseConfigOverride(value string) (*bufconfig.Config, error)
 	default:
 		data = []byte(value)
 	}
-	config, err := e.configProvider.GetConfigForData(data)
+	config, err := e.configProvider.GetConfigForData(ctx, data)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", e.configOverrideFlagName, err)
 	}

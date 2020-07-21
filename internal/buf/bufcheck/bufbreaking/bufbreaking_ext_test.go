@@ -633,7 +633,7 @@ func testGetConfig(
 	if err != nil && !storage.IsNotExist(err) {
 		require.NoError(t, err)
 	}
-	config, err := configProvider.GetConfigForData(data)
+	config, err := configProvider.GetConfigForData(ctx, data)
 	require.NoError(t, err)
 	return config
 }
