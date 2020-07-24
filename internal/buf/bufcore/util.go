@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/image/v1"
+	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/image/v1"
 )
 
 func getImportFileIndexes(protoImage *imagev1.Image) (map[int]struct{}, error) {

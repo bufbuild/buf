@@ -20,7 +20,7 @@ import (
 	"sort"
 	"sync"
 
-	storagev1beta1 "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/storage/v1beta1"
+	storagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/storage/v1"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/thread"
 )
@@ -32,12 +32,12 @@ import (
 func ToFileSet(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
-) (*storagev1beta1.FileSet, error) {
+) (*storagev1.FileSet, error) {
 	paths, err := storage.AllPaths(ctx, readBucket, "")
 	if err != nil {
 		return nil, err
 	}
-	files := make([]*storagev1beta1.File, 0, len(paths))
+	files := make([]*storagev1.File, 0, len(paths))
 	var lock sync.Mutex
 	jobs := make([]func() error, len(paths))
 	for i, path := range paths {
@@ -47,7 +47,7 @@ func ToFileSet(
 			if err != nil {
 				return err
 			}
-			file := &storagev1beta1.File{
+			file := &storagev1.File{
 				Path:    path,
 				Content: data,
 			}
@@ -67,7 +67,7 @@ func ToFileSet(
 			return files[i].GetPath() < files[j].GetPath()
 		},
 	)
-	fileSet := &storagev1beta1.FileSet{
+	fileSet := &storagev1.FileSet{
 		Files: files,
 	}
 	if err := fileSet.Validate(); err != nil {
@@ -79,7 +79,7 @@ func ToFileSet(
 // FromFileSet copies the FileSet to the WriteBucket.
 func FromFileSet(
 	ctx context.Context,
-	fileSet *storagev1beta1.FileSet,
+	fileSet *storagev1.FileSet,
 	writeBucket storage.WriteBucket,
 ) error {
 	if err := fileSet.Validate(); err != nil {
