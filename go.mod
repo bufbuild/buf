@@ -19,7 +19,7 @@ require (
 	go.opencensus.io v0.22.4
 	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.15.0
-	google.golang.org/genproto v0.0.0-20200722002428-88e341933a54 // indirect
+	google.golang.org/genproto v0.0.0-20200724131911-43cab4749ae7 // indirect
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
