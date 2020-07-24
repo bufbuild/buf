@@ -14,8 +14,8 @@ GO_BINS := $(GO_BINS) $(BUF_BIN) \
 GO_LINT_IGNORES := $(GO_LINT_IGNORES) /internal/buf/cmd/buf/internal/protoc
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
-PROTOC_GEN_GO_OUT := internal/gen/proto/go/v1
-PROTOC_GEN_VALIDATE_OUT := internal/gen/proto/go/v1
+PROTOC_GEN_GO_OUT := internal/gen/proto/go
+PROTOC_GEN_VALIDATE_OUT := internal/gen/proto/go
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
 	.vscode/ \

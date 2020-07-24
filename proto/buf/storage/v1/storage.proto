@@ -14,11 +14,11 @@
 
 syntax = "proto3";
 
-package bufbuild.buf.storage.v1beta1;
+package buf.storage.v1;
 
 import "validate/validate.proto";
 
-option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/v1/bufbuild/buf/storage/v1beta1;storagev1beta1";
+option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/storage/v1;storagev1";
 
 // FileSet is a the set of files for a module.
 message FileSet {
