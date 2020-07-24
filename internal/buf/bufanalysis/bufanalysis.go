@@ -25,7 +25,7 @@ import (
 
 const (
 	// FormatText is the text format for FileAnnotations.
-	FormatText = iota + 1
+	FormatText Format = iota + 1
 	// FormatJSON is the JSON format for FileAnnotations.
 	FormatJSON
 	// FormatMSVS is the MSVS format for FileAnnotations.
