@@ -16,48 +16,21 @@ package internal
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufmod"
 	"github.com/bufbuild/buf/internal/buf/bufwire"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
-	"github.com/bufbuild/buf/internal/pkg/git"
-	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
 
-const (
-	experimentalGitCloneFlagName  = "experimental-git-clone"
-	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
-	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
-	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
-	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
-)
-
-var (
-	// Timeout should be set through context for calls to EnvReader, not through http.Client
-	defaultHTTPClient        = &http.Client{}
-	defaultHTTPAuthenticator = httpauth.NewMultiAuthenticator(
-		httpauth.NewNetrcAuthenticator(),
-		// must keep this for legacy purposes
-		httpauth.NewEnvAuthenticator(
-			inputHTTPSPasswordEnvKey,
-			inputHTTPSPasswordEnvKey,
-		),
-	)
-	defaultGitClonerOptions = git.ClonerOptions{
-		HTTPSUsernameEnvKey:      inputHTTPSUsernameEnvKey,
-		HTTPSPasswordEnvKey:      inputHTTPSPasswordEnvKey,
-		SSHKeyFileEnvKey:         inputSSHKeyFileEnvKey,
-		SSHKnownHostsFilesEnvKey: inputSSHKnownHostsFilesEnvKey,
-	}
-)
+const experimentalGitCloneFlagName = "experimental-git-clone"
 
 // NewBufwireEnvReader returns a new EnvReader.
 func NewBufwireEnvReader(
@@ -70,12 +43,7 @@ func NewBufwireEnvReader(
 		buffetch.NewRefParser(
 			logger,
 		),
-		buffetch.NewReader(
-			logger,
-			defaultHTTPClient,
-			defaultHTTPAuthenticator,
-			git.NewCloner(logger, defaultGitClonerOptions),
-		),
+		bufcli.NewFetchReader(logger),
 		bufconfig.NewProvider(logger),
 		bufmod.NewBucketBuilder(logger),
 		bufbuild.NewBuilder(logger),
@@ -94,12 +62,7 @@ func NewBufwireImageReader(
 		buffetch.NewImageRefParser(
 			logger,
 		),
-		buffetch.NewReader(
-			logger,
-			defaultHTTPClient,
-			defaultHTTPAuthenticator,
-			git.NewCloner(logger, defaultGitClonerOptions),
-		),
+		bufcli.NewFetchReader(logger),
 		imageFlagName,
 	)
 }

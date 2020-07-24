@@ -9,7 +9,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.2
 	github.com/google/go-cmp v0.5.1
-	github.com/jhump/protoreflect v1.7.1-0.20200720033022-cb62454d469b
+	github.com/jhump/protoreflect v1.7.1-0.20200723220026-11eaaf73e0ec
 	github.com/klauspost/compress v1.10.10
 	github.com/klauspost/pgzip v1.2.4
 	github.com/pkg/profile v1.5.0
@@ -19,7 +19,7 @@ require (
 	go.opencensus.io v0.22.4
 	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.15.0
-	google.golang.org/genproto v0.0.0-20200721032028-5044d0edf986 // indirect
+	google.golang.org/genproto v0.0.0-20200722002428-88e341933a54 // indirect
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
