@@ -54,9 +54,9 @@ func newGitRef(
 		return nil, err
 	}
 	if depth == 0 {
-		return nil, newDepthZeroError()
+		return nil, NewDepthZeroError()
 	}
-	return buildGitRef(
+	return newDirectGitRef(
 		format,
 		path,
 		gitScheme,
@@ -66,7 +66,7 @@ func newGitRef(
 	), nil
 }
 
-func buildGitRef(
+func newDirectGitRef(
 	format string,
 	path string,
 	gitScheme GitScheme,
@@ -114,13 +114,13 @@ func (*gitRef) gitRef()    {}
 
 func getGitSchemeAndPath(path string) (GitScheme, string, error) {
 	if path == "" {
-		return 0, "", newNoPathError()
+		return 0, "", NewNoPathError()
 	}
 	if app.IsDevStderr(path) {
-		return 0, "", newInvalidGitPathError(path)
+		return 0, "", NewInvalidGitPathError(path)
 	}
 	if path == "-" || app.IsDevNull(path) || app.IsDevStdin(path) || app.IsDevStdout(path) {
-		return 0, "", newInvalidGitPathError(path)
+		return 0, "", NewInvalidGitPathError(path)
 	}
 	for prefix, gitScheme := range gitSchemePrefixToGitScheme {
 		if strings.HasPrefix(path, prefix) {
@@ -129,13 +129,13 @@ func getGitSchemeAndPath(path string) (GitScheme, string, error) {
 				path = normalpath.Normalize(path)
 			}
 			if path == "" {
-				return 0, "", newNoPathError()
+				return 0, "", NewNoPathError()
 			}
 			return gitScheme, path, nil
 		}
 	}
 	if strings.Contains(path, "://") {
-		return 0, "", newInvalidGitPathError(path)
+		return 0, "", NewInvalidGitPathError(path)
 	}
 	return GitSchemeLocal, normalpath.Normalize(path), nil
 }

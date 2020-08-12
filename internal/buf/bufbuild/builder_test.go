@@ -17,7 +17,6 @@ package bufbuild
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"sort"
 	"testing"
@@ -42,131 +41,9 @@ var buftestingDirPath = filepath.Join(
 	"buftesting",
 )
 
-func TestBuildGoogleapis(t *testing.T) {
+func TestGoogleapis(t *testing.T) {
 	t.Parallel()
-	for _, includeSourceInfo := range []bool{true, false} {
-		t.Run(
-			fmt.Sprintf("includeSourceInfo:%v", includeSourceInfo),
-			func(t *testing.T) {
-				t.Parallel()
-				testBuildGoogleapis(t, includeSourceInfo)
-			},
-		)
-	}
-}
-
-func TestBufProtocGoogleapis(t *testing.T) {
-	t.Parallel()
-	for _, includeSourceInfo := range []bool{true, false} {
-		t.Run(
-			fmt.Sprintf("includeSourceInfo:%v", includeSourceInfo),
-			func(t *testing.T) {
-				t.Parallel()
-				testBuildBufProtocGoogleapis(t, includeSourceInfo)
-			},
-		)
-	}
-}
-
-func TestActualProtocGoogleapis(t *testing.T) {
-	t.Parallel()
-	//for _, includeSourceInfo := range []bool{true, false} {
-	for _, includeSourceInfo := range []bool{false} {
-		t.Run(
-			fmt.Sprintf("includeSourceInfo:%v", includeSourceInfo),
-			func(t *testing.T) {
-				t.Parallel()
-				testBuildActualProtocGoogleapis(t, includeSourceInfo)
-			},
-		)
-	}
-}
-
-func TestCompareGoogleapis(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
-	// Don't run in parallel as it allocates a lot of memory
-	for _, includeSourceInfo := range []bool{true, false} {
-		t.Run(
-			fmt.Sprintf("includeSourceInfo:%v", includeSourceInfo),
-			func(t *testing.T) {
-				t.Parallel()
-				image := testBuildGoogleapis(t, includeSourceInfo)
-				fileDescriptorSet := bufcore.ImageToFileDescriptorSet(image)
-				actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, includeSourceInfo)
-				prototesting.AssertFileDescriptorSetsEqual(t, fileDescriptorSet, actualProtocFileDescriptorSet)
-			},
-		)
-	}
-}
-
-func TestCompareBufProtocGoogleapis(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
-	// Don't run in parallel as it allocates a lot of memory
-	for _, includeSourceInfo := range []bool{true, false} {
-		t.Run(
-			fmt.Sprintf("includeSourceInfo:%v", includeSourceInfo),
-			func(t *testing.T) {
-				t.Parallel()
-				bufProtocFileDescriptorSet := testBuildBufProtocGoogleapis(t, includeSourceInfo)
-				actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, includeSourceInfo)
-				prototesting.AssertFileDescriptorSetsEqual(t, bufProtocFileDescriptorSet, actualProtocFileDescriptorSet)
-			},
-		)
-	}
-}
-
-func TestCompareCustomOptions1(t *testing.T) {
-	testCompare(t, "customoptions1")
-}
-
-func TestCompareProto3Optional1(t *testing.T) {
-	testCompare(t, "proto3optional1")
-}
-
-func TestCustomOptionsError1(t *testing.T) {
-	t.Parallel()
-	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", "customoptionserror1"))
-	require.Equal(t, 1, len(fileAnnotations), fileAnnotations)
-	require.Equal(
-		t,
-		"testdata/customoptionserror1/b.proto:9:27:field a.Baz.bat: option (a.foo).bat: field bat of a.Foo does not exist",
-		fileAnnotations[0].String(),
-	)
-}
-
-func TestOptionPanic(t *testing.T) {
-	t.Parallel()
-	require.NotPanics(t, func() {
-		module := testGetModule(t, filepath.Join("testdata", "optionpanic"))
-		_, _, err := NewBuilder(zap.NewNop()).Build(
-			context.Background(),
-			module,
-		)
-		require.NoError(t, err)
-	})
-}
-
-func testCompare(t *testing.T, relDirPath string) {
-	t.Parallel()
-	dirPath := filepath.Join("testdata", relDirPath)
-	image, fileAnnotations := testBuild(t, false, dirPath)
-	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
-	image = bufcore.ImageWithoutImports(image)
-	fileDescriptorSet := bufcore.ImageToFileDescriptorSet(image)
-	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 0)
-	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, false, false, dirPath, filePaths)
-	prototesting.AssertFileDescriptorSetsEqual(t, fileDescriptorSet, actualProtocFileDescriptorSet)
-}
-
-func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufcore.Image {
-	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	image, fileAnnotations := testBuild(t, includeSourceInfo, googleapisDirPath)
-
-	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
+	image := testBuildGoogleapis(t, true)
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
 	assert.Equal(
 		t,
@@ -239,14 +116,74 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufcore.Image {
 	// basic check to make sure there is no error at this scale
 	_, err = protosource.NewFilesUnstable(context.Background(), bufcoreutil.NewInputFiles(image.Files())...)
 	assert.NoError(t, err)
-	return image
 }
 
-func testBuildBufProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
+func TestCompareGoogleapis(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	t.Parallel()
+	// cannot directly compare with source code info as buf protoc creates additional source
+	// code infos that protoc does not
+	image := testBuildGoogleapis(t, false)
+	fileDescriptorSet := bufcore.ImageToFileDescriptorSet(image)
+	actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, false)
+	prototesting.AssertFileDescriptorSetsEqual(
+		t,
+		fileDescriptorSet,
+		actualProtocFileDescriptorSet,
+	)
+}
+
+func TestCompareCustomOptions1(t *testing.T) {
+	t.Parallel()
+	testCompare(t, "customoptions1")
+}
+
+func TestCompareProto3Optional1(t *testing.T) {
+	t.Parallel()
+	testCompare(t, "proto3optional1")
+}
+
+func TestCustomOptionsError1(t *testing.T) {
+	t.Parallel()
+	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", "customoptionserror1"))
+	require.Equal(t, 1, len(fileAnnotations), fileAnnotations)
+	require.Equal(
+		t,
+		"testdata/customoptionserror1/b.proto:9:27:field a.Baz.bat: option (a.foo).bat: field bat of a.Foo does not exist",
+		fileAnnotations[0].String(),
+	)
+}
+
+func TestOptionPanic(t *testing.T) {
+	t.Parallel()
+	require.NotPanics(t, func() {
+		module := testGetModule(t, filepath.Join("testdata", "optionpanic"))
+		_, _, err := NewBuilder(zap.NewNop()).Build(
+			context.Background(),
+			module,
+		)
+		require.NoError(t, err)
+	})
+}
+
+func testCompare(t *testing.T, relDirPath string) {
+	dirPath := filepath.Join("testdata", relDirPath)
+	image, fileAnnotations := testBuild(t, false, dirPath)
+	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
+	image = bufcore.ImageWithoutImports(image)
+	fileDescriptorSet := bufcore.ImageToFileDescriptorSet(image)
+	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 0)
+	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, false, false, dirPath, filePaths)
+	prototesting.AssertFileDescriptorSetsEqual(t, fileDescriptorSet, actualProtocFileDescriptorSet)
+}
+
+func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufcore.Image {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	fileDescriptorSet := testBuildBufProtoc(t, true, includeSourceInfo, googleapisDirPath)
-	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(fileDescriptorSet.GetFile()))
-	return fileDescriptorSet
+	image, fileAnnotations := testBuild(t, includeSourceInfo, googleapisDirPath)
+	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
+	return image
 }
 
 func testBuildActualProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
@@ -254,6 +191,7 @@ func testBuildActualProtocGoogleapis(t *testing.T, includeSourceInfo bool) *desc
 	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 0)
 	fileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, true, includeSourceInfo, googleapisDirPath, filePaths)
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(fileDescriptorSet.GetFile()))
+
 	return fileDescriptorSet
 }
 
@@ -272,30 +210,6 @@ func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufcore.Im
 	return image, fileAnnotations
 }
 
-func testBuildBufProtoc(
-	t *testing.T,
-	includeImports bool,
-	includeSourceInfo bool,
-	dirPath string,
-) *descriptorpb.FileDescriptorSet {
-	module := testGetModuleBufProtoc(t, dirPath)
-	var options []BuildOption
-	if !includeSourceInfo {
-		options = append(options, WithExcludeSourceCodeInfo())
-	}
-	image, fileAnnotations, err := NewBuilder(zap.NewNop()).Build(
-		context.Background(),
-		module,
-		options...,
-	)
-	require.NoError(t, err)
-	require.Empty(t, fileAnnotations)
-	if !includeImports {
-		image = bufcore.ImageWithoutImports(image)
-	}
-	return bufcore.ImageToFileDescriptorSet(image)
-}
-
 func testGetModule(t *testing.T, dirPath string) bufcore.Module {
 	readWriteBucket, err := storageos.NewReadWriteBucket(dirPath)
 	require.NoError(t, err)
@@ -305,15 +219,6 @@ func testGetModule(t *testing.T, dirPath string) bufcore.Module {
 		context.Background(),
 		readWriteBucket,
 		config,
-	)
-	require.NoError(t, err)
-	return module
-}
-
-func testGetModuleBufProtoc(t *testing.T, dirPath string) bufcore.Module {
-	module, err := bufmod.NewIncludeBuilder(zap.NewNop()).BuildForIncludes(
-		context.Background(),
-		[]string{dirPath},
 	)
 	require.NoError(t, err)
 	return module

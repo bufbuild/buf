@@ -225,7 +225,7 @@ func (r *reader) getDirBucket(
 	mapper storage.Mapper,
 ) (storage.ReadBucketCloser, error) {
 	if !r.localEnabled {
-		return nil, newReadLocalDisabledError()
+		return nil, NewReadLocalDisabledError()
 	}
 	readWriteBucket, err := storageos.NewReadWriteBucket(dirRef.Path())
 	if err != nil {
@@ -242,7 +242,7 @@ func (r *reader) getGitBucket(
 	mapper storage.Mapper,
 ) (_ storage.ReadBucketCloser, retErr error) {
 	if !r.gitEnabled {
-		return nil, newReadGitDisabledError()
+		return nil, NewReadGitDisabledError()
 	}
 	gitURL, err := getGitURL(gitRef)
 	if err != nil {
@@ -330,17 +330,17 @@ func (r *reader) getFileReadCloserAndSizePotentiallyCompressed(
 	switch fileScheme := fileRef.FileScheme(); fileScheme {
 	case FileSchemeHTTP:
 		if !r.httpEnabled {
-			return nil, -1, newReadHTTPDisabledError()
+			return nil, -1, NewReadHTTPDisabledError()
 		}
 		return r.getFileReadCloserAndSizePotentiallyCompressedHTTP(ctx, container, "http://"+fileRef.Path())
 	case FileSchemeHTTPS:
 		if !r.httpEnabled {
-			return nil, -1, newReadHTTPDisabledError()
+			return nil, -1, NewReadHTTPDisabledError()
 		}
 		return r.getFileReadCloserAndSizePotentiallyCompressedHTTP(ctx, container, "https://"+fileRef.Path())
 	case FileSchemeLocal:
 		if !r.localEnabled {
-			return nil, -1, newReadLocalDisabledError()
+			return nil, -1, NewReadLocalDisabledError()
 		}
 		file, err := os.Open(fileRef.Path())
 		if err != nil {
@@ -353,7 +353,7 @@ func (r *reader) getFileReadCloserAndSizePotentiallyCompressed(
 		return file, fileInfo.Size(), nil
 	case FileSchemeStdio, FileSchemeStdin:
 		if !r.stdioEnabled {
-			return nil, -1, newReadStdioDisabledError()
+			return nil, -1, NewReadStdioDisabledError()
 		}
 		return ioutil.NopCloser(container.Stdin()), -1, nil
 	case FileSchemeStdout:

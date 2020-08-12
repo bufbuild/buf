@@ -35,24 +35,24 @@ func newDirRef(
 	path string,
 ) (*dirRef, error) {
 	if path == "" {
-		return nil, newNoPathError()
+		return nil, NewNoPathError()
 	}
 	if app.IsDevStderr(path) {
-		return nil, newInvalidDirPathError(path)
+		return nil, NewInvalidDirPathError(path)
 	}
 	if path == "-" || app.IsDevNull(path) || app.IsDevStdin(path) || app.IsDevStdout(path) {
-		return nil, newInvalidDirPathError(path)
+		return nil, NewInvalidDirPathError(path)
 	}
 	if strings.Contains(path, "://") {
-		return nil, newInvalidDirPathError(path)
+		return nil, NewInvalidDirPathError(path)
 	}
-	return buildDirRef(
+	return newDirectDirRef(
 		format,
 		normalpath.Normalize(path),
 	), nil
 }
 
-func buildDirRef(
+func newDirectDirRef(
 	format string,
 	path string,
 ) *dirRef {
