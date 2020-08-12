@@ -44,13 +44,13 @@ func newSingleRef(
 	compressionType CompressionType,
 ) (*singleRef, error) {
 	if path == "" {
-		return nil, newNoPathError()
+		return nil, NewNoPathError()
 	}
 	if app.IsDevStderr(path) {
-		return nil, newInvalidFilePathError(path)
+		return nil, NewInvalidFilePathError(path)
 	}
 	if path == "-" {
-		return buildSingleRef(
+		return newDirectSingleRef(
 			format,
 			"",
 			FileSchemeStdio,
@@ -58,7 +58,7 @@ func newSingleRef(
 		), nil
 	}
 	if app.IsDevStdin(path) {
-		return buildSingleRef(
+		return newDirectSingleRef(
 			format,
 			"",
 			FileSchemeStdin,
@@ -66,7 +66,7 @@ func newSingleRef(
 		), nil
 	}
 	if app.IsDevStdout(path) {
-		return buildSingleRef(
+		return newDirectSingleRef(
 			format,
 			"",
 			FileSchemeStdout,
@@ -74,7 +74,7 @@ func newSingleRef(
 		), nil
 	}
 	if app.IsDevNull(path) {
-		return buildSingleRef(
+		return newDirectSingleRef(
 			format,
 			"",
 			FileSchemeNull,
@@ -88,9 +88,9 @@ func newSingleRef(
 				path = normalpath.Normalize(path)
 			}
 			if path == "" {
-				return nil, newNoPathError()
+				return nil, NewNoPathError()
 			}
-			return buildSingleRef(
+			return newDirectSingleRef(
 				format,
 				path,
 				fileScheme,
@@ -99,9 +99,9 @@ func newSingleRef(
 		}
 	}
 	if strings.Contains(path, "://") {
-		return nil, newInvalidFilePathError(path)
+		return nil, NewInvalidFilePathError(path)
 	}
-	return buildSingleRef(
+	return newDirectSingleRef(
 		format,
 		normalpath.Normalize(path),
 		FileSchemeLocal,
@@ -109,7 +109,7 @@ func newSingleRef(
 	), nil
 }
 
-func buildSingleRef(
+func newDirectSingleRef(
 	format string,
 	path string,
 	fileScheme FileScheme,

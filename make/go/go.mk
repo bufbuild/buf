@@ -20,6 +20,8 @@ GO_BINS ?=
 GO_GET_PKGS ?=
 # Settable
 GO_LINT_IGNORES := $(GO_LINT_IGNORES) \/gen\/
+# Settable
+GO_MOD_VERSION ?= 1.14
 
 # Runtime
 GOPKGS ?= ./...
@@ -57,6 +59,7 @@ ci:
 updategodeps:
 	rm -f go.mod go.sum
 	go mod init $(GO_MODULE)
+	go mod edit -go=$(GO_MOD_VERSION)
 ifneq ($(GO_GET_PKGS),)
 	go get $(sort $(GO_GET_PKGS))
 endif

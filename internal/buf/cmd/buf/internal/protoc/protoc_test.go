@@ -109,6 +109,9 @@ func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
 }
 
 func TestCompareOutputGoogleapis(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 1000)

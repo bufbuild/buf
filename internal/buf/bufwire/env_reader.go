@@ -323,12 +323,12 @@ func (e *envReader) getEnvFromSource(
 			buildOptions,
 			bufmod.WithPaths(bucketRelPaths...),
 		)
-	}
-	if externalFilePathsAllowNotExist {
-		buildOptions = append(
-			buildOptions,
-			bufmod.WithPathsAllowNotExistOnWalk(),
-		)
+		if externalFilePathsAllowNotExist {
+			buildOptions = append(
+				buildOptions,
+				bufmod.WithPathsAllowNotExistOnWalk(),
+			)
+		}
 	}
 	module, err := e.modBucketBuilder.BuildForBucket(
 		ctx,

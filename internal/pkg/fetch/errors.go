@@ -20,138 +20,180 @@ import (
 	"strings"
 )
 
-func newValueEmptyError() error {
+var (
+	knownCompressionTypeStrings = []string{
+		"none",
+		"gzip",
+		"zstd",
+	}
+)
+
+// NewValueEmptyError is a fetch error.
+func NewValueEmptyError() error {
 	return errors.New("required")
 }
 
-func newValueMultipleHashtagsError(value string) error {
+// NewValueMultipleHashtagsError is a fetch error.
+func NewValueMultipleHashtagsError(value string) error {
 	return fmt.Errorf("%q has multiple #s which is invalid", value)
 }
 
-func newValueStartsWithHashtagError(value string) error {
+// NewValueStartsWithHashtagError is a fetch error.
+func NewValueStartsWithHashtagError(value string) error {
 	return fmt.Errorf("%q starts with # which is invalid", value)
 }
 
-func newValueEndsWithHashtagError(value string) error {
+// NewValueEndsWithHashtagError is a fetch error.
+func NewValueEndsWithHashtagError(value string) error {
 	return fmt.Errorf("%q ends with # which is invalid", value)
 }
 
-func newFormatNotAllowedError(format string, allowedFormats map[string]struct{}) error {
+// NewFormatNotAllowedError is a fetch error.
+func NewFormatNotAllowedError(format string, allowedFormats map[string]struct{}) error {
 	return fmt.Errorf("format was %q but must be one of %s", format, formatsToString(allowedFormats))
 }
 
-func newFormatCannotBeDeterminedError(value string) error {
+// NewFormatCannotBeDeterminedError is a fetch error.
+func NewFormatCannotBeDeterminedError(value string) error {
 	return fmt.Errorf("format cannot be determined from %q", value)
 }
 
-func newCannotSpecifyGitBranchAndTagError() error {
+// NewCannotSpecifyGitBranchAndTagError is a fetch error.
+func NewCannotSpecifyGitBranchAndTagError() error {
 	return fmt.Errorf(`must specify only one of "branch", "tag"`)
 }
 
-func newCannotSpecifyTagWithRefError() error {
+// NewCannotSpecifyTagWithRefError is a fetch error.
+func NewCannotSpecifyTagWithRefError() error {
 	return fmt.Errorf(`cannot specify "tag" with "ref"`)
 }
 
-func newDepthParseError(s string) error {
+// NewDepthParseError is a fetch error.
+func NewDepthParseError(s string) error {
 	return fmt.Errorf(`could not parse "depth" value %q`, s)
 }
 
-func newDepthZeroError() error {
+// NewDepthZeroError is a fetch error.
+func NewDepthZeroError() error {
 	return fmt.Errorf(`"depth" must be >0 if specified`)
 }
 
-func newPathUnknownGzError(path string) error {
+// NewPathUnknownGzError is a fetch error.
+func NewPathUnknownGzError(path string) error {
 	return fmt.Errorf("path %q had .gz extension with unknown format", path)
 }
 
-func newCompressionUnknownError(compression string, valid ...string) error {
-	return fmt.Errorf("unknown compression: %q (valid values are %q)", compression, strings.Join(valid, ","))
+// NewCompressionUnknownError is a fetch error.
+func NewCompressionUnknownError(compression string) error {
+	return fmt.Errorf("unknown compression: %q (valid values are %q)", compression, strings.Join(knownCompressionTypeStrings, ","))
 }
 
-func newCannotSpecifyCompressionForZipError() error {
+// NewCannotSpecifyCompressionForZipError is a fetch error.
+func NewCannotSpecifyCompressionForZipError() error {
 	return errors.New("cannot specify compression type for zip files")
 }
 
-func newNoPathError() error {
+// NewNoPathError is a fetch error.
+func NewNoPathError() error {
 	return errors.New("value has no path once processed")
 }
 
-func newOptionsInvalidError(s string) error {
+// NewOptionsInvalidError is a fetch error.
+func NewOptionsInvalidError(s string) error {
 	return fmt.Errorf("invalid options: %q", s)
 }
 
-func newOptionsInvalidKeyError(key string) error {
+// NewOptionsInvalidKeyError is a fetch error.
+func NewOptionsInvalidKeyError(key string) error {
 	return fmt.Errorf("invalid options key: %q", key)
 }
 
-func newOptionsDuplicateKeyError(key string) error {
+// NewOptionsDuplicateKeyError is a fetch error.
+func NewOptionsDuplicateKeyError(key string) error {
 	return fmt.Errorf("duplicate options key: %q", key)
 }
 
-func newOptionsInvalidForFormatError(format string, s string) error {
+// NewOptionsInvalidForFormatError is a fetch error.
+func NewOptionsInvalidForFormatError(format string, s string) error {
 	return fmt.Errorf("invalid options for format %q: %q", format, s)
 }
 
-func newOptionsCouldNotParseStripComponentsError(s string) error {
+// NewOptionsCouldNotParseStripComponentsError is a fetch error.
+func NewOptionsCouldNotParseStripComponentsError(s string) error {
 	return fmt.Errorf("could not parse strip_components value %q", s)
 }
 
-func newOptionsCouldNotParseRecurseSubmodulesError(s string) error {
+// NewOptionsCouldNotParseRecurseSubmodulesError is a fetch error.
+func NewOptionsCouldNotParseRecurseSubmodulesError(s string) error {
 	return fmt.Errorf("could not parse recurse_submodules value %q", s)
 }
 
-func newFormatOverrideNotAllowedForDevNullError(devNull string) error {
+// NewFormatOverrideNotAllowedForDevNullError is a fetch error.
+func NewFormatOverrideNotAllowedForDevNullError(devNull string) error {
 	return fmt.Errorf("not allowed if path is %s", devNull)
 }
 
-func newInvalidGitPathError(path string) error {
+// NewInvalidGitPathError is a fetch error.
+func NewInvalidGitPathError(path string) error {
 	return fmt.Errorf("invalid git path: %q", path)
 }
 
-func newInvalidDirPathError(path string) error {
+// NewInvalidDirPathError is a fetch error.
+func NewInvalidDirPathError(path string) error {
 	return fmt.Errorf("invalid dir path: %q", path)
 }
 
-func newInvalidFilePathError(path string) error {
+// NewInvalidFilePathError is a fetch error.
+func NewInvalidFilePathError(path string) error {
 	return fmt.Errorf("invalid file path: %q", path)
 }
 
-func newFormatUnknownError(formatString string) error {
+// NewFormatUnknownError is a fetch error.
+func NewFormatUnknownError(formatString string) error {
 	return fmt.Errorf("unknown format: %q", formatString)
 }
 
-func newReadDisabledError(scheme string) error {
+// NewReadDisabledError is a fetch error.
+func NewReadDisabledError(scheme string) error {
 	return fmt.Errorf("reading assets from %s disabled", scheme)
 }
 
-func newReadHTTPDisabledError() error {
-	return newReadDisabledError("http")
+// NewReadHTTPDisabledError is a fetch error.
+func NewReadHTTPDisabledError() error {
+	return NewReadDisabledError("http")
 }
 
-func newReadGitDisabledError() error {
-	return newReadDisabledError("git")
+// NewReadGitDisabledError is a fetch error.
+func NewReadGitDisabledError() error {
+	return NewReadDisabledError("git")
 }
 
-func newReadLocalDisabledError() error {
-	return newReadDisabledError("local")
+// NewReadLocalDisabledError is a fetch error.
+func NewReadLocalDisabledError() error {
+	return NewReadDisabledError("local")
 }
 
-func newReadStdioDisabledError() error {
-	return newReadDisabledError("stdin")
+// NewReadStdioDisabledError is a fetch error.
+func NewReadStdioDisabledError() error {
+	return NewReadDisabledError("stdin")
 }
 
-func newWriteDisabledError(scheme string) error {
+// NewWriteDisabledError is a fetch error.
+func NewWriteDisabledError(scheme string) error {
 	return fmt.Errorf("writing assets to %s disabled", scheme)
 }
 
-func newWriteHTTPDisabledError() error {
-	return newWriteDisabledError("http")
+// NewWriteHTTPDisabledError is a fetch error.
+func NewWriteHTTPDisabledError() error {
+	return NewWriteDisabledError("http")
 }
 
-func newWriteLocalDisabledError() error {
-	return newWriteDisabledError("local")
+// NewWriteLocalDisabledError is a fetch error.
+func NewWriteLocalDisabledError() error {
+	return NewWriteDisabledError("local")
 }
 
-func newWriteStdioDisabledError() error {
-	return newWriteDisabledError("stdout")
+// NewWriteStdioDisabledError is a fetch error.
+func NewWriteStdioDisabledError() error {
+	return NewWriteDisabledError("stdout")
 }
