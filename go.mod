@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
-	github.com/envoyproxy/protoc-gen-validate v0.4.0
+	github.com/envoyproxy/protoc-gen-validate v0.4.1
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.2
@@ -19,7 +19,8 @@ require (
 	go.opencensus.io v0.22.4
 	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.15.0
-	google.golang.org/genproto v0.0.0-20200724131911-43cab4749ae7 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	google.golang.org/genproto v0.0.0-20200808173500-a06252235341 // indirect
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )

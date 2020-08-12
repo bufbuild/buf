@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fetch
+package buffetch
 
 import (
 	"context"
@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/fetch"
 	"github.com/bufbuild/buf/internal/pkg/tmp"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -31,8 +32,8 @@ func TestRoundTripBin(t *testing.T) {
 		t,
 		"file.bin",
 		[]byte("one"),
-		testFormatBin,
-		CompressionTypeNone,
+		formatBin,
+		fetch.CompressionTypeNone,
 	)
 }
 
@@ -41,8 +42,8 @@ func TestRoundTripBinGz(t *testing.T) {
 		t,
 		"file.bin.gz",
 		[]byte("one"),
-		testFormatBin,
-		CompressionTypeGzip,
+		formatBin,
+		fetch.CompressionTypeGzip,
 	)
 }
 
@@ -51,8 +52,8 @@ func TestRoundTripBinZst(t *testing.T) {
 		t,
 		"file.bin.zst",
 		[]byte("one"),
-		testFormatBin,
-		CompressionTypeZstd,
+		formatBin,
+		fetch.CompressionTypeZstd,
 	)
 }
 
@@ -61,14 +62,14 @@ func testRoundTripLocalFile(
 	filename string,
 	expectedData []byte,
 	expectedFormat string,
-	expectedCompressionType CompressionType,
+	expectedCompressionType fetch.CompressionType,
 ) {
 	t.Parallel()
 
 	logger := zap.NewNop()
-	refParser := testNewRefParser(logger)
-	reader := testNewReader(logger)
-	writer := testNewWriter(logger)
+	refParser := newRefParser(logger)
+	reader := testNewFetchReader(logger)
+	writer := testNewFetchWriter(logger)
 
 	ctx := context.Background()
 	container := app.NewContainer(nil, nil, nil, nil)
@@ -77,10 +78,10 @@ func testRoundTripLocalFile(
 	require.NoError(t, err)
 	filePath := filepath.Join(tmpDir.AbsPath(), filename)
 
-	parsedRef, err := refParser.GetParsedRef(ctx, filePath)
+	parsedRef, err := refParser.getParsedRef(ctx, filePath, testAllowedFormats)
 	require.NoError(t, err)
 	require.Equal(t, expectedFormat, parsedRef.Format())
-	fileRef, ok := parsedRef.(FileRef)
+	fileRef, ok := parsedRef.(fetch.FileRef)
 	require.True(t, ok)
 	require.Equal(t, expectedCompressionType, fileRef.CompressionType())
 
@@ -101,16 +102,16 @@ func testRoundTripLocalFile(
 	require.NoError(t, tmpDir.Close())
 }
 
-func testNewReader(logger *zap.Logger) Reader {
-	return NewReader(
+func testNewFetchReader(logger *zap.Logger) fetch.Reader {
+	return fetch.NewReader(
 		logger,
-		WithReaderLocal(),
+		fetch.WithReaderLocal(),
 	)
 }
 
-func testNewWriter(logger *zap.Logger) Writer {
-	return NewWriter(
+func testNewFetchWriter(logger *zap.Logger) fetch.Writer {
+	return fetch.NewWriter(
 		logger,
-		WithWriterLocal(),
+		fetch.WithWriterLocal(),
 	)
 }

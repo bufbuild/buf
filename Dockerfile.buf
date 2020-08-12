@@ -4,9 +4,9 @@ FROM $DOCKER_WORKSPACE_IMAGE as builder
 
 COPY cmd ./cmd
 COPY internal ./internal
-RUN go build -o /go/bin/buf ./cmd/buf
+RUN go build -ldflags "-s -w" -trimpath -o /go/bin/buf ./cmd/buf
 
-FROM alpine:3.11
+FROM alpine:3.12.0
 
 RUN apk add --update --no-cache \
     ca-certificates \

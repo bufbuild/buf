@@ -154,22 +154,22 @@ func (w *writer) putFileWriteCloserPotentiallyUncompressed(
 	switch fileScheme := fileRef.FileScheme(); fileScheme {
 	case FileSchemeHTTP:
 		if !w.httpEnabled {
-			return nil, newWriteHTTPDisabledError()
+			return nil, NewWriteHTTPDisabledError()
 		}
 		return nil, fmt.Errorf("http not supported for writes: %v", fileRef.Path())
 	case FileSchemeHTTPS:
 		if !w.httpEnabled {
-			return nil, newWriteHTTPDisabledError()
+			return nil, NewWriteHTTPDisabledError()
 		}
 		return nil, fmt.Errorf("https not supported for writes: %v", fileRef.Path())
 	case FileSchemeLocal:
 		if !w.localEnabled {
-			return nil, newWriteLocalDisabledError()
+			return nil, NewWriteLocalDisabledError()
 		}
 		return os.Create(fileRef.Path())
 	case FileSchemeStdio, FileSchemeStdout:
 		if !w.stdioEnabled {
-			return nil, newWriteStdioDisabledError()
+			return nil, NewWriteStdioDisabledError()
 		}
 		return ioutilextended.NopWriteCloser(container.Stdout()), nil
 	case FileSchemeStdin:

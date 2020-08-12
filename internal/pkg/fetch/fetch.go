@@ -202,10 +202,48 @@ type ParsedSingleRef interface {
 	HasFormat
 }
 
+// NewDirectParsedSingleRef returns a new ParsedSingleRef with no validation checks.
+//
+// This should only be used for testing.
+func NewDirectParsedSingleRef(
+	format string,
+	path string,
+	fileScheme FileScheme,
+	compressionType CompressionType,
+) ParsedSingleRef {
+	return newDirectSingleRef(
+		format,
+		path,
+		fileScheme,
+		compressionType,
+	)
+}
+
 // ParsedArchiveRef is a parsed ArchiveRef.
 type ParsedArchiveRef interface {
 	ArchiveRef
 	HasFormat
+}
+
+// NewDirectParsedArchiveRef returns a new ParsedArchiveRef with no validation checks.
+//
+// This should only be used for testing.
+func NewDirectParsedArchiveRef(
+	format string,
+	path string,
+	fileScheme FileScheme,
+	archiveType ArchiveType,
+	compressionType CompressionType,
+	stripComponents uint32,
+) ParsedArchiveRef {
+	return newDirectArchiveRef(
+		format,
+		path,
+		fileScheme,
+		archiveType,
+		compressionType,
+		stripComponents,
+	)
 }
 
 // ParsedDirRef is a parsed DirRef.
@@ -214,10 +252,38 @@ type ParsedDirRef interface {
 	HasFormat
 }
 
+// NewDirectParsedDirRef returns a new ParsedDirRef with no validation checks.
+//
+// This should only be used for testing.
+func NewDirectParsedDirRef(format string, path string) ParsedDirRef {
+	return newDirectDirRef(format, path)
+}
+
 // ParsedGitRef is a parsed GitRef.
 type ParsedGitRef interface {
 	GitRef
 	HasFormat
+}
+
+// NewDirectParsedGitRef returns a new ParsedGitRef with no validation checks.
+//
+// This should only be used for testing.
+func NewDirectParsedGitRef(
+	format string,
+	path string,
+	gitScheme GitScheme,
+	gitName git.Name,
+	recurseSubmodules bool,
+	depth uint32,
+) ParsedGitRef {
+	return newDirectGitRef(
+		format,
+		path,
+		gitScheme,
+		gitName,
+		recurseSubmodules,
+		depth,
+	)
 }
 
 // RefParser parses references.
