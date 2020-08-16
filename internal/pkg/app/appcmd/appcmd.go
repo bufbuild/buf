@@ -119,7 +119,7 @@ func run(
 	}
 
 	cobraCommand.SetArgs(app.Args(container)[1:])
-	cobraCommand.SetOut(container.Stderr())
+	cobraCommand.SetOut(container.Stdout())
 	cobraCommand.SetErr(container.Stderr())
 
 	if err := cobraCommand.Execute(); err != nil {
