@@ -1,19 +1,36 @@
-ARG DOCKER_WORKSPACE_IMAGE
+# syntax=docker/dockerfile:1.0.0-experimental
 
+ARG DOCKER_WORKSPACE_IMAGE
 FROM $DOCKER_WORKSPACE_IMAGE as builder
 
 COPY cmd ./cmd
 COPY internal ./internal
 RUN go build -ldflags "-s -w" -trimpath -o /go/bin/buf ./cmd/buf
 
-FROM alpine:3.12.0
+ENV PROTOC_VERSION=3.13.0
+RUN wget \
+        https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip \
+        -O /tmp/protoc.zip \
+    && unzip /tmp/protoc.zip -d /opt/protoc \
+    && chmod 755 /opt/protoc/bin/protoc
 
-RUN apk add --update --no-cache \
-    ca-certificates \
-    git \
-    openssh-client && \
-  rm -rf /var/cache/apk/*
+
+# Production image
+# TODO: rethink using python as base. Need to add NodeJS (for typescript) and Java plugins for protoc.
+FROM python:3.8-buster
+
+RUN --mount=target=/var/lib/apt/lists,type=cache \
+    --mount=target=/var/cache/apt,type=cache \
+    apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        git
 
 COPY --from=builder /go/bin/buf /usr/local/bin/buf
+COPY --from=builder /opt/protoc /usr/local/
+
+RUN pip install \
+    --no-cache-dir \
+    "betterproto[compiler]" \
+    mypy-protobuf
 
 ENTRYPOINT ["/usr/local/bin/buf"]

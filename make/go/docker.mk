@@ -24,7 +24,7 @@ DOCKERMAKETARGET ?= all
 
 .PHONY: dockerbuildworkspace
 dockerbuildworkspace:
-	docker build \
+	DOCKER_BUILDKIT=1 docker build \
 		--build-arg PROJECT=$(PROJECT) \
 		--build-arg GO_MODULE=$(GO_MODULE) \
 		-t $(DOCKER_WORKSPACE_IMAGE) \
@@ -41,7 +41,7 @@ dockerbuild::
 define dockerbinfunc
 .PHONY: dockerbuild$(1)
 dockerbuild$(1): dockerbuildworkspace
-	docker build \
+	DOCKER_BUILDKIT=1 docker build \
 		--build-arg DOCKER_WORKSPACE_IMAGE=$(DOCKER_WORKSPACE_IMAGE) \
 		-t $(DOCKER_ORG)/$(1):latest \
 		-f Dockerfile.$(1) \

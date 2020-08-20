@@ -1,4 +1,6 @@
-FROM golang:1.15.0-alpine3.12
+# syntax=docker/dockerfile:1.0.0-experimental
+
+FROM golang:1.15.0
 
 ARG PROJECT
 ARG GO_MODULE
@@ -13,21 +15,11 @@ ENV \
 
 WORKDIR /workspace
 
-RUN apk add --update --no-cache \
-    bash \
-    build-base \
-    ca-certificates \
-    curl \
-    git \
-    openssh-client \
-    unzip \
-    wget && \
-  rm -rf /var/cache/apk/*
-
-RUN wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub && \
-  wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/2.31-r0/glibc-2.31-r0.apk && \
-  apk add --no-cache glibc-2.31-r0.apk && \
-  rm -rf /var/cache/apk/*
+RUN --mount=target=/var/lib/apt/lists,type=cache \
+    --mount=target=/var/cache/apt,type=cache \
+    apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        unzip
 
 COPY go.mod go.sum /workspace/
 RUN go mod download
