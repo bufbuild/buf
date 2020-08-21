@@ -380,7 +380,7 @@ var (
 	)
 	v1FieldNoDescriptorCheckerBuilder = bufcheckinternal.NewNopCheckerBuilder(
 		"FIELD_NO_DESCRIPTOR",
-		`field names are are not name capitalization of "descriptor" with any number of prefix or suffix underscores`,
+		`field names are not name capitalization of "descriptor" with any number of prefix or suffix underscores`,
 		newAdapter(internal.CheckFieldNoDescriptor),
 	)
 	v1FileLowerSnakeCaseCheckerBuilder = bufcheckinternal.NewNopCheckerBuilder(
@@ -410,12 +410,12 @@ var (
 	)
 	v1PackageDefinedCheckerBuilder = bufcheckinternal.NewNopCheckerBuilder(
 		"PACKAGE_DEFINED",
-		"all files with have a package defined",
+		"all files have a package defined",
 		newAdapter(internal.CheckPackageDefined),
 	)
 	v1PackageDirectoryMatchCheckerBuilder = bufcheckinternal.NewNopCheckerBuilder(
 		"PACKAGE_DIRECTORY_MATCH",
-		"all files with are in a directory that matches their package name",
+		"all files are in a directory that matches their package name",
 		newAdapter(internal.CheckPackageDirectoryMatch),
 	)
 	v1PackageLowerSnakeCaseCheckerBuilder = bufcheckinternal.NewNopCheckerBuilder(
@@ -486,7 +486,7 @@ var (
 	v1RPCRequestResponseUniqueCheckerBuilder = bufcheckinternal.NewCheckerBuilder(
 		"RPC_REQUEST_RESPONSE_UNIQUE",
 		func(configBuilder bufcheckinternal.ConfigBuilder) (string, error) {
-			return "RPCs request and response types are only used in one RPC (configurable)", nil
+			return "RPC request and response types are only used in one RPC (configurable)", nil
 		},
 		func(configBuilder bufcheckinternal.ConfigBuilder) (bufcheckinternal.CheckFunc, error) {
 			return bufcheckinternal.CheckFunc(func(id string, ignoreFunc bufcheckinternal.IgnoreFunc, _ []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
