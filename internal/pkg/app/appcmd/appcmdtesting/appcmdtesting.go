@@ -35,6 +35,7 @@ func RunCommandSuccessStdout(
 	stdin io.Reader,
 	args ...string,
 ) {
+	t.Helper()
 	RunCommandExitCodeStdout(t, newCommand, 0, expectedStdout, env, stdin, args...)
 }
 
@@ -48,6 +49,7 @@ func RunCommandExitCodeStdout(
 	stdin io.Reader,
 	args ...string,
 ) {
+	t.Helper()
 	stdout := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, env, stdin, stdout, args...)
 	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
@@ -62,6 +64,7 @@ func RunCommandSuccess(
 	stdout io.Writer,
 	args ...string,
 ) {
+	t.Helper()
 	RunCommandExitCode(t, newCommand, 0, env, stdin, stdout, args...)
 }
 
@@ -75,6 +78,7 @@ func RunCommandExitCode(
 	stdout io.Writer,
 	args ...string,
 ) {
+	t.Helper()
 	stderr := bytes.NewBuffer(nil)
 	exitCode := app.GetExitCode(
 		appcmd.Run(
