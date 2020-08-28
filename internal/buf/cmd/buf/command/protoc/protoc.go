@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
@@ -144,7 +143,15 @@ func run(
 	}
 
 	if env.PrintFreeFieldNumbers {
-		s, err := bufimageutil.FreeMessageRangeStrings(ctx, bufmodule.NewModuleFileSet(module, nil /* TODO: Resolve dependencies */), image)
+		fileInfos, err := module.TargetFileInfos(ctx)
+		if err != nil {
+			return err
+		}
+		var filePaths []string
+		for _, fileInfo := range fileInfos {
+			filePaths = append(filePaths, fileInfo.Path())
+		}
+		s, err := bufimageutil.FreeMessageRangeStrings(ctx, filePaths, image)
 		if err != nil {
 			return err
 		}

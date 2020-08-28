@@ -32,7 +32,7 @@ func TestModuleFileSetBuilderDeduplicates(t *testing.T) {
 	moduleFileSetBuilder := bufmodulebuild.NewModuleFileSetBuilder(
 		zap.NewNop(),
 		&testModuleReader{
-			alreadyRedquested: make(map[string]struct{}),
+			alreadyRequested: make(map[string]struct{}),
 		},
 	)
 	module, err := bufmodule.NewModuleForProto(context.Background(), &modulev1.Module{
@@ -65,15 +65,15 @@ func TestModuleFileSetBuilderDeduplicates(t *testing.T) {
 }
 
 type testModuleReader struct {
-	alreadyRedquested map[string]struct{}
+	alreadyRequested map[string]struct{}
 }
 
 func (m *testModuleReader) GetModule(ctx context.Context, moduleName bufmodule.ModuleName) (bufmodule.Module, error) {
-	if _, ok := m.alreadyRedquested[moduleName.String()]; ok {
+	if _, ok := m.alreadyRequested[moduleName.String()]; ok {
 		// This is the test failure condition - we should only request each module once
 		return nil, errors.New("module already requested")
 	}
-	m.alreadyRedquested[moduleName.String()] = struct{}{}
+	m.alreadyRequested[moduleName.String()] = struct{}{}
 	switch moduleName.String() {
 	case fmt.Sprintf("buf.build/foo/bar/v1:%s", bufmoduletesting.TestDigest):
 		return bufmodule.NewModuleForProto(context.Background(), &modulev1.Module{

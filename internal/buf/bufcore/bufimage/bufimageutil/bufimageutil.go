@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/protosource"
 )
 
@@ -34,23 +33,17 @@ func NewInputFiles(imageFiles []bufimage.ImageFile) []protosource.InputFile {
 
 // FreeMessageRangeStrings gets the free MessageRange strings for the target files.
 //
-// TODO: this should not depend on bufmodule.
-//
 // Recursive.
 func FreeMessageRangeStrings(
 	ctx context.Context,
-	moduleFileSet bufmodule.ModuleFileSet,
+	filePaths []string,
 	image bufimage.Image,
 ) ([]string, error) {
-	fileInfos, err := moduleFileSet.TargetFileInfos(ctx)
-	if err != nil {
-		return nil, err
-	}
 	var s []string
-	for _, fileInfo := range fileInfos {
-		imageFile := image.GetFile(fileInfo.Path())
+	for _, filePath := range filePaths {
+		imageFile := image.GetFile(filePath)
 		if imageFile == nil {
-			return nil, fmt.Errorf("unexpected nil image file: %q", fileInfo.Path())
+			return nil, fmt.Errorf("unexpected nil image file: %q", filePath)
 		}
 		file, err := protosource.NewFile(imageFile)
 		if err != nil {

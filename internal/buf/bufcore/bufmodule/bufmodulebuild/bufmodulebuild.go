@@ -45,10 +45,6 @@ type ModuleBucketBuilder interface {
 	//
 	// If paths is empty, all files are built.
 	// Paths should be relative to the bucket, not the roots.
-	//
-	// TODO: revisit whether we want to have a dependency file structure
-	// that is understood and read from the ReadBucket
-	// https://github.com/bufteam/bufbuild/issues/170
 	BuildForBucket(
 		ctx context.Context,
 		readBucket storage.ReadBucket,
