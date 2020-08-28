@@ -3,15 +3,18 @@ BUF_BIN ?= cmd/buf
 PROTOREFLECT_VERSION := 11eaaf73e0ec2d04934c5d86d46577568463cc86
 # Remove when https://github.com/spf13/cobra/pull/1070 is released
 COBRA_VERSION := 884edc58ad08083e6c9a505041695aa2c3ca2d7a
+# Remove when https://github.com/ory/dockertest/issues/208 is fixed
+GOLANG_X_SYS_VERSION := f9321e4c35a6ee62ff0348f57ad5a3b5e73e299e
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION) \
-	github.com/spf13/cobra@$(COBRA_VERSION)
+	github.com/spf13/cobra@$(COBRA_VERSION) \
+	golang.org/x/sys@$(GOLANG_X_SYS_VERSION)
 GO_BINS := $(GO_BINS) $(BUF_BIN) \
 	cmd/protoc-gen-buf-check-breaking \
 	cmd/protoc-gen-buf-check-lint \
 	internal/pkg/storage/cmd/storage-go-binary-data \
 	internal/pkg/app/appproto/appprotoexec/cmd/protoc-gen-proxy
-GO_LINT_IGNORES := $(GO_LINT_IGNORES) /internal/buf/cmd/buf/internal/protoc
+GO_LINT_IGNORES := $(GO_LINT_IGNORES) /internal/buf/cmd/buf/command/protoc
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto/go
@@ -33,8 +36,6 @@ include make/go/protoc_gen_go.mk
 include make/go/protoc_gen_validate.mk
 include make/go/dep_go_fuzz.mk
 
-pretest:: $(PROTOC)
-
 .PHONY: wkt
 wkt: installstorage-go-binary-data $(PROTOC)
 	rm -rf internal/gen/data
@@ -43,12 +44,18 @@ wkt: installstorage-go-binary-data $(PROTOC)
 
 prepostgenerate:: wkt
 
+.PHONY: prebuflint
+prebuflint::
+
 .PHONY: buflint
-buflint: installbuf
+buflint: installbuf prebuflint
 	buf check lint
 
+.PHONY: prebufbreaking
+prebufbreaking::
+
 .PHONY: bufbreaking
-bufbreaking: installbuf
+bufbreaking: installbuf prebufbreaking
 	@ if [ -d .git ]; then \
 			$(MAKE) bufbreakinginternal; \
 		else \

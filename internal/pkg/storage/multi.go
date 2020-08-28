@@ -20,7 +20,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/internal"
 )
 
-// Multi takes the union of the ReadBuckets.
+// MultiReadBucket takes the union of the ReadBuckets.
 //
 // If no readBuckets are given, this returns a no-op ReadBucket.
 // If one readBucket is given, this returns the original ReadBucket.
@@ -28,7 +28,7 @@ import (
 //
 // This expects and validates that no paths overlap between the ReadBuckets.
 // This assumes that buckets are logically unique.
-func Multi(readBuckets ...ReadBucket) ReadBucket {
+func MultiReadBucket(readBuckets ...ReadBucket) ReadBucket {
 	switch len(readBuckets) {
 	case 0:
 		return nopReadBucket{}

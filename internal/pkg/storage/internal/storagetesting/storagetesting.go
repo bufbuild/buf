@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/internal"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageproto"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -135,7 +134,7 @@ func RunTestSuite(
 	t *testing.T,
 	storagetestingDirPath string,
 	newReadBucket func(*testing.T, string) storage.ReadBucket,
-	newWriteBucketAndCleanup func(*testing.T) (storage.WriteBucket, func() error),
+	newWriteBucket func(*testing.T) storage.WriteBucket,
 	writeBucketToReadBucket func(*testing.T, storage.WriteBucket) storage.ReadBucket,
 ) {
 	oneDirPath := filepath.Join(storagetestingDirPath, "testdata", "one")
@@ -149,8 +148,8 @@ func RunTestSuite(
 		".",
 		"./",
 	} {
+		prefix := prefix
 		t.Run(fmt.Sprintf("root-%q", prefix), func(t *testing.T) {
-			prefix := prefix
 			t.Parallel()
 			readBucket := newReadBucket(t, oneDirPath)
 			AssertPathToContent(
@@ -178,7 +177,7 @@ func RunTestSuite(
 	t.Run("map-1", func(t *testing.T) {
 		t.Parallel()
 		readBucket := newReadBucket(t, oneDirPath)
-		readBucket = storage.Map(
+		readBucket = storage.MapReadBucket(
 			readBucket,
 			storage.MapOnPrefix("root"),
 		)
@@ -206,7 +205,7 @@ func RunTestSuite(
 	t.Run("map-2", func(t *testing.T) {
 		t.Parallel()
 		readBucket := newReadBucket(t, oneDirPath)
-		readBucket = storage.Map(
+		readBucket = storage.MapReadBucket(
 			readBucket,
 			storage.MapOnPrefix("root/a"),
 		)
@@ -230,7 +229,7 @@ func RunTestSuite(
 			"1.proto",
 			filepath.Join(oneDirPath, "root", "a", "1.proto"),
 		)
-		readBucket = storage.Map(
+		readBucket = storage.MapReadBucket(
 			readBucket,
 			storage.MapOnPrefix("b"),
 		)
@@ -256,7 +255,7 @@ func RunTestSuite(
 	t.Run("map-3", func(t *testing.T) {
 		t.Parallel()
 		readBucket := newReadBucket(t, oneDirPath)
-		readBucket = storage.Map(
+		readBucket = storage.MapReadBucket(
 			readBucket,
 			storage.MapOnPrefix("root/ab"),
 		)
@@ -277,7 +276,7 @@ func RunTestSuite(
 			"1.proto",
 			filepath.Join(oneDirPath, "root", "ab", "1.proto"),
 		)
-		readBucket = storage.Map(
+		readBucket = storage.MapReadBucket(
 			readBucket,
 			storage.MatchOr(
 				storage.MatchPathExt(".txt"),
@@ -305,12 +304,12 @@ func RunTestSuite(
 	t.Run("multi-all", func(t *testing.T) {
 		t.Parallel()
 		readBucket := newReadBucket(t, twoDirPath)
-		readBucketMulti := storage.Multi(
-			storage.Map(
+		readBucketMulti := storage.MultiReadBucket(
+			storage.MapReadBucket(
 				readBucket,
 				storage.MapOnPrefix("root1"),
 			),
-			storage.Map(
+			storage.MapReadBucket(
 				readBucket,
 				storage.MapOnPrefix("root2"),
 			),
@@ -352,12 +351,12 @@ func RunTestSuite(
 	t.Run("multi-overlap", func(t *testing.T) {
 		t.Parallel()
 		readBucket := newReadBucket(t, twoDirPath)
-		readBucketMulti := storage.Multi(
-			storage.Map(
+		readBucketMulti := storage.MultiReadBucket(
+			storage.MapReadBucket(
 				readBucket,
 				storage.MapOnPrefix("root1"),
 			),
-			storage.Map(
+			storage.MapReadBucket(
 				readBucket,
 				storage.MapOnPrefix("rootoverlap"),
 			),
@@ -637,12 +636,12 @@ func RunTestSuite(
 			name: "multi-all",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
 				readBucket := newReadBucket(t, twoDirPath)
-				return storage.Multi(
-					storage.Map(
+				return storage.MultiReadBucket(
+					storage.MapReadBucket(
 						readBucket,
 						storage.MapOnPrefix("root1"),
 					),
-					storage.Map(
+					storage.MapReadBucket(
 						readBucket,
 						storage.MapOnPrefix("root2"),
 					),
@@ -688,12 +687,12 @@ func RunTestSuite(
 			name: "multi-map-on-prefix",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
 				readBucket := newReadBucket(t, twoDirPath)
-				return storage.Multi(
-					storage.Map(
+				return storage.MultiReadBucket(
+					storage.MapReadBucket(
 						readBucket,
 						storage.MapOnPrefix("root1"),
 					),
-					storage.Map(
+					storage.MapReadBucket(
 						readBucket,
 						storage.MapOnPrefix("root2"),
 					),
@@ -723,12 +722,12 @@ func RunTestSuite(
 			name: "multi-map-on-prefix-filter",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
 				readBucket := newReadBucket(t, twoDirPath)
-				return storage.Multi(
-					storage.Map(
+				return storage.MultiReadBucket(
+					storage.MapReadBucket(
 						readBucket,
 						storage.MapOnPrefix("root1"),
 					),
-					storage.Map(
+					storage.MapReadBucket(
 						readBucket,
 						storage.MapOnPrefix("root2"),
 					),
@@ -762,8 +761,8 @@ func RunTestSuite(
 			t.Run(fmt.Sprintf("copy-%s", testCase.name), func(t *testing.T) {
 				t.Parallel()
 				readBucket := testCase.newReadBucketFunc(t)
-				readBucket = storage.Map(readBucket, testCase.mappers...)
-				writeBucket, cleanupFunc := newWriteBucketAndCleanup(t)
+				readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
+				writeBucket := newWriteBucket(t)
 				_, err := storage.Copy(
 					context.Background(),
 					readBucket,
@@ -772,13 +771,12 @@ func RunTestSuite(
 				require.NoError(t, err)
 				readBucket = writeBucketToReadBucket(t, writeBucket)
 				AssertPathToContent(t, readBucket, testCase.prefix, testCase.expectedPathToContent)
-				assert.NoError(t, cleanupFunc())
 			})
 			t.Run(fmt.Sprintf("tar-mapper-read-%s", testCase.name), func(t *testing.T) {
 				t.Parallel()
 				readBucket := testCase.newReadBucketFunc(t)
-				readBucket = storage.Map(readBucket, testCase.mappers...)
-				writeBucket, cleanupFunc := newWriteBucketAndCleanup(t)
+				readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
+				writeBucket := newWriteBucket(t)
 				buffer := bytes.NewBuffer(nil)
 				require.NoError(t, storagearchive.Tar(
 					context.Background(),
@@ -794,13 +792,12 @@ func RunTestSuite(
 				))
 				readBucket = writeBucketToReadBucket(t, writeBucket)
 				AssertPathToContent(t, readBucket, testCase.prefix, testCase.expectedPathToContent)
-				assert.NoError(t, cleanupFunc())
 			})
 			t.Run(fmt.Sprintf("zip-mapper-read-%s", testCase.name), func(t *testing.T) {
 				t.Parallel()
 				readBucket := testCase.newReadBucketFunc(t)
-				readBucket = storage.Map(readBucket, testCase.mappers...)
-				writeBucket, cleanupFunc := newWriteBucketAndCleanup(t)
+				readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
+				writeBucket := newWriteBucket(t)
 				buffer := bytes.NewBuffer(nil)
 				require.NoError(t, storagearchive.Zip(
 					context.Background(),
@@ -818,13 +815,12 @@ func RunTestSuite(
 				))
 				readBucket = writeBucketToReadBucket(t, writeBucket)
 				AssertPathToContent(t, readBucket, testCase.prefix, testCase.expectedPathToContent)
-				assert.NoError(t, cleanupFunc())
 			})
 		}
 		t.Run(fmt.Sprintf("tar-mapper-write-%s", testCase.name), func(t *testing.T) {
 			t.Parallel()
 			readBucket := testCase.newReadBucketFunc(t)
-			writeBucket, cleanupFunc := newWriteBucketAndCleanup(t)
+			writeBucket := newWriteBucket(t)
 			buffer := bytes.NewBuffer(nil)
 			require.NoError(t, storagearchive.Tar(
 				context.Background(),
@@ -840,12 +836,11 @@ func RunTestSuite(
 			))
 			readBucket = writeBucketToReadBucket(t, writeBucket)
 			AssertPathToContent(t, readBucket, testCase.prefix, testCase.expectedPathToContent)
-			assert.NoError(t, cleanupFunc())
 		})
 		t.Run(fmt.Sprintf("zip-mapper-write%s", testCase.name), func(t *testing.T) {
 			t.Parallel()
 			readBucket := testCase.newReadBucketFunc(t)
-			writeBucket, cleanupFunc := newWriteBucketAndCleanup(t)
+			writeBucket := newWriteBucket(t)
 			buffer := bytes.NewBuffer(nil)
 			require.NoError(t, storagearchive.Zip(
 				context.Background(),
@@ -863,7 +858,6 @@ func RunTestSuite(
 			))
 			readBucket = writeBucketToReadBucket(t, writeBucket)
 			AssertPathToContent(t, readBucket, testCase.prefix, testCase.expectedPathToContent)
-			assert.NoError(t, cleanupFunc())
 		})
 	}
 
@@ -894,43 +888,16 @@ Only in b-dir: 3.txt
 		)
 	})
 
-	t.Run("proto", func(t *testing.T) {
-		t.Parallel()
-		readBucketSource := newReadBucket(t, oneDirPath)
-		fileSet, err := storageproto.ToFileSet(
-			context.Background(),
-			readBucketSource,
-		)
-		require.NoError(t, err)
-		writeBucket, cleanupFunc := newWriteBucketAndCleanup(t)
-		err = storageproto.FromFileSet(
-			context.Background(),
-			fileSet,
-			writeBucket,
-		)
-		require.NoError(t, err)
-		readBucketRoundTrip := writeBucketToReadBucket(t, writeBucket)
-		diff, err := storage.Diff(
-			context.Background(),
-			readBucketSource,
-			readBucketRoundTrip,
-			"source",
-			"round-trip",
-		)
-		require.NoError(t, err)
-		assert.Empty(t, diff)
-		assert.NoError(t, cleanupFunc())
-	})
-
 	t.Run("overlap-success", func(t *testing.T) {
+		t.Parallel()
 		readBucket := newReadBucket(t, threeDirPath)
-		readBucket = storage.Map(readBucket, storage.MatchPathExt(".proto"))
-		readBucket = storage.Multi(
-			storage.Map(
+		readBucket = storage.MapReadBucket(readBucket, storage.MatchPathExt(".proto"))
+		readBucket = storage.MultiReadBucket(
+			storage.MapReadBucket(
 				readBucket,
 				storage.MapOnPrefix("a"),
 			),
-			storage.Map(
+			storage.MapReadBucket(
 				readBucket,
 				storage.MapOnPrefix("b"),
 			),
@@ -951,14 +918,15 @@ Only in b-dir: 3.txt
 		)
 	})
 	t.Run("overlap-error", func(t *testing.T) {
+		t.Parallel()
 		readBucket := newReadBucket(t, threeDirPath)
-		readBucket = storage.Map(
-			storage.Multi(
-				storage.Map(
+		readBucket = storage.MapReadBucket(
+			storage.MultiReadBucket(
+				storage.MapReadBucket(
 					readBucket,
 					storage.MapOnPrefix("a"),
 				),
-				storage.Map(
+				storage.MapReadBucket(
 					readBucket,
 					storage.MapOnPrefix("b"),
 				),
@@ -971,5 +939,31 @@ Only in b-dir: 3.txt
 			"",
 		)
 		assert.True(t, storage.IsExistsMultipleLocations(err))
+	})
+
+	t.Run("map-write-bucket", func(t *testing.T) {
+		t.Parallel()
+		writeBucket := newWriteBucket(t)
+		mapWriteBucket := storage.MapWriteBucket(
+			writeBucket,
+			storage.MapOnPrefix("a/b/c"),
+		)
+		writeObjectCloser, err := mapWriteBucket.Put(
+			context.Background(),
+			"hello",
+			4,
+		)
+		require.NoError(t, err)
+		_, err = writeObjectCloser.Write([]byte("abcd"))
+		require.NoError(t, err)
+		require.NoError(t, writeObjectCloser.Close())
+		readBucket := writeBucketToReadBucket(t, writeBucket)
+		data, err := storage.ReadPath(
+			context.Background(),
+			readBucket,
+			"a/b/c/hello",
+		)
+		require.NoError(t, err)
+		require.Equal(t, "abcd", string(data))
 	})
 }

@@ -16,19 +16,15 @@ package bufwire
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/bufmod"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.opencensus.io/trace"
@@ -37,49 +33,46 @@ import (
 )
 
 type envReader struct {
-	logger                 *zap.Logger
-	fetchRefParser         buffetch.RefParser
-	fetchReader            buffetch.Reader
-	configProvider         bufconfig.Provider
-	modBucketBuilder       bufmod.BucketBuilder
-	buildBuilder           bufbuild.Builder
-	imageReader            *imageReader
-	valueFlagName          string
-	configOverrideFlagName string
+	logger               *zap.Logger
+	fetchReader          buffetch.Reader
+	moduleBucketBuilder  bufmodulebuild.ModuleBucketBuilder
+	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder
+	imageBuilder         bufimagebuild.Builder
+	imageReader          *imageReader
+	configReader         *configReader
 }
 
 func newEnvReader(
 	logger *zap.Logger,
-	fetchRefParser buffetch.RefParser,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
-	modBucketBuilder bufmod.BucketBuilder,
-	buildBuilder bufbuild.Builder,
-	valueFlagName string,
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
+	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
+	imageBuilder bufimagebuild.Builder,
 	configOverrideFlagName string,
 ) *envReader {
 	return &envReader{
-		logger:           logger.Named("bufwire"),
-		fetchRefParser:   fetchRefParser,
-		fetchReader:      fetchReader,
-		configProvider:   configProvider,
-		modBucketBuilder: modBucketBuilder,
-		buildBuilder:     buildBuilder,
+		logger:               logger.Named("bufwire"),
+		fetchReader:          fetchReader,
+		moduleBucketBuilder:  moduleBucketBuilder,
+		moduleFileSetBuilder: moduleFileSetBuilder,
+		imageBuilder:         imageBuilder,
 		imageReader: newImageReader(
 			logger,
-			fetchRefParser,
 			fetchReader,
-			valueFlagName,
 		),
-		valueFlagName:          valueFlagName,
-		configOverrideFlagName: configOverrideFlagName,
+		configReader: newConfigReader(
+			logger,
+			configProvider,
+			configOverrideFlagName,
+		),
 	}
 }
 
 func (e *envReader) GetEnv(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	value string,
+	ref buffetch.Ref,
 	configOverride string,
 	externalFilePaths []string,
 	externalFilePathsAllowNotExist bool,
@@ -87,132 +80,96 @@ func (e *envReader) GetEnv(
 ) (_ Env, _ []bufanalysis.FileAnnotation, retErr error) {
 	ctx, span := trace.StartSpan(ctx, "get_env")
 	defer span.End()
-	defer func() {
-		if retErr != nil {
-			retErr = fmt.Errorf("%v: %w", e.valueFlagName, retErr)
-		}
-	}()
-
-	ref, err := e.fetchRefParser.GetRef(ctx, value)
-	if err != nil {
-		return nil, nil, err
-	}
 	switch t := ref.(type) {
 	case buffetch.ImageRef:
-		env, err := e.getEnvFromImage(
+		env, err := e.getImageEnv(
 			ctx,
 			container,
+			t,
 			configOverride,
 			externalFilePaths,
 			externalFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
-			t,
 		)
 		return env, nil, err
 	case buffetch.SourceRef:
-		return e.getEnvFromSource(
+		return e.getSourceEnv(
 			ctx,
 			container,
+			t,
 			configOverride,
 			externalFilePaths,
 			externalFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
+		)
+	case buffetch.ModuleRef:
+		return e.getModuleEnv(
+			ctx,
+			container,
 			t,
+			configOverride,
+			externalFilePaths,
+			externalFilePathsAllowNotExist,
+			excludeSourceCodeInfo,
 		)
 	default:
 		return nil, nil, fmt.Errorf("invalid ref: %T", ref)
 	}
 }
 
-func (e *envReader) GetImageEnv(
+func (e *envReader) GetSourceOrModuleEnv(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	value string,
-	configOverride string,
-	externalFilePaths []string,
-	externalFilePathsAllowNotExist bool,
-	excludeSourceCodeInfo bool,
-) (_ Env, retErr error) {
-	ctx, span := trace.StartSpan(ctx, "get_image_env")
-	defer span.End()
-	defer func() {
-		if retErr != nil {
-			retErr = fmt.Errorf("%v: %w", e.valueFlagName, retErr)
-		}
-	}()
-
-	imageRef, err := e.fetchRefParser.GetImageRef(ctx, value)
-	if err != nil {
-		return nil, err
-	}
-	return e.getEnvFromImage(
-		ctx,
-		container,
-		configOverride,
-		externalFilePaths,
-		externalFilePathsAllowNotExist,
-		excludeSourceCodeInfo,
-		imageRef,
-	)
-}
-
-func (e *envReader) GetSourceEnv(
-	ctx context.Context,
-	container app.EnvStdinContainer,
-	value string,
+	sourceOrModuleRef buffetch.SourceOrModuleRef,
 	configOverride string,
 	externalFilePaths []string,
 	externalFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ Env, _ []bufanalysis.FileAnnotation, retErr error) {
-	ctx, span := trace.StartSpan(ctx, "get_source_env")
+	ctx, span := trace.StartSpan(ctx, "get_source_or_module_env")
 	defer span.End()
-	defer func() {
-		if retErr != nil {
-			retErr = fmt.Errorf("%v: %w", e.valueFlagName, retErr)
-		}
-	}()
-
-	sourceRef, err := e.fetchRefParser.GetSourceRef(ctx, value)
-	if err != nil {
-		return nil, nil, err
+	switch t := sourceOrModuleRef.(type) {
+	case buffetch.SourceRef:
+		return e.getSourceEnv(
+			ctx,
+			container,
+			t,
+			configOverride,
+			externalFilePaths,
+			externalFilePathsAllowNotExist,
+			excludeSourceCodeInfo,
+		)
+	case buffetch.ModuleRef:
+		return e.getModuleEnv(
+			ctx,
+			container,
+			t,
+			configOverride,
+			externalFilePaths,
+			externalFilePathsAllowNotExist,
+			excludeSourceCodeInfo,
+		)
+	default:
+		return nil, nil, fmt.Errorf("invalid ref: %T", sourceOrModuleRef)
 	}
-	return e.getEnvFromSource(
-		ctx,
-		container,
-		configOverride,
-		externalFilePaths,
-		externalFilePathsAllowNotExist,
-		excludeSourceCodeInfo,
-		sourceRef,
-	)
 }
 
 func (e *envReader) ListFiles(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	value string,
+	ref buffetch.Ref,
 	configOverride string,
 ) (_ []bufcore.FileInfo, retErr error) {
-	defer func() {
-		if retErr != nil {
-			retErr = fmt.Errorf("%v: %w", e.valueFlagName, retErr)
-		}
-	}()
-	ref, err := e.fetchRefParser.GetRef(ctx, value)
-	if err != nil {
-		return nil, err
-	}
 	switch t := ref.(type) {
 	case buffetch.ImageRef:
 		// if we have an image, list the files in the image
-		image, err := e.imageReader.getImageForImageRef(
+		image, err := e.imageReader.GetImage(
 			ctx,
 			container,
+			t,
 			nil,
 			false,
 			true,
-			t,
 		)
 		if err != nil {
 			return nil, err
@@ -231,7 +188,7 @@ func (e *envReader) ListFiles(
 		defer func() {
 			retErr = multierr.Append(retErr, readBucketCloser.Close())
 		}()
-		module, err := e.modBucketBuilder.BuildForBucket(
+		module, err := e.moduleBucketBuilder.BuildForBucket(
 			ctx,
 			readBucketCloser,
 			config.Build,
@@ -239,67 +196,53 @@ func (e *envReader) ListFiles(
 		if err != nil {
 			return nil, err
 		}
-		return module.TargetFileInfos(ctx)
+		return module.SourceFileInfos(ctx)
+	case buffetch.ModuleRef:
+		module, err := e.fetchReader.GetModule(ctx, container, t)
+		if err != nil {
+			return nil, err
+		}
+		return module.SourceFileInfos(ctx)
 	default:
 		return nil, fmt.Errorf("invalid ref: %T", ref)
 	}
 }
 
-func (e *envReader) GetConfig(
-	ctx context.Context,
-	configOverride string,
-) (*bufconfig.Config, error) {
-	if configOverride != "" {
-		return e.parseConfigOverride(ctx, configOverride)
-	}
-	// if there is no config override, we read the config from the current directory
-	data, err := ioutil.ReadFile(bufconfig.ConfigFilePath)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return nil, err
-		}
-		// just in case
-		data = nil
-	}
-	// if there was no file, this just returns default config
-	return e.configProvider.GetConfigForData(ctx, data)
-}
-
-func (e *envReader) getEnvFromImage(
+func (e *envReader) getImageEnv(
 	ctx context.Context,
 	container app.EnvStdinContainer,
+	imageRef buffetch.ImageRef,
 	configOverride string,
 	externalFilePaths []string,
 	externalFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
-	imageRef buffetch.ImageRef,
 ) (_ Env, retErr error) {
-	image, err := e.imageReader.getImageForImageRef(
+	image, err := e.imageReader.GetImage(
 		ctx,
 		container,
+		imageRef,
 		externalFilePaths,
 		externalFilePathsAllowNotExist,
 		excludeSourceCodeInfo,
-		imageRef,
 	)
 	if err != nil {
 		return nil, err
 	}
-	config, err := e.GetConfig(ctx, configOverride)
+	config, err := e.configReader.GetConfig(ctx, configOverride)
 	if err != nil {
 		return nil, err
 	}
 	return newEnv(image, config), nil
 }
 
-func (e *envReader) getEnvFromSource(
+func (e *envReader) getSourceEnv(
 	ctx context.Context,
 	container app.EnvStdinContainer,
+	sourceRef buffetch.SourceRef,
 	configOverride string,
 	externalFilePaths []string,
 	externalFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
-	sourceRef buffetch.SourceRef,
 ) (_ Env, _ []bufanalysis.FileAnnotation, retErr error) {
 	readBucketCloser, config, err := e.getSourceBucketAndConfig(ctx, container, sourceRef, configOverride)
 	if err != nil {
@@ -309,7 +252,7 @@ func (e *envReader) getEnvFromSource(
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
 
-	var buildOptions []bufmod.BuildOption
+	var buildOptions []bufmodulebuild.BuildOption
 	if len(externalFilePaths) > 0 {
 		bucketRelPaths := make([]string, len(externalFilePaths))
 		for i, externalFilePath := range externalFilePaths {
@@ -319,18 +262,19 @@ func (e *envReader) getEnvFromSource(
 			}
 			bucketRelPaths[i] = bucketRelPath
 		}
-		buildOptions = append(
-			buildOptions,
-			bufmod.WithPaths(bucketRelPaths...),
-		)
 		if externalFilePathsAllowNotExist {
 			buildOptions = append(
 				buildOptions,
-				bufmod.WithPathsAllowNotExistOnWalk(),
+				bufmodulebuild.WithPathsAllowNotExist(bucketRelPaths),
+			)
+		} else {
+			buildOptions = append(
+				buildOptions,
+				bufmodulebuild.WithPaths(bucketRelPaths),
 			)
 		}
 	}
-	module, err := e.modBucketBuilder.BuildForBucket(
+	module, err := e.moduleBucketBuilder.BuildForBucket(
 		ctx,
 		readBucketCloser,
 		config.Build,
@@ -339,22 +283,50 @@ func (e *envReader) getEnvFromSource(
 	if err != nil {
 		return nil, nil, err
 	}
-	var options []bufbuild.BuildOption
-	if excludeSourceCodeInfo {
-		options = append(options, bufbuild.WithExcludeSourceCodeInfo())
-	}
-	image, fileAnnotations, err := e.buildBuilder.Build(
-		ctx,
-		module,
-		options...,
-	)
+	return e.buildModule(ctx, module, config, excludeSourceCodeInfo)
+}
+
+func (e *envReader) getModuleEnv(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	moduleRef buffetch.ModuleRef,
+	configOverride string,
+	externalFilePaths []string,
+	externalFilePathsAllowNotExist bool,
+	excludeSourceCodeInfo bool,
+) (_ Env, _ []bufanalysis.FileAnnotation, retErr error) {
+	module, err := e.fetchReader.GetModule(ctx, container, moduleRef)
 	if err != nil {
 		return nil, nil, err
 	}
-	if len(fileAnnotations) > 0 {
-		return nil, fileAnnotations, nil
+	if len(externalFilePaths) > 0 {
+		targetPaths := make([]string, len(externalFilePaths))
+		for i, externalFilePath := range externalFilePaths {
+			targetPath, err := moduleRef.PathForExternalPath(externalFilePath)
+			if err != nil {
+				return nil, nil, err
+			}
+			targetPaths[i] = targetPath
+		}
+		if externalFilePathsAllowNotExist {
+			module, err = bufmodule.ModuleWithTargetPaths(module, targetPaths)
+			if err != nil {
+				return nil, nil, err
+			}
+		} else {
+			module, err = bufmodule.ModuleWithTargetPathsAllowNotExist(module, targetPaths)
+			if err != nil {
+				return nil, nil, err
+			}
+		}
 	}
-	return newEnv(image, config), nil, nil
+	// TODO: we should read the config from the module when configuration
+	// is added to modules
+	config, err := e.configReader.GetConfig(ctx, configOverride)
+	if err != nil {
+		return nil, nil, err
+	}
+	return e.buildModule(ctx, module, config, excludeSourceCodeInfo)
 }
 
 func (e *envReader) getSourceBucketAndConfig(
@@ -368,43 +340,44 @@ func (e *envReader) getSourceBucketAndConfig(
 		return nil, nil, err
 	}
 	defer func() {
+		// we want to return an opened bucket, except on error
+		// if there is an error, this means we are returning nil, so
+		// we close the bucket as we are not returning it
 		if retErr != nil {
 			retErr = multierr.Append(retErr, readBucketCloser.Close())
 		}
 	}()
-	var config *bufconfig.Config
-	if configOverride != "" {
-		config, err = e.parseConfigOverride(ctx, configOverride)
-	} else {
-		// if there is no config override, we read the config from the bucket
-		// if there was no file, this just returns default config
-		config, err = e.configProvider.GetConfig(ctx, readBucketCloser)
-	}
+	config, err := e.configReader.getConfig(ctx, readBucketCloser, configOverride)
 	if err != nil {
 		return nil, nil, err
 	}
 	return readBucketCloser, config, nil
 }
 
-func (e *envReader) parseConfigOverride(ctx context.Context, value string) (*bufconfig.Config, error) {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return nil, errors.New("config override value is empty")
-	}
-	var data []byte
-	var err error
-	switch filepath.Ext(value) {
-	case ".json", ".yaml":
-		data, err = ioutil.ReadFile(value)
-		if err != nil {
-			return nil, fmt.Errorf("%s: could not read file: %v", e.configOverrideFlagName, err)
-		}
-	default:
-		data = []byte(value)
-	}
-	config, err := e.configProvider.GetConfigForData(ctx, data)
+func (e *envReader) buildModule(
+	ctx context.Context,
+	module bufmodule.Module,
+	config *bufconfig.Config,
+	excludeSourceCodeInfo bool,
+) (Env, []bufanalysis.FileAnnotation, error) {
+	moduleFileSet, err := e.moduleFileSetBuilder.Build(ctx, module)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %v", e.configOverrideFlagName, err)
+		return nil, nil, err
 	}
-	return config, nil
+	var options []bufimagebuild.BuildOption
+	if excludeSourceCodeInfo {
+		options = append(options, bufimagebuild.WithExcludeSourceCodeInfo())
+	}
+	image, fileAnnotations, err := e.imageBuilder.Build(
+		ctx,
+		moduleFileSet,
+		options...,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(fileAnnotations) > 0 {
+		return nil, fileAnnotations, nil
+	}
+	return newEnv(image, config), nil, nil
 }

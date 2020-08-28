@@ -133,7 +133,7 @@ func newConfigForCheckerBuilders(
 	}
 	for id := range exceptIDMap {
 		if _, ok := idToCheckerBuilder[id]; !ok {
-			return nil, fmt.Errorf("%q is not a known d after verification", id)
+			return nil, fmt.Errorf("%q is not a known id after verification", id)
 		}
 		delete(resultIDToCheckerBuilder, id)
 	}

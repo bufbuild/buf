@@ -19,31 +19,20 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/fetch"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-)
-
-var (
-	testAllowedFormats = []string{
-		formatBin,
-		formatJSON,
-		formatBingz,
-		formatJSONGZ,
-		formatTar,
-		formatTargz,
-		formatZip,
-		formatGit,
-		formatDir,
-	}
 )
 
 func TestGetParsedRefSuccess(t *testing.T) {
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedDirRef(
+		internal.NewDirectParsedDirRef(
 			formatDir,
 			"path/to/dir",
 		),
@@ -51,7 +40,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedDirRef(
+		internal.NewDirectParsedDirRef(
 			formatDir,
 			".",
 		),
@@ -59,7 +48,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedDirRef(
+		internal.NewDirectParsedDirRef(
 			formatDir,
 			"/",
 		),
@@ -67,7 +56,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedDirRef(
+		internal.NewDirectParsedDirRef(
 			formatDir,
 			".",
 		),
@@ -75,7 +64,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedDirRef(
+		internal.NewDirectParsedDirRef(
 			formatDir,
 			"../foo",
 		),
@@ -83,7 +72,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedDirRef(
+		internal.NewDirectParsedDirRef(
 			formatDir,
 			"/foo",
 		),
@@ -91,154 +80,154 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file.tar",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeNone,
 			0,
 		),
 		"path/to/file.tar",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"/path/to/file.tar",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeNone,
 			0,
 		),
 		"file:///path/to/file.tar",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file.tar",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeNone,
 			1,
 		),
 		"path/to/file.tar#strip_components=1",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file.tar.gz",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeGzip,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeGzip,
 			0,
 		),
 		"path/to/file.tar.gz",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file.tar.gz",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeGzip,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeGzip,
 			1,
 		),
 		"path/to/file.tar.gz#strip_components=1",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file.tgz",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeGzip,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeGzip,
 			0,
 		),
 		"path/to/file.tgz",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file.tgz",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeGzip,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeGzip,
 			1,
 		),
 		"path/to/file.tgz#strip_components=1",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file.tar",
-			fetch.FileSchemeHTTP,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeHTTP,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeNone,
 			0,
 		),
 		"http://path/to/file.tar",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file.tar",
-			fetch.FileSchemeHTTPS,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeHTTPS,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeNone,
 			0,
 		),
 		"https://path/to/file.tar",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatZip,
 			"path/to/file.zip",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeZip,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeZip,
+			internal.CompressionTypeNone,
 			0,
 		),
 		"path/to/file.zip",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatZip,
 			"/path/to/file.zip",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeZip,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeZip,
+			internal.CompressionTypeNone,
 			0,
 		),
 		"file:///path/to/file.zip",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatZip,
 			"path/to/file.zip",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeZip,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeZip,
+			internal.CompressionTypeNone,
 			1,
 		),
 		"path/to/file.zip#strip_components=1",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"path/to/dir.git",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			nil,
 			false,
 			1,
@@ -247,10 +236,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"path/to/dir.git",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			nil,
 			false,
 			40,
@@ -259,10 +248,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"path/to/dir.git",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			git.NewBranchName("master"),
 			false,
 			1,
@@ -271,10 +260,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"/path/to/dir.git",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			git.NewBranchName("master"),
 			false,
 			1,
@@ -283,10 +272,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"path/to/dir.git",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			git.NewTagName("v1.0.0"),
 			false,
 			1,
@@ -295,10 +284,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"hello.com/path/to/dir.git",
-			fetch.GitSchemeHTTP,
+			internal.GitSchemeHTTP,
 			git.NewBranchName("master"),
 			false,
 			1,
@@ -307,10 +296,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"hello.com/path/to/dir.git",
-			fetch.GitSchemeHTTPS,
+			internal.GitSchemeHTTPS,
 			git.NewBranchName("master"),
 			false,
 			1,
@@ -319,10 +308,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"user@hello.com:path/to/dir.git",
-			fetch.GitSchemeSSH,
+			internal.GitSchemeSSH,
 			git.NewBranchName("master"),
 			false,
 			1,
@@ -331,10 +320,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"user@hello.com:path/to/dir.git",
-			fetch.GitSchemeSSH,
+			internal.GitSchemeSSH,
 			git.NewRefName("refs/remotes/origin/HEAD"),
 			false,
 			50,
@@ -343,10 +332,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"user@hello.com:path/to/dir.git",
-			fetch.GitSchemeSSH,
+			internal.GitSchemeSSH,
 			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "master"),
 			false,
 			50,
@@ -355,10 +344,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"user@hello.com:path/to/dir.git",
-			fetch.GitSchemeSSH,
+			internal.GitSchemeSSH,
 			git.NewRefName("refs/remotes/origin/HEAD"),
 			false,
 			10,
@@ -367,10 +356,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"user@hello.com:path/to/dir.git",
-			fetch.GitSchemeSSH,
+			internal.GitSchemeSSH,
 			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "master"),
 			false,
 			10,
@@ -379,152 +368,152 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"path/to/file.bin",
-			fetch.FileSchemeLocal,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
 		),
 		"path/to/file.bin",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"path/to/file.bin.gz",
-			fetch.FileSchemeLocal,
-			fetch.CompressionTypeGzip,
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
 		),
 		"path/to/file.bin.gz",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatJSON,
 			"path/to/file.json",
-			fetch.FileSchemeLocal,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
 		),
 		"path/to/file.json",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatJSON,
 			"path/to/file.json.gz",
-			fetch.FileSchemeLocal,
-			fetch.CompressionTypeGzip,
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
 		),
 		"path/to/file.json.gz",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatJSON,
 			"path/to/file.json.gz",
-			fetch.FileSchemeLocal,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
 		),
 		"path/to/file.json.gz#compression=none",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatJSON,
 			"path/to/file.json.gz",
-			fetch.FileSchemeLocal,
-			fetch.CompressionTypeGzip,
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
 		),
 		"path/to/file.json.gz#compression=gzip",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"",
-			fetch.FileSchemeStdio,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeStdio,
+			internal.CompressionTypeNone,
 		),
 		"-",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatJSON,
 			"",
-			fetch.FileSchemeStdio,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeStdio,
+			internal.CompressionTypeNone,
 		),
 		"-#format=json",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"",
-			fetch.FileSchemeNull,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeNull,
+			internal.CompressionTypeNone,
 		),
 		app.DevNullFilePath,
 	)
 	// TODO: this needs to be moved to a unix-only test
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"",
-			fetch.FileSchemeStdin,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeStdin,
+			internal.CompressionTypeNone,
 		),
 		app.DevStdinFilePath,
 	)
 	// TODO: this needs to be moved to a unix-only test
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"",
-			fetch.FileSchemeStdout,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeStdout,
+			internal.CompressionTypeNone,
 		),
 		app.DevStdoutFilePath,
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"path/to/dir",
-			fetch.FileSchemeLocal,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
 		),
 		"path/to/dir#format=bin",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"path/to/dir",
-			fetch.FileSchemeLocal,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.CompressionTypeNone,
 		),
 		"path/to/dir#format=bin,compression=none",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"path/to/dir",
-			fetch.FileSchemeLocal,
-			fetch.CompressionTypeGzip,
+			internal.FileSchemeLocal,
+			internal.CompressionTypeGzip,
 		),
 		"path/to/dir#format=bin,compression=gzip",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"/path/to/dir",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			git.NewBranchName("master"),
 			false,
 			1,
@@ -533,10 +522,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"/path/to/dir",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			git.NewBranchName("master/foo"),
 			false,
 			1,
@@ -545,10 +534,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"path/to/dir",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			git.NewTagName("master/foo"),
 			false,
 			1,
@@ -557,10 +546,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"path/to/dir",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			git.NewTagName("master/foo"),
 			false,
 			1,
@@ -569,10 +558,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"path/to/dir",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			git.NewTagName("master/foo"),
 			true,
 			1,
@@ -581,10 +570,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"path/to/dir",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			git.NewTagName("master/foo"),
 			false,
 			1,
@@ -593,10 +582,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"path/to/dir",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			git.NewRefName("refs/remotes/origin/HEAD"),
 			false,
 			50,
@@ -605,10 +594,10 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedGitRef(
+		internal.NewDirectParsedGitRef(
 			formatGit,
 			"path/to/dir",
-			fetch.GitSchemeLocal,
+			internal.GitSchemeLocal,
 			git.NewRefName("refs/remotes/origin/HEAD"),
 			false,
 			10,
@@ -617,283 +606,313 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTargz,
 			"path/to/file",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeGzip,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeGzip,
 			1,
 		),
 		"path/to/file#format=targz,strip_components=1",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeNone,
 			1,
 		),
 		"path/to/file#format=tar,strip_components=1",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeNone,
 			1,
 		),
 		"path/to/file#format=tar,strip_components=1,compression=none",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeGzip,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeGzip,
 			1,
 		),
 		"path/to/file#format=tar,strip_components=1,compression=gzip",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatZip,
 			"path/to/file",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeZip,
-			fetch.CompressionTypeNone,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeZip,
+			internal.CompressionTypeNone,
 			1,
 		),
 		"path/to/file#format=zip,strip_components=1",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file.tar.zst",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeZstd,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeZstd,
 			0,
 		),
 		"path/to/file.tar.zst",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file.tar.zst",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeZstd,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeZstd,
 			1,
 		),
 		"path/to/file.tar.zst#strip_components=1",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedArchiveRef(
+		internal.NewDirectParsedArchiveRef(
 			formatTar,
 			"path/to/file",
-			fetch.FileSchemeLocal,
-			fetch.ArchiveTypeTar,
-			fetch.CompressionTypeZstd,
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeZstd,
 			1,
 		),
 		"path/to/file#format=tar,strip_components=1,compression=zstd",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"path/to/file",
-			fetch.FileSchemeLocal,
-			fetch.CompressionTypeZstd,
+			internal.FileSchemeLocal,
+			internal.CompressionTypeZstd,
 		),
 		"path/to/file#format=bin,compression=zstd",
 	)
 	testGetParsedRefSuccess(
 		t,
-		fetch.NewDirectParsedSingleRef(
+		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"path/to/file.bin.zst",
-			fetch.FileSchemeLocal,
-			fetch.CompressionTypeZstd,
+			internal.FileSchemeLocal,
+			internal.CompressionTypeZstd,
 		),
 		"path/to/file.bin.zst",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedModuleRef(
+			formatMod,
+			testNewModuleName(
+				t,
+				"example.com",
+				"foo",
+				"bar",
+				"v1",
+				"",
+			),
+		),
+		"example.com/foo/bar/v1",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedModuleRef(
+			formatMod,
+			testNewModuleName(
+				t,
+				"example.com",
+				"foo",
+				"bar",
+				"v1",
+				bufmoduletesting.TestDigest,
+			),
+		),
+		"example.com/foo/bar/v1:"+bufmoduletesting.TestDigest,
 	)
 }
 
 func TestGetParsedRefError(t *testing.T) {
 	testGetParsedRefError(
 		t,
-		fetch.NewValueEmptyError(),
+		internal.NewValueEmptyError(),
 		"",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewValueMultipleHashtagsError("foo#format=git#branch=master"),
+		internal.NewValueMultipleHashtagsError("foo#format=git#branch=master"),
 		"foo#format=git#branch=master",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewValueStartsWithHashtagError("#path/to/dir"),
+		internal.NewValueStartsWithHashtagError("#path/to/dir"),
 		"#path/to/dir",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewValueEndsWithHashtagError("path/to/dir#"),
+		internal.NewValueEndsWithHashtagError("path/to/dir#"),
 		"path/to/dir#",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewInvalidDirPathError("-"),
+		internal.NewInvalidPathError(formatDir, "-"),
 		"-#format=dir",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewInvalidGitPathError("-"),
+		internal.NewInvalidPathError(formatGit, "-"),
 		"-#format=git,branch=master",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewCannotSpecifyGitBranchAndTagError(),
+		internal.NewCannotSpecifyGitBranchAndTagError(),
 		"path/to/foo#format=git,branch=foo,tag=bar",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewCannotSpecifyGitBranchAndTagError(),
+		internal.NewCannotSpecifyGitBranchAndTagError(),
 		"path/to/foo#format=git,branch=foo,tag=bar,ref=baz",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewCannotSpecifyTagWithRefError(),
+		internal.NewCannotSpecifyTagWithRefError(),
 		"path/to/foo#format=git,tag=foo,ref=bar",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewDepthParseError("bar"),
+		internal.NewDepthParseError("bar"),
 		"path/to/foo#format=git,depth=bar",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewDepthZeroError(),
+		internal.NewDepthZeroError(),
 		"path/to/foo#format=git,ref=foor,depth=0",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewOptionsDuplicateKeyError("branch"),
+		internal.NewOptionsDuplicateKeyError("branch"),
 		"path/to/foo#format=git,branch=foo,branch=bar",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewPathUnknownGzError("path/to/foo.gz"),
+		internal.NewPathUnknownGzError("path/to/foo.gz"),
 		"path/to/foo.gz",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewPathUnknownGzError("path/to/foo.bar.gz"),
+		internal.NewPathUnknownGzError("path/to/foo.bar.gz"),
 		"path/to/foo.bar.gz",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewOptionsInvalidError("bar"),
+		internal.NewOptionsInvalidError("bar"),
 		"path/to/foo#bar",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewOptionsInvalidError("bar="),
+		internal.NewOptionsInvalidError("bar="),
 		"path/to/foo#bar=",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewOptionsInvalidError("format=bin,bar="),
+		internal.NewOptionsInvalidError("format=bin,bar="),
 		"path/to/foo#format=bin,bar=",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewOptionsInvalidError("format=bin,=bar"),
+		internal.NewOptionsInvalidError("format=bin,=bar"),
 		"path/to/foo#format=bin,=bar",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewFormatOverrideNotAllowedForDevNullError(app.DevNullFilePath),
+		internal.NewFormatOverrideNotAllowedForDevNullError(app.DevNullFilePath),
 		fmt.Sprintf("%s#format=bin", app.DevNullFilePath),
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewFormatUnknownError("bar"),
+		internal.NewFormatUnknownError("bar"),
 		"path/to/foo#format=bar",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewOptionsCouldNotParseStripComponentsError("foo"),
+		internal.NewOptionsCouldNotParseStripComponentsError("foo"),
 		"path/to/foo.tar.gz#strip_components=foo",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewCompressionUnknownError("foo"),
+		internal.NewCompressionUnknownError("foo"),
 		"path/to/foo.tar.gz#compression=foo",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewOptionsInvalidKeyError("foo"),
+		internal.NewOptionsInvalidKeyError("foo"),
 		"path/to/foo.tar.gz#foo=bar",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewOptionsInvalidForFormatError(formatTar, "path/to/foo.tar.gz#branch=master"),
+		internal.NewOptionsInvalidForFormatError(formatTar, "path/to/foo.tar.gz#branch=master"),
 		"path/to/foo.tar.gz#branch=master",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewOptionsInvalidForFormatError(formatDir, "path/to/foo#strip_components=1"),
+		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/foo#strip_components=1"),
 		"path/to/foo#strip_components=1",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewOptionsDuplicateKeyError("strip_components"),
+		internal.NewOptionsDuplicateKeyError("strip_components"),
 		"path/to/foo.tar#strip_components=0,strip_components=1",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewOptionsInvalidForFormatError(formatDir, "path/to/foo#compression=none"),
+		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/foo#compression=none"),
 		"path/to/foo#compression=none",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewCannotSpecifyCompressionForZipError(),
+		internal.NewCannotSpecifyCompressionForZipError(),
 		"path/to/foo.zip#compression=none",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewCannotSpecifyCompressionForZipError(),
+		internal.NewCannotSpecifyCompressionForZipError(),
 		"path/to/foo.zip#compression=gzip",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewCannotSpecifyCompressionForZipError(),
+		internal.NewCannotSpecifyCompressionForZipError(),
 		"path/to/foo#format=zip,compression=none",
 	)
 	testGetParsedRefError(
 		t,
-		fetch.NewCannotSpecifyCompressionForZipError(),
+		internal.NewCannotSpecifyCompressionForZipError(),
 		"path/to/foo#format=zip,compression=gzip",
 	)
 }
 
 func testGetParsedRefSuccess(
 	t *testing.T,
-	expectedRef fetch.ParsedRef,
+	expectedRef internal.ParsedRef,
 	value string,
 ) {
 	testGetParsedRef(
@@ -919,7 +938,7 @@ func testGetParsedRefError(
 
 func testGetParsedRef(
 	t *testing.T,
-	expectedParsedRef fetch.ParsedRef,
+	expectedParsedRef internal.ParsedRef,
 	expectedErr error,
 	value string,
 ) {
@@ -928,13 +947,32 @@ func testGetParsedRef(
 		parsedRef, err := newRefParser(zap.NewNop()).getParsedRef(
 			context.Background(),
 			value,
-			testAllowedFormats,
+			allFormats,
 		)
 		if expectedErr != nil {
-			assert.Equal(t, expectedErr, err)
+			if err == nil {
+				assert.Equal(t, nil, parsedRef, "expected error")
+			} else {
+				assert.Equal(t, expectedErr, err)
+			}
 		} else {
 			assert.NoError(t, err)
-			assert.Equal(t, expectedParsedRef, parsedRef)
+			if err == nil {
+				assert.Equal(t, expectedParsedRef, parsedRef)
+			}
 		}
 	})
+}
+
+func testNewModuleName(
+	t *testing.T,
+	server string,
+	owner string,
+	repository string,
+	version string,
+	digest string,
+) bufmodule.ModuleName {
+	moduleName, err := bufmodule.NewModuleName(server, owner, repository, version, digest)
+	require.NoError(t, err)
+	return moduleName
 }

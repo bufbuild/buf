@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
@@ -218,10 +218,10 @@ func testBuildCodeGeneratorRequest(
 	for _, fileToGenerateFilePath := range fileToGenerate {
 		nonImportRootRelFilePaths[fileToGenerateFilePath] = struct{}{}
 	}
-	imageFiles := make([]bufcore.ImageFile, len(fileDescriptorSet.File))
+	imageFiles := make([]bufimage.ImageFile, len(fileDescriptorSet.File))
 	for i, fileDescriptorProto := range fileDescriptorSet.File {
 		_, isNotImport := nonImportRootRelFilePaths[fileDescriptorProto.GetName()]
-		imageFile, err := bufcore.NewImageFile(
+		imageFile, err := bufimage.NewImageFile(
 			fileDescriptorProto,
 			"",
 			!isNotImport,
@@ -229,7 +229,7 @@ func testBuildCodeGeneratorRequest(
 		require.NoError(t, err)
 		imageFiles[i] = imageFile
 	}
-	image, err := bufcore.NewImage(imageFiles)
+	image, err := bufimage.NewImage(imageFiles)
 	require.NoError(t, err)
-	return bufcore.ImageToCodeGeneratorRequest(image, parameter)
+	return bufimage.ImageToCodeGeneratorRequest(image, parameter)
 }

@@ -18,23 +18,23 @@ import (
 	"context"
 	"io"
 
+	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/fetch"
 	"go.uber.org/zap"
 )
 
 type writer struct {
-	fetchWriter fetch.Writer
+	internalWriter internal.Writer
 }
 
 func newWriter(
 	logger *zap.Logger,
 ) *writer {
 	return &writer{
-		fetchWriter: fetch.NewWriter(
+		internalWriter: internal.NewWriter(
 			logger,
-			fetch.WithWriterLocal(),
-			fetch.WithWriterStdio(),
+			internal.WithWriterLocal(),
+			internal.WithWriterStdio(),
 		),
 	}
 }
@@ -44,5 +44,5 @@ func (w *writer) PutImageFile(
 	container app.EnvStdoutContainer,
 	imageRef ImageRef,
 ) (io.WriteCloser, error) {
-	return w.fetchWriter.PutFile(ctx, container, imageRef.fetchFileRef())
+	return w.internalWriter.PutFile(ctx, container, imageRef.internalFileRef())
 }

@@ -17,20 +17,20 @@ package buffetch
 import (
 	"path/filepath"
 
-	"github.com/bufbuild/buf/internal/pkg/fetch"
+	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 )
 
 var _ SourceRef = &sourceRef{}
 
 type sourceRef struct {
-	bucketRef fetch.BucketRef
+	bucketRef internal.BucketRef
 	dirPath   string
 }
 
-func newSourceRef(bucketRef fetch.BucketRef) *sourceRef {
+func newSourceRef(bucketRef internal.BucketRef) *sourceRef {
 	var dirPath string
-	if dirRef, ok := bucketRef.(fetch.DirRef); ok {
+	if dirRef, ok := bucketRef.(internal.DirRef); ok {
 		dirPath = dirRef.Path()
 	}
 	return &sourceRef{
@@ -59,10 +59,12 @@ func (r *sourceRef) PathForExternalPath(externalPath string) (string, error) {
 	return normalpath.NormalizeAndValidate(path)
 }
 
-func (r *sourceRef) fetchRef() fetch.Ref {
+func (r *sourceRef) internalRef() internal.Ref {
 	return r.bucketRef
 }
 
-func (r *sourceRef) fetchBucketRef() fetch.BucketRef {
+func (r *sourceRef) internalBucketRef() internal.BucketRef {
 	return r.bucketRef
 }
+
+func (*sourceRef) isSourceOrModuleRef() {}

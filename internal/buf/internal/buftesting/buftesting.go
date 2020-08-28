@@ -23,10 +23,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/internal/buf/bufmod"
-	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/github"
-	"github.com/bufbuild/buf/internal/pkg/httpauth"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/internal/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/prototesting"
 	"github.com/stretchr/testify/require"
@@ -47,7 +45,6 @@ var (
 	testHTTPClient = &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	testHTTPAuthenticator = httpauth.NewNopAuthenticator()
 	testGoogleapisDirPath = filepath.Join("cache", "googleapis")
 	testLock              sync.Mutex
 )
@@ -83,6 +80,7 @@ func RunActualProtoc(
 	stdout io.Writer,
 	extraFlags ...string,
 ) {
+	t.Helper()
 	err := prototesting.RunProtoc(
 		context.Background(),
 		[]string{dirPath},
@@ -109,16 +107,14 @@ func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
 	defer testLock.Unlock()
 
 	googleapisDirPath := filepath.Join(buftestingDirPath, testGoogleapisDirPath)
-	archiveReader := github.NewArchiveReader(
+	archiveReader := githubtesting.NewArchiveReader(
 		zap.NewNop(),
 		testHTTPClient,
-		testHTTPAuthenticator,
 	)
 	require.NoError(
 		t,
 		archiveReader.GetArchive(
 			context.Background(),
-			app.NewContainer(nil, nil, nil, nil),
 			googleapisDirPath,
 			"googleapis",
 			"googleapis",
@@ -133,7 +129,8 @@ func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
 // Limit limits the number of files returned if > 0.
 // protoc has a fixed size for number of characters to argument list.
 func GetProtocFilePaths(t *testing.T, dirPath string, limit int) []string {
-	module, err := bufmod.NewIncludeBuilder(zap.NewNop()).BuildForIncludes(
+	t.Helper()
+	module, err := bufmodulebuild.NewModuleIncludeBuilder(zap.NewNop()).BuildForIncludes(
 		context.Background(),
 		[]string{dirPath},
 	)
