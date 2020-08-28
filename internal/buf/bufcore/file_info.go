@@ -15,6 +15,7 @@
 package bufcore
 
 import (
+	"github.com/bufbuild/buf/internal/buf/bufcore/internal"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
 
@@ -31,7 +32,7 @@ func newFileInfo(
 	externalPath string,
 	isImport bool,
 ) (*fileInfo, error) {
-	if err := validateFileInfoPath(path); err != nil {
+	if err := internal.ValidateFileInfoPath(path); err != nil {
 		return nil, err
 	}
 	if externalPath == "" {
@@ -77,6 +78,14 @@ func (f *fileInfo) ExternalPath() string {
 
 func (f *fileInfo) IsImport() bool {
 	return f.isImport
+}
+
+func (f *fileInfo) WithIsImport(isImport bool) FileInfo {
+	return newFileInfoNoValidate(
+		f.path,
+		f.externalPath,
+		isImport,
+	)
 }
 
 func (*fileInfo) isFileInfo() {}

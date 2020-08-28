@@ -60,10 +60,10 @@ updategodeps:
 	rm -f go.mod go.sum
 	go mod init $(GO_MODULE)
 	go mod edit -go=$(GO_MOD_VERSION)
+	go get -u -t ./... $(GO_GET_PKGS)
 ifneq ($(GO_GET_PKGS),)
 	go get $(sort $(GO_GET_PKGS))
 endif
-	go get -u -t ./...
 	$(MAKE) generate
 	$(MAKE)
 

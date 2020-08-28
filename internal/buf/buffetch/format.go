@@ -27,6 +27,8 @@ const (
 	formatJSON = "json"
 	// formatJSONGZ is the JSON gzipped format.
 	formatJSONGZ = "jsongz"
+	// formatMod is the module format.
+	formatMod = "mod"
 	// formatTar is the tar format.
 	formatTar = "tar"
 	// formatTargz is the tar gzipped format.
@@ -43,6 +45,7 @@ var (
 		formatJSON,
 		formatJSONGZ,
 	}
+	// sorted
 	imageFormatsNotDeprecated = []string{
 		formatBin,
 		formatJSON,
@@ -63,6 +66,31 @@ var (
 		formatZip,
 	}
 	// sorted
+	moduleFormats = []string{
+		formatMod,
+	}
+	// sorted
+	moduleFormatsNotDeprecated = []string{
+		formatMod,
+	}
+	// sorted
+	sourceOrModuleFormats = []string{
+		formatDir,
+		formatGit,
+		formatMod,
+		formatTar,
+		formatTargz,
+		formatZip,
+	}
+	// sorted
+	sourceOrModuleFormatsNotDeprecated = []string{
+		formatDir,
+		formatGit,
+		formatMod,
+		formatTar,
+		formatZip,
+	}
+	// sorted
 	allFormats = []string{
 		formatBin,
 		formatBingz,
@@ -70,6 +98,7 @@ var (
 		formatGit,
 		formatJSON,
 		formatJSONGZ,
+		formatMod,
 		formatTar,
 		formatTargz,
 		formatZip,
@@ -80,6 +109,7 @@ var (
 		formatDir,
 		formatGit,
 		formatJSON,
+		formatMod,
 		formatTar,
 		formatZip,
 	}

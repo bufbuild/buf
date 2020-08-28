@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/pkg/interrupt"
-	"github.com/gofrs/uuid"
+	"github.com/bufbuild/buf/internal/pkg/uuid"
 	"go.uber.org/multierr"
 )
 
@@ -38,7 +38,7 @@ type File interface {
 //
 // This file will be deleted on interrupt signals.
 func NewFileWithData(data []byte) (File, error) {
-	id, err := uuid.NewV4()
+	id, err := uuid.New()
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ type Dir interface {
 // baseDirPath can be empty, in which case os.TempDir() is used.
 // This directory will be deleted on interrupt signals.
 func NewDir(baseDirPath string) (Dir, error) {
-	id, err := uuid.NewV4()
+	id, err := uuid.New()
 	if err != nil {
 		return nil, err
 	}

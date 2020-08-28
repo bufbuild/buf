@@ -152,7 +152,7 @@ func (c *cloner) CloneToBucket(
 	}
 	var readBucket storage.ReadBucket = tmpReadWriteBucket
 	if options.Mapper != nil {
-		readBucket = storage.Map(readBucket, options.Mapper)
+		readBucket = storage.MapReadBucket(readBucket, options.Mapper)
 	}
 	ctx, span2 := trace.StartSpan(ctx, "git_clone_to_bucket_copy")
 	defer span2.End()

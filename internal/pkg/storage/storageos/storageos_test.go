@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/internal/storagetesting"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/tmp"
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,12 +42,11 @@ func testNewReadBucket(t *testing.T, dirPath string) storage.ReadBucket {
 	return osBucket
 }
 
-func testNewWriteBucketAndCleanup(t *testing.T) (storage.WriteBucket, func() error) {
-	tmpDir, err := tmp.NewDir("tmp")
+func testNewWriteBucketAndCleanup(t *testing.T) storage.WriteBucket {
+	tmpDir := t.TempDir()
+	osBucket, err := storageos.NewReadWriteBucket(tmpDir)
 	require.NoError(t, err)
-	osBucket, err := storageos.NewReadWriteBucket(tmpDir.AbsPath())
-	require.NoError(t, err)
-	return osBucket, tmpDir.Close
+	return osBucket
 }
 
 func testWriteBucketToReadBucket(t *testing.T, writeBucket storage.WriteBucket) storage.ReadBucket {

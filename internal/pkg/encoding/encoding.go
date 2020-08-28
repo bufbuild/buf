@@ -84,3 +84,8 @@ func GetJSONStringOrStringValue(rawMessage json.RawMessage) string {
 	}
 	return string(rawMessage)
 }
+
+// MarshalYAML marshals the given value into YAML.
+func MarshalYAML(v interface{}) ([]byte, error) {
+	return yaml.Marshal(v)
+}

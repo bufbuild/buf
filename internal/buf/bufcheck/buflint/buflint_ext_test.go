@@ -22,11 +22,12 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufanalysis/bufanalysistesting"
-	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore"
-	"github.com/bufbuild/buf/internal/buf/bufmod"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
@@ -846,19 +847,27 @@ func testLintExternalConfigModifier(
 	configProvider := bufconfig.NewProvider(logger, configProviderOptions...)
 	config := testGetConfig(t, configProvider, readWriteBucket)
 
-	module, err := bufmod.NewBucketBuilder(zap.NewNop()).BuildForBucket(
+	module, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),
 		readWriteBucket,
 		config.Build,
 	)
 	require.NoError(t, err)
-	image, fileAnnotations, err := bufbuild.NewBuilder(zap.NewNop()).Build(
-		ctx,
+	moduleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(
+		zap.NewNop(),
+		bufmodule.NewNopModuleReader(),
+	).Build(
+		context.Background(),
 		module,
 	)
 	require.NoError(t, err)
+	image, fileAnnotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
+		ctx,
+		moduleFileSet,
+	)
+	require.NoError(t, err)
 	require.Empty(t, fileAnnotations)
-	image = bufcore.ImageWithoutImports(image)
+	image = bufimage.ImageWithoutImports(image)
 
 	handler := buflint.NewHandler(logger)
 	fileAnnotations, err = handler.Check(
@@ -881,12 +890,7 @@ func testGetConfig(
 ) *bufconfig.Config {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-
-	data, err := storage.ReadPath(ctx, readBucket, bufconfig.ConfigFilePath)
-	if err != nil && !storage.IsNotExist(err) {
-		require.NoError(t, err)
-	}
-	config, err := configProvider.GetConfigForData(ctx, data)
+	config, err := configProvider.GetConfig(ctx, readBucket)
 	require.NoError(t, err)
 	return config
 }

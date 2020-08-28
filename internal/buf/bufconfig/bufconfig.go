@@ -20,19 +20,14 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/bufmod"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
 
-// ConfigFilePath is the default config file path within a bucket.
-//
-// TODO: make sure copied for git
-const ConfigFilePath = "buf.yaml"
-
 // Config is the user config.
 type Config struct {
-	Build    *bufmod.Config
+	Build    *bufmodulebuild.Config
 	Breaking *bufbreaking.Config
 	Lint     *buflint.Config
 }
@@ -49,6 +44,11 @@ type Provider interface {
 	GetConfigForData(ctx context.Context, data []byte) (*Config, error)
 }
 
+// NewProvider returns a new Provider.
+func NewProvider(logger *zap.Logger, options ...ProviderOption) Provider {
+	return newProvider(logger, options...)
+}
+
 // ProviderOption is an option for a new Provider.
 type ProviderOption func(*provider)
 
@@ -62,14 +62,10 @@ func ProviderWithExternalConfigModifier(externalConfigModifier func(*ExternalCon
 	}
 }
 
-// NewProvider returns a new Provider.
-func NewProvider(logger *zap.Logger, options ...ProviderOption) Provider {
-	return newProvider(logger, options...)
-}
-
 // ExternalConfig is an external config.
 type ExternalConfig struct {
-	Build    bufmod.ExternalConfig      `json:"build,omitempty" yaml:"build,omitempty"`
-	Breaking bufbreaking.ExternalConfig `json:"breaking,omitempty" yaml:"breaking,omitempty"`
-	Lint     buflint.ExternalConfig     `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Build    bufmodulebuild.ExternalConfig `json:"build,omitempty" yaml:"build,omitempty"`
+	Breaking bufbreaking.ExternalConfig    `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Lint     buflint.ExternalConfig        `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Deps     []string                      `json:"deps,omitempty" yaml:"deps,omitempty"`
 }

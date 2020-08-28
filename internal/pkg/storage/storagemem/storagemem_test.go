@@ -54,8 +54,8 @@ func testNewReadBucket(t *testing.T, dirPath string) storage.ReadBucket {
 	return readBucket
 }
 
-func testNewWriteBucketAndCleanup(*testing.T) (storage.WriteBucket, func() error) {
-	return storagemem.NewReadBucketBuilder(), func() error { return nil }
+func testNewWriteBucketAndCleanup(*testing.T) storage.WriteBucket {
+	return storagemem.NewReadBucketBuilder()
 }
 
 func testWriteBucketToReadBucket(t *testing.T, writeBucket storage.WriteBucket) storage.ReadBucket {

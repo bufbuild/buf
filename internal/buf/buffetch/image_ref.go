@@ -15,19 +15,19 @@
 package buffetch
 
 import (
-	"github.com/bufbuild/buf/internal/pkg/fetch"
+	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 )
 
 var _ ImageRef = &imageRef{}
 
 type imageRef struct {
-	fileRef       fetch.FileRef
+	fileRef       internal.FileRef
 	imageEncoding ImageEncoding
 }
 
 func newImageRef(
-	fileRef fetch.FileRef,
+	fileRef internal.FileRef,
 	imageEncoding ImageEncoding,
 ) *imageRef {
 	return &imageRef{
@@ -45,13 +45,13 @@ func (r *imageRef) ImageEncoding() ImageEncoding {
 }
 
 func (r *imageRef) IsNull() bool {
-	return r.fileRef.FileScheme() == fetch.FileSchemeNull
+	return r.fileRef.FileScheme() == internal.FileSchemeNull
 }
 
-func (r *imageRef) fetchRef() fetch.Ref {
+func (r *imageRef) internalRef() internal.Ref {
 	return r.fileRef
 }
 
-func (r *imageRef) fetchFileRef() fetch.FileRef {
+func (r *imageRef) internalFileRef() internal.FileRef {
 	return r.fileRef
 }

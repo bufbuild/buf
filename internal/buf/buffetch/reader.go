@@ -19,8 +19,9 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/fetch"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -28,7 +29,7 @@ import (
 )
 
 type reader struct {
-	fetchReader fetch.Reader
+	internalReader internal.Reader
 }
 
 func newReader(
@@ -36,19 +37,74 @@ func newReader(
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
+	moduleReader bufmodule.ModuleReader,
 ) *reader {
 	return &reader{
-		fetchReader: fetch.NewReader(
+		internalReader: internal.NewReader(
 			logger,
-			fetch.WithReaderHTTP(
+			internal.WithReaderHTTP(
 				httpClient,
 				httpAuthenticator,
 			),
-			fetch.WithReaderGit(
+			internal.WithReaderGit(
 				gitCloner,
 			),
-			fetch.WithReaderLocal(),
-			fetch.WithReaderStdio(),
+			internal.WithReaderLocal(),
+			internal.WithReaderStdio(),
+			internal.WithReaderModule(moduleReader),
+		),
+	}
+}
+
+func newImageReader(
+	logger *zap.Logger,
+	httpClient *http.Client,
+	httpAuthenticator httpauth.Authenticator,
+	gitCloner git.Cloner,
+) *reader {
+	return &reader{
+		internalReader: internal.NewReader(
+			logger,
+			internal.WithReaderHTTP(
+				httpClient,
+				httpAuthenticator,
+			),
+			internal.WithReaderLocal(),
+			internal.WithReaderStdio(),
+		),
+	}
+}
+
+func newSourceReader(
+	logger *zap.Logger,
+	httpClient *http.Client,
+	httpAuthenticator httpauth.Authenticator,
+	gitCloner git.Cloner,
+) *reader {
+	return &reader{
+		internalReader: internal.NewReader(
+			logger,
+			internal.WithReaderHTTP(
+				httpClient,
+				httpAuthenticator,
+			),
+			internal.WithReaderGit(
+				gitCloner,
+			),
+			internal.WithReaderLocal(),
+			internal.WithReaderStdio(),
+		),
+	}
+}
+
+func newModuleReader(
+	logger *zap.Logger,
+	moduleReader bufmodule.ModuleReader,
+) *reader {
+	return &reader{
+		internalReader: internal.NewReader(
+			logger,
+			internal.WithReaderModule(moduleReader),
 		),
 	}
 }
@@ -58,7 +114,7 @@ func (a *reader) GetImageFile(
 	container app.EnvStdinContainer,
 	imageRef ImageRef,
 ) (io.ReadCloser, error) {
-	return a.fetchReader.GetFile(ctx, container, imageRef.fetchFileRef())
+	return a.internalReader.GetFile(ctx, container, imageRef.internalFileRef())
 }
 
 func (a *reader) GetSourceBucket(
@@ -66,5 +122,13 @@ func (a *reader) GetSourceBucket(
 	container app.EnvStdinContainer,
 	sourceRef SourceRef,
 ) (storage.ReadBucketCloser, error) {
-	return a.fetchReader.GetBucket(ctx, container, sourceRef.fetchBucketRef())
+	return a.internalReader.GetBucket(ctx, container, sourceRef.internalBucketRef())
+}
+
+func (a *reader) GetModule(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	moduleRef ModuleRef,
+) (bufmodule.Module, error) {
+	return a.internalReader.GetModule(ctx, container, moduleRef.internalModuleRef())
 }

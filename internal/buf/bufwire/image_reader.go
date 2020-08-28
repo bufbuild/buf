@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -30,63 +30,30 @@ import (
 )
 
 type imageReader struct {
-	logger              *zap.Logger
-	fetchImageRefParser buffetch.ImageRefParser
-	fetchReader         buffetch.Reader
-	valueFlagName       string
+	logger      *zap.Logger
+	fetchReader buffetch.ImageReader
 }
 
 func newImageReader(
 	logger *zap.Logger,
-	fetchImageRefParser buffetch.ImageRefParser,
-	fetchReader buffetch.Reader,
-	valueFlagName string,
+	fetchReader buffetch.ImageReader,
 ) *imageReader {
 	return &imageReader{
-		logger:              logger.Named("bufwire"),
-		fetchImageRefParser: fetchImageRefParser,
-		fetchReader:         fetchReader,
-		valueFlagName:       valueFlagName,
+		logger:      logger.Named("bufwire"),
+		fetchReader: fetchReader,
 	}
 }
 
 func (i *imageReader) GetImage(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	value string,
+	imageRef buffetch.ImageRef,
 	externalFilePaths []string,
 	externalFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
-) (_ bufcore.Image, retErr error) {
+) (_ bufimage.Image, retErr error) {
 	ctx, span := trace.StartSpan(ctx, "get_image")
 	defer span.End()
-	defer func() {
-		if retErr != nil {
-			retErr = fmt.Errorf("%v: %w", i.valueFlagName, retErr)
-		}
-	}()
-	imageRef, err := i.fetchImageRefParser.GetImageRef(ctx, value)
-	if err != nil {
-		return nil, err
-	}
-	return i.getImageForImageRef(
-		ctx,
-		container,
-		externalFilePaths,
-		externalFilePathsAllowNotExist,
-		excludeSourceCodeInfo,
-		imageRef,
-	)
-}
-
-func (i *imageReader) getImageForImageRef(
-	ctx context.Context,
-	container app.EnvStdinContainer,
-	externalFilePaths []string,
-	externalFilePathsAllowNotExist bool,
-	excludeSourceCodeInfo bool,
-	imageRef buffetch.ImageRef,
-) (_ bufcore.Image, retErr error) {
 	readCloser, err := i.fetchReader.GetImageFile(ctx, container, imageRef)
 	if err != nil {
 		return nil, err
@@ -155,7 +122,7 @@ func (i *imageReader) getImageForImageRef(
 			fileDescriptorProto.SourceCodeInfo = nil
 		}
 	}
-	image, err := bufcore.NewImageForProto(protoImage)
+	image, err := bufimage.NewImageForProto(protoImage)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +140,7 @@ func (i *imageReader) getImageForImageRef(
 	if externalFilePathsAllowNotExist {
 		// externalFilePaths have to be targetPaths
 		// TODO: evaluate this
-		return bufcore.ImageWithOnlyPathsAllowNotExist(image, imagePaths)
+		return bufimage.ImageWithOnlyPathsAllowNotExist(image, imagePaths)
 	}
-	return bufcore.ImageWithOnlyPaths(image, imagePaths)
+	return bufimage.ImageWithOnlyPaths(image, imagePaths)
 }

@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
@@ -29,51 +29,43 @@ import (
 )
 
 type imageWriter struct {
-	logger              *zap.Logger
-	fetchImageRefParser buffetch.ImageRefParser
-	fetchWriter         buffetch.Writer
+	logger      *zap.Logger
+	fetchWriter buffetch.Writer
 }
 
 func newImageWriter(
 	logger *zap.Logger,
-	fetchImageRefParser buffetch.ImageRefParser,
 	fetchWriter buffetch.Writer,
 ) *imageWriter {
 	return &imageWriter{
-		logger:              logger,
-		fetchImageRefParser: fetchImageRefParser,
-		fetchWriter:         fetchWriter,
+		logger:      logger,
+		fetchWriter: fetchWriter,
 	}
 }
 
 func (i *imageWriter) PutImage(
 	ctx context.Context,
 	container app.EnvStdoutContainer,
-	value string,
-	image bufcore.Image,
+	imageRef buffetch.ImageRef,
+	image bufimage.Image,
 	asFileDescriptorSet bool,
 	excludeImports bool,
 ) (retErr error) {
 	ctx, span := trace.StartSpan(ctx, "put_image")
 	defer span.End()
-
-	imageRef, err := i.fetchImageRefParser.GetImageRef(ctx, value)
-	if err != nil {
-		return err
-	}
 	// stop short for performance
 	if imageRef.IsNull() {
 		return nil
 	}
 	writeImage := image
 	if excludeImports {
-		writeImage = bufcore.ImageWithoutImports(image)
+		writeImage = bufimage.ImageWithoutImports(image)
 	}
 	var message proto.Message
 	if asFileDescriptorSet {
-		message = bufcore.ImageToFileDescriptorSet(writeImage)
+		message = bufimage.ImageToFileDescriptorSet(writeImage)
 	} else {
-		message = bufcore.ImageToProtoImage(writeImage)
+		message = bufimage.ImageToProtoImage(writeImage)
 	}
 	data, err := i.imageMarshal(ctx, message, image, imageRef.ImageEncoding())
 	if err != nil {
@@ -93,7 +85,7 @@ func (i *imageWriter) PutImage(
 func (i *imageWriter) imageMarshal(
 	ctx context.Context,
 	message proto.Message,
-	image bufcore.Image,
+	image bufimage.Image,
 	imageEncoding buffetch.ImageEncoding,
 ) ([]byte, error) {
 	_, span := trace.StartSpan(ctx, "image_marshal")
@@ -104,7 +96,7 @@ func (i *imageWriter) imageMarshal(
 	case buffetch.ImageEncodingJSON:
 		// TODO: verify that image is complete
 		resolver, err := protoencoding.NewResolver(
-			bufcore.ImageToFileDescriptorProtos(
+			bufimage.ImageToFileDescriptorProtos(
 				image,
 			)...,
 		)

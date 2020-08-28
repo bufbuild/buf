@@ -16,12 +16,15 @@
 package ioutilextended
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 	"io/ioutil"
+	"os"
 	"sync"
 
 	"go.uber.org/multierr"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 var (
@@ -68,6 +71,24 @@ func ReaderAtForReader(reader io.Reader) (io.ReaderAt, error) {
 		return nil, err
 	}
 	return bytes.NewReader(data), nil
+}
+
+// ReadPassword provides a way to prompt a user for a password.
+// It reads a line from the input without echoing it
+// and strips the terminating \n.
+//
+// If the reader used is not a terminal, this will simply read until the next newline.
+func ReadPassword(reader io.Reader) ([]byte, error) {
+	if file, ok := reader.(*os.File); ok && terminal.IsTerminal(int(file.Fd())) {
+		return terminal.ReadPassword(int(file.Fd()))
+	}
+	// Fall back to reading until newline for non-terminals
+	bufReader := bufio.NewReader(reader)
+	read, _, err := bufReader.ReadLine()
+	if err != nil {
+		return nil, err
+	}
+	return read, nil
 }
 
 type discardReader struct{}
