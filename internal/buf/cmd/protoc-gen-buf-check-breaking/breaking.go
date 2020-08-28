@@ -19,11 +19,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
@@ -72,12 +74,15 @@ func handle(
 	if !externalConfig.LimitToInputFiles {
 		files = nil
 	}
-	envReader := internal.NewBufwireEnvReader(logger, "against_input", "against_input_config")
-	againstEnv, err := envReader.GetImageEnv(
+	againstImageRef, err := buffetch.NewImageRefParser(logger).GetImageRef(ctx, externalConfig.AgainstInput)
+	if err != nil {
+		return fmt.Errorf("against_input: %v", err)
+	}
+	imageReader := internal.NewBufwireImageReader(logger)
+	againstImage, err := imageReader.GetImage(
 		ctx,
 		newContainer(container),
-		externalConfig.AgainstInput,
-		encoding.GetJSONStringOrStringValue(externalConfig.AgainstInputConfig),
+		againstImageRef,
 		files, // limit to the input files if specified
 		true,  // allow files in the against input to not exist
 		false, // keep for now
@@ -85,19 +90,18 @@ func handle(
 	if err != nil {
 		return err
 	}
-	againstImage := againstEnv.Image()
 	if externalConfig.ExcludeImports {
-		againstImage = bufcore.ImageWithoutImports(againstImage)
+		againstImage = bufimage.ImageWithoutImports(againstImage)
 	}
-	envReader = internal.NewBufwireEnvReader(logger, "", "input_config")
-	config, err := envReader.GetConfig(
+	configReader := internal.NewBufwireConfigReader(logger, "input_config")
+	config, err := configReader.GetConfig(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 	)
 	if err != nil {
 		return err
 	}
-	image, err := bufcore.NewImageForCodeGeneratorRequest(request)
+	image, err := bufimage.NewImageForCodeGeneratorRequest(request)
 	if err != nil {
 		return err
 	}

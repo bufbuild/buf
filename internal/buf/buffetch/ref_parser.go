@@ -16,69 +16,152 @@ package buffetch
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/fetch"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 )
 
 type refParser struct {
 	logger         *zap.Logger
-	fetchRefParser fetch.RefParser
+	fetchRefParser internal.RefParser
 }
 
 func newRefParser(logger *zap.Logger) *refParser {
-	return newRefParserInternal(logger, processRawRef)
+	return &refParser{
+		logger: logger.Named("buffetch"),
+		fetchRefParser: internal.NewRefParser(
+			logger,
+			internal.WithRawRefProcessor(processRawRef),
+			internal.WithSingleFormat(formatBin),
+			internal.WithSingleFormat(formatJSON),
+			internal.WithSingleFormat(
+				formatBingz,
+				internal.WithSingleDefaultCompressionType(
+					internal.CompressionTypeGzip,
+				),
+			),
+			internal.WithSingleFormat(
+				formatJSONGZ,
+				internal.WithSingleDefaultCompressionType(
+					internal.CompressionTypeGzip,
+				),
+			),
+			internal.WithArchiveFormat(
+				formatTar,
+				internal.ArchiveTypeTar,
+			),
+			internal.WithArchiveFormat(
+				formatTargz,
+				internal.ArchiveTypeTar,
+				internal.WithArchiveDefaultCompressionType(
+					internal.CompressionTypeGzip,
+				),
+			),
+			internal.WithArchiveFormat(
+				formatZip,
+				internal.ArchiveTypeZip,
+			),
+			internal.WithGitFormat(formatGit),
+			internal.WithDirFormat(formatDir),
+			internal.WithModuleFormat(formatMod),
+		),
+	}
 }
 
 func newImageRefParser(logger *zap.Logger) *refParser {
-	return newRefParserInternal(logger, processRawRefImage)
-}
-
-func newRefParserInternal(
-	logger *zap.Logger,
-	rawRefProcessor func(*fetch.RawRef) error,
-) *refParser {
 	return &refParser{
 		logger: logger.Named("buffetch"),
-		fetchRefParser: fetch.NewRefParser(
+		fetchRefParser: internal.NewRefParser(
 			logger,
-			fetch.WithRawRefProcessor(rawRefProcessor),
-			fetch.WithSingleFormat(formatBin),
-			fetch.WithSingleFormat(formatJSON),
-			fetch.WithSingleFormat(
+			internal.WithRawRefProcessor(processRawRefImage),
+			internal.WithSingleFormat(formatBin),
+			internal.WithSingleFormat(formatJSON),
+			internal.WithSingleFormat(
 				formatBingz,
-				fetch.WithSingleDefaultCompressionType(
-					fetch.CompressionTypeGzip,
+				internal.WithSingleDefaultCompressionType(
+					internal.CompressionTypeGzip,
 				),
 			),
-			fetch.WithSingleFormat(
+			internal.WithSingleFormat(
 				formatJSONGZ,
-				fetch.WithSingleDefaultCompressionType(
-					fetch.CompressionTypeGzip,
+				internal.WithSingleDefaultCompressionType(
+					internal.CompressionTypeGzip,
 				),
 			),
-			fetch.WithArchiveFormat(
+		),
+	}
+}
+
+func newSourceRefParser(logger *zap.Logger) *refParser {
+	return &refParser{
+		logger: logger.Named("buffetch"),
+		fetchRefParser: internal.NewRefParser(
+			logger,
+			internal.WithRawRefProcessor(processRawRefSource),
+			internal.WithArchiveFormat(
 				formatTar,
-				fetch.ArchiveTypeTar,
+				internal.ArchiveTypeTar,
 			),
-			fetch.WithArchiveFormat(
+			internal.WithArchiveFormat(
 				formatTargz,
-				fetch.ArchiveTypeTar,
-				fetch.WithArchiveDefaultCompressionType(
-					fetch.CompressionTypeGzip,
+				internal.ArchiveTypeTar,
+				internal.WithArchiveDefaultCompressionType(
+					internal.CompressionTypeGzip,
 				),
 			),
-			fetch.WithArchiveFormat(
+			internal.WithArchiveFormat(
 				formatZip,
-				fetch.ArchiveTypeZip,
+				internal.ArchiveTypeZip,
 			),
-			fetch.WithGitFormat(formatGit),
-			fetch.WithDirFormat(formatDir),
+			internal.WithGitFormat(formatGit),
+			internal.WithDirFormat(formatDir),
+		),
+	}
+}
+
+func newModuleRefParser(logger *zap.Logger) *refParser {
+	return &refParser{
+		logger: logger.Named("buffetch"),
+		fetchRefParser: internal.NewRefParser(
+			logger,
+			internal.WithRawRefProcessor(processRawRefModule),
+			internal.WithModuleFormat(formatMod),
+		),
+	}
+}
+
+func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
+	return &refParser{
+		logger: logger.Named("buffetch"),
+		fetchRefParser: internal.NewRefParser(
+			logger,
+			internal.WithRawRefProcessor(processRawRefSourceOrModule),
+			internal.WithArchiveFormat(
+				formatTar,
+				internal.ArchiveTypeTar,
+			),
+			internal.WithArchiveFormat(
+				formatTargz,
+				internal.ArchiveTypeTar,
+				internal.WithArchiveDefaultCompressionType(
+					internal.CompressionTypeGzip,
+				),
+			),
+			internal.WithArchiveFormat(
+				formatZip,
+				internal.ArchiveTypeZip,
+			),
+			internal.WithGitFormat(formatGit),
+			internal.WithDirFormat(formatDir),
+			internal.WithModuleFormat(formatMod),
 		),
 	}
 }
@@ -94,20 +177,49 @@ func (a *refParser) GetRef(
 		return nil, err
 	}
 	switch t := parsedRef.(type) {
-	case fetch.ParsedSingleRef:
+	case internal.ParsedSingleRef:
 		imageEncoding, err := parseImageEncoding(t.Format())
 		if err != nil {
 			return nil, err
 		}
 		return newImageRef(t, imageEncoding), nil
-	case fetch.ParsedArchiveRef:
+	case internal.ParsedArchiveRef:
 		return newSourceRef(t), nil
-	case fetch.ParsedDirRef:
+	case internal.ParsedDirRef:
 		return newSourceRef(t), nil
-	case fetch.ParsedGitRef:
+	case internal.ParsedGitRef:
 		return newSourceRef(t), nil
+	case internal.ParsedModuleRef:
+		return newModuleRef(t), nil
 	default:
-		return nil, fmt.Errorf("known ParsedRef type: %T", parsedRef)
+		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
+	}
+}
+
+func (a *refParser) GetSourceOrModuleRef(
+	ctx context.Context,
+	value string,
+) (SourceOrModuleRef, error) {
+	ctx, span := trace.StartSpan(ctx, "get_source_or_module_ref")
+	defer span.End()
+	parsedRef, err := a.getParsedRef(ctx, value, sourceOrModuleFormats)
+	if err != nil {
+		return nil, err
+	}
+	switch t := parsedRef.(type) {
+	case internal.ParsedSingleRef:
+		// this should never happen
+		return nil, fmt.Errorf("invalid ParsedRef type for source or module: %T", parsedRef)
+	case internal.ParsedArchiveRef:
+		return newSourceRef(t), nil
+	case internal.ParsedDirRef:
+		return newSourceRef(t), nil
+	case internal.ParsedGitRef:
+		return newSourceRef(t), nil
+	case internal.ParsedModuleRef:
+		return newModuleRef(t), nil
+	default:
+		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
 	}
 }
 
@@ -121,7 +233,7 @@ func (a *refParser) GetImageRef(
 	if err != nil {
 		return nil, err
 	}
-	parsedSingleRef, ok := parsedRef.(fetch.ParsedSingleRef)
+	parsedSingleRef, ok := parsedRef.(internal.ParsedSingleRef)
 	if !ok {
 		// this should never happen
 		return nil, fmt.Errorf("invalid ParsedRef type for image: %T", parsedRef)
@@ -143,7 +255,7 @@ func (a *refParser) GetSourceRef(
 	if err != nil {
 		return nil, err
 	}
-	parsedBucketRef, ok := parsedRef.(fetch.ParsedBucketRef)
+	parsedBucketRef, ok := parsedRef.(internal.ParsedBucketRef)
 	if !ok {
 		// this should never happen
 		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
@@ -151,15 +263,33 @@ func (a *refParser) GetSourceRef(
 	return newSourceRef(parsedBucketRef), nil
 }
 
+func (a *refParser) GetModuleRef(
+	ctx context.Context,
+	value string,
+) (ModuleRef, error) {
+	ctx, span := trace.StartSpan(ctx, "get_source_ref")
+	defer span.End()
+	parsedRef, err := a.getParsedRef(ctx, value, moduleFormats)
+	if err != nil {
+		return nil, err
+	}
+	parsedModuleRef, ok := parsedRef.(internal.ParsedModuleRef)
+	if !ok {
+		// this should never happen
+		return nil, fmt.Errorf("invalid ParsedRef type for source: %T", parsedRef)
+	}
+	return newModuleRef(parsedModuleRef), nil
+}
+
 func (a *refParser) getParsedRef(
 	ctx context.Context,
 	value string,
 	allowedFormats []string,
-) (fetch.ParsedRef, error) {
+) (internal.ParsedRef, error) {
 	parsedRef, err := a.fetchRefParser.GetParsedRef(
 		ctx,
 		value,
-		fetch.WithAllowedFormats(allowedFormats...),
+		internal.WithAllowedFormats(allowedFormats...),
 	)
 	if err != nil {
 		return nil, err
@@ -168,7 +298,7 @@ func (a *refParser) getParsedRef(
 	return parsedRef, nil
 }
 
-func (a *refParser) checkDeprecated(parsedRef fetch.ParsedRef) {
+func (a *refParser) checkDeprecated(parsedRef internal.ParsedRef) {
 	format := parsedRef.Format()
 	if replacementFormat, ok := deprecatedCompressionFormatToReplacementFormat[format]; ok {
 		a.logger.Sugar().Warnf(
@@ -179,10 +309,10 @@ func (a *refParser) checkDeprecated(parsedRef fetch.ParsedRef) {
 	}
 }
 
-func processRawRef(rawRef *fetch.RawRef) error {
+func processRawRef(rawRef *internal.RawRef) error {
 	// if format option is not set and path is "-", default to bin
 	var format string
-	var compressionType fetch.CompressionType
+	var compressionType internal.CompressionType
 	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
 		format = formatBin
 	} else {
@@ -196,7 +326,7 @@ func processRawRef(rawRef *fetch.RawRef) error {
 		case ".zip":
 			format = formatZip
 		case ".gz":
-			compressionType = fetch.CompressionTypeGzip
+			compressionType = internal.CompressionTypeGzip
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 			case ".bin":
 				format = formatBin
@@ -208,7 +338,7 @@ func processRawRef(rawRef *fetch.RawRef) error {
 				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
 			}
 		case ".zst":
-			compressionType = fetch.CompressionTypeZstd
+			compressionType = internal.CompressionTypeZstd
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 			case ".bin":
 				format = formatBin
@@ -221,11 +351,15 @@ func processRawRef(rawRef *fetch.RawRef) error {
 			}
 		case ".tgz":
 			format = formatTar
-			compressionType = fetch.CompressionTypeGzip
+			compressionType = internal.CompressionTypeGzip
 		case ".git":
 			format = formatGit
 		default:
-			format = formatDir
+			var err error
+			format, err = assumeModuleOrDir(rawRef.Path)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	rawRef.Format = format
@@ -233,10 +367,90 @@ func processRawRef(rawRef *fetch.RawRef) error {
 	return nil
 }
 
-func processRawRefImage(rawRef *fetch.RawRef) error {
+func processRawRefSource(rawRef *internal.RawRef) error {
 	// if format option is not set and path is "-", default to bin
 	var format string
-	var compressionType fetch.CompressionType
+	var compressionType internal.CompressionType
+	switch filepath.Ext(rawRef.Path) {
+	case ".tar":
+		format = formatTar
+	case ".zip":
+		format = formatZip
+	case ".gz":
+		compressionType = internal.CompressionTypeGzip
+		switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+		case ".tar":
+			format = formatTar
+		default:
+			return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
+		}
+	case ".zst":
+		compressionType = internal.CompressionTypeZstd
+		switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+		case ".tar":
+			format = formatTar
+		default:
+			return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
+		}
+	case ".tgz":
+		format = formatTar
+		compressionType = internal.CompressionTypeGzip
+	case ".git":
+		format = formatGit
+	default:
+		format = formatDir
+	}
+	rawRef.Format = format
+	rawRef.CompressionType = compressionType
+	return nil
+}
+
+func processRawRefSourceOrModule(rawRef *internal.RawRef) error {
+	// if format option is not set and path is "-", default to bin
+	var format string
+	var compressionType internal.CompressionType
+	switch filepath.Ext(rawRef.Path) {
+	case ".tar":
+		format = formatTar
+	case ".zip":
+		format = formatZip
+	case ".gz":
+		compressionType = internal.CompressionTypeGzip
+		switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+		case ".tar":
+			format = formatTar
+		default:
+			return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
+		}
+	case ".zst":
+		compressionType = internal.CompressionTypeZstd
+		switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+		case ".tar":
+			format = formatTar
+		default:
+			return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
+		}
+	case ".tgz":
+		format = formatTar
+		compressionType = internal.CompressionTypeGzip
+	case ".git":
+		format = formatGit
+	default:
+		var err error
+		format, err = assumeModuleOrDir(rawRef.Path)
+		if err != nil {
+			return err
+		}
+	}
+	rawRef.Format = format
+	rawRef.CompressionType = compressionType
+	return nil
+}
+
+func processRawRefImage(rawRef *internal.RawRef) error {
+	// if format option is not set and path is "-", default to bin
+	var format string
+	var compressionType internal.CompressionType
 	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
 		format = formatBin
 	} else {
@@ -246,7 +460,7 @@ func processRawRefImage(rawRef *fetch.RawRef) error {
 		case ".json":
 			format = formatJSON
 		case ".gz":
-			compressionType = fetch.CompressionTypeGzip
+			compressionType = internal.CompressionTypeGzip
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 			case ".bin":
 				format = formatBin
@@ -256,7 +470,7 @@ func processRawRefImage(rawRef *fetch.RawRef) error {
 				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
 			}
 		case ".zst":
-			compressionType = fetch.CompressionTypeZstd
+			compressionType = internal.CompressionTypeZstd
 			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
 			case ".bin":
 				format = formatBin
@@ -274,6 +488,11 @@ func processRawRefImage(rawRef *fetch.RawRef) error {
 	return nil
 }
 
+func processRawRefModule(rawRef *internal.RawRef) error {
+	rawRef.Format = formatMod
+	return nil
+}
+
 func parseImageEncoding(format string) (ImageEncoding, error) {
 	switch format {
 	case formatBin, formatBingz:
@@ -283,4 +502,24 @@ func parseImageEncoding(format string) (ImageEncoding, error) {
 	default:
 		return 0, fmt.Errorf("invalid format for image: %q", format)
 	}
+}
+
+// TODO: this is a terrible heuristic, and we shouldn't be using what amounts
+// to heuristics here (technically this is a documentable rule, but still)
+func assumeModuleOrDir(path string) (string, error) {
+	if path == "" {
+		return "", errors.New("assumeModuleOrDir: no path given")
+	}
+	if _, err := bufmodule.ModuleNameForString(path); err == nil {
+		// this is possible to be a module, check if it is a directory though
+		fileInfo, err := os.Stat(path)
+		if err == nil && fileInfo.IsDir() {
+			// if we have a directory, assume this is a directory
+			return formatDir, nil
+		}
+		// not a directory, assume module
+		return formatMod, nil
+	}
+	// cannot be parsed into a module, assume dir for here
+	return formatDir, nil
 }

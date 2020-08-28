@@ -16,6 +16,8 @@
 package storagemem
 
 import (
+	"context"
+
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
 
@@ -37,6 +39,15 @@ func NewReadBucketBuilder() ReadBucketBuilder {
 // NewReadBucket returns a new ReadBucket.
 func NewReadBucket(pathToData map[string][]byte, options ...ReadBucketOption) (storage.ReadBucket, error) {
 	return newReadBucket(pathToData, options...)
+}
+
+// CopyReadBucket copies the contents of the read bucket into a new, memory-backed read bucket.
+func CopyReadBucket(ctx context.Context, readBucket storage.ReadBucket) (storage.ReadBucket, error) {
+	readBucketBuilder := NewReadBucketBuilder()
+	if _, err := storage.Copy(ctx, readBucket, readBucketBuilder); err != nil {
+		return nil, err
+	}
+	return readBucketBuilder.ToReadBucket()
 }
 
 // ReadBucketOption is an option for a new ReadBucket.

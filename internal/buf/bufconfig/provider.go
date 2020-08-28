@@ -20,13 +20,16 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/bufmod"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
+
+// configFilePath is the default config file path within a bucket.
+const configFilePath = "buf.yaml"
 
 type provider struct {
 	logger                 *zap.Logger
@@ -48,7 +51,7 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	defer span.End()
 
 	externalConfig := &ExternalConfig{}
-	readObject, err := readBucket.Get(ctx, ConfigFilePath)
+	readObject, err := readBucket.Get(ctx, configFilePath)
 	if err != nil {
 		if storage.IsNotExist(err) {
 			return p.newConfig(externalConfig)
@@ -85,7 +88,7 @@ func (p *provider) newConfig(externalConfig *ExternalConfig) (*Config, error) {
 			return nil, err
 		}
 	}
-	buildConfig, err := bufmod.NewConfig(externalConfig.Build)
+	buildConfig, err := bufmodulebuild.NewConfig(externalConfig.Build, externalConfig.Deps...)
 	if err != nil {
 		return nil, err
 	}

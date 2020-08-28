@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"go.uber.org/zap"
 )
 
@@ -38,8 +38,8 @@ type Handler interface {
 	Check(
 		ctx context.Context,
 		config *Config,
-		previousImage bufcore.Image,
-		image bufcore.Image,
+		previousImage bufimage.Image,
+		image bufimage.Image,
 	) ([]bufanalysis.FileAnnotation, error)
 }
 

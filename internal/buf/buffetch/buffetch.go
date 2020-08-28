@@ -19,8 +19,9 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/fetch"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -44,6 +45,16 @@ var (
 	//
 	// This does not include deprecated formats.
 	SourceFormatsString = stringutil.SliceToString(sourceFormatsNotDeprecated)
+	// ModuleFormatsString is the string representation of all module formats.
+	//
+	// Module formats are also source formats.
+	//
+	// This does not include deprecated formats.
+	ModuleFormatsString = stringutil.SliceToString(moduleFormatsNotDeprecated)
+	// SourceOrModuleFormatsString is the string representation of all source or module formats.
+	//
+	// This does not include deprecated formats.
+	SourceOrModuleFormatsString = stringutil.SliceToString(sourceOrModuleFormatsNotDeprecated)
 	// AllFormatsString is the string representation of all formats.
 	//
 	// This does not include deprecated formats.
@@ -76,7 +87,7 @@ type PathResolver interface {
 type Ref interface {
 	PathResolver
 
-	fetchRef() fetch.Ref
+	internalRef() internal.Ref
 }
 
 // ImageRef is an image file reference.
@@ -84,13 +95,25 @@ type ImageRef interface {
 	Ref
 	ImageEncoding() ImageEncoding
 	IsNull() bool
-	fetchFileRef() fetch.FileRef
+	internalFileRef() internal.FileRef
+}
+
+// SourceOrModuleRef is a source bucket or module reference.
+type SourceOrModuleRef interface {
+	Ref
+	isSourceOrModuleRef()
 }
 
 // SourceRef is a source bucket reference.
 type SourceRef interface {
-	Ref
-	fetchBucketRef() fetch.BucketRef
+	SourceOrModuleRef
+	internalBucketRef() internal.BucketRef
+}
+
+// ModuleRef is a module reference.
+type ModuleRef interface {
+	SourceOrModuleRef
+	internalModuleRef() internal.ModuleRef
 }
 
 // ImageRefParser is an image ref parser for Buf.
@@ -105,16 +128,35 @@ type SourceRefParser interface {
 	GetSourceRef(ctx context.Context, value string) (SourceRef, error)
 }
 
+// ModuleRefParser is a source ref parser for Buf.
+type ModuleRefParser interface {
+	// GetModuleRef gets the reference for the source file.
+	//
+	// A module is a special type of source with additional properties.
+	GetModuleRef(ctx context.Context, value string) (ModuleRef, error)
+}
+
+// SourceOrModuleRefParser is a source or module ref parser for Buf.
+type SourceOrModuleRefParser interface {
+	SourceRefParser
+	ModuleRefParser
+
+	// GetSourceOrModuleRef gets the reference for the image file or source bucket.
+	GetSourceOrModuleRef(ctx context.Context, value string) (SourceOrModuleRef, error)
+}
+
 // RefParser is a ref parser for Buf.
 type RefParser interface {
 	ImageRefParser
-	SourceRefParser
+	SourceOrModuleRefParser
 
-	// GetRef gets the reference for the image file or source bucket.
+	// GetRef gets the reference for the image file, source bucket, or module.
 	GetRef(ctx context.Context, value string) (Ref, error)
 }
 
 // NewRefParser returns a new RefParser.
+//
+// This defaults to dir or module.
 func NewRefParser(logger *zap.Logger) RefParser {
 	return newRefParser(logger)
 }
@@ -126,8 +168,27 @@ func NewImageRefParser(logger *zap.Logger) ImageRefParser {
 	return newImageRefParser(logger)
 }
 
-// Reader is a reader for Buf.
-type Reader interface {
+// NewSourceRefParser returns a new RefParser for sources only.
+//
+// This defaults to dir or module.
+func NewSourceRefParser(logger *zap.Logger) SourceRefParser {
+	return newSourceRefParser(logger)
+}
+
+// NewModuleRefParser returns a new RefParser for modules only.
+func NewModuleRefParser(logger *zap.Logger) ModuleRefParser {
+	return newModuleRefParser(logger)
+}
+
+// NewSourceOrModuleRefParser returns a new RefParser for sources or modules only.
+//
+// This defaults to dir or module.
+func NewSourceOrModuleRefParser(logger *zap.Logger) SourceOrModuleRefParser {
+	return newSourceOrModuleRefParser(logger)
+}
+
+// ImageReader is an image reader.
+type ImageReader interface {
 	// GetImageFile gets the image file.
 	//
 	// The returned file will be uncompressed.
@@ -136,6 +197,10 @@ type Reader interface {
 		container app.EnvStdinContainer,
 		imageRef ImageRef,
 	) (io.ReadCloser, error)
+}
+
+// SourceReader is a source reader.
+type SourceReader interface {
 	// GetSource gets the source bucket.
 	//
 	// The returned bucket will only have .proto and configuration files.
@@ -146,18 +211,78 @@ type Reader interface {
 	) (storage.ReadBucketCloser, error)
 }
 
+// ModuleReader is a module reader.
+type ModuleReader interface {
+	// GetModule gets the module.
+	GetModule(
+		ctx context.Context,
+		container app.EnvStdinContainer,
+		moduleRef ModuleRef,
+	) (bufmodule.Module, error)
+}
+
+// Reader is a reader for Buf.
+type Reader interface {
+	ImageReader
+	SourceReader
+	ModuleReader
+}
+
 // NewReader returns a new Reader.
 func NewReader(
 	logger *zap.Logger,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
+	moduleReader bufmodule.ModuleReader,
 ) Reader {
 	return newReader(
 		logger,
 		httpClient,
 		httpAuthenticator,
 		gitCloner,
+		moduleReader,
+	)
+}
+
+// NewImageReader returns a new ImageReader.
+func NewImageReader(
+	logger *zap.Logger,
+	httpClient *http.Client,
+	httpAuthenticator httpauth.Authenticator,
+	gitCloner git.Cloner,
+) ImageReader {
+	return newImageReader(
+		logger,
+		httpClient,
+		httpAuthenticator,
+		gitCloner,
+	)
+}
+
+// NewSourceReader returns a new SourceReader.
+func NewSourceReader(
+	logger *zap.Logger,
+	httpClient *http.Client,
+	httpAuthenticator httpauth.Authenticator,
+	gitCloner git.Cloner,
+) SourceReader {
+	return newSourceReader(
+		logger,
+		httpClient,
+		httpAuthenticator,
+		gitCloner,
+	)
+}
+
+// NewModuleReader returns a new ModuleReader.
+func NewModuleReader(
+	logger *zap.Logger,
+	moduleReader bufmodule.ModuleReader,
+) ModuleReader {
+	return newModuleReader(
+		logger,
+		moduleReader,
 	)
 }
 

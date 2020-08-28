@@ -21,8 +21,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // NewFileInfo returns a new FileInfo for testing.
@@ -39,34 +37,6 @@ func NewFileInfo(
 	)
 	require.NoError(t, err)
 	return fileInfo
-}
-
-// NewImageFile returns a new ImageFile for testing.
-func NewImageFile(
-	t *testing.T,
-	fileDescriptorProto *descriptorpb.FileDescriptorProto,
-	externalPath string,
-	isImport bool,
-) bufcore.ImageFile {
-	imageFile, err := bufcore.NewImageFile(
-		fileDescriptorProto,
-		externalPath,
-		isImport,
-	)
-	require.NoError(t, err)
-	return imageFile
-}
-
-// NewFileDescriptorProto returns a new FileDescriptorProto for testing.
-func NewFileDescriptorProto(
-	t *testing.T,
-	path string,
-	importPaths ...string,
-) *descriptorpb.FileDescriptorProto {
-	return &descriptorpb.FileDescriptorProto{
-		Name:       proto.String(path),
-		Dependency: importPaths,
-	}
 }
 
 // AssertFileInfosEqual asserts the expected FileInfos equal the actual FileInfos.
@@ -94,28 +64,4 @@ func FileInfoToAbs(t *testing.T, fileInfo bufcore.FileInfo) bufcore.FileInfo {
 	)
 	require.NoError(t, err)
 	return newFileInfo
-}
-
-// AssertImageFilesEqual asserts the expected ImageFiles equal the actual ImageFiles.
-func AssertImageFilesEqual(t *testing.T, expected []bufcore.ImageFile, actual []bufcore.ImageFile) {
-	expectedNormalizedImageFiles := normalizeImageFiles(t, expected)
-	actualNormalizedImageFiles := normalizeImageFiles(t, actual)
-	assert.Equal(t, expectedNormalizedImageFiles, actualNormalizedImageFiles)
-}
-
-func normalizeImageFiles(t *testing.T, imageFiles []bufcore.ImageFile) []bufcore.ImageFile {
-	normalizedImageFiles := make([]bufcore.ImageFile, len(imageFiles))
-	for i, imageFile := range imageFiles {
-		normalizedImageFiles[i] = NewImageFile(
-			t,
-			NewFileDescriptorProto(
-				t,
-				imageFile.Proto().GetName(),
-				imageFile.Proto().GetDependency()...,
-			),
-			imageFile.ExternalPath(),
-			imageFile.IsImport(),
-		)
-	}
-	return normalizedImageFiles
 }

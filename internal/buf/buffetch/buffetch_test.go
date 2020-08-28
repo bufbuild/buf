@@ -20,9 +20,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/fetch"
-	"github.com/bufbuild/buf/internal/pkg/tmp"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -33,7 +32,7 @@ func TestRoundTripBin(t *testing.T) {
 		"file.bin",
 		[]byte("one"),
 		formatBin,
-		fetch.CompressionTypeNone,
+		internal.CompressionTypeNone,
 	)
 }
 
@@ -43,7 +42,7 @@ func TestRoundTripBinGz(t *testing.T) {
 		"file.bin.gz",
 		[]byte("one"),
 		formatBin,
-		fetch.CompressionTypeGzip,
+		internal.CompressionTypeGzip,
 	)
 }
 
@@ -53,7 +52,7 @@ func TestRoundTripBinZst(t *testing.T) {
 		"file.bin.zst",
 		[]byte("one"),
 		formatBin,
-		fetch.CompressionTypeZstd,
+		internal.CompressionTypeZstd,
 	)
 }
 
@@ -62,7 +61,7 @@ func testRoundTripLocalFile(
 	filename string,
 	expectedData []byte,
 	expectedFormat string,
-	expectedCompressionType fetch.CompressionType,
+	expectedCompressionType internal.CompressionType,
 ) {
 	t.Parallel()
 
@@ -74,14 +73,13 @@ func testRoundTripLocalFile(
 	ctx := context.Background()
 	container := app.NewContainer(nil, nil, nil, nil)
 
-	tmpDir, err := tmp.NewDir("")
-	require.NoError(t, err)
-	filePath := filepath.Join(tmpDir.AbsPath(), filename)
+	tmpDir := t.TempDir()
+	filePath := filepath.Join(tmpDir, filename)
 
-	parsedRef, err := refParser.getParsedRef(ctx, filePath, testAllowedFormats)
+	parsedRef, err := refParser.getParsedRef(ctx, filePath, allFormats)
 	require.NoError(t, err)
 	require.Equal(t, expectedFormat, parsedRef.Format())
-	fileRef, ok := parsedRef.(fetch.FileRef)
+	fileRef, ok := parsedRef.(internal.FileRef)
 	require.True(t, ok)
 	require.Equal(t, expectedCompressionType, fileRef.CompressionType())
 
@@ -98,20 +96,18 @@ func testRoundTripLocalFile(
 	require.NoError(t, readCloser.Close())
 
 	require.Equal(t, string(expectedData), string(actualData))
-
-	require.NoError(t, tmpDir.Close())
 }
 
-func testNewFetchReader(logger *zap.Logger) fetch.Reader {
-	return fetch.NewReader(
+func testNewFetchReader(logger *zap.Logger) internal.Reader {
+	return internal.NewReader(
 		logger,
-		fetch.WithReaderLocal(),
+		internal.WithReaderLocal(),
 	)
 }
 
-func testNewFetchWriter(logger *zap.Logger) fetch.Writer {
-	return fetch.NewWriter(
+func testNewFetchWriter(logger *zap.Logger) internal.Writer {
+	return internal.NewWriter(
 		logger,
-		fetch.WithWriterLocal(),
+		internal.WithWriterLocal(),
 	)
 }

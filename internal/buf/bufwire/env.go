@@ -16,22 +16,22 @@ package bufwire
 
 import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 )
 
 type env struct {
-	image  bufcore.Image
+	image  bufimage.Image
 	config *bufconfig.Config
 }
 
-func newEnv(image bufcore.Image, config *bufconfig.Config) *env {
+func newEnv(image bufimage.Image, config *bufconfig.Config) *env {
 	return &env{
 		image:  image,
 		config: config,
 	}
 }
 
-func (e *env) Image() bufcore.Image {
+func (e *env) Image() bufimage.Image {
 	return e.image
 }
 

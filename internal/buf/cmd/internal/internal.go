@@ -15,39 +15,32 @@
 package internal
 
 import (
-	"fmt"
-
-	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/bufmod"
 	"github.com/bufbuild/buf/internal/buf/bufwire"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
-	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
-
-const experimentalGitCloneFlagName = "experimental-git-clone"
 
 // NewBufwireEnvReader returns a new EnvReader.
 func NewBufwireEnvReader(
 	logger *zap.Logger,
-	inputFlagName string,
 	configOverrideFlagName string,
+	moduleReader bufmodule.ModuleReader,
 ) bufwire.EnvReader {
 	return bufwire.NewEnvReader(
 		logger,
-		buffetch.NewRefParser(
-			logger,
-		),
-		bufcli.NewFetchReader(logger),
+		bufcli.NewFetchReader(logger, moduleReader),
 		bufconfig.NewProvider(logger),
-		bufmod.NewBucketBuilder(logger),
-		bufbuild.NewBuilder(logger),
-		inputFlagName,
+		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
+		bufimagebuild.NewBuilder(logger),
 		configOverrideFlagName,
 	)
 }
@@ -55,15 +48,10 @@ func NewBufwireEnvReader(
 // NewBufwireImageReader returns a new ImageReader.
 func NewBufwireImageReader(
 	logger *zap.Logger,
-	imageFlagName string,
 ) bufwire.ImageReader {
 	return bufwire.NewImageReader(
 		logger,
-		buffetch.NewImageRefParser(
-			logger,
-		),
-		bufcli.NewFetchReader(logger),
-		imageFlagName,
+		bufcli.NewFetchImageReader(logger),
 	)
 }
 
@@ -73,12 +61,21 @@ func NewBufwireImageWriter(
 ) bufwire.ImageWriter {
 	return bufwire.NewImageWriter(
 		logger,
-		buffetch.NewImageRefParser(
-			logger,
-		),
 		buffetch.NewWriter(
 			logger,
 		),
+	)
+}
+
+// NewBufwireConfigReader returns a new EnvReader.
+func NewBufwireConfigReader(
+	logger *zap.Logger,
+	configOverrideFlagName string,
+) bufwire.ConfigReader {
+	return bufwire.NewConfigReader(
+		logger,
+		bufconfig.NewProvider(logger),
+		configOverrideFlagName,
 	)
 }
 
@@ -103,22 +100,4 @@ func NewBufbreakingHandler(
 // WarnExperimental warns that the command is experimental.
 func WarnExperimental(container applog.Container) {
 	container.Logger().Warn(`This command has been released for early evaluation only and is experimental. It is not ready for production, and is likely to to have significant changes.`)
-}
-
-// BindExperimentalGitClone binds the experimental-git-clone flag
-func BindExperimentalGitClone(flagSet *pflag.FlagSet, value *bool) {
-	flagSet.BoolVar(
-		value,
-		experimentalGitCloneFlagName,
-		false,
-		"Use the git binary to clone instead of the internal git library.",
-	)
-	_ = flagSet.MarkHidden(experimentalGitCloneFlagName)
-	_ = flagSet.MarkDeprecated(
-		experimentalGitCloneFlagName,
-		fmt.Sprintf(
-			"Flag --%s is deprecated. The formerly-experimental git clone functionality is now the only clone functionality used, and this flag has no effect.",
-			experimentalGitCloneFlagName,
-		),
-	)
 }

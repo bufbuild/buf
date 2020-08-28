@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
@@ -509,10 +510,12 @@ func testRunStdoutInternal(t *testing.T, expectedExitCode int, expectedStdout st
 	t.Helper()
 	appcmdtesting.RunCommandExitCodeStdout(
 		t,
-		func(use string) *appcmd.Command { return newRootCommand(use) },
+		func(use string) *appcmd.Command { return testNewRootCommand(use) },
 		expectedExitCode,
 		expectedStdout,
-		nil,
+		map[string]string{
+			"BUF_CONFIG_DIR": "testdata/config",
+		},
 		nil,
 		args...,
 	)
@@ -528,11 +531,17 @@ func testRun(
 	t.Helper()
 	appcmdtesting.RunCommandExitCode(
 		t,
-		func(use string) *appcmd.Command { return newRootCommand(use) },
+		func(use string) *appcmd.Command { return testNewRootCommand(use) },
 		expectedExitCode,
-		nil,
+		map[string]string{
+			"BUF_CONFIG_DIR": "testdata/config",
+		},
 		stdin,
 		stdout,
 		args...,
 	)
+}
+
+func testNewRootCommand(use string) *appcmd.Command {
+	return newRootCommand(use, nil, bufcli.NopModuleReaderProvider)
 }

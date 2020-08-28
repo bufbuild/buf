@@ -21,18 +21,19 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufbuild"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/bufmod"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"go.uber.org/zap"
 )
 
 // Env is an environment.
 type Env interface {
-	Image() bufcore.Image
+	Image() bufimage.Image
 	Config() *bufconfig.Config
 }
 
@@ -44,27 +45,17 @@ type EnvReader interface {
 	GetEnv(
 		ctx context.Context,
 		container app.EnvStdinContainer,
-		value string,
+		ref buffetch.Ref,
 		configOverride string,
 		externalFilePaths []string,
 		externalFileFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
 	) (Env, []bufanalysis.FileAnnotation, error)
-	// GetImageEnv is the same as GetEnv but only allows image values and never builds.
-	GetImageEnv(
+	// GetSourceOrModuleEnv is the same as GetEnv, but only allows source or module values, and always builds.
+	GetSourceOrModuleEnv(
 		ctx context.Context,
 		container app.EnvStdinContainer,
-		value string,
-		configOverride string,
-		externalFilePaths []string,
-		externalFileFilePathsAllowNotExist bool,
-		excludeSourceCodeInfo bool,
-	) (Env, error)
-	// GetSourceEnv is the same as GetEnv but only allows source values and always builds.
-	GetSourceEnv(
-		ctx context.Context,
-		container app.EnvStdinContainer,
-		value string,
+		sourceOrModuleRef buffetch.SourceOrModuleRef,
 		configOverride string,
 		externalFilePaths []string,
 		externalFileFilePathsAllowNotExist bool,
@@ -74,35 +65,28 @@ type EnvReader interface {
 	ListFiles(
 		ctx context.Context,
 		container app.EnvStdinContainer,
-		value string,
+		ref buffetch.Ref,
 		configOverride string,
 	) ([]bufcore.FileInfo, error)
-	// GetConfig gets the config.
-	GetConfig(
-		ctx context.Context,
-		configOverride string,
-	) (*bufconfig.Config, error)
 }
 
 // NewEnvReader returns a new EnvReader.
 func NewEnvReader(
 	logger *zap.Logger,
-	fetchRefParser buffetch.RefParser,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
-	modBucketBuilder bufmod.BucketBuilder,
-	buildBuilder bufbuild.Builder,
-	valueFlagName string,
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
+	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
+	imageBuilder bufimagebuild.Builder,
 	configOverrideFlagName string,
 ) EnvReader {
 	return newEnvReader(
 		logger,
-		fetchRefParser,
 		fetchReader,
 		configProvider,
-		modBucketBuilder,
-		buildBuilder,
-		valueFlagName,
+		moduleBucketBuilder,
+		moduleFileSetBuilder,
+		imageBuilder,
 		configOverrideFlagName,
 	)
 }
@@ -113,25 +97,21 @@ type ImageReader interface {
 	GetImage(
 		ctx context.Context,
 		container app.EnvStdinContainer,
-		value string,
+		imageRef buffetch.ImageRef,
 		externalFilePaths []string,
 		externalFileFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
-	) (bufcore.Image, error)
+	) (bufimage.Image, error)
 }
 
 // NewImageReader returns a new ImageReader.
 func NewImageReader(
 	logger *zap.Logger,
-	fetchImageRefParser buffetch.ImageRefParser,
-	fetchReader buffetch.Reader,
-	valueFlagName string,
+	fetchReader buffetch.ImageReader,
 ) ImageReader {
 	return newImageReader(
 		logger,
-		fetchImageRefParser,
 		fetchReader,
-		valueFlagName,
 	)
 }
 
@@ -144,8 +124,8 @@ type ImageWriter interface {
 	PutImage(
 		ctx context.Context,
 		container app.EnvStdoutContainer,
-		value string,
-		image bufcore.Image,
+		imageRef buffetch.ImageRef,
+		image bufimage.Image,
 		asFileDescriptorSet bool,
 		excludeImports bool,
 	) error
@@ -154,12 +134,32 @@ type ImageWriter interface {
 // NewImageWriter returns a new ImageWriter.
 func NewImageWriter(
 	logger *zap.Logger,
-	fetchImageRefParser buffetch.ImageRefParser,
 	fetchWriter buffetch.Writer,
 ) ImageWriter {
 	return newImageWriter(
 		logger,
-		fetchImageRefParser,
 		fetchWriter,
+	)
+}
+
+// ConfigReader reads configs.
+type ConfigReader interface {
+	// GetConfig gets the config.
+	GetConfig(
+		ctx context.Context,
+		configOverride string,
+	) (*bufconfig.Config, error)
+}
+
+// NewConfigReader returns a new ConfigReader.
+func NewConfigReader(
+	logger *zap.Logger,
+	configProvider bufconfig.Provider,
+	configOverrideFlagName string,
+) ConfigReader {
+	return newConfigReader(
+		logger,
+		configProvider,
+		configOverrideFlagName,
 	)
 }
