@@ -17,23 +17,26 @@ package protosource
 type field struct {
 	namedDescriptor
 
-	message      Message
-	number       int
-	label        FieldDescriptorProtoLabel
-	typ          FieldDescriptorProtoType
-	typeName     string
-	oneofIndex   *int32
-	jsonName     string
-	jsType       FieldOptionsJSType
-	cType        FieldOptionsCType
-	packed       *bool
-	numberPath   []int32
-	typePath     []int32
-	typeNamePath []int32
-	jsonNamePath []int32
-	jsTypePath   []int32
-	cTypePath    []int32
-	packedPath   []int32
+	message  Message
+	number   int
+	label    FieldDescriptorProtoLabel
+	typ      FieldDescriptorProtoType
+	typeName string
+	// this has to be the pointer to the private struct or you have the bug where the
+	// interface is nil but value == nil is false
+	oneof          *oneof
+	proto3Optional bool
+	jsonName       string
+	jsType         FieldOptionsJSType
+	cType          FieldOptionsCType
+	packed         *bool
+	numberPath     []int32
+	typePath       []int32
+	typeNamePath   []int32
+	jsonNamePath   []int32
+	jsTypePath     []int32
+	cTypePath      []int32
+	packedPath     []int32
 }
 
 func newField(
@@ -43,7 +46,8 @@ func newField(
 	label FieldDescriptorProtoLabel,
 	typ FieldDescriptorProtoType,
 	typeName string,
-	oneofIndex *int32,
+	oneof *oneof,
+	proto3Optional bool,
 	jsonName string,
 	jsType FieldOptionsJSType,
 	cType FieldOptionsCType,
@@ -63,7 +67,8 @@ func newField(
 		label:           label,
 		typ:             typ,
 		typeName:        typeName,
-		oneofIndex:      oneofIndex,
+		oneof:           oneof,
+		proto3Optional:  proto3Optional,
 		jsonName:        jsonName,
 		jsType:          jsType,
 		cType:           cType,
@@ -98,11 +103,17 @@ func (f *field) TypeName() string {
 	return f.typeName
 }
 
-func (f *field) OneofIndex() (int, bool) {
-	if f.oneofIndex == nil {
-		return 0, false
+func (f *field) Oneof() Oneof {
+	// this has to be done or you have the bug where the interface is nil
+	// but value == nil is false
+	if f.oneof == nil {
+		return nil
 	}
-	return int(*f.oneofIndex), true
+	return f.oneof
+}
+
+func (f *field) Proto3Optional() bool {
+	return f.proto3Optional
 }
 
 func (f *field) JSONName() string {

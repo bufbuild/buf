@@ -16,10 +16,12 @@ package bufconfig
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -100,7 +102,18 @@ func (p *provider) newConfig(externalConfig *ExternalConfig) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	var moduleName bufmodule.ModuleName
+	if externalConfig.Name != "" {
+		moduleName, err = bufmodule.ModuleNameForString(externalConfig.Name)
+		if err != nil {
+			return nil, err
+		}
+		if moduleName.Digest() != "" {
+			return nil, errors.New("config module name must not contain a digest")
+		}
+	}
 	return &Config{
+		Name:     moduleName,
 		Build:    buildConfig,
 		Breaking: breakingConfig,
 		Lint:     lintConfig,

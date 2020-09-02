@@ -305,7 +305,9 @@ type Field interface {
 	Label() FieldDescriptorProtoLabel
 	Type() FieldDescriptorProtoType
 	TypeName() string
-	OneofIndex() (int, bool)
+	// may be nil
+	Oneof() Oneof
+	Proto3Optional() bool
 	JSONName() string
 	JSType() FieldOptionsJSType
 	CType() FieldOptionsCType
@@ -327,6 +329,7 @@ type Oneof interface {
 	NamedDescriptor
 
 	Message() Message
+	Fields() []Field
 }
 
 // Service is a service descriptor.
@@ -833,22 +836,6 @@ func StringToExtensionMessageRange(message Message) map[string]MessageRange {
 		stringToExtensionMessageRange[TagRangeString(extensionMessageRange)] = extensionMessageRange
 	}
 	return stringToExtensionMessageRange
-}
-
-// FieldOneof returns the Oneof for the field.
-//
-// Returns nil if the field is not in a oneof.
-// Returns error if the field is malformed.
-func FieldOneof(field Field) (Oneof, error) {
-	oneofIndex, ok := field.OneofIndex()
-	if !ok {
-		return nil, nil
-	}
-	oneofs := field.Message().Oneofs()
-	if len(oneofs) <= oneofIndex {
-		return nil, fmt.Errorf("malformed oneof index for field %q: %d", field.FullName(), oneofIndex)
-	}
-	return oneofs[oneofIndex], nil
 }
 
 // NumberInReservedRanges returns true if the number is in one of the Ranges.

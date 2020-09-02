@@ -275,15 +275,8 @@ func checkFieldSameName(add addFunc, previousField protosource.Field, field prot
 var CheckFieldSameOneof = newFieldPairCheckFunc(checkFieldSameOneof)
 
 func checkFieldSameOneof(add addFunc, previousField protosource.Field, field protosource.Field) error {
-	previousOneof, err := protosource.FieldOneof(previousField)
-	if err != nil {
-		return err
-	}
-	oneof, err := protosource.FieldOneof(field)
-	if err != nil {
-		return err
-	}
-
+	previousOneof := previousField.Oneof()
+	oneof := field.Oneof()
 	previousInsideOneof := previousOneof != nil
 	insideOneof := oneof != nil
 	if !previousInsideOneof && !insideOneof {

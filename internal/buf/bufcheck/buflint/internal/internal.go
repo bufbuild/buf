@@ -281,6 +281,13 @@ func checkOneofLowerSnakeCase(add addFunc, oneof protosource.Oneof) error {
 	name := oneof.Name()
 	expectedName := fieldToLowerSnakeCase(name)
 	if name != expectedName {
+		// if this is an implicit oneof for a proto3 optional field, do not error
+		// https://github.com/protocolbuffers/protobuf/blob/master/docs/implementing_proto3_presence.md
+		if fields := oneof.Fields(); len(fields) == 1 {
+			if fields[0].Proto3Optional() {
+				return nil
+			}
+		}
 		add(oneof, oneof.NameLocation(), "Oneof name %q should be lower_snake_case, such as %q.", name, expectedName)
 	}
 	return nil

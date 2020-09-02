@@ -287,7 +287,7 @@ func NewModuleFileSet(
 func ModuleNameForString(path string) (ModuleName, error) {
 	slashSplit := strings.Split(path, "/")
 	if len(slashSplit) != 4 {
-		return nil, newInvalidModuleNameStringError(path, "module name without digest is not in the form server/owner/repository/version")
+		return nil, newInvalidModuleNameStringError(path, "module name is not in the form server/owner/repository/version")
 	}
 	server := strings.TrimSpace(slashSplit[0])
 	if server == "" {
