@@ -74,3 +74,14 @@ message Two {
     }
   }
 }
+
+// checking to see if the implicit oneof triggers the linter, which it should not
+message Three {
+  message Four {
+    message Five {
+      optional string one = 1;
+    }
+    optional string one = 1;
+  }
+  optional string one = 1;
+}
