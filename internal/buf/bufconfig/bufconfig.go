@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
@@ -27,6 +28,7 @@ import (
 
 // Config is the user config.
 type Config struct {
+	Name     bufmodule.ModuleName
 	Build    *bufmodulebuild.Config
 	Breaking *bufbreaking.Config
 	Lint     *buflint.Config
@@ -64,6 +66,7 @@ func ProviderWithExternalConfigModifier(externalConfigModifier func(*ExternalCon
 
 // ExternalConfig is an external config.
 type ExternalConfig struct {
+	Name     string                        `json:"name,omitempty" yaml:"name,omitempty"`
 	Build    bufmodulebuild.ExternalConfig `json:"build,omitempty" yaml:"build,omitempty"`
 	Breaking bufbreaking.ExternalConfig    `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 	Lint     buflint.ExternalConfig        `json:"lint,omitempty" yaml:"lint,omitempty"`

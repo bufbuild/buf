@@ -17,6 +17,9 @@
 package netrc
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -88,6 +91,74 @@ func TestGetMachineForName(t *testing.T) {
 	)
 }
 
+func TestPutMachine(t *testing.T) {
+	testPutMachineSuccess(
+		t,
+		"foo.com",
+		"test@foo.com",
+		"password",
+		false,
+	)
+	testPutMachineSuccess(
+		t,
+		"foo.com",
+		"test@foo.com",
+		"password",
+		true,
+	)
+	testPutMachineError(
+		t,
+		"foo.com",
+		"test@foo.com",
+		"password",
+	)
+}
+
+func testPutMachineSuccess(
+	t *testing.T,
+	name string,
+	login string,
+	password string,
+	createNetrcBeforePut bool,
+) {
+	t.Helper()
+	filePath := filepath.Join(t.TempDir(), netrcFilename)
+	envContainer := app.NewEnvContainer(map[string]string{"NETRC": filePath})
+	machine, err := GetMachineForName(envContainer, name)
+	require.NoError(t, err)
+	require.Nil(t, machine)
+
+	if createNetrcBeforePut {
+		_, err = os.Create(filePath)
+		require.NoError(t, err)
+	}
+
+	expectedMachine := NewMachine(name, login, password, "")
+	err = PutMachine(envContainer, expectedMachine)
+	require.NoError(t, err)
+
+	actualMachine, err := GetMachineForName(envContainer, name)
+	require.NoError(t, err)
+	assert.Equal(t, expectedMachine, actualMachine)
+}
+
+func testPutMachineError(
+	t *testing.T,
+	name string,
+	login string,
+	password string,
+) {
+	t.Helper()
+	filePath := filepath.Join(t.TempDir(), netrcFilename)
+	envContainer := app.NewEnvContainer(map[string]string{"NETRC": filePath})
+	_, err := os.Create(filePath)
+	require.NoError(t, err)
+	err = ioutil.WriteFile(filePath, []byte("invalid netrc"), 0644)
+	require.NoError(t, err)
+	err = PutMachine(envContainer, NewMachine(name, login, password, ""))
+	require.Error(t, err)
+}
+
 func testGetMachineForNameSuccess(
 	t *testing.T,
 	name string,
@@ -97,6 +168,7 @@ func testGetMachineForNameSuccess(
 	expectedPassword string,
 	expectedAccount string,
 ) {
+	t.Helper()
 	machine, err := GetMachineForName(app.NewEnvContainer(map[string]string{"HOME": homeDirPath}), name)
 	require.NoError(t, err)
 	require.NotNil(t, machine)
@@ -111,6 +183,7 @@ func testGetMachineForNameNil(
 	name string,
 	homeDirPath string,
 ) {
+	t.Helper()
 	machine, err := GetMachineForName(app.NewEnvContainer(map[string]string{"HOME": homeDirPath}), name)
 	require.NoError(t, err)
 	require.Nil(t, machine)

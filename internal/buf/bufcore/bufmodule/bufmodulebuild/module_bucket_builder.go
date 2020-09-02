@@ -20,6 +20,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"go.uber.org/zap"
 )
 
@@ -62,11 +63,13 @@ func (b *moduleBucketBuilder) buildForBucket(
 	bucketRelPathsAllowNotExist bool,
 ) (bufmodule.Module, error) {
 	roots := make([]string, 0, len(config.RootToExcludes))
-	rootBuckets := []storage.ReadBucket{
-		storage.MapReadBucket(
-			readBucket,
-			storage.MatchPathEqual(bufmodule.LockFilePath),
-		),
+	var rootBuckets []storage.ReadBucket
+	lockFileReadBucket, err := getLockFileReadBucket(ctx, readBucket)
+	if err != nil {
+		return nil, err
+	}
+	if lockFileReadBucket != nil {
+		rootBuckets = append(rootBuckets, lockFileReadBucket)
 	}
 	for root, excludes := range config.RootToExcludes {
 		roots = append(roots, root)
@@ -111,5 +114,27 @@ func (b *moduleBucketBuilder) buildForBucket(
 		bucketRelPaths,
 		bucketRelPathsAllowNotExist,
 		normalpath.Relative,
+	)
+}
+
+// may return nil
+func getLockFileReadBucket(
+	ctx context.Context,
+	readBucket storage.ReadBucket,
+) (storage.ReadBucket, error) {
+	lockFileData, err := storage.ReadPath(ctx, readBucket, bufmodule.LockFilePath)
+	if err != nil {
+		if storage.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if len(lockFileData) == 0 {
+		return nil, nil
+	}
+	return storagemem.NewReadBucket(
+		map[string][]byte{
+			bufmodule.LockFilePath: lockFileData,
+		},
 	)
 }

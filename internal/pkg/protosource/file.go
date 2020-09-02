@@ -415,6 +415,27 @@ func (f *file) populateMessage(
 		getMessageMessageSetWireFormatPath(topLevelMessageIndex, nestedMessageIndexes...),
 		getMessageNoStandardDescriptorAccessorPath(topLevelMessageIndex, nestedMessageIndexes...),
 	)
+	oneofIndexToOneof := make(map[int]*oneof)
+	for oneofIndex, oneofDescriptorProto := range descriptorProto.GetOneofDecl() {
+		oneofNamedDescriptor, err := newNamedDescriptor(
+			newLocationDescriptor(
+				f.descriptor,
+				getMessageOneofPath(oneofIndex, topLevelMessageIndex, nestedMessageIndexes...),
+			),
+			oneofDescriptorProto.GetName(),
+			getMessageOneofNamePath(oneofIndex, topLevelMessageIndex, nestedMessageIndexes...),
+			append(nestedMessageNames, message.Name()),
+		)
+		if err != nil {
+			return nil, err
+		}
+		oneof := newOneof(
+			oneofNamedDescriptor,
+			message,
+		)
+		message.addOneof(oneof)
+		oneofIndexToOneof[oneofIndex] = oneof
+	}
 	for fieldIndex, fieldDescriptorProto := range descriptorProto.GetField() {
 		// TODO: not working for map entries
 		fieldNamedDescriptor, err := newNamedDescriptor(
@@ -449,6 +470,15 @@ func (f *file) populateMessage(
 		if err != nil {
 			return nil, err
 		}
+		var oneof *oneof
+		var ok bool
+		if fieldDescriptorProto.OneofIndex != nil {
+			oneofIndex := int(*fieldDescriptorProto.OneofIndex)
+			oneof, ok = oneofIndexToOneof[oneofIndex]
+			if !ok {
+				return nil, fmt.Errorf("no oneof for index %d", oneofIndex)
+			}
+		}
 		field := newField(
 			fieldNamedDescriptor,
 			message,
@@ -456,7 +486,8 @@ func (f *file) populateMessage(
 			label,
 			typ,
 			fieldDescriptorProto.GetTypeName(),
-			fieldDescriptorProto.OneofIndex,
+			oneof,
+			fieldDescriptorProto.GetProto3Optional(),
 			fieldDescriptorProto.GetJsonName(),
 			jsType,
 			cType,
@@ -470,6 +501,9 @@ func (f *file) populateMessage(
 			getMessageFieldPackedPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 		)
 		message.addField(field)
+		if oneof != nil {
+			oneof.addField(field)
+		}
 	}
 	// TODO: is this right?
 	for fieldIndex, fieldDescriptorProto := range descriptorProto.GetExtension() {
@@ -505,6 +539,15 @@ func (f *file) populateMessage(
 		if err != nil {
 			return nil, err
 		}
+		var oneof *oneof
+		var ok bool
+		if fieldDescriptorProto.OneofIndex != nil {
+			oneofIndex := int(*fieldDescriptorProto.OneofIndex)
+			oneof, ok = oneofIndexToOneof[oneofIndex]
+			if !ok {
+				return nil, fmt.Errorf("no oneof for index %d", oneofIndex)
+			}
+		}
 		field := newField(
 			fieldNamedDescriptor,
 			message,
@@ -512,7 +555,8 @@ func (f *file) populateMessage(
 			label,
 			typ,
 			fieldDescriptorProto.GetTypeName(),
-			fieldDescriptorProto.OneofIndex,
+			oneof,
+			fieldDescriptorProto.GetProto3Optional(),
 			fieldDescriptorProto.GetJsonName(),
 			jsType,
 			cType,
@@ -526,25 +570,9 @@ func (f *file) populateMessage(
 			getMessageExtensionPackedPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 		)
 		message.addExtension(field)
-	}
-	for oneofIndex, oneofDescriptorProto := range descriptorProto.GetOneofDecl() {
-		oneofNamedDescriptor, err := newNamedDescriptor(
-			newLocationDescriptor(
-				f.descriptor,
-				getMessageOneofPath(oneofIndex, topLevelMessageIndex, nestedMessageIndexes...),
-			),
-			oneofDescriptorProto.GetName(),
-			getMessageOneofNamePath(oneofIndex, topLevelMessageIndex, nestedMessageIndexes...),
-			append(nestedMessageNames, message.Name()),
-		)
-		if err != nil {
-			return nil, err
+		if oneof != nil {
+			oneof.addField(field)
 		}
-		oneof := newOneof(
-			oneofNamedDescriptor,
-			message,
-		)
-		message.addOneof(oneof)
 	}
 	for reservedRangeIndex, reservedRangeDescriptorProto := range descriptorProto.GetReservedRange() {
 		reservedRangeLocationDescriptor := newLocationDescriptor(

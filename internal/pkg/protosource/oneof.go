@@ -18,6 +18,7 @@ type oneof struct {
 	namedDescriptor
 
 	message Message
+	fields  []Field
 }
 
 func newOneof(
@@ -32,4 +33,12 @@ func newOneof(
 
 func (o *oneof) Message() Message {
 	return o.message
+}
+
+func (o *oneof) Fields() []Field {
+	return o.fields
+}
+
+func (o *oneof) addField(field Field) {
+	o.fields = append(o.fields, field)
 }

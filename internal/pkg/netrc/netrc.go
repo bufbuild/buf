@@ -16,6 +16,7 @@
 package netrc
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -33,6 +34,16 @@ type Machine interface {
 	Account() string
 }
 
+// NewMachine creates a new Machine.
+func NewMachine(
+	name string,
+	login string,
+	password string,
+	account string,
+) Machine {
+	return newMachine(name, login, password, account)
+}
+
 // GetMachineForName returns the Machine for the given name.
 //
 // Returns nil if no such Machine.
@@ -42,6 +53,15 @@ func GetMachineForName(envContainer app.EnvContainer, name string) (_ Machine, r
 		return nil, err
 	}
 	return getMachineForNameAndFilePath(name, filePath)
+}
+
+// PutMachine adds the given Machine to the configured netrc file.
+func PutMachine(envContainer app.EnvContainer, machine Machine) error {
+	filePath, err := getFilePath(envContainer)
+	if err != nil {
+		return err
+	}
+	return putMachineForFilePath(machine, filePath)
 }
 
 func getFilePath(envContainer app.EnvContainer) (string, error) {
@@ -80,4 +100,45 @@ func getMachineForNameAndFilePath(name string, filePath string) (_ Machine, retE
 		netrcMachine.Password,
 		netrcMachine.Account,
 	), nil
+}
+
+func putMachineForFilePath(machine Machine, filePath string) (retErr error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return err
+		}
+		// If a netrc file does not already exist, create one and continue.
+		file, err = os.Create(filePath)
+		if err != nil {
+			return err
+		}
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, file.Close())
+	}()
+	netrc, err := netrc.Parse(file)
+	if err != nil {
+		return err
+	}
+	if foundMachine := netrc.FindMachine(machine.Name()); foundMachine != nil {
+		// If the machine already exists, remove it so that its entry is overwritten.
+		netrc.RemoveMachine(machine.Name())
+	}
+	// Put the machine into the user's netrc.
+	_ = netrc.NewMachine(
+		machine.Name(),
+		machine.Login(),
+		machine.Password(),
+		machine.Account(),
+	)
+	bytes, err := netrc.MarshalText()
+	if err != nil {
+		return err
+	}
+	info, err := file.Stat()
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filePath, bytes, info.Mode())
 }
