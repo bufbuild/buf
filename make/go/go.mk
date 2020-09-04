@@ -17,6 +17,8 @@ $(call _assert_var,OPEN_CMD)
 # Settable
 GO_BINS ?=
 # Settable
+GO_TEST_BINS ?=
+# Settable
 GO_GET_PKGS ?=
 # Settable
 GO_LINT_IGNORES := $(GO_LINT_IGNORES) \/gen\/
@@ -116,7 +118,7 @@ build: prebuild
 pretest::
 
 .PHONY: test
-test: pretest
+test: pretest installtest
 	go test $(GO_TEST_FLAGS) $(GOPKGS)
 
 .PHONY: shorttest
@@ -159,6 +161,20 @@ endef
 
 $(foreach gobin,$(sort $(GO_BINS)),$(eval $(call gobinfunc,$(gobin))))
 $(foreach gobin,$(sort $(GO_BINS)),$(eval FILE_IGNORES := $(FILE_IGNORES) $(gobin)/$(notdir $(gobin))))
+
+.PHONY: installtest
+installtest::
+
+define gotestbinfunc
+.PHONY: installtest$(notdir $(1))
+installtest$(notdir $(1)):
+	go install ./$(1)
+
+installtest:: installtest$(notdir $(1))
+endef
+
+$(foreach gobin,$(sort $(GO_TEST_BINS)),$(eval $(call gotestbinfunc,$(gobin))))
+$(foreach gobin,$(sort $(GO_TEST_BINS)),$(eval FILE_IGNORES := $(FILE_IGNORES) $(gobin)/$(notdir $(gobin))))
 
 .PHONY: __go_lint_pkgs
 __go_lint_pkgs:

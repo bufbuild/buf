@@ -21,8 +21,8 @@ require (
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6 // indirect
-	golang.org/x/tools v0.0.0-20200902171120-36b1a880d5d1 // indirect
-	google.golang.org/genproto v0.0.0-20200901141002-b3bf27a9dbd1 // indirect
+	golang.org/x/tools v0.0.0-20200904140424-93eecc3576be // indirect
+	google.golang.org/genproto v0.0.0-20200904004341-0bd0a958aa1d // indirect
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )

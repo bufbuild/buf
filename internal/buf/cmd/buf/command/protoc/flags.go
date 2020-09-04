@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
@@ -62,8 +63,9 @@ type flags struct {
 type env struct {
 	flags
 
-	PluginNameToPluginInfo map[string]*pluginInfo
-	FilePaths              []string
+	PluginNamesSortedByOutIndex []string
+	PluginNameToPluginInfo      map[string]*pluginInfo
+	FilePaths                   []string
 }
 
 type flagsBuilder struct {
@@ -220,6 +222,10 @@ func (f *flagsBuilder) Build(args []string) (*env, error) {
 			return nil, newCannotSpecifyPathWithoutOutError(pluginName)
 		}
 	}
+	pluginNamesSortedByOutIndex, err := f.getPluginNamesSortedByOutIndex(pluginNameToPluginInfo)
+	if err != nil {
+		return nil, err
+	}
 	if len(f.IncludeDirPaths) == 0 {
 		f.IncludeDirPaths = defaultIncludeDirPaths
 	}
@@ -230,9 +236,10 @@ func (f *flagsBuilder) Build(args []string) (*env, error) {
 		return nil, errNoInputFiles
 	}
 	return &env{
-		flags:                  f.flags,
-		PluginNameToPluginInfo: pluginNameToPluginInfo,
-		FilePaths:              filePaths,
+		flags:                       f.flags,
+		PluginNamesSortedByOutIndex: pluginNamesSortedByOutIndex,
+		PluginNameToPluginInfo:      pluginNameToPluginInfo,
+		FilePaths:                   filePaths,
 	}, nil
 }
 
@@ -424,6 +431,46 @@ func (f *flagsBuilder) parsePluginNameToPluginInfo(pluginNameToPluginInfo map[st
 		pluginInfo.Path = pluginPath
 	}
 	return nil
+}
+
+func (f *flagsBuilder) getPluginNamesSortedByOutIndex(
+	pluginNameToPluginInfo map[string]*pluginInfo,
+) ([]string, error) {
+	pluginNames := make([]string, 0, len(pluginNameToPluginInfo))
+	for pluginName := range pluginNameToPluginInfo {
+		pluginNames = append(pluginNames, pluginName)
+	}
+	var err error
+	sort.Slice(
+		pluginNames,
+		func(i int, j int) bool {
+			pluginName1 := pluginNames[i]
+			pluginName2 := pluginNames[j]
+			pluginValue1, ok := f.pluginNameToValue[pluginName1]
+			if !ok {
+				err = fmt.Errorf("no value for plugin name %q inside pluginNameToValue", pluginName1)
+				return false
+			}
+			pluginValue2, ok := f.pluginNameToValue[pluginName2]
+			if !ok {
+				err = fmt.Errorf("no value for plugin name %q inside pluginNameToValue", pluginName2)
+				return false
+			}
+			if len(pluginValue1.OutIndexes) != 1 {
+				err = fmt.Errorf("%d out indexes for plugin name %q", len(pluginValue1.OutIndexes), pluginName1)
+				return false
+			}
+			if len(pluginValue2.OutIndexes) != 1 {
+				err = fmt.Errorf("%d out indexes for plugin name %q", len(pluginValue2.OutIndexes), pluginName2)
+				return false
+			}
+			return pluginValue1.OutIndexes[0] < pluginValue2.OutIndexes[0]
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return pluginNames, nil
 }
 
 func (f *flagsBuilder) checkUnsupported() error {

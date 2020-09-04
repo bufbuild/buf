@@ -17,15 +17,19 @@ package bufmodulecache
 import (
 	"context"
 	"fmt"
+	"io"
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"go.uber.org/zap"
 )
 
 type moduleReader struct {
-	cache    bufmodule.ModuleReadWriter
-	delegate bufmodule.ModuleReader
+	logger        *zap.Logger
+	cache         bufmodule.ModuleReadWriter
+	delegate      bufmodule.ModuleReader
+	messageWriter io.Writer
 
 	count     int
 	cacheHits int
@@ -33,13 +37,20 @@ type moduleReader struct {
 }
 
 func newModuleReader(
+	logger *zap.Logger,
 	cache bufmodule.ModuleReadWriter,
 	delegate bufmodule.ModuleReader,
+	options ...ModuleReaderOption,
 ) *moduleReader {
-	return &moduleReader{
+	moduleReader := &moduleReader{
+		logger:   logger,
 		cache:    cache,
 		delegate: delegate,
 	}
+	for _, option := range options {
+		option(moduleReader)
+	}
+	return moduleReader
 }
 
 func (m *moduleReader) GetModule(
@@ -49,6 +60,12 @@ func (m *moduleReader) GetModule(
 	module, err := m.cache.GetModule(ctx, moduleName)
 	if err != nil {
 		if storage.IsNotExist(err) {
+			m.logger.Debug("cache_miss", zap.String("module_name", moduleName.String()))
+			if m.messageWriter != nil {
+				if _, err := m.messageWriter.Write([]byte("buf: downloading " + moduleName.String())); err != nil {
+					return nil, err
+				}
+			}
 			module, err := m.getModuleUncached(ctx, moduleName)
 			if err != nil {
 				return nil, err
@@ -60,6 +77,7 @@ func (m *moduleReader) GetModule(
 		}
 		return nil, err
 	}
+	m.logger.Debug("cache_hit", zap.String("module_name", moduleName.String()))
 	m.lock.Lock()
 	m.count++
 	m.cacheHits++
@@ -93,12 +111,14 @@ func (m *moduleReader) getModuleUncached(
 	return module, nil
 }
 
+//lint:ignore SA4006 used in tests
 func (m *moduleReader) getCount() int {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	return m.count
 }
 
+//lint:ignore SA4006 used in tests
 func (m *moduleReader) getCacheHits() int {
 	m.lock.RLock()
 	defer m.lock.RUnlock()

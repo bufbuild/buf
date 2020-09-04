@@ -170,7 +170,12 @@ func run(
 			}
 			span.End()
 		}
-		for pluginName, pluginInfo := range env.PluginNameToPluginInfo {
+		// we need to run these in the order they appear for insertion points to work
+		for _, pluginName := range env.PluginNamesSortedByOutIndex {
+			pluginInfo, ok := env.PluginNameToPluginInfo[pluginName]
+			if !ok {
+				return fmt.Errorf("no value in PluginNamesToPluginInfo for %q", pluginName)
+			}
 			if err := executePlugin(
 				ctx,
 				container.Logger(),
