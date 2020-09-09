@@ -14,13 +14,33 @@
 
 package bufmodulecache
 
-import "github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+import (
+	"io"
+
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"go.uber.org/zap"
+)
 
 // NewModuleReader returns a new ModuleReader that uses cache as a caching layer, and
 // delegate as the source of truth.
 func NewModuleReader(
+	logger *zap.Logger,
 	cache bufmodule.ModuleReadWriter,
 	delegate bufmodule.ModuleReader,
+	options ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
-	return newModuleReader(cache, delegate)
+	return newModuleReader(logger, cache, delegate, options...)
+}
+
+// ModuleReaderOption is an option for a new ModuleReader.
+type ModuleReaderOption func(*moduleReader)
+
+// WithMessageWriter adds the given Writer to print messages.
+//
+// This is typically stderr.
+// The default is to not print messages.
+func WithMessageWriter(messageWriter io.Writer) ModuleReaderOption {
+	return func(moduleReader *moduleReader) {
+		moduleReader.messageWriter = messageWriter
+	}
 }

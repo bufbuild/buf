@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestBasic(t *testing.T) {
@@ -53,7 +54,7 @@ func TestBasic(t *testing.T) {
 	require.True(t, bufmodule.ModuleNameEqual(resolvedModuleName, putResolvedModuleName))
 
 	cacheModuleReadWriter := newTestModuleReadWriter(t)
-	moduleReader := newModuleReader(cacheModuleReadWriter, delegateModuleReadWriter)
+	moduleReader := newModuleReader(zap.NewNop(), cacheModuleReadWriter, delegateModuleReadWriter)
 
 	getModule, err := moduleReader.GetModule(ctx, resolvedModuleName)
 	require.NoError(t, err)

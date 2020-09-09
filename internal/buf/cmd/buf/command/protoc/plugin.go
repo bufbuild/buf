@@ -15,10 +15,15 @@
 package protoc
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -112,7 +117,10 @@ func writeResponseFiles(
 	}
 	for _, file := range files {
 		if file.GetInsertionPoint() != "" {
-			return fmt.Errorf("insertion points not supported but are coming soon: %s", file.GetName())
+			if err := applyInsertionPoint(ctx, file, out); err != nil {
+				return err
+			}
+			continue
 		}
 		data := []byte(file.GetContent())
 		writeObjectCloser, err := readWriteBucket.Put(ctx, file.GetName(), uint32(len(data)))
@@ -126,4 +134,73 @@ func writeResponseFiles(
 		}
 	}
 	return nil
+}
+
+// applyInsertionPoint inserts the content of the given file at the insertion point that it specfiies.
+// For more details on insertion points, see the following:
+//
+// https://github.com/protocolbuffers/protobuf/blob/f5bdd7cd56aa86612e166706ed8ef139db06edf2/src/google/protobuf/compiler/plugin.proto#L135-L171
+func applyInsertionPoint(ctx context.Context, file *pluginpb.CodeGeneratorResponse_File, out string) error {
+	filePath := filepath.Join(out, file.GetName())
+	targetFile, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer targetFile.Close()
+	targetScanner := bufio.NewScanner(targetFile)
+	match := fmt.Sprintf("@@protoc_insertion_point(%s)", file.GetInsertionPoint())
+	var resultLines []string
+	for targetScanner.Scan() {
+		targetLine := targetScanner.Text()
+		if !strings.Contains(targetLine, match) {
+			resultLines = append(resultLines, targetLine)
+			continue
+		}
+		// For each line in then new content, apply the
+		// same amount of whitespace. This is important
+		// for specific languages, e.g. Python.
+		whitespace := leadingWhitespace(targetLine)
+
+		// Create another scanner so that we can seamlessly handle
+		// newlines in a platform-agnostic manner.
+		insertedContentScanner := bufio.NewScanner(bytes.NewBufferString(file.GetContent()))
+		insertedLines := scanWithPrefix(insertedContentScanner, whitespace)
+		resultLines = append(resultLines, insertedLines...)
+
+		// Code inserted at this point is placed immediately
+		// above the line containing the insertion point, so
+		// we include it last.
+		resultLines = append(resultLines, targetLine)
+	}
+	// Now that we've applied the insertion point content into
+	// the target's original content, we overwrite the target.
+	resultContent := strings.Join(resultLines, "\n")
+	fileInfo, err := targetFile.Stat()
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(filePath, []byte(resultContent), fileInfo.Mode())
+}
+
+// leadingWhitespace iterates through the given string,
+// and returns the leading whitespace substring, if any.
+//
+//  leadingWhitespace("   foo ") -> "   "
+func leadingWhitespace(s string) string {
+	for i, r := range s {
+		if !unicode.IsSpace(r) {
+			return s[:i]
+		}
+	}
+	return s
+}
+
+// scanWithPrefix iterates over each of the given scanner's lines
+// and prepends each one with the given prefix.
+func scanWithPrefix(scanner *bufio.Scanner, prefix string) []string {
+	var result []string
+	for scanner.Scan() {
+		result = append(result, prefix+scanner.Text())
+	}
+	return result
 }

@@ -18,6 +18,7 @@ package appcmd
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -58,6 +59,22 @@ type Command struct {
 	// SubCommands are the sub-commands. Optional.
 	// Must be unset if there is a run function.
 	SubCommands []*Command
+}
+
+// NewInvalidArgumentError creates a new invalidArgumentError, indicating that
+// the error was caused by argument validation. This causes us to print the usage
+// help text for the command that it is returned from.
+func NewInvalidArgumentError(err string) error {
+	return &invalidArgumentError{
+		err: err,
+	}
+}
+
+// NewInvalidArgumentErrorf creates a new InvalidArgumentError, indicating that
+// the error was caused by argument validation. This causes us to print the usage
+// help text for the command that it is returned from.
+func NewInvalidArgumentErrorf(format string, args ...interface{}) error {
+	return NewInvalidArgumentError(fmt.Sprintf(format, args...))
 }
 
 // Main runs the application using the OS container and calling os.Exit on the return value of Run.
@@ -159,7 +176,14 @@ func commandToCobra(
 	}
 	if command.Run != nil {
 		cobraCommand.Run = func(_ *cobra.Command, args []string) {
-			*runErrAddr = command.Run(ctx, app.NewContainerForArgs(container, args...))
+			runErr := command.Run(ctx, app.NewContainerForArgs(container, args...))
+			if errors.Is(runErr, &invalidArgumentError{}) {
+				// Print usage for failing command if an args error is returned.
+				// This has to be done at this level since the usage must relate
+				// to the command executed.
+				printUsage(container, cobraCommand.UsageString())
+			}
+			*runErrAddr = runErr
 		}
 	}
 	if command.Version != "" {
@@ -196,4 +220,8 @@ func normalizeFunc(f func(*pflag.FlagSet, string) string) func(*pflag.FlagSet, s
 	return func(flagSet *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(f(flagSet, name))
 	}
+}
+
+func printUsage(container app.StderrContainer, usage string) {
+	_, _ = container.Stderr().Write([]byte(usage + "\n"))
 }

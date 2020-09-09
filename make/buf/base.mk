@@ -14,6 +14,9 @@ GO_BINS := $(GO_BINS) $(BUF_BIN) \
 	cmd/protoc-gen-buf-check-lint \
 	internal/pkg/storage/cmd/storage-go-binary-data \
 	internal/pkg/app/appproto/appprotoexec/cmd/protoc-gen-proxy
+GO_TEST_BINS := $(GO_TEST_BINS) \
+	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver \
+	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer
 GO_LINT_IGNORES := $(GO_LINT_IGNORES) /internal/buf/cmd/buf/command/protoc
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
@@ -22,6 +25,7 @@ PROTOC_GEN_VALIDATE_OUT := internal/gen/proto/go
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
 	.vscode/ \
+	internal/buf/cmd/buf/cache/ \
 	internal/buf/internal/buftesting/cache/ \
 	internal/pkg/storage/storageos/tmp/
 
@@ -44,18 +48,12 @@ wkt: installstorage-go-binary-data $(PROTOC)
 
 prepostgenerate:: wkt
 
-.PHONY: prebuflint
-prebuflint::
-
 .PHONY: buflint
-buflint: installbuf prebuflint
+buflint: installbuf
 	buf check lint
 
-.PHONY: prebufbreaking
-prebufbreaking::
-
 .PHONY: bufbreaking
-bufbreaking: installbuf prebufbreaking
+bufbreaking: installbuf
 	@ if [ -d .git ]; then \
 			$(MAKE) bufbreakinginternal; \
 		else \
