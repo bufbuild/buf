@@ -111,14 +111,12 @@ func (m *moduleReader) getModuleUncached(
 	return module, nil
 }
 
-//lint:ignore SA4006 used in tests
 func (m *moduleReader) getCount() int {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	return m.count
 }
 
-//lint:ignore SA4006 used in tests
 func (m *moduleReader) getCacheHits() int {
 	m.lock.RLock()
 	defer m.lock.RUnlock()

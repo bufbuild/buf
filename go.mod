@@ -10,7 +10,7 @@ require (
 	github.com/golang/protobuf v1.4.2
 	github.com/google/go-cmp v0.5.2
 	github.com/jhump/protoreflect v1.7.1-0.20200723220026-11eaaf73e0ec
-	github.com/klauspost/compress v1.10.11
+	github.com/klauspost/compress v1.11.0
 	github.com/klauspost/pgzip v1.2.5
 	github.com/pkg/profile v1.5.0
 	github.com/spf13/cobra v1.0.1-0.20200713175500-884edc58ad08
@@ -20,8 +20,9 @@ require (
 	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
+	golang.org/x/net v0.0.0-20200904194848-62affa334b73 // indirect
 	golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6 // indirect
-	golang.org/x/tools v0.0.0-20200904140424-93eecc3576be // indirect
+	golang.org/x/tools v0.0.0-20200908211811-12e1bf57a112 // indirect
 	google.golang.org/genproto v0.0.0-20200904004341-0bd0a958aa1d // indirect
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776

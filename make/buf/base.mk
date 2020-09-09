@@ -48,18 +48,12 @@ wkt: installstorage-go-binary-data $(PROTOC)
 
 prepostgenerate:: wkt
 
-.PHONY: prebuflint
-prebuflint::
-
 .PHONY: buflint
-buflint: installbuf prebuflint
+buflint: installbuf
 	buf check lint
 
-.PHONY: prebufbreaking
-prebufbreaking::
-
 .PHONY: bufbreaking
-bufbreaking: installbuf prebufbreaking
+bufbreaking: installbuf
 	@ if [ -d .git ]; then \
 			$(MAKE) bufbreakinginternal; \
 		else \

@@ -147,7 +147,7 @@ func run(
 	moduleReaderProvider bufcli.ModuleReaderProvider,
 ) error {
 	if flags.AgainstInput == "" {
-		return fmt.Errorf("--%s is required", againstInputFlagName)
+		return appcmd.NewInvalidArgumentErrorf("--%s is required", againstInputFlagName)
 	}
 	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, flags.Input)
 	if err != nil {

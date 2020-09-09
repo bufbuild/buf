@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/internal/pkg/encoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -71,4 +72,13 @@ type ExternalConfig struct {
 	Breaking bufbreaking.ExternalConfig    `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 	Lint     buflint.ExternalConfig        `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Deps     []string                      `json:"deps,omitempty" yaml:"deps,omitempty"`
+}
+
+// WriteBufYAMLToBucket writes the given ExternalConfig (buf.yaml) into the bucket.
+func WriteBufYAMLToBucket(ctx context.Context, writeBucket storage.WriteBucket, externalConfig ExternalConfig) (retErr error) {
+	bytes, err := encoding.MarshalYAML(externalConfig)
+	if err != nil {
+		return err
+	}
+	return storage.PutPath(ctx, writeBucket, ConfigFilePath, bytes)
 }

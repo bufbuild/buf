@@ -45,7 +45,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flagsBuilder := newFlagsBuilder()
 	return &appcmd.Command{
-		Use:   name,
+		Use:   name + " <proto_file1> <proto_file2> ...",
 		Short: "High-performance protoc replacement.",
 		Long: `This replaces protoc using Buf's internal compiler.
 
@@ -190,7 +190,7 @@ func run(
 		return nil
 	}
 	if env.Output == "" {
-		return fmt.Errorf("--%s is required", outputFlagName)
+		return appcmd.NewInvalidArgumentErrorf("--%s is required", outputFlagName)
 	}
 	imageRef, err := buffetch.NewImageRefParser(container.Logger()).GetImageRef(ctx, env.Output)
 	if err != nil {
