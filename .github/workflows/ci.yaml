@@ -39,6 +39,9 @@ jobs:
       - name: echostuff
         if: success()
         run: make echostuff
+      - name: echostuffinstalltest
+        if: success()
+        run: make echostuffinstalltest
       - name: ci
         if: success()
         run: make ci
