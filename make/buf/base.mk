@@ -44,13 +44,13 @@ include make/go/dep_go_fuzz.mk
 echostuff:
 	pwd
 	@echo $$PATH
-	ls $$GOBIN
+	-ls $$GOBIN
 
 .PHONY: echostuffinstalltest
 echostuffinstalltest: installtest
 	pwd
 	@echo $$PATH
-	ls $$GOBIN
+	-ls $$GOBIN
 	exit 1
 
 .PHONY: wkt
