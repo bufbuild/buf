@@ -98,7 +98,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 func run(ctx context.Context, container applog.Container, flags *flags) (retErr error) {
 	internal.WarnExperimental(container)
 	if flags.Output == "" {
-		return fmt.Errorf("--%s is required", outputFlagName)
+		return appcmd.NewInvalidArgumentErrorf("--%s is required", outputFlagName)
 	}
 	imageRef, err := buffetch.NewImageRefParser(container.Logger()).GetImageRef(ctx, flags.Image)
 	if err != nil {

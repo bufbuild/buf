@@ -84,6 +84,9 @@ func TestParseFlags(t *testing.T) {
 					},
 					ErrorFormat: "text",
 				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
+				},
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out: "go_out",
@@ -113,6 +116,9 @@ func TestParseFlags(t *testing.T) {
 						"proto",
 					},
 					ErrorFormat: "text",
+				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
 				},
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
@@ -145,6 +151,9 @@ func TestParseFlags(t *testing.T) {
 						"proto",
 					},
 					ErrorFormat: "text",
+				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
 				},
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
@@ -179,6 +188,9 @@ func TestParseFlags(t *testing.T) {
 					},
 					ErrorFormat: "text",
 				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
+				},
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out:  "go_out",
@@ -203,6 +215,9 @@ func TestParseFlags(t *testing.T) {
 					},
 					ErrorFormat: "text",
 				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
+				},
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out:  "go_out",
@@ -226,6 +241,9 @@ func TestParseFlags(t *testing.T) {
 						"proto",
 					},
 					ErrorFormat: "text",
+				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
 				},
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
@@ -265,6 +283,9 @@ func TestParseFlags(t *testing.T) {
 					},
 					ErrorFormat: "text",
 				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
+				},
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out: "go_out",
@@ -299,6 +320,9 @@ func TestParseFlags(t *testing.T) {
 						"proto",
 					},
 					ErrorFormat: "text",
+				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
 				},
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
@@ -335,6 +359,9 @@ func TestParseFlags(t *testing.T) {
 						"proto",
 					},
 					ErrorFormat: "text",
+				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
 				},
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
@@ -371,6 +398,9 @@ func TestParseFlags(t *testing.T) {
 					},
 					ErrorFormat: "text",
 				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
+				},
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out: "go_out",
@@ -398,6 +428,39 @@ func TestParseFlags(t *testing.T) {
 			},
 			ExpectedError: newDuplicateOutError("go"),
 		},
+		{
+			Args: []string{
+				"--foo_out=foo",
+				"--bar_out=bar",
+				"--baz_out=baz",
+				"foo.proto",
+			},
+			Expected: &env{
+				flags: flags{
+					IncludeDirPaths: defaultIncludeDirPaths,
+					ErrorFormat:     defaultErrorFormat,
+				},
+				PluginNamesSortedByOutIndex: []string{
+					"foo",
+					"bar",
+					"baz",
+				},
+				PluginNameToPluginInfo: map[string]*pluginInfo{
+					"foo": {
+						Out: "foo",
+					},
+					"bar": {
+						Out: "bar",
+					},
+					"baz": {
+						Out: "baz",
+					},
+				},
+				FilePaths: []string{
+					"foo.proto",
+				},
+			},
+		},
 	}
 	for i, testCase := range testCases {
 		name := fmt.Sprintf("%d", i)
@@ -414,6 +477,9 @@ func TestParseFlags(t *testing.T) {
 					// so we set them to nil here for comparison
 					if len(env.IncludeDirPaths) == 0 {
 						env.IncludeDirPaths = nil
+					}
+					if len(env.PluginNamesSortedByOutIndex) == 0 {
+						env.PluginNamesSortedByOutIndex = nil
 					}
 					if len(env.PluginNameToPluginInfo) == 0 {
 						env.PluginNameToPluginInfo = nil

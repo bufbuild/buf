@@ -30,8 +30,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// configFilePath is the default config file path within a bucket.
-const configFilePath = "buf.yaml"
+// ConfigFilePath is the default config file path within a bucket.
+const ConfigFilePath = "buf.yaml"
 
 type provider struct {
 	logger                 *zap.Logger
@@ -53,7 +53,7 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	defer span.End()
 
 	externalConfig := &ExternalConfig{}
-	readObject, err := readBucket.Get(ctx, configFilePath)
+	readObject, err := readBucket.Get(ctx, ConfigFilePath)
 	if err != nil {
 		if storage.IsNotExist(err) {
 			return p.newConfig(externalConfig)

@@ -45,7 +45,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flagsBuilder := newFlagsBuilder()
 	return &appcmd.Command{
-		Use:   name,
+		Use:   name + " <proto_file1> <proto_file2> ...",
 		Short: "High-performance protoc replacement.",
 		Long: `This replaces protoc using Buf's internal compiler.
 
@@ -170,7 +170,12 @@ func run(
 			}
 			span.End()
 		}
-		for pluginName, pluginInfo := range env.PluginNameToPluginInfo {
+		// we need to run these in the order they appear for insertion points to work
+		for _, pluginName := range env.PluginNamesSortedByOutIndex {
+			pluginInfo, ok := env.PluginNameToPluginInfo[pluginName]
+			if !ok {
+				return fmt.Errorf("no value in PluginNamesToPluginInfo for %q", pluginName)
+			}
 			if err := executePlugin(
 				ctx,
 				container.Logger(),
@@ -185,7 +190,7 @@ func run(
 		return nil
 	}
 	if env.Output == "" {
-		return fmt.Errorf("--%s is required", outputFlagName)
+		return appcmd.NewInvalidArgumentErrorf("--%s is required", outputFlagName)
 	}
 	imageRef, err := buffetch.NewImageRefParser(container.Logger()).GetImageRef(ctx, env.Output)
 	if err != nil {

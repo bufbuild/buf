@@ -8,8 +8,8 @@ ENV \
   GO111MODULE=on \
   GOPRIVATE=$GO_MODULE \
   GOPATH=/cache/$PROJECT/Linux/x86_64/go \
-  GOBIN=/cache/$PROJECT/Linux/x86_64/bin \
-  PATH=/cache/$PROJECT/Linux/x86_64/bin:${PATH}
+  GOBIN=/cache/$PROJECT/Linux/x86_64/gobin \
+  PATH=/cache/$PROJECT/Linux/x86_64/gobin:/cache/$PROJECT/Linux/x86_64/bin:${PATH}
 
 WORKDIR /workspace
 

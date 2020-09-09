@@ -127,7 +127,7 @@ func run(
 	moduleReaderProvider bufcli.ModuleReaderProvider,
 ) error {
 	if flags.Output == "" {
-		return fmt.Errorf("--%s is required", outputFlagName)
+		return appcmd.NewInvalidArgumentErrorf("--%s is required", outputFlagName)
 	}
 	sourceOrModuleRef, err := buffetch.NewSourceOrModuleRefParser(
 		container.Logger(),

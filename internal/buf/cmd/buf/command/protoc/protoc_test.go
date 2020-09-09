@@ -46,6 +46,11 @@ var buftestingDirPath = filepath.Join(
 	"buftesting",
 )
 
+type testPluginInfo struct {
+	name string
+	opt  string
+}
+
 func TestOverlap(t *testing.T) {
 	t.Parallel()
 	// https://github.com/bufbuild/buf/issues/113
@@ -134,7 +139,12 @@ func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 	}
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	testCompareGeneratedStubs(t, googleapisDirPath, "go", "Mgoogle/api/auth.proto=foo")
+	testCompareGeneratedStubs(t,
+		googleapisDirPath,
+		[]testPluginInfo{
+			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
+		},
+	)
 }
 
 func TestCompareGeneratedStubsGoogleapisRuby(t *testing.T) {
@@ -143,22 +153,42 @@ func TestCompareGeneratedStubsGoogleapisRuby(t *testing.T) {
 	}
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	testCompareGeneratedStubs(t, googleapisDirPath, "ruby", "")
+	testCompareGeneratedStubs(t,
+		googleapisDirPath,
+		[]testPluginInfo{{name: "ruby"}},
+	)
+}
+
+func TestCompareInsertionPointOutput(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	t.Parallel()
+	insertionTestdataDirPath := filepath.Join("testdata", "insertion")
+	testCompareGeneratedStubs(t,
+		insertionTestdataDirPath,
+		[]testPluginInfo{
+			{name: "insertion-point-receiver"},
+			{name: "insertion-point-writer"},
+		},
+	)
 }
 
 func testCompareGeneratedStubs(
 	t *testing.T,
 	dirPath string,
-	pluginName string,
-	pluginOpt string,
+	plugins []testPluginInfo,
 ) {
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 1000)
-	var baseFlags []string
-	if pluginOpt != "" {
-		baseFlags = append(baseFlags, fmt.Sprintf("--%s_opt=%s", pluginName, pluginOpt))
-	}
 	actualProtocDir := t.TempDir()
 	bufProtocDir := t.TempDir()
+	var actualProtocPluginFlags []string
+	for _, plugin := range plugins {
+		actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_out=%s", plugin.name, actualProtocDir))
+		if plugin.opt != "" {
+			actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_opt=%s", plugin.name, plugin.opt))
+		}
+	}
 	buftesting.RunActualProtoc(
 		t,
 		false,
@@ -169,11 +199,15 @@ func testCompareGeneratedStubs(
 			"PATH": os.Getenv("PATH"),
 		},
 		nil,
-		append(
-			baseFlags,
-			fmt.Sprintf("--%s_out=%s", pluginName, actualProtocDir),
-		)...,
+		actualProtocPluginFlags...,
 	)
+	var bufProtocPluginFlags []string
+	for _, plugin := range plugins {
+		bufProtocPluginFlags = append(bufProtocPluginFlags, fmt.Sprintf("--%s_out=%s", plugin.name, bufProtocDir))
+		if plugin.opt != "" {
+			bufProtocPluginFlags = append(bufProtocPluginFlags, fmt.Sprintf("--%s_opt=%s", plugin.name, plugin.opt))
+		}
+	}
 	appcmdtesting.RunCommandSuccess(
 		t,
 		func(use string) *appcmd.Command {
@@ -190,10 +224,9 @@ func testCompareGeneratedStubs(
 		nil,
 		append(
 			append(
-				baseFlags,
+				bufProtocPluginFlags,
 				"-I",
 				dirPath,
-				fmt.Sprintf("--%s_out=%s", pluginName, bufProtocDir),
 				"--by-dir",
 			),
 			filePaths...,

@@ -515,6 +515,7 @@ func testRunStdoutInternal(t *testing.T, expectedExitCode int, expectedStdout st
 		expectedStdout,
 		map[string]string{
 			"BUF_CONFIG_DIR": "testdata/config",
+			"BUF_CACHE_DIR":  "cache",
 		},
 		nil,
 		args...,
@@ -535,6 +536,7 @@ func testRun(
 		expectedExitCode,
 		map[string]string{
 			"BUF_CONFIG_DIR": "testdata/config",
+			"BUF_CACHE_DIR":  "cache",
 		},
 		stdin,
 		stdout,
