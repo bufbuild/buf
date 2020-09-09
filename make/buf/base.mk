@@ -40,19 +40,6 @@ include make/go/protoc_gen_go.mk
 include make/go/protoc_gen_validate.mk
 include make/go/dep_go_fuzz.mk
 
-.PHONY: echostuff
-echostuff:
-	pwd
-	@echo $$PATH
-	-ls $$GOBIN
-
-.PHONY: echostuffinstalltest
-echostuffinstalltest: installtest
-	pwd
-	@echo $$PATH
-	-ls $$GOBIN
-	exit 1
-
 .PHONY: wkt
 wkt: installstorage-go-binary-data $(PROTOC)
 	rm -rf internal/gen/data

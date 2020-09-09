@@ -122,7 +122,7 @@ test: pretest installtest
 	go test $(GO_TEST_FLAGS) $(GOPKGS)
 
 .PHONY: shorttest
-shorttest: pretest
+shorttest: pretest installtest
 	go test -test.short $(GO_TEST_FLAGS) $(GOPKGS)
 
 .PHONY: deppkgs
@@ -134,7 +134,7 @@ coverpkgs:
 	@go list $(GOPKGS) | grep -v \/gen\/ | tr '\n' ',' | sed "s/,$$//"
 
 .PHONY: cover
-cover: pretest
+cover: pretest installtest
 	@mkdir -p $(dir $(COVER_HTML)) $(dir $(COVER_TXT))
 	@rm -f $(COVER_HTML) $(COVER_TXT)
 	go test -race -coverprofile=$(COVER_TXT) -coverpkg=$(shell GOPKGS=$(GOPKGS) $(MAKE) -s coverpkgs) $(GOPKGS)
