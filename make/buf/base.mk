@@ -28,7 +28,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	internal/buf/internal/buftesting/cache/ \
 	internal/pkg/storage/storageos/tmp/
 
-USE_BUF_GENERATE := true
+USE_BUF_PROTOC_BY_DIR := true
 
 include make/go/bootstrap.mk
 include make/go/go.mk
