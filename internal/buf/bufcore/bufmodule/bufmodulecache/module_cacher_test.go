@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodulestorage
+package bufmodulecache
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBasic(t *testing.T) {
+func TestCacherBasic(t *testing.T) {
 	ctx := context.Background()
 	moduleName, err := bufmodule.ModuleNameForString(bufmoduletesting.TestModuleNameString)
 	require.NoError(t, err)
@@ -41,19 +41,26 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, resolvedModuleName.Digest(), bufmoduletesting.TestDigest)
 
-	moduleReadWriter := newTestModuleReadWriter(t)
-	_, err = moduleReadWriter.GetModule(ctx, resolvedModuleName)
+	moduleCacher := newTestModuleCacher(t)
+	_, err = moduleCacher.GetModule(ctx, resolvedModuleName)
 	require.True(t, storage.IsNotExist(err))
 
-	putResolvedModuleName, err := moduleReadWriter.PutModule(
+	_, err = moduleCacher.PutModule(
 		context.Background(),
 		moduleName,
+		module,
+	)
+	require.True(t, bufmodule.IsNoDigestError(err))
+
+	putResolvedModuleName, err := moduleCacher.PutModule(
+		context.Background(),
+		resolvedModuleName,
 		module,
 	)
 	require.NoError(t, err)
 	require.True(t, bufmodule.ModuleNameEqual(resolvedModuleName, putResolvedModuleName))
 
-	getModule, err := moduleReadWriter.GetModule(ctx, resolvedModuleName)
+	getModule, err := moduleCacher.GetModule(ctx, resolvedModuleName)
 	require.NoError(t, err)
 	getReadBucketBuilder := storagemem.NewReadBucketBuilder()
 	err = bufmodule.ModuleToBucket(ctx, getModule, getReadBucketBuilder)
@@ -65,8 +72,8 @@ func TestBasic(t *testing.T) {
 	require.True(t, exists)
 }
 
-func newTestModuleReadWriter(t *testing.T) bufmodule.ModuleReadWriter {
+func newTestModuleCacher(t *testing.T) *moduleCacher {
 	readWriteBucket, err := storageos.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
-	return NewModuleReadWriter(readWriteBucket)
+	return newModuleCacher(readWriteBucket)
 }

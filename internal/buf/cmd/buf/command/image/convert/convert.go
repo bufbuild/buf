@@ -39,13 +39,14 @@ const (
 	imageFlagShortName          = "i"
 )
 
-// NewCommand returns a new Command
-func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
+// NewCommand returns a new Command.
+func NewCommand(name string, builder appflag.Builder, deprecated string) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
-		Short: "Convert the input Image to an output Image with the specified format and filters.",
-		Args:  cobra.NoArgs,
+		Use:        name,
+		Short:      "Convert the input Image to an output Image with the specified format and filters.",
+		Deprecated: deprecated,
+		Args:       cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container applog.Container) error {
 				return run(ctx, container, flags)
@@ -96,7 +97,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 }
 
 func run(ctx context.Context, container applog.Container, flags *flags) (retErr error) {
-	internal.WarnExperimental(container)
+	internal.WarnBeta(container)
 	if flags.Output == "" {
 		return appcmd.NewInvalidArgumentErrorf("--%s is required", outputFlagName)
 	}

@@ -17,11 +17,11 @@ package appcmd
 // invalidArgumentError is used to indicate that an error was
 // caused by argument validation.
 type invalidArgumentError struct {
-	err string
+	message string
 }
 
 func (a *invalidArgumentError) Error() string {
-	return a.err
+	return a.message
 }
 
 func (a *invalidArgumentError) Is(err error) bool {

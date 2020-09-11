@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulestorage"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
@@ -44,17 +43,18 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, exists)
 
-	delegateModuleReadWriter := newTestModuleReadWriter(t)
+	delegateModuleReadWriter := newTestModuleCacher(t)
 	putResolvedModuleName, err := delegateModuleReadWriter.PutModule(
 		context.Background(),
-		moduleName,
+		resolvedModuleName,
 		module,
 	)
 	require.NoError(t, err)
 	require.True(t, bufmodule.ModuleNameEqual(resolvedModuleName, putResolvedModuleName))
 
-	cacheModuleReadWriter := newTestModuleReadWriter(t)
-	moduleReader := newModuleReader(zap.NewNop(), cacheModuleReadWriter, delegateModuleReadWriter)
+	cacheBucket, err := storageos.NewReadWriteBucket(t.TempDir())
+	require.NoError(t, err)
+	moduleReader := newModuleReader(zap.NewNop(), cacheBucket, delegateModuleReadWriter)
 
 	getModule, err := moduleReader.GetModule(ctx, resolvedModuleName)
 	require.NoError(t, err)
@@ -79,10 +79,4 @@ func TestBasic(t *testing.T) {
 
 	require.Equal(t, 2, moduleReader.getCount())
 	require.Equal(t, 1, moduleReader.getCacheHits())
-}
-
-func newTestModuleReadWriter(t *testing.T) bufmodule.ModuleReadWriter {
-	readWriteBucket, err := storageos.NewReadWriteBucket(t.TempDir())
-	require.NoError(t, err)
-	return bufmodulestorage.NewModuleReadWriter(readWriteBucket)
 }

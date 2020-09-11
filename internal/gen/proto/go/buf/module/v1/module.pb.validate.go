@@ -236,9 +236,9 @@ func (m *ModuleName) Validate() error {
 		return nil
 	}
 
-	if l := utf8.RuneCountInString(m.GetServer()); l < 1 || l > 256 {
+	if l := utf8.RuneCountInString(m.GetRemote()); l < 1 || l > 256 {
 		return ModuleNameValidationError{
-			field:  "Server",
+			field:  "Remote",
 			reason: "value length must be between 1 and 256 runes, inclusive",
 		}
 	}

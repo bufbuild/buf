@@ -60,9 +60,9 @@ func TestModuleNameForStringError(t *testing.T) {
 		ExpectedErrorString string
 	}{
 		{
-			Name:                "Module without a server",
+			Name:                "Module without a remote",
 			Input:               "/bar/baz/v1",
-			ExpectedErrorString: "invalid module name: server name is empty: /bar/baz/v1",
+			ExpectedErrorString: "invalid module name: remote name is empty: /bar/baz/v1",
 		},
 		{
 			Name:                "Module without an owner",
@@ -82,7 +82,7 @@ func TestModuleNameForStringError(t *testing.T) {
 		{
 			Name:                "Invalid module structure",
 			Input:               "foo.com/bar/baz",
-			ExpectedErrorString: "invalid module name: module name is not in the form server/owner/repository/version: foo.com/bar/baz",
+			ExpectedErrorString: "invalid module name: module name is not in the form remote/owner/repository/version: foo.com/bar/baz",
 		},
 		{
 			Name:                "Invalid digest structure",
@@ -103,14 +103,14 @@ func TestModuleNameForStringError(t *testing.T) {
 
 func newModuleName(
 	t *testing.T,
-	server string,
+	remote string,
 	owner string,
 	repository string,
 	version string,
 	digest string,
 ) bufmodule.ModuleName {
 	t.Helper()
-	moduleName, err := bufmodule.NewModuleName(server, owner, repository, version, digest)
+	moduleName, err := bufmodule.NewModuleName(remote, owner, repository, version, digest)
 	require.NoError(t, err)
 	return moduleName
 }

@@ -56,7 +56,7 @@ func handle(
 	if err != nil {
 		return err
 	}
-	handler, err := appprotoexec.NewHandler(logger, split[0], "", "")
+	handler, err := appprotoexec.NewHandler(logger, split[0])
 	if err != nil {
 		return err
 	}

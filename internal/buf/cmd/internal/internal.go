@@ -97,7 +97,7 @@ func NewBufbreakingHandler(
 	)
 }
 
-// WarnExperimental warns that the command is experimental.
-func WarnExperimental(container applog.Container) {
+// WarnBeta warns that the command is beta.
+func WarnBeta(container applog.Container) {
 	container.Logger().Warn(`This command has been released for early evaluation only and is experimental. It is not ready for production, and is likely to to have significant changes.`)
 }
