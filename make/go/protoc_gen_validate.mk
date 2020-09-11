@@ -22,11 +22,14 @@ PROTO_INCLUDE_PATHS := $(PROTO_INCLUDE_PATHS) third_party/proto
 EXTRA_MAKEGO_FILES := $(EXTRA_MAKEGO_FILES) scripts/protoc_gen_plugin.bash
 
 PROTOC_GEN_VALIDATE_EXTRA_FLAGS :=
-ifdef PROTOC_USE_BUF
-PROTOC_GEN_VALIDATE_EXTRA_FLAGS := --use-buf
+ifdef USE_BUF_PROTOC
+PROTOC_GEN_VALIDATE_EXTRA_FLAGS := --use-buf-protoc
 endif
-ifdef PROTOC_USE_BUF_BY_DIR
-PROTOC_GEN_VALIDATE_EXTRA_FLAGS := --use-buf --by-dir
+ifdef USE_BUF_PROTOC_BY_DIR
+PROTOC_GEN_VALIDATE_EXTRA_FLAGS := --use-buf-protoc-by-dir
+endif
+ifdef USE_BUF_GENERATE
+PROTOC_GEN_VALIDATE_EXTRA_FLAGS := --use-buf-generate
 endif
 
 .PHONY: protocgenvalidate

@@ -18,6 +18,7 @@ import (
 	"io"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
 
@@ -25,11 +26,11 @@ import (
 // delegate as the source of truth.
 func NewModuleReader(
 	logger *zap.Logger,
-	cache bufmodule.ModuleReadWriter,
+	cacheBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
 	options ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
-	return newModuleReader(logger, cache, delegate, options...)
+	return newModuleReader(logger, cacheBucket, delegate, options...)
 }
 
 // ModuleReaderOption is an option for a new ModuleReader.

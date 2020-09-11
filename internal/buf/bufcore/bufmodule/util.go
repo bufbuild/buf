@@ -53,10 +53,10 @@ func moduleNameCompareTo(a ModuleName, b ModuleName) int {
 	if a != nil && b == nil {
 		return 1
 	}
-	if a.Server() < b.Server() {
+	if a.Remote() < b.Remote() {
 		return -1
 	}
-	if a.Server() > b.Server() {
+	if a.Remote() > b.Remote() {
 		return 1
 	}
 	if a.Owner() < b.Owner() {

@@ -55,9 +55,8 @@ message ModuleFile {
 }
 
 message ModuleName {
-  // This is a server name, not necessarily
-  // the address it serves on.
-  string server = 1 [
+  // The DNS name or IP address of the server that hosts the module.
+  string remote = 1 [
     (validate.rules).string.min_len = 1,
     (validate.rules).string.max_len = 256
   ];

@@ -44,14 +44,14 @@ func TestModuleFileSetBuilderDeduplicates(t *testing.T) {
 		},
 		Dependencies: []*modulev1.ModuleName{
 			{
-				Server:     "buf.build",
+				Remote:     "buf.build",
 				Owner:      "foo",
 				Repository: "bar",
 				Version:    "v1",
 				Digest:     bufmoduletesting.TestDigest,
 			},
 			{
-				Server:     "buf.build",
+				Remote:     "buf.build",
 				Owner:      "google",
 				Repository: "googleapis",
 				Version:    "v1",
@@ -86,7 +86,7 @@ func (m *testModuleReader) GetModule(ctx context.Context, moduleName bufmodule.M
 			Dependencies: []*modulev1.ModuleName{
 				// Will force second lookup of googleapis
 				{
-					Server:     "buf.build",
+					Remote:     "buf.build",
 					Owner:      "google",
 					Repository: "googleapis",
 					Version:    "v1",

@@ -129,7 +129,7 @@ func (m *module) GetFile(ctx context.Context, path string) (ModuleFile, error) {
 }
 
 // Dependencies gets the dependency ModuleNames.
-// The returned dependencies are sorted by server, owner, repository, version, and digest.
+// The returned dependencies are sorted by remote, owner, repository, version, and digest.
 func (m *module) Dependencies() []ModuleName {
 	// already sorted
 	return m.dependencies

@@ -65,7 +65,6 @@ func newDuplicatePluginPathError(pluginName string) error {
 }
 
 func newEncodeNotSupportedError() error {
-	//lint:ignore ST1005 CLI error message
 	return fmt.Errorf(
 		`--%s is not supported by buf.
 
@@ -76,7 +75,6 @@ Please email us at support@buf.build if this is a need for your organization.`,
 }
 
 func newDecodeNotSupportedError() error {
-	//lint:ignore ST1005 CLI error message
 	return fmt.Errorf(
 		`--%s is not supported by buf.
 
@@ -87,7 +85,6 @@ Please email us at support@buf.build if this is a need for your organization.`,
 }
 
 func newDecodeRawNotSupportedError() error {
-	//lint:ignore ST1005 CLI error message
 	return fmt.Errorf(
 		`--%s is not supported by buf.
 
@@ -98,7 +95,6 @@ Please email us at support@buf.build if this is a need for your organization.`,
 }
 
 func newDescriptorSetInNotSupportedError() error {
-	//lint:ignore ST1005 CLI error message
 	return fmt.Errorf(
 		`--%s is not supported by buf.
 
