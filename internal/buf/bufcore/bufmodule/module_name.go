@@ -22,7 +22,7 @@ import (
 
 // moduleName implements the ModuleName interface.
 type moduleName struct {
-	server     string
+	remote     string
 	owner      string
 	repository string
 	version    string
@@ -30,7 +30,7 @@ type moduleName struct {
 }
 
 func newModuleName(
-	server string,
+	remote string,
 	owner string,
 	repository string,
 	version string,
@@ -41,7 +41,7 @@ func newModuleName(
 	// this is a little hacky but better than replicating the logic for now
 	return newModuleNameForProto(
 		&modulev1.ModuleName{
-			Server:     server,
+			Remote:     remote,
 			Owner:      owner,
 			Repository: repository,
 			Version:    version,
@@ -57,7 +57,7 @@ func newModuleNameForProto(
 		return nil, err
 	}
 	return &moduleName{
-		server:     protoModuleName.Server,
+		remote:     protoModuleName.Remote,
 		owner:      protoModuleName.Owner,
 		repository: protoModuleName.Repository,
 		version:    protoModuleName.Version,
@@ -65,8 +65,8 @@ func newModuleNameForProto(
 	}, nil
 }
 
-func (m *moduleName) Server() string {
-	return m.server
+func (m *moduleName) Remote() string {
+	return m.remote
 }
 
 func (m *moduleName) Owner() string {
@@ -99,7 +99,7 @@ func newProtoModuleNameForModuleName(
 	moduleName ModuleName,
 ) (*modulev1.ModuleName, error) {
 	protoModuleName := &modulev1.ModuleName{
-		Server:     moduleName.Server(),
+		Remote:     moduleName.Remote(),
 		Owner:      moduleName.Owner(),
 		Repository: moduleName.Repository(),
 		Version:    moduleName.Version(),
@@ -114,5 +114,5 @@ func newProtoModuleNameForModuleName(
 // moduleNameIdentity returns the given module name's identity. This is
 // the string representation, minus the digest.
 func moduleNameIdentity(moduleName ModuleName) string {
-	return fmt.Sprintf("%s/%s/%s/%s", moduleName.Server(), moduleName.Owner(), moduleName.Repository(), moduleName.Version())
+	return fmt.Sprintf("%s/%s/%s/%s", moduleName.Remote(), moduleName.Owner(), moduleName.Repository(), moduleName.Version())
 }

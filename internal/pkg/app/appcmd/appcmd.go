@@ -42,6 +42,10 @@ type Command struct {
 	//
 	// TODO: make specific types for appcmd to limit what can be done.
 	Args cobra.PositionalArgs
+	// Deprecated says to print this deprecation string.
+	Deprecated string
+	// Hidden says to hide this command.
+	Hidden bool
 	// BindFlags allows binding of flags on build.
 	BindFlags func(*pflag.FlagSet)
 	// BindPersistentFlags allows binding of flags on build.
@@ -64,9 +68,9 @@ type Command struct {
 // NewInvalidArgumentError creates a new invalidArgumentError, indicating that
 // the error was caused by argument validation. This causes us to print the usage
 // help text for the command that it is returned from.
-func NewInvalidArgumentError(err string) error {
+func NewInvalidArgumentError(message string) error {
 	return &invalidArgumentError{
-		err: err,
+		message: message,
 	}
 }
 
@@ -155,9 +159,11 @@ func commandToCobra(
 		return nil, err
 	}
 	cobraCommand := &cobra.Command{
-		Use:   command.Use,
-		Args:  command.Args,
-		Short: strings.TrimSpace(command.Short),
+		Use:        command.Use,
+		Args:       command.Args,
+		Deprecated: command.Deprecated,
+		Hidden:     command.Hidden,
+		Short:      strings.TrimSpace(command.Short),
 	}
 	if command.Long != "" {
 		cobraCommand.Long = cobraCommand.Short + "\n\n" + strings.TrimSpace(command.Long)

@@ -966,13 +966,13 @@ func testGetParsedRef(
 
 func testNewModuleName(
 	t *testing.T,
-	server string,
+	remote string,
 	owner string,
 	repository string,
 	version string,
 	digest string,
 ) bufmodule.ModuleName {
-	moduleName, err := bufmodule.NewModuleName(server, owner, repository, version, digest)
+	moduleName, err := bufmodule.NewModuleName(remote, owner, repository, version, digest)
 	require.NoError(t, err)
 	return moduleName
 }

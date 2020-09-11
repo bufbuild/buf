@@ -32,8 +32,9 @@ PROTO_INCLUDE_PATHS=()
 PLUGIN_NAME=
 PLUGIN_OUT=
 PLUGIN_OPT=
-USE_BUF=
-BY_DIR=
+USE_BUF_PROTOC=
+USE_BUF_PROTOC_BY_DIR=
+USE_BUF_GENERATE=
 while test $# -gt 0; do
   case "${1}" in
     -h|--help)
@@ -60,12 +61,16 @@ while test $# -gt 0; do
       PLUGIN_OPT="$(echo ${1} | sed -e 's/^[^=]*=//g')"
       shift
       ;;
-    --use-buf)
-      USE_BUF=1
+    --use-buf-protoc)
+      USE_BUF_PROTOC=1
       shift
       ;;
-    --by-dir)
-      BY_DIR=1
+    --use-buf-protoc-by-dir)
+      USE_BUF_PROTOC_BY_DIR=1
+      shift
+      ;;
+    --use-buf-generate)
+      USE_BUF_GENERATE=1
       shift
       ;;
     *)
@@ -75,9 +80,26 @@ while test $# -gt 0; do
   esac
 done
 
-check_flag_value_set "${PROTO_PATHS[@]}"
 check_flag_value_set "${PLUGIN_NAME}"
 check_flag_value_set "${PLUGIN_OUT}"
+check_flag_value_set "${PROTO_PATHS[@]}"
+
+mkdir -p "${PLUGIN_OUT}"
+
+if [ -n "${USE_BUF_GENERATE}" ]; then
+  BUF_GENERATE_FLAGS=("--plugin=${PLUGIN_NAME}" "--plugin-out=${PLUGIN_OUT}")
+  if [ -n "${PLUGIN_OPT}" ]; then
+    BUF_GENERATE_FLAGS+=("--plugin-opt=${PLUGIN_OPT}")
+  fi
+  for proto_path in "${PROTO_PATHS[@]}"; do
+    for proto_file in $(find "${proto_path}" -name '*.proto'); do
+      BUF_GENERATE_FLAGS+=("--file=${proto_file}")
+    done
+  done
+  echo buf beta generate "${BUF_GENERATE_FLAGS[@]}"
+  buf beta generate "${BUF_GENERATE_FLAGS[@]}"
+  exit 0
+fi
 
 PROTOC_FLAGS=()
 for proto_path in "${PROTO_PATHS[@]}"; do
@@ -90,15 +112,13 @@ PROTOC_FLAGS+=("--${PLUGIN_NAME}_out=${PLUGIN_OUT}")
 if [ -n "${PLUGIN_OPT}" ]; then
   PROTOC_FLAGS+=("--${PLUGIN_NAME}_opt=${PLUGIN_OPT}")
 fi
-
-mkdir -p "${PLUGIN_OUT}"
 for proto_path in "${PROTO_PATHS[@]}"; do
-  if [ -n "${USE_BUF}" ] && [ -n "${BY_DIR}" ]; then
+  if [ -n "${USE_BUF_PROTOC_BY_DIR}" ]; then
       echo buf protoc --by_dir "${PROTOC_FLAGS[@]}" $(find "${proto_path}" -name '*.proto')
       buf protoc --by_dir "${PROTOC_FLAGS[@]}" $(find "${proto_path}" -name '*.proto')
   else
     for dir in $(find "${proto_path}" -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq); do
-      if [ -n "${USE_BUF}" ]; then
+      if [ -n "${USE_BUF_PROTOC}" ]; then
         echo buf protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
         buf protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
       else

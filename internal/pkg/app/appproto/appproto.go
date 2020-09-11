@@ -13,6 +13,9 @@
 // limitations under the License.
 
 // Package appproto contains helper functionality for protoc plugins.
+//
+// Note this is currently implicitly tested through buf's protoc command.
+// If this were split out into a separate package, testing would need to be moved to this package.
 package appproto
 
 import (
@@ -20,8 +23,9 @@ import (
 	"io/ioutil"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
+	"github.com/bufbuild/buf/internal/pkg/storage"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -82,7 +86,7 @@ func NewRunFunc(handler Handler) func(context.Context, app.Container) error {
 		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(input, request); err != nil {
 			return err
 		}
-		response, err := Execute(ctx, container, handler, request)
+		response, err := runHandler(ctx, container, handler, request)
 		if err != nil {
 			return err
 		}
@@ -95,20 +99,23 @@ func NewRunFunc(handler Handler) func(context.Context, app.Container) error {
 	}
 }
 
-// Execute executes the given handler.
-func Execute(
-	ctx context.Context,
-	container app.EnvStderrContainer,
+// Executor executes the Handler using protoc's plugin execution logic.
+//
+// This invokes a Handler and writes out the response to a Bucket, additionally
+// accounting for insertion point logic.
+type Executor interface {
+	Execute(
+		ctx context.Context,
+		container app.EnvStderrContainer,
+		readWriteBucket storage.ReadWriteBucket,
+		request *pluginpb.CodeGeneratorRequest,
+	) error
+}
+
+// NewExecutor returns a new Executor.
+func NewExecutor(
+	logger *zap.Logger,
 	handler Handler,
-	request *pluginpb.CodeGeneratorRequest,
-) (*pluginpb.CodeGeneratorResponse, error) {
-	if err := protodescriptor.ValidateCodeGeneratorRequest(request); err != nil {
-		return nil, err
-	}
-	responseWriter := newResponseWriter()
-	response := responseWriter.toResponse(handler.Handle(ctx, container, responseWriter, request))
-	if err := protodescriptor.ValidateCodeGeneratorResponse(response); err != nil {
-		return nil, err
-	}
-	return response, nil
+) Executor {
+	return newExecutor(logger, handler)
 }

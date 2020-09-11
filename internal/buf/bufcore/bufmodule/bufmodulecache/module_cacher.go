@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodulestorage
+package bufmodulecache
 
 import (
 	"bytes"
@@ -32,22 +32,22 @@ const (
 	moduleFileName = "module.bin.zst"
 )
 
-type moduleReadWriter struct {
+type moduleCacher struct {
 	// We want to make this a combined ReadWriteBucket as opposed to splitting
 	// moduleReader and moduleWriter as we may want to auto-correct on GetModule
 	// and delete modules that do not have equivalent digests in the future.
 	readWriteBucket storage.ReadWriteBucket
 }
 
-func newModuleReadWriter(
+func newModuleCacher(
 	readWriteBucket storage.ReadWriteBucket,
-) *moduleReadWriter {
-	return &moduleReadWriter{
+) *moduleCacher {
+	return &moduleCacher{
 		readWriteBucket: readWriteBucket,
 	}
 }
 
-func (m *moduleReadWriter) GetModule(
+func (m *moduleCacher) GetModule(
 	ctx context.Context,
 	moduleName bufmodule.ModuleName,
 ) (_ bufmodule.Module, retErr error) {
@@ -96,14 +96,13 @@ func (m *moduleReadWriter) GetModule(
 	return module, nil
 }
 
-func (m *moduleReadWriter) PutModule(
+func (m *moduleCacher) PutModule(
 	ctx context.Context,
 	moduleName bufmodule.ModuleName,
 	module bufmodule.Module,
 ) (_ bufmodule.ModuleName, retErr error) {
-	resolvedModuleName, err := bufmodule.ResolvedModuleNameForModule(ctx, moduleName, module)
-	if err != nil {
-		return nil, err
+	if moduleName.Digest() == "" {
+		return nil, bufmodule.NewNoDigestError(moduleName)
 	}
 	protoModule, err := bufmodule.ModuleToProtoModule(ctx, module)
 	if err != nil {
@@ -135,7 +134,7 @@ func (m *moduleReadWriter) PutModule(
 	// was incorrectly stored and would not pass validation.
 	writeObjectCloser, err := m.readWriteBucket.Put(
 		ctx,
-		getModuleFilePath(resolvedModuleName),
+		getModuleFilePath(moduleName),
 		uint32(len(compressedData)),
 	)
 	if err != nil {
@@ -147,7 +146,7 @@ func (m *moduleReadWriter) PutModule(
 	if _, err := writeObjectCloser.Write(compressedData); err != nil {
 		return nil, err
 	}
-	return resolvedModuleName, nil
+	return moduleName, nil
 }
 
 // this assumes the ModuleName is resolved
@@ -157,7 +156,7 @@ func getModuleFilePath(moduleName bufmodule.ModuleName) string {
 	// ie the characters used are restricted, and all of these are non-empty,
 	// digest is the weird one though.
 	return normalpath.Join(
-		moduleName.Server(),
+		moduleName.Remote(),
 		moduleName.Owner(),
 		moduleName.Repository(),
 		moduleName.Version(),

@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package appprotoexec provides appproto.Handlers for binary plugins.
+// Package appprotoexec provides protoc plugin handling and execution.
+//
+// Note this is currently implicitly tested through buf's protoc command.
+// If this were split out into a separate package, testing would need to be moved to this package.
 package appprotoexec
 
 import (
@@ -61,52 +64,62 @@ var (
 func NewHandler(
 	logger *zap.Logger,
 	pluginName string,
-	protocPath string,
-	pluginPath string,
+	options ...HandlerOption,
 ) (appproto.Handler, error) {
-	if pluginPath != "" {
-		return NewBinaryHandler(logger, pluginPath)
+	handlerOptions := newHandlerOptions()
+	for _, option := range options {
+		option(handlerOptions)
+	}
+	if handlerOptions.pluginPath != "" {
+		pluginPath, err := exec.LookPath(handlerOptions.pluginPath)
+		if err != nil {
+			return nil, err
+		}
+		return newBinaryHandler(logger, pluginPath), nil
 	}
 	pluginPath, err := exec.LookPath("protoc-gen-" + pluginName)
 	if err == nil {
 		return newBinaryHandler(logger, pluginPath), nil
 	}
 	if _, ok := ProtocProxyPluginNames[pluginName]; ok {
-		if protocPath == "" {
-			protocPath = "protoc"
+		if handlerOptions.protocPath == "" {
+			handlerOptions.protocPath = "protoc"
 		}
-		return NewProtocProxyHandler(logger, protocPath, pluginName)
+		protocPath, err := exec.LookPath(handlerOptions.protocPath)
+		if err != nil {
+			return nil, err
+		}
+		return newProtocProxyHandler(logger, protocPath, pluginName), nil
 	}
 	return nil, fmt.Errorf("could not find protoc plugin for name %s", pluginName)
 }
 
-// NewBinaryHandler returns a new Handler for the given plugin path.
+// HandlerOption is an option for a new Handler.
+type HandlerOption func(*handlerOptions)
+
+// HandlerWithProtocPath returns a new HandlerOption that sets the path to the protoc binary.
 //
-// exec.LookPath is called on the pluginPath, and error is returned if exec.LookPath returns an error.
-func NewBinaryHandler(
-	logger *zap.Logger,
-	pluginPath string,
-) (appproto.Handler, error) {
-	pluginPath, err := exec.LookPath(pluginPath)
-	if err != nil {
-		return nil, err
+// The default is to do exec.LookPath on "protoc".
+func HandlerWithProtocPath(protocPath string) HandlerOption {
+	return func(handlerOptions *handlerOptions) {
+		handlerOptions.protocPath = protocPath
 	}
-	return newBinaryHandler(logger, pluginPath), nil
 }
 
-// NewProtocProxyHandler returns a new Handler that proxies through protoc.
+// HandlerWithPluginPath returns a new HandlerOption that sets the path to the plugin binary.
 //
-// This can be used for the builtin plugins.
-//
-// exec.LookPath is called on the protocPath, and error is returned if exec.LookPath returns an error.
-func NewProtocProxyHandler(
-	logger *zap.Logger,
-	protocPath string,
-	pluginName string,
-) (appproto.Handler, error) {
-	protocPath, err := exec.LookPath(protocPath)
-	if err != nil {
-		return nil, err
+// The default is to do exec.LookPath on "protoc-gen-" + pluginName.
+func HandlerWithPluginPath(pluginPath string) HandlerOption {
+	return func(handlerOptions *handlerOptions) {
+		handlerOptions.pluginPath = pluginPath
 	}
-	return newProtocProxyHandler(logger, protocPath, pluginName), nil
+}
+
+type handlerOptions struct {
+	protocPath string
+	pluginPath string
+}
+
+func newHandlerOptions() *handlerOptions {
+	return &handlerOptions{}
 }

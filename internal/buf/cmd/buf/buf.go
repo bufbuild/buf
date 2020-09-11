@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/lint"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/lsbreakingcheckers"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/lslintcheckers"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/image/build"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/image/convert"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lsfiles"
@@ -106,14 +107,31 @@ func newRootCommand(
 			protoc.NewCommand("protoc", builder, moduleReaderProvider),
 			lsfiles.NewCommand("ls-files", builder, moduleReaderProvider),
 			{
-				Use:   "experimental",
-				Short: "Experimental commands. Unstable and will likely change.",
+				Use:   "beta",
+				Short: "Beta commands. Unstable and will likely change.",
 				SubCommands: []*appcmd.Command{
+					generate.NewCommand("generate", builder, moduleReaderProvider),
 					{
 						Use:   "image",
 						Short: "Work with Images and FileDescriptorSets.",
 						SubCommands: []*appcmd.Command{
-							convert.NewCommand("convert", builder),
+							convert.NewCommand("convert", builder, ""),
+						},
+					},
+				},
+			},
+			{
+				Use:        "experimental",
+				Short:      "Experimental commands. Unstable and will likely change.",
+				Deprecated: `use "beta" instead.`,
+				Hidden:     true,
+				SubCommands: []*appcmd.Command{
+					{
+						Use:        "image",
+						Short:      "Work with Images and FileDescriptorSets.",
+						Deprecated: `use "beta image" instead.`,
+						SubCommands: []*appcmd.Command{
+							convert.NewCommand("convert", builder, `use "beta image convert" instead.`),
 						},
 					},
 				},

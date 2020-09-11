@@ -4,11 +4,9 @@
 $(call _assert_var,MAKEGO)
 $(call _conditional_include,$(MAKEGO)/base.mk)
 $(call _conditional_include,$(MAKEGO)/dep_errcheck.mk)
-$(call _conditional_include,$(MAKEGO)/dep_golint.mk)
 $(call _conditional_include,$(MAKEGO)/dep_staticcheck.mk)
 # Must be set
 $(call _assert_var,GO_MODULE)
-$(call _assert_var,GOLINT)
 $(call _assert_var,ERRCHECK)
 $(call _assert_var,STATICCHECK)
 $(call _assert_var,TMP)
@@ -39,7 +37,7 @@ else
 GO_TEST_FLAGS :=
 endif
 
-.DEFAULT_GOAL := all
+.DEFAULT_GOAL := shortall
 
 .PHONY: all
 all:
@@ -82,10 +80,6 @@ gofmtmodtidy:
 
 postgenerate:: gofmtmodtidy
 
-.PHONY: golint
-golint: __go_lint_pkgs $(GOLINT)
-	golint -set_exit_status $(GO_LINT_PKGS)
-
 .PHONY: vet
 vet: __go_lint_pkgs
 	go vet $(GO_LINT_PKGS)
@@ -104,7 +98,7 @@ postlint::
 .PHONY: lint
 lint:
 	@$(MAKE) checknodiffgenerated
-	@$(MAKE) golint vet errcheck staticcheck
+	@$(MAKE) vet errcheck staticcheck
 	@$(MAKE) postlint
 
 .PHONY: prebuild

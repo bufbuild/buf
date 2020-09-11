@@ -17,7 +17,6 @@ GO_BINS := $(GO_BINS) $(BUF_BIN) \
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer
-GO_LINT_IGNORES := $(GO_LINT_IGNORES) /internal/buf/cmd/buf/command/protoc
 DOCKER_BINS := $(DOCKER_BINS) buf
 PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto/go
@@ -29,7 +28,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	internal/buf/internal/buftesting/cache/ \
 	internal/pkg/storage/storageos/tmp/
 
-PROTOC_USE_BUF_BY_DIR := true
+USE_BUF_PROTOC_BY_DIR := true
 
 include make/go/bootstrap.mk
 include make/go/go.mk
@@ -68,7 +67,7 @@ postlint:: buflint bufbreaking
 
 .PHONY: bufrelease
 bufrelease:
-	DOCKER_IMAGE=golang:1.15.1-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.15.2-buster bash make/buf/scripts/release.bash
 
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)

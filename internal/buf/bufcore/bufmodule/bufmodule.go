@@ -65,7 +65,7 @@ type ModuleName interface {
 	fmt.Stringer
 
 	// Required.
-	Server() string
+	Remote() string
 	// Required.
 	Owner() string
 	// Required.
@@ -80,13 +80,13 @@ type ModuleName interface {
 
 // NewModuleName returns a new validated ModuleName.
 func NewModuleName(
-	server string,
+	remote string,
 	owner string,
 	repository string,
 	version string,
 	digest string,
 ) (ModuleName, error) {
-	return newModuleName(server, owner, repository, version, digest)
+	return newModuleName(remote, owner, repository, version, digest)
 }
 
 // NewModuleNameForProto returns a new ModuleName for the given proto ModuleName.
@@ -165,7 +165,7 @@ type Module interface {
 	GetFile(ctx context.Context, path string) (ModuleFile, error)
 	// Dependencies gets the dependency ModuleNames. These are always resolved.
 	//
-	// The returned ModuleNames are sorted by server, owner, repository, version, and then digest.
+	// The returned ModuleNames are sorted by remote, owner, repository, version, and then digest.
 	Dependencies() []ModuleName
 
 	getSourceReadBucket() storage.ReadBucket
@@ -216,7 +216,10 @@ func ModuleWithTargetPathsAllowNotExist(module Module, targetPaths []string) (Mo
 	return newTargetingModule(module, targetPaths, true)
 }
 
-// ModuleReader reads modules.
+// ModuleReader reads modules. If the ModuleReader is asked to get an unresolved ModuleName,
+// it will resolve the module according to the latest digest.
+//
+// Callers SHOULD NOT rely on this interface for resolving all of a module's dependencies.
 type ModuleReader interface {
 	// GetModule gets the named Module.
 	//
@@ -226,37 +229,9 @@ type ModuleReader interface {
 	GetModule(ctx context.Context, moduleName ModuleName) (Module, error)
 }
 
-// ModuleWriter writes modules.
-type ModuleWriter interface {
-	// PutModule puts the named Module.
-	//
-	// The given ModuleName must be unresolved, i.e. it must not have a digest.
-	//
-	// Returns a new resolved ModuleName with the digest.
-	PutModule(ctx context.Context, moduleName ModuleName, module Module) (ModuleName, error)
-}
-
-// ModuleReadWriter is a ModuleReader and ModuleWriter
-type ModuleReadWriter interface {
-	ModuleReader
-	ModuleWriter
-}
-
 // NewNopModuleReader returns a new ModuleReader that always returns a storage.IsNotExist error.
 func NewNopModuleReader() ModuleReader {
 	return newNopModuleReader()
-}
-
-// NewNopModuleWriter returns a new ModuleWriter that does not store the Module, instead just
-// calculates the digest and returns a ModuleName with this digest.
-func NewNopModuleWriter() ModuleWriter {
-	return newNopModuleWriter()
-}
-
-// NewNopModuleReadWriter returns a new ModuleReadWriter that combines a no-op ModuleReader
-// and a no-op ModuleWriter.
-func NewNopModuleReadWriter() ModuleReadWriter {
-	return newNopModuleReadWriter()
 }
 
 // ModuleFileSet is a Protobuf module file set.
@@ -283,15 +258,15 @@ func NewModuleFileSet(
 
 // ModuleNameForString returns a new ModuleName for the given string.
 //
-// This parses the path in the form server/owner/repository/version[:digest]
+// This parses the path in the form remote/owner/repository/version[:digest]
 func ModuleNameForString(path string) (ModuleName, error) {
 	slashSplit := strings.Split(path, "/")
 	if len(slashSplit) != 4 {
-		return nil, newInvalidModuleNameStringError(path, "module name is not in the form server/owner/repository/version")
+		return nil, newInvalidModuleNameStringError(path, "module name is not in the form remote/owner/repository/version")
 	}
-	server := strings.TrimSpace(slashSplit[0])
-	if server == "" {
-		return nil, newInvalidModuleNameStringError(path, "server name is empty")
+	remote := strings.TrimSpace(slashSplit[0])
+	if remote == "" {
+		return nil, newInvalidModuleNameStringError(path, "remote name is empty")
 	}
 	owner := strings.TrimSpace(slashSplit[1])
 	if owner == "" {
@@ -317,7 +292,7 @@ func ModuleNameForString(path string) (ModuleName, error) {
 		return nil, newInvalidModuleNameStringError(path, "version name is empty")
 	}
 	return NewModuleName(
-		server,
+		remote,
 		owner,
 		repository,
 		version,
@@ -359,7 +334,7 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1.Module, 
 	protoModuleNames := make([]*modulev1.ModuleName, len(dependencies))
 	for i, dependency := range dependencies {
 		protoModuleName := &modulev1.ModuleName{
-			Server:     dependency.Server(),
+			Remote:     dependency.Remote(),
 			Owner:      dependency.Owner(),
 			Repository: dependency.Repository(),
 			Version:    dependency.Version(),
@@ -397,7 +372,7 @@ func ModuleDigestB1(
 	// Version must be part of the digest, since we require digests
 	// to be unique per-repository.
 	//
-	// We do not include the server, owner, or repository here
+	// We do not include the remote, owner, or repository here
 	// as we want the ability to change the repository name or
 	// change the repository owner without affecting the digest.
 	if _, err := hash.Write([]byte(moduleVersion)); err != nil {
@@ -413,7 +388,7 @@ func ModuleDigestB1(
 		// Note that this does mean that changing a repository name or owner
 		// will result in a different digest, this is something we may
 		// want to revisit.
-		if _, err := hash.Write([]byte(dependency.Server())); err != nil {
+		if _, err := hash.Write([]byte(dependency.Remote())); err != nil {
 			return "", err
 		}
 		if _, err := hash.Write([]byte(dependency.Owner())); err != nil {
@@ -544,7 +519,7 @@ func ResolvedModuleNameForModule(ctx context.Context, moduleName ModuleName, mod
 		return nil, err
 	}
 	return NewModuleName(
-		moduleName.Server(),
+		moduleName.Remote(),
 		moduleName.Owner(),
 		moduleName.Repository(),
 		moduleName.Version(),
@@ -560,7 +535,7 @@ func UnresolvedModuleName(moduleName ModuleName) (ModuleName, error) {
 		return nil, fmt.Errorf("moduleName is already unresolved: %q", moduleName.String())
 	}
 	return NewModuleName(
-		moduleName.Server(),
+		moduleName.Remote(),
 		moduleName.Owner(),
 		moduleName.Repository(),
 		moduleName.Version(),
@@ -596,7 +571,7 @@ func ModuleNameEqual(a ModuleName, b ModuleName) bool {
 	if a == nil {
 		return true
 	}
-	return a.Server() == b.Server() &&
+	return a.Remote() == b.Remote() &&
 		a.Owner() == b.Owner() &&
 		a.Repository() == b.Repository() &&
 		a.Version() == b.Version() &&

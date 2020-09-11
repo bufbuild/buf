@@ -27,7 +27,7 @@ import (
 
 type moduleReader struct {
 	logger        *zap.Logger
-	cache         bufmodule.ModuleReadWriter
+	cache         *moduleCacher
 	delegate      bufmodule.ModuleReader
 	messageWriter io.Writer
 
@@ -38,13 +38,13 @@ type moduleReader struct {
 
 func newModuleReader(
 	logger *zap.Logger,
-	cache bufmodule.ModuleReadWriter,
+	cacheBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
 	options ...ModuleReaderOption,
 ) *moduleReader {
 	moduleReader := &moduleReader{
 		logger:   logger,
-		cache:    cache,
+		cache:    newModuleCacher(cacheBucket),
 		delegate: delegate,
 	}
 	for _, option := range options {
@@ -59,10 +59,10 @@ func (m *moduleReader) GetModule(
 ) (bufmodule.Module, error) {
 	module, err := m.cache.GetModule(ctx, moduleName)
 	if err != nil {
-		if storage.IsNotExist(err) {
+		if storage.IsNotExist(err) || bufmodule.IsNoDigestError(err) {
 			m.logger.Debug("cache_miss", zap.String("module_name", moduleName.String()))
 			if m.messageWriter != nil {
-				if _, err := m.messageWriter.Write([]byte("buf: downloading " + moduleName.String())); err != nil {
+				if _, err := m.messageWriter.Write([]byte("buf: downloading " + moduleName.String() + "\n")); err != nil {
 					return nil, err
 				}
 			}
@@ -93,13 +93,15 @@ func (m *moduleReader) getModuleUncached(
 	if err != nil {
 		return nil, err
 	}
-	unresolvedModuleName, err := bufmodule.UnresolvedModuleName(moduleName)
-	if err != nil {
-		return nil, err
+	if moduleName.Digest() == "" {
+		moduleName, err = bufmodule.ResolvedModuleNameForModule(ctx, moduleName, module)
+		if err != nil {
+			return nil, err
+		}
 	}
 	cacheModuleName, err := m.cache.PutModule(
 		ctx,
-		unresolvedModuleName,
+		moduleName,
 		module,
 	)
 	if err != nil {
