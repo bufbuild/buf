@@ -16,8 +16,6 @@ syntax = "proto3";
 
 package buf.module.v1;
 
-import "validate/validate.proto";
-
 option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1;modulev1";
 
 // Module is a module.
@@ -29,10 +27,7 @@ message Module {
   // Only the target files. No imports.
   //
   // Maximum total size of all content: 32MB.
-  repeated ModuleFile files = 1 [
-    (validate.rules).repeated.min_items = 1,
-    (validate.rules).repeated.max_items = 16384
-  ];
+  repeated ModuleFile files = 1;
   // dependencies are the dependencies.
   //
   // These must be resolved.
@@ -43,42 +38,21 @@ message Module {
 message ModuleFile {
   // path is the relative path of the file.
   // Path can only use '/' as the separator character, and includes no ".." components.
-  string path = 1 [
-    (validate.rules).string.min_len = 1,
-    (validate.rules).string.max_len = 2048
-  ];
+  string path = 1;
   // content is the content of the file.
-  bytes content = 2 [
-    (validate.rules).bytes.min_len = 1,
-    (validate.rules).bytes.max_len = 1048576
-  ];
+  bytes content = 2;
 }
 
 message ModuleName {
   // The DNS name or IP address of the server that hosts the module.
-  string remote = 1 [
-    (validate.rules).string.min_len = 1,
-    (validate.rules).string.max_len = 256
-  ];
+  string remote = 1;
   // The users username or organization name
-  string owner = 2 [
-    (validate.rules).string.min_len = 3,
-    (validate.rules).string.max_len = 64,
-    (validate.rules).string.pattern = "^[a-z0-9-]*$"
-  ];
+  string owner = 2;
   // The repository name
-  string repository = 3 [
-    (validate.rules).string.min_len = 3,
-    (validate.rules).string.max_len = 64,
-    (validate.rules).string.pattern = "^[a-z0-9-]*$"
-  ];
+  string repository = 3;
   // The repository version
   // Required
-  string version = 4 [
-    (validate.rules).string.min_len = 2,
-    (validate.rules).string.max_len = 64,
-    (validate.rules).string.pattern = "^[a-z0-9-.]*$"
-  ];
+  string version = 4;
   // The repository commit digest
   string digest = 5;
 }

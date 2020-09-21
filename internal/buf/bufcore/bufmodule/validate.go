@@ -24,18 +24,56 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 )
 
-// 32MB
-const maxModuleTotalContentLength = 32 << 20
+const (
+	// 32MB
+	maxModuleTotalContentLength    = 32 << 20
+	ownerNameMinLength             = 3
+	ownerNameMaxLength             = 64
+	protoFileMaxCount              = 16384
+	remoteMinLength                = 1
+	remoteMaxLength                = 256
+	repositoryNameMinLength        = 2
+	repositoryNameMaxLength        = 64
+	repositoryVersionNameMinLength = 2
+	repositoryVersionNameMaxLength = 32
+)
 
-func validateProtoModule(protoModule *modulev1.Module) error {
+// ValidateDigest verifies the given digest's prefix,
+// decodes its base64 representation and checks the
+// length of the encoded bytes.
+func ValidateDigest(digest string) error {
+	if digest == "" {
+		return errors.New("empty digest")
+	}
+	split := strings.SplitN(digest, "-", 2)
+	if len(split) != 2 {
+		return fmt.Errorf("invalid digest: %s", digest)
+	}
+	digestPrefix := split[0]
+	digestValue := split[1]
+	if digestPrefix != b1DigestPrefix {
+		return fmt.Errorf("unknown digest prefix: %s", digestPrefix)
+	}
+	decoded, err := base64.URLEncoding.DecodeString(digestValue)
+	if err != nil {
+		return fmt.Errorf("failed to decode digest %s: %v", digestValue, err)
+	}
+	if len(decoded) != 32 {
+		return fmt.Errorf("invalid sha256 hash, expected 32 bytes: %s", digestValue)
+	}
+	return nil
+}
+
+// ValidateProtoModule verifies the given module is well-formed.
+func ValidateProtoModule(protoModule *modulev1.Module) error {
 	if protoModule == nil {
-		return errors.New("nil Module")
+		return errors.New("module is required")
 	}
 	if len(protoModule.Files) == 0 {
-		return errors.New("Module had no files")
+		return errors.New("module has no files")
 	}
-	if err := protoModule.Validate(); err != nil {
-		return err
+	if len(protoModule.Files) > protoFileMaxCount {
+		return fmt.Errorf("module can contain at most %d files", protoFileMaxCount)
 	}
 	totalContentLength := 0
 	filePathMap := make(map[string]struct{}, len(protoModule.Files))
@@ -55,17 +93,85 @@ func validateProtoModule(protoModule *modulev1.Module) error {
 	return nil
 }
 
-func validateProtoModuleName(protoModuleName *modulev1.ModuleName) error {
+// ValidateProtoModuleName verifies the given module name is well-formed.
+func ValidateProtoModuleName(protoModuleName *modulev1.ModuleName) error {
 	if protoModuleName == nil {
-		return errors.New("nil ModuleName")
+		return errors.New("module name is required")
 	}
-	if err := protoModuleName.Validate(); err != nil {
+	if err := validateRemote(protoModuleName.Remote); err != nil {
+		return err
+	}
+	if err := ValidateOwnerName(protoModuleName.Owner, "owner"); err != nil {
+		return err
+	}
+	if err := ValidateRepositoryName(protoModuleName.Repository); err != nil {
+		return err
+	}
+	if err := ValidateRepositoryVersionName(protoModuleName.Version); err != nil {
 		return err
 	}
 	if protoModuleName.Digest != "" {
-		if err := validateDigest(protoModuleName.Digest); err != nil {
+		if err := ValidateDigest(protoModuleName.Digest); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// ValidateOwnerName is used to validate owner names, i.e. usernames and organization names.
+func ValidateOwnerName(ownerName string, ownerType string) error {
+	if ownerName == "" {
+		return fmt.Errorf("%s name is required", ownerType)
+	}
+	if len(ownerName) < ownerNameMinLength || len(ownerName) > ownerNameMaxLength {
+		return fmt.Errorf("%s name %q must be between at least %d and at most %d characters", ownerType, ownerName, ownerNameMinLength, ownerNameMaxLength)
+	}
+	for _, char := range ownerName {
+		if !isLowerAlphanumeric(char) && char != '-' {
+			return fmt.Errorf("%s name %q must only contain lowercase letters, digits, or hyphens (-)", ownerType, ownerName)
+		}
+	}
+	return nil
+}
+
+// ValidateRepositoryName verifies the given repository name is well-formed.
+func ValidateRepositoryName(repositoryName string) error {
+	if repositoryName == "" {
+		return errors.New("repository name is required")
+	}
+	if len(repositoryName) < repositoryNameMinLength || len(repositoryName) > repositoryNameMaxLength {
+		return fmt.Errorf("repository name must be at least %d and at most %d characters", repositoryNameMinLength, repositoryNameMaxLength)
+	}
+	for _, char := range repositoryName {
+		if !isLowerAlphanumeric(char) && char != '-' {
+			return fmt.Errorf("repository name %q must only contain lowercase letters, digits, or hyphens (-)", repositoryName)
+		}
+	}
+	return nil
+}
+
+// ValidateRepositoryVersionName verifies the given repository version name is well-formed.
+func ValidateRepositoryVersionName(versionName string) error {
+	if versionName == "" {
+		return errors.New("repository version name is required")
+	}
+	if len(versionName) < repositoryVersionNameMinLength || len(versionName) > repositoryVersionNameMaxLength {
+		return fmt.Errorf("repository version name %q must be at least %d and at most %d characters", versionName, repositoryVersionNameMinLength, repositoryVersionNameMaxLength)
+	}
+	for _, char := range versionName {
+		if !isLowerAlphanumeric(char) && char != '-' && char != '.' {
+			return fmt.Errorf("repository version name %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", versionName)
+		}
+	}
+	return nil
+}
+
+func validateRemote(remote string) error {
+	if remote == "" {
+		return errors.New("remote is required")
+	}
+	if len(remote) < remoteMinLength || len(remote) > remoteMaxLength {
+		return fmt.Errorf("remote %q must be at least %d and at most %d characters", remote, remoteMinLength, remoteMaxLength)
 	}
 	return nil
 }
@@ -108,28 +214,7 @@ func validateModuleFilePathWithoutNormalization(path string) error {
 	return nil
 }
 
-// validateDigest verifies the given digest's prefix,
-// decodes its base64 representation and checks the
-// length of the encoded bytes.
-func validateDigest(digest string) error {
-	if digest == "" {
-		return errors.New("empty digest")
-	}
-	split := strings.SplitN(digest, "-", 2)
-	if len(split) != 2 {
-		return fmt.Errorf("invalid digest: %s", digest)
-	}
-	digestPrefix := split[0]
-	digestValue := split[1]
-	if digestPrefix != b1DigestPrefix {
-		return fmt.Errorf("unknown digest prefix: %s", digestPrefix)
-	}
-	decoded, err := base64.URLEncoding.DecodeString(digestValue)
-	if err != nil {
-		return fmt.Errorf("failed to decode digest %s: %v", digestValue, err)
-	}
-	if len(decoded) != 32 {
-		return fmt.Errorf("invalid sha256 hash, expected 32 bytes: %s", digestValue)
-	}
-	return nil
+// islowerAlphanumeric returns true for [0-9a-z].
+func isLowerAlphanumeric(r rune) bool {
+	return ('0' <= r && r <= '9') || ('a' <= r && r <= 'z')
 }
