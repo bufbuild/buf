@@ -10,6 +10,7 @@ $(call _conditional_include,$(MAKEGO)/dep_protoc_gen_go.mk)
 $(call _assert_var,PROTO_PATH)
 # Must be set
 $(call _assert_var,PROTOC_GEN_GO_OUT)
+$(call _assert_var,CACHE_BIN)
 $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,PROTOC)
 $(call _assert_var,PROTOC_GEN_GO)
@@ -37,6 +38,7 @@ protocgengoclean:
 .PHONY: protocgengo
 protocgengo: protocgengoclean $(PROTOC) $(BUF) $(PROTOC_GEN_GO)
 	bash $(MAKEGO)/scripts/protoc_gen_plugin.bash $(PROTOC_GEN_GO_EXTRA_FLAGS) \
+		"--buf_path=$(CACHE_BIN)/buf" \
 		"--proto_path=$(PROTO_PATH)" \
 		"--proto_include_path=$(CACHE_INCLUDE)" \
 		$(patsubst %,--proto_include_path=%,$(PROTO_INCLUDE_PATHS)) \

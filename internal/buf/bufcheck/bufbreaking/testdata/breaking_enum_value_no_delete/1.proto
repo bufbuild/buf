@@ -38,6 +38,5 @@ enum Ten {
 }
 
 enum Eleven {
-  option allow_alias = true;
   ELEVEN_UNSPECIFIED = 0;
 }
