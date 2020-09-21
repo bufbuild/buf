@@ -52,7 +52,7 @@ func TestRunBreakingEnumValueNoDelete(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 5, 1, 8, 2, "ENUM_VALUE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 12, 5, 15, 6, "ENUM_VALUE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 3, 25, 4, "ENUM_VALUE_NO_DELETE"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 1, 43, 2, "ENUM_VALUE_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 40, 1, 42, 2, "ENUM_VALUE_NO_DELETE"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 48, 1, 52, 2, "ENUM_VALUE_NO_DELETE"),
 	)
 }
@@ -64,7 +64,7 @@ func TestRunBreakingEnumValueNoDeleteUnlessNameReserved(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 5, 1, 9, 2, "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 5, 17, 6, "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 3, 28, 4, "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 1, 46, 2, "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 1, 45, 2, "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 48, 1, 52, 2, "ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED"),
 	)
 }
@@ -76,7 +76,7 @@ func TestRunBreakingEnumValueNoDeleteUnlessNumberReserved(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 5, 1, 9, 2, "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 5, 17, 6, "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED"),
 		bufanalysistesting.NewFileAnnotation(t, "1.proto", 24, 3, 28, 4, "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED"),
-		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 1, 46, 2, "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 43, 1, 45, 2, "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED"),
 		bufanalysistesting.NewFileAnnotation(t, "2.proto", 48, 1, 52, 2, "ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED"),
 	)
 }
