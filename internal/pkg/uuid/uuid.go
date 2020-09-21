@@ -24,3 +24,9 @@ func New() (uuid.UUID, error) {
 	}
 	return id, nil
 }
+
+// Validate determines if the given UUID string is valid.
+func Validate(u string) error {
+	_, err := uuid.FromString(u)
+	return err
+}

@@ -53,7 +53,7 @@ func newModuleName(
 func newModuleNameForProto(
 	protoModuleName *modulev1.ModuleName,
 ) (*moduleName, error) {
-	if err := validateProtoModuleName(protoModuleName); err != nil {
+	if err := ValidateProtoModuleName(protoModuleName); err != nil {
 		return nil, err
 	}
 	return &moduleName{
@@ -105,7 +105,7 @@ func newProtoModuleNameForModuleName(
 		Version:    moduleName.Version(),
 		Digest:     moduleName.Digest(),
 	}
-	if err := validateProtoModuleName(protoModuleName); err != nil {
+	if err := ValidateProtoModuleName(protoModuleName); err != nil {
 		return nil, err
 	}
 	return protoModuleName, nil

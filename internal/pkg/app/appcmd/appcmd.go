@@ -118,8 +118,8 @@ func run(
 		return err
 	}
 
-	// If the root command is not the only command, add hidden bash-completion
-	// and zsh-completion commands.
+	// If the root command is not the only command, add hidden bash-completion,
+	// fish-completion, and zsh-completion commands.
 	if len(command.SubCommands) > 0 {
 		cobraCommand.AddCommand(&cobra.Command{
 			Use:    "bash-completion",
@@ -127,6 +127,14 @@ func run(
 			Hidden: true,
 			Run: func(*cobra.Command, []string) {
 				runErr = cobraCommand.GenBashCompletion(container.Stdout())
+			},
+		})
+		cobraCommand.AddCommand(&cobra.Command{
+			Use:    "fish-completion",
+			Args:   cobra.NoArgs,
+			Hidden: true,
+			Run: func(*cobra.Command, []string) {
+				runErr = cobraCommand.GenFishCompletion(container.Stdout(), true)
 			},
 		})
 		cobraCommand.AddCommand(&cobra.Command{

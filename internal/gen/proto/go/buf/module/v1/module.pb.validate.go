@@ -57,13 +57,6 @@ func (m *Module) Validate() error {
 		return nil
 	}
 
-	if l := len(m.GetFiles()); l < 1 || l > 16384 {
-		return ModuleValidationError{
-			field:  "Files",
-			reason: "value must contain between 1 and 16384 items, inclusive",
-		}
-	}
-
 	for idx, item := range m.GetFiles() {
 		_, _ = idx, item
 
@@ -158,19 +151,9 @@ func (m *ModuleFile) Validate() error {
 		return nil
 	}
 
-	if l := utf8.RuneCountInString(m.GetPath()); l < 1 || l > 2048 {
-		return ModuleFileValidationError{
-			field:  "Path",
-			reason: "value length must be between 1 and 2048 runes, inclusive",
-		}
-	}
+	// no validation rules for Path
 
-	if l := len(m.GetContent()); l < 1 || l > 1048576 {
-		return ModuleFileValidationError{
-			field:  "Content",
-			reason: "value length must be between 1 and 1048576 bytes, inclusive",
-		}
-	}
+	// no validation rules for Content
 
 	return nil
 }
@@ -236,54 +219,13 @@ func (m *ModuleName) Validate() error {
 		return nil
 	}
 
-	if l := utf8.RuneCountInString(m.GetRemote()); l < 1 || l > 256 {
-		return ModuleNameValidationError{
-			field:  "Remote",
-			reason: "value length must be between 1 and 256 runes, inclusive",
-		}
-	}
+	// no validation rules for Remote
 
-	if l := utf8.RuneCountInString(m.GetOwner()); l < 3 || l > 64 {
-		return ModuleNameValidationError{
-			field:  "Owner",
-			reason: "value length must be between 3 and 64 runes, inclusive",
-		}
-	}
+	// no validation rules for Owner
 
-	if !_ModuleName_Owner_Pattern.MatchString(m.GetOwner()) {
-		return ModuleNameValidationError{
-			field:  "Owner",
-			reason: "value does not match regex pattern \"^[a-z0-9-]*$\"",
-		}
-	}
+	// no validation rules for Repository
 
-	if l := utf8.RuneCountInString(m.GetRepository()); l < 3 || l > 64 {
-		return ModuleNameValidationError{
-			field:  "Repository",
-			reason: "value length must be between 3 and 64 runes, inclusive",
-		}
-	}
-
-	if !_ModuleName_Repository_Pattern.MatchString(m.GetRepository()) {
-		return ModuleNameValidationError{
-			field:  "Repository",
-			reason: "value does not match regex pattern \"^[a-z0-9-]*$\"",
-		}
-	}
-
-	if l := utf8.RuneCountInString(m.GetVersion()); l < 2 || l > 64 {
-		return ModuleNameValidationError{
-			field:  "Version",
-			reason: "value length must be between 2 and 64 runes, inclusive",
-		}
-	}
-
-	if !_ModuleName_Version_Pattern.MatchString(m.GetVersion()) {
-		return ModuleNameValidationError{
-			field:  "Version",
-			reason: "value does not match regex pattern \"^[a-z0-9-.]*$\"",
-		}
-	}
+	// no validation rules for Version
 
 	// no validation rules for Digest
 
@@ -343,9 +285,3 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ModuleNameValidationError{}
-
-var _ModuleName_Owner_Pattern = regexp.MustCompile("^[a-z0-9-]*$")
-
-var _ModuleName_Repository_Pattern = regexp.MustCompile("^[a-z0-9-]*$")
-
-var _ModuleName_Version_Pattern = regexp.MustCompile("^[a-z0-9-.]*$")
