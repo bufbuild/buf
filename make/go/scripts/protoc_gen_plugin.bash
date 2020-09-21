@@ -27,6 +27,7 @@ check_flag_value_set() {
   fi
 }
 
+BUF_PATH=buf
 PROTO_PATHS=()
 PROTO_INCLUDE_PATHS=()
 PLUGIN_NAME=
@@ -40,6 +41,10 @@ while test $# -gt 0; do
     -h|--help)
       usage
       exit 0
+      ;;
+    --buf_path*)
+      BUF_PATH="$(echo ${1} | sed -e 's/^[^=]*=//g')"
+      shift
       ;;
     --proto_path*)
       PROTO_PATHS+=("$(echo ${1} | sed -e 's/^[^=]*=//g')")
@@ -96,8 +101,8 @@ if [ -n "${USE_BUF_GENERATE}" ]; then
       BUF_GENERATE_FLAGS+=("--file=${proto_file}")
     done
   done
-  echo buf beta generate "${BUF_GENERATE_FLAGS[@]}"
-  buf beta generate "${BUF_GENERATE_FLAGS[@]}"
+  echo "${BUF_PATH}" beta generate "${BUF_GENERATE_FLAGS[@]}"
+  "${BUF_PATH}" beta generate "${BUF_GENERATE_FLAGS[@]}"
   exit 0
 fi
 
@@ -114,13 +119,13 @@ if [ -n "${PLUGIN_OPT}" ]; then
 fi
 for proto_path in "${PROTO_PATHS[@]}"; do
   if [ -n "${USE_BUF_PROTOC_BY_DIR}" ]; then
-      echo buf protoc --by_dir "${PROTOC_FLAGS[@]}" $(find "${proto_path}" -name '*.proto')
-      buf protoc --by_dir "${PROTOC_FLAGS[@]}" $(find "${proto_path}" -name '*.proto')
+      echo "${BUF_PATH}" protoc --by_dir "${PROTOC_FLAGS[@]}" $(find "${proto_path}" -name '*.proto')
+      "${BUF_PATH}" protoc --by_dir "${PROTOC_FLAGS[@]}" $(find "${proto_path}" -name '*.proto')
   else
     for dir in $(find "${proto_path}" -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq); do
       if [ -n "${USE_BUF_PROTOC}" ]; then
-        echo buf protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
-        buf protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
+        echo "${BUF_PATH}" protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
+        "${BUF_PATH}" protoc "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
       else
         echo protoc --experimental_allow_proto3_optional "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
         protoc --experimental_allow_proto3_optional "${PROTOC_FLAGS[@]}" $(find "${dir}" -name '*.proto')
