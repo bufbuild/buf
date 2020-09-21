@@ -346,7 +346,7 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1.Module, 
 		Files:        protoModuleFiles,
 		Dependencies: protoModuleNames,
 	}
-	if err := validateProtoModule(protoModule); err != nil {
+	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
 	}
 	return protoModule, nil

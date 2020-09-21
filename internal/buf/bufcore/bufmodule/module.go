@@ -30,7 +30,7 @@ type module struct {
 }
 
 func newModuleForProto(ctx context.Context, protoModule *modulev1.Module) (*module, error) {
-	if err := validateProtoModule(protoModule); err != nil {
+	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
 	}
 	pathToData := make(map[string][]byte)
