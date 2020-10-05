@@ -32,11 +32,12 @@ import (
 func NewBufwireEnvReader(
 	logger *zap.Logger,
 	configOverrideFlagName string,
+	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) bufwire.EnvReader {
 	return bufwire.NewEnvReader(
 		logger,
-		bufcli.NewFetchReader(logger, moduleReader),
+		bufcli.NewFetchReader(logger, moduleResolver, moduleReader),
 		bufconfig.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),

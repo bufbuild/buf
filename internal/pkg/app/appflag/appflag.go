@@ -21,18 +21,26 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
+	"github.com/bufbuild/buf/internal/pkg/app/appname"
 	"github.com/spf13/pflag"
 )
+
+// Container is a container.
+type Container interface {
+	app.Container
+	appname.Container
+	applog.Container
+}
 
 // Builder builds run functions.
 type Builder interface {
 	BindRoot(flagSet *pflag.FlagSet)
-	NewRunFunc(func(context.Context, applog.Container) error) func(context.Context, app.Container) error
+	NewRunFunc(func(context.Context, Container) error) func(context.Context, app.Container) error
 }
 
 // NewBuilder returns a new Builder.
-func NewBuilder(options ...BuilderOption) Builder {
-	return newBuilder(options...)
+func NewBuilder(appName string, options ...BuilderOption) Builder {
+	return newBuilder(appName, options...)
 }
 
 // BuilderOption is an option for a new Builder
@@ -45,9 +53,9 @@ func BuilderWithTimeout(defaultTimeout time.Duration) BuilderOption {
 	}
 }
 
-// BuilderWithZapTracer enables zap tracing for the builder.
-func BuilderWithZapTracer() BuilderOption {
+// BuilderWithTracing enables zap tracing for the builder.
+func BuilderWithTracing() BuilderOption {
 	return func(builder *builder) {
-		builder.zapTracer = true
+		builder.tracing = true
 	}
 }

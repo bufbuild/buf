@@ -588,9 +588,13 @@ func WithReaderGit(gitCloner git.Cloner) ReaderOption {
 }
 
 // WithReaderModule enables modules.
-func WithReaderModule(moduleReader bufmodule.ModuleReader) ReaderOption {
+func WithReaderModule(
+	moduleResolver bufmodule.ModuleResolver,
+	moduleReader bufmodule.ModuleReader,
+) ReaderOption {
 	return func(reader *reader) {
 		reader.moduleEnabled = true
+		reader.moduleResolver = moduleResolver
 		reader.moduleReader = moduleReader
 	}
 }

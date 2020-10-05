@@ -24,7 +24,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/storage/internal"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 	"github.com/klauspost/compress/zip"
 	"go.uber.org/multierr"
 )
@@ -79,7 +79,7 @@ func Untar(
 	stripComponentCount uint32,
 ) error {
 	tarReader := tar.NewReader(reader)
-	walkChecker := internal.NewWalkChecker()
+	walkChecker := storageutil.NewWalkChecker()
 	for tarHeader, err := tarReader.Next(); err != io.EOF; tarHeader, err = tarReader.Next() {
 		if err != nil {
 			return err
@@ -98,13 +98,7 @@ func Untar(
 			if tarHeader.Size < 0 {
 				return fmt.Errorf("invalid size for tar file %s: %d", tarHeader.Name, tarHeader.Size)
 			}
-			writeObjectCloser, err := writeBucket.Put(ctx, path, uint32(tarHeader.Size))
-			if err != nil {
-				return err
-			}
-			_, err = io.Copy(writeObjectCloser, tarReader)
-			err = multierr.Append(err, writeObjectCloser.Close())
-			if err != nil {
+			if err := storage.CopyReader(ctx, writeBucket, tarReader, path); err != nil {
 				return err
 			}
 		}
@@ -164,7 +158,7 @@ func Unzip(
 	if err != nil {
 		return err
 	}
-	walkChecker := internal.NewWalkChecker()
+	walkChecker := storageutil.NewWalkChecker()
 	// reads can be done concurrently in the future
 	for _, zipFile := range zipReader.File {
 		if err := walkChecker.Check(ctx); err != nil {
@@ -178,22 +172,28 @@ func Unzip(
 			continue
 		}
 		if zipFile.FileInfo().Mode().IsRegular() {
-			readCloser, err := zipFile.Open()
-			if err != nil {
-				return err
-			}
-			writeObjectCloser, err := writeBucket.Put(ctx, path, uint32(zipFile.UncompressedSize64))
-			if err != nil {
-				return multierr.Append(err, readCloser.Close())
-			}
-			_, err = io.Copy(writeObjectCloser, readCloser)
-			err = multierr.Combine(err, writeObjectCloser.Close(), readCloser.Close())
-			if err != nil {
+			if err := copyZipFile(ctx, writeBucket, zipFile, path); err != nil {
 				return err
 			}
 		}
 	}
 	return nil
+}
+
+func copyZipFile(
+	ctx context.Context,
+	writeBucket storage.WriteBucket,
+	zipFile *zip.File,
+	path string,
+) (retErr error) {
+	readCloser, err := zipFile.Open()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, readCloser.Close())
+	}()
+	return storage.CopyReader(ctx, writeBucket, readCloser, path)
 }
 
 func unmapArchivePath(

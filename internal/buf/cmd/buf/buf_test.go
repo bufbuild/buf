@@ -530,6 +530,7 @@ func testRun(
 	args ...string,
 ) {
 	t.Helper()
+	stderr := bytes.NewBuffer(nil)
 	appcmdtesting.RunCommandExitCode(
 		t,
 		func(use string) *appcmd.Command { return testNewRootCommand(use) },
@@ -540,10 +541,11 @@ func testRun(
 		},
 		stdin,
 		stdout,
+		stderr,
 		args...,
 	)
 }
 
 func testNewRootCommand(use string) *appcmd.Command {
-	return newRootCommand(use, nil, bufcli.NopModuleReaderProvider)
+	return newRootCommand(use, nil, bufcli.NopModuleResolverReaderProvider{})
 }

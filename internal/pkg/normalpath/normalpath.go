@@ -21,6 +21,7 @@ package normalpath
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -92,16 +93,18 @@ func (e *Error) Error() string {
 	return e.Path + ": " + errString
 }
 
-// ErrorEquals returns true if err is an Error and err.Error == target.
-func ErrorEquals(err error, target error) bool {
-	if err == nil {
-		return false
+// Unwrap implements errors.Unwrap for Error.
+func (e *Error) Unwrap() error {
+	if e == nil {
+		return nil
 	}
-	pathError, ok := err.(*Error)
-	if !ok {
-		return false
-	}
-	return pathError.Err == target
+	return e.Err
+}
+
+// Is implements errors.Is for Error.
+func (e *Error) Is(err error) bool {
+	_, ok := err.(*Error)
+	return ok
 }
 
 // NormalizeAndValidate normalizes and validates the given path.
@@ -387,4 +390,37 @@ func StripComponents(path string, countUint32 uint32) (string, bool) {
 		return "", false
 	}
 	return Join(components[count:]...), true
+}
+
+// ValidatePathComponent validates that the string is a valid
+// component of a path, e.g. it can be Joined and form a valid path.
+func ValidatePathComponent(component string) error {
+	if component == "" {
+		return errors.New("path component must not be empty")
+	}
+	if strings.ContainsRune(component, '/') {
+		return errors.New(`path component must not contain "/" `)
+	}
+	if strings.Contains(component, "..") {
+		return errors.New(`path component must not contain ".."`)
+	}
+	if url.PathEscape(component) != component {
+		return fmt.Errorf(
+			"path component must match its URL escaped version: %q did not match %q",
+			component,
+			url.PathEscape(component),
+		)
+	}
+	return nil
+}
+
+// ValidatePathComponents validates that all the strings are valid
+// components of a path, e.g. they can be Joined and form a valid path.
+func ValidatePathComponents(components ...string) error {
+	for _, component := range components {
+		if err := ValidatePathComponent(component); err != nil {
+			return err
+		}
+	}
+	return nil
 }

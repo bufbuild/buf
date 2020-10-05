@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulestorage"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -38,13 +39,13 @@ type moduleReader struct {
 
 func newModuleReader(
 	logger *zap.Logger,
-	cacheBucket storage.ReadWriteBucket,
+	moduleStore bufmodulestorage.Store,
 	delegate bufmodule.ModuleReader,
 	options ...ModuleReaderOption,
 ) *moduleReader {
 	moduleReader := &moduleReader{
 		logger:   logger,
-		cache:    newModuleCacher(cacheBucket),
+		cache:    newModuleCacher(moduleStore),
 		delegate: delegate,
 	}
 	for _, option := range options {
@@ -55,18 +56,18 @@ func newModuleReader(
 
 func (m *moduleReader) GetModule(
 	ctx context.Context,
-	moduleName bufmodule.ModuleName,
+	resolvedModuleName bufmodule.ResolvedModuleName,
 ) (bufmodule.Module, error) {
-	module, err := m.cache.GetModule(ctx, moduleName)
+	module, err := m.cache.GetModule(ctx, resolvedModuleName)
 	if err != nil {
 		if storage.IsNotExist(err) || bufmodule.IsNoDigestError(err) {
-			m.logger.Debug("cache_miss", zap.String("module_name", moduleName.String()))
+			m.logger.Debug("cache_miss", zap.String("module_name", resolvedModuleName.String()))
 			if m.messageWriter != nil {
-				if _, err := m.messageWriter.Write([]byte("buf: downloading " + moduleName.String() + "\n")); err != nil {
+				if _, err := m.messageWriter.Write([]byte("buf: downloading " + resolvedModuleName.String() + "\n")); err != nil {
 					return nil, err
 				}
 			}
-			module, err := m.getModuleUncached(ctx, moduleName)
+			module, err := m.getModuleUncached(ctx, resolvedModuleName)
 			if err != nil {
 				return nil, err
 			}
@@ -77,7 +78,7 @@ func (m *moduleReader) GetModule(
 		}
 		return nil, err
 	}
-	m.logger.Debug("cache_hit", zap.String("module_name", moduleName.String()))
+	m.logger.Debug("cache_hit", zap.String("module_name", resolvedModuleName.String()))
 	m.lock.Lock()
 	m.count++
 	m.cacheHits++
@@ -87,28 +88,22 @@ func (m *moduleReader) GetModule(
 
 func (m *moduleReader) getModuleUncached(
 	ctx context.Context,
-	moduleName bufmodule.ModuleName,
+	resolvedModuleName bufmodule.ResolvedModuleName,
 ) (bufmodule.Module, error) {
-	module, err := m.delegate.GetModule(ctx, moduleName)
+	module, err := m.delegate.GetModule(ctx, resolvedModuleName)
 	if err != nil {
 		return nil, err
 	}
-	if moduleName.Digest() == "" {
-		moduleName, err = bufmodule.ResolvedModuleNameForModule(ctx, moduleName, module)
-		if err != nil {
-			return nil, err
-		}
-	}
 	cacheModuleName, err := m.cache.PutModule(
 		ctx,
-		moduleName,
+		resolvedModuleName,
 		module,
 	)
 	if err != nil {
 		return nil, err
 	}
-	if !bufmodule.ModuleNameEqual(moduleName, cacheModuleName) {
-		return nil, fmt.Errorf("mismatched cache module name: %q %q", moduleName.String(), cacheModuleName.String())
+	if !bufmodule.ModuleNameEqual(resolvedModuleName, cacheModuleName) {
+		return nil, fmt.Errorf("mismatched cache module name: %q %q", resolvedModuleName.String(), cacheModuleName.String())
 	}
 	return module, nil
 }

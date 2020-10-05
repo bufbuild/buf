@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
-	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -41,7 +40,7 @@ import (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	moduleReaderProvider bufcli.ModuleReaderProvider,
+	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) *appcmd.Command {
 	flagsBuilder := newFlagsBuilder()
 	return &appcmd.Command{
@@ -59,12 +58,12 @@ Additional flags:
       --(.*)_opt:                   Options for the named plugin.
       @filename:                    Parse arguments from the given filename.`,
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container applog.Container) error {
+			func(ctx context.Context, container appflag.Container) error {
 				env, err := flagsBuilder.Build(app.Args(container))
 				if err != nil {
 					return err
 				}
-				return run(ctx, container, env, moduleReaderProvider)
+				return run(ctx, container, env, moduleResolverReaderProvider)
 			},
 		),
 		BindFlags:     flagsBuilder.Bind,
@@ -75,9 +74,9 @@ Additional flags:
 
 func run(
 	ctx context.Context,
-	container applog.Container,
+	container appflag.Container,
 	env *env,
-	moduleReaderProvider bufcli.ModuleReaderProvider,
+	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) (retErr error) {
 	if env.PrintFreeFieldNumbers && len(env.PluginNameToPluginInfo) > 0 {
 		return fmt.Errorf("cannot call --%s and plugins at the same time", printFreeFieldNumbersFlagName)
@@ -104,7 +103,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleReader, err := moduleReaderProvider.GetModuleReader(ctx, container)
+	moduleReader, err := moduleResolverReaderProvider.GetModuleReader(ctx, container)
 	if err != nil {
 		return err
 	}

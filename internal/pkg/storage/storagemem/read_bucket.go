@@ -21,7 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/storage/internal"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 )
 
 var errDuplicatePath = errors.New("duplicate path")
@@ -40,7 +40,7 @@ func newReadBucket(
 	}
 	pathToObject := make(map[string]*object, len(pathToData))
 	for path, data := range pathToData {
-		path, err := internal.ValidatePath(path)
+		path, err := storageutil.ValidatePath(path)
 		if err != nil {
 			return nil, err
 		}
@@ -82,11 +82,11 @@ func (b *readBucket) Stat(ctx context.Context, path string) (storage.ObjectInfo,
 }
 
 func (b *readBucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
-	prefix, err := internal.ValidatePrefix(prefix)
+	prefix, err := storageutil.ValidatePrefix(prefix)
 	if err != nil {
 		return err
 	}
-	walkChecker := internal.NewWalkChecker()
+	walkChecker := storageutil.NewWalkChecker()
 	for path, object := range b.pathToObject {
 		if err := walkChecker.Check(ctx); err != nil {
 			return err
@@ -102,7 +102,7 @@ func (b *readBucket) Walk(ctx context.Context, prefix string, f func(storage.Obj
 }
 
 func (b *readBucket) getObject(ctx context.Context, path string) (*object, error) {
-	path, err := internal.ValidatePath(path)
+	path, err := storageutil.ValidatePath(path)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (b *readBucket) getObject(ctx context.Context, path string) (*object, error
 }
 
 type readObjectCloser struct {
-	internal.ObjectInfo
+	storageutil.ObjectInfo
 
 	reader *bytes.Reader
 	closed bool
@@ -147,7 +147,7 @@ func (r *readObjectCloser) Close() error {
 }
 
 type object struct {
-	internal.ObjectInfo
+	storageutil.ObjectInfo
 
 	data []byte
 }
@@ -158,7 +158,7 @@ func newObject(
 	data []byte,
 ) *object {
 	return &object{
-		ObjectInfo: internal.NewObjectInfo(
+		ObjectInfo: storageutil.NewObjectInfo(
 			uint32(len(data)),
 			path,
 			externalPath,

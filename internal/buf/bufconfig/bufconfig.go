@@ -75,7 +75,7 @@ type ExternalConfig struct {
 }
 
 // WriteBufYAMLToBucket writes the given ExternalConfig (buf.yaml) into the bucket.
-func WriteBufYAMLToBucket(ctx context.Context, writeBucket storage.WriteBucket, externalConfig ExternalConfig) (retErr error) {
+func WriteBufYAMLToBucket(ctx context.Context, writeBucket storage.WriteBucket, externalConfig ExternalConfig) error {
 	bytes, err := encoding.MarshalYAML(externalConfig)
 	if err != nil {
 		return err

@@ -36,9 +36,6 @@ func newModuleName(
 	version string,
 	digest string,
 ) (*moduleName, error) {
-	// we get all the validation logic from protoc-gen-validate
-	// that we also want to apply here, so we just do this
-	// this is a little hacky but better than replicating the logic for now
 	return newModuleNameForProto(
 		&modulev1.ModuleName{
 			Remote:     remote,
@@ -97,18 +94,14 @@ func (m *moduleName) isModuleName() {}
 
 func newProtoModuleNameForModuleName(
 	moduleName ModuleName,
-) (*modulev1.ModuleName, error) {
-	protoModuleName := &modulev1.ModuleName{
+) *modulev1.ModuleName {
+	return &modulev1.ModuleName{
 		Remote:     moduleName.Remote(),
 		Owner:      moduleName.Owner(),
 		Repository: moduleName.Repository(),
 		Version:    moduleName.Version(),
 		Digest:     moduleName.Digest(),
 	}
-	if err := ValidateProtoModuleName(protoModuleName); err != nil {
-		return nil, err
-	}
-	return protoModuleName, nil
 }
 
 // moduleNameIdentity returns the given module name's identity. This is

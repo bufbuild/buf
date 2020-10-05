@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodulecache
+package bufmodulestorage_test
 
 import (
 	"context"
@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func TestBasic(t *testing.T) {
@@ -44,41 +43,37 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, exists)
 
-	delegateModuleReadWriter := newTestModuleCacher(t)
-	putResolvedModuleName, err := delegateModuleReadWriter.PutModule(
+	readWriteBucket, err := storageos.NewReadWriteBucket(t.TempDir())
+	require.NoError(t, err)
+	key := bufmodulestorage.Key{"some", "path"}
+	moduleStore := bufmodulestorage.NewStore(readWriteBucket)
+	keys, err := moduleStore.AllKeys(ctx)
+	require.NoError(t, err)
+	require.Empty(t, keys)
+	err = moduleStore.Put(
 		context.Background(),
-		resolvedModuleName,
+		key,
 		module,
 	)
 	require.NoError(t, err)
-	require.True(t, bufmodule.ModuleNameEqual(resolvedModuleName, putResolvedModuleName))
-
-	cacheBucket, err := storageos.NewReadWriteBucket(t.TempDir())
+	paths, err := storage.AllPaths(ctx, readWriteBucket, "")
 	require.NoError(t, err)
-	moduleStore := bufmodulestorage.NewStore(cacheBucket)
-	moduleReader := newModuleReader(zap.NewNop(), moduleStore, delegateModuleReadWriter)
+	require.Equal(t, []string{"v1/some/path/module.bin.zst"}, paths)
+	keys, err = moduleStore.AllKeys(ctx)
+	require.NoError(t, err)
+	require.Equal(t, []bufmodulestorage.Key{key}, keys)
 
-	getModule, err := moduleReader.GetModule(ctx, resolvedModuleName)
+	getModule, err := moduleStore.Get(ctx, key)
 	require.NoError(t, err)
 	getReadBucketBuilder := storagemem.NewReadBucketBuilder()
 	err = bufmodule.ModuleToBucket(ctx, getModule, getReadBucketBuilder)
 	require.NoError(t, err)
 	getReadBucket, err := getReadBucketBuilder.ToReadBucket()
 	require.NoError(t, err)
-	// Verify that the buf.lock file was created.
-	exists, err = storage.Exists(ctx, getReadBucket, bufmodule.LockFilePath)
-	require.NoError(t, err)
-	require.True(t, exists)
 
 	// Exclude non-proto files for the diff check
 	filteredReadBucket := storage.MapReadBucket(getReadBucket, storage.MatchPathExt(".proto"))
 	diff, err := storage.Diff(ctx, readBucket, filteredReadBucket, "from", "to")
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
-
-	_, err = moduleReader.GetModule(ctx, resolvedModuleName)
-	require.NoError(t, err)
-
-	require.Equal(t, 2, moduleReader.getCount())
-	require.Equal(t, 1, moduleReader.getCacheHits())
 }

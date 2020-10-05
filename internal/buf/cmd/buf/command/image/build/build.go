@@ -26,7 +26,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
-	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -48,7 +47,7 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	moduleReaderProvider bufcli.ModuleReaderProvider,
+	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -56,8 +55,8 @@ func NewCommand(
 		Short: "Build all files from the input location and output an Image or FileDescriptorSet.",
 		Args:  cobra.NoArgs,
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container applog.Container) error {
-				return run(ctx, container, flags, moduleReaderProvider)
+			func(ctx context.Context, container appflag.Container) error {
+				return run(ctx, container, flags, moduleResolverReaderProvider)
 			},
 		),
 		BindFlags: flags.Bind,
@@ -122,9 +121,9 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container applog.Container,
+	container appflag.Container,
 	flags *flags,
-	moduleReaderProvider bufcli.ModuleReaderProvider,
+	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) error {
 	if flags.Output == "" {
 		return appcmd.NewInvalidArgumentErrorf("--%s is required", outputFlagName)
@@ -135,13 +134,18 @@ func run(
 	if err != nil {
 		return fmt.Errorf("--%s: %v", sourceFlagName, err)
 	}
-	moduleReader, err := moduleReaderProvider.GetModuleReader(ctx, container)
+	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
+	if err != nil {
+		return err
+	}
+	moduleReader, err := moduleResolverReaderProvider.GetModuleReader(ctx, container)
 	if err != nil {
 		return err
 	}
 	env, fileAnnotations, err := internal.NewBufwireEnvReader(
 		container.Logger(),
 		sourceConfigFlagName,
+		moduleResolver,
 		moduleReader,
 		// must be source or module only
 	).GetSourceOrModuleEnv(

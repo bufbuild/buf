@@ -9,7 +9,8 @@ GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION) \
 	github.com/spf13/cobra@$(COBRA_VERSION) \
 	golang.org/x/sys@$(GOLANG_X_SYS_VERSION)
-GO_BINS := $(GO_BINS) $(BUF_BIN) \
+GO_BINS := $(GO_BINS) \
+	$(BUF_BIN) \
 	cmd/protoc-gen-buf-check-breaking \
 	cmd/protoc-gen-buf-check-lint \
 	internal/pkg/storage/cmd/storage-go-binary-data \
@@ -36,7 +37,6 @@ include make/go/codecov.mk
 include make/go/dep_protoc.mk
 include make/go/docker.mk
 include make/go/protoc_gen_go.mk
-include make/go/protoc_gen_validate.mk
 include make/go/dep_go_fuzz.mk
 
 .PHONY: wkt

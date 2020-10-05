@@ -211,9 +211,10 @@ type SourceReader interface {
 	) (storage.ReadBucketCloser, error)
 }
 
-// ModuleReader is a module reader.
-type ModuleReader interface {
+// ModuleFetcher is a module fetcher.
+type ModuleFetcher interface {
 	// GetModule gets the module.
+	// Unresolved ModuleRef's are automatically resolved.
 	GetModule(
 		ctx context.Context,
 		container app.EnvStdinContainer,
@@ -225,7 +226,7 @@ type ModuleReader interface {
 type Reader interface {
 	ImageReader
 	SourceReader
-	ModuleReader
+	ModuleFetcher
 }
 
 // NewReader returns a new Reader.
@@ -234,6 +235,7 @@ func NewReader(
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
+	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) Reader {
 	return newReader(
@@ -241,6 +243,7 @@ func NewReader(
 		httpClient,
 		httpAuthenticator,
 		gitCloner,
+		moduleResolver,
 		moduleReader,
 	)
 }
@@ -275,13 +278,15 @@ func NewSourceReader(
 	)
 }
 
-// NewModuleReader returns a new ModuleReader.
-func NewModuleReader(
+// NewModuleFetcher returns a new ModuleFetcher.
+func NewModuleFetcher(
 	logger *zap.Logger,
+	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
-) ModuleReader {
-	return newModuleReader(
+) ModuleFetcher {
+	return newModuleFetcher(
 		logger,
+		moduleResolver,
 		moduleReader,
 	)
 }
