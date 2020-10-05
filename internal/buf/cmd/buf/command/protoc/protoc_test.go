@@ -56,11 +56,11 @@ func TestOverlap(t *testing.T) {
 	// https://github.com/bufbuild/buf/issues/113
 	appcmdtesting.RunCommandSuccess(
 		t,
-		func(use string) *appcmd.Command {
+		func(name string) *appcmd.Command {
 			return NewCommand(
-				use,
-				appflag.NewBuilder(),
-				bufcli.NopModuleReaderProvider,
+				name,
+				appflag.NewBuilder(name),
+				bufcli.NopModuleResolverReaderProvider{},
 			)
 		},
 		nil,
@@ -94,11 +94,11 @@ func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
 	)
 	appcmdtesting.RunCommandSuccessStdout(
 		t,
-		func(use string) *appcmd.Command {
+		func(name string) *appcmd.Command {
 			return NewCommand(
-				use,
-				appflag.NewBuilder(),
-				bufcli.NopModuleReaderProvider,
+				name,
+				appflag.NewBuilder(name),
+				bufcli.NopModuleResolverReaderProvider{},
 			)
 		},
 		actualProtocStdout.String(),
@@ -210,11 +210,11 @@ func testCompareGeneratedStubs(
 	}
 	appcmdtesting.RunCommandSuccess(
 		t,
-		func(use string) *appcmd.Command {
+		func(name string) *appcmd.Command {
 			return NewCommand(
-				use,
-				appflag.NewBuilder(),
-				bufcli.NopModuleReaderProvider,
+				name,
+				appflag.NewBuilder(name),
+				bufcli.NopModuleResolverReaderProvider{},
 			)
 		},
 		map[string]string{
@@ -265,11 +265,11 @@ func testGetBufProtocFileDescriptorSetBytes(t *testing.T, dirPath string) []byte
 	stdout := bytes.NewBuffer(nil)
 	appcmdtesting.RunCommandSuccess(
 		t,
-		func(use string) *appcmd.Command {
+		func(name string) *appcmd.Command {
 			return NewCommand(
-				use,
-				appflag.NewBuilder(),
-				bufcli.NopModuleReaderProvider,
+				name,
+				appflag.NewBuilder(name),
+				bufcli.NopModuleResolverReaderProvider{},
 			)
 		},
 		nil,

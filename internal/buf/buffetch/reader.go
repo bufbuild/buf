@@ -37,6 +37,7 @@ func newReader(
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
+	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) *reader {
 	return &reader{
@@ -51,7 +52,10 @@ func newReader(
 			),
 			internal.WithReaderLocal(),
 			internal.WithReaderStdio(),
-			internal.WithReaderModule(moduleReader),
+			internal.WithReaderModule(
+				moduleResolver,
+				moduleReader,
+			),
 		),
 	}
 }
@@ -97,14 +101,18 @@ func newSourceReader(
 	}
 }
 
-func newModuleReader(
+func newModuleFetcher(
 	logger *zap.Logger,
+	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) *reader {
 	return &reader{
 		internalReader: internal.NewReader(
 			logger,
-			internal.WithReaderModule(moduleReader),
+			internal.WithReaderModule(
+				moduleResolver,
+				moduleReader,
+			),
 		),
 	}
 }

@@ -125,7 +125,7 @@ func TestCompareGoogleapis(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
 	}
-	t.Parallel()
+	// Don't run in parallel as it allocates a lot of memory
 	// cannot directly compare with source code info as buf protoc creates additional source
 	// code infos that protoc does not
 	image := testBuildGoogleapis(t, false)

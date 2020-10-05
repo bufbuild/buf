@@ -53,16 +53,16 @@ func (m *moduleFileSetBuilder) Build(
 func (m *moduleFileSetBuilder) getModules(
 	ctx context.Context,
 	seenModules map[string]struct{},
-	moduleNames []bufmodule.ModuleName,
+	resolvedModuleNames []bufmodule.ResolvedModuleName,
 ) ([]bufmodule.Module, error) {
 	var modules []bufmodule.Module
-	for _, moduleName := range moduleNames {
+	for _, resolvedModuleName := range resolvedModuleNames {
 		// Avoid pulling module more than once
-		if _, ok := seenModules[moduleName.String()]; ok {
+		if _, ok := seenModules[resolvedModuleName.String()]; ok {
 			continue
 		}
-		seenModules[moduleName.String()] = struct{}{}
-		module, err := m.moduleReader.GetModule(ctx, moduleName)
+		seenModules[resolvedModuleName.String()] = struct{}{}
+		module, err := m.moduleReader.GetModule(ctx, resolvedModuleName)
 		if err != nil {
 			return nil, err
 		}

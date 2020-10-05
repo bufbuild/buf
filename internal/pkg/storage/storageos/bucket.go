@@ -18,14 +18,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"os"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/storage/internal"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 )
 
 // errNotDir is the error returned if a path does not dir.
@@ -79,7 +78,7 @@ func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, err
 		return nil, err
 	}
 	// we could use fileInfo.Name() however we might as well use the externalPath
-	return internal.NewObjectInfo(
+	return storageutil.NewObjectInfo(
 		size,
 		path,
 		externalPath,
@@ -95,9 +94,9 @@ func (b *bucket) Walk(
 	if err != nil {
 		return err
 	}
-	walkChecker := internal.NewWalkChecker()
+	walkChecker := storageutil.NewWalkChecker()
 	// Walk does not follow symlinks
-	return filepath.Walk(
+	if err := filepath.Walk(
 		externalPrefix,
 		func(externalPath string, fileInfo os.FileInfo, err error) error {
 			if err != nil {
@@ -121,7 +120,7 @@ func (b *bucket) Walk(
 					return err
 				}
 				if err := f(
-					internal.NewObjectInfo(
+					storageutil.NewObjectInfo(
 						size,
 						path,
 						externalPath,
@@ -132,10 +131,17 @@ func (b *bucket) Walk(
 			}
 			return nil
 		},
-	)
+	); err != nil {
+		if os.IsNotExist(err) {
+			// Should be a no-op according to the spec.
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
-func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.WriteObjectCloser, error) {
+func (b *bucket) Put(ctx context.Context, path string) (storage.WriteObjectCloser, error) {
 	externalPath, err := b.getExternalPath(path)
 	if err != nil {
 		return nil, err
@@ -160,9 +166,25 @@ func (b *bucket) Put(ctx context.Context, path string, size uint32) (storage.Wri
 		return nil, err
 	}
 	return newWriteObjectCloser(
-		size,
 		file,
 	), nil
+}
+
+func (b *bucket) Delete(ctx context.Context, path string) error {
+	externalPath, err := b.getExternalPath(path)
+	if err != nil {
+		return err
+	}
+	// Note: this deletes the file at the path, but it may
+	// leave orphan parent directories around that were
+	// created by the MkdirAll in Put.
+	if err := os.Remove(externalPath); err != nil {
+		if os.IsNotExist(err) {
+			return storage.NewErrNotExist(path)
+		}
+		return err
+	}
+	return nil
 }
 
 func (*bucket) SetExternalPathSupported() bool {
@@ -198,7 +220,7 @@ func (b *bucket) getExternalPathAndSize(path string) (string, uint32, error) {
 }
 
 func (b *bucket) getExternalPath(path string) (string, error) {
-	path, err := internal.ValidatePath(path)
+	path, err := storageutil.ValidatePath(path)
 	if err != nil {
 		return "", err
 	}
@@ -207,7 +229,7 @@ func (b *bucket) getExternalPath(path string) (string, error) {
 }
 
 func (b *bucket) getExternalPrefix(path string) (string, error) {
-	path, err := internal.ValidatePrefix(path)
+	path, err := storageutil.ValidatePrefix(path)
 	if err != nil {
 		return "", err
 	}
@@ -226,7 +248,7 @@ type readObjectCloser struct {
 	// we use ObjectInfo for Path, ExternalPath, etc to make sure this is static
 	// we put ObjectInfos in maps in other places so we do not want this to change
 	// this could be a problem if the underlying file is concurrently moved or resized however
-	internal.ObjectInfo
+	storageutil.ObjectInfo
 
 	file *os.File
 }
@@ -238,7 +260,7 @@ func newReadObjectCloser(
 	file *os.File,
 ) *readObjectCloser {
 	return &readObjectCloser{
-		ObjectInfo: internal.NewObjectInfo(
+		ObjectInfo: storageutil.NewObjectInfo(
 			size,
 			path,
 			externalPath,
@@ -257,27 +279,19 @@ func (r *readObjectCloser) Close() error {
 }
 
 type writeObjectCloser struct {
-	size    uint32
-	file    *os.File
-	written int
+	file *os.File
 }
 
 func newWriteObjectCloser(
-	size uint32,
 	file *os.File,
 ) *writeObjectCloser {
 	return &writeObjectCloser{
-		size: size,
 		file: file,
 	}
 }
 
 func (w *writeObjectCloser) Write(p []byte) (int, error) {
-	if uint32(w.written+len(p)) > w.size {
-		return 0, io.EOF
-	}
 	n, err := w.file.Write(p)
-	w.written += n
 	return n, toStorageError(err)
 }
 
@@ -287,9 +301,6 @@ func (w *writeObjectCloser) SetExternalPath(string) error {
 
 func (w *writeObjectCloser) Close() error {
 	err := toStorageError(w.file.Close())
-	if uint32(w.written) != w.size {
-		return storage.ErrIncompleteWrite
-	}
 	return err
 }
 

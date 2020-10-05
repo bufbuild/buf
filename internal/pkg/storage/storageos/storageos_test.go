@@ -18,31 +18,35 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/storage/internal/storagetesting"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/require"
 )
 
-var storagetestingDirPath = filepath.Join("..", "internal", "storagetesting")
+var storagetestingDirPath = filepath.Join("..", "storagetesting")
 
 func TestOS(t *testing.T) {
+	t.Parallel()
 	storagetesting.RunTestSuite(
 		t,
 		storagetestingDirPath,
 		testNewReadBucket,
-		testNewWriteBucketAndCleanup,
+		testNewWriteBucket,
 		testWriteBucketToReadBucket,
 	)
 }
 
-func testNewReadBucket(t *testing.T, dirPath string) storage.ReadBucket {
+func testNewReadBucket(t *testing.T, dirPath string) (storage.ReadBucket, storagetesting.GetExternalPathFunc) {
 	osBucket, err := storageos.NewReadWriteBucket(dirPath)
 	require.NoError(t, err)
-	return osBucket
+	return osBucket, func(t *testing.T, rootPath string, path string) string {
+		return normalpath.Join(rootPath, path)
+	}
 }
 
-func testNewWriteBucketAndCleanup(t *testing.T) storage.WriteBucket {
+func testNewWriteBucket(t *testing.T) storage.WriteBucket {
 	tmpDir := t.TempDir()
 	osBucket, err := storageos.NewReadWriteBucket(tmpDir)
 	require.NoError(t, err)

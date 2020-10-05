@@ -26,29 +26,29 @@ import (
 
 type module struct {
 	sourceReadBucket storage.ReadBucket
-	dependencies     []ModuleName
+	dependencies     []ResolvedModuleName
 }
 
 func newModuleForProto(ctx context.Context, protoModule *modulev1.Module) (*module, error) {
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
 	}
-	pathToData := make(map[string][]byte)
-	dependencies, err := NewModuleNamesForProtos(protoModule.Dependencies...)
+	dependencies, err := NewResolvedModuleNamesForProtos(protoModule.Dependencies...)
 	if err != nil {
 		return nil, err
 	}
-	sortModuleNames(dependencies)
-	lockFileContent, err := putDependenciesToData(dependencies)
-	if err != nil {
+	sortResolvedModuleNames(dependencies)
+	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	if err := putDependencies(ctx, readBucketBuilder, dependencies); err != nil {
 		return nil, err
 	}
-	pathToData[LockFilePath] = lockFileContent
 	for _, moduleFile := range protoModule.Files {
 		// we already know that paths are unique from validation
-		pathToData[moduleFile.Path] = moduleFile.Content
+		if err := storage.PutPath(ctx, readBucketBuilder, moduleFile.Path, moduleFile.Content); err != nil {
+			return nil, err
+		}
 	}
-	sourceReadBucket, err := storagemem.NewReadBucket(pathToData)
+	sourceReadBucket, err := readBucketBuilder.ToReadBucket()
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func newModuleForBucket(
 func newModuleForBucketWithDependencies(
 	ctx context.Context,
 	sourceReadBucket storage.ReadBucket,
-	dependencies []ModuleName,
+	dependencies []ResolvedModuleName,
 ) (*module, error) {
 	seenModuleNames := make(map[string]struct{})
 	for _, dependency := range dependencies {
@@ -84,7 +84,7 @@ func newModuleForBucketWithDependencies(
 		}
 		seenModuleNames[moduleIdentity] = struct{}{}
 	}
-	sortModuleNames(dependencies)
+	sortResolvedModuleNames(dependencies)
 	return &module{
 		// Now that we've captured the dependencies, we prune it from
 		// the source read bucket so that it can be validated as a closure of .proto files.
@@ -130,7 +130,7 @@ func (m *module) GetFile(ctx context.Context, path string) (ModuleFile, error) {
 
 // Dependencies gets the dependency ModuleNames.
 // The returned dependencies are sorted by remote, owner, repository, version, and digest.
-func (m *module) Dependencies() []ModuleName {
+func (m *module) Dependencies() []ResolvedModuleName {
 	// already sorted
 	return m.dependencies
 }

@@ -36,9 +36,9 @@ import (
 const Version = "0.25.0-dev"
 
 // Main is the main.
-func Main(use string, options ...MainOption) {
+func Main(name string, options ...MainOption) {
 	mainOptions := &mainOptions{
-		moduleReaderProvider: bufcli.NopModuleReaderProvider,
+		moduleResolverReaderProvider: bufcli.NopModuleResolverReaderProvider{},
 	}
 	for _, option := range options {
 		option(mainOptions)
@@ -46,9 +46,9 @@ func Main(use string, options ...MainOption) {
 	appcmd.Main(
 		context.Background(),
 		newRootCommand(
-			use,
+			name,
 			mainOptions.rootCommandModifier,
-			mainOptions.moduleReaderProvider,
+			mainOptions.moduleResolverReaderProvider,
 		),
 	)
 }
@@ -56,61 +56,62 @@ func Main(use string, options ...MainOption) {
 // MainOption is an option for command construction.
 type MainOption func(*mainOptions)
 
-// WithModuleReaderProvider returns a new MainOption that uses the given ModuleReaderProvider.
-func WithModuleReaderProvider(moduleReaderProvider bufcli.ModuleReaderProvider) MainOption {
+// WithModuleResolverAndReaderProvider returns a new MainOption that uses the given ModuleResolverReaderProvider.
+func WithModuleResolverAndReaderProvider(moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider) MainOption {
 	return func(options *mainOptions) {
-		options.moduleReaderProvider = moduleReaderProvider
+		options.moduleResolverReaderProvider = moduleResolverReaderProvider
 	}
 }
 
 // WithRootCommandModifier returns a new MainOption that modifies the root Command.
-func WithRootCommandModifier(rootCommandModifier func(*appcmd.Command, appflag.Builder, bufcli.ModuleReaderProvider)) MainOption {
+func WithRootCommandModifier(rootCommandModifier func(*appcmd.Command, appflag.Builder, bufcli.ModuleResolverReaderProvider)) MainOption {
 	return func(mainOptions *mainOptions) {
 		mainOptions.rootCommandModifier = rootCommandModifier
 	}
 }
 
 type mainOptions struct {
-	rootCommandModifier  func(*appcmd.Command, appflag.Builder, bufcli.ModuleReaderProvider)
-	moduleReaderProvider bufcli.ModuleReaderProvider
+	rootCommandModifier          func(*appcmd.Command, appflag.Builder, bufcli.ModuleResolverReaderProvider)
+	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider
 }
 
 func newRootCommand(
-	use string,
-	rootCommandModifier func(*appcmd.Command, appflag.Builder, bufcli.ModuleReaderProvider),
-	moduleReaderProvider bufcli.ModuleReaderProvider,
+	name string,
+	rootCommandModifier func(*appcmd.Command, appflag.Builder, bufcli.ModuleResolverReaderProvider),
+	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) *appcmd.Command {
 	builder := appflag.NewBuilder(
+		name,
 		appflag.BuilderWithTimeout(120*time.Second),
-		appflag.BuilderWithZapTracer(),
+		appflag.BuilderWithTracing(),
 	)
 	rootCommand := &appcmd.Command{
-		Use: use,
+		Use: name,
 		SubCommands: []*appcmd.Command{
 			{
 				Use:   "image",
 				Short: "Work with Images and FileDescriptorSets.",
 				SubCommands: []*appcmd.Command{
-					build.NewCommand("build", builder, moduleReaderProvider),
+					build.NewCommand("build", builder, moduleResolverReaderProvider),
 				},
 			},
 			{
 				Use:   "check",
 				Short: "Run lint or breaking change checks.",
 				SubCommands: []*appcmd.Command{
-					lint.NewCommand("lint", builder, moduleReaderProvider),
-					breaking.NewCommand("breaking", builder, moduleReaderProvider),
+					lint.NewCommand("lint", builder, moduleResolverReaderProvider),
+					breaking.NewCommand("breaking", builder, moduleResolverReaderProvider),
 					lslintcheckers.NewCommand("ls-lint-checkers", builder),
 					lsbreakingcheckers.NewCommand("ls-breaking-checkers", builder),
 				},
 			},
-			protoc.NewCommand("protoc", builder, moduleReaderProvider),
-			lsfiles.NewCommand("ls-files", builder, moduleReaderProvider),
+			protoc.NewCommand("protoc", builder, moduleResolverReaderProvider),
+			lsfiles.NewCommand("ls-files", builder, moduleResolverReaderProvider),
 			{
 				Use:   "beta",
 				Short: "Beta commands. Unstable and will likely change.",
 				SubCommands: []*appcmd.Command{
-					generate.NewCommand("generate", builder, moduleReaderProvider),
+					generate.NewCommand("generate", builder, moduleResolverReaderProvider),
 					{
 						Use:   "image",
 						Short: "Work with Images and FileDescriptorSets.",
@@ -141,7 +142,7 @@ func newRootCommand(
 		Version:             Version,
 	}
 	if rootCommandModifier != nil {
-		rootCommandModifier(rootCommand, builder, moduleReaderProvider)
+		rootCommandModifier(rootCommand, builder, moduleResolverReaderProvider)
 	}
 	return rootCommand
 }

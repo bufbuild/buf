@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
-	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -46,7 +45,7 @@ func NewCommand(
 		Short: "List breaking checkers.",
 		Args:  cobra.NoArgs,
 		Run: builder.NewRunFunc(
-			func(ctx context.Context, container applog.Container) error {
+			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
 		),
@@ -74,7 +73,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(
 	ctx context.Context,
-	container applog.Container,
+	container appflag.Container,
 	flags *flags,
 ) error {
 	var checkers []bufcheck.Checker

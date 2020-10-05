@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"sync"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
@@ -39,7 +38,7 @@ func newReadBucketBuilder() *readBucketBuilder {
 	}
 }
 
-func (b *readBucketBuilder) Put(ctx context.Context, path string, size uint32) (storage.WriteObjectCloser, error) {
+func (b *readBucketBuilder) Put(ctx context.Context, path string) (storage.WriteObjectCloser, error) {
 	path, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return nil, err
@@ -47,7 +46,22 @@ func (b *readBucketBuilder) Put(ctx context.Context, path string, size uint32) (
 	if path == "." {
 		return nil, errors.New("cannot put root")
 	}
-	return newWriteObjectCloser(b, path, size), nil
+	return newWriteObjectCloser(b, path), nil
+}
+
+func (b *readBucketBuilder) Delete(ctx context.Context, path string) error {
+	path, err := normalpath.NormalizeAndValidate(path)
+	if err != nil {
+		return err
+	}
+	b.lock.Lock()
+	defer b.lock.Unlock()
+	if _, ok := b.pathToData[path]; !ok {
+		return storage.NewErrNotExist(path)
+	}
+	delete(b.pathToData, path)
+	delete(b.pathToExternalPath, path)
+	return nil
 }
 
 func (*readBucketBuilder) SetExternalPathSupported() bool {
@@ -61,22 +75,18 @@ func (b *readBucketBuilder) ToReadBucket(options ...ReadBucketOption) (storage.R
 type writeObjectCloser struct {
 	readBucketBuilder    *readBucketBuilder
 	path                 string
-	size                 uint32
 	buffer               *bytes.Buffer
 	explicitExternalPath string
-	written              int
 	closed               bool
 }
 
 func newWriteObjectCloser(
 	readBucketBuilder *readBucketBuilder,
 	path string,
-	size uint32,
 ) *writeObjectCloser {
 	return &writeObjectCloser{
 		readBucketBuilder: readBucketBuilder,
 		path:              path,
-		size:              size,
 		buffer:            bytes.NewBuffer(nil),
 	}
 }
@@ -85,12 +95,7 @@ func (w *writeObjectCloser) Write(p []byte) (int, error) {
 	if w.closed {
 		return 0, storage.ErrClosed
 	}
-	if uint32(w.written+len(p)) > w.size {
-		return 0, io.EOF
-	}
-	n, err := w.buffer.Write(p)
-	w.written += n
-	return n, err
+	return w.buffer.Write(p)
 }
 
 func (w *writeObjectCloser) SetExternalPath(externalPath string) error {
@@ -107,19 +112,16 @@ func (w *writeObjectCloser) Close() error {
 		return storage.ErrClosed
 	}
 	w.closed = true
-	if uint32(w.written) != w.size {
-		return storage.ErrIncompleteWrite
-	}
 	// overwrites anything existing
 	// this is the same behavior as storageos
 	w.readBucketBuilder.lock.Lock()
+	defer w.readBucketBuilder.lock.Unlock()
 	w.readBucketBuilder.pathToData[w.path] = w.buffer.Bytes()
 	if w.explicitExternalPath != "" {
 		w.readBucketBuilder.pathToExternalPath[w.path] = w.explicitExternalPath
 	} else {
 		delete(w.readBucketBuilder.pathToExternalPath, w.path)
 	}
-	w.readBucketBuilder.lock.Unlock()
 	return nil
 }
 

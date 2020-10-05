@@ -21,7 +21,7 @@ import (
 	"io"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/storage/internal"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 )
 
 // MapReadBucket maps the ReadBucket.
@@ -172,17 +172,25 @@ func newMapWriteBucket(
 	}
 }
 
-func (w *mapWriteBucket) Put(ctx context.Context, path string, size uint32) (WriteObjectCloser, error) {
+func (w *mapWriteBucket) Put(ctx context.Context, path string) (WriteObjectCloser, error) {
 	fullPath, err := w.getFullPath(path)
 	if err != nil {
 		return nil, err
 	}
-	writeObjectCloser, err := w.delegate.Put(ctx, fullPath, size)
+	writeObjectCloser, err := w.delegate.Put(ctx, fullPath)
 	// TODO: if this is a path error, we should replace the path
 	if err != nil {
 		return nil, err
 	}
 	return replaceWriteObjectCloserExternalPathNotSupported(writeObjectCloser), nil
+}
+
+func (w *mapWriteBucket) Delete(ctx context.Context, path string) error {
+	fullPath, err := w.getFullPath(path)
+	if err != nil {
+		return err
+	}
+	return w.delegate.Delete(ctx, fullPath)
 }
 
 func (*mapWriteBucket) SetExternalPathSupported() bool {
@@ -208,7 +216,7 @@ func replaceObjectInfoPath(objectInfo ObjectInfo, path string) ObjectInfo {
 	if objectInfo.Path() == path {
 		return objectInfo
 	}
-	return internal.NewObjectInfo(
+	return storageutil.NewObjectInfo(
 		objectInfo.Size(),
 		path,
 		objectInfo.ExternalPath(),

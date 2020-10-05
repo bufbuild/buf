@@ -59,7 +59,13 @@ export GOPRIVATE := $(GO_MODULE)
 endif
 export GOPATH := $(abspath $(CACHE_GO))
 export GOBIN := $(abspath $(CACHE_GOBIN))
-export PATH := $(GOBIN):$(abspath $(CACHE_BIN)):$(PATH)
+
+ifdef EXTRAPATH
+EXTRAPATH := $(GOBIN):$(abspath $(CACHE_BIN)):$(EXTRAPATH)
+else
+EXTRAPATH := $(GOBIN):$(abspath $(CACHE_BIN))
+endif
+export PATH := $(EXTRAPATH):$(PATH)
 
 print-%:
 	@echo $($*)
@@ -85,7 +91,7 @@ direnv:
 	@echo 'export GOPRIVATE="$(GOPRIVATE)"' >> $(CACHE_ENV)/env.sh
 	@echo 'export GOPATH="$(GOPATH)"' >> $(CACHE_ENV)/env.sh
 	@echo 'export GOBIN="$(GOBIN)"' >> $(CACHE_ENV)/env.sh
-	@echo 'export PATH="$(GOBIN):$(abspath $(CACHE_BIN)):$${PATH}"' >> $(CACHE_ENV)/env.sh
+	@echo 'export PATH="$(EXTRAPATH):$${PATH}"' >> $(CACHE_ENV)/env.sh
 	@echo '[ -f "$(abspath $(ENV_SH))" ] && . "$(abspath $(ENV_SH))"' >> $(CACHE_ENV)/env.sh
 	@echo $(CACHE_ENV)/env.sh
 

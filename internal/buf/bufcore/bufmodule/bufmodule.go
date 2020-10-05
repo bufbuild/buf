@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
@@ -94,41 +93,90 @@ func NewModuleNameForProto(protoModuleName *modulev1.ModuleName) (ModuleName, er
 	return newModuleNameForProto(protoModuleName)
 }
 
-// NewModuleNamesForProtos maps the Protobuf equivalent into the internal represenation.
-func NewModuleNamesForProtos(moduleNames ...*modulev1.ModuleName) ([]ModuleName, error) {
-	if len(moduleNames) == 0 {
+// NewModuleNamesForProtos maps the Protobuf equivalent into the internal representation.
+func NewModuleNamesForProtos(protoModuleNames ...*modulev1.ModuleName) ([]ModuleName, error) {
+	if len(protoModuleNames) == 0 {
 		return nil, nil
 	}
-	result := make([]ModuleName, len(moduleNames))
-	for i, proto := range moduleNames {
-		moduleName, err := NewModuleNameForProto(proto)
+	moduleNames := make([]ModuleName, len(protoModuleNames))
+	for i, protoModuleName := range protoModuleNames {
+		moduleName, err := NewModuleNameForProto(protoModuleName)
 		if err != nil {
 			return nil, err
 		}
-		result[i] = moduleName
+		moduleNames[i] = moduleName
 	}
-	return result, nil
+	return moduleNames, nil
 }
 
 // NewProtoModuleNameForModuleName returns a new proto ModuleName for the given ModuleName.
-func NewProtoModuleNameForModuleName(moduleName ModuleName) (*modulev1.ModuleName, error) {
+func NewProtoModuleNameForModuleName(moduleName ModuleName) *modulev1.ModuleName {
 	return newProtoModuleNameForModuleName(moduleName)
 }
 
 // NewProtoModuleNamesForModuleNames maps the given module names into the protobuf representation.
-func NewProtoModuleNamesForModuleNames(moduleNames ...ModuleName) ([]*modulev1.ModuleName, error) {
+func NewProtoModuleNamesForModuleNames(moduleNames ...ModuleName) []*modulev1.ModuleName {
 	if len(moduleNames) == 0 {
+		return nil
+	}
+	protoModuleNames := make([]*modulev1.ModuleName, len(moduleNames))
+	for i, moduleName := range moduleNames {
+		protoModuleNames[i] = NewProtoModuleNameForModuleName(moduleName)
+	}
+	return protoModuleNames
+}
+
+// ResolvedModuleName represents a resolved module name,
+// e.g. a module name with a digest.
+type ResolvedModuleName interface {
+	fmt.Stringer
+	ModuleName
+
+	isResolvedModuleName()
+}
+
+// NewResolvedModuleName returns a new validated ResolvedModuleName.
+func NewResolvedModuleName(
+	remote string,
+	owner string,
+	repository string,
+	version string,
+	digest string,
+) (ResolvedModuleName, error) {
+	return newResolvedModuleName(remote, owner, repository, version, digest)
+}
+
+// NewResolvedModuleNamesForProtos maps the Protobuf equivalent into the internal representation.
+func NewResolvedModuleNamesForProtos(protoModuleNames ...*modulev1.ModuleName) ([]ResolvedModuleName, error) {
+	if len(protoModuleNames) == 0 {
 		return nil, nil
 	}
-	result := make([]*modulev1.ModuleName, len(moduleNames))
-	for i, proto := range moduleNames {
-		moduleName, err := NewProtoModuleNameForModuleName(proto)
+	resolvedModuleNames := make([]ResolvedModuleName, len(protoModuleNames))
+	for i, protoModuleName := range protoModuleNames {
+		resolvedModuleName, err := NewResolvedModuleNameForProto(protoModuleName)
 		if err != nil {
 			return nil, err
 		}
-		result[i] = moduleName
+		resolvedModuleNames[i] = resolvedModuleName
 	}
-	return result, nil
+	return resolvedModuleNames, nil
+}
+
+// NewResolvedModuleNameForProto returns a new ResolvedModuleName for the given proto ModuleName.
+func NewResolvedModuleNameForProto(protoModuleName *modulev1.ModuleName) (ResolvedModuleName, error) {
+	return newResolvedModuleNameForProto(protoModuleName)
+}
+
+// NewProtoModuleNamesForResolvedModuleNames maps the given module names into the protobuf representation.
+func NewProtoModuleNamesForResolvedModuleNames(resolvedModuleNames ...ResolvedModuleName) []*modulev1.ModuleName {
+	if len(resolvedModuleNames) == 0 {
+		return nil
+	}
+	protoModuleNames := make([]*modulev1.ModuleName, len(resolvedModuleNames))
+	for i, resolvedModuleName := range resolvedModuleNames {
+		protoModuleNames[i] = NewProtoModuleNameForModuleName(resolvedModuleName)
+	}
+	return protoModuleNames
 }
 
 // Module is a Protobuf module.
@@ -163,10 +211,10 @@ type Module interface {
 	//
 	// Returns storage.IsNotExist error if the file does not exist.
 	GetFile(ctx context.Context, path string) (ModuleFile, error)
-	// Dependencies gets the dependency ModuleNames. These are always resolved.
+	// Dependencies gets the dependency ModuleNames.
 	//
 	// The returned ModuleNames are sorted by remote, owner, repository, version, and then digest.
-	Dependencies() []ModuleName
+	Dependencies() []ResolvedModuleName
 
 	getSourceReadBucket() storage.ReadBucket
 	isModule()
@@ -186,7 +234,7 @@ func NewModuleForBucket(
 func NewModuleForBucketWithDependencies(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
-	dependencies []ModuleName,
+	dependencies []ResolvedModuleName,
 ) (Module, error) {
 	return newModuleForBucketWithDependencies(ctx, readBucket, dependencies)
 }
@@ -216,17 +264,25 @@ func ModuleWithTargetPathsAllowNotExist(module Module, targetPaths []string) (Mo
 	return newTargetingModule(module, targetPaths, true)
 }
 
-// ModuleReader reads modules. If the ModuleReader is asked to get an unresolved ModuleName,
-// it will resolve the module according to the latest digest.
-//
-// Callers SHOULD NOT rely on this interface for resolving all of a module's dependencies.
+// ModuleResolver resolves modules.
+type ModuleResolver interface {
+	// ResolveModule resolves the provided ModuleName.
+	//
+	// Returns an error that fufills storage.IsNotExist if the named Module does not exist.
+	ResolveModule(ctx context.Context, moduleName ModuleName) (ResolvedModuleName, error)
+}
+
+// NewNopModuleResolver returns a new ModuleResolver that always returns a storage.IsNotExist error.
+func NewNopModuleResolver() ModuleResolver {
+	return newNopModuleResolver()
+}
+
+// ModuleReader reads resolved modules.
 type ModuleReader interface {
 	// GetModule gets the named Module.
 	//
-	// The given ModuleName must be resolved, i.e. it must have a digest.
-	//
 	// Returns an error that fufills storage.IsNotExist if the named Module does not exist.
-	GetModule(ctx context.Context, moduleName ModuleName) (Module, error)
+	GetModule(ctx context.Context, moduleName ResolvedModuleName) (Module, error)
 }
 
 // NewNopModuleReader returns a new ModuleReader that always returns a storage.IsNotExist error.
@@ -300,6 +356,23 @@ func ModuleNameForString(path string) (ModuleName, error) {
 	)
 }
 
+// ResolvedModuleNameForString returns a new ResolvedModuleName for the given string.
+//
+// This parses the path in the form remote/owner/repository/version:digest
+func ResolvedModuleNameForString(path string) (ResolvedModuleName, error) {
+	moduleName, err := ModuleNameForString(path)
+	if err != nil {
+		return nil, err
+	}
+	return NewResolvedModuleName(
+		moduleName.Remote(),
+		moduleName.Owner(),
+		moduleName.Repository(),
+		moduleName.Version(),
+		moduleName.Digest(),
+	)
+}
+
 // ModuleToProtoModule converts the Module to a proto Module.
 //
 // This takes all Sources and puts them in the Module, not just Targets.
@@ -312,18 +385,8 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1.Module, 
 	}
 	protoModuleFiles := make([]*modulev1.ModuleFile, len(sourceFileInfos))
 	for i, sourceFileInfo := range sourceFileInfos {
-		protoModuleFile := &modulev1.ModuleFile{
-			Path: sourceFileInfo.Path(),
-		}
-		moduleFile, err := module.GetFile(ctx, sourceFileInfo.Path())
+		protoModuleFile, err := moduleFileToProto(ctx, module, sourceFileInfo.Path())
 		if err != nil {
-			return nil, err
-		}
-		protoModuleFile.Content, err = ioutil.ReadAll(moduleFile)
-		if err != nil {
-			return nil, multierr.Append(err, moduleFile.Close())
-		}
-		if err := moduleFile.Close(); err != nil {
 			return nil, err
 		}
 		protoModuleFiles[i] = protoModuleFile
@@ -439,11 +502,7 @@ func ModuleToBucket(
 		return err
 	}
 	for _, fileInfo := range fileInfos {
-		content, err := ReadModuleFile(ctx, module, fileInfo.Path())
-		if err != nil {
-			return err
-		}
-		if err := storage.PutPath(ctx, writeBucket, fileInfo.Path(), content); err != nil {
+		if err := moduleFileToBucket(ctx, module, fileInfo.Path(), writeBucket); err != nil {
 			return err
 		}
 	}
@@ -451,42 +510,24 @@ func ModuleToBucket(
 	return putDependencies(ctx, writeBucket, module.Dependencies())
 }
 
-// ReadModuleFile reads the content for the .proto file at the given path in the Module.
-//
-// Returns an error that fufills storage.IsNotExist if the path does not exist.
-func ReadModuleFile(
-	ctx context.Context,
-	module Module,
-	path string,
-) (_ []byte, retErr error) {
-	moduleFile, err := module.GetFile(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, moduleFile.Close())
-	}()
-	return ioutil.ReadAll(moduleFile)
-}
-
-// DeduplicateModuleNames returns a deduplicated slice of module names
-// by selecting the first occurrence of a module name based on the modules
-// representation without a digest.
-func DeduplicateModuleNames(moduleNames []ModuleName) []ModuleName {
-	deduplicated := make([]ModuleName, 0, len(moduleNames))
+// DeduplicateResolvedModuleNames returns a deduplicated slice of resolved module names
+// by selecting the first occurrence of a resolved module name based on the modules
+// representation without the digest.
+func DeduplicateResolvedModuleNames(resolvedModuleNames []ResolvedModuleName) []ResolvedModuleName {
+	deduplicated := make([]ResolvedModuleName, 0, len(resolvedModuleNames))
 	seenModuleNames := make(map[string]struct{})
-	for _, moduleName := range moduleNames {
-		moduleIdentity := moduleNameIdentity(moduleName)
+	for _, resolvedModuleName := range resolvedModuleNames {
+		moduleIdentity := moduleNameIdentity(resolvedModuleName)
 		if _, ok := seenModuleNames[moduleIdentity]; ok {
 			continue
 		}
 		seenModuleNames[moduleIdentity] = struct{}{}
-		deduplicated = append(deduplicated, moduleName)
+		deduplicated = append(deduplicated, resolvedModuleName)
 	}
 	// It's important that we sort after we've deduplicated (and not before),
 	// so that the first ModuleNames provided are prioritized over the ones
 	// that follow.
-	sortModuleNames(deduplicated)
+	sortResolvedModuleNames(deduplicated)
 	return deduplicated
 }
 
@@ -504,13 +545,27 @@ func ValidateModuleNamesUnique(moduleNames []ModuleName) error {
 	return nil
 }
 
+// ValidateResolvedModuleNamesUnique returns an error if the module names contain
+// any duplicates.
+func ValidateResolvedModuleNamesUnique(resolvedModuleNames []ResolvedModuleName) error {
+	seenModuleNames := make(map[string]struct{})
+	for _, resolvedModuleName := range resolvedModuleNames {
+		moduleIdentity := moduleNameIdentity(resolvedModuleName)
+		if _, ok := seenModuleNames[moduleIdentity]; ok {
+			return fmt.Errorf("module %s appeared twice", moduleIdentity)
+		}
+		seenModuleNames[moduleIdentity] = struct{}{}
+	}
+	return nil
+}
+
 // ResolvedModuleNameForModule returns a new validated ModuleName that uses the values
 // from the given ModuleName and the digest from the Module.
 //
 // The given ModuleName must not already have a digest.
 //
 // This is just a convenience function.
-func ResolvedModuleNameForModule(ctx context.Context, moduleName ModuleName, module Module) (ModuleName, error) {
+func ResolvedModuleNameForModule(ctx context.Context, moduleName ModuleName, module Module) (ResolvedModuleName, error) {
 	if moduleName.Digest() != "" {
 		return nil, fmt.Errorf("module name to ResolvedModuleNameForModule already has a digest: %s", moduleName.String())
 	}
@@ -518,7 +573,7 @@ func ResolvedModuleNameForModule(ctx context.Context, moduleName ModuleName, mod
 	if err != nil {
 		return nil, err
 	}
-	return NewModuleName(
+	return NewResolvedModuleName(
 		moduleName.Remote(),
 		moduleName.Owner(),
 		moduleName.Repository(),

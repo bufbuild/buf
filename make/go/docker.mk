@@ -40,9 +40,8 @@ dockerbuild::
 
 define dockerbinfunc
 .PHONY: dockerbuild$(1)
-dockerbuild$(1): dockerbuildworkspace
+dockerbuild$(1):
 	docker build \
-		--build-arg DOCKER_WORKSPACE_IMAGE=$(DOCKER_WORKSPACE_IMAGE) \
 		-t $(DOCKER_ORG)/$(1):latest \
 		-f Dockerfile.$(1) \
 		.

@@ -57,6 +57,24 @@ func CopyWithExternalPaths() CopyOption {
 	}
 }
 
+// CopyReader copies the contents of the Reader into the WriteBucket at the path.
+func CopyReader(
+	ctx context.Context,
+	writeBucket WriteBucket,
+	reader io.Reader,
+	path string,
+) (retErr error) {
+	writeObjectCloser, err := writeBucket.Put(ctx, path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, writeObjectCloser.Close())
+	}()
+	_, err = io.Copy(writeObjectCloser, reader)
+	return err
+}
+
 func copyPaths(
 	ctx context.Context,
 	from ReadBucket,
@@ -96,23 +114,28 @@ func copyPath(
 	fromPath string,
 	toPath string,
 	copyExternalPaths bool,
-) error {
+) (retErr error) {
 	readObjectCloser, err := from.Get(ctx, fromPath)
 	if err != nil {
 		return err
 	}
-	writeObjectCloser, err := to.Put(ctx, toPath, readObjectCloser.Size())
+	defer func() {
+		retErr = multierr.Append(err, readObjectCloser.Close())
+	}()
+	writeObjectCloser, err := to.Put(ctx, toPath)
 	if err != nil {
-		return multierr.Append(err, readObjectCloser.Close())
+		return err
 	}
+	defer func() {
+		retErr = multierr.Append(err, writeObjectCloser.Close())
+	}()
 	if copyExternalPaths {
-		// do this before copying so that writeObjectCloser.Close() will fail due to incomplete write
 		if err := writeObjectCloser.SetExternalPath(readObjectCloser.ExternalPath()); err != nil {
-			return multierr.Append(err, multierr.Append(writeObjectCloser.Close(), readObjectCloser.Close()))
+			return err
 		}
 	}
 	_, err = io.Copy(writeObjectCloser, readObjectCloser)
-	return multierr.Append(err, multierr.Append(writeObjectCloser.Close(), readObjectCloser.Close()))
+	return err
 }
 
 type copyOptions struct {
