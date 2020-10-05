@@ -38,6 +38,7 @@ type ReadBucket interface {
 	// if there is a system error.
 	Stat(ctx context.Context, path string) (ObjectInfo, error)
 	// Walk walks the bucket with the prefix, calling f on each path.
+	// If the prefix doesn't exist, this is a no-op.
 	//
 	// Note that foo/barbaz will not be called for foo/bar, but will
 	// be called for foo/bar/baz.
@@ -55,7 +56,12 @@ type WriteBucket interface {
 	// The path is truncated on close.
 	//
 	// Returns error on system error.
-	Put(ctx context.Context, path string, size uint32) (WriteObjectCloser, error)
+	Put(ctx context.Context, path string) (WriteObjectCloser, error)
+	// Delete deletes the object at the path.
+	//
+	// Returns ErrNotExist if the path does not exist, other error
+	// if there is a system error.
+	Delete(ctx context.Context, path string) error
 	// SetExternalPathSupported returns true if SetExternalPath is supported.
 	//
 	// For example, in-memory buckets may choose to return true so that object sources
@@ -106,9 +112,6 @@ func NopReadWriteBucketCloser(readWriteBucket ReadWriteBucket) ReadWriteBucketCl
 // ObjectInfo contains object info.
 type ObjectInfo interface {
 	// Size is the size of the object.
-	//
-	// For writes, the write size must sum up to this size when closed, otherwise ErrIncompleteWrite is returned.
-	// For writes, any write over this size will return io.EOF.
 	Size() uint32
 	// Path is the path of the object.
 	//

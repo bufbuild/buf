@@ -55,8 +55,9 @@ type reader struct {
 	gitEnabled bool
 	gitCloner  git.Cloner
 
-	moduleEnabled bool
-	moduleReader  bufmodule.ModuleReader
+	moduleEnabled  bool
+	moduleReader   bufmodule.ModuleReader
+	moduleResolver bufmodule.ModuleResolver
 }
 
 func newReader(
@@ -304,7 +305,31 @@ func (r *reader) getModule(
 	if r.moduleReader == nil {
 		return nil, errors.New("module reader is nil")
 	}
-	return r.moduleReader.GetModule(ctx, moduleRef.ModuleName())
+	if r.moduleResolver == nil {
+		return nil, errors.New("module resolver is nil")
+	}
+	moduleName := moduleRef.ModuleName()
+	var resolvedModuleName bufmodule.ResolvedModuleName
+	if moduleName.Digest() == "" {
+		var err error
+		resolvedModuleName, err = r.moduleResolver.ResolveModule(ctx, moduleName)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		var err error
+		resolvedModuleName, err = bufmodule.NewResolvedModuleName(
+			moduleName.Remote(),
+			moduleName.Owner(),
+			moduleName.Repository(),
+			moduleName.Version(),
+			moduleName.Digest(),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return r.moduleReader.GetModule(ctx, resolvedModuleName)
 }
 
 func (r *reader) getFileReadCloserAndSize(

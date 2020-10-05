@@ -20,7 +20,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 
+	"go.uber.org/multierr"
 	"gopkg.in/yaml.v3"
 )
 
@@ -46,8 +48,7 @@ func UnmarshalYAMLStrict(data []byte, v interface{}) error {
 	if len(data) == 0 {
 		return nil
 	}
-	yamlDecoder := yaml.NewDecoder(bytes.NewReader(data))
-	yamlDecoder.KnownFields(true)
+	yamlDecoder := NewYAMLDecoder(bytes.NewReader(data))
 	if err := yamlDecoder.Decode(v); err != nil {
 		return fmt.Errorf("could not unmarshal as YAML: %v", err)
 	}
@@ -86,6 +87,29 @@ func GetJSONStringOrStringValue(rawMessage json.RawMessage) string {
 }
 
 // MarshalYAML marshals the given value into YAML.
-func MarshalYAML(v interface{}) ([]byte, error) {
-	return yaml.Marshal(v)
+func MarshalYAML(v interface{}) (_ []byte, retErr error) {
+	buffer := bytes.NewBuffer(nil)
+	yamlEncoder := NewYAMLEncoder(buffer)
+	defer func() {
+		retErr = multierr.Append(retErr, yamlEncoder.Close())
+	}()
+	if err := yamlEncoder.Encode(v); err != nil {
+		return nil, err
+	}
+	return buffer.Bytes(), nil
+}
+
+// NewYAMLEncoder creates a new YAML encoder reader from the Writer.
+// The encoder must be closed after use.
+func NewYAMLEncoder(writer io.Writer) *yaml.Encoder {
+	yamlEncoder := yaml.NewEncoder(writer)
+	yamlEncoder.SetIndent(2)
+	return yamlEncoder
+}
+
+// NewYAMLDecoder creates a new YAML decoder from the reader.
+func NewYAMLDecoder(reader io.Reader) *yaml.Decoder {
+	yamlDecoder := yaml.NewDecoder(reader)
+	yamlDecoder.KnownFields(true)
+	return yamlDecoder
 }

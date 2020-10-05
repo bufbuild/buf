@@ -68,7 +68,7 @@ type testModuleReader struct {
 	alreadyRequested map[string]struct{}
 }
 
-func (m *testModuleReader) GetModule(ctx context.Context, moduleName bufmodule.ModuleName) (bufmodule.Module, error) {
+func (m *testModuleReader) GetModule(ctx context.Context, moduleName bufmodule.ResolvedModuleName) (bufmodule.Module, error) {
 	if _, ok := m.alreadyRequested[moduleName.String()]; ok {
 		// This is the test failure condition - we should only request each module once
 		return nil, errors.New("module already requested")

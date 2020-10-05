@@ -20,7 +20,6 @@ import (
 	"io"
 	"strings"
 
-	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/zaputil"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -28,14 +27,12 @@ import (
 
 // Container is a container.
 type Container interface {
-	app.Container
-
 	Logger() *zap.Logger
 }
 
 // NewContainer returns a new Container.
-func NewContainer(appContainer app.Container, logger *zap.Logger) Container {
-	return newContainer(appContainer, logger)
+func NewContainer(logger *zap.Logger) Container {
+	return newContainer(logger)
 }
 
 // NewLogger returns a new Logger.

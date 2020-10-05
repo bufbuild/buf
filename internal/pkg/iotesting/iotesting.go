@@ -12,20 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodule
+package iotesting
 
 import (
-	"context"
-
-	"github.com/bufbuild/buf/internal/pkg/storage"
+	"io"
+	"strings"
+	"testing"
 )
 
-type nopModuleReader struct{}
-
-func newNopModuleReader() *nopModuleReader {
-	return &nopModuleReader{}
+// NewWriter returns a new io.Writer that writes
+// to a testing logger.
+func NewWriter(tb testing.TB) io.Writer {
+	return &writer{
+		tb: tb,
+	}
 }
 
-func (*nopModuleReader) GetModule(ctx context.Context, moduleName ResolvedModuleName) (Module, error) {
-	return nil, storage.NewErrNotExist(moduleName.String())
+type writer struct {
+	tb testing.TB
+}
+
+func (t *writer) Write(in []byte) (int, error) {
+	t.tb.Helper()
+	t.tb.Log(strings.TrimSpace(string(in)))
+	return len(in), nil
 }

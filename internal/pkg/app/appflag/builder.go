@@ -29,6 +29,8 @@ import (
 )
 
 type builder struct {
+	appName string
+
 	logLevel  string
 	logFormat string
 
@@ -42,11 +44,13 @@ type builder struct {
 
 	defaultTimeout time.Duration
 
-	zapTracer bool
+	tracing bool
 }
 
-func newBuilder(options ...BuilderOption) *builder {
-	builder := &builder{}
+func newBuilder(appName string, options ...BuilderOption) *builder {
+	builder := &builder{
+		appName: appName,
+	}
 	for _, option := range options {
 		option(builder)
 	}
@@ -73,7 +77,7 @@ func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
 }
 
 func (b *builder) NewRunFunc(
-	f func(context.Context, applog.Container) error,
+	f func(context.Context, Container) error,
 ) func(context.Context, app.Container) error {
 	return func(ctx context.Context, appContainer app.Container) error {
 		return b.run(ctx, appContainer, f)
@@ -83,9 +87,13 @@ func (b *builder) NewRunFunc(
 func (b *builder) run(
 	ctx context.Context,
 	appContainer app.Container,
-	f func(context.Context, applog.Container) error,
+	f func(context.Context, Container) error,
 ) error {
 	logger, err := applog.NewLogger(appContainer.Stderr(), b.logLevel, b.logFormat)
+	if err != nil {
+		return err
+	}
+	container, err := newContainer(appContainer, b.appName, logger)
 	if err != nil {
 		return err
 	}
@@ -101,13 +109,13 @@ func (b *builder) run(
 		defer cancel()
 	}
 
-	if b.zapTracer {
+	if b.tracing {
 		if err := observabilityzap.NewExporter(logger).Run(ctx); err != nil {
 			return err
 		}
 	}
 	if !b.profile {
-		return f(ctx, applog.NewContainer(appContainer, logger))
+		return f(ctx, container)
 	}
 	return runProfile(
 		logger,
@@ -116,7 +124,7 @@ func (b *builder) run(
 		b.profileLoops,
 		b.profileAllowError,
 		func() error {
-			return f(ctx, applog.NewContainer(appContainer, logger))
+			return f(ctx, container)
 		},
 	)
 }

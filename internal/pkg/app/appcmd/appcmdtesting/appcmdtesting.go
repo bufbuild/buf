@@ -51,8 +51,26 @@ func RunCommandExitCodeStdout(
 ) {
 	t.Helper()
 	stdout := bytes.NewBuffer(nil)
-	RunCommandExitCode(t, newCommand, expectedExitCode, env, stdin, stdout, args...)
+	stderr := bytes.NewBuffer(nil)
+	RunCommandExitCode(t, newCommand, expectedExitCode, env, stdin, stdout, stderr, args...)
 	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
+}
+
+// RunCommandExitCodeStderr runs the command and compares the exit code and stderr output.
+func RunCommandExitCodeStderr(
+	t *testing.T,
+	newCommand func(string) *appcmd.Command,
+	expectedExitCode int,
+	expectedStderr string,
+	env map[string]string,
+	stdin io.Reader,
+	args ...string,
+) {
+	t.Helper()
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	RunCommandExitCode(t, newCommand, expectedExitCode, env, stdin, stdout, stderr, args...)
+	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
 }
 
 // RunCommandSuccess runs the command and makes sure it was successful.
@@ -65,7 +83,8 @@ func RunCommandSuccess(
 	args ...string,
 ) {
 	t.Helper()
-	RunCommandExitCode(t, newCommand, 0, env, stdin, stdout, args...)
+	stderr := bytes.NewBuffer(nil)
+	RunCommandExitCode(t, newCommand, 0, env, stdin, stdout, stderr, args...)
 }
 
 // RunCommandExitCode runs the command and compares the exit code.
@@ -76,22 +95,29 @@ func RunCommandExitCode(
 	env map[string]string,
 	stdin io.Reader,
 	stdout io.Writer,
+	stderr io.Writer,
 	args ...string,
 ) {
 	t.Helper()
-	stderr := bytes.NewBuffer(nil)
+	stderrCopy := bytes.NewBuffer(nil)
+	stdoutCopy := bytes.NewBuffer(nil)
 	exitCode := app.GetExitCode(
 		appcmd.Run(
 			context.Background(),
 			app.NewContainer(
 				env,
 				stdin,
-				stdout,
-				stderr,
+				io.MultiWriter(stdout, stdoutCopy),
+				io.MultiWriter(stderr, stderrCopy),
 				append([]string{"test"}, args...)...,
 			),
 			newCommand("test"),
 		),
 	)
-	require.Equal(t, expectedExitCode, exitCode, stringutil.TrimLines(stderr.String()))
+	require.Equal(
+		t,
+		expectedExitCode,
+		exitCode,
+		stringutil.TrimLines(stdoutCopy.String())+"\n"+stringutil.TrimLines(stderrCopy.String()),
+	)
 }

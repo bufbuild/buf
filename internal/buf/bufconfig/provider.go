@@ -17,7 +17,6 @@ package bufconfig
 import (
 	"context"
 	"errors"
-	"io/ioutil"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
@@ -53,7 +52,7 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	defer span.End()
 
 	externalConfig := &ExternalConfig{}
-	readObject, err := readBucket.Get(ctx, ConfigFilePath)
+	readObjectCloser, err := readBucket.Get(ctx, ConfigFilePath)
 	if err != nil {
 		if storage.IsNotExist(err) {
 			return p.newConfig(externalConfig)
@@ -61,13 +60,9 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readObject.Close())
+		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
-	data, err := ioutil.ReadAll(readObject)
-	if err != nil {
-		return nil, err
-	}
-	if err := encoding.UnmarshalYAMLStrict(data, externalConfig); err != nil {
+	if err := encoding.NewYAMLDecoder(readObjectCloser).Decode(externalConfig); err != nil {
 		return nil, err
 	}
 	return p.newConfig(externalConfig)

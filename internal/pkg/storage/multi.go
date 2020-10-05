@@ -17,7 +17,7 @@ package storage
 import (
 	"context"
 
-	"github.com/bufbuild/buf/internal/pkg/storage/internal"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 )
 
 // MultiReadBucket takes the union of the ReadBuckets.
@@ -131,12 +131,12 @@ func (nopReadBucket) Stat(ctx context.Context, path string) (ObjectInfo, error) 
 }
 
 func (nopReadBucket) Walk(ctx context.Context, prefix string, f func(ObjectInfo) error) error {
-	_, err := internal.ValidatePrefix(prefix)
+	_, err := storageutil.ValidatePrefix(prefix)
 	return err
 }
 
 func nopGetStat(path string) error {
-	path, err := internal.ValidatePath(path)
+	path, err := storageutil.ValidatePath(path)
 	if err != nil {
 		return err
 	}

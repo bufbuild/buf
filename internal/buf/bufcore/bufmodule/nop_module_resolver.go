@@ -20,12 +20,12 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
 
-type nopModuleReader struct{}
+type nopModuleResolver struct{}
 
-func newNopModuleReader() *nopModuleReader {
-	return &nopModuleReader{}
+func newNopModuleResolver() *nopModuleResolver {
+	return &nopModuleResolver{}
 }
 
-func (*nopModuleReader) GetModule(ctx context.Context, moduleName ResolvedModuleName) (Module, error) {
+func (*nopModuleResolver) ResolveModule(ctx context.Context, moduleName ModuleName) (ResolvedModuleName, error) {
 	return nil, storage.NewErrNotExist(moduleName.String())
 }

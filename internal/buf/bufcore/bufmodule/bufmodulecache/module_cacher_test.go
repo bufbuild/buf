@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulestorage"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
@@ -75,5 +76,5 @@ func TestCacherBasic(t *testing.T) {
 func newTestModuleCacher(t *testing.T) *moduleCacher {
 	readWriteBucket, err := storageos.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
-	return newModuleCacher(readWriteBucket)
+	return newModuleCacher(bufmodulestorage.NewStore(readWriteBucket))
 }

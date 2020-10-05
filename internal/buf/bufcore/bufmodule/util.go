@@ -15,10 +15,15 @@
 package bufmodule
 
 import (
+	"context"
 	"fmt"
+	"io/ioutil"
 	"sort"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
+	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
+	"github.com/bufbuild/buf/internal/pkg/storage"
+	"go.uber.org/multierr"
 )
 
 func sortFileInfos(fileInfos []bufcore.FileInfo) {
@@ -30,20 +35,20 @@ func sortFileInfos(fileInfos []bufcore.FileInfo) {
 	)
 }
 
-func sortModuleNames(moduleNames []ModuleName) {
-	sort.Slice(moduleNames, func(i, j int) bool {
-		return moduleNameLess(moduleNames[i], moduleNames[j])
+func sortResolvedModuleNames(resolvedModuleNames []ResolvedModuleName) {
+	sort.Slice(resolvedModuleNames, func(i, j int) bool {
+		return resolvedModuleNameLess(resolvedModuleNames[i], resolvedModuleNames[j])
 	})
 }
 
-func moduleNameLess(a ModuleName, b ModuleName) bool {
-	return moduleNameCompareTo(a, b) < 0
+func resolvedModuleNameLess(a ResolvedModuleName, b ResolvedModuleName) bool {
+	return resolvedModuleNameCompareTo(a, b) < 0
 }
 
 // return -1 if less
 // return 1 if greater
 // return 0 if equal
-func moduleNameCompareTo(a ModuleName, b ModuleName) int {
+func resolvedModuleNameCompareTo(a ResolvedModuleName, b ResolvedModuleName) int {
 	if a == nil && b == nil {
 		return 0
 	}
@@ -88,4 +93,33 @@ func moduleNameCompareTo(a ModuleName, b ModuleName) int {
 
 func newInvalidModuleNameStringError(path string, reason string) error {
 	return fmt.Errorf("invalid module name: %s: %s", reason, path)
+}
+
+func moduleFileToBucket(ctx context.Context, module Module, path string, writeBucket storage.WriteBucket) (retErr error) {
+	readCloser, err := module.GetFile(ctx, path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, readCloser.Close())
+	}()
+	return storage.CopyReader(ctx, writeBucket, readCloser, path)
+}
+
+func moduleFileToProto(ctx context.Context, module Module, path string) (_ *modulev1.ModuleFile, retErr error) {
+	protoModuleFile := &modulev1.ModuleFile{
+		Path: path,
+	}
+	readCloser, err := module.GetFile(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, readCloser.Close())
+	}()
+	protoModuleFile.Content, err = ioutil.ReadAll(readCloser)
+	if err != nil {
+		return nil, err
+	}
+	return protoModuleFile, nil
 }
