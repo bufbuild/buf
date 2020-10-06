@@ -39,6 +39,9 @@ include make/go/docker.mk
 include make/go/protoc_gen_go.mk
 include make/go/dep_go_fuzz.mk
 
+# Settable
+BUF_BREAKING_INPUT ?= .git\#branch=master
+
 .PHONY: wkt
 wkt: installstorage-go-binary-data $(PROTOC)
 	rm -rf internal/gen/data
@@ -53,15 +56,11 @@ buflint: installbuf
 
 .PHONY: bufbreaking
 bufbreaking: installbuf
-	@ if [ -d .git ]; then \
-			$(MAKE) bufbreakinginternal; \
-		else \
-			echo "skipping make bufbreaking due to no .git repository" >&2; \
-		fi
-
-.PHONY: bufbreakinginternal
-bufbreakinginternal:
-	-buf check breaking --against-input '.git#branch=master'
+ifneq ($(BUF_BREAKING_INPUT),)
+	-buf check breaking --against-input $(BUF_BREAKING_INPUT)
+else
+	@echo "skipping make bufbreaking" >&2
+endif
 
 postlint:: buflint bufbreaking
 

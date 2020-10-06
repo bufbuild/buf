@@ -39,6 +39,8 @@ CACHE_GO := $(CACHE)/go
 # version of buf installed from source
 # CACHE_GOBIN takes precedence over CACHE_BIN in PATH
 CACHE_GOBIN := $(CACHE)/gobin
+# CACHE_GOCACHE is where the build cache is stored.
+CACHE_GOCACHE := $(CACHE)/gocache
 
 ifeq ($(UNAME_ARCH),x86_64)
 ifeq ($(UNAME_OS),Darwin)
@@ -59,6 +61,8 @@ export GOPRIVATE := $(GO_MODULE)
 endif
 export GOPATH := $(abspath $(CACHE_GO))
 export GOBIN := $(abspath $(CACHE_GOBIN))
+export GOCACHE := $(abspath $(CACHE_GOCACHE))
+export GOMODCACHE := $(GOPATH)/pkg/mod
 
 ifdef EXTRAPATH
 EXTRAPATH := $(GOBIN):$(abspath $(CACHE_BIN)):$(EXTRAPATH)
@@ -91,6 +95,8 @@ direnv:
 	@echo 'export GOPRIVATE="$(GOPRIVATE)"' >> $(CACHE_ENV)/env.sh
 	@echo 'export GOPATH="$(GOPATH)"' >> $(CACHE_ENV)/env.sh
 	@echo 'export GOBIN="$(GOBIN)"' >> $(CACHE_ENV)/env.sh
+	@echo 'export GOCACHE="$(GOCACHE)"' >> $(CACHE_ENV)/env.sh
+	@echo 'export GOMODCACHE="$(GOPATH)/pkg/mod"' >> $(CACHE_ENV)/env.sh
 	@echo 'export PATH="$(EXTRAPATH):$${PATH}"' >> $(CACHE_ENV)/env.sh
 	@echo '[ -f "$(abspath $(ENV_SH))" ] && . "$(abspath $(ENV_SH))"' >> $(CACHE_ENV)/env.sh
 	@echo $(CACHE_ENV)/env.sh
