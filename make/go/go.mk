@@ -51,7 +51,6 @@ shortall:
 
 .PHONY: ci
 ci:
-	@$(MAKE) deps
 	@$(MAKE) lint
 	@$(MAKE) cover
 
