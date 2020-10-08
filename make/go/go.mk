@@ -97,8 +97,7 @@ postlint::
 .PHONY: lint
 lint:
 	@$(MAKE) checknodiffgenerated
-	@$(MAKE) vet errcheck staticcheck
-	@$(MAKE) postlint
+	@$(MAKE) vet errcheck staticcheck postlint
 
 .PHONY: prebuild
 prebuild::

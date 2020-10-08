@@ -7,8 +7,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/bufbuild/buf/releases 20200911 checked 20200911
-BUF_VERSION ?= v0.23.0
+# https://github.com/bufbuild/buf/releases
+BUF_VERSION ?= v0.24.0
 
 BUF := $(CACHE_VERSIONS)/buf/$(BUF_VERSION)
 $(BUF):
@@ -21,3 +21,8 @@ $(BUF):
 	@touch $(BUF)
 
 dockerdeps:: $(BUF)
+
+.PHONY: bufgenerate
+bufgenerate::
+
+pregenerate:: bufgenerate
