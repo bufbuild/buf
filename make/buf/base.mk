@@ -19,7 +19,6 @@ GO_TEST_BINS := $(GO_TEST_BINS) \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer
 DOCKER_BINS := $(DOCKER_BINS) buf
-PROTO_PATH := proto
 PROTOC_GEN_GO_OUT := internal/gen/proto/go
 PROTOC_GEN_VALIDATE_OUT := internal/gen/proto/go
 FILE_IGNORES := $(FILE_IGNORES) \
