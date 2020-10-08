@@ -20,10 +20,10 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
@@ -160,7 +160,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	env, fileAnnotations, err := internal.NewBufwireEnvReader(
+	env, fileAnnotations, err := bufcli.NewWireEnvReader(
 		container.Logger(),
 		inputConfigFlagName,
 		moduleResolver,
@@ -208,7 +208,7 @@ func run(
 	if err != nil {
 		return fmt.Errorf("--%s: %v", againstInputFlagName, err)
 	}
-	againstEnv, fileAnnotations, err := internal.NewBufwireEnvReader(
+	againstEnv, fileAnnotations, err := bufcli.NewWireEnvReader(
 		container.Logger(),
 		againstInputConfigFlagName,
 		moduleResolver,
@@ -239,7 +239,7 @@ func run(
 	if flags.ExcludeImports {
 		againstImage = bufimage.ImageWithoutImports(againstImage)
 	}
-	fileAnnotations, err = internal.NewBufbreakingHandler(container.Logger()).Check(
+	fileAnnotations, err = bufbreaking.NewHandler(container.Logger()).Check(
 		ctx,
 		env.Config().Breaking,
 		againstImage,

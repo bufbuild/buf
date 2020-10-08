@@ -20,7 +20,6 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/spf13/cobra"
@@ -97,7 +96,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	fileRefs, err := internal.NewBufwireEnvReader(
+	fileRefs, err := bufcli.NewWireFileLister(
 		container.Logger(),
 		inputConfigFlagName,
 		moduleResolver,

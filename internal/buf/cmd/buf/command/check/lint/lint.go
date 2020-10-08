@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
@@ -121,7 +120,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	env, fileAnnotations, err := internal.NewBufwireEnvReader(
+	env, fileAnnotations, err := bufcli.NewWireEnvReader(
 		container.Logger(),
 		inputConfigFlagName,
 		moduleResolver,
@@ -148,7 +147,7 @@ func run(
 		}
 		return errors.New("")
 	}
-	fileAnnotations, err = internal.NewBuflintHandler(container.Logger()).Check(
+	fileAnnotations, err = buflint.NewHandler(container.Logger()).Check(
 		ctx,
 		env.Config().Lint,
 		bufimage.ImageWithoutImports(env.Image()),

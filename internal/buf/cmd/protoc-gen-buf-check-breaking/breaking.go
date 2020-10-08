@@ -24,9 +24,10 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
@@ -78,7 +79,7 @@ func handle(
 	if err != nil {
 		return fmt.Errorf("against_input: %v", err)
 	}
-	imageReader := internal.NewBufwireImageReader(logger)
+	imageReader := bufcli.NewWireImageReader(logger)
 	againstImage, err := imageReader.GetImage(
 		ctx,
 		newContainer(container),
@@ -93,7 +94,7 @@ func handle(
 	if externalConfig.ExcludeImports {
 		againstImage = bufimage.ImageWithoutImports(againstImage)
 	}
-	configReader := internal.NewBufwireConfigReader(logger, "input_config")
+	configReader := bufcli.NewWireConfigReader(logger, "input_config")
 	config, err := configReader.GetConfig(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
@@ -105,7 +106,7 @@ func handle(
 	if err != nil {
 		return err
 	}
-	fileAnnotations, err := internal.NewBufbreakingHandler(logger).Check(
+	fileAnnotations, err := bufbreaking.NewHandler(logger).Check(
 		ctx,
 		config.Breaking,
 		againstImage,

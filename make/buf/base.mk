@@ -42,6 +42,8 @@ include make/go/dep_go_fuzz.mk
 # Settable
 BUF_BREAKING_INPUT ?= .git\#branch=master
 
+installtest:: $(PROTOC) $(PROTOC_GEN_GO)
+
 .PHONY: wkt
 wkt: installstorage-go-binary-data $(PROTOC)
 	rm -rf internal/gen/data
