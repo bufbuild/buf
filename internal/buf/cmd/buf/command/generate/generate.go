@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
@@ -163,7 +162,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	env, fileAnnotations, err := internal.NewBufwireEnvReader(
+	env, fileAnnotations, err := bufcli.NewWireEnvReader(
 		container.Logger(),
 		inputConfigFlagName,
 		moduleResolver,

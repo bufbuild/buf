@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 )
@@ -27,6 +28,16 @@ import (
 type container struct {
 	envContainer app.EnvContainer
 	appName      string
+
+	configDirPath     string
+	configDirPathOnce sync.Once
+	cacheDirPath      string
+	cacheDirPathOnce  sync.Once
+	dataDirPath       string
+	dataDirPathOnce   sync.Once
+	port              uint16
+	portErr           error
+	portOnce          sync.Once
 }
 
 func newContainer(envContainer app.EnvContainer, appName string) (*container, error) {
@@ -44,18 +55,53 @@ func (c *container) AppName() string {
 }
 
 func (c *container) ConfigDirPath() string {
-	return c.getDirPath("CONFIG_DIR", app.ConfigDirPath)
+	c.configDirPathOnce.Do(c.setConfigDirPath)
+	return c.configDirPath
 }
 
 func (c *container) CacheDirPath() string {
-	return c.getDirPath("CACHE_DIR", app.CacheDirPath)
+	c.cacheDirPathOnce.Do(c.setCacheDirPath)
+	return c.cacheDirPath
 }
 
 func (c *container) DataDirPath() string {
-	return c.getDirPath("DATA_DIR", app.DataDirPath)
+	c.dataDirPathOnce.Do(c.setDataDirPath)
+	return c.dataDirPath
 }
 
 func (c *container) Port() (uint16, error) {
+	c.portOnce.Do(c.setPort)
+	return c.port, c.portErr
+}
+
+func (c *container) setConfigDirPath() {
+	c.configDirPath = c.getDirPath("CONFIG_DIR", app.ConfigDirPath)
+}
+
+func (c *container) setCacheDirPath() {
+	c.cacheDirPath = c.getDirPath("CACHE_DIR", app.CacheDirPath)
+}
+
+func (c *container) setDataDirPath() {
+	c.dataDirPath = c.getDirPath("DATA_DIR", app.DataDirPath)
+}
+
+func (c *container) setPort() {
+	c.port, c.portErr = c.getPort()
+}
+
+func (c *container) getDirPath(envSuffix string, getBaseDirPath func(app.EnvContainer) (string, error)) string {
+	dirPath := c.envContainer.Env(getEnvPrefix(c.appName) + envSuffix)
+	if dirPath == "" {
+		baseDirPath, err := getBaseDirPath(c.envContainer)
+		if err == nil {
+			dirPath = filepath.Join(baseDirPath, c.appName)
+		}
+	}
+	return dirPath
+}
+
+func (c *container) getPort() (uint16, error) {
 	portString := c.envContainer.Env(getEnvPrefix(c.appName) + "PORT")
 	if portString == "" {
 		portString = c.envContainer.Env("PORT")
@@ -68,17 +114,6 @@ func (c *container) Port() (uint16, error) {
 		return 0, fmt.Errorf("could not parse port %q to uint16: %v", portString, err)
 	}
 	return uint16(port), nil
-}
-
-func (c *container) getDirPath(envSuffix string, getBaseDirPath func(app.EnvContainer) (string, error)) string {
-	dirPath := c.envContainer.Env(getEnvPrefix(c.appName) + envSuffix)
-	if dirPath == "" {
-		baseDirPath, err := getBaseDirPath(c.envContainer)
-		if err == nil {
-			dirPath = filepath.Join(baseDirPath, c.appName)
-		}
-	}
-	return dirPath
 }
 
 func getEnvPrefix(appName string) string {

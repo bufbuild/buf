@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
@@ -195,7 +194,7 @@ func run(
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
-	return internal.NewBufwireImageWriter(container.Logger()).PutImage(ctx,
+	return bufcli.NewWireImageWriter(container.Logger()).PutImage(ctx,
 		container,
 		imageRef,
 		image,

@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	imageinternal "github.com/bufbuild/buf/internal/buf/cmd/buf/command/image/internal"
-	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/spf13/cobra"
@@ -96,7 +96,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 }
 
 func run(ctx context.Context, container appflag.Container, flags *flags) (retErr error) {
-	internal.WarnBeta(container)
+	bufcli.WarnBeta(container.Logger())
 	if flags.Output == "" {
 		return appcmd.NewInvalidArgumentErrorf("--%s is required", outputFlagName)
 	}
@@ -104,7 +104,7 @@ func run(ctx context.Context, container appflag.Container, flags *flags) (retErr
 	if err != nil {
 		return fmt.Errorf("--%s: %v", imageFlagName, err)
 	}
-	image, err := internal.NewBufwireImageReader(
+	image, err := bufcli.NewWireImageReader(
 		container.Logger(),
 	).GetImage(
 		ctx,
@@ -121,7 +121,7 @@ func run(ctx context.Context, container appflag.Container, flags *flags) (retErr
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
-	return internal.NewBufwireImageWriter(
+	return bufcli.NewWireImageWriter(
 		container.Logger(),
 	).PutImage(
 		ctx,
