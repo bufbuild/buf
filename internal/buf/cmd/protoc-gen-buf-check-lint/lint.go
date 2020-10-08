@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
-	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
@@ -63,7 +63,7 @@ func handle(
 	if err != nil {
 		return err
 	}
-	configReader := internal.NewBufwireConfigReader(logger, "input_config")
+	configReader := bufcli.NewWireConfigReader(logger, "input_config")
 	config, err := configReader.GetConfig(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
@@ -76,7 +76,7 @@ func handle(
 		return err
 	}
 	image = bufimage.ImageWithoutImports(image)
-	fileAnnotations, err := internal.NewBuflintHandler(logger).Check(
+	fileAnnotations, err := buflint.NewHandler(logger).Check(
 		ctx,
 		config.Lint,
 		image,

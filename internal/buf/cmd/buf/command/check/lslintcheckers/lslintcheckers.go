@@ -19,8 +19,8 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/buf/bufcli"
 	checkinternal "github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/internal"
-	"github.com/bufbuild/buf/internal/buf/cmd/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/spf13/cobra"
@@ -84,7 +84,7 @@ func run(
 			return err
 		}
 	} else {
-		config, err := internal.NewBufwireConfigReader(
+		config, err := bufcli.NewWireConfigReader(
 			container.Logger(),
 			configFlagName,
 		).GetConfig(

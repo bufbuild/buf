@@ -18,8 +18,12 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufwire"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
@@ -94,6 +98,80 @@ func NewFetchImageReader(logger *zap.Logger) buffetch.ImageReader {
 		defaultHTTPAuthenticator,
 		git.NewCloner(logger, defaultGitClonerOptions),
 	)
+}
+
+// NewWireEnvReader returns a new EnvReader.
+func NewWireEnvReader(
+	logger *zap.Logger,
+	configOverrideFlagName string,
+	moduleResolver bufmodule.ModuleResolver,
+	moduleReader bufmodule.ModuleReader,
+) bufwire.EnvReader {
+	return bufwire.NewEnvReader(
+		logger,
+		NewFetchReader(logger, moduleResolver, moduleReader),
+		bufconfig.NewProvider(logger),
+		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
+		bufimagebuild.NewBuilder(logger),
+		configOverrideFlagName,
+	)
+}
+
+// NewWireFileLister returns a new FileLister.
+func NewWireFileLister(
+	logger *zap.Logger,
+	configOverrideFlagName string,
+	moduleResolver bufmodule.ModuleResolver,
+	moduleReader bufmodule.ModuleReader,
+) bufwire.FileLister {
+	return bufwire.NewFileLister(
+		logger,
+		NewFetchReader(logger, moduleResolver, moduleReader),
+		bufconfig.NewProvider(logger),
+		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufimagebuild.NewBuilder(logger),
+		configOverrideFlagName,
+	)
+}
+
+// NewWireImageReader returns a new ImageReader.
+func NewWireImageReader(
+	logger *zap.Logger,
+) bufwire.ImageReader {
+	return bufwire.NewImageReader(
+		logger,
+		NewFetchImageReader(logger),
+	)
+}
+
+// NewWireImageWriter returns a new ImageWriter.
+func NewWireImageWriter(
+	logger *zap.Logger,
+) bufwire.ImageWriter {
+	return bufwire.NewImageWriter(
+		logger,
+		buffetch.NewWriter(
+			logger,
+		),
+	)
+}
+
+// NewWireConfigReader returns a new ConfigReader.
+func NewWireConfigReader(
+	logger *zap.Logger,
+	configOverrideFlagName string,
+) bufwire.ConfigReader {
+	return bufwire.NewConfigReader(
+		logger,
+		bufconfig.NewProvider(logger),
+		configOverrideFlagName,
+	)
+}
+
+// WarnBeta warns that the command is beta.
+func WarnBeta(logger *zap.Logger) {
+	logger.Warn(`This command has been released for early evaluation only and is experimental. It is not ready for production, and is likely to to have significant changes.`)
 }
 
 // ModuleResolverReaderProvider provides ModuleResolvers and ModuleReaders.

@@ -20,13 +20,11 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -154,60 +152,6 @@ func (e *envReader) GetSourceOrModuleEnv(
 	}
 }
 
-func (e *envReader) ListFiles(
-	ctx context.Context,
-	container app.EnvStdinContainer,
-	ref buffetch.Ref,
-	configOverride string,
-) (_ []bufcore.FileInfo, retErr error) {
-	switch t := ref.(type) {
-	case buffetch.ImageRef:
-		// if we have an image, list the files in the image
-		image, err := e.imageReader.GetImage(
-			ctx,
-			container,
-			t,
-			nil,
-			false,
-			true,
-		)
-		if err != nil {
-			return nil, err
-		}
-		files := image.Files()
-		fileInfos := make([]bufcore.FileInfo, len(files))
-		for i, file := range files {
-			fileInfos[i] = file
-		}
-		return fileInfos, nil
-	case buffetch.SourceRef:
-		readBucketCloser, config, err := e.getSourceBucketAndConfig(ctx, container, t, configOverride)
-		if err != nil {
-			return nil, err
-		}
-		defer func() {
-			retErr = multierr.Append(retErr, readBucketCloser.Close())
-		}()
-		module, err := e.moduleBucketBuilder.BuildForBucket(
-			ctx,
-			readBucketCloser,
-			config.Build,
-		)
-		if err != nil {
-			return nil, err
-		}
-		return module.SourceFileInfos(ctx)
-	case buffetch.ModuleRef:
-		module, err := e.fetchReader.GetModule(ctx, container, t)
-		if err != nil {
-			return nil, err
-		}
-		return module.SourceFileInfos(ctx)
-	default:
-		return nil, fmt.Errorf("invalid ref: %T", ref)
-	}
-}
-
 func (e *envReader) getImageEnv(
 	ctx context.Context,
 	container app.EnvStdinContainer,
@@ -244,13 +188,17 @@ func (e *envReader) getSourceEnv(
 	externalFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ Env, _ []bufanalysis.FileAnnotation, retErr error) {
-	readBucketCloser, config, err := e.getSourceBucketAndConfig(ctx, container, sourceRef, configOverride)
+	readBucketCloser, err := e.fetchReader.GetSourceBucket(ctx, container, sourceRef)
 	if err != nil {
 		return nil, nil, err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
+	config, err := e.configReader.getConfig(ctx, readBucketCloser, configOverride)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	var buildOptions []bufmodulebuild.BuildOption
 	if len(externalFilePaths) > 0 {
@@ -327,31 +275,6 @@ func (e *envReader) getModuleEnv(
 		return nil, nil, err
 	}
 	return e.buildModule(ctx, module, config, excludeSourceCodeInfo)
-}
-
-func (e *envReader) getSourceBucketAndConfig(
-	ctx context.Context,
-	container app.EnvStdinContainer,
-	sourceRef buffetch.SourceRef,
-	configOverride string,
-) (_ storage.ReadBucketCloser, _ *bufconfig.Config, retErr error) {
-	readBucketCloser, err := e.fetchReader.GetSourceBucket(ctx, container, sourceRef)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer func() {
-		// we want to return an opened bucket, except on error
-		// if there is an error, this means we are returning nil, so
-		// we close the bucket as we are not returning it
-		if retErr != nil {
-			retErr = multierr.Append(retErr, readBucketCloser.Close())
-		}
-	}()
-	config, err := e.configReader.getConfig(ctx, readBucketCloser, configOverride)
-	if err != nil {
-		return nil, nil, err
-	}
-	return readBucketCloser, config, nil
 }
 
 func (e *envReader) buildModule(

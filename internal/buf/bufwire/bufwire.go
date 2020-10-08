@@ -61,13 +61,6 @@ type EnvReader interface {
 		externalFileFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
 	) (Env, []bufanalysis.FileAnnotation, error)
-	// ListFiles lists the files.
-	ListFiles(
-		ctx context.Context,
-		container app.EnvStdinContainer,
-		ref buffetch.Ref,
-		configOverride string,
-	) ([]bufcore.FileInfo, error)
 }
 
 // NewEnvReader returns a new EnvReader.
@@ -86,6 +79,36 @@ func NewEnvReader(
 		configProvider,
 		moduleBucketBuilder,
 		moduleFileSetBuilder,
+		imageBuilder,
+		configOverrideFlagName,
+	)
+}
+
+// FileLister lists files.
+type FileLister interface {
+	// ListFiles lists the files.
+	ListFiles(
+		ctx context.Context,
+		container app.EnvStdinContainer,
+		ref buffetch.Ref,
+		configOverride string,
+	) ([]bufcore.FileInfo, error)
+}
+
+// NewFileLister returns a new FileLister.
+func NewFileLister(
+	logger *zap.Logger,
+	fetchReader buffetch.Reader,
+	configProvider bufconfig.Provider,
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
+	imageBuilder bufimagebuild.Builder,
+	configOverrideFlagName string,
+) FileLister {
+	return newFileLister(
+		logger,
+		fetchReader,
+		configProvider,
+		moduleBucketBuilder,
 		imageBuilder,
 		configOverrideFlagName,
 	)
