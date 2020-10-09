@@ -535,20 +535,6 @@ func testBreaking(
 	relDirPath string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	testBreakingExternalConfigModifier(
-		t,
-		relDirPath,
-		nil,
-		expectedFileAnnotations...,
-	)
-}
-
-func testBreakingExternalConfigModifier(
-	t *testing.T,
-	relDirPath string,
-	modifier func(*bufconfig.ExternalConfig),
-	expectedFileAnnotations ...bufanalysis.FileAnnotation,
-) {
 	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -562,19 +548,7 @@ func testBreakingExternalConfigModifier(
 	readWriteBucket, err := storageos.NewReadWriteBucket(dirPath)
 	require.NoError(t, err)
 
-	var configProviderOptions []bufconfig.ProviderOption
-	if modifier != nil {
-		configProviderOptions = append(
-			configProviderOptions,
-			bufconfig.ProviderWithExternalConfigModifier(
-				func(externalConfig *bufconfig.ExternalConfig) error {
-					modifier(externalConfig)
-					return nil
-				},
-			),
-		)
-	}
-	configProvider := bufconfig.NewProvider(logger, configProviderOptions...)
+	configProvider := bufconfig.NewProvider(logger)
 	previousConfig := testGetConfig(t, configProvider, previousReadWriteBucket)
 	config := testGetConfig(t, configProvider, readWriteBucket)
 

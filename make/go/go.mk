@@ -44,6 +44,8 @@ all:
 	@$(MAKE) lint
 	@$(MAKE) test
 
+postupgrade:: all
+
 .PHONY: shortall
 shortall:
 	@$(MAKE) lint
@@ -54,8 +56,8 @@ ci:
 	@$(MAKE) lint
 	@$(MAKE) cover
 
-.PHONY: updategodeps
-updategodeps:
+.PHONY: upgradegodeps
+upgradegodeps:
 	rm -f go.mod go.sum
 	go mod init $(GO_MODULE)
 	go mod edit -go=$(GO_MOD_VERSION)
@@ -63,10 +65,10 @@ updategodeps:
 ifneq ($(GO_GET_PKGS),)
 	go get $(sort $(GO_GET_PKGS))
 endif
-	$(MAKE) generate
-	$(MAKE)
 
-initmakego:: updategodeps
+preupgrade:: upgradegodeps
+
+initmakego:: upgradegodeps
 
 .PHONY: godeps
 godeps: deps

@@ -30,7 +30,10 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/encoding"
 )
 
-const configFileName = "config.yaml"
+const (
+	configFileName   = "config.yaml"
+	secretRelDirPath = "secrets"
+)
 
 // Container is a container.
 type Container interface {
@@ -86,6 +89,17 @@ func ReadConfig(container Container, value interface{}) error {
 		}
 	}
 	return nil
+}
+
+// ReadSecret returns the contents of the file at path
+// filepath.Join(container.ConfigDirPath(), secretRelDirPath, name).
+func ReadSecret(container Container, name string) (string, error) {
+	secretFilePath := filepath.Join(container.ConfigDirPath(), secretRelDirPath, name)
+	data, err := ioutil.ReadFile(secretFilePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read secret at %s: %w", secretFilePath, err)
+	}
+	return string(data), nil
 }
 
 // WriteConfig writes the configuration to the YAML configuration file config.yaml

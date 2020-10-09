@@ -1,3 +1,4 @@
+version: v1beta1
 lint:
   use:
     - RPC_NO_CLIENT_STREAMING

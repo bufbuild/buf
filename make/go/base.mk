@@ -151,6 +151,18 @@ checknodiffgenerated:
 			echo "skipping make checknodiffgenerated due to no .git repository" >&2; \
 		fi
 
+.PHONY: preupgrade
+preupgrade::
+
+.PHONY: postupgrade
+postupgrade::
+
+.PHONY: upgrade
+upgrade:
+	@$(MAKE) preupgrade
+	@$(MAKE) generate
+	@$(MAKE) postupgrade
+
 .PHONY: updatemakego
 updatemakego:
 ifndef CONFIRM

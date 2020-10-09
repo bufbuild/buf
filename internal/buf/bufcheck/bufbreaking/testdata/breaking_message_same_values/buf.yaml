@@ -1,3 +1,4 @@
+version: v1beta1
 breaking:
   use:
     - MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR

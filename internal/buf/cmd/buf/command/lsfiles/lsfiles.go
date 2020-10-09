@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
+	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
@@ -88,6 +89,7 @@ func run(
 	if err != nil {
 		return fmt.Errorf("--%s: %v", inputFlagName, err)
 	}
+	configProvider := bufconfig.NewProvider(container.Logger())
 	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
 	if err != nil {
 		return err
@@ -99,6 +101,7 @@ func run(
 	fileRefs, err := bufcli.NewWireFileLister(
 		container.Logger(),
 		inputConfigFlagName,
+		configProvider,
 		moduleResolver,
 		moduleReader,
 	).ListFiles(
