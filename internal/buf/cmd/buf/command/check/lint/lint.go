@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
+	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
@@ -112,6 +113,7 @@ func run(
 	if err != nil {
 		return fmt.Errorf("--%s: %v", inputFlagName, err)
 	}
+	configProvider := bufconfig.NewProvider(container.Logger())
 	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
 	if err != nil {
 		return err
@@ -123,6 +125,7 @@ func run(
 	env, fileAnnotations, err := bufcli.NewWireEnvReader(
 		container.Logger(),
 		inputConfigFlagName,
+		configProvider,
 		moduleResolver,
 		moduleReader,
 	).GetEnv(

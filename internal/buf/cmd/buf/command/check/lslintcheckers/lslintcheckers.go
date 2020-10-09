@@ -20,6 +20,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
+	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	checkinternal "github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
@@ -84,9 +85,11 @@ func run(
 			return err
 		}
 	} else {
+		configProvider := bufconfig.NewProvider(container.Logger())
 		config, err := bufcli.NewWireConfigReader(
 			container.Logger(),
 			configFlagName,
+			configProvider,
 		).GetConfig(
 			ctx,
 			flags.Config,

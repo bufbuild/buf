@@ -24,6 +24,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
+	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
@@ -63,7 +64,8 @@ func handle(
 	if err != nil {
 		return err
 	}
-	configReader := bufcli.NewWireConfigReader(logger, "input_config")
+	configProvider := bufconfig.NewProvider(logger)
+	configReader := bufcli.NewWireConfigReader(logger, "input_config", configProvider)
 	config, err := configReader.GetConfig(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),

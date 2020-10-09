@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
@@ -34,7 +35,8 @@ import (
 const v1beta1Version = "v1beta1"
 
 type provider struct {
-	logger *zap.Logger
+	logger          *zap.Logger
+	warnVersionOnce sync.Once
 }
 
 func newProvider(logger *zap.Logger) *provider {
@@ -78,7 +80,11 @@ func (p *provider) getConfigForData(ctx context.Context, data []byte, id string)
 	}
 	switch externalConfigVersion.Version {
 	case "":
-		p.logger.Sugar().Warnf(`%s has no version set. Please add "version: %s". See https://buf.build/docs/faq for more details.`, id, v1beta1Version)
+		p.warnVersionOnce.Do(
+			func() {
+				p.logger.Sugar().Warnf(`%s has no version set. Please add "version: %s". See https://buf.build/docs/faq for more details.`, id, v1beta1Version)
+			},
+		)
 	case v1beta1Version:
 	default:
 		return nil, fmt.Errorf("%s has unknown configuration version: %s", id, externalConfigVersion.Version)
