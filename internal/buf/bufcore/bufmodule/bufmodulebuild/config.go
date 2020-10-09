@@ -24,7 +24,7 @@ import (
 )
 
 // all of this code can likely be simplified
-func newConfig(externalConfig ExternalConfig, deps ...string) (*Config, error) {
+func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Config, error) {
 	dependencies, err := parseDependencies(deps...)
 	if err != nil {
 		return nil, err

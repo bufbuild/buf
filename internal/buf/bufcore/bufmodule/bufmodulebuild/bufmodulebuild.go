@@ -142,9 +142,9 @@ type Config struct {
 	Deps []bufmodule.ModuleName
 }
 
-// NewConfig returns a new, validated Config for the ExternalConfig.
-func NewConfig(externalConfig ExternalConfig, deps ...string) (*Config, error) {
-	return newConfig(externalConfig, deps...)
+// NewConfigV1Beta1 returns a new, validated Config for the ExternalConfig.
+func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Config, error) {
+	return newConfigV1Beta1(externalConfig, deps...)
 }
 
 // Roots returns the Roots.
@@ -157,8 +157,8 @@ func (c *Config) Roots() []string {
 	return roots
 }
 
-// ExternalConfig is an external config.
-type ExternalConfig struct {
+// ExternalConfigV1Beta1 is an external config.
+type ExternalConfigV1Beta1 struct {
 	Roots    []string `json:"roots,omitempty" yaml:"roots,omitempty"`
 	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }

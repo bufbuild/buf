@@ -27,6 +27,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// ConfigFilePath is the configuration file path.
+const ConfigFilePath = "buf.yaml"
+
 // Config is the user config.
 type Config struct {
 	Name     bufmodule.ModuleName
@@ -48,37 +51,26 @@ type Provider interface {
 }
 
 // NewProvider returns a new Provider.
-func NewProvider(logger *zap.Logger, options ...ProviderOption) Provider {
-	return newProvider(logger, options...)
+func NewProvider(logger *zap.Logger) Provider {
+	return newProvider(logger)
 }
 
-// ProviderOption is an option for a new Provider.
-type ProviderOption func(*provider)
-
-// ProviderWithExternalConfigModifier returns a new ProviderOption that applies the following
-// external config modifier before processing an ExternalConfig.
-//
-// Useful for testing.
-func ProviderWithExternalConfigModifier(externalConfigModifier func(*ExternalConfig) error) ProviderOption {
-	return func(provider *provider) {
-		provider.externalConfigModifier = externalConfigModifier
-	}
-}
-
-// ExternalConfig is an external config.
-type ExternalConfig struct {
-	Name     string                        `json:"name,omitempty" yaml:"name,omitempty"`
-	Build    bufmodulebuild.ExternalConfig `json:"build,omitempty" yaml:"build,omitempty"`
-	Breaking bufbreaking.ExternalConfig    `json:"breaking,omitempty" yaml:"breaking,omitempty"`
-	Lint     buflint.ExternalConfig        `json:"lint,omitempty" yaml:"lint,omitempty"`
-	Deps     []string                      `json:"deps,omitempty" yaml:"deps,omitempty"`
-}
-
-// WriteBufYAMLToBucket writes the given ExternalConfig (buf.yaml) into the bucket.
-func WriteBufYAMLToBucket(ctx context.Context, writeBucket storage.WriteBucket, externalConfig ExternalConfig) error {
-	bytes, err := encoding.MarshalYAML(externalConfig)
+// ConfigCreate writes an initial configuration file into the bucket.
+func ConfigCreate(ctx context.Context, writeBucket storage.WriteBucket, name string, deps ...string) error {
+	data, err := encoding.MarshalYAML(
+		externalConfigV1Beta1{
+			Version: v1beta1Version,
+			Name:    name,
+			Deps:    deps,
+		},
+	)
 	if err != nil {
 		return err
 	}
-	return storage.PutPath(ctx, writeBucket, ConfigFilePath, bytes)
+	return storage.PutPath(ctx, writeBucket, ConfigFilePath, data)
+}
+
+// ConfigExists checks if a configuration file exists.
+func ConfigExists(ctx context.Context, readBucket storage.ReadBucket) (bool, error) {
+	return storage.Exists(ctx, readBucket, ConfigFilePath)
 }

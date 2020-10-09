@@ -1,3 +1,4 @@
+version: v1beta1
 lint:
   use:
     - MESSAGE_PASCAL_CASE

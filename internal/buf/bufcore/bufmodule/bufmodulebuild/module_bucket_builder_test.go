@@ -165,8 +165,8 @@ func testBucketGetFileInfos(
 	t.Parallel()
 	readWriteBucket, err := storageos.NewReadWriteBucket(relDir)
 	require.NoError(t, err)
-	config, err := NewConfig(
-		ExternalConfig{
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
 			Roots:    relRoots,
 			Excludes: relExcludes,
 		},
@@ -221,8 +221,8 @@ func testBucketGetAllFileInfosError(
 ) {
 	readWriteBucket, err := storageos.NewReadWriteBucket(relDir)
 	require.NoError(t, err)
-	config, err := NewConfig(
-		ExternalConfig{
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
 			Roots:    relRoots,
 			Excludes: relExcludes,
 		},
@@ -250,8 +250,8 @@ func testBucketGetFileInfosForExternalPathsError(
 ) {
 	readWriteBucket, err := storageos.NewReadWriteBucket(relDir)
 	require.NoError(t, err)
-	config, err := NewConfig(
-		ExternalConfig{
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
 			Roots: relRoots,
 		},
 	)

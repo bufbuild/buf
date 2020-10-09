@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
+	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -94,7 +95,8 @@ func handle(
 	if externalConfig.ExcludeImports {
 		againstImage = bufimage.ImageWithoutImports(againstImage)
 	}
-	configReader := bufcli.NewWireConfigReader(logger, "input_config")
+	configProvider := bufconfig.NewProvider(logger)
+	configReader := bufcli.NewWireConfigReader(logger, "input_config", configProvider)
 	config, err := configReader.GetConfig(
 		ctx,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),

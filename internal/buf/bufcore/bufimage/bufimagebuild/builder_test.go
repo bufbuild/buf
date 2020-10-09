@@ -217,7 +217,7 @@ func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufimage.I
 func testGetModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet {
 	readWriteBucket, err := storageos.NewReadWriteBucket(dirPath)
 	require.NoError(t, err)
-	config, err := bufmodulebuild.NewConfig(bufmodulebuild.ExternalConfig{})
+	config, err := bufmodulebuild.NewConfigV1Beta1(bufmodulebuild.ExternalConfigV1Beta1{})
 	require.NoError(t, err)
 	module, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),

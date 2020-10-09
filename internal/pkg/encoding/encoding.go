@@ -48,7 +48,7 @@ func UnmarshalYAMLStrict(data []byte, v interface{}) error {
 	if len(data) == 0 {
 		return nil
 	}
-	yamlDecoder := NewYAMLDecoder(bytes.NewReader(data))
+	yamlDecoder := NewYAMLDecoderStrict(bytes.NewReader(data))
 	if err := yamlDecoder.Decode(v); err != nil {
 		return fmt.Errorf("could not unmarshal as YAML: %v", err)
 	}
@@ -66,6 +66,50 @@ func UnmarshalJSONOrYAMLStrict(data []byte, v interface{}) error {
 	if jsonErr := UnmarshalJSONStrict(data, v); jsonErr != nil {
 		if yamlErr := UnmarshalYAMLStrict(data, v); yamlErr != nil {
 			return errors.New(jsonErr.Error() + "\n" + yamlErr.Error())
+		}
+	}
+	return nil
+}
+
+// UnmarshalJSONNonStrict unmarshals the data as JSON, returning a user error on failure.
+//
+// If the data length is 0, this is a no-op.
+func UnmarshalJSONNonStrict(data []byte, v interface{}) error {
+	if len(data) == 0 {
+		return nil
+	}
+	jsonDecoder := json.NewDecoder(bytes.NewReader(data))
+	if err := jsonDecoder.Decode(v); err != nil {
+		return fmt.Errorf("could not unmarshal as JSON: %v", err)
+	}
+	return nil
+}
+
+// UnmarshalYAMLNonStrict unmarshals the data as YAML, returning a user error on failure.
+//
+// If the data length is 0, this is a no-op.
+func UnmarshalYAMLNonStrict(data []byte, v interface{}) error {
+	if len(data) == 0 {
+		return nil
+	}
+	yamlDecoder := NewYAMLDecoderNonStrict(bytes.NewReader(data))
+	if err := yamlDecoder.Decode(v); err != nil {
+		return fmt.Errorf("could not unmarshal as YAML: %v", err)
+	}
+	return nil
+}
+
+// UnmarshalJSONOrYAMLNonStrict unmarshals the data as JSON or YAML in order, returning
+// a user error with both errors on failure.
+//
+// If the data length is 0, this is a no-op.
+func UnmarshalJSONOrYAMLNonStrict(data []byte, v interface{}) error {
+	if len(data) == 0 {
+		return nil
+	}
+	if jsonErr := UnmarshalJSONNonStrict(data, v); jsonErr != nil {
+		if yamlErr := UnmarshalYAMLNonStrict(data, v); yamlErr != nil {
+			return multierr.Append(jsonErr, yamlErr)
 		}
 	}
 	return nil
@@ -107,9 +151,14 @@ func NewYAMLEncoder(writer io.Writer) *yaml.Encoder {
 	return yamlEncoder
 }
 
-// NewYAMLDecoder creates a new YAML decoder from the reader.
-func NewYAMLDecoder(reader io.Reader) *yaml.Decoder {
+// NewYAMLDecoderStrict creates a new YAML decoder from the reader.
+func NewYAMLDecoderStrict(reader io.Reader) *yaml.Decoder {
 	yamlDecoder := yaml.NewDecoder(reader)
 	yamlDecoder.KnownFields(true)
 	return yamlDecoder
+}
+
+// NewYAMLDecoderNonStrict creates a new YAML decoder from the reader.
+func NewYAMLDecoderNonStrict(reader io.Reader) *yaml.Decoder {
+	return yaml.NewDecoder(reader)
 }

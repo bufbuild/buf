@@ -104,13 +104,14 @@ func NewFetchImageReader(logger *zap.Logger) buffetch.ImageReader {
 func NewWireEnvReader(
 	logger *zap.Logger,
 	configOverrideFlagName string,
+	configProvider bufconfig.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) bufwire.EnvReader {
 	return bufwire.NewEnvReader(
 		logger,
 		NewFetchReader(logger, moduleResolver, moduleReader),
-		bufconfig.NewProvider(logger),
+		configProvider,
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
@@ -122,13 +123,14 @@ func NewWireEnvReader(
 func NewWireFileLister(
 	logger *zap.Logger,
 	configOverrideFlagName string,
+	configProvider bufconfig.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) bufwire.FileLister {
 	return bufwire.NewFileLister(
 		logger,
 		NewFetchReader(logger, moduleResolver, moduleReader),
-		bufconfig.NewProvider(logger),
+		configProvider,
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufimagebuild.NewBuilder(logger),
 		configOverrideFlagName,
@@ -161,10 +163,11 @@ func NewWireImageWriter(
 func NewWireConfigReader(
 	logger *zap.Logger,
 	configOverrideFlagName string,
+	configProvider bufconfig.Provider,
 ) bufwire.ConfigReader {
 	return bufwire.NewConfigReader(
 		logger,
-		bufconfig.NewProvider(logger),
+		configProvider,
 		configOverrideFlagName,
 	)
 }
