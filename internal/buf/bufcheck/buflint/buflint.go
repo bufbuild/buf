@@ -84,8 +84,8 @@ func (c *Config) GetCheckers(categories ...string) ([]bufcheck.Checker, error) {
 	return checkersToBufcheckCheckers(c.Checkers, categories)
 }
 
-// NewConfig returns a new Config.
-func NewConfig(externalConfig ExternalConfig) (*Config, error) {
+// NewConfigV1Beta1 returns a new Config.
+func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
 	internalConfig, err := internal.ConfigBuilder{
 		Use:                                  externalConfig.Use,
 		Except:                               externalConfig.Except,
@@ -114,15 +114,15 @@ func NewConfig(externalConfig ExternalConfig) (*Config, error) {
 //
 // Should only be used for printing.
 func GetAllCheckers(categories ...string) ([]bufcheck.Checker, error) {
-	config, err := NewConfig(ExternalConfig{Use: v1AllCategories})
+	config, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Use: v1AllCategories})
 	if err != nil {
 		return nil, err
 	}
 	return checkersToBufcheckCheckers(config.Checkers, categories)
 }
 
-// ExternalConfig is an external config.
-type ExternalConfig struct {
+// ExternalConfigV1Beta1 is an external config.
+type ExternalConfigV1Beta1 struct {
 	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
 	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
 	// IgnoreRootPaths

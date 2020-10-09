@@ -69,7 +69,7 @@ func dependenciesForBucket(ctx context.Context, readBucket storage.ReadBucket) (
 		retErr = multierr.Append(retErr, readObject.Close())
 	}()
 	externalLockFile := &externalLockFile{}
-	if err := encoding.NewYAMLDecoder(readObject).Decode(externalLockFile); err != nil {
+	if err := encoding.NewYAMLDecoderStrict(readObject).Decode(externalLockFile); err != nil {
 		return nil, err
 	}
 	dependencies := make([]ResolvedModuleName, len(externalLockFile.Deps))

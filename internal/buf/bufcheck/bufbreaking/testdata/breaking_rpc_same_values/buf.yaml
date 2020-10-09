@@ -1,3 +1,4 @@
+version: v1beta1
 breaking:
   except:
     - SERVICE_NO_DELETE

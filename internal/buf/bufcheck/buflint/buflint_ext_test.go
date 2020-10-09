@@ -678,7 +678,7 @@ func TestRunServiceSuffixCustom(t *testing.T) {
 func TestRunIgnores1(t *testing.T) {
 	testLint(
 		t,
-		"ignores",
+		"ignores1",
 		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
@@ -701,15 +701,9 @@ func TestRunIgnores1(t *testing.T) {
 }
 
 func TestRunIgnores2(t *testing.T) {
-	testLintExternalConfigModifier(
+	testLint(
 		t,
-		"ignores",
-		func(externalConfig *bufconfig.ExternalConfig) {
-			externalConfig.Lint.Ignore = []string{
-				"buf/bar/bar2.proto",
-				"buf/foo",
-			}
-		},
+		"ignores2",
 		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
@@ -720,24 +714,9 @@ func TestRunIgnores2(t *testing.T) {
 }
 
 func TestRunIgnores3(t *testing.T) {
-	testLintExternalConfigModifier(
+	testLint(
 		t,
-		"ignores",
-		func(externalConfig *bufconfig.ExternalConfig) {
-			externalConfig.Lint.IgnoreOnly = map[string][]string{
-				"ENUM_PASCAL_CASE": {
-					"buf/bar/bar.proto",
-					"buf/foo/bar",
-					"buf/foo/bar",
-				},
-				"MESSAGE_PASCAL_CASE": {
-					"buf/bar/bar.proto",
-				},
-				"STYLE_BASIC": {
-					"buf/foo/bar",
-				},
-			}
-		},
+		"ignores3",
 		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE"),
@@ -794,11 +773,11 @@ func TestCommentIgnoresOff(t *testing.T) {
 }
 
 func TestCommentIgnoresOn(t *testing.T) {
-	testLintExternalConfigModifier(
+	testLintConfigModifier(
 		t,
 		"comment_ignores",
-		func(externalConfig *bufconfig.ExternalConfig) {
-			externalConfig.Lint.AllowCommentIgnores = true
+		func(config *bufconfig.Config) {
+			config.Lint.AllowCommentIgnores = true
 		},
 	)
 }
@@ -808,7 +787,7 @@ func testLint(
 	relDirPath string,
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
-	testLintExternalConfigModifier(
+	testLintConfigModifier(
 		t,
 		relDirPath,
 		nil,
@@ -816,10 +795,10 @@ func testLint(
 	)
 }
 
-func testLintExternalConfigModifier(
+func testLintConfigModifier(
 	t *testing.T,
 	relDirPath string,
-	modifier func(*bufconfig.ExternalConfig),
+	configModifier func(*bufconfig.Config),
 	expectedFileAnnotations ...bufanalysis.FileAnnotation,
 ) {
 	t.Parallel()
@@ -832,20 +811,11 @@ func testLintExternalConfigModifier(
 	readWriteBucket, err := storageos.NewReadWriteBucket(dirPath)
 	require.NoError(t, err)
 
-	var configProviderOptions []bufconfig.ProviderOption
-	if modifier != nil {
-		configProviderOptions = append(
-			configProviderOptions,
-			bufconfig.ProviderWithExternalConfigModifier(
-				func(externalConfig *bufconfig.ExternalConfig) error {
-					modifier(externalConfig)
-					return nil
-				},
-			),
-		)
-	}
-	configProvider := bufconfig.NewProvider(logger, configProviderOptions...)
+	configProvider := bufconfig.NewProvider(logger)
 	config := testGetConfig(t, configProvider, readWriteBucket)
+	if configModifier != nil {
+		configModifier(config)
+	}
 
 	module, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),

@@ -1,3 +1,4 @@
+version: v1beta1
 lint:
   use:
     - ENUM_FIRST_VALUE_ZERO

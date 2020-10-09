@@ -17,6 +17,8 @@ package bufconfig
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io/ioutil"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
@@ -29,71 +31,75 @@ import (
 	"go.uber.org/zap"
 )
 
-// ConfigFilePath is the default config file path within a bucket.
-const ConfigFilePath = "buf.yaml"
+const v1beta1Version = "v1beta1"
 
 type provider struct {
-	logger                 *zap.Logger
-	externalConfigModifier func(*ExternalConfig) error
+	logger *zap.Logger
 }
 
-func newProvider(logger *zap.Logger, options ...ProviderOption) *provider {
-	provider := &provider{
+func newProvider(logger *zap.Logger) *provider {
+	return &provider{
 		logger: logger,
 	}
-	for _, option := range options {
-		option(provider)
-	}
-	return provider
 }
 
 func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, retErr error) {
 	ctx, span := trace.StartSpan(ctx, "get_config")
 	defer span.End()
 
-	externalConfig := &ExternalConfig{}
 	readObjectCloser, err := readBucket.Get(ctx, ConfigFilePath)
 	if err != nil {
 		if storage.IsNotExist(err) {
-			return p.newConfig(externalConfig)
+			return p.newConfigV1Beta1(externalConfigV1Beta1{})
 		}
 		return nil, err
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
-	if err := encoding.NewYAMLDecoder(readObjectCloser).Decode(externalConfig); err != nil {
+	data, err := ioutil.ReadAll(readObjectCloser)
+	if err != nil {
 		return nil, err
 	}
-	return p.newConfig(externalConfig)
+	return p.getConfigForData(ctx, data, `File "`+readObjectCloser.ExternalPath()+`"`)
 }
 
 func (p *provider) GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
 	_, span := trace.StartSpan(ctx, "get_config_for_data")
 	defer span.End()
 
-	externalConfig := &ExternalConfig{}
-	if err := encoding.UnmarshalJSONOrYAMLStrict(data, externalConfig); err != nil {
-		return nil, err
-	}
-	return p.newConfig(externalConfig)
+	return p.getConfigForData(ctx, data, "Configuration data")
 }
 
-func (p *provider) newConfig(externalConfig *ExternalConfig) (*Config, error) {
-	if p.externalConfigModifier != nil {
-		if err := p.externalConfigModifier(externalConfig); err != nil {
-			return nil, err
-		}
+func (p *provider) getConfigForData(ctx context.Context, data []byte, id string) (*Config, error) {
+	var externalConfigVersion externalConfigVersion
+	if err := encoding.UnmarshalJSONOrYAMLNonStrict(data, &externalConfigVersion); err != nil {
+		return nil, err
 	}
-	buildConfig, err := bufmodulebuild.NewConfig(externalConfig.Build, externalConfig.Deps...)
+	switch externalConfigVersion.Version {
+	case "":
+		p.logger.Sugar().Warnf(`%s has no version set. Please add "version: %s". See https://buf.build/docs/faq for more details.`, id, v1beta1Version)
+	case v1beta1Version:
+	default:
+		return nil, fmt.Errorf("%s has unknown configuration version: %s", id, externalConfigVersion.Version)
+	}
+	var externalConfigV1Beta1 externalConfigV1Beta1
+	if err := encoding.UnmarshalJSONOrYAMLStrict(data, &externalConfigV1Beta1); err != nil {
+		return nil, err
+	}
+	return p.newConfigV1Beta1(externalConfigV1Beta1)
+}
+
+func (p *provider) newConfigV1Beta1(externalConfig externalConfigV1Beta1) (*Config, error) {
+	buildConfig, err := bufmodulebuild.NewConfigV1Beta1(externalConfig.Build, externalConfig.Deps...)
 	if err != nil {
 		return nil, err
 	}
-	breakingConfig, err := bufbreaking.NewConfig(externalConfig.Breaking)
+	breakingConfig, err := bufbreaking.NewConfigV1Beta1(externalConfig.Breaking)
 	if err != nil {
 		return nil, err
 	}
-	lintConfig, err := buflint.NewConfig(externalConfig.Lint)
+	lintConfig, err := buflint.NewConfigV1Beta1(externalConfig.Lint)
 	if err != nil {
 		return nil, err
 	}
@@ -113,4 +119,17 @@ func (p *provider) newConfig(externalConfig *ExternalConfig) (*Config, error) {
 		Breaking: breakingConfig,
 		Lint:     lintConfig,
 	}, nil
+}
+
+type externalConfigVersion struct {
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+type externalConfigV1Beta1 struct {
+	Version  string                               `json:"version,omitempty" yaml:"version,omitempty"`
+	Name     string                               `json:"name,omitempty" yaml:"name,omitempty"`
+	Build    bufmodulebuild.ExternalConfigV1Beta1 `json:"build,omitempty" yaml:"build,omitempty"`
+	Breaking bufbreaking.ExternalConfigV1Beta1    `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Lint     buflint.ExternalConfigV1Beta1        `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Deps     []string                             `json:"deps,omitempty" yaml:"deps,omitempty"`
 }

@@ -24,10 +24,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewConfigSuccess1(t *testing.T) {
+func TestNewConfigV1Beta1Success1(t *testing.T) {
 	// https://github.com/bufbuild/buf/issues/56
 	t.Parallel()
-	testNewConfigSuccess(
+	testNewConfigV1Beta1Success(
 		t,
 		[]string{
 			"proto",
@@ -38,9 +38,9 @@ func TestNewConfigSuccess1(t *testing.T) {
 	)
 }
 
-func TestNewConfigError1(t *testing.T) {
+func TestNewConfigV1Beta1Error1(t *testing.T) {
 	t.Parallel()
-	testNewConfigError(
+	testNewConfigV1Beta1Error(
 		t,
 		[]string{
 			"/a/b",
@@ -50,9 +50,9 @@ func TestNewConfigError1(t *testing.T) {
 	)
 }
 
-func TestNewConfigError2(t *testing.T) {
+func TestNewConfigV1Beta1Error2(t *testing.T) {
 	t.Parallel()
-	testNewConfigError(
+	testNewConfigV1Beta1Error(
 		t,
 		[]string{},
 		[]string{
@@ -62,9 +62,9 @@ func TestNewConfigError2(t *testing.T) {
 	)
 }
 
-func TestNewConfigError3(t *testing.T) {
+func TestNewConfigV1Beta1Error3(t *testing.T) {
 	t.Parallel()
-	testNewConfigError(
+	testNewConfigV1Beta1Error(
 		t,
 		[]string{
 			"a/b",
@@ -75,9 +75,9 @@ func TestNewConfigError3(t *testing.T) {
 	)
 }
 
-func TestNewConfigError4(t *testing.T) {
+func TestNewConfigV1Beta1Error4(t *testing.T) {
 	t.Parallel()
-	testNewConfigError(
+	testNewConfigV1Beta1Error(
 		t,
 		[]string{
 			"a/b",
@@ -88,9 +88,9 @@ func TestNewConfigError4(t *testing.T) {
 	)
 }
 
-func TestNewConfigError5(t *testing.T) {
+func TestNewConfigV1Beta1Error5(t *testing.T) {
 	t.Parallel()
-	testNewConfigError(
+	testNewConfigV1Beta1Error(
 		t,
 		[]string{
 			"a/b",
@@ -102,9 +102,9 @@ func TestNewConfigError5(t *testing.T) {
 	)
 }
 
-func TestNewConfigError6(t *testing.T) {
+func TestNewConfigV1Beta1Error6(t *testing.T) {
 	t.Parallel()
-	testNewConfigError(
+	testNewConfigV1Beta1Error(
 		t,
 		[]string{
 			".",
@@ -115,9 +115,9 @@ func TestNewConfigError6(t *testing.T) {
 	)
 }
 
-func TestNewConfigError7(t *testing.T) {
+func TestNewConfigV1Beta1Error7(t *testing.T) {
 	t.Parallel()
-	testNewConfigError(
+	testNewConfigV1Beta1Error(
 		t,
 		[]string{
 			"proto",
@@ -131,9 +131,9 @@ func TestNewConfigError7(t *testing.T) {
 	)
 }
 
-func TestNewConfigError8(t *testing.T) {
+func TestNewConfigV1Beta1Error8(t *testing.T) {
 	t.Parallel()
-	testNewConfigError(
+	testNewConfigV1Beta1Error(
 		t,
 		[]string{
 			"proto",
@@ -147,9 +147,9 @@ func TestNewConfigError8(t *testing.T) {
 	)
 }
 
-func TestNewConfigError9(t *testing.T) {
+func TestNewConfigV1Beta1Error9(t *testing.T) {
 	t.Parallel()
-	testNewConfigError(
+	testNewConfigV1Beta1Error(
 		t,
 		[]string{
 			"proto",
@@ -163,9 +163,9 @@ func TestNewConfigError9(t *testing.T) {
 	)
 }
 
-func TestNewConfigEqual1(t *testing.T) {
+func TestNewConfigV1Beta1Equal1(t *testing.T) {
 	t.Parallel()
-	testNewConfigEqual(
+	testNewConfigV1Beta1Equal(
 		t,
 		[]string{
 			"a",
@@ -194,9 +194,9 @@ func TestNewConfigEqual1(t *testing.T) {
 	)
 }
 
-func TestNewConfigEqual2(t *testing.T) {
+func TestNewConfigV1Beta1Equal2(t *testing.T) {
 	t.Parallel()
-	testNewConfigEqual(
+	testNewConfigV1Beta1Equal(
 		t,
 		[]string{
 			"a",
@@ -222,24 +222,24 @@ func TestNewConfigEqual2(t *testing.T) {
 	)
 }
 
-func testNewConfigSuccess(t *testing.T, roots []string, excludes []string, deps []string) {
-	_, err := NewConfig(ExternalConfig{Roots: roots, Excludes: excludes}, deps...)
+func testNewConfigV1Beta1Success(t *testing.T, roots []string, excludes []string, deps []string) {
+	_, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.NoError(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 }
 
-func testNewConfigError(t *testing.T, roots []string, excludes []string, deps []string) {
-	_, err := NewConfig(ExternalConfig{Roots: roots, Excludes: excludes}, deps...)
+func testNewConfigV1Beta1Error(t *testing.T, roots []string, excludes []string, deps []string) {
+	_, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.Error(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 }
 
-func testNewConfigEqual(
+func testNewConfigV1Beta1Equal(
 	t *testing.T,
 	roots []string,
 	excludes []string,
 	deps []string,
 	expectedConfig *Config,
 ) {
-	config, err := NewConfig(ExternalConfig{Roots: roots, Excludes: excludes}, deps...)
+	config, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.NoError(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 	assert.Equal(t, expectedConfig, config)
 }
