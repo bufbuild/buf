@@ -22,35 +22,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// RunTestDefaultConfigBuilder runs the test.
-func RunTestDefaultConfigBuilder(
-	t *testing.T,
-	checkerBuilders []*internal.CheckerBuilder,
-	idToCategories map[string][]string,
-	defaultCategories []string,
-) {
-	_, err := internal.ConfigBuilder{}.NewConfig(checkerBuilders, idToCategories, defaultCategories)
+// RunTestVersionSpec tests the VersionSpec.
+func RunTestVersionSpec(t *testing.T, versionSpec *internal.VersionSpec) {
+	runTestDefaultConfigBuilder(t, versionSpec)
+	runTestCheckerBuilders(t, versionSpec)
+}
+
+func runTestDefaultConfigBuilder(t *testing.T, versionSpec *internal.VersionSpec) {
+	_, err := internal.ConfigBuilder{}.NewConfig(versionSpec)
 	assert.NoError(t, err)
 }
 
-// RunTestCheckerBuilders runs the test.
-func RunTestCheckerBuilders(
-	t *testing.T,
-	checkerBuilders []*internal.CheckerBuilder,
-	idToCategories map[string][]string,
-	allCategories []string,
-) {
-	idsMap := make(map[string]struct{}, len(checkerBuilders))
-	for _, checkerBuilder := range checkerBuilders {
+func runTestCheckerBuilders(t *testing.T, versionSpec *internal.VersionSpec) {
+	idsMap := make(map[string]struct{}, len(versionSpec.CheckerBuilders))
+	for _, checkerBuilder := range versionSpec.CheckerBuilders {
 		_, ok := idsMap[checkerBuilder.ID()]
 		assert.False(t, ok, "duplicated id %q", checkerBuilder.ID())
 		idsMap[checkerBuilder.ID()] = struct{}{}
 	}
-	allCategoriesMap := stringutil.SliceToMap(allCategories)
+	allCategoriesMap := stringutil.SliceToMap(versionSpec.AllCategories)
 	for id := range idsMap {
 		expectedID := stringutil.ToUpperSnakeCase(id)
 		assert.Equal(t, expectedID, id)
-		categories, ok := idToCategories[id]
+		categories, ok := versionSpec.IDToCategories[id]
 		assert.True(t, ok, "id %q categories are not configured", id)
 		assert.True(t, len(categories) > 0, "id %q must have categories", id)
 		for _, category := range categories {
@@ -60,7 +54,7 @@ func RunTestCheckerBuilders(
 			assert.True(t, ok, "category %q configured for id %q is not a known category", category, id)
 		}
 	}
-	for id := range idToCategories {
+	for id := range versionSpec.IDToCategories {
 		_, ok := idsMap[id]
 		assert.True(t, ok, "id %q configured in categories is not added to checkerBuilders", id)
 	}
