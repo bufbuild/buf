@@ -12,16 +12,16 @@ require (
 	github.com/klauspost/compress v1.11.1
 	github.com/klauspost/pgzip v1.2.5
 	github.com/pkg/profile v1.5.0
-	github.com/spf13/cobra v1.0.1-0.20200713175500-884edc58ad08
+	github.com/spf13/cobra v1.0.1-0.20201006035406-b97b5ead31f7
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
 	go.opencensus.io v0.22.5
 	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
-	golang.org/x/sys v0.0.0-20200826173525-f9321e4c35a6 // indirect
+	golang.org/x/sys v0.0.0-20201009025420-dfb3f7c4e634 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	google.golang.org/genproto v0.0.0-20201009135657-4d944d34d83c // indirect
+	google.golang.org/genproto v0.0.0-20201012135029-0c95dc0d88e8 // indirect
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
