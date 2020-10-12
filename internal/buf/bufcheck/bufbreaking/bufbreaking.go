@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking/internal/bufbreakingv1beta1"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"go.uber.org/zap"
@@ -66,13 +67,11 @@ type Config struct {
 	IgnoreRootPaths     map[string]struct{}
 }
 
-// GetCheckers returns the checkers for the given categories.
-//
-// If categories is empty, this returns all checkers as bufcheck.Checkers.
+// GetCheckers returns the checkers.
 //
 // Should only be used for printing.
-func (c *Config) GetCheckers(categories ...string) ([]bufcheck.Checker, error) {
-	return checkersToBufcheckCheckers(c.Checkers, categories)
+func (c *Config) GetCheckers() []bufcheck.Checker {
+	return checkersToBufcheckCheckers(c.Checkers)
 }
 
 // NewConfigV1Beta1 returns a new Config.
@@ -83,9 +82,7 @@ func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
 		IgnoreRootPaths:               externalConfig.Ignore,
 		IgnoreIDOrCategoryToRootPaths: externalConfig.IgnoreOnly,
 	}.NewConfig(
-		v1CheckerBuilders,
-		v1IDToCategories,
-		v1DefaultCategories,
+		bufbreakingv1beta1.VersionSpec,
 	)
 	if err != nil {
 		return nil, err
@@ -93,17 +90,19 @@ func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
 	return internalConfigToConfig(internalConfig), nil
 }
 
-// GetAllCheckers gets all known checkers for the given categories.
-//
-// If categories is empty, this returns all checkers as bufcheck.Checkers.
+// GetAllCheckersV1Beta1 gets all known checkers.
 //
 // Should only be used for printing.
-func GetAllCheckers(categories ...string) ([]bufcheck.Checker, error) {
-	config, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Use: v1AllCategories})
+func GetAllCheckersV1Beta1() ([]bufcheck.Checker, error) {
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
+			Use: bufbreakingv1beta1.VersionSpec.AllCategories,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
-	return checkersToBufcheckCheckers(config.Checkers, categories)
+	return checkersToBufcheckCheckers(config.Checkers), nil
 }
 
 // ExternalConfigV1Beta1 is an external config.
@@ -132,16 +131,13 @@ func configToInternalConfig(config *Config) *internal.Config {
 	}
 }
 
-func checkersToBufcheckCheckers(checkers []Checker, categories []string) ([]bufcheck.Checker, error) {
+func checkersToBufcheckCheckers(checkers []Checker) []bufcheck.Checker {
 	if checkers == nil {
-		return nil, nil
+		return nil
 	}
 	s := make([]bufcheck.Checker, len(checkers))
 	for i, e := range checkers {
 		s[i] = e
 	}
-	if len(categories) == 0 {
-		return s, nil
-	}
-	return internal.GetCheckersForCategories(s, v1AllCategories, categories)
+	return s
 }

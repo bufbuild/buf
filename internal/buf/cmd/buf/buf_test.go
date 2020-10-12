@@ -230,7 +230,8 @@ func TestFail12(t *testing.T) {
 	testRunStdout(
 		t,
 		1,
-		`lint:
+		`version: v1beta1
+lint:
   ignore_only:
     FIELD_LOWER_SNAKE_CASE:
 	  - buf/buf.proto
@@ -273,15 +274,52 @@ func TestCheckLsLintCheckers1(t *testing.T) {
 		t,
 		0,
 		`
-		ID                       CATEGORIES  PURPOSE
-		RPC_NO_CLIENT_STREAMING  UNARY_RPC   Checks that RPCs are not client streaming.
-		RPC_NO_SERVER_STREAMING  UNARY_RPC   Checks that RPCs are not server streaming.
+ID                                CATEGORIES                                  PURPOSE
+DIRECTORY_SAME_PACKAGE            MINIMAL, BASIC, DEFAULT, FILE_LAYOUT        Checks that all files in a given directory are in the same package.
+PACKAGE_DIRECTORY_MATCH           MINIMAL, BASIC, DEFAULT, FILE_LAYOUT        Checks that all files are in a directory that matches their package name.
+PACKAGE_SAME_DIRECTORY            MINIMAL, BASIC, DEFAULT, FILE_LAYOUT        Checks that all files with a given package are in the same directory.
+PACKAGE_SAME_CSHARP_NAMESPACE     MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the csharp_namespace option.
+PACKAGE_SAME_GO_PACKAGE           MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the go_package option.
+PACKAGE_SAME_JAVA_MULTIPLE_FILES  MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the java_multiple_files option.
+PACKAGE_SAME_JAVA_PACKAGE         MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the java_package option.
+PACKAGE_SAME_PHP_NAMESPACE        MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the php_namespace option.
+PACKAGE_SAME_RUBY_PACKAGE         MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the ruby_package option.
+PACKAGE_SAME_SWIFT_PREFIX         MINIMAL, BASIC, DEFAULT, PACKAGE_AFFINITY   Checks that all files with a given package have the same value for the swift_prefix option.
+ENUM_NO_ALLOW_ALIAS               MINIMAL, BASIC, DEFAULT, SENSIBLE           Checks that enums do not have the allow_alias option set.
+FIELD_NO_DESCRIPTOR               MINIMAL, BASIC, DEFAULT, SENSIBLE           Checks that field names are not name capitalization of "descriptor" with any number of prefix or suffix underscores.
+IMPORT_NO_PUBLIC                  MINIMAL, BASIC, DEFAULT, SENSIBLE           Checks that imports are not public.
+IMPORT_NO_WEAK                    MINIMAL, BASIC, DEFAULT, SENSIBLE           Checks that imports are not weak.
+PACKAGE_DEFINED                   MINIMAL, BASIC, DEFAULT, SENSIBLE           Checks that all files have a package defined.
+ENUM_PASCAL_CASE                  BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that enums are PascalCase.
+ENUM_VALUE_UPPER_SNAKE_CASE       BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that enum values are UPPER_SNAKE_CASE.
+FIELD_LOWER_SNAKE_CASE            BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that field names are lower_snake_case.
+MESSAGE_PASCAL_CASE               BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that messages are PascalCase.
+ONEOF_LOWER_SNAKE_CASE            BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that oneof names are lower_snake_case.
+PACKAGE_LOWER_SNAKE_CASE          BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that packages are lower_snake.case.
+RPC_PASCAL_CASE                   BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that RPCs are PascalCase.
+SERVICE_PASCAL_CASE               BASIC, DEFAULT, STYLE_BASIC, STYLE_DEFAULT  Checks that services are PascalCase.
+ENUM_VALUE_PREFIX                 DEFAULT, STYLE_DEFAULT                      Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
+ENUM_ZERO_VALUE_SUFFIX            DEFAULT, STYLE_DEFAULT                      Checks that enum zero values are suffixed with _UNSPECIFIED (suffix is configurable).
+FILE_LOWER_SNAKE_CASE             DEFAULT, STYLE_DEFAULT                      Checks that filenames are lower_snake_case.
+PACKAGE_VERSION_SUFFIX            DEFAULT, STYLE_DEFAULT                      Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
+RPC_REQUEST_RESPONSE_UNIQUE       DEFAULT, STYLE_DEFAULT                      Checks that RPC request and response types are only used in one RPC (configurable).
+RPC_REQUEST_STANDARD_NAME         DEFAULT, STYLE_DEFAULT                      Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
+RPC_RESPONSE_STANDARD_NAME        DEFAULT, STYLE_DEFAULT                      Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).
+SERVICE_SUFFIX                    DEFAULT, STYLE_DEFAULT                      Checks that services are suffixed with Service (suffix is configurable).
+COMMENT_ENUM                      COMMENTS                                    Checks that enums have non-empty comments.
+COMMENT_ENUM_VALUE                COMMENTS                                    Checks that enum values have non-empty comments.
+COMMENT_FIELD                     COMMENTS                                    Checks that fields have non-empty comments.
+COMMENT_MESSAGE                   COMMENTS                                    Checks that messages have non-empty comments.
+COMMENT_ONEOF                     COMMENTS                                    Checks that oneof have non-empty comments.
+COMMENT_RPC                       COMMENTS                                    Checks that RPCs have non-empty comments.
+COMMENT_SERVICE                   COMMENTS                                    Checks that services have non-empty comments.
+RPC_NO_CLIENT_STREAMING           UNARY_RPC                                   Checks that RPCs are not client streaming.
+RPC_NO_SERVER_STREAMING           UNARY_RPC                                   Checks that RPCs are not server streaming.
+ENUM_FIRST_VALUE_ZERO             OTHER                                       Checks that all first values of enums have a numeric value of 0.
 		`,
 		"check",
 		"ls-lint-checkers",
 		"--all",
-		"--category",
-		"UNARY_RPC",
 	)
 }
 
@@ -308,31 +346,65 @@ func TestCheckLsBreakingCheckers1(t *testing.T) {
 		t,
 		0,
 		`
-		ID                                           CATEGORIES                      PURPOSE
-		ENUM_VALUE_SAME_NAME                         FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
-		FIELD_SAME_JSON_NAME                         FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
-		FIELD_SAME_NAME                              FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
-		FIELD_SAME_LABEL                             FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same labels in a given message.
-		FIELD_SAME_ONEOF                             FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
-		FIELD_SAME_TYPE                              FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same types in a given message.
-		MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT         FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
-		RESERVED_ENUM_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given enum.
-		RESERVED_MESSAGE_NO_DELETE                   FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given message.
-		RPC_SAME_CLIENT_STREAMING                    FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same client streaming value.
-		RPC_SAME_IDEMPOTENCY_LEVEL                   FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same value for the idempotency_level option.
-		RPC_SAME_REQUEST_TYPE                        FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same request type.
-		RPC_SAME_RESPONSE_TYPE                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same response type.
-		RPC_SAME_SERVER_STREAMING                    FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same server streaming value.
-		ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED    WIRE_JSON                       Checks that enum values are not deleted from a given enum unless the name is reserved.
-		FIELD_NO_DELETE_UNLESS_NAME_RESERVED         WIRE_JSON                       Checks that fields are not deleted from a given message unless the name is reserved.
-		ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED  WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
-		FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED       WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
+ID                                              CATEGORIES                      PURPOSE
+ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
+FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
+FILE_SAME_PACKAGE                               FILE                            Checks that files have the same package.
+MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
+SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
+ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
+EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
+FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
+FIELD_SAME_CTYPE                                FILE, PACKAGE                   Checks that fields have the same value for the ctype option.
+FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
+FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
+FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the cc_generic_services option.
+FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   Checks that files have the same value for the csharp_namespace option.
+FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                   Checks that files have the same value for the go_package option.
+FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   Checks that files have the same value for the java_generic_services option.
+FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
+FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
+FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
+FILE_SAME_JAVA_STRING_CHECK_UTF8                FILE, PACKAGE                   Checks that files have the same value for the java_string_check_utf8 option.
+FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
+FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
+FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
+FILE_SAME_PHP_GENERIC_SERVICES                  FILE, PACKAGE                   Checks that files have the same value for the php_generic_services option.
+FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   Checks that files have the same value for the php_metadata_namespace option.
+FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   Checks that files have the same value for the php_namespace option.
+FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the py_generic_services option.
+FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the ruby_package option.
+FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
+FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
+MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
+RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
+ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
+FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
+FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
+FIELD_SAME_LABEL                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same labels in a given message.
+FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
+FIELD_SAME_TYPE                                 FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same types in a given message.
+MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
+RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given enum.
+RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given message.
+RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same client streaming value.
+RPC_SAME_IDEMPOTENCY_LEVEL                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same value for the idempotency_level option.
+RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same request type.
+RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same response type.
+RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same server streaming value.
+PACKAGE_ENUM_NO_DELETE                          PACKAGE                         Checks that enums are not deleted from a given package.
+PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                         Checks that messages are not deleted from a given package.
+PACKAGE_NO_DELETE                               PACKAGE                         Checks that packages are not deleted.
+PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
+ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                       Checks that enum values are not deleted from a given enum unless the name is reserved.
+FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                       Checks that fields are not deleted from a given message unless the name is reserved.
+ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
+FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
 		`,
 		"check",
 		"ls-breaking-checkers",
 		"--all",
-		"--category",
-		"WIRE_JSON",
 	)
 }
 

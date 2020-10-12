@@ -60,30 +60,16 @@ type ConfigBuilder struct {
 }
 
 // NewConfig returns a new Config.
-func (b ConfigBuilder) NewConfig(
-	checkerBuilders []*CheckerBuilder,
-	idToCategories map[string][]string,
-	defaultCategories []string,
-) (*Config, error) {
-	return newConfig(
-		b,
-		checkerBuilders,
-		idToCategories,
-		defaultCategories,
-	)
+func (b ConfigBuilder) NewConfig(versionSpec *VersionSpec) (*Config, error) {
+	return newConfig(b, versionSpec)
 }
 
-func newConfig(
-	configBuilder ConfigBuilder,
-	checkerBuilders []*CheckerBuilder,
-	idToCategories map[string][]string,
-	defaultCategories []string,
-) (*Config, error) {
+func newConfig(configBuilder ConfigBuilder, versionSpec *VersionSpec) (*Config, error) {
 	configBuilder.Use = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(configBuilder.Use)
 	configBuilder.Except = stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(configBuilder.Except)
 	if len(configBuilder.Use) == 0 {
 		// default behavior
-		configBuilder.Use = defaultCategories
+		configBuilder.Use = versionSpec.DefaultCategories
 	}
 	if configBuilder.EnumZeroValueSuffix == "" {
 		configBuilder.EnumZeroValueSuffix = defaultEnumZeroValueSuffix
@@ -93,12 +79,11 @@ func newConfig(
 	}
 	return newConfigForCheckerBuilders(
 		configBuilder,
-		checkerBuilders,
-		idToCategories,
+		versionSpec.CheckerBuilders,
+		versionSpec.IDToCategories,
 	)
 }
 
-// revisionCheckerBuilders is a var such as Revision1CheckerBuilders
 func newConfigForCheckerBuilders(
 	configBuilder ConfigBuilder,
 	checkerBuilders []*CheckerBuilder,

@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
+	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
@@ -32,23 +33,16 @@ func BindLSCheckersAll(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 	)
 }
 
-// BindLSCheckersCategories binds the categories flag for an ls checkers command.
-func BindLSCheckersCategories(flagSet *pflag.FlagSet, addr *[]string, flagName string) {
-	flagSet.StringSliceVar(
-		addr,
-		flagName,
-		nil,
-		"Only list the checkers in these categories.",
-	)
-}
-
 // BindLSCheckersConfig binds the config flag for an ls checkers command.
-func BindLSCheckersConfig(flagSet *pflag.FlagSet, addr *string, flagName string) {
+func BindLSCheckersConfig(flagSet *pflag.FlagSet, addr *string, flagName string, allFlagName string) {
 	flagSet.StringVar(
 		addr,
 		flagName,
 		"",
-		`The config file or data to use. If --all is specified, this is ignored.`,
+		fmt.Sprintf(
+			`The config file or data to use. If --%s is specified, this is ignored.`,
+			allFlagName,
+		),
 	)
 }
 
@@ -63,4 +57,23 @@ func BindLSCheckersFormat(flagSet *pflag.FlagSet, addr *string, flagName string)
 			stringutil.SliceToString(bufcheck.AllCheckerFormatStrings),
 		),
 	)
+}
+
+// BindLSCheckersCategories binds the categories flag for an ls checkers command.
+func BindLSCheckersCategories(flagSet *pflag.FlagSet, addr *[]string, flagName string) {
+	flagSet.StringSliceVar(
+		addr,
+		flagName,
+		nil,
+		"Only list the checkers in these categories.",
+	)
+	_ = flagSet.MarkHidden(flagName)
+}
+
+// CheckLSCheckersCategories checks that value is empty as this flag is deprecated.
+func CheckLSCheckersCategories(value []string, flagName string) error {
+	if len(value) > 0 {
+		return appcmd.NewInvalidArgumentErrorf("Flag --%s has been removed in v0.26.0 in preparation for v1.0. This flag is difficult to reconcile with the concept of configuration versions. If filtering by category is necessary, print in JSON format and filter.", flagName)
+	}
+	return nil
 }
