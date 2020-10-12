@@ -55,7 +55,8 @@ func NewCommand(
 }
 
 type flags struct {
-	All        bool
+	All bool
+	// TODO: remove for v1.0
 	Categories []string
 	Config     string
 	Format     string
@@ -68,7 +69,7 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	checkinternal.BindLSCheckersAll(flagSet, &f.All, allFlagName)
 	checkinternal.BindLSCheckersCategories(flagSet, &f.Categories, categoriesFlagName)
-	checkinternal.BindLSCheckersConfig(flagSet, &f.Config, configFlagName)
+	checkinternal.BindLSCheckersConfig(flagSet, &f.Config, configFlagName, allFlagName)
 	checkinternal.BindLSCheckersFormat(flagSet, &f.Format, formatFlagName)
 }
 
@@ -77,19 +78,21 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	if err := checkinternal.CheckLSCheckersCategories(flags.Categories, categoriesFlagName); err != nil {
+		return err
+	}
 	var checkers []bufcheck.Checker
 	var err error
 	if flags.All {
-		checkers, err = bufbreaking.GetAllCheckers(flags.Categories...)
+		checkers, err = bufbreaking.GetAllCheckersV1Beta1()
 		if err != nil {
 			return err
 		}
 	} else {
-		configProvider := bufconfig.NewProvider(container.Logger())
 		config, err := bufcli.NewWireConfigReader(
 			container.Logger(),
 			configFlagName,
-			configProvider,
+			bufconfig.NewProvider(container.Logger()),
 		).GetConfig(
 			ctx,
 			flags.Config,
@@ -97,10 +100,7 @@ func run(
 		if err != nil {
 			return err
 		}
-		checkers, err = config.Breaking.GetCheckers(flags.Categories...)
-		if err != nil {
-			return err
-		}
+		checkers = config.Breaking.GetCheckers()
 	}
 	return bufcheck.PrintCheckers(
 		container.Stdout(),

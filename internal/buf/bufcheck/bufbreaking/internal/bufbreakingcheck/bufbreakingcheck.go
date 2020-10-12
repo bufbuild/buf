@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+// Package bufbreakingcheck impelements the check functions.
+//
+// These are used by bufbreakingbuild to create CheckerBuilders.
+package bufbreakingcheck
 
 import (
 	"errors"
