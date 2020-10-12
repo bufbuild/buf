@@ -2,13 +2,10 @@ BUF_BIN ?= cmd/buf
 
 PROTOREFLECT_VERSION := 11eaaf73e0ec2d04934c5d86d46577568463cc86
 # Remove when https://github.com/spf13/cobra/pull/1070 is released
-COBRA_VERSION := 884edc58ad08083e6c9a505041695aa2c3ca2d7a
-# Remove when https://github.com/ory/dockertest/issues/208 is fixed
-GOLANG_X_SYS_VERSION := f9321e4c35a6ee62ff0348f57ad5a3b5e73e299e
+COBRA_VERSION := b97b5ead31f7d34f764ac8666e40c214bb8e06dc
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION) \
-	github.com/spf13/cobra@$(COBRA_VERSION) \
-	golang.org/x/sys@$(GOLANG_X_SYS_VERSION)
+	github.com/spf13/cobra@$(COBRA_VERSION)
 GO_BINS := $(GO_BINS) \
 	$(BUF_BIN) \
 	cmd/protoc-gen-buf-check-breaking \
