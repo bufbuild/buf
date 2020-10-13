@@ -849,6 +849,7 @@ func RunTestSuite(
 					context.Background(),
 					readBucket,
 					buffer,
+					true,
 				))
 				data := buffer.Bytes()
 				require.NoError(t, storagearchive.Unzip(
@@ -892,6 +893,7 @@ func RunTestSuite(
 				context.Background(),
 				readBucket,
 				buffer,
+				true,
 			))
 			data := buffer.Bytes()
 			require.NoError(t, storagearchive.Unzip(
