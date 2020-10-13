@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"sort"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -28,6 +30,7 @@ var errDuplicatePath = errors.New("duplicate path")
 
 type readBucket struct {
 	pathToObject map[string]*object
+	paths        []string
 }
 
 func newReadBucket(
@@ -39,6 +42,7 @@ func newReadBucket(
 		option(readBucketOptions)
 	}
 	pathToObject := make(map[string]*object, len(pathToData))
+	paths := make([]string, 0, len(pathToData))
 	for path, data := range pathToData {
 		path, err := storageutil.ValidatePath(path)
 		if err != nil {
@@ -63,9 +67,12 @@ func newReadBucket(
 			externalPath,
 			data,
 		)
+		paths = append(paths, path)
 	}
+	sort.Strings(paths)
 	return &readBucket{
 		pathToObject: pathToObject,
+		paths:        paths,
 	}, nil
 }
 
@@ -87,7 +94,12 @@ func (b *readBucket) Walk(ctx context.Context, prefix string, f func(storage.Obj
 		return err
 	}
 	walkChecker := storageutil.NewWalkChecker()
-	for path, object := range b.pathToObject {
+	for _, path := range b.paths {
+		object, ok := b.pathToObject[path]
+		if !ok {
+			// this is a system error
+			return fmt.Errorf("path %q not in pathToObject", path)
+		}
 		if err := walkChecker.Check(ctx); err != nil {
 			return err
 		}

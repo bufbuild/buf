@@ -20,14 +20,30 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/bufbuild/buf/internal/pkg/thread"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
+)
+
+var (
+	manifestPath    = normalpath.Join("META-INF", "MANIFEST.MF")
+	manifestContent = []byte(`Manifest-Version: 1.0
+Created-By: 1.6.0 (protoc)
+
+`)
 )
 
 type executor struct {
@@ -48,24 +64,118 @@ func newExecutor(
 func (e *executor) Execute(
 	ctx context.Context,
 	container app.EnvStderrContainer,
-	readWriteBucket storage.ReadWriteBucket,
-	request *pluginpb.CodeGeneratorRequest,
+	pluginOut string,
+	requests ...*pluginpb.CodeGeneratorRequest,
 ) error {
+	var files []*pluginpb.CodeGeneratorResponse_File
+	var lock sync.Mutex
+	switch len(requests) {
+	case 0:
+		return nil
+	case 1:
+		iFiles, err := e.runHandler(ctx, container, requests[0])
+		if err != nil {
+			return err
+		}
+		files = iFiles
+	default:
+		jobs := make([]func() error, len(requests))
+		for i, request := range requests {
+			request := request
+			jobs[i] = func() error {
+				iFiles, err := e.runHandler(ctx, container, request)
+				if err != nil {
+					return err
+				}
+				lock.Lock()
+				files = append(files, iFiles...)
+				lock.Unlock()
+				return nil
+			}
+		}
+		if err := thread.Parallelize(jobs...); err != nil {
+			return err
+		}
+	}
+	switch filepath.Ext(pluginOut) {
+	case ".jar":
+		return writeResponseFilesArchive(ctx, files, pluginOut, true)
+	case ".zip":
+		return writeResponseFilesArchive(ctx, files, pluginOut, false)
+	case "":
+		return writeResponseFilesDirectory(ctx, files, pluginOut)
+	default:
+		return fmt.Errorf("unsupported output: %s", pluginOut)
+	}
+}
+
+func (e *executor) runHandler(
+	ctx context.Context,
+	container app.EnvStderrContainer,
+	request *pluginpb.CodeGeneratorRequest,
+) ([]*pluginpb.CodeGeneratorResponse_File, error) {
 	response, err := runHandler(ctx, container, e.handler, request)
+	if err != nil {
+		return nil, err
+	}
+	if errString := response.GetError(); errString != "" {
+		return nil, errors.New(errString)
+	}
+	return response.File, nil
+}
+
+func writeResponseFilesArchive(
+	ctx context.Context,
+	files []*pluginpb.CodeGeneratorResponse_File,
+	outFilePath string,
+	includeManifest bool,
+) (retErr error) {
+	fileInfo, err := os.Stat(filepath.Dir(outFilePath))
 	if err != nil {
 		return err
 	}
-	if errString := response.GetError(); errString != "" {
-		return errors.New(errString)
+	if !fileInfo.IsDir() {
+		return fmt.Errorf("not a directory: %s", filepath.Dir(outFilePath))
 	}
-	return writeResponseFiles(ctx, response.File, readWriteBucket)
+	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	for _, file := range files {
+		if file.GetInsertionPoint() != "" {
+			return fmt.Errorf("insertion points not supported with archive output: %s", file.GetName())
+		}
+		if err := storage.PutPath(ctx, readBucketBuilder, file.GetName(), []byte(file.GetContent())); err != nil {
+			return err
+		}
+	}
+	if includeManifest {
+		if err := storage.PutPath(ctx, readBucketBuilder, manifestPath, manifestContent); err != nil {
+			return err
+		}
+	}
+	readBucket, err := readBucketBuilder.ToReadBucket()
+	if err != nil {
+		return err
+	}
+	file, err := os.Create(outFilePath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, file.Close())
+	}()
+	// protoc does not compress
+	return storagearchive.Zip(ctx, readBucket, file, false)
 }
 
-func writeResponseFiles(
+func writeResponseFilesDirectory(
 	ctx context.Context,
 	files []*pluginpb.CodeGeneratorResponse_File,
-	readWriteBucket storage.ReadWriteBucket,
+	outDirPath string,
 ) error {
+	// this checks that the directory exists
+	readWriteBucket, err := storageos.NewReadWriteBucket(outDirPath)
+	if err != nil {
+		return err
+	}
 	for _, file := range files {
 		if file.GetInsertionPoint() != "" {
 			if err := applyInsertionPoint(ctx, file, readWriteBucket); err != nil {

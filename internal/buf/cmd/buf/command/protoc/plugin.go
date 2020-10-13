@@ -17,16 +17,14 @@ package protoc
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoexec"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
-	"github.com/bufbuild/buf/internal/pkg/thread"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type pluginInfo struct {
@@ -50,16 +48,6 @@ func executePlugin(
 	pluginName string,
 	pluginInfo *pluginInfo,
 ) error {
-	switch filepath.Ext(pluginInfo.Out) {
-	case ".jar":
-		return fmt.Errorf("jar output not supported but is coming soon: %q", pluginInfo.Out)
-	case ".zip":
-		return fmt.Errorf("zip output not supported but is coming soon: %q", pluginInfo.Out)
-	}
-	readWriteBucket, err := storageos.NewReadWriteBucket(pluginInfo.Out)
-	if err != nil {
-		return err
-	}
 	var handlerOptions []appprotoexec.HandlerOption
 	if pluginInfo.Path != "" {
 		handlerOptions = append(handlerOptions, appprotoexec.HandlerWithPluginPath(pluginInfo.Path))
@@ -68,24 +56,16 @@ func executePlugin(
 	if err != nil {
 		return err
 	}
-	executor := appproto.NewExecutor(logger, handler)
-	jobs := make([]func() error, len(images))
+	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
 	for i, image := range images {
-		image := image
-		jobs[i] = func() error {
-			if err := executor.Execute(
-				ctx,
-				container,
-				readWriteBucket,
-				bufimage.ImageToCodeGeneratorRequest(
-					image,
-					strings.Join(pluginInfo.Opt, ","),
-				),
-			); err != nil {
-				return fmt.Errorf("--%s_out: %v", pluginName, err)
-			}
-			return nil
-		}
+		requests[i] = bufimage.ImageToCodeGeneratorRequest(
+			image,
+			strings.Join(pluginInfo.Opt, ","),
+		)
 	}
-	return thread.Parallelize(jobs...)
+	executor := appproto.NewExecutor(logger, handler)
+	if err := executor.Execute(ctx, container, pluginInfo.Out, requests...); err != nil {
+		return fmt.Errorf("--%s_out: %v", pluginName, err)
+	}
+	return nil
 }

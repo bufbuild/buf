@@ -24,7 +24,6 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
-	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -101,14 +100,21 @@ func NewRunFunc(handler Handler) func(context.Context, app.Container) error {
 
 // Executor executes the Handler using protoc's plugin execution logic.
 //
-// This invokes a Handler and writes out the response to a Bucket, additionally
-// accounting for insertion point logic.
+// This invokes a Handler and writes out the response to the output location,
+// additionally accounting for insertion point logic.
+//
+// If multiple requests are specified, these are executed in parallel and the
+// result is combined into one response that is written.
+//
+// If the output location is a directory, insertion points are supported, and
+// the directory is written to.
+// If the output location is a jar or zip file, insertion points are not supported.
 type Executor interface {
 	Execute(
 		ctx context.Context,
 		container app.EnvStderrContainer,
-		readWriteBucket storage.ReadWriteBucket,
-		request *pluginpb.CodeGeneratorRequest,
+		out string,
+		requests ...*pluginpb.CodeGeneratorRequest,
 	) error
 }
 
