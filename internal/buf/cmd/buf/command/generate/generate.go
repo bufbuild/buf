@@ -29,11 +29,10 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoexec"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
-	"github.com/bufbuild/buf/internal/pkg/thread"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const (
@@ -192,9 +191,12 @@ func run(
 	if err != nil {
 		return err
 	}
-	readWriteBucket, err := storageos.NewReadWriteBucket(flags.PluginOut)
-	if err != nil {
-		return err
+	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
+	for i, image := range images {
+		requests[i] = bufimage.ImageToCodeGeneratorRequest(
+			image,
+			strings.Join(flags.PluginOpt, ","),
+		)
 	}
 	var handlerOptions []appprotoexec.HandlerOption
 	if flags.PluginPath != "" {
@@ -209,20 +211,5 @@ func run(
 		return err
 	}
 	executor := appproto.NewExecutor(container.Logger(), handler)
-	jobs := make([]func() error, len(images))
-	for i, image := range images {
-		image := image
-		jobs[i] = func() error {
-			return executor.Execute(
-				ctx,
-				container,
-				readWriteBucket,
-				bufimage.ImageToCodeGeneratorRequest(
-					image,
-					strings.Join(flags.PluginOpt, ","),
-				),
-			)
-		}
-	}
-	return thread.Parallelize(jobs...)
+	return executor.Execute(ctx, container, flags.PluginOut, requests...)
 }

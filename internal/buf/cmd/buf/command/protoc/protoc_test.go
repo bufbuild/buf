@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -31,6 +32,8 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"github.com/bufbuild/buf/internal/pkg/prototesting"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -147,6 +150,36 @@ func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 	)
 }
 
+func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	t.Parallel()
+	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	testCompareGeneratedStubsArchive(t,
+		googleapisDirPath,
+		[]testPluginInfo{
+			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
+		},
+		false,
+	)
+}
+
+func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+	t.Parallel()
+	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	testCompareGeneratedStubsArchive(t,
+		googleapisDirPath,
+		[]testPluginInfo{
+			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
+		},
+		true,
+	)
+}
+
 func TestCompareGeneratedStubsGoogleapisRuby(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode")
@@ -240,6 +273,109 @@ func testCompareGeneratedStubs(
 		context.Background(),
 		actualReadWriteBucket,
 		bufReadWriteBucket,
+		"protoc",
+		"buf-protoc",
+	)
+	require.NoError(t, err)
+	assert.Empty(t, string(diff))
+}
+
+func testCompareGeneratedStubsArchive(
+	t *testing.T,
+	dirPath string,
+	plugins []testPluginInfo,
+	useJar bool,
+) {
+	fileExt := ".zip"
+	if useJar {
+		fileExt = ".jar"
+	}
+	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 1000)
+	tempDir := t.TempDir()
+	actualProtocFile := filepath.Join(tempDir, "actual-protoc"+fileExt)
+	bufProtocFile := filepath.Join(tempDir, "buf-protoc"+fileExt)
+	var actualProtocPluginFlags []string
+	for _, plugin := range plugins {
+		actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_out=%s", plugin.name, actualProtocFile))
+		if plugin.opt != "" {
+			actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_opt=%s", plugin.name, plugin.opt))
+		}
+	}
+	buftesting.RunActualProtoc(
+		t,
+		false,
+		false,
+		dirPath,
+		filePaths,
+		map[string]string{
+			"PATH": os.Getenv("PATH"),
+		},
+		nil,
+		actualProtocPluginFlags...,
+	)
+	var bufProtocPluginFlags []string
+	for _, plugin := range plugins {
+		bufProtocPluginFlags = append(bufProtocPluginFlags, fmt.Sprintf("--%s_out=%s", plugin.name, bufProtocFile))
+		if plugin.opt != "" {
+			bufProtocPluginFlags = append(bufProtocPluginFlags, fmt.Sprintf("--%s_opt=%s", plugin.name, plugin.opt))
+		}
+	}
+	appcmdtesting.RunCommandSuccess(
+		t,
+		func(name string) *appcmd.Command {
+			return NewCommand(
+				name,
+				appflag.NewBuilder(name),
+				bufcli.NopModuleResolverReaderProvider{},
+			)
+		},
+		map[string]string{
+			"PATH": os.Getenv("PATH"),
+		},
+		nil,
+		nil,
+		append(
+			append(
+				bufProtocPluginFlags,
+				"-I",
+				dirPath,
+				"--by-dir",
+			),
+			filePaths...,
+		)...,
+	)
+	actualData, err := ioutil.ReadFile(actualProtocFile)
+	require.NoError(t, err)
+	actualReadBucketBuilder := storagemem.NewReadBucketBuilder()
+	err = storagearchive.Unzip(
+		context.Background(),
+		bytes.NewReader(actualData),
+		int64(len(actualData)),
+		actualReadBucketBuilder,
+		nil,
+		0,
+	)
+	require.NoError(t, err)
+	actualReadBucket, err := actualReadBucketBuilder.ToReadBucket()
+	require.NoError(t, err)
+	bufData, err := ioutil.ReadFile(bufProtocFile)
+	require.NoError(t, err)
+	bufReadBucketBuilder := storagemem.NewReadBucketBuilder()
+	err = storagearchive.Unzip(
+		context.Background(),
+		bytes.NewReader(bufData),
+		int64(len(bufData)),
+		bufReadBucketBuilder,
+		nil,
+		0,
+	)
+	require.NoError(t, err)
+	bufReadBucket, err := bufReadBucketBuilder.ToReadBucket()
+	require.NoError(t, err)
+	diff, err := storage.Diff(
+		context.Background(),
+		actualReadBucket,
+		bufReadBucket,
 		"protoc",
 		"buf-protoc",
 	)

@@ -113,6 +113,7 @@ func Zip(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	writer io.Writer,
+	compressed bool,
 ) (retErr error) {
 	zipWriter := zip.NewWriter(writer)
 	defer func() {
@@ -123,7 +124,15 @@ func Zip(
 		readBucket,
 		"",
 		func(readObject storage.ReadObject) error {
-			writer, err := zipWriter.Create(readObject.Path())
+			method := zip.Store
+			if compressed {
+				method = zip.Deflate
+			}
+			header := &zip.FileHeader{
+				Name:   readObject.Path(),
+				Method: method,
+			}
+			writer, err := zipWriter.CreateHeader(header)
 			if err != nil {
 				return err
 			}
