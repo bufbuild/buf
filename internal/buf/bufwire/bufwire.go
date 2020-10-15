@@ -71,7 +71,6 @@ func NewEnvReader(
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
-	configOverrideFlagName string,
 ) EnvReader {
 	return newEnvReader(
 		logger,
@@ -80,7 +79,6 @@ func NewEnvReader(
 		moduleBucketBuilder,
 		moduleFileSetBuilder,
 		imageBuilder,
-		configOverrideFlagName,
 	)
 }
 
@@ -102,7 +100,6 @@ func NewFileLister(
 	configProvider bufconfig.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	imageBuilder bufimagebuild.Builder,
-	configOverrideFlagName string,
 ) FileLister {
 	return newFileLister(
 		logger,
@@ -110,7 +107,6 @@ func NewFileLister(
 		configProvider,
 		moduleBucketBuilder,
 		imageBuilder,
-		configOverrideFlagName,
 	)
 }
 
@@ -162,27 +158,5 @@ func NewImageWriter(
 	return newImageWriter(
 		logger,
 		fetchWriter,
-	)
-}
-
-// ConfigReader reads configs.
-type ConfigReader interface {
-	// GetConfig gets the config.
-	GetConfig(
-		ctx context.Context,
-		configOverride string,
-	) (*bufconfig.Config, error)
-}
-
-// NewConfigReader returns a new ConfigReader.
-func NewConfigReader(
-	logger *zap.Logger,
-	configProvider bufconfig.Provider,
-	configOverrideFlagName string,
-) ConfigReader {
-	return newConfigReader(
-		logger,
-		configProvider,
-		configOverrideFlagName,
 	)
 }

@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -47,6 +48,14 @@ func (r *responseWriter) Add(file *pluginpb.CodeGeneratorResponse_File) error {
 	name := file.GetName()
 	if name == "" {
 		return errors.New("add CodeGeneratorResponse.File.Name is empty")
+	}
+	// name must be relative and not contain "." or ".." per the documentation
+	normalizedName, err := normalpath.NormalizeAndValidate(name)
+	if err != nil {
+		return fmt.Errorf("had invalid CodeGenerator.Response.File name: %v", err)
+	}
+	if name != normalizedName {
+		return fmt.Errorf("expected CodeGeneratorResponse.File name %s to be %s", name, normalizedName)
 	}
 	if _, ok := r.fileNames[name]; ok {
 		return fmt.Errorf("duplicate CodeGeneratorResponse.File added: %q", name)

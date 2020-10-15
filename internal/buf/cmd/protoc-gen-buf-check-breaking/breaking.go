@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -95,10 +96,14 @@ func handle(
 	if externalConfig.ExcludeImports {
 		againstImage = bufimage.ImageWithoutImports(againstImage)
 	}
-	configProvider := bufconfig.NewProvider(logger)
-	configReader := bufcli.NewWireConfigReader(logger, "input_config", configProvider)
-	config, err := configReader.GetConfig(
+	readWriteBucket, err := storageos.NewReadWriteBucket(".")
+	if err != nil {
+		return err
+	}
+	config, err := bufconfig.ReadConfig(
 		ctx,
+		bufconfig.NewProvider(logger),
+		readWriteBucket,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 	)
 	if err != nil {

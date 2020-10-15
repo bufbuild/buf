@@ -16,8 +16,6 @@ GO_TEST_BINS := $(GO_TEST_BINS) \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer
 DOCKER_BINS := $(DOCKER_BINS) buf
-PROTOC_GEN_GO_OUT := internal/gen/proto/go
-PROTOC_GEN_VALIDATE_OUT := internal/gen/proto/go
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
 	.vscode/ \
@@ -28,12 +26,12 @@ FILE_IGNORES := $(FILE_IGNORES) \
 USE_BUF_GENERATE := true
 
 include make/go/bootstrap.mk
+include make/go/dep_protoc.mk
+include make/go/dep_protoc_gen_go.mk
+include make/go/dep_go_fuzz.mk
 include make/go/go.mk
 include make/go/codecov.mk
-include make/go/dep_protoc.mk
 include make/go/docker.mk
-include make/go/protoc_gen_go.mk
-include make/go/dep_go_fuzz.mk
 
 # Settable
 BUF_BREAKING_INPUT ?= .git\#branch=master
@@ -47,6 +45,16 @@ wkt: installstorage-go-binary-data $(PROTOC)
 	storage-go-binary-data $(CACHE_INCLUDE) --package wkt > internal/gen/data/wkt/wkt.gen.go
 
 prepostgenerate:: wkt
+
+.PHONY: bufgeneratedeps
+bufgeneratedeps:: installbuf $(PROTOC_GEN_GO)
+
+.PHONY: bufgenerate
+bufgenerate: bufgeneratedeps
+	rm -rf internal/proto/gen/go
+	buf beta generate
+
+pregenerate:: bufgenerate
 
 .PHONY: buflint
 buflint: installbuf
@@ -64,7 +72,7 @@ postlint:: buflint bufbreaking
 
 .PHONY: bufrelease
 bufrelease:
-	DOCKER_IMAGE=golang:1.15.2-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.15.3-buster bash make/buf/scripts/release.bash
 
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)

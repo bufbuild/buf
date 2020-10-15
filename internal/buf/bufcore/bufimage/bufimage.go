@@ -270,3 +270,14 @@ func ImageToCodeGeneratorRequest(image Image, parameter string) *pluginpb.CodeGe
 	}
 	return request
 }
+
+// ImagesToCodeGeneratorRequests converts the Images to CodeGeneratorRequests.
+//
+// All non-imports are added as files to generate.
+func ImagesToCodeGeneratorRequests(images []Image, parameter string) []*pluginpb.CodeGeneratorRequest {
+	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
+	for i, image := range images {
+		requests[i] = ImageToCodeGeneratorRequest(image, parameter)
+	}
+	return requests
+}

@@ -17,6 +17,9 @@ package bufconfig
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
@@ -40,7 +43,7 @@ type Config struct {
 
 // Provider is a provider.
 type Provider interface {
-	// GetConfig gets the Config for the given JSON or YAML data.
+	// GetConfig gets the Config for the YAML data at ConfigFilePath.
 	//
 	// If the data is of length 0, returns the default config.
 	GetConfig(ctx context.Context, readBucket storage.ReadBucket) (*Config, error)
@@ -55,8 +58,8 @@ func NewProvider(logger *zap.Logger) Provider {
 	return newProvider(logger)
 }
 
-// ConfigCreate writes an initial configuration file into the bucket.
-func ConfigCreate(ctx context.Context, writeBucket storage.WriteBucket, name string, deps ...string) error {
+// CreateConfig writes an initial configuration file into the bucket.
+func CreateConfig(ctx context.Context, writeBucket storage.WriteBucket, name string, deps ...string) error {
 	data, err := encoding.MarshalYAML(
 		externalConfigV1Beta1{
 			Version: v1beta1Version,
@@ -73,4 +76,43 @@ func ConfigCreate(ctx context.Context, writeBucket storage.WriteBucket, name str
 // ConfigExists checks if a configuration file exists.
 func ConfigExists(ctx context.Context, readBucket storage.ReadBucket) (bool, error) {
 	return storage.Exists(ctx, readBucket, ConfigFilePath)
+}
+
+// ReadConfig reads the configuration, including potentially reading from the OS for an override.
+//
+// If no override is set, this reads ConfigFilePath in the bucket..
+// If override is set, this will first check if the override ends in .json or .yaml, if so,
+// this reads the file at this path and uses it. Otherwise, this assumes this is configuration
+// data in either JSON or YAML format, and unmarshals it.
+//
+// Only use in CLI tools.
+func ReadConfig(ctx context.Context, provider Provider, readBucket storage.ReadBucket, override string) (*Config, error) {
+	if override != "" {
+		var data []byte
+		var err error
+		switch filepath.Ext(override) {
+		case ".json", ".yaml":
+			data, err = ioutil.ReadFile(override)
+			if err != nil {
+				return nil, fmt.Errorf("could not read file: %v", err)
+			}
+		default:
+			data = []byte(override)
+		}
+		return provider.GetConfigForData(ctx, data)
+	}
+	return provider.GetConfig(ctx, readBucket)
+}
+
+type externalConfigVersion struct {
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+type externalConfigV1Beta1 struct {
+	Version  string                               `json:"version,omitempty" yaml:"version,omitempty"`
+	Name     string                               `json:"name,omitempty" yaml:"name,omitempty"`
+	Build    bufmodulebuild.ExternalConfigV1Beta1 `json:"build,omitempty" yaml:"build,omitempty"`
+	Breaking bufbreaking.ExternalConfigV1Beta1    `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Lint     buflint.ExternalConfigV1Beta1        `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Deps     []string                             `json:"deps,omitempty" yaml:"deps,omitempty"`
 }

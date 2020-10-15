@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
@@ -35,8 +34,7 @@ import (
 const v1beta1Version = "v1beta1"
 
 type provider struct {
-	logger          *zap.Logger
-	warnVersionOnce sync.Once
+	logger *zap.Logger
 }
 
 func newProvider(logger *zap.Logger) *provider {
@@ -63,34 +61,43 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	if err != nil {
 		return nil, err
 	}
-	return p.getConfigForData(ctx, data, `File "`+readObjectCloser.ExternalPath()+`"`)
+	return p.getConfigForData(
+		ctx,
+		encoding.UnmarshalYAMLNonStrict,
+		encoding.UnmarshalYAMLStrict,
+		data,
+		`File "`+readObjectCloser.ExternalPath()+`"`,
+	)
 }
 
 func (p *provider) GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
 	_, span := trace.StartSpan(ctx, "get_config_for_data")
 	defer span.End()
-
-	return p.getConfigForData(ctx, data, "Configuration data")
+	return p.getConfigForData(
+		ctx,
+		encoding.UnmarshalJSONOrYAMLNonStrict,
+		encoding.UnmarshalJSONOrYAMLStrict,
+		data,
+		"Configuration data",
+	)
 }
 
-func (p *provider) getConfigForData(ctx context.Context, data []byte, id string) (*Config, error) {
+func (p *provider) getConfigForData(
+	ctx context.Context,
+	unmarshalNonStrict func([]byte, interface{}) error,
+	unmarshalStrict func([]byte, interface{}) error,
+	data []byte,
+	id string,
+) (*Config, error) {
 	var externalConfigVersion externalConfigVersion
-	if err := encoding.UnmarshalJSONOrYAMLNonStrict(data, &externalConfigVersion); err != nil {
+	if err := unmarshalNonStrict(data, &externalConfigVersion); err != nil {
 		return nil, err
 	}
-	switch externalConfigVersion.Version {
-	case "":
-		p.warnVersionOnce.Do(
-			func() {
-				p.logger.Sugar().Warnf(`%s has no version set. Please add "version: %s". See https://buf.build/docs/faq for more details.`, id, v1beta1Version)
-			},
-		)
-	case v1beta1Version:
-	default:
-		return nil, fmt.Errorf("%s has unknown configuration version: %s", id, externalConfigVersion.Version)
+	if err := p.validateExternalConfigVersion(externalConfigVersion, id); err != nil {
+		return nil, err
 	}
 	var externalConfigV1Beta1 externalConfigV1Beta1
-	if err := encoding.UnmarshalJSONOrYAMLStrict(data, &externalConfigV1Beta1); err != nil {
+	if err := unmarshalStrict(data, &externalConfigV1Beta1); err != nil {
 		return nil, err
 	}
 	return p.newConfigV1Beta1(externalConfigV1Beta1)
@@ -127,15 +134,14 @@ func (p *provider) newConfigV1Beta1(externalConfig externalConfigV1Beta1) (*Conf
 	}, nil
 }
 
-type externalConfigVersion struct {
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
-}
-
-type externalConfigV1Beta1 struct {
-	Version  string                               `json:"version,omitempty" yaml:"version,omitempty"`
-	Name     string                               `json:"name,omitempty" yaml:"name,omitempty"`
-	Build    bufmodulebuild.ExternalConfigV1Beta1 `json:"build,omitempty" yaml:"build,omitempty"`
-	Breaking bufbreaking.ExternalConfigV1Beta1    `json:"breaking,omitempty" yaml:"breaking,omitempty"`
-	Lint     buflint.ExternalConfigV1Beta1        `json:"lint,omitempty" yaml:"lint,omitempty"`
-	Deps     []string                             `json:"deps,omitempty" yaml:"deps,omitempty"`
+func (p *provider) validateExternalConfigVersion(externalConfigVersion externalConfigVersion, id string) error {
+	switch externalConfigVersion.Version {
+	case "":
+		p.logger.Sugar().Warnf(`%s has no version set. Please add "version: %s". See https://buf.build/docs/faq for more details.`, id, v1beta1Version)
+		return nil
+	case v1beta1Version:
+		return nil
+	default:
+		return fmt.Errorf("%s has unknown configuration version: %s", id, externalConfigVersion.Version)
+	}
 }
