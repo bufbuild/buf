@@ -100,7 +100,6 @@ func run(
 	}
 	fileRefs, err := bufcli.NewWireFileLister(
 		container.Logger(),
-		inputConfigFlagName,
 		configProvider,
 		moduleResolver,
 		moduleReader,

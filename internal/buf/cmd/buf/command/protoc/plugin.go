@@ -21,10 +21,8 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/appproto"
-	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoexec"
+	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoos"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type pluginInfo struct {
@@ -48,23 +46,17 @@ func executePlugin(
 	pluginName string,
 	pluginInfo *pluginInfo,
 ) error {
-	var handlerOptions []appprotoexec.HandlerOption
-	if pluginInfo.Path != "" {
-		handlerOptions = append(handlerOptions, appprotoexec.HandlerWithPluginPath(pluginInfo.Path))
-	}
-	handler, err := appprotoexec.NewHandler(logger, pluginName, handlerOptions...)
-	if err != nil {
-		return err
-	}
-	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
-	for i, image := range images {
-		requests[i] = bufimage.ImageToCodeGeneratorRequest(
-			image,
+	if err := appprotoos.NewGenerator(logger).Generate(
+		ctx,
+		container,
+		pluginName,
+		pluginInfo.Out,
+		bufimage.ImagesToCodeGeneratorRequests(
+			images,
 			strings.Join(pluginInfo.Opt, ","),
-		)
-	}
-	executor := appproto.NewExecutor(logger, handler)
-	if err := executor.Execute(ctx, container, pluginInfo.Out, requests...); err != nil {
+		),
+		appprotoos.GenerateWithPluginPath(pluginInfo.Path),
+	); err != nil {
 		return fmt.Errorf("--%s_out: %v", pluginName, err)
 	}
 	return nil

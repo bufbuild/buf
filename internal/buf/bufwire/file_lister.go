@@ -31,10 +31,10 @@ import (
 type fileLister struct {
 	logger              *zap.Logger
 	fetchReader         buffetch.Reader
+	configProvider      bufconfig.Provider
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
 	imageBuilder        bufimagebuild.Builder
 	imageReader         *imageReader
-	configReader        *configReader
 }
 
 func newFileLister(
@@ -43,21 +43,16 @@ func newFileLister(
 	configProvider bufconfig.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	imageBuilder bufimagebuild.Builder,
-	configOverrideFlagName string,
 ) *fileLister {
 	return &fileLister{
 		logger:              logger.Named("bufwire"),
 		fetchReader:         fetchReader,
+		configProvider:      configProvider,
 		moduleBucketBuilder: moduleBucketBuilder,
 		imageBuilder:        imageBuilder,
 		imageReader: newImageReader(
 			logger,
 			fetchReader,
-		),
-		configReader: newConfigReader(
-			logger,
-			configProvider,
-			configOverrideFlagName,
 		),
 	}
 }
@@ -96,7 +91,7 @@ func (e *fileLister) ListFiles(
 		defer func() {
 			retErr = multierr.Append(retErr, readBucketCloser.Close())
 		}()
-		config, err := e.configReader.getConfig(ctx, readBucketCloser, configOverride)
+		config, err := bufconfig.ReadConfig(ctx, e.configProvider, readBucketCloser, configOverride)
 		if err != nil {
 			return nil, err
 		}

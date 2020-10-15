@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package protoc
+package generate
 
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -24,20 +25,17 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
+	"github.com/bufbuild/buf/internal/buf/bufgen"
 	"github.com/bufbuild/buf/internal/buf/internal/buftesting"
-	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
-	"github.com/bufbuild/buf/internal/pkg/protoencoding"
-	"github.com/bufbuild/buf/internal/pkg/prototesting"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 var buftestingDirPath = filepath.Join(
@@ -48,93 +46,6 @@ var buftestingDirPath = filepath.Join(
 	"internal",
 	"buftesting",
 )
-
-type testPluginInfo struct {
-	name string
-	opt  string
-}
-
-func TestOverlap(t *testing.T) {
-	t.Parallel()
-	// https://github.com/bufbuild/buf/issues/113
-	appcmdtesting.RunCommandSuccess(
-		t,
-		func(name string) *appcmd.Command {
-			return NewCommand(
-				name,
-				appflag.NewBuilder(name),
-				bufcli.NopModuleResolverReaderProvider{},
-			)
-		},
-		nil,
-		nil,
-		nil,
-		"-I",
-		filepath.Join("testdata", "overlap", "a"),
-		"-I",
-		filepath.Join("testdata", "overlap", "b"),
-		"-o",
-		app.DevNullFilePath,
-		filepath.Join("testdata", "overlap", "a", "1.proto"),
-		filepath.Join("testdata", "overlap", "b", "2.proto"),
-	)
-}
-
-func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
-	t.Parallel()
-	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 100)
-	actualProtocStdout := bytes.NewBuffer(nil)
-	buftesting.RunActualProtoc(
-		t,
-		false,
-		false,
-		googleapisDirPath,
-		filePaths,
-		nil,
-		actualProtocStdout,
-		fmt.Sprintf("--%s", printFreeFieldNumbersFlagName),
-	)
-	appcmdtesting.RunCommandSuccessStdout(
-		t,
-		func(name string) *appcmd.Command {
-			return NewCommand(
-				name,
-				appflag.NewBuilder(name),
-				bufcli.NopModuleResolverReaderProvider{},
-			)
-		},
-		actualProtocStdout.String(),
-		nil,
-		nil,
-		append(
-			[]string{
-				"-I",
-				googleapisDirPath,
-				fmt.Sprintf("--%s", printFreeFieldNumbersFlagName),
-			},
-			filePaths...,
-		)...,
-	)
-}
-
-func TestCompareOutputGoogleapis(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
-	t.Parallel()
-	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 100)
-	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(
-		t,
-		false,
-		false,
-		googleapisDirPath,
-		filePaths,
-	)
-	bufProtocFileDescriptorSet := testGetBufProtocFileDescriptorSet(t, googleapisDirPath)
-	prototesting.AssertFileDescriptorSetsEqual(t, bufProtocFileDescriptorSet, actualProtocFileDescriptorSet)
-}
 
 func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 	if testing.Short() {
@@ -214,7 +125,7 @@ func testCompareGeneratedStubs(
 ) {
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 100)
 	actualProtocDir := t.TempDir()
-	bufProtocDir := t.TempDir()
+	bufGenDir := t.TempDir()
 	var actualProtocPluginFlags []string
 	for _, plugin := range plugins {
 		actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_out=%s", plugin.name, actualProtocDir))
@@ -234,12 +145,18 @@ func testCompareGeneratedStubs(
 		nil,
 		actualProtocPluginFlags...,
 	)
-	var bufProtocPluginFlags []string
-	for _, plugin := range plugins {
-		bufProtocPluginFlags = append(bufProtocPluginFlags, fmt.Sprintf("--%s_out=%s", plugin.name, bufProtocDir))
-		if plugin.opt != "" {
-			bufProtocPluginFlags = append(bufProtocPluginFlags, fmt.Sprintf("--%s_opt=%s", plugin.name, plugin.opt))
-		}
+	genFlags := []string{
+		"--input",
+		dirPath,
+		"--config",
+		newExternalConfigV1Beta1String(t, plugins, bufGenDir),
+	}
+	for _, filePath := range filePaths {
+		genFlags = append(
+			genFlags,
+			"--file",
+			filePath,
+		)
 	}
 	appcmdtesting.RunCommandSuccess(
 		t,
@@ -255,26 +172,18 @@ func testCompareGeneratedStubs(
 		},
 		nil,
 		nil,
-		append(
-			append(
-				bufProtocPluginFlags,
-				"-I",
-				dirPath,
-				"--by-dir",
-			),
-			filePaths...,
-		)...,
+		genFlags...,
 	)
 	actualReadWriteBucket, err := storageos.NewReadWriteBucket(actualProtocDir)
 	require.NoError(t, err)
-	bufReadWriteBucket, err := storageos.NewReadWriteBucket(bufProtocDir)
+	bufReadWriteBucket, err := storageos.NewReadWriteBucket(bufGenDir)
 	require.NoError(t, err)
 	diff, err := storage.Diff(
 		context.Background(),
 		actualReadWriteBucket,
 		bufReadWriteBucket,
 		"protoc",
-		"buf-protoc",
+		"buf-generate",
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))
@@ -293,7 +202,7 @@ func testCompareGeneratedStubsArchive(
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 100)
 	tempDir := t.TempDir()
 	actualProtocFile := filepath.Join(tempDir, "actual-protoc"+fileExt)
-	bufProtocFile := filepath.Join(tempDir, "buf-protoc"+fileExt)
+	bufGenFile := filepath.Join(tempDir, "buf-generate"+fileExt)
 	var actualProtocPluginFlags []string
 	for _, plugin := range plugins {
 		actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_out=%s", plugin.name, actualProtocFile))
@@ -313,12 +222,18 @@ func testCompareGeneratedStubsArchive(
 		nil,
 		actualProtocPluginFlags...,
 	)
-	var bufProtocPluginFlags []string
-	for _, plugin := range plugins {
-		bufProtocPluginFlags = append(bufProtocPluginFlags, fmt.Sprintf("--%s_out=%s", plugin.name, bufProtocFile))
-		if plugin.opt != "" {
-			bufProtocPluginFlags = append(bufProtocPluginFlags, fmt.Sprintf("--%s_opt=%s", plugin.name, plugin.opt))
-		}
+	genFlags := []string{
+		"--input",
+		dirPath,
+		"--config",
+		newExternalConfigV1Beta1String(t, plugins, bufGenFile),
+	}
+	for _, filePath := range filePaths {
+		genFlags = append(
+			genFlags,
+			"--file",
+			filePath,
+		)
 	}
 	appcmdtesting.RunCommandSuccess(
 		t,
@@ -334,15 +249,7 @@ func testCompareGeneratedStubsArchive(
 		},
 		nil,
 		nil,
-		append(
-			append(
-				bufProtocPluginFlags,
-				"-I",
-				dirPath,
-				"--by-dir",
-			),
-			filePaths...,
-		)...,
+		genFlags...,
 	)
 	actualData, err := ioutil.ReadFile(actualProtocFile)
 	require.NoError(t, err)
@@ -358,7 +265,7 @@ func testCompareGeneratedStubsArchive(
 	require.NoError(t, err)
 	actualReadBucket, err := actualReadBucketBuilder.ToReadBucket()
 	require.NoError(t, err)
-	bufData, err := ioutil.ReadFile(bufProtocFile)
+	bufData, err := ioutil.ReadFile(bufGenFile)
 	require.NoError(t, err)
 	bufReadBucketBuilder := storagemem.NewReadBucketBuilder()
 	err = storagearchive.Unzip(
@@ -377,49 +284,32 @@ func testCompareGeneratedStubsArchive(
 		actualReadBucket,
 		bufReadBucket,
 		"protoc",
-		"buf-protoc",
+		"buf-generate",
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))
 }
 
-func testGetBufProtocFileDescriptorSet(t *testing.T, dirPath string) *descriptorpb.FileDescriptorSet {
-	data := testGetBufProtocFileDescriptorSetBytes(t, dirPath)
-	fileDescriptorSet := &descriptorpb.FileDescriptorSet{}
-	// TODO: change to image read logic
-	require.NoError(
-		t,
-		protoencoding.NewWireUnmarshaler(nil).Unmarshal(
-			data,
-			fileDescriptorSet,
-		),
-	)
-	return fileDescriptorSet
+type testPluginInfo struct {
+	name string
+	opt  string
 }
 
-func testGetBufProtocFileDescriptorSetBytes(t *testing.T, dirPath string) []byte {
-	stdout := bytes.NewBuffer(nil)
-	appcmdtesting.RunCommandSuccess(
-		t,
-		func(name string) *appcmd.Command {
-			return NewCommand(
-				name,
-				appflag.NewBuilder(name),
-				bufcli.NopModuleResolverReaderProvider{},
-			)
-		},
-		nil,
-		nil,
-		stdout,
-		append(
-			[]string{
-				"-I",
-				dirPath,
-				"-o",
-				"-",
+func newExternalConfigV1Beta1String(t *testing.T, plugins []testPluginInfo, out string) string {
+	externalConfig := bufgen.ExternalConfigV1Beta1{
+		Version: "v1beta1",
+	}
+	for _, plugin := range plugins {
+		externalConfig.Plugins = append(
+			externalConfig.Plugins,
+			bufgen.ExternalPluginConfigV1Beta1{
+				Name: plugin.name,
+				Out:  out,
+				Opt:  plugin.opt,
 			},
-			buftesting.GetProtocFilePaths(t, dirPath, 100)...,
-		)...,
-	)
-	return stdout.Bytes()
+		)
+	}
+	data, err := json.Marshal(externalConfig)
+	require.NoError(t, err)
+	return string(data)
 }

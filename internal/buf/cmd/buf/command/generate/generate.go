@@ -18,32 +18,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufgen"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
-	"github.com/bufbuild/buf/internal/pkg/app/appproto"
-	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const (
-	errorFormatFlagName = "error-format"
-	filesFlagName       = "file"
-	inputFlagName       = "input"
-	inputConfigFlagName = "input-config"
-	pluginNameFlagName  = "plugin"
-	pluginOutFlagName   = "plugin-out"
-	pluginOptFlagName   = "plugin-opt"
-	pluginPathFlagName  = "plugin-path"
+	configFlagName              = "config"
+	baseOutDirPathFlagName      = "output"
+	baseOutDirPathFlagShortName = "o"
+	errorFormatFlagName         = "error-format"
+	filesFlagName               = "file"
+	inputFlagName               = "input"
+	inputConfigFlagName         = "input-config"
 )
 
 // NewCommand returns a new Command.
@@ -55,7 +50,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: "Generate stubs for a plugin.",
+		Short: "Generate stubs for a plugin using a configuration.",
 		Args:  cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -67,14 +62,12 @@ func NewCommand(
 }
 
 type flags struct {
-	ErrorFormat string
-	Files       []string
-	Input       string
-	InputConfig string
-	PluginName  string
-	PluginOut   string
-	PluginOpt   []string
-	PluginPath  string
+	Config         string
+	BaseOutDirPath string
+	ErrorFormat    string
+	Files          []string
+	Input          string
+	InputConfig    string
 }
 
 func newFlags() *flags {
@@ -82,6 +75,19 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(
+		&f.Config,
+		configFlagName,
+		"buf.gen.yaml",
+		`The generation config file or data to use. Must be in either YAML or JSON format.`,
+	)
+	flagSet.StringVarP(
+		&f.BaseOutDirPath,
+		baseOutDirPathFlagName,
+		baseOutDirPathFlagShortName,
+		".",
+		`The base directory to generate to. This is prepended to the out directories in the generation config.`,
+	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -102,7 +108,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		inputFlagName,
 		".",
 		fmt.Sprintf(
-			`The source or image to generate from. Must be one of format %s.`,
+			`The source or image to generate for. Must be one of format %s.`,
 			buffetch.AllFormatsString,
 		),
 	)
@@ -110,31 +116,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.InputConfig,
 		inputConfigFlagName,
 		"",
-		`The config file or data to use.`,
-	)
-	flagSet.StringVar(
-		&f.PluginName,
-		pluginNameFlagName,
-		"",
-		`The plugin to use. By default, protoc-gen-PLUGIN must be on your $PATH.`,
-	)
-	flagSet.StringVar(
-		&f.PluginOut,
-		pluginOutFlagName,
-		"",
-		`The output directory.`,
-	)
-	flagSet.StringSliceVar(
-		&f.PluginOpt,
-		pluginOptFlagName,
-		nil,
-		`The options to use.`,
-	)
-	flagSet.StringVar(
-		&f.PluginPath,
-		pluginPathFlagName,
-		"",
-		`The path to the plugin binary. By default, uses protoc-gen-PLUGIN on your $PATH.`,
+		`The source or image config file or data to use.`,
 	)
 }
 
@@ -144,17 +126,11 @@ func run(
 	flags *flags,
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) (retErr error) {
-	if flags.PluginName == "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s is required", pluginNameFlagName)
-	}
-	if flags.PluginOut == "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s is required", pluginOutFlagName)
-	}
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, flags.Input)
+	logger := container.Logger()
+	ref, err := buffetch.NewRefParser(logger).GetRef(ctx, flags.Input)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", inputFlagName, err)
 	}
-	configProvider := bufconfig.NewProvider(container.Logger())
 	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
 	if err != nil {
 		return err
@@ -163,10 +139,13 @@ func run(
 	if err != nil {
 		return err
 	}
+	genConfig, err := bufgen.ReadConfig(flags.Config)
+	if err != nil {
+		return err
+	}
 	env, fileAnnotations, err := bufcli.NewWireEnvReader(
-		container.Logger(),
-		inputConfigFlagName,
-		configProvider,
+		logger,
+		bufconfig.NewProvider(logger),
 		moduleResolver,
 		moduleReader,
 	).GetEnv(
@@ -187,29 +166,11 @@ func run(
 		}
 		return errors.New("")
 	}
-	images, err := bufimage.ImageByDir(env.Image())
-	if err != nil {
-		return err
-	}
-	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
-	for i, image := range images {
-		requests[i] = bufimage.ImageToCodeGeneratorRequest(
-			image,
-			strings.Join(flags.PluginOpt, ","),
-		)
-	}
-	var handlerOptions []appprotoexec.HandlerOption
-	if flags.PluginPath != "" {
-		handlerOptions = append(handlerOptions, appprotoexec.HandlerWithPluginPath(flags.PluginPath))
-	}
-	handler, err := appprotoexec.NewHandler(
-		container.Logger(),
-		flags.PluginName,
-		handlerOptions...,
+	return bufgen.NewGenerator(logger).Generate(
+		ctx,
+		container,
+		genConfig,
+		env.Image(),
+		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
 	)
-	if err != nil {
-		return err
-	}
-	executor := appproto.NewExecutor(container.Logger(), handler)
-	return executor.Execute(ctx, container, flags.PluginOut, requests...)
 }

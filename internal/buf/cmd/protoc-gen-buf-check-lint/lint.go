@@ -23,13 +23,13 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -64,10 +64,14 @@ func handle(
 	if err != nil {
 		return err
 	}
-	configProvider := bufconfig.NewProvider(logger)
-	configReader := bufcli.NewWireConfigReader(logger, "input_config", configProvider)
-	config, err := configReader.GetConfig(
+	readWriteBucket, err := storageos.NewReadWriteBucket(".")
+	if err != nil {
+		return err
+	}
+	config, err := bufconfig.ReadConfig(
 		ctx,
+		bufconfig.NewProvider(logger),
+		readWriteBucket,
 		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 	)
 	if err != nil {
