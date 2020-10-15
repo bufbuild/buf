@@ -103,7 +103,6 @@ func NewFetchImageReader(logger *zap.Logger) buffetch.ImageReader {
 // NewWireEnvReader returns a new EnvReader.
 func NewWireEnvReader(
 	logger *zap.Logger,
-	configOverrideFlagName string,
 	configProvider bufconfig.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
@@ -115,14 +114,12 @@ func NewWireEnvReader(
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
-		configOverrideFlagName,
 	)
 }
 
 // NewWireFileLister returns a new FileLister.
 func NewWireFileLister(
 	logger *zap.Logger,
-	configOverrideFlagName string,
 	configProvider bufconfig.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
@@ -133,7 +130,6 @@ func NewWireFileLister(
 		configProvider,
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufimagebuild.NewBuilder(logger),
-		configOverrideFlagName,
 	)
 }
 
@@ -156,19 +152,6 @@ func NewWireImageWriter(
 		buffetch.NewWriter(
 			logger,
 		),
-	)
-}
-
-// NewWireConfigReader returns a new ConfigReader.
-func NewWireConfigReader(
-	logger *zap.Logger,
-	configOverrideFlagName string,
-	configProvider bufconfig.Provider,
-) bufwire.ConfigReader {
-	return bufwire.NewConfigReader(
-		logger,
-		configProvider,
-		configOverrideFlagName,
 	)
 }
 

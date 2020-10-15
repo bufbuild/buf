@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -33,11 +34,11 @@ import (
 type envReader struct {
 	logger               *zap.Logger
 	fetchReader          buffetch.Reader
+	configProvider       bufconfig.Provider
 	moduleBucketBuilder  bufmodulebuild.ModuleBucketBuilder
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder
 	imageBuilder         bufimagebuild.Builder
 	imageReader          *imageReader
-	configReader         *configReader
 }
 
 func newEnvReader(
@@ -47,22 +48,17 @@ func newEnvReader(
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
-	configOverrideFlagName string,
 ) *envReader {
 	return &envReader{
 		logger:               logger.Named("bufwire"),
 		fetchReader:          fetchReader,
+		configProvider:       configProvider,
 		moduleBucketBuilder:  moduleBucketBuilder,
 		moduleFileSetBuilder: moduleFileSetBuilder,
 		imageBuilder:         imageBuilder,
 		imageReader: newImageReader(
 			logger,
 			fetchReader,
-		),
-		configReader: newConfigReader(
-			logger,
-			configProvider,
-			configOverrideFlagName,
 		),
 	}
 }
@@ -172,7 +168,11 @@ func (e *envReader) getImageEnv(
 	if err != nil {
 		return nil, err
 	}
-	config, err := e.configReader.GetConfig(ctx, configOverride)
+	readWriteBucket, err := storageos.NewReadWriteBucket(".")
+	if err != nil {
+		return nil, err
+	}
+	config, err := bufconfig.ReadConfig(ctx, e.configProvider, readWriteBucket, configOverride)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (e *envReader) getSourceEnv(
 	defer func() {
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
-	config, err := e.configReader.getConfig(ctx, readBucketCloser, configOverride)
+	config, err := bufconfig.ReadConfig(ctx, e.configProvider, readBucketCloser, configOverride)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -270,7 +270,11 @@ func (e *envReader) getModuleEnv(
 	}
 	// TODO: we should read the config from the module when configuration
 	// is added to modules
-	config, err := e.configReader.GetConfig(ctx, configOverride)
+	readWriteBucket, err := storageos.NewReadWriteBucket(".")
+	if err != nil {
+		return nil, nil, err
+	}
+	config, err := bufconfig.ReadConfig(ctx, e.configProvider, readWriteBucket, configOverride)
 	if err != nil {
 		return nil, nil, err
 	}

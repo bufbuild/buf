@@ -19,11 +19,11 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	checkinternal "github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -89,12 +89,14 @@ func run(
 			return err
 		}
 	} else {
-		config, err := bufcli.NewWireConfigReader(
-			container.Logger(),
-			configFlagName,
-			bufconfig.NewProvider(container.Logger()),
-		).GetConfig(
+		readWriteBucket, err := storageos.NewReadWriteBucket(".")
+		if err != nil {
+			return err
+		}
+		config, err := bufconfig.ReadConfig(
 			ctx,
+			bufconfig.NewProvider(container.Logger()),
+			readWriteBucket,
 			flags.Config,
 		)
 		if err != nil {

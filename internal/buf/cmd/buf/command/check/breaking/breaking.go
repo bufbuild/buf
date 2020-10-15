@@ -164,7 +164,6 @@ func run(
 	}
 	env, fileAnnotations, err := bufcli.NewWireEnvReader(
 		container.Logger(),
-		inputConfigFlagName,
 		configProvider,
 		moduleResolver,
 		moduleReader,
@@ -213,7 +212,6 @@ func run(
 	}
 	againstEnv, fileAnnotations, err := bufcli.NewWireEnvReader(
 		container.Logger(),
-		againstInputConfigFlagName,
 		configProvider,
 		moduleResolver,
 		moduleReader,
