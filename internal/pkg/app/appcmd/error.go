@@ -20,6 +20,10 @@ type invalidArgumentError struct {
 	message string
 }
 
+func newInvalidArgumentError(message string) *invalidArgumentError {
+	return &invalidArgumentError{message: message}
+}
+
 func (a *invalidArgumentError) Error() string {
 	return a.message
 }

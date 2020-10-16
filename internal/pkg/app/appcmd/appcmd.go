@@ -69,9 +69,7 @@ type Command struct {
 // the error was caused by argument validation. This causes us to print the usage
 // help text for the command that it is returned from.
 func NewInvalidArgumentError(message string) error {
-	return &invalidArgumentError{
-		message: message,
-	}
+	return newInvalidArgumentError(message)
 }
 
 // NewInvalidArgumentErrorf creates a new InvalidArgumentError, indicating that
@@ -200,16 +198,27 @@ func commandToCobra(
 			*runErrAddr = runErr
 		}
 	}
+	if len(command.SubCommands) > 0 {
+		// command.Run will not be set per validation
+		cobraCommand.Run = func(cmd *cobra.Command, args []string) {
+			printUsage(container, cobraCommand.UsageString())
+			if len(args) == 0 {
+				*runErrAddr = errors.New("Sub-command required.")
+			} else {
+				*runErrAddr = fmt.Errorf("Unknown sub-command: %s", strings.Join(args, " "))
+			}
+		}
+		for _, subCommand := range command.SubCommands {
+			subCobraCommand, err := commandToCobra(ctx, container, subCommand, runErrAddr)
+			if err != nil {
+				return nil, err
+			}
+			cobraCommand.AddCommand(subCobraCommand)
+		}
+	}
 	if command.Version != "" {
 		cobraCommand.SetVersionTemplate("{{.Version}}\n")
 		cobraCommand.Version = command.Version
-	}
-	for _, subCommand := range command.SubCommands {
-		subCobraCommand, err := commandToCobra(ctx, container, subCommand, runErrAddr)
-		if err != nil {
-			return nil, err
-		}
-		cobraCommand.AddCommand(subCobraCommand)
 	}
 	return cobraCommand, nil
 }
@@ -225,7 +234,7 @@ func commandValidate(command *Command) error {
 		return errors.New("cannot set both Command.Run and Command.SubCommands")
 	}
 	if command.Run == nil && len(command.SubCommands) == 0 {
-		return errors.New("cannot set both Command.Run and Command.SubCommands")
+		return errors.New("must set one of Command.Run and Command.SubCommands")
 	}
 	return nil
 }
