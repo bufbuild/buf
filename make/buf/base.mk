@@ -52,7 +52,7 @@ bufgeneratedeps:: installbuf $(PROTOC_GEN_GO)
 .PHONY: bufgenerate
 bufgenerate: bufgeneratedeps
 	rm -rf internal/proto/gen/go
-	buf beta generate
+	buf generate
 
 pregenerate:: bufgenerate
 
