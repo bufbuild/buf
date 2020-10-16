@@ -105,13 +105,13 @@ func newRootCommand(
 					lsbreakingcheckers.NewCommand("ls-breaking-checkers", builder),
 				},
 			},
+			generate.NewCommand("generate", builder, moduleResolverReaderProvider),
 			protoc.NewCommand("protoc", builder, moduleResolverReaderProvider),
 			lsfiles.NewCommand("ls-files", builder, moduleResolverReaderProvider),
 			{
 				Use:   "beta",
 				Short: "Beta commands. Unstable and will likely change.",
 				SubCommands: []*appcmd.Command{
-					generate.NewCommand("generate", builder, moduleResolverReaderProvider),
 					{
 						Use:   "image",
 						Short: "Work with Images and FileDescriptorSets.",
