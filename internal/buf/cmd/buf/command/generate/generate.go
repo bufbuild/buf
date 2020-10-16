@@ -57,7 +57,7 @@ version: v1beta1         # required
 plugins:
   - name: go             # required
     out: gen/go          # required
-    out: plugins=grpc    # optional
+    opt: plugins=grpc    # optional
     path: custom-gen-go  # optional
   - name java
     out: gen/java
