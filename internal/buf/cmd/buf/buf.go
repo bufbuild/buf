@@ -33,7 +33,7 @@ import (
 )
 
 // Version is the version of buf.
-const Version = "0.28.0-dev"
+const Version = "0.27.1"
 
 // Main is the main.
 func Main(name string, options ...MainOption) {
