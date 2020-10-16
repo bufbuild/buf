@@ -148,7 +148,7 @@ func testCompareGeneratedStubs(
 	genFlags := []string{
 		"--input",
 		dirPath,
-		"--config",
+		"--template",
 		newExternalConfigV1Beta1String(t, plugins, bufGenDir),
 	}
 	for _, filePath := range filePaths {
@@ -225,7 +225,7 @@ func testCompareGeneratedStubsArchive(
 	genFlags := []string{
 		"--input",
 		dirPath,
-		"--config",
+		"--template",
 		newExternalConfigV1Beta1String(t, plugins, bufGenFile),
 	}
 	for _, filePath := range filePaths {

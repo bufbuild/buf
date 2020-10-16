@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	configFlagName              = "config"
+	templateFlagName            = "template"
 	baseOutDirPathFlagName      = "output"
 	baseOutDirPathFlagShortName = "o"
 	errorFormatFlagName         = "error-format"
@@ -50,8 +50,45 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: "Generate stubs for a plugin using a configuration.",
-		Args:  cobra.NoArgs,
+		Short: "Generate stubs for protoc plugins using a template.",
+		Long: `This command uses a template file of the shape:
+
+version: v1beta1         # required
+plugins:
+  - name: go             # required
+    out: gen/go          # required
+    out: plugins=grpc    # optional
+    path: custom-gen-go  # optional
+  - name java
+    out: gen/java
+
+By default, buf generate will look for a file of this shape named
+"buf.gen.yaml" in your current directory. This can be thought of as a template
+for the set of plugins you want to invoke. Then, call with:
+
+# uses buf.gen.yaml as template, current directory as input
+$ buf generate
+
+# same as the defaults
+$ buf generate --input . --template buf.gen.yaml
+
+# --template also takes YAML or JSON data as input, so it can be used without a file
+$ buf generate --input . --template '{"version":"v1beta1","plugins":[{"name":"go","out":"gen/go"}]}'
+
+# download the repository, compile it, and generate per the bar.yaml template
+$ buf generate --input https://github.com/foo/bar.git --template bar.yaml
+
+# generate to the bar/ directory, prepending bar/ to the out directives in the template
+$ buf generate --input https://github.com/foo/bar.git --template bar.yaml -o bar
+
+The paths in the template and the -o flag will be interpreted as relative to your
+current directory, so you can place your template files anywhere.
+
+Plugins are invoked in the order they are specified in the template, but each plugin
+has a per-directory parallel invocation, with results from each invocation combined
+before writing the result. This is equivalent behavior to "buf protoc --by_dir".
+`,
+		Args: cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags, moduleResolverReaderProvider)
@@ -62,7 +99,7 @@ func NewCommand(
 }
 
 type flags struct {
-	Config         string
+	Template       string
 	BaseOutDirPath string
 	ErrorFormat    string
 	Files          []string
@@ -76,17 +113,17 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
-		&f.Config,
-		configFlagName,
+		&f.Template,
+		templateFlagName,
 		"buf.gen.yaml",
-		`The generation config file or data to use. Must be in either YAML or JSON format.`,
+		`The generation template file or data to use. Must be in either YAML or JSON format.`,
 	)
 	flagSet.StringVarP(
 		&f.BaseOutDirPath,
 		baseOutDirPathFlagName,
 		baseOutDirPathFlagShortName,
 		".",
-		`The base directory to generate to. This is prepended to the out directories in the generation config.`,
+		`The base directory to generate to. This is prepended to the out directories in the generation template.`,
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
@@ -139,7 +176,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	genConfig, err := bufgen.ReadConfig(flags.Config)
+	genConfig, err := bufgen.ReadConfig(flags.Template)
 	if err != nil {
 		return err
 	}
