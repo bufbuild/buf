@@ -16,7 +16,6 @@ package bufmodulebuild
 
 import (
 	"context"
-	"sort"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -145,16 +144,6 @@ type Config struct {
 // NewConfigV1Beta1 returns a new, validated Config for the ExternalConfig.
 func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Config, error) {
 	return newConfigV1Beta1(externalConfig, deps...)
-}
-
-// Roots returns the Roots.
-func (c *Config) Roots() []string {
-	roots := make([]string, 0, len(c.RootToExcludes))
-	for root := range c.RootToExcludes {
-		roots = append(roots, root)
-	}
-	sort.Strings(roots)
-	return roots
 }
 
 // ExternalConfigV1Beta1 is an external config.

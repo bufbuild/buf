@@ -18,8 +18,8 @@ require (
 	go.opencensus.io v0.22.5
 	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.16.0
-	golang.org/x/crypto v0.0.0-20201012173705-84dcc777aaee
-	golang.org/x/sys v0.0.0-20201015000850-e3ed0017c211 // indirect
+	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
+	golang.org/x/sys v0.0.0-20201017003518-b09fb700fbb7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto v0.0.0-20201015140912-32ed001d685c // indirect
 	google.golang.org/protobuf v1.25.0
