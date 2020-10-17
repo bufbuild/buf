@@ -33,43 +33,44 @@ import (
 
 func TestSuccess1(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess2(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess3(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess4(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess5(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--exclude-source-info", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--exclude-source-info", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess6(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, 0, ``, "check", "lint", "--input", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "check", "lint", "--input", filepath.Join("testdata", "success"))
 }
 
 func TestSuccessProfile1(t *testing.T) {
 	t.Parallel()
-	testRunStdoutProfile(t, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
+	testRunStdoutProfile(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
 }
 
 func TestFail1(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		0,
 		``,
 		"image", "build", "-o", app.DevNullFilePath,
@@ -82,6 +83,7 @@ func TestFail2(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		0,
 		``,
 		"image", "build", "-o", app.DevNullFilePath,
@@ -95,6 +97,7 @@ func TestFail3(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		0,
 		``,
 		"image", "build", "-o", app.DevNullFilePath,
@@ -108,6 +111,7 @@ func TestFail4(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		0,
 		``,
 		"image", "build", "-o", app.DevNullFilePath,
@@ -122,6 +126,7 @@ func TestFail5(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		1,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
@@ -136,6 +141,7 @@ func TestFail6(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		1,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
@@ -152,6 +158,7 @@ func TestFail7(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		1,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
@@ -170,6 +177,7 @@ func TestFail8(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		1,
 		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
 		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`,
@@ -184,6 +192,7 @@ func TestFail9(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		1,
 		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
 		"check",
@@ -199,6 +208,7 @@ func TestFail10(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		0,
 		``,
 		"check",
@@ -214,6 +224,7 @@ func TestFail11(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		1,
 		`testdata/fail2/buf/buf2.proto:5:8:buf/buf.proto: does not exist`,
 		"check",
@@ -229,6 +240,7 @@ func TestFail12(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		1,
 		`version: v1beta1
 lint:
@@ -250,6 +262,7 @@ func TestFailCheckBreaking1(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		1,
 		`
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
@@ -272,6 +285,7 @@ func TestCheckLsLintCheckers1(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		0,
 		`
 ID                                CATEGORIES                                  PURPOSE
@@ -327,6 +341,7 @@ func TestCheckLsLintCheckers2(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		0,
 		`
 		ID                       CATEGORIES                            PURPOSE
@@ -344,6 +359,7 @@ func TestCheckLsBreakingCheckers1(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		0,
 		`
 ID                                              CATEGORIES                      PURPOSE
@@ -412,6 +428,7 @@ func TestCheckLsBreakingCheckers2(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		0,
 		`
 		ID                    CATEGORIES     PURPOSE
@@ -429,6 +446,7 @@ func TestLsFiles(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
+		nil,
 		0,
 		`
 		testdata/success/buf/buf.proto
@@ -436,6 +454,64 @@ func TestLsFiles(t *testing.T) {
 		"ls-files",
 		"--input",
 		filepath.Join("testdata", "success"),
+	)
+}
+
+func TestLsFilesImage1(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"image",
+		"build",
+		"-o",
+		"-",
+		"--source",
+		filepath.Join("testdata", "success"),
+	)
+	testRunStdout(
+		t,
+		stdout,
+		0,
+		`
+		google/protobuf/descriptor.proto
+		buf/buf.proto
+		`,
+		"ls-files",
+		"--input",
+		"-",
+	)
+}
+
+func TestLsFilesImage2(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"image",
+		"build",
+		"--exclude-imports",
+		"-o",
+		"-",
+		"--source",
+		filepath.Join("testdata", "success"),
+	)
+	testRunStdout(
+		t,
+		stdout,
+		0,
+		`
+		buf/buf.proto
+		`,
+		"ls-files",
+		"--input",
+		"-",
 	)
 }
 
@@ -549,36 +625,7 @@ func TestImageConvertRoundtripJSONBinaryJSON(t *testing.T) {
 	require.Equal(t, json1, stdout.Bytes())
 }
 
-func testRunStdout(t *testing.T, expectedExitCode int, expectedStdout string, args ...string) {
-	t.Helper()
-	testRunStdoutInternal(
-		t,
-		expectedExitCode,
-		expectedStdout,
-		args...,
-	)
-}
-
-func testRunStdoutProfile(t *testing.T, expectedExitCode int, expectedStdout string, args ...string) {
-	t.Helper()
-	profileDirPath, err := ioutil.TempDir("", "")
-	require.NoError(t, err)
-	defer func() { assert.NoError(t, os.RemoveAll(profileDirPath)) }()
-	testRunStdoutInternal(
-		t,
-		0,
-		``,
-		append(
-			args,
-			"--profile",
-			fmt.Sprintf("--profile-path=%s", profileDirPath),
-			"--profile-loops=1",
-			"--profile-type=cpu",
-		)...,
-	)
-}
-
-func testRunStdoutInternal(t *testing.T, expectedExitCode int, expectedStdout string, args ...string) {
+func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
 	t.Helper()
 	appcmdtesting.RunCommandExitCodeStdout(
 		t,
@@ -589,8 +636,28 @@ func testRunStdoutInternal(t *testing.T, expectedExitCode int, expectedStdout st
 			"BUF_CONFIG_DIR": "testdata/config",
 			"BUF_CACHE_DIR":  "cache",
 		},
-		nil,
+		stdin,
 		args...,
+	)
+}
+
+func testRunStdoutProfile(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
+	t.Helper()
+	profileDirPath, err := ioutil.TempDir("", "")
+	require.NoError(t, err)
+	defer func() { assert.NoError(t, os.RemoveAll(profileDirPath)) }()
+	testRunStdout(
+		t,
+		stdin,
+		0,
+		``,
+		append(
+			args,
+			"--profile",
+			fmt.Sprintf("--profile-path=%s", profileDirPath),
+			"--profile-loops=1",
+			"--profile-type=cpu",
+		)...,
 	)
 }
 

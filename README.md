@@ -29,17 +29,13 @@ However, we recommend you read the below introduction first!
 - [Tour of existing functionality- takes about 10 minutes to complete](https://buf.build/docs/tour-1)
 - [Overview of our 40 lint checkers](https://buf.build/docs/lint-checkers)
 - [Overview of our 54 breaking change checkers](https://buf.build/docs/breaking-checkers)
+- [Simple code generation](https://buf.build/docs/generate-usage)
+- [High-performance protoc replacement](https://buf.build/docs/generate-protoc)
 - [Protobuf Style Guide](https://buf.build/docs/style-guide)
 - [Migration from Protolock](https://buf.build/docs/migration-protolock)
 - [Migration from Prototool](https://buf.build/docs/migration-prototool)
 
 ## Overview
-
-*"Protobuf is so much harder to use than JSON, why should I use Protobuf?"*
-
-Buf aims to eventually reverse this sentence. Our goal is for you to say:
-
-*"JSON is so much harder to use than Protobuf, why should I use JSON?"*
 
 Using an [IDL](https://en.wikipedia.org/wiki/Interface_description_language) such as
 [Protocol Buffers](https://developers.google.com/protocol-buffers) ("Protobuf")
@@ -84,24 +80,29 @@ your structured data and APIs can quite literally produce one of the largest eff
 engineering organization can have. Much of the software we write today can be generated, and many
 daily software development tasks we perform can be automated away.
 
-In time, Buf aims to solve all this and more. However, there is a long way between that world and the one we have now.
+In time, Buf aims to solve all this and more. However, there is a long way between that
+world and the one we have now.
 
 ## Buf CLI
 
 Phase 1 is to solve the API Structure and Backwards Compatibility problems: let's
 help you maintain consistent Protobuf APIs that maintain compatibility.
 
-**We have released the Buf CLI tool, and associated `protoc` plugins, into public beta.**
+This is done via the Buf CLI tool.
 
 Buf currently contains:
 
 - A [linter](https://buf.build/docs/lint-usage) that enforces good API design choices and structure.
 - A [breaking change detector](https://buf.build/docs/breaking-usage) that enforces compatibility at the source code or wire level.
+- A [generator](https://buf.build/docs/generate-usage) that invokes your protoc plugins based on a configurable
+  template.
+  A [protoc replacement](https://buf.build/docs/generate-protoc) that uses Buf's newly-developed [high performance
+  Protobuf compiler](https://buf.build/docs/build-compiler.md).
 - A configurable file [builder](https://buf.build/docs/build-overview) that produces
   [Images](https://buf.build/docs/build-images), our extension of
   [FileDescriptorSets](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto).
 
-**Buf is designed to be extremely simple to use, while providing functionality for advanced use cases.**
+Buf is designed to be extremely simple to use, while providing functionality for advanced use cases.
 Features of Buf's include:
 
 - **Automatic file discovery**. By default, Buf will build your `.proto` files by walking your file
@@ -145,59 +146,15 @@ Features of Buf's include:
   instantaneous feedback, which is especially useful with editor integration. Buf's speed is
   directly proportional to the input size, so checking a single file only takes a few milliseconds.
 
-- **Use protoc as your compiler**. Existing lint and breaking change detection tools produce an
-  internal representation of your Protobuf schema in one of two ways:
-
-  - By using a third-party Protobuf parser, which is usually error-prone and almost never covers
-    every edge case of the Protobuf grammar.
-  - By shelling out to `protoc` itself and parsing the result, which not only requires specific
-    management of `protoc` in relation to the lint/breaking change detection tool, but can be
-    cumbersome and error-prone itself, especially if the tool parses error output from `protoc`.
-
-  Buf tackles this issue by using FileDescriptorSets internally
-  for all operations, and allowing these FileDescriptorSets to be produced in one of two ways:
-
-  - By using a newly-developed Golang Protobuf compiler that is continuously tested against thousands
-    of known Protobuf definitions, including all known edge cases of the Protobuf grammar.
-  - By allowing users to provide `protoc` output as `buf` input, thereby bypassing any compiling
-    or parsing on the part of `buf` entirely, and instead using `protoc`, the gold standard of
-    Protobuf compilation.
-
-  See the [Image](https://buf.build/docs/build-images) and [compiler](https://buf.build/docs/build-compiler) documentation for more details.
-
-  In short, we don't expect you to natively trust the internal compiler is actually equivalent to
-  `protoc` - we would want to verify this claim ourselves. There are also cases (such as Bazel setups)
-  where you may already have infrastructure around calling `protoc`, and may want to just use
-  artifacts from `protoc` as input to `buf`.
-
-- **Use buf as a protoc plugin instead of a standalone tool**. You can go a step further and use
-  Buf's lint and breaking change functionality as a `protoc` plugin with the provided
-  [protoc-gen-buf-check-lint](https://buf.build/docs/lint-protoc-plugin) and
-  [protoc-gen-buf-check-breaking](https://buf.build/docs/breaking-protoc-plugin) plugins.
-
-- **Docker image**. You can use Buf from the provided Docker image [bufbuild/buf](https://hub.docker.com/r/bufbuild/buf) as well.
-
 ## Buf Schema Registry
 
-We'll work through the beta over the next couple months, and hope to hit a stable v1.0 by
-early 2020.
-
-Simultaneously, we'll be working on our next goal, which is to solve the bigger problem:
-now that you have consistent and compatible APIs, how do you, and your customers, consume them?
-
-Phase 2 is the **Buf Schema Registry**, Our goal is for the Buf Schema Registry to be a
-publicly hosted and on-prem service that will receive [Images](https://buf.build/docs/build-images)
-built by `buf`, and let you produce and consume various generated artifacts such as:
-
-- Language-specific stubs, for every version of `protoc` and associated language plugins.
-- Tarballs that contain your `.proto` files alongside Bazel build rules.
-- Hosted documentation for your Protobuf APIs.
+The Buf CLI is just the first component of Buf's modern Protobuf ecosystem. We're currently
+in private beta of the **Buf Schema Registry**, a hosted and on-prem service that managed
+the new Protobuf Modules paradigm. The Buf Schema Registry allows you to push and consume
+modules, enabling entirely new Protobuf workflows.
 
 There's a lot we are planning with the Buf Schema Registry. For a quick overview, see our
 [roadmap](https://buf.build/docs/roadmap).
-
-Phase 3+ will build on top of `buf` and the Buf Schema Registry, and we'll announce these at
-at a later date.
 
 ## Where to go from here
 
