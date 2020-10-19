@@ -15,7 +15,6 @@
 package observabilityzap
 
 import (
-	"context"
 	"time"
 
 	"go.opencensus.io/trace"
@@ -30,17 +29,6 @@ func newExporter(logger *zap.Logger) *zapTracer {
 	return &zapTracer{
 		logger: logger,
 	}
-}
-
-func (t *zapTracer) Run(ctx context.Context) error {
-	// Note, trace.RegisterExporter registers to a global exporter registry
-	// in the OpenCensus trace package. Generally we avoid this sort of
-	// thing, because globals make it hard to reason about package dependencies
-	// and makes testing harder. However, in this case it's the workflow
-	// intended by the designers of the package, and working around it
-	// turns into a real messy endeavour.
-	trace.RegisterExporter(t)
-	return nil
 }
 
 // ExportSpan implements the opencensus trace.Exporter interface.
@@ -61,4 +49,8 @@ func (t *zapTracer) ExportSpan(sd *trace.SpanData) {
 		fields = append(fields, zap.Any(key, att))
 	}
 	checkedEntry.Write(fields...)
+}
+
+func (t *zapTracer) Close() error {
+	return nil
 }

@@ -106,5 +106,4 @@ func (m *testModuleReader) GetModule(ctx context.Context, moduleName bufmodule.R
 	default:
 		return nil, fmt.Errorf("unknown module: %s", moduleName.String())
 	}
-
 }

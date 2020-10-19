@@ -14,10 +14,29 @@
 
 package observability
 
-import "context"
+import (
+	"io"
 
-// Exporter describes the interface implemented
-// by all observability exporters.
-type Exporter interface {
-	Run(context.Context) error
+	"go.opencensus.io/stats/view"
+	"go.opencensus.io/trace"
+)
+
+// TraceExportCloser describes the interface used to export OpenCensus traces
+// and cleaning of resources.
+type TraceExportCloser interface {
+	trace.Exporter
+	io.Closer
+}
+
+// ViewExportCloser describes the interface used to export OpenCensus views
+// and cleaning of resources.
+type ViewExportCloser interface {
+	view.Exporter
+	io.Closer
+}
+
+// TraceViewExportCloser implements both OpenCensus view and trace exporting.
+type TraceViewExportCloser interface {
+	TraceExportCloser
+	ViewExportCloser
 }

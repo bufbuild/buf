@@ -114,7 +114,6 @@ func (r *mapReadBucket) Stat(ctx context.Context, path string) (ObjectInfo, erro
 		return nil, err
 	}
 	return replaceObjectInfoPath(objectInfo, path), nil
-
 }
 
 func (r *mapReadBucket) Walk(ctx context.Context, prefix string, f func(ObjectInfo) error) error {

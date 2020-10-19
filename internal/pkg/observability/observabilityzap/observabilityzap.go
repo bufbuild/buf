@@ -20,6 +20,6 @@ import (
 )
 
 // NewExporter returns a new Exporter with a zap backend.
-func NewExporter(logger *zap.Logger) observability.Exporter {
+func NewExporter(logger *zap.Logger) observability.TraceExportCloser {
 	return newExporter(logger)
 }

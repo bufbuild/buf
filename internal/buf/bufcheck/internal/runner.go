@@ -81,7 +81,6 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 	}
 	bufanalysis.SortFileAnnotations(fileAnnotations)
 	return fileAnnotations, nil
-
 }
 
 func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {

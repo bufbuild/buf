@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/observability/observabilityzap"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
+	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 )
 
@@ -110,9 +111,7 @@ func (b *builder) run(
 	}
 
 	if b.tracing {
-		if err := observabilityzap.NewExporter(logger).Run(ctx); err != nil {
-			return err
-		}
+		trace.RegisterExporter(observabilityzap.NewExporter(logger))
 	}
 	if !b.profile {
 		return f(ctx, container)

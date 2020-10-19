@@ -39,7 +39,7 @@ const (
 
 var (
 	// ProtocProxyPluginNames are the names of the plugins that should be proxied through protoc
-	// in the absense of a binary.
+	// in the absence of a binary.
 	ProtocProxyPluginNames = map[string]struct{}{
 		"cpp":    {},
 		"csharp": {},
