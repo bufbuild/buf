@@ -3,12 +3,10 @@
 # Must be set
 $(call _assert_var,MAKEGO)
 $(call _conditional_include,$(MAKEGO)/base.mk)
-$(call _conditional_include,$(MAKEGO)/dep_errcheck.mk)
-$(call _conditional_include,$(MAKEGO)/dep_staticcheck.mk)
+$(call _conditional_include,$(MAKEGO)/dep_golangci_lint.mk)
 # Must be set
 $(call _assert_var,GO_MODULE)
-$(call _assert_var,ERRCHECK)
-$(call _assert_var,STATICCHECK)
+$(call _assert_var,GOLANGCI_LINT)
 $(call _assert_var,TMP)
 $(call _assert_var,OPEN_CMD)
 
@@ -19,12 +17,12 @@ GO_TEST_BINS ?=
 # Settable
 GO_GET_PKGS ?=
 # Settable
-GO_LINT_IGNORES := $(GO_LINT_IGNORES) \/gen\/
-# Settable
 GO_MOD_VERSION ?= 1.14
 
 # Runtime
 GOPKGS ?= ./...
+# Runtime
+GOLANGCILINTTIMEOUT ?= 2m0s
 # Runtime GONOTESTCACHE
 # Runtime COVEROPEN
 
@@ -81,17 +79,16 @@ gofmtmodtidy:
 
 postgenerate:: gofmtmodtidy
 
-.PHONY: vet
-vet: __go_lint_pkgs
-	go vet $(GO_LINT_PKGS)
+.PHONY: checknonolint
+checknonolint:
+	@if grep '//nolint' $(shell find . -name '*.go'); then \
+		echo '//nolint directives found, surface ignores in .golangci.yml instead' >&2; \
+		exit 1; \
+	fi
 
-.PHONY:
-errcheck: __go_lint_pkgs $(ERRCHECK)
-	errcheck $(GO_LINT_PKGS)
-
-.PHONY: staticcheck
-staticcheck: __go_lint_pkgs $(STATICCHECK)
-	staticcheck $(GO_LINT_PKGS)
+.PHONY: golangcilint
+golangcilint: $(GOLANGCI_LINT)
+	golangci-lint run --timeout $(GOLANGCILINTTIMEOUT)
 
 .PHONY: postlint
 postlint::
@@ -99,7 +96,7 @@ postlint::
 .PHONY: lint
 lint:
 	@$(MAKE) checknodiffgenerated
-	@$(MAKE) vet errcheck staticcheck postlint
+	@$(MAKE) checknonolint golangcilint postlint
 
 .PHONY: prebuild
 prebuild::
@@ -169,11 +166,3 @@ endef
 
 $(foreach gobin,$(sort $(GO_TEST_BINS)),$(eval $(call gotestbinfunc,$(gobin))))
 $(foreach gobin,$(sort $(GO_TEST_BINS)),$(eval FILE_IGNORES := $(FILE_IGNORES) $(gobin)/$(notdir $(gobin))))
-
-.PHONY: __go_lint_pkgs
-__go_lint_pkgs:
-ifdef GO_LINT_IGNORES
-	$(eval GO_LINT_PKGS := $(shell go list $(GOPKGS) | grep -v $(patsubst %,-e %,$(sort $(GO_LINT_IGNORES)))))
-else
-	$(eval GO_LINT_PKGS := $(GOPKGS))
-endif

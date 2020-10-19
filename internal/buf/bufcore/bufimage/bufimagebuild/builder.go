@@ -43,7 +43,6 @@ func newBuilder(logger *zap.Logger) *builder {
 	return &builder{
 		logger: logger,
 	}
-
 }
 
 func (b *builder) Build(
