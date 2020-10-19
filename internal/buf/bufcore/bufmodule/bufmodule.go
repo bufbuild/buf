@@ -296,7 +296,7 @@ func NewNopModuleReader() ModuleReader {
 type ModuleFileSet interface {
 	// Note that GetFile will pull from All files instead of just Source Files!
 	Module
-	// AllFileInfos gets all FileInfos associated with the module, including depedencies.
+	// AllFileInfos gets all FileInfos associated with the module, including dependencies.
 	//
 	// The returned FileInfos are sorted by path.
 	AllFileInfos(ctx context.Context) ([]bufcore.FileInfo, error)
