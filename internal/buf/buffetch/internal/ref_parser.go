@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/git"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"go.uber.org/zap"
 )
 
@@ -173,6 +174,14 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 				return nil, NewOptionsCouldNotParseStripComponentsError(value)
 			}
 			rawRef.ArchiveStripComponents = uint32(stripComponents)
+		case "subdir":
+			subDirPath, err := normalpath.NormalizeAndValidate(value)
+			if err != nil {
+				return nil, err
+			}
+			if subDirPath != "." {
+				rawRef.SubDirPath = subDirPath
+			}
 		default:
 			return nil, NewOptionsInvalidKeyError(key)
 		}
@@ -214,6 +223,11 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 	}
 	if !singleOK && !archiveOK {
 		if rawRef.CompressionType != 0 {
+			return nil, NewOptionsInvalidForFormatError(rawRef.Format, value)
+		}
+	}
+	if !archiveOK && !gitOK {
+		if rawRef.SubDirPath != "" {
 			return nil, NewOptionsInvalidForFormatError(rawRef.Format, value)
 		}
 	}
@@ -291,6 +305,7 @@ func getArchiveRef(
 		archiveType,
 		compressionType,
 		rawRef.ArchiveStripComponents,
+		rawRef.SubDirPath,
 	)
 }
 
@@ -316,6 +331,7 @@ func getGitRef(
 		gitRefName,
 		rawRef.GitDepth,
 		rawRef.GitRecurseSubmodules,
+		rawRef.SubDirPath,
 	)
 }
 

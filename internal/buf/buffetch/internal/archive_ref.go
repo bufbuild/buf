@@ -14,6 +14,8 @@
 
 package internal
 
+import "github.com/bufbuild/buf/internal/pkg/normalpath"
+
 var (
 	_ ParsedArchiveRef = &archiveRef{}
 )
@@ -25,6 +27,7 @@ type archiveRef struct {
 	archiveType     ArchiveType
 	compressionType CompressionType
 	stripComponents uint32
+	subDirPath      string
 }
 
 func newArchiveRef(
@@ -33,6 +36,7 @@ func newArchiveRef(
 	archiveType ArchiveType,
 	compressionType CompressionType,
 	stripComponents uint32,
+	subDirPath string,
 ) (*archiveRef, error) {
 	if archiveType == ArchiveTypeZip && compressionType != CompressionTypeNone {
 		return nil, NewCannotSpecifyCompressionForZipError()
@@ -45,6 +49,13 @@ func newArchiveRef(
 	if err != nil {
 		return nil, err
 	}
+	subDirPath, err = normalpath.NormalizeAndValidate(subDirPath)
+	if err != nil {
+		return nil, err
+	}
+	if subDirPath == "." {
+		subDirPath = ""
+	}
 	return newDirectArchiveRef(
 		singleRef.Format(),
 		singleRef.Path(),
@@ -52,6 +63,7 @@ func newArchiveRef(
 		archiveType,
 		singleRef.CompressionType(),
 		stripComponents,
+		subDirPath,
 	), nil
 }
 
@@ -62,6 +74,7 @@ func newDirectArchiveRef(
 	archiveType ArchiveType,
 	compressionType CompressionType,
 	stripComponents uint32,
+	subDirPath string,
 ) *archiveRef {
 	return &archiveRef{
 		format:          format,
@@ -70,6 +83,7 @@ func newDirectArchiveRef(
 		archiveType:     archiveType,
 		compressionType: compressionType,
 		stripComponents: stripComponents,
+		subDirPath:      subDirPath,
 	}
 }
 
@@ -95,6 +109,10 @@ func (r *archiveRef) CompressionType() CompressionType {
 
 func (r *archiveRef) StripComponents() uint32 {
 	return r.stripComponents
+}
+
+func (r *archiveRef) SubDirPath() string {
+	return r.subDirPath
 }
 
 func (*archiveRef) ref()        {}
