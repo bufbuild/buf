@@ -87,6 +87,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeNone,
 			0,
+			"",
 		),
 		"path/to/file.tar",
 	)
@@ -99,6 +100,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeNone,
 			0,
+			"",
 		),
 		"file:///path/to/file.tar",
 	)
@@ -111,6 +113,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeNone,
 			1,
+			"",
 		),
 		"path/to/file.tar#strip_components=1",
 	)
@@ -123,6 +126,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeGzip,
 			0,
+			"",
 		),
 		"path/to/file.tar.gz",
 	)
@@ -135,6 +139,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeGzip,
 			1,
+			"",
 		),
 		"path/to/file.tar.gz#strip_components=1",
 	)
@@ -147,6 +152,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeGzip,
 			0,
+			"",
 		),
 		"path/to/file.tgz",
 	)
@@ -159,6 +165,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeGzip,
 			1,
+			"",
 		),
 		"path/to/file.tgz#strip_components=1",
 	)
@@ -171,6 +178,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeNone,
 			0,
+			"",
 		),
 		"http://path/to/file.tar",
 	)
@@ -183,6 +191,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeNone,
 			0,
+			"",
 		),
 		"https://path/to/file.tar",
 	)
@@ -195,6 +204,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeZip,
 			internal.CompressionTypeNone,
 			0,
+			"",
 		),
 		"path/to/file.zip",
 	)
@@ -207,6 +217,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeZip,
 			internal.CompressionTypeNone,
 			0,
+			"",
 		),
 		"file:///path/to/file.zip",
 	)
@@ -219,6 +230,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeZip,
 			internal.CompressionTypeNone,
 			1,
+			"",
 		),
 		"path/to/file.zip#strip_components=1",
 	)
@@ -231,6 +243,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			nil,
 			false,
 			1,
+			"",
 		),
 		"path/to/dir.git",
 	)
@@ -243,6 +256,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			nil,
 			false,
 			40,
+			"",
 		),
 		"path/to/dir.git#depth=40",
 	)
@@ -255,6 +269,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewBranchName("master"),
 			false,
 			1,
+			"",
 		),
 		"path/to/dir.git#branch=master",
 	)
@@ -267,6 +282,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewBranchName("master"),
 			false,
 			1,
+			"",
 		),
 		"file:///path/to/dir.git#branch=master",
 	)
@@ -279,6 +295,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewTagName("v1.0.0"),
 			false,
 			1,
+			"",
 		),
 		"path/to/dir.git#tag=v1.0.0",
 	)
@@ -291,6 +308,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewBranchName("master"),
 			false,
 			1,
+			"",
 		),
 		"http://hello.com/path/to/dir.git#branch=master",
 	)
@@ -303,6 +321,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewBranchName("master"),
 			false,
 			1,
+			"",
 		),
 		"https://hello.com/path/to/dir.git#branch=master",
 	)
@@ -315,6 +334,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewBranchName("master"),
 			false,
 			1,
+			"",
 		),
 		"ssh://user@hello.com:path/to/dir.git#branch=master",
 	)
@@ -327,6 +347,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewRefName("refs/remotes/origin/HEAD"),
 			false,
 			50,
+			"",
 		),
 		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD",
 	)
@@ -339,6 +360,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "master"),
 			false,
 			50,
+			"",
 		),
 		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,branch=master",
 	)
@@ -351,6 +373,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewRefName("refs/remotes/origin/HEAD"),
 			false,
 			10,
+			"",
 		),
 		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,depth=10",
 	)
@@ -363,8 +386,48 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "master"),
 			false,
 			10,
+			"",
 		),
 		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,branch=master,depth=10",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedGitRef(
+			formatGit,
+			"path/to/dir.git",
+			internal.GitSchemeLocal,
+			nil,
+			false,
+			1,
+			"foo/bar",
+		),
+		"path/to/dir.git#subdir=foo/bar",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedGitRef(
+			formatGit,
+			"path/to/dir.git",
+			internal.GitSchemeLocal,
+			nil,
+			false,
+			1,
+			"",
+		),
+		"path/to/dir.git#subdir=.",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedGitRef(
+			formatGit,
+			"path/to/dir.git",
+			internal.GitSchemeLocal,
+			nil,
+			false,
+			1,
+			"",
+		),
+		"path/to/dir.git#subdir=foo/..",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -517,6 +580,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewBranchName("master"),
 			false,
 			1,
+			"",
 		),
 		"/path/to/dir#branch=master,format=git",
 	)
@@ -529,6 +593,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewBranchName("master/foo"),
 			false,
 			1,
+			"",
 		),
 		"/path/to/dir#format=git,branch=master/foo",
 	)
@@ -541,6 +606,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewTagName("master/foo"),
 			false,
 			1,
+			"",
 		),
 		"path/to/dir#tag=master/foo,format=git",
 	)
@@ -553,6 +619,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewTagName("master/foo"),
 			false,
 			1,
+			"",
 		),
 		"path/to/dir#format=git,tag=master/foo",
 	)
@@ -565,6 +632,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewTagName("master/foo"),
 			true,
 			1,
+			"",
 		),
 		"path/to/dir#format=git,tag=master/foo,recurse_submodules=true",
 	)
@@ -577,6 +645,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewTagName("master/foo"),
 			false,
 			1,
+			"",
 		),
 		"path/to/dir#format=git,tag=master/foo,recurse_submodules=false",
 	)
@@ -589,6 +658,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewRefName("refs/remotes/origin/HEAD"),
 			false,
 			50,
+			"",
 		),
 		"path/to/dir#format=git,ref=refs/remotes/origin/HEAD",
 	)
@@ -601,6 +671,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			git.NewRefName("refs/remotes/origin/HEAD"),
 			false,
 			10,
+			"",
 		),
 		"path/to/dir#format=git,ref=refs/remotes/origin/HEAD,depth=10",
 	)
@@ -613,6 +684,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeGzip,
 			1,
+			"",
 		),
 		"path/to/file#format=targz,strip_components=1",
 	)
@@ -625,6 +697,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeNone,
 			1,
+			"",
 		),
 		"path/to/file#format=tar,strip_components=1",
 	)
@@ -637,6 +710,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeNone,
 			1,
+			"",
 		),
 		"path/to/file#format=tar,strip_components=1,compression=none",
 	)
@@ -649,6 +723,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeGzip,
 			1,
+			"",
 		),
 		"path/to/file#format=tar,strip_components=1,compression=gzip",
 	)
@@ -661,6 +736,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeZip,
 			internal.CompressionTypeNone,
 			1,
+			"",
 		),
 		"path/to/file#format=zip,strip_components=1",
 	)
@@ -673,6 +749,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeZstd,
 			0,
+			"",
 		),
 		"path/to/file.tar.zst",
 	)
@@ -685,8 +762,35 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeZstd,
 			1,
+			"",
 		),
 		"path/to/file.tar.zst#strip_components=1",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedArchiveRef(
+			formatZip,
+			"path/to/file",
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeZip,
+			internal.CompressionTypeNone,
+			1,
+			"",
+		),
+		"path/to/file#format=zip,strip_components=1",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedArchiveRef(
+			formatTar,
+			"path/to/file.tar.zst",
+			internal.FileSchemeLocal,
+			internal.ArchiveTypeTar,
+			internal.CompressionTypeZstd,
+			0,
+			"foo/bar",
+		),
+		"path/to/file.tar.zst#subdir=foo/bar",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -697,8 +801,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.ArchiveTypeTar,
 			internal.CompressionTypeZstd,
 			1,
+			"foo/bar",
 		),
-		"path/to/file#format=tar,strip_components=1,compression=zstd",
+		"path/to/file#format=tar,strip_components=1,compression=zstd,subdir=foo/bar",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -902,6 +1007,11 @@ func TestGetParsedRefError(t *testing.T) {
 		t,
 		internal.NewCannotSpecifyCompressionForZipError(),
 		"path/to/foo#format=zip,compression=none",
+	)
+	testGetParsedRefError(
+		t,
+		internal.NewCannotSpecifyCompressionForZipError(),
+		"path/to/foo#format=zip,compression=gzip",
 	)
 	testGetParsedRefError(
 		t,
