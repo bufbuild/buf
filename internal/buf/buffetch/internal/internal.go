@@ -124,7 +124,10 @@ type ArchiveRef interface {
 	FileRef
 	BucketRef
 	ArchiveType() ArchiveType
+	// Applied before subdir
 	StripComponents() uint32
+	// Will be empty instead of "." for root directory
+	SubDirPath() string
 	archiveRef()
 }
 
@@ -134,8 +137,9 @@ func NewArchiveRef(
 	archiveType ArchiveType,
 	compressionType CompressionType,
 	stripComponents uint32,
+	subDirPath string,
 ) (ArchiveRef, error) {
-	return newArchiveRef("", path, archiveType, compressionType, stripComponents)
+	return newArchiveRef("", path, archiveType, compressionType, stripComponents, subDirPath)
 }
 
 // DirRef is a local directory reference.
@@ -167,6 +171,8 @@ type GitRef interface {
 	// Will always be >= 1
 	Depth() uint32
 	RecurseSubmodules() bool
+	// Will be empty instead of "." for root directory
+	SubDirPath() string
 	gitRef()
 }
 
@@ -176,8 +182,9 @@ func NewGitRef(
 	gitName git.Name,
 	depth uint32,
 	recurseSubmodules bool,
+	subDirPath string,
 ) (GitRef, error) {
-	return newGitRef("", path, gitName, depth, recurseSubmodules)
+	return newGitRef("", path, gitName, depth, recurseSubmodules, subDirPath)
 }
 
 // ModuleRef is a module reference.
@@ -256,6 +263,7 @@ func NewDirectParsedArchiveRef(
 	archiveType ArchiveType,
 	compressionType CompressionType,
 	stripComponents uint32,
+	subDirPath string,
 ) ParsedArchiveRef {
 	return newDirectArchiveRef(
 		format,
@@ -264,6 +272,7 @@ func NewDirectParsedArchiveRef(
 		archiveType,
 		compressionType,
 		stripComponents,
+		subDirPath,
 	)
 }
 
@@ -296,6 +305,7 @@ func NewDirectParsedGitRef(
 	gitName git.Name,
 	recurseSubmodules bool,
 	depth uint32,
+	subDirPath string,
 ) ParsedGitRef {
 	return newDirectGitRef(
 		format,
@@ -304,6 +314,7 @@ func NewDirectParsedGitRef(
 		gitName,
 		recurseSubmodules,
 		depth,
+		subDirPath,
 	)
 }
 
@@ -417,6 +428,8 @@ type RawRef struct {
 	// Only set for single, archive formats
 	// Cannot be set for zip archives
 	CompressionType CompressionType
+	// Only set for archive, git formats
+	SubDirPath string
 	// Only set for git formats
 	// Only one of GitBranch and GitTag will be set
 	GitBranch string
@@ -645,7 +658,7 @@ func WithAllowedFormats(formats ...string) GetParsedRefOption {
 // GetFileOption is a GetFile option.
 type GetFileOption func(*getFileOptions)
 
-// WithGetFileKeepFileCompression says to return s compressed.
+// WithGetFileKeepFileCompression says to return compressed.
 func WithGetFileKeepFileCompression() GetFileOption {
 	return func(getFileOptions *getFileOptions) {
 		getFileOptions.keepFileCompression = true
@@ -654,13 +667,6 @@ func WithGetFileKeepFileCompression() GetFileOption {
 
 // GetBucketOption is a GetBucket option.
 type GetBucketOption func(*getBucketOptions)
-
-// WithGetBucketMapper returns a GetBucketOption that adds the Mapper.
-func WithGetBucketMapper(mapper storage.Mapper) GetBucketOption {
-	return func(getBucketOptions *getBucketOptions) {
-		getBucketOptions.mapper = mapper
-	}
-}
 
 // PutFileOption is a PutFile option.
 type PutFileOption func(*putFileOptions)

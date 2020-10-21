@@ -40,6 +40,7 @@ type gitRef struct {
 	gitName           git.Name
 	depth             uint32
 	recurseSubmodules bool
+	subDirPath        string
 }
 
 func newGitRef(
@@ -48,6 +49,7 @@ func newGitRef(
 	gitName git.Name,
 	depth uint32,
 	recurseSubmodules bool,
+	subDirPath string,
 ) (*gitRef, error) {
 	gitScheme, path, err := getGitSchemeAndPath(format, path)
 	if err != nil {
@@ -56,6 +58,13 @@ func newGitRef(
 	if depth == 0 {
 		return nil, NewDepthZeroError()
 	}
+	subDirPath, err = normalpath.NormalizeAndValidate(subDirPath)
+	if err != nil {
+		return nil, err
+	}
+	if subDirPath == "." {
+		subDirPath = ""
+	}
 	return newDirectGitRef(
 		format,
 		path,
@@ -63,6 +72,7 @@ func newGitRef(
 		gitName,
 		recurseSubmodules,
 		depth,
+		subDirPath,
 	), nil
 }
 
@@ -73,6 +83,7 @@ func newDirectGitRef(
 	gitName git.Name,
 	recurseSubmodules bool,
 	depth uint32,
+	subDirPath string,
 ) *gitRef {
 	return &gitRef{
 		format:            format,
@@ -81,6 +92,7 @@ func newDirectGitRef(
 		gitName:           gitName,
 		depth:             depth,
 		recurseSubmodules: recurseSubmodules,
+		subDirPath:        subDirPath,
 	}
 }
 
@@ -106,6 +118,10 @@ func (r *gitRef) Depth() uint32 {
 
 func (r *gitRef) RecurseSubmodules() bool {
 	return r.recurseSubmodules
+}
+
+func (r *gitRef) SubDirPath() string {
+	return r.subDirPath
 }
 
 func (*gitRef) ref()       {}

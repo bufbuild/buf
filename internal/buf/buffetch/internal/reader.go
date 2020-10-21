@@ -119,21 +119,18 @@ func (r *reader) GetBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.mapper,
 		)
 	case DirRef:
 		return r.getDirBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.mapper,
 		)
 	case GitRef:
 		return r.getGitBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.mapper,
 		)
 	default:
 		return nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
@@ -182,7 +179,6 @@ func (r *reader) getArchiveBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
-	mapper storage.Mapper,
 ) (_ storage.ReadBucketCloser, retErr error) {
 	readCloser, size, err := r.getFileReadCloserAndSize(ctx, container, archiveRef, false)
 	if err != nil {
@@ -192,6 +188,10 @@ func (r *reader) getArchiveBucket(
 		retErr = multierr.Append(retErr, readCloser.Close())
 	}()
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	var mapper storage.Mapper
+	if archiveRef.SubDirPath() != "" {
+		mapper = storage.MapOnPrefix(archiveRef.SubDirPath())
+	}
 	ctx, span := trace.StartSpan(ctx, "unarchive")
 	defer span.End()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
@@ -244,7 +244,6 @@ func (r *reader) getDirBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
-	mapper storage.Mapper,
 ) (storage.ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
@@ -260,7 +259,6 @@ func (r *reader) getGitBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	gitRef GitRef,
-	mapper storage.Mapper,
 ) (_ storage.ReadBucketCloser, retErr error) {
 	if !r.gitEnabled {
 		return nil, NewReadGitDisabledError()
@@ -273,6 +271,10 @@ func (r *reader) getGitBucket(
 		return nil, err
 	}
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	var mapper storage.Mapper
+	if gitRef.SubDirPath() != "" {
+		mapper = storage.MapOnPrefix(gitRef.SubDirPath())
+	}
 	if err := r.gitCloner.CloneToBucket(
 		ctx,
 		container,
@@ -488,9 +490,7 @@ func newGetFileOptions() *getFileOptions {
 	return &getFileOptions{}
 }
 
-type getBucketOptions struct {
-	mapper storage.Mapper
-}
+type getBucketOptions struct{}
 
 func newGetBucketOptions() *getBucketOptions {
 	return &getBucketOptions{}
