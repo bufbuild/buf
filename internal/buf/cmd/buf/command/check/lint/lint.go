@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
@@ -35,7 +36,11 @@ import (
 const (
 	errorFormatFlagName = "error-format"
 	filesFlagName       = "file"
-	inputFlagName       = "input"
+	configFlagName      = "config"
+
+	// deprecated
+	inputFlagName = "input"
+	// deprecated
 	inputConfigFlagName = "input-config"
 )
 
@@ -47,9 +52,10 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
+		Use:   name + " <input>",
 		Short: "Check that the input location passes lint checks.",
-		Args:  cobra.NoArgs,
+		Long:  internal.GetInputLong(`the source, module, or image to lint`),
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags, moduleResolverReaderProvider)
@@ -62,8 +68,14 @@ func NewCommand(
 type flags struct {
 	ErrorFormat string
 	Files       []string
-	Input       string
+	Config      string
+
+	// deprecated
+	Input string
+	// deprecated
 	InputConfig string
+	// special
+	InputHashtag string
 }
 
 func newFlags() *flags {
@@ -71,6 +83,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	internal.BindInputHashtag(flagSet, &f.InputHashtag)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -87,20 +100,39 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		`Limit to specific files. This is an advanced feature and is not recommended.`,
 	)
 	flagSet.StringVar(
+		&f.Config,
+		configFlagName,
+		"",
+		`The config file or data to use.`,
+	)
+
+	// deprecated
+	flagSet.StringVar(
 		&f.Input,
 		inputFlagName,
-		".",
+		"",
 		fmt.Sprintf(
 			`The source or image to lint. Must be one of format %s.`,
 			buffetch.AllFormatsString,
 		),
 	)
+	_ = flagSet.MarkDeprecated(
+		inputFlagName,
+		`input as the first argument instead.`+internal.FlagDeprecationMessageSuffix,
+	)
+	_ = flagSet.MarkHidden(inputFlagName)
+	// deprecated
 	flagSet.StringVar(
 		&f.InputConfig,
 		inputConfigFlagName,
 		"",
 		`The config file or data to use.`,
 	)
+	_ = flagSet.MarkDeprecated(
+		inputConfigFlagName,
+		fmt.Sprintf("use --%s instead.%s", configFlagName, internal.FlagDeprecationMessageSuffix),
+	)
+	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
 
 func run(
@@ -109,9 +141,22 @@ func run(
 	flags *flags,
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) (retErr error) {
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, flags.Input)
+	input, err := internal.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
 	if err != nil {
-		return fmt.Errorf("--%s: %v", inputFlagName, err)
+		return err
+	}
+	inputConfig, err := internal.GetFlagOrDeprecatedFlag(
+		flags.Config,
+		configFlagName,
+		flags.InputConfig,
+		inputConfigFlagName,
+	)
+	if err != nil {
+		return err
+	}
+	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
+	if err != nil {
+		return err
 	}
 	configProvider := bufconfig.NewProvider(container.Logger())
 	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
@@ -131,7 +176,7 @@ func run(
 		ctx,
 		container,
 		ref,
-		flags.InputConfig,
+		inputConfig,
 		flags.Files, // we filter checks for files
 		false,       // input files must exist
 		false,       // we must include source info for linting

@@ -63,7 +63,7 @@ buflint: installbuf
 .PHONY: bufbreaking
 bufbreaking: installbuf
 ifneq ($(BUF_BREAKING_INPUT),)
-	-buf check breaking --against-input $(BUF_BREAKING_INPUT)
+	-buf check breaking --against $(BUF_BREAKING_INPUT)
 else
 	@echo "skipping make bufbreaking" >&2
 endif

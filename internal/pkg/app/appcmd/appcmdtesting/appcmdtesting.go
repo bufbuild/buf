@@ -29,78 +29,85 @@ import (
 // RunCommandSuccessStdout runs the command and makes sure it was successful, and compares the stdout output.
 func RunCommandSuccessStdout(
 	t *testing.T,
-	newCommand func(string) *appcmd.Command,
+	newCommand func(use string) *appcmd.Command,
 	expectedStdout string,
-	env map[string]string,
+	newEnv func(use string) map[string]string,
 	stdin io.Reader,
 	args ...string,
 ) {
 	t.Helper()
-	RunCommandExitCodeStdout(t, newCommand, 0, expectedStdout, env, stdin, args...)
+	RunCommandExitCodeStdout(t, newCommand, 0, expectedStdout, newEnv, stdin, args...)
 }
 
 // RunCommandExitCodeStdout runs the command and compares the exit code and stdout output.
 func RunCommandExitCodeStdout(
 	t *testing.T,
-	newCommand func(string) *appcmd.Command,
+	newCommand func(use string) *appcmd.Command,
 	expectedExitCode int,
 	expectedStdout string,
-	env map[string]string,
+	newEnv func(use string) map[string]string,
 	stdin io.Reader,
 	args ...string,
 ) {
 	t.Helper()
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	RunCommandExitCode(t, newCommand, expectedExitCode, env, stdin, stdout, stderr, args...)
+	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
 	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
 }
 
 // RunCommandExitCodeStderr runs the command and compares the exit code and stderr output.
 func RunCommandExitCodeStderr(
 	t *testing.T,
-	newCommand func(string) *appcmd.Command,
+	newCommand func(use string) *appcmd.Command,
 	expectedExitCode int,
 	expectedStderr string,
-	env map[string]string,
+	newEnv func(use string) map[string]string,
 	stdin io.Reader,
 	args ...string,
 ) {
 	t.Helper()
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
-	RunCommandExitCode(t, newCommand, expectedExitCode, env, stdin, stdout, stderr, args...)
+	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
 	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
 }
 
 // RunCommandSuccess runs the command and makes sure it was successful.
 func RunCommandSuccess(
 	t *testing.T,
-	newCommand func(string) *appcmd.Command,
-	env map[string]string,
+	newCommand func(use string) *appcmd.Command,
+	newEnv func(use string) map[string]string,
 	stdin io.Reader,
 	stdout io.Writer,
 	args ...string,
 ) {
 	t.Helper()
 	stderr := bytes.NewBuffer(nil)
-	RunCommandExitCode(t, newCommand, 0, env, stdin, stdout, stderr, args...)
+	RunCommandExitCode(t, newCommand, 0, newEnv, stdin, stdout, stderr, args...)
 }
 
 // RunCommandExitCode runs the command and compares the exit code.
 func RunCommandExitCode(
 	t *testing.T,
-	newCommand func(string) *appcmd.Command,
+	newCommand func(use string) *appcmd.Command,
 	expectedExitCode int,
-	env map[string]string,
+	newEnv func(use string) map[string]string,
 	stdin io.Reader,
 	stdout io.Writer,
 	stderr io.Writer,
 	args ...string,
 ) {
 	t.Helper()
+	// make the use something different than the actual command
+	// to make sure that all code is binary-name-agnostic.
+	use := "test"
 	stderrCopy := bytes.NewBuffer(nil)
 	stdoutCopy := bytes.NewBuffer(nil)
+	var env map[string]string
+	if newEnv != nil {
+		env = newEnv(use)
+	}
 	exitCode := app.GetExitCode(
 		appcmd.Run(
 			context.Background(),
@@ -111,7 +118,7 @@ func RunCommandExitCode(
 				io.MultiWriter(stderr, stderrCopy),
 				append([]string{"test"}, args...)...,
 			),
-			newCommand("test"),
+			newCommand(use),
 		),
 	)
 	require.Equal(

@@ -18,6 +18,8 @@ DOCKER_WORKSPACE_DIR := /workspace
 
 # Settable
 DOCKER_BINS ?=
+# Settable
+DOCKER_BUILD_EXTRA_FLAGS ?=
 
 # Runtime
 DOCKERMAKETARGET ?= all
@@ -25,6 +27,7 @@ DOCKERMAKETARGET ?= all
 .PHONY: dockerbuildworkspace
 dockerbuildworkspace:
 	docker build \
+		$(DOCKER_BUILD_EXTRA_FLAGS) \
 		--build-arg PROJECT=$(PROJECT) \
 		--build-arg GO_MODULE=$(GO_MODULE) \
 		-t $(DOCKER_WORKSPACE_IMAGE) \
@@ -39,12 +42,15 @@ dockermakeworkspace: dockerbuildworkspace
 dockerbuild::
 
 define dockerbinfunc
+.PHONY: dockerbuilddeps$(1)
+dockerbuilddeps$(1)::
+
 .PHONY: dockerbuild$(1)
-dockerbuild$(1):
-	docker build \
-		-t $(DOCKER_ORG)/$(1):latest \
-		-f Dockerfile.$(1) \
-		.
+dockerbuild$(1): dockerbuilddeps$(1)
+	docker build $(DOCKER_BUILD_EXTRA_FLAGS) -t $(DOCKER_ORG)/$(1):latest -f Dockerfile.$(1) .
+ifdef EXTRA_DOCKER_ORG
+	docker tag $(DOCKER_ORG)/$(1):latest $(EXTRA_DOCKER_ORG)/$(1):latest
+endif
 
 dockerbuild:: dockerbuild$(1)
 endef
