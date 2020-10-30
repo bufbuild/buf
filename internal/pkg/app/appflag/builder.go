@@ -106,7 +106,7 @@ func (b *builder) run(
 
 	var cancel context.CancelFunc
 	if !b.profile && b.timeout != 0 {
-		ctx, cancel = context.WithTimeout(context.Background(), b.timeout)
+		ctx, cancel = context.WithTimeout(ctx, b.timeout)
 		defer cancel()
 	}
 

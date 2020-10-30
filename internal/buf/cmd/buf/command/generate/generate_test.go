@@ -167,8 +167,10 @@ func testCompareGeneratedStubs(
 				bufcli.NopModuleResolverReaderProvider{},
 			)
 		},
-		map[string]string{
-			"PATH": os.Getenv("PATH"),
+		func(string) map[string]string {
+			return map[string]string{
+				"PATH": os.Getenv("PATH"),
+			}
 		},
 		nil,
 		nil,
@@ -244,8 +246,10 @@ func testCompareGeneratedStubsArchive(
 				bufcli.NopModuleResolverReaderProvider{},
 			)
 		},
-		map[string]string{
-			"PATH": os.Getenv("PATH"),
+		func(string) map[string]string {
+			return map[string]string{
+				"PATH": os.Getenv("PATH"),
+			}
 		},
 		nil,
 		nil,

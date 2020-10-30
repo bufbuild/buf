@@ -137,7 +137,7 @@ func (p *provider) newConfigV1Beta1(externalConfig externalConfigV1Beta1) (*Conf
 func (p *provider) validateExternalConfigVersion(externalConfigVersion externalConfigVersion, id string) error {
 	switch externalConfigVersion.Version {
 	case "":
-		p.logger.Sugar().Warnf(`%s has no version set. Please add "version: %s". See https://buf.build/docs/faq for more details.`, id, v1beta1Version)
+		p.logger.Sugar().Warnf(`%s has no version set. Please add "version: %s". See https://docs.buf.build/faq for more details.`, id, v1beta1Version)
 		return nil
 	case v1beta1Version:
 		return nil

@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufgen"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
@@ -37,8 +38,12 @@ const (
 	baseOutDirPathFlagShortName = "o"
 	errorFormatFlagName         = "error-format"
 	filesFlagName               = "file"
-	inputFlagName               = "input"
-	inputConfigFlagName         = "input-config"
+	configFlagName              = "config"
+
+	// deprecated
+	inputFlagName = "input"
+	// deprecated
+	inputConfigFlagName = "input-config"
 )
 
 // NewCommand returns a new Command.
@@ -49,7 +54,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
+		Use:   name + " <input>",
 		Short: "Generate stubs for protoc plugins using a template.",
 		Long: `This command uses a template file of the shape:
 
@@ -62,24 +67,41 @@ plugins:
   - name java
     out: gen/java
 
+As an example, here's a typical "buf.gen.yaml" go and grpc, assuming
+"protoc-gen-go" and "protoc-gen-go-grpc" are on your "$PATH":
+
+version: v1beta1
+plugins:
+  - name: go
+    out: gen/go
+    opt: paths=source_relative
+  - name: go-grpc
+    out: gen/go
+    opt: paths=source_relative,require_unimplemented_servers=false
+
 By default, buf generate will look for a file of this shape named
 "buf.gen.yaml" in your current directory. This can be thought of as a template
-for the set of plugins you want to invoke. Then, call with:
+for the set of plugins you want to invoke.
+
+The first argument is the source, module, or image to generate from.
+If no argument is specified, defaults to ".".
+
+Call with:
 
 # uses buf.gen.yaml as template, current directory as input
 $ buf generate
 
-# same as the defaults
-$ buf generate --input . --template buf.gen.yaml
+# same as the defaults (template of "buf.gen.yaml", current directory as input)
+$ buf generate --template buf.gen.yaml .
 
 # --template also takes YAML or JSON data as input, so it can be used without a file
-$ buf generate --input . --template '{"version":"v1beta1","plugins":[{"name":"go","out":"gen/go"}]}'
+$ buf generate --template '{"version":"v1beta1","plugins":[{"name":"go","out":"gen/go"}]}'
 
 # download the repository, compile it, and generate per the bar.yaml template
-$ buf generate --input https://github.com/foo/bar.git --template bar.yaml
+$ buf generate --template bar.yaml https://github.com/foo/bar.git
 
 # generate to the bar/ directory, prepending bar/ to the out directives in the template
-$ buf generate --input https://github.com/foo/bar.git --template bar.yaml -o bar
+$ buf generate --template bar.yaml -o bar https://github.com/foo/bar.git
 
 The paths in the template and the -o flag will be interpreted as relative to your
 current directory, so you can place your template files anywhere.
@@ -88,7 +110,7 @@ Plugins are invoked in the order they are specified in the template, but each pl
 has a per-directory parallel invocation, with results from each invocation combined
 before writing the result. This is equivalent behavior to "buf protoc --by_dir".
 `,
-		Args: cobra.NoArgs,
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags, moduleResolverReaderProvider)
@@ -103,8 +125,14 @@ type flags struct {
 	BaseOutDirPath string
 	ErrorFormat    string
 	Files          []string
-	Input          string
-	InputConfig    string
+	Config         string
+
+	// deprecated
+	Input string
+	// deprecated
+	InputConfig string
+	// special
+	InputHashtag string
 }
 
 func newFlags() *flags {
@@ -112,6 +140,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	internal.BindInputHashtag(flagSet, &f.InputHashtag)
 	flagSet.StringVar(
 		&f.Template,
 		templateFlagName,
@@ -141,20 +170,39 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		`Limit to specific files. This is an advanced feature and is not recommended.`,
 	)
 	flagSet.StringVar(
+		&f.Config,
+		configFlagName,
+		"",
+		`The config file or data to use.`,
+	)
+
+	// deprecated
+	flagSet.StringVar(
 		&f.Input,
 		inputFlagName,
-		".",
+		"",
 		fmt.Sprintf(
 			`The source or image to generate for. Must be one of format %s.`,
 			buffetch.AllFormatsString,
 		),
 	)
+	_ = flagSet.MarkDeprecated(
+		inputFlagName,
+		`input as the first argument instead.`+internal.FlagDeprecationMessageSuffix,
+	)
+	_ = flagSet.MarkHidden(inputFlagName)
+	// deprecated
 	flagSet.StringVar(
 		&f.InputConfig,
 		inputConfigFlagName,
 		"",
-		`The source or image config file or data to use.`,
+		`The config file or data to use.`,
 	)
+	_ = flagSet.MarkDeprecated(
+		inputConfigFlagName,
+		fmt.Sprintf("use --%s instead.%s", configFlagName, internal.FlagDeprecationMessageSuffix),
+	)
+	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
 
 func run(
@@ -164,9 +212,22 @@ func run(
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) (retErr error) {
 	logger := container.Logger()
-	ref, err := buffetch.NewRefParser(logger).GetRef(ctx, flags.Input)
+	input, err := internal.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
 	if err != nil {
-		return fmt.Errorf("--%s: %v", inputFlagName, err)
+		return err
+	}
+	inputConfig, err := internal.GetFlagOrDeprecatedFlag(
+		flags.Config,
+		configFlagName,
+		flags.InputConfig,
+		inputConfigFlagName,
+	)
+	if err != nil {
+		return err
+	}
+	ref, err := buffetch.NewRefParser(logger).GetRef(ctx, input)
+	if err != nil {
+		return err
 	}
 	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
 	if err != nil {
@@ -189,7 +250,7 @@ func run(
 		ctx,
 		container,
 		ref,
-		flags.InputConfig,
+		inputConfig,
 		flags.Files, // we filter on files
 		false,       // input files must exist
 		false,       // we must include source info for generation

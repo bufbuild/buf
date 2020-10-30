@@ -19,21 +19,26 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/breaking"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/lint"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/lsbreakingcheckers"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/lslintcheckers"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/generate"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/image/build"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/image/convert"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/protoc"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 )
 
-// Version is the version of buf.
-const Version = "0.29.0-dev"
+const (
+	// Version is the version of buf.
+	Version                 = "0.29.0-dev"
+	imageDeprecationMessage = `"image" sub-commands are now all implemented under the top-level "buf build" command, use "buf build" instead.
+We recommend migrating, however this command continues to work.
+See https://docs.buf.build/faq for more details.`
+)
 
 // Main is the main.
 func Main(name string, options ...MainOption) {
@@ -45,7 +50,7 @@ func Main(name string, options ...MainOption) {
 	}
 	appcmd.Main(
 		context.Background(),
-		newRootCommand(
+		NewRootCommand(
 			name,
 			mainOptions.rootCommandModifier,
 			mainOptions.moduleResolverReaderProvider,
@@ -70,12 +75,10 @@ func WithRootCommandModifier(rootCommandModifier func(*appcmd.Command, appflag.B
 	}
 }
 
-type mainOptions struct {
-	rootCommandModifier          func(*appcmd.Command, appflag.Builder, bufcli.ModuleResolverReaderProvider)
-	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider
-}
-
-func newRootCommand(
+// NewRootCommand returns a new root command.
+//
+// This is public for use in testing.
+func NewRootCommand(
 	name string,
 	rootCommandModifier func(*appcmd.Command, appflag.Builder, bufcli.ModuleResolverReaderProvider),
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
@@ -88,11 +91,19 @@ func newRootCommand(
 	rootCommand := &appcmd.Command{
 		Use: name,
 		SubCommands: []*appcmd.Command{
+			build.NewCommand("build", builder, moduleResolverReaderProvider, "", false),
 			{
-				Use:   "image",
-				Short: "Work with Images and FileDescriptorSets.",
+				Use:        "image",
+				Short:      "Work with Images and FileDescriptorSets.",
+				Deprecated: imageDeprecationMessage,
+				Hidden:     true,
 				SubCommands: []*appcmd.Command{
-					build.NewCommand("build", builder, moduleResolverReaderProvider),
+					build.NewCommand(
+						"build",
+						builder, moduleResolverReaderProvider,
+						imageDeprecationMessage,
+						true,
+					),
 				},
 			},
 			{
@@ -109,30 +120,46 @@ func newRootCommand(
 			protoc.NewCommand("protoc", builder, moduleResolverReaderProvider),
 			lsfiles.NewCommand("ls-files", builder, moduleResolverReaderProvider),
 			{
-				Use:   "beta",
-				Short: "Beta commands. Unstable and will likely change.",
+				Use:    "beta",
+				Short:  "Beta commands. Unstable and will likely change.",
+				Hidden: true,
 				SubCommands: []*appcmd.Command{
 					{
-						Use:   "image",
-						Short: "Work with Images and FileDescriptorSets.",
+						Use:        "image",
+						Short:      "Work with Images and FileDescriptorSets.",
+						Deprecated: imageDeprecationMessage,
+						Hidden:     true,
 						SubCommands: []*appcmd.Command{
-							convert.NewCommand("convert", builder, ""),
+							convert.NewCommand(
+								"convert",
+								builder,
+								imageDeprecationMessage,
+								true,
+							),
 						},
 					},
 				},
 			},
 			{
-				Use:        "experimental",
-				Short:      "Experimental commands. Unstable and will likely change.",
-				Deprecated: `use "beta" instead.`,
-				Hidden:     true,
+				Use:   "experimental",
+				Short: "Experimental commands. Unstable and will likely change.",
+				Deprecated: `use "beta" instead.
+We recommend migrating, however this command continues to work.
+See https://docs.buf.build/faq for more details.`,
+				Hidden: true,
 				SubCommands: []*appcmd.Command{
 					{
 						Use:        "image",
 						Short:      "Work with Images and FileDescriptorSets.",
-						Deprecated: `use "beta image" instead.`,
+						Deprecated: imageDeprecationMessage,
+						Hidden:     true,
 						SubCommands: []*appcmd.Command{
-							convert.NewCommand("convert", builder, `use "beta image convert" instead.`),
+							convert.NewCommand(
+								"convert",
+								builder,
+								imageDeprecationMessage,
+								true,
+							),
 						},
 					},
 				},
@@ -145,4 +172,9 @@ func newRootCommand(
 		rootCommandModifier(rootCommand, builder, moduleResolverReaderProvider)
 	}
 	return rootCommand
+}
+
+type mainOptions struct {
+	rootCommandModifier          func(*appcmd.Command, appflag.Builder, bufcli.ModuleResolverReaderProvider)
+	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider
 }
