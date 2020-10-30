@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/spf13/cobra"
@@ -28,7 +29,11 @@ import (
 )
 
 const (
-	inputFlagName       = "input"
+	configFlagName = "config"
+
+	// deprecated
+	inputFlagName = "input"
+	// deprecated
 	inputConfigFlagName = "input-config"
 )
 
@@ -40,9 +45,10 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
-		Short: "List all Protobuf files for the input location.",
-		Args:  cobra.NoArgs,
+		Use:   name + " <input>",
+		Short: "List all Protobuf files for the input.",
+		Long:  internal.GetInputLong(`the source, module, or image to list from`),
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags, moduleResolverReaderProvider)
@@ -53,8 +59,14 @@ func NewCommand(
 }
 
 type flags struct {
-	Input       string
+	Config string
+
+	// deprecated
+	Input string
+	// deprecated
 	InputConfig string
+	// special
+	InputHashtag string
 }
 
 func newFlags() *flags {
@@ -62,10 +74,11 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	internal.BindInputHashtag(flagSet, &f.InputHashtag)
 	flagSet.StringVar(
 		&f.Input,
 		inputFlagName,
-		".",
+		"",
 		fmt.Sprintf(
 			`The source or image to list the files from. Must be one of format %s.`,
 			buffetch.AllFormatsString,
@@ -73,10 +86,23 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 	flagSet.StringVar(
 		&f.InputConfig,
+		configFlagName,
+		"",
+		`The config file or data to use.`,
+	)
+
+	// deprecated
+	flagSet.StringVar(
+		&f.InputConfig,
 		inputConfigFlagName,
 		"",
 		`The config file or data to use.`,
 	)
+	_ = flagSet.MarkDeprecated(
+		inputConfigFlagName,
+		fmt.Sprintf("use --%s instead.%s", configFlagName, internal.FlagDeprecationMessageSuffix),
+	)
+	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
 
 func run(
@@ -85,9 +111,22 @@ func run(
 	flags *flags,
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) error {
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, flags.Input)
+	input, err := internal.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
 	if err != nil {
-		return fmt.Errorf("--%s: %v", inputFlagName, err)
+		return err
+	}
+	inputConfig, err := internal.GetFlagOrDeprecatedFlag(
+		flags.Config,
+		configFlagName,
+		flags.InputConfig,
+		inputConfigFlagName,
+	)
+	if err != nil {
+		return err
+	}
+	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
+	if err != nil {
+		return err
 	}
 	configProvider := bufconfig.NewProvider(container.Logger())
 	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
@@ -107,7 +146,7 @@ func run(
 		ctx,
 		container,
 		ref,
-		flags.InputConfig,
+		inputConfig,
 	)
 	if err != nil {
 		return err

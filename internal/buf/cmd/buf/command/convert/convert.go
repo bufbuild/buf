@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	imageinternal "github.com/bufbuild/buf/internal/buf/cmd/buf/command/image/internal"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/spf13/cobra"
@@ -39,12 +39,20 @@ const (
 )
 
 // NewCommand returns a new Command.
-func NewCommand(name string, builder appflag.Builder, deprecated string) *appcmd.Command {
+//
+// This command has been replaced with build and should always be deprecated.
+func NewCommand(
+	name string,
+	builder appflag.Builder,
+	deprecated string,
+	hidden bool,
+) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:        name,
 		Short:      "Convert the input Image to an output Image with the specified format and filters.",
 		Deprecated: deprecated,
+		Hidden:     hidden,
 		Args:       cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -69,10 +77,10 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	imageinternal.BindAsFileDescriptorSet(flagSet, &f.AsFileDescriptorSet, asFileDescriptorSetFlagName)
-	imageinternal.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
-	imageinternal.BindExcludeSourceInfo(flagSet, &f.ExcludeSourceInfo, excludeSourceInfoFlagName)
-	imageinternal.BindFiles(flagSet, &f.Files, filesFlagName)
+	internal.BindAsFileDescriptorSet(flagSet, &f.AsFileDescriptorSet, asFileDescriptorSetFlagName)
+	internal.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
+	internal.BindExcludeSourceInfo(flagSet, &f.ExcludeSourceInfo, excludeSourceInfoFlagName)
+	internal.BindFiles(flagSet, &f.Files, filesFlagName)
 	flagSet.StringVarP(
 		&f.Image,
 		imageFlagName,
@@ -96,7 +104,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 }
 
 func run(ctx context.Context, container appflag.Container, flags *flags) (retErr error) {
-	bufcli.WarnBeta(container.Logger())
 	if flags.Output == "" {
 		return appcmd.NewInvalidArgumentErrorf("--%s is required", outputFlagName)
 	}

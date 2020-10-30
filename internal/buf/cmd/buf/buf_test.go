@@ -21,10 +21,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
 	"github.com/stretchr/testify/assert"
@@ -33,37 +33,44 @@ import (
 
 func TestSuccess1(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "build", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess2(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess3(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "build", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "build", "--exclude-source-info", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess4(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess5(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--exclude-imports", "--exclude-source-info", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess6(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, ``, "check", "lint", "--input", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "check", "lint", filepath.Join("testdata", "success"))
 }
 
 func TestSuccessProfile1(t *testing.T) {
 	t.Parallel()
-	testRunStdoutProfile(t, nil, 0, ``, "image", "build", "-o", app.DevNullFilePath, "--source", filepath.Join("testdata", "success"))
+	testRunStdoutProfile(t, nil, 0, ``, "build", "--source", filepath.Join("testdata", "success"))
+	testRunStdoutProfile(t, nil, 0, ``, "build", filepath.Join("testdata", "success"))
 }
 
 func TestFail1(t *testing.T) {
@@ -73,8 +80,16 @@ func TestFail1(t *testing.T) {
 		nil,
 		0,
 		``,
-		"image", "build", "-o", app.DevNullFilePath,
+		"build",
 		"--source",
+		filepath.Join("testdata", "fail"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
 		filepath.Join("testdata", "fail"),
 	)
 }
@@ -86,9 +101,18 @@ func TestFail2(t *testing.T) {
 		nil,
 		0,
 		``,
-		"image", "build", "-o", app.DevNullFilePath,
+		"build",
 		"--exclude-imports",
 		"--source",
+		filepath.Join("testdata", "fail"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		"--exclude-imports",
 		filepath.Join("testdata", "fail"),
 	)
 }
@@ -100,9 +124,18 @@ func TestFail3(t *testing.T) {
 		nil,
 		0,
 		``,
-		"image", "build", "-o", app.DevNullFilePath,
+		"build",
 		"--exclude-source-info",
 		"--source",
+		filepath.Join("testdata", "fail"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		"--exclude-source-info",
 		filepath.Join("testdata", "fail"),
 	)
 }
@@ -114,10 +147,20 @@ func TestFail4(t *testing.T) {
 		nil,
 		0,
 		``,
-		"image", "build", "-o", app.DevNullFilePath,
+		"build",
 		"--exclude-imports",
 		"--exclude-source-info",
 		"--source",
+		filepath.Join("testdata", "fail"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		"--exclude-imports",
+		"--exclude-source-info",
 		filepath.Join("testdata", "fail"),
 	)
 }
@@ -135,6 +178,16 @@ func TestFail5(t *testing.T) {
 		"--input",
 		filepath.Join("testdata", "fail"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		"check",
+		"lint",
+		filepath.Join("testdata", "fail"),
+	)
 }
 
 func TestFail6(t *testing.T) {
@@ -148,6 +201,18 @@ func TestFail6(t *testing.T) {
 		"check",
 		"lint",
 		"--input",
+		filepath.Join("testdata", "fail"),
+		"--file",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		"check",
+		"lint",
 		filepath.Join("testdata", "fail"),
 		"--file",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -171,6 +236,20 @@ func TestFail7(t *testing.T) {
 		"--input-config",
 		`{"lint":{"use":["BASIC"]}}`,
 	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		"check",
+		"lint",
+		"--file",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+		filepath.Join("testdata"),
+		"--config",
+		`{"lint":{"use":["BASIC"]}}`,
+	)
 }
 
 func TestFail8(t *testing.T) {
@@ -186,6 +265,16 @@ func TestFail8(t *testing.T) {
 		"--input",
 		filepath.Join("testdata", "fail2"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
+		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`,
+		"check",
+		"lint",
+		filepath.Join("testdata", "fail2"),
+	)
 }
 
 func TestFail9(t *testing.T) {
@@ -198,6 +287,17 @@ func TestFail9(t *testing.T) {
 		"check",
 		"lint",
 		"--input",
+		filepath.Join("testdata", "fail2"),
+		"--file",
+		filepath.Join("testdata", "fail2", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		"check",
+		"lint",
 		filepath.Join("testdata", "fail2"),
 		"--file",
 		filepath.Join("testdata", "fail2", "buf", "buf.proto"),
@@ -218,6 +318,17 @@ func TestFail10(t *testing.T) {
 		"--file",
 		filepath.Join("testdata", "fail2", "buf", "buf3.proto"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"check",
+		"lint",
+		filepath.Join("testdata", "fail2"),
+		"--file",
+		filepath.Join("testdata", "fail2", "buf", "buf3.proto"),
+	)
 }
 
 func TestFail11(t *testing.T) {
@@ -232,6 +343,17 @@ func TestFail11(t *testing.T) {
 		"--file",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
 		"--input",
+		filepath.Join("testdata"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		`testdata/fail2/buf/buf2.proto:5:8:buf/buf.proto: does not exist`,
+		"check",
+		"lint",
+		"--file",
+		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
 		filepath.Join("testdata"),
 	)
 }
@@ -256,6 +378,100 @@ lint:
 		"--error-format",
 		"config-ignore-yaml",
 	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		`version: v1beta1
+lint:
+  ignore_only:
+    FIELD_LOWER_SNAKE_CASE:
+	  - buf/buf.proto
+	PACKAGE_DIRECTORY_MATCH:
+	  - buf/buf.proto`,
+		"check",
+		"lint",
+		filepath.Join("testdata", "fail"),
+		"--error-format",
+		"config-ignore-yaml",
+	)
+}
+
+func TestFailArgAndDeprecatedFlag1(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"build",
+		"--source",
+		filepath.Join("testdata", "success"),
+		filepath.Join("testdata", "success"),
+	)
+}
+
+func TestFailArgAndDeprecatedFlag2(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"check",
+		"lint",
+		"--input",
+		filepath.Join("testdata", "success"),
+		filepath.Join("testdata", "success"),
+	)
+}
+
+func TestFailArgAndDeprecatedFlag3(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"check",
+		"breaking",
+		"--against-input",
+		filepath.Join("testdata", "success"),
+		"--input",
+		filepath.Join("testdata", "success"),
+		filepath.Join("testdata", "success"),
+	)
+}
+
+func TestFailArgAndDeprecatedFlag4(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"check",
+		"breaking",
+		"--against-input",
+		filepath.Join("testdata", "success"),
+		"--against",
+		filepath.Join("testdata", "success"),
+		filepath.Join("testdata", "success"),
+	)
+}
+
+func TestFailArgAndDeprecatedFlag5(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"ls-files",
+		"--input",
+		filepath.Join("testdata", "success"),
+		filepath.Join("testdata", "success"),
+	)
 }
 
 func TestFailCheckBreaking1(t *testing.T) {
@@ -277,6 +493,24 @@ func TestFailCheckBreaking1(t *testing.T) {
 		// can't bother right now to filepath.Join this
 		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
 		"--against-input",
+		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
+	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		`
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
+		`,
+		"check",
+		"breaking",
+		// can't bother right now to filepath.Join this
+		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
+		"--against",
 		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
 	)
 }
@@ -455,6 +689,16 @@ func TestLsFiles(t *testing.T) {
 		"--input",
 		filepath.Join("testdata", "success"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+		testdata/success/buf/buf.proto
+		`,
+		"ls-files",
+		filepath.Join("testdata", "success"),
+	)
 }
 
 func TestLsFilesImage1(t *testing.T) {
@@ -465,11 +709,9 @@ func TestLsFilesImage1(t *testing.T) {
 		0,
 		nil,
 		stdout,
-		"image",
 		"build",
 		"-o",
 		"-",
-		"--source",
 		filepath.Join("testdata", "success"),
 	)
 	testRunStdout(
@@ -481,7 +723,6 @@ func TestLsFilesImage1(t *testing.T) {
 		buf/buf.proto
 		`,
 		"ls-files",
-		"--input",
 		"-",
 	)
 }
@@ -494,12 +735,10 @@ func TestLsFilesImage2(t *testing.T) {
 		0,
 		nil,
 		stdout,
-		"image",
 		"build",
 		"--exclude-imports",
 		"-o",
 		"-",
-		"--source",
 		filepath.Join("testdata", "success"),
 	)
 	testRunStdout(
@@ -510,7 +749,6 @@ func TestLsFilesImage2(t *testing.T) {
 		buf/buf.proto
 		`,
 		"ls-files",
-		"--input",
 		"-",
 	)
 }
@@ -524,11 +762,9 @@ func TestImageConvertRoundtripBinaryJSONBinary(t *testing.T) {
 		0,
 		nil,
 		stdout,
-		"image",
 		"build",
 		"-o",
 		"-",
-		"--source",
 		filepath.Join("testdata", "customoptions1"),
 	)
 
@@ -542,10 +778,7 @@ func TestImageConvertRoundtripBinaryJSONBinary(t *testing.T) {
 		0,
 		stdin,
 		stdout,
-		"beta",
-		"image",
-		"convert",
-		"-i",
+		"build",
 		"-",
 		"-o",
 		"-#format=json",
@@ -558,10 +791,7 @@ func TestImageConvertRoundtripBinaryJSONBinary(t *testing.T) {
 		0,
 		stdin,
 		stdout,
-		"beta",
-		"image",
-		"convert",
-		"-i",
+		"build",
 		"-#format=json",
 		"-o",
 		"-",
@@ -579,11 +809,9 @@ func TestImageConvertRoundtripJSONBinaryJSON(t *testing.T) {
 		0,
 		nil,
 		stdout,
-		"image",
 		"build",
 		"-o",
 		"-#format=json",
-		"--source",
 		filepath.Join("testdata", "customoptions1"),
 	)
 
@@ -597,10 +825,7 @@ func TestImageConvertRoundtripJSONBinaryJSON(t *testing.T) {
 		0,
 		stdin,
 		stdout,
-		"beta",
-		"image",
-		"convert",
-		"-i",
+		"build",
 		"-#format=json",
 		"-o",
 		"-",
@@ -613,10 +838,7 @@ func TestImageConvertRoundtripJSONBinaryJSON(t *testing.T) {
 		0,
 		stdin,
 		stdout,
-		"beta",
-		"image",
-		"convert",
-		"-i",
+		"build",
 		"-",
 		"-o",
 		"-#format=json",
@@ -632,9 +854,11 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 		func(use string) *appcmd.Command { return testNewRootCommand(use) },
 		expectedExitCode,
 		expectedStdout,
-		map[string]string{
-			"BUF_CONFIG_DIR": "testdata/config",
-			"BUF_CACHE_DIR":  "cache",
+		func(use string) map[string]string {
+			return map[string]string{
+				useEnvVar(use, "CONFIG_DIR"): "testdata/config",
+				useEnvVar(use, "CACHE_DIR"):  "cache",
+			}
 		},
 		stdin,
 		args...,
@@ -674,9 +898,11 @@ func testRun(
 		t,
 		func(use string) *appcmd.Command { return testNewRootCommand(use) },
 		expectedExitCode,
-		map[string]string{
-			"BUF_CONFIG_DIR": "testdata/config",
-			"BUF_CACHE_DIR":  "cache",
+		func(use string) map[string]string {
+			return map[string]string{
+				useEnvVar(use, "CONFIG_DIR"): "testdata/config",
+				useEnvVar(use, "CACHE_DIR"):  "cache",
+			}
 		},
 		stdin,
 		stdout,
@@ -686,5 +912,9 @@ func testRun(
 }
 
 func testNewRootCommand(use string) *appcmd.Command {
-	return newRootCommand(use, nil, bufcli.NopModuleResolverReaderProvider{})
+	return NewRootCommand(use, nil, bufcli.NopModuleResolverReaderProvider{})
+}
+
+func useEnvVar(use string, suffix string) string {
+	return strings.ToUpper(use) + "_" + suffix
 }
