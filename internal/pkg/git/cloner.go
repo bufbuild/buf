@@ -60,6 +60,7 @@ func (c *cloner) CloneToBucket(
 	case strings.HasPrefix(url, "http://"),
 		strings.HasPrefix(url, "https://"),
 		strings.HasPrefix(url, "ssh://"),
+		strings.HasPrefix(url, "git://"),
 		strings.HasPrefix(url, "file://"):
 	default:
 		return fmt.Errorf("invalid git url: %q", url)
