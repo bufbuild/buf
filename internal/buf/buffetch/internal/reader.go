@@ -471,6 +471,8 @@ func getGitURL(gitRef GitRef) (string, error) {
 		return "https://" + gitRef.Path(), nil
 	case GitSchemeSSH:
 		return "ssh://" + gitRef.Path(), nil
+	case GitSchemeGit:
+		return "git://" + gitRef.Path(), nil
 	case GitSchemeLocal:
 		absPath, err := filepath.Abs(normalpath.Unnormalize(gitRef.Path()))
 		if err != nil {
