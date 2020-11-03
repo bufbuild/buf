@@ -54,6 +54,8 @@ const (
 	GitSchemeLocal
 	// GitSchemeSSH is the ssh git scheme.
 	GitSchemeSSH
+	// GitSchemeGit is the git git scheme.
+	GitSchemeGit
 
 	// ArchiveTypeTar is a tar archive.
 	ArchiveTypeTar ArchiveType = iota + 1
@@ -161,7 +163,7 @@ func NewDirRef(path string) (DirRef, error) {
 type GitRef interface {
 	// Path is the path to the reference.
 	//
-	// This will be the non-empty path minus the scheme for http, https, and ssh git repositories.
+	// This will be the non-empty path minus the scheme for http, https, ssh, and git repositories.
 	// This will be the non-empty normalized directory path for local git repositories.
 	Path() string
 	BucketRef

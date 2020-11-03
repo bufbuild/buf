@@ -431,6 +431,32 @@ func TestGetParsedRefSuccess(t *testing.T) {
 	)
 	testGetParsedRefSuccess(
 		t,
+		internal.NewDirectParsedGitRef(
+			formatGit,
+			"user@hello.com:path/to/dir.git",
+			internal.GitSchemeGit,
+			git.NewBranchName("master"),
+			false,
+			1,
+			"",
+		),
+		"git://user@hello.com:path/to/dir.git#branch=master",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedGitRef(
+			formatGit,
+			"path/to/dir.git",
+			internal.GitSchemeGit,
+			git.NewBranchName("master"),
+			false,
+			1,
+			"",
+		),
+		"git://path/to/dir.git#branch=master",
+	)
+	testGetParsedRefSuccess(
+		t,
 		internal.NewDirectParsedSingleRef(
 			formatBin,
 			"path/to/file.bin",

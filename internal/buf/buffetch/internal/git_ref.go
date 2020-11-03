@@ -30,6 +30,7 @@ var (
 		"https://": GitSchemeHTTPS,
 		"file://":  GitSchemeLocal,
 		"ssh://":   GitSchemeSSH,
+		"git://":   GitSchemeGit,
 	}
 )
 
