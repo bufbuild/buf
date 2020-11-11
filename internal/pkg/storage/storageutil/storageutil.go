@@ -25,27 +25,19 @@ import (
 
 // ObjectInfo is an embeddable ObjectInfo.
 type ObjectInfo struct {
-	size         uint32
 	path         string
 	externalPath string
 }
 
 // NewObjectInfo returns a new ObjectInfo.
 func NewObjectInfo(
-	size uint32,
 	path string,
 	externalPath string,
 ) ObjectInfo {
 	return ObjectInfo{
-		size:         size,
 		path:         path,
 		externalPath: externalPath,
 	}
-}
-
-// Size implements ObjectInfo.
-func (o ObjectInfo) Size() uint32 {
-	return o.size
 }
 
 // Path implements ObjectInfo.

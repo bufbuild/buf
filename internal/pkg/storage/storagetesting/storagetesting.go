@@ -60,7 +60,6 @@ func AssertNotExist(
 func AssertObjectInfo(
 	t *testing.T,
 	readBucket storage.ReadBucket,
-	size uint32,
 	path string,
 	externalPath string,
 ) {
@@ -70,7 +69,6 @@ func AssertObjectInfo(
 	AssertObjectInfoEqual(
 		t,
 		storageutil.NewObjectInfo(
-			size,
 			path,
 			externalPath,
 		),
@@ -85,7 +83,6 @@ func AssertObjectInfoEqual(
 	actual storage.ObjectInfo,
 ) {
 	t.Helper()
-	assert.Equal(t, int(expected.Size()), int(actual.Size()))
 	assert.Equal(t, expected.Path(), actual.Path())
 	assert.Equal(t, expected.ExternalPath(), actual.ExternalPath())
 }
@@ -112,15 +109,8 @@ func AssertPathToContent(
 	for _, path := range paths {
 		expectedContent, ok := expectedPathToContent[path]
 		assert.True(t, ok, path)
-		expectedSize := len(expectedContent)
-		objectInfo, err := readBucket.Stat(context.Background(), path)
+		_, err := readBucket.Stat(context.Background(), path)
 		require.NoError(t, err, path)
-		// weird issue with int vs uint64
-		if expectedSize == 0 {
-			assert.Equal(t, 0, int(objectInfo.Size()), path)
-		} else {
-			assert.Equal(t, expectedSize, int(objectInfo.Size()), path)
-		}
 		readObjectCloser, err := readBucket.Get(context.Background(), path)
 		require.NoError(t, err, path)
 		data, err := ioutil.ReadAll(readObjectCloser)
@@ -149,8 +139,6 @@ func RunTestSuite(
 	oneDirPath := filepath.Join(storagetestingDirPath, "testdata", "one")
 	twoDirPath := filepath.Join(storagetestingDirPath, "testdata", "two")
 	threeDirPath := filepath.Join(storagetestingDirPath, "testdata", "three")
-	diffDirPathA := filepath.Join(storagetestingDirPath, "testdata", "diff", "a")
-	diffDirPathB := filepath.Join(storagetestingDirPath, "testdata", "diff", "b")
 
 	for _, prefix := range []string{
 		"",
@@ -234,7 +222,6 @@ func RunTestSuite(
 		AssertObjectInfo(
 			t,
 			readBucket,
-			33,
 			"1.proto",
 			getExternalPathFunc(t, oneDirPath, filepath.Join("root", "a", "1.proto")),
 		)
@@ -255,7 +242,6 @@ func RunTestSuite(
 		AssertObjectInfo(
 			t,
 			readBucket,
-			33,
 			"1.proto",
 			getExternalPathFunc(t, oneDirPath, filepath.Join("root", "a", "b", "1.proto")),
 		)
@@ -281,7 +267,6 @@ func RunTestSuite(
 		AssertObjectInfo(
 			t,
 			readBucket,
-			33,
 			"1.proto",
 			getExternalPathFunc(t, oneDirPath, filepath.Join("root", "ab", "1.proto")),
 		)
@@ -304,7 +289,6 @@ func RunTestSuite(
 		AssertObjectInfo(
 			t,
 			readBucket,
-			33,
 			"2.proto",
 			getExternalPathFunc(t, oneDirPath, filepath.Join("root", "ab", "2.proto")),
 		)
@@ -911,27 +895,56 @@ func RunTestSuite(
 
 	t.Run("diff", func(t *testing.T) {
 		t.Parallel()
-		readBucketA, _ := newReadBucket(t, diffDirPathA)
-		readBucketB, _ := newReadBucket(t, diffDirPathB)
-		diff, err := storage.Diff(
+		diffDirPathA := filepath.Join(storagetestingDirPath, "testdata", "diff", "a")
+		diffDirPathB := filepath.Join(storagetestingDirPath, "testdata", "diff", "b")
+		readBucketA, getExternalPathFuncA := newReadBucket(t, diffDirPathA)
+		readBucketB, getExternalPathFuncB := newReadBucket(t, diffDirPathB)
+		readBucketA = storage.MapReadBucket(readBucketA, storage.MapOnPrefix("prefix"))
+		readBucketB = storage.MapReadBucket(readBucketB, storage.MapOnPrefix("prefix"))
+		externalPathPrefixA := getExternalPathFuncA(t, diffDirPathA, "prefix") + "/"
+		externalPathPrefixB := getExternalPathFuncB(t, diffDirPathB, "prefix") + "/"
+		a1TxtPath := externalPathPrefixA + "1.txt"
+		b1TxtPath := externalPathPrefixB + "1.txt"
+		a2TxtPath := externalPathPrefixA + "2.txt"
+		b2TxtPath := externalPathPrefixB + "2.txt"
+
+		diff, err := storage.DiffBytes(
 			context.Background(),
 			readBucketA,
 			readBucketB,
-			"a-dir",
-			"b-dir",
+			storage.DiffWithSuppressTimestamps(),
+			storage.DiffWithExternalPaths(),
+			storage.DiffWithExternalPathPrefixes(
+				externalPathPrefixA,
+				externalPathPrefixB,
+			),
 		)
 		require.NoError(t, err)
 		assert.Equal(
 			t,
-			`--- a-dir/1.txt
-+++ b-dir/1.txt
+			fmt.Sprintf(
+				`diff -u %s %s
+--- %s
++++ %s
 @@ -1,2 +1,2 @@
 -aaaa
  bbbb
 +cccc
-Only in a-dir: 2.txt
-Only in b-dir: 3.txt
+diff -u %s %s
+--- %s
++++ %s
+@@ -1 +0,0 @@
+-dddd
 `,
+				a1TxtPath,
+				b1TxtPath,
+				a1TxtPath,
+				b1TxtPath,
+				a2TxtPath,
+				b2TxtPath,
+				a2TxtPath,
+				b2TxtPath,
+			),
 			string(diff),
 		)
 	})

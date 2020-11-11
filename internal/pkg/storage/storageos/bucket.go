@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 
@@ -55,8 +54,11 @@ func newBucket(rootPath string) (*bucket, error) {
 }
 
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
-	externalPath, size, err := b.getExternalPathAndSize(path)
+	externalPath, err := b.getExternalPath(path)
 	if err != nil {
+		return nil, err
+	}
+	if err := b.validateExternalPath(path, externalPath); err != nil {
 		return nil, err
 	}
 	file, err := os.Open(externalPath)
@@ -65,7 +67,6 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 	}
 	// we could use fileInfo.Name() however we might as well use the externalPath
 	return newReadObjectCloser(
-		size,
 		path,
 		externalPath,
 		file,
@@ -73,13 +74,15 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 }
 
 func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
-	externalPath, size, err := b.getExternalPathAndSize(path)
+	externalPath, err := b.getExternalPath(path)
 	if err != nil {
+		return nil, err
+	}
+	if err := b.validateExternalPath(path, externalPath); err != nil {
 		return nil, err
 	}
 	// we could use fileInfo.Name() however we might as well use the externalPath
 	return storageutil.NewObjectInfo(
-		size,
 		path,
 		externalPath,
 	), nil
@@ -106,10 +109,6 @@ func (b *bucket) Walk(
 				return err
 			}
 			if fileInfo.Mode().IsRegular() {
-				size, err := getFileInfoSize(fileInfo)
-				if err != nil {
-					return err
-				}
 				path, err := normalpath.Rel(b.rootPath, normalpath.Normalize(externalPath))
 				if err != nil {
 					return err
@@ -121,7 +120,6 @@ func (b *bucket) Walk(
 				}
 				if err := f(
 					storageutil.NewObjectInfo(
-						size,
 						path,
 						externalPath,
 					),
@@ -159,8 +157,6 @@ func (b *bucket) Put(ctx context.Context, path string) (storage.WriteObjectClose
 	} else if !fileInfo.IsDir() {
 		return nil, newErrNotDir(externalDir)
 	}
-	// TODO: we should defer this until Close, as we want to check to make sure the correct size was written.
-	// Creating this here will not match storagemem, which does defer
 	file, err := os.Create(externalPath)
 	if err != nil {
 		return nil, err
@@ -191,34 +187,6 @@ func (*bucket) SetExternalPathSupported() bool {
 	return false
 }
 
-func (b *bucket) getExternalPathAndSize(path string) (string, uint32, error) {
-	externalPath, err := b.getExternalPath(path)
-	if err != nil {
-		return "", 0, err
-	}
-	// this is potentially introducing two calls to a file
-	// instead of one, ie we do both Stat and Open as opposed
-	// to just Open
-	// we do this to make sure we are only reading regular files
-	fileInfo, err := os.Stat(externalPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return "", 0, storage.NewErrNotExist(path)
-		}
-		return "", 0, err
-	}
-	if !fileInfo.Mode().IsRegular() {
-		// making this a user error as any access means this was generally requested
-		// by the user, since we only call the function for Walk on regular files
-		return "", 0, fmt.Errorf("%q is not a regular file", path)
-	}
-	size, err := getFileInfoSize(fileInfo)
-	if err != nil {
-		return "", 0, err
-	}
-	return externalPath, size, nil
-}
-
 func (b *bucket) getExternalPath(path string) (string, error) {
 	path, err := storageutil.ValidatePath(path)
 	if err != nil {
@@ -228,6 +196,26 @@ func (b *bucket) getExternalPath(path string) (string, error) {
 	return normalpath.Unnormalize(normalpath.Join(b.rootPath, path)), nil
 }
 
+func (b *bucket) validateExternalPath(path string, externalPath string) error {
+	// this is potentially introducing two calls to a file
+	// instead of one, ie we do both Stat and Open as opposed
+	// to just Open
+	// we do this to make sure we are only reading regular files
+	fileInfo, err := os.Stat(externalPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return storage.NewErrNotExist(path)
+		}
+		return err
+	}
+	if !fileInfo.Mode().IsRegular() {
+		// making this a user error as any access means this was generally requested
+		// by the user, since we only call the function for Walk on regular files
+		return fmt.Errorf("%q is not a regular file", path)
+	}
+	return nil
+}
+
 func (b *bucket) getExternalPrefix(path string) (string, error) {
 	path, err := storageutil.ValidatePrefix(path)
 	if err != nil {
@@ -235,13 +223,6 @@ func (b *bucket) getExternalPrefix(path string) (string, error) {
 	}
 	// Join calls clean
 	return normalpath.Unnormalize(normalpath.Join(b.rootPath, path)), nil
-}
-
-func getFileInfoSize(fileInfo os.FileInfo) (uint32, error) {
-	if fileInfo.Size() > int64(math.MaxUint32) {
-		return 0, fmt.Errorf("file too large: %d", fileInfo.Size())
-	}
-	return uint32(fileInfo.Size()), nil
 }
 
 type readObjectCloser struct {
@@ -254,14 +235,12 @@ type readObjectCloser struct {
 }
 
 func newReadObjectCloser(
-	size uint32,
 	path string,
 	externalPath string,
 	file *os.File,
 ) *readObjectCloser {
 	return &readObjectCloser{
 		ObjectInfo: storageutil.NewObjectInfo(
-			size,
 			path,
 			externalPath,
 		),

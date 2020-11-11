@@ -120,8 +120,9 @@ func NewRootCommand(
 			protoc.NewCommand("protoc", builder, moduleResolverReaderProvider),
 			lsfiles.NewCommand("ls-files", builder, moduleResolverReaderProvider),
 			{
-				Use:    "beta",
-				Short:  "Beta commands. Unstable and will likely change.",
+				Use:   "beta",
+				Short: "Beta commands. Unstable and will likely change.",
+				// TODO: remove
 				Hidden: true,
 				SubCommands: []*appcmd.Command{
 					{

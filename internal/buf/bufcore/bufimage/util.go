@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/internal/buf/bufcore/internal"
+	"github.com/bufbuild/buf/internal/buf/bufcore/internal/bufcorevalidate"
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/image/v1"
 )
 
@@ -40,7 +40,7 @@ func imageWithOnlyPaths(
 	paths []string,
 	allowNotExist bool,
 ) (Image, error) {
-	if err := internal.ValidateFileInfoPaths(paths); err != nil {
+	if err := bufcorevalidate.ValidateFileInfoPaths(paths); err != nil {
 		return nil, err
 	}
 	var nonImportImageFiles []ImageFile

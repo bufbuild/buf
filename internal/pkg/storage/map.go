@@ -216,7 +216,6 @@ func replaceObjectInfoPath(objectInfo ObjectInfo, path string) ObjectInfo {
 		return objectInfo
 	}
 	return storageutil.NewObjectInfo(
-		objectInfo.Size(),
 		path,
 		objectInfo.ExternalPath(),
 	)

@@ -22,10 +22,9 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufcoreprotoparse"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/bufbuild/buf/internal/pkg/thread"
 	"github.com/jhump/protoreflect/desc"
@@ -41,7 +40,7 @@ type builder struct {
 
 func newBuilder(logger *zap.Logger) *builder {
 	return &builder{
-		logger: logger,
+		logger: logger.Named("bufimagebuild"),
 	}
 }
 
@@ -69,7 +68,7 @@ func (b *builder) build(
 	ctx, span := trace.StartSpan(ctx, "build")
 	defer span.End()
 
-	parserAccessorHandler := newParserAccessorHandler(ctx, moduleFileSet)
+	parserAccessorHandler := bufcoreprotoparse.NewParserAccessorHandler(ctx, moduleFileSet)
 	targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -82,7 +81,7 @@ func (b *builder) build(
 		paths[i] = targetFileInfo.Path()
 	}
 
-	buildResults := b.getBuildResults(
+	buildResults := getBuildResults(
 		ctx,
 		parserAccessorHandler,
 		paths,
@@ -108,7 +107,7 @@ func (b *builder) build(
 	if err != nil {
 		return nil, nil, err
 	}
-	image, err := b.getImage(
+	image, err := getImage(
 		ctx,
 		excludeSourceCodeInfo,
 		descFileDescriptors,
@@ -120,9 +119,9 @@ func (b *builder) build(
 	return image, nil, nil
 }
 
-func (b *builder) getBuildResults(
+func getBuildResults(
 	ctx context.Context,
-	parserAccessorHandler *parserAccessorHandler,
+	parserAccessorHandler bufcoreprotoparse.ParserAccessorHandler,
 	paths []string,
 	excludeSourceCodeInfo bool,
 ) []*buildResult {
@@ -178,7 +177,7 @@ func (b *builder) getBuildResults(
 
 func getBuildResult(
 	ctx context.Context,
-	parserAccessorHandler *parserAccessorHandler,
+	parserAccessorHandler bufcoreprotoparse.ParserAccessorHandler,
 	paths []string,
 	excludeSourceCodeInfo bool,
 ) *buildResult {
@@ -208,7 +207,7 @@ func getBuildResult(
 					errors.New("got invalid source error from parse but no errors reported"),
 				)
 			}
-			fileAnnotations, err := getFileAnnotations(
+			fileAnnotations, err := bufcoreprotoparse.GetFileAnnotations(
 				ctx,
 				parserAccessorHandler,
 				errorsWithPos,
@@ -248,82 +247,6 @@ func getBuildResult(
 		}
 	}
 	return newBuildResult(descFileDescriptors, nil, nil)
-}
-
-func getFileAnnotations(
-	ctx context.Context,
-	parserAccessorHandler *parserAccessorHandler,
-	errorsWithPos []protoparse.ErrorWithPos,
-) ([]bufanalysis.FileAnnotation, error) {
-	fileAnnotations := make([]bufanalysis.FileAnnotation, 0, len(errorsWithPos))
-	for _, errorWithPos := range errorsWithPos {
-		fileAnnotation, err := getFileAnnotation(
-			ctx,
-			parserAccessorHandler,
-			errorWithPos,
-		)
-		if err != nil {
-			return nil, err
-		}
-		fileAnnotations = append(fileAnnotations, fileAnnotation)
-	}
-	return fileAnnotations, nil
-}
-
-func getFileAnnotation(
-	ctx context.Context,
-	parserAccessorHandler *parserAccessorHandler,
-	errorWithPos protoparse.ErrorWithPos,
-) (bufanalysis.FileAnnotation, error) {
-	var fileInfo bufcore.FileInfo
-	var startLine int
-	var startColumn int
-	var endLine int
-	var endColumn int
-	typeString := "COMPILE"
-	message := "Compile error."
-	// this should never happen
-	// maybe we should error
-	if errorWithPos.Unwrap() != nil {
-		message = errorWithPos.Unwrap().Error()
-	}
-	sourcePos := protoparse.SourcePos{}
-	if errorWithSourcePos, ok := errorWithPos.(protoparse.ErrorWithSourcePos); ok {
-		if pos := errorWithSourcePos.Pos; pos != nil {
-			sourcePos = *pos
-		}
-	}
-	if sourcePos.Filename != "" {
-		path, err := normalpath.NormalizeAndValidate(sourcePos.Filename)
-		if err != nil {
-			return nil, err
-		}
-		fileInfo, err = bufcore.NewFileInfo(
-			path,
-			parserAccessorHandler.ExternalPath(path),
-			parserAccessorHandler.IsImport(path),
-		)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if sourcePos.Line > 0 {
-		startLine = sourcePos.Line
-		endLine = sourcePos.Line
-	}
-	if sourcePos.Col > 0 {
-		startColumn = sourcePos.Col
-		endColumn = sourcePos.Col
-	}
-	return bufanalysis.NewFileAnnotation(
-		fileInfo,
-		startLine,
-		startColumn,
-		endLine,
-		endColumn,
-		typeString,
-		message,
-	), nil
 }
 
 func getDescFileDescriptorsFromBuildResults(
@@ -379,15 +302,15 @@ func checkAndSortDescFileDescriptors(
 	return sortedDescFileDescriptors, nil
 }
 
-// getFiles gets the Files for the desc.FileDescriptors.
+// getImage gets the Image for the desc.FileDescriptors.
 //
 // This mimics protoc's output order.
 // This assumes checkAndSortDescFileDescriptors was called.
-func (b *builder) getImage(
+func getImage(
 	ctx context.Context,
 	excludeSourceCodeInfo bool,
 	sortedFileDescriptors []*desc.FileDescriptor,
-	parserAccessorHandler *parserAccessorHandler,
+	parserAccessorHandler bufcoreprotoparse.ParserAccessorHandler,
 ) (bufimage.Image, error) {
 	ctx, span := trace.StartSpan(ctx, "get_image")
 	defer span.End()
@@ -429,7 +352,7 @@ func getImageFilesRec(
 	ctx context.Context,
 	excludeSourceCodeInfo bool,
 	descFileDescriptor *desc.FileDescriptor,
-	parserAccessorHandler *parserAccessorHandler,
+	parserAccessorHandler bufcoreprotoparse.ParserAccessorHandler,
 	alreadySeen map[string]struct{},
 	nonImportFilenames map[string]struct{},
 	imageFiles []bufimage.ImageFile,

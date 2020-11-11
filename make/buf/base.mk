@@ -1,6 +1,6 @@
 BUF_BIN ?= cmd/buf
 
-PROTOREFLECT_VERSION := 11eaaf73e0ec2d04934c5d86d46577568463cc86
+PROTOREFLECT_VERSION := 0050302ca4f8e433a0de84423d9de3dce02299dc
 # Remove when https://github.com/spf13/cobra/pull/1070 is released
 COBRA_VERSION := b97b5ead31f7d34f764ac8666e40c214bb8e06dc
 GO_GET_PKGS := $(GO_GET_PKGS) \
@@ -10,6 +10,7 @@ GO_BINS := $(GO_BINS) \
 	$(BUF_BIN) \
 	cmd/protoc-gen-buf-check-breaking \
 	cmd/protoc-gen-buf-check-lint \
+	internal/pkg/storage/cmd/ddiff \
 	internal/pkg/storage/cmd/storage-go-binary-data \
 	internal/pkg/app/appproto/appprotoexec/cmd/protoc-gen-proxy
 GO_TEST_BINS := $(GO_TEST_BINS) \
@@ -72,7 +73,7 @@ postlint:: buflint bufbreaking
 
 .PHONY: bufrelease
 bufrelease:
-	DOCKER_IMAGE=golang:1.15.3-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.15.4-buster bash make/buf/scripts/release.bash
 
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)

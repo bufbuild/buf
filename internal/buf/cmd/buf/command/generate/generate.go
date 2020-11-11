@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufgen"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
@@ -140,7 +139,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	internal.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	flagSet.StringVar(
 		&f.Template,
 		templateFlagName,
@@ -188,7 +187,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 	_ = flagSet.MarkDeprecated(
 		inputFlagName,
-		`input as the first argument instead.`+internal.FlagDeprecationMessageSuffix,
+		`input as the first argument instead.`+bufcli.FlagDeprecationMessageSuffix,
 	)
 	_ = flagSet.MarkHidden(inputFlagName)
 	// deprecated
@@ -200,7 +199,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 	_ = flagSet.MarkDeprecated(
 		inputConfigFlagName,
-		fmt.Sprintf("use --%s instead.%s", configFlagName, internal.FlagDeprecationMessageSuffix),
+		fmt.Sprintf("use --%s instead.%s", configFlagName, bufcli.FlagDeprecationMessageSuffix),
 	)
 	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
@@ -212,11 +211,11 @@ func run(
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) (retErr error) {
 	logger := container.Logger()
-	input, err := internal.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
 	if err != nil {
 		return err
 	}
-	inputConfig, err := internal.GetFlagOrDeprecatedFlag(
+	inputConfig, err := bufcli.GetFlagOrDeprecatedFlag(
 		flags.Config,
 		configFlagName,
 		flags.InputConfig,
@@ -241,12 +240,12 @@ func run(
 	if err != nil {
 		return err
 	}
-	env, fileAnnotations, err := bufcli.NewWireEnvReader(
+	imageConfig, fileAnnotations, err := bufcli.NewWireImageConfigReader(
 		logger,
 		bufconfig.NewProvider(logger),
 		moduleResolver,
 		moduleReader,
-	).GetEnv(
+	).GetImageConfig(
 		ctx,
 		container,
 		ref,
@@ -268,7 +267,7 @@ func run(
 		ctx,
 		container,
 		genConfig,
-		env.Image(),
+		imageConfig.Image(),
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
 	)
 }

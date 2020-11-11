@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/spf13/cobra"
@@ -47,7 +46,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input>",
 		Short: "List all Protobuf files for the input.",
-		Long:  internal.GetInputLong(`the source, module, or image to list from`),
+		Long:  bufcli.GetInputLong(`the source, module, or image to list from`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -74,7 +73,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	internal.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	flagSet.StringVar(
 		&f.Input,
 		inputFlagName,
@@ -100,7 +99,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 	_ = flagSet.MarkDeprecated(
 		inputConfigFlagName,
-		fmt.Sprintf("use --%s instead.%s", configFlagName, internal.FlagDeprecationMessageSuffix),
+		fmt.Sprintf("use --%s instead.%s", configFlagName, bufcli.FlagDeprecationMessageSuffix),
 	)
 	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
@@ -111,11 +110,11 @@ func run(
 	flags *flags,
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) error {
-	input, err := internal.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
 	if err != nil {
 		return err
 	}
-	inputConfig, err := internal.GetFlagOrDeprecatedFlag(
+	inputConfig, err := bufcli.GetFlagOrDeprecatedFlag(
 		flags.Config,
 		configFlagName,
 		flags.InputConfig,

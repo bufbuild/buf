@@ -25,24 +25,25 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"go.uber.org/zap"
 )
 
-// Env is an environment.
-type Env interface {
+// ImageConfig is an image and configuration.
+type ImageConfig interface {
 	Image() bufimage.Image
 	Config() *bufconfig.Config
 }
 
-// EnvReader is an environment reader.
-type EnvReader interface {
-	// GetEnv gets an environment for the fetch value.
+// ImageConfigReader is an ImageConfig reader.
+type ImageConfigReader interface {
+	// GetImageConfig gets the ImageConfig for the fetch value.
 	//
 	// If externalFilePaths is empty, this builds all files under Buf control.
-	GetEnv(
+	GetImageConfig(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		ref buffetch.Ref,
@@ -50,9 +51,9 @@ type EnvReader interface {
 		externalFilePaths []string,
 		externalFileFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
-	) (Env, []bufanalysis.FileAnnotation, error)
-	// GetSourceOrModuleEnv is the same as GetEnv, but only allows source or module values, and always builds.
-	GetSourceOrModuleEnv(
+	) (ImageConfig, []bufanalysis.FileAnnotation, error)
+	// GetSourceOrModuleImageConfig is the same as GetImageConfig, but only allows source or module values, and always builds.
+	GetSourceOrModuleImageConfig(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		sourceOrModuleRef buffetch.SourceOrModuleRef,
@@ -60,25 +61,64 @@ type EnvReader interface {
 		externalFilePaths []string,
 		externalFileFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
-	) (Env, []bufanalysis.FileAnnotation, error)
+	) (ImageConfig, []bufanalysis.FileAnnotation, error)
 }
 
-// NewEnvReader returns a new EnvReader.
-func NewEnvReader(
+// NewImageConfigReader returns a new ImageConfigReader.
+func NewImageConfigReader(
 	logger *zap.Logger,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
-) EnvReader {
-	return newEnvReader(
+) ImageConfigReader {
+	return newImageConfigReader(
 		logger,
 		fetchReader,
 		configProvider,
 		moduleBucketBuilder,
 		moduleFileSetBuilder,
 		imageBuilder,
+	)
+}
+
+// ModuleConfig is an module and configuration.
+type ModuleConfig interface {
+	Module() bufmodule.Module
+	Config() *bufconfig.Config
+}
+
+// ModuleConfigReader is a ModuleConfig reader.
+type ModuleConfigReader interface {
+	// GetModuleConfig gets the ModuleConfig for the fetch value.
+	//
+	// If externalFilePaths is empty, this builds all files under Buf control.
+	//
+	// Note that as opposed to ModuleReader, this will return a Module for either
+	// a source or module reference, not just a module reference.
+	GetModuleConfig(
+		ctx context.Context,
+		container app.EnvStdinContainer,
+		sourceOrModuleRef buffetch.SourceOrModuleRef,
+		configOverride string,
+		externalFilePaths []string,
+		externalFilePathsAllowNotExist bool,
+	) (ModuleConfig, error)
+}
+
+// NewModuleConfigReader returns a new ModuleConfigReader
+func NewModuleConfigReader(
+	logger *zap.Logger,
+	fetchReader buffetch.Reader,
+	configProvider bufconfig.Provider,
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
+) ModuleConfigReader {
+	return newModuleConfigReader(
+		logger,
+		fetchReader,
+		configProvider,
+		moduleBucketBuilder,
 	)
 }
 
