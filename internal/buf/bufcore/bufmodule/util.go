@@ -96,28 +96,32 @@ func newInvalidModuleNameStringError(path string, reason string) error {
 }
 
 func moduleFileToBucket(ctx context.Context, module Module, path string, writeBucket storage.WriteBucket) (retErr error) {
-	readCloser, err := module.GetFile(ctx, path)
+	moduleFile, err := module.GetFile(ctx, path)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readCloser.Close())
+		retErr = multierr.Append(retErr, moduleFile.Close())
 	}()
-	return storage.CopyReader(ctx, writeBucket, readCloser, path)
+	var copyOptions []storage.CopyOption
+	if writeBucket.SetExternalPathSupported() {
+		copyOptions = append(copyOptions, storage.CopyWithExternalPaths())
+	}
+	return storage.CopyReadObject(ctx, writeBucket, moduleFile, copyOptions...)
 }
 
 func moduleFileToProto(ctx context.Context, module Module, path string) (_ *modulev1.ModuleFile, retErr error) {
 	protoModuleFile := &modulev1.ModuleFile{
 		Path: path,
 	}
-	readCloser, err := module.GetFile(ctx, path)
+	moduleFile, err := module.GetFile(ctx, path)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, readCloser.Close())
+		retErr = multierr.Append(retErr, moduleFile.Close())
 	}()
-	protoModuleFile.Content, err = ioutil.ReadAll(readCloser)
+	protoModuleFile.Content, err = ioutil.ReadAll(moduleFile)
 	if err != nil {
 		return nil, err
 	}

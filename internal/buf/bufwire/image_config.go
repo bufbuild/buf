@@ -12,14 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package observabilityzap
+package bufwire
 
 import (
-	"github.com/bufbuild/buf/internal/pkg/observability"
-	"go.uber.org/zap"
+	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 )
 
-// NewTraceExportCloser returns a new TraceExportCloser with a zap backend.
-func NewTraceExportCloser(logger *zap.Logger) observability.TraceExportCloser {
-	return newTraceExportCloser(logger)
+type imageConfig struct {
+	image  bufimage.Image
+	config *bufconfig.Config
+}
+
+func newImageConfig(image bufimage.Image, config *bufconfig.Config) *imageConfig {
+	return &imageConfig{
+		image:  image,
+		config: config,
+	}
+}
+
+func (i *imageConfig) Image() bufimage.Image {
+	return i.image
+}
+
+func (i *imageConfig) Config() *bufconfig.Config {
+	return i.config
 }

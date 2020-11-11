@@ -22,10 +22,11 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
+	"github.com/bufbuild/buf/internal/pkg/observability"
 	"github.com/bufbuild/buf/internal/pkg/observability/observabilityzap"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
-	"go.opencensus.io/trace"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -89,7 +90,7 @@ func (b *builder) run(
 	ctx context.Context,
 	appContainer app.Container,
 	f func(context.Context, Container) error,
-) error {
+) (retErr error) {
 	logger, err := applog.NewLogger(appContainer.Stderr(), b.logLevel, b.logFormat)
 	if err != nil {
 		return err
@@ -111,7 +112,14 @@ func (b *builder) run(
 	}
 
 	if b.tracing {
-		trace.RegisterExporter(observabilityzap.NewExporter(logger))
+		closer := observability.Start(
+			observability.StartWithTraceExportCloser(
+				observabilityzap.NewTraceExportCloser(logger),
+			),
+		)
+		defer func() {
+			retErr = multierr.Append(retErr, closer.Close())
+		}()
 	}
 	if !b.profile {
 		return f(ctx, container)

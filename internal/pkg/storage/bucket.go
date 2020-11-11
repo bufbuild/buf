@@ -111,8 +111,6 @@ func NopReadWriteBucketCloser(readWriteBucket ReadWriteBucket) ReadWriteBucketCl
 
 // ObjectInfo contains object info.
 type ObjectInfo interface {
-	// Size is the size of the object.
-	Size() uint32
 	// Path is the path of the object.
 	//
 	// This will always correspond to a path within the Bucket. For sub-buckets, this is the sub-path, but the

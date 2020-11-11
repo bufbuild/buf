@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufimagebuild
+package bufcoreprotoparse
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 
 type parserAccessorHandler struct {
 	ctx                context.Context
-	moduleFileSet      bufmodule.ModuleFileSet
+	module             bufmodule.Module
 	pathToExternalPath map[string]string
 	nonImportPaths     map[string]struct{}
 	lock               sync.RWMutex
@@ -36,18 +36,18 @@ type parserAccessorHandler struct {
 
 func newParserAccessorHandler(
 	ctx context.Context,
-	moduleFileSet bufmodule.ModuleFileSet,
+	module bufmodule.Module,
 ) *parserAccessorHandler {
 	return &parserAccessorHandler{
 		ctx:                ctx,
-		moduleFileSet:      moduleFileSet,
+		module:             module,
 		pathToExternalPath: make(map[string]string),
 		nonImportPaths:     make(map[string]struct{}),
 	}
 }
 
 func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error) {
-	moduleFile, moduleErr := p.moduleFileSet.GetFile(p.ctx, path)
+	moduleFile, moduleErr := p.module.GetFile(p.ctx, path)
 	if moduleErr != nil {
 		if !storage.IsNotExist(moduleErr) {
 			return nil, moduleErr

@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
@@ -54,7 +53,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input>",
 		Short: "Check that the input location passes lint checks.",
-		Long:  internal.GetInputLong(`the source, module, or image to lint`),
+		Long:  bufcli.GetInputLong(`the source, module, or image to lint`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -83,7 +82,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	internal.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -118,7 +117,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 	_ = flagSet.MarkDeprecated(
 		inputFlagName,
-		`input as the first argument instead.`+internal.FlagDeprecationMessageSuffix,
+		`input as the first argument instead.`+bufcli.FlagDeprecationMessageSuffix,
 	)
 	_ = flagSet.MarkHidden(inputFlagName)
 	// deprecated
@@ -130,7 +129,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 	_ = flagSet.MarkDeprecated(
 		inputConfigFlagName,
-		fmt.Sprintf("use --%s instead.%s", configFlagName, internal.FlagDeprecationMessageSuffix),
+		fmt.Sprintf("use --%s instead.%s", configFlagName, bufcli.FlagDeprecationMessageSuffix),
 	)
 	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
@@ -141,11 +140,11 @@ func run(
 	flags *flags,
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) (retErr error) {
-	input, err := internal.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
 	if err != nil {
 		return err
 	}
-	inputConfig, err := internal.GetFlagOrDeprecatedFlag(
+	inputConfig, err := bufcli.GetFlagOrDeprecatedFlag(
 		flags.Config,
 		configFlagName,
 		flags.InputConfig,
@@ -167,12 +166,12 @@ func run(
 	if err != nil {
 		return err
 	}
-	env, fileAnnotations, err := bufcli.NewWireEnvReader(
+	imageConfig, fileAnnotations, err := bufcli.NewWireImageConfigReader(
 		container.Logger(),
 		configProvider,
 		moduleResolver,
 		moduleReader,
-	).GetEnv(
+	).GetImageConfig(
 		ctx,
 		container,
 		ref,
@@ -196,8 +195,8 @@ func run(
 	}
 	fileAnnotations, err = buflint.NewHandler(container.Logger()).Check(
 		ctx,
-		env.Config().Lint,
-		bufimage.ImageWithoutImports(env.Image()),
+		imageConfig.Config().Lint,
+		bufimage.ImageWithoutImports(imageConfig.Image()),
 	)
 	if err != nil {
 		return err

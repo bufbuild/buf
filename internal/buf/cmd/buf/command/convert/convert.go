@@ -20,7 +20,6 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/spf13/cobra"
@@ -77,10 +76,10 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	internal.BindAsFileDescriptorSet(flagSet, &f.AsFileDescriptorSet, asFileDescriptorSetFlagName)
-	internal.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
-	internal.BindExcludeSourceInfo(flagSet, &f.ExcludeSourceInfo, excludeSourceInfoFlagName)
-	internal.BindFiles(flagSet, &f.Files, filesFlagName)
+	bufcli.BindAsFileDescriptorSet(flagSet, &f.AsFileDescriptorSet, asFileDescriptorSetFlagName)
+	bufcli.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
+	bufcli.BindExcludeSourceInfo(flagSet, &f.ExcludeSourceInfo, excludeSourceInfoFlagName)
+	bufcli.BindFiles(flagSet, &f.Files, filesFlagName)
 	flagSet.StringVarP(
 		&f.Image,
 		imageFlagName,

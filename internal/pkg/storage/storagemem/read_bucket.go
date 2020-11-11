@@ -35,12 +35,8 @@ type readBucket struct {
 
 func newReadBucket(
 	pathToData map[string][]byte,
-	options ...ReadBucketOption,
+	pathToExternalPath map[string]string,
 ) (*readBucket, error) {
-	readBucketOptions := &readBucketOptions{}
-	for _, option := range options {
-		option(readBucketOptions)
-	}
 	pathToObject := make(map[string]*object, len(pathToData))
 	paths := make([]string, 0, len(pathToData))
 	for path, data := range pathToData {
@@ -52,13 +48,8 @@ func newReadBucket(
 			return nil, normalpath.NewError(path, errDuplicatePath)
 		}
 		externalPath := path
-		if readBucketOptions.externalPathResolver != nil {
-			externalPath, err = readBucketOptions.externalPathResolver(path)
-			if err != nil {
-				return nil, err
-			}
-		} else if len(readBucketOptions.pathToExternalPath) > 0 {
-			if mapExternalPath := readBucketOptions.pathToExternalPath[path]; mapExternalPath != "" {
+		if len(pathToExternalPath) > 0 {
+			if mapExternalPath := pathToExternalPath[path]; mapExternalPath != "" {
 				externalPath = mapExternalPath
 			}
 		}
@@ -171,15 +162,9 @@ func newObject(
 ) *object {
 	return &object{
 		ObjectInfo: storageutil.NewObjectInfo(
-			uint32(len(data)),
 			path,
 			externalPath,
 		),
 		data: data,
 	}
-}
-
-type readBucketOptions struct {
-	externalPathResolver func(string) (string, error)
-	pathToExternalPath   map[string]string
 }

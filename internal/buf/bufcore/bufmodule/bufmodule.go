@@ -492,6 +492,7 @@ func ModuleDigestB1(
 // ModuleToBucket writes the given Module to the WriteBucket.
 //
 // This writes the sources and the buf.lock file.
+// This copies external paths if the WriteBucket supports setting of external paths.
 func ModuleToBucket(
 	ctx context.Context,
 	module Module,
@@ -508,6 +509,27 @@ func ModuleToBucket(
 	}
 	// Create a lock file
 	return putDependencies(ctx, writeBucket, module.Dependencies())
+}
+
+// TargetModuleFilesToBucket writes the target files of the given Module to the WriteBucket.
+//
+// This does not write the buf.lock file.
+// This copies external paths if the WriteBucket supports setting of external paths.
+func TargetModuleFilesToBucket(
+	ctx context.Context,
+	module Module,
+	writeBucket storage.WriteBucket,
+) error {
+	fileInfos, err := module.TargetFileInfos(ctx)
+	if err != nil {
+		return err
+	}
+	for _, fileInfo := range fileInfos {
+		if err := moduleFileToBucket(ctx, module, fileInfo.Path(), writeBucket); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // DeduplicateResolvedModuleNames returns a deduplicated slice of resolved module names

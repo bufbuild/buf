@@ -175,7 +175,7 @@ func DiffFileDescriptorSetsWire(
 	if err != nil {
 		return "", err
 	}
-	output, err := diff.Diff(ctx, oneData, twoData, oneName, twoName, false)
+	output, err := diff.Diff(ctx, oneData, twoData, oneName, twoName)
 	if err != nil {
 		return "", err
 	}
@@ -206,7 +206,7 @@ func DiffFileDescriptorSetsJSON(
 	if err != nil {
 		return "", err
 	}
-	output, err := diff.Diff(ctx, oneData, twoData, oneName, twoName, false)
+	output, err := diff.Diff(ctx, oneData, twoData, oneName, twoName)
 	if err != nil {
 		return "", err
 	}
