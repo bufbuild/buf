@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/internal"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
@@ -60,7 +59,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:        name + " <input>",
 		Short:      "Build all files from the input location and output an image.",
-		Long:       internal.GetInputLong(`the source or module to build, or image to convert`),
+		Long:       bufcli.GetInputLong(`the source or module to build, or image to convert`),
 		Args:       cobra.MaximumNArgs(1),
 		Deprecated: deprecated,
 		Hidden:     hidden,
@@ -95,11 +94,11 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	internal.BindInputHashtag(flagSet, &f.InputHashtag)
-	internal.BindAsFileDescriptorSet(flagSet, &f.AsFileDescriptorSet, asFileDescriptorSetFlagName)
-	internal.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
-	internal.BindExcludeSourceInfo(flagSet, &f.ExcludeSourceInfo, excludeSourceInfoFlagName)
-	internal.BindFiles(flagSet, &f.Files, filesFlagName)
+	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindAsFileDescriptorSet(flagSet, &f.AsFileDescriptorSet, asFileDescriptorSetFlagName)
+	bufcli.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
+	bufcli.BindExcludeSourceInfo(flagSet, &f.ExcludeSourceInfo, excludeSourceInfoFlagName)
+	bufcli.BindFiles(flagSet, &f.Files, filesFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -138,7 +137,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 	_ = flagSet.MarkDeprecated(
 		sourceFlagName,
-		`input as the first argument instead.`+internal.FlagDeprecationMessageSuffix,
+		`input as the first argument instead.`+bufcli.FlagDeprecationMessageSuffix,
 	)
 	_ = flagSet.MarkHidden(sourceFlagName)
 	// deprecated
@@ -150,7 +149,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	)
 	_ = flagSet.MarkDeprecated(
 		sourceConfigFlagName,
-		fmt.Sprintf("use --%s instead.%s", configFlagName, internal.FlagDeprecationMessageSuffix),
+		fmt.Sprintf("use --%s instead.%s", configFlagName, bufcli.FlagDeprecationMessageSuffix),
 	)
 	_ = flagSet.MarkHidden(sourceConfigFlagName)
 }
@@ -164,11 +163,11 @@ func run(
 	if flags.Output == "" {
 		return appcmd.NewInvalidArgumentErrorf("Flag --%s is required.", outputFlagName)
 	}
-	input, err := internal.GetInputValue(container, flags.InputHashtag, flags.Source, sourceFlagName, ".")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Source, sourceFlagName, ".")
 	if err != nil {
 		return err
 	}
-	inputConfig, err := internal.GetFlagOrDeprecatedFlag(
+	inputConfig, err := bufcli.GetFlagOrDeprecatedFlag(
 		flags.Config,
 		configFlagName,
 		flags.SourceConfig,
@@ -190,13 +189,12 @@ func run(
 	if err != nil {
 		return err
 	}
-	env, fileAnnotations, err := bufcli.NewWireEnvReader(
+	imageConfig, fileAnnotations, err := bufcli.NewWireImageConfigReader(
 		container.Logger(),
 		configProvider,
 		moduleResolver,
 		moduleReader,
-		// must be source or module only
-	).GetEnv(
+	).GetImageConfig(
 		ctx,
 		container,
 		ref,
@@ -235,7 +233,7 @@ func run(
 		ctx,
 		container,
 		imageRef,
-		env.Image(),
+		imageConfig.Image(),
 		flags.AsFileDescriptorSet,
 		flags.ExcludeImports,
 	)

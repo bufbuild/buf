@@ -16,6 +16,8 @@ package bufcli
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
@@ -27,20 +29,28 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
+	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
 
-// Constants used by the buf CLI
 const (
+	// FlagDeprecationMessageSuffix is the suffix for flag deprecation messages.
+	FlagDeprecationMessageSuffix = `
+We recommend migrating, however this flag continues to work.
+See https://docs.buf.build/faq for more details.`
+
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
 	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
+
+	inputHashtagFlagName      = "__hashtag__"
+	inputHashtagFlagShortName = "#"
 )
 
 var (
 	// defaultHTTPClient is the client we use for HTTP requests.
-	// Timeout should be set through context for calls to EnvReader, not through http.Client
+	// Timeout should be set through context for calls to ImageConfigReader, not through http.Client
 	defaultHTTPClient = &http.Client{}
 	// defaultHTTPAuthenticator is the default authenticator
 	// used for HTTP requests.
@@ -60,6 +70,144 @@ var (
 		SSHKnownHostsFilesEnvKey: inputSSHKnownHostsFilesEnvKey,
 	}
 )
+
+// BindAsFileDescriptorSet binds the exclude-imports flag.
+func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string) {
+	flagSet.BoolVar(
+		addr,
+		flagName,
+		false,
+		`Output as a google.protobuf.FileDescriptorSet instead of an image.
+
+Note that images are wire-compatible with FileDescriptorSets, however this flag will strip
+the additional metadata added for Buf usage.`,
+	)
+}
+
+// BindExcludeImports binds the exclude-imports flag.
+func BindExcludeImports(flagSet *pflag.FlagSet, addr *bool, flagName string) {
+	flagSet.BoolVar(
+		addr,
+		flagName,
+		false,
+		"Exclude imports.",
+	)
+}
+
+// BindExcludeSourceInfo binds the exclude-source-info flag.
+func BindExcludeSourceInfo(flagSet *pflag.FlagSet, addr *bool, flagName string) {
+	flagSet.BoolVar(
+		addr,
+		flagName,
+		false,
+		"Exclude source info.",
+	)
+}
+
+// BindFiles binds the files flag.
+func BindFiles(flagSet *pflag.FlagSet, addr *[]string, flagName string) {
+	flagSet.StringSliceVar(
+		addr,
+		flagName,
+		nil,
+		`Limit to specific files. This is an advanced feature and is not recommended.`,
+	)
+}
+
+// BindInputHashtag binds the input hashtag flag.
+//
+// This needs to be added to any command that has the input as the first argument.
+// This deals with the situation "buf build -#format=json" which results in
+// a parse error from pflag.
+func BindInputHashtag(flagSet *pflag.FlagSet, addr *string) {
+	flagSet.StringVarP(
+		addr,
+		inputHashtagFlagName,
+		inputHashtagFlagShortName,
+		"",
+		"",
+	)
+	_ = flagSet.MarkHidden(inputHashtagFlagName)
+}
+
+// GetInputLong gets the long command description for an input-based command.
+func GetInputLong(inputArgDescription string) string {
+	return fmt.Sprintf(
+		`The first argument is %s.
+The first argument must be one of format %s.
+If no argument is specified, defaults to ".".`,
+		inputArgDescription,
+		buffetch.AllFormatsString,
+	)
+}
+
+// GetSourceOrModuleLong gets the long command description for an input-based command.
+func GetSourceOrModuleLong(inputArgDescription string) string {
+	return fmt.Sprintf(
+		`The first argument is %s.
+The first argument must be one of format %s.
+If no argument is specified, defaults to ".".`,
+		inputArgDescription,
+		buffetch.SourceOrModuleFormatsString,
+	)
+}
+
+// GetInputValue gets either the first arg or the deprecated flag, but not both.
+//
+// Also parses the special input hashtag flag that deals with the situation "buf build -#format=json".
+// The existence of 0 or 1 args should be handled by the Args field on Command.
+func GetInputValue(
+	container appflag.Container,
+	inputHashtag string,
+	deprecatedFlag string,
+	deprecatedFlagName string,
+	defaultValue string,
+) (string, error) {
+	var arg string
+	switch numArgs := container.NumArgs(); numArgs {
+	case 0:
+		if inputHashtag != "" {
+			arg = "-#" + inputHashtag
+		}
+	case 1:
+		arg = container.Arg(0)
+		if arg == "" {
+			return "", errors.New("First argument is present but empty.")
+		}
+		// if arg is non-empty and inputHashtag is non-empty, this means two arguments were specified
+		if inputHashtag != "" {
+			return "", errors.New("Only 1 argument allowed but 2 arguments specified.")
+		}
+	default:
+		return "", fmt.Errorf("Only 1 argument allowed but %d arguments specified.", numArgs)
+	}
+	if arg != "" && deprecatedFlag != "" {
+		return "", fmt.Errorf("Cannot specify both first argument and deprecated flag --%s.", deprecatedFlagName)
+	}
+	if arg != "" {
+		return arg, nil
+	}
+	if deprecatedFlag != "" {
+		return deprecatedFlag, nil
+	}
+	return defaultValue, nil
+}
+
+// GetFlagOrDeprecatedFlag gets the flag, or the deprecated flag.
+func GetFlagOrDeprecatedFlag(
+	flag string,
+	flagName string,
+	deprecatedFlag string,
+	deprecatedFlagName string,
+) (string, error) {
+	if flag != "" && deprecatedFlag != "" {
+		return "", fmt.Errorf("Cannot specify both --%s and --%s.", flagName, deprecatedFlagName)
+	}
+	if flag != "" {
+		return flag, nil
+	}
+	return deprecatedFlag, nil
+}
 
 // NewFetchReader creates a new buffetch.Reader with the default HTTP client
 // and git cloner.
@@ -100,20 +248,35 @@ func NewFetchImageReader(logger *zap.Logger) buffetch.ImageReader {
 	)
 }
 
-// NewWireEnvReader returns a new EnvReader.
-func NewWireEnvReader(
+// NewWireImageConfigReader returns a new ImageConfigReader.
+func NewWireImageConfigReader(
 	logger *zap.Logger,
 	configProvider bufconfig.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
-) bufwire.EnvReader {
-	return bufwire.NewEnvReader(
+) bufwire.ImageConfigReader {
+	return bufwire.NewImageConfigReader(
 		logger,
 		NewFetchReader(logger, moduleResolver, moduleReader),
 		configProvider,
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
+	)
+}
+
+// NewWireModuleConfigReader returns a new ModuleConfigReader.
+func NewWireModuleConfigReader(
+	logger *zap.Logger,
+	configProvider bufconfig.Provider,
+	moduleResolver bufmodule.ModuleResolver,
+	moduleReader bufmodule.ModuleReader,
+) bufwire.ModuleConfigReader {
+	return bufwire.NewModuleConfigReader(
+		logger,
+		NewFetchReader(logger, moduleResolver, moduleReader),
+		configProvider,
+		bufmodulebuild.NewModuleBucketBuilder(logger),
 	)
 }
 
@@ -153,11 +316,6 @@ func NewWireImageWriter(
 			logger,
 		),
 	)
-}
-
-// WarnBeta warns that the command is beta.
-func WarnBeta(logger *zap.Logger) {
-	logger.Warn(`This command has been released for early evaluation only and is experimental. It is not ready for production, and is likely to to have significant changes.`)
 }
 
 // ModuleResolverReaderProvider provides ModuleResolvers and ModuleReaders.

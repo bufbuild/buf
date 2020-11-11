@@ -72,7 +72,7 @@ func TestBasic(t *testing.T) {
 
 	// Exclude non-proto files for the diff check
 	filteredReadBucket := storage.MapReadBucket(getReadBucket, storage.MatchPathExt(".proto"))
-	diff, err := storage.Diff(ctx, readBucket, filteredReadBucket, "from", "to")
+	diff, err := storage.DiffBytes(ctx, readBucket, filteredReadBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
 

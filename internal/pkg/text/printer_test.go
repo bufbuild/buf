@@ -12,18 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package text
 
 import (
-	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
+	"bytes"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/multierr"
 )
 
-// ValidateFileInfoPath validates the FileInfo path.
-func ValidateFileInfoPath(path string) error {
-	return protodescriptor.ValidateProtoPath("root relative file path", path)
-}
-
-// ValidateFileInfoPaths validates the FileInfo paths.
-func ValidateFileInfoPaths(paths []string) error {
-	return protodescriptor.ValidateProtoPaths("root relative file path", paths)
+func TestBasic(t *testing.T) {
+	var printErr error
+	buffer := bytes.NewBuffer(nil)
+	p := NewPrinter(
+		buffer,
+		PrinterWithErrorRecorder(
+			func(err error) {
+				printErr = multierr.Append(printErr, err)
+			},
+		),
+	)
+	p.P()
+	p.P("foo")
+	p.In()
+	p.P("1", "2")
+	p.P("3", "4 ")
+	p.Out()
+	p.P(" ", " ")
+	assert.Equal(t, buffer.String(), "\nfoo\n  12\n  34\n\n")
+	assert.NoError(t, printErr)
+	p.Out()
+	assert.Equal(t, errNegativeIndents, printErr)
 }

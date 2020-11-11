@@ -8,7 +8,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.3
 	github.com/google/go-cmp v0.5.2
-	github.com/jhump/protoreflect v1.7.1-0.20200723220026-11eaaf73e0ec
+	github.com/jhump/protoreflect v1.7.1-0.20200924151349-0050302ca4f8
 	github.com/klauspost/compress v1.11.2
 	github.com/klauspost/pgzip v1.2.5
 	github.com/pkg/profile v1.5.0
@@ -19,9 +19,9 @@ require (
 	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
-	golang.org/x/sys v0.0.0-20201101102859-da207088b7d1 // indirect
+	golang.org/x/sys v0.0.0-20201110211018-35f3e6cf4a65 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	google.golang.org/genproto v0.0.0-20201103154000-415bd0cd5df6 // indirect
-	google.golang.org/protobuf v1.25.0
+	google.golang.org/genproto v0.0.0-20201111145450-ac7456db90a6 // indirect
+	google.golang.org/protobuf v1.25.1-0.20201020201750-d3470999428b
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )

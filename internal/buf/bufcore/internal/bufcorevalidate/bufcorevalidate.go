@@ -12,29 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufwire
+package bufcorevalidate
 
 import (
-	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 )
 
-type env struct {
-	image  bufimage.Image
-	config *bufconfig.Config
+// ValidateFileInfoPath validates the FileInfo path.
+func ValidateFileInfoPath(path string) error {
+	return protodescriptor.ValidateProtoPath("root relative file path", path)
 }
 
-func newEnv(image bufimage.Image, config *bufconfig.Config) *env {
-	return &env{
-		image:  image,
-		config: config,
-	}
-}
-
-func (e *env) Image() bufimage.Image {
-	return e.image
-}
-
-func (e *env) Config() *bufconfig.Config {
-	return e.config
+// ValidateFileInfoPaths validates the FileInfo paths.
+func ValidateFileInfoPaths(paths []string) error {
+	return protodescriptor.ValidateProtoPaths("root relative file path", paths)
 }

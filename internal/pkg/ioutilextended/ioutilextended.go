@@ -29,8 +29,10 @@ var (
 	DiscardReader io.Reader = discardReader{}
 	// DiscardReadCloser is an io.ReadCloser in which all calls return 0 and io.EOF.
 	DiscardReadCloser io.ReadCloser = ioutil.NopCloser(DiscardReader)
-	// DiscardWriteCloser is a discard io.WriteCloser
+	// DiscardWriteCloser is a discard io.WriteCloser.
 	DiscardWriteCloser io.WriteCloser = NopWriteCloser(ioutil.Discard)
+	// NopCloser is a no-op closer.
+	NopCloser = nopCloser{}
 )
 
 // NopWriteCloser returns an io.WriteCloser with a no-op Close method wrapping the provided io.Writer.
@@ -81,6 +83,12 @@ type nopWriteCloser struct {
 }
 
 func (nopWriteCloser) Close() error {
+	return nil
+}
+
+type nopCloser struct{}
+
+func (nopCloser) Close() error {
 	return nil
 }
 

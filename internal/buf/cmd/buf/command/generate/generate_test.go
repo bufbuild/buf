@@ -180,12 +180,10 @@ func testCompareGeneratedStubs(
 	require.NoError(t, err)
 	bufReadWriteBucket, err := storageos.NewReadWriteBucket(bufGenDir)
 	require.NoError(t, err)
-	diff, err := storage.Diff(
+	diff, err := storage.DiffBytes(
 		context.Background(),
 		actualReadWriteBucket,
 		bufReadWriteBucket,
-		"protoc",
-		"buf-generate",
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))
@@ -283,12 +281,10 @@ func testCompareGeneratedStubsArchive(
 	require.NoError(t, err)
 	bufReadBucket, err := bufReadBucketBuilder.ToReadBucket()
 	require.NoError(t, err)
-	diff, err := storage.Diff(
+	diff, err := storage.DiffBytes(
 		context.Background(),
 		actualReadBucket,
 		bufReadBucket,
-		"protoc",
-		"buf-generate",
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))

@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -47,18 +48,22 @@ func Tar(
 		readBucket,
 		"",
 		func(readObject storage.ReadObject) error {
+			data, err := ioutil.ReadAll(readObject)
+			if err != nil {
+				return err
+			}
 			if err := tarWriter.WriteHeader(
 				&tar.Header{
 					Typeflag: tar.TypeReg,
 					Name:     readObject.Path(),
-					Size:     int64(readObject.Size()),
+					Size:     int64(len(data)),
 					// If we ever use this outside of testing, we will want to do something about this
 					Mode: 0644,
 				},
 			); err != nil {
 				return err
 			}
-			_, err := io.Copy(tarWriter, readObject)
+			_, err = tarWriter.Write(data)
 			return err
 		},
 	)

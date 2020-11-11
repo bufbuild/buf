@@ -68,8 +68,8 @@ func (*readBucketBuilder) SetExternalPathSupported() bool {
 	return true
 }
 
-func (b *readBucketBuilder) ToReadBucket(options ...ReadBucketOption) (storage.ReadBucket, error) {
-	return newReadBucket(b.pathToData, append(options, withPathToExternalPath(b.pathToExternalPath))...)
+func (b *readBucketBuilder) ToReadBucket() (storage.ReadBucket, error) {
+	return newReadBucket(b.pathToData, b.pathToExternalPath)
 }
 
 type writeObjectCloser struct {
@@ -123,10 +123,4 @@ func (w *writeObjectCloser) Close() error {
 		delete(w.readBucketBuilder.pathToExternalPath, w.path)
 	}
 	return nil
-}
-
-func withPathToExternalPath(pathToExternalPath map[string]string) ReadBucketOption {
-	return func(readBucketOptions *readBucketOptions) {
-		readBucketOptions.pathToExternalPath = pathToExternalPath
-	}
 }

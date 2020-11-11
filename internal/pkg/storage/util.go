@@ -17,6 +17,7 @@ package storage
 import (
 	"context"
 	"io/ioutil"
+	"sort"
 
 	"go.uber.org/multierr"
 )
@@ -99,4 +100,36 @@ func Exists(ctx context.Context, readBucket ReadBucket, path string) (bool, erro
 		return false, err
 	}
 	return true, nil
+}
+
+// allObjectInfos walks the bucket and gets all the ObjectInfos.
+func allObjectInfos(ctx context.Context, readBucket ReadBucket, prefix string) ([]ObjectInfo, error) {
+	var allObjectInfos []ObjectInfo
+	if err := readBucket.Walk(
+		ctx,
+		prefix,
+		func(objectInfo ObjectInfo) error {
+			allObjectInfos = append(allObjectInfos, objectInfo)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	return allObjectInfos, nil
+}
+
+func pathToObjectInfo(objectInfos []ObjectInfo) map[string]ObjectInfo {
+	m := make(map[string]ObjectInfo, len(objectInfos))
+	for _, objectInfo := range objectInfos {
+		m[objectInfo.Path()] = objectInfo
+	}
+	return m
+}
+func sortObjectInfos(objectInfos []ObjectInfo) {
+	sort.Slice(
+		objectInfos,
+		func(i int, j int) bool {
+			return objectInfos[i].Path() < objectInfos[j].Path()
+		},
+	)
 }
