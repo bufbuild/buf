@@ -20,21 +20,24 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type responseWriter struct {
-	files                 []*pluginpb.CodeGeneratorResponse_File
+	container             app.StderrContainer
 	fileNames             map[string]struct{}
+	files                 []*pluginpb.CodeGeneratorResponse_File
 	errorMessages         []string
 	featureProto3Optional bool
 	lock                  sync.RWMutex
 }
 
-func newResponseWriter() *responseWriter {
+func newResponseWriter(container app.StderrContainer) *responseWriter {
 	return &responseWriter{
+		container: container,
 		fileNames: make(map[string]struct{}),
 	}
 }
@@ -49,19 +52,35 @@ func (r *responseWriter) Add(file *pluginpb.CodeGeneratorResponse_File) error {
 	if name == "" {
 		return errors.New("add CodeGeneratorResponse.File.Name is empty")
 	}
-	// name must be relative and not contain "." or ".." per the documentation
+	// name must be relative, to-slashed, and not contain "." or ".." per the documentation
+	// this is what normalize does
 	normalizedName, err := normalpath.NormalizeAndValidate(name)
 	if err != nil {
-		return fmt.Errorf("had invalid CodeGenerator.Response.File name: %v", err)
+		// we need names to be normalized for the appproto.Generator to properly put them in buckets
+		// so we have to error here if it is not validated
+		return newUnvalidatedNameError(name)
 	}
-	if name != normalizedName {
-		return fmt.Errorf("expected CodeGeneratorResponse.File name %s to be %s", name, normalizedName)
+	if normalizedName != name {
+		if err := r.warnUnnormalizedName(name); err != nil {
+			return err
+		}
+		// we need names to be normalized for the appproto.Generator to properly put
+		// them in buckets, so we will coerce this into a normalized name if it is
+		// validated, ie if it does not container ".." and is absolute, we can still
+		// continue, assuming we validate here
+		name = normalizedName
+		file.Name = proto.String(name)
 	}
 	if _, ok := r.fileNames[name]; ok {
-		return fmt.Errorf("duplicate CodeGeneratorResponse.File added: %q", name)
+		if err := r.warnDuplicateName(name); err != nil {
+			return err
+		}
+	} else {
+		// we drop the file if it is duplicated, and only put in the map and files slice
+		// if it does not exist
+		r.fileNames[name] = struct{}{}
+		r.files = append(r.files, file)
 	}
-	r.fileNames[name] = struct{}{}
-	r.files = append(r.files, file)
 	return nil
 }
 
@@ -108,4 +127,38 @@ func (r *responseWriter) toResponse(err error) *pluginpb.CodeGeneratorResponse {
 		response.SupportedFeatures = proto.Uint64(uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL))
 	}
 	return response
+}
+
+func (r *responseWriter) warnUnnormalizedName(name string) error {
+	_, err := r.container.Stderr().Write([]byte(fmt.Sprintf(
+		`Warning: generated file name %q does not conform to the Protobuf generation specification.
+Note that the file name must be relative, use "/" instead of "\", and not use "." or ".." as part of the file name.
+Buf will continue without error here, but please raise an issue with the maintainer of the plugin
+and reference https://github.com/protocolbuffers/protobuf/blob/95e6c5b4746dd7474d540ce4fb375e3f79a086f8/src/google/protobuf/compiler/plugin.proto#L122
+`,
+		name,
+	)))
+	return err
+}
+
+func (r *responseWriter) warnDuplicateName(name string) error {
+	_, err := r.container.Stderr().Write([]byte(fmt.Sprintf(
+		`Warning: duplicate generated file name %q.
+Buf will continue without error here and drop the second occurrence of thie file, but
+please raise an issue with the maintainer of the plugin.
+`,
+		name,
+	)))
+	return err
+}
+
+func newUnvalidatedNameError(name string) error {
+	return fmt.Errorf(
+		`Generated file name %q does not conform to the Protobuf generation specification.
+Note that the file name must be relative, and not use "..".
+Please raise an issue with the maintainer of the plugin
+and reference https://github.com/protocolbuffers/protobuf/blob/95e6c5b4746dd7474d540ce4fb375e3f79a086f8/src/google/protobuf/compiler/plugin.proto#L122
+`,
+		name,
+	)
 }

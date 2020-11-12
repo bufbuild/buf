@@ -31,7 +31,7 @@ func runHandler(
 	if err := protodescriptor.ValidateCodeGeneratorRequest(request); err != nil {
 		return nil, err
 	}
-	responseWriter := newResponseWriter()
+	responseWriter := newResponseWriter(container)
 	response := responseWriter.toResponse(handler.Handle(ctx, container, responseWriter, request))
 	if err := protodescriptor.ValidateCodeGeneratorResponse(response); err != nil {
 		return nil, err
