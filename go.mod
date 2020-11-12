@@ -7,7 +7,7 @@ require (
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.4.3
-	github.com/google/go-cmp v0.5.2
+	github.com/google/go-cmp v0.5.3
 	github.com/jhump/protoreflect v1.7.1-0.20200924151349-0050302ca4f8
 	github.com/klauspost/compress v1.11.2
 	github.com/klauspost/pgzip v1.2.5
