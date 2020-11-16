@@ -36,7 +36,7 @@ const (
 	errorFormatFlagName         = "error-format"
 	excludeImportsFlagName      = "exclude-imports"
 	excludeSourceInfoFlagName   = "exclude-source-info"
-	filesFlagName               = "file"
+	pathsFlagName               = "path"
 	outputFlagName              = "output"
 	outputFlagShortName         = "o"
 	configFlagName              = "config"
@@ -45,6 +45,8 @@ const (
 	sourceFlagName = "source"
 	// deprecated
 	sourceConfigFlagName = "source-config"
+	// deprecated
+	filesFlagName = "file"
 )
 
 // NewCommand returns a new Command.
@@ -77,7 +79,7 @@ type flags struct {
 	ErrorFormat         string
 	ExcludeImports      bool
 	ExcludeSourceInfo   bool
-	Files               []string
+	Paths               []string
 	Output              string
 	Config              string
 
@@ -85,6 +87,8 @@ type flags struct {
 	Source string
 	// deprecated
 	SourceConfig string
+	// deprecated
+	Files []string
 	// special
 	InputHashtag string
 }
@@ -98,7 +102,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindAsFileDescriptorSet(flagSet, &f.AsFileDescriptorSet, asFileDescriptorSetFlagName)
 	bufcli.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
 	bufcli.BindExcludeSourceInfo(flagSet, &f.ExcludeSourceInfo, excludeSourceInfoFlagName)
-	bufcli.BindFiles(flagSet, &f.Files, filesFlagName)
+	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -167,11 +171,20 @@ func run(
 	if err != nil {
 		return err
 	}
-	inputConfig, err := bufcli.GetFlagOrDeprecatedFlag(
+	inputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
 		flags.Config,
 		configFlagName,
 		flags.SourceConfig,
 		sourceConfigFlagName,
+	)
+	if err != nil {
+		return err
+	}
+	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
+		flags.Paths,
+		pathsFlagName,
+		flags.Files,
+		filesFlagName,
 	)
 	if err != nil {
 		return err
@@ -199,7 +212,7 @@ func run(
 		container,
 		ref,
 		inputConfig,
-		flags.Files,
+		paths,
 		false,
 		flags.ExcludeSourceInfo,
 	)

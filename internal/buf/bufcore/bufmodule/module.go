@@ -57,6 +57,7 @@ func newModuleForProto(ctx context.Context, protoModule *modulev1.Module) (*modu
 		sourceReadBucket,
 	)
 }
+
 func newModuleForBucket(
 	ctx context.Context,
 	sourceReadBucket storage.ReadBucket,

@@ -114,7 +114,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	inputConfig, err := bufcli.GetFlagOrDeprecatedFlag(
+	inputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
 		flags.Config,
 		configFlagName,
 		flags.InputConfig,

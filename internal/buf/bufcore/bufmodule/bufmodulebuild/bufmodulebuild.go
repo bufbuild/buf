@@ -80,24 +80,22 @@ func NewModuleIncludeBuilder(logger *zap.Logger) ModuleIncludeBuilder {
 // BuildOption is an option for BuildForBucket.
 type BuildOption func(*buildOptions)
 
-// WithPaths returns a new BuildOption that specifies specific file paths to build.
+// WithPaths returns a new BuildOption that specifies specific file or directory paths to build.
 //
 // These paths must exist.
 // These paths must be relative to the bucket or include directory paths.
 // These paths will be normalized.
 // Multiple calls to this option and WithPathsAllowNotExist will override previous calls.
 //
-// This results in ModuleWithTargetPaths being used on the resulting
-// build module.
-// This is done within bufmodulebuild so we can resolve the paths relative to their
-// roots.
+// This results in ModuleWithTargetPaths being used on the resulting build module.
+// This is done within bufmodulebuild so we can resolve the paths relative to their roots.
 func WithPaths(paths []string) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.paths = paths
 	}
 }
 
-// WithPathsAllowNotExist returns a new BuildOption that specifies specific file paths to build,
+// WithPathsAllowNotExist returns a new BuildOption that specifies specific file or directory paths to build,
 // but allows the specified paths to not exist.
 //
 // These paths must exist.
@@ -107,7 +105,6 @@ func WithPaths(paths []string) BuildOption {
 //
 // This results in ModuleWithTargetPathsAllowNotExist being used on the resulting build module.
 // This is done within bufmodulebuild so we can resolve the paths relative to their roots.
-// Calling this
 func WithPathsAllowNotExist(paths []string) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.paths = paths

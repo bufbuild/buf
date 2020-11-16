@@ -35,7 +35,7 @@ import (
 const (
 	errorFormatFlagName       = "error-format"
 	excludeImportsFlagName    = "exclude-imports"
-	filesFlagName             = "file"
+	pathsFlagName             = "path"
 	limitToInputFilesFlagName = "limit-to-input-files"
 	configFlagName            = "config"
 	againstFlagName           = "against"
@@ -49,6 +49,8 @@ const (
 	againstInputFlagName = "against-input"
 	// deprecated
 	againstInputConfigFlagName = "against-input-config"
+	// deprecated
+	filesFlagName = "file"
 )
 
 // NewCommand returns a new Command.
@@ -75,8 +77,8 @@ func NewCommand(
 type flags struct {
 	ErrorFormat       string
 	ExcludeImports    bool
-	Files             []string
 	LimitToInputFiles bool
+	Paths             []string
 	Config            string
 	Against           string
 	AgainstConfig     string
@@ -89,6 +91,8 @@ type flags struct {
 	AgainstInput string
 	// deprecated
 	AgainstInputConfig string
+	// deprecated
+	Files []string
 	// special
 	InputHashtag string
 }
@@ -98,6 +102,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	flagSet.StringVar(
 		&f.ErrorFormat,
@@ -114,19 +119,16 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		false,
 		"Exclude imports from breaking change detection.",
 	)
-	flagSet.StringSliceVar(
-		&f.Files,
-		filesFlagName,
-		nil,
-		`Limit to specific files. This is an advanced feature and is not recommended.`,
-	)
 	flagSet.BoolVar(
 		&f.LimitToInputFiles,
 		limitToInputFilesFlagName,
 		false,
-		`Only run breaking checks against the files in the input.
+		fmt.Sprintf(
+			`Only run breaking checks against the files in the input.
 This has the effect of filtering the against input to only contain the files in the input.
-Overrides --file.`,
+Overrides --%s.`,
+			pathsFlagName,
+		),
 	)
 	flagSet.StringVar(
 		&f.Config,
@@ -216,7 +218,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	inputConfig, err := bufcli.GetFlagOrDeprecatedFlag(
+	inputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
 		flags.Config,
 		configFlagName,
 		flags.InputConfig,
@@ -225,7 +227,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	againstInput, err := bufcli.GetFlagOrDeprecatedFlag(
+	againstInput, err := bufcli.GetStringFlagOrDeprecatedFlag(
 		flags.Against,
 		againstFlagName,
 		flags.AgainstInput,
@@ -234,7 +236,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	againstInputConfig, err := bufcli.GetFlagOrDeprecatedFlag(
+	againstInputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
 		flags.AgainstConfig,
 		againstConfigFlagName,
 		flags.AgainstInputConfig,
@@ -245,6 +247,15 @@ func run(
 	}
 	if againstInput == "" {
 		return appcmd.NewInvalidArgumentErrorf("Flag --%s is required.", againstFlagName)
+	}
+	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
+		flags.Paths,
+		pathsFlagName,
+		flags.Files,
+		filesFlagName,
+	)
+	if err != nil {
+		return err
 	}
 	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
 	if err != nil {
@@ -269,9 +280,9 @@ func run(
 		container,
 		ref,
 		inputConfig,
-		flags.Files, // we filter checks for files
-		false,       // files specified must exist on the main input
-		false,       // we must include source info for this side of the check
+		paths, // we filter checks for files
+		false, // files specified must exist on the main input
+		false, // we must include source info for this side of the check
 	)
 	if err != nil {
 		return err
@@ -293,7 +304,7 @@ func run(
 
 	// TODO: this doesn't actually work because we're using the same file paths for both sides
 	// if the roots change, then we're torched
-	externalPaths := flags.Files
+	externalPaths := paths
 	if flags.LimitToInputFiles {
 		files := image.Files()
 		// we know that the file descriptors have unique names from validation

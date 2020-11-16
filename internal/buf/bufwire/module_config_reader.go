@@ -55,8 +55,8 @@ func (m *moduleConfigReader) GetModuleConfig(
 	container app.EnvStdinContainer,
 	sourceOrModuleRef buffetch.SourceOrModuleRef,
 	configOverride string,
-	externalFilePaths []string,
-	externalFilePathsAllowNotExist bool,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
 ) (ModuleConfig, error) {
 	ctx, span := trace.StartSpan(ctx, "get_module_config")
 	defer span.End()
@@ -67,8 +67,8 @@ func (m *moduleConfigReader) GetModuleConfig(
 			container,
 			t,
 			configOverride,
-			externalFilePaths,
-			externalFilePathsAllowNotExist,
+			externalDirOrFilePaths,
+			externalDirOrFilePathsAllowNotExist,
 		)
 	case buffetch.ModuleRef:
 		return m.getModuleModuleConfig(
@@ -76,8 +76,8 @@ func (m *moduleConfigReader) GetModuleConfig(
 			container,
 			t,
 			configOverride,
-			externalFilePaths,
-			externalFilePathsAllowNotExist,
+			externalDirOrFilePaths,
+			externalDirOrFilePathsAllowNotExist,
 		)
 	default:
 		return nil, fmt.Errorf("invalid ref: %T", sourceOrModuleRef)
@@ -89,8 +89,8 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	container app.EnvStdinContainer,
 	sourceRef buffetch.SourceRef,
 	configOverride string,
-	externalFilePaths []string,
-	externalFilePathsAllowNotExist bool,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
 ) (_ ModuleConfig, retErr error) {
 	readBucketCloser, err := m.fetchReader.GetSourceBucket(ctx, container, sourceRef)
 	if err != nil {
@@ -105,16 +105,16 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	}
 
 	var buildOptions []bufmodulebuild.BuildOption
-	if len(externalFilePaths) > 0 {
-		bucketRelPaths := make([]string, len(externalFilePaths))
-		for i, externalFilePath := range externalFilePaths {
-			bucketRelPath, err := sourceRef.PathForExternalPath(externalFilePath)
+	if len(externalDirOrFilePaths) > 0 {
+		bucketRelPaths := make([]string, len(externalDirOrFilePaths))
+		for i, externalDirOrFilePath := range externalDirOrFilePaths {
+			bucketRelPath, err := sourceRef.PathForExternalPath(externalDirOrFilePath)
 			if err != nil {
 				return nil, err
 			}
 			bucketRelPaths[i] = bucketRelPath
 		}
-		if externalFilePathsAllowNotExist {
+		if externalDirOrFilePathsAllowNotExist {
 			buildOptions = append(
 				buildOptions,
 				bufmodulebuild.WithPathsAllowNotExist(bucketRelPaths),
@@ -144,23 +144,23 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 	container app.EnvStdinContainer,
 	moduleRef buffetch.ModuleRef,
 	configOverride string,
-	externalFilePaths []string,
-	externalFilePathsAllowNotExist bool,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
 ) (_ ModuleConfig, retErr error) {
 	module, err := m.fetchReader.GetModule(ctx, container, moduleRef)
 	if err != nil {
 		return nil, err
 	}
-	if len(externalFilePaths) > 0 {
-		targetPaths := make([]string, len(externalFilePaths))
-		for i, externalFilePath := range externalFilePaths {
-			targetPath, err := moduleRef.PathForExternalPath(externalFilePath)
+	if len(externalDirOrFilePaths) > 0 {
+		targetPaths := make([]string, len(externalDirOrFilePaths))
+		for i, externalDirOrFilePath := range externalDirOrFilePaths {
+			targetPath, err := moduleRef.PathForExternalPath(externalDirOrFilePath)
 			if err != nil {
 				return nil, err
 			}
 			targetPaths[i] = targetPath
 		}
-		if externalFilePathsAllowNotExist {
+		if externalDirOrFilePathsAllowNotExist {
 			module, err = bufmodule.ModuleWithTargetPaths(module, targetPaths)
 			if err != nil {
 				return nil, err

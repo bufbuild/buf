@@ -15,6 +15,10 @@
 package bufcorevalidate
 
 import (
+	"errors"
+	"fmt"
+
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 )
 
@@ -26,4 +30,27 @@ func ValidateFileInfoPath(path string) error {
 // ValidateFileInfoPaths validates the FileInfo paths.
 func ValidateFileInfoPaths(paths []string) error {
 	return protodescriptor.ValidateProtoPaths("root relative file path", paths)
+}
+
+// ValidateFileOrDirPaths validates the file or direction paths are normalized and validated,
+// and not duplicated.
+func ValidateFileOrDirPaths(paths []string) error {
+	pathMap := make(map[string]struct{}, len(paths))
+	for _, path := range paths {
+		if path == "" {
+			return errors.New("path is empty")
+		}
+		normalized, err := normalpath.NormalizeAndValidate(path)
+		if err != nil {
+			return fmt.Errorf("path had normalization error: %w", err)
+		}
+		if path != normalized {
+			return fmt.Errorf("path %s was not normalized to %s", path, normalized)
+		}
+		if _, ok := pathMap[path]; ok {
+			return fmt.Errorf("duplicate path: %s", path)
+		}
+		pathMap[path] = struct{}{}
+	}
+	return nil
 }
