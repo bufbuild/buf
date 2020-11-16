@@ -93,13 +93,56 @@ func TestGoogleapis(t *testing.T) {
 		},
 		testGetImageFilePaths(imageWithSpecificNames),
 	)
+	imageWithSpecificNames, err = bufimage.ImageWithOnlyPathsAllowNotExist(
+		image,
+		[]string{
+			"google/protobuf/descriptor.proto",
+			"google/protobuf/api.proto",
+			"google/type",
+			"google/foo",
+		},
+	)
+	assert.NoError(t, err)
+	assert.Equal(
+		t,
+		[]string{
+			"google/protobuf/any.proto",
+			"google/protobuf/api.proto",
+			"google/protobuf/descriptor.proto",
+			"google/protobuf/source_context.proto",
+			"google/protobuf/type.proto",
+			"google/protobuf/wrappers.proto",
+			"google/type/calendar_period.proto",
+			"google/type/color.proto",
+			"google/type/date.proto",
+			"google/type/dayofweek.proto",
+			"google/type/expr.proto",
+			"google/type/fraction.proto",
+			"google/type/latlng.proto",
+			"google/type/money.proto",
+			"google/type/postal_address.proto",
+			"google/type/quaternion.proto",
+			"google/type/timeofday.proto",
+		},
+		testGetImageFilePaths(imageWithSpecificNames),
+	)
 	imageWithoutImports = bufimage.ImageWithoutImports(imageWithSpecificNames)
 	assert.Equal(
 		t,
 		[]string{
 			"google/protobuf/api.proto",
 			"google/protobuf/descriptor.proto",
+			"google/type/calendar_period.proto",
+			"google/type/color.proto",
 			"google/type/date.proto",
+			"google/type/dayofweek.proto",
+			"google/type/expr.proto",
+			"google/type/fraction.proto",
+			"google/type/latlng.proto",
+			"google/type/money.proto",
+			"google/type/postal_address.proto",
+			"google/type/quaternion.proto",
+			"google/type/timeofday.proto",
 		},
 		testGetImageFilePaths(imageWithoutImports),
 	)
@@ -112,8 +155,17 @@ func TestGoogleapis(t *testing.T) {
 			"google/foo/nonsense.proto",
 		},
 	)
-	// TODO
-	assert.Equal(t, errors.New("google/foo/nonsense.proto is not present in the Image"), err)
+	assert.Equal(t, errors.New("google/foo/nonsense.proto has no matching file in the image"), err)
+	_, err = bufimage.ImageWithOnlyPaths(
+		image,
+		[]string{
+			"google/protobuf/descriptor.proto",
+			"google/protobuf/api.proto",
+			"google/type/date.proto",
+			"google/foo",
+		},
+	)
+	assert.Equal(t, errors.New("google/foo has no matching file in the image"), err)
 
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
 	// basic check to make sure there is no error at this scale

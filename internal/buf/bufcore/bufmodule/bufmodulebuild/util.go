@@ -27,18 +27,18 @@ import (
 func applyModulePaths(
 	module bufmodule.Module,
 	roots []string,
-	paths []string,
-	pathsAllowNotExist bool,
+	fileOrDirPaths []string,
+	fileOrDirPathsAllowNotExist bool,
 	pathType normalpath.PathType,
 ) (bufmodule.Module, error) {
-	if len(paths) == 0 {
+	if len(fileOrDirPaths) == 0 {
 		return module, nil
 	}
-	targetPaths, err := pathsToTargetPaths(roots, paths, pathType)
+	targetPaths, err := pathsToTargetPaths(roots, fileOrDirPaths, pathType)
 	if err != nil {
 		return nil, err
 	}
-	if pathsAllowNotExist {
+	if fileOrDirPathsAllowNotExist {
 		return bufmodule.ModuleWithTargetPathsAllowNotExist(module, targetPaths)
 	}
 	return bufmodule.ModuleWithTargetPaths(module, targetPaths)
@@ -64,7 +64,7 @@ func pathsToTargetPaths(roots []string, paths []string, pathType normalpath.Path
 func pathToTargetPath(roots []string, path string, pathType normalpath.PathType) (string, error) {
 	var matchingRoots []string
 	for _, root := range roots {
-		if normalpath.ContainsPath(root, path, pathType) {
+		if normalpath.EqualsOrContainsPath(root, path, pathType) {
 			matchingRoots = append(matchingRoots, root)
 		}
 	}

@@ -154,7 +154,7 @@ func testCompareGeneratedStubs(
 	for _, filePath := range filePaths {
 		genFlags = append(
 			genFlags,
-			"--file",
+			"--path",
 			filePath,
 		)
 	}
@@ -231,7 +231,7 @@ func testCompareGeneratedStubsArchive(
 	for _, filePath := range filePaths {
 		genFlags = append(
 			genFlags,
-			"--file",
+			"--path",
 			filePath,
 		)
 	}

@@ -202,7 +202,7 @@ func TestFail6(t *testing.T) {
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
-		"--file",
+		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 	)
 	testRunStdout(
@@ -214,7 +214,7 @@ func TestFail6(t *testing.T) {
 		"check",
 		"lint",
 		filepath.Join("testdata", "fail"),
-		"--file",
+		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 	)
 }
@@ -229,7 +229,7 @@ func TestFail7(t *testing.T) {
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
 		"check",
 		"lint",
-		"--file",
+		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		"--input",
 		filepath.Join("testdata"),
@@ -244,7 +244,7 @@ func TestFail7(t *testing.T) {
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
 		"check",
 		"lint",
-		"--file",
+		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		filepath.Join("testdata"),
 		"--config",
@@ -288,7 +288,7 @@ func TestFail9(t *testing.T) {
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail2"),
-		"--file",
+		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf.proto"),
 	)
 	testRunStdout(
@@ -299,7 +299,7 @@ func TestFail9(t *testing.T) {
 		"check",
 		"lint",
 		filepath.Join("testdata", "fail2"),
-		"--file",
+		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf.proto"),
 	)
 }
@@ -315,7 +315,7 @@ func TestFail10(t *testing.T) {
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail2"),
-		"--file",
+		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf3.proto"),
 	)
 	testRunStdout(
@@ -326,7 +326,7 @@ func TestFail10(t *testing.T) {
 		"check",
 		"lint",
 		filepath.Join("testdata", "fail2"),
-		"--file",
+		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf3.proto"),
 	)
 }
@@ -340,7 +340,7 @@ func TestFail11(t *testing.T) {
 		`testdata/fail2/buf/buf2.proto:5:8:buf/buf.proto: does not exist`,
 		"check",
 		"lint",
-		"--file",
+		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
 		"--input",
 		filepath.Join("testdata"),
@@ -352,7 +352,7 @@ func TestFail11(t *testing.T) {
 		`testdata/fail2/buf/buf2.proto:5:8:buf/buf.proto: does not exist`,
 		"check",
 		"lint",
-		"--file",
+		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
 		filepath.Join("testdata"),
 	)

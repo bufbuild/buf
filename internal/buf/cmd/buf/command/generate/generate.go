@@ -36,13 +36,15 @@ const (
 	baseOutDirPathFlagName      = "output"
 	baseOutDirPathFlagShortName = "o"
 	errorFormatFlagName         = "error-format"
-	filesFlagName               = "file"
 	configFlagName              = "config"
+	pathsFlagName               = "path"
 
 	// deprecated
 	inputFlagName = "input"
 	// deprecated
 	inputConfigFlagName = "input-config"
+	// deprecated
+	filesFlagName = "file"
 )
 
 // NewCommand returns a new Command.
@@ -105,6 +107,17 @@ $ buf generate --template bar.yaml -o bar https://github.com/foo/bar.git
 The paths in the template and the -o flag will be interpreted as relative to your
 current directory, so you can place your template files anywhere.
 
+If you only want to generate stubs for a subset of your input, you can do so via the --path flag:
+
+# Only generate for the files in the directories proto/foo and proto/bar
+$ buf generate --path proto/foo --path proto/bar
+
+# Only generate for the files proto/foo/foo.proto and proto/foo/bar.proto
+$ buf generate --path proto/foo/foo.proto --path proto/foo/bar.proto
+
+# Only generate for the files in the directory proto/foo on your GitHub repository
+$ buf generate --template buf.gen.yaml https://github.com/foo/bar.git --path proto/foo
+
 Plugins are invoked in the order they are specified in the template, but each plugin
 has a per-directory parallel invocation, with results from each invocation combined
 before writing the result. This is equivalent behavior to "buf protoc --by_dir".
@@ -125,6 +138,7 @@ type flags struct {
 	ErrorFormat    string
 	Files          []string
 	Config         string
+	Paths          []string
 
 	// deprecated
 	Input string
@@ -140,6 +154,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
 	flagSet.StringVar(
 		&f.Template,
 		templateFlagName,
@@ -161,12 +176,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			"The format for build errors, printed to stderr. Must be one of %s.",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
-	)
-	flagSet.StringSliceVar(
-		&f.Files,
-		filesFlagName,
-		nil,
-		`Limit to specific files. This is an advanced feature and is not recommended.`,
 	)
 	flagSet.StringVar(
 		&f.Config,
@@ -215,11 +224,20 @@ func run(
 	if err != nil {
 		return err
 	}
-	inputConfig, err := bufcli.GetFlagOrDeprecatedFlag(
+	inputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
 		flags.Config,
 		configFlagName,
 		flags.InputConfig,
 		inputConfigFlagName,
+	)
+	if err != nil {
+		return err
+	}
+	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
+		flags.Paths,
+		pathsFlagName,
+		flags.Files,
+		filesFlagName,
 	)
 	if err != nil {
 		return err
@@ -250,9 +268,9 @@ func run(
 		container,
 		ref,
 		inputConfig,
-		flags.Files, // we filter on files
-		false,       // input files must exist
-		false,       // we must include source info for generation
+		paths, // we filter on files
+		false, // input files must exist
+		false, // we must include source info for generation
 	)
 	if err != nil {
 		return err

@@ -48,8 +48,8 @@ func (i *imageReader) GetImage(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	imageRef buffetch.ImageRef,
-	externalFilePaths []string,
-	externalFilePathsAllowNotExist bool,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ bufimage.Image, retErr error) {
 	ctx, span := trace.StartSpan(ctx, "get_image")
@@ -126,20 +126,19 @@ func (i *imageReader) GetImage(
 	if err != nil {
 		return nil, err
 	}
-	if len(externalFilePaths) == 0 {
+	if len(externalDirOrFilePaths) == 0 {
 		return image, nil
 	}
-	imagePaths := make([]string, len(externalFilePaths))
-	for i, externalFilePath := range externalFilePaths {
-		imagePath, err := imageRef.PathForExternalPath(externalFilePath)
+	imagePaths := make([]string, len(externalDirOrFilePaths))
+	for i, externalDirOrFilePath := range externalDirOrFilePaths {
+		imagePath, err := imageRef.PathForExternalPath(externalDirOrFilePath)
 		if err != nil {
 			return nil, err
 		}
 		imagePaths[i] = imagePath
 	}
-	if externalFilePathsAllowNotExist {
-		// externalFilePaths have to be targetPaths
-		// TODO: evaluate this
+	if externalDirOrFilePathsAllowNotExist {
+		// externalDirOrFilePaths have to be targetPaths
 		return bufimage.ImageWithOnlyPathsAllowNotExist(image, imagePaths)
 	}
 	return bufimage.ImageWithOnlyPaths(image, imagePaths)
