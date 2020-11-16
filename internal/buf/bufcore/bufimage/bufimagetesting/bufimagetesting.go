@@ -26,7 +26,7 @@ import (
 
 // NewImageFile returns a new ImageFile for testing.
 func NewImageFile(
-	t *testing.T,
+	t testing.TB,
 	fileDescriptorProto *descriptorpb.FileDescriptorProto,
 	externalPath string,
 	isImport bool,
@@ -42,7 +42,7 @@ func NewImageFile(
 
 // NewFileDescriptorProto returns a new FileDescriptorProto for testing.
 func NewFileDescriptorProto(
-	t *testing.T,
+	t testing.TB,
 	path string,
 	importPaths ...string,
 ) *descriptorpb.FileDescriptorProto {
@@ -53,13 +53,13 @@ func NewFileDescriptorProto(
 }
 
 // AssertImageFilesEqual asserts the expected ImageFiles equal the actual ImageFiles.
-func AssertImageFilesEqual(t *testing.T, expected []bufimage.ImageFile, actual []bufimage.ImageFile) {
+func AssertImageFilesEqual(t testing.TB, expected []bufimage.ImageFile, actual []bufimage.ImageFile) {
 	expectedNormalizedImageFiles := normalizeImageFiles(t, expected)
 	actualNormalizedImageFiles := normalizeImageFiles(t, actual)
 	assert.Equal(t, expectedNormalizedImageFiles, actualNormalizedImageFiles)
 }
 
-func normalizeImageFiles(t *testing.T, imageFiles []bufimage.ImageFile) []bufimage.ImageFile {
+func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufimage.ImageFile {
 	normalizedImageFiles := make([]bufimage.ImageFile, len(imageFiles))
 	for i, imageFile := range imageFiles {
 		normalizedImageFiles[i] = NewImageFile(

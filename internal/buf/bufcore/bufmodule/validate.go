@@ -176,23 +176,6 @@ func validateRemote(remote string) error {
 	return nil
 }
 
-func validateModuleFilePaths(paths []string) error {
-	if len(paths) == 0 {
-		return nil
-	}
-	pathMap := make(map[string]struct{}, len(paths))
-	for _, path := range paths {
-		if err := validateModuleFilePath(path); err != nil {
-			return err
-		}
-		if _, ok := pathMap[path]; ok {
-			return fmt.Errorf("duplicate module file path: %s", path)
-		}
-		pathMap[path] = struct{}{}
-	}
-	return nil
-}
-
 func validateModuleFilePath(path string) error {
 	normalizedPath, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {

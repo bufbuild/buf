@@ -188,7 +188,7 @@ func NewProtoModuleNamesForResolvedModuleNames(resolvedModuleNames ...ResolvedMo
 // Targets (Modules and ModuleFileSets):
 //   Just the files specified to build. This will either be sources, or will be specific files
 //   within sources, ie this is a subset of Sources. The difference between Targets and Sources happens
-//   when i.e. the --file flag is used.
+//   when i.e. the --path flag is used.
 // Sources (Modules and ModuleFileSets):
 //   The files with no dependencies. This is a superset of Targets and subset of All.
 // All (ModuleFileSets only):
@@ -247,19 +247,25 @@ func NewModuleForProto(
 	return newModuleForProto(ctx, protoModule)
 }
 
-// ModuleWithTargetPaths returns a new Module that specifies specific file paths to build.
+// ModuleWithTargetPaths returns a new Module that specifies specific file or directory paths to build.
 //
 // These paths must exist.
 // These paths must be relative to the roots.
 // These paths will be normalized and validated.
 // These paths must be unique when normalized and validated.
 // Multiple calls to this option will override previous calls.
+//
+// Note that this will result in TargetFileInfos containing only these paths, and not
+// any imports. Imports, and non-targeted files, are still available via SourceFileInfos.
 func ModuleWithTargetPaths(module Module, targetPaths []string) (Module, error) {
 	return newTargetingModule(module, targetPaths, false)
 }
 
-// ModuleWithTargetPathsAllowNotExist returns a new Module specified specifie file paths to build,
+// ModuleWithTargetPathsAllowNotExist returns a new Module specified specific file or directory paths to build,
 // but allows the specified paths to not exist.
+//
+// Note that this will result in TargetFileInfos containing only these paths, and not
+// any imports. Imports, and non-targeted files, are still available via SourceFileInfos.
 func ModuleWithTargetPathsAllowNotExist(module Module, targetPaths []string) (Module, error) {
 	return newTargetingModule(module, targetPaths, true)
 }

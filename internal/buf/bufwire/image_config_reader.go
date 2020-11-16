@@ -74,8 +74,8 @@ func (i *imageConfigReader) GetImageConfig(
 	container app.EnvStdinContainer,
 	ref buffetch.Ref,
 	configOverride string,
-	externalFilePaths []string,
-	externalFilePathsAllowNotExist bool,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (ImageConfig, []bufanalysis.FileAnnotation, error) {
 	switch t := ref.(type) {
@@ -85,8 +85,8 @@ func (i *imageConfigReader) GetImageConfig(
 			container,
 			t,
 			configOverride,
-			externalFilePaths,
-			externalFilePathsAllowNotExist,
+			externalDirOrFilePaths,
+			externalDirOrFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
 		)
 		return env, nil, err
@@ -96,8 +96,8 @@ func (i *imageConfigReader) GetImageConfig(
 			container,
 			t,
 			configOverride,
-			externalFilePaths,
-			externalFilePathsAllowNotExist,
+			externalDirOrFilePaths,
+			externalDirOrFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
 		)
 	case buffetch.ModuleRef:
@@ -106,8 +106,8 @@ func (i *imageConfigReader) GetImageConfig(
 			container,
 			t,
 			configOverride,
-			externalFilePaths,
-			externalFilePathsAllowNotExist,
+			externalDirOrFilePaths,
+			externalDirOrFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
 		)
 	default:
@@ -120,8 +120,8 @@ func (i *imageConfigReader) GetSourceOrModuleImageConfig(
 	container app.EnvStdinContainer,
 	sourceOrModuleRef buffetch.SourceOrModuleRef,
 	configOverride string,
-	externalFilePaths []string,
-	externalFilePathsAllowNotExist bool,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (ImageConfig, []bufanalysis.FileAnnotation, error) {
 	moduleConfig, err := i.moduleConfigReader.GetModuleConfig(
@@ -129,8 +129,8 @@ func (i *imageConfigReader) GetSourceOrModuleImageConfig(
 		container,
 		sourceOrModuleRef,
 		configOverride,
-		externalFilePaths,
-		externalFilePathsAllowNotExist,
+		externalDirOrFilePaths,
+		externalDirOrFilePathsAllowNotExist,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -143,16 +143,16 @@ func (i *imageConfigReader) getImageImageConfig(
 	container app.EnvStdinContainer,
 	imageRef buffetch.ImageRef,
 	configOverride string,
-	externalFilePaths []string,
-	externalFilePathsAllowNotExist bool,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ ImageConfig, retErr error) {
 	image, err := i.imageReader.GetImage(
 		ctx,
 		container,
 		imageRef,
-		externalFilePaths,
-		externalFilePathsAllowNotExist,
+		externalDirOrFilePaths,
+		externalDirOrFilePathsAllowNotExist,
 		excludeSourceCodeInfo,
 	)
 	if err != nil {

@@ -56,8 +56,8 @@ func (b *moduleIncludeBuilder) BuildForIncludes(
 func (b *moduleIncludeBuilder) buildForIncludes(
 	ctx context.Context,
 	includeDirPaths []string,
-	filePaths []string,
-	filePathsAllowNotExist bool,
+	fileOrDirPaths []string,
+	fileOrDirPathsAllowNotExist bool,
 ) (bufmodule.Module, error) {
 	if len(includeDirPaths) == 0 {
 		includeDirPaths = []string{"."}
@@ -71,8 +71,8 @@ func (b *moduleIncludeBuilder) buildForIncludes(
 	if err != nil {
 		return nil, err
 	}
-	absFilePaths, err := normalizeAndCheckPaths(
-		filePaths,
+	absFileOrDirPaths, err := normalizeAndCheckPaths(
+		fileOrDirPaths,
 		"input file",
 		normalpath.Absolute,
 		false,
@@ -97,8 +97,8 @@ func (b *moduleIncludeBuilder) buildForIncludes(
 	return applyModulePaths(
 		module,
 		absIncludeDirPaths,
-		absFilePaths,
-		filePathsAllowNotExist,
+		absFileOrDirPaths,
+		fileOrDirPathsAllowNotExist,
 		normalpath.Absolute,
 	)
 }

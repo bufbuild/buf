@@ -163,8 +163,11 @@ func ImageWithoutImports(image Image) Image {
 	return newImageNoValidate(newImageFiles)
 }
 
-// ImageWithOnlyPaths returns a copy of the Image that only includes the Files
-// with the given root relative file paths.
+// ImageWithOnlyPaths returns a copy of the Image that only includes the files
+// with the given root relative file paths or directories.
+//
+// Note that paths can be either files or directories - whether or not a path
+// is included is a result of normalpath.EqualsOrContainsPath.
 //
 // If a root relative file path does not exist, this errors.
 func ImageWithOnlyPaths(
@@ -174,8 +177,11 @@ func ImageWithOnlyPaths(
 	return imageWithOnlyPaths(image, paths, false)
 }
 
-// ImageWithOnlyPathsAllowNotExist returns a copy of the Image that only includes the Files
+// ImageWithOnlyPathsAllowNotExist returns a copy of the Image that only includes the files
 // with the given root relative file paths.
+//
+// Note that paths can be either files or directories - whether or not a path
+// is included is a result of normalpath.EqualsOrContainsPath.
 //
 // If a root relative file path does not exist, this skips this path.
 func ImageWithOnlyPathsAllowNotExist(

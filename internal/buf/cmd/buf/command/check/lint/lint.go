@@ -34,13 +34,15 @@ import (
 
 const (
 	errorFormatFlagName = "error-format"
-	filesFlagName       = "file"
 	configFlagName      = "config"
+	pathsFlagName       = "path"
 
 	// deprecated
 	inputFlagName = "input"
 	// deprecated
 	inputConfigFlagName = "input-config"
+	// deprecated
+	filesFlagName = "file"
 )
 
 // NewCommand returns a new Command.
@@ -66,13 +68,15 @@ func NewCommand(
 
 type flags struct {
 	ErrorFormat string
-	Files       []string
 	Config      string
+	Paths       []string
 
 	// deprecated
 	Input string
 	// deprecated
 	InputConfig string
+	// deprecated
+	Files []string
 	// special
 	InputHashtag string
 }
@@ -83,6 +87,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -91,12 +96,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			"The format for build errors or check violations, printed to stdout. Must be one of %s.",
 			stringutil.SliceToString(buflint.AllFormatStrings),
 		),
-	)
-	flagSet.StringSliceVar(
-		&f.Files,
-		filesFlagName,
-		nil,
-		`Limit to specific files. This is an advanced feature and is not recommended.`,
 	)
 	flagSet.StringVar(
 		&f.Config,
@@ -144,11 +143,20 @@ func run(
 	if err != nil {
 		return err
 	}
-	inputConfig, err := bufcli.GetFlagOrDeprecatedFlag(
+	inputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
 		flags.Config,
 		configFlagName,
 		flags.InputConfig,
 		inputConfigFlagName,
+	)
+	if err != nil {
+		return err
+	}
+	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
+		flags.Paths,
+		pathsFlagName,
+		flags.Files,
+		filesFlagName,
 	)
 	if err != nil {
 		return err
@@ -176,9 +184,9 @@ func run(
 		container,
 		ref,
 		inputConfig,
-		flags.Files, // we filter checks for files
-		false,       // input files must exist
-		false,       // we must include source info for linting
+		paths, // we filter checks for files
+		false, // input files must exist
+		false, // we must include source info for linting
 	)
 	if err != nil {
 		return err

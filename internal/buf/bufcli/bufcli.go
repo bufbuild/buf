@@ -78,7 +78,6 @@ func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string
 		flagName,
 		false,
 		`Output as a google.protobuf.FileDescriptorSet instead of an image.
-
 Note that images are wire-compatible with FileDescriptorSets, however this flag will strip
 the additional metadata added for Buf usage.`,
 	)
@@ -104,13 +103,41 @@ func BindExcludeSourceInfo(flagSet *pflag.FlagSet, addr *bool, flagName string) 
 	)
 }
 
-// BindFiles binds the files flag.
-func BindFiles(flagSet *pflag.FlagSet, addr *[]string, flagName string) {
+// BindPaths binds the paths flag.
+func BindPaths(
+	flagSet *pflag.FlagSet,
+	pathsAddr *[]string,
+	pathsFlagName string,
+) {
 	flagSet.StringSliceVar(
-		addr,
-		flagName,
+		pathsAddr,
+		pathsFlagName,
 		nil,
-		`Limit to specific files. This is an advanced feature and is not recommended.`,
+		`Limit to specific files or directories, for example "proto/a/a.proto" or "proto/a".
+If specified multiple times, the union will be taken.`,
+	)
+}
+
+// BindPathAndDeprecatedFiles binds the paths flag and the deprecated files flag.
+func BindPathsAndDeprecatedFiles(
+	flagSet *pflag.FlagSet,
+	pathsAddr *[]string,
+	pathsFlagName string,
+	filesAddr *[]string,
+	filesFlagName string,
+) {
+	BindPaths(flagSet, pathsAddr, pathsFlagName)
+	flagSet.StringSliceVar(
+		filesAddr,
+		filesFlagName,
+		nil,
+		`Limit to specific files.
+If specified multiple times, the union will be taken.`,
+	)
+	_ = flagSet.MarkHidden(filesFlagName)
+	_ = flagSet.MarkDeprecated(
+		filesFlagName,
+		fmt.Sprintf("use --%s instead.%s", pathsFlagName, FlagDeprecationMessageSuffix),
 	)
 }
 
@@ -193,8 +220,8 @@ func GetInputValue(
 	return defaultValue, nil
 }
 
-// GetFlagOrDeprecatedFlag gets the flag, or the deprecated flag.
-func GetFlagOrDeprecatedFlag(
+// GetStringFlagOrDeprecatedFlag gets the flag, or the deprecated flag.
+func GetStringFlagOrDeprecatedFlag(
 	flag string,
 	flagName string,
 	deprecatedFlag string,
@@ -204,6 +231,22 @@ func GetFlagOrDeprecatedFlag(
 		return "", fmt.Errorf("Cannot specify both --%s and --%s.", flagName, deprecatedFlagName)
 	}
 	if flag != "" {
+		return flag, nil
+	}
+	return deprecatedFlag, nil
+}
+
+// GetStringSliceFlagOrDeprecatedFlag gets the flag, or the deprecated flag.
+func GetStringSliceFlagOrDeprecatedFlag(
+	flag []string,
+	flagName string,
+	deprecatedFlag []string,
+	deprecatedFlagName string,
+) ([]string, error) {
+	if len(flag) > 0 && len(deprecatedFlag) > 0 {
+		return nil, fmt.Errorf("Cannot specify both --%s and --%s.", flagName, deprecatedFlagName)
+	}
+	if len(flag) > 0 {
 		return flag, nil
 	}
 	return deprecatedFlag, nil

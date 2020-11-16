@@ -341,7 +341,7 @@ func MapHasEqualOrContainingPath(m map[string]struct{}, path string, pathType Pa
 	return false
 }
 
-// MapAllEqualOrContainingPaths returns the matching paths in the map.
+// MapAllEqualOrContainingPaths returns the matching paths in the map in a sorted slice.
 //
 // The path and all keys in m are expected to be normalized and validated.
 //
@@ -353,6 +353,24 @@ func MapHasEqualOrContainingPath(m map[string]struct{}, path string, pathType Pa
 //
 // If the map is empty, returns nil.
 func MapAllEqualOrContainingPaths(m map[string]struct{}, path string, pathType PathType) []string {
+	if len(m) == 0 {
+		return nil
+	}
+	return stringutil.MapToSortedSlice(MapAllEqualOrContainingPathMap(m, path, pathType))
+}
+
+// MapAllEqualOrContainingPathMap returns the matching paths in the map in a new map.
+//
+// The path and all keys in m are expected to be normalized and validated.
+//
+// For a given key x:
+//
+//   - If x == PathType, the path always matches.
+//   - If x == path, the path matches.
+//   - If x is a directory that contains path, the path matches.
+//
+// If the map is empty, returns nil.
+func MapAllEqualOrContainingPathMap(m map[string]struct{}, path string, pathType PathType) map[string]struct{} {
 	separator := pathType.Separator()
 	if separator == "" {
 		return nil
@@ -373,7 +391,7 @@ func MapAllEqualOrContainingPaths(m map[string]struct{}, path string, pathType P
 			}
 		}
 	}
-	return stringutil.MapToSortedSlice(n)
+	return n
 }
 
 // StripComponents strips the specified number of components.

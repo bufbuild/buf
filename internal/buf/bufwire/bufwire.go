@@ -42,14 +42,14 @@ type ImageConfig interface {
 type ImageConfigReader interface {
 	// GetImageConfig gets the ImageConfig for the fetch value.
 	//
-	// If externalFilePaths is empty, this builds all files under Buf control.
+	// If externalDirOrFilePaths is empty, this builds all files under Buf control.
 	GetImageConfig(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		ref buffetch.Ref,
 		configOverride string,
-		externalFilePaths []string,
-		externalFileFilePathsAllowNotExist bool,
+		externalDirOrFilePaths []string,
+		externalDirOrFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
 	) (ImageConfig, []bufanalysis.FileAnnotation, error)
 	// GetSourceOrModuleImageConfig is the same as GetImageConfig, but only allows source or module values, and always builds.
@@ -58,8 +58,8 @@ type ImageConfigReader interface {
 		container app.EnvStdinContainer,
 		sourceOrModuleRef buffetch.SourceOrModuleRef,
 		configOverride string,
-		externalFilePaths []string,
-		externalFileFilePathsAllowNotExist bool,
+		externalDirOrFilePaths []string,
+		externalDirOrFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
 	) (ImageConfig, []bufanalysis.FileAnnotation, error)
 }
@@ -93,7 +93,7 @@ type ModuleConfig interface {
 type ModuleConfigReader interface {
 	// GetModuleConfig gets the ModuleConfig for the fetch value.
 	//
-	// If externalFilePaths is empty, this builds all files under Buf control.
+	// If externalDirOrFilePaths is empty, this builds all files under Buf control.
 	//
 	// Note that as opposed to ModuleReader, this will return a Module for either
 	// a source or module reference, not just a module reference.
@@ -102,8 +102,8 @@ type ModuleConfigReader interface {
 		container app.EnvStdinContainer,
 		sourceOrModuleRef buffetch.SourceOrModuleRef,
 		configOverride string,
-		externalFilePaths []string,
-		externalFilePathsAllowNotExist bool,
+		externalDirOrFilePaths []string,
+		externalDirOrFilePathsAllowNotExist bool,
 	) (ModuleConfig, error)
 }
 
@@ -157,8 +157,8 @@ type ImageReader interface {
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		imageRef buffetch.ImageRef,
-		externalFilePaths []string,
-		externalFileFilePathsAllowNotExist bool,
+		externalDirOrFilePaths []string,
+		externalDirOrFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
 	) (bufimage.Image, error)
 }

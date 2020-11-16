@@ -96,6 +96,8 @@ func ValidateCodeGeneratorResponse(response *pluginpb.CodeGeneratorResponse) err
 }
 
 // ValidateProtoPath validates the proto path.
+//
+// This checks that the path is normalized and ends in .proto.
 func ValidateProtoPath(name string, path string) error {
 	if path == "" {
 		return fmt.Errorf("%s is empty", name)
@@ -107,10 +109,15 @@ func ValidateProtoPath(name string, path string) error {
 	if path != normalized {
 		return fmt.Errorf("%s %s was not normalized to %s", name, path, normalized)
 	}
+	if normalpath.Ext(path) != ".proto" {
+		return fmt.Errorf("%s %s does not have a .proto extension", name, path)
+	}
 	return nil
 }
 
 // ValidateProtoPaths validates the proto paths.
+//
+// This checks that the paths are normalized and end in .proto.
 func ValidateProtoPaths(name string, paths []string) error {
 	for _, path := range paths {
 		if err := ValidateProtoPath(name, path); err != nil {
