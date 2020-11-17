@@ -191,6 +191,11 @@ func ToPascalCase(s string) string {
 	return output
 }
 
+// IslowerAlphanumeric returns true for [0-9a-z].
+func IsLowerAlphanumeric(r rune) bool {
+	return ('0' <= r && r <= '9') || ('a' <= r && r <= 'z')
+}
+
 func toSnakeCase(s string, options ...SnakeCaseOption) string {
 	snakeCaseOptions := &snakeCaseOptions{}
 	for _, option := range options {

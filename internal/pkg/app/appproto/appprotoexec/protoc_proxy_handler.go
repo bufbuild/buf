@@ -92,6 +92,14 @@ func (h *protocProxyHandler) Handle(
 		fmt.Sprintf("--descriptor_set_in=%s", app.DevStdinFilePath),
 		fmt.Sprintf("--%s_out=%s", h.pluginName, tmpDir.AbsPath()),
 	}
+	if featureProto3Optional {
+		args = append(
+			args,
+			// this flag may be deleted someday
+			// in that case, we will have to check that minor < certain_value
+			"--experimental_allow_proto3_optional",
+		)
+	}
 	if parameter := request.GetParameter(); parameter != "" {
 		args = append(
 			args,

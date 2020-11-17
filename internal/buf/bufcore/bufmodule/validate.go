@@ -22,6 +22,7 @@ import (
 
 	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
 const (
@@ -127,7 +128,7 @@ func ValidateOwnerName(ownerName string, ownerType string) error {
 		return fmt.Errorf("%s name %q must be between at least %d and at most %d characters", ownerType, ownerName, ownerNameMinLength, ownerNameMaxLength)
 	}
 	for _, char := range ownerName {
-		if !isLowerAlphanumeric(char) && char != '-' {
+		if !stringutil.IsLowerAlphanumeric(char) && char != '-' {
 			return fmt.Errorf("%s name %q must only contain lowercase letters, digits, or hyphens (-)", ownerType, ownerName)
 		}
 	}
@@ -143,7 +144,7 @@ func ValidateRepositoryName(repositoryName string) error {
 		return fmt.Errorf("repository name must be at least %d and at most %d characters", repositoryNameMinLength, repositoryNameMaxLength)
 	}
 	for _, char := range repositoryName {
-		if !isLowerAlphanumeric(char) && char != '-' {
+		if !stringutil.IsLowerAlphanumeric(char) && char != '-' {
 			return fmt.Errorf("repository name %q must only contain lowercase letters, digits, or hyphens (-)", repositoryName)
 		}
 	}
@@ -159,7 +160,7 @@ func ValidateRepositoryVersionName(versionName string) error {
 		return fmt.Errorf("repository version name %q must be at least %d and at most %d characters", versionName, repositoryVersionNameMinLength, repositoryVersionNameMaxLength)
 	}
 	for _, char := range versionName {
-		if !isLowerAlphanumeric(char) && char != '-' && char != '.' {
+		if !stringutil.IsLowerAlphanumeric(char) && char != '-' && char != '.' {
 			return fmt.Errorf("repository version name %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", versionName)
 		}
 	}
@@ -195,9 +196,4 @@ func validateModuleFilePathWithoutNormalization(path string) error {
 		return fmt.Errorf("path %s did not have extension .proto", path)
 	}
 	return nil
-}
-
-// islowerAlphanumeric returns true for [0-9a-z].
-func isLowerAlphanumeric(r rune) bool {
-	return ('0' <= r && r <= '9') || ('a' <= r && r <= 'z')
 }
