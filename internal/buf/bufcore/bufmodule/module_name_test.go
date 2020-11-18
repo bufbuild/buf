@@ -75,19 +75,19 @@ func TestModuleNameForStringError(t *testing.T) {
 			ExpectedErrorString: "invalid module name: repository name is empty: foo.com/bar//v1",
 		},
 		{
-			Name:                "Module without a version",
+			Name:                "Module without a track",
 			Input:               "foo.com/bar/baz/",
-			ExpectedErrorString: "invalid module name: version name is empty: foo.com/bar/baz/",
+			ExpectedErrorString: "invalid module name: track name is empty: foo.com/bar/baz/",
 		},
 		{
 			Name:                "Invalid module structure",
 			Input:               "foo.com/bar/baz",
-			ExpectedErrorString: "invalid module name: module name is not in the form remote/owner/repository/version: foo.com/bar/baz",
+			ExpectedErrorString: "invalid module name: module name is not in the form remote/owner/repository/track: foo.com/bar/baz",
 		},
 		{
 			Name:                "Invalid digest structure",
 			Input:               "foo.com/bar/baz/v1:digest:digest",
-			ExpectedErrorString: "invalid module name: invalid version with digest: foo.com/bar/baz/v1:digest:digest",
+			ExpectedErrorString: "invalid module name: invalid track with digest: foo.com/bar/baz/v1:digest:digest",
 		},
 	}
 
@@ -106,11 +106,11 @@ func newModuleName(
 	remote string,
 	owner string,
 	repository string,
-	version string,
+	track string,
 	digest string,
 ) bufmodule.ModuleName {
 	t.Helper()
-	moduleName, err := bufmodule.NewModuleName(remote, owner, repository, version, digest)
+	moduleName, err := bufmodule.NewModuleName(remote, owner, repository, track, digest)
 	require.NoError(t, err)
 	return moduleName
 }

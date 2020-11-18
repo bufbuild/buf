@@ -26,6 +26,10 @@ FILE_IGNORES := $(FILE_IGNORES) \
 
 USE_BUF_GENERATE := true
 
+# Set to an alternative location for the buf binary when doing
+# code-breaking changes that will result in installbuf failing
+BUF_GENERATE_BINARY_PATH ?= buf
+
 include make/go/bootstrap.mk
 include make/go/dep_protoc.mk
 include make/go/dep_protoc_gen_go.mk
@@ -48,12 +52,25 @@ wkt: installstorage-go-binary-data $(PROTOC)
 prepostgenerate:: wkt
 
 .PHONY: bufgeneratedeps
-bufgeneratedeps:: installbuf $(PROTOC_GEN_GO)
+bufgeneratedeps:: $(PROTOC_GEN_GO)
+ifeq ($(BUF_GENERATE_BINARY_PATH),buf)
+bufgeneratedeps:: installbuf
+endif
+
+.PHONY: bufgenerateclean
+bufgenerateclean::
+
+.PHONY: bufgeneratecleango
+bufgeneratecleango:
+	rm -rf internal/gen/proto/go
+
+bufgenerateclean:: bufgeneratecleango
 
 .PHONY: bufgenerate
-bufgenerate: bufgeneratedeps
-	rm -rf internal/proto/gen/go
-	buf generate
+bufgenerate:
+	$(MAKE) bufgeneratedeps
+	$(MAKE) bufgenerateclean
+	$(BUF_GENERATE_BINARY_PATH) generate
 
 pregenerate:: bufgenerate
 

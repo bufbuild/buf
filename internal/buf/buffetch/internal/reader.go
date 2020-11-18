@@ -324,7 +324,7 @@ func (r *reader) getModule(
 			moduleName.Remote(),
 			moduleName.Owner(),
 			moduleName.Repository(),
-			moduleName.Version(),
+			moduleName.Track(),
 			moduleName.Digest(),
 		)
 		if err != nil {

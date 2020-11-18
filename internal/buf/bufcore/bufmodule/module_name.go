@@ -25,7 +25,7 @@ type moduleName struct {
 	remote     string
 	owner      string
 	repository string
-	version    string
+	track      string
 	digest     string
 }
 
@@ -33,7 +33,7 @@ func newModuleName(
 	remote string,
 	owner string,
 	repository string,
-	version string,
+	track string,
 	digest string,
 ) (*moduleName, error) {
 	return newModuleNameForProto(
@@ -41,7 +41,7 @@ func newModuleName(
 			Remote:     remote,
 			Owner:      owner,
 			Repository: repository,
-			Version:    version,
+			Track:      track,
 			Digest:     digest,
 		},
 	)
@@ -57,7 +57,7 @@ func newModuleNameForProto(
 		remote:     protoModuleName.Remote,
 		owner:      protoModuleName.Owner,
 		repository: protoModuleName.Repository,
-		version:    protoModuleName.Version,
+		track:      protoModuleName.Track,
 		digest:     protoModuleName.Digest,
 	}, nil
 }
@@ -74,8 +74,8 @@ func (m *moduleName) Repository() string {
 	return m.repository
 }
 
-func (m *moduleName) Version() string {
-	return m.version
+func (m *moduleName) Track() string {
+	return m.track
 }
 
 func (m *moduleName) Digest() string {
@@ -99,7 +99,7 @@ func newProtoModuleNameForModuleName(
 		Remote:     moduleName.Remote(),
 		Owner:      moduleName.Owner(),
 		Repository: moduleName.Repository(),
-		Version:    moduleName.Version(),
+		Track:      moduleName.Track(),
 		Digest:     moduleName.Digest(),
 	}
 }
@@ -107,5 +107,5 @@ func newProtoModuleNameForModuleName(
 // moduleNameIdentity returns the given module name's identity. This is
 // the string representation, minus the digest.
 func moduleNameIdentity(moduleName ModuleName) string {
-	return fmt.Sprintf("%s/%s/%s/%s", moduleName.Remote(), moduleName.Owner(), moduleName.Repository(), moduleName.Version())
+	return fmt.Sprintf("%s/%s/%s/%s", moduleName.Remote(), moduleName.Owner(), moduleName.Repository(), moduleName.Track())
 }

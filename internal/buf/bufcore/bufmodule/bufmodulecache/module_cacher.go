@@ -74,7 +74,7 @@ func getModuleKey(moduleName bufmodule.ModuleName) bufmodulestorage.Key {
 		moduleName.Remote(),
 		moduleName.Owner(),
 		moduleName.Repository(),
-		moduleName.Version(),
+		moduleName.Track(),
 		moduleName.Digest(),
 	}
 }

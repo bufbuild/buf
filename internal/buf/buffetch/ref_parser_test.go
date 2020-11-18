@@ -1105,10 +1105,10 @@ func testNewModuleName(
 	remote string,
 	owner string,
 	repository string,
-	version string,
+	track string,
 	digest string,
 ) bufmodule.ModuleName {
-	moduleName, err := bufmodule.NewModuleName(remote, owner, repository, version, digest)
+	moduleName, err := bufmodule.NewModuleName(remote, owner, repository, track, digest)
 	require.NoError(t, err)
 	return moduleName
 }

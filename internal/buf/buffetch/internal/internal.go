@@ -198,7 +198,7 @@ type ModuleRef interface {
 
 // NewModuleRef returns a new ModuleRef.
 //
-// The path must be in the form server/owner/repository/version[:digest].
+// The path must be in the form server/owner/repository/track[:digest].
 func NewModuleRef(path string) (ModuleRef, error) {
 	return newModuleRef("", path)
 }

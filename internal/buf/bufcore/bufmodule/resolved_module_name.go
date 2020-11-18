@@ -29,7 +29,7 @@ func newResolvedModuleName(
 	remote string,
 	owner string,
 	repository string,
-	version string,
+	track string,
 	digest string,
 ) (*resolvedModuleName, error) {
 	return newResolvedModuleNameForProto(
@@ -37,7 +37,7 @@ func newResolvedModuleName(
 			Remote:     remote,
 			Owner:      owner,
 			Repository: repository,
-			Version:    version,
+			Track:      track,
 			Digest:     digest,
 		},
 	)
