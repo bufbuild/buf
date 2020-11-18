@@ -141,7 +141,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufc
 		for potentialDirPath := range potentialDirPathMap {
 			if _, ok := matchingPotentialDirPathMap[potentialDirPath]; !ok {
 				// no match, this is an error given that allowNotExist is false
-				return nil, fmt.Errorf("%s has no matching file in the module", potentialDirPath)
+				return nil, fmt.Errorf("path %q has no matching file in the module", potentialDirPath)
 			}
 		}
 	}

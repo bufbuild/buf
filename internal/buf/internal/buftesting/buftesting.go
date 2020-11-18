@@ -19,7 +19,6 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
 
@@ -45,8 +44,11 @@ var (
 	testHTTPClient = &http.Client{
 		Timeout: 10 * time.Second,
 	}
+	testArchiveReader = githubtesting.NewArchiveReader(
+		zap.NewNop(),
+		testHTTPClient,
+	)
 	testGoogleapisDirPath = filepath.Join("cache", "googleapis")
-	testLock              sync.Mutex
 )
 
 // GetActualProtocFileDescriptorSet gets the FileDescriptorSet for actual protoc.
@@ -97,23 +99,10 @@ func RunActualProtoc(
 
 // GetGoogleapisDirPath gets the path to a clone of googleapis.
 func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
-	testLock.Lock()
-	defer func() {
-		if r := recover(); r != nil {
-			testLock.Unlock()
-			panic(r)
-		}
-	}()
-	defer testLock.Unlock()
-
 	googleapisDirPath := filepath.Join(buftestingDirPath, testGoogleapisDirPath)
-	archiveReader := githubtesting.NewArchiveReader(
-		zap.NewNop(),
-		testHTTPClient,
-	)
 	require.NoError(
 		t,
-		archiveReader.GetArchive(
+		testArchiveReader.GetArchive(
 			context.Background(),
 			googleapisDirPath,
 			"googleapis",

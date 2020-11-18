@@ -24,10 +24,10 @@ import (
 // we validate the FileDescriptorProtos as part of NewFile
 func validateProtoImageExceptFileDescriptorProtos(protoImage *imagev1.Image) error {
 	if protoImage == nil {
-		return errors.New("nil Image")
+		return errors.New("nil image")
 	}
 	if len(protoImage.File) == 0 {
-		return errors.New("empty Image Files")
+		return errors.New("image contains no files")
 	}
 	if protoImage.BufbuildImageExtension != nil {
 		return validateProtoImageExtension(protoImage.BufbuildImageExtension, uint32(len(protoImage.File)))
@@ -49,10 +49,10 @@ func validateProtoImageExtension(
 		}
 		fileIndex := *imageImportRef.FileIndex
 		if fileIndex >= numFiles {
-			return fmt.Errorf("invalid file index: %d", fileIndex)
+			return fmt.Errorf("invalid ImageImportRef file index: %d", fileIndex)
 		}
 		if _, ok := seenFileIndexes[fileIndex]; ok {
-			return fmt.Errorf("duplicate file index: %d", fileIndex)
+			return fmt.Errorf("duplicate ImageImportRef file index: %d", fileIndex)
 		}
 		seenFileIndexes[fileIndex] = struct{}{}
 	}

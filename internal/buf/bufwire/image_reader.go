@@ -74,7 +74,7 @@ func (i *imageReader) GetImage(
 		firstProtoImage := &imagev1.Image{}
 		_, span := trace.StartSpan(ctx, "first_wire_unmarshal")
 		if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
-			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
+			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		span.End()
 		_, span = trace.StartSpan(ctx, "new_resolver")
@@ -89,14 +89,14 @@ func (i *imageReader) GetImage(
 		span.End()
 		_, span = trace.StartSpan(ctx, "second_wire_unmarshal")
 		if err := protoencoding.NewWireUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
-			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
+			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		span.End()
 	case buffetch.ImageEncodingJSON:
 		firstProtoImage := &imagev1.Image{}
 		_, span := trace.StartSpan(ctx, "first_json_unmarshal")
 		if err := protoencoding.NewJSONUnmarshaler(nil).Unmarshal(data, firstProtoImage); err != nil {
-			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
+			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		// TODO right now, NewResolver sets AllowUnresolvable to true all the time
 		// we want to make this into a check, and we verify if we need this for the individual command
@@ -111,7 +111,7 @@ func (i *imageReader) GetImage(
 		span.End()
 		_, span = trace.StartSpan(ctx, "second_json_unmarshal")
 		if err := protoencoding.NewJSONUnmarshaler(resolver).Unmarshal(data, protoImage); err != nil {
-			return nil, fmt.Errorf("could not unmarshal Image: %v", err)
+			return nil, fmt.Errorf("could not unmarshal image: %v", err)
 		}
 		span.End()
 	default:

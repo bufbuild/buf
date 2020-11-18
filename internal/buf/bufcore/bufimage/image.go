@@ -15,6 +15,7 @@
 package bufimage
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -26,6 +27,9 @@ type image struct {
 }
 
 func newImage(files []ImageFile, reorder bool) (*image, error) {
+	if len(files) == 0 {
+		return nil, errors.New("image contains no files")
+	}
 	pathToImageFile := make(map[string]ImageFile, len(files))
 	for _, file := range files {
 		path := file.Path()

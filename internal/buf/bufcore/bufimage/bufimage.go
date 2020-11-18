@@ -78,6 +78,7 @@ type Image interface {
 //
 // The input ImageFiles are expected to be in correct DAG order!
 // TODO: Consider checking the above, and if not, reordering the Files.
+// If imageFiles is empty, returns error
 func NewImage(imageFiles []ImageFile) (Image, error) {
 	return newImage(imageFiles, false)
 }
