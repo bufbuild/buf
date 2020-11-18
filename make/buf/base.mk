@@ -73,7 +73,7 @@ postlint:: buflint bufbreaking
 
 .PHONY: bufrelease
 bufrelease:
-	DOCKER_IMAGE=golang:1.15.4-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.15.5-buster bash make/buf/scripts/release.bash
 
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)
