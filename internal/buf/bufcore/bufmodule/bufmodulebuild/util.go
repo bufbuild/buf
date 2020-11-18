@@ -64,14 +64,14 @@ func pathsToTargetPaths(roots []string, paths []string, pathType normalpath.Path
 func pathToTargetPath(roots []string, path string, pathType normalpath.PathType) (string, error) {
 	var matchingRoots []string
 	for _, root := range roots {
-		if normalpath.EqualsOrContainsPath(root, path, pathType) {
+		if normalpath.ContainsPath(root, path, pathType) {
 			matchingRoots = append(matchingRoots, root)
 		}
 	}
 	switch len(matchingRoots) {
 	case 0:
 		// this is a user error and will likely happen often
-		return "", fmt.Errorf("%s is not contained within any of %s", path, strings.Join(roots, ", "))
+		return "", fmt.Errorf("path %q is not contained within any of roots %q - note that specified paths cannot be roots, but must be contained within roots", path, strings.Join(roots, ", "))
 	case 1:
 		targetPath, err := normalpath.Rel(matchingRoots[0], path)
 		if err != nil {
@@ -81,7 +81,7 @@ func pathToTargetPath(roots []string, path string, pathType normalpath.PathType)
 		return normalpath.NormalizeAndValidate(targetPath)
 	default:
 		// this should never happen
-		return "", fmt.Errorf("%q is contained in multiple roots %v", path, roots)
+		return "", fmt.Errorf("%q is contained in multiple roots %q", path, strings.Join(roots, ", "))
 	}
 }
 
@@ -135,13 +135,13 @@ func sortAndCheckDuplicatePaths(outputs []string, name string, pathType normalpa
 			output2 := outputs[j]
 
 			if output1 == output2 {
-				return nil, fmt.Errorf("duplicate %s %s", name, output1)
+				return nil, fmt.Errorf("duplicate %s %q", name, output1)
 			}
 			if normalpath.EqualsOrContainsPath(output2, output1, pathType) {
-				return nil, fmt.Errorf("%s %s is within %s %s which is not allowed", name, output1, name, output2)
+				return nil, fmt.Errorf("%s %q is within %s %q which is not allowed", name, output1, name, output2)
 			}
 			if normalpath.EqualsOrContainsPath(output1, output2, pathType) {
-				return nil, fmt.Errorf("%s %s is within %s %s which is not allowed", name, output2, name, output1)
+				return nil, fmt.Errorf("%s %q is within %s %q which is not allowed", name, output2, name, output1)
 			}
 		}
 	}
@@ -159,10 +159,10 @@ func sortAndCheckDuplicatePaths(outputs []string, name string, pathType normalpa
 	}
 	if hasTerminateDir {
 		if len(notTerminateDir) == 1 {
-			return nil, fmt.Errorf("%s %s is within %s %s which is not allowed", name, notTerminateDir[0], name, pathType.Separator())
+			return nil, fmt.Errorf("%s %q is within %s %q which is not allowed", name, notTerminateDir[0], name, pathType.Separator())
 		}
 		if len(notTerminateDir) > 1 {
-			return nil, fmt.Errorf("%ss %v are within %s %s which is not allowed", name, notTerminateDir, name, pathType.Separator())
+			return nil, fmt.Errorf("%ss %q are within %s %q which is not allowed", name, strings.Join(notTerminateDir, ", "), name, pathType.Separator())
 		}
 	}
 

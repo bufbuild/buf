@@ -155,7 +155,7 @@ func TestGoogleapis(t *testing.T) {
 			"google/foo/nonsense.proto",
 		},
 	)
-	assert.Equal(t, errors.New("google/foo/nonsense.proto has no matching file in the image"), err)
+	assert.Equal(t, errors.New(`path "google/foo/nonsense.proto" has no matching file in the image`), err)
 	_, err = bufimage.ImageWithOnlyPaths(
 		image,
 		[]string{
@@ -165,7 +165,7 @@ func TestGoogleapis(t *testing.T) {
 			"google/foo",
 		},
 	)
-	assert.Equal(t, errors.New("google/foo has no matching file in the image"), err)
+	assert.Equal(t, errors.New(`path "google/foo" has no matching file in the image`), err)
 
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
 	// basic check to make sure there is no error at this scale

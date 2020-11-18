@@ -56,6 +56,10 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, allowNotExist bool
 	// that itself contains ImageFiles, i.e. a/b.proto/c.proto is valid if not dumb
 	var potentialDirPaths []string
 	for _, fileOrDirPath := range fileOrDirPaths {
+		// this is not allowed, this is the equivalent of a root
+		if fileOrDirPath == "." {
+			return nil, errors.New(`"." is not a valid path value`)
+		}
 		if normalpath.Ext(fileOrDirPath) != ".proto" {
 			// not a .proto file, therefore must be a directory
 			potentialDirPaths = append(potentialDirPaths, fileOrDirPath)
@@ -119,7 +123,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, allowNotExist bool
 		for potentialDirPath := range potentialDirPathMap {
 			if _, ok := matchingPotentialDirPathMap[potentialDirPath]; !ok {
 				// no match, this is an error given that allowNotExist is false
-				return nil, fmt.Errorf("%s has no matching file in the image", potentialDirPath)
+				return nil, fmt.Errorf("path %q has no matching file in the image", potentialDirPath)
 			}
 		}
 	}

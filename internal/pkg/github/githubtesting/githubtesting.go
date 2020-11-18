@@ -29,6 +29,10 @@ type ArchiveReader interface {
 	// The root directory within the tarball is stripped.
 	// If the directory already exists, this is a no-op.
 	//
+	// Uses file locking to make sure the no-op works properly across multiple process invocations,
+	// which is needed for example with go test.
+	// This is also thread-safe.
+	//
 	// Only use for testing.
 	GetArchive(
 		ctx context.Context,

@@ -20,10 +20,14 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
+	"sync"
+	"time"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/gofrs/flock"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -31,6 +35,7 @@ import (
 type archiveReader struct {
 	logger     *zap.Logger
 	httpClient *http.Client
+	lock       sync.Mutex
 }
 
 func newArchiveReader(
@@ -50,7 +55,28 @@ func (a *archiveReader) GetArchive(
 	repository string,
 	ref string,
 ) (retErr error) {
-	outputDirPath = normalpath.Normalize(outputDirPath)
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	outputDirPath = normalpath.Unnormalize(outputDirPath)
+
+	// creates a file in the same parent directory as outputDirPath
+	flockPath := outputDirPath + ".flock"
+	if err := os.MkdirAll(filepath.Dir(flockPath), 0755); err != nil {
+		return err
+	}
+	flock := flock.New(flockPath)
+	locked, err := flock.TryLockContext(ctx, time.Second)
+	if err != nil {
+		return fmt.Errorf("could not get file lock %q: %v", flockPath, err)
+	}
+	if !locked {
+		return fmt.Errorf("could not lock %q", flockPath)
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, flock.Unlock())
+	}()
+
 	// check if already exists, if so, do nothing
 	if fileInfo, err := os.Stat(outputDirPath); err == nil {
 		if !fileInfo.IsDir() {
@@ -87,7 +113,7 @@ func (a *archiveReader) GetArchive(
 	if err := os.MkdirAll(outputDirPath, 0755); err != nil {
 		return err
 	}
-	readWriteBucket, err := storageos.NewReadWriteBucket(outputDirPath)
+	readWriteBucket, err := storageos.NewReadWriteBucket(normalpath.Normalize(outputDirPath))
 	if err != nil {
 		return err
 	}
