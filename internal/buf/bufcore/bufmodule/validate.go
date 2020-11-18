@@ -27,16 +27,16 @@ import (
 
 const (
 	// 32MB
-	maxModuleTotalContentLength    = 32 << 20
-	ownerNameMinLength             = 3
-	ownerNameMaxLength             = 64
-	protoFileMaxCount              = 16384
-	remoteMinLength                = 1
-	remoteMaxLength                = 256
-	repositoryNameMinLength        = 2
-	repositoryNameMaxLength        = 64
-	repositoryVersionNameMinLength = 2
-	repositoryVersionNameMaxLength = 32
+	maxModuleTotalContentLength  = 32 << 20
+	ownerNameMinLength           = 3
+	ownerNameMaxLength           = 64
+	protoFileMaxCount            = 16384
+	remoteMinLength              = 1
+	remoteMaxLength              = 256
+	repositoryNameMinLength      = 2
+	repositoryNameMaxLength      = 64
+	repositoryTrackNameMinLength = 2
+	repositoryTrackNameMaxLength = 32
 )
 
 // ValidateDigest verifies the given digest's prefix,
@@ -108,7 +108,7 @@ func ValidateProtoModuleName(protoModuleName *modulev1.ModuleName) error {
 	if err := ValidateRepositoryName(protoModuleName.Repository); err != nil {
 		return err
 	}
-	if err := ValidateRepositoryVersionName(protoModuleName.Version); err != nil {
+	if err := ValidateRepositoryTrackName(protoModuleName.Track); err != nil {
 		return err
 	}
 	if protoModuleName.Digest != "" {
@@ -151,17 +151,17 @@ func ValidateRepositoryName(repositoryName string) error {
 	return nil
 }
 
-// ValidateRepositoryVersionName verifies the given repository version name is well-formed.
-func ValidateRepositoryVersionName(versionName string) error {
-	if versionName == "" {
-		return errors.New("repository version name is required")
+// ValidateRepositoryTrackName verifies the given repository track name is well-formed.
+func ValidateRepositoryTrackName(trackName string) error {
+	if trackName == "" {
+		return errors.New("repository track name is required")
 	}
-	if len(versionName) < repositoryVersionNameMinLength || len(versionName) > repositoryVersionNameMaxLength {
-		return fmt.Errorf("repository version name %q must be at least %d and at most %d characters", versionName, repositoryVersionNameMinLength, repositoryVersionNameMaxLength)
+	if len(trackName) < repositoryTrackNameMinLength || len(trackName) > repositoryTrackNameMaxLength {
+		return fmt.Errorf("repository track name %q must be at least %d and at most %d characters", trackName, repositoryTrackNameMinLength, repositoryTrackNameMaxLength)
 	}
-	for _, char := range versionName {
+	for _, char := range trackName {
 		if !stringutil.IsLowerAlphanumeric(char) && char != '-' && char != '.' {
-			return fmt.Errorf("repository version name %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", versionName)
+			return fmt.Errorf("repository track name %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", trackName)
 		}
 	}
 	return nil

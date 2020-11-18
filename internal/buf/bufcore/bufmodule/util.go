@@ -76,10 +76,10 @@ func resolvedModuleNameCompareTo(a ResolvedModuleName, b ResolvedModuleName) int
 	if a.Repository() > b.Repository() {
 		return 1
 	}
-	if a.Version() < b.Version() {
+	if a.Track() < b.Track() {
 		return -1
 	}
-	if a.Version() > b.Version() {
+	if a.Track() > b.Track() {
 		return 1
 	}
 	if a.Digest() < b.Digest() {
