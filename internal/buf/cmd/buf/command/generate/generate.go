@@ -118,6 +118,10 @@ $ buf generate --path proto/foo/foo.proto --path proto/foo/bar.proto
 # Only generate for the files in the directory proto/foo on your GitHub repository
 $ buf generate --template buf.gen.yaml https://github.com/foo/bar.git --path proto/foo
 
+Note that all paths must be contained within a root. For example, if you have the single
+root "proto", you cannot specify "--path proto", however "--path proto/foo" is allowed
+as "proto/foo" is contained within "proto".
+
 Plugins are invoked in the order they are specified in the template, but each plugin
 has a per-directory parallel invocation, with results from each invocation combined
 before writing the result. This is equivalent behavior to "buf protoc --by_dir".
