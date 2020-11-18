@@ -50,9 +50,8 @@ message ModuleName {
   string owner = 2;
   // The repository name
   string repository = 3;
-  // The repository version
-  // Required
-  string version = 4;
+  // The repository track
+  string track = 4;
   // The repository commit digest
   string digest = 5;
 }

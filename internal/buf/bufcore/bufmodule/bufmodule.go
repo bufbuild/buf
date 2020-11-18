@@ -70,7 +70,7 @@ type ModuleName interface {
 	// Required.
 	Repository() string
 	// Required.
-	Version() string
+	Track() string
 	// Optional.
 	Digest() string
 
@@ -82,10 +82,10 @@ func NewModuleName(
 	remote string,
 	owner string,
 	repository string,
-	version string,
+	track string,
 	digest string,
 ) (ModuleName, error) {
-	return newModuleName(remote, owner, repository, version, digest)
+	return newModuleName(remote, owner, repository, track, digest)
 }
 
 // NewModuleNameForProto returns a new ModuleName for the given proto ModuleName.
@@ -140,10 +140,10 @@ func NewResolvedModuleName(
 	remote string,
 	owner string,
 	repository string,
-	version string,
+	track string,
 	digest string,
 ) (ResolvedModuleName, error) {
-	return newResolvedModuleName(remote, owner, repository, version, digest)
+	return newResolvedModuleName(remote, owner, repository, track, digest)
 }
 
 // NewResolvedModuleNamesForProtos maps the Protobuf equivalent into the internal representation.
@@ -213,7 +213,7 @@ type Module interface {
 	GetFile(ctx context.Context, path string) (ModuleFile, error)
 	// Dependencies gets the dependency ModuleNames.
 	//
-	// The returned ModuleNames are sorted by remote, owner, repository, version, and then digest.
+	// The returned ModuleNames are sorted by remote, owner, repository, track, and then digest.
 	Dependencies() []ResolvedModuleName
 
 	getSourceReadBucket() storage.ReadBucket
@@ -320,11 +320,11 @@ func NewModuleFileSet(
 
 // ModuleNameForString returns a new ModuleName for the given string.
 //
-// This parses the path in the form remote/owner/repository/version[:digest]
+// This parses the path in the form remote/owner/repository/track[:digest]
 func ModuleNameForString(path string) (ModuleName, error) {
 	slashSplit := strings.Split(path, "/")
 	if len(slashSplit) != 4 {
-		return nil, newInvalidModuleNameStringError(path, "module name is not in the form remote/owner/repository/version")
+		return nil, newInvalidModuleNameStringError(path, "module name is not in the form remote/owner/repository/track")
 	}
 	remote := strings.TrimSpace(slashSplit[0])
 	if remote == "" {
@@ -338,33 +338,33 @@ func ModuleNameForString(path string) (ModuleName, error) {
 	if repository == "" {
 		return nil, newInvalidModuleNameStringError(path, "repository name is empty")
 	}
-	versionSplit := strings.Split(slashSplit[3], ":")
-	var version string
+	trackSplit := strings.Split(slashSplit[3], ":")
+	var track string
 	var digest string
-	switch len(versionSplit) {
+	switch len(trackSplit) {
 	case 1:
-		version = strings.TrimSpace(versionSplit[0])
+		track = strings.TrimSpace(trackSplit[0])
 	case 2:
-		version = strings.TrimSpace(versionSplit[0])
-		digest = strings.TrimSpace(versionSplit[1])
+		track = strings.TrimSpace(trackSplit[0])
+		digest = strings.TrimSpace(trackSplit[1])
 	default:
-		return nil, newInvalidModuleNameStringError(path, "invalid version with digest")
+		return nil, newInvalidModuleNameStringError(path, "invalid track with digest")
 	}
-	if version == "" {
-		return nil, newInvalidModuleNameStringError(path, "version name is empty")
+	if track == "" {
+		return nil, newInvalidModuleNameStringError(path, "track name is empty")
 	}
 	return NewModuleName(
 		remote,
 		owner,
 		repository,
-		version,
+		track,
 		digest,
 	)
 }
 
 // ResolvedModuleNameForString returns a new ResolvedModuleName for the given string.
 //
-// This parses the path in the form remote/owner/repository/version:digest
+// This parses the path in the form remote/owner/repository/track:digest
 func ResolvedModuleNameForString(path string) (ResolvedModuleName, error) {
 	moduleName, err := ModuleNameForString(path)
 	if err != nil {
@@ -374,7 +374,7 @@ func ResolvedModuleNameForString(path string) (ResolvedModuleName, error) {
 		moduleName.Remote(),
 		moduleName.Owner(),
 		moduleName.Repository(),
-		moduleName.Version(),
+		moduleName.Track(),
 		moduleName.Digest(),
 	)
 }
@@ -406,7 +406,7 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1.Module, 
 			Remote:     dependency.Remote(),
 			Owner:      dependency.Owner(),
 			Repository: dependency.Repository(),
-			Version:    dependency.Version(),
+			Track:      dependency.Track(),
 			Digest:     dependency.Digest(),
 		}
 		protoModuleNames[i] = protoModuleName
@@ -426,7 +426,7 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1.Module, 
 // The digest on ModuleName must be unset.
 // We might want an UnresolvedModuleName, need to see how this plays out.
 // To create the module digest (SHA256):
-// 	1. Add the string representation of the module version
+// 	1. Add the string representation of the module track
 // 	2. Add the dependency hashes (sorted lexicographically by the string representation)
 // 	3. For every file in the module (sorted lexicographically by path):
 // 		1. Add the file path
@@ -434,17 +434,17 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1.Module, 
 //	4. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
 func ModuleDigestB1(
 	ctx context.Context,
-	moduleVersion string,
+	moduleTrack string,
 	module Module,
 ) (string, error) {
 	hash := sha256.New()
-	// Version must be part of the digest, since we require digests
+	// Track must be part of the digest, since we require digests
 	// to be unique per-repository.
 	//
 	// We do not include the remote, owner, or repository here
 	// as we want the ability to change the repository name or
 	// change the repository owner without affecting the digest.
-	if _, err := hash.Write([]byte(moduleVersion)); err != nil {
+	if _, err := hash.Write([]byte(moduleTrack)); err != nil {
 		return "", err
 	}
 	for _, dependency := range module.Dependencies() {
@@ -466,7 +466,7 @@ func ModuleDigestB1(
 		if _, err := hash.Write([]byte(dependency.Repository())); err != nil {
 			return "", err
 		}
-		if _, err := hash.Write([]byte(dependency.Version())); err != nil {
+		if _, err := hash.Write([]byte(dependency.Track())); err != nil {
 			return "", err
 		}
 		if _, err := hash.Write([]byte(dependency.Digest())); err != nil {
@@ -597,7 +597,7 @@ func ResolvedModuleNameForModule(ctx context.Context, moduleName ModuleName, mod
 	if moduleName.Digest() != "" {
 		return nil, fmt.Errorf("module name to ResolvedModuleNameForModule already has a digest: %s", moduleName.String())
 	}
-	digest, err := ModuleDigestB1(ctx, moduleName.Version(), module)
+	digest, err := ModuleDigestB1(ctx, moduleName.Track(), module)
 	if err != nil {
 		return nil, err
 	}
@@ -605,7 +605,7 @@ func ResolvedModuleNameForModule(ctx context.Context, moduleName ModuleName, mod
 		moduleName.Remote(),
 		moduleName.Owner(),
 		moduleName.Repository(),
-		moduleName.Version(),
+		moduleName.Track(),
 		digest,
 	)
 }
@@ -621,7 +621,7 @@ func UnresolvedModuleName(moduleName ModuleName) (ModuleName, error) {
 		moduleName.Remote(),
 		moduleName.Owner(),
 		moduleName.Repository(),
-		moduleName.Version(),
+		moduleName.Track(),
 		"",
 	)
 }
@@ -636,7 +636,7 @@ func ValidateModuleDigest(ctx context.Context, moduleName ModuleName, module Mod
 	if err != nil {
 		return err
 	}
-	digest, err := ModuleDigestB1(ctx, unresolvedModuleName.Version(), module)
+	digest, err := ModuleDigestB1(ctx, unresolvedModuleName.Track(), module)
 	if err != nil {
 		return err
 	}
@@ -657,7 +657,7 @@ func ModuleNameEqual(a ModuleName, b ModuleName) bool {
 	return a.Remote() == b.Remote() &&
 		a.Owner() == b.Owner() &&
 		a.Repository() == b.Repository() &&
-		a.Version() == b.Version() &&
+		a.Track() == b.Track() &&
 		a.Digest() == b.Digest()
 }
 
