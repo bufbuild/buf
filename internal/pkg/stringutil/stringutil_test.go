@@ -208,6 +208,23 @@ func TestSliceToUniqueSortedSliceFilterEmptyStrings(t *testing.T) {
 	assert.Equal(t, []string{}, SliceToUniqueSortedSliceFilterEmptyStrings([]string{""}))
 }
 
+func TestSliceElementsContained(t *testing.T) {
+	t.Parallel()
+	assert.True(t, SliceElementsContained(nil, nil))
+	assert.True(t, SliceElementsContained([]string{}, []string{}))
+	assert.True(t, SliceElementsContained(nil, []string{}))
+	assert.True(t, SliceElementsContained([]string{}, nil))
+	assert.True(t, SliceElementsContained([]string{"one"}, []string{"one"}))
+	assert.True(t, SliceElementsContained([]string{"one", "two"}, []string{"one"}))
+	assert.True(t, SliceElementsContained([]string{"one", "two"}, []string{"two"}))
+	assert.True(t, SliceElementsContained([]string{"one", "two"}, []string{"one", "two"}))
+	assert.True(t, SliceElementsContained([]string{"one", "two"}, []string{"two", "one"}))
+	assert.False(t, SliceElementsContained([]string{"one", "two"}, []string{"three"}))
+	assert.False(t, SliceElementsContained([]string{}, []string{"three"}))
+	assert.False(t, SliceElementsContained([]string{"one"}, []string{"one", "two"}))
+	assert.False(t, SliceElementsContained([]string{"two"}, []string{"one", "two"}))
+}
+
 func TestSliceToChunks(t *testing.T) {
 	t.Parallel()
 	testSliceToChunks(

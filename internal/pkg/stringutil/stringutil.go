@@ -134,6 +134,19 @@ func SliceElementsEqual(one []string, two []string) bool {
 	return true
 }
 
+// SliceElementsContained returns true if superset contains subset.
+//
+// Nil and empty slices are treated as equals.
+func SliceElementsContained(superset []string, subset []string) bool {
+	m := SliceToMap(superset)
+	for _, elem := range subset {
+		if _, ok := m[elem]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
 // JoinSliceQuoted joins the slice with quotes.
 func JoinSliceQuoted(s []string, sep string) string {
 	if len(s) == 0 {

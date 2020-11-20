@@ -46,3 +46,11 @@ enum Eleven {
   ELEVEN_ONE = 1;
   ELEVEN_THREE = 1;
 }
+
+enum Twelve {
+  option allow_alias = true;
+  TWELVE_UNSPECIFIED = 0;
+  TWELVE_ONE = 1;
+  TWELVE_TWO = 1;
+  TWELVE_THREE = 1;
+}
