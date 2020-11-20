@@ -15,9 +15,6 @@
 package buflintcheck
 
 import (
-	"strconv"
-	"strings"
-
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/pkg/protosource"
@@ -41,76 +38,6 @@ func fieldToUpperSnakeCase(s string) string {
 	// We allow both effectively by not passing the option
 	//return stringutil.ToUpperSnakeCase(s, stringutil.SnakeCaseWithNewWordOnDigits())
 	return stringutil.ToUpperSnakeCase(s)
-}
-
-// https://cloud.google.com/apis/design/versioning
-//
-// All Proto Package values pass.
-//
-// v1test can be v1test.*
-// v1p1alpha1 is also valid in addition to v1p1beta1
-func packageHasVersionSuffix(pkg string) bool {
-	if pkg == "" {
-		return false
-	}
-	parts := strings.Split(pkg, ".")
-	if len(parts) < 2 {
-		return false
-	}
-	lastPart := parts[len(parts)-1]
-	if len(lastPart) < 2 {
-		return false
-	}
-	if lastPart[0] != 'v' {
-		return false
-	}
-	version := lastPart[1:]
-	if strings.Contains(version, "test") {
-		split := strings.SplitN(version, "test", 2)
-		if len(split) != 2 {
-			return false
-		}
-		return stringIsPositiveNumber(split[0])
-	}
-	if strings.Contains(version, "alpha") {
-		return packageVersionIsValidAlphaOrBeta(version, "alpha")
-	}
-	if strings.Contains(version, "beta") {
-		return packageVersionIsValidAlphaOrBeta(version, "beta")
-	}
-	return stringIsPositiveNumber(version)
-}
-
-func packageVersionIsValidAlphaOrBeta(version string, name string) bool {
-	split := strings.SplitN(version, name, 2)
-	if len(split) != 2 {
-		return false
-	}
-	if strings.Contains(split[0], "p") {
-		patchSplit := strings.SplitN(split[0], "p", 2)
-		if len(patchSplit) != 2 {
-			return false
-		}
-		if !stringIsPositiveNumber(patchSplit[0]) || !stringIsPositiveNumber(patchSplit[1]) {
-			return false
-		}
-	} else {
-		if !stringIsPositiveNumber(split[0]) {
-			return false
-		}
-	}
-	return stringIsPositiveNumber(split[1])
-}
-
-func stringIsPositiveNumber(s string) bool {
-	if s == "" {
-		return false
-	}
-	value, err := strconv.ParseUint(s, 10, 64)
-	if err != nil {
-		return false
-	}
-	return value > 0
 }
 
 func newFilesCheckFunc(

@@ -62,9 +62,10 @@ type Config struct {
 	//
 	// Checkers will be sorted by first categories, then id when Configs are
 	// created from this package, i.e. created wth ConfigBuilder.NewConfig.
-	Checkers            []Checker
-	IgnoreIDToRootPaths map[string]map[string]struct{}
-	IgnoreRootPaths     map[string]struct{}
+	Checkers               []Checker
+	IgnoreIDToRootPaths    map[string]map[string]struct{}
+	IgnoreRootPaths        map[string]struct{}
+	IgnoreUnstablePackages bool
 }
 
 // GetCheckers returns the checkers.
@@ -81,6 +82,7 @@ func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
 		Except:                        externalConfig.Except,
 		IgnoreRootPaths:               externalConfig.Ignore,
 		IgnoreIDOrCategoryToRootPaths: externalConfig.IgnoreOnly,
+		IgnoreUnstablePackages:        externalConfig.IgnoreUnstablePackages,
 	}.NewConfig(
 		bufbreakingv1beta1.VersionSpec,
 	)
@@ -112,22 +114,25 @@ type ExternalConfigV1Beta1 struct {
 	// IgnoreRootPaths
 	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
 	// IgnoreIDOrCategoryToRootPaths
-	IgnoreOnly map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
+	IgnoreOnly             map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
+	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
 }
 
 func internalConfigToConfig(internalConfig *internal.Config) *Config {
 	return &Config{
-		Checkers:            internalCheckersToCheckers(internalConfig.Checkers),
-		IgnoreIDToRootPaths: internalConfig.IgnoreIDToRootPaths,
-		IgnoreRootPaths:     internalConfig.IgnoreRootPaths,
+		Checkers:               internalCheckersToCheckers(internalConfig.Checkers),
+		IgnoreIDToRootPaths:    internalConfig.IgnoreIDToRootPaths,
+		IgnoreRootPaths:        internalConfig.IgnoreRootPaths,
+		IgnoreUnstablePackages: internalConfig.IgnoreUnstablePackages,
 	}
 }
 
 func configToInternalConfig(config *Config) *internal.Config {
 	return &internal.Config{
-		Checkers:            checkersToInternalCheckers(config.Checkers),
-		IgnoreIDToRootPaths: config.IgnoreIDToRootPaths,
-		IgnoreRootPaths:     config.IgnoreRootPaths,
+		Checkers:               checkersToInternalCheckers(config.Checkers),
+		IgnoreIDToRootPaths:    config.IgnoreIDToRootPaths,
+		IgnoreRootPaths:        config.IgnoreRootPaths,
+		IgnoreUnstablePackages: config.IgnoreUnstablePackages,
 	}
 }
 

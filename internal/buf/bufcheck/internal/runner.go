@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/protosource"
+	"github.com/bufbuild/buf/internal/pkg/protoversion"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
@@ -84,13 +85,21 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 }
 
 func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
-	if r.ignorePrefix == "" || !config.AllowCommentIgnores {
-		return func(id string, descriptor protosource.Descriptor, location protosource.Location) bool {
-			return idIsIgnored(id, descriptor, config)
-		}
-	}
 	return func(id string, descriptor protosource.Descriptor, location protosource.Location) bool {
-		return locationIsIgnored(id, r.ignorePrefix, location, config) || idIsIgnored(id, descriptor, config)
+		if idIsIgnored(id, descriptor, config) {
+			return true
+		}
+		if r.ignorePrefix != "" && config.AllowCommentIgnores && locationIsIgnored(id, r.ignorePrefix, location, config) {
+			return true
+		}
+		if config.IgnoreUnstablePackages {
+			packageVersion, ok := protoversion.NewPackageVersionForPackage(descriptor.File().Package())
+			if !ok {
+				return false
+			}
+			return packageVersion.StabilityLevel() != protoversion.StabilityLevelStable
+		}
+		return false
 	}
 }
 
