@@ -1,0 +1,4 @@
+version: v1beta1
+breaking:
+  use:
+    - ENUM_NO_DELETE

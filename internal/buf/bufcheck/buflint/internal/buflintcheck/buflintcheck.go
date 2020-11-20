@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/protosource"
+	"github.com/bufbuild/buf/internal/pkg/protoversion"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
@@ -449,7 +450,7 @@ func checkPackageVersionSuffix(add addFunc, file protosource.File) error {
 	if pkg == "" {
 		return nil
 	}
-	if !packageHasVersionSuffix(pkg) {
+	if _, ok := protoversion.NewPackageVersionForPackage(pkg); !ok {
 		add(file, file.PackageLocation(), `Package name %q should be suffixed with a correctly formed version, such as %q.`, pkg, pkg+".v1")
 	}
 	return nil

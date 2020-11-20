@@ -530,6 +530,41 @@ func TestRunBreakingServiceNoDelete(t *testing.T) {
 	)
 }
 
+func TestRunBreakingIgnoreUnstablePackagesTrue(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_ignore_unstable_packages_true",
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 7, 1, 16, 2, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 12, 4, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "a/v1/1.proto", "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "a/v1/1.proto", 9, 1, 18, 2, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "a/v1/1.proto", 10, 3, 14, 4, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "b/1.proto", "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "b/1.proto", 9, 1, 18, 2, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "b/1.proto", 10, 3, 14, 4, "ENUM_NO_DELETE"),
+	)
+}
+
+func TestRunBreakingIgnoreUnstablePackagesFalse(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_ignore_unstable_packages_false",
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 7, 1, 16, 2, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 8, 3, 12, 4, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "a/v1/1.proto", "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "a/v1/1.proto", 9, 1, 18, 2, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "a/v1/1.proto", 10, 3, 14, 4, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "a/v1beta1/1.proto", "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "a/v1beta1/1.proto", 9, 1, 18, 2, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "a/v1beta1/1.proto", 10, 3, 14, 4, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "b/1.proto", "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "b/1.proto", 9, 1, 18, 2, "ENUM_NO_DELETE"),
+		bufanalysistesting.NewFileAnnotation(t, "b/1.proto", 10, 3, 14, 4, "ENUM_NO_DELETE"),
+	)
+}
+
 func testBreaking(
 	t *testing.T,
 	relDirPath string,
