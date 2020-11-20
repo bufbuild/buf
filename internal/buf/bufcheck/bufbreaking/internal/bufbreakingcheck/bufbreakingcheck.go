@@ -128,7 +128,11 @@ var CheckEnumValueSameName = newEnumValuePairCheckFunc(checkEnumValueSameName)
 func checkEnumValueSameName(add addFunc, previousNameToEnumValue map[string]protosource.EnumValue, nameToEnumValue map[string]protosource.EnumValue) error {
 	previousNames := getSortedEnumValueNames(previousNameToEnumValue)
 	names := getSortedEnumValueNames(nameToEnumValue)
-	if !stringutil.SliceElementsEqual(previousNames, names) {
+	// all current names for this number need to be in the previous set
+	// ie if you now have FOO=2, BAR=2, you need to have had FOO=2, BAR=2 previously
+	// FOO=2, BAR=2, BAZ=2 now would pass
+	// FOO=2, BAR=2, BAZ=2 previously would fail
+	if !stringutil.SliceElementsContained(names, previousNames) {
 		previousNamesString := stringutil.JoinSliceQuoted(previousNames, ", ")
 		namesString := stringutil.JoinSliceQuoted(names, ", ")
 		nameSuffix := ""
