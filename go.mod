@@ -19,9 +19,9 @@ require (
 	go.opencensus.io v0.22.5
 	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.16.0
-	golang.org/x/sys v0.0.0-20201118182958-a01c418693c7 // indirect
+	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	google.golang.org/genproto v0.0.0-20201117123952-62d171c70ae1 // indirect
+	google.golang.org/genproto v0.0.0-20201119123407-9b1e624d6bc4 // indirect
 	google.golang.org/protobuf v1.25.1-0.20201020201750-d3470999428b
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
