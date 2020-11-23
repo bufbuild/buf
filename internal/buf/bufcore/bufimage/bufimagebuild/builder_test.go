@@ -223,6 +223,11 @@ func TestOptionPanic(t *testing.T) {
 	})
 }
 
+func TestCompareSemicolons(t *testing.T) {
+	t.Parallel()
+	testCompare(t, "semicolons")
+}
+
 func testCompare(t *testing.T, relDirPath string) {
 	t.Helper()
 	dirPath := filepath.Join("testdata", relDirPath)

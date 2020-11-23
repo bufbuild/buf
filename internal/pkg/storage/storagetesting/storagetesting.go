@@ -25,6 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
@@ -131,14 +132,15 @@ type GetExternalPathFunc func(*testing.T, string, string) string
 func RunTestSuite(
 	t *testing.T,
 	storagetestingDirPath string,
-	newReadBucket func(*testing.T, string) (storage.ReadBucket, GetExternalPathFunc),
-	newWriteBucket func(*testing.T) storage.WriteBucket,
+	newReadBucket func(*testing.T, string, ...storageos.ReadWriteBucketOption) (storage.ReadBucket, GetExternalPathFunc),
+	newWriteBucket func(*testing.T, ...storageos.ReadWriteBucketOption) storage.WriteBucket,
 	writeBucketToReadBucket func(*testing.T, storage.WriteBucket) storage.ReadBucket,
 ) {
 	t.Helper()
 	oneDirPath := filepath.Join(storagetestingDirPath, "testdata", "one")
 	twoDirPath := filepath.Join(storagetestingDirPath, "testdata", "two")
 	threeDirPath := filepath.Join(storagetestingDirPath, "testdata", "three")
+	symlinkSuccessDirPath := filepath.Join(storagetestingDirPath, "..", "..", "filepathextended", "testdata", "symlink_success")
 
 	for _, prefix := range []string{
 		"",
@@ -1097,5 +1099,39 @@ diff -u %s %s
 			return nil
 		})
 		require.NoError(t, err)
+	})
+
+	t.Run("symlink_success_no_symlinks", func(t *testing.T) {
+		t.Parallel()
+		readBucket, _ := newReadBucket(t, symlinkSuccessDirPath)
+		AssertPathToContent(
+			t,
+			readBucket,
+			"",
+			map[string]string{
+				"file.proto": testProtoContent,
+			},
+		)
+	})
+	t.Run("symlink_success_follow_symlinks", func(t *testing.T) {
+		t.Parallel()
+		readBucket, _ := newReadBucket(t, symlinkSuccessDirPath, storageos.ReadWriteBucketWithFollowSymlinks())
+		AssertPathToContent(
+			t,
+			readBucket,
+			"",
+			map[string]string{
+				"1.proto":      testProtoContent,
+				"a/b/1.proto":  testProtoContent,
+				"a/b/2.proto":  testProtoContent,
+				"a/b/2.txt":    testTxtContent,
+				"a/bar.yaml":   testYAMLContent,
+				"a/file.proto": testProtoContent,
+				"ab/1.proto":   testProtoContent,
+				"ab/2.proto":   testProtoContent,
+				"ab/2.txt":     testTxtContent,
+				"file.proto":   testProtoContent,
+			},
+		)
 	})
 }

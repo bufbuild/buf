@@ -39,7 +39,7 @@ func TestFile(t *testing.T) {
 
 func TestDir(t *testing.T) {
 	t.Parallel()
-	tmpDir, err := NewDir("")
+	tmpDir, err := NewDir()
 	require.NoError(t, err)
 	assert.True(t, filepath.IsAbs(tmpDir.AbsPath()))
 	fileInfo, err := os.Stat(tmpDir.AbsPath())
