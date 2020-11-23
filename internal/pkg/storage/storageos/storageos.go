@@ -29,6 +29,16 @@ import (
 // can be absolute or jump context.
 //
 // Not thread-safe.
-func NewReadWriteBucket(rootPath string) (storage.ReadWriteBucket, error) {
-	return newBucket(rootPath)
+func NewReadWriteBucket(rootPath string, options ...ReadWriteBucketOption) (storage.ReadWriteBucket, error) {
+	return newBucket(rootPath, options...)
+}
+
+// ReadWriteBucketOption is an option for a new ReadWriteBucket.
+type ReadWriteBucketOption func(*bucket)
+
+// ReadWriteBucketWithFollowSymlinks returns a ReadWriteBucketOption that results in following symlinks.
+func ReadWriteBucketWithFollowSymlinks() ReadWriteBucketOption {
+	return func(bucket *bucket) {
+		bucket.followSymlinks = true
+	}
 }

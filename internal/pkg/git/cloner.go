@@ -79,7 +79,7 @@ func (c *cloner) CloneToBucket(
 		}
 	}
 
-	tmpDir, err := tmp.NewDir("")
+	tmpDir, err := tmp.NewDir()
 	if err != nil {
 		return err
 	}

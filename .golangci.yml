@@ -34,6 +34,7 @@ linters:
     - gomodguard
     - goprintffuncname
     - gosimple
+    - gosec
     - govet
     - ineffassign
     - misspell
@@ -55,3 +56,21 @@ issues:
     - linters:
         - stylecheck
       text: "ST1005:"
+    - linters:
+        - gosec
+      # G101 checks for hardcoded credentials, and the variables named "*Password*
+      # trip this off.
+      path: internal/buf/bufcli/bufcli.go
+      text: "G101:"
+    - linters:
+        - gosec
+      # G204 checks that exec.Command is not called with non-constants.
+      # We call exec.Command for protoc and plugin proxying, and control the arguments completely.
+      path: internal/pkg/app/appproto/appprotoexec/binary_handler.go
+      text: "G204:"
+    - linters:
+        - gosec
+      # G204 checks that exec.Command is not called with non-constants.
+      # We call exec.Command for protoc and plugin proxying, and control the arguments completely.
+      path: internal/pkg/app/appproto/appprotoexec/protoc_proxy_handler.go
+      text: "G204:"

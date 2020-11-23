@@ -81,7 +81,7 @@ func (h *protocProxyHandler) Handle(
 	if err != nil {
 		return err
 	}
-	tmpDir, err := tmp.NewDir("")
+	tmpDir, err := tmp.NewDir()
 	if err != nil {
 		return err
 	}
