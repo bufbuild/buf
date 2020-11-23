@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package tmp provides temporary files and directories.
+//
+// Usage of this package requires eng approval - ask before using.
 package tmp
 
 import (
@@ -34,9 +37,12 @@ type File interface {
 	AbsPath() string
 }
 
-// NewFileWithData returns a new File.
+// NewFileWithData returns a new temporary file with the given data.
 //
+// It must be closed when done.
 // This file will be deleted on interrupt signals.
+//
+// Usage of this function requires eng approval - ask before using.
 func NewFileWithData(data []byte) (File, error) {
 	id, err := uuid.New()
 	if err != nil {
@@ -76,16 +82,22 @@ type Dir interface {
 	AbsPath() string
 }
 
-// NewDir returns a new Dir.
+// NewDir returns a new temporary directory.
 //
-// baseDirPath can be empty, in which case os.TempDir() is used.
-// This directory will be deleted on interrupt signals.
-func NewDir(baseDirPath string) (Dir, error) {
+// It must be closed when done.
+// This file will be deleted on interrupt signals.
+//
+// Usage of this function requires eng approval - ask before using.
+func NewDir(options ...DirOption) (Dir, error) {
+	dirOptions := newDirOptions()
+	for _, option := range options {
+		option(dirOptions)
+	}
 	id, err := uuid.New()
 	if err != nil {
 		return nil, err
 	}
-	path, err := ioutil.TempDir("", id.String())
+	path, err := ioutil.TempDir(dirOptions.basePath, id.String())
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +112,19 @@ func NewDir(baseDirPath string) (Dir, error) {
 		_ = os.RemoveAll(absPath)
 	}()
 	return newDir(absPath, closer), nil
+}
+
+// DirOption is an option for NewDir.
+type DirOption func(*dirOptions)
+
+// DirWithBasePath returns a new DirOption that sets the base path to create
+// the temporary directory in.
+//
+// The default is to use os.TempDir().
+func DirWithBasePath(basePath string) DirOption {
+	return func(dirOptions *dirOptions) {
+		dirOptions.basePath = basePath
+	}
 }
 
 type file struct {
@@ -144,4 +169,12 @@ func (d *dir) Close() error {
 	err := os.RemoveAll(d.absPath)
 	d.closer()
 	return err
+}
+
+type dirOptions struct {
+	basePath string
+}
+
+func newDirOptions() *dirOptions {
+	return &dirOptions{}
 }

@@ -153,7 +153,7 @@ func testPutMachineError(
 	envContainer := app.NewEnvContainer(map[string]string{"NETRC": filePath})
 	_, err := os.Create(filePath)
 	require.NoError(t, err)
-	err = ioutil.WriteFile(filePath, []byte("invalid netrc"), 0644)
+	err = ioutil.WriteFile(filePath, []byte("invalid netrc"), 0600)
 	require.NoError(t, err)
 	err = PutMachine(envContainer, NewMachine(name, login, password, ""))
 	require.Error(t, err)
