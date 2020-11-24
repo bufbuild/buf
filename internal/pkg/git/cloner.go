@@ -33,14 +33,20 @@ import (
 )
 
 type cloner struct {
-	logger  *zap.Logger
-	options ClonerOptions
+	logger            *zap.Logger
+	storageosProvider storageos.Provider
+	options           ClonerOptions
 }
 
-func newCloner(logger *zap.Logger, options ClonerOptions) *cloner {
+func newCloner(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	options ClonerOptions,
+) *cloner {
 	return &cloner{
-		logger:  logger,
-		options: options,
+		logger:            logger,
+		storageosProvider: storageosProvider,
+		options:           options,
 	}
 }
 
@@ -147,7 +153,8 @@ func (c *cloner) CloneToBucket(
 		}
 	}
 
-	tmpReadWriteBucket, err := storageos.NewReadWriteBucket(tmpDir.AbsPath())
+	// we do NOT want to read in symlinks
+	tmpReadWriteBucket, err := c.storageosProvider.NewReadWriteBucket(tmpDir.AbsPath())
 	if err != nil {
 		return err
 	}

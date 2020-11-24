@@ -25,14 +25,17 @@ import (
 )
 
 type moduleIncludeBuilder struct {
-	logger *zap.Logger
+	logger            *zap.Logger
+	storageosProvider storageos.Provider
 }
 
 func newModuleIncludeBuilder(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 ) *moduleIncludeBuilder {
 	return &moduleIncludeBuilder{
-		logger: logger,
+		logger:            logger,
+		storageosProvider: storageosProvider,
 	}
 }
 
@@ -82,7 +85,10 @@ func (b *moduleIncludeBuilder) buildForIncludes(
 	}
 	var rootBuckets []storage.ReadBucket
 	for _, includeDirPath := range includeDirPaths {
-		rootBucket, err := storageos.NewReadWriteBucket(includeDirPath)
+		rootBucket, err := b.storageosProvider.NewReadWriteBucket(
+			includeDirPath,
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
 		if err != nil {
 			return nil, err
 		}

@@ -117,6 +117,7 @@ func WriteConfig(container Container, value interface{}) error {
 	}
 	configFilePath := filepath.Join(container.ConfigDirPath(), configFileName)
 	fileMode := os.FileMode(0644)
+	// OK to use os.Stat instead of os.Lstat here
 	if fileInfo, err := os.Stat(configFilePath); err == nil {
 		fileMode = fileInfo.Mode()
 	}

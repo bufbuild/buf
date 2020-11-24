@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
 
@@ -34,6 +35,7 @@ type reader struct {
 
 func newReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
@@ -43,6 +45,7 @@ func newReader(
 	return &reader{
 		internalReader: internal.NewReader(
 			logger,
+			storageosProvider,
 			internal.WithReaderHTTP(
 				httpClient,
 				httpAuthenticator,
@@ -62,6 +65,7 @@ func newReader(
 
 func newImageReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
@@ -69,6 +73,7 @@ func newImageReader(
 	return &reader{
 		internalReader: internal.NewReader(
 			logger,
+			storageosProvider,
 			internal.WithReaderHTTP(
 				httpClient,
 				httpAuthenticator,
@@ -81,6 +86,7 @@ func newImageReader(
 
 func newSourceReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 	httpAuthenticator httpauth.Authenticator,
 	gitCloner git.Cloner,
@@ -88,6 +94,7 @@ func newSourceReader(
 	return &reader{
 		internalReader: internal.NewReader(
 			logger,
+			storageosProvider,
 			internal.WithReaderHTTP(
 				httpClient,
 				httpAuthenticator,
@@ -103,12 +110,14 @@ func newSourceReader(
 
 func newModuleFetcher(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) *reader {
 	return &reader{
 		internalReader: internal.NewReader(
 			logger,
+			storageosProvider,
 			internal.WithReaderModule(
 				moduleResolver,
 				moduleReader,

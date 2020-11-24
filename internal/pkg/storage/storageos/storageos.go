@@ -19,26 +19,47 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
 
-// NewReadWriteBucket returns a new OS bucket.
+// Provider provides new ReadWriteBuckets.
+type Provider interface {
+	// NewReadWriteBucket returns a new OS bucket.
+	//
+	// Only regular files are handled, that is Exists should only be called
+	// for regular files, Get and Put only work for regular files, Put
+	// automatically calls Mkdir, and Walk only calls f on regular files.
+	//
+	// The root path is expected to be normalized, however the root path
+	// can be absolute or jump context.
+	//
+	// Not thread-safe.
+	NewReadWriteBucket(rootPath string, options ...ReadWriteBucketOption) (storage.ReadWriteBucket, error)
+}
+
+// NewProvider returns a new Provider.
+func NewProvider(options ...ProviderOption) Provider {
+	return newProvider(options...)
+}
+
+// ProviderOption is an option for a new Provider.
+type ProviderOption func(*provider)
+
+// ProviderWithSymlinks returns a ProviderOption that results in symlink support.
 //
-// Only regular files are handled, that is Exists should only be called
-// for regular files, Get and Put only work for regular files, Put
-// automatically calls Mkdir, and Walk only calls f on regular files.
-//
-// The root path is expected to be normalized, however the root path
-// can be absolute or jump context.
-//
-// Not thread-safe.
-func NewReadWriteBucket(rootPath string, options ...ReadWriteBucketOption) (storage.ReadWriteBucket, error) {
-	return newBucket(rootPath, options...)
+// Note that ReadWriteBucketWithSymlinksEnabled still needs to be passed for a given
+// ReadWriteBucket to have symlinks followed.
+func ProviderWithSymlinks() ProviderOption {
+	return func(provider *provider) {
+		provider.symlinks = true
+	}
 }
 
 // ReadWriteBucketOption is an option for a new ReadWriteBucket.
-type ReadWriteBucketOption func(*bucket)
+type ReadWriteBucketOption func(*readWriteBucketOptions)
 
-// ReadWriteBucketWithFollowSymlinks returns a ReadWriteBucketOption that results in following symlinks.
-func ReadWriteBucketWithFollowSymlinks() ReadWriteBucketOption {
-	return func(bucket *bucket) {
-		bucket.followSymlinks = true
+// ReadWriteBucketWithSymlinksIfSupported returns a ReadWriteBucketOption that results
+// in symlink support being enabled for this bucket. If the Provider did not have symlink
+// support, this is a no-op.
+func ReadWriteBucketWithSymlinksIfSupported() ReadWriteBucketOption {
+	return func(readWriteBucketOptions *readWriteBucketOptions) {
+		readWriteBucketOptions.symlinksIfSupported = true
 	}
 }

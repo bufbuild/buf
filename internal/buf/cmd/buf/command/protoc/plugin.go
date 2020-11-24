@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
 
@@ -41,12 +42,13 @@ func newPluginInfo() *pluginInfo {
 func executePlugin(
 	ctx context.Context,
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	container app.EnvStderrContainer,
 	images []bufimage.Image,
 	pluginName string,
 	pluginInfo *pluginInfo,
 ) error {
-	if err := appprotoos.NewGenerator(logger).Generate(
+	if err := appprotoos.NewGenerator(logger, storageosProvider).Generate(
 		ctx,
 		container,
 		pluginName,

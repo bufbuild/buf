@@ -33,18 +33,21 @@ import (
 )
 
 type archiveReader struct {
-	logger     *zap.Logger
-	httpClient *http.Client
-	lock       sync.Mutex
+	logger            *zap.Logger
+	storageosProvider storageos.Provider
+	httpClient        *http.Client
+	lock              sync.Mutex
 }
 
 func newArchiveReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 ) *archiveReader {
 	return &archiveReader{
-		logger:     logger.Named("githubtesting"),
-		httpClient: httpClient,
+		logger:            logger.Named("githubtesting"),
+		storageosProvider: storageosProvider,
+		httpClient:        httpClient,
 	}
 }
 
@@ -78,6 +81,7 @@ func (a *archiveReader) GetArchive(
 	}()
 
 	// check if already exists, if so, do nothing
+	// OK to use os.Stat here
 	if fileInfo, err := os.Stat(outputDirPath); err == nil {
 		if !fileInfo.IsDir() {
 			return fmt.Errorf("expected %s to be a directory", outputDirPath)
@@ -113,7 +117,8 @@ func (a *archiveReader) GetArchive(
 	if err := os.MkdirAll(outputDirPath, 0755); err != nil {
 		return err
 	}
-	readWriteBucket, err := storageos.NewReadWriteBucket(normalpath.Normalize(outputDirPath))
+	// do NOT want to read in symlinks
+	readWriteBucket, err := a.storageosProvider.NewReadWriteBucket(normalpath.Normalize(outputDirPath))
 	if err != nil {
 		return err
 	}

@@ -64,7 +64,11 @@ func handle(
 	if err != nil {
 		return err
 	}
-	readWriteBucket, err := storageos.NewReadWriteBucket(".")
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		".",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	if err != nil {
 		return err
 	}

@@ -74,7 +74,9 @@ func TestCacherBasic(t *testing.T) {
 }
 
 func newTestModuleCacher(t *testing.T) *moduleCacher {
-	readWriteBucket, err := storageos.NewReadWriteBucket(t.TempDir())
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	//we do not not want symlinks for the store
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
 	return newModuleCacher(bufmodulestorage.NewStore(readWriteBucket))
 }

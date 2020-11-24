@@ -113,14 +113,14 @@ func testPort(t *testing.T, appName string, env map[string]string, expected uint
 }
 
 func testRoundTrip(t *testing.T, appName string, env map[string]string, dirPath string) {
-	_, err := os.Stat(filepath.Join(dirPath, configFileName))
+	_, err := os.Lstat(filepath.Join(dirPath, configFileName))
 	require.Error(t, err)
 	container, err := NewContainer(app.NewEnvContainer(env), appName)
 	require.NoError(t, err)
 	inputTestConfig := &testConfig{Bar: "one", Baz: "two"}
 	err = WriteConfig(container, inputTestConfig)
 	require.NoError(t, err)
-	_, err = os.Stat(filepath.Join(dirPath, configFileName))
+	_, err = os.Lstat(filepath.Join(dirPath, configFileName))
 	require.NoError(t, err)
 	outputTestConfig := &testConfig{}
 	err = ReadConfig(container, outputTestConfig)

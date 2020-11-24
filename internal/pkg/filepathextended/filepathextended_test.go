@@ -15,7 +15,6 @@
 package filepathextended
 
 import (
-	"errors"
 	"os"
 	"path/filepath"
 	"sort"
@@ -39,11 +38,11 @@ func TestWalkSymlinkSuccessNoSymlinks(t *testing.T) {
 	)
 }
 
-func TestWalkSymlinkSuccessFollowSymlinks(t *testing.T) {
+func TestWalkSymlinkSuccessSymlinks(t *testing.T) {
 	t.Parallel()
 	filePaths, err := testWalkGetRegularFilePaths(
 		filepath.Join("testdata", "symlink_success"),
-		WalkWithFollowSymlinks(),
+		WalkWithSymlinks(),
 	)
 	require.NoError(t, err)
 	require.Equal(
@@ -64,22 +63,35 @@ func TestWalkSymlinkSuccessFollowSymlinks(t *testing.T) {
 	)
 }
 
-func TestWalkSymlinkErrorLoopNoSymlinks(t *testing.T) {
+func TestWalkSymlinkLoopNoSymlinks(t *testing.T) {
 	t.Parallel()
 	filePaths, err := testWalkGetRegularFilePaths(
-		filepath.Join("testdata", "symlink_error_loop"),
+		filepath.Join("testdata", "symlink_loop"),
 	)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(filePaths))
+	require.Equal(
+		t,
+		[]string{
+			"file.proto",
+		},
+		filePaths,
+	)
 }
 
-func TestWalkSymlinkErrorLoopFollowSymlinks(t *testing.T) {
+func TestWalkSymlinkLoopSymlinks(t *testing.T) {
 	t.Parallel()
-	_, err := testWalkGetRegularFilePaths(
-		filepath.Join("testdata", "symlink_error_loop"),
-		WalkWithFollowSymlinks(),
+	filePaths, err := testWalkGetRegularFilePaths(
+		filepath.Join("testdata", "symlink_loop"),
+		WalkWithSymlinks(),
 	)
-	require.True(t, errors.Is(err, &symlinkLoopError{}))
+	require.NoError(t, err)
+	require.Equal(
+		t,
+		[]string{
+			"file.proto",
+		},
+		filePaths,
+	)
 }
 
 func testWalkGetRegularFilePaths(dirPath string, options ...WalkOption) ([]string, error) {
