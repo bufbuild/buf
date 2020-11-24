@@ -34,7 +34,7 @@ import (
 
 const (
 	// Version is the version of buf.
-	Version                 = "0.32.0-dev"
+	Version                 = "0.32.0"
 	imageDeprecationMessage = `"image" sub-commands are now all implemented under the top-level "buf build" command, use "buf build" instead.
 We recommend migrating, however this command continues to work.
 See https://docs.buf.build/faq for more details.`
