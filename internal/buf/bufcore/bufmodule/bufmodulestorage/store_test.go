@@ -43,7 +43,9 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, exists)
 
-	readWriteBucket, err := storageos.NewReadWriteBucket(t.TempDir())
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	// we do not want symlinks for the store
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
 	key := bufmodulestorage.Key{"some", "path"}
 	moduleStore := bufmodulestorage.NewStore(readWriteBucket)

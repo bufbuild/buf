@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
 
@@ -67,6 +68,7 @@ type ImageConfigReader interface {
 // NewImageConfigReader returns a new ImageConfigReader.
 func NewImageConfigReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
@@ -75,6 +77,7 @@ func NewImageConfigReader(
 ) ImageConfigReader {
 	return newImageConfigReader(
 		logger,
+		storageosProvider,
 		fetchReader,
 		configProvider,
 		moduleBucketBuilder,
@@ -110,12 +113,14 @@ type ModuleConfigReader interface {
 // NewModuleConfigReader returns a new ModuleConfigReader
 func NewModuleConfigReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 ) ModuleConfigReader {
 	return newModuleConfigReader(
 		logger,
+		storageosProvider,
 		fetchReader,
 		configProvider,
 		moduleBucketBuilder,

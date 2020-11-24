@@ -23,6 +23,7 @@ import (
 	"os/exec"
 
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
 
@@ -63,6 +64,7 @@ var (
 // - Else, this returns error.
 func NewHandler(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	pluginName string,
 	options ...HandlerOption,
 ) (appproto.Handler, error) {
@@ -89,7 +91,7 @@ func NewHandler(
 		if err != nil {
 			return nil, err
 		}
-		return newProtocProxyHandler(logger, protocPath, pluginName), nil
+		return newProtocProxyHandler(logger, storageosProvider, protocPath, pluginName), nil
 	}
 	return nil, fmt.Errorf("could not find protoc plugin for name %s", pluginName)
 }

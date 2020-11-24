@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -125,8 +126,10 @@ func run(ctx context.Context, container appflag.Container, flags *flags) (retErr
 	if err != nil {
 		return fmt.Errorf("--%s: %v", imageFlagName, err)
 	}
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	image, err := bufcli.NewWireImageReader(
 		container.Logger(),
+		storageosProvider,
 	).GetImage(
 		ctx,
 		container,

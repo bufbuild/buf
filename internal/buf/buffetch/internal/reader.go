@@ -43,7 +43,8 @@ import (
 )
 
 type reader struct {
-	logger *zap.Logger
+	logger            *zap.Logger
+	storageosProvider storageos.Provider
 
 	localEnabled bool
 	stdioEnabled bool
@@ -62,10 +63,12 @@ type reader struct {
 
 func newReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	options ...ReaderOption,
 ) *reader {
 	reader := &reader{
-		logger: logger,
+		logger:            logger,
+		storageosProvider: storageosProvider,
 	}
 	for _, option := range options {
 		option(reader)
@@ -248,7 +251,10 @@ func (r *reader) getDirBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	readWriteBucket, err := storageos.NewReadWriteBucket(dirRef.Path())
+	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
+		dirRef.Path(),
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	if err != nil {
 		return nil, err
 	}

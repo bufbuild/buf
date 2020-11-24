@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/prototesting"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -44,8 +45,10 @@ var (
 	testHTTPClient = &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	testArchiveReader = githubtesting.NewArchiveReader(
+	testStorageosProvider = storageos.NewProvider(storageos.ProviderWithSymlinks())
+	testArchiveReader     = githubtesting.NewArchiveReader(
 		zap.NewNop(),
+		testStorageosProvider,
 		testHTTPClient,
 	)
 	testGoogleapisDirPath = filepath.Join("cache", "googleapis")
@@ -119,7 +122,7 @@ func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
 // protoc has a fixed size for number of characters to argument list.
 func GetProtocFilePaths(t *testing.T, dirPath string, limit int) []string {
 	t.Helper()
-	module, err := bufmodulebuild.NewModuleIncludeBuilder(zap.NewNop()).BuildForIncludes(
+	module, err := bufmodulebuild.NewModuleIncludeBuilder(zap.NewNop(), testStorageosProvider).BuildForIncludes(
 		context.Background(),
 		[]string{dirPath},
 	)

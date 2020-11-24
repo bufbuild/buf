@@ -42,10 +42,10 @@ func TestDir(t *testing.T) {
 	tmpDir, err := NewDir()
 	require.NoError(t, err)
 	assert.True(t, filepath.IsAbs(tmpDir.AbsPath()))
-	fileInfo, err := os.Stat(tmpDir.AbsPath())
+	fileInfo, err := os.Lstat(tmpDir.AbsPath())
 	assert.NoError(t, err)
 	assert.True(t, fileInfo.IsDir())
 	assert.NoError(t, tmpDir.Close())
-	_, err = os.Stat(tmpDir.AbsPath())
+	_, err = os.Lstat(tmpDir.AbsPath())
 	assert.Error(t, err)
 }

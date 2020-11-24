@@ -115,6 +115,7 @@ func RunProtoc(
 	if err != nil {
 		return err
 	}
+	// OK to use os.Stat here
 	wktFileInfo, err := os.Stat(filepath.Join(protocIncludePath, "google", "protobuf", "any.proto"))
 	if err != nil {
 		return err

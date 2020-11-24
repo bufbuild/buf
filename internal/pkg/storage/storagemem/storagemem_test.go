@@ -40,8 +40,11 @@ func TestMem(t *testing.T) {
 	)
 }
 
-func testNewReadBucket(t *testing.T, dirPath string, options ...storageos.ReadWriteBucketOption) (storage.ReadBucket, storagetesting.GetExternalPathFunc) {
-	osBucket, err := storageos.NewReadWriteBucket(dirPath, options...)
+func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos.Provider) (storage.ReadBucket, storagetesting.GetExternalPathFunc) {
+	osBucket, err := storageosProvider.NewReadWriteBucket(
+		dirPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
 	_, err = storage.Copy(
@@ -58,7 +61,7 @@ func testNewReadBucket(t *testing.T, dirPath string, options ...storageos.ReadWr
 	}
 }
 
-func testNewWriteBucket(*testing.T, ...storageos.ReadWriteBucketOption) storage.WriteBucket {
+func testNewWriteBucket(*testing.T, storageos.Provider) storage.WriteBucket {
 	return storagemem.NewReadBucketBuilder()
 }
 

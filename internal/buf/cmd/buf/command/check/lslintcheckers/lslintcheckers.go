@@ -81,6 +81,7 @@ func run(
 	if err := checkinternal.CheckLSCheckersCategories(flags.Categories, categoriesFlagName); err != nil {
 		return err
 	}
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	var checkers []bufcheck.Checker
 	var err error
 	if flags.All {
@@ -89,7 +90,10 @@ func run(
 			return err
 		}
 	} else {
-		readWriteBucket, err := storageos.NewReadWriteBucket(".")
+		readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+			".",
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
 		if err != nil {
 			return err
 		}

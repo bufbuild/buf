@@ -37,21 +37,21 @@ func Walk(walkPath string, walkFunc filepath.WalkFunc, options ...WalkOption) (r
 		// If we have an error, then we still walk to call walkFunc with the error.
 		return walkFunc(walkPath, nil, err)
 	}
-	resolvedPath, fileInfo, err := optionallyEvaluateSymlink(walkPath, fileInfo, walkOptions.followSymlinks)
+	resolvedPath, fileInfo, err := optionallyEvaluateSymlink(walkPath, fileInfo, walkOptions.symlinks)
 	if err != nil {
 		// If we have an error, then we still walk to call walkFunc with the error.
 		return walkFunc(walkPath, nil, err)
 	}
-	return walk(walkPath, resolvedPath, fileInfo, walkFunc, make(map[string]struct{}), walkOptions.followSymlinks)
+	return walk(walkPath, resolvedPath, fileInfo, walkFunc, make(map[string]struct{}), walkOptions.symlinks)
 }
 
 // WalkOption is an option for Walk.
 type WalkOption func(*walkOptions)
 
-// WalkWithFollowSymlinks returns a WalkOption that results in Walk following symlinks.
-func WalkWithFollowSymlinks() WalkOption {
+// WalkWithSymlinks returns a WalkOption that results in Walk following symlinks.
+func WalkWithSymlinks() WalkOption {
 	return func(walkOptions *walkOptions) {
-		walkOptions.followSymlinks = true
+		walkOptions.symlinks = true
 	}
 }
 
@@ -63,11 +63,13 @@ func walk(
 	fileInfo os.FileInfo,
 	walkFunc filepath.WalkFunc,
 	resolvedPathMap map[string]struct{},
-	followSymlinks bool,
+	symlinks bool,
 ) error {
-	if followSymlinks {
+	if symlinks {
 		if _, ok := resolvedPathMap[resolvedPath]; ok {
-			return walkFunc(walkPath, fileInfo, newSymlinkLoopError(resolvedPath))
+			// Do not walk down this path.
+			// We could later make it optional to error in this case.
+			return nil
 		}
 		resolvedPathMap[resolvedPath] = struct{}{}
 	}
@@ -108,7 +110,7 @@ func walk(
 			// the same code as in the symlink if statement below.
 			continue
 		}
-		subResolvedPath, subFileInfo, err = optionallyEvaluateSymlink(subResolvedPath, subFileInfo, followSymlinks)
+		subResolvedPath, subFileInfo, err = optionallyEvaluateSymlink(subResolvedPath, subFileInfo, symlinks)
 		if err != nil {
 			// If we have an error, still call walkFunc and match filepath.Walk.
 			if walkErr := walkFunc(subWalkPath, subFileInfo, err); walkErr != nil && walkErr != filepath.SkipDir {
@@ -117,7 +119,7 @@ func walk(
 			// No error, just continue the for loop.
 			continue
 		}
-		if err := walk(subWalkPath, subResolvedPath, subFileInfo, walkFunc, resolvedPathMap, followSymlinks); err != nil {
+		if err := walk(subWalkPath, subResolvedPath, subFileInfo, walkFunc, resolvedPathMap, symlinks); err != nil {
 			// If not a directory, return the error.
 			// Else, if the error is filepath.SkipDir, return the error.
 			// Else, this is a directory and we have filepath.SkipDir, do not return the error and continue.
@@ -152,7 +154,7 @@ func readDirNames(dirPath string) (_ []string, retErr error) {
 }
 
 type walkOptions struct {
-	followSymlinks bool
+	symlinks bool
 }
 
 func newWalkOptions() *walkOptions {
@@ -160,8 +162,8 @@ func newWalkOptions() *walkOptions {
 }
 
 // returns optionally-resolved path, optionally-resolved os.FileInfo
-func optionallyEvaluateSymlink(filePath string, fileInfo os.FileInfo, followSymlinks bool) (string, os.FileInfo, error) {
-	if !followSymlinks {
+func optionallyEvaluateSymlink(filePath string, fileInfo os.FileInfo, symlinks bool) (string, os.FileInfo, error) {
+	if !symlinks {
 		return filePath, fileInfo, nil
 	}
 	if fileInfo.Mode()&os.ModeSymlink != os.ModeSymlink {
@@ -176,23 +178,4 @@ func optionallyEvaluateSymlink(filePath string, fileInfo os.FileInfo, followSyml
 		return filePath, fileInfo, err
 	}
 	return resolvedFilePath, resolvedFileInfo, nil
-}
-
-type symlinkLoopError struct {
-	path string
-}
-
-func newSymlinkLoopError(path string) *symlinkLoopError {
-	return &symlinkLoopError{
-		path: path,
-	}
-}
-
-func (s *symlinkLoopError) Error() string {
-	return "found a symlink loop at: " + s.path
-}
-
-func (s *symlinkLoopError) Is(err error) bool {
-	_, ok := err.(*symlinkLoopError)
-	return ok
 }

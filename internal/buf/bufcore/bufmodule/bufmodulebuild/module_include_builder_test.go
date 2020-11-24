@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufcoretesting"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -86,6 +87,7 @@ func testIncludeGetFileInfos(
 	relRoots []string,
 	expectedFileInfos ...bufcore.FileInfo,
 ) {
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	for _, isAbs := range []bool{true, false} {
 		isAbs := isAbs
 		expectedFileInfos := expectedFileInfos
@@ -95,7 +97,7 @@ func testIncludeGetFileInfos(
 		t.Run(fmt.Sprintf("abs=%v", isAbs), func(t *testing.T) {
 			t.Parallel()
 			includeDirPaths := testIncludeDirPaths(t, relDir, relRoots, isAbs)
-			module, err := NewModuleIncludeBuilder(zap.NewNop()).BuildForIncludes(
+			module, err := NewModuleIncludeBuilder(zap.NewNop(), storageosProvider).BuildForIncludes(
 				context.Background(),
 				includeDirPaths,
 			)
@@ -113,7 +115,7 @@ func testIncludeGetFileInfos(
 				for i := 0; i < len(expectedFileInfos); i++ {
 					filePaths[i] = expectedFileInfos[i].ExternalPath()
 				}
-				module, err := NewModuleIncludeBuilder(zap.NewNop()).BuildForIncludes(
+				module, err := NewModuleIncludeBuilder(zap.NewNop(), storageosProvider).BuildForIncludes(
 					context.Background(),
 					includeDirPaths,
 					WithPaths(filePaths),
@@ -137,12 +139,13 @@ func testIncludeGetAllFileInfosError(
 	relRoots []string,
 	expectedSpecificError error,
 ) {
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	for _, isAbs := range []bool{true, false} {
 		isAbs := isAbs
 		t.Run(fmt.Sprintf("abs=%v", isAbs), func(t *testing.T) {
 			t.Parallel()
 			includeDirPaths := testIncludeDirPaths(t, relDir, relRoots, isAbs)
-			module, err := NewModuleIncludeBuilder(zap.NewNop()).BuildForIncludes(
+			module, err := NewModuleIncludeBuilder(zap.NewNop(), storageosProvider).BuildForIncludes(
 				context.Background(),
 				includeDirPaths,
 			)
@@ -163,12 +166,13 @@ func testIncludeGetFileInfosForExternalPathsError(
 	relRoots []string,
 	externalPaths []string,
 ) {
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	for _, isAbs := range []bool{true, false} {
 		isAbs := isAbs
 		t.Run(fmt.Sprintf("abs=%v", isAbs), func(t *testing.T) {
 			t.Parallel()
 			includeDirPaths := testIncludeDirPaths(t, relDir, relRoots, isAbs)
-			_, err := NewModuleIncludeBuilder(zap.NewNop()).BuildForIncludes(
+			_, err := NewModuleIncludeBuilder(zap.NewNop(), storageosProvider).BuildForIncludes(
 				context.Background(),
 				includeDirPaths,
 				WithPaths(externalPaths),

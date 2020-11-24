@@ -578,9 +578,16 @@ func testBreaking(
 	previousDirPath := filepath.Join("testdata_previous", relDirPath)
 	dirPath := filepath.Join("testdata", relDirPath)
 
-	previousReadWriteBucket, err := storageos.NewReadWriteBucket(previousDirPath)
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	previousReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		previousDirPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
-	readWriteBucket, err := storageos.NewReadWriteBucket(dirPath)
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		dirPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
 
 	configProvider := bufconfig.NewProvider(logger)

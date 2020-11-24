@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -174,8 +175,10 @@ func run(
 	if err != nil {
 		return err
 	}
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	imageConfig, fileAnnotations, err := bufcli.NewWireImageConfigReader(
 		container.Logger(),
+		storageosProvider,
 		configProvider,
 		moduleResolver,
 		moduleReader,

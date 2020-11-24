@@ -163,7 +163,11 @@ func testBucketGetFileInfos(
 	expectedFileInfos ...bufcore.FileInfo,
 ) {
 	t.Parallel()
-	readWriteBucket, err := storageos.NewReadWriteBucket(relDir)
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		relDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
 	config, err := NewConfigV1Beta1(
 		ExternalConfigV1Beta1{
@@ -219,7 +223,11 @@ func testBucketGetAllFileInfosError(
 	relExcludes []string,
 	expectedSpecificError error,
 ) {
-	readWriteBucket, err := storageos.NewReadWriteBucket(relDir)
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		relDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
 	config, err := NewConfigV1Beta1(
 		ExternalConfigV1Beta1{
@@ -248,7 +256,11 @@ func testBucketGetFileInfosForExternalPathsError(
 	relRoots []string,
 	externalPaths []string,
 ) {
-	readWriteBucket, err := storageos.NewReadWriteBucket(relDir)
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		relDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
 	config, err := NewConfigV1Beta1(
 		ExternalConfigV1Beta1{

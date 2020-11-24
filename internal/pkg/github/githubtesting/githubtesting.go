@@ -19,6 +19,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
 
@@ -46,10 +47,12 @@ type ArchiveReader interface {
 // NewArchiveReader returns a new ArchiveReader.
 func NewArchiveReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	httpClient *http.Client,
 ) ArchiveReader {
 	return newArchiveReader(
 		logger,
+		storageosProvider,
 		httpClient,
 	)
 }

@@ -512,6 +512,7 @@ func assumeModuleOrDir(path string) (string, error) {
 	}
 	if _, err := bufmodule.ModuleNameForString(path); err == nil {
 		// this is possible to be a module, check if it is a directory though
+		// OK to use os.Stat instead of os.Lstat here
 		fileInfo, err := os.Stat(path)
 		if err == nil && fileInfo.IsDir() {
 			// if we have a directory, assume this is a directory

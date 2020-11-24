@@ -19,6 +19,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -39,8 +40,11 @@ type Generator interface {
 }
 
 // NewGenerator returns a new Generator.
-func NewGenerator(logger *zap.Logger) Generator {
-	return newGenerator(logger)
+func NewGenerator(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) Generator {
+	return newGenerator(logger, storageosProvider)
 }
 
 // GenerateOption is an option for Generate.

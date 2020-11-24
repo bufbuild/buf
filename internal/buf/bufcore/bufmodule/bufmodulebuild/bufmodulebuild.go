@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
 
@@ -73,8 +74,11 @@ type ModuleIncludeBuilder interface {
 //
 // TODO: we should parse includeDirPaths for modules as well in theory
 // would be nice to be able to do buf protoc -I path/to/dir -I buf.build/foo/bar/v1
-func NewModuleIncludeBuilder(logger *zap.Logger) ModuleIncludeBuilder {
-	return newModuleIncludeBuilder(logger)
+func NewModuleIncludeBuilder(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) ModuleIncludeBuilder {
+	return newModuleIncludeBuilder(logger, storageosProvider)
 }
 
 // BuildOption is an option for BuildForBucket.

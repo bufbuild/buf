@@ -42,12 +42,17 @@ Created-By: 1.6.0 (protoc)
 )
 
 type generator struct {
-	logger *zap.Logger
+	logger            *zap.Logger
+	storageosProvider storageos.Provider
 }
 
-func newGenerator(logger *zap.Logger) *generator {
+func newGenerator(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) *generator {
 	return &generator{
-		logger: logger,
+		logger:            logger,
+		storageosProvider: storageosProvider,
 	}
 }
 
@@ -65,6 +70,7 @@ func (g *generator) Generate(
 	}
 	handler, err := appprotoexec.NewHandler(
 		g.logger,
+		g.storageosProvider,
 		pluginName,
 		appprotoexec.HandlerWithPluginPath(generateOptions.pluginPath),
 	)
@@ -115,6 +121,7 @@ func (g *generator) generateZip(
 	createOutDirIfNotExists bool,
 ) (retErr error) {
 	outDirPath := filepath.Dir(outFilePath)
+	// OK to use os.Stat instead of os.Lstat here
 	fileInfo, err := os.Stat(outDirPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -168,7 +175,10 @@ func (g *generator) generateDirectory(
 		}
 	}
 	// this checks that the directory exists
-	readWriteBucket, err := storageos.NewReadWriteBucket(outDirPath)
+	readWriteBucket, err := g.storageosProvider.NewReadWriteBucket(
+		outDirPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	if err != nil {
 		return err
 	}
