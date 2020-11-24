@@ -81,7 +81,8 @@ func handle(
 	if err != nil {
 		return fmt.Errorf("against_input: %v", err)
 	}
-	imageReader := bufcli.NewWireImageReader(logger)
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	imageReader := bufcli.NewWireImageReader(logger, storageosProvider)
 	againstImage, err := imageReader.GetImage(
 		ctx,
 		newContainer(container),
@@ -96,7 +97,10 @@ func handle(
 	if externalConfig.ExcludeImports {
 		againstImage = bufimage.ImageWithoutImports(againstImage)
 	}
-	readWriteBucket, err := storageos.NewReadWriteBucket(".")
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		".",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	if err != nil {
 		return err
 	}

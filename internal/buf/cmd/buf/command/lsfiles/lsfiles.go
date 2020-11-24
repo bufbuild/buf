@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -136,8 +137,10 @@ func run(
 	if err != nil {
 		return err
 	}
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	fileRefs, err := bufcli.NewWireFileLister(
 		container.Logger(),
+		storageosProvider,
 		configProvider,
 		moduleResolver,
 		moduleReader,

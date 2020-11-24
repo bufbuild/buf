@@ -267,9 +267,16 @@ func testCompareGeneratedStubs(
 			filePaths...,
 		)...,
 	)
-	actualReadWriteBucket, err := storageos.NewReadWriteBucket(actualProtocDir)
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	actualReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		actualProtocDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
-	bufReadWriteBucket, err := storageos.NewReadWriteBucket(bufProtocDir)
+	bufReadWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		bufProtocDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
 	diff, err := storage.DiffBytes(
 		context.Background(),

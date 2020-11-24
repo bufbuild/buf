@@ -31,6 +31,7 @@ import (
 
 type moduleConfigReader struct {
 	logger              *zap.Logger
+	storageosProvider   storageos.Provider
 	fetchReader         buffetch.Reader
 	configProvider      bufconfig.Provider
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
@@ -38,12 +39,14 @@ type moduleConfigReader struct {
 
 func newModuleConfigReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 ) *moduleConfigReader {
 	return &moduleConfigReader{
 		logger:              logger.Named("bufwire"),
+		storageosProvider:   storageosProvider,
 		fetchReader:         fetchReader,
 		configProvider:      configProvider,
 		moduleBucketBuilder: moduleBucketBuilder,
@@ -174,7 +177,10 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 	}
 	// TODO: we should read the config from the module when configuration
 	// is added to modules
-	readWriteBucket, err := storageos.NewReadWriteBucket(".")
+	readWriteBucket, err := m.storageosProvider.NewReadWriteBucket(
+		".",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	if err != nil {
 		return nil, err
 	}

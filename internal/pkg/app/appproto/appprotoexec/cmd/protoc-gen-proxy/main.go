@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/applog"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoexec"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -56,7 +57,8 @@ func handle(
 	if err != nil {
 		return err
 	}
-	handler, err := appprotoexec.NewHandler(logger, split[0])
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	handler, err := appprotoexec.NewHandler(logger, storageosProvider, split[0])
 	if err != nil {
 		return err
 	}

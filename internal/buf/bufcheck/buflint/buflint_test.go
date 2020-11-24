@@ -808,7 +808,11 @@ func testLintConfigModifier(
 
 	dirPath := filepath.Join("testdata", relDirPath)
 
-	readWriteBucket, err := storageos.NewReadWriteBucket(dirPath)
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		dirPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
 
 	configProvider := bufconfig.NewProvider(logger)

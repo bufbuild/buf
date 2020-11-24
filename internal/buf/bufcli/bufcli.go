@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
@@ -256,14 +257,16 @@ func GetStringSliceFlagOrDeprecatedFlag(
 // and git cloner.
 func NewFetchReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) buffetch.Reader {
 	return buffetch.NewReader(
 		logger,
+		storageosProvider,
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,
-		git.NewCloner(logger, defaultGitClonerOptions),
+		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
 		moduleResolver,
 		moduleReader,
 	)
@@ -271,36 +274,46 @@ func NewFetchReader(
 
 // NewFetchSourceReader creates a new buffetch.SourceReader with the default HTTP client
 // and git cloner.
-func NewFetchSourceReader(logger *zap.Logger) buffetch.SourceReader {
+func NewFetchSourceReader(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) buffetch.SourceReader {
 	return buffetch.NewSourceReader(
 		logger,
+		storageosProvider,
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,
-		git.NewCloner(logger, defaultGitClonerOptions),
+		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
 	)
 }
 
 // NewFetchImageReader creates a new buffetch.ImageReader with the default HTTP client
 // and git cloner.
-func NewFetchImageReader(logger *zap.Logger) buffetch.ImageReader {
+func NewFetchImageReader(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) buffetch.ImageReader {
 	return buffetch.NewImageReader(
 		logger,
+		storageosProvider,
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,
-		git.NewCloner(logger, defaultGitClonerOptions),
+		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
 	)
 }
 
 // NewWireImageConfigReader returns a new ImageConfigReader.
 func NewWireImageConfigReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	configProvider bufconfig.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) bufwire.ImageConfigReader {
 	return bufwire.NewImageConfigReader(
 		logger,
-		NewFetchReader(logger, moduleResolver, moduleReader),
+		storageosProvider,
+		NewFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
 		configProvider,
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
@@ -311,13 +324,15 @@ func NewWireImageConfigReader(
 // NewWireModuleConfigReader returns a new ModuleConfigReader.
 func NewWireModuleConfigReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	configProvider bufconfig.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) bufwire.ModuleConfigReader {
 	return bufwire.NewModuleConfigReader(
 		logger,
-		NewFetchReader(logger, moduleResolver, moduleReader),
+		storageosProvider,
+		NewFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
 		configProvider,
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 	)
@@ -326,13 +341,14 @@ func NewWireModuleConfigReader(
 // NewWireFileLister returns a new FileLister.
 func NewWireFileLister(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	configProvider bufconfig.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) bufwire.FileLister {
 	return bufwire.NewFileLister(
 		logger,
-		NewFetchReader(logger, moduleResolver, moduleReader),
+		NewFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
 		configProvider,
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufimagebuild.NewBuilder(logger),
@@ -342,10 +358,11 @@ func NewWireFileLister(
 // NewWireImageReader returns a new ImageReader.
 func NewWireImageReader(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 ) bufwire.ImageReader {
 	return bufwire.NewImageReader(
 		logger,
-		NewFetchImageReader(logger),
+		NewFetchImageReader(logger, storageosProvider),
 	)
 }
 

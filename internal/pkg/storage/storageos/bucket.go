@@ -31,13 +31,19 @@ import (
 var errNotDir = errors.New("not a directory")
 
 type bucket struct {
-	rootPath       string
-	followSymlinks bool
+	rootPath string
+	symlinks bool
 }
 
-func newBucket(rootPath string, options ...ReadWriteBucketOption) (*bucket, error) {
+func newBucket(rootPath string, symlinks bool) (*bucket, error) {
 	rootPath = normalpath.Unnormalize(rootPath)
-	fileInfo, err := os.Stat(rootPath)
+	var fileInfo os.FileInfo
+	var err error
+	if symlinks {
+		fileInfo, err = os.Stat(rootPath)
+	} else {
+		fileInfo, err = os.Lstat(rootPath)
+	}
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, storage.NewErrNotExist(rootPath)
@@ -50,13 +56,10 @@ func newBucket(rootPath string, options ...ReadWriteBucketOption) (*bucket, erro
 	// do not validate - allow anything with OS buckets including
 	// absolute paths and jumping context
 	rootPath = normalpath.Normalize(rootPath)
-	bucket := &bucket{
+	return &bucket{
 		rootPath: rootPath,
-	}
-	for _, option := range options {
-		option(bucket)
-	}
-	return bucket, nil
+		symlinks: symlinks,
+	}, nil
 }
 
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
@@ -68,7 +71,7 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 		return nil, err
 	}
 	resolvedPath := externalPath
-	if b.followSymlinks {
+	if b.symlinks {
 		resolvedPath, err = filepath.EvalSymlinks(externalPath)
 		if err != nil {
 			return nil, err
@@ -112,8 +115,8 @@ func (b *bucket) Walk(
 	}
 	walkChecker := storageutil.NewWalkChecker()
 	var walkOptions []filepathextended.WalkOption
-	if b.followSymlinks {
-		walkOptions = append(walkOptions, filepathextended.WalkWithFollowSymlinks())
+	if b.symlinks {
+		walkOptions = append(walkOptions, filepathextended.WalkWithSymlinks())
 	}
 	if err := filepathextended.Walk(
 		externalPrefix,
@@ -163,7 +166,7 @@ func (b *bucket) Put(ctx context.Context, path string) (storage.WriteObjectClose
 	}
 	externalDir := filepath.Dir(externalPath)
 	var fileInfo os.FileInfo
-	if b.followSymlinks {
+	if b.symlinks {
 		fileInfo, err = os.Stat(externalDir)
 	} else {
 		fileInfo, err = os.Lstat(externalDir)
@@ -224,7 +227,7 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 	// we do this to make sure we are only reading regular files
 	var fileInfo os.FileInfo
 	var err error
-	if b.followSymlinks {
+	if b.symlinks {
 		fileInfo, err = os.Stat(externalPath)
 	} else {
 		fileInfo, err = os.Lstat(externalPath)

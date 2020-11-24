@@ -48,11 +48,11 @@ func newCommand() *appcmd.Command {
 func run(ctx context.Context, container app.Container) error {
 	oneDirPath := filepath.Clean(container.Arg(0))
 	twoDirPath := filepath.Clean(container.Arg(1))
-	oneReadWriteBucket, err := storageos.NewReadWriteBucket(oneDirPath)
+	oneReadWriteBucket, err := storageos.NewProvider(storageos.ProviderWithSymlinks()).NewReadWriteBucket(oneDirPath)
 	if err != nil {
 		return err
 	}
-	twoReadWriteBucket, err := storageos.NewReadWriteBucket(twoDirPath)
+	twoReadWriteBucket, err := storageos.NewProvider(storageos.ProviderWithSymlinks()).NewReadWriteBucket(twoDirPath)
 	if err != nil {
 		return err
 	}

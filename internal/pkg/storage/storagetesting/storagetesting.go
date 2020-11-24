@@ -132,8 +132,8 @@ type GetExternalPathFunc func(*testing.T, string, string) string
 func RunTestSuite(
 	t *testing.T,
 	storagetestingDirPath string,
-	newReadBucket func(*testing.T, string, ...storageos.ReadWriteBucketOption) (storage.ReadBucket, GetExternalPathFunc),
-	newWriteBucket func(*testing.T, ...storageos.ReadWriteBucketOption) storage.WriteBucket,
+	newReadBucket func(*testing.T, string, storageos.Provider) (storage.ReadBucket, GetExternalPathFunc),
+	newWriteBucket func(*testing.T, storageos.Provider) storage.WriteBucket,
 	writeBucketToReadBucket func(*testing.T, storage.WriteBucket) storage.ReadBucket,
 ) {
 	t.Helper()
@@ -141,6 +141,8 @@ func RunTestSuite(
 	twoDirPath := filepath.Join(storagetestingDirPath, "testdata", "two")
 	threeDirPath := filepath.Join(storagetestingDirPath, "testdata", "three")
 	symlinkSuccessDirPath := filepath.Join(storagetestingDirPath, "..", "..", "filepathextended", "testdata", "symlink_success")
+	symlinkLoopDirPath := filepath.Join(storagetestingDirPath, "..", "..", "filepathextended", "testdata", "symlink_loop")
+	defaultProvider := storageos.NewProvider()
 
 	for _, prefix := range []string{
 		"",
@@ -150,7 +152,7 @@ func RunTestSuite(
 		prefix := prefix
 		t.Run(fmt.Sprintf("root-%q", prefix), func(t *testing.T) {
 			t.Parallel()
-			readBucket, _ := newReadBucket(t, oneDirPath)
+			readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 			AssertPathToContent(
 				t,
 				readBucket,
@@ -175,7 +177,7 @@ func RunTestSuite(
 
 	t.Run("map-1", func(t *testing.T) {
 		t.Parallel()
-		readBucket, _ := newReadBucket(t, oneDirPath)
+		readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 		readBucket = storage.MapReadBucket(
 			readBucket,
 			storage.MapOnPrefix("root"),
@@ -203,7 +205,7 @@ func RunTestSuite(
 
 	t.Run("map-2", func(t *testing.T) {
 		t.Parallel()
-		readBucket, getExternalPathFunc := newReadBucket(t, oneDirPath)
+		readBucket, getExternalPathFunc := newReadBucket(t, oneDirPath, defaultProvider)
 		readBucket = storage.MapReadBucket(
 			readBucket,
 			storage.MapOnPrefix("root/a"),
@@ -251,7 +253,7 @@ func RunTestSuite(
 
 	t.Run("map-3", func(t *testing.T) {
 		t.Parallel()
-		readBucket, getExternalPathFunc := newReadBucket(t, oneDirPath)
+		readBucket, getExternalPathFunc := newReadBucket(t, oneDirPath, defaultProvider)
 		readBucket = storage.MapReadBucket(
 			readBucket,
 			storage.MapOnPrefix("root/ab"),
@@ -298,7 +300,7 @@ func RunTestSuite(
 
 	t.Run("multi-all", func(t *testing.T) {
 		t.Parallel()
-		readBucket, _ := newReadBucket(t, twoDirPath)
+		readBucket, _ := newReadBucket(t, twoDirPath, defaultProvider)
 		readBucketMulti := storage.MultiReadBucket(
 			storage.MapReadBucket(
 				readBucket,
@@ -346,7 +348,7 @@ func RunTestSuite(
 
 	t.Run("multi-overlap", func(t *testing.T) {
 		t.Parallel()
-		readBucket, _ := newReadBucket(t, twoDirPath)
+		readBucket, _ := newReadBucket(t, twoDirPath, defaultProvider)
 		readBucketMulti := storage.MultiReadBucket(
 			storage.MapReadBucket(
 				readBucket,
@@ -391,7 +393,7 @@ func RunTestSuite(
 		{
 			name: "proto-and-single-file",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			mappers: []storage.Mapper{
@@ -414,7 +416,7 @@ func RunTestSuite(
 		{
 			name: "proto-and-single-file-walk-prefix-root-a",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			prefix: "root/a",
@@ -433,7 +435,7 @@ func RunTestSuite(
 		{
 			name: "proto-and-single-file-walk-prefix-root-a-2",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			prefix: "./root/a",
@@ -452,7 +454,7 @@ func RunTestSuite(
 		{
 			name: "proto-and-single-file-strip-components",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			stripComponentCount: 1,
@@ -476,7 +478,7 @@ func RunTestSuite(
 		{
 			name: "proto-and-single-file-map-prefix-root-a",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			mappers: []storage.Mapper{
@@ -496,7 +498,7 @@ func RunTestSuite(
 		{
 			name: "proto-and-single-file-map-prefix-a-strip-components",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			stripComponentCount: 1,
@@ -517,7 +519,7 @@ func RunTestSuite(
 		{
 			name: "all",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			mappers: []storage.Mapper{
@@ -545,7 +547,7 @@ func RunTestSuite(
 		{
 			name: "proto-and-single-file-not-equal-or-contained-map-prefix",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			mappers: []storage.Mapper{
@@ -569,7 +571,7 @@ func RunTestSuite(
 		{
 			name: "proto-and-single-file-not-equal-or-contained-map-prefix-and",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			mappers: []storage.Mapper{
@@ -595,7 +597,7 @@ func RunTestSuite(
 		{
 			name: "proto-and-single-file-not-equal-or-contained-map-prefix-and-2",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			mappers: []storage.Mapper{
@@ -623,7 +625,7 @@ func RunTestSuite(
 		{
 			name: "proto-and-single-file-not-equal-or-contained-map-prefix-and-3",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			mappers: []storage.Mapper{
@@ -651,7 +653,7 @@ func RunTestSuite(
 		{
 			name: "proto-and-single-file-not-equal-or-contained-map-prefix-chained",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, oneDirPath)
+				readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 				return readBucket
 			},
 			mappers: []storage.Mapper{
@@ -667,7 +669,7 @@ func RunTestSuite(
 		{
 			name: "multi-all",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, twoDirPath)
+				readBucket, _ := newReadBucket(t, twoDirPath, defaultProvider)
 				return storage.MultiReadBucket(
 					storage.MapReadBucket(
 						readBucket,
@@ -718,7 +720,7 @@ func RunTestSuite(
 		{
 			name: "multi-map-on-prefix",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, twoDirPath)
+				readBucket, _ := newReadBucket(t, twoDirPath, defaultProvider)
 				return storage.MultiReadBucket(
 					storage.MapReadBucket(
 						readBucket,
@@ -753,7 +755,7 @@ func RunTestSuite(
 		{
 			name: "multi-map-on-prefix-filter",
 			newReadBucketFunc: func(t *testing.T) storage.ReadBucket {
-				readBucket, _ := newReadBucket(t, twoDirPath)
+				readBucket, _ := newReadBucket(t, twoDirPath, defaultProvider)
 				return storage.MultiReadBucket(
 					storage.MapReadBucket(
 						readBucket,
@@ -794,7 +796,7 @@ func RunTestSuite(
 				t.Parallel()
 				readBucket := testCase.newReadBucketFunc(t)
 				readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
-				writeBucket := newWriteBucket(t)
+				writeBucket := newWriteBucket(t, defaultProvider)
 				_, err := storage.Copy(
 					context.Background(),
 					readBucket,
@@ -808,7 +810,7 @@ func RunTestSuite(
 				t.Parallel()
 				readBucket := testCase.newReadBucketFunc(t)
 				readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
-				writeBucket := newWriteBucket(t)
+				writeBucket := newWriteBucket(t, defaultProvider)
 				buffer := bytes.NewBuffer(nil)
 				require.NoError(t, storagearchive.Tar(
 					context.Background(),
@@ -829,7 +831,7 @@ func RunTestSuite(
 				t.Parallel()
 				readBucket := testCase.newReadBucketFunc(t)
 				readBucket = storage.MapReadBucket(readBucket, testCase.mappers...)
-				writeBucket := newWriteBucket(t)
+				writeBucket := newWriteBucket(t, defaultProvider)
 				buffer := bytes.NewBuffer(nil)
 				require.NoError(t, storagearchive.Zip(
 					context.Background(),
@@ -853,7 +855,7 @@ func RunTestSuite(
 		t.Run(fmt.Sprintf("tar-mapper-write-%s", testCase.name), func(t *testing.T) {
 			t.Parallel()
 			readBucket := testCase.newReadBucketFunc(t)
-			writeBucket := newWriteBucket(t)
+			writeBucket := newWriteBucket(t, defaultProvider)
 			buffer := bytes.NewBuffer(nil)
 			require.NoError(t, storagearchive.Tar(
 				context.Background(),
@@ -873,7 +875,7 @@ func RunTestSuite(
 		t.Run(fmt.Sprintf("zip-mapper-write%s", testCase.name), func(t *testing.T) {
 			t.Parallel()
 			readBucket := testCase.newReadBucketFunc(t)
-			writeBucket := newWriteBucket(t)
+			writeBucket := newWriteBucket(t, defaultProvider)
 			buffer := bytes.NewBuffer(nil)
 			require.NoError(t, storagearchive.Zip(
 				context.Background(),
@@ -899,8 +901,8 @@ func RunTestSuite(
 		t.Parallel()
 		diffDirPathA := filepath.Join(storagetestingDirPath, "testdata", "diff", "a")
 		diffDirPathB := filepath.Join(storagetestingDirPath, "testdata", "diff", "b")
-		readBucketA, getExternalPathFuncA := newReadBucket(t, diffDirPathA)
-		readBucketB, getExternalPathFuncB := newReadBucket(t, diffDirPathB)
+		readBucketA, getExternalPathFuncA := newReadBucket(t, diffDirPathA, defaultProvider)
+		readBucketB, getExternalPathFuncB := newReadBucket(t, diffDirPathB, defaultProvider)
 		readBucketA = storage.MapReadBucket(readBucketA, storage.MapOnPrefix("prefix"))
 		readBucketB = storage.MapReadBucket(readBucketB, storage.MapOnPrefix("prefix"))
 		externalPathPrefixA := getExternalPathFuncA(t, diffDirPathA, "prefix") + "/"
@@ -953,7 +955,7 @@ diff -u %s %s
 
 	t.Run("overlap-success", func(t *testing.T) {
 		t.Parallel()
-		readBucket, _ := newReadBucket(t, threeDirPath)
+		readBucket, _ := newReadBucket(t, threeDirPath, defaultProvider)
 		readBucket = storage.MapReadBucket(readBucket, storage.MatchPathExt(".proto"))
 		readBucket = storage.MultiReadBucket(
 			storage.MapReadBucket(
@@ -983,7 +985,7 @@ diff -u %s %s
 
 	t.Run("overlap-error", func(t *testing.T) {
 		t.Parallel()
-		readBucket, _ := newReadBucket(t, threeDirPath)
+		readBucket, _ := newReadBucket(t, threeDirPath, defaultProvider)
 		readBucket = storage.MapReadBucket(
 			storage.MultiReadBucket(
 				storage.MapReadBucket(
@@ -1007,7 +1009,7 @@ diff -u %s %s
 
 	t.Run("map-write-bucket", func(t *testing.T) {
 		t.Parallel()
-		writeBucket := newWriteBucket(t)
+		writeBucket := newWriteBucket(t, defaultProvider)
 		mapWriteBucket := storage.MapWriteBucket(
 			writeBucket,
 			storage.MapOnPrefix("a/b/c"),
@@ -1032,7 +1034,7 @@ diff -u %s %s
 
 	t.Run("absolute-path-read-error", func(t *testing.T) {
 		t.Parallel()
-		readBucket, _ := newReadBucket(t, oneDirPath)
+		readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 		_, err := readBucket.Get(context.Background(), "/absolute/path")
 		require.EqualError(t, err, "/absolute/path: expected to be relative", "should be using storageutil.ValidatePath on Get")
 		_, err = readBucket.Stat(context.Background(), "/absolute/path")
@@ -1043,7 +1045,7 @@ diff -u %s %s
 
 	t.Run("absolute-path-write-error", func(t *testing.T) {
 		t.Parallel()
-		writeBucket := newWriteBucket(t)
+		writeBucket := newWriteBucket(t, defaultProvider)
 		_, err := writeBucket.Put(context.Background(), "/absolute/path")
 		require.EqualError(t, err, "/absolute/path: expected to be relative", "should be using normalize.NormalizeAndValidate on Put")
 		err = writeBucket.Delete(context.Background(), "/absolute/path")
@@ -1052,7 +1054,7 @@ diff -u %s %s
 
 	t.Run("root-path-error", func(t *testing.T) {
 		t.Parallel()
-		readBucket, _ := newReadBucket(t, oneDirPath)
+		readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
 		_, err := readBucket.Get(context.Background(), ".")
 		require.EqualError(t, err, "cannot use root", "should be using storageutil.ValidatePath on Get")
 		_, err = readBucket.Stat(context.Background(), ".")
@@ -1061,7 +1063,7 @@ diff -u %s %s
 
 	t.Run("write-bucket-put-delete", func(t *testing.T) {
 		t.Parallel()
-		writeBucket := newWriteBucket(t)
+		writeBucket := newWriteBucket(t, defaultProvider)
 		err := writeBucket.Delete(context.Background(), "hello")
 		require.True(t, storage.IsNotExist(err))
 		writeObjectCloser, err := writeBucket.Put(
@@ -1092,7 +1094,7 @@ diff -u %s %s
 
 	t.Run("walk-prefixed-bucket-should-not-error", func(t *testing.T) {
 		t.Parallel()
-		writeBucket := newWriteBucket(t)
+		writeBucket := newWriteBucket(t, defaultProvider)
 		readBucket := writeBucketToReadBucket(t, writeBucket)
 		mappedReadBucket := storage.MapReadBucket(readBucket, storage.MapOnPrefix("prefix"))
 		err := mappedReadBucket.Walk(context.Background(), "", func(_ storage.ObjectInfo) error {
@@ -1103,7 +1105,7 @@ diff -u %s %s
 
 	t.Run("symlink_success_no_symlinks", func(t *testing.T) {
 		t.Parallel()
-		readBucket, _ := newReadBucket(t, symlinkSuccessDirPath)
+		readBucket, _ := newReadBucket(t, symlinkSuccessDirPath, defaultProvider)
 		AssertPathToContent(
 			t,
 			readBucket,
@@ -1115,7 +1117,13 @@ diff -u %s %s
 	})
 	t.Run("symlink_success_follow_symlinks", func(t *testing.T) {
 		t.Parallel()
-		readBucket, _ := newReadBucket(t, symlinkSuccessDirPath, storageos.ReadWriteBucketWithFollowSymlinks())
+		readBucket, _ := newReadBucket(
+			t,
+			symlinkSuccessDirPath,
+			storageos.NewProvider(
+				storageos.ProviderWithSymlinks(),
+			),
+		)
 		AssertPathToContent(
 			t,
 			readBucket,
@@ -1131,6 +1139,36 @@ diff -u %s %s
 				"ab/2.proto":   testProtoContent,
 				"ab/2.txt":     testTxtContent,
 				"file.proto":   testProtoContent,
+			},
+		)
+	})
+	t.Run("symlink_loop_no_symlinks", func(t *testing.T) {
+		t.Parallel()
+		readBucket, _ := newReadBucket(t, symlinkLoopDirPath, defaultProvider)
+		AssertPathToContent(
+			t,
+			readBucket,
+			"",
+			map[string]string{
+				"file.proto": testProtoContent,
+			},
+		)
+	})
+	t.Run("symlink_loop_follow_symlinks", func(t *testing.T) {
+		t.Parallel()
+		readBucket, _ := newReadBucket(
+			t,
+			symlinkLoopDirPath,
+			storageos.NewProvider(
+				storageos.ProviderWithSymlinks(),
+			),
+		)
+		AssertPathToContent(
+			t,
+			readBucket,
+			"",
+			map[string]string{
+				"file.proto": testProtoContent,
 			},
 		)
 	})

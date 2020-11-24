@@ -41,20 +41,23 @@ import (
 )
 
 type protocProxyHandler struct {
-	logger     *zap.Logger
-	protocPath string
-	pluginName string
+	logger            *zap.Logger
+	storageosProvider storageos.Provider
+	protocPath        string
+	pluginName        string
 }
 
 func newProtocProxyHandler(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	protocPath string,
 	pluginName string,
 ) *protocProxyHandler {
 	return &protocProxyHandler{
-		logger:     logger.Named("appprotoexec"),
-		protocPath: protocPath,
-		pluginName: pluginName,
+		logger:            logger.Named("appprotoexec"),
+		storageosProvider: storageosProvider,
+		protocPath:        protocPath,
+		pluginName:        pluginName,
 	}
 }
 
@@ -122,7 +125,8 @@ func (h *protocProxyHandler) Handle(
 	if featureProto3Optional {
 		responseWriter.SetFeatureProto3Optional()
 	}
-	readWriteBucket, err := storageos.NewReadWriteBucket(tmpDir.AbsPath())
+	// no need for symlinks here, and don't want to support
+	readWriteBucket, err := h.storageosProvider.NewReadWriteBucket(tmpDir.AbsPath())
 	if err != nil {
 		return err
 	}

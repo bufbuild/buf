@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
 
@@ -30,10 +31,13 @@ type generator struct {
 	appprotoosGenerator appprotoos.Generator
 }
 
-func newGenerator(logger *zap.Logger) *generator {
+func newGenerator(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) *generator {
 	return &generator{
 		logger:              logger,
-		appprotoosGenerator: appprotoos.NewGenerator(logger),
+		appprotoosGenerator: appprotoos.NewGenerator(logger, storageosProvider),
 	}
 }
 

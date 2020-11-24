@@ -53,7 +53,9 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, bufmodule.ModuleNameEqual(resolvedModuleName, putResolvedModuleName))
 
-	cacheBucket, err := storageos.NewReadWriteBucket(t.TempDir())
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	// we do not want symlinks for the store
+	cacheBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
 	moduleStore := bufmodulestorage.NewStore(cacheBucket)
 	moduleReader := newModuleReader(zap.NewNop(), moduleStore, delegateModuleReadWriter)

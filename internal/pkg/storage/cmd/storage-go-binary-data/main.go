@@ -89,7 +89,7 @@ func (c *controller) Run(ctx context.Context, container app.Container) error {
 }
 
 func getPathToData(ctx context.Context, dirPath string) (map[string][]byte, error) {
-	readWriteBucket, err := storageos.NewReadWriteBucket(dirPath)
+	readWriteBucket, err := storageos.NewProvider(storageos.ProviderWithSymlinks()).NewReadWriteBucket(dirPath)
 	if err != nil {
 		return nil, err
 	}

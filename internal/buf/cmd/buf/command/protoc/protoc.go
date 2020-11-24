@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -94,7 +95,8 @@ func run(
 		)
 	}
 
-	module, err := bufmodulebuild.NewModuleIncludeBuilder(container.Logger()).BuildForIncludes(
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	module, err := bufmodulebuild.NewModuleIncludeBuilder(container.Logger(), storageosProvider).BuildForIncludes(
 		ctx,
 		env.IncludeDirPaths,
 		bufmodulebuild.WithPaths(env.FilePaths),
@@ -177,6 +179,7 @@ func run(
 			if err := executePlugin(
 				ctx,
 				container.Logger(),
+				storageosProvider,
 				container,
 				images,
 				pluginName,

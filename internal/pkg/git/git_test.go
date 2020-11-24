@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -46,7 +47,7 @@ func TestCloneBranchToBucket(t *testing.T) {
 	}
 	absGitPath, err := filepath.Abs("../../../.git")
 	require.NoError(t, err)
-	_, err = os.Stat(absGitPath)
+	_, err = os.Lstat(absGitPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			t.Skip("no .git repository")
@@ -61,7 +62,8 @@ func TestCloneBranchToBucket(t *testing.T) {
 	require.NoError(t, err)
 	relFilePathError1 := "Makefile"
 
-	cloner := NewCloner(zap.NewNop(), ClonerOptions{})
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	cloner := NewCloner(zap.NewNop(), storageosProvider, ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
@@ -90,7 +92,7 @@ func TestCloneRefToBucket(t *testing.T) {
 	t.Parallel()
 	absGitPath, err := filepath.Abs("../../../.git")
 	require.NoError(t, err)
-	_, err = os.Stat(absGitPath)
+	_, err = os.Lstat(absGitPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			t.Skip("no .git repository")
@@ -105,7 +107,8 @@ func TestCloneRefToBucket(t *testing.T) {
 	require.NoError(t, err)
 	relFilePathError1 := "Makefile"
 
-	cloner := NewCloner(zap.NewNop(), ClonerOptions{})
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	cloner := NewCloner(zap.NewNop(), storageosProvider, ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
@@ -143,7 +146,7 @@ func TestCloneBranchAndRefToBucket(t *testing.T) {
 	}
 	absGitPath, err := filepath.Abs("../../../.git")
 	require.NoError(t, err)
-	_, err = os.Stat(absGitPath)
+	_, err = os.Lstat(absGitPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			t.Skip("no .git repository")
@@ -158,7 +161,8 @@ func TestCloneBranchAndRefToBucket(t *testing.T) {
 	require.NoError(t, err)
 	relFilePathError1 := "Makefile"
 
-	cloner := NewCloner(zap.NewNop(), ClonerOptions{})
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	cloner := NewCloner(zap.NewNop(), storageosProvider, ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
@@ -187,7 +191,7 @@ func TestCloneDefault(t *testing.T) {
 	t.Parallel()
 	absGitPath, err := filepath.Abs("../../../.git")
 	require.NoError(t, err)
-	_, err = os.Stat(absGitPath)
+	_, err = os.Lstat(absGitPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			t.Skip("no .git repository")
@@ -202,7 +206,8 @@ func TestCloneDefault(t *testing.T) {
 	require.NoError(t, err)
 	relFilePathError1 := "Makefile"
 
-	cloner := NewCloner(zap.NewNop(), ClonerOptions{})
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	cloner := NewCloner(zap.NewNop(), storageosProvider, ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
 	readBucketBuilder := storagemem.NewReadBucketBuilder()

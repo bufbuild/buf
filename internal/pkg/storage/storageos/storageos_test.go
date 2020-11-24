@@ -38,17 +38,23 @@ func TestOS(t *testing.T) {
 	)
 }
 
-func testNewReadBucket(t *testing.T, dirPath string, options ...storageos.ReadWriteBucketOption) (storage.ReadBucket, storagetesting.GetExternalPathFunc) {
-	osBucket, err := storageos.NewReadWriteBucket(dirPath, options...)
+func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos.Provider) (storage.ReadBucket, storagetesting.GetExternalPathFunc) {
+	osBucket, err := storageosProvider.NewReadWriteBucket(
+		dirPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
 	return osBucket, func(t *testing.T, rootPath string, path string) string {
 		return normalpath.Join(rootPath, path)
 	}
 }
 
-func testNewWriteBucket(t *testing.T, options ...storageos.ReadWriteBucketOption) storage.WriteBucket {
+func testNewWriteBucket(t *testing.T, storageosProvider storageos.Provider) storage.WriteBucket {
 	tmpDir := t.TempDir()
-	osBucket, err := storageos.NewReadWriteBucket(tmpDir, options...)
+	osBucket, err := storageosProvider.NewReadWriteBucket(
+		tmpDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	require.NoError(t, err)
 	return osBucket
 }
