@@ -281,10 +281,39 @@ func ImageToCodeGeneratorRequest(image Image, parameter string) *pluginpb.CodeGe
 // ImagesToCodeGeneratorRequests converts the Images to CodeGeneratorRequests.
 //
 // All non-imports are added as files to generate.
-func ImagesToCodeGeneratorRequests(images []Image, parameter string) []*pluginpb.CodeGeneratorRequest {
+func ImagesToCodeGeneratorRequests(images []Image, parameter string, serial bool) []*pluginpb.CodeGeneratorRequest {
 	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
 	for i, image := range images {
 		requests[i] = ImageToCodeGeneratorRequest(image, parameter)
 	}
+
+	// If requested, pack all requests in to a single request to avoid parallelization
+	if serial && len(requests) > 0 {
+		singleRequest := make([]*pluginpb.CodeGeneratorRequest, 1)
+		singleRequest[0] = &pluginpb.CodeGeneratorRequest{
+			Parameter: requests[0].Parameter,
+		}
+
+		consumedImages := make(map[string]bool)
+		consumedFiles := make(map[string]bool)
+		for _, request := range requests {
+			for _, image := range request.ProtoFile {
+				if _, ok := consumedImages[*image.Name]; !ok {
+					consumedImages[*image.Name] = true
+					singleRequest[0].ProtoFile = append(singleRequest[0].ProtoFile, image)
+				}
+			}
+
+			for _, file := range request.FileToGenerate {
+				if _, ok := consumedFiles[file]; !ok {
+					consumedFiles[file] = true
+					singleRequest[0].FileToGenerate = append(singleRequest[0].FileToGenerate, file)
+				}
+			}
+		}
+
+		requests = singleRequest
+	}
+
 	return requests
 }

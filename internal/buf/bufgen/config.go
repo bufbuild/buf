@@ -116,10 +116,11 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
 		config.PluginConfigs = append(
 			config.PluginConfigs,
 			&PluginConfig{
-				Name: plugin.Name,
-				Out:  plugin.Out,
-				Opt:  plugin.Opt,
-				Path: plugin.Path,
+				Name:   plugin.Name,
+				Out:    plugin.Out,
+				Opt:    plugin.Opt,
+				Path:   plugin.Path,
+				Serial: plugin.Serial,
 			},
 		)
 	}

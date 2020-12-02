@@ -1,0 +1,12 @@
+{
+  "version": "v1beta1",
+  "plugins": [
+    {
+      "name": "go",
+      "out": "gen/go",
+      "opt": "plugins=grpc",
+      "path": "/path/to/foo",
+      "serial": true
+    }
+  ]
+}

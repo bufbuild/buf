@@ -56,6 +56,7 @@ func executePlugin(
 		bufimage.ImagesToCodeGeneratorRequests(
 			images,
 			strings.Join(pluginInfo.Opt, ","),
+			false,
 		),
 		appprotoos.GenerateWithPluginPath(pluginInfo.Path),
 	); err != nil {

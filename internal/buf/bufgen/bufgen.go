@@ -78,6 +78,8 @@ type PluginConfig struct {
 	Opt string
 	// Optional
 	Path string
+	// Optional
+	Serial bool
 }
 
 // ReadConfig reads the configuration from the OS.
@@ -103,10 +105,11 @@ type ExternalConfigV1Beta1 struct {
 //
 // Only use outside of this package for testing.
 type ExternalPluginConfigV1Beta1 struct {
-	Name string `json:"name,omitempty" yaml:"name,omitempty"`
-	Out  string `json:"out,omitempty" yaml:"out,omitempty"`
-	Opt  string `json:"opt,omitempty" yaml:"opt,omitempty"`
-	Path string `json:"path,omitempty" yaml:"path,omitempty"`
+	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
+	Out    string `json:"out,omitempty" yaml:"out,omitempty"`
+	Opt    string `json:"opt,omitempty" yaml:"opt,omitempty"`
+	Path   string `json:"path,omitempty" yaml:"path,omitempty"`
+	Serial bool   `json:"serial,omitempty" yaml:"serial,omitempty"`
 }
 
 type externalConfigVersion struct {

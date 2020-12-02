@@ -26,13 +26,26 @@ func TestReadConfig(t *testing.T) {
 	successConfig := &Config{
 		PluginConfigs: []*PluginConfig{
 			{
-				Name: "go",
-				Out:  "gen/go",
-				Opt:  "plugins=grpc",
-				Path: "/path/to/foo",
+				Name:   "go",
+				Out:    "gen/go",
+				Opt:    "plugins=grpc",
+				Path:   "/path/to/foo",
+				Serial: false,
 			},
 		},
 	}
+	successConfigSerial := &Config{
+		PluginConfigs: []*PluginConfig{
+			{
+				Name:   "go",
+				Out:    "gen/go",
+				Opt:    "plugins=grpc",
+				Path:   "/path/to/foo",
+				Serial: true,
+			},
+		},
+	}
+
 	config, err := ReadConfig(filepath.Join("testdata", "gen_success1.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
@@ -49,6 +62,14 @@ func TestReadConfig(t *testing.T) {
 	config, err = ReadConfig(string(data))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
+	config, err = ReadConfig(filepath.Join("testdata", "gen_success_serial1.json"))
+	require.NoError(t, err)
+	require.Equal(t, successConfigSerial, config)
+	data, err = ioutil.ReadFile(filepath.Join("testdata", "gen_success_serial1.json"))
+	require.NoError(t, err)
+	config, err = ReadConfig(string(data))
+	require.NoError(t, err)
+	require.Equal(t, successConfigSerial, config)
 	_, err = ReadConfig(filepath.Join("testdata", "gen_error1.yaml"))
 	require.Error(t, err)
 	data, err = ioutil.ReadFile(filepath.Join("testdata", "gen_error1.yaml"))

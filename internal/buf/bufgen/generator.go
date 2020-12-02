@@ -82,7 +82,7 @@ func (g *generator) generate(
 			container,
 			pluginConfig.Name,
 			out,
-			bufimage.ImagesToCodeGeneratorRequests(images, pluginConfig.Opt),
+			bufimage.ImagesToCodeGeneratorRequests(images, pluginConfig.Opt, pluginConfig.Serial),
 			appprotoos.GenerateWithPluginPath(pluginConfig.Path),
 			appprotoos.GenerateWithCreateOutDirIfNotExists(),
 		); err != nil {
