@@ -881,6 +881,36 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		),
 		"example.com/foo/bar/v1:"+bufmoduletesting.TestDigest,
 	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBin,
+			"github.com/path/to/file.bin",
+			internal.FileSchemeHTTPS,
+			internal.CompressionTypeNone,
+		),
+		"https://github.com/path/to/file.bin",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBin,
+			"github.com/path/to/file.ext",
+			internal.FileSchemeHTTPS,
+			internal.CompressionTypeNone,
+		),
+		"https://github.com/path/to/file.ext#format=bin",
+	)
+	testGetParsedRefSuccess(
+		t,
+		internal.NewDirectParsedSingleRef(
+			formatBin,
+			"gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.bin?private_token=bar",
+			internal.FileSchemeHTTPS,
+			internal.CompressionTypeNone,
+		),
+		"https://gitlab.com/api/v4/projects/foo/packages/generic/proto/0.0.1/proto.bin?private_token=bar#format=bin",
+	)
 }
 
 func TestGetParsedRefError(t *testing.T) {

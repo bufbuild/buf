@@ -18,18 +18,17 @@ more details.**
 
 Buf’s long-term goal is to enable schema-driven development: a future where APIs are defined consistently, in a way that service owners and clients can depend on.
 
-Defining APIs using an [IDL](https://en.wikipedia.org/wiki/Interface_description_language) provides a number of benefits over simply exposing JSON/REST services, and today, [Protobuf](https://developers.google.com/protocol-buffers) is the most stable, widely-adopted IDL in the industry.  
+Defining APIs using an [IDL](https://en.wikipedia.org/wiki/Interface_description_language) provides a number of benefits over simply exposing JSON/REST services, and today, [Protobuf](https://developers.google.com/protocol-buffers) is the most stable, widely-adopted IDL in the industry.
 
 However, as it stands, using Protobuf is much more difficult than using JSON as your data transfer format.
 
-Enter Buf: We’re building tooling to make Protobuf reliable and easy to use for service owners and clients, while keeping it the obvious choice on the technical merits. 
+Enter Buf: We’re building tooling to make Protobuf reliable and easy to use for service owners and clients, while keeping it the obvious choice on the technical merits.
 
 Your organization should not have to reinvent the wheel to create, maintain, and consume Protobuf APIs efficiently and effectively. We'll handle your Protobuf management strategy for you, so you can focus on what matters.
 
 We’re working quickly to build a modern Protobuf ecosystem. Our first tool is the **Buf CLI**, built to help you create consistent Protobuf APIs that preserve compatibility and comply with design best-practices. The tool is currently available on an open-source basis.
 
 Our second tool, the **Buf Schema Registry (“BSR”)**, will be the hub of our ecosystem. The BSR is a platform that serves as the source of truth for your organization's Protobuf files, enabling you to centrally maintain compatibility and manage dependencies, while enabling your clients to consume APIs reliably and efficiently. The BSR will be available for a limited, free private beta shortly.
-
 
 ## Quick Links
 
@@ -46,7 +45,7 @@ However, we recommend you read the below introduction first!
 
 ## The problems we aim to solve
 
-Traditionally, adopting Protobuf presents a number of challenges across the API lifecycle.  These are the problems we aim to solve.
+Traditionally, adopting Protobuf presents a number of challenges across the API lifecycle. These are the problems we aim to solve.
 
 ### Creating consistent Protobuf APIs
 
@@ -54,7 +53,7 @@ Traditionally, adopting Protobuf presents a number of challenges across the API 
 
 ### Maintaining compatible, accessible Protobuf APIs
 
-- **Dependency management is usually an afterthought**: Protobuf files are vendored manually, with an error-prone copy-and-paste process from Github repositories.  There is no centralized attempt to track and manage around cross-file dependencies.
+- **Dependency management is usually an afterthought**: Protobuf files are vendored manually, with an error-prone copy-and-paste process from Github repositories. There is no centralized attempt to track and manage around cross-file dependencies.
 
 - **Forwards and backwards compatibility is not enforced**: While forwards and backwards compatibility is a promise of Protobuf, actually maintaining backwards-compatible Protobuf APIs isn't widely practiced, and is hard to enforce.
 
@@ -64,11 +63,9 @@ Traditionally, adopting Protobuf presents a number of challenges across the API 
 
 - **The tooling ecosystem is limited**: Lots of easy-to-use tooling exists today for JSON/REST APIs. Mock server generation, fuzz testing, documentation, and other daily API concerns are not widely standardized and easy to use for Protobuf APIs, requiring teams to regularly reinvent the wheel and build custom tooling to replicate the JSON ecosystem.
 
-
 ## Buf is building a modern Protobuf ecosystem
 
 Our tools will address many of the problems above, ultimately allowing you to redirect much of your time and energy from managing Protobuf files to implementing your core features and infrastructure.
-
 
 ### The Buf CLI
 
@@ -137,13 +134,13 @@ Initially, the BSR will offer the following key features:
 
 - **Automatically enforce forwards and backwards compatibility**: Ensure API clients never break, without wasteful team-to-team communication or custom SLAs.
 
-- **Generated libraries produced by a managed compiler**: Language-specific stub generation using Buf’s high-performance, drop-in protoc replacement. 
+- **Generated libraries produced by a managed compiler**: Language-specific stub generation using Buf’s high-performance, drop-in protoc replacement.
 
 Over time, our goal is to make the BSR the only tool you need to manage your Protobuf workflow from end to end. To that end, there's a lot we are planning with the Buf Schema Registry. For a quick overview, see our [roadmap](https://buf.build/docs/roadmap).
 
 ## Where to go from here
 
-To install Buf, proceed to [installation](https://buf.build/docs/installation). This includes links to an example
+To install Buf, proceed to [installation](https://buf.build/docs/installation.mdx). This includes links to an example
 repository for Travis CI and GitHub Actions integration.
 
 Next, we recommend completing the [tour](https://buf.build/docs/tour-1). This tour should only take about 10 minutes, and

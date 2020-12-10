@@ -10,7 +10,6 @@
 /internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
 /internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 /internal/buf/internal/buftesting/cache/
-/internal/pkg/app/appproto/appprotoexec/cmd/protoc-gen-proxy/protoc-gen-proxy
 /internal/pkg/storage/cmd/ddiff/ddiff
 /internal/pkg/storage/cmd/storage-go-binary-data/storage-go-binary-data
 /internal/pkg/storage/storageos/tmp/

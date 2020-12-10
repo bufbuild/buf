@@ -21,10 +21,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"sync"
 	"unicode"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/thread"
 	"go.uber.org/multierr"
@@ -82,42 +82,22 @@ func (g *generator) getResponseFiles(
 	container app.EnvStderrContainer,
 	requests []*pluginpb.CodeGeneratorRequest,
 ) ([]*pluginpb.CodeGeneratorResponse_File, error) {
-	switch len(requests) {
-	case 0:
-		return nil, nil
-	case 1:
-		return g.runHandler(ctx, container, requests[0])
-	default:
-		var files []*pluginpb.CodeGeneratorResponse_File
-		var lock sync.Mutex
-		jobs := make([]func() error, len(requests))
-		for i, request := range requests {
-			request := request
-			jobs[i] = func() error {
-				iFiles, err := g.runHandler(ctx, container, request)
-				if err != nil {
-					return err
-				}
-				lock.Lock()
-				files = append(files, iFiles...)
-				lock.Unlock()
-				return nil
+	responseWriter := newResponseWriter(container)
+	jobs := make([]func() error, len(requests))
+	for i, request := range requests {
+		request := request
+		jobs[i] = func() error {
+			if err := protodescriptor.ValidateCodeGeneratorRequest(request); err != nil {
+				return err
 			}
+			return g.handler.Handle(ctx, container, responseWriter, request)
 		}
-		if err := thread.Parallelize(jobs...); err != nil {
-			return nil, err
-		}
-		return files, nil
 	}
-}
-
-func (g *generator) runHandler(
-	ctx context.Context,
-	container app.EnvStderrContainer,
-	request *pluginpb.CodeGeneratorRequest,
-) ([]*pluginpb.CodeGeneratorResponse_File, error) {
-	response, err := runHandler(ctx, container, g.handler, request)
-	if err != nil {
+	if err := thread.Parallelize(jobs...); err != nil {
+		return nil, err
+	}
+	response := responseWriter.toResponse()
+	if err := protodescriptor.ValidateCodeGeneratorResponse(response); err != nil {
 		return nil, err
 	}
 	if errString := response.GetError(); errString != "" {
