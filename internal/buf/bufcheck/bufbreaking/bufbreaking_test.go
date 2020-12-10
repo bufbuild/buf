@@ -309,6 +309,15 @@ func TestRunBreakingFileNoDelete(t *testing.T) {
 	)
 }
 
+func TestRunBreakingFileNoDeleteUnstable(t *testing.T) {
+	// https://github.com/bufbuild/buf/issues/211
+	testBreaking(
+		t,
+		"breaking_file_no_delete_unstable",
+		bufanalysistesting.NewFileAnnotationNoLocationOrPath(t, "FILE_NO_DELETE"),
+	)
+}
+
 func TestRunBreakingFileSamePackage(t *testing.T) {
 	testBreaking(
 		t,
