@@ -24,7 +24,7 @@ import (
 )
 
 func main() {
-	app.Main(context.Background(), appproto.NewRunFunc(appproto.HandlerFunc(handle)))
+	appproto.Main(context.Background(), appproto.HandlerFunc(handle))
 }
 
 func handle(
@@ -33,17 +33,16 @@ func handle(
 	responseWriter appproto.ResponseWriter,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
-	if err := responseWriter.Add(&pluginpb.CodeGeneratorResponse_File{
-		Name:           proto.String("test.txt"),
-		InsertionPoint: proto.String("example"),
-		Content: proto.String(`
+	return responseWriter.AddFile(
+		&pluginpb.CodeGeneratorResponse_File{
+			Name:           proto.String("test.txt"),
+			InsertionPoint: proto.String("example"),
+			Content: proto.String(`
 			// Include this comment on the 'example' insertion point.
 			  // This is another example where whitespaces are preserved.
 			  // And this demonstrates a newline literal (\n).
 			// And don't forget the windows newline literal (\r\n).
 		`),
-	}); err != nil {
-		return err
-	}
-	return nil
+		},
+	)
 }

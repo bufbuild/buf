@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"strings"
 	"time"
 
@@ -37,7 +36,7 @@ const defaultTimeout = 10 * time.Second
 
 // Main is the main.
 func Main() {
-	app.Main(context.Background(), appproto.NewRunFunc(appproto.HandlerFunc(handle)))
+	appproto.Main(context.Background(), appproto.HandlerFunc(handle))
 }
 
 func handle(
@@ -99,7 +98,7 @@ func handle(
 		if err := buflint.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
 			return err
 		}
-		return errors.New(strings.TrimSpace(buffer.String()))
+		responseWriter.AddError(strings.TrimSpace(buffer.String()))
 	}
 	return nil
 }
