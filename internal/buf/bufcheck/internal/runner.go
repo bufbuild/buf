@@ -93,6 +93,9 @@ func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
 			return true
 		}
 		if config.IgnoreUnstablePackages {
+			if descriptor == nil {
+				return false
+			}
 			packageVersion, ok := protoversion.NewPackageVersionForPackage(descriptor.File().Package())
 			if !ok {
 				return false
