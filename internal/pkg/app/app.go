@@ -292,6 +292,7 @@ func Main(ctx context.Context, f func(context.Context, Container) error) {
 // Run runs the application using the container.
 //
 // The run will be stopped on interrupt signal.
+// The exit code can be determined using GetExitCode.
 func Run(ctx context.Context, container Container, f func(context.Context, Container) error) error {
 	ctx, cancel := interrupt.WithCancel(ctx)
 	defer cancel()

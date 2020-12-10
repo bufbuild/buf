@@ -24,7 +24,7 @@ import (
 )
 
 func main() {
-	app.Main(context.Background(), appproto.NewRunFunc(appproto.HandlerFunc(handle)))
+	appproto.Main(context.Background(), appproto.HandlerFunc(handle))
 }
 
 func handle(
@@ -33,9 +33,10 @@ func handle(
 	responseWriter appproto.ResponseWriter,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
-	if err := responseWriter.Add(&pluginpb.CodeGeneratorResponse_File{
-		Name: proto.String("test.txt"),
-		Content: proto.String(`
+	return responseWriter.AddFile(
+		&pluginpb.CodeGeneratorResponse_File{
+			Name: proto.String("test.txt"),
+			Content: proto.String(`
 		// The following line represents an insertion point named 'example'.
 		// We include a few indentation to verify the whitespace is preserved
 		// in the inserted content.
@@ -44,8 +45,6 @@ func handle(
 		//
 		// Note that all text should be added above the insertion point.
 		`),
-	}); err != nil {
-		return err
-	}
-	return nil
+		},
+	)
 }

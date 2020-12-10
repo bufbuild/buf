@@ -53,27 +53,31 @@ func SetParallelism(parallelism int) {
 // A max of Parallelism jobs will be run at once.
 // Returns the combined error from the jobs.
 func Parallelize(jobs ...func() error) error {
-	if len(jobs) == 1 {
+	switch len(jobs) {
+	case 0:
+		return nil
+	case 1:
 		return jobs[0]()
+	default:
+		semaphoreC := make(chan struct{}, Parallelism())
+		var retErr error
+		var wg sync.WaitGroup
+		var lock sync.Mutex
+		for _, job := range jobs {
+			job := job
+			wg.Add(1)
+			semaphoreC <- struct{}{}
+			go func() {
+				if err := job(); err != nil {
+					lock.Lock()
+					retErr = multierr.Append(retErr, err)
+					lock.Unlock()
+				}
+				<-semaphoreC
+				wg.Done()
+			}()
+		}
+		wg.Wait()
+		return retErr
 	}
-	semaphoreC := make(chan struct{}, Parallelism())
-	var retErr error
-	var wg sync.WaitGroup
-	var lock sync.Mutex
-	for _, job := range jobs {
-		job := job
-		wg.Add(1)
-		semaphoreC <- struct{}{}
-		go func() {
-			if err := job(); err != nil {
-				lock.Lock()
-				retErr = multierr.Append(retErr, err)
-				lock.Unlock()
-			}
-			<-semaphoreC
-			wg.Done()
-		}()
-	}
-	wg.Wait()
-	return retErr
 }

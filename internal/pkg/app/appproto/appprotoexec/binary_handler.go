@@ -94,15 +94,13 @@ func (h *binaryHandler) Handle(
 		responseWriter.SetFeatureProto3Optional()
 	}
 	for _, file := range response.File {
-		if err := responseWriter.Add(file); err != nil {
+		if err := responseWriter.AddFile(file); err != nil {
 			return err
 		}
 	}
 	// call AddError even if this is empty
 	if response.Error != nil {
-		if err := responseWriter.AddError(response.GetError()); err != nil {
-			return err
-		}
+		responseWriter.AddError(response.GetError())
 	}
 	return nil
 }

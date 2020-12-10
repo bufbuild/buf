@@ -42,7 +42,7 @@ func newResponseWriter(container app.StderrContainer) *responseWriter {
 	}
 }
 
-func (r *responseWriter) Add(file *pluginpb.CodeGeneratorResponse_File) error {
+func (r *responseWriter) AddFile(file *pluginpb.CodeGeneratorResponse_File) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	if file == nil {
@@ -84,7 +84,7 @@ func (r *responseWriter) Add(file *pluginpb.CodeGeneratorResponse_File) error {
 	return nil
 }
 
-func (r *responseWriter) AddError(message string) error {
+func (r *responseWriter) AddError(message string) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 	if message == "" {
@@ -93,7 +93,6 @@ func (r *responseWriter) AddError(message string) error {
 		message = "error"
 	}
 	r.errorMessages = append(r.errorMessages, message)
-	return nil
 }
 
 func (r *responseWriter) SetFeatureProto3Optional() {
@@ -104,24 +103,14 @@ func (r *responseWriter) SetFeatureProto3Optional() {
 
 // should only be called once
 // should be private
-func (r *responseWriter) toResponse(err error) *pluginpb.CodeGeneratorResponse {
+func (r *responseWriter) toResponse() *pluginpb.CodeGeneratorResponse {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	response := &pluginpb.CodeGeneratorResponse{
 		File: r.files,
 	}
-	finalErrorMessages := r.errorMessages
-	if err != nil {
-		errorMessage := err.Error()
-		if errorMessage == "" {
-			// default to an error message to make sure we pass an error
-			// if err != nil
-			errorMessage = "error"
-		}
-		finalErrorMessages = append(finalErrorMessages, errorMessage)
-	}
-	if len(finalErrorMessages) > 0 {
-		response.Error = proto.String(strings.Join(finalErrorMessages, "\n"))
+	if len(r.errorMessages) > 0 {
+		response.Error = proto.String(strings.Join(r.errorMessages, "\n"))
 	}
 	if r.featureProto3Optional {
 		response.SupportedFeatures = proto.Uint64(uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL))
@@ -131,10 +120,7 @@ func (r *responseWriter) toResponse(err error) *pluginpb.CodeGeneratorResponse {
 
 func (r *responseWriter) warnUnnormalizedName(name string) error {
 	_, err := r.container.Stderr().Write([]byte(fmt.Sprintf(
-		`Warning: generated file name %q does not conform to the Protobuf generation specification.
-Note that the file name must be relative, use "/" instead of "\", and not use "." or ".." as part of the file name.
-Buf will continue without error here, but please raise an issue with the maintainer of the plugin
-and reference https://github.com/protocolbuffers/protobuf/blob/95e6c5b4746dd7474d540ce4fb375e3f79a086f8/src/google/protobuf/compiler/plugin.proto#L122
+		`Warning: Generated file name %q does not conform to the Protobuf generation specification. Note that the file name must be relative, use "/" instead of "\", and not use "." or ".." as part of the file name. Buf will continue without error here, but please raise an issue with the maintainer of the plugin and reference https://github.com/protocolbuffers/protobuf/blob/95e6c5b4746dd7474d540ce4fb375e3f79a086f8/src/google/protobuf/compiler/plugin.proto#L122
 `,
 		name,
 	)))
@@ -143,9 +129,7 @@ and reference https://github.com/protocolbuffers/protobuf/blob/95e6c5b4746dd7474
 
 func (r *responseWriter) warnDuplicateName(name string) error {
 	_, err := r.container.Stderr().Write([]byte(fmt.Sprintf(
-		`Warning: duplicate generated file name %q.
-Buf will continue without error here and drop the second occurrence of thie file, but
-please raise an issue with the maintainer of the plugin.
+		`Warning: Duplicate generated file name %q. Buf will continue without error here and drop the second occurrence of thie file, but please raise an issue with the maintainer of the plugin.
 `,
 		name,
 	)))
@@ -154,10 +138,7 @@ please raise an issue with the maintainer of the plugin.
 
 func newUnvalidatedNameError(name string) error {
 	return fmt.Errorf(
-		`Generated file name %q does not conform to the Protobuf generation specification.
-Note that the file name must be relative, and not use "..".
-Please raise an issue with the maintainer of the plugin
-and reference https://github.com/protocolbuffers/protobuf/blob/95e6c5b4746dd7474d540ce4fb375e3f79a086f8/src/google/protobuf/compiler/plugin.proto#L122
+		`Generated file name %q does not conform to the Protobuf generation specification. Note that the file name must be relative, and not use "..". Please raise an issue with the maintainer of the plugin and reference https://github.com/protocolbuffers/protobuf/blob/95e6c5b4746dd7474d540ce4fb375e3f79a086f8/src/google/protobuf/compiler/plugin.proto#L122
 `,
 		name,
 	)

@@ -174,7 +174,7 @@ func testRunHandlerFunc(
 	stderr := bytes.NewBuffer(nil)
 
 	exitCode := app.GetExitCode(
-		app.Run(
+		appproto.Run(
 			context.Background(),
 			app.NewContainer(
 				nil,
@@ -182,9 +182,7 @@ func testRunHandlerFunc(
 				stdout,
 				stderr,
 			),
-			appproto.NewRunFunc(
-				handler,
-			),
+			handler,
 		),
 	)
 
