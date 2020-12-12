@@ -113,13 +113,18 @@ func validateExternalConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id stri
 func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
 	config := &Config{}
 	for _, plugin := range externalConfig.Plugins {
+		strategy, err := ParseStrategy(plugin.Strategy)
+		if err != nil {
+			return nil, err
+		}
 		config.PluginConfigs = append(
 			config.PluginConfigs,
 			&PluginConfig{
-				Name: plugin.Name,
-				Out:  plugin.Out,
-				Opt:  plugin.Opt,
-				Path: plugin.Path,
+				Name:     plugin.Name,
+				Out:      plugin.Out,
+				Opt:      plugin.Opt,
+				Path:     plugin.Path,
+				Strategy: strategy,
 			},
 		)
 	}

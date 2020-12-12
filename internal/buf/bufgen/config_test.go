@@ -26,10 +26,11 @@ func TestReadConfig(t *testing.T) {
 	successConfig := &Config{
 		PluginConfigs: []*PluginConfig{
 			{
-				Name: "go",
-				Out:  "gen/go",
-				Opt:  "plugins=grpc",
-				Path: "/path/to/foo",
+				Name:     "go",
+				Out:      "gen/go",
+				Opt:      "plugins=grpc",
+				Path:     "/path/to/foo",
+				Strategy: StrategyAll,
 			},
 		},
 	}
