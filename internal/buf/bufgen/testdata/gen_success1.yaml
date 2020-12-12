@@ -4,3 +4,4 @@ plugins:
     out: gen/go
     opt: plugins=grpc
     path: /path/to/foo
+    strategy: all
