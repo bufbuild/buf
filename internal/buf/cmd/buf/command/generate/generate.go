@@ -60,12 +60,49 @@ func NewCommand(
 		Short: "Generate stubs for protoc plugins using a template.",
 		Long: `This command uses a template file of the shape:
 
-version: v1beta1         # required
+# The version of the generation template.
+# Required.
+# The only currently-valid value is v1beta1.
+version: v1beta1
+# The plugins to run.
 plugins:
-  - name: go             # required
-    out: gen/go          # required
-    opt: plugins=grpc    # optional
+    # The name of the plugin.
+    # Required.
+    # By default, buf generate will look for a binary named protoc-gen-NAME on your $PATH.
+  - name: go
+    # The the relative output directory.
+    # Required.
+    out: gen/go
+    # Any options to provide to the plugin.
+    # Optional.
+    opt: paths=source_relative
+    # The custom path to the plugin binary, if not protoc-gen-NAME on your $PATH.
     path: custom-gen-go  # optional
+    # The generation strategy to use. There are two options:
+    #
+    # 1. "directory"
+    #
+    #   This will result in buf splitting the input files by directory, and making separate plugin
+    #   invocations in parallel. This is roughly the concurrent equivalent of:
+    #
+    #     for dir in $(find . -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq); do
+    #       protoc -I . $(find "${dir}" -name '*.proto')
+    #     done
+    #
+    #   Almost every Protobuf plugin either requires this, or works with this,
+    #   and this is the recommended and default value.
+    #
+    # 2. "all"
+    #
+    #   This will result in buf making a single plugin invocation with all input files.
+    #   This is roughly the equivalent of:
+    #
+    #     protoc -I . $(find . -name '*.proto')
+    #
+    #   This is needed for certain plugins that expect all files to be given at once.
+    #
+    # Optional. If omitted, "directory" is used. Most users should not need to set this option.
+    strategy: directory
   - name java
     out: gen/java
 
