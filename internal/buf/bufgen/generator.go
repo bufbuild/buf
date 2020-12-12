@@ -68,21 +68,36 @@ func (g *generator) generate(
 	image bufimage.Image,
 	baseOutDirPath string,
 ) error {
-	images, err := bufimage.ImageByDir(image)
-	if err != nil {
-		return err
-	}
+	// we keep this as a variable so we can cache it if we hit StrategyDirectory
+	var imagesByDir []bufimage.Image
+	var err error
 	for _, pluginConfig := range config.PluginConfigs {
 		out := pluginConfig.Out
 		if baseOutDirPath != "" && baseOutDirPath != "." {
 			out = filepath.Join(baseOutDirPath, out)
+		}
+		var pluginImages []bufimage.Image
+		switch pluginConfig.Strategy {
+		case StrategyAll:
+			pluginImages = []bufimage.Image{image}
+		case StrategyDirectory:
+			// if we have not already called this, call it
+			if imagesByDir == nil {
+				imagesByDir, err = bufimage.ImageByDir(image)
+				if err != nil {
+					return err
+				}
+			}
+			pluginImages = imagesByDir
+		default:
+			return fmt.Errorf("unknown strategy: %v", pluginConfig.Strategy)
 		}
 		if err := g.appprotoosGenerator.Generate(
 			ctx,
 			container,
 			pluginConfig.Name,
 			out,
-			bufimage.ImagesToCodeGeneratorRequests(images, pluginConfig.Opt),
+			bufimage.ImagesToCodeGeneratorRequests(pluginImages, pluginConfig.Opt),
 			appprotoos.GenerateWithPluginPath(pluginConfig.Path),
 			appprotoos.GenerateWithCreateOutDirIfNotExists(),
 		); err != nil {

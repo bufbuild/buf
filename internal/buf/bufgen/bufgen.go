@@ -19,12 +19,52 @@ package bufgen
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
+
+const (
+	// StrategyDirectory is the strategy that says to generate per directory.
+	//
+	// This is the default value.
+	StrategyDirectory Strategy = 1
+	// StrategyAll is the strategy that says to generate with all files at once.
+	StrategyAll Strategy = 2
+)
+
+// Strategy is a generation stategy.
+type Strategy int
+
+// ParseStrategy parses the Strategy.
+//
+// If the empty string is provided, this is interpreted as StrategyDirectory.
+func ParseStrategy(s string) (Strategy, error) {
+	switch s {
+	case "", "directory":
+		return StrategyDirectory, nil
+	case "all":
+		return StrategyAll, nil
+	default:
+		return 0, fmt.Errorf("unknown strategy: %s", s)
+	}
+}
+
+// String implements fmt.Stringer.
+func (s Strategy) String() string {
+	switch s {
+	case StrategyDirectory:
+		return "directory"
+	case StrategyAll:
+		return "all"
+	default:
+		return strconv.Itoa(int(s))
+	}
+}
 
 // Generator generates Protobuf stubs based on configurations.
 type Generator interface {
@@ -78,6 +118,8 @@ type PluginConfig struct {
 	Opt string
 	// Optional
 	Path string
+	// Required
+	Strategy Strategy
 }
 
 // ReadConfig reads the configuration from the OS.
@@ -103,10 +145,11 @@ type ExternalConfigV1Beta1 struct {
 //
 // Only use outside of this package for testing.
 type ExternalPluginConfigV1Beta1 struct {
-	Name string `json:"name,omitempty" yaml:"name,omitempty"`
-	Out  string `json:"out,omitempty" yaml:"out,omitempty"`
-	Opt  string `json:"opt,omitempty" yaml:"opt,omitempty"`
-	Path string `json:"path,omitempty" yaml:"path,omitempty"`
+	Name     string `json:"name,omitempty" yaml:"name,omitempty"`
+	Out      string `json:"out,omitempty" yaml:"out,omitempty"`
+	Opt      string `json:"opt,omitempty" yaml:"opt,omitempty"`
+	Path     string `json:"path,omitempty" yaml:"path,omitempty"`
+	Strategy string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 
 type externalConfigVersion struct {
