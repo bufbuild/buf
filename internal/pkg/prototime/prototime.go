@@ -12,22 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodule
+package prototime
 
-// errNoDigest is returned when a resolved module was required.
-type errNoDigest struct {
-	moduleName ModuleName
-}
+import (
+	"time"
 
-func (e *errNoDigest) Error() string {
-	if e.moduleName == nil {
-		return "an errNoDigest type requires a ModuleName"
+	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+// NewTimestamp creates a new proto WKT timestamp from a time.Time.
+// It runs CheckValid() on the timestamp before returning.
+func NewTimestamp(t time.Time) (*timestamppb.Timestamp, error) {
+	timestamp := timestamppb.New(t)
+	if err := timestamp.CheckValid(); err != nil {
+		return nil, err
 	}
-	return "module does not include a resolved digest: " + e.moduleName.String()
-}
-
-// Is implements errors.Is for errNoDigest
-func (e *errNoDigest) Is(err error) bool {
-	_, ok := err.(*errNoDigest)
-	return ok
+	return timestamp, nil
 }

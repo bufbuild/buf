@@ -193,7 +193,7 @@ func NewGitRef(
 // ModuleRef is a module reference.
 type ModuleRef interface {
 	Ref
-	ModuleName() bufmodule.ModuleName
+	ModuleReference() bufmodule.ModuleReference
 	moduleRef()
 }
 
@@ -332,11 +332,11 @@ type ParsedModuleRef interface {
 // This should only be used for testing.
 func NewDirectParsedModuleRef(
 	format string,
-	moduleName bufmodule.ModuleName,
+	moduleReference bufmodule.ModuleReference,
 ) ParsedModuleRef {
 	return newDirectModuleRef(
 		format,
-		moduleName,
+		moduleReference,
 	)
 }
 

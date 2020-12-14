@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package buf.module.v1;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1;modulev1";
 
 // Module is a module.
@@ -29,9 +31,7 @@ message Module {
   // Maximum total size of all content: 32MB.
   repeated ModuleFile files = 1;
   // dependencies are the dependencies.
-  //
-  // These must be resolved.
-  repeated ModuleName dependencies = 2;
+  repeated ModulePin dependencies = 2;
 }
 
 // ModuleFile is a file within a FileSet.
@@ -43,15 +43,24 @@ message ModuleFile {
   bytes content = 2;
 }
 
-message ModuleName {
-  // The DNS name or IP address of the server that hosts the module.
+// ModuleReference is a module reference.
+message ModuleReference {
   string remote = 1;
-  // The users username or organization name
   string owner = 2;
-  // The repository name
   string repository = 3;
-  // The repository track
+  oneof reference {
+    string track = 4;
+    string commit = 5;
+  }
+}
+
+// ModulePin is a module pin.
+message ModulePin {
+  string remote = 1;
+  string owner = 2;
+  string repository = 3;
   string track = 4;
-  // The repository commit digest
-  string digest = 5;
+  string commit = 5;
+  string digest = 6;
+  google.protobuf.Timestamp create_time = 7;
 }

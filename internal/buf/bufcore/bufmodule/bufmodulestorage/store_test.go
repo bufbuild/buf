@@ -25,33 +25,27 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestBasic(t *testing.T) {
 	ctx := context.Background()
-	moduleName, err := bufmodule.ModuleNameForString(bufmoduletesting.TestModuleNameString)
-	require.NoError(t, err)
+
 	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestData)
 	require.NoError(t, err)
 	module, err := bufmodule.NewModuleForBucket(ctx, readBucket)
 	require.NoError(t, err)
-	resolvedModuleName, err := bufmodule.ResolvedModuleNameForModule(ctx, moduleName, module)
-	require.NoError(t, err)
-	require.Equal(t, resolvedModuleName.Digest(), bufmoduletesting.TestDigest)
-
-	exists, err := storage.Exists(ctx, readBucket, bufmodule.LockFilePath)
-	require.NoError(t, err)
-	require.False(t, exists)
 
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	// we do not want symlinks for the store
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
-	key := bufmodulestorage.Key{"some", "path"}
-	moduleStore := bufmodulestorage.NewStore(readWriteBucket)
+	moduleStore := bufmodulestorage.NewStore(zap.NewNop(), readWriteBucket)
+
 	keys, err := moduleStore.AllKeys(ctx)
 	require.NoError(t, err)
 	require.Empty(t, keys)
+
+	key := bufmodulestorage.Key{"some", "path"}
 	err = moduleStore.Put(
 		context.Background(),
 		key,

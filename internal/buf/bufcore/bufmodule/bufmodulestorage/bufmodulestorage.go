@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"go.uber.org/zap"
 )
 
 // Key is a list of strings used to uniquely identify a module
@@ -35,6 +36,19 @@ type Store interface {
 }
 
 // NewStore creates a new module store backed by the readWriteBucket.
-func NewStore(readWriteBucket storage.ReadWriteBucket) Store {
-	return newStore(readWriteBucket)
+func NewStore(logger *zap.Logger, readWriteBucket storage.ReadWriteBucket) Store {
+	return newStore(logger, readWriteBucket)
+}
+
+// NewModulePinKey returns a new Key for the ModulePin.
+//
+// This does not use digest.
+func NewModulePinKey(modulePin bufmodule.ModulePin) Key {
+	return Key{
+		modulePin.Remote(),
+		modulePin.Owner(),
+		modulePin.Repository(),
+		modulePin.Track(),
+		modulePin.Commit(),
+	}
 }

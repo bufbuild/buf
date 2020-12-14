@@ -18,10 +18,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
@@ -29,29 +30,14 @@ import (
 	"go.uber.org/multierr"
 )
 
-const b1DigestPrefix = "b1"
+const (
+	// LockFilePath defines the path to the lock file, relative to the root of the module.
+	LockFilePath = "buf.lock"
 
-// LockFilePath defines the path to the lock file, relative to the root of the module.
-const LockFilePath = "buf.lock"
+	b1DigestPrefix = "b1"
+)
 
-// ErrNoTargetFiles is the error returned if there are no target files found.
-var ErrNoTargetFiles = errors.New("no .proto target files found")
-
-// NewNoDigestError returns a new error indicating that a module did not have
-// a digest where required.
-func NewNoDigestError(moduleName ModuleName) error {
-	return &errNoDigest{
-		moduleName: moduleName,
-	}
-}
-
-// IsNoDigestError returns whether the error provided, or
-// any error wrapped by that error, is a NoDigest error.
-func IsNoDigestError(err error) bool {
-	return errors.Is(err, &errNoDigest{})
-}
-
-// ModuleFile is a file within a Root.
+// ModuleFile is a module file.
 type ModuleFile interface {
 	bufcore.FileInfo
 	io.ReadCloser
@@ -59,124 +45,248 @@ type ModuleFile interface {
 	isModuleFile()
 }
 
-// ModuleName is a module name.
-type ModuleName interface {
-	fmt.Stringer
-
-	// Required.
+// ModuleIdentity is a module identity.
+//
+// It just contains remote, owner, repository.
+//
+// This is shared by ModuleReference and ModulePin.
+type ModuleIdentity interface {
 	Remote() string
-	// Required.
 	Owner() string
-	// Required.
 	Repository() string
-	// Required.
-	Track() string
-	// Optional.
-	Digest() string
 
-	isModuleName()
+	// identity is the string remote/owner/repository.
+	identity() string
+	isModuleIdentity()
 }
 
-// NewModuleName returns a new validated ModuleName.
-func NewModuleName(
+// NewModuleIdentity returns a new ModuleIdentity.
+func NewModuleIdentity(
 	remote string,
 	owner string,
 	repository string,
-	track string,
-	digest string,
-) (ModuleName, error) {
-	return newModuleName(remote, owner, repository, track, digest)
+) (ModuleIdentity, error) {
+	return newModuleIdentity(remote, owner, repository)
 }
 
-// NewModuleNameForProto returns a new ModuleName for the given proto ModuleName.
-func NewModuleNameForProto(protoModuleName *modulev1.ModuleName) (ModuleName, error) {
-	return newModuleNameForProto(protoModuleName)
-}
-
-// NewModuleNamesForProtos maps the Protobuf equivalent into the internal representation.
-func NewModuleNamesForProtos(protoModuleNames ...*modulev1.ModuleName) ([]ModuleName, error) {
-	if len(protoModuleNames) == 0 {
-		return nil, nil
+// ModuleIdentityForString returns a new ModuleIdentity for the given string.
+//
+// This parses the path in the form remote/owner/repository{:track,@commit}.
+//
+// TODO: we may want to add a special error if we detect / or @ as this may be a common mistake.
+func ModuleIdentityForString(path string) (ModuleIdentity, error) {
+	slashSplit := strings.Split(path, "/")
+	if len(slashSplit) != 3 {
+		return nil, newInvalidModuleIdentityStringError(path)
 	}
-	moduleNames := make([]ModuleName, len(protoModuleNames))
-	for i, protoModuleName := range protoModuleNames {
-		moduleName, err := NewModuleNameForProto(protoModuleName)
-		if err != nil {
-			return nil, err
-		}
-		moduleNames[i] = moduleName
+	remote := strings.TrimSpace(slashSplit[0])
+	if remote == "" {
+		return nil, newInvalidModuleIdentityStringError(path)
 	}
-	return moduleNames, nil
+	owner := strings.TrimSpace(slashSplit[1])
+	if owner == "" {
+		return nil, newInvalidModuleIdentityStringError(path)
+	}
+	repository := strings.TrimSpace(slashSplit[2])
+	if repository == "" {
+		return nil, newInvalidModuleIdentityStringError(path)
+	}
+	return NewModuleIdentity(remote, owner, repository)
 }
 
-// NewProtoModuleNameForModuleName returns a new proto ModuleName for the given ModuleName.
-func NewProtoModuleNameForModuleName(moduleName ModuleName) *modulev1.ModuleName {
-	return newProtoModuleNameForModuleName(moduleName)
-}
+// ModuleReference is a module reference.
+//
+// It references either a track, or a commit.
+// Only one of Track and Commit will be set.
+// Note that since commits belong to tracks, we can deduce
+// the track from the commit when resolving.
+type ModuleReference interface {
+	ModuleIdentity
 
-// NewProtoModuleNamesForModuleNames maps the given module names into the protobuf representation.
-func NewProtoModuleNamesForModuleNames(moduleNames ...ModuleName) []*modulev1.ModuleName {
-	if len(moduleNames) == 0 {
-		return nil
-	}
-	protoModuleNames := make([]*modulev1.ModuleName, len(moduleNames))
-	for i, moduleName := range moduleNames {
-		protoModuleNames[i] = NewProtoModuleNameForModuleName(moduleName)
-	}
-	return protoModuleNames
-}
-
-// ResolvedModuleName represents a resolved module name,
-// e.g. a module name with a digest.
-type ResolvedModuleName interface {
+	// Prints either remote/owner/repository:track or remote/owner/repository@commit
 	fmt.Stringer
-	ModuleName
 
-	isResolvedModuleName()
+	// only one of these will be set
+	Track() string
+	// only one of these will be set
+	Commit() string
+
+	isModuleReference()
 }
 
-// NewResolvedModuleName returns a new validated ResolvedModuleName.
-func NewResolvedModuleName(
+// NewTrackModuleReference returns a new validated ModuleReference for a track.
+func NewTrackModuleReference(
 	remote string,
 	owner string,
 	repository string,
 	track string,
-	digest string,
-) (ResolvedModuleName, error) {
-	return newResolvedModuleName(remote, owner, repository, track, digest)
+) (ModuleReference, error) {
+	return newModuleReference(remote, owner, repository, track, "")
 }
 
-// NewResolvedModuleNamesForProtos maps the Protobuf equivalent into the internal representation.
-func NewResolvedModuleNamesForProtos(protoModuleNames ...*modulev1.ModuleName) ([]ResolvedModuleName, error) {
-	if len(protoModuleNames) == 0 {
+// NewCommitModuleReference returns a new validated ModuleReference for a commit.
+func NewCommitModuleReference(
+	remote string,
+	owner string,
+	repository string,
+	commit string,
+) (ModuleReference, error) {
+	return newModuleReference(remote, owner, repository, "", commit)
+}
+
+// NewModuleReferenceForProto returns a new ModuleReference for the given proto ModuleReference.
+func NewModuleReferenceForProto(protoModuleReference *modulev1.ModuleReference) (ModuleReference, error) {
+	return newModuleReferenceForProto(protoModuleReference)
+}
+
+// NewModuleReferencesForProtos maps the Protobuf equivalent into the internal representation.
+func NewModuleReferencesForProtos(protoModuleReferences ...*modulev1.ModuleReference) ([]ModuleReference, error) {
+	if len(protoModuleReferences) == 0 {
 		return nil, nil
 	}
-	resolvedModuleNames := make([]ResolvedModuleName, len(protoModuleNames))
-	for i, protoModuleName := range protoModuleNames {
-		resolvedModuleName, err := NewResolvedModuleNameForProto(protoModuleName)
+	moduleReferences := make([]ModuleReference, len(protoModuleReferences))
+	for i, protoModuleReference := range protoModuleReferences {
+		moduleReference, err := NewModuleReferenceForProto(protoModuleReference)
 		if err != nil {
 			return nil, err
 		}
-		resolvedModuleNames[i] = resolvedModuleName
+		moduleReferences[i] = moduleReference
 	}
-	return resolvedModuleNames, nil
+	return moduleReferences, nil
 }
 
-// NewResolvedModuleNameForProto returns a new ResolvedModuleName for the given proto ModuleName.
-func NewResolvedModuleNameForProto(protoModuleName *modulev1.ModuleName) (ResolvedModuleName, error) {
-	return newResolvedModuleNameForProto(protoModuleName)
+// NewProtoModuleReferenceForModuleReference returns a new proto ModuleReference for the given ModuleReference.
+func NewProtoModuleReferenceForModuleReference(moduleReference ModuleReference) *modulev1.ModuleReference {
+	return newProtoModuleReferenceForModuleReference(moduleReference)
 }
 
-// NewProtoModuleNamesForResolvedModuleNames maps the given module names into the protobuf representation.
-func NewProtoModuleNamesForResolvedModuleNames(resolvedModuleNames ...ResolvedModuleName) []*modulev1.ModuleName {
-	if len(resolvedModuleNames) == 0 {
+// NewProtoModuleReferencesForModuleReferences maps the given module references into the protobuf representation.
+func NewProtoModuleReferencesForModuleReferences(moduleReferences ...ModuleReference) []*modulev1.ModuleReference {
+	if len(moduleReferences) == 0 {
 		return nil
 	}
-	protoModuleNames := make([]*modulev1.ModuleName, len(resolvedModuleNames))
-	for i, resolvedModuleName := range resolvedModuleNames {
-		protoModuleNames[i] = NewProtoModuleNameForModuleName(resolvedModuleName)
+	protoModuleReferences := make([]*modulev1.ModuleReference, len(moduleReferences))
+	for i, moduleReference := range moduleReferences {
+		protoModuleReferences[i] = NewProtoModuleReferenceForModuleReference(moduleReference)
 	}
-	return protoModuleNames
+	return protoModuleReferences
+}
+
+// ModuleReferenceForString returns a new ModuleReference for the given string.
+//
+// This parses the path in the form remote/owner/repository{:track,@commit}.
+func ModuleReferenceForString(path string) (ModuleReference, error) {
+	slashSplit := strings.Split(path, "/")
+	if len(slashSplit) != 3 {
+		return nil, newInvalidModuleReferenceStringError(path)
+	}
+	remote := strings.TrimSpace(slashSplit[0])
+	if remote == "" {
+		return nil, newInvalidModuleReferenceStringError(path)
+	}
+	owner := strings.TrimSpace(slashSplit[1])
+	if owner == "" {
+		return nil, newInvalidModuleReferenceStringError(path)
+	}
+	rest := strings.TrimSpace(slashSplit[2])
+	if rest == "" {
+		return nil, newInvalidModuleReferenceStringError(path)
+	}
+	switch trackSplit := strings.Split(rest, ":"); len(trackSplit) {
+	case 1:
+		switch commitSplit := strings.Split(rest, "@"); len(commitSplit) {
+		case 2:
+			repository := strings.TrimSpace(commitSplit[0])
+			commit := strings.TrimSpace(commitSplit[1])
+			if repository == "" || commit == "" {
+				return nil, newInvalidModuleReferenceStringError(path)
+			}
+			return NewCommitModuleReference(remote, owner, repository, commit)
+		default:
+			return nil, newInvalidModuleReferenceStringError(path)
+		}
+	case 2:
+		repository := strings.TrimSpace(trackSplit[0])
+		track := strings.TrimSpace(trackSplit[1])
+		if repository == "" || track == "" {
+			return nil, newInvalidModuleReferenceStringError(path)
+		}
+		return NewTrackModuleReference(remote, owner, repository, track)
+	default:
+		return nil, newInvalidModuleReferenceStringError(path)
+	}
+}
+
+// ModulePin is a module pin.
+//
+// It references a specific point in time of a Module.
+//
+// Note that a commit does this itself, but we want all this information.
+// This is what is stored in a buf.lock file.
+type ModulePin interface {
+	ModuleIdentity
+
+	// Prints remote/owner/repository@commit, which matches ModuleReference
+	fmt.Stringer
+
+	// all of these will be set
+	Track() string
+	Commit() string
+	Digest() string
+	CreateTime() time.Time
+
+	isModulePin()
+}
+
+// NewModulePin returns a new validated ModulePin.
+func NewModulePin(
+	remote string,
+	owner string,
+	repository string,
+	track string,
+	commit string,
+	digest string,
+	createTime time.Time,
+) (ModulePin, error) {
+	return newModulePin(remote, owner, repository, track, commit, digest, createTime)
+}
+
+// NewModulePinForProto returns a new ModulePin for the given proto ModulePin.
+func NewModulePinForProto(protoModulePin *modulev1.ModulePin) (ModulePin, error) {
+	return newModulePinForProto(protoModulePin)
+}
+
+// NewModulePinsForProtos maps the Protobuf equivalent into the internal representation.
+func NewModulePinsForProtos(protoModulePins ...*modulev1.ModulePin) ([]ModulePin, error) {
+	if len(protoModulePins) == 0 {
+		return nil, nil
+	}
+	modulePins := make([]ModulePin, len(protoModulePins))
+	for i, protoModulePin := range protoModulePins {
+		modulePin, err := NewModulePinForProto(protoModulePin)
+		if err != nil {
+			return nil, err
+		}
+		modulePins[i] = modulePin
+	}
+	return modulePins, nil
+}
+
+// NewProtoModulePinForModulePin returns a new proto ModulePin for the given ModulePin.
+func NewProtoModulePinForModulePin(modulePin ModulePin) *modulev1.ModulePin {
+	return newProtoModulePinForModulePin(modulePin)
+}
+
+// NewProtoModulePinsForModulePins maps the given module pins into the protobuf representation.
+func NewProtoModulePinsForModulePins(modulePins ...ModulePin) []*modulev1.ModulePin {
+	if len(modulePins) == 0 {
+		return nil
+	}
+	protoModulePins := make([]*modulev1.ModulePin, len(modulePins))
+	for i, modulePin := range modulePins {
+		protoModulePins[i] = NewProtoModulePinForModulePin(modulePin)
+	}
+	return protoModulePins
 }
 
 // Module is a Protobuf module.
@@ -207,14 +317,17 @@ type Module interface {
 	//
 	// The returned SourceFileInfos are sorted by path.
 	SourceFileInfos(ctx context.Context) ([]bufcore.FileInfo, error)
-	// GetFile gets the source file for the given path.
+	// GetModuleFile gets the source file for the given path.
 	//
 	// Returns storage.IsNotExist error if the file does not exist.
-	GetFile(ctx context.Context, path string) (ModuleFile, error)
-	// Dependencies gets the dependency ModuleNames.
+	GetModuleFile(ctx context.Context, path string) (ModuleFile, error)
+	// DependencyModulePins gets the dependency ModulePins.
 	//
-	// The returned ModuleNames are sorted by remote, owner, repository, track, and then digest.
-	Dependencies() []ResolvedModuleName
+	// The returned ModulePins are sorted by remote, owner, repository, track, commit, and then digest.
+	// The returned ModulePins are unique by remote, owner, repository.
+	//
+	// This includes all transitive dependencies.
+	DependencyModulePins() []ModulePin
 
 	getSourceReadBucket() storage.ReadBucket
 	isModule()
@@ -229,14 +342,15 @@ func NewModuleForBucket(
 	return newModuleForBucket(ctx, readBucket)
 }
 
-// NewModuleForBucketWithDependencies explicitly specifies the dependencies that should
-// be used when creating the Module. The module names must be resolved and unique.
-func NewModuleForBucketWithDependencies(
+// NewModuleForBucketWithDependencyModulePins explicitly specifies the dependencies
+// that should be used when creating the Module. The module names must be resolved
+// and unique.
+func NewModuleForBucketWithDependencyModulePins(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
-	dependencies []ResolvedModuleName,
+	dependencyModulePins []ModulePin,
 ) (Module, error) {
-	return newModuleForBucketWithDependencies(ctx, readBucket, dependencies)
+	return newModuleForBucketWithDependencyModulePins(ctx, readBucket, dependencyModulePins)
 }
 
 // NewModuleForProto returns a new Module for the given proto Module.
@@ -272,10 +386,10 @@ func ModuleWithTargetPathsAllowNotExist(module Module, targetPaths []string) (Mo
 
 // ModuleResolver resolves modules.
 type ModuleResolver interface {
-	// ResolveModule resolves the provided ModuleName.
+	// GetModulePin resolves the provided ModuleReference to a ModulePin.
 	//
 	// Returns an error that fufills storage.IsNotExist if the named Module does not exist.
-	ResolveModule(ctx context.Context, moduleName ModuleName) (ResolvedModuleName, error)
+	GetModulePin(ctx context.Context, moduleReference ModuleReference) (ModulePin, error)
 }
 
 // NewNopModuleResolver returns a new ModuleResolver that always returns a storage.IsNotExist error.
@@ -285,10 +399,10 @@ func NewNopModuleResolver() ModuleResolver {
 
 // ModuleReader reads resolved modules.
 type ModuleReader interface {
-	// GetModule gets the named Module.
+	// GetModule gets the Module for the ModulePin.
 	//
-	// Returns an error that fufills storage.IsNotExist if the named Module does not exist.
-	GetModule(ctx context.Context, moduleName ResolvedModuleName) (Module, error)
+	// Returns an error that fufills storage.IsNotExist if the Module does not exist.
+	GetModule(ctx context.Context, modulePin ModulePin) (Module, error)
 }
 
 // NewNopModuleReader returns a new ModuleReader that always returns a storage.IsNotExist error.
@@ -299,8 +413,10 @@ func NewNopModuleReader() ModuleReader {
 // ModuleFileSet is a Protobuf module file set.
 //
 // It contains the files for both targets, sources and dependencies.
+//
+// TODO: we should not have ModuleFileSet inherit from Module, this is confusing
 type ModuleFileSet interface {
-	// Note that GetFile will pull from All files instead of just Source Files!
+	// Note that GetModuleFile will pull from All files instead of just Source Files!
 	Module
 	// AllFileInfos gets all FileInfos associated with the module, including dependencies.
 	//
@@ -316,67 +432,6 @@ func NewModuleFileSet(
 	dependencies []Module,
 ) ModuleFileSet {
 	return newModuleFileSet(module, dependencies)
-}
-
-// ModuleNameForString returns a new ModuleName for the given string.
-//
-// This parses the path in the form remote/owner/repository/track[:digest]
-func ModuleNameForString(path string) (ModuleName, error) {
-	slashSplit := strings.Split(path, "/")
-	if len(slashSplit) != 4 {
-		return nil, newInvalidModuleNameStringError(path, "module name is not in the form remote/owner/repository/track")
-	}
-	remote := strings.TrimSpace(slashSplit[0])
-	if remote == "" {
-		return nil, newInvalidModuleNameStringError(path, "remote name is empty")
-	}
-	owner := strings.TrimSpace(slashSplit[1])
-	if owner == "" {
-		return nil, newInvalidModuleNameStringError(path, "owner name is empty")
-	}
-	repository := strings.TrimSpace(slashSplit[2])
-	if repository == "" {
-		return nil, newInvalidModuleNameStringError(path, "repository name is empty")
-	}
-	trackSplit := strings.Split(slashSplit[3], ":")
-	var track string
-	var digest string
-	switch len(trackSplit) {
-	case 1:
-		track = strings.TrimSpace(trackSplit[0])
-	case 2:
-		track = strings.TrimSpace(trackSplit[0])
-		digest = strings.TrimSpace(trackSplit[1])
-	default:
-		return nil, newInvalidModuleNameStringError(path, "invalid track with digest")
-	}
-	if track == "" {
-		return nil, newInvalidModuleNameStringError(path, "track name is empty")
-	}
-	return NewModuleName(
-		remote,
-		owner,
-		repository,
-		track,
-		digest,
-	)
-}
-
-// ResolvedModuleNameForString returns a new ResolvedModuleName for the given string.
-//
-// This parses the path in the form remote/owner/repository/track:digest
-func ResolvedModuleNameForString(path string) (ResolvedModuleName, error) {
-	moduleName, err := ModuleNameForString(path)
-	if err != nil {
-		return nil, err
-	}
-	return NewResolvedModuleName(
-		moduleName.Remote(),
-		moduleName.Owner(),
-		moduleName.Repository(),
-		moduleName.Track(),
-		moduleName.Digest(),
-	)
 }
 
 // ModuleToProtoModule converts the Module to a proto Module.
@@ -399,21 +454,14 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1.Module, 
 	}
 	// these are returned sorted, so there is no need to sort
 	// the resulting protoModuleNames afterwards
-	dependencies := module.Dependencies()
-	protoModuleNames := make([]*modulev1.ModuleName, len(dependencies))
-	for i, dependency := range dependencies {
-		protoModuleName := &modulev1.ModuleName{
-			Remote:     dependency.Remote(),
-			Owner:      dependency.Owner(),
-			Repository: dependency.Repository(),
-			Track:      dependency.Track(),
-			Digest:     dependency.Digest(),
-		}
-		protoModuleNames[i] = protoModuleName
+	dependencyModulePins := module.DependencyModulePins()
+	protoModulePins := make([]*modulev1.ModulePin, len(dependencyModulePins))
+	for i, dependencyModulePin := range dependencyModulePins {
+		protoModulePins[i] = NewProtoModulePinForModulePin(dependencyModulePin)
 	}
 	protoModule := &modulev1.Module{
 		Files:        protoModuleFiles,
-		Dependencies: protoModuleNames,
+		Dependencies: protoModulePins,
 	}
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
@@ -421,55 +469,34 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1.Module, 
 	return protoModule, nil
 }
 
-// ModuleDigestB1 returns the b1 digest for the module and module name.
+// ModuleDigest returns the b1 digest for the Module.
 //
-// The digest on ModuleName must be unset.
-// We might want an UnresolvedModuleName, need to see how this plays out.
 // To create the module digest (SHA256):
-// 	1. Add the string representation of the module track
+// 	1. For every file in the module (sorted lexicographically by path):
+// 		a. Add the file path
+//		b. Add the file contents
 // 	2. Add the dependency hashes (sorted lexicographically by the string representation)
-// 	3. For every file in the module (sorted lexicographically by path):
-// 		1. Add the file path
-//		2. Add the file contents
-//	4. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
-func ModuleDigestB1(
-	ctx context.Context,
-	moduleTrack string,
-	module Module,
-) (string, error) {
+//	3. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
+func ModuleDigest(ctx context.Context, module Module) (string, error) {
 	hash := sha256.New()
-	// Track must be part of the digest, since we require digests
-	// to be unique per-repository.
-	//
-	// We do not include the remote, owner, or repository here
-	// as we want the ability to change the repository name or
-	// change the repository owner without affecting the digest.
-	if _, err := hash.Write([]byte(moduleTrack)); err != nil {
-		return "", err
-	}
-	for _, dependency := range module.Dependencies() {
-		if dependency.Digest() == "" {
-			return "", NewNoDigestError(dependency)
-		}
+	// DependencyModulePins returns these sorted
+	for _, dependencyModulePin := range module.DependencyModulePins() {
 		// We include each of these individually as opposed to using String
 		// so that if the String representation changes, we still get the same digest.
 		//
 		// Note that this does mean that changing a repository name or owner
 		// will result in a different digest, this is something we may
 		// want to revisit.
-		if _, err := hash.Write([]byte(dependency.Remote())); err != nil {
+		if _, err := hash.Write([]byte(dependencyModulePin.Remote())); err != nil {
 			return "", err
 		}
-		if _, err := hash.Write([]byte(dependency.Owner())); err != nil {
+		if _, err := hash.Write([]byte(dependencyModulePin.Owner())); err != nil {
 			return "", err
 		}
-		if _, err := hash.Write([]byte(dependency.Repository())); err != nil {
+		if _, err := hash.Write([]byte(dependencyModulePin.Repository())); err != nil {
 			return "", err
 		}
-		if _, err := hash.Write([]byte(dependency.Track())); err != nil {
-			return "", err
-		}
-		if _, err := hash.Write([]byte(dependency.Digest())); err != nil {
+		if _, err := hash.Write([]byte(dependencyModulePin.Digest())); err != nil {
 			return "", err
 		}
 	}
@@ -481,7 +508,7 @@ func ModuleDigestB1(
 		if _, err := hash.Write([]byte(sourceFileInfo.Path())); err != nil {
 			return "", err
 		}
-		moduleFile, err := module.GetFile(ctx, sourceFileInfo.Path())
+		moduleFile, err := module.GetModuleFile(ctx, sourceFileInfo.Path())
 		if err != nil {
 			return "", err
 		}
@@ -509,12 +536,11 @@ func ModuleToBucket(
 		return err
 	}
 	for _, fileInfo := range fileInfos {
-		if err := moduleFileToBucket(ctx, module, fileInfo.Path(), writeBucket); err != nil {
+		if err := putModuleFileToBucket(ctx, module, fileInfo.Path(), writeBucket); err != nil {
 			return err
 		}
 	}
-	// Create a lock file
-	return putDependencies(ctx, writeBucket, module.Dependencies())
+	return putDependencyModulePinsToBucket(ctx, writeBucket, module.DependencyModulePins())
 }
 
 // TargetModuleFilesToBucket writes the target files of the given Module to the WriteBucket.
@@ -531,123 +557,45 @@ func TargetModuleFilesToBucket(
 		return err
 	}
 	for _, fileInfo := range fileInfos {
-		if err := moduleFileToBucket(ctx, module, fileInfo.Path(), writeBucket); err != nil {
+		if err := putModuleFileToBucket(ctx, module, fileInfo.Path(), writeBucket); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// DeduplicateResolvedModuleNames returns a deduplicated slice of resolved module names
-// by selecting the first occurrence of a resolved module name based on the modules
-// representation without the digest.
-func DeduplicateResolvedModuleNames(resolvedModuleNames []ResolvedModuleName) []ResolvedModuleName {
-	deduplicated := make([]ResolvedModuleName, 0, len(resolvedModuleNames))
-	seenModuleNames := make(map[string]struct{})
-	for _, resolvedModuleName := range resolvedModuleNames {
-		moduleIdentity := moduleNameIdentity(resolvedModuleName)
-		if _, ok := seenModuleNames[moduleIdentity]; ok {
-			continue
-		}
-		seenModuleNames[moduleIdentity] = struct{}{}
-		deduplicated = append(deduplicated, resolvedModuleName)
-	}
-	// It's important that we sort after we've deduplicated (and not before),
-	// so that the first ModuleNames provided are prioritized over the ones
-	// that follow.
-	sortResolvedModuleNames(deduplicated)
-	return deduplicated
-}
-
-// ValidateModuleNamesUnique returns an error if the module names contain
-// any duplicates.
-func ValidateModuleNamesUnique(moduleNames []ModuleName) error {
-	seenModuleNames := make(map[string]struct{})
-	for _, moduleName := range moduleNames {
-		moduleIdentity := moduleNameIdentity(moduleName)
-		if _, ok := seenModuleNames[moduleIdentity]; ok {
+// ValidateModuleReferencesUniqueByIdentity returns an error if the module references contain any duplicates.
+//
+// This only checks remote, owner, repository.
+func ValidateModuleReferencesUniqueByIdentity(moduleReferences []ModuleReference) error {
+	seenModuleReferences := make(map[string]struct{})
+	for _, moduleReference := range moduleReferences {
+		moduleIdentity := moduleReference.identity()
+		if _, ok := seenModuleReferences[moduleIdentity]; ok {
 			return fmt.Errorf("module %s appeared twice", moduleIdentity)
 		}
-		seenModuleNames[moduleIdentity] = struct{}{}
+		seenModuleReferences[moduleIdentity] = struct{}{}
 	}
 	return nil
 }
 
-// ValidateResolvedModuleNamesUnique returns an error if the module names contain
-// any duplicates.
-func ValidateResolvedModuleNamesUnique(resolvedModuleNames []ResolvedModuleName) error {
-	seenModuleNames := make(map[string]struct{})
-	for _, resolvedModuleName := range resolvedModuleNames {
-		moduleIdentity := moduleNameIdentity(resolvedModuleName)
-		if _, ok := seenModuleNames[moduleIdentity]; ok {
+// ValidateModulePinsUniqueByIdentity returns an error if the module pins contain any duplicates.
+//
+// This only checks remote, owner, repository.
+func ValidateModulePinsUniqueByIdentity(modulePins []ModulePin) error {
+	seenModulePins := make(map[string]struct{})
+	for _, modulePin := range modulePins {
+		moduleIdentity := modulePin.identity()
+		if _, ok := seenModulePins[moduleIdentity]; ok {
 			return fmt.Errorf("module %s appeared twice", moduleIdentity)
 		}
-		seenModuleNames[moduleIdentity] = struct{}{}
+		seenModulePins[moduleIdentity] = struct{}{}
 	}
 	return nil
 }
 
-// ResolvedModuleNameForModule returns a new validated ModuleName that uses the values
-// from the given ModuleName and the digest from the Module.
-//
-// The given ModuleName must not already have a digest.
-//
-// This is just a convenience function.
-func ResolvedModuleNameForModule(ctx context.Context, moduleName ModuleName, module Module) (ResolvedModuleName, error) {
-	if moduleName.Digest() != "" {
-		return nil, fmt.Errorf("module name to ResolvedModuleNameForModule already has a digest: %s", moduleName.String())
-	}
-	digest, err := ModuleDigestB1(ctx, moduleName.Track(), module)
-	if err != nil {
-		return nil, err
-	}
-	return NewResolvedModuleName(
-		moduleName.Remote(),
-		moduleName.Owner(),
-		moduleName.Repository(),
-		moduleName.Track(),
-		digest,
-	)
-}
-
-// UnresolvedModuleName returns the ModuleName without a digest.
-//
-// This is just a convenience function.
-func UnresolvedModuleName(moduleName ModuleName) (ModuleName, error) {
-	if moduleName.Digest() == "" {
-		return nil, fmt.Errorf("moduleName is already unresolved: %q", moduleName.String())
-	}
-	return NewModuleName(
-		moduleName.Remote(),
-		moduleName.Owner(),
-		moduleName.Repository(),
-		moduleName.Track(),
-		"",
-	)
-}
-
-// ValidateModuleDigest validates that the Module matches the digest on ModuleName.
-//
-// The given ModuleName must have a digest.
-//
-// This is just a convenience function.
-func ValidateModuleDigest(ctx context.Context, moduleName ModuleName, module Module) error {
-	unresolvedModuleName, err := UnresolvedModuleName(moduleName)
-	if err != nil {
-		return err
-	}
-	digest, err := ModuleDigestB1(ctx, unresolvedModuleName.Track(), module)
-	if err != nil {
-		return err
-	}
-	if digest != moduleName.Digest() {
-		return fmt.Errorf("mismatched module digest for %s: %s %s", unresolvedModuleName.String(), moduleName.Digest(), digest)
-	}
-	return nil
-}
-
-// ModuleNameEqual returns true if a equals b.
-func ModuleNameEqual(a ModuleName, b ModuleName) bool {
+// ModuleReferenceEqual returns true if a equals b.
+func ModuleReferenceEqual(a ModuleReference, b ModuleReference) bool {
 	if (a == nil) != (b == nil) {
 		return false
 	}
@@ -658,10 +606,35 @@ func ModuleNameEqual(a ModuleName, b ModuleName) bool {
 		a.Owner() == b.Owner() &&
 		a.Repository() == b.Repository() &&
 		a.Track() == b.Track() &&
-		a.Digest() == b.Digest()
+		a.Commit() == b.Commit()
 }
 
-// WriteModuleDependenciesToBucket writes the module dependencies to the write bucket in the form of a lock file.
-func WriteModuleDependenciesToBucket(ctx context.Context, writeBucket storage.WriteBucket, module Module) error {
-	return putDependencies(ctx, writeBucket, module.Dependencies())
+// ModulePinEqual returns true if a equals b.
+func ModulePinEqual(a ModulePin, b ModulePin) bool {
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if a == nil {
+		return true
+	}
+	return a.Remote() == b.Remote() &&
+		a.Owner() == b.Owner() &&
+		a.Repository() == b.Repository() &&
+		a.Track() == b.Track() &&
+		a.Commit() == b.Commit() &&
+		a.Digest() == b.Digest() &&
+		a.CreateTime().Equal(b.CreateTime())
+}
+
+// PutModuleDependencyModulePinsToBucket writes the module dependencies to the write bucket in the form of a lock file.
+func PutModuleDependencyModulePinsToBucket(ctx context.Context, writeBucket storage.WriteBucket, module Module) error {
+	// we know module dependency module pins are sorted and unique
+	return putDependencyModulePinsToBucket(ctx, writeBucket, module.DependencyModulePins())
+}
+
+// SortModulePins sorts the ModulePins.
+func SortModulePins(modulePins []ModulePin) {
+	sort.Slice(modulePins, func(i, j int) bool {
+		return modulePinLess(modulePins[i], modulePins[j])
+	})
 }

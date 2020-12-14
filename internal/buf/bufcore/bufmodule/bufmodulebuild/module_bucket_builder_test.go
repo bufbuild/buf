@@ -21,7 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufcoretesting"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/internal"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
@@ -133,7 +133,7 @@ func TestBucketGetAllFileInfosError2(t *testing.T) {
 			".",
 		},
 		[]string{},
-		bufmodule.ErrNoTargetFiles,
+		internal.ErrNoTargetFiles,
 	)
 }
 

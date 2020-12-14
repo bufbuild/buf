@@ -36,16 +36,16 @@ func newModuleCacher(
 
 func (m *moduleCacher) GetModule(
 	ctx context.Context,
-	resolvedModuleName bufmodule.ResolvedModuleName,
+	modulePin bufmodule.ModulePin,
 ) (bufmodule.Module, error) {
-	path := getModuleKey(resolvedModuleName)
-	module, err := m.moduleStore.Get(ctx, path)
+	key := bufmodulestorage.NewModulePinKey(modulePin)
+	module, err := m.moduleStore.Get(ctx, key)
 	if err != nil {
 		return nil, err
 	}
-	if err := bufmodule.ValidateModuleDigest(ctx, resolvedModuleName, module); err != nil {
+	if err := bufmodule.ValidateModuleMatchesDigest(ctx, module, modulePin); err != nil {
 		// Delete module if it's invalid
-		deleteErr := m.moduleStore.Delete(ctx, path)
+		deleteErr := m.moduleStore.Delete(ctx, key)
 		if deleteErr != nil {
 			err = multierr.Append(err, deleteErr)
 		}
@@ -56,25 +56,11 @@ func (m *moduleCacher) GetModule(
 
 func (m *moduleCacher) PutModule(
 	ctx context.Context,
-	moduleName bufmodule.ModuleName,
+	modulePin bufmodule.ModulePin,
 	module bufmodule.Module,
-) (bufmodule.ModuleName, error) {
-	if moduleName.Digest() == "" {
-		return nil, bufmodule.NewNoDigestError(moduleName)
+) error {
+	if err := bufmodule.ValidateModuleMatchesDigest(ctx, module, modulePin); err != nil {
+		return err
 	}
-	if err := m.moduleStore.Put(ctx, getModuleKey(moduleName), module); err != nil {
-		return nil, err
-	}
-	return moduleName, nil
-}
-
-// this assumes the ModuleName is resolved
-func getModuleKey(moduleName bufmodule.ModuleName) bufmodulestorage.Key {
-	return bufmodulestorage.Key{
-		moduleName.Remote(),
-		moduleName.Owner(),
-		moduleName.Repository(),
-		moduleName.Track(),
-		moduleName.Digest(),
-	}
+	return m.moduleStore.Put(ctx, bufmodulestorage.NewModulePinKey(modulePin), module)
 }

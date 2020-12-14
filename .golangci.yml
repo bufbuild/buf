@@ -74,3 +74,7 @@ issues:
       # We call exec.Command for protoc and plugin proxying, and control the arguments completely.
       path: internal/pkg/app/appproto/appprotoexec/protoc_proxy_handler.go
       text: "G204:"
+      # we actually want to use this init in testing
+    - linters:
+        - gochecknoinits
+      path: internal/buf/bufcore/bufmodule/bufmoduletesting/bufmoduletesting.go

@@ -16,32 +16,24 @@ package bufmodule
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/internal"
 	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 )
 
 type module struct {
-	sourceReadBucket storage.ReadBucket
-	dependencies     []ResolvedModuleName
+	sourceReadBucket     storage.ReadBucket
+	dependencyModulePins []ModulePin
 }
 
 func newModuleForProto(ctx context.Context, protoModule *modulev1.Module) (*module, error) {
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
 	}
-	dependencies, err := NewResolvedModuleNamesForProtos(protoModule.Dependencies...)
-	if err != nil {
-		return nil, err
-	}
-	sortResolvedModuleNames(dependencies)
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
-	if err := putDependencies(ctx, readBucketBuilder, dependencies); err != nil {
-		return nil, err
-	}
 	for _, moduleFile := range protoModule.Files {
 		// we already know that paths are unique from validation
 		if err := storage.PutPath(ctx, readBucketBuilder, moduleFile.Path, moduleFile.Content); err != nil {
@@ -52,9 +44,14 @@ func newModuleForProto(ctx context.Context, protoModule *modulev1.Module) (*modu
 	if err != nil {
 		return nil, err
 	}
-	return newModuleForBucket(
+	dependencyModulePins, err := NewModulePinsForProtos(protoModule.Dependencies...)
+	if err != nil {
+		return nil, err
+	}
+	return newModuleForBucketWithDependencyModulePins(
 		ctx,
 		sourceReadBucket,
+		dependencyModulePins,
 	)
 }
 
@@ -62,35 +59,26 @@ func newModuleForBucket(
 	ctx context.Context,
 	sourceReadBucket storage.ReadBucket,
 ) (*module, error) {
-	dependencies, err := dependenciesForBucket(ctx, sourceReadBucket)
+	dependencyModulePins, err := getDependencyModulePinsForBucket(ctx, sourceReadBucket)
 	if err != nil {
 		return nil, err
 	}
-	return newModuleForBucketWithDependencies(ctx, sourceReadBucket, dependencies)
+	return newModuleForBucketWithDependencyModulePins(ctx, sourceReadBucket, dependencyModulePins)
 }
 
-func newModuleForBucketWithDependencies(
+func newModuleForBucketWithDependencyModulePins(
 	ctx context.Context,
 	sourceReadBucket storage.ReadBucket,
-	dependencies []ResolvedModuleName,
+	dependencyModulePins []ModulePin,
 ) (*module, error) {
-	seenModuleNames := make(map[string]struct{})
-	for _, dependency := range dependencies {
-		moduleIdentity := moduleNameIdentity(dependency)
-		if _, ok := seenModuleNames[moduleIdentity]; ok {
-			return nil, fmt.Errorf("module %s appeared twice", moduleIdentity)
-		}
-		if dependency.Digest() == "" {
-			return nil, NewNoDigestError(dependency)
-		}
-		seenModuleNames[moduleIdentity] = struct{}{}
+	if err := ValidateModulePinsUniqueByIdentity(dependencyModulePins); err != nil {
+		return nil, err
 	}
-	sortResolvedModuleNames(dependencies)
+	// we rely on this being sorted here
+	SortModulePins(dependencyModulePins)
 	return &module{
-		// Now that we've captured the dependencies, we prune it from
-		// the source read bucket so that it can be validated as a closure of .proto files.
-		sourceReadBucket: storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
-		dependencies:     dependencies,
+		sourceReadBucket:     storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
+		dependencyModulePins: dependencyModulePins,
 	}, nil
 }
 
@@ -111,13 +99,13 @@ func (m *module) SourceFileInfos(ctx context.Context) ([]bufcore.FileInfo, error
 		return nil, err
 	}
 	if len(fileInfos) == 0 {
-		return nil, ErrNoTargetFiles
+		return nil, internal.ErrNoTargetFiles
 	}
-	sortFileInfos(fileInfos)
+	bufcore.SortFileInfos(fileInfos)
 	return fileInfos, nil
 }
 
-func (m *module) GetFile(ctx context.Context, path string) (ModuleFile, error) {
+func (m *module) GetModuleFile(ctx context.Context, path string) (ModuleFile, error) {
 	// super overkill but ok
 	if err := validateModuleFilePath(path); err != nil {
 		return nil, err
@@ -129,11 +117,9 @@ func (m *module) GetFile(ctx context.Context, path string) (ModuleFile, error) {
 	return newModuleFile(bufcore.NewFileInfoForObjectInfo(readObjectCloser, false), readObjectCloser), nil
 }
 
-// Dependencies gets the dependency ModuleNames.
-// The returned dependencies are sorted by remote, owner, repository, track, and digest.
-func (m *module) Dependencies() []ResolvedModuleName {
-	// already sorted
-	return m.dependencies
+func (m *module) DependencyModulePins() []ModulePin {
+	// already sorted in constructor
+	return m.dependencyModulePins
 }
 
 func (m *module) getSourceReadBucket() storage.ReadBucket {

@@ -141,8 +141,8 @@ func TestNewConfigV1Beta1Error8(t *testing.T) {
 		[]string{},
 		[]string{
 			// Duplicate dependency
-			"buf.build/foo/bar/v1",
-			"buf.build/foo/bar/v1",
+			bufmoduletesting.TestModuleReferenceFooBarV1String,
+			bufmoduletesting.TestModuleReferenceFooBarV2String,
 		},
 	)
 }
@@ -156,9 +156,25 @@ func TestNewConfigV1Beta1Error9(t *testing.T) {
 		},
 		[]string{},
 		[]string{
-			// Duplicate dependency with and without digest
-			"buf.build/foo/bar/v1",
-			"buf.build/foo/bar/v1:" + bufmoduletesting.TestDigest,
+			// Duplicate dependency
+			bufmoduletesting.TestModuleReferenceFooBarV1String,
+			bufmoduletesting.TestModuleReferenceFooBarCommitString,
+		},
+	)
+}
+
+func TestNewConfigV1Beta1Error10(t *testing.T) {
+	t.Parallel()
+	testNewConfigV1Beta1Error(
+		t,
+		[]string{
+			"proto",
+		},
+		[]string{},
+		[]string{
+			// Duplicate dependency
+			bufmoduletesting.TestModuleReferenceFooBarV1String,
+			bufmoduletesting.TestModuleReferenceFooBarV1String,
 		},
 	)
 }
@@ -175,8 +191,8 @@ func TestNewConfigV1Beta1Equal1(t *testing.T) {
 			"a/foo",
 		},
 		[]string{
-			"buf.build/foo/bar/v1:" + bufmoduletesting.TestDigest,
-			"buf.build/baz/qux/v2",
+			bufmoduletesting.TestModuleReferenceFooBarV1String,
+			bufmoduletesting.TestModuleReferenceFooBazCommitString,
 		},
 		&Config{
 			RootToExcludes: map[string][]string{
@@ -185,10 +201,10 @@ func TestNewConfigV1Beta1Equal1(t *testing.T) {
 				},
 				"b": {},
 			},
-			Deps: testParseDependencies(
+			DependencyModuleReferences: testParseDependencyModuleReferences(
 				t,
-				"buf.build/foo/bar/v1:"+bufmoduletesting.TestDigest,
-				"buf.build/baz/qux/v2",
+				bufmoduletesting.TestModuleReferenceFooBarV1String,
+				bufmoduletesting.TestModuleReferenceFooBazCommitString,
 			),
 		},
 	)
@@ -244,8 +260,8 @@ func testNewConfigV1Beta1Equal(
 	assert.Equal(t, expectedConfig, config)
 }
 
-func testParseDependencies(t *testing.T, deps ...string) []bufmodule.ModuleName {
-	moduleNames, err := parseDependencies(deps...)
+func testParseDependencyModuleReferences(t *testing.T, deps ...string) []bufmodule.ModuleReference {
+	moduleNames, err := parseDependencyModuleReferences(deps...)
 	require.NoError(t, err)
 	return moduleNames
 }

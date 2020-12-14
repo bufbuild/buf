@@ -137,9 +137,8 @@ type Config struct {
 	// The excludes in this map will be relative to the root they map to!
 	//
 	// If RootToExcludes is empty, the default is "." with no excludes.
-	RootToExcludes map[string][]string
-	// Resolved or unresolved
-	Deps []bufmodule.ModuleName
+	RootToExcludes             map[string][]string
+	DependencyModuleReferences []bufmodule.ModuleReference
 }
 
 // NewConfigV1Beta1 returns a new, validated Config for the ExternalConfig.

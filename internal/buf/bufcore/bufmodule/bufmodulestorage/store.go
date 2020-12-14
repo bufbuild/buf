@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/klauspost/compress/zstd"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 const (
@@ -34,13 +35,15 @@ const (
 )
 
 type store struct {
+	logger          *zap.Logger
 	readWriteBucket storage.ReadWriteBucket
 }
 
-func newStore(readWriteBucket storage.ReadWriteBucket) *store {
+func newStore(logger *zap.Logger, readWriteBucket storage.ReadWriteBucket) *store {
 	// Add version prefix
 	readWriteBucket = storage.MapReadWriteBucket(readWriteBucket, storage.MapOnPrefix(formatVersion))
 	return &store{
+		logger:          logger.Named("bufmodulestorage"),
 		readWriteBucket: readWriteBucket,
 	}
 }
@@ -50,6 +53,7 @@ func (s *store) Get(ctx context.Context, key Key) (_ bufmodule.Module, retErr er
 		return nil, fmt.Errorf("invalid key: %w", err)
 	}
 	modulePath := normalpath.Join(append(key, moduleFileName)...)
+	s.logger.Debug("get", zap.String("path", modulePath))
 	readObjectCloser, err := s.readWriteBucket.Get(ctx, modulePath)
 	if err != nil {
 		// This correctly returns an error that fufills storage.ErrNotExist per the documentation
@@ -80,6 +84,7 @@ func (s *store) Put(ctx context.Context, key Key, module bufmodule.Module) (retE
 		return fmt.Errorf("invalid key: %w", err)
 	}
 	modulePath := normalpath.Join(append(key, moduleFileName)...)
+	s.logger.Debug("put", zap.String("path", modulePath))
 	// Check if there is already a module at the path
 	if _, err := s.readWriteBucket.Stat(ctx, modulePath); !storage.IsNotExist(err) {
 		return fmt.Errorf("module already exists at path %q", modulePath)
@@ -117,6 +122,7 @@ func (s *store) Delete(ctx context.Context, key Key) error {
 		return fmt.Errorf("invalid key: %w", err)
 	}
 	modulePath := normalpath.Join(append(key, moduleFileName)...)
+	s.logger.Debug("delete", zap.String("path", modulePath))
 	return s.readWriteBucket.Delete(ctx, modulePath)
 }
 
