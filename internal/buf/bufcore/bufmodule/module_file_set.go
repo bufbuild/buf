@@ -59,11 +59,11 @@ func (m *moduleFileSet) AllFileInfos(ctx context.Context) ([]bufcore.FileInfo, e
 	}); err != nil {
 		return nil, err
 	}
-	sortFileInfos(fileInfos)
+	bufcore.SortFileInfos(fileInfos)
 	return fileInfos, nil
 }
 
-func (m *moduleFileSet) GetFile(ctx context.Context, path string) (ModuleFile, error) {
+func (m *moduleFileSet) GetModuleFile(ctx context.Context, path string) (ModuleFile, error) {
 	// super overkill but ok
 	if err := validateModuleFilePath(path); err != nil {
 		return nil, err

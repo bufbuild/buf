@@ -15,6 +15,7 @@
 package bufmodule
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -23,47 +24,23 @@ import (
 	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
+	remoteMinLength     = 2
+	remoteMaxLength     = 256
+	ownerMinLength      = 3
+	ownerMaxLength      = 64
+	repositoryMinLength = 2
+	repositoryMaxLength = 64
+	trackMinLength      = 2
+	trackMaxLength      = 64
 	// 32MB
-	maxModuleTotalContentLength  = 32 << 20
-	ownerNameMinLength           = 3
-	ownerNameMaxLength           = 64
-	protoFileMaxCount            = 16384
-	remoteMinLength              = 1
-	remoteMaxLength              = 256
-	repositoryNameMinLength      = 2
-	repositoryNameMaxLength      = 64
-	repositoryTrackNameMinLength = 2
-	repositoryTrackNameMaxLength = 32
+	maxModuleTotalContentLength = 32 << 20
+	protoFileMaxCount           = 16384
 )
-
-// ValidateDigest verifies the given digest's prefix,
-// decodes its base64 representation and checks the
-// length of the encoded bytes.
-func ValidateDigest(digest string) error {
-	if digest == "" {
-		return errors.New("empty digest")
-	}
-	split := strings.SplitN(digest, "-", 2)
-	if len(split) != 2 {
-		return fmt.Errorf("invalid digest: %s", digest)
-	}
-	digestPrefix := split[0]
-	digestValue := split[1]
-	if digestPrefix != b1DigestPrefix {
-		return fmt.Errorf("unknown digest prefix: %s", digestPrefix)
-	}
-	decoded, err := base64.URLEncoding.DecodeString(digestValue)
-	if err != nil {
-		return fmt.Errorf("failed to decode digest %s: %v", digestValue, err)
-	}
-	if len(decoded) != 32 {
-		return fmt.Errorf("invalid sha256 hash, expected 32 bytes: %s", digestValue)
-	}
-	return nil
-}
 
 // ValidateProtoModule verifies the given module is well-formed.
 func ValidateProtoModule(protoModule *modulev1.Module) error {
@@ -91,78 +68,198 @@ func ValidateProtoModule(protoModule *modulev1.Module) error {
 	if totalContentLength > maxModuleTotalContentLength {
 		return fmt.Errorf("total module content length is %d when max is %d", totalContentLength, maxModuleTotalContentLength)
 	}
+	for _, dependency := range protoModule.Dependencies {
+		if err := ValidateProtoModulePin(dependency); err != nil {
+			return fmt.Errorf("module had invalid dependency: %v", err)
+		}
+	}
 	return nil
 }
 
-// ValidateProtoModuleName verifies the given module name is well-formed.
-func ValidateProtoModuleName(protoModuleName *modulev1.ModuleName) error {
-	if protoModuleName == nil {
-		return errors.New("module name is required")
+// ValidateProtoModuleReference verifies the given module reference is well-formed.
+func ValidateProtoModuleReference(protoModuleReference *modulev1.ModuleReference) error {
+	if protoModuleReference == nil {
+		return errors.New("module reference is required")
 	}
-	if err := validateRemote(protoModuleName.Remote); err != nil {
+	if err := validateRemote(protoModuleReference.Remote); err != nil {
 		return err
 	}
-	if err := ValidateOwnerName(protoModuleName.Owner, "owner"); err != nil {
+	if err := ValidateOwner(protoModuleReference.Owner, "owner"); err != nil {
 		return err
 	}
-	if err := ValidateRepositoryName(protoModuleName.Repository); err != nil {
+	if err := ValidateRepository(protoModuleReference.Repository); err != nil {
 		return err
 	}
-	if err := ValidateRepositoryTrackName(protoModuleName.Track); err != nil {
-		return err
-	}
-	if protoModuleName.Digest != "" {
-		if err := ValidateDigest(protoModuleName.Digest); err != nil {
+	track := protoModuleReference.GetTrack()
+	commit := protoModuleReference.GetCommit()
+	switch {
+	case track == "" && commit == "":
+		return fmt.Errorf("module reference must have either a track or commit")
+	case track != "" && commit == "":
+		if err := ValidateTrack(track); err != nil {
 			return err
 		}
+	case track == "" && commit != "":
+		if err := ValidateCommit(commit); err != nil {
+			return err
+		}
+	default:
+		// should never happen due to oneof
+		return fmt.Errorf("module reference cannot have both a track and commit")
 	}
 	return nil
 }
 
-// ValidateOwnerName is used to validate owner names, i.e. usernames and organization names.
-func ValidateOwnerName(ownerName string, ownerType string) error {
-	if ownerName == "" {
+// ValidateProtoModulePin verifies the given module pin is well-formed.
+func ValidateProtoModulePin(protoModulePin *modulev1.ModulePin) error {
+	if protoModulePin == nil {
+		return errors.New("module pin is required")
+	}
+	if err := validateRemote(protoModulePin.Remote); err != nil {
+		return err
+	}
+	if err := ValidateOwner(protoModulePin.Owner, "owner"); err != nil {
+		return err
+	}
+	if err := ValidateRepository(protoModulePin.Repository); err != nil {
+		return err
+	}
+	if err := ValidateTrack(protoModulePin.Track); err != nil {
+		return err
+	}
+	if err := ValidateCommit(protoModulePin.Commit); err != nil {
+		return err
+	}
+	if err := ValidateDigest(protoModulePin.Digest); err != nil {
+		return err
+	}
+	if err := validateCreateTime(protoModulePin.CreateTime); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ValidateUser verifies the given user name is well-formed.
+func ValidateUser(user string) error {
+	return ValidateOwner(user, "user")
+}
+
+// ValidateOrganization verifies the given organization name is well-formed.
+func ValidateOrganization(organization string) error {
+	return ValidateOwner(organization, "organization")
+}
+
+// ValidateOwner verifies the given owner name is well-formed.
+func ValidateOwner(owner string, ownerType string) error {
+	if owner == "" {
 		return fmt.Errorf("%s name is required", ownerType)
 	}
-	if len(ownerName) < ownerNameMinLength || len(ownerName) > ownerNameMaxLength {
-		return fmt.Errorf("%s name %q must be between at least %d and at most %d characters", ownerType, ownerName, ownerNameMinLength, ownerNameMaxLength)
+	if len(owner) < ownerMinLength || len(owner) > ownerMaxLength {
+		return fmt.Errorf("%s name %q must be between at least %d and at most %d characters", ownerType, owner, ownerMinLength, ownerMaxLength)
 	}
-	for _, char := range ownerName {
+	for _, char := range owner {
 		if !stringutil.IsLowerAlphanumeric(char) && char != '-' {
-			return fmt.Errorf("%s name %q must only contain lowercase letters, digits, or hyphens (-)", ownerType, ownerName)
+			return fmt.Errorf("%s name %q must only contain lowercase letters, digits, or hyphens (-)", ownerType, owner)
 		}
 	}
 	return nil
 }
 
-// ValidateRepositoryName verifies the given repository name is well-formed.
-func ValidateRepositoryName(repositoryName string) error {
-	if repositoryName == "" {
+// ValidateRepository verifies the given repository name is well-formed.
+func ValidateRepository(repository string) error {
+	if repository == "" {
 		return errors.New("repository name is required")
 	}
-	if len(repositoryName) < repositoryNameMinLength || len(repositoryName) > repositoryNameMaxLength {
-		return fmt.Errorf("repository name must be at least %d and at most %d characters", repositoryNameMinLength, repositoryNameMaxLength)
+	if len(repository) < repositoryMinLength || len(repository) > repositoryMaxLength {
+		return fmt.Errorf("repository name must be at least %d and at most %d characters", repositoryMinLength, repositoryMaxLength)
 	}
-	for _, char := range repositoryName {
+	for _, char := range repository {
 		if !stringutil.IsLowerAlphanumeric(char) && char != '-' {
-			return fmt.Errorf("repository name %q must only contain lowercase letters, digits, or hyphens (-)", repositoryName)
+			return fmt.Errorf("repository name %q must only contain lowercase letters, digits, or hyphens (-)", repository)
 		}
 	}
 	return nil
 }
 
-// ValidateRepositoryTrackName verifies the given repository track name is well-formed.
-func ValidateRepositoryTrackName(trackName string) error {
-	if trackName == "" {
-		return errors.New("repository track name is required")
+// ValidateTrack verifies the given repository track is well-formed.
+func ValidateTrack(track string) error {
+	if track == "" {
+		return errors.New("repository track is required")
 	}
-	if len(trackName) < repositoryTrackNameMinLength || len(trackName) > repositoryTrackNameMaxLength {
-		return fmt.Errorf("repository track name %q must be at least %d and at most %d characters", trackName, repositoryTrackNameMinLength, repositoryTrackNameMaxLength)
+	if len(track) < trackMinLength || len(track) > trackMaxLength {
+		return fmt.Errorf("repository track %q must be at least %d and at most %d characters", track, trackMinLength, trackMaxLength)
 	}
-	for _, char := range trackName {
+	for _, char := range track {
 		if !stringutil.IsLowerAlphanumeric(char) && char != '-' && char != '.' {
-			return fmt.Errorf("repository track name %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", trackName)
+			return fmt.Errorf("repository track %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", track)
 		}
+	}
+	return nil
+}
+
+// ValidateCommit verifies the given commit is well-formed.
+func ValidateCommit(commit string) error {
+	if commit == "" {
+		return errors.New("empty commit")
+	}
+	if err := uuid.Validate(commit); err != nil {
+		return fmt.Errorf("commit is invalid: %v", err)
+	}
+	return nil
+}
+
+// ValidateDigest verifies the given digest's prefix,
+// decodes its base64 representation and checks the
+// length of the encoded bytes.
+func ValidateDigest(digest string) error {
+	if digest == "" {
+		return errors.New("empty digest")
+	}
+	split := strings.SplitN(digest, "-", 2)
+	if len(split) != 2 {
+		return fmt.Errorf("invalid digest: %s", digest)
+	}
+	digestPrefix := split[0]
+	digestValue := split[1]
+	if digestPrefix != b1DigestPrefix {
+		return fmt.Errorf("unknown digest prefix: %s", digestPrefix)
+	}
+	decoded, err := base64.URLEncoding.DecodeString(digestValue)
+	if err != nil {
+		return fmt.Errorf("failed to decode digest %s: %v", digestValue, err)
+	}
+	if len(decoded) != 32 {
+		return fmt.Errorf("invalid sha256 hash, expected 32 bytes: %s", digestValue)
+	}
+	return nil
+}
+
+// ValidateModuleMatchesDigest validates that the Module matches the digest.
+//
+// This is just a convenience function.
+func ValidateModuleMatchesDigest(ctx context.Context, module Module, modulePin ModulePin) error {
+	digest, err := ModuleDigest(ctx, module)
+	if err != nil {
+		return err
+	}
+	if digest != modulePin.Digest() {
+		return fmt.Errorf("mismatched module digest for %q: expected: %q got: %q", modulePin.identity(), modulePin.Digest(), digest)
+	}
+	return nil
+}
+
+func validateModuleIdentity(moduleIdentity ModuleIdentity) error {
+	if moduleIdentity == nil {
+		return errors.New("module identity is required")
+	}
+	if err := validateRemote(moduleIdentity.Remote()); err != nil {
+		return err
+	}
+	if err := ValidateOwner(moduleIdentity.Owner(), "owner"); err != nil {
+		return err
+	}
+	if err := ValidateRepository(moduleIdentity.Repository()); err != nil {
+		return err
 	}
 	return nil
 }
@@ -175,6 +272,16 @@ func validateRemote(remote string) error {
 		return fmt.Errorf("remote %q must be at least %d and at most %d characters", remote, remoteMinLength, remoteMaxLength)
 	}
 	return nil
+}
+
+func validateCreateTime(createTime *timestamppb.Timestamp) error {
+	if createTime == nil {
+		return errors.New("create_time is required")
+	}
+	if createTime.Seconds == 0 && createTime.Nanos == 0 {
+		return errors.New("create_time must not be 0")
+	}
+	return createTime.CheckValid()
 }
 
 func validateModuleFilePath(path string) error {

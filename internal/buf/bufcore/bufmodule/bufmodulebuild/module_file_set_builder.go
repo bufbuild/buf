@@ -39,41 +39,15 @@ func (m *moduleFileSetBuilder) Build(
 	ctx context.Context,
 	module bufmodule.Module,
 ) (bufmodule.ModuleFileSet, error) {
-	var dependencies []bufmodule.Module
-	if len(module.Dependencies()) > 0 {
-		var err error
-		dependencies, err = m.getModules(ctx, make(map[string]struct{}), module.Dependencies())
+	var dependencyModules []bufmodule.Module
+	// we know these are unique by remote, owner, repository
+	// these also contain all transitive dependencies
+	for _, dependnecyModulePin := range module.DependencyModulePins() {
+		dependencyModule, err := m.moduleReader.GetModule(ctx, dependnecyModulePin)
 		if err != nil {
 			return nil, err
 		}
+		dependencyModules = append(dependencyModules, dependencyModule)
 	}
-	return bufmodule.NewModuleFileSet(module, dependencies), nil
-}
-
-func (m *moduleFileSetBuilder) getModules(
-	ctx context.Context,
-	seenModules map[string]struct{},
-	resolvedModuleNames []bufmodule.ResolvedModuleName,
-) ([]bufmodule.Module, error) {
-	var modules []bufmodule.Module
-	for _, resolvedModuleName := range resolvedModuleNames {
-		// Avoid pulling module more than once
-		if _, ok := seenModules[resolvedModuleName.String()]; ok {
-			continue
-		}
-		seenModules[resolvedModuleName.String()] = struct{}{}
-		module, err := m.moduleReader.GetModule(ctx, resolvedModuleName)
-		if err != nil {
-			return nil, err
-		}
-		modules = append(modules, module)
-		if len(module.Dependencies()) > 0 {
-			dependencies, err := m.getModules(ctx, seenModules, module.Dependencies())
-			if err != nil {
-				return nil, err
-			}
-			modules = append(modules, dependencies...)
-		}
-	}
-	return modules, nil
+	return bufmodule.NewModuleFileSet(module, dependencyModules), nil
 }

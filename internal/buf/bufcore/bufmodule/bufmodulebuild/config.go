@@ -25,7 +25,7 @@ import (
 
 // all of this code can likely be simplified
 func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Config, error) {
-	dependencies, err := parseDependencies(deps...)
+	dependencyModuleReferences, err := parseDependencyModuleReferences(deps...)
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +53,8 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Co
 
 	if len(fullExcludes) == 0 {
 		return &Config{
-			RootToExcludes: rootToExcludes,
-			Deps:           dependencies,
+			RootToExcludes:             rootToExcludes,
+			DependencyModuleReferences: dependencyModuleReferences,
 		}, nil
 	}
 
@@ -107,27 +107,26 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Co
 		rootToExcludes[root] = uniqueSortedExcludes
 	}
 	return &Config{
-		RootToExcludes: rootToExcludes,
-		Deps:           dependencies,
+		RootToExcludes:             rootToExcludes,
+		DependencyModuleReferences: dependencyModuleReferences,
 	}, nil
 }
 
-// parseDependencies parses the given dependencies into structured ModuleNames.
-func parseDependencies(deps ...string) ([]bufmodule.ModuleName, error) {
+func parseDependencyModuleReferences(deps ...string) ([]bufmodule.ModuleReference, error) {
 	if len(deps) == 0 {
 		return nil, nil
 	}
-	dependencies := make([]bufmodule.ModuleName, 0, len(deps))
-	for _, dependency := range deps {
-		dependency := strings.TrimSpace(dependency)
-		moduleName, err := bufmodule.ModuleNameForString(dependency)
+	moduleReferences := make([]bufmodule.ModuleReference, 0, len(deps))
+	for _, dep := range deps {
+		dep := strings.TrimSpace(dep)
+		moduleReference, err := bufmodule.ModuleReferenceForString(dep)
 		if err != nil {
 			return nil, err
 		}
-		dependencies = append(dependencies, moduleName)
+		moduleReferences = append(moduleReferences, moduleReference)
 	}
-	if err := bufmodule.ValidateModuleNamesUnique(dependencies); err != nil {
+	if err := bufmodule.ValidateModuleReferencesUniqueByIdentity(moduleReferences); err != nil {
 		return nil, err
 	}
-	return dependencies, nil
+	return moduleReferences, nil
 }

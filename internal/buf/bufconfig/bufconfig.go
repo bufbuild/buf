@@ -35,10 +35,10 @@ const ConfigFilePath = "buf.yaml"
 
 // Config is the user config.
 type Config struct {
-	Name     bufmodule.ModuleName
-	Build    *bufmodulebuild.Config
-	Breaking *bufbreaking.Config
-	Lint     *buflint.Config
+	ModuleIdentity bufmodule.ModuleIdentity
+	Build          *bufmodulebuild.Config
+	Breaking       *bufbreaking.Config
+	Lint           *buflint.Config
 }
 
 // Provider is a provider.
@@ -59,11 +59,14 @@ func NewProvider(logger *zap.Logger) Provider {
 }
 
 // CreateConfig writes an initial configuration file into the bucket.
-func CreateConfig(ctx context.Context, writeBucket storage.WriteBucket, name string, deps ...string) error {
+func CreateConfig(ctx context.Context, writeBucket storage.WriteBucket, moduleIdentityString string, deps ...string) error {
+	if _, err := bufmodule.ModuleIdentityForString(moduleIdentityString); err != nil {
+		return err
+	}
 	data, err := encoding.MarshalYAML(
 		externalConfigV1Beta1{
 			Version: v1beta1Version,
-			Name:    name,
+			Name:    moduleIdentityString,
 			Deps:    deps,
 		},
 	)

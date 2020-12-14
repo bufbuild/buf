@@ -16,7 +16,6 @@ package bufmodulecache
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"sync"
 
@@ -56,19 +55,29 @@ func newModuleReader(
 
 func (m *moduleReader) GetModule(
 	ctx context.Context,
-	resolvedModuleName bufmodule.ResolvedModuleName,
+	modulePin bufmodule.ModulePin,
 ) (bufmodule.Module, error) {
-	module, err := m.cache.GetModule(ctx, resolvedModuleName)
+	module, err := m.cache.GetModule(ctx, modulePin)
 	if err != nil {
-		if storage.IsNotExist(err) || bufmodule.IsNoDigestError(err) {
-			m.logger.Debug("cache_miss", zap.String("module_name", resolvedModuleName.String()))
+		if storage.IsNotExist(err) {
+			m.logger.Debug(
+				"cache_miss",
+				zap.String("module_pin", modulePin.String()),
+			)
 			if m.messageWriter != nil {
-				if _, err := m.messageWriter.Write([]byte("buf: downloading " + resolvedModuleName.String() + "\n")); err != nil {
+				if _, err := m.messageWriter.Write([]byte("buf: downloading " + modulePin.String() + "\n")); err != nil {
 					return nil, err
 				}
 			}
-			module, err := m.getModuleUncached(ctx, resolvedModuleName)
+			module, err := m.delegate.GetModule(ctx, modulePin)
 			if err != nil {
+				return nil, err
+			}
+			if err := m.cache.PutModule(
+				ctx,
+				modulePin,
+				module,
+			); err != nil {
 				return nil, err
 			}
 			m.lock.Lock()
@@ -78,33 +87,14 @@ func (m *moduleReader) GetModule(
 		}
 		return nil, err
 	}
-	m.logger.Debug("cache_hit", zap.String("module_name", resolvedModuleName.String()))
+	m.logger.Debug(
+		"cache_hit",
+		zap.String("module_pin", modulePin.String()),
+	)
 	m.lock.Lock()
 	m.count++
 	m.cacheHits++
 	m.lock.Unlock()
-	return module, nil
-}
-
-func (m *moduleReader) getModuleUncached(
-	ctx context.Context,
-	resolvedModuleName bufmodule.ResolvedModuleName,
-) (bufmodule.Module, error) {
-	module, err := m.delegate.GetModule(ctx, resolvedModuleName)
-	if err != nil {
-		return nil, err
-	}
-	cacheModuleName, err := m.cache.PutModule(
-		ctx,
-		resolvedModuleName,
-		module,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if !bufmodule.ModuleNameEqual(resolvedModuleName, cacheModuleName) {
-		return nil, fmt.Errorf("mismatched cache module name: %q %q", resolvedModuleName.String(), cacheModuleName.String())
-	}
 	return module, nil
 }
 

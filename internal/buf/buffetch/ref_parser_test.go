@@ -855,31 +855,29 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		t,
 		internal.NewDirectParsedModuleRef(
 			formatMod,
-			testNewModuleName(
+			testNewTrackModuleReference(
 				t,
 				"example.com",
 				"foo",
 				"bar",
 				"v1",
-				"",
 			),
 		),
-		"example.com/foo/bar/v1",
+		"example.com/foo/bar:v1",
 	)
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedModuleRef(
 			formatMod,
-			testNewModuleName(
+			testNewCommitModuleReference(
 				t,
 				"example.com",
 				"foo",
 				"bar",
-				"v1",
-				bufmoduletesting.TestDigest,
+				bufmoduletesting.TestCommit,
 			),
 		),
-		"example.com/foo/bar/v1:"+bufmoduletesting.TestDigest,
+		"example.com/foo/bar@"+bufmoduletesting.TestCommit,
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -1130,15 +1128,26 @@ func testGetParsedRef(
 	})
 }
 
-func testNewModuleName(
+func testNewTrackModuleReference(
 	t *testing.T,
 	remote string,
 	owner string,
 	repository string,
 	track string,
-	digest string,
-) bufmodule.ModuleName {
-	moduleName, err := bufmodule.NewModuleName(remote, owner, repository, track, digest)
+) bufmodule.ModuleReference {
+	moduleReference, err := bufmodule.NewTrackModuleReference(remote, owner, repository, track)
 	require.NoError(t, err)
-	return moduleName
+	return moduleReference
+}
+
+func testNewCommitModuleReference(
+	t *testing.T,
+	remote string,
+	owner string,
+	repository string,
+	commit string,
+) bufmodule.ModuleReference {
+	moduleReference, err := bufmodule.NewCommitModuleReference(remote, owner, repository, commit)
+	require.NoError(t, err)
+	return moduleReference
 }

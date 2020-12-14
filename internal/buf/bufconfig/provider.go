@@ -16,7 +16,6 @@ package bufconfig
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 
@@ -116,21 +115,18 @@ func (p *provider) newConfigV1Beta1(externalConfig externalConfigV1Beta1) (*Conf
 	if err != nil {
 		return nil, err
 	}
-	var moduleName bufmodule.ModuleName
+	var moduleIdentity bufmodule.ModuleIdentity
 	if externalConfig.Name != "" {
-		moduleName, err = bufmodule.ModuleNameForString(externalConfig.Name)
+		moduleIdentity, err = bufmodule.ModuleIdentityForString(externalConfig.Name)
 		if err != nil {
 			return nil, err
 		}
-		if moduleName.Digest() != "" {
-			return nil, errors.New("config module name must not contain a digest")
-		}
 	}
 	return &Config{
-		Name:     moduleName,
-		Build:    buildConfig,
-		Breaking: breakingConfig,
-		Lint:     lintConfig,
+		ModuleIdentity: moduleIdentity,
+		Build:          buildConfig,
+		Breaking:       breakingConfig,
+		Lint:           lintConfig,
 	}, nil
 }
 
