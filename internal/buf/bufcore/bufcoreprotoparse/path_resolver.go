@@ -47,7 +47,7 @@ func newParserAccessorHandler(
 }
 
 func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error) {
-	moduleFile, moduleErr := p.module.GetFile(p.ctx, path)
+	moduleFile, moduleErr := p.module.GetModuleFile(p.ctx, path)
 	if moduleErr != nil {
 		if !storage.IsNotExist(moduleErr) {
 			return nil, moduleErr

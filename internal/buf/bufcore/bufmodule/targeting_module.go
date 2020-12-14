@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/internal"
 	"github.com/bufbuild/buf/internal/buf/bufcore/internal/bufcorevalidate"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -54,9 +55,9 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufc
 	defer func() {
 		if retErr == nil {
 			if len(fileInfos) == 0 {
-				retErr = ErrNoTargetFiles
+				retErr = internal.ErrNoTargetFiles
 			} else {
-				sortFileInfos(fileInfos)
+				bufcore.SortFileInfos(fileInfos)
 			}
 		}
 	}()

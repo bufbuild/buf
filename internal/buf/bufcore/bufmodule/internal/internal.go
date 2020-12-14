@@ -12,20 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodule
+package internal
 
-import (
-	"context"
+import "errors"
 
-	"github.com/bufbuild/buf/internal/pkg/storage"
-)
-
-type nopModuleResolver struct{}
-
-func newNopModuleResolver() *nopModuleResolver {
-	return &nopModuleResolver{}
-}
-
-func (*nopModuleResolver) GetModulePin(_ context.Context, moduleReference ModuleReference) (ModulePin, error) {
-	return nil, storage.NewErrNotExist(moduleReference.String())
-}
+// ErrNoTargetFiles is the error returned if there are no target files found.
+var ErrNoTargetFiles = errors.New("no .proto target files found")

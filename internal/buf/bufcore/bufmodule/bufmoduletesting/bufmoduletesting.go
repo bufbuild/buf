@@ -14,15 +14,43 @@
 
 package bufmoduletesting
 
+import "github.com/bufbuild/buf/internal/pkg/uuid"
+
 const (
-	//TestDigest is a valid testDigest.
-	TestDigest = "b1-JR67l5Bfch-TiWnottksIFG9HyYS3o8JQKBTeZdGP-Y="
-	// TestModuleNameString is a valid module name string.
-	TestModuleNameString = "buf.build/foo/bar/v1"
+	// TestDigest is a valid digest.
+	//
+	// This matches TestData.
+	TestDigest = "b1-gLO3B_5ClhdU52w1gMOxk4GokvCoM1OqjarxMfjStGQ="
+	// TestModuleReferenceV1String is a valid module reference string.
+	TestModuleReferenceFooBarV1String = "buf.build/foo/bar:v1"
+	// TestModuleReferenceV2String is a valid module reference string.
+	TestModuleReferenceFooBarV2String = "buf.build/foo/bar:v2"
+	// TestModuleReferenceV1String is a valid module reference string.
+	TestModuleReferenceFooBazV1String = "buf.build/foo/baz:v1"
+	// TestModuleReferenceV2String is a valid module reference string.
+	TestModuleReferenceFooBazV2String = "buf.build/foo/baz:v2"
 )
 
-// TestData is the data that maps to TestDigest with TestModuleNameString.
-var TestData = map[string][]byte{
-	"file1.proto":        []byte(`syntax="proto3";`),
-	"folder/file2.proto": []byte(`syntax="proto3";`),
+var (
+	// TestData is the data that maps to TestDigest with TestModuleReferenceString.
+	TestData = map[string][]byte{
+		"file1.proto":        []byte(`syntax="proto3";`),
+		"folder/file2.proto": []byte(`syntax="proto3";`),
+	}
+	// TestCommit is a valid commit.
+	TestCommit string
+	// TestModuleReferenceFooBarCommitString is a valid module reference string.
+	TestModuleReferenceFooBarCommitString string
+	// TestModuleReferenceFooBazCommitString is a valid module reference string.
+	TestModuleReferenceFooBazCommitString string
+)
+
+func init() {
+	testCommitUUID, err := uuid.New()
+	if err != nil {
+		panic(err.Error())
+	}
+	TestCommit = testCommitUUID.String()
+	TestModuleReferenceFooBarCommitString = "buf.build/foo/bar@" + TestCommit
+	TestModuleReferenceFooBazCommitString = "buf.build/foo/baz@" + TestCommit
 }

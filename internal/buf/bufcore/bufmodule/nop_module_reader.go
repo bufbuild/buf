@@ -26,6 +26,6 @@ func newNopModuleReader() *nopModuleReader {
 	return &nopModuleReader{}
 }
 
-func (*nopModuleReader) GetModule(ctx context.Context, moduleName ResolvedModuleName) (Module, error) {
-	return nil, storage.NewErrNotExist(moduleName.String())
+func (*nopModuleReader) GetModule(_ context.Context, modulePin ModulePin) (Module, error) {
+	return nil, storage.NewErrNotExist(modulePin.String())
 }

@@ -510,7 +510,7 @@ func assumeModuleOrDir(path string) (string, error) {
 	if path == "" {
 		return "", errors.New("assumeModuleOrDir: no path given")
 	}
-	if _, err := bufmodule.ModuleNameForString(path); err == nil {
+	if _, err := bufmodule.ModuleReferenceForString(path); err == nil {
 		// this is possible to be a module, check if it is a directory though
 		// OK to use os.Stat instead of os.Lstat here
 		fileInfo, err := os.Stat(path)

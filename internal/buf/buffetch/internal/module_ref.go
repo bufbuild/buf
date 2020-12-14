@@ -26,8 +26,8 @@ var (
 )
 
 type moduleRef struct {
-	format     string
-	moduleName bufmodule.ModuleName
+	format          string
+	moduleReference bufmodule.ModuleReference
 }
 
 func newModuleRef(
@@ -46,18 +46,18 @@ func newModuleRef(
 	if strings.Contains(path, "://") {
 		return nil, NewInvalidPathError(format, path)
 	}
-	moduleName, err := bufmodule.ModuleNameForString(path)
+	moduleReference, err := bufmodule.ModuleReferenceForString(path)
 	if err != nil {
 		// TODO: this is dumb
 		return nil, NewInvalidPathError(format, path)
 	}
-	return newDirectModuleRef(format, moduleName), nil
+	return newDirectModuleRef(format, moduleReference), nil
 }
 
-func newDirectModuleRef(format string, moduleName bufmodule.ModuleName) *moduleRef {
+func newDirectModuleRef(format string, moduleReference bufmodule.ModuleReference) *moduleRef {
 	return &moduleRef{
-		format:     format,
-		moduleName: moduleName,
+		format:          format,
+		moduleReference: moduleReference,
 	}
 }
 
@@ -65,8 +65,8 @@ func (r *moduleRef) Format() string {
 	return r.format
 }
 
-func (r *moduleRef) ModuleName() bufmodule.ModuleName {
-	return r.moduleName
+func (r *moduleRef) ModuleReference() bufmodule.ModuleReference {
+	return r.moduleReference
 }
 
 func (*moduleRef) ref()       {}
