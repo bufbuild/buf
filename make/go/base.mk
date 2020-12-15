@@ -172,15 +172,18 @@ else
 	@mkdir -p $(TMP)
 	git clone $(MAKEGO_REMOTE) $(TMP)/makego
 	rm -rf $(MAKEGO)
-ifdef ALL
 	cp -R $(TMP)/makego/make/go $(MAKEGO)
-else
-	mkdir -p $(MAKEGO)
-	$(foreach makego_file,$(subst $(MAKEGO)/,,$(filter $(MAKEGO)/%.mk,$(MAKEFILE_LIST))),cp $(TMP)/makego/make/go/$(makego_file) $(MAKEGO)/$(makego_file); )
-	$(foreach extra_makego_file,$(sort $(EXTRA_MAKEGO_FILES)),mkdir -p $(MAKEGO)/$(dir $(extra_makego_file)); cp $(TMP)/makego/make/go/$(extra_makego_file) $(MAKEGO)/$(extra_makego_file); )
+ifndef ALL
+	$(MAKE) cleanmakego
 endif
 	@rm -rf $(TMP)/makego
 endif
+
+.PHONY: cleanmakego
+cleanmakego:
+	find $(MAKEGO) -type f | \
+	grep -v $(foreach makego_file,$(filter $(MAKEGO)/%.mk,$(MAKEFILE_LIST)) $(EXTRA_MAKEGO_FILES),-e $(makego_file)) | \
+	xargs rm || true
 
 .PHONY: copytomakego
 copytomakego:
