@@ -50,6 +50,7 @@ func newExternalLockFileDep(modulePin ModulePin) *externalLockFileDep {
 		Track:      modulePin.Track(),
 		Commit:     modulePin.Commit(),
 		Digest:     modulePin.Digest(),
+		CreateTime: modulePin.CreateTime(),
 	}
 }
 

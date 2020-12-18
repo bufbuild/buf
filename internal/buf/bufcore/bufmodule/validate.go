@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
+	"github.com/bufbuild/buf/internal/pkg/netextended"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/bufbuild/buf/internal/pkg/uuid"
@@ -29,8 +30,6 @@ import (
 )
 
 const (
-	remoteMinLength     = 2
-	remoteMaxLength     = 256
 	ownerMinLength      = 3
 	ownerMaxLength      = 64
 	repositoryMinLength = 2
@@ -265,11 +264,8 @@ func validateModuleIdentity(moduleIdentity ModuleIdentity) error {
 }
 
 func validateRemote(remote string) error {
-	if remote == "" {
-		return errors.New("remote is required")
-	}
-	if len(remote) < remoteMinLength || len(remote) > remoteMaxLength {
-		return fmt.Errorf("remote %q must be at least %d and at most %d characters", remote, remoteMinLength, remoteMaxLength)
+	if _, err := netextended.ValidateHostname(remote); err != nil {
+		return fmt.Errorf("invalid remote %q: %w", remote, err)
 	}
 	return nil
 }
