@@ -213,6 +213,21 @@ func (b *bucket) Delete(ctx context.Context, path string) error {
 	return nil
 }
 
+func (b *bucket) DeleteAll(ctx context.Context, prefix string) error {
+	externalPrefix, err := b.getExternalPrefix(prefix)
+	if err != nil {
+		return err
+	}
+	if err := os.RemoveAll(externalPrefix); err != nil {
+		// this is a no-nop per the documentation
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
 func (*bucket) SetExternalPathSupported() bool {
 	return false
 }
@@ -251,13 +266,13 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 	return nil
 }
 
-func (b *bucket) getExternalPrefix(path string) (string, error) {
-	path, err := storageutil.ValidatePrefix(path)
+func (b *bucket) getExternalPrefix(prefix string) (string, error) {
+	prefix, err := storageutil.ValidatePrefix(prefix)
 	if err != nil {
 		return "", err
 	}
 	// Join calls clean
-	return normalpath.Unnormalize(normalpath.Join(b.rootPath, path)), nil
+	return normalpath.Unnormalize(normalpath.Join(b.rootPath, prefix)), nil
 }
 
 type readObjectCloser struct {

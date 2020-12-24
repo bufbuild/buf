@@ -14,7 +14,7 @@
 
 package bufmoduletesting
 
-import "github.com/bufbuild/buf/internal/pkg/uuid"
+import "github.com/bufbuild/buf/internal/pkg/uuidutil"
 
 const (
 	// TestDigest is a valid digest.
@@ -46,11 +46,15 @@ var (
 )
 
 func init() {
-	testCommitUUID, err := uuid.New()
+	testCommitUUID, err := uuidutil.New()
 	if err != nil {
 		panic(err.Error())
 	}
-	TestCommit = testCommitUUID.String()
+	testCommitDashless, err := uuidutil.ToDashless(testCommitUUID)
+	if err != nil {
+		panic(err.Error())
+	}
+	TestCommit = testCommitDashless
 	TestModuleReferenceFooBarCommitString = "buf.build/foo/bar@" + TestCommit
 	TestModuleReferenceFooBazCommitString = "buf.build/foo/baz@" + TestCommit
 }

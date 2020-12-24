@@ -17,7 +17,7 @@ package bufmodule
 import (
 	"testing"
 
-	"github.com/bufbuild/buf/internal/pkg/uuid"
+	"github.com/bufbuild/buf/internal/pkg/uuidutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,9 +29,10 @@ func TestModuleReferenceForString(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleReference, moduleReference)
 
-	commitUUID, err := uuid.New()
+	commitUUID, err := uuidutil.New()
 	require.NoError(t, err)
-	commit := commitUUID.String()
+	commit, err := uuidutil.ToDashless(commitUUID)
+	require.NoError(t, err)
 	expectedModuleReference, err = NewCommitModuleReference("foo.com", "bar", "baz", commit)
 	require.NoError(t, err)
 	moduleReference, err = ModuleReferenceForString("foo.com/bar/baz@" + commit)

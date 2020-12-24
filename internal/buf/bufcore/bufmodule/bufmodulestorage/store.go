@@ -31,7 +31,6 @@ import (
 
 const (
 	moduleFileName = "module.bin.zst"
-	formatVersion  = "v1"
 )
 
 type store struct {
@@ -40,8 +39,6 @@ type store struct {
 }
 
 func newStore(logger *zap.Logger, readWriteBucket storage.ReadWriteBucket) *store {
-	// Add version prefix
-	readWriteBucket = storage.MapReadWriteBucket(readWriteBucket, storage.MapOnPrefix(formatVersion))
 	return &store{
 		logger:          logger.Named("bufmodulestorage"),
 		readWriteBucket: readWriteBucket,
@@ -49,11 +46,11 @@ func newStore(logger *zap.Logger, readWriteBucket storage.ReadWriteBucket) *stor
 }
 
 func (s *store) Get(ctx context.Context, key Key) (_ bufmodule.Module, retErr error) {
+	s.logger.Debug("get", zap.Strings("key", key))
 	if err := normalpath.ValidatePathComponents(key...); err != nil {
 		return nil, fmt.Errorf("invalid key: %w", err)
 	}
 	modulePath := normalpath.Join(append(key, moduleFileName)...)
-	s.logger.Debug("get", zap.String("path", modulePath))
 	readObjectCloser, err := s.readWriteBucket.Get(ctx, modulePath)
 	if err != nil {
 		// This correctly returns an error that fufills storage.ErrNotExist per the documentation
@@ -80,11 +77,11 @@ func (s *store) Get(ctx context.Context, key Key) (_ bufmodule.Module, retErr er
 }
 
 func (s *store) Put(ctx context.Context, key Key, module bufmodule.Module) (retErr error) {
+	s.logger.Debug("put", zap.Strings("key", key))
 	if err := normalpath.ValidatePathComponents(key...); err != nil {
 		return fmt.Errorf("invalid key: %w", err)
 	}
 	modulePath := normalpath.Join(append(key, moduleFileName)...)
-	s.logger.Debug("put", zap.String("path", modulePath))
 	// Check if there is already a module at the path
 	if _, err := s.readWriteBucket.Stat(ctx, modulePath); !storage.IsNotExist(err) {
 		return fmt.Errorf("module already exists at path %q", modulePath)
@@ -118,28 +115,28 @@ func (s *store) Put(ctx context.Context, key Key, module bufmodule.Module) (retE
 }
 
 func (s *store) Delete(ctx context.Context, key Key) error {
+	s.logger.Debug("delete", zap.Strings("key", key))
 	if err := normalpath.ValidatePathComponents(key...); err != nil {
 		return fmt.Errorf("invalid key: %w", err)
 	}
 	modulePath := normalpath.Join(append(key, moduleFileName)...)
-	s.logger.Debug("delete", zap.String("path", modulePath))
 	return s.readWriteBucket.Delete(ctx, modulePath)
 }
 
-func (s *store) AllKeys(ctx context.Context) ([]Key, error) {
-	paths, err := storage.AllPaths(ctx, s.readWriteBucket, "")
-	if err != nil {
-		return nil, err
-	}
-	var keys []Key
-	for _, path := range paths {
-		if normalpath.Base(path) != moduleFileName {
-			return nil, fmt.Errorf("unexpected path in bucket: %q", path)
-		}
-		// Trim module file name
-		dir := normalpath.Dir(path)
-		components := normalpath.Components(dir)
-		keys = append(keys, Key(components))
-	}
-	return keys, nil
+func (s *store) ForEachKey(ctx context.Context, f func(Key, error) error) error {
+	return s.readWriteBucket.Walk(
+		ctx,
+		"",
+		func(objectInfo storage.ObjectInfo) error {
+			path := objectInfo.Path()
+			if normalpath.Base(path) != moduleFileName {
+				if err := f(nil, fmt.Errorf("unexpected path in bucket: %q", path)); err != nil {
+					return err
+				}
+				return nil
+			}
+			// Trim module file name
+			return f(Key(normalpath.Components(normalpath.Dir(path))), nil)
+		},
+	)
 }
