@@ -1092,6 +1092,112 @@ diff -u %s %s
 		require.True(t, storage.IsNotExist(err))
 	})
 
+	t.Run("write-bucket-put-delete-all", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+		writeBucket := newWriteBucket(t, defaultProvider)
+		// this test starts with this data in the bucket, and then
+		// deletes it over time in different ways
+		pathToData := map[string]string{
+			"a.txt":      testTxtContent,
+			"b/d.txt":    testTxtContent,
+			"b/d/e.txt":  testTxtContent,
+			"b/d/f.txt":  testTxtContent,
+			"c.d/e.txt":  testTxtContent,
+			"c.de/f.txt": testTxtContent,
+			"g.txt":      testTxtContent,
+		}
+		for path, data := range pathToData {
+			err := storage.PutPath(ctx, writeBucket, path, []byte(data))
+			require.NoError(t, err)
+		}
+		AssertPathToContent(
+			t,
+			writeBucketToReadBucket(t, writeBucket),
+			"",
+			pathToData,
+		)
+		err := writeBucket.DeleteAll(ctx, "h")
+		require.NoError(t, err)
+		AssertPathToContent(
+			t,
+			writeBucketToReadBucket(t, writeBucket),
+			"",
+			pathToData,
+		)
+		err = writeBucket.DeleteAll(ctx, "b/d/e.txt")
+		require.NoError(t, err)
+		delete(pathToData, "b/d/e.txt")
+		AssertPathToContent(
+			t,
+			writeBucketToReadBucket(t, writeBucket),
+			"",
+			pathToData,
+		)
+		err = writeBucket.DeleteAll(ctx, "b/d")
+		require.NoError(t, err)
+		delete(pathToData, "b/d/f.txt")
+		AssertPathToContent(
+			t,
+			writeBucketToReadBucket(t, writeBucket),
+			"",
+			pathToData,
+		)
+		err = writeBucket.DeleteAll(ctx, "b")
+		require.NoError(t, err)
+		delete(pathToData, "b/d.txt")
+		AssertPathToContent(
+			t,
+			writeBucketToReadBucket(t, writeBucket),
+			"",
+			pathToData,
+		)
+		err = writeBucket.DeleteAll(ctx, "a.txt")
+		require.NoError(t, err)
+		delete(pathToData, "a.txt")
+		AssertPathToContent(
+			t,
+			writeBucketToReadBucket(t, writeBucket),
+			"",
+			pathToData,
+		)
+		err = writeBucket.DeleteAll(ctx, "c.d")
+		require.NoError(t, err)
+		delete(pathToData, "c.d/e.txt")
+		AssertPathToContent(
+			t,
+			writeBucketToReadBucket(t, writeBucket),
+			"",
+			pathToData,
+		)
+		err = writeBucket.DeleteAll(ctx, "c.d")
+		require.NoError(t, err)
+		AssertPathToContent(
+			t,
+			writeBucketToReadBucket(t, writeBucket),
+			"",
+			pathToData,
+		)
+		err = writeBucket.DeleteAll(ctx, "c.de")
+		require.NoError(t, err)
+		delete(pathToData, "c.de/f.txt")
+		AssertPathToContent(
+			t,
+			writeBucketToReadBucket(t, writeBucket),
+			"",
+			pathToData,
+		)
+		err = writeBucket.DeleteAll(ctx, "")
+		require.NoError(t, err)
+		delete(pathToData, "g.txt")
+		AssertPathToContent(
+			t,
+			writeBucketToReadBucket(t, writeBucket),
+			"",
+			pathToData,
+		)
+	})
+
 	t.Run("walk-prefixed-bucket-should-not-error", func(t *testing.T) {
 		t.Parallel()
 		writeBucket := newWriteBucket(t, defaultProvider)

@@ -62,6 +62,13 @@ type WriteBucket interface {
 	// Returns ErrNotExist if the path does not exist, other error
 	// if there is a system error.
 	Delete(ctx context.Context, path string) error
+	// DeleteAll deletes all objects with the prefix.
+	// If the prefix doesn't exist, this is a no-op.
+	//
+	// Note that the prefix is used as a filepath prefix, and
+	// NOT a string prefix. For example, the prefix "foo/bar"
+	// will delete "foo/bar/baz", but NOT "foo/barbaz".
+	DeleteAll(ctx context.Context, prefix string) error
 	// SetExternalPathSupported returns true if SetExternalPath is supported.
 	//
 	// For example, in-memory buckets may choose to return true so that object sources

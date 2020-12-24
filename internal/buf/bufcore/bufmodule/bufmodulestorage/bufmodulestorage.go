@@ -32,7 +32,12 @@ type Store interface {
 	Get(ctx context.Context, moduleKey Key) (bufmodule.Module, error)
 	Put(ctx context.Context, moduleKey Key, module bufmodule.Module) error
 	Delete(ctx context.Context, moduleKey Key) error
-	AllKeys(ctx context.Context) ([]Key, error)
+	// ForEachKey iterates over every key and calls f.
+	//
+	// If an error occurs during iteration, it will be passed to f. If f
+	// returns nil, the iteration will continue, else if it returns error,
+	// the iteration will stop and the error will be returned.
+	ForEachKey(ctx context.Context, f func(Key, error) error) error
 }
 
 // NewStore creates a new module store backed by the readWriteBucket.
