@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/netextended"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
-	"github.com/bufbuild/buf/internal/pkg/uuid"
+	"github.com/bufbuild/buf/internal/pkg/uuidutil"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -201,7 +201,7 @@ func ValidateCommit(commit string) error {
 	if commit == "" {
 		return errors.New("empty commit")
 	}
-	if err := uuid.Validate(commit); err != nil {
+	if err := uuidutil.ValidateDashless(commit); err != nil {
 		return fmt.Errorf("commit is invalid: %v", err)
 	}
 	return nil

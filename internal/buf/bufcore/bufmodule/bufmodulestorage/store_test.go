@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodulestorage_test
+package bufmodulestorage
 
 import (
 	"context"
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulestorage"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
@@ -39,13 +38,13 @@ func TestBasic(t *testing.T) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
-	moduleStore := bufmodulestorage.NewStore(zap.NewNop(), readWriteBucket)
+	moduleStore := NewStore(zap.NewNop(), readWriteBucket)
 
-	keys, err := moduleStore.AllKeys(ctx)
+	keys, err := allKeys(ctx, moduleStore)
 	require.NoError(t, err)
 	require.Empty(t, keys)
 
-	key := bufmodulestorage.Key{"some", "path"}
+	key := Key{"some", "path"}
 	err = moduleStore.Put(
 		context.Background(),
 		key,
@@ -54,10 +53,10 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 	paths, err := storage.AllPaths(ctx, readWriteBucket, "")
 	require.NoError(t, err)
-	require.Equal(t, []string{"v1/some/path/module.bin.zst"}, paths)
-	keys, err = moduleStore.AllKeys(ctx)
+	require.Equal(t, []string{"some/path/module.bin.zst"}, paths)
+	keys, err = allKeys(ctx, moduleStore)
 	require.NoError(t, err)
-	require.Equal(t, []bufmodulestorage.Key{key}, keys)
+	require.Equal(t, []Key{key}, keys)
 
 	getModule, err := moduleStore.Get(ctx, key)
 	require.NoError(t, err)
@@ -72,4 +71,21 @@ func TestBasic(t *testing.T) {
 	diff, err := storage.DiffBytes(ctx, readBucket, filteredReadBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
+}
+
+func allKeys(ctx context.Context, moduleStore Store) ([]Key, error) {
+	var keys []Key
+	if err := moduleStore.ForEachKey(
+		ctx,
+		func(key Key, err error) error {
+			if err != nil {
+				return err
+			}
+			keys = append(keys, key)
+			return nil
+		},
+	); err != nil {
+		return nil, err
+	}
+	return keys, nil
 }

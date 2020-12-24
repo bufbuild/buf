@@ -192,6 +192,18 @@ func (w *mapWriteBucket) Delete(ctx context.Context, path string) error {
 	return w.delegate.Delete(ctx, fullPath)
 }
 
+func (w *mapWriteBucket) DeleteAll(ctx context.Context, prefix string) error {
+	prefix, err := normalpath.NormalizeAndValidate(prefix)
+	if err != nil {
+		return err
+	}
+	fullPrefix, matches := w.mapper.MapPrefix(prefix)
+	if !matches {
+		return nil
+	}
+	return w.delegate.DeleteAll(ctx, fullPrefix)
+}
+
 func (*mapWriteBucket) SetExternalPathSupported() bool {
 	return false
 }
