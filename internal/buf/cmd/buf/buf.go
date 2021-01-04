@@ -143,7 +143,6 @@ func NewRootCommand(
 				Use:   "config",
 				Short: "Interact with the configuration of Buf.",
 				SubCommands: []*appcmd.Command{
-					configinit.NewCommand("init", builder),
 					configlslintrules.NewCommand("ls-lint-rules", builder, "", false),
 					configlsbreakingrules.NewCommand("ls-breaking-rules", builder, "", false),
 				},
@@ -151,9 +150,14 @@ func NewRootCommand(
 			{
 				Use:   "beta",
 				Short: "Beta commands. Unstable and will likely change.",
-				// TODO: remove
-				Hidden: true,
 				SubCommands: []*appcmd.Command{
+					{
+						Use:   "config",
+						Short: "Interact with the configuration of Buf.",
+						SubCommands: []*appcmd.Command{
+							configinit.NewCommand("init", builder),
+						},
+					},
 					{
 						Use:        "image",
 						Short:      "Work with Images and FileDescriptorSets.",
