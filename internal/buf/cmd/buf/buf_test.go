@@ -958,7 +958,7 @@ breaking:
 
 func testConfigInit(t *testing.T, expectedData string, document bool, uncomment bool, name string, deps ...string) {
 	tempDir := t.TempDir()
-	args := []string{"config", "init", "-o", tempDir}
+	args := []string{"beta", "config", "init", "-o", tempDir}
 	if document {
 		args = append(args, "--doc")
 	}
