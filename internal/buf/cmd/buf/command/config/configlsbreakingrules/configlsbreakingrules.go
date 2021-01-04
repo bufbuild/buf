@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package lslintcheckers
+package configlsbreakingrules
 
 import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
-	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	checkinternal "github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/internal"
+	configinternal "github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/internal"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -39,12 +39,16 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
+	deprecated string,
+	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
-		Short: "List lint checkers.",
-		Args:  cobra.NoArgs,
+		Use:        name,
+		Short:      "List breaking rules.",
+		Args:       cobra.NoArgs,
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -67,10 +71,10 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	checkinternal.BindLSCheckersAll(flagSet, &f.All, allFlagName)
-	checkinternal.BindLSCheckersCategories(flagSet, &f.Categories, categoriesFlagName)
-	checkinternal.BindLSCheckersConfig(flagSet, &f.Config, configFlagName, allFlagName)
-	checkinternal.BindLSCheckersFormat(flagSet, &f.Format, formatFlagName)
+	configinternal.BindLSRulesAll(flagSet, &f.All, allFlagName)
+	configinternal.BindLSRulesCategories(flagSet, &f.Categories, categoriesFlagName)
+	configinternal.BindLSRulesConfig(flagSet, &f.Config, configFlagName, allFlagName)
+	configinternal.BindLSRulesFormat(flagSet, &f.Format, formatFlagName)
 }
 
 func run(
@@ -78,14 +82,14 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	if err := checkinternal.CheckLSCheckersCategories(flags.Categories, categoriesFlagName); err != nil {
+	if err := configinternal.CheckLSRulesCategories(flags.Categories, categoriesFlagName); err != nil {
 		return err
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	var checkers []bufcheck.Checker
+	var rules []bufcheck.Rule
 	var err error
 	if flags.All {
-		checkers, err = buflint.GetAllCheckersV1Beta1()
+		rules, err = bufbreaking.GetAllRulesV1Beta1()
 		if err != nil {
 			return err
 		}
@@ -101,16 +105,16 @@ func run(
 			ctx,
 			bufconfig.NewProvider(container.Logger()),
 			readWriteBucket,
-			flags.Config,
+			bufconfig.ReadConfigWithOverride(flags.Config),
 		)
 		if err != nil {
 			return err
 		}
-		checkers = config.Lint.GetCheckers()
+		rules = config.Breaking.GetRules()
 	}
-	return bufcheck.PrintCheckers(
+	return bufcheck.PrintRules(
 		container.Stdout(),
-		checkers,
+		rules,
 		flags.Format,
 	)
 }

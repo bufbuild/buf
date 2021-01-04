@@ -21,7 +21,7 @@ import "github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 
 // VersionSpec is the version specification for v1beta1.
 var VersionSpec = &internal.VersionSpec{
-	CheckerBuilders:   v1beta1CheckerBuilders,
+	RuleBuilders:      v1beta1RuleBuilders,
 	DefaultCategories: v1beta1DefaultCategories,
 	AllCategories:     v1beta1AllCategories,
 	IDToCategories:    v1beta1IDToCategories,

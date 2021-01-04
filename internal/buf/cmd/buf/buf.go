@@ -19,13 +19,14 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/build"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/breaking"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/lint"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/lsbreakingcheckers"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/check/lslintcheckers"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configinit"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configlsbreakingrules"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configlslintrules"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/generate"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/protoc"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
@@ -35,7 +36,22 @@ import (
 const (
 	// Version is the version of buf.
 	Version                 = "0.34.0-dev"
-	imageDeprecationMessage = `"image" sub-commands are now all implemented under the top-level "buf build" command, use "buf build" instead.
+	checkDeprecationMessage = `"buf check" sub-commands are now all implemented with the top-level "buf lint" and "buf breaking" commands.
+We recommend migrating, however this command continues to work.
+See https://docs.buf.build/faq for more details.`
+	checkBreakingDeprecationMessage = `"buf check breaking" has been moved to "buf breaking", use "buf breaking" instead.
+We recommend migrating, however this command continues to work.
+See https://docs.buf.build/faq for more details.`
+	checkLintDeprecationMessage = `"buf check lint" has been moved to "buf lint", use "buf lint" instead.
+We recommend migrating, however this command continues to work.
+See https://docs.buf.build/faq for more details.`
+	checkLSBreakingCheckersDeprecationMessage = `"buf check ls-breaking-checkers" has been moved to "buf config ls-breaking-rules", use "buf config ls-breaking-rules" instead.
+We recommend migrating, however this command continues to work.
+See https://docs.buf.build/faq for more details.`
+	checkLSLintCheckersDeprecationMessage = `"buf check ls-lint-checkers" has been moved to "buf config ls-lint-rules", use "buf config ls-lint-rules" instead.
+We recommend migrating, however this command continues to work.
+See https://docs.buf.build/faq for more details.`
+	imageDeprecationMessage = `"buf image" sub-commands are now all implemented under the top-level "buf build" command, use "buf build" instead.
 We recommend migrating, however this command continues to work.
 See https://docs.buf.build/faq for more details.`
 )
@@ -107,18 +123,31 @@ func NewRootCommand(
 				},
 			},
 			{
-				Use:   "check",
-				Short: "Run lint or breaking change checks.",
+				Use:        "check",
+				Short:      "Run linting or breaking change detection.",
+				Deprecated: checkDeprecationMessage,
+				Hidden:     true,
 				SubCommands: []*appcmd.Command{
-					lint.NewCommand("lint", builder, moduleResolverReaderProvider),
-					breaking.NewCommand("breaking", builder, moduleResolverReaderProvider),
-					lslintcheckers.NewCommand("ls-lint-checkers", builder),
-					lsbreakingcheckers.NewCommand("ls-breaking-checkers", builder),
+					lint.NewCommand("lint", builder, moduleResolverReaderProvider, checkLintDeprecationMessage, true),
+					breaking.NewCommand("breaking", builder, moduleResolverReaderProvider, checkBreakingDeprecationMessage, true),
+					configlslintrules.NewCommand("ls-lint-checkers", builder, checkLSLintCheckersDeprecationMessage, true),
+					configlsbreakingrules.NewCommand("ls-breaking-checkers", builder, checkLSBreakingCheckersDeprecationMessage, true),
 				},
 			},
+			lint.NewCommand("lint", builder, moduleResolverReaderProvider, "", false),
+			breaking.NewCommand("breaking", builder, moduleResolverReaderProvider, "", false),
 			generate.NewCommand("generate", builder, moduleResolverReaderProvider),
 			protoc.NewCommand("protoc", builder, moduleResolverReaderProvider),
 			lsfiles.NewCommand("ls-files", builder, moduleResolverReaderProvider),
+			{
+				Use:   "config",
+				Short: "Interact with the configuration of Buf.",
+				SubCommands: []*appcmd.Command{
+					configinit.NewCommand("init", builder),
+					configlslintrules.NewCommand("ls-lint-rules", builder, "", false),
+					configlsbreakingrules.NewCommand("ls-breaking-rules", builder, "", false),
+				},
+			},
 			{
 				Use:   "beta",
 				Short: "Beta commands. Unstable and will likely change.",

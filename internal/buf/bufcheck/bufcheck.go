@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufcheck contains the implementations of the lint and breaking change detection checkers.
+// Package bufcheck contains the implementations of the lint and breaking change detection rules.
 //
 // There is a lot of shared logic between the two, and originally they were actually combined into
 // one logical entity (where some checks happened to be linters, and some checks happen to be
@@ -29,36 +29,36 @@ import (
 	"go.uber.org/multierr"
 )
 
-// AllCheckerFormatStrings is all checker format strings.
-var AllCheckerFormatStrings = []string{
+// AllRuleFormatStrings is all rule format strings.
+var AllRuleFormatStrings = []string{
 	"text",
 	"json",
 }
 
-// Checker is a checker.
-type Checker interface {
+// Rule is a rule.
+type Rule interface {
 	json.Marshaler
 
-	// ID returns the ID of the Checker.
+	// ID returns the ID of the Rule.
 	//
 	// UPPER_SNAKE_CASE.
 	ID() string
-	// Categories returns the categories of the Checker.
+	// Categories returns the categories of the Rule.
 	//
 	// UPPER_SNAKE_CASE.
 	// Sorted.
 	Categories() []string
-	// Purpose returns the purpose of the Checker.
+	// Purpose returns the purpose of the Rule.
 	//
 	// Full sentence.
 	Purpose() string
 }
 
-// PrintCheckers prints the checkers to the writer.
+// PrintRules prints the rules to the writer.
 //
 // The empty string defaults to text.
-func PrintCheckers(writer io.Writer, checkers []Checker, formatString string) (retErr error) {
-	if len(checkers) == 0 {
+func PrintRules(writer io.Writer, rules []Rule, formatString string) (retErr error) {
+	if len(rules) == 0 {
 		return nil
 	}
 	asJSON := false
@@ -80,17 +80,17 @@ func PrintCheckers(writer io.Writer, checkers []Checker, formatString string) (r
 			return err
 		}
 	}
-	for _, checker := range checkers {
-		if err := printChecker(writer, checker, asJSON); err != nil {
+	for _, rule := range rules {
+		if err := printRule(writer, rule, asJSON); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func printChecker(writer io.Writer, checker Checker, asJSON bool) error {
+func printRule(writer io.Writer, rule Rule, asJSON bool) error {
 	if asJSON {
-		data, err := json.Marshal(checker)
+		data, err := json.Marshal(rule)
 		if err != nil {
 			return err
 		}
@@ -99,7 +99,7 @@ func printChecker(writer io.Writer, checker Checker, asJSON bool) error {
 		}
 		return nil
 	}
-	if _, err := fmt.Fprintf(writer, "%s\t%s\t%s\n", checker.ID(), strings.Join(checker.Categories(), ", "), checker.Purpose()); err != nil {
+	if _, err := fmt.Fprintf(writer, "%s\t%s\t%s\n", rule.ID(), strings.Join(rule.Categories(), ", "), rule.Purpose()); err != nil {
 		return err
 	}
 	return nil

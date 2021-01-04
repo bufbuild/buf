@@ -14,8 +14,13 @@
 
 package main
 
-import breaking "github.com/bufbuild/buf/internal/buf/cmd/protoc-gen-buf-check-breaking"
+import breaking "github.com/bufbuild/buf/internal/buf/cmd/protoc-gen-buf-breaking"
 
 func main() {
-	breaking.Main()
+	breaking.Main(
+		breaking.WithDeprecatedBinaryName(
+			"protoc-gen-buf-check-breaking",
+			"protoc-gen-buf-breaking",
+		),
+	)
 }

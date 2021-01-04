@@ -28,24 +28,24 @@ type IgnoreFunc func(id string, descriptor protosource.Descriptor, location prot
 // CheckFunc is a check function.
 type CheckFunc func(id string, ignoreFunc IgnoreFunc, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error)
 
-// Checker provides a base embeddable checker.
-type Checker struct {
+// Rule provides a base embeddable rule.
+type Rule struct {
 	id         string
 	categories []string
 	purpose    string
 	checkFunc  CheckFunc
 }
 
-// newChecker returns a new Checker.
+// newRule returns a new Rule.
 //
 // Categories will be sorted and purpose will have "Checks that "
 // prepended and "." appended.
-func newChecker(
+func newRule(
 	id string,
 	categories []string,
 	purpose string,
 	checkFunc CheckFunc,
-) *Checker {
+) *Rule {
 	c := make([]string, len(categories))
 	copy(c, categories)
 	sort.Slice(
@@ -54,7 +54,7 @@ func newChecker(
 			return categoryCompare(c[i], c[j]) < 0
 		},
 	)
-	return &Checker{
+	return &Rule{
 		id:         id,
 		categories: c,
 		purpose:    "Checks that " + purpose + ".",
@@ -62,31 +62,31 @@ func newChecker(
 	}
 }
 
-// ID implements Checker.
-func (c *Checker) ID() string {
+// ID implements Rule.
+func (c *Rule) ID() string {
 	return c.id
 }
 
-// Categories implements Checker.
-func (c *Checker) Categories() []string {
+// Categories implements Rule.
+func (c *Rule) Categories() []string {
 	return c.categories
 }
 
-// Purpose implements Checker.
-func (c *Checker) Purpose() string {
+// Purpose implements Rule.
+func (c *Rule) Purpose() string {
 	return c.purpose
 }
 
-// MarshalJSON implements Checker.
-func (c *Checker) MarshalJSON() ([]byte, error) {
-	return json.Marshal(checkerJSON{ID: c.id, Categories: c.categories, Purpose: c.purpose})
+// MarshalJSON implements Rule.
+func (c *Rule) MarshalJSON() ([]byte, error) {
+	return json.Marshal(ruleJSON{ID: c.id, Categories: c.categories, Purpose: c.purpose})
 }
 
-func (c *Checker) check(ignoreFunc IgnoreFunc, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
+func (c *Rule) check(ignoreFunc IgnoreFunc, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return c.checkFunc(c.ID(), ignoreFunc, previousFiles, files)
 }
 
-type checkerJSON struct {
+type ruleJSON struct {
 	ID         string   `json:"id" yaml:"id"`
 	Categories []string `json:"categories" yaml:"categories"`
 	Purpose    string   `json:"purpose" yaml:"purpose"`

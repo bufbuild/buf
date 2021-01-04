@@ -23,18 +23,18 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// BindLSCheckersAll binds the all flag for an ls checkers command.
-func BindLSCheckersAll(flagSet *pflag.FlagSet, addr *bool, flagName string) {
+// BindLSRulesAll binds the all flag for an ls rules command.
+func BindLSRulesAll(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 	flagSet.BoolVar(
 		addr,
 		flagName,
 		false,
-		"List all checkers and not just those currently configured.",
+		"List all rules and not just those currently configured.",
 	)
 }
 
-// BindLSCheckersConfig binds the config flag for an ls checkers command.
-func BindLSCheckersConfig(flagSet *pflag.FlagSet, addr *string, flagName string, allFlagName string) {
+// BindLSRulesConfig binds the config flag for an ls rules command.
+func BindLSRulesConfig(flagSet *pflag.FlagSet, addr *string, flagName string, allFlagName string) {
 	flagSet.StringVar(
 		addr,
 		flagName,
@@ -46,32 +46,32 @@ func BindLSCheckersConfig(flagSet *pflag.FlagSet, addr *string, flagName string,
 	)
 }
 
-// BindLSCheckersFormat binds the format flag for an ls checkers command.
-func BindLSCheckersFormat(flagSet *pflag.FlagSet, addr *string, flagName string) {
+// BindLSRulesFormat binds the format flag for an ls rules command.
+func BindLSRulesFormat(flagSet *pflag.FlagSet, addr *string, flagName string) {
 	flagSet.StringVar(
 		addr,
 		flagName,
 		"text",
 		fmt.Sprintf(
-			"The format to print checkers as. Must be one of %s.",
-			stringutil.SliceToString(bufcheck.AllCheckerFormatStrings),
+			"The format to print rules as. Must be one of %s.",
+			stringutil.SliceToString(bufcheck.AllRuleFormatStrings),
 		),
 	)
 }
 
-// BindLSCheckersCategories binds the categories flag for an ls checkers command.
-func BindLSCheckersCategories(flagSet *pflag.FlagSet, addr *[]string, flagName string) {
+// BindLSRulesCategories binds the categories flag for an ls rules command.
+func BindLSRulesCategories(flagSet *pflag.FlagSet, addr *[]string, flagName string) {
 	flagSet.StringSliceVar(
 		addr,
 		flagName,
 		nil,
-		"Only list the checkers in these categories.",
+		"Only list the rules in these categories.",
 	)
 	_ = flagSet.MarkHidden(flagName)
 }
 
-// CheckLSCheckersCategories checks that value is empty as this flag is deprecated.
-func CheckLSCheckersCategories(value []string, flagName string) error {
+// CheckLSRulesCategories checks that value is empty as this flag is deprecated.
+func CheckLSRulesCategories(value []string, flagName string) error {
 	if len(value) > 0 {
 		return appcmd.NewInvalidArgumentErrorf("Flag --%s has been removed in v0.26.0 in preparation for v1.0. This flag is difficult to reconcile with the concept of configuration versions. If filtering by category is necessary, print in JSON format and filter.", flagName)
 	}

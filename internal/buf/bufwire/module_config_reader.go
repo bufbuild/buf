@@ -102,7 +102,12 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	defer func() {
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
-	config, err := bufconfig.ReadConfig(ctx, m.configProvider, readBucketCloser, configOverride)
+	config, err := bufconfig.ReadConfig(
+		ctx,
+		m.configProvider,
+		readBucketCloser,
+		bufconfig.ReadConfigWithOverride(configOverride),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +189,12 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 	if err != nil {
 		return nil, err
 	}
-	config, err := bufconfig.ReadConfig(ctx, m.configProvider, readWriteBucket, configOverride)
+	config, err := bufconfig.ReadConfig(
+		ctx,
+		m.configProvider,
+		readWriteBucket,
+		bufconfig.ReadConfigWithOverride(configOverride),
+	)
 	if err != nil {
 		return nil, err
 	}

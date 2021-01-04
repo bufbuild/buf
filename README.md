@@ -35,8 +35,8 @@ Our second tool, the **Buf Schema Registry (“BSR”)**, will be the hub of our
 However, we recommend you read the below introduction first!
 
 - [Tour of existing functionality- takes about 10 minutes to complete](https://docs.buf.build/tour-1)
-- [Overview of our 40 lint checkers](https://docs.buf.build/lint-checkers)
-- [Overview of our 54 breaking change checkers](https://docs.buf.build/breaking-checkers)
+- [Overview of our 40 lint rules](https://docs.buf.build/lint-rules)
+- [Overview of our 54 breaking change rules](https://docs.buf.build/breaking-rules)
 - [Simple code generation](https://docs.buf.build/generate-usage)
 - [High-performance protoc replacement](https://docs.buf.build/generate-protoc)
 - [Protobuf Style Guide](https://docs.buf.build/style-guide)
@@ -91,10 +91,10 @@ The Buf CLI is designed to be extremely simple to use, while providing functiona
 
 - **Selectable configuration**: of the exact lint and breaking change configuration you want.
   While we recommend using the defaults, Buf allows you to easily understand and select the exact set
-  of lint and breaking change checkers your organization needs.
+  of lint and breaking change rules your organization needs.
 
-  Buf provides [40 available lint checkers](https://docs.buf.build/lint-checkers) and [54 available breaking
-  checkers](https://docs.buf.build/breaking-checkers) to cover most needs. We believe our breaking change detection truly
+  Buf provides [40 available lint rules](https://docs.buf.build/lint-rules) and [54 available breaking
+  rules](https://docs.buf.build/breaking-rules.md) to cover most needs. We believe our breaking change detection truly
   covers every scenario for your APIs.
 
 - **Selectable error output**: By default, Buf outputs `file:line:col:message` information

@@ -17,15 +17,11 @@ package bufconfig
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
-	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/internal/pkg/encoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -58,57 +54,97 @@ func NewProvider(logger *zap.Logger) Provider {
 	return newProvider(logger)
 }
 
-// CreateConfig writes an initial configuration file into the bucket.
-func CreateConfig(ctx context.Context, writeBucket storage.WriteBucket, moduleIdentityString string, deps ...string) error {
-	if _, err := bufmodule.ModuleIdentityForString(moduleIdentityString); err != nil {
-		return err
-	}
-	data, err := encoding.MarshalYAML(
-		externalConfigV1Beta1{
-			Version: v1beta1Version,
-			Name:    moduleIdentityString,
-			Deps:    deps,
-		},
+// WriteConfig writes an initial configuration file into the bucket.
+func WriteConfig(
+	ctx context.Context,
+	writeBucket storage.WriteBucket,
+	options ...WriteConfigOption,
+) error {
+	return writeConfig(
+		ctx,
+		writeBucket,
+		options...,
 	)
-	if err != nil {
-		return err
+}
+
+// WriteConfigOption is an option for WriteConfig.
+type WriteConfigOption func(*writeConfigOptions)
+
+// WriteConfigWithModuleIdentity returns a new WriteConfigOption that sets the name of the
+// module to the given ModuleIdentity.
+//
+// The default is to not set the name.
+func WriteConfigWithModuleIdentity(moduleIdentity bufmodule.ModuleIdentity) WriteConfigOption {
+	return func(writeConfigOptions *writeConfigOptions) {
+		writeConfigOptions.moduleIdentity = moduleIdentity
 	}
-	return storage.PutPath(ctx, writeBucket, ConfigFilePath, data)
+}
+
+// WriteConfigWithDependencyModuleReferences returns a new WriteConfigOption that sets the
+// dependencies of the module.
+//
+// The default is to not have any dependencies.
+//
+// If this option is used, WriteConfigWithModuleIdentity must also be used.
+func WriteConfigWithDependencyModuleReferences(dependencyModuleReferences ...bufmodule.ModuleReference) WriteConfigOption {
+	return func(writeConfigOptions *writeConfigOptions) {
+		writeConfigOptions.dependencyModuleReferences = dependencyModuleReferences
+	}
+}
+
+// WriteConfigWithDocumentationComments returns a new WriteConfigOption that documents the resulting configuration file.
+func WriteConfigWithDocumentationComments() WriteConfigOption {
+	return func(writeConfigOptions *writeConfigOptions) {
+		writeConfigOptions.documentationComments = true
+	}
+}
+
+// WriteConfigWithUncomment returns a new WriteConfigOption that uncomments the resulting configuration file
+// options that are commented out by default.
+//
+// If this option is used, WriteConfigWithDocumentationComments must also be used.
+func WriteConfigWithUncomment() WriteConfigOption {
+	return func(writeConfigOptions *writeConfigOptions) {
+		writeConfigOptions.uncomment = true
+	}
+}
+
+// ReadConfig reads the configuration, including potentially reading from the OS for an override.
+//
+// Only use in CLI tools.
+func ReadConfig(
+	ctx context.Context,
+	provider Provider,
+	readBucket storage.ReadBucket,
+	options ...ReadConfigOption,
+) (*Config, error) {
+	return readConfig(
+		ctx,
+		provider,
+		readBucket,
+		options...,
+	)
+}
+
+// ReadConfigOption is an option for ReadConfig.
+type ReadConfigOption func(*readConfigOptions)
+
+// ReadConfigWithOverride sets the override.
+//
+// If override is set, this will first check if the override ends in .json or .yaml, if so,
+// this reads the file at this path and uses it. Otherwise, this assumes this is configuration
+// data in either JSON or YAML format, and unmarshals it.
+//
+// If no override is set, this reads ConfigFilePath in the bucket..
+func ReadConfigWithOverride(override string) ReadConfigOption {
+	return func(readConfigOptions *readConfigOptions) {
+		readConfigOptions.override = override
+	}
 }
 
 // ConfigExists checks if a configuration file exists.
 func ConfigExists(ctx context.Context, readBucket storage.ReadBucket) (bool, error) {
 	return storage.Exists(ctx, readBucket, ConfigFilePath)
-}
-
-// ReadConfig reads the configuration, including potentially reading from the OS for an override.
-//
-// If no override is set, this reads ConfigFilePath in the bucket..
-// If override is set, this will first check if the override ends in .json or .yaml, if so,
-// this reads the file at this path and uses it. Otherwise, this assumes this is configuration
-// data in either JSON or YAML format, and unmarshals it.
-//
-// Only use in CLI tools.
-func ReadConfig(ctx context.Context, provider Provider, readBucket storage.ReadBucket, override string) (*Config, error) {
-	if override != "" {
-		var data []byte
-		var err error
-		switch filepath.Ext(override) {
-		case ".json", ".yaml":
-			data, err = ioutil.ReadFile(override)
-			if err != nil {
-				return nil, fmt.Errorf("could not read file: %v", err)
-			}
-		default:
-			data = []byte(override)
-		}
-		return provider.GetConfigForData(ctx, data)
-	}
-	return provider.GetConfig(ctx, readBucket)
-}
-
-type externalConfigVersion struct {
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }
 
 type externalConfigV1Beta1 struct {
@@ -118,4 +154,8 @@ type externalConfigV1Beta1 struct {
 	Breaking bufbreaking.ExternalConfigV1Beta1    `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 	Lint     buflint.ExternalConfigV1Beta1        `json:"lint,omitempty" yaml:"lint,omitempty"`
 	Deps     []string                             `json:"deps,omitempty" yaml:"deps,omitempty"`
+}
+
+type externalConfigVersion struct {
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }

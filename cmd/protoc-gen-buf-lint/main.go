@@ -17,10 +17,5 @@ package main
 import lint "github.com/bufbuild/buf/internal/buf/cmd/protoc-gen-buf-lint"
 
 func main() {
-	lint.Main(
-		lint.WithDeprecatedBinaryName(
-			"protoc-gen-buf-check-lint",
-			"protoc-gen-buf-lint",
-		),
-	)
+	lint.Main()
 }

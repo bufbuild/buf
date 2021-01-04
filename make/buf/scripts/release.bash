@@ -66,7 +66,12 @@ for os in Darwin Linux; do
   for arch in x86_64; do
     dir="${os}/${arch}/${BASE_NAME}"
     mkdir -p "${dir}/bin"
-    for binary in buf protoc-gen-buf-check-breaking protoc-gen-buf-check-lint; do
+    for binary in \
+      buf \
+      protoc-gen-buf-breaking \
+      protoc-gen-buf-lint \
+      protoc-gen-buf-check-breaking \
+      protoc-gen-buf-check-lint; do
       CGO_ENABLED=0 GOOS=$(goos "${os}") GOARCH=$(goarch "${arch}") \
         go build -a -ldflags "-s -w" -trimpath -o "${dir}/bin/${binary}" "${DIR}/cmd/${binary}/main.go"
       cp "${dir}/bin/${binary}" "${binary}-${os}-${arch}"

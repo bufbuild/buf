@@ -59,13 +59,17 @@ func NewCommand(
 	name string,
 	builder appflag.Builder,
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
+	deprecated string,
+	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " --against against-input <input>",
-		Short: "Check that the input location has no breaking changes compared to the against location.",
-		Long:  bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
-		Args:  cobra.MaximumNArgs(1),
+		Use:        name + " --against against-input <input>",
+		Short:      "Check that the input location has no breaking changes compared to the against location.",
+		Long:       bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
+		Args:       cobra.MaximumNArgs(1),
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags, moduleResolverReaderProvider)
