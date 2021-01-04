@@ -35,7 +35,7 @@ import (
 
 const (
 	// Version is the version of buf.
-	Version                 = "0.34.0"
+	Version                 = "0.35.0-dev"
 	checkDeprecationMessage = `"buf check" sub-commands are now all implemented with the top-level "buf lint" and "buf breaking" commands.
 We recommend migrating, however this command continues to work.
 See https://docs.buf.build/faq for more details.`
