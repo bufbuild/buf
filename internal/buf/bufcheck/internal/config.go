@@ -30,11 +30,11 @@ const (
 
 // Config is the check config.
 type Config struct {
-	// Checkers are the checkers to run.
+	// Rules are the rules to run.
 	//
-	// Checkers will be sorted by first categories, then id when Configs are
+	// Rules will be sorted by first categories, then id when Configs are
 	// created from this package, i.e. created wth ConfigBuilder.NewConfig.
-	Checkers []*Checker
+	Rules []*Rule
 
 	IgnoreRootPaths     map[string]struct{}
 	IgnoreIDToRootPaths map[string]map[string]struct{}
@@ -79,21 +79,21 @@ func newConfig(configBuilder ConfigBuilder, versionSpec *VersionSpec) (*Config, 
 	if configBuilder.ServiceSuffix == "" {
 		configBuilder.ServiceSuffix = defaultServiceSuffix
 	}
-	return newConfigForCheckerBuilders(
+	return newConfigForRuleBuilders(
 		configBuilder,
-		versionSpec.CheckerBuilders,
+		versionSpec.RuleBuilders,
 		versionSpec.IDToCategories,
 	)
 }
 
-func newConfigForCheckerBuilders(
+func newConfigForRuleBuilders(
 	configBuilder ConfigBuilder,
-	checkerBuilders []*CheckerBuilder,
+	ruleBuilders []*RuleBuilder,
 	idToCategories map[string][]string,
 ) (*Config, error) {
 	// this checks that there are not duplicate IDs for a given revision
 	// which would be a system error
-	idToCheckerBuilder, err := getIDToCheckerBuilder(checkerBuilders)
+	idToRuleBuilder, err := getIDToRuleBuilder(ruleBuilders)
 	if err != nil {
 		return nil, err
 	}
@@ -108,40 +108,40 @@ func newConfigForCheckerBuilders(
 	}
 
 	// this removes duplicates
-	// we already know that a given checker with the same ID is equivalent
-	resultIDToCheckerBuilder := make(map[string]*CheckerBuilder)
+	// we already know that a given rule with the same ID is equivalent
+	resultIDToRuleBuilder := make(map[string]*RuleBuilder)
 
 	for id := range useIDMap {
-		checkerBuilder, ok := idToCheckerBuilder[id]
+		ruleBuilder, ok := idToRuleBuilder[id]
 		if !ok {
 			return nil, fmt.Errorf("%q is not a known id after verification", id)
 		}
-		resultIDToCheckerBuilder[checkerBuilder.id] = checkerBuilder
+		resultIDToRuleBuilder[ruleBuilder.id] = ruleBuilder
 	}
 	for id := range exceptIDMap {
-		if _, ok := idToCheckerBuilder[id]; !ok {
+		if _, ok := idToRuleBuilder[id]; !ok {
 			return nil, fmt.Errorf("%q is not a known id after verification", id)
 		}
-		delete(resultIDToCheckerBuilder, id)
+		delete(resultIDToRuleBuilder, id)
 	}
 
-	resultCheckerBuilders := make([]*CheckerBuilder, 0, len(resultIDToCheckerBuilder))
-	for _, checkerBuilder := range resultIDToCheckerBuilder {
-		resultCheckerBuilders = append(resultCheckerBuilders, checkerBuilder)
+	resultRuleBuilders := make([]*RuleBuilder, 0, len(resultIDToRuleBuilder))
+	for _, ruleBuilder := range resultIDToRuleBuilder {
+		resultRuleBuilders = append(resultRuleBuilders, ruleBuilder)
 	}
-	resultCheckers := make([]*Checker, 0, len(resultCheckerBuilders))
-	for _, checkerBuilder := range resultCheckerBuilders {
-		categories, err := getCheckerBuilderCategories(checkerBuilder, idToCategories)
+	resultRules := make([]*Rule, 0, len(resultRuleBuilders))
+	for _, ruleBuilder := range resultRuleBuilders {
+		categories, err := getRuleBuilderCategories(ruleBuilder, idToCategories)
 		if err != nil {
 			return nil, err
 		}
-		checker, err := checkerBuilder.NewChecker(configBuilder, categories)
+		rule, err := ruleBuilder.NewRule(configBuilder, categories)
 		if err != nil {
 			return nil, err
 		}
-		resultCheckers = append(resultCheckers, checker)
+		resultRules = append(resultRules, rule)
 	}
-	sortCheckers(resultCheckers)
+	sortRules(resultRules)
 
 	ignoreIDToRootPathsUnnormalized, err := transformToIDToListMap(configBuilder.IgnoreIDOrCategoryToRootPaths, idToCategories, categoryToIDs)
 	if err != nil {
@@ -185,7 +185,7 @@ func newConfigForCheckerBuilders(
 	}
 
 	return &Config{
-		Checkers:               resultCheckers,
+		Rules:                  resultRules,
 		IgnoreIDToRootPaths:    ignoreIDToRootPaths,
 		IgnoreRootPaths:        ignoreRootPaths,
 		AllowCommentIgnores:    configBuilder.AllowCommentIgnores,
@@ -259,38 +259,38 @@ func getCategoryToIDs(idToCategories map[string][]string) map[string][]string {
 	return categoryToIDs
 }
 
-func getIDToCheckerBuilder(checkerBuilders []*CheckerBuilder) (map[string]*CheckerBuilder, error) {
-	m := make(map[string]*CheckerBuilder)
-	for _, checkerBuilder := range checkerBuilders {
-		if _, ok := m[checkerBuilder.id]; ok {
-			return nil, fmt.Errorf("duplicate checker ID: %q", checkerBuilder.id)
+func getIDToRuleBuilder(ruleBuilders []*RuleBuilder) (map[string]*RuleBuilder, error) {
+	m := make(map[string]*RuleBuilder)
+	for _, ruleBuilder := range ruleBuilders {
+		if _, ok := m[ruleBuilder.id]; ok {
+			return nil, fmt.Errorf("duplicate rule ID: %q", ruleBuilder.id)
 		}
-		m[checkerBuilder.id] = checkerBuilder
+		m[ruleBuilder.id] = ruleBuilder
 	}
 	return m, nil
 }
 
-func getCheckerBuilderCategories(
-	checkerBuilder *CheckerBuilder,
+func getRuleBuilderCategories(
+	ruleBuilder *RuleBuilder,
 	idToCategories map[string][]string,
 ) ([]string, error) {
-	categories, ok := idToCategories[checkerBuilder.id]
+	categories, ok := idToCategories[ruleBuilder.id]
 	if !ok {
-		return nil, fmt.Errorf("%q is not configured for categories", checkerBuilder.id)
+		return nil, fmt.Errorf("%q is not configured for categories", ruleBuilder.id)
 	}
 	// it is ok for categories to be empty, however the map must contain an entry
 	// or otherwise this is a system error
 	return categories, nil
 }
 
-func sortCheckers(checkers []*Checker) {
+func sortRules(rules []*Rule) {
 	sort.Slice(
-		checkers,
+		rules,
 		func(i int, j int) bool {
 			// categories are sorted at this point
 			// so we know the first category is a top-level category if present
-			one := checkers[i]
-			two := checkers[j]
+			one := rules[i]
+			two := rules[j]
 			oneCategories := one.Categories()
 			twoCategories := two.Categories()
 			if len(oneCategories) > 0 && len(twoCategories) > 0 {

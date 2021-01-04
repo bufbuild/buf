@@ -14,7 +14,7 @@
 
 // Package bufbreakingcheck impelements the check functions.
 //
-// These are used by bufbreakingbuild to create CheckerBuilders.
+// These are used by bufbreakingbuild to create RuleBuilders.
 package bufbreakingcheck
 
 import (

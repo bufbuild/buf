@@ -33,9 +33,14 @@ mkdir -p "${OUT_DIR}/share/zsh/site-functions"
 
 set -x
 
-go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/buf" "cmd/buf/main.go"
-go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/protoc-gen-buf-check-breaking" "cmd/protoc-gen-buf-check-breaking/main.go"
-go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/protoc-gen-buf-check-lint" "cmd/protoc-gen-buf-check-lint/main.go"
+for binary in \
+  buf \
+  protoc-gen-buf-breaking \
+  protoc-gen-buf-lint \
+  protoc-gen-buf-check-breaking \
+  protoc-gen-buf-check-lint; do
+  go build -ldflags "-s -w" -trimpath -o "${OUT_DIR}/bin/${binary}" "cmd/${binary}/main.go"
+done
 "${OUT_DIR}/bin/buf" bash-completion > "${OUT_DIR}/etc/bash_completion.d/buf"
 "${OUT_DIR}/bin/buf" fish-completion > "${OUT_DIR}/share/fish/vendor_completions.d/buf.fish"
 "${OUT_DIR}/bin/buf" zsh-completion > "${OUT_DIR}/share/zsh/site-functions/_buf"

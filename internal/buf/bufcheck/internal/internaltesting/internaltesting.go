@@ -25,7 +25,7 @@ import (
 // RunTestVersionSpec tests the VersionSpec.
 func RunTestVersionSpec(t *testing.T, versionSpec *internal.VersionSpec) {
 	runTestDefaultConfigBuilder(t, versionSpec)
-	runTestCheckerBuilders(t, versionSpec)
+	runTestRuleBuilders(t, versionSpec)
 }
 
 func runTestDefaultConfigBuilder(t *testing.T, versionSpec *internal.VersionSpec) {
@@ -33,12 +33,12 @@ func runTestDefaultConfigBuilder(t *testing.T, versionSpec *internal.VersionSpec
 	assert.NoError(t, err)
 }
 
-func runTestCheckerBuilders(t *testing.T, versionSpec *internal.VersionSpec) {
-	idsMap := make(map[string]struct{}, len(versionSpec.CheckerBuilders))
-	for _, checkerBuilder := range versionSpec.CheckerBuilders {
-		_, ok := idsMap[checkerBuilder.ID()]
-		assert.False(t, ok, "duplicated id %q", checkerBuilder.ID())
-		idsMap[checkerBuilder.ID()] = struct{}{}
+func runTestRuleBuilders(t *testing.T, versionSpec *internal.VersionSpec) {
+	idsMap := make(map[string]struct{}, len(versionSpec.RuleBuilders))
+	for _, ruleBuilder := range versionSpec.RuleBuilders {
+		_, ok := idsMap[ruleBuilder.ID()]
+		assert.False(t, ok, "duplicated id %q", ruleBuilder.ID())
+		idsMap[ruleBuilder.ID()] = struct{}{}
 	}
 	allCategoriesMap := stringutil.SliceToMap(versionSpec.AllCategories)
 	for id := range idsMap {
@@ -56,6 +56,6 @@ func runTestCheckerBuilders(t *testing.T, versionSpec *internal.VersionSpec) {
 	}
 	for id := range versionSpec.IDToCategories {
 		_, ok := idsMap[id]
-		assert.True(t, ok, "id %q configured in categories is not added to checkerBuilders", id)
+		assert.True(t, ok, "id %q configured in categories is not added to ruleBuilders", id)
 	}
 }

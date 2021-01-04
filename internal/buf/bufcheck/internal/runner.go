@@ -44,31 +44,31 @@ func NewRunner(logger *zap.Logger, ignorePrefix string) *Runner {
 	}
 }
 
-// Check runs the Checkers.
+// Check runs the Rules.
 func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
-	checkers := config.Checkers
-	if len(checkers) == 0 {
+	rules := config.Rules
+	if len(rules) == 0 {
 		return nil, nil
 	}
 	ctx, span := trace.StartSpan(ctx, "check")
 	span.AddAttributes(
 		trace.Int64Attribute("num_files", int64(len(files))),
-		trace.Int64Attribute("num_checkers", int64(len(checkers))),
+		trace.Int64Attribute("num_rules", int64(len(rules))),
 	)
 	defer span.End()
 
 	ignoreFunc := r.newIgnoreFunc(config)
 	var fileAnnotations []bufanalysis.FileAnnotation
-	resultC := make(chan *result, len(checkers))
-	for _, checker := range checkers {
-		checker := checker
+	resultC := make(chan *result, len(rules))
+	for _, rule := range rules {
+		rule := rule
 		go func() {
-			iFileAnnotations, iErr := checker.check(ignoreFunc, previousFiles, files)
+			iFileAnnotations, iErr := rule.check(ignoreFunc, previousFiles, files)
 			resultC <- newResult(iFileAnnotations, iErr)
 		}()
 	}
 	var err error
-	for i := 0; i < len(checkers); i++ {
+	for i := 0; i < len(rules); i++ {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()

@@ -37,7 +37,7 @@ import (
 
 // Hint on how to get these:
 // 1. cd into the specific diriectory
-// 2. buf check lint --error-format=json | jq '[.path, ".", .start_line, .start_column, .end_line, .end_column, .type] | @csv' --raw-output
+// 2. buf lint --error-format=json | jq '[.path, ".", .start_line, .start_column, .end_line, .end_column, .type] | @csv' --raw-output
 
 func TestRunComments(t *testing.T) {
 	testLint(

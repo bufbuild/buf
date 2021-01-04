@@ -169,7 +169,12 @@ func (i *imageConfigReader) getImageImageConfig(
 	if err != nil {
 		return nil, err
 	}
-	config, err := bufconfig.ReadConfig(ctx, i.configProvider, readWriteBucket, configOverride)
+	config, err := bufconfig.ReadConfig(
+		ctx,
+		i.configProvider,
+		readWriteBucket,
+		bufconfig.ReadConfigWithOverride(configOverride),
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -55,8 +55,9 @@ type ModuleIdentity interface {
 	Owner() string
 	Repository() string
 
-	// identity is the string remote/owner/repository.
-	identity() string
+	// IdentityString is the string remote/owner/repository.
+	IdentityString() string
+
 	isModuleIdentity()
 }
 
@@ -570,11 +571,11 @@ func TargetModuleFilesToBucket(
 func ValidateModuleReferencesUniqueByIdentity(moduleReferences []ModuleReference) error {
 	seenModuleReferences := make(map[string]struct{})
 	for _, moduleReference := range moduleReferences {
-		moduleIdentity := moduleReference.identity()
-		if _, ok := seenModuleReferences[moduleIdentity]; ok {
-			return fmt.Errorf("module %s appeared twice", moduleIdentity)
+		moduleIdentityString := moduleReference.IdentityString()
+		if _, ok := seenModuleReferences[moduleIdentityString]; ok {
+			return fmt.Errorf("module %s appeared twice", moduleIdentityString)
 		}
-		seenModuleReferences[moduleIdentity] = struct{}{}
+		seenModuleReferences[moduleIdentityString] = struct{}{}
 	}
 	return nil
 }
@@ -585,11 +586,11 @@ func ValidateModuleReferencesUniqueByIdentity(moduleReferences []ModuleReference
 func ValidateModulePinsUniqueByIdentity(modulePins []ModulePin) error {
 	seenModulePins := make(map[string]struct{})
 	for _, modulePin := range modulePins {
-		moduleIdentity := modulePin.identity()
-		if _, ok := seenModulePins[moduleIdentity]; ok {
-			return fmt.Errorf("module %s appeared twice", moduleIdentity)
+		moduleIdentityString := modulePin.IdentityString()
+		if _, ok := seenModulePins[moduleIdentityString]; ok {
+			return fmt.Errorf("module %s appeared twice", moduleIdentityString)
 		}
-		seenModulePins[moduleIdentity] = struct{}{}
+		seenModulePins[moduleIdentityString] = struct{}{}
 	}
 	return nil
 }

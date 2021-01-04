@@ -242,7 +242,7 @@ func ValidateModuleMatchesDigest(ctx context.Context, module Module, modulePin M
 		return err
 	}
 	if digest != modulePin.Digest() {
-		return fmt.Errorf("mismatched module digest for %q: expected: %q got: %q", modulePin.identity(), modulePin.Digest(), digest)
+		return fmt.Errorf("mismatched module digest for %q: expected: %q got: %q", modulePin.IdentityString(), modulePin.Digest(), digest)
 	}
 	return nil
 }

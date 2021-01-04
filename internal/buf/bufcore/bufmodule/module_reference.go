@@ -119,12 +119,12 @@ func (m *moduleReference) Commit() string {
 
 func (m *moduleReference) String() string {
 	if m.track != "" {
-		return m.remote + "/" + m.owner + "/" + m.repository + "/" + m.track
+		return m.remote + "/" + m.owner + "/" + m.repository + ":" + m.track
 	}
 	return m.remote + "/" + m.owner + "/" + m.repository + "@" + m.commit
 }
 
-func (m *moduleReference) identity() string {
+func (m *moduleReference) IdentityString() string {
 	return m.remote + "/" + m.owner + "/" + m.repository
 }
 

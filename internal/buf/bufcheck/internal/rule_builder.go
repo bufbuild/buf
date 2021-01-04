@@ -19,47 +19,47 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/protosource"
 )
 
-// CheckerBuilder is a checker builder.
-type CheckerBuilder struct {
+// RuleBuilder is a rule builder.
+type RuleBuilder struct {
 	id         string
 	newPurpose func(ConfigBuilder) (string, error)
 	newCheck   func(ConfigBuilder) (CheckFunc, error)
 }
 
-// NewCheckerBuilder returns a new CheckerBuilder.
-func NewCheckerBuilder(
+// NewRuleBuilder returns a new RuleBuilder.
+func NewRuleBuilder(
 	id string,
 	newPurpose func(ConfigBuilder) (string, error),
 	newCheck func(ConfigBuilder) (CheckFunc, error),
-) *CheckerBuilder {
-	return &CheckerBuilder{
+) *RuleBuilder {
+	return &RuleBuilder{
 		id:         id,
 		newPurpose: newPurpose,
 		newCheck:   newCheck,
 	}
 }
 
-// NewNopCheckerBuilder returns a new CheckerBuilder for the direct
+// NewNopRuleBuilder returns a new RuleBuilder for the direct
 // purpose and CheckFunc.
-func NewNopCheckerBuilder(
+func NewNopRuleBuilder(
 	id string,
 	purpose string,
 	checkFunc CheckFunc,
-) *CheckerBuilder {
-	return NewCheckerBuilder(
+) *RuleBuilder {
+	return NewRuleBuilder(
 		id,
 		newNopPurpose(purpose),
 		newNopCheckFunc(checkFunc),
 	)
 }
 
-// NewChecker returns a new Checker.
+// NewRule returns a new Rule.
 //
 // Categories will be sorted and Purpose will be prepended with "Checks that "
 // and appended with ".".
 //
-// Categories is an actual copy from the checkerBuilder.
-func (c *CheckerBuilder) NewChecker(configBuilder ConfigBuilder, categories []string) (*Checker, error) {
+// Categories is an actual copy from the ruleBuilder.
+func (c *RuleBuilder) NewRule(configBuilder ConfigBuilder, categories []string) (*Rule, error) {
 	purpose, err := c.newPurpose(configBuilder)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (c *CheckerBuilder) NewChecker(configBuilder ConfigBuilder, categories []st
 	if err != nil {
 		return nil, err
 	}
-	return newChecker(
+	return newRule(
 		c.id,
 		categories,
 		purpose,
@@ -77,7 +77,7 @@ func (c *CheckerBuilder) NewChecker(configBuilder ConfigBuilder, categories []st
 }
 
 // ID returns the id.
-func (c *CheckerBuilder) ID() string {
+func (c *RuleBuilder) ID() string {
 	return c.id
 }
 

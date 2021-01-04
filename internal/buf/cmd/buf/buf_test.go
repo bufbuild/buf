@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
+	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
 	"github.com/stretchr/testify/assert"
@@ -65,6 +66,8 @@ func TestSuccess6(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, ``, "check", "lint", "--input", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "check", "lint", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "lint", "--input", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 0, ``, "lint", filepath.Join("testdata", "success"))
 }
 
 func TestSuccessProfile1(t *testing.T) {
@@ -173,7 +176,6 @@ func TestFail5(t *testing.T) {
 		1,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
-		"check",
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
@@ -184,7 +186,6 @@ func TestFail5(t *testing.T) {
 		1,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
-		"check",
 		"lint",
 		filepath.Join("testdata", "fail"),
 	)
@@ -198,7 +199,6 @@ func TestFail6(t *testing.T) {
 		1,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
-		"check",
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
@@ -211,7 +211,6 @@ func TestFail6(t *testing.T) {
 		1,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
-		"check",
 		"lint",
 		filepath.Join("testdata", "fail"),
 		"--path",
@@ -227,7 +226,6 @@ func TestFail7(t *testing.T) {
 		1,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
-		"check",
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -242,7 +240,6 @@ func TestFail7(t *testing.T) {
 		1,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
-		"check",
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -260,7 +257,6 @@ func TestFail8(t *testing.T) {
 		1,
 		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
 		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`,
-		"check",
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail2"),
@@ -271,7 +267,6 @@ func TestFail8(t *testing.T) {
 		1,
 		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
 		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`,
-		"check",
 		"lint",
 		filepath.Join("testdata", "fail2"),
 	)
@@ -284,7 +279,6 @@ func TestFail9(t *testing.T) {
 		nil,
 		1,
 		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
-		"check",
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail2"),
@@ -296,7 +290,6 @@ func TestFail9(t *testing.T) {
 		nil,
 		1,
 		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
-		"check",
 		"lint",
 		filepath.Join("testdata", "fail2"),
 		"--path",
@@ -311,7 +304,6 @@ func TestFail10(t *testing.T) {
 		nil,
 		0,
 		``,
-		"check",
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail2"),
@@ -323,7 +315,6 @@ func TestFail10(t *testing.T) {
 		nil,
 		0,
 		``,
-		"check",
 		"lint",
 		filepath.Join("testdata", "fail2"),
 		"--path",
@@ -338,7 +329,6 @@ func TestFail11(t *testing.T) {
 		nil,
 		1,
 		`testdata/fail2/buf/buf2.proto:5:8:buf/buf.proto: does not exist`,
-		"check",
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
@@ -350,7 +340,6 @@ func TestFail11(t *testing.T) {
 		nil,
 		1,
 		`testdata/fail2/buf/buf2.proto:5:8:buf/buf.proto: does not exist`,
-		"check",
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
@@ -371,7 +360,6 @@ lint:
 	  - buf/buf.proto
 	PACKAGE_DIRECTORY_MATCH:
 	  - buf/buf.proto`,
-		"check",
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
@@ -389,7 +377,6 @@ lint:
 	  - buf/buf.proto
 	PACKAGE_DIRECTORY_MATCH:
 	  - buf/buf.proto`,
-		"check",
 		"lint",
 		filepath.Join("testdata", "fail"),
 		"--error-format",
@@ -418,7 +405,6 @@ func TestFailArgAndDeprecatedFlag2(t *testing.T) {
 		nil,
 		1,
 		``,
-		"check",
 		"lint",
 		"--input",
 		filepath.Join("testdata", "success"),
@@ -433,7 +419,6 @@ func TestFailArgAndDeprecatedFlag3(t *testing.T) {
 		nil,
 		1,
 		``,
-		"check",
 		"breaking",
 		"--against-input",
 		filepath.Join("testdata", "success"),
@@ -450,7 +435,6 @@ func TestFailArgAndDeprecatedFlag4(t *testing.T) {
 		nil,
 		1,
 		``,
-		"check",
 		"breaking",
 		"--against-input",
 		filepath.Join("testdata", "success"),
@@ -513,15 +497,46 @@ func TestFailCheckBreaking1(t *testing.T) {
 		"--against",
 		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
 	)
-}
-
-func TestCheckLsLintCheckers1(t *testing.T) {
-	t.Parallel()
 	testRunStdout(
 		t,
 		nil,
-		0,
+		1,
 		`
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
+		`,
+		"breaking",
+		"--input",
+		// can't bother right now to filepath.Join this
+		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
+		"--against-input",
+		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
+	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		`
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
+		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
+		`,
+		"breaking",
+		// can't bother right now to filepath.Join this
+		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
+		"--against",
+		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
+	)
+}
+
+func TestCheckLsLintRules1(t *testing.T) {
+	t.Parallel()
+	expectedStdout := `
 ID                                CATEGORIES                                  PURPOSE
 DIRECTORY_SAME_PACKAGE            MINIMAL, BASIC, DEFAULT, FILE_LAYOUT        Checks that all files in a given directory are in the same package.
 PACKAGE_DIRECTORY_MATCH           MINIMAL, BASIC, DEFAULT, FILE_LAYOUT        Checks that all files are in a directory that matches their package name.
@@ -564,14 +579,28 @@ COMMENT_SERVICE                   COMMENTS                                    Ch
 RPC_NO_CLIENT_STREAMING           UNARY_RPC                                   Checks that RPCs are not client streaming.
 RPC_NO_SERVER_STREAMING           UNARY_RPC                                   Checks that RPCs are not server streaming.
 ENUM_FIRST_VALUE_ZERO             OTHER                                       Checks that all first values of enums have a numeric value of 0.
-		`,
+		`
+	testRunStdout(
+		t,
+		nil,
+		0,
+		expectedStdout,
 		"check",
 		"ls-lint-checkers",
 		"--all",
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		expectedStdout,
+		"config",
+		"ls-lint-rules",
+		"--all",
+	)
 }
 
-func TestCheckLsLintCheckers2(t *testing.T) {
+func TestCheckLsLintRules2(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
@@ -582,20 +611,16 @@ func TestCheckLsLintCheckers2(t *testing.T) {
 		PACKAGE_DIRECTORY_MATCH  MINIMAL, BASIC, DEFAULT, FILE_LAYOUT  Checks that all files are in a directory that matches their package name.
 		ENUM_NO_ALLOW_ALIAS      MINIMAL, BASIC, DEFAULT, SENSIBLE     Checks that enums do not have the allow_alias option set.
 		`,
-		"check",
-		"ls-lint-checkers",
+		"config",
+		"ls-lint-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_checkers", "buf.yaml"),
+		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
 	)
 }
 
-func TestCheckLsBreakingCheckers1(t *testing.T) {
+func TestCheckLsBreakingRules1(t *testing.T) {
 	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		0,
-		`
+	expectedStdout := `
 ID                                              CATEGORIES                      PURPOSE
 ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
 FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
@@ -651,14 +676,28 @@ ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                       
 FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                       Checks that fields are not deleted from a given message unless the name is reserved.
 ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
 FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
-		`,
+		`
+	testRunStdout(
+		t,
+		nil,
+		0,
+		expectedStdout,
 		"check",
 		"ls-breaking-checkers",
 		"--all",
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		expectedStdout,
+		"config",
+		"ls-breaking-rules",
+		"--all",
+	)
 }
 
-func TestCheckLsBreakingCheckers2(t *testing.T) {
+func TestCheckLsBreakingRules2(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
 		t,
@@ -669,10 +708,10 @@ func TestCheckLsBreakingCheckers2(t *testing.T) {
 		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
 		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
 		`,
-		"check",
-		"ls-breaking-checkers",
+		"config",
+		"ls-breaking-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_checkers", "buf.yaml"),
+		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
 	)
 }
 
@@ -845,6 +884,97 @@ func TestImageConvertRoundtripJSONBinaryJSON(t *testing.T) {
 	)
 
 	require.Equal(t, json1, stdout.Bytes())
+}
+
+func TestConfigInitBasic(t *testing.T) {
+	t.Parallel()
+	testConfigInit(
+		t,
+		`version: v1beta1
+build:
+  roots:
+    - .
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE
+`,
+		false,
+		false,
+		"",
+	)
+}
+
+func TestConfigInitName(t *testing.T) {
+	t.Parallel()
+	testConfigInit(
+		t,
+		`version: v1beta1
+name: buf.build/foo/bar
+build:
+  roots:
+    - .
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE
+`,
+		false,
+		false,
+		"buf.build/foo/bar",
+	)
+}
+
+func TestConfigInitNameDeps(t *testing.T) {
+	t.Parallel()
+	testConfigInit(
+		t,
+		`version: v1beta1
+name: buf.build/foo/bar
+deps:
+  - buf.build/foo/baz:v1
+  - buf.build/foo/bat:v1
+build:
+  roots:
+    - .
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE
+`,
+		false,
+		false,
+		"buf.build/foo/bar",
+		"buf.build/foo/baz:v1",
+		"buf.build/foo/bat:v1",
+	)
+}
+
+func testConfigInit(t *testing.T, expectedData string, document bool, uncomment bool, name string, deps ...string) {
+	tempDir := t.TempDir()
+	args := []string{"config", "init", "-o", tempDir}
+	if document {
+		args = append(args, "--doc")
+	}
+	if uncomment {
+		args = append(args, "--uncomment")
+	}
+	if name != "" {
+		args = append(args, "--name", name)
+	}
+	for _, dep := range deps {
+		args = append(args, "--dep", dep)
+	}
+	testRun(t, 0, nil, nil, args...)
+	data, err := ioutil.ReadFile(filepath.Join(tempDir, bufconfig.ConfigFilePath))
+	require.NoError(t, err)
+	require.Equal(t, expectedData, string(data))
 }
 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {

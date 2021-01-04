@@ -4,8 +4,10 @@
 .tmp/
 .vscode/
 cmd/buf/buf
+cmd/protoc-gen-buf-breaking/protoc-gen-buf-breaking
 cmd/protoc-gen-buf-check-breaking/protoc-gen-buf-check-breaking
 cmd/protoc-gen-buf-check-lint/protoc-gen-buf-check-lint
+cmd/protoc-gen-buf-lint/protoc-gen-buf-lint
 internal/buf/cmd/buf/cache/
 internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
 internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
