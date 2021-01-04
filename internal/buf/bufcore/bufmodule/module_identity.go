@@ -48,7 +48,7 @@ func (m *moduleIdentity) Repository() string {
 	return m.repository
 }
 
-func (m *moduleIdentity) identity() string {
+func (m *moduleIdentity) IdentityString() string {
 	return m.remote + "/" + m.owner + "/" + m.repository
 }
 

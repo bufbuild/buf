@@ -14,7 +14,7 @@
 
 // Package buflintcheck impelements the check functions.
 //
-// These are used by buflintbuild to create CheckerBuilders.
+// These are used by buflintbuild to create RuleBuilders.
 package buflintcheck
 
 import (

@@ -91,7 +91,12 @@ func (e *fileLister) ListFiles(
 		defer func() {
 			retErr = multierr.Append(retErr, readBucketCloser.Close())
 		}()
-		config, err := bufconfig.ReadConfig(ctx, e.configProvider, readBucketCloser, configOverride)
+		config, err := bufconfig.ReadConfig(
+			ctx,
+			e.configProvider,
+			readBucketCloser,
+			bufconfig.ReadConfigWithOverride(configOverride),
+		)
 		if err != nil {
 			return nil, err
 		}

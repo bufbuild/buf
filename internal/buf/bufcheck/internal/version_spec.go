@@ -14,9 +14,9 @@
 
 package internal
 
-// VersionSpec specifies the checkers, ids, and categories for a given version.
+// VersionSpec specifies the rules, ids, and categories for a given version.
 type VersionSpec struct {
-	CheckerBuilders   []*CheckerBuilder
+	RuleBuilders      []*RuleBuilder
 	DefaultCategories []string
 	AllCategories     []string
 	IDToCategories    map[string][]string

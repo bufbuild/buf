@@ -21,7 +21,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/protosource"
 )
 
-// Helper is a helper for checkers.
+// Helper is a helper for rules.
 type Helper struct {
 	id              string
 	ignoreFunc      IgnoreFunc

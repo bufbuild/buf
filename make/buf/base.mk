@@ -8,6 +8,8 @@ GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/spf13/cobra@$(COBRA_VERSION)
 GO_BINS := $(GO_BINS) \
 	$(BUF_BIN) \
+	cmd/protoc-gen-buf-breaking \
+	cmd/protoc-gen-buf-lint \
 	cmd/protoc-gen-buf-check-breaking \
 	cmd/protoc-gen-buf-check-lint \
 	internal/pkg/storage/cmd/ddiff \
@@ -75,12 +77,12 @@ pregenerate:: bufgenerate
 
 .PHONY: buflint
 buflint: installbuf
-	buf check lint
+	buf lint
 
 .PHONY: bufbreaking
 bufbreaking: installbuf
 ifneq ($(BUF_BREAKING_INPUT),)
-	-buf check breaking --against $(BUF_BREAKING_INPUT)
+	-buf breaking --against $(BUF_BREAKING_INPUT)
 else
 	@echo "skipping make bufbreaking" >&2
 endif

@@ -147,7 +147,23 @@ func testRunLint(
 
 	testRunHandlerFunc(
 		t,
-		appproto.HandlerFunc(handle),
+		appproto.HandlerFunc(
+			func(
+				ctx context.Context,
+				container app.EnvStderrContainer,
+				responseWriter appproto.ResponseWriter,
+				request *pluginpb.CodeGeneratorRequest,
+			) error {
+				return handle(
+					ctx,
+					container,
+					responseWriter,
+					request,
+					"",
+					"",
+				)
+			},
+		),
 		testBuildCodeGeneratorRequest(
 			t,
 			root,

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package buflintbuild contains the CheckerBuilders used by buflintv*.
+// Package buflintbuild contains the RuleBuilders used by buflintv*.
 package buflintbuild
 
 import (
@@ -25,86 +25,86 @@ import (
 )
 
 var (
-	// CommentEnumCheckerBuilder is a checker builder.
-	CommentEnumCheckerBuilder = internal.NewNopCheckerBuilder(
+	// CommentEnumRuleBuilder is a rule builder.
+	CommentEnumRuleBuilder = internal.NewNopRuleBuilder(
 		"COMMENT_ENUM",
 		"enums have non-empty comments",
 		newAdapter(buflintcheck.CheckCommentEnum),
 	)
-	// CommentEnumValueCheckerBuilder is a checker builder.
-	CommentEnumValueCheckerBuilder = internal.NewNopCheckerBuilder(
+	// CommentEnumValueRuleBuilder is a rule builder.
+	CommentEnumValueRuleBuilder = internal.NewNopRuleBuilder(
 		"COMMENT_ENUM_VALUE",
 		"enum values have non-empty comments",
 		newAdapter(buflintcheck.CheckCommentEnumValue),
 	)
-	// CommentFieldCheckerBuilder is a checker builder.
-	CommentFieldCheckerBuilder = internal.NewNopCheckerBuilder(
+	// CommentFieldRuleBuilder is a rule builder.
+	CommentFieldRuleBuilder = internal.NewNopRuleBuilder(
 		"COMMENT_FIELD",
 		"fields have non-empty comments",
 		newAdapter(buflintcheck.CheckCommentField),
 	)
-	// CommentMessageCheckerBuilder is a checker builder.
-	CommentMessageCheckerBuilder = internal.NewNopCheckerBuilder(
+	// CommentMessageRuleBuilder is a rule builder.
+	CommentMessageRuleBuilder = internal.NewNopRuleBuilder(
 		"COMMENT_MESSAGE",
 		"messages have non-empty comments",
 		newAdapter(buflintcheck.CheckCommentMessage),
 	)
-	// CommentOneofCheckerBuilder is a checker builder.
-	CommentOneofCheckerBuilder = internal.NewNopCheckerBuilder(
+	// CommentOneofRuleBuilder is a rule builder.
+	CommentOneofRuleBuilder = internal.NewNopRuleBuilder(
 		"COMMENT_ONEOF",
 		"oneof have non-empty comments",
 		newAdapter(buflintcheck.CheckCommentOneof),
 	)
-	// CommentRPCCheckerBuilder is a checker builder.
-	CommentRPCCheckerBuilder = internal.NewNopCheckerBuilder(
+	// CommentRPCRuleBuilder is a rule builder.
+	CommentRPCRuleBuilder = internal.NewNopRuleBuilder(
 		"COMMENT_RPC",
 		"RPCs have non-empty comments",
 		newAdapter(buflintcheck.CheckCommentRPC),
 	)
-	// CommentServiceCheckerBuilder is a checker builder.
-	CommentServiceCheckerBuilder = internal.NewNopCheckerBuilder(
+	// CommentServiceRuleBuilder is a rule builder.
+	CommentServiceRuleBuilder = internal.NewNopRuleBuilder(
 		"COMMENT_SERVICE",
 		"services have non-empty comments",
 		newAdapter(buflintcheck.CheckCommentService),
 	)
-	// DirectorySamePackageCheckerBuilder is a checker builder.
-	DirectorySamePackageCheckerBuilder = internal.NewNopCheckerBuilder(
+	// DirectorySamePackageRuleBuilder is a rule builder.
+	DirectorySamePackageRuleBuilder = internal.NewNopRuleBuilder(
 		"DIRECTORY_SAME_PACKAGE",
 		"all files in a given directory are in the same package",
 		newAdapter(buflintcheck.CheckDirectorySamePackage),
 	)
-	// EnumFirstValueZeroCheckerBuilder is a checker builder.
-	EnumFirstValueZeroCheckerBuilder = internal.NewNopCheckerBuilder(
+	// EnumFirstValueZeroRuleBuilder is a rule builder.
+	EnumFirstValueZeroRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_FIRST_VALUE_ZERO",
 		"all first values of enums have a numeric value of 0",
 		newAdapter(buflintcheck.CheckEnumFirstValueZero),
 	)
-	// EnumNoAllowAliasCheckerBuilder is a checker builder.
-	EnumNoAllowAliasCheckerBuilder = internal.NewNopCheckerBuilder(
+	// EnumNoAllowAliasRuleBuilder is a rule builder.
+	EnumNoAllowAliasRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_NO_ALLOW_ALIAS",
 		"enums do not have the allow_alias option set",
 		newAdapter(buflintcheck.CheckEnumNoAllowAlias),
 	)
-	// EnumPascalCaseCheckerBuilder is a checker builder.
-	EnumPascalCaseCheckerBuilder = internal.NewNopCheckerBuilder(
+	// EnumPascalCaseRuleBuilder is a rule builder.
+	EnumPascalCaseRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_PASCAL_CASE",
 		"enums are PascalCase",
 		newAdapter(buflintcheck.CheckEnumPascalCase),
 	)
-	// EnumValuePrefixCheckerBuilder is a checker builder.
-	EnumValuePrefixCheckerBuilder = internal.NewNopCheckerBuilder(
+	// EnumValuePrefixRuleBuilder is a rule builder.
+	EnumValuePrefixRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_VALUE_PREFIX",
 		"enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE",
 		newAdapter(buflintcheck.CheckEnumValuePrefix),
 	)
-	// EnumValueUpperSnakeCaseCheckerBuilder is a checker builder.
-	EnumValueUpperSnakeCaseCheckerBuilder = internal.NewNopCheckerBuilder(
+	// EnumValueUpperSnakeCaseRuleBuilder is a rule builder.
+	EnumValueUpperSnakeCaseRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_VALUE_UPPER_SNAKE_CASE",
 		"enum values are UPPER_SNAKE_CASE",
 		newAdapter(buflintcheck.CheckEnumValueUpperSnakeCase),
 	)
-	// EnumZeroValueSuffixCheckerBuilder is a checker builder.
-	EnumZeroValueSuffixCheckerBuilder = internal.NewCheckerBuilder(
+	// EnumZeroValueSuffixRuleBuilder is a rule builder.
+	EnumZeroValueSuffixRuleBuilder = internal.NewRuleBuilder(
 		"ENUM_ZERO_VALUE_SUFFIX",
 		func(configBuilder internal.ConfigBuilder) (string, error) {
 			if configBuilder.EnumZeroValueSuffix == "" {
@@ -121,140 +121,140 @@ var (
 			}), nil
 		},
 	)
-	// FieldLowerSnakeCaseCheckerBuilder is a checker builder.
-	FieldLowerSnakeCaseCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldLowerSnakeCaseRuleBuilder is a rule builder.
+	FieldLowerSnakeCaseRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_LOWER_SNAKE_CASE",
 		"field names are lower_snake_case",
 		newAdapter(buflintcheck.CheckFieldLowerSnakeCase),
 	)
-	// FieldNoDescriptorCheckerBuilder is a checker builder.
-	FieldNoDescriptorCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldNoDescriptorRuleBuilder is a rule builder.
+	FieldNoDescriptorRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_NO_DESCRIPTOR",
 		`field names are not name capitalization of "descriptor" with any number of prefix or suffix underscores`,
 		newAdapter(buflintcheck.CheckFieldNoDescriptor),
 	)
-	// FileLowerSnakeCaseCheckerBuilder is a checker builder.
-	FileLowerSnakeCaseCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileLowerSnakeCaseRuleBuilder is a rule builder.
+	FileLowerSnakeCaseRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_LOWER_SNAKE_CASE",
 		"filenames are lower_snake_case",
 		newAdapter(buflintcheck.CheckFileLowerSnakeCase),
 	)
-	// ImportNoPublicCheckerBuilder is a checker builder.
-	ImportNoPublicCheckerBuilder = internal.NewNopCheckerBuilder(
+	// ImportNoPublicRuleBuilder is a rule builder.
+	ImportNoPublicRuleBuilder = internal.NewNopRuleBuilder(
 		"IMPORT_NO_PUBLIC",
 		"imports are not public",
 		newAdapter(buflintcheck.CheckImportNoPublic),
 	)
-	// ImportNoWeakCheckerBuilder is a checker builder.
-	ImportNoWeakCheckerBuilder = internal.NewNopCheckerBuilder(
+	// ImportNoWeakRuleBuilder is a rule builder.
+	ImportNoWeakRuleBuilder = internal.NewNopRuleBuilder(
 		"IMPORT_NO_WEAK",
 		"imports are not weak",
 		newAdapter(buflintcheck.CheckImportNoWeak),
 	)
-	// MessagePascalCaseCheckerBuilder is a checker builder.
-	MessagePascalCaseCheckerBuilder = internal.NewNopCheckerBuilder(
+	// MessagePascalCaseRuleBuilder is a rule builder.
+	MessagePascalCaseRuleBuilder = internal.NewNopRuleBuilder(
 		"MESSAGE_PASCAL_CASE",
 		"messages are PascalCase",
 		newAdapter(buflintcheck.CheckMessagePascalCase),
 	)
-	// OneofLowerSnakeCaseCheckerBuilder is a checker builder.
-	OneofLowerSnakeCaseCheckerBuilder = internal.NewNopCheckerBuilder(
+	// OneofLowerSnakeCaseRuleBuilder is a rule builder.
+	OneofLowerSnakeCaseRuleBuilder = internal.NewNopRuleBuilder(
 		"ONEOF_LOWER_SNAKE_CASE",
 		"oneof names are lower_snake_case",
 		newAdapter(buflintcheck.CheckOneofLowerSnakeCase),
 	)
-	// PackageDefinedCheckerBuilder is a checker builder.
-	PackageDefinedCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageDefinedRuleBuilder is a rule builder.
+	PackageDefinedRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_DEFINED",
 		"all files have a package defined",
 		newAdapter(buflintcheck.CheckPackageDefined),
 	)
-	// PackageDirectoryMatchCheckerBuilder is a checker builder.
-	PackageDirectoryMatchCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageDirectoryMatchRuleBuilder is a rule builder.
+	PackageDirectoryMatchRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_DIRECTORY_MATCH",
 		"all files are in a directory that matches their package name",
 		newAdapter(buflintcheck.CheckPackageDirectoryMatch),
 	)
-	// PackageLowerSnakeCaseCheckerBuilder is a checker builder.
-	PackageLowerSnakeCaseCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageLowerSnakeCaseRuleBuilder is a rule builder.
+	PackageLowerSnakeCaseRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_LOWER_SNAKE_CASE",
 		"packages are lower_snake.case",
 		newAdapter(buflintcheck.CheckPackageLowerSnakeCase),
 	)
-	// PackageSameCsharpNamespaceCheckerBuilder is a checker builder.
-	PackageSameCsharpNamespaceCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageSameCsharpNamespaceRuleBuilder is a rule builder.
+	PackageSameCsharpNamespaceRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_SAME_CSHARP_NAMESPACE",
 		"all files with a given package have the same value for the csharp_namespace option",
 		newAdapter(buflintcheck.CheckPackageSameCsharpNamespace),
 	)
-	// PackageSameDirectoryCheckerBuilder is a checker builder.
-	PackageSameDirectoryCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageSameDirectoryRuleBuilder is a rule builder.
+	PackageSameDirectoryRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_SAME_DIRECTORY",
 		"all files with a given package are in the same directory",
 		newAdapter(buflintcheck.CheckPackageSameDirectory),
 	)
-	// PackageSameGoPackageCheckerBuilder is a checker builder.
-	PackageSameGoPackageCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageSameGoPackageRuleBuilder is a rule builder.
+	PackageSameGoPackageRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_SAME_GO_PACKAGE",
 		"all files with a given package have the same value for the go_package option",
 		newAdapter(buflintcheck.CheckPackageSameGoPackage),
 	)
-	// PackageSameJavaMultipleFilesCheckerBuilder is a checker builder.
-	PackageSameJavaMultipleFilesCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageSameJavaMultipleFilesRuleBuilder is a rule builder.
+	PackageSameJavaMultipleFilesRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_SAME_JAVA_MULTIPLE_FILES",
 		"all files with a given package have the same value for the java_multiple_files option",
 		newAdapter(buflintcheck.CheckPackageSameJavaMultipleFiles),
 	)
-	// PackageSameJavaPackageCheckerBuilder is a checker builder.
-	PackageSameJavaPackageCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageSameJavaPackageRuleBuilder is a rule builder.
+	PackageSameJavaPackageRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_SAME_JAVA_PACKAGE",
 		"all files with a given package have the same value for the java_package option",
 		newAdapter(buflintcheck.CheckPackageSameJavaPackage),
 	)
-	// PackageSamePhpNamespaceCheckerBuilder is a checker builder.
-	PackageSamePhpNamespaceCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageSamePhpNamespaceRuleBuilder is a rule builder.
+	PackageSamePhpNamespaceRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_SAME_PHP_NAMESPACE",
 		"all files with a given package have the same value for the php_namespace option",
 		newAdapter(buflintcheck.CheckPackageSamePhpNamespace),
 	)
-	// PackageSameRubyPackageCheckerBuilder is a checker builder.
-	PackageSameRubyPackageCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageSameRubyPackageRuleBuilder is a rule builder.
+	PackageSameRubyPackageRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_SAME_RUBY_PACKAGE",
 		"all files with a given package have the same value for the ruby_package option",
 		newAdapter(buflintcheck.CheckPackageSameRubyPackage),
 	)
-	// PackageSameSwiftPrefixCheckerBuilder is a checker builder.
-	PackageSameSwiftPrefixCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageSameSwiftPrefixRuleBuilder is a rule builder.
+	PackageSameSwiftPrefixRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_SAME_SWIFT_PREFIX",
 		"all files with a given package have the same value for the swift_prefix option",
 		newAdapter(buflintcheck.CheckPackageSameSwiftPrefix),
 	)
-	// PackageVersionSuffixCheckerBuilder is a checker builder.
-	PackageVersionSuffixCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageVersionSuffixRuleBuilder is a rule builder.
+	PackageVersionSuffixRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_VERSION_SUFFIX",
 		`the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1`,
 		newAdapter(buflintcheck.CheckPackageVersionSuffix),
 	)
-	// RPCNoClientStreamingCheckerBuilder is a checker builder.
-	RPCNoClientStreamingCheckerBuilder = internal.NewNopCheckerBuilder(
+	// RPCNoClientStreamingRuleBuilder is a rule builder.
+	RPCNoClientStreamingRuleBuilder = internal.NewNopRuleBuilder(
 		"RPC_NO_CLIENT_STREAMING",
 		"RPCs are not client streaming",
 		newAdapter(buflintcheck.CheckRPCNoClientStreaming),
 	)
-	// RPCNoServerStreamingCheckerBuilder is a checker builder.
-	RPCNoServerStreamingCheckerBuilder = internal.NewNopCheckerBuilder(
+	// RPCNoServerStreamingRuleBuilder is a rule builder.
+	RPCNoServerStreamingRuleBuilder = internal.NewNopRuleBuilder(
 		"RPC_NO_SERVER_STREAMING",
 		"RPCs are not server streaming",
 		newAdapter(buflintcheck.CheckRPCNoServerStreaming),
 	)
-	// RPCPascalCaseCheckerBuilder is a checker builder.
-	RPCPascalCaseCheckerBuilder = internal.NewNopCheckerBuilder(
+	// RPCPascalCaseRuleBuilder is a rule builder.
+	RPCPascalCaseRuleBuilder = internal.NewNopRuleBuilder(
 		"RPC_PASCAL_CASE",
 		"RPCs are PascalCase",
 		newAdapter(buflintcheck.CheckRPCPascalCase),
 	)
-	// RPCRequestResponseUniqueCheckerBuilder is a checker builder.
-	RPCRequestResponseUniqueCheckerBuilder = internal.NewCheckerBuilder(
+	// RPCRequestResponseUniqueRuleBuilder is a rule builder.
+	RPCRequestResponseUniqueRuleBuilder = internal.NewRuleBuilder(
 		"RPC_REQUEST_RESPONSE_UNIQUE",
 		func(configBuilder internal.ConfigBuilder) (string, error) {
 			return "RPC request and response types are only used in one RPC (configurable)", nil
@@ -272,8 +272,8 @@ var (
 			}), nil
 		},
 	)
-	// RPCRequestStandardNameCheckerBuilder is a checker builder.
-	RPCRequestStandardNameCheckerBuilder = internal.NewCheckerBuilder(
+	// RPCRequestStandardNameRuleBuilder is a rule builder.
+	RPCRequestStandardNameRuleBuilder = internal.NewRuleBuilder(
 		"RPC_REQUEST_STANDARD_NAME",
 		func(configBuilder internal.ConfigBuilder) (string, error) {
 			return "RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable)", nil
@@ -289,8 +289,8 @@ var (
 			}), nil
 		},
 	)
-	// RPCResponseStandardNameCheckerBuilder is a checker builder.
-	RPCResponseStandardNameCheckerBuilder = internal.NewCheckerBuilder(
+	// RPCResponseStandardNameRuleBuilder is a rule builder.
+	RPCResponseStandardNameRuleBuilder = internal.NewRuleBuilder(
 		"RPC_RESPONSE_STANDARD_NAME",
 		func(configBuilder internal.ConfigBuilder) (string, error) {
 			return "RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable)", nil
@@ -306,14 +306,14 @@ var (
 			}), nil
 		},
 	)
-	// ServicePascalCaseCheckerBuilder is a checker builder.
-	ServicePascalCaseCheckerBuilder = internal.NewNopCheckerBuilder(
+	// ServicePascalCaseRuleBuilder is a rule builder.
+	ServicePascalCaseRuleBuilder = internal.NewNopRuleBuilder(
 		"SERVICE_PASCAL_CASE",
 		"services are PascalCase",
 		newAdapter(buflintcheck.CheckServicePascalCase),
 	)
-	// ServiceSuffixCheckerBuilder is a checker builder.
-	ServiceSuffixCheckerBuilder = internal.NewCheckerBuilder(
+	// ServiceSuffixRuleBuilder is a rule builder.
+	ServiceSuffixRuleBuilder = internal.NewRuleBuilder(
 		"SERVICE_SUFFIX",
 		func(configBuilder internal.ConfigBuilder) (string, error) {
 			if configBuilder.ServiceSuffix == "" {

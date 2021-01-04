@@ -14,13 +14,8 @@
 
 package main
 
-import lint "github.com/bufbuild/buf/internal/buf/cmd/protoc-gen-buf-lint"
+import breaking "github.com/bufbuild/buf/internal/buf/cmd/protoc-gen-buf-breaking"
 
 func main() {
-	lint.Main(
-		lint.WithDeprecatedBinaryName(
-			"protoc-gen-buf-check-lint",
-			"protoc-gen-buf-lint",
-		),
-	)
+	breaking.Main()
 }

@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufbreakingbuild contains the CheckerBuilders used by bufbreakingv*.
+// Package bufbreakingbuild contains the RuleBuilders used by bufbreakingv*.
 //
-// In the future, we can have multiple versions of a CheckerBuilder here, and then
-// include them separately in the bufbreakingv* packages. For example, FieldSameTypeCheckerBuilder
-// could be split into FieldSameTypeCheckerBuilder/FieldSameTypeCheckerBuilderV2 which handle
+// In the future, we can have multiple versions of a RuleBuilder here, and then
+// include them separately in the bufbreakingv* packages. For example, FieldSameTypeRuleBuilder
+// could be split into FieldSameTypeRuleBuilder/FieldSameTypeRuleBuilderV2 which handle
 // primitives differently, and we could use the former in v1beta1, and the latter in v1.
 package bufbreakingbuild
 
@@ -26,326 +26,326 @@ import (
 )
 
 var (
-	// EnumNoDeleteCheckerBuilder is a checker builder.
-	EnumNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// EnumNoDeleteRuleBuilder is a rule builder.
+	EnumNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_NO_DELETE",
 		"enums are not deleted from a given file",
 		bufbreakingcheck.CheckEnumNoDelete,
 	)
-	// EnumValueNoDeleteCheckerBuilder is a checker builder.
-	EnumValueNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// EnumValueNoDeleteRuleBuilder is a rule builder.
+	EnumValueNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_VALUE_NO_DELETE",
 		"enum values are not deleted from a given enum",
 		bufbreakingcheck.CheckEnumValueNoDelete,
 	)
-	// EnumValueNoDeleteUnlessNameReservedCheckerBuilder is a checker builder.
-	EnumValueNoDeleteUnlessNameReservedCheckerBuilder = internal.NewNopCheckerBuilder(
+	// EnumValueNoDeleteUnlessNameReservedRuleBuilder is a rule builder.
+	EnumValueNoDeleteUnlessNameReservedRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED",
 		"enum values are not deleted from a given enum unless the name is reserved",
 		bufbreakingcheck.CheckEnumValueNoDeleteUnlessNameReserved,
 	)
-	// EnumValueNoDeleteUnlessNumberReservedCheckerBuilder is a checker builder.
-	EnumValueNoDeleteUnlessNumberReservedCheckerBuilder = internal.NewNopCheckerBuilder(
+	// EnumValueNoDeleteUnlessNumberReservedRuleBuilder is a rule builder.
+	EnumValueNoDeleteUnlessNumberReservedRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED",
 		"enum values are not deleted from a given enum unless the number is reserved",
 		bufbreakingcheck.CheckEnumValueNoDeleteUnlessNumberReserved,
 	)
-	// EnumValueSameNameCheckerBuilder is a checker builder.
-	EnumValueSameNameCheckerBuilder = internal.NewNopCheckerBuilder(
+	// EnumValueSameNameRuleBuilder is a rule builder.
+	EnumValueSameNameRuleBuilder = internal.NewNopRuleBuilder(
 		"ENUM_VALUE_SAME_NAME",
 		"enum values have the same name",
 		bufbreakingcheck.CheckEnumValueSameName,
 	)
-	// ExtensionMessageNoDeleteCheckerBuilder is a checker builder.
-	ExtensionMessageNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// ExtensionMessageNoDeleteRuleBuilder is a rule builder.
+	ExtensionMessageNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"EXTENSION_MESSAGE_NO_DELETE",
 		"extension ranges are not deleted from a given message",
 		bufbreakingcheck.CheckExtensionMessageNoDelete,
 	)
-	// FieldNoDeleteCheckerBuilder is a checker builder.
-	FieldNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldNoDeleteRuleBuilder is a rule builder.
+	FieldNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_NO_DELETE",
 		"fields are not deleted from a given message",
 		bufbreakingcheck.CheckFieldNoDelete,
 	)
-	// FieldNoDeleteUnlessNameReservedCheckerBuilder is a checker builder.
-	FieldNoDeleteUnlessNameReservedCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldNoDeleteUnlessNameReservedRuleBuilder is a rule builder.
+	FieldNoDeleteUnlessNameReservedRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_NO_DELETE_UNLESS_NAME_RESERVED",
 		"fields are not deleted from a given message unless the name is reserved",
 		bufbreakingcheck.CheckFieldNoDeleteUnlessNameReserved,
 	)
-	// FieldNoDeleteUnlessNumberReservedCheckerBuilder is a checker builder.
-	FieldNoDeleteUnlessNumberReservedCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldNoDeleteUnlessNumberReservedRuleBuilder is a rule builder.
+	FieldNoDeleteUnlessNumberReservedRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED",
 		"fields are not deleted from a given message unless the number is reserved",
 		bufbreakingcheck.CheckFieldNoDeleteUnlessNumberReserved,
 	)
-	// FieldSameCTypeCheckerBuilder is a checker builder.
-	FieldSameCTypeCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldSameCTypeRuleBuilder is a rule builder.
+	FieldSameCTypeRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_SAME_CTYPE",
 		"fields have the same value for the ctype option",
 		bufbreakingcheck.CheckFieldSameCType,
 	)
-	// FieldSameJSONNameCheckerBuilder is a checker builder.
-	FieldSameJSONNameCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldSameJSONNameRuleBuilder is a rule builder.
+	FieldSameJSONNameRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_SAME_JSON_NAME",
 		"fields have the same value for the json_name option",
 		bufbreakingcheck.CheckFieldSameJSONName,
 	)
-	// FieldSameJSTypeCheckerBuilder is a checker builder.
-	FieldSameJSTypeCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldSameJSTypeRuleBuilder is a rule builder.
+	FieldSameJSTypeRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_SAME_JSTYPE",
 		"fields have the same value for the jstype option",
 		bufbreakingcheck.CheckFieldSameJSType,
 	)
-	// FieldSameLabelCheckerBuilder is a checker builder.
-	FieldSameLabelCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldSameLabelRuleBuilder is a rule builder.
+	FieldSameLabelRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_SAME_LABEL",
 		"fields have the same labels in a given message",
 		bufbreakingcheck.CheckFieldSameLabel,
 	)
-	// FieldSameNameCheckerBuilder is a checker builder.
-	FieldSameNameCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldSameNameRuleBuilder is a rule builder.
+	FieldSameNameRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_SAME_NAME",
 		"fields have the same names in a given message",
 		bufbreakingcheck.CheckFieldSameName,
 	)
-	// FieldSameOneofCheckerBuilder is a checker builder.
-	FieldSameOneofCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldSameOneofRuleBuilder is a rule builder.
+	FieldSameOneofRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_SAME_ONEOF",
 		"fields have the same oneofs in a given message",
 		bufbreakingcheck.CheckFieldSameOneof,
 	)
-	// FieldSameTypeCheckerBuilder is a checker builder.
-	FieldSameTypeCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FieldSameTypeRuleBuilder is a rule builder.
+	FieldSameTypeRuleBuilder = internal.NewNopRuleBuilder(
 		"FIELD_SAME_TYPE",
 		"fields have the same types in a given message",
 		bufbreakingcheck.CheckFieldSameType,
 	)
-	// FileNoDeleteCheckerBuilder is a checker builder.
-	FileNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileNoDeleteRuleBuilder is a rule builder.
+	FileNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_NO_DELETE",
 		"files are not deleted",
 		bufbreakingcheck.CheckFileNoDelete,
 	)
-	// FileSameCsharpNamespaceCheckerBuilder is a checker builder.
-	FileSameCsharpNamespaceCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameCsharpNamespaceRuleBuilder is a rule builder.
+	FileSameCsharpNamespaceRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_CSHARP_NAMESPACE",
 		"files have the same value for the csharp_namespace option",
 		bufbreakingcheck.CheckFileSameCsharpNamespace,
 	)
-	// FileSameGoPackageCheckerBuilder is a checker builder.
-	FileSameGoPackageCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameGoPackageRuleBuilder is a rule builder.
+	FileSameGoPackageRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_GO_PACKAGE",
 		"files have the same value for the go_package option",
 		bufbreakingcheck.CheckFileSameGoPackage,
 	)
-	// FileSameJavaMultipleFilesCheckerBuilder is a checker builder.
-	FileSameJavaMultipleFilesCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameJavaMultipleFilesRuleBuilder is a rule builder.
+	FileSameJavaMultipleFilesRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_JAVA_MULTIPLE_FILES",
 		"files have the same value for the java_multiple_files option",
 		bufbreakingcheck.CheckFileSameJavaMultipleFiles,
 	)
-	// FileSameJavaOuterClassnameCheckerBuilder is a checker builder.
-	FileSameJavaOuterClassnameCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameJavaOuterClassnameRuleBuilder is a rule builder.
+	FileSameJavaOuterClassnameRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_JAVA_OUTER_CLASSNAME",
 		"files have the same value for the java_outer_classname option",
 		bufbreakingcheck.CheckFileSameJavaOuterClassname,
 	)
-	// FileSameJavaPackageCheckerBuilder is a checker builder.
-	FileSameJavaPackageCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameJavaPackageRuleBuilder is a rule builder.
+	FileSameJavaPackageRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_JAVA_PACKAGE",
 		"files have the same value for the java_package option",
 		bufbreakingcheck.CheckFileSameJavaPackage,
 	)
-	// FileSameJavaStringCheckUtf8CheckerBuilder is a checker builder.
-	FileSameJavaStringCheckUtf8CheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameJavaStringCheckUtf8RuleBuilder is a rule builder.
+	FileSameJavaStringCheckUtf8RuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_JAVA_STRING_CHECK_UTF8",
 		"files have the same value for the java_string_check_utf8 option",
 		bufbreakingcheck.CheckFileSameJavaStringCheckUtf8,
 	)
-	// FileSameObjcClassPrefixCheckerBuilder is a checker builder.
-	FileSameObjcClassPrefixCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameObjcClassPrefixRuleBuilder is a rule builder.
+	FileSameObjcClassPrefixRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_OBJC_CLASS_PREFIX",
 		"files have the same value for the objc_class_prefix option",
 		bufbreakingcheck.CheckFileSameObjcClassPrefix,
 	)
-	// FileSamePackageCheckerBuilder is a checker builder.
-	FileSamePackageCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSamePackageRuleBuilder is a rule builder.
+	FileSamePackageRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_PACKAGE",
 		"files have the same package",
 		bufbreakingcheck.CheckFileSamePackage,
 	)
-	// FileSamePhpClassPrefixCheckerBuilder is a checker builder.
-	FileSamePhpClassPrefixCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSamePhpClassPrefixRuleBuilder is a rule builder.
+	FileSamePhpClassPrefixRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_PHP_CLASS_PREFIX",
 		"files have the same value for the php_class_prefix option",
 		bufbreakingcheck.CheckFileSamePhpClassPrefix,
 	)
-	// FileSamePhpMetadataNamespaceCheckerBuilder is a checker builder.
-	FileSamePhpMetadataNamespaceCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSamePhpMetadataNamespaceRuleBuilder is a rule builder.
+	FileSamePhpMetadataNamespaceRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_PHP_METADATA_NAMESPACE",
 		"files have the same value for the php_metadata_namespace option",
 		bufbreakingcheck.CheckFileSamePhpMetadataNamespace,
 	)
-	// FileSamePhpNamespaceCheckerBuilder is a checker builder.
-	FileSamePhpNamespaceCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSamePhpNamespaceRuleBuilder is a rule builder.
+	FileSamePhpNamespaceRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_PHP_NAMESPACE",
 		"files have the same value for the php_namespace option",
 		bufbreakingcheck.CheckFileSamePhpNamespace,
 	)
-	// FileSameRubyPackageCheckerBuilder is a checker builder.
-	FileSameRubyPackageCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameRubyPackageRuleBuilder is a rule builder.
+	FileSameRubyPackageRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_RUBY_PACKAGE",
 		"files have the same value for the ruby_package option",
 		bufbreakingcheck.CheckFileSameRubyPackage,
 	)
-	// FileSameSwiftPrefixCheckerBuilder is a checker builder.
-	FileSameSwiftPrefixCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameSwiftPrefixRuleBuilder is a rule builder.
+	FileSameSwiftPrefixRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_SWIFT_PREFIX",
 		"files have the same value for the swift_prefix option",
 		bufbreakingcheck.CheckFileSameSwiftPrefix,
 	)
-	// FileSameOptimizeForCheckerBuilder is a checker builder.
-	FileSameOptimizeForCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameOptimizeForRuleBuilder is a rule builder.
+	FileSameOptimizeForRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_OPTIMIZE_FOR",
 		"files have the same value for the optimize_for option",
 		bufbreakingcheck.CheckFileSameOptimizeFor,
 	)
-	// FileSameCcGenericServicesCheckerBuilder is a checker builder.
-	FileSameCcGenericServicesCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameCcGenericServicesRuleBuilder is a rule builder.
+	FileSameCcGenericServicesRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_CC_GENERIC_SERVICES",
 		"files have the same value for the cc_generic_services option",
 		bufbreakingcheck.CheckFileSameCcGenericServices,
 	)
-	// FileSameJavaGenericServicesCheckerBuilder is a checker builder.
-	FileSameJavaGenericServicesCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameJavaGenericServicesRuleBuilder is a rule builder.
+	FileSameJavaGenericServicesRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_JAVA_GENERIC_SERVICES",
 		"files have the same value for the java_generic_services option",
 		bufbreakingcheck.CheckFileSameJavaGenericServices,
 	)
-	// FileSamePyGenericServicesCheckerBuilder is a checker builder.
-	FileSamePyGenericServicesCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSamePyGenericServicesRuleBuilder is a rule builder.
+	FileSamePyGenericServicesRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_PY_GENERIC_SERVICES",
 		"files have the same value for the py_generic_services option",
 		bufbreakingcheck.CheckFileSamePyGenericServices,
 	)
-	// FileSamePhpGenericServicesCheckerBuilder is a checker builder.
-	FileSamePhpGenericServicesCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSamePhpGenericServicesRuleBuilder is a rule builder.
+	FileSamePhpGenericServicesRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_PHP_GENERIC_SERVICES",
 		"files have the same value for the php_generic_services option",
 		bufbreakingcheck.CheckFileSamePhpGenericServices,
 	)
-	// FileSameCcEnableArenasCheckerBuilder is a checker builder.
-	FileSameCcEnableArenasCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameCcEnableArenasRuleBuilder is a rule builder.
+	FileSameCcEnableArenasRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_CC_ENABLE_ARENAS",
 		"files have the same value for the cc_enable_arenas option",
 		bufbreakingcheck.CheckFileSameCcEnableArenas,
 	)
-	// FileSameSyntaxCheckerBuilder is a checker builder.
-	FileSameSyntaxCheckerBuilder = internal.NewNopCheckerBuilder(
+	// FileSameSyntaxRuleBuilder is a rule builder.
+	FileSameSyntaxRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_SAME_SYNTAX",
 		"files have the same syntax",
 		bufbreakingcheck.CheckFileSameSyntax,
 	)
-	// MessageNoDeleteCheckerBuilder is a checker builder.
-	MessageNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// MessageNoDeleteRuleBuilder is a rule builder.
+	MessageNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"MESSAGE_NO_DELETE",
 		"messages are not deleted from a given file",
 		bufbreakingcheck.CheckMessageNoDelete,
 	)
-	// MessageNoRemoveStandardDescriptorAccessorCheckerBuilder is a checker builder.
-	MessageNoRemoveStandardDescriptorAccessorCheckerBuilder = internal.NewNopCheckerBuilder(
+	// MessageNoRemoveStandardDescriptorAccessorRuleBuilder is a rule builder.
+	MessageNoRemoveStandardDescriptorAccessorRuleBuilder = internal.NewNopRuleBuilder(
 		"MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR",
 		"messages do not change the no_standard_descriptor_accessor option from false or unset to true",
 		bufbreakingcheck.CheckMessageNoRemoveStandardDescriptorAccessor,
 	)
-	// MessageSameMessageSetWireFormatCheckerBuilder is a checker builder.
-	MessageSameMessageSetWireFormatCheckerBuilder = internal.NewNopCheckerBuilder(
+	// MessageSameMessageSetWireFormatRuleBuilder is a rule builder.
+	MessageSameMessageSetWireFormatRuleBuilder = internal.NewNopRuleBuilder(
 		"MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT",
 		"messages have the same value for the message_set_wire_format option",
 		bufbreakingcheck.CheckMessageSameMessageSetWireFormat,
 	)
-	// OneofNoDeleteCheckerBuilder is a checker builder.
-	OneofNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// OneofNoDeleteRuleBuilder is a rule builder.
+	OneofNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"ONEOF_NO_DELETE",
 		"oneofs are not deleted from a given message",
 		bufbreakingcheck.CheckOneofNoDelete,
 	)
-	// PackageEnumNoDeleteCheckerBuilder is a checker builder.
-	PackageEnumNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageEnumNoDeleteRuleBuilder is a rule builder.
+	PackageEnumNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_ENUM_NO_DELETE",
 		"enums are not deleted from a given package",
 		bufbreakingcheck.CheckPackageEnumNoDelete,
 	)
-	// PackageMessageNoDeleteCheckerBuilder is a checker builder.
-	PackageMessageNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageMessageNoDeleteRuleBuilder is a rule builder.
+	PackageMessageNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_MESSAGE_NO_DELETE",
 		"messages are not deleted from a given package",
 		bufbreakingcheck.CheckPackageMessageNoDelete,
 	)
-	// PackageNoDeleteCheckerBuilder is a checker builder.
-	PackageNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageNoDeleteRuleBuilder is a rule builder.
+	PackageNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_NO_DELETE",
 		"packages are not deleted",
 		bufbreakingcheck.CheckPackageNoDelete,
 	)
-	// PackageServiceNoDeleteCheckerBuilder is a checker builder.
-	PackageServiceNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// PackageServiceNoDeleteRuleBuilder is a rule builder.
+	PackageServiceNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_SERVICE_NO_DELETE",
 		"services are not deleted from a given package",
 		bufbreakingcheck.CheckPackageServiceNoDelete,
 	)
-	// ReservedEnumNoDeleteCheckerBuilder is a checker builder.
-	ReservedEnumNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// ReservedEnumNoDeleteRuleBuilder is a rule builder.
+	ReservedEnumNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"RESERVED_ENUM_NO_DELETE",
 		"reserved ranges and names are not deleted from a given enum",
 		bufbreakingcheck.CheckReservedEnumNoDelete,
 	)
-	// ReservedMessageNoDeleteCheckerBuilder is a checker builder.
-	ReservedMessageNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// ReservedMessageNoDeleteRuleBuilder is a rule builder.
+	ReservedMessageNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"RESERVED_MESSAGE_NO_DELETE",
 		"reserved ranges and names are not deleted from a given message",
 		bufbreakingcheck.CheckReservedMessageNoDelete,
 	)
-	// RPCNoDeleteCheckerBuilder is a checker builder.
-	RPCNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// RPCNoDeleteRuleBuilder is a rule builder.
+	RPCNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"RPC_NO_DELETE",
 		"rpcs are not deleted from a given service",
 		bufbreakingcheck.CheckRPCNoDelete,
 	)
-	// RPCSameClientStreamingCheckerBuilder is a checker builder.
-	RPCSameClientStreamingCheckerBuilder = internal.NewNopCheckerBuilder(
+	// RPCSameClientStreamingRuleBuilder is a rule builder.
+	RPCSameClientStreamingRuleBuilder = internal.NewNopRuleBuilder(
 		"RPC_SAME_CLIENT_STREAMING",
 		"rpcs have the same client streaming value",
 		bufbreakingcheck.CheckRPCSameClientStreaming,
 	)
-	// RPCSameIdempotencyLevelCheckerBuilder is a checker builder.
-	RPCSameIdempotencyLevelCheckerBuilder = internal.NewNopCheckerBuilder(
+	// RPCSameIdempotencyLevelRuleBuilder is a rule builder.
+	RPCSameIdempotencyLevelRuleBuilder = internal.NewNopRuleBuilder(
 		"RPC_SAME_IDEMPOTENCY_LEVEL",
 		"rpcs have the same value for the idempotency_level option",
 		bufbreakingcheck.CheckRPCSameIdempotencyLevel,
 	)
-	// RPCSameRequestTypeCheckerBuilder is a checker builder.
-	RPCSameRequestTypeCheckerBuilder = internal.NewNopCheckerBuilder(
+	// RPCSameRequestTypeRuleBuilder is a rule builder.
+	RPCSameRequestTypeRuleBuilder = internal.NewNopRuleBuilder(
 		"RPC_SAME_REQUEST_TYPE",
 		"rpcs are have the same request type",
 		bufbreakingcheck.CheckRPCSameRequestType,
 	)
-	// RPCSameResponseTypeCheckerBuilder is a checker builder.
-	RPCSameResponseTypeCheckerBuilder = internal.NewNopCheckerBuilder(
+	// RPCSameResponseTypeRuleBuilder is a rule builder.
+	RPCSameResponseTypeRuleBuilder = internal.NewNopRuleBuilder(
 		"RPC_SAME_RESPONSE_TYPE",
 		"rpcs are have the same response type",
 		bufbreakingcheck.CheckRPCSameResponseType,
 	)
-	// RPCSameServerStreamingCheckerBuilder is a checker builder.
-	RPCSameServerStreamingCheckerBuilder = internal.NewNopCheckerBuilder(
+	// RPCSameServerStreamingRuleBuilder is a rule builder.
+	RPCSameServerStreamingRuleBuilder = internal.NewNopRuleBuilder(
 		"RPC_SAME_SERVER_STREAMING",
 		"rpcs have the same server streaming value",
 		bufbreakingcheck.CheckRPCSameServerStreaming,
 	)
-	// ServiceNoDeleteCheckerBuilder is a checker builder.
-	ServiceNoDeleteCheckerBuilder = internal.NewNopCheckerBuilder(
+	// ServiceNoDeleteRuleBuilder is a rule builder.
+	ServiceNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"SERVICE_NO_DELETE",
 		"services are not deleted from a given file",
 		bufbreakingcheck.CheckServiceNoDelete,

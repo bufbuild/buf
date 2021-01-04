@@ -35,8 +35,43 @@ import (
 const defaultTimeout = 10 * time.Second
 
 // Main is the main.
-func Main() {
-	appproto.Main(context.Background(), appproto.HandlerFunc(handle))
+func Main(options ...MainOption) {
+	mainOptions := newMainOptions()
+	for _, option := range options {
+		option(mainOptions)
+	}
+	appproto.Main(
+		context.Background(),
+		appproto.HandlerFunc(
+			func(
+				ctx context.Context,
+				container app.EnvStderrContainer,
+				responseWriter appproto.ResponseWriter,
+				request *pluginpb.CodeGeneratorRequest,
+			) error {
+				return handle(
+					ctx,
+					container,
+					responseWriter,
+					request,
+					mainOptions.oldBinaryName,
+					mainOptions.newBinaryName,
+				)
+			},
+		),
+	)
+}
+
+// MainOption is an option for Main.
+type MainOption func(*mainOptions)
+
+// WithDeprecatedBinaryName returns a new MainOption that marks this binary
+// as deprecated and points from the old binary name to the new binary name.
+func WithDeprecatedBinaryName(oldBinaryName string, newBinaryName string) MainOption {
+	return func(mainOptions *mainOptions) {
+		mainOptions.oldBinaryName = oldBinaryName
+		mainOptions.newBinaryName = newBinaryName
+	}
 }
 
 func handle(
@@ -44,6 +79,8 @@ func handle(
 	container app.EnvStderrContainer,
 	responseWriter appproto.ResponseWriter,
 	request *pluginpb.CodeGeneratorRequest,
+	oldBinaryName string,
+	newBinaryName string,
 ) error {
 	responseWriter.SetFeatureProto3Optional()
 	externalConfig := &externalConfig{}
@@ -63,6 +100,15 @@ func handle(
 	if err != nil {
 		return err
 	}
+	if oldBinaryName != "" && newBinaryName != "" {
+		logger.Sugar().Warnf(
+			"%s is deprecated. Use %s instead. %s can be installed in the same manner as %s, whether from GitHub Releases, Homebrew, AUR, or direct Go installation.",
+			oldBinaryName,
+			newBinaryName,
+			newBinaryName,
+			oldBinaryName,
+		)
+	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		".",
@@ -75,7 +121,9 @@ func handle(
 		ctx,
 		bufconfig.NewProvider(logger),
 		readWriteBucket,
-		encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
+		bufconfig.ReadConfigWithOverride(
+			encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
+		),
 	)
 	if err != nil {
 		return err
@@ -109,4 +157,13 @@ type externalConfig struct {
 	LogFormat   string          `json:"log_format,omitempty" yaml:"log_format,omitempty"`
 	ErrorFormat string          `json:"error_format,omitempty" yaml:"error_format,omitempty"`
 	Timeout     time.Duration   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+}
+
+type mainOptions struct {
+	oldBinaryName string
+	newBinaryName string
+}
+
+func newMainOptions() *mainOptions {
+	return &mainOptions{}
 }

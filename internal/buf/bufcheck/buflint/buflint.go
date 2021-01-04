@@ -57,28 +57,28 @@ func NewHandler(logger *zap.Logger) Handler {
 	return newHandler(logger)
 }
 
-// Checker is a checker.
-type Checker interface {
-	bufcheck.Checker
+// Rule is a rule.
+type Rule interface {
+	bufcheck.Rule
 
-	internalLint() *internal.Checker
+	internalLint() *internal.Rule
 }
 
 // Config is the check config.
 type Config struct {
-	// Checkers are the lint checkers to run.
+	// Rules are the lint rules to run.
 	//
-	// Checkers will be sorted by first categories, then id when Configs are
+	// Rules will be sorted by first categories, then id when Configs are
 	// created from this package, i.e. created wth ConfigBuilder.NewConfig.
-	Checkers            []Checker
+	Rules               []Rule
 	IgnoreIDToRootPaths map[string]map[string]struct{}
 	IgnoreRootPaths     map[string]struct{}
 	AllowCommentIgnores bool
 }
 
-// GetCheckers returns the checkers.
-func (c *Config) GetCheckers() []bufcheck.Checker {
-	return checkersToBufcheckCheckers(c.Checkers)
+// GetRules returns the rules.
+func (c *Config) GetRules() []bufcheck.Rule {
+	return rulesToBufcheckRules(c.Rules)
 }
 
 // NewConfigV1Beta1 returns a new Config.
@@ -103,10 +103,10 @@ func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
 	return internalConfigToConfig(internalConfig), nil
 }
 
-// GetAllCheckersV1Beta1 gets all known checkers.
+// GetAllRulesV1Beta1 gets all known rules.
 //
 // Should only be used for printing.
-func GetAllCheckersV1Beta1() ([]bufcheck.Checker, error) {
+func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 	config, err := NewConfigV1Beta1(
 		ExternalConfigV1Beta1{
 			Use: buflintv1beta1.VersionSpec.AllCategories,
@@ -115,7 +115,7 @@ func GetAllCheckersV1Beta1() ([]bufcheck.Checker, error) {
 	if err != nil {
 		return nil, err
 	}
-	return checkersToBufcheckCheckers(config.Checkers), nil
+	return rulesToBufcheckRules(config.Rules), nil
 }
 
 // ExternalConfigV1Beta1 is an external config.
@@ -208,7 +208,7 @@ lint:
 
 func internalConfigToConfig(internalConfig *internal.Config) *Config {
 	return &Config{
-		Checkers:            internalCheckersToCheckers(internalConfig.Checkers),
+		Rules:               internalRulesToRules(internalConfig.Rules),
 		IgnoreIDToRootPaths: internalConfig.IgnoreIDToRootPaths,
 		IgnoreRootPaths:     internalConfig.IgnoreRootPaths,
 		AllowCommentIgnores: internalConfig.AllowCommentIgnores,
@@ -217,19 +217,19 @@ func internalConfigToConfig(internalConfig *internal.Config) *Config {
 
 func configToInternalConfig(config *Config) *internal.Config {
 	return &internal.Config{
-		Checkers:            checkersToInternalCheckers(config.Checkers),
+		Rules:               rulesToInternalRules(config.Rules),
 		IgnoreIDToRootPaths: config.IgnoreIDToRootPaths,
 		IgnoreRootPaths:     config.IgnoreRootPaths,
 		AllowCommentIgnores: config.AllowCommentIgnores,
 	}
 }
 
-func checkersToBufcheckCheckers(checkers []Checker) []bufcheck.Checker {
-	if checkers == nil {
+func rulesToBufcheckRules(rules []Rule) []bufcheck.Rule {
+	if rules == nil {
 		return nil
 	}
-	s := make([]bufcheck.Checker, len(checkers))
-	for i, e := range checkers {
+	s := make([]bufcheck.Rule, len(rules))
+	for i, e := range rules {
 		s[i] = e
 	}
 	return s
