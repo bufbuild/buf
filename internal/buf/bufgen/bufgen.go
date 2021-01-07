@@ -145,11 +145,11 @@ type ExternalConfigV1Beta1 struct {
 //
 // Only use outside of this package for testing.
 type ExternalPluginConfigV1Beta1 struct {
-	Name     string `json:"name,omitempty" yaml:"name,omitempty"`
-	Out      string `json:"out,omitempty" yaml:"out,omitempty"`
-	Opt      string `json:"opt,omitempty" yaml:"opt,omitempty"`
-	Path     string `json:"path,omitempty" yaml:"path,omitempty"`
-	Strategy string `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+	Name     string      `json:"name,omitempty" yaml:"name,omitempty"`
+	Out      string      `json:"out,omitempty" yaml:"out,omitempty"`
+	Opt      interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
+	Path     string      `json:"path,omitempty" yaml:"path,omitempty"`
+	Strategy string      `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 
 type externalConfigVersion struct {

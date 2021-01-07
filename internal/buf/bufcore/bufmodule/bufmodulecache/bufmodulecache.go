@@ -18,7 +18,8 @@ import (
 	"io"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulestorage"
+	"github.com/bufbuild/buf/internal/pkg/filelock"
+	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
 
@@ -26,11 +27,11 @@ import (
 // delegate as the source of truth.
 func NewModuleReader(
 	logger *zap.Logger,
-	moduleStore bufmodulestorage.Store,
+	readWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
 	options ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
-	return newModuleReader(logger, moduleStore, delegate, options...)
+	return newModuleReader(logger, readWriteBucket, delegate, options...)
 }
 
 // ModuleReaderOption is an option for a new ModuleReader.
@@ -43,5 +44,14 @@ type ModuleReaderOption func(*moduleReader)
 func WithMessageWriter(messageWriter io.Writer) ModuleReaderOption {
 	return func(moduleReader *moduleReader) {
 		moduleReader.messageWriter = messageWriter
+	}
+}
+
+// WithFileLocker adds the given Locker to synchronize between operations.
+//
+// The default is to not synchronize between operations.
+func WithFileLocker(fileLocker filelock.Locker) ModuleReaderOption {
+	return func(moduleReader *moduleReader) {
+		moduleReader.fileLocker = fileLocker
 	}
 }

@@ -25,6 +25,9 @@ import (
 	"go.uber.org/multierr"
 )
 
+// Filename exposes the netrc filename based on the current operating system.
+const Filename = netrcFilename
+
 // Machine is a machine.
 type Machine interface {
 	// Empty for default machine.

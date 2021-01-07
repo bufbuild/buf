@@ -75,6 +75,7 @@ plugins:
     out: gen/go
     # Any options to provide to the plugin.
     # Optional.
+    # This can be either a single string or a list of strings.
     opt: paths=source_relative
     # The custom path to the plugin binary, if not protoc-gen-NAME on your $PATH.
     path: custom-gen-go  # optional

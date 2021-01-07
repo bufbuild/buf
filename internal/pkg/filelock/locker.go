@@ -28,7 +28,7 @@ type locker struct {
 
 func newLocker(rootDirPath string) (*locker, error) {
 	// allow symlinks
-	fileInfo, err := os.Stat(rootDirPath)
+	fileInfo, err := os.Stat(normalpath.Unnormalize(rootDirPath))
 	if err != nil {
 		return nil, err
 	}
