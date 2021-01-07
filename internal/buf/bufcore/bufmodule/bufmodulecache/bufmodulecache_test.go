@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulestorage"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/internal/pkg/filelock"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -47,8 +47,8 @@ func TestReaderBasic(t *testing.T) {
 	module, err := bufmodule.NewModuleForBucket(ctx, readBucket)
 	require.NoError(t, err)
 
-	moduleStore := newTestModuleStore(t)
-	moduleCacher := newModuleCacher(moduleStore)
+	readWriteBucket, fileLocker := newTestBucketAndLocker(t)
+	moduleCacher := newModuleCacher(readWriteBucket, fileLocker)
 	err = moduleCacher.PutModule(
 		context.Background(),
 		modulePin,
@@ -56,10 +56,11 @@ func TestReaderBasic(t *testing.T) {
 	)
 	require.NoError(t, err)
 	// the delegate uses the cache we just populated
-	delegateModuleReader := newModuleReader(zap.NewNop(), moduleStore, moduleCacher)
+	delegateModuleReader := newModuleReader(zap.NewNop(), readWriteBucket, moduleCacher, WithFileLocker(fileLocker))
 
 	// the main does not, so there will be a cache miss
-	moduleReader := newModuleReader(zap.NewNop(), newTestModuleStore(t), delegateModuleReader)
+	mainReadWriteBucket, mainFileLocker := newTestBucketAndLocker(t)
+	moduleReader := newModuleReader(zap.NewNop(), mainReadWriteBucket, delegateModuleReader, WithFileLocker(mainFileLocker))
 	getModule, err := moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
 	getReadBucketBuilder := storagemem.NewReadBucketBuilder()
@@ -103,7 +104,8 @@ func TestCacherBasic(t *testing.T) {
 	module, err := bufmodule.NewModuleForBucket(ctx, readBucket)
 	require.NoError(t, err)
 
-	moduleCacher := newModuleCacher(newTestModuleStore(t))
+	readWriteBucket, fileLocker := newTestBucketAndLocker(t)
+	moduleCacher := newModuleCacher(readWriteBucket, fileLocker)
 	_, err = moduleCacher.GetModule(ctx, modulePin)
 	require.True(t, storage.IsNotExist(err))
 
@@ -126,9 +128,11 @@ func TestCacherBasic(t *testing.T) {
 	require.True(t, exists)
 }
 
-func newTestModuleStore(t *testing.T) bufmodulestorage.Store {
+func newTestBucketAndLocker(t *testing.T) (storage.ReadWriteBucket, filelock.Locker) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
-	return bufmodulestorage.NewStore(zap.NewNop(), readWriteBucket)
+	fileLocker, err := filelock.NewLocker(t.TempDir())
+	require.NoError(t, err)
+	return readWriteBucket, fileLocker
 }

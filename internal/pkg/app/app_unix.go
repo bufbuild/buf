@@ -61,6 +61,11 @@ func HomeDirPath(envContainer EnvContainer) (string, error) {
 // This will be $XDG_CACHE_HOME for darwin and linux, falling back to $HOME/.cache.
 // This will be %LocalAppData% for windows.
 //
+// See https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+// for darwin and linux. Note that we use the same for darwin and linux as this is
+// what developers expect, as opposed to ~/Library/Preferences etc as the stdlib
+// does for Go.
+//
 // Users cannot assume that CacheDirPath, ConfigDirPath, and DataDirPath are unique.
 func CacheDirPath(envContainer EnvContainer) (string, error) {
 	return xdgDirPath(envContainer, "XDG_CACHE_HOME", ".cache")
@@ -71,6 +76,11 @@ func CacheDirPath(envContainer EnvContainer) (string, error) {
 // This will be $XDG_CONFIG_HOME for darwin and linux, falling back to $HOME/.config.
 // This will be %AppData% for windows.
 //
+// See https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+// for darwin and linux. Note that we use the same for darwin and linux as this is
+// what developers expect, as opposed to ~/Library/Preferences etc as the stdlib
+// does for Go.
+//
 // Users cannot assume that CacheDirPath, ConfigDirPath, and DataDirPath are unique.
 func ConfigDirPath(envContainer EnvContainer) (string, error) {
 	return xdgDirPath(envContainer, "XDG_CONFIG_HOME", ".config")
@@ -80,6 +90,11 @@ func ConfigDirPath(envContainer EnvContainer) (string, error) {
 //
 // This will be $XDG_DATA_HOME for darwin and linux, falling back to $HOME/.local/share.
 // This will be %LocalAppData% for windows.
+//
+// See https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+// for darwin and linux. Note that we use the same for darwin and linux as this is
+// what developers expect, as opposed to ~/Library/Preferences etc as the stdlib
+// does for Go.
 //
 // Users cannot assume that CacheDirPath, ConfigDirPath, and DataDirPath are unique.
 func DataDirPath(envContainer EnvContainer) (string, error) {

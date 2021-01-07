@@ -21,7 +21,7 @@ import (
 
 const (
 	// DefaultLockTimeout is the default lock timeout.
-	DefaultLockTimeout = 1 * time.Second
+	DefaultLockTimeout = 3 * time.Second
 	// DefaultLockRetryDelay is the default lock retry delay.
 	DefaultLockRetryDelay = 200 * time.Millisecond
 )
@@ -87,4 +87,9 @@ func LockWithRetryDelay(retryDelay time.Duration) LockOption {
 	return func(lockOptions *lockOptions) {
 		lockOptions.retryDelay = retryDelay
 	}
+}
+
+// NewNopLocker returns a new no-op Locker.
+func NewNopLocker() Locker {
+	return newNopLocker()
 }

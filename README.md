@@ -104,9 +104,9 @@ The Buf CLI is designed to be extremely simple to use, while providing functiona
   of the lint error is also available, and JUnit output is coming soon.
 
 - **Editor integration**: The default error output is easily parseable by any editor, making the
-  feedback loop for issues very short. Currently, we only provide [Vim integration](https://docs.buf.build/editor-integration)
-  for linting but will extend this in the future to include other editors such as Emacs, VS Code,
-  and Intellij IDEs.
+  feedback loop for issues very short. Currently, we only provide
+  [Vim and Visual Studio Code integration](https://docs.buf.build/editor-integration) for linting but will extend this
+  in the future to include other editors such as Emacs and Intellij IDEs.
 
 - **Check anything from anywhere**: Buf allows you to not only check a Protobuf schema stored
   locally as `.proto` files, but allows you to check many different [Inputs](https://docs.buf.build/inputs):

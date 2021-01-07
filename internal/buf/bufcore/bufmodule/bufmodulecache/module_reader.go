@@ -20,7 +20,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulestorage"
+	"github.com/bufbuild/buf/internal/pkg/filelock"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -30,6 +30,7 @@ type moduleReader struct {
 	cache         *moduleCacher
 	delegate      bufmodule.ModuleReader
 	messageWriter io.Writer
+	fileLocker    filelock.Locker
 
 	count     int
 	cacheHits int
@@ -38,18 +39,19 @@ type moduleReader struct {
 
 func newModuleReader(
 	logger *zap.Logger,
-	moduleStore bufmodulestorage.Store,
+	readWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
 	options ...ModuleReaderOption,
 ) *moduleReader {
 	moduleReader := &moduleReader{
-		logger:   logger,
-		cache:    newModuleCacher(moduleStore),
-		delegate: delegate,
+		logger:     logger,
+		delegate:   delegate,
+		fileLocker: filelock.NewNopLocker(),
 	}
 	for _, option := range options {
 		option(moduleReader)
 	}
+	moduleReader.cache = newModuleCacher(readWriteBucket, moduleReader.fileLocker)
 	return moduleReader
 }
 
