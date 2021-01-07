@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/encoding"
 )
@@ -92,7 +93,7 @@ func getConfig(
 	if err := validateExternalConfigV1Beta1(externalConfigV1Beta1, id); err != nil {
 		return nil, err
 	}
-	return newConfigV1Beta1(externalConfigV1Beta1)
+	return newConfigV1Beta1(externalConfigV1Beta1, id)
 }
 
 func validateExternalConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) error {
@@ -110,19 +111,36 @@ func validateExternalConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id stri
 	return nil
 }
 
-func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
+func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config, error) {
 	config := &Config{}
 	for _, plugin := range externalConfig.Plugins {
 		strategy, err := ParseStrategy(plugin.Strategy)
 		if err != nil {
 			return nil, err
 		}
+		var opt string
+		switch t := plugin.Opt.(type) {
+		case string:
+			opt = t
+		case []interface{}:
+			opts := make([]string, len(t))
+			for i, elem := range t {
+				s, ok := elem.(string)
+				if !ok {
+					return nil, fmt.Errorf("%s: could not convert opt element %T to a string", id, elem)
+				}
+				opts[i] = s
+			}
+			opt = strings.Join(opts, ",")
+		default:
+			return nil, fmt.Errorf("%s: unknown type %T for opt", id, opt)
+		}
 		config.PluginConfigs = append(
 			config.PluginConfigs,
 			&PluginConfig{
 				Name:     plugin.Name,
 				Out:      plugin.Out,
-				Opt:      plugin.Opt,
+				Opt:      opt,
 				Path:     plugin.Path,
 				Strategy: strategy,
 			},

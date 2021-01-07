@@ -1,0 +1,9 @@
+version: v1beta1
+plugins:
+  - name: go
+    out: gen/go
+    opt:
+      - plugins=grpc
+      - foo=bar
+    path: /path/to/foo
+    strategy: all

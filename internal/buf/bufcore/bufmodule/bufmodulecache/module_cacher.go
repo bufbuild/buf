@@ -18,38 +18,63 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulestorage"
+	"github.com/bufbuild/buf/internal/pkg/filelock"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/multierr"
 )
 
 type moduleCacher struct {
-	moduleStore bufmodulestorage.Store
+	readWriteBucket storage.ReadWriteBucket
+	fileLocker      filelock.Locker
 }
 
 func newModuleCacher(
-	moduleStore bufmodulestorage.Store,
+	readWriteBucket storage.ReadWriteBucket,
+	fileLocker filelock.Locker,
 ) *moduleCacher {
 	return &moduleCacher{
-		moduleStore: moduleStore,
+		readWriteBucket: readWriteBucket,
+		fileLocker:      fileLocker,
 	}
 }
 
 func (m *moduleCacher) GetModule(
 	ctx context.Context,
 	modulePin bufmodule.ModulePin,
-) (bufmodule.Module, error) {
-	key := bufmodulestorage.NewModulePinKey(modulePin)
-	module, err := m.moduleStore.Get(ctx, key)
+) (_ bufmodule.Module, retErr error) {
+	modulePath := newCacheKey(modulePin)
+	unlocker, err := m.fileLocker.RLock(ctx, modulePath)
 	if err != nil {
 		return nil, err
 	}
-	if err := bufmodule.ValidateModuleMatchesDigest(ctx, module, modulePin); err != nil {
-		// Delete module if it's invalid
-		deleteErr := m.moduleStore.Delete(ctx, key)
-		if deleteErr != nil {
-			err = multierr.Append(err, deleteErr)
-		}
+	// We cannot defer the unlock here because the conditional write lock would never succeed.
+	// Instead, we manually call unlocker.Unlock in each case below.
+	readWriteBucket := storage.MapReadWriteBucket(m.readWriteBucket, storage.MapOnPrefix(modulePath))
+	exists, err := storage.Exists(ctx, readWriteBucket, bufmodule.LockFilePath)
+	if err != nil {
+		return nil, multierr.Append(err, unlocker.Unlock())
+	}
+	if !exists {
+		return nil, multierr.Append(storage.NewErrNotExist(modulePath), unlocker.Unlock())
+	}
+	module, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
+	if err != nil {
+		return nil, multierr.Append(err, unlocker.Unlock())
+	}
+	if err := unlocker.Unlock(); err != nil {
 		return nil, err
+	}
+	if err := bufmodule.ValidateModuleMatchesDigest(ctx, module, modulePin); err != nil {
+		// Delete module if it's invalid.
+		unlocker, lockErr := m.fileLocker.Lock(ctx, modulePath)
+		if lockErr != nil {
+			err = multierr.Append(err, lockErr)
+		}
+		defer func() {
+			retErr = multierr.Append(retErr, unlocker.Unlock())
+		}()
+		return nil, multierr.Append(err, readWriteBucket.DeleteAll(ctx, ""))
 	}
 	return module, nil
 }
@@ -58,9 +83,24 @@ func (m *moduleCacher) PutModule(
 	ctx context.Context,
 	modulePin bufmodule.ModulePin,
 	module bufmodule.Module,
-) error {
+) (retErr error) {
 	if err := bufmodule.ValidateModuleMatchesDigest(ctx, module, modulePin); err != nil {
 		return err
 	}
-	return m.moduleStore.Put(ctx, bufmodulestorage.NewModulePinKey(modulePin), module)
+	modulePath := newCacheKey(modulePin)
+	unlocker, err := m.fileLocker.Lock(ctx, modulePath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, unlocker.Unlock())
+	}()
+	readWriteBucket := storage.MapReadWriteBucket(m.readWriteBucket, storage.MapOnPrefix(modulePath))
+	return bufmodule.ModuleToBucket(ctx, module, readWriteBucket)
+}
+
+// newCacheKey returns the key associated with the given module pin.
+// The cache key is of the form: owner/repository/commit.
+func newCacheKey(modulePin bufmodule.ModulePin) string {
+	return normalpath.Join(modulePin.Owner(), modulePin.Repository(), modulePin.Commit())
 }
