@@ -45,6 +45,16 @@ func TestReadConfig(t *testing.T) {
 			},
 		},
 	}
+	successConfig3 := &Config{
+		PluginConfigs: []*PluginConfig{
+			{
+				Name:     "go",
+				Out:      "gen/go",
+				Path:     "/path/to/foo",
+				Strategy: StrategyAll,
+			},
+		},
+	}
 	config, err := ReadConfig(filepath.Join("testdata", "gen_success1.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
@@ -78,6 +88,14 @@ func TestReadConfig(t *testing.T) {
 	config, err = ReadConfig(string(data))
 	require.NoError(t, err)
 	require.Equal(t, successConfig2, config)
+	config, err = ReadConfig(filepath.Join("testdata", "gen_success3.json"))
+	require.NoError(t, err)
+	require.Equal(t, successConfig3, config)
+	data, err = ioutil.ReadFile(filepath.Join("testdata", "gen_success3.json"))
+	require.NoError(t, err)
+	config, err = ReadConfig(string(data))
+	require.NoError(t, err)
+	require.Equal(t, successConfig3, config)
 
 	_, err = ReadConfig(filepath.Join("testdata", "gen_error1.yaml"))
 	require.Error(t, err)

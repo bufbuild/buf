@@ -132,6 +132,8 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 				opts[i] = s
 			}
 			opt = strings.Join(opts, ",")
+		case nil:
+			// If opt is omitted, plugin.Opt is nil
 		default:
 			return nil, fmt.Errorf("%s: unknown type %T for opt", id, opt)
 		}
