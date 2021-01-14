@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
-	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
+	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/multierr"
 )
@@ -72,7 +72,7 @@ func NewModuleIdentity(
 
 // ModuleIdentityForString returns a new ModuleIdentity for the given string.
 //
-// This parses the path in the form remote/owner/repository{:track,@commit}.
+// This parses the path in the form remote/owner/repository{:branch,@commit}.
 //
 // TODO: we may want to add a special error if we detect / or @ as this may be a common mistake.
 func ModuleIdentityForString(path string) (ModuleIdentity, error) {
@@ -97,32 +97,32 @@ func ModuleIdentityForString(path string) (ModuleIdentity, error) {
 
 // ModuleReference is a module reference.
 //
-// It references either a track, or a commit.
-// Only one of Track and Commit will be set.
-// Note that since commits belong to tracks, we can deduce
-// the track from the commit when resolving.
+// It references either a branch, or a commit.
+// Only one of Branch and Commit will be set.
+// Note that since commits belong to branches, we can deduce
+// the branch from the commit when resolving.
 type ModuleReference interface {
 	ModuleIdentity
 
-	// Prints either remote/owner/repository:track or remote/owner/repository@commit
+	// Prints either remote/owner/repository:branch or remote/owner/repository@commit
 	fmt.Stringer
 
 	// only one of these will be set
-	Track() string
+	Branch() string
 	// only one of these will be set
 	Commit() string
 
 	isModuleReference()
 }
 
-// NewTrackModuleReference returns a new validated ModuleReference for a track.
-func NewTrackModuleReference(
+// NewBranchModuleReference returns a new validated ModuleReference for a branch.
+func NewBranchModuleReference(
 	remote string,
 	owner string,
 	repository string,
-	track string,
+	branch string,
 ) (ModuleReference, error) {
-	return newModuleReference(remote, owner, repository, track, "")
+	return newModuleReference(remote, owner, repository, branch, "")
 }
 
 // NewCommitModuleReference returns a new validated ModuleReference for a commit.
@@ -136,12 +136,12 @@ func NewCommitModuleReference(
 }
 
 // NewModuleReferenceForProto returns a new ModuleReference for the given proto ModuleReference.
-func NewModuleReferenceForProto(protoModuleReference *modulev1.ModuleReference) (ModuleReference, error) {
+func NewModuleReferenceForProto(protoModuleReference *modulev1alpha1.ModuleReference) (ModuleReference, error) {
 	return newModuleReferenceForProto(protoModuleReference)
 }
 
 // NewModuleReferencesForProtos maps the Protobuf equivalent into the internal representation.
-func NewModuleReferencesForProtos(protoModuleReferences ...*modulev1.ModuleReference) ([]ModuleReference, error) {
+func NewModuleReferencesForProtos(protoModuleReferences ...*modulev1alpha1.ModuleReference) ([]ModuleReference, error) {
 	if len(protoModuleReferences) == 0 {
 		return nil, nil
 	}
@@ -157,16 +157,16 @@ func NewModuleReferencesForProtos(protoModuleReferences ...*modulev1.ModuleRefer
 }
 
 // NewProtoModuleReferenceForModuleReference returns a new proto ModuleReference for the given ModuleReference.
-func NewProtoModuleReferenceForModuleReference(moduleReference ModuleReference) *modulev1.ModuleReference {
+func NewProtoModuleReferenceForModuleReference(moduleReference ModuleReference) *modulev1alpha1.ModuleReference {
 	return newProtoModuleReferenceForModuleReference(moduleReference)
 }
 
 // NewProtoModuleReferencesForModuleReferences maps the given module references into the protobuf representation.
-func NewProtoModuleReferencesForModuleReferences(moduleReferences ...ModuleReference) []*modulev1.ModuleReference {
+func NewProtoModuleReferencesForModuleReferences(moduleReferences ...ModuleReference) []*modulev1alpha1.ModuleReference {
 	if len(moduleReferences) == 0 {
 		return nil
 	}
-	protoModuleReferences := make([]*modulev1.ModuleReference, len(moduleReferences))
+	protoModuleReferences := make([]*modulev1alpha1.ModuleReference, len(moduleReferences))
 	for i, moduleReference := range moduleReferences {
 		protoModuleReferences[i] = NewProtoModuleReferenceForModuleReference(moduleReference)
 	}
@@ -175,7 +175,7 @@ func NewProtoModuleReferencesForModuleReferences(moduleReferences ...ModuleRefer
 
 // ModuleReferenceForString returns a new ModuleReference for the given string.
 //
-// This parses the path in the form remote/owner/repository{:track,@commit}.
+// This parses the path in the form remote/owner/repository{:branch,@commit}.
 func ModuleReferenceForString(path string) (ModuleReference, error) {
 	slashSplit := strings.Split(path, "/")
 	if len(slashSplit) != 3 {
@@ -193,7 +193,7 @@ func ModuleReferenceForString(path string) (ModuleReference, error) {
 	if rest == "" {
 		return nil, newInvalidModuleReferenceStringError(path)
 	}
-	switch trackSplit := strings.Split(rest, ":"); len(trackSplit) {
+	switch branchSplit := strings.Split(rest, ":"); len(branchSplit) {
 	case 1:
 		switch commitSplit := strings.Split(rest, "@"); len(commitSplit) {
 		case 2:
@@ -207,12 +207,12 @@ func ModuleReferenceForString(path string) (ModuleReference, error) {
 			return nil, newInvalidModuleReferenceStringError(path)
 		}
 	case 2:
-		repository := strings.TrimSpace(trackSplit[0])
-		track := strings.TrimSpace(trackSplit[1])
-		if repository == "" || track == "" {
+		repository := strings.TrimSpace(branchSplit[0])
+		branch := strings.TrimSpace(branchSplit[1])
+		if repository == "" || branch == "" {
 			return nil, newInvalidModuleReferenceStringError(path)
 		}
-		return NewTrackModuleReference(remote, owner, repository, track)
+		return NewBranchModuleReference(remote, owner, repository, branch)
 	default:
 		return nil, newInvalidModuleReferenceStringError(path)
 	}
@@ -231,7 +231,7 @@ type ModulePin interface {
 	fmt.Stringer
 
 	// all of these will be set
-	Track() string
+	Branch() string
 	Commit() string
 	Digest() string
 	CreateTime() time.Time
@@ -244,21 +244,21 @@ func NewModulePin(
 	remote string,
 	owner string,
 	repository string,
-	track string,
+	branch string,
 	commit string,
 	digest string,
 	createTime time.Time,
 ) (ModulePin, error) {
-	return newModulePin(remote, owner, repository, track, commit, digest, createTime)
+	return newModulePin(remote, owner, repository, branch, commit, digest, createTime)
 }
 
 // NewModulePinForProto returns a new ModulePin for the given proto ModulePin.
-func NewModulePinForProto(protoModulePin *modulev1.ModulePin) (ModulePin, error) {
+func NewModulePinForProto(protoModulePin *modulev1alpha1.ModulePin) (ModulePin, error) {
 	return newModulePinForProto(protoModulePin)
 }
 
 // NewModulePinsForProtos maps the Protobuf equivalent into the internal representation.
-func NewModulePinsForProtos(protoModulePins ...*modulev1.ModulePin) ([]ModulePin, error) {
+func NewModulePinsForProtos(protoModulePins ...*modulev1alpha1.ModulePin) ([]ModulePin, error) {
 	if len(protoModulePins) == 0 {
 		return nil, nil
 	}
@@ -274,16 +274,16 @@ func NewModulePinsForProtos(protoModulePins ...*modulev1.ModulePin) ([]ModulePin
 }
 
 // NewProtoModulePinForModulePin returns a new proto ModulePin for the given ModulePin.
-func NewProtoModulePinForModulePin(modulePin ModulePin) *modulev1.ModulePin {
+func NewProtoModulePinForModulePin(modulePin ModulePin) *modulev1alpha1.ModulePin {
 	return newProtoModulePinForModulePin(modulePin)
 }
 
 // NewProtoModulePinsForModulePins maps the given module pins into the protobuf representation.
-func NewProtoModulePinsForModulePins(modulePins ...ModulePin) []*modulev1.ModulePin {
+func NewProtoModulePinsForModulePins(modulePins ...ModulePin) []*modulev1alpha1.ModulePin {
 	if len(modulePins) == 0 {
 		return nil
 	}
-	protoModulePins := make([]*modulev1.ModulePin, len(modulePins))
+	protoModulePins := make([]*modulev1alpha1.ModulePin, len(modulePins))
 	for i, modulePin := range modulePins {
 		protoModulePins[i] = NewProtoModulePinForModulePin(modulePin)
 	}
@@ -324,7 +324,7 @@ type Module interface {
 	GetModuleFile(ctx context.Context, path string) (ModuleFile, error)
 	// DependencyModulePins gets the dependency ModulePins.
 	//
-	// The returned ModulePins are sorted by remote, owner, repository, track, commit, and then digest.
+	// The returned ModulePins are sorted by remote, owner, repository, branch, commit, and then digest.
 	// The returned ModulePins are unique by remote, owner, repository.
 	//
 	// This includes all transitive dependencies.
@@ -357,7 +357,7 @@ func NewModuleForBucketWithDependencyModulePins(
 // NewModuleForProto returns a new Module for the given proto Module.
 func NewModuleForProto(
 	ctx context.Context,
-	protoModule *modulev1.Module,
+	protoModule *modulev1alpha1.Module,
 ) (Module, error) {
 	return newModuleForProto(ctx, protoModule)
 }
@@ -438,14 +438,14 @@ func NewModuleFileSet(
 // ModuleToProtoModule converts the Module to a proto Module.
 //
 // This takes all Sources and puts them in the Module, not just Targets.
-func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1.Module, error) {
+func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Module, error) {
 	// these are returned sorted, so there is no need to sort
 	// the resulting protoModuleFiles afterwards
 	sourceFileInfos, err := module.SourceFileInfos(ctx)
 	if err != nil {
 		return nil, err
 	}
-	protoModuleFiles := make([]*modulev1.ModuleFile, len(sourceFileInfos))
+	protoModuleFiles := make([]*modulev1alpha1.ModuleFile, len(sourceFileInfos))
 	for i, sourceFileInfo := range sourceFileInfos {
 		protoModuleFile, err := moduleFileToProto(ctx, module, sourceFileInfo.Path())
 		if err != nil {
@@ -456,11 +456,11 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1.Module, 
 	// these are returned sorted, so there is no need to sort
 	// the resulting protoModuleNames afterwards
 	dependencyModulePins := module.DependencyModulePins()
-	protoModulePins := make([]*modulev1.ModulePin, len(dependencyModulePins))
+	protoModulePins := make([]*modulev1alpha1.ModulePin, len(dependencyModulePins))
 	for i, dependencyModulePin := range dependencyModulePins {
 		protoModulePins[i] = NewProtoModulePinForModulePin(dependencyModulePin)
 	}
-	protoModule := &modulev1.Module{
+	protoModule := &modulev1alpha1.Module{
 		Files:        protoModuleFiles,
 		Dependencies: protoModulePins,
 	}
@@ -606,7 +606,7 @@ func ModuleReferenceEqual(a ModuleReference, b ModuleReference) bool {
 	return a.Remote() == b.Remote() &&
 		a.Owner() == b.Owner() &&
 		a.Repository() == b.Repository() &&
-		a.Track() == b.Track() &&
+		a.Branch() == b.Branch() &&
 		a.Commit() == b.Commit()
 }
 
@@ -621,7 +621,7 @@ func ModulePinEqual(a ModulePin, b ModulePin) bool {
 	return a.Remote() == b.Remote() &&
 		a.Owner() == b.Owner() &&
 		a.Repository() == b.Repository() &&
-		a.Track() == b.Track() &&
+		a.Branch() == b.Branch() &&
 		a.Commit() == b.Commit() &&
 		a.Digest() == b.Digest() &&
 		a.CreateTime().Equal(b.CreateTime())

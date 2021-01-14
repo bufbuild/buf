@@ -16,7 +16,7 @@ package bufimage
 
 import (
 	"github.com/bufbuild/buf/internal/buf/bufcore"
-	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/image/v1"
+	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"google.golang.org/protobuf/proto"

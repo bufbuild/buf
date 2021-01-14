@@ -19,7 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/internal"
-	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
+	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 )
@@ -29,7 +29,7 @@ type module struct {
 	dependencyModulePins []ModulePin
 }
 
-func newModuleForProto(ctx context.Context, protoModule *modulev1.Module) (*module, error) {
+func newModuleForProto(ctx context.Context, protoModule *modulev1alpha1.Module) (*module, error) {
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
 	}

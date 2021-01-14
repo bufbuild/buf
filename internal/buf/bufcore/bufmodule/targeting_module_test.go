@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufcoretesting"
-	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
+	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,8 +28,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 	ctx := context.Background()
 	module, err := NewModuleForProto(
 		ctx,
-		&modulev1.Module{
-			Files: []*modulev1.ModuleFile{
+		&modulev1alpha1.Module{
+			Files: []*modulev1alpha1.ModuleFile{
 				{
 					Path:    "a/a.proto",
 					Content: []byte(`syntax = "proto3"; package a;`),

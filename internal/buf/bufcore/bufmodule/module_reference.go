@@ -17,14 +17,14 @@ package bufmodule
 import (
 	"fmt"
 
-	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
+	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 )
 
 type moduleReference struct {
 	remote     string
 	owner      string
 	repository string
-	track      string
+	branch     string
 	commit     string
 }
 
@@ -32,34 +32,34 @@ func newModuleReference(
 	remote string,
 	owner string,
 	repository string,
-	track string,
+	branch string,
 	commit string,
 ) (*moduleReference, error) {
-	protoModuleReference := &modulev1.ModuleReference{
+	protoModuleReference := &modulev1alpha1.ModuleReference{
 		Remote:     remote,
 		Owner:      owner,
 		Repository: repository,
 	}
 	switch {
-	case track != "" && commit == "":
-		protoModuleReference.Reference = &modulev1.ModuleReference_Track{
-			Track: track,
+	case branch != "" && commit == "":
+		protoModuleReference.Reference = &modulev1alpha1.ModuleReference_Branch{
+			Branch: branch,
 		}
-	case track == "" && commit != "":
-		protoModuleReference.Reference = &modulev1.ModuleReference_Commit{
+	case branch == "" && commit != "":
+		protoModuleReference.Reference = &modulev1alpha1.ModuleReference_Commit{
 			Commit: commit,
 		}
-	case track != "" && commit != "":
-		return nil, fmt.Errorf("module reference cannot have both a track and commit")
+	case branch != "" && commit != "":
+		return nil, fmt.Errorf("module reference cannot have both a branch and commit")
 	}
-	// validates that exactly one of track or commit is set
+	// validates that exactly one of branch or commit is set
 	return newModuleReferenceForProto(protoModuleReference)
 }
 
 func newModuleReferenceForProto(
-	protoModuleReference *modulev1.ModuleReference,
+	protoModuleReference *modulev1alpha1.ModuleReference,
 ) (*moduleReference, error) {
-	// validates that exactly one of track or commit is set
+	// validates that exactly one of branch or commit is set
 	if err := ValidateProtoModuleReference(protoModuleReference); err != nil {
 		return nil, err
 	}
@@ -67,30 +67,30 @@ func newModuleReferenceForProto(
 		remote:     protoModuleReference.Remote,
 		owner:      protoModuleReference.Owner,
 		repository: protoModuleReference.Repository,
-		track:      protoModuleReference.GetTrack(),
+		branch:     protoModuleReference.GetBranch(),
 		commit:     protoModuleReference.GetCommit(),
 	}, nil
 }
 
 func newProtoModuleReferenceForModuleReference(
 	moduleReference ModuleReference,
-) *modulev1.ModuleReference {
+) *modulev1alpha1.ModuleReference {
 	// no need to validate as we know we have a valid ModuleReference constructed
 	// by this package due to the private interface
-	protoModuleReference := &modulev1.ModuleReference{
+	protoModuleReference := &modulev1alpha1.ModuleReference{
 		Remote:     moduleReference.Remote(),
 		Owner:      moduleReference.Owner(),
 		Repository: moduleReference.Repository(),
 	}
-	track := moduleReference.Track()
+	branch := moduleReference.Branch()
 	commit := moduleReference.Commit()
 	switch {
-	case track != "" && commit == "":
-		protoModuleReference.Reference = &modulev1.ModuleReference_Track{
-			Track: track,
+	case branch != "" && commit == "":
+		protoModuleReference.Reference = &modulev1alpha1.ModuleReference_Branch{
+			Branch: branch,
 		}
-	case track == "" && commit != "":
-		protoModuleReference.Reference = &modulev1.ModuleReference_Commit{
+	case branch == "" && commit != "":
+		protoModuleReference.Reference = &modulev1alpha1.ModuleReference_Commit{
 			Commit: commit,
 		}
 	}
@@ -109,8 +109,8 @@ func (m *moduleReference) Repository() string {
 	return m.repository
 }
 
-func (m *moduleReference) Track() string {
-	return m.track
+func (m *moduleReference) Branch() string {
+	return m.branch
 }
 
 func (m *moduleReference) Commit() string {
@@ -118,8 +118,8 @@ func (m *moduleReference) Commit() string {
 }
 
 func (m *moduleReference) String() string {
-	if m.track != "" {
-		return m.remote + "/" + m.owner + "/" + m.repository + ":" + m.track
+	if m.branch != "" {
+		return m.remote + "/" + m.owner + "/" + m.repository + ":" + m.branch
 	}
 	return m.remote + "/" + m.owner + "/" + m.repository + "@" + m.commit
 }

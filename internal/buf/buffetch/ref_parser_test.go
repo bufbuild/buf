@@ -855,7 +855,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		t,
 		internal.NewDirectParsedModuleRef(
 			formatMod,
-			testNewTrackModuleReference(
+			testNewBranchModuleReference(
 				t,
 				"example.com",
 				"foo",
@@ -1128,14 +1128,14 @@ func testGetParsedRef(
 	})
 }
 
-func testNewTrackModuleReference(
+func testNewBranchModuleReference(
 	t *testing.T,
 	remote string,
 	owner string,
 	repository string,
-	track string,
+	branch string,
 ) bufmodule.ModuleReference {
-	moduleReference, err := bufmodule.NewTrackModuleReference(remote, owner, repository, track)
+	moduleReference, err := bufmodule.NewBranchModuleReference(remote, owner, repository, branch)
 	require.NoError(t, err)
 	return moduleReference
 }

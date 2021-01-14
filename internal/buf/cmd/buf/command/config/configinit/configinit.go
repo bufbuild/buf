@@ -44,7 +44,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: fmt.Sprintf("Initializes and writes a new %s configuration file.", bufconfig.ConfigFilePath),
+		Short: fmt.Sprintf("Initializes and writes a new %s configuration file.", bufconfig.ExternalConfigV1Beta1FilePath),
 		Args:  cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -111,7 +111,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	_ = flagSet.MarkHidden(uncommentFlagName)
 }
 
-// run creates a new buf.yaml file.
 func run(
 	ctx context.Context,
 	container appflag.Container,
@@ -133,7 +132,7 @@ func run(
 		return err
 	}
 	if exists {
-		return appcmd.NewInvalidArgumentErrorf("%s already exists, not overwriting", bufconfig.ConfigFilePath)
+		return appcmd.NewInvalidArgumentErrorf("%s already exists, not overwriting", bufconfig.ExternalConfigV1Beta1FilePath)
 	}
 	var writeConfigOptions []bufconfig.WriteConfigOption
 	if flags.DocumentationComments {

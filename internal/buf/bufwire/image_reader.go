@@ -21,7 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/image/v1"
+	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"go.opencensus.io/trace"

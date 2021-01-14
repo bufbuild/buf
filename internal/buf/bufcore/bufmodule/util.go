@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
+	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/multierr"
@@ -60,10 +60,10 @@ func modulePinCompareTo(a ModulePin, b ModulePin) int {
 	if a.Repository() > b.Repository() {
 		return 1
 	}
-	if a.Track() < b.Track() {
+	if a.Branch() < b.Branch() {
 		return -1
 	}
-	if a.Track() > b.Track() {
+	if a.Branch() > b.Branch() {
 		return 1
 	}
 	if a.Commit() < b.Commit() {
@@ -102,8 +102,8 @@ func putModuleFileToBucket(ctx context.Context, module Module, path string, writ
 	return storage.CopyReadObject(ctx, writeBucket, moduleFile, copyOptions...)
 }
 
-func moduleFileToProto(ctx context.Context, module Module, path string) (_ *modulev1.ModuleFile, retErr error) {
-	protoModuleFile := &modulev1.ModuleFile{
+func moduleFileToProto(ctx context.Context, module Module, path string) (_ *modulev1alpha1.ModuleFile, retErr error) {
+	protoModuleFile := &modulev1alpha1.ModuleFile{
 		Path: path,
 	}
 	moduleFile, err := module.GetModuleFile(ctx, path)
@@ -162,5 +162,5 @@ func newInvalidModuleIdentityStringError(s string) error {
 }
 
 func newInvalidModuleReferenceStringError(s string) error {
-	return fmt.Errorf("module reference invalid: must be in the form remote/owner/repository:track or remote/owner/repository@commit: %q", s)
+	return fmt.Errorf("module reference invalid: must be in the form remote/owner/repository:branch or remote/owner/repository@commit: %q", s)
 }

@@ -352,7 +352,7 @@ func writeConfig(
 	); err != nil {
 		return err
 	}
-	return storage.PutPath(ctx, writeBucket, ConfigFilePath, buffer.Bytes())
+	return storage.PutPath(ctx, writeBucket, ExternalConfigV1Beta1FilePath, buffer.Bytes())
 }
 
 type tmplParam struct {
