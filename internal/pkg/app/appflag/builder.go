@@ -16,6 +16,7 @@ package appflag
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"time"
@@ -26,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/observability/observabilityzap"
 	"github.com/pkg/profile"
 	"github.com/spf13/pflag"
+	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -33,6 +35,7 @@ import (
 type builder struct {
 	appName string
 
+	verbose   bool
 	logLevel  string
 	logFormat string
 
@@ -60,7 +63,13 @@ func newBuilder(appName string, options ...BuilderOption) *builder {
 }
 
 func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(&b.logLevel, "log-level", "info", "The log level [debug,info,warn,error].")
+	// True means debug, false means info.
+	flagSet.BoolVarP(&b.verbose, "verbose", "v", false, "Enable verbose logging.")
+	flagSet.StringVar(&b.logLevel, "log-level", "", "The log level [debug,info,warn,error].")
+	// Effectively deprecated - we only ever cared about debug vs info, which is now controlled
+	// by verbose, but we keep this around in case it is being used and handle it being set.
+	// Note that both verbose and log-level cannot be set together.
+	_ = flagSet.MarkHidden("log-level")
 	flagSet.StringVar(&b.logFormat, "log-format", "color", "The log format [text,color,json].")
 	if b.defaultTimeout > 0 {
 		flagSet.DurationVar(&b.timeout, "timeout", b.defaultTimeout, `The duration until timing out.`)
@@ -91,7 +100,11 @@ func (b *builder) run(
 	appContainer app.Container,
 	f func(context.Context, Container) error,
 ) (retErr error) {
-	logger, err := applog.NewLogger(appContainer.Stderr(), b.logLevel, b.logFormat)
+	logLevel, err := getLogLevel(b.verbose, b.logLevel)
+	if err != nil {
+		return err
+	}
+	logger, err := applog.NewLogger(appContainer.Stderr(), logLevel, b.logFormat)
 	if err != nil {
 		return err
 	}
@@ -99,11 +112,6 @@ func (b *builder) run(
 	if err != nil {
 		return err
 	}
-	start := time.Now()
-	logger.Debug("start")
-	defer func() {
-		logger.Debug("end", zap.Duration("duration", time.Since(start)))
-	}()
 
 	var cancel context.CancelFunc
 	if !b.profile && b.timeout != 0 {
@@ -120,6 +128,9 @@ func (b *builder) run(
 		defer func() {
 			retErr = multierr.Append(retErr, closer.Close())
 		}()
+		var span *trace.Span
+		ctx, span = trace.StartSpan(ctx, "command")
+		defer span.End()
 	}
 	if !b.profile {
 		return f(ctx, container)
@@ -186,4 +197,17 @@ func runProfile(
 	}
 	stop.Stop()
 	return nil
+}
+
+func getLogLevel(verboseFlag bool, logLevelFlag string) (string, error) {
+	if verboseFlag && logLevelFlag != "" {
+		return "", errors.New("cannot set both --verbose and --log-level")
+	}
+	if logLevelFlag != "" {
+		return logLevelFlag, nil
+	}
+	if verboseFlag {
+		return "debug", nil
+	}
+	return "info", nil
 }

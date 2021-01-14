@@ -23,7 +23,7 @@ import (
 
 func TestModuleReferenceForString(t *testing.T) {
 	t.Parallel()
-	expectedModuleReference, err := NewTrackModuleReference("foo.com", "bar", "baz", "v1")
+	expectedModuleReference, err := NewBranchModuleReference("foo.com", "bar", "baz", "v1")
 	require.NoError(t, err)
 	require.Equal(t, "foo.com/bar/baz:v1", expectedModuleReference.String())
 	moduleReference, err := ModuleReferenceForString("foo.com/bar/baz:v1")
@@ -61,7 +61,7 @@ func TestModuleReferenceForStringError(t *testing.T) {
 			Input: "foo.com/bar/:v1",
 		},
 		{
-			Name:  "Module without a track",
+			Name:  "Module without a branch",
 			Input: "foo.com/bar/baz:",
 		},
 		{
@@ -69,7 +69,7 @@ func TestModuleReferenceForStringError(t *testing.T) {
 			Input: "foo.com/bar/baz@",
 		},
 		{
-			Name:  "Module without a track or commit",
+			Name:  "Module without a branch or commit",
 			Input: "foo.com/bar/baz",
 		},
 	}

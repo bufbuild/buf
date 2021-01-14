@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
+	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/netextended"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
@@ -34,15 +34,15 @@ const (
 	ownerMaxLength      = 64
 	repositoryMinLength = 2
 	repositoryMaxLength = 64
-	trackMinLength      = 2
-	trackMaxLength      = 64
+	branchMinLength     = 2
+	branchMaxLength     = 64
 	// 32MB
 	maxModuleTotalContentLength = 32 << 20
 	protoFileMaxCount           = 16384
 )
 
 // ValidateProtoModule verifies the given module is well-formed.
-func ValidateProtoModule(protoModule *modulev1.Module) error {
+func ValidateProtoModule(protoModule *modulev1alpha1.Module) error {
 	if protoModule == nil {
 		return errors.New("module is required")
 	}
@@ -76,7 +76,7 @@ func ValidateProtoModule(protoModule *modulev1.Module) error {
 }
 
 // ValidateProtoModuleReference verifies the given module reference is well-formed.
-func ValidateProtoModuleReference(protoModuleReference *modulev1.ModuleReference) error {
+func ValidateProtoModuleReference(protoModuleReference *modulev1alpha1.ModuleReference) error {
 	if protoModuleReference == nil {
 		return errors.New("module reference is required")
 	}
@@ -89,28 +89,28 @@ func ValidateProtoModuleReference(protoModuleReference *modulev1.ModuleReference
 	if err := ValidateRepository(protoModuleReference.Repository); err != nil {
 		return err
 	}
-	track := protoModuleReference.GetTrack()
+	branch := protoModuleReference.GetBranch()
 	commit := protoModuleReference.GetCommit()
 	switch {
-	case track == "" && commit == "":
-		return fmt.Errorf("module reference must have either a track or commit")
-	case track != "" && commit == "":
-		if err := ValidateTrack(track); err != nil {
+	case branch == "" && commit == "":
+		return fmt.Errorf("module reference must have either a branch or commit")
+	case branch != "" && commit == "":
+		if err := ValidateBranch(branch); err != nil {
 			return err
 		}
-	case track == "" && commit != "":
+	case branch == "" && commit != "":
 		if err := ValidateCommit(commit); err != nil {
 			return err
 		}
 	default:
 		// should never happen due to oneof
-		return fmt.Errorf("module reference cannot have both a track and commit")
+		return fmt.Errorf("module reference cannot have both a branch and commit")
 	}
 	return nil
 }
 
 // ValidateProtoModulePin verifies the given module pin is well-formed.
-func ValidateProtoModulePin(protoModulePin *modulev1.ModulePin) error {
+func ValidateProtoModulePin(protoModulePin *modulev1alpha1.ModulePin) error {
 	if protoModulePin == nil {
 		return errors.New("module pin is required")
 	}
@@ -123,7 +123,7 @@ func ValidateProtoModulePin(protoModulePin *modulev1.ModulePin) error {
 	if err := ValidateRepository(protoModulePin.Repository); err != nil {
 		return err
 	}
-	if err := ValidateTrack(protoModulePin.Track); err != nil {
+	if err := ValidateBranch(protoModulePin.Branch); err != nil {
 		return err
 	}
 	if err := ValidateCommit(protoModulePin.Commit); err != nil {
@@ -180,17 +180,17 @@ func ValidateRepository(repository string) error {
 	return nil
 }
 
-// ValidateTrack verifies the given repository track is well-formed.
-func ValidateTrack(track string) error {
-	if track == "" {
-		return errors.New("repository track is required")
+// ValidateBranch verifies the given repository branch is well-formed.
+func ValidateBranch(branch string) error {
+	if branch == "" {
+		return errors.New("repository branch is required")
 	}
-	if len(track) < trackMinLength || len(track) > trackMaxLength {
-		return fmt.Errorf("repository track %q must be at least %d and at most %d characters", track, trackMinLength, trackMaxLength)
+	if len(branch) < branchMinLength || len(branch) > branchMaxLength {
+		return fmt.Errorf("repository branch %q must be at least %d and at most %d characters", branch, branchMinLength, branchMaxLength)
 	}
-	for _, char := range track {
+	for _, char := range branch {
 		if !stringutil.IsLowerAlphanumeric(char) && char != '-' && char != '.' {
-			return fmt.Errorf("repository track %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", track)
+			return fmt.Errorf("repository branch %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", branch)
 		}
 	}
 	return nil

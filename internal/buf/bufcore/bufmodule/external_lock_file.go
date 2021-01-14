@@ -36,7 +36,7 @@ type externalLockFileDep struct {
 	Remote     string    `json:"remote,omitempty" yaml:"remote,omitempty"`
 	Owner      string    `json:"owner,omitempty" yaml:"owner,omitempty"`
 	Repository string    `json:"repository,omitempty" yaml:"repository,omitempty"`
-	Track      string    `json:"track,omitempty" yaml:"track,omitempty"`
+	Branch     string    `json:"branch,omitempty" yaml:"branch,omitempty"`
 	Commit     string    `json:"commit,omitempty" yaml:"commit,omitempty"`
 	Digest     string    `json:"digest,omitempty" yaml:"digest,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty" yaml:"create_time,omitempty"`
@@ -47,7 +47,7 @@ func newExternalLockFileDep(modulePin ModulePin) *externalLockFileDep {
 		Remote:     modulePin.Remote(),
 		Owner:      modulePin.Owner(),
 		Repository: modulePin.Repository(),
-		Track:      modulePin.Track(),
+		Branch:     modulePin.Branch(),
 		Commit:     modulePin.Commit(),
 		Digest:     modulePin.Digest(),
 		CreateTime: modulePin.CreateTime(),
@@ -61,7 +61,7 @@ func modulePinsForExternalLockFile(externalLockFile *externalLockFile) ([]Module
 			dep.Remote,
 			dep.Owner,
 			dep.Repository,
-			dep.Track,
+			dep.Branch,
 			dep.Commit,
 			dep.Digest,
 			dep.CreateTime,
