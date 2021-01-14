@@ -14,11 +14,11 @@
 
 syntax = "proto3";
 
-package buf.module.v1;
+package buf.alpha.module.v1alpha1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1;modulev1";
+option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1;modulev1alpha1";
 
 // Module is a module.
 message Module {
@@ -49,7 +49,7 @@ message ModuleReference {
   string owner = 2;
   string repository = 3;
   oneof reference {
-    string track = 4;
+    string branch = 4;
     string commit = 5;
   }
 }
@@ -59,7 +59,7 @@ message ModulePin {
   string remote = 1;
   string owner = 2;
   string repository = 3;
-  string track = 4;
+  string branch = 4;
   string commit = 5;
   string digest = 6;
   google.protobuf.Timestamp create_time = 7;

@@ -201,7 +201,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
 		&f.Template,
 		templateFlagName,
-		"buf.gen.yaml",
+		bufgen.ExternalConfigV1Beta1FilePath,
 		`The generation template file or data to use. Must be in either YAML or JSON format.`,
 	)
 	flagSet.StringVarP(

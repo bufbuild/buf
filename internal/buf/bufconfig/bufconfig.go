@@ -26,8 +26,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// ConfigFilePath is the configuration file path.
-const ConfigFilePath = "buf.yaml"
+// ExternalConfigV1Beta1FilePath is the default configuration file path for v1beta1.
+const ExternalConfigV1Beta1FilePath = "buf.yaml"
 
 // Config is the user config.
 type Config struct {
@@ -144,7 +144,7 @@ func ReadConfigWithOverride(override string) ReadConfigOption {
 
 // ConfigExists checks if a configuration file exists.
 func ConfigExists(ctx context.Context, readBucket storage.ReadBucket) (bool, error) {
-	return storage.Exists(ctx, readBucket, ConfigFilePath)
+	return storage.Exists(ctx, readBucket, ExternalConfigV1Beta1FilePath)
 }
 
 type externalConfigV1Beta1 struct {

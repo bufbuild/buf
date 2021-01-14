@@ -17,7 +17,7 @@ package bufmodule
 import (
 	"time"
 
-	modulev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/module/v1"
+	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/prototime"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -26,7 +26,7 @@ type modulePin struct {
 	remote     string
 	owner      string
 	repository string
-	track      string
+	branch     string
 	commit     string
 	digest     string
 	createTime time.Time
@@ -36,7 +36,7 @@ func newModulePin(
 	remote string,
 	owner string,
 	repository string,
-	track string,
+	branch string,
 	commit string,
 	digest string,
 	createTime time.Time,
@@ -46,11 +46,11 @@ func newModulePin(
 		return nil, err
 	}
 	return newModulePinForProto(
-		&modulev1.ModulePin{
+		&modulev1alpha1.ModulePin{
 			Remote:     remote,
 			Owner:      owner,
 			Repository: repository,
-			Track:      track,
+			Branch:     branch,
 			Commit:     commit,
 			Digest:     digest,
 			CreateTime: protoCreateTime,
@@ -59,7 +59,7 @@ func newModulePin(
 }
 
 func newModulePinForProto(
-	protoModulePin *modulev1.ModulePin,
+	protoModulePin *modulev1alpha1.ModulePin,
 ) (*modulePin, error) {
 	if err := ValidateProtoModulePin(protoModulePin); err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func newModulePinForProto(
 		remote:     protoModulePin.Remote,
 		owner:      protoModulePin.Owner,
 		repository: protoModulePin.Repository,
-		track:      protoModulePin.Track,
+		branch:     protoModulePin.Branch,
 		commit:     protoModulePin.Commit,
 		digest:     protoModulePin.Digest,
 		createTime: protoModulePin.CreateTime.AsTime(),
@@ -77,12 +77,12 @@ func newModulePinForProto(
 
 func newProtoModulePinForModulePin(
 	modulePin ModulePin,
-) *modulev1.ModulePin {
-	return &modulev1.ModulePin{
+) *modulev1alpha1.ModulePin {
+	return &modulev1alpha1.ModulePin{
 		Remote:     modulePin.Remote(),
 		Owner:      modulePin.Owner(),
 		Repository: modulePin.Repository(),
-		Track:      modulePin.Track(),
+		Branch:     modulePin.Branch(),
 		Commit:     modulePin.Commit(),
 		Digest:     modulePin.Digest(),
 		// no need to validate as we already know this is valid
@@ -102,8 +102,8 @@ func (m *modulePin) Repository() string {
 	return m.repository
 }
 
-func (m *modulePin) Track() string {
-	return m.track
+func (m *modulePin) Branch() string {
+	return m.branch
 }
 
 func (m *modulePin) Commit() string {

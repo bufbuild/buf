@@ -135,7 +135,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 		case nil:
 			// If opt is omitted, plugin.Opt is nil
 		default:
-			return nil, fmt.Errorf("%s: unknown type %T for opt", id, opt)
+			return nil, fmt.Errorf("%s: unknown type %T for opt", id, t)
 		}
 		config.PluginConfigs = append(
 			config.PluginConfigs,

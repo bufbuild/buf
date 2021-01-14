@@ -614,7 +614,7 @@ func TestCheckLsLintRules2(t *testing.T) {
 		"config",
 		"ls-lint-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
+		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1Beta1FilePath),
 	)
 }
 
@@ -711,7 +711,7 @@ func TestCheckLsBreakingRules2(t *testing.T) {
 		"config",
 		"ls-breaking-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_rules", "buf.yaml"),
+		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1Beta1FilePath),
 	)
 }
 
@@ -972,7 +972,7 @@ func testConfigInit(t *testing.T, expectedData string, document bool, uncomment 
 		args = append(args, "--dep", dep)
 	}
 	testRun(t, 0, nil, nil, args...)
-	data, err := ioutil.ReadFile(filepath.Join(tempDir, bufconfig.ConfigFilePath))
+	data, err := ioutil.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1Beta1FilePath))
 	require.NoError(t, err)
 	require.Equal(t, expectedData, string(data))
 }

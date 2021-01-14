@@ -28,6 +28,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// ExternalConfigV1Beta1FilePath is the default external configuration file path for v1beta1.
+const ExternalConfigV1Beta1FilePath = "buf.gen.yaml"
+
 const (
 	// StrategyDirectory is the strategy that says to generate per directory.
 	//

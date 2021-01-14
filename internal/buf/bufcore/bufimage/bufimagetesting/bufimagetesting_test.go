@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
-	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/image/v1"
+	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"

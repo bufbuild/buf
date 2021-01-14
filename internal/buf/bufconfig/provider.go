@@ -46,7 +46,7 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	ctx, span := trace.StartSpan(ctx, "get_config")
 	defer span.End()
 
-	readObjectCloser, err := readBucket.Get(ctx, ConfigFilePath)
+	readObjectCloser, err := readBucket.Get(ctx, ExternalConfigV1Beta1FilePath)
 	if err != nil {
 		if storage.IsNotExist(err) {
 			return p.newConfigV1Beta1(externalConfigV1Beta1{})
