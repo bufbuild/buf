@@ -35,7 +35,9 @@ func newHandler(
 ) *handler {
 	return &handler{
 		logger: logger,
-		runner: internal.NewRunner(logger, ""),
+		// comment ignores are not allowed for breaking changes
+		// so do not set the ignore prefix per the RunnerWithIgnorePrefix comments
+		runner: internal.NewRunner(logger),
 	}
 }
 

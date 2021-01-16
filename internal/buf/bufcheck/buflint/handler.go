@@ -35,7 +35,11 @@ type handler struct {
 func newHandler(logger *zap.Logger) *handler {
 	return &handler{
 		logger: logger,
-		runner: internal.NewRunner(logger, globalIgnorePrefix),
+		// linting allows for comment ignores
+		// note that comment ignores still need to be enabled within the config
+		// for a given check, this just says that comment ignores are allowed
+		// in the first place
+		runner: internal.NewRunner(logger, internal.RunnerWithIgnorePrefix(globalIgnorePrefix)),
 	}
 }
 

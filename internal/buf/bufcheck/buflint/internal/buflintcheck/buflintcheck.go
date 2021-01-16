@@ -86,7 +86,7 @@ func checkCommentNamedDescriptor(
 		return nil
 	}
 	if strings.TrimSpace(location.LeadingComments()) == "" {
-		add(namedDescriptor, location, "%s %q should have a non-empty comment for documentation.", typeName, namedDescriptor.Name())
+		add(namedDescriptor, location, nil, "%s %q should have a non-empty comment for documentation.", typeName, namedDescriptor.Name())
 	}
 	return nil
 }
@@ -103,7 +103,7 @@ func checkDirectorySamePackage(add addFunc, dirPath string, files []protosource.
 	if len(pkgMap) > 1 {
 		pkgs := stringutil.MapToSortedSlice(pkgMap)
 		for _, file := range files {
-			add(file, file.PackageLocation(), "Multiple packages %q detected within directory %q.", strings.Join(pkgs, ","), dirPath)
+			add(file, file.PackageLocation(), nil, "Multiple packages %q detected within directory %q.", strings.Join(pkgs, ","), dirPath)
 		}
 	}
 	return nil
@@ -114,7 +114,7 @@ var CheckEnumNoAllowAlias = newEnumCheckFunc(checkEnumNoAllowAlias)
 
 func checkEnumNoAllowAlias(add addFunc, enum protosource.Enum) error {
 	if enum.AllowAlias() {
-		add(enum, enum.AllowAliasLocation(), `Enum option "allow_alias" on enum %q must be false.`, enum.Name())
+		add(enum, enum.AllowAliasLocation(), nil, `Enum option "allow_alias" on enum %q must be false.`, enum.Name())
 	}
 	return nil
 }
@@ -126,7 +126,7 @@ func checkEnumPascalCase(add addFunc, enum protosource.Enum) error {
 	name := enum.Name()
 	expectedName := stringutil.ToPascalCase(name)
 	if name != expectedName {
-		add(enum, enum.NameLocation(), "Enum name %q should be PascalCase, such as %q.", name, expectedName)
+		add(enum, enum.NameLocation(), nil, "Enum name %q should be PascalCase, such as %q.", name, expectedName)
 	}
 	return nil
 }
@@ -138,7 +138,7 @@ func checkEnumFirstValueZero(add addFunc, enum protosource.Enum) error {
 	if values := enum.Values(); len(values) > 0 {
 		if firstEnumValue := values[0]; firstEnumValue.Number() != 0 {
 			// proto3 compilation references the number
-			add(firstEnumValue, firstEnumValue.NumberLocation(), "First enum value %q should have a numeric value of 0", firstEnumValue.Name())
+			add(firstEnumValue, firstEnumValue.NumberLocation(), nil, "First enum value %q should have a numeric value of 0", firstEnumValue.Name())
 		}
 	}
 	return nil
@@ -151,7 +151,19 @@ func checkEnumValuePrefix(add addFunc, enumValue protosource.EnumValue) error {
 	name := enumValue.Name()
 	expectedPrefix := fieldToUpperSnakeCase(enumValue.Enum().Name()) + "_"
 	if !strings.HasPrefix(name, expectedPrefix) {
-		add(enumValue, enumValue.NameLocation(), "Enum value name %q should be prefixed with %q.", name, expectedPrefix)
+		add(
+			enumValue,
+			enumValue.NameLocation(),
+			// also check the enum for this comment ignore
+			// this allows users to set this "globally" for an enum
+			// this came up in https://github.com/bufbuild/buf/issues/161
+			[]protosource.Location{
+				enumValue.Enum().Location(),
+			},
+			"Enum value name %q should be prefixed with %q.",
+			name,
+			expectedPrefix,
+		)
 	}
 	return nil
 }
@@ -163,7 +175,18 @@ func checkEnumValueUpperSnakeCase(add addFunc, enumValue protosource.EnumValue) 
 	name := enumValue.Name()
 	expectedName := fieldToUpperSnakeCase(name)
 	if name != expectedName {
-		add(enumValue, enumValue.NameLocation(), "Enum value name %q should be UPPER_SNAKE_CASE, such as %q.", name, expectedName)
+		add(
+			enumValue,
+			enumValue.NameLocation(),
+			// also check the enum for this comment ignore
+			// this allows users to set this "globally" for an enum
+			[]protosource.Location{
+				enumValue.Enum().Location(),
+			},
+			"Enum value name %q should be UPPER_SNAKE_CASE, such as %q.",
+			name,
+			expectedName,
+		)
 	}
 	return nil
 }
@@ -188,7 +211,7 @@ func checkEnumZeroValueSuffix(add addFunc, enumValue protosource.EnumValue, suff
 	}
 	name := enumValue.Name()
 	if !strings.HasSuffix(name, suffix) {
-		add(enumValue, enumValue.NameLocation(), "Enum zero value name %q should be suffixed with %q.", name, suffix)
+		add(enumValue, enumValue.NameLocation(), nil, "Enum zero value name %q should be suffixed with %q.", name, suffix)
 	}
 	return nil
 }
@@ -209,7 +232,18 @@ func checkFieldLowerSnakeCase(add addFunc, field protosource.Field) error {
 	name := field.Name()
 	expectedName := fieldToLowerSnakeCase(name)
 	if name != expectedName {
-		add(field, field.NameLocation(), "Field name %q should be lower_snake_case, such as %q.", name, expectedName)
+		add(
+			field,
+			field.NameLocation(),
+			// also check the message for this comment ignore
+			// this allows users to set this "globally" for a message
+			[]protosource.Location{
+				field.Message().Location(),
+			},
+			"Field name %q should be lower_snake_case, such as %q.",
+			name,
+			expectedName,
+		)
 	}
 	return nil
 }
@@ -220,7 +254,17 @@ var CheckFieldNoDescriptor = newFieldCheckFunc(checkFieldNoDescriptor)
 func checkFieldNoDescriptor(add addFunc, field protosource.Field) error {
 	name := field.Name()
 	if strings.ToLower(strings.Trim(name, "_")) == "descriptor" {
-		add(field, field.NameLocation(), `Field name %q cannot be any capitalization of "descriptor" with any number of prefix or suffix underscores.`, name)
+		add(
+			field,
+			field.NameLocation(),
+			// also check the message for this comment ignore
+			// this allows users to set this "globally" for a message
+			[]protosource.Location{
+				field.Message().Location(),
+			},
+			`Field name %q cannot be any capitalization of "descriptor" with any number of prefix or suffix underscores.`,
+			name,
+		)
 	}
 	return nil
 }
@@ -235,7 +279,7 @@ func checkFileLowerSnakeCase(add addFunc, file protosource.File) error {
 	baseWithoutExt := strings.TrimSuffix(base, ext)
 	expectedBaseWithoutExt := stringutil.ToLowerSnakeCase(baseWithoutExt)
 	if baseWithoutExt != expectedBaseWithoutExt {
-		add(file, nil, `Filename %q should be lower_snake_case%s, such as "%s%s".`, base, ext, expectedBaseWithoutExt, ext)
+		add(file, nil, nil, `Filename %q should be lower_snake_case%s, such as "%s%s".`, base, ext, expectedBaseWithoutExt, ext)
 	}
 	return nil
 }
@@ -257,7 +301,7 @@ func checkImportNoWeak(add addFunc, fileImport protosource.FileImport) error {
 
 func checkImportNoPublicWeak(add addFunc, fileImport protosource.FileImport, value bool, name string) error {
 	if value {
-		add(fileImport, fileImport.Location(), `Import %q must not be %s.`, fileImport.Import(), name)
+		add(fileImport, fileImport.Location(), nil, `Import %q must not be %s.`, fileImport.Import(), name)
 	}
 	return nil
 }
@@ -273,7 +317,7 @@ func checkMessagePascalCase(add addFunc, message protosource.Message) error {
 	name := message.Name()
 	expectedName := stringutil.ToPascalCase(name)
 	if name != expectedName {
-		add(message, message.NameLocation(), "Message name %q should be PascalCase, such as %q.", name, expectedName)
+		add(message, message.NameLocation(), nil, "Message name %q should be PascalCase, such as %q.", name, expectedName)
 	}
 	return nil
 }
@@ -292,7 +336,18 @@ func checkOneofLowerSnakeCase(add addFunc, oneof protosource.Oneof) error {
 				return nil
 			}
 		}
-		add(oneof, oneof.NameLocation(), "Oneof name %q should be lower_snake_case, such as %q.", name, expectedName)
+		add(
+			oneof,
+			oneof.NameLocation(),
+			// also check the message for this comment ignore
+			// this allows users to set this "globally" for a message
+			[]protosource.Location{
+				oneof.Message().Location(),
+			},
+			"Oneof name %q should be lower_snake_case, such as %q.",
+			name,
+			expectedName,
+		)
 	}
 	return nil
 }
@@ -302,7 +357,7 @@ var CheckPackageDefined = newFileCheckFunc(checkPackageDefined)
 
 func checkPackageDefined(add addFunc, file protosource.File) error {
 	if file.Package() == "" {
-		add(file, nil, "Files must have a package defined.")
+		add(file, nil, nil, "Files must have a package defined.")
 	}
 	return nil
 }
@@ -320,7 +375,7 @@ func checkPackageDirectoryMatch(add addFunc, file protosource.File) error {
 	// need to check case where in root relative directory and no package defined
 	// this should be valid although if SENSIBLE is turned on this will be invalid
 	if dirPath != expectedDirPath {
-		add(file, file.PackageLocation(), "Files with package %q must be within a directory %q relative to root but were in directory %q.", pkg, normalpath.Unnormalize(expectedDirPath), dirPath)
+		add(file, file.PackageLocation(), nil, "Files with package %q must be within a directory %q relative to root but were in directory %q.", pkg, normalpath.Unnormalize(expectedDirPath), dirPath)
 	}
 	return nil
 }
@@ -339,7 +394,7 @@ func checkPackageLowerSnakeCase(add addFunc, file protosource.File) error {
 	}
 	expectedPkg := strings.Join(split, ".")
 	if pkg != expectedPkg {
-		add(file, file.PackageLocation(), "Package name %q should be lower_snake.case, such as %q.", pkg, expectedPkg)
+		add(file, file.PackageLocation(), nil, "Package name %q should be lower_snake.case, such as %q.", pkg, expectedPkg)
 	}
 	return nil
 }
@@ -355,7 +410,7 @@ func checkPackageSameDirectory(add addFunc, pkg string, files []protosource.File
 	if len(dirMap) > 1 {
 		dirs := stringutil.MapToSortedSlice(dirMap)
 		for _, file := range files {
-			add(file, file.PackageLocation(), "Multiple directories %q contain files with package %q.", strings.Join(dirs, ","), pkg)
+			add(file, file.PackageLocation(), nil, "Multiple directories %q contain files with package %q.", strings.Join(dirs, ","), pkg)
 		}
 	}
 	return nil
@@ -433,9 +488,9 @@ func checkPackageSameOptionValue(
 		optionValues := stringutil.MapToSortedSlice(optionValueMap)
 		for _, file := range files {
 			if noOptionValue {
-				add(file, getOptionLocation(file), "Files in package %q have both values %q and no value for option %q and all values must be equal.", pkg, strings.Join(optionValues, ","), name)
+				add(file, getOptionLocation(file), nil, "Files in package %q have both values %q and no value for option %q and all values must be equal.", pkg, strings.Join(optionValues, ","), name)
 			} else {
-				add(file, getOptionLocation(file), "Files in package %q have multiple values %q for option %q and all values must be equal.", pkg, strings.Join(optionValues, ","), name)
+				add(file, getOptionLocation(file), nil, "Files in package %q have multiple values %q for option %q and all values must be equal.", pkg, strings.Join(optionValues, ","), name)
 			}
 		}
 	}
@@ -451,7 +506,7 @@ func checkPackageVersionSuffix(add addFunc, file protosource.File) error {
 		return nil
 	}
 	if _, ok := protoversion.NewPackageVersionForPackage(pkg); !ok {
-		add(file, file.PackageLocation(), `Package name %q should be suffixed with a correctly formed version, such as %q.`, pkg, pkg+".v1")
+		add(file, file.PackageLocation(), nil, `Package name %q should be suffixed with a correctly formed version, such as %q.`, pkg, pkg+".v1")
 	}
 	return nil
 }
@@ -461,7 +516,17 @@ var CheckRPCNoClientStreaming = newMethodCheckFunc(checkRPCNoClientStreaming)
 
 func checkRPCNoClientStreaming(add addFunc, method protosource.Method) error {
 	if method.ClientStreaming() {
-		add(method, method.Location(), "RPC %q is client streaming.", method.Name())
+		add(
+			method,
+			method.Location(),
+			// also check the service for this comment ignore
+			// this allows users to set this "globally" for a service
+			[]protosource.Location{
+				method.Service().Location(),
+			},
+			"RPC %q is client streaming.",
+			method.Name(),
+		)
 	}
 	return nil
 }
@@ -471,7 +536,17 @@ var CheckRPCNoServerStreaming = newMethodCheckFunc(checkRPCNoServerStreaming)
 
 func checkRPCNoServerStreaming(add addFunc, method protosource.Method) error {
 	if method.ServerStreaming() {
-		add(method, method.Location(), "RPC %q is server streaming.", method.Name())
+		add(
+			method,
+			method.Location(),
+			// also check the service for this comment ignore
+			// this allows users to set this "globally" for a service
+			[]protosource.Location{
+				method.Service().Location(),
+			},
+			"RPC %q is server streaming.",
+			method.Name(),
+		)
 	}
 	return nil
 }
@@ -483,7 +558,18 @@ func checkRPCPascalCase(add addFunc, method protosource.Method) error {
 	name := method.Name()
 	expectedName := stringutil.ToPascalCase(name)
 	if name != expectedName {
-		add(method, method.NameLocation(), "RPC name %q should be PascalCase, such as %q.", name, expectedName)
+		add(
+			method,
+			method.NameLocation(),
+			// also check the service for this comment ignore
+			// this allows users to set this "globally" for a service
+			[]protosource.Location{
+				method.Service().Location(),
+			},
+			"RPC name %q should be PascalCase, such as %q.",
+			name,
+			expectedName,
+		)
 	}
 	return nil
 }
@@ -529,7 +615,18 @@ func checkRPCRequestResponseUnique(
 			if method.InputTypeName() == method.OutputTypeName() {
 				// if we allow both empty requests and responses, we do not want to add a FileAnnotation
 				if !(method.InputTypeName() == ".google.protobuf.Empty" && allowGoogleProtobufEmptyRequests && allowGoogleProtobufEmptyResponses) {
-					add(method, method.Location(), "RPC %q has the same type %q for the request and response.", method.Name(), method.InputTypeName())
+					add(
+						method,
+						method.Location(),
+						// also check the service for this comment ignore
+						// this allows users to set this "globally" for a service
+						[]protosource.Location{
+							method.Service().Location(),
+						},
+						"RPC %q has the same type %q for the request and response.",
+						method.Name(),
+						method.InputTypeName(),
+					)
 				}
 			}
 		}
@@ -571,19 +668,49 @@ func checkRPCRequestResponseUnique(
 				}
 				if !allowGoogleProtobufEmptyRequests && len(requestMethods) > 1 {
 					for _, method := range requestMethods {
-						add(method, method.Location(), "%q is used as the request for multiple RPCs.", requestResponseType)
+						add(
+							method,
+							method.Location(),
+							// also check the service for this comment ignore
+							// this allows users to set this "globally" for a service
+							[]protosource.Location{
+								method.Service().Location(),
+							},
+							"%q is used as the request for multiple RPCs.",
+							requestResponseType,
+						)
 					}
 				}
 				if !allowGoogleProtobufEmptyResponses && len(responseMethods) > 1 {
 					for _, method := range responseMethods {
-						add(method, method.Location(), "%q is used as the response for multiple RPCs.", requestResponseType)
+						add(
+							method,
+							method.Location(),
+							// also check the service for this comment ignore
+							// this allows users to set this "globally" for a service
+							[]protosource.Location{
+								method.Service().Location(),
+							},
+							"%q is used as the response for multiple RPCs.",
+							requestResponseType,
+						)
 					}
 				}
 			}
 		} else {
 			// else, we have a duplicate usage of requestResponseType, add an FileAnnotation to each method
 			for _, method := range fullNameToMethod {
-				add(method, method.Location(), "%q is used as the request or response type for multiple RPCs.", requestResponseType)
+				add(
+					method,
+					method.Location(),
+					// also check the service for this comment ignore
+					// this allows users to set this "globally" for a service
+					[]protosource.Location{
+						method.Service().Location(),
+					},
+					"%q is used as the request or response type for multiple RPCs.",
+					requestResponseType,
+				)
 			}
 		}
 	}
@@ -620,7 +747,20 @@ func checkRPCRequestStandardName(add addFunc, method protosource.Method, allowGo
 	expectedName1 := stringutil.ToPascalCase(method.Name()) + "Request"
 	expectedName2 := stringutil.ToPascalCase(service.Name()) + expectedName1
 	if name != expectedName1 && name != expectedName2 {
-		add(method, method.InputTypeLocation(), "RPC request type %q should be named %q or %q.", name, expectedName1, expectedName2)
+		add(
+			method,
+			method.InputTypeLocation(),
+			// also check the method and service for this comment ignore
+			// this came up in https://github.com/bufbuild/buf/issues/242
+			[]protosource.Location{
+				method.Location(),
+				method.Service().Location(),
+			},
+			"RPC request type %q should be named %q or %q.",
+			name,
+			expectedName1,
+			expectedName2,
+		)
 	}
 	return nil
 }
@@ -655,7 +795,20 @@ func checkRPCResponseStandardName(add addFunc, method protosource.Method, allowG
 	expectedName1 := stringutil.ToPascalCase(method.Name()) + "Response"
 	expectedName2 := stringutil.ToPascalCase(service.Name()) + expectedName1
 	if name != expectedName1 && name != expectedName2 {
-		add(method, method.OutputTypeLocation(), "RPC response type %q should be named %q or %q.", name, expectedName1, expectedName2)
+		add(
+			method,
+			method.OutputTypeLocation(),
+			// also check the method and service for this comment ignore
+			// this came up in https://github.com/bufbuild/buf/issues/242
+			[]protosource.Location{
+				method.Location(),
+				method.Service().Location(),
+			},
+			"RPC response type %q should be named %q or %q.",
+			name,
+			expectedName1,
+			expectedName2,
+		)
 	}
 	return nil
 }
@@ -667,7 +820,7 @@ func checkServicePascalCase(add addFunc, service protosource.Service) error {
 	name := service.Name()
 	expectedName := stringutil.ToPascalCase(name)
 	if name != expectedName {
-		add(service, service.NameLocation(), "Service name %q should be PascalCase, such as %q.", name, expectedName)
+		add(service, service.NameLocation(), nil, "Service name %q should be PascalCase, such as %q.", name, expectedName)
 	}
 	return nil
 }
@@ -689,7 +842,7 @@ var CheckServiceSuffix = func(
 func checkServiceSuffix(add addFunc, service protosource.Service, suffix string) error {
 	name := service.Name()
 	if !strings.HasSuffix(name, suffix) {
-		add(service, service.NameLocation(), "Service name %q should be suffixed with %q.", name, suffix)
+		add(service, service.NameLocation(), nil, "Service name %q should be suffixed with %q.", name, suffix)
 	}
 	return nil
 }

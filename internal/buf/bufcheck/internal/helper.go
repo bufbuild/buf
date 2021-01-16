@@ -46,7 +46,27 @@ func (h *Helper) AddFileAnnotationf(
 	format string,
 	args ...interface{},
 ) {
-	if h.ignoreFunc != nil && h.ignoreFunc(h.id, descriptor, location) {
+	h.AddFileAnnotationWithExtraIgnoreLocationsf(descriptor, location, nil, format, args...)
+}
+
+// AddFileAnnotationWithExtraIgnoreLocationsf adds a FileAnnotation with the id as the Type.
+//
+// extraIgnoreLocations are extra locations to check for comment ignores.
+//
+// If descriptor is nil, no filename information is added.
+// If location is nil, no line or column information will be added.
+func (h *Helper) AddFileAnnotationWithExtraIgnoreLocationsf(
+	descriptor protosource.Descriptor,
+	location protosource.Location,
+	extraIgnoreLocations []protosource.Location,
+	format string,
+	args ...interface{},
+) {
+	if h.ignoreFunc != nil && h.ignoreFunc(
+		h.id,
+		descriptor,
+		append([]protosource.Location{location}, extraIgnoreLocations...),
+	) {
 		return
 	}
 	h.fileAnnotations = append(
