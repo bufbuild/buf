@@ -35,12 +35,28 @@ type Runner struct {
 }
 
 // NewRunner returns a new Runner.
+func NewRunner(logger *zap.Logger, options ...RunnerOption) *Runner {
+	runner := &Runner{
+		logger: logger,
+	}
+	for _, option := range options {
+		option(runner)
+	}
+	return runner
+}
+
+// RunnerOption is an option for a new Runner.
+type RunnerOption func(*Runner)
+
+// RunnerWithIgnorePrefix returns a new RunnerOption that sets the comment ignore prefix.
 //
-// ignorePrefix should be empty if comment ignores are not allowed
-func NewRunner(logger *zap.Logger, ignorePrefix string) *Runner {
-	return &Runner{
-		logger:       logger,
-		ignorePrefix: ignorePrefix,
+// This will result in failures where the location has "ignore_prefix id" in the leading
+// comment being ignored.
+//
+// The default is to not enable comment ignores.
+func RunnerWithIgnorePrefix(ignorePrefix string) RunnerOption {
+	return func(runner *Runner) {
+		runner.ignorePrefix = ignorePrefix
 	}
 }
 
@@ -85,11 +101,14 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 }
 
 func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
-	return func(id string, descriptor protosource.Descriptor, location protosource.Location) bool {
+	return func(id string, descriptor protosource.Descriptor, locations []protosource.Location) bool {
 		if idIsIgnored(id, descriptor, config) {
 			return true
 		}
-		if r.ignorePrefix != "" && config.AllowCommentIgnores && locationIsIgnored(id, r.ignorePrefix, location, config) {
+		// if ignorePrefix is empty, comment ignores are not enabled for the runner
+		// this is the case with breaking changes
+		if r.ignorePrefix != "" && config.AllowCommentIgnores &&
+			locationsAreIgnored(id, r.ignorePrefix, locations, config) {
 			return true
 		}
 		if config.IgnoreUnstablePackages {
@@ -124,21 +143,21 @@ func idIsIgnored(id string, descriptor protosource.Descriptor, config *Config) b
 	return normalpath.MapHasEqualOrContainingPath(ignoreRootPaths, path, normalpath.Relative)
 }
 
-func locationIsIgnored(id string, ignorePrefix string, location protosource.Location, config *Config) bool {
+func locationsAreIgnored(id string, ignorePrefix string, locations []protosource.Location, config *Config) bool {
+	// we already check that ignorePrefix is non-empty, but just doing here for safety
 	if id == "" || ignorePrefix == "" {
 		return false
 	}
-	if location == nil {
-		return false
-	}
-	leadingComments := location.LeadingComments()
-	if leadingComments == "" {
-		return false
-	}
 	fullIgnorePrefix := ignorePrefix + " " + id
-	for _, line := range stringutil.SplitTrimLinesNoEmpty(leadingComments) {
-		if strings.HasPrefix(line, fullIgnorePrefix) {
-			return true
+	for _, location := range locations {
+		if location != nil {
+			if leadingComments := location.LeadingComments(); leadingComments != "" {
+				for _, line := range stringutil.SplitTrimLinesNoEmpty(leadingComments) {
+					if strings.HasPrefix(line, fullIgnorePrefix) {
+						return true
+					}
+				}
+			}
 		}
 	}
 	return false

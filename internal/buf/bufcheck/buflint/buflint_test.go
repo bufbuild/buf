@@ -782,6 +782,55 @@ func TestCommentIgnoresOn(t *testing.T) {
 	)
 }
 
+func TestCommentIgnoresCascadeOff(t *testing.T) {
+	testLint(
+		t,
+		"comment_ignores_cascade",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 12, 6, 12, 13, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 3, 14, 29, "ENUM_NO_ALLOW_ALIAS"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 3, 16, 14, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 3, 16, 14, "ENUM_ZERO_VALUE_SUFFIX"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 17, 3, 17, 13, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 18, 3, 18, 13, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 24, 9, 24, 19, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 28, 11, 28, 21, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 32, 13, 32, 23, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 35, 12, 35, 19, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 37, 9, 37, 35, "ENUM_NO_ALLOW_ALIAS"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 39, 9, 39, 20, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 39, 9, 39, 20, "ENUM_ZERO_VALUE_SUFFIX"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 40, 9, 40, 19, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 41, 9, 41, 19, "ENUM_VALUE_UPPER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 43, 13, 43, 16, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 44, 13, 44, 16, "ONEOF_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 45, 15, 45, 18, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 48, 11, 48, 14, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 49, 11, 49, 14, "ONEOF_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 50, 13, 50, 16, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 53, 9, 53, 12, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 54, 9, 54, 12, "ONEOF_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 55, 11, 55, 14, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 63, 9, 63, 19, "SERVICE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 64, 7, 64, 16, "RPC_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 64, 17, 64, 38, "RPC_REQUEST_STANDARD_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 64, 49, 64, 70, "RPC_RESPONSE_STANDARD_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 68, 9, 68, 19, "SERVICE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 72, 7, 72, 16, "RPC_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 72, 17, 72, 38, "RPC_REQUEST_STANDARD_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 72, 49, 72, 70, "RPC_RESPONSE_STANDARD_NAME"),
+	)
+}
+
+func TestCommentIgnoresCascadeOn(t *testing.T) {
+	testLintConfigModifier(
+		t,
+		"comment_ignores_cascade",
+		func(config *bufconfig.Config) {
+			config.Lint.AllowCommentIgnores = true
+		},
+	)
+}
+
 func testLint(
 	t *testing.T,
 	relDirPath string,

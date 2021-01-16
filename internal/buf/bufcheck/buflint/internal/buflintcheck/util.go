@@ -23,8 +23,8 @@ import (
 
 // addFunc adds a FileAnnotation.
 //
-// Both the Descriptor and Location can be nil.
-type addFunc func(protosource.Descriptor, protosource.Location, string, ...interface{})
+// Both the Descriptor and Locations can be nil.
+type addFunc func(protosource.Descriptor, protosource.Location, []protosource.Location, string, ...interface{})
 
 func fieldToLowerSnakeCase(s string) string {
 	// Try running this on googleapis and watch
@@ -45,7 +45,7 @@ func newFilesCheckFunc(
 ) func(string, internal.IgnoreFunc, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return func(id string, ignoreFunc internal.IgnoreFunc, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 		helper := internal.NewHelper(id, ignoreFunc)
-		if err := f(helper.AddFileAnnotationf, files); err != nil {
+		if err := f(helper.AddFileAnnotationWithExtraIgnoreLocationsf, files); err != nil {
 			return nil, err
 		}
 		return helper.FileAnnotations(), nil

@@ -23,7 +23,11 @@ import (
 )
 
 // IgnoreFunc is an ignore function.
-type IgnoreFunc func(id string, descriptor protosource.Descriptor, location protosource.Location) bool
+//
+// Locations are the locations to check for comment ignores.
+// Sometimes, we have multiple locations to check, for example with RPC_REQUEST_STANDARD_NAME
+// and RPC_RESPONSE_STANDARD_NAME, we want to check both the input/output type, and the method.
+type IgnoreFunc func(id string, descriptor protosource.Descriptor, locations []protosource.Location) bool
 
 // CheckFunc is a check function.
 type CheckFunc func(id string, ignoreFunc IgnoreFunc, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error)
