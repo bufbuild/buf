@@ -57,6 +57,13 @@ issues:
         - stylecheck
       text: "ST1005:"
     - linters:
+        - errcheck
+      # headers.go has casts with values from contexts that should fail if there
+      # is no error, but it would be very unidiomatic to return an error from
+      # the functions that do these casts, and we completely control the
+      # context values within this file
+      path: internal/pkg/rpc/headers.go
+    - linters:
         - gosec
       # G101 checks for hardcoded credentials, and the variables named "*Password*
       # trip this off.
