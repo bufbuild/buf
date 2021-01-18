@@ -46,11 +46,6 @@ jobs:
           BUF_BREAKING_INPUT: 'https://github.com/bufbuild/buf.git#branch=master'
           BUF_INPUT_HTTPS_USERNAME: ${{ github.actor }}
           BUF_INPUT_HTTPS_PASSWORD: ${{ github.token }}
-      - name: codecov
-        if: success()
-        run: make codecov
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: docker
         if: success()
         run: bash .github/scripts/docker.bash
