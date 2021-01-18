@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputil
+package httpclient
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -25,7 +26,42 @@ import (
 // Client is a client.
 type Client interface {
 	// Do matches http.Client.
+	//
+	// This allows Client to be dropped in for http.Client.
 	Do(request *http.Request) (*http.Response, error)
+	// ParseAddress parses the given address.
+	//
+	// If the address has a scheme, this is a no-op.
+	// If the address does not have a scheme, this adds https:// if TLS was configured,
+	// and http:// if TLS was not configured.
+	ParseAddress(address string) string
+}
+
+// NewClient returns a new Client.
+func NewClient(options ...ClientOption) (Client, error) {
+	return newClient(options...)
+}
+
+// ClientOption is an option for a new Client.
+type ClientOption func(*client)
+
+// ClientWithTLSConfig returns a new ClientOption to use the tls.Config.
+//
+// The default is to use no TLS.
+func ClientWithTLSConfig(tlsConfig *tls.Config) ClientOption {
+	return func(client *client) {
+		client.tlsConfig = tlsConfig
+	}
+}
+
+// ClientWithObservability returns a new ClientOption to use
+// OpenCensus tracing and metrics.
+//
+// The default is to use no observability.
+func ClientWithObservability() ClientOption {
+	return func(client *client) {
+		client.observability = true
+	}
 }
 
 // GetResponseBody reads and closes the response body.
