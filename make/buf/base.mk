@@ -34,9 +34,10 @@ BUF_GENERATE_BINARY_PATH ?= buf
 include make/go/bootstrap.mk
 include make/go/dep_protoc.mk
 include make/go/dep_protoc_gen_go.mk
+include make/go/dep_protoc_gen_go_grpc.mk
+include make/go/dep_protoc_gen_twirp.mk
 include make/go/dep_go_fuzz.mk
 include make/go/go.mk
-include make/go/codecov.mk
 include make/go/docker.mk
 
 # Settable
