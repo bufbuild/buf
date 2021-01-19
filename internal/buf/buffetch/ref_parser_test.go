@@ -877,7 +877,7 @@ func TestGetParsedRefSuccess(t *testing.T) {
 				bufmoduletesting.TestCommit,
 			),
 		),
-		"example.com/foo/bar@"+bufmoduletesting.TestCommit,
+		"example.com/foo/bar:"+bufmoduletesting.TestCommit,
 	)
 	testGetParsedRefSuccess(
 		t,
