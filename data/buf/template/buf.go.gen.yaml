@@ -13,13 +13,7 @@
 # limitations under the License.
 
 version: v1beta1
-build:
-  roots:
-    - proto
-lint:
-  use:
-    - DEFAULT
-    - UNARY_RPC
-breaking:
-  use:
-    - FILE
+plugins:
+  - name: go
+    out: go
+    opt: paths=source_relative

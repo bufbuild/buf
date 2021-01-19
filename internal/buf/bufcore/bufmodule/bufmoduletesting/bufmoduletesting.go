@@ -55,6 +55,6 @@ func init() {
 		panic(err.Error())
 	}
 	TestCommit = testCommitDashless
-	TestModuleReferenceFooBarCommitString = "buf.build/foo/bar@" + TestCommit
-	TestModuleReferenceFooBazCommitString = "buf.build/foo/baz@" + TestCommit
+	TestModuleReferenceFooBarCommitString = "buf.build/foo/bar:" + TestCommit
+	TestModuleReferenceFooBazCommitString = "buf.build/foo/baz:" + TestCommit
 }

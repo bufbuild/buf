@@ -162,5 +162,5 @@ func newInvalidModuleIdentityStringError(s string) error {
 }
 
 func newInvalidModuleReferenceStringError(s string) error {
-	return fmt.Errorf("module reference invalid: must be in the form remote/owner/repository:branch or remote/owner/repository@commit: %q", s)
+	return fmt.Errorf("module reference invalid: must be in the form remote/owner/repository:branch or remote/owner/repository:commit: %q", s)
 }

@@ -43,7 +43,7 @@ jobs:
         if: success()
         run: make ci
         env:
-          BUF_BREAKING_INPUT: 'https://github.com/bufbuild/buf.git#branch=master'
+          BUF_BREAKING_PROTO_INPUT: 'https://github.com/bufbuild/buf.git#branch=master,subdir=proto'
           BUF_INPUT_HTTPS_USERNAME: ${{ github.actor }}
           BUF_INPUT_HTTPS_PASSWORD: ${{ github.token }}
       - name: docker
