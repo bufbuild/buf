@@ -13,7 +13,10 @@
 # limitations under the License.
 
 version: v1beta1
-plugins:
-  - name: go
-    out: internal/gen/proto/go
-    opt: paths=source_relative
+lint:
+  use:
+    - DEFAULT
+    - UNARY_RPC
+breaking:
+  use:
+    - FILE

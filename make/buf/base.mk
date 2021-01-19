@@ -41,7 +41,7 @@ include make/go/go.mk
 include make/go/docker.mk
 
 # Settable
-BUF_BREAKING_INPUT ?= .git\#branch=master
+BUF_BREAKING_PROTO_INPUT ?= .git\#branch=master,subdir=proto
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
@@ -69,26 +69,33 @@ bufgeneratecleango:
 bufgenerateclean:: bufgeneratecleango
 
 .PHONY: bufgenerate
-bufgenerate:
+bufgenerate::
+
+.PHONY: bufgenerateprotogo
+bufgenerateprotogo:
+	$(BUF_GENERATE_BINARY_PATH) generate proto \
+		--output internal/gen/proto \
+		--template data/buf/template/buf.go.gen.yaml
+
+bufgenerate:: bufgenerateprotogo
+
+.PHONY: bufgeneratesteps
+bufgeneratesteps:
 	$(MAKE) bufgeneratedeps
 	$(MAKE) bufgenerateclean
-	$(BUF_GENERATE_BINARY_PATH) generate
+	$(MAKE) bufgenerate
 
-pregenerate:: bufgenerate
+pregenerate:: bufgeneratesteps
 
-.PHONY: buflint
-buflint: installbuf
-	buf lint
+.PHONY: buflintproto
+buflintproto: installbuf
+	buf lint proto
 
-.PHONY: bufbreaking
-bufbreaking: installbuf
-ifneq ($(BUF_BREAKING_INPUT),)
-	-buf breaking --against $(BUF_BREAKING_INPUT)
-else
-	@echo "skipping make bufbreaking" >&2
-endif
+.PHONY: bufbreakingproto
+bufbreakingproto: installbuf
+	-buf breaking proto --against $(BUF_BREAKING_PROTO_INPUT)
 
-postlint:: buflint bufbreaking
+postlint:: buflintproto bufbreakingproto
 
 .PHONY: bufrelease
 bufrelease:

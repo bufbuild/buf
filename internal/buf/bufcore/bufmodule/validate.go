@@ -193,6 +193,9 @@ func ValidateBranch(branch string) error {
 			return fmt.Errorf("repository branch %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", branch)
 		}
 	}
+	if err := uuidutil.ValidateDashless(branch); err == nil {
+		return fmt.Errorf("repository branch %q must not be parseable as a valid commit", branch)
+	}
 	return nil
 }
 
