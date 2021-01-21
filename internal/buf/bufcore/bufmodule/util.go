@@ -157,10 +157,14 @@ func getDependencyModulePinsForBucket(
 	return modulePinsForExternalLockFile(externalLockFile)
 }
 
+func newInvalidModuleOwnerStringError(s string) error {
+	return fmt.Errorf("module owner %q is invalid: must be in the form remote/owner", s)
+}
+
 func newInvalidModuleIdentityStringError(s string) error {
-	return fmt.Errorf("module identity invalid: must be in the form remote/owner/repository: %q", s)
+	return fmt.Errorf("module identity %q is invalid: must be in the form remote/owner/repository", s)
 }
 
 func newInvalidModuleReferenceStringError(s string) error {
-	return fmt.Errorf("module reference invalid: must be in the form remote/owner/repository:branch or remote/owner/repository:commit: %q", s)
+	return fmt.Errorf("module reference %q is invalid: must be in the form remote/owner/repository:branch or remote/owner/repository:commit", s)
 }

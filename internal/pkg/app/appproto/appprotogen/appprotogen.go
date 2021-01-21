@@ -27,7 +27,11 @@ import (
 )
 
 // NewHandler returns a new Handler for the protogen Plugin function.
-func NewHandler(f func(*protogen.Plugin) error) appproto.Handler {
+func NewHandler(f func(*protogen.Plugin) error, options ...HandlerOption) appproto.Handler {
+	handlerOptions := newHandlerOptions()
+	for _, option := range options {
+		option(handlerOptions)
+	}
 	return appproto.HandlerFunc(
 		func(
 			ctx context.Context,
@@ -35,7 +39,9 @@ func NewHandler(f func(*protogen.Plugin) error) appproto.Handler {
 			responseWriter appproto.ResponseWriter,
 			request *pluginpb.CodeGeneratorRequest,
 		) error {
-			plugin, err := protogen.Options{}.New(request)
+			plugin, err := protogen.Options{
+				ParamFunc: handlerOptions.optionHandler,
+			}.New(request)
 			if err != nil {
 				return err
 			}
@@ -60,7 +66,7 @@ func NewHandler(f func(*protogen.Plugin) error) appproto.Handler {
 // NewPerFileHandler returns a newHandler for the protogen per-file function.
 //
 // This will invoke f for every file marked for generation.
-func NewPerFileHandler(f func(*protogen.Plugin, *protogen.File) error) appproto.Handler {
+func NewPerFileHandler(f func(*protogen.Plugin, *protogen.File) error, options ...HandlerOption) appproto.Handler {
 	return NewHandler(
 		func(plugin *protogen.Plugin) error {
 			for _, file := range plugin.Files {
@@ -72,6 +78,7 @@ func NewPerFileHandler(f func(*protogen.Plugin, *protogen.File) error) appproto.
 			}
 			return nil
 		},
+		options...,
 	)
 }
 
@@ -81,7 +88,7 @@ func NewPerFileHandler(f func(*protogen.Plugin, *protogen.File) error) appproto.
 // the same directory also have the same go package and go import path.
 //
 // This will invoke f for every set of files in a package marked for generation.
-func NewPerGoPackageHandler(f func(*protogen.Plugin, *GoPackageFileSet) error) appproto.Handler {
+func NewPerGoPackageHandler(f func(*protogen.Plugin, *GoPackageFileSet) error, options ...HandlerOption) appproto.Handler {
 	return NewHandler(
 		func(plugin *protogen.Plugin) error {
 			generatedDirToGoPackageFileSet := make(map[string]*GoPackageFileSet)
@@ -124,7 +131,20 @@ func NewPerGoPackageHandler(f func(*protogen.Plugin, *GoPackageFileSet) error) a
 			}
 			return nil
 		},
+		options...,
 	)
+}
+
+// HandlerOption is an option for a new Handler.
+type HandlerOption func(*handlerOptions)
+
+// HandlerWithOptionHandler returns a new HandlerOption that sets the given param function.
+//
+// This parses options given on the command line.
+func HandlerWithOptionHandler(optionHandler func(string, string) error) HandlerOption {
+	return func(handlerOptions *handlerOptions) {
+		handlerOptions.optionHandler = optionHandler
+	}
 }
 
 // GoPackageFileSet are files within a single Go package.
@@ -152,4 +172,12 @@ func (g *GoPackageFileSet) Services() []*protogen.Service {
 		},
 	)
 	return services
+}
+
+type handlerOptions struct {
+	optionHandler func(string, string) error
+}
+
+func newHandlerOptions() *handlerOptions {
+	return &handlerOptions{}
 }

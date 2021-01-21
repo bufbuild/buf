@@ -21,13 +21,13 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/build"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configinit"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configlsbreakingrules"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configlslintrules"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lsfiles"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/mod/modinit"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/protoc"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
@@ -155,7 +155,7 @@ func NewRootCommand(
 						Use:   "config",
 						Short: "Interact with the configuration of Buf.",
 						SubCommands: []*appcmd.Command{
-							configinit.NewCommand("init", builder),
+							modinit.NewCommand("init", builder, "", false), // TODO: Deprecate this command once the alpha commands are merged into this set.
 						},
 					},
 					{

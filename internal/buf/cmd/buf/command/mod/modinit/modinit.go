@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package configinit
+package modinit
 
 import (
 	"context"
@@ -40,12 +40,16 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
+	deprecated string,
+	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
-		Short: fmt.Sprintf("Initializes and writes a new %s configuration file.", bufconfig.ExternalConfigV1Beta1FilePath),
-		Args:  cobra.NoArgs,
+		Use:        name,
+		Short:      fmt.Sprintf("Initializes and writes a new %s configuration file.", bufconfig.ExternalConfigV1Beta1FilePath),
+		Args:       cobra.NoArgs,
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

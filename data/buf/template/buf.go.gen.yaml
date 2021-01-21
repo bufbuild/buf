@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This template is for go only for OSS types.
 version: v1beta1
 plugins:
   - name: go
-    out: go
+    out: internal/gen/proto/go
     opt: paths=source_relative

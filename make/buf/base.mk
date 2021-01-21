@@ -25,13 +25,8 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	internal/buf/internal/buftesting/cache/ \
 	internal/pkg/storage/storageos/tmp/
 
-USE_BUF_GENERATE := true
-
-# Set to an alternative location for the buf binary when doing
-# code-breaking changes that will result in installbuf failing
-BUF_GENERATE_BINARY_PATH ?= buf
-
 include make/go/bootstrap.mk
+include make/go/dep_buf.mk
 include make/go/dep_protoc.mk
 include make/go/dep_protoc_gen_go.mk
 include make/go/dep_protoc_gen_go_grpc.mk
@@ -53,11 +48,24 @@ wkt: installstorage-go-binary-data $(PROTOC)
 
 prepostgenerate:: wkt
 
-.PHONY: bufgeneratedeps
-bufgeneratedeps:: $(PROTOC_GEN_GO)
-ifeq ($(BUF_GENERATE_BINARY_PATH),buf)
-bufgeneratedeps:: installbuf
+# Runtime variable BUFBINARYHEAD uses the buf binary installed
+# from this repository to do buf generate instead of using a
+# downloaded release binary. We typically use the downloaded
+# release binary as when generating, the codebase can break,
+# and if we have generate depend on installing buf, we have
+# a chicken or egg problem.
+
+.PHONY: bufbinaryinstall
+ifeq ($(BUFBINARYHEAD),)
+BUF_BINARY := $(CACHE_BIN)/buf
+bufbinaryinstall: $(BUF)
+else
+BUF_BINARY := $(CACHE_GOBIN)/buf
+bufbinaryinstall: installbuf
 endif
+
+.PHONY: bufgeneratedeps
+bufgeneratedeps:: bufbinaryinstall $(PROTOC_GEN_GO)
 
 .PHONY: bufgenerateclean
 bufgenerateclean::
@@ -68,38 +76,36 @@ bufgeneratecleango:
 
 bufgenerateclean:: bufgeneratecleango
 
-.PHONY: bufgenerate
-bufgenerate::
+.PHONY: bufgeneratesteps
+bufgeneratesteps::
 
 .PHONY: bufgenerateprotogo
 bufgenerateprotogo:
-	$(BUF_GENERATE_BINARY_PATH) generate proto \
-		--output internal/gen/proto \
-		--template data/buf/template/buf.go.gen.yaml
+	$(BUF_BINARY) generate proto --template data/buf/template/buf.go.gen.yaml
 
-bufgenerate:: bufgenerateprotogo
+bufgeneratesteps:: bufgenerateprotogo
 
-.PHONY: bufgeneratesteps
-bufgeneratesteps:
+.PHONY: bufgenerate
+bufgenerate:
 	$(MAKE) bufgeneratedeps
 	$(MAKE) bufgenerateclean
-	$(MAKE) bufgenerate
+	$(MAKE) bufgeneratesteps
 
-pregenerate:: bufgeneratesteps
+pregenerate:: bufgenerate
 
 .PHONY: buflintproto
-buflintproto: installbuf
-	buf lint proto
+buflintproto: bufbinaryinstall
+	$(BUF_BINARY) lint proto
 
 .PHONY: bufbreakingproto
-bufbreakingproto: installbuf
-	-buf breaking proto --against $(BUF_BREAKING_PROTO_INPUT)
+bufbreakingproto: bufbinaryinstall
+	-$(BUF_BINARY) breaking proto --against $(BUF_BREAKING_PROTO_INPUT)
 
 postlint:: buflintproto bufbreakingproto
 
 .PHONY: bufrelease
 bufrelease:
-	DOCKER_IMAGE=golang:1.15.6-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.15.7-buster bash make/buf/scripts/release.bash
 
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)

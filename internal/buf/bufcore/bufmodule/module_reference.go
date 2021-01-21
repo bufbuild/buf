@@ -129,5 +129,6 @@ func (m *moduleReference) IdentityString() string {
 	return m.remote + "/" + m.owner + "/" + m.repository
 }
 
+func (*moduleReference) isModuleOwner()     {}
 func (*moduleReference) isModuleIdentity()  {}
 func (*moduleReference) isModuleReference() {}
