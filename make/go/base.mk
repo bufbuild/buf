@@ -49,13 +49,11 @@ CACHE_GOBIN := $(CACHE)/gobin
 # CACHE_GOCACHE is where the build cache is stored.
 CACHE_GOCACHE := $(CACHE)/gocache
 
-ifeq ($(UNAME_ARCH),x86_64)
 ifeq ($(UNAME_OS),Darwin)
 OPEN_CMD := open
 endif
 ifeq ($(UNAME_OS),Linux)
 OPEN_CMD := xdg-open
-endif
 endif
 
 # Runtime ALL

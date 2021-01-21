@@ -13,13 +13,16 @@ $(call _assert_var,CACHE_BIN)
 # https://github.com/protocolbuffers/protobuf/releases 20200814 checked 20200917
 PROTOC_VERSION ?= 3.13.0
 
+# There are no protobuf releases for Darwin ARM so for
+# now we always use the x86_64 release through Rosetta.
 ifeq ($(UNAME_OS),Darwin)
 PROTOC_OS := osx
+PROTOC_ARCH := x86_64
 endif
 ifeq ($(UNAME_OS),Linux)
 PROTOC_OS = linux
-endif
 PROTOC_ARCH := $(UNAME_ARCH)
+endif
 
 PROTOC := $(CACHE_VERSIONS)/protoc/$(PROTOC_VERSION)
 $(PROTOC):

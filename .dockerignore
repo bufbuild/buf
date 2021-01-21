@@ -15,3 +15,8 @@ internal/buf/internal/buftesting/cache/
 internal/pkg/storage/cmd/ddiff/ddiff
 internal/pkg/storage/cmd/storage-go-binary-data/storage-go-binary-data
 internal/pkg/storage/storageos/tmp/
+internal/protoplugin/cmd/protoc-gen-go-api/protoc-gen-go-api
+internal/protoplugin/cmd/protoc-gen-go-apiclient/protoc-gen-go-apiclient
+internal/protoplugin/cmd/protoc-gen-go-apiclientgrpc/protoc-gen-go-apiclientgrpc
+internal/protoplugin/cmd/protoc-gen-go-apiclienttwirp/protoc-gen-go-apiclienttwirp
+internal/protoplugin/cmd/protoc-gen-proxy/protoc-gen-proxy
