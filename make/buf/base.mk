@@ -94,7 +94,13 @@ bufgeneratesteps::
 bufgenerateprotogo:
 	$(BUF_BINARY) generate proto --template data/buf/template/buf.go.gen.yaml
 
-bufgeneratesteps:: bufgenerateprotogo
+.PHONY: bufgenerateprotogoclient
+bufgenerateprotogoclient:
+	$(BUF_BINARY) generate proto --template data/buf/template/buf.go-client.gen.yaml
+
+bufgeneratesteps:: \
+	bufgenerateprotogo \
+	bufgenerateprotogoclient
 
 .PHONY: bufgenerate
 bufgenerate:
