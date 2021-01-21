@@ -13,7 +13,12 @@ GO_BINS := $(GO_BINS) \
 	cmd/protoc-gen-buf-check-breaking \
 	cmd/protoc-gen-buf-check-lint \
 	internal/pkg/storage/cmd/ddiff \
-	internal/pkg/storage/cmd/storage-go-binary-data
+	internal/pkg/storage/cmd/storage-go-binary-data \
+	internal/protoplugin/cmd/protoc-gen-go-api \
+	internal/protoplugin/cmd/protoc-gen-go-apiclient \
+	internal/protoplugin/cmd/protoc-gen-go-apiclientgrpc \
+	internal/protoplugin/cmd/protoc-gen-go-apiclienttwirp \
+	internal/protoplugin/cmd/protoc-gen-proxy
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer
@@ -65,14 +70,20 @@ bufbinaryinstall: installbuf
 endif
 
 .PHONY: bufgeneratedeps
-bufgeneratedeps:: bufbinaryinstall $(PROTOC_GEN_GO)
+bufgeneratedeps:: \
+	bufbinaryinstall \
+	installprotoc-gen-go-api \
+	installprotoc-gen-go-apiclient \
+	installprotoc-gen-go-apiclientgrpc \
+	installprotoc-gen-go-apiclienttwirp \
+	$(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) $(PROTOC_GEN_TWIRP)
 
 .PHONY: bufgenerateclean
 bufgenerateclean::
 
 .PHONY: bufgeneratecleango
 bufgeneratecleango:
-	rm -rf internal/gen/proto/go
+	rm -rf internal/gen/proto
 
 bufgenerateclean:: bufgeneratecleango
 
