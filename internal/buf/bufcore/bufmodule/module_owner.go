@@ -14,43 +14,31 @@
 
 package bufmodule
 
-type moduleIdentity struct {
-	remote     string
-	owner      string
-	repository string
+type moduleOwner struct {
+	remote string
+	owner  string
 }
 
-func newModuleIdentity(
+func newModuleOwner(
 	remote string,
 	owner string,
-	repository string,
-) (*moduleIdentity, error) {
-	moduleIdentity := &moduleIdentity{
-		remote:     remote,
-		owner:      owner,
-		repository: repository,
+) (*moduleOwner, error) {
+	moduleOwner := &moduleOwner{
+		remote: remote,
+		owner:  owner,
 	}
-	if err := validateModuleIdentity(moduleIdentity); err != nil {
+	if err := validateModuleOwner(moduleOwner); err != nil {
 		return nil, err
 	}
-	return moduleIdentity, nil
+	return moduleOwner, nil
 }
 
-func (m *moduleIdentity) Remote() string {
+func (m *moduleOwner) Remote() string {
 	return m.remote
 }
 
-func (m *moduleIdentity) Owner() string {
+func (m *moduleOwner) Owner() string {
 	return m.owner
 }
 
-func (m *moduleIdentity) Repository() string {
-	return m.repository
-}
-
-func (m *moduleIdentity) IdentityString() string {
-	return m.remote + "/" + m.owner + "/" + m.repository
-}
-
-func (*moduleIdentity) isModuleOwner()    {}
-func (*moduleIdentity) isModuleIdentity() {}
+func (*moduleOwner) isModuleOwner() {}

@@ -126,5 +126,6 @@ func (m *modulePin) IdentityString() string {
 	return m.remote + "/" + m.owner + "/" + m.repository
 }
 
+func (*modulePin) isModuleOwner()    {}
 func (*modulePin) isModuleIdentity() {}
 func (*modulePin) isModulePin()      {}
