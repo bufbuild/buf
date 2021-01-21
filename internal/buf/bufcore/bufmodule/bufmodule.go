@@ -49,14 +49,53 @@ type ModuleFile interface {
 	isModuleFile()
 }
 
+// ModuleOwner is a module owner.
+//
+// It just contains remote, owner.
+//
+// This is shared by ModuleIdentity.
+type ModuleOwner interface {
+	Remote() string
+	Owner() string
+
+	isModuleOwner()
+}
+
+// NewModuleOwner returns a new ModuleOwner.
+func NewModuleOwner(
+	remote string,
+	owner string,
+) (ModuleOwner, error) {
+	return newModuleOwner(remote, owner)
+}
+
+// ModuleOwnerForString returns a new ModuleOwner for the given string.
+//
+// This parses the path in the form remote/owner.
+func ModuleOwnerForString(path string) (ModuleOwner, error) {
+	slashSplit := strings.Split(path, "/")
+	if len(slashSplit) != 2 {
+		return nil, newInvalidModuleOwnerStringError(path)
+	}
+	remote := strings.TrimSpace(slashSplit[0])
+	if remote == "" {
+		return nil, newInvalidModuleIdentityStringError(path)
+	}
+	owner := strings.TrimSpace(slashSplit[1])
+	if owner == "" {
+		return nil, newInvalidModuleIdentityStringError(path)
+	}
+	return NewModuleOwner(remote, owner)
+}
+
 // ModuleIdentity is a module identity.
 //
 // It just contains remote, owner, repository.
 //
 // This is shared by ModuleReference and ModulePin.
 type ModuleIdentity interface {
-	Remote() string
-	Owner() string
+	ModuleOwner
+
 	Repository() string
 
 	// IdentityString is the string remote/owner/repository.
@@ -80,21 +119,9 @@ func NewModuleIdentity(
 //
 // TODO: we may want to add a special error if we detect / or @ as this may be a common mistake.
 func ModuleIdentityForString(path string) (ModuleIdentity, error) {
-	slashSplit := strings.Split(path, "/")
-	if len(slashSplit) != 3 {
-		return nil, newInvalidModuleIdentityStringError(path)
-	}
-	remote := strings.TrimSpace(slashSplit[0])
-	if remote == "" {
-		return nil, newInvalidModuleIdentityStringError(path)
-	}
-	owner := strings.TrimSpace(slashSplit[1])
-	if owner == "" {
-		return nil, newInvalidModuleIdentityStringError(path)
-	}
-	repository := strings.TrimSpace(slashSplit[2])
-	if repository == "" {
-		return nil, newInvalidModuleIdentityStringError(path)
+	remote, owner, repository, err := parseModuleIdentityComponents(path)
+	if err != nil {
+		return nil, err
 	}
 	return NewModuleIdentity(remote, owner, repository)
 }
@@ -693,20 +720,8 @@ func SortModulePins(modulePins []ModulePin) {
 // parseModuleReferenceComponents parses and returns the remote, owner, repository,
 // and ref (branch or commit) from the given path.
 func parseModuleReferenceComponents(path string) (remote string, owner string, repository string, ref string, err error) {
-	slashSplit := strings.Split(path, "/")
-	if len(slashSplit) != 3 {
-		return "", "", "", "", newInvalidModuleReferenceStringError(path)
-	}
-	remote = strings.TrimSpace(slashSplit[0])
-	if remote == "" {
-		return "", "", "", "", newInvalidModuleReferenceStringError(path)
-	}
-	owner = strings.TrimSpace(slashSplit[1])
-	if owner == "" {
-		return "", "", "", "", newInvalidModuleReferenceStringError(path)
-	}
-	rest := strings.TrimSpace(slashSplit[2])
-	if rest == "" {
+	remote, owner, rest, err := parseModuleIdentityComponents(path)
+	if err != nil {
 		return "", "", "", "", newInvalidModuleReferenceStringError(path)
 	}
 	restSplit := strings.Split(rest, ":")
@@ -722,6 +737,26 @@ func parseModuleReferenceComponents(path string) (remote string, owner string, r
 		return remote, owner, repository, ref, nil
 	}
 	return "", "", "", "", newInvalidModuleReferenceStringError(path)
+}
+
+func parseModuleIdentityComponents(path string) (remote string, owner string, repository string, err error) {
+	slashSplit := strings.Split(path, "/")
+	if len(slashSplit) != 3 {
+		return "", "", "", newInvalidModuleIdentityStringError(path)
+	}
+	remote = strings.TrimSpace(slashSplit[0])
+	if remote == "" {
+		return "", "", "", newInvalidModuleIdentityStringError(path)
+	}
+	owner = strings.TrimSpace(slashSplit[1])
+	if owner == "" {
+		return "", "", "", newInvalidModuleIdentityStringError(path)
+	}
+	repository = strings.TrimSpace(slashSplit[2])
+	if repository == "" {
+		return "", "", "", newInvalidModuleIdentityStringError(path)
+	}
+	return remote, owner, repository, nil
 }
 
 type moduleReferenceForStringOptions struct {

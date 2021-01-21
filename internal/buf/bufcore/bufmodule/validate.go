@@ -250,6 +250,19 @@ func ValidateModuleMatchesDigest(ctx context.Context, module Module, modulePin M
 	return nil
 }
 
+func validateModuleOwner(moduleOwner ModuleOwner) error {
+	if moduleOwner == nil {
+		return errors.New("module owner is required")
+	}
+	if err := validateRemote(moduleOwner.Remote()); err != nil {
+		return err
+	}
+	if err := ValidateOwner(moduleOwner.Owner(), "owner"); err != nil {
+		return err
+	}
+	return nil
+}
+
 func validateModuleIdentity(moduleIdentity ModuleIdentity) error {
 	if moduleIdentity == nil {
 		return errors.New("module identity is required")
