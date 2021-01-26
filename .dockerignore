@@ -12,6 +12,8 @@ internal/buf/cmd/buf/cache/
 internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
 internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 internal/buf/internal/buftesting/cache/
+internal/pkg/git/cmd/git-ls-files-unstaged/git-ls-files-unstaged
+internal/pkg/license/cmd/license-header/license-header
 internal/pkg/storage/cmd/ddiff/ddiff
 internal/pkg/storage/cmd/storage-go-binary-data/storage-go-binary-data
 internal/pkg/storage/storageos/tmp/

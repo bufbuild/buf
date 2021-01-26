@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	use     = "ddif"
+	use     = "ddiff"
 	version = "0.0.1-dev"
 )
 
