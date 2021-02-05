@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"testing"
 
@@ -43,8 +44,14 @@ func TestNormalizeAndValidate(t *testing.T) {
 	path, err = NormalizeAndValidate("./foo")
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", path)
-	_, err = NormalizeAndValidate("/foo")
+
+	absolutePath := "/foo"
+	if runtime.GOOS == "windows" {
+		absolutePath = "C:\\foo"
+	}
+	_, err = NormalizeAndValidate(absolutePath)
 	assert.Error(t, err)
+
 	_, err = NormalizeAndValidate("../foo")
 	assert.Error(t, err)
 }

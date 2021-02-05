@@ -1,0 +1,217 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/api/v1alpha1/api.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1;registryv1alpha1";
+
+enum Visibility {
+  VISIBILITY_UNSPECIFIED = 0;
+  VISIBILITY_PUBLIC = 1;
+  VISIBILITY_PRIVATE = 2;
+}
+
+message Repository {
+  // primary key, unique, immutable
+  string id = 1;
+  // immutable
+  google.protobuf.Timestamp create_time = 2;
+  // mutable
+  google.protobuf.Timestamp update_time = 3;
+  // unique, mutable
+  string name = 4;
+  oneof owner {
+    // foreign key, mutable
+    string user_id = 5;
+    // foreign key, mutable
+    string organization_id = 6;
+  }
+  Visibility visibility = 7;
+}
+
+// RepositoryService is the Repository service.
+// All methods on the Repository service require authentication.
+service RepositoryService {
+  // GetRepository gets a repository by ID.
+  rpc GetRepository(GetRepositoryRequest) returns (GetRepositoryResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // GetRepositoryByFullName gets a repository by full name.
+  rpc GetRepositoryByFullName(GetRepositoryByFullNameRequest) returns (GetRepositoryByFullNameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // ListRepositories lists all repositories.
+  rpc ListRepositories(ListRepositoriesRequest) returns (ListRepositoriesResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // ListUserRepositories lists all repositories belonging to a user.
+  rpc ListUserRepositories(ListUserRepositoriesRequest) returns (ListUserRepositoriesResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // ListOrganizationRepositories lists all repositories for an organization.
+  rpc ListOrganizationRepositories(ListOrganizationRepositoriesRequest) returns (ListOrganizationRepositoriesResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // CreateRepositoryByFullName creates a new repository by full name.
+  rpc CreateRepositoryByFullName(CreateRepositoryByFullNameRequest) returns (CreateRepositoryByFullNameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // UpdateRepositoryName updates a repository's name.
+  rpc UpdateRepositoryName(UpdateRepositoryNameRequest) returns (UpdateRepositoryNameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // UpdateRepositoryNameByFullName updates a repository's name by full name.
+  rpc UpdateRepositoryNameByFullName(UpdateRepositoryNameByFullNameRequest) returns (UpdateRepositoryNameByFullNameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // UpdateRepositoryVisibility updates a repository's visibility.
+  rpc UpdateRepositoryVisibility(UpdateRepositoryVisibilityRequest) returns (UpdateRepositoryVisibilityResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // UpdateRepositoryVisibilityByName updates a repository's visibility by name.
+  rpc UpdateRepositoryVisibilityByName(UpdateRepositoryVisibilityByNameRequest) returns (UpdateRepositoryVisibilityByNameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // DeleteRepository deletes a repository.
+  rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // DeleteRepositoryByFullName deletes a repository by full name.
+  rpc DeleteRepositoryByFullName(DeleteRepositoryByFullNameRequest) returns (DeleteRepositoryByFullNameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+}
+
+message GetRepositoryRequest {
+  string id = 1;
+}
+
+message GetRepositoryResponse {
+  Repository repository = 1;
+}
+
+message GetRepositoryByFullNameRequest {
+  string full_name = 1;
+}
+
+message GetRepositoryByFullNameResponse {
+  Repository repository = 1;
+}
+
+message ListRepositoriesRequest {
+  uint32 page_size = 1;
+  // The first page is returned if this is empty.
+  string page_token = 2;
+  bool reverse = 3;
+}
+
+message ListRepositoriesResponse {
+  repeated Repository repositories = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message ListUserRepositoriesRequest {
+  // The ID of the user whose repositories should be listed.
+  string user_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  bool reverse = 4;
+}
+
+message ListUserRepositoriesResponse {
+  repeated Repository repositories = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message ListOrganizationRepositoriesRequest {
+  // The ID of the organization whose repositories should be listed.
+  string organization_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  bool reverse = 4;
+}
+
+message ListOrganizationRepositoriesResponse {
+  repeated Repository repositories = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message CreateRepositoryByFullNameRequest {
+  // Must be unique across repositories.
+  string full_name = 1;
+  Visibility visibility = 2;
+}
+
+message CreateRepositoryByFullNameResponse {
+  Repository repository = 1;
+}
+
+message UpdateRepositoryNameRequest {
+  string id = 1;
+  string new_name = 2;
+}
+
+message UpdateRepositoryNameResponse {
+  Repository repository = 1;
+}
+
+message UpdateRepositoryNameByFullNameRequest {
+  string full_name = 1;
+  string new_name = 2;
+}
+
+message UpdateRepositoryNameByFullNameResponse {
+  Repository repository = 1;
+}
+
+message UpdateRepositoryVisibilityRequest {
+  string id = 1;
+  Visibility new_visibility = 2;
+}
+
+message UpdateRepositoryVisibilityResponse {
+  Repository repository = 1;
+}
+
+message UpdateRepositoryVisibilityByNameRequest {
+  string owner_name = 1;
+  string repository_name = 2;
+  Visibility new_visibility = 3;
+}
+
+message UpdateRepositoryVisibilityByNameResponse {
+  Repository repository = 1;
+}
+
+message DeleteRepositoryRequest {
+  string id = 1;
+}
+
+message DeleteRepositoryResponse {}
+
+message DeleteRepositoryByFullNameRequest {
+  string full_name = 1;
+}
+
+message DeleteRepositoryByFullNameResponse {}

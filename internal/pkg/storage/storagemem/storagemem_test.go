@@ -57,7 +57,8 @@ func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos
 	readBucket, err := readBucketBuilder.ToReadBucket()
 	require.NoError(t, err)
 	return readBucket, func(t *testing.T, rootPath string, path string) string {
-		return normalpath.Join(rootPath, path)
+		// Join calls Clean
+		return normalpath.Unnormalize(normalpath.Join(rootPath, path))
 	}
 }
 

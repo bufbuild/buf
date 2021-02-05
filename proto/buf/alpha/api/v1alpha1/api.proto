@@ -1,0 +1,36 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto2";
+
+package buf.alpha.api.v1alpha1;
+
+import "google/protobuf/descriptor.proto";
+
+option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/api/v1alpha1;apiv1alpha1";
+
+// https://developers.google.com/protocol-buffers/docs/proto#customoptions
+// We start at 70001 as an organization.
+
+// AccessType is the access type.
+enum AccessType {
+  ACCESS_TYPE_UNSPECIFIED = 0;
+  ACCESS_TYPE_READ = 1;
+  ACCESS_TYPE_WRITE = 2;
+}
+
+extend google.protobuf.MethodOptions {
+  // access_type specifies the AccessType of the method.
+  optional AccessType access_type = 70001;
+}
