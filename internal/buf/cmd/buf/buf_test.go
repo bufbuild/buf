@@ -24,7 +24,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
@@ -1042,7 +1041,7 @@ func testRun(
 }
 
 func testNewRootCommand(use string) *appcmd.Command {
-	return NewRootCommand(use, nil, bufcli.NopModuleResolverReaderProvider{})
+	return NewRootCommand(use, nil)
 }
 
 func useEnvVar(use string, suffix string) string {

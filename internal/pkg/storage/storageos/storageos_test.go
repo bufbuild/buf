@@ -45,7 +45,8 @@ func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos
 	)
 	require.NoError(t, err)
 	return osBucket, func(t *testing.T, rootPath string, path string) string {
-		return normalpath.Join(rootPath, path)
+		// Join calls Clean
+		return normalpath.Unnormalize(normalpath.Join(rootPath, path))
 	}
 }
 

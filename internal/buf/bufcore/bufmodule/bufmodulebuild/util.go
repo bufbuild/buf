@@ -146,26 +146,6 @@ func sortAndCheckDuplicatePaths(outputs []string, name string, pathType normalpa
 		}
 	}
 
-	// already checked duplicates, but if there are multiple directories and we have "." or "/",
-	// then the other directories are within the output directory "." or "/".
-	var notTerminateDir []string
-	hasTerminateDir := false
-	for _, output := range outputs {
-		if output != pathType.Separator() {
-			notTerminateDir = append(notTerminateDir, output)
-		} else {
-			hasTerminateDir = true
-		}
-	}
-	if hasTerminateDir {
-		if len(notTerminateDir) == 1 {
-			return nil, fmt.Errorf("%s %q is within %s %q which is not allowed", name, notTerminateDir[0], name, pathType.Separator())
-		}
-		if len(notTerminateDir) > 1 {
-			return nil, fmt.Errorf("%ss %q are within %s %q which is not allowed", name, strings.Join(notTerminateDir, ", "), name, pathType.Separator())
-		}
-	}
-
 	return outputs, nil
 }
 

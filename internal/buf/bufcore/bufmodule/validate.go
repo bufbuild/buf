@@ -31,9 +31,9 @@ import (
 
 const (
 	ownerMinLength      = 3
-	ownerMaxLength      = 64
+	ownerMaxLength      = 32
 	repositoryMinLength = 2
-	repositoryMaxLength = 64
+	repositoryMaxLength = 32
 	branchMinLength     = 2
 	branchMaxLength     = 64
 	// 32MB
