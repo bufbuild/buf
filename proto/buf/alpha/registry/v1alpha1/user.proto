@@ -1,0 +1,233 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/api/v1alpha1/api.proto";
+import "buf/alpha/registry/v1alpha1/scope.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1;registryv1alpha1";
+
+message User {
+  // primary key, unique, immutable
+  string id = 1;
+  // immutable
+  google.protobuf.Timestamp create_time = 2;
+  // mutable
+  google.protobuf.Timestamp update_time = 3;
+  // unique, mutable
+  string username = 4;
+}
+
+// UserService is the User service.
+service UserService {
+  // CreateUser creates a new user with the given username.
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // GetCurrentUser gets information associated with the current user.
+  //
+  // The user's ID is retrieved from the request's authentication header.
+  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // GetUser gets a user by ID.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // GetUserByUsername gets a user by username.
+  rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserByUsernameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // ListUsers lists all users.
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // ListOrganizationUsers lists all users for an organization.
+  rpc ListOrganizationUsers(ListOrganizationUsersRequest) returns (ListOrganizationUsersResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // UpdateUserUsername updates a user's username.
+  rpc UpdateUserUsername(UpdateUserUsernameRequest) returns (UpdateUserUsernameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // DeleteUser deletes a user.
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // AddUserOrganizationScope adds an organization scope for a specific organization to a user by ID.
+  rpc AddUserOrganizationScope(AddUserOrganizationScopeRequest) returns (AddUserOrganizationScopeResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
+  rpc AddUserOrganizationScopeByName(AddUserOrganizationScopeByNameRequest) returns (AddUserOrganizationScopeByNameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
+  rpc RemoveUserOrganizationScope(RemoveUserOrganizationScopeRequest) returns (RemoveUserOrganizationScopeResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // RemoveUserOrganizationScopeByName removes an organization scope for a specific organization from a user by name.
+  rpc RemoveUserOrganizationScopeByName(RemoveUserOrganizationScopeByNameRequest) returns (RemoveUserOrganizationScopeByNameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // AddUserServerScope adds a server scope for a user by ID.
+  rpc AddUserServerScope(AddUserServerScopeRequest) returns (AddUserServerScopeResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // AddUserServerScopeByName adds a server scope for a user by name.
+  rpc AddUserServerScopeByName(AddUserServerScopeByNameRequest) returns (AddUserServerScopeByNameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // RemoveUserServerScope removes a server scope for a user by ID.
+  rpc RemoveUserServerScope(RemoveUserServerScopeRequest) returns (RemoveUserServerScopeResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // RemoveUserServerScopeByName removes a server scope for a user by name.
+  rpc RemoveUserServerScopeByName(RemoveUserServerScopeByNameRequest) returns (RemoveUserServerScopeByNameResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+}
+
+message CreateUserRequest {
+  string username = 1;
+}
+
+message CreateUserResponse {
+  User user = 1;
+}
+
+message GetCurrentUserRequest {}
+
+message GetCurrentUserResponse {
+  User user = 1;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message GetUserByUsernameRequest {
+  string username = 1;
+}
+
+message GetUserByUsernameResponse {
+  User user = 1;
+}
+
+message ListUsersRequest {
+  uint32 page_size = 1;
+  // The first page is returned if this is empty.
+  string page_token = 2;
+  bool reverse = 3;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message ListOrganizationUsersRequest {
+  string organization_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  bool reverse = 4;
+}
+
+message ListOrganizationUsersResponse {
+  repeated User users = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message UpdateUserUsernameRequest {
+  string new_username = 1;
+}
+
+message UpdateUserUsernameResponse {
+  User user = 1;
+}
+
+message DeleteUserRequest {}
+
+message DeleteUserResponse {}
+
+message AddUserOrganizationScopeRequest {
+  string id = 1;
+  string organization_id = 2;
+  OrganizationScope organization_scope = 3;
+}
+
+message AddUserOrganizationScopeResponse {}
+
+message AddUserOrganizationScopeByNameRequest {
+  string name = 1;
+  string organization_name = 2;
+  OrganizationScope organization_scope = 3;
+}
+
+message AddUserOrganizationScopeByNameResponse {}
+
+message RemoveUserOrganizationScopeRequest {
+  string id = 1;
+  string organization_id = 2;
+  OrganizationScope organization_scope = 3;
+}
+
+message RemoveUserOrganizationScopeResponse {}
+
+message RemoveUserOrganizationScopeByNameRequest {
+  string name = 1;
+  string organization_name = 2;
+  OrganizationScope organization_scope = 3;
+}
+
+message RemoveUserOrganizationScopeByNameResponse {}
+
+message AddUserServerScopeRequest {
+  string id = 1;
+  ServerScope server_scope = 2;
+}
+
+message AddUserServerScopeResponse {}
+
+message AddUserServerScopeByNameRequest {
+  string name = 1;
+  ServerScope server_scope = 2;
+}
+
+message AddUserServerScopeByNameResponse {}
+
+message RemoveUserServerScopeRequest {
+  string id = 1;
+  ServerScope server_scope = 2;
+}
+
+message RemoveUserServerScopeResponse {}
+
+message RemoveUserServerScopeByNameRequest {
+  string name = 1;
+  ServerScope server_scope = 2;
+}
+
+message RemoveUserServerScopeByNameResponse {}

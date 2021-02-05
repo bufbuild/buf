@@ -20,7 +20,10 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -905,12 +908,12 @@ func RunTestSuite(
 		readBucketB, getExternalPathFuncB := newReadBucket(t, diffDirPathB, defaultProvider)
 		readBucketA = storage.MapReadBucket(readBucketA, storage.MapOnPrefix("prefix"))
 		readBucketB = storage.MapReadBucket(readBucketB, storage.MapOnPrefix("prefix"))
-		externalPathPrefixA := getExternalPathFuncA(t, diffDirPathA, "prefix") + "/"
-		externalPathPrefixB := getExternalPathFuncB(t, diffDirPathB, "prefix") + "/"
-		a1TxtPath := externalPathPrefixA + "1.txt"
-		b1TxtPath := externalPathPrefixB + "1.txt"
-		a2TxtPath := externalPathPrefixA + "2.txt"
-		b2TxtPath := externalPathPrefixB + "2.txt"
+		externalPathPrefixA := getExternalPathFuncA(t, diffDirPathA, "prefix") + string(os.PathSeparator)
+		externalPathPrefixB := getExternalPathFuncB(t, diffDirPathB, "prefix") + string(os.PathSeparator)
+		a1TxtPath := filepath.ToSlash(externalPathPrefixA + "1.txt")
+		b1TxtPath := filepath.ToSlash(externalPathPrefixB + "1.txt")
+		a2TxtPath := filepath.ToSlash(externalPathPrefixA + "2.txt")
+		b2TxtPath := filepath.ToSlash(externalPathPrefixB + "2.txt")
 
 		diff, err := storage.DiffBytes(
 			context.Background(),
@@ -923,32 +926,46 @@ func RunTestSuite(
 				externalPathPrefixB,
 			),
 		)
-		require.NoError(t, err)
-		assert.Equal(
-			t,
-			fmt.Sprintf(
-				`diff -u %s %s
---- %s
-+++ %s
-@@ -1,2 +1,2 @@
+
+		// This isn't great, but it tests the exact behaviour of the diff
+		// functionality. Headers are always "ToSlash" paths and `\n`. The
+		// contents of the diff are platform dependent.
+		diff1 := `@@ -1,2 +1,2 @@
 -aaaa
  bbbb
 +cccc
-diff -u %s %s
+`
+		diff2 := `@@ -1 +0,0 @@
+-dddd
+`
+		if runtime.GOOS == "windows" {
+			diff1 = strings.ReplaceAll(diff1, "\n", "\r\n")
+			diff2 = strings.ReplaceAll(diff2, "\n", "\r\n")
+		}
+		expectDiff := fmt.Sprintf(
+			`diff -u %s %s
 --- %s
 +++ %s
-@@ -1 +0,0 @@
--dddd
-`,
-				a1TxtPath,
-				b1TxtPath,
-				a1TxtPath,
-				b1TxtPath,
-				a2TxtPath,
-				b2TxtPath,
-				a2TxtPath,
-				b2TxtPath,
-			),
+%sdiff -u %s %s
+--- %s
++++ %s
+%s`,
+			a1TxtPath,
+			b1TxtPath,
+			a1TxtPath,
+			b1TxtPath,
+			diff1,
+			a2TxtPath,
+			b2TxtPath,
+			a2TxtPath,
+			b2TxtPath,
+			diff2,
+		)
+
+		require.NoError(t, err)
+		assert.Equal(
+			t,
+			expectDiff,
 			string(diff),
 		)
 	})
@@ -1034,22 +1051,36 @@ diff -u %s %s
 
 	t.Run("absolute-path-read-error", func(t *testing.T) {
 		t.Parallel()
+
+		absolutePath := "/absolute/path"
+		if runtime.GOOS == "windows" {
+			absolutePath = "C:\\Fake\\Absolute\\Path"
+		}
+		expectErr := fmt.Sprintf("%s: expected to be relative", absolutePath)
+
 		readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
-		_, err := readBucket.Get(context.Background(), "/absolute/path")
-		require.EqualError(t, err, "/absolute/path: expected to be relative", "should be using storageutil.ValidatePath on Get")
-		_, err = readBucket.Stat(context.Background(), "/absolute/path")
-		require.EqualError(t, err, "/absolute/path: expected to be relative", "should be using storageutil.ValidatePath on Stat")
-		err = readBucket.Walk(context.Background(), "/absolute/path", nil)
-		require.EqualError(t, err, "/absolute/path: expected to be relative", "should be using storageutil.ValidatePrefix on Walk")
+		_, err := readBucket.Get(context.Background(), absolutePath)
+		require.EqualError(t, err, expectErr, "should be using storageutil.ValidatePath on Get")
+		_, err = readBucket.Stat(context.Background(), absolutePath)
+		require.EqualError(t, err, expectErr, "should be using storageutil.ValidatePath on Stat")
+		err = readBucket.Walk(context.Background(), absolutePath, nil)
+		require.EqualError(t, err, expectErr, "should be using storageutil.ValidatePrefix on Walk")
 	})
 
 	t.Run("absolute-path-write-error", func(t *testing.T) {
 		t.Parallel()
+
+		absolutePath := "/absolute/path"
+		if runtime.GOOS == "windows" {
+			absolutePath = "C:\\Fake\\Absolute\\Path"
+		}
+		expectErr := fmt.Sprintf("%s: expected to be relative", absolutePath)
+
 		writeBucket := newWriteBucket(t, defaultProvider)
-		_, err := writeBucket.Put(context.Background(), "/absolute/path")
-		require.EqualError(t, err, "/absolute/path: expected to be relative", "should be using normalize.NormalizeAndValidate on Put")
-		err = writeBucket.Delete(context.Background(), "/absolute/path")
-		require.EqualError(t, err, "/absolute/path: expected to be relative", "should be using normalize.NormalizeAndValidate on Delete")
+		_, err := writeBucket.Put(context.Background(), absolutePath)
+		require.EqualError(t, err, expectErr, "should be using normalize.NormalizeAndValidate on Put")
+		err = writeBucket.Delete(context.Background(), absolutePath)
+		require.EqualError(t, err, expectErr, "should be using normalize.NormalizeAndValidate on Delete")
 	})
 
 	t.Run("root-path-error", func(t *testing.T) {
@@ -1210,6 +1241,10 @@ diff -u %s %s
 	})
 
 	t.Run("symlink_success_no_symlinks", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Skip symlink tests on Windows")
+		}
+
 		t.Parallel()
 		readBucket, _ := newReadBucket(t, symlinkSuccessDirPath, defaultProvider)
 		AssertPathToContent(
@@ -1222,6 +1257,10 @@ diff -u %s %s
 		)
 	})
 	t.Run("symlink_success_follow_symlinks", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Skip symlink tests on Windows")
+		}
+
 		t.Parallel()
 		readBucket, _ := newReadBucket(
 			t,
@@ -1249,6 +1288,10 @@ diff -u %s %s
 		)
 	})
 	t.Run("symlink_loop_no_symlinks", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Skip symlink tests on Windows")
+		}
+
 		t.Parallel()
 		readBucket, _ := newReadBucket(t, symlinkLoopDirPath, defaultProvider)
 		AssertPathToContent(
@@ -1261,6 +1304,10 @@ diff -u %s %s
 		)
 	})
 	t.Run("symlink_loop_follow_symlinks", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Skip symlink tests on Windows")
+		}
+
 		t.Parallel()
 		readBucket, _ := newReadBucket(
 			t,

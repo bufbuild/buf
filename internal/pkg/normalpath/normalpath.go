@@ -114,15 +114,15 @@ func (e *Error) Is(err error) bool {
 // This can be used to validate that paths are valid to use with Buckets.
 // The error message is safe to pass to users.
 func NormalizeAndValidate(path string) (string, error) {
-	path = Normalize(path)
-	if filepath.IsAbs(path) {
+	normalizedPath := Normalize(path)
+	if filepath.IsAbs(normalizedPath) {
 		return "", NewError(path, errNotRelative)
 	}
 	// https://github.com/bufbuild/buf/issues/51
-	if strings.HasPrefix(path, normalizedRelPathJumpContextPrefix) {
+	if strings.HasPrefix(normalizedPath, normalizedRelPathJumpContextPrefix) {
 		return "", NewError(path, errOutsideContextDir)
 	}
-	return path, nil
+	return normalizedPath, nil
 }
 
 // NormalizeAndAbsolute normalizes the path and makes it absolute.
@@ -152,7 +152,7 @@ func NormalizeAndTransformForPathType(path string, pathType PathType) (string, e
 // This calls filepath.Clean and filepath.ToSlash on the path.
 // If the path is "" or ".", this returns ".".
 func Normalize(path string) string {
-	return filepath.Clean(filepath.ToSlash(path))
+	return filepath.ToSlash(filepath.Clean(path))
 }
 
 // Unnormalize unnormalizes the given path.

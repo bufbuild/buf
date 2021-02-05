@@ -17,6 +17,7 @@ package filelock
 import (
 	"context"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -69,6 +70,10 @@ func TestLockerBasic(t *testing.T) {
 	require.Error(t, err)
 	require.NoError(t, unlocker.Unlock())
 	require.NoError(t, unlocker2.Unlock())
-	_, err = locker.Lock(ctx, "/not/normalized/and/validated")
+	absolutePath := "/not/normalized/and/validated"
+	if runtime.GOOS == "windows" {
+		absolutePath = "C:\\not\\normalized\\and\\validated"
+	}
+	_, err = locker.Lock(ctx, absolutePath)
 	require.Error(t, err)
 }

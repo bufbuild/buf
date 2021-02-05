@@ -15,26 +15,45 @@
 package bufcli
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
+	"github.com/bufbuild/buf/internal/buf/bufapiclient"
+	"github.com/bufbuild/buf/internal/buf/bufapp"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufprint"
+	"github.com/bufbuild/buf/internal/buf/buftransport"
 	"github.com/bufbuild/buf/internal/buf/bufwire"
+	"github.com/bufbuild/buf/internal/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	registryv1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1"
+	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
+	"github.com/bufbuild/buf/internal/pkg/app/appname"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
+	"github.com/bufbuild/buf/internal/pkg/netconfig"
+	"github.com/bufbuild/buf/internal/pkg/netrc"
+	"github.com/bufbuild/buf/internal/pkg/rpc"
+	"github.com/bufbuild/buf/internal/pkg/rpc/rpcauth"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
 
 const (
+	// Version is the version of buf.
+	Version = "0.37.0-dev"
+
 	// FlagDeprecationMessageSuffix is the suffix for flag deprecation messages.
 	FlagDeprecationMessageSuffix = `
 We recommend migrating, however this flag continues to work.
@@ -47,6 +66,8 @@ See https://docs.buf.build/faq for more details.`
 
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
+
+	userPromptAttempts = 3
 )
 
 var (
@@ -378,6 +399,69 @@ func NewWireImageWriter(
 	)
 }
 
+// NewConfig creates a new Config.
+func NewConfig(container appflag.Container) (*bufapp.Config, error) {
+	externalConfig := bufapp.ExternalConfig{}
+	if err := appname.ReadConfig(container, &externalConfig); err != nil {
+		return nil, err
+	}
+	return bufapp.NewConfig(container, externalConfig)
+}
+
+// UpdateRemote writes the user credentials to the user configuration.
+func UpdateRemote(container appflag.Container, address string, token string) error {
+	_, err := modifyRemotes(
+		container,
+		func(remoteProvider netconfig.RemoteProvider) (netconfig.RemoteProvider, bool, error) {
+			updatedRemoteProvider, err := remoteProvider.WithUpdatedRemote(address, token)
+			return updatedRemoteProvider, true, err
+		},
+	)
+	return err
+}
+
+// DeleteRemote deletes the user credentials from the user configuration.
+func DeleteRemote(container appflag.Container, address string) (bool, error) {
+	return modifyRemotes(
+		container,
+		func(remoteProvider netconfig.RemoteProvider) (netconfig.RemoteProvider, bool, error) {
+			updatedRemoteProvider, ok := remoteProvider.WithoutRemote(address)
+			return updatedRemoteProvider, ok, nil
+		},
+	)
+}
+
+// WithHeaders adds the root headers.
+func WithHeaders(
+	ctx context.Context,
+	container appflag.Container,
+	address string,
+) (context.Context, error) {
+	machine, err := netrc.GetMachineForName(container, address)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
+	}
+	var password string
+	if machine != nil {
+		password = machine.Password()
+	}
+	ctx = rpc.WithOutgoingHeader(ctx, "buf-version", Version)
+	return rpcauth.WithToken(ctx, password), nil
+}
+
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
+func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
+	config, err := NewConfig(container)
+	if err != nil {
+		return nil, err
+	}
+	useGRPC, err := buftransport.UseGRPC(container)
+	if err != nil {
+		return nil, err
+	}
+	return bufapiclient.NewRegistryProvider(ctx, container.Logger(), config.TLS, useGRPC)
+}
+
 // ModuleResolverReaderProvider provides ModuleResolvers and ModuleReaders.
 type ModuleResolverReaderProvider interface {
 	GetModuleReader(context.Context, appflag.Container) (bufmodule.ModuleReader, error)
@@ -395,4 +479,233 @@ func (NopModuleResolverReaderProvider) GetModuleReader(_ context.Context, _ appf
 // GetModuleResolver returns a no-op module resolver.
 func (NopModuleResolverReaderProvider) GetModuleResolver(_ context.Context, _ appflag.Container) (bufmodule.ModuleResolver, error) {
 	return bufmodule.NewNopModuleResolver(), nil
+}
+
+// NewRegistryModuleResolverReaderProvider returns a new registry-backed ModuleResolverReaderProvider.
+func NewRegistryModuleResolverReaderProvider() ModuleResolverReaderProvider {
+	return newRegistryModuleResolverReaderProvider()
+}
+
+// PromptUserForDelete is used to receieve user confirmation that a specific
+// entity should be deleted. If the user's answer does not match the expected
+// answer, an error is returned.
+func PromptUserForDelete(container app.Container, entityType string, expectedAnswer string) error {
+	confirmation, err := promptUser(
+		container,
+		fmt.Sprintf(
+			"Please confirm that you want to DELETE this %s by entering its name again."+
+				"\nWARNING: This action is NOT reversible!\n",
+			entityType,
+		),
+	)
+	if err != nil {
+		return err
+	}
+	if confirmation != expectedAnswer {
+		return fmt.Errorf(
+			"expected %q, but received %q",
+			expectedAnswer,
+			confirmation,
+		)
+	}
+	return nil
+}
+
+// ReadModule gets a module from a source ref.
+func ReadModule(
+	ctx context.Context,
+	container appflag.Container,
+	storageosProvider storageos.Provider,
+	source string,
+) (bufmodule.Module, bufmodule.ModuleIdentity, error) {
+	sourceRef, err := buffetch.NewSourceRefParser(
+		container.Logger(),
+	).GetSourceRef(
+		ctx,
+		source,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	sourceBucket, err := NewFetchSourceReader(
+		container.Logger(),
+		storageosProvider,
+	).GetSourceBucket(
+		ctx,
+		container,
+		sourceRef,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	exists, err := bufconfig.ConfigExists(ctx, sourceBucket)
+	if err != nil {
+		return nil, nil, NewInternalError(err)
+	}
+	if !exists {
+		return nil, nil, ErrNoConfigFile
+	}
+	// TODO: This should just read a lock file
+	sourceConfig, err := bufconfig.NewProvider(
+		container.Logger(),
+	).GetConfig(
+		ctx,
+		sourceBucket,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	moduleIdentity := sourceConfig.ModuleIdentity
+	if moduleIdentity == nil {
+		return nil, nil, ErrNoModuleName
+	}
+	module, err := bufmodulebuild.NewModuleBucketBuilder(container.Logger()).BuildForBucket(
+		ctx,
+		sourceBucket,
+		sourceConfig.Build,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	return module, moduleIdentity, err
+}
+
+// PrintUsers prints the provided users to the writer.
+func PrintUsers(
+	ctx context.Context,
+	writer io.Writer,
+	formatString string,
+	users ...*registryv1alpha1.User,
+) error {
+	format, err := bufprint.ParseFormat(formatString)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	userPrinter, err := bufprint.NewUserPrinter(writer, format)
+	if err != nil {
+		return NewInternalError(err)
+	}
+	return userPrinter.PrintUsers(ctx, users...)
+}
+
+// PrintOrganizations prints the provided organizations to the writer.
+func PrintOrganizations(
+	ctx context.Context,
+	address string,
+	writer io.Writer,
+	formatString string,
+	organizations ...*registryv1alpha1.Organization,
+) error {
+	format, err := bufprint.ParseFormat(formatString)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	organizationPrinter, err := bufprint.NewOrganizationPrinter(address, writer, format)
+	if err != nil {
+		return NewInternalError(err)
+	}
+	return organizationPrinter.PrintOrganizations(ctx, organizations...)
+}
+
+// PrintRepositories prints the provided repositories to the writer.
+func PrintRepositories(
+	ctx context.Context,
+	apiProvider registryv1alpha1apiclient.Provider,
+	address string,
+	writer io.Writer,
+	formatString string,
+	repositories ...*registryv1alpha1.Repository,
+) error {
+	format, err := bufprint.ParseFormat(formatString)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	repositoryPrinter, err := bufprint.NewRepositoryPrinter(apiProvider, address, writer, format)
+	if err != nil {
+		return NewInternalError(err)
+	}
+	return repositoryPrinter.PrintRepositories(ctx, repositories...)
+}
+
+// PrintRepositoryBranches prints the provided repositoryBranches to the writer.
+func PrintRepositoryBranches(
+	ctx context.Context,
+	writer io.Writer,
+	formatString string,
+	repositoryBranches ...*registryv1alpha1.RepositoryBranch,
+) error {
+	format, err := bufprint.ParseFormat(formatString)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	repositoryBranchPrinter, err := bufprint.NewRepositoryBranchPrinter(writer, format)
+	if err != nil {
+		return NewInternalError(err)
+	}
+	return repositoryBranchPrinter.PrintRepositoryBranches(ctx, repositoryBranches...)
+}
+
+// modifyRemotes modifies the remotes based on f.
+//
+// if f returns false, this performs no update and returns false.
+func modifyRemotes(container appflag.Container, f func(netconfig.RemoteProvider) (netconfig.RemoteProvider, bool, error)) (bool, error) {
+	externalConfig := bufapp.ExternalConfig{}
+	if err := appname.ReadConfig(container, &externalConfig); err != nil {
+		return false, err
+	}
+	config, err := bufapp.NewConfig(container, externalConfig)
+	if err != nil {
+		return false, err
+	}
+	updatedRemoteProvider, ok, err := f(config.RemoteProvider)
+	if err != nil {
+		return false, err
+	}
+	if !ok {
+		return false, nil
+	}
+	externalConfig.Remotes = updatedRemoteProvider.ToExternalRemotes()
+	if err := appname.WriteConfig(container, &externalConfig); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// promptUser reads a line from Stdin, prompting the user with the prompt first.
+// The prompt is repeatedly shown until the user provides a non-empty response.
+func promptUser(container app.Container, prompt string) (string, error) {
+	var attempts int
+	for attempts < userPromptAttempts {
+		attempts++
+		if _, err := fmt.Fprint(
+			container.Stdout(),
+			prompt,
+		); err != nil {
+			return "", NewInternalError(err)
+		}
+		scanner := bufio.NewScanner(container.Stdin())
+		if !scanner.Scan() {
+			return "", NewInternalError(scanner.Err())
+		}
+		value := scanner.Text()
+		if err := scanner.Err(); err != nil {
+			return "", NewInternalError(err)
+		}
+		if len(strings.TrimSpace(value)) != 0 {
+			// We want to preserve spaces in user input, so we only apply
+			// strings.TrimSpace to verify an answer was provided.
+			return value, nil
+		}
+		if attempts < userPromptAttempts {
+			// We only want to ask the user to try again if they actually
+			// have another attempt.
+			if _, err := fmt.Fprintln(
+				container.Stdout(),
+				"An answer was not provided; please try again.",
+			); err != nil {
+				return "", NewInternalError(err)
+			}
+		}
+	}
+	return "", NewTooManyEmptyAnswersError(userPromptAttempts)
 }
