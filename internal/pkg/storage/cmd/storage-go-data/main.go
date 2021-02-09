@@ -33,8 +33,11 @@ import (
 )
 
 const (
-	programName = "storage-go-binary-data"
+	programName = "storage-go-data"
 	version     = "0.0.1-dev"
+
+	pkgFlagName = "package"
+
 	sliceLength = math.MaxInt64
 )
 
@@ -43,36 +46,38 @@ func main() {
 }
 
 func newCommand() *appcmd.Command {
-	controller := newController()
+	flags := newFlags()
 	return &appcmd.Command{
-		Use:       fmt.Sprintf("%s path/to/dir", programName),
-		Args:      cobra.ExactArgs(1),
-		Run:       controller.Run,
+		Use:  fmt.Sprintf("%s path/to/dir", programName),
+		Args: cobra.ExactArgs(1),
+		Run: func(ctx context.Context, container app.Container) error {
+			return run(ctx, container, flags)
+		},
+		BindFlags: flags.Bind,
 		Version:   version,
-		BindFlags: controller.BindFlags,
 	}
 }
 
-type controller struct {
-	PackageName string
+type flags struct {
+	Pkg string
 }
 
-func newController() *controller {
-	return &controller{}
+func newFlags() *flags {
+	return &flags{}
 }
 
-func (c *controller) BindFlags(flagSet *pflag.FlagSet) {
+func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
-		&c.PackageName,
-		"package",
+		&f.Pkg,
+		pkgFlagName,
 		"",
 		"The name of the generated package.",
 	)
 }
 
-func (c *controller) Run(ctx context.Context, container app.Container) error {
+func run(ctx context.Context, container app.Container, flags *flags) error {
 	dirPath := container.Arg(0)
-	packageName := c.PackageName
+	packageName := flags.Pkg
 	if packageName == "" {
 		packageName = filepath.Base(dirPath)
 	}

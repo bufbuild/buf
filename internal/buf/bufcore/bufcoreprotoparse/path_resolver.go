@@ -21,7 +21,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/gen/data/wkt"
+	"github.com/bufbuild/buf/internal/gen/data/datawkt"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/multierr"
 )
@@ -52,7 +52,7 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 		if !storage.IsNotExist(moduleErr) {
 			return nil, moduleErr
 		}
-		if wktModuleFile, wktErr := wkt.ReadBucket.Get(p.ctx, path); wktErr == nil {
+		if wktModuleFile, wktErr := datawkt.ReadBucket.Get(p.ctx, path); wktErr == nil {
 			if wktModuleFile.Path() != path {
 				// this should never happen, but just in case
 				return nil, fmt.Errorf("parser accessor requested path %q but got %q", path, wktModuleFile.Path())

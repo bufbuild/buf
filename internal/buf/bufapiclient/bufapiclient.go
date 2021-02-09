@@ -34,20 +34,55 @@ func NewRegistryProvider(
 	ctx context.Context,
 	logger *zap.Logger,
 	tlsConfig *tls.Config,
-	useGRPC bool,
+	options ...RegistryProviderOption,
 ) (registryv1alpha1apiclient.Provider, error) {
-	if useGRPC {
+	registryProviderOptions := &registryProviderOptions{}
+	for _, option := range options {
+		option(registryProviderOptions)
+	}
+	if registryProviderOptions.useGRPC {
 		clientConnProvider, err := NewGRPCClientConnProvider(ctx, logger, tlsConfig)
 		if err != nil {
 			return nil, err
 		}
-		return registryv1alpha1apiclientgrpc.NewProvider(logger, clientConnProvider), nil
+		return registryv1alpha1apiclientgrpc.NewProvider(
+			logger,
+			clientConnProvider,
+			registryv1alpha1apiclientgrpc.WithAddressMapper(registryProviderOptions.addressMapper),
+		), nil
 	}
 	httpClient, err := NewHTTPClient(tlsConfig)
 	if err != nil {
 		return nil, err
 	}
-	return registryv1alpha1apiclienttwirp.NewProvider(logger, httpClient), nil
+	return registryv1alpha1apiclienttwirp.NewProvider(
+		logger,
+		httpClient,
+		registryv1alpha1apiclienttwirp.WithAddressMapper(registryProviderOptions.addressMapper),
+	), nil
+}
+
+// RegistryProviderOption is an option for a new registry Provider.
+type RegistryProviderOption func(*registryProviderOptions)
+
+type registryProviderOptions struct {
+	useGRPC       bool
+	addressMapper func(string) string
+}
+
+// RegistryProviderWithGRPC returns a new RegistryProviderOption that turns on gRPC.
+func RegistryProviderWithGRPC() RegistryProviderOption {
+	return func(options *registryProviderOptions) {
+		options.useGRPC = true
+	}
+}
+
+// RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps
+// addresses with the given function.
+func RegistryProviderWithAddressMapper(addressMapper func(string) string) RegistryProviderOption {
+	return func(options *registryProviderOptions) {
+		options.addressMapper = addressMapper
+	}
 }
 
 // NewGRPCClientConnProvider returns a new gRPC ClientConnProvider.

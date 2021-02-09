@@ -72,7 +72,7 @@ func (e *errInternal) Is(err error) bool {
 func NewRPCError(action string, address string, err error) error {
 	switch {
 	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
-		return fmt.Errorf(`Failed to %s: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For more, see https://ec.haxx.se/usingcurl/usingcurl-netrc`, action)
+		return fmt.Errorf(`Failed to %s: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://beta.docs.buf.build/authentication`, action)
 	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnavailable:
 		return fmt.Errorf(`Failed to %s: the server hosted at %q is unavailable: %w.`, action, address, err)
 	}

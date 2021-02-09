@@ -188,7 +188,7 @@ func TestNewConfigV1Beta1Equal1(t *testing.T) {
 			"b",
 		},
 		[]string{
-			"a/foo",
+			"a/foob",
 		},
 		[]string{
 			bufmoduletesting.TestModuleReferenceFooBarV1String,
@@ -197,7 +197,7 @@ func TestNewConfigV1Beta1Equal1(t *testing.T) {
 		&Config{
 			RootToExcludes: map[string][]string{
 				"a": {
-					"foo",
+					"foob",
 				},
 				"b": {},
 			},
@@ -219,19 +219,19 @@ func TestNewConfigV1Beta1Equal2(t *testing.T) {
 			"b",
 		},
 		[]string{
-			"a/foo",
-			"b/foo",
-			"b/bar",
+			"a/foob",
+			"b/foob",
+			"b/barr",
 		},
 		[]string{},
 		&Config{
 			RootToExcludes: map[string][]string{
 				"a": {
-					"foo",
+					"foob",
 				},
 				"b": {
-					"bar",
-					"foo",
+					"barr",
+					"foob",
 				},
 			},
 		},
@@ -239,11 +239,13 @@ func TestNewConfigV1Beta1Equal2(t *testing.T) {
 }
 
 func testNewConfigV1Beta1Success(t *testing.T, roots []string, excludes []string, deps []string) {
+	t.Helper()
 	_, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.NoError(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 }
 
 func testNewConfigV1Beta1Error(t *testing.T, roots []string, excludes []string, deps []string) {
+	t.Helper()
 	_, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.Error(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 }
@@ -255,12 +257,14 @@ func testNewConfigV1Beta1Equal(
 	deps []string,
 	expectedConfig *Config,
 ) {
+	t.Helper()
 	config, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.NoError(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 	assert.Equal(t, expectedConfig, config)
 }
 
 func testParseDependencyModuleReferences(t *testing.T, deps ...string) []bufmodule.ModuleReference {
+	t.Helper()
 	moduleNames, err := parseDependencyModuleReferences(deps...)
 	require.NoError(t, err)
 	return moduleNames
