@@ -52,7 +52,7 @@ import (
 
 const (
 	// Version is the version of buf.
-	Version = "0.37.0"
+	Version = "0.38.0-dev"
 
 	// FlagDeprecationMessageSuffix is the suffix for flag deprecation messages.
 	FlagDeprecationMessageSuffix = `
