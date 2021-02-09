@@ -858,12 +858,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testNewBranchModuleReference(
 				t,
 				"example.com",
-				"foo",
+				"foob",
 				"bar",
 				"v1",
 			),
 		),
-		"example.com/foo/bar:v1",
+		"example.com/foob/bar:v1",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -872,12 +872,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			testNewCommitModuleReference(
 				t,
 				"example.com",
-				"foo",
+				"foob",
 				"bar",
 				bufmoduletesting.TestCommit,
 			),
 		),
-		"example.com/foo/bar:"+bufmoduletesting.TestCommit,
+		"example.com/foob/bar:"+bufmoduletesting.TestCommit,
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -1106,6 +1106,7 @@ func testGetParsedRef(
 	expectedErr error,
 	value string,
 ) {
+	t.Helper()
 	t.Run(value, func(t *testing.T) {
 		t.Parallel()
 		parsedRef, err := newRefParser(zap.NewNop()).getParsedRef(

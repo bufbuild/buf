@@ -29,19 +29,38 @@ import (
 func NewProvider(
 	logger *zap.Logger,
 	clientConnProvider grpcclient.ClientConnProvider,
+	options ...ProviderOption,
 ) registryv1alpha1apiclient.Provider {
-	return &provider{
+	provider := &provider{
 		logger:             logger,
 		clientConnProvider: clientConnProvider,
 	}
+	for _, option := range options {
+		option(provider)
+	}
+	return provider
 }
 
 type provider struct {
 	logger             *zap.Logger
 	clientConnProvider grpcclient.ClientConnProvider
+	addressMapper      func(string) string
+}
+
+// ProviderOption is an option for a new Provider.
+type ProviderOption func(*provider)
+
+// WithAddressMapper maps the address with the given function.
+func WithAddressMapper(addressMapper func(string) string) ProviderOption {
+	return func(provider *provider) {
+		provider.addressMapper = addressMapper
+	}
 }
 
 func (p *provider) NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error) {
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
 	if err != nil {
 		return nil, err
@@ -53,6 +72,9 @@ func (p *provider) NewDownloadService(ctx context.Context, address string) (regi
 }
 
 func (p *provider) NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error) {
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
 	if err != nil {
 		return nil, err
@@ -64,6 +86,9 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 }
 
 func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
 	if err != nil {
 		return nil, err
@@ -75,6 +100,9 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 }
 
 func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
 	if err != nil {
 		return nil, err
@@ -86,6 +114,9 @@ func (p *provider) NewRepositoryBranchService(ctx context.Context, address strin
 }
 
 func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
 	if err != nil {
 		return nil, err
@@ -97,6 +128,9 @@ func (p *provider) NewRepositoryCommitService(ctx context.Context, address strin
 }
 
 func (p *provider) NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error) {
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
 	if err != nil {
 		return nil, err
@@ -108,6 +142,9 @@ func (p *provider) NewRepositoryService(ctx context.Context, address string) (re
 }
 
 func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
 	if err != nil {
 		return nil, err
@@ -119,6 +156,9 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 }
 
 func (p *provider) NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error) {
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
 	if err != nil {
 		return nil, err

@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	ownerMinLength      = 3
+	ownerMinLength      = 4
 	ownerMaxLength      = 32
 	repositoryMinLength = 2
 	repositoryMaxLength = 32

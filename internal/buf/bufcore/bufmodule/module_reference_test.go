@@ -24,23 +24,23 @@ import (
 
 func TestModuleReferenceForString(t *testing.T) {
 	t.Parallel()
-	expectedModuleReference, err := NewBranchModuleReference("foo.com", "bar", "baz", "main")
+	expectedModuleReference, err := NewBranchModuleReference("foo.com", "barr", "baz", "main")
 	require.NoError(t, err)
-	require.Equal(t, "foo.com/bar/baz:main", expectedModuleReference.String())
-	moduleReference, err := ModuleReferenceForString("foo.com/bar/baz")
+	require.Equal(t, "foo.com/barr/baz:main", expectedModuleReference.String())
+	moduleReference, err := ModuleReferenceForString("foo.com/barr/baz")
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleReference, moduleReference)
-	branchModuleReference, err := BranchModuleReferenceForString("foo.com/bar/baz")
+	branchModuleReference, err := BranchModuleReferenceForString("foo.com/barr/baz")
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleReference, branchModuleReference)
 
-	expectedModuleReference, err = NewBranchModuleReference("foo.com", "bar", "baz", "v1")
+	expectedModuleReference, err = NewBranchModuleReference("foo.com", "barr", "baz", "v1")
 	require.NoError(t, err)
-	require.Equal(t, "foo.com/bar/baz:v1", expectedModuleReference.String())
-	moduleReference, err = ModuleReferenceForString("foo.com/bar/baz:v1")
+	require.Equal(t, "foo.com/barr/baz:v1", expectedModuleReference.String())
+	moduleReference, err = ModuleReferenceForString("foo.com/barr/baz:v1")
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleReference, moduleReference)
-	branchModuleReference, err = BranchModuleReferenceForString("foo.com/bar/baz:v1")
+	branchModuleReference, err = BranchModuleReferenceForString("foo.com/barr/baz:v1")
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleReference, branchModuleReference)
 
@@ -48,13 +48,13 @@ func TestModuleReferenceForString(t *testing.T) {
 	require.NoError(t, err)
 	commit, err := uuidutil.ToDashless(commitUUID)
 	require.NoError(t, err)
-	expectedModuleReference, err = NewCommitModuleReference("foo.com", "bar", "baz", commit)
+	expectedModuleReference, err = NewCommitModuleReference("foo.com", "barr", "baz", commit)
 	require.NoError(t, err)
-	require.Equal(t, "foo.com/bar/baz:"+commit, expectedModuleReference.String())
-	moduleReference, err = ModuleReferenceForString("foo.com/bar/baz:" + commit)
+	require.Equal(t, "foo.com/barr/baz:"+commit, expectedModuleReference.String())
+	moduleReference, err = ModuleReferenceForString("foo.com/barr/baz:" + commit)
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleReference, moduleReference)
-	commitModuleReference, err := CommitModuleReferenceForString("foo.com/bar/baz:" + commit)
+	commitModuleReference, err := CommitModuleReferenceForString("foo.com/barr/baz:" + commit)
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleReference, commitModuleReference)
 }
@@ -67,7 +67,7 @@ func TestModuleReferenceForStringError(t *testing.T) {
 	}{
 		{
 			Name:  "Module without a remote",
-			Input: "/bar/baz:v1",
+			Input: "/barr/baz:v1",
 		},
 		{
 			Name:  "Module without an owner",
@@ -75,15 +75,15 @@ func TestModuleReferenceForStringError(t *testing.T) {
 		},
 		{
 			Name:  "Module without a repository",
-			Input: "foo.com/bar/:v1",
+			Input: "foo.com/barr/:v1",
 		},
 		{
 			Name:  "Module without a branch or commit",
-			Input: "foo.com/bar/baz:",
+			Input: "foo.com/barr/baz:",
 		},
 		{
 			Name:  "Module with invalid characters",
-			Input: "foo.com/bar/baz@qux:v1",
+			Input: "foo.com/barr/baz@qux:v1",
 		},
 	}
 	for _, testCase := range testCases {
@@ -108,7 +108,7 @@ func TestModuleReferenceForStringRequireBranchError(t *testing.T) {
 	}{
 		{
 			Name:  "Module without a branch",
-			Input: "foo.com/bar/baz",
+			Input: "foo.com/barr/baz",
 		},
 	}
 	for _, testCase := range testCases {
@@ -131,7 +131,7 @@ func TestBranchModuleReferenceForStringError(t *testing.T) {
 	}{
 		{
 			Name:  "Module with a commit",
-			Input: "foo.com/bar/baz:" + bufmoduletesting.TestCommit,
+			Input: "foo.com/barr/baz:" + bufmoduletesting.TestCommit,
 		},
 	}
 	for _, testCase := range testCases {
@@ -152,11 +152,11 @@ func TestCommitModuleReferenceForStringError(t *testing.T) {
 	}{
 		{
 			Name:  "Module without a commit",
-			Input: "foo.com/bar/baz",
+			Input: "foo.com/barr/baz",
 		},
 		{
 			Name:  "Module with a branch",
-			Input: "foo.com/bar/baz:v1",
+			Input: "foo.com/barr/baz:v1",
 		},
 	}
 	for _, testCase := range testCases {

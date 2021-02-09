@@ -21,14 +21,14 @@ const (
 	//
 	// This matches TestData.
 	TestDigest = "b1-gLO3B_5ClhdU52w1gMOxk4GokvCoM1OqjarxMfjStGQ="
-	// TestModuleReferenceV1String is a valid module reference string.
-	TestModuleReferenceFooBarV1String = "buf.build/foo/bar:v1"
-	// TestModuleReferenceV2String is a valid module reference string.
-	TestModuleReferenceFooBarV2String = "buf.build/foo/bar:v2"
-	// TestModuleReferenceV1String is a valid module reference string.
-	TestModuleReferenceFooBazV1String = "buf.build/foo/baz:v1"
-	// TestModuleReferenceV2String is a valid module reference string.
-	TestModuleReferenceFooBazV2String = "buf.build/foo/baz:v2"
+	// TestModuleReferenceFooBarV1String is a valid module reference string.
+	TestModuleReferenceFooBarV1String = "buf.build/foob/bar:v1"
+	// TestModuleReferenceFooBarV2String is a valid module reference string.
+	TestModuleReferenceFooBarV2String = "buf.build/foob/bar:v2"
+	// TestModuleReferenceFooBazV1String is a valid module reference string.
+	TestModuleReferenceFooBazV1String = "buf.build/foob/baz:v1"
+	// TestModuleReferenceFooBazV2String is a valid module reference string.
+	TestModuleReferenceFooBazV2String = "buf.build/foob/baz:v2"
 )
 
 var (
@@ -55,6 +55,6 @@ func init() {
 		panic(err.Error())
 	}
 	TestCommit = testCommitDashless
-	TestModuleReferenceFooBarCommitString = "buf.build/foo/bar:" + TestCommit
-	TestModuleReferenceFooBazCommitString = "buf.build/foo/baz:" + TestCommit
+	TestModuleReferenceFooBarCommitString = "buf.build/foob/bar:" + TestCommit
+	TestModuleReferenceFooBazCommitString = "buf.build/foob/baz:" + TestCommit
 }

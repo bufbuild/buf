@@ -21,8 +21,24 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 )
 
-// TODO: change to based on "use"
-const transportEnvKey = "BUF_TRANSPORT"
+const (
+	apiSubdomain = "api"
+
+	// TODO: change to based on "use"
+	disableAPISubdomainEnvKey = "BUF_DISABLE_API_SUBDOMAIN"
+	// TODO: change to based on "use"
+	transportEnvKey = "BUF_TRANSPORT"
+)
+
+// IsAPISubdomainEnabled returns true if the container says to use the API subdomain.
+func IsAPISubdomainEnabled(container app.EnvContainer) bool {
+	return strings.TrimSpace(strings.ToLower(container.Env(disableAPISubdomainEnvKey))) == ""
+}
+
+// SetDisableAPISubdomain sets the environment map to disable the API subdomain.
+func SetDisableAPISubdomain(env map[string]string) {
+	env[disableAPISubdomainEnvKey] = "disable"
+}
 
 // UseGRPC returns true if the container says to use grpc.
 func UseGRPC(container app.EnvContainer) (bool, error) {
@@ -44,4 +60,9 @@ func SetUseGRPC(env map[string]string, useGRPC bool) {
 	} else {
 		env[transportEnvKey] = "twirp"
 	}
+}
+
+// PrependAPISubdomain prepends the API subdomain to the given address.
+func PrependAPISubdomain(address string) string {
+	return apiSubdomain + "." + address
 }

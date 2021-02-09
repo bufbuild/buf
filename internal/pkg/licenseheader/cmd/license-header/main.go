@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/diff"
-	"github.com/bufbuild/buf/internal/pkg/license"
+	"github.com/bufbuild/buf/internal/pkg/licenseheader"
 	"github.com/spf13/pflag"
 )
 
@@ -95,11 +95,11 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 	if flags.LicenseType == "" {
 		return newRequiredFlagError(licenseTypeFlagName)
 	}
-	licenseType, err := license.ParseLicenseType(flags.LicenseType)
+	licenseType, err := licenseheader.ParseLicenseType(flags.LicenseType)
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("--%s: %v", licenseTypeFlagName, err)
 	}
-	if licenseType != license.LicenseTypeNone {
+	if licenseType != licenseheader.LicenseTypeNone {
 		if flags.CopyrightHolder == "" {
 			return newRequiredFlagError(copyrightHolderFlagName)
 		}
@@ -113,7 +113,7 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 		if err != nil {
 			return err
 		}
-		modifiedData, err := license.Modify(
+		modifiedData, err := licenseheader.Modify(
 			licenseType,
 			flags.CopyrightHolder,
 			flags.YearRange,
