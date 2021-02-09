@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package license handles license headers.
-package license
+// Package licenseheader handles license headers.
+package licenseheader
 
 import (
 	"bytes"

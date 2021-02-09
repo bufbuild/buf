@@ -22,11 +22,11 @@ import (
 
 func TestModuleOwnerForString(t *testing.T) {
 	t.Parallel()
-	expectedModuleOwner, err := NewModuleOwner("foo.com", "bar")
+	expectedModuleOwner, err := NewModuleOwner("foo.com", "barr")
 	require.NoError(t, err)
 	require.Equal(t, "foo.com", expectedModuleOwner.Remote())
-	require.Equal(t, "bar", expectedModuleOwner.Owner())
-	moduleOwner, err := ModuleOwnerForString("foo.com/bar")
+	require.Equal(t, "barr", expectedModuleOwner.Owner())
+	moduleOwner, err := ModuleOwnerForString("foo.com/barr")
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleOwner, moduleOwner)
 }

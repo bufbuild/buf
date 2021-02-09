@@ -62,13 +62,9 @@ func NewCommand(
 type flags struct {
 	DocumentationComments bool
 	OutDirPath            string
+	Name                  string
+	Deps                  []string
 
-	// Hidden.
-	// Use when BSR is released.
-	Name string
-	// Hidden.
-	// Use when BSR is released.
-	Deps []string
 	// Hidden.
 	// Just used for generating docs.buf.build.
 	Uncomment bool
@@ -98,14 +94,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The module name.",
 	)
-	_ = flagSet.MarkHidden(nameFlagName)
 	flagSet.StringSliceVar(
 		&f.Deps,
 		depFlagName,
 		nil,
 		"The module dependencies.",
 	)
-	_ = flagSet.MarkHidden(depFlagName)
 	flagSet.BoolVar(
 		&f.Uncomment,
 		uncommentFlagName,

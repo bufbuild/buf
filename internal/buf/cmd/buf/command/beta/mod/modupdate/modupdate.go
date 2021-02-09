@@ -101,6 +101,10 @@ func run(
 	if moduleConfig.ModuleIdentity == nil || moduleConfig.ModuleIdentity.Remote() == "" {
 		return bufcli.ErrNoModuleName
 	}
+	ctx, err = bufcli.WithHeaders(ctx, container, moduleConfig.ModuleIdentity.Remote())
+	if err != nil {
+		return err
+	}
 	var dependencyModulePins []bufmodule.ModulePin
 	if len(moduleConfig.Build.DependencyModuleReferences) != 0 {
 		apiProvider, err := bufcli.NewRegistryProvider(ctx, container)

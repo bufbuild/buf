@@ -14,8 +14,9 @@ GO_BINS := $(GO_BINS) \
 	cmd/protoc-gen-buf-check-lint \
 	internal/pkg/git/cmd/git-ls-files-unstaged \
 	internal/pkg/storage/cmd/ddiff \
-	internal/pkg/storage/cmd/storage-go-binary-data \
-	internal/pkg/license/cmd/license-header \
+	internal/pkg/storage/cmd/storage-go-data \
+	internal/pkg/licenseheader/cmd/license-header \
+	internal/pkg/spdx/cmd/spdx-go-data \
 	internal/protoplugin/cmd/protoc-gen-go-api \
 	internal/protoplugin/cmd/protoc-gen-go-apiclient \
 	internal/protoplugin/cmd/protoc-gen-go-apiclientgrpc \
@@ -51,13 +52,15 @@ BUF_BREAKING_PROTO_INPUT ?= .git\#branch=master,subdir=proto
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
-.PHONY: wkt
-wkt: installstorage-go-binary-data $(PROTOC)
+.PHONY: godata
+godata: installspdx-go-data installstorage-go-data $(PROTOC)
 	rm -rf internal/gen/data
-	mkdir -p internal/gen/data/wkt
-	storage-go-binary-data $(CACHE_INCLUDE) --package wkt > internal/gen/data/wkt/wkt.gen.go
+	mkdir -p internal/gen/data/datawkt
+	mkdir -p internal/gen/data/dataspdx
+	storage-go-data $(CACHE_INCLUDE) --package datawkt > internal/gen/data/datawkt/datawkt.gen.go
+	spdx-go-data --package dataspdx > internal/gen/data/dataspdx/dataspdx.gen.go
 
-prepostgenerate:: wkt
+prepostgenerate:: godata
 
 .PHONY: licenseheader
 licenseheader: installlicense-header installgit-ls-files-unstaged

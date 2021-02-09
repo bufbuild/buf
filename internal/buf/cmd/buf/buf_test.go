@@ -911,7 +911,7 @@ func TestConfigInitName(t *testing.T) {
 	testConfigInit(
 		t,
 		`version: v1beta1
-name: buf.build/foo/bar
+name: buf.build/foob/bar
 build:
   roots:
     - .
@@ -924,7 +924,7 @@ breaking:
 `,
 		false,
 		false,
-		"buf.build/foo/bar",
+		"buf.build/foob/bar",
 	)
 }
 
@@ -933,10 +933,10 @@ func TestConfigInitNameDeps(t *testing.T) {
 	testConfigInit(
 		t,
 		`version: v1beta1
-name: buf.build/foo/bar
+name: buf.build/foob/bar
 deps:
-  - buf.build/foo/baz:v1
-  - buf.build/foo/bat:v1
+  - buf.build/foob/baz:v1
+  - buf.build/foob/bat:v1
 build:
   roots:
     - .
@@ -949,13 +949,14 @@ breaking:
 `,
 		false,
 		false,
-		"buf.build/foo/bar",
-		"buf.build/foo/baz:v1",
-		"buf.build/foo/bat:v1",
+		"buf.build/foob/bar",
+		"buf.build/foob/baz:v1",
+		"buf.build/foob/bat:v1",
 	)
 }
 
 func testConfigInit(t *testing.T, expectedData string, document bool, uncomment bool, name string, deps ...string) {
+	t.Helper()
 	tempDir := t.TempDir()
 	args := []string{"beta", "config", "init", "-o", tempDir}
 	if document {

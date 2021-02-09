@@ -34,7 +34,7 @@ func TestReaderBasic(t *testing.T) {
 
 	modulePin, err := bufmodule.NewModulePin(
 		"buf.build",
-		"foo",
+		"foob",
 		"bar",
 		"v1",
 		bufmoduletesting.TestCommit,
@@ -91,7 +91,7 @@ func TestCacherBasic(t *testing.T) {
 
 	modulePin, err := bufmodule.NewModulePin(
 		"buf.build",
-		"foo",
+		"foob",
 		"bar",
 		"v1",
 		bufmoduletesting.TestCommit,

@@ -459,7 +459,19 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 	if err != nil {
 		return nil, err
 	}
-	return bufapiclient.NewRegistryProvider(ctx, container.Logger(), config.TLS, useGRPC)
+	var options []bufapiclient.RegistryProviderOption
+	if buftransport.IsAPISubdomainEnabled(container) {
+		options = append(options, bufapiclient.RegistryProviderWithAddressMapper(buftransport.PrependAPISubdomain))
+	}
+	if useGRPC {
+		options = append(options, bufapiclient.RegistryProviderWithGRPC())
+	}
+	return bufapiclient.NewRegistryProvider(
+		ctx,
+		container.Logger(),
+		config.TLS,
+		options...,
+	)
 }
 
 // ModuleResolverReaderProvider provides ModuleResolvers and ModuleReaders.
