@@ -1,6 +1,6 @@
 BUF_BIN ?= cmd/buf
 
-PROTOREFLECT_VERSION := v1.8.1
+PROTOREFLECT_VERSION := v1.8.2
 # Remove when https://github.com/spf13/cobra/pull/1070 is released
 COBRA_VERSION := b97b5ead31f7d34f764ac8666e40c214bb8e06dc
 GO_GET_PKGS := $(GO_GET_PKGS) \
@@ -141,7 +141,7 @@ postlint:: buflintproto bufbreakingproto
 
 .PHONY: bufrelease
 bufrelease:
-	DOCKER_IMAGE=golang:1.15.7-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.16.0-buster bash make/buf/scripts/release.bash
 
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)

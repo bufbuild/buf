@@ -48,10 +48,9 @@ message ModuleReference {
   string remote = 1;
   string owner = 2;
   string repository = 3;
-  oneof reference {
-    string branch = 4;
-    string commit = 5;
-  }
+  // either branch or commit
+  // in the future this will also be tag
+  string reference = 4;
 }
 
 // ModulePin is a module pin.

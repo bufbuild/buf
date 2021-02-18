@@ -24,8 +24,9 @@ import (
 )
 
 type pushService struct {
-	logger *zap.Logger
-	client v1alpha1.PushServiceClient
+	logger          *zap.Logger
+	client          v1alpha1.PushServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // Push pushes.
@@ -36,6 +37,9 @@ func (s *pushService) Push(
 	branch string,
 	module *v1alpha11.Module,
 ) (localModulePin *v1alpha1.LocalModulePin, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.Push(
 		ctx,
 		&v1alpha1.PushRequest{

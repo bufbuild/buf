@@ -57,6 +57,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
+			bufcli.NewErrorInterceptor(name),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -107,10 +108,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	ctx, err = bufcli.WithHeaders(ctx, container, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
 	repository, err := service.CreateRepositoryByFullName(
 		ctx,
 		moduleIdentity.Owner()+"/"+moduleIdentity.Repository(),
@@ -120,7 +117,7 @@ func run(
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
 			return bufcli.NewRepositoryNameAlreadyExistsError(container.Arg(0))
 		}
-		return bufcli.NewRPCError("create repository", moduleIdentity.Remote(), err)
+		return err
 	}
 	return bufcli.PrintRepositories(ctx, apiProvider, moduleIdentity.Remote(), container.Stdout(), flags.Format, repository)
 }

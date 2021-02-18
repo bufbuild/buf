@@ -49,6 +49,7 @@ func NewRegistryProvider(
 			logger,
 			clientConnProvider,
 			registryv1alpha1apiclientgrpc.WithAddressMapper(registryProviderOptions.addressMapper),
+			registryv1alpha1apiclientgrpc.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
 		), nil
 	}
 	httpClient, err := NewHTTPClient(tlsConfig)
@@ -59,6 +60,7 @@ func NewRegistryProvider(
 		logger,
 		httpClient,
 		registryv1alpha1apiclienttwirp.WithAddressMapper(registryProviderOptions.addressMapper),
+		registryv1alpha1apiclienttwirp.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
 	), nil
 }
 
@@ -66,8 +68,9 @@ func NewRegistryProvider(
 type RegistryProviderOption func(*registryProviderOptions)
 
 type registryProviderOptions struct {
-	useGRPC       bool
-	addressMapper func(string) string
+	useGRPC                 bool
+	addressMapper           func(string) string
+	contextModifierProvider func(string) (func(context.Context) context.Context, error)
 }
 
 // RegistryProviderWithGRPC returns a new RegistryProviderOption that turns on gRPC.
@@ -82,6 +85,15 @@ func RegistryProviderWithGRPC() RegistryProviderOption {
 func RegistryProviderWithAddressMapper(addressMapper func(string) string) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
 		options.addressMapper = addressMapper
+	}
+}
+
+// RegistryProviderWithContextModifierProvider returns a new RegistryProviderOption that
+// creates a context modifier for a given address. This is used to modify the context
+// before every RPC invocation.
+func RegistryProviderWithContextModifierProvider(contextModifierProvider func(address string) (func(context.Context) context.Context, error)) RegistryProviderOption {
+	return func(options *registryProviderOptions) {
+		options.contextModifierProvider = contextModifierProvider
 	}
 }
 

@@ -56,6 +56,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
+	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	clientConnProviderGoIdentString := g.QualifiedGoIdent(grpcclientPackage.Ident("ClientConnProvider"))
 	loggerGoIdentString := g.QualifiedGoIdent(zapPackage.Ident("Logger"))
 	apiclientGoImportPath, err := helper.NewPackageGoImportPath(
@@ -87,7 +88,8 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`type provider struct {`)
 	g.P(`logger *`, loggerGoIdentString)
 	g.P(`clientConnProvider `, clientConnProviderGoIdentString)
-	g.P(`addressMapper `, `func(string) string`)
+	g.P(`addressMapper func(string) string`)
+	g.P(`contextModifierProvider func(string) (func (`, contextGoIdentString, `) `, contextGoIdentString, `, error)`)
 	g.P(`}`)
 	g.P()
 	g.P(`// ProviderOption is an option for a new Provider.`)
@@ -100,8 +102,18 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`}`)
 	g.P(`}`)
 	g.P()
+	// We create the contextModifier once for each address instead of passing address to a contextProvider directly
+	// so that we do not have to do the same address logic for each RPC call, and only do it when we create the provider.
+	// For example, we might read .netrc to create the contextProvider - we do not want to have to do this on every RPC call.
+	g.P(`// WithContextModifierProvider provides a function that  modifies the context before every RPC invocation.`)
+	g.P(`// Applied before the address mapper.`)
+	g.P(`func WithContextModifierProvider(contextModifierProvider func(address string) (func(`, contextGoIdentString, `) `, contextGoIdentString, `, error)) ProviderOption {`)
+	g.P(`return func(provider *provider) {`)
+	g.P(`provider.contextModifierProvider = contextModifierProvider`)
+	g.P(`}`)
+	g.P(`}`)
+	g.P()
 
-	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	apiGoImportPath, err := helper.NewPackageGoImportPath(
 		goPackageFileSet,
 		"api",
@@ -119,6 +131,14 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		newClientGoIdentString := g.QualifiedGoIdent(newClientGoIdent)
 
 		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, address string) (`, interfaceGoIdentString, `, error) {`)
+		g.P(`var contextModifier func(`, contextGoIdentString, `) `, contextGoIdentString)
+		g.P(`var err error`)
+		g.P(`if p.contextModifierProvider != nil {`)
+		g.P(`contextModifier, err = p.contextModifierProvider(address)`)
+		g.P(`if err != nil {`)
+		g.P(`return nil, err`)
+		g.P(`}`)
+		g.P(`}`)
 		g.P(`if p.addressMapper != nil {`)
 		g.P(`address = p.addressMapper(address)`)
 		g.P(`}`)
@@ -129,10 +149,12 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`return &`, structName, `{`)
 		g.P(`logger: p.logger,`)
 		g.P(`client: `, newClientGoIdentString, `(clientConn),`)
+		g.P(`contextModifier: contextModifier,`)
 		g.P(`}, nil`)
 		g.P(`}`)
 		g.P()
 	}
+
 	return nil
 }
 
@@ -153,6 +175,7 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`type `, structName, ` struct {`)
 		g.P(`logger *`, loggerGoIdentString)
 		g.P(`client `, clientGoIdentString)
+		g.P(`contextModifier func (`, contextGoIdentString, `) `, contextGoIdentString)
 		g.P(`}`)
 		g.P()
 
@@ -180,6 +203,9 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 			} else {
 				g.P(method.Comments.Leading, `func (s *`, structName, `) `, funcName, `(`, strings.Join(funcParameterStrings, `, `), `) (`, strings.Join(funcReturnStrings, `, `), `) {`)
 			}
+			g.P(`if s.contextModifier != nil{`)
+			g.P(`ctx = s.contextModifier(ctx)`)
+			g.P(`}`)
 
 			requestGoIdentString := g.QualifiedGoIdent(method.Input.GoIdent)
 			if len(funcReturnStrings) == 1 {

@@ -12,23 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build !windows
+
 package normalpath
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"testing"
 
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestWarnPathSeparator(t *testing.T) {
-	fmt.Fprintf(os.Stderr, "WARN: os.PathSeparator is %q\n", string(os.PathSeparator))
-}
 
 func TestNormalizeAndValidate(t *testing.T) {
 	t.Parallel()
@@ -45,11 +42,7 @@ func TestNormalizeAndValidate(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", path)
 
-	absolutePath := "/foo"
-	if runtime.GOOS == "windows" {
-		absolutePath = "C:\\foo"
-	}
-	_, err = NormalizeAndValidate(absolutePath)
+	_, err = NormalizeAndValidate("/foo")
 	assert.Error(t, err)
 
 	_, err = NormalizeAndValidate("../foo")
@@ -75,6 +68,7 @@ func TestUnnormalize(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t, "", Unnormalize(""))
 	assert.Equal(t, ".", Unnormalize("."))
+	assert.Equal(t, "/foo", Unnormalize("/foo"))
 }
 
 func TestBase(t *testing.T) {
@@ -378,7 +372,7 @@ func TestContainsPathAbs(t *testing.T) {
 	testContainsPathAbs(t, false, "/a.proto", "/")
 	testContainsPathAbs(t, false, "/", "/")
 	testContainsPathAbs(t, true, "/", "/a/b.proto")
-	testContainsPathAbs(t, true, "/", "a/b")
+	testContainsPathAbs(t, true, "/", "/a/b")
 	testContainsPathAbs(t, false, "/a", "/ab/c")
 	testContainsPathAbs(t, true, "/a", "/a/b/c")
 	testContainsPathAbs(t, false, "/b", "/a/b/c")
@@ -394,7 +388,7 @@ func TestEqualsOrContainsPathAbs(t *testing.T) {
 	testEqualsOrContainsPathAbs(t, true, "/a.proto", "/a.proto")
 	testEqualsOrContainsPathAbs(t, true, "/", "/a.proto")
 	testEqualsOrContainsPathAbs(t, false, "a.proto", "/")
-	testEqualsOrContainsPathAbs(t, true, "/", "a/b.proto")
+	testEqualsOrContainsPathAbs(t, true, "/", "/a/b.proto")
 	testEqualsOrContainsPathAbs(t, true, "/", "/a/b")
 	testEqualsOrContainsPathAbs(t, false, "/a", "/ab/c")
 	testEqualsOrContainsPathAbs(t, true, "/a", "/a/b/c")

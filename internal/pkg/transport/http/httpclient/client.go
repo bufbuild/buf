@@ -52,6 +52,14 @@ func newClient(options ...ClientOption) (*client, error) {
 	return client, nil
 }
 
+func newClientWithTransport(transport http.RoundTripper) (*client, error) {
+	return &client{
+		httpClient: &http.Client{
+			Transport: transport,
+		},
+	}, nil
+}
+
 func (c *client) Do(request *http.Request) (*http.Response, error) {
 	return c.httpClient.Do(request)
 }
@@ -64,4 +72,8 @@ func (c *client) ParseAddress(address string) string {
 		return "http://" + address
 	}
 	return address
+}
+
+func (c *client) Transport() http.RoundTripper {
+	return c.httpClient.Transport
 }

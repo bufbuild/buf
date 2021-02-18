@@ -15,8 +15,6 @@
 package bufmodule
 
 import (
-	"fmt"
-
 	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 )
 
@@ -24,42 +22,27 @@ type moduleReference struct {
 	remote     string
 	owner      string
 	repository string
-	branch     string
-	commit     string
+	reference  string
 }
 
 func newModuleReference(
 	remote string,
 	owner string,
 	repository string,
-	branch string,
-	commit string,
+	reference string,
 ) (*moduleReference, error) {
 	protoModuleReference := &modulev1alpha1.ModuleReference{
 		Remote:     remote,
 		Owner:      owner,
 		Repository: repository,
+		Reference:  reference,
 	}
-	switch {
-	case branch != "" && commit == "":
-		protoModuleReference.Reference = &modulev1alpha1.ModuleReference_Branch{
-			Branch: branch,
-		}
-	case branch == "" && commit != "":
-		protoModuleReference.Reference = &modulev1alpha1.ModuleReference_Commit{
-			Commit: commit,
-		}
-	case branch != "" && commit != "":
-		return nil, fmt.Errorf("module reference cannot have both a branch and commit")
-	}
-	// validates that exactly one of branch or commit is set
 	return newModuleReferenceForProto(protoModuleReference)
 }
 
 func newModuleReferenceForProto(
 	protoModuleReference *modulev1alpha1.ModuleReference,
 ) (*moduleReference, error) {
-	// validates that exactly one of branch or commit is set
 	if err := ValidateProtoModuleReference(protoModuleReference); err != nil {
 		return nil, err
 	}
@@ -67,8 +50,7 @@ func newModuleReferenceForProto(
 		remote:     protoModuleReference.Remote,
 		owner:      protoModuleReference.Owner,
 		repository: protoModuleReference.Repository,
-		branch:     protoModuleReference.GetBranch(),
-		commit:     protoModuleReference.GetCommit(),
+		reference:  protoModuleReference.Reference,
 	}, nil
 }
 
@@ -77,24 +59,12 @@ func newProtoModuleReferenceForModuleReference(
 ) *modulev1alpha1.ModuleReference {
 	// no need to validate as we know we have a valid ModuleReference constructed
 	// by this package due to the private interface
-	protoModuleReference := &modulev1alpha1.ModuleReference{
+	return &modulev1alpha1.ModuleReference{
 		Remote:     moduleReference.Remote(),
 		Owner:      moduleReference.Owner(),
 		Repository: moduleReference.Repository(),
+		Reference:  moduleReference.Reference(),
 	}
-	branch := moduleReference.Branch()
-	commit := moduleReference.Commit()
-	switch {
-	case branch != "" && commit == "":
-		protoModuleReference.Reference = &modulev1alpha1.ModuleReference_Branch{
-			Branch: branch,
-		}
-	case branch == "" && commit != "":
-		protoModuleReference.Reference = &modulev1alpha1.ModuleReference_Commit{
-			Commit: commit,
-		}
-	}
-	return protoModuleReference
 }
 
 func (m *moduleReference) Remote() string {
@@ -109,20 +79,12 @@ func (m *moduleReference) Repository() string {
 	return m.repository
 }
 
-func (m *moduleReference) Branch() string {
-	return m.branch
-}
-
-func (m *moduleReference) Commit() string {
-	return m.commit
+func (m *moduleReference) Reference() string {
+	return m.reference
 }
 
 func (m *moduleReference) String() string {
-	ref := m.branch
-	if ref == "" {
-		ref = m.commit
-	}
-	return m.remote + "/" + m.owner + "/" + m.repository + ":" + ref
+	return m.remote + "/" + m.owner + "/" + m.repository + ":" + m.reference
 }
 
 func (m *moduleReference) IdentityString() string {

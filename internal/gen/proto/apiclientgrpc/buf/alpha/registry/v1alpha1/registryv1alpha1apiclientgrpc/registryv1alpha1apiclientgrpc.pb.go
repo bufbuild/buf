@@ -42,9 +42,10 @@ func NewProvider(
 }
 
 type provider struct {
-	logger             *zap.Logger
-	clientConnProvider grpcclient.ClientConnProvider
-	addressMapper      func(string) string
+	logger                  *zap.Logger
+	clientConnProvider      grpcclient.ClientConnProvider
+	addressMapper           func(string) string
+	contextModifierProvider func(string) (func(context.Context) context.Context, error)
 }
 
 // ProviderOption is an option for a new Provider.
@@ -57,7 +58,23 @@ func WithAddressMapper(addressMapper func(string) string) ProviderOption {
 	}
 }
 
+// WithContextModifierProvider provides a function that  modifies the context before every RPC invocation.
+// Applied before the address mapper.
+func WithContextModifierProvider(contextModifierProvider func(address string) (func(context.Context) context.Context, error)) ProviderOption {
+	return func(provider *provider) {
+		provider.contextModifierProvider = contextModifierProvider
+	}
+}
+
 func (p *provider) NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -66,12 +83,21 @@ func (p *provider) NewDownloadService(ctx context.Context, address string) (regi
 		return nil, err
 	}
 	return &downloadService{
-		logger: p.logger,
-		client: v1alpha1.NewDownloadServiceClient(clientConn),
+		logger:          p.logger,
+		client:          v1alpha1.NewDownloadServiceClient(clientConn),
+		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -80,12 +106,21 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 		return nil, err
 	}
 	return &organizationService{
-		logger: p.logger,
-		client: v1alpha1.NewOrganizationServiceClient(clientConn),
+		logger:          p.logger,
+		client:          v1alpha1.NewOrganizationServiceClient(clientConn),
+		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -94,12 +129,21 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 		return nil, err
 	}
 	return &pushService{
-		logger: p.logger,
-		client: v1alpha1.NewPushServiceClient(clientConn),
+		logger:          p.logger,
+		client:          v1alpha1.NewPushServiceClient(clientConn),
+		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -108,12 +152,21 @@ func (p *provider) NewRepositoryBranchService(ctx context.Context, address strin
 		return nil, err
 	}
 	return &repositoryBranchService{
-		logger: p.logger,
-		client: v1alpha1.NewRepositoryBranchServiceClient(clientConn),
+		logger:          p.logger,
+		client:          v1alpha1.NewRepositoryBranchServiceClient(clientConn),
+		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -122,12 +175,21 @@ func (p *provider) NewRepositoryCommitService(ctx context.Context, address strin
 		return nil, err
 	}
 	return &repositoryCommitService{
-		logger: p.logger,
-		client: v1alpha1.NewRepositoryCommitServiceClient(clientConn),
+		logger:          p.logger,
+		client:          v1alpha1.NewRepositoryCommitServiceClient(clientConn),
+		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -136,12 +198,21 @@ func (p *provider) NewRepositoryService(ctx context.Context, address string) (re
 		return nil, err
 	}
 	return &repositoryService{
-		logger: p.logger,
-		client: v1alpha1.NewRepositoryServiceClient(clientConn),
+		logger:          p.logger,
+		client:          v1alpha1.NewRepositoryServiceClient(clientConn),
+		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -150,12 +221,21 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 		return nil, err
 	}
 	return &resolveService{
-		logger: p.logger,
-		client: v1alpha1.NewResolveServiceClient(clientConn),
+		logger:          p.logger,
+		client:          v1alpha1.NewResolveServiceClient(clientConn),
+		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -164,7 +244,8 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 		return nil, err
 	}
 	return &userService{
-		logger: p.logger,
-		client: v1alpha1.NewUserServiceClient(clientConn),
+		logger:          p.logger,
+		client:          v1alpha1.NewUserServiceClient(clientConn),
+		contextModifier: contextModifier,
 	}, nil
 }

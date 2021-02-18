@@ -89,8 +89,13 @@ func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
 
 func (b *builder) NewRunFunc(
 	f func(context.Context, Container) error,
+	interceptors ...Interceptor,
 ) func(context.Context, app.Container) error {
+	interceptor := chainInterceptors(interceptors...)
 	return func(ctx context.Context, appContainer app.Container) error {
+		if interceptor != nil {
+			return b.run(ctx, appContainer, interceptor(f))
+		}
 		return b.run(ctx, appContainer, f)
 	}
 }
@@ -210,4 +215,29 @@ func getLogLevel(verboseFlag bool, logLevelFlag string) (string, error) {
 		return "debug", nil
 	}
 	return "info", nil
+}
+
+// chainInterceptors consolidates the given interceptors into one.
+// The interceptors are applied in the order they are declared.
+func chainInterceptors(interceptors ...Interceptor) Interceptor {
+	filtered := make([]Interceptor, 0, len(interceptors))
+	for _, interceptor := range interceptors {
+		if interceptor != nil {
+			filtered = append(filtered, interceptor)
+		}
+	}
+	switch n := len(filtered); n {
+	case 0:
+		return nil
+	case 1:
+		return filtered[0]
+	default:
+		first := filtered[0]
+		return func(next func(context.Context, Container) error) func(context.Context, Container) error {
+			for i := len(filtered) - 1; i > 0; i-- {
+				next = filtered[i](next)
+			}
+			return first(next)
+		}
+	}
 }

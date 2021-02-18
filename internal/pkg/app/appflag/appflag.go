@@ -32,10 +32,13 @@ type Container interface {
 	applog.Container
 }
 
+// Interceptor intercepts and adapts the request or response of run functions.
+type Interceptor func(func(context.Context, Container) error) func(context.Context, Container) error
+
 // Builder builds run functions.
 type Builder interface {
 	BindRoot(flagSet *pflag.FlagSet)
-	NewRunFunc(func(context.Context, Container) error) func(context.Context, app.Container) error
+	NewRunFunc(func(context.Context, Container) error, ...Interceptor) func(context.Context, app.Container) error
 }
 
 // NewBuilder returns a new Builder.

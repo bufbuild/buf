@@ -59,6 +59,23 @@ func WithToken(ctx context.Context, token string) context.Context {
 	return ctx
 }
 
+// GetTokenFromHeader gets the current authentication token, if
+// there is one.
+func GetTokenFromHeader(ctx context.Context) (string, error) {
+	authHeader := rpc.GetIncomingHeader(ctx, authenticationHeader)
+	if authHeader == "" {
+		return "", errors.New("no auth header provided")
+	}
+	if !strings.HasPrefix(authHeader, authenticationTokenPrefix) {
+		return "", errors.New("invalid header format")
+	}
+	token := strings.TrimPrefix(authHeader, authenticationTokenPrefix)
+	if token == "" {
+		return "", errors.New("invalid header format")
+	}
+	return token, nil
+}
+
 // Authenticator defines the interface used to authenticate a token.
 type Authenticator interface {
 	Authenticate(ctx context.Context, token string) (*User, error)
@@ -91,7 +108,7 @@ func NewServerInterceptor(authenticator Authenticator) rpc.ServerInterceptor {
 }
 
 func authenticate(ctx context.Context, authenticator Authenticator) (*User, bool) {
-	token, err := getTokenFromHeader(ctx)
+	token, err := GetTokenFromHeader(ctx)
 	if err != nil {
 		return nil, false
 	}
@@ -100,21 +117,4 @@ func authenticate(ctx context.Context, authenticator Authenticator) (*User, bool
 		return nil, false
 	}
 	return user, true
-}
-
-// getTokenFromHeader gets the current authentication token, if
-// there is one.
-func getTokenFromHeader(ctx context.Context) (string, error) {
-	authHeader := rpc.GetIncomingHeader(ctx, authenticationHeader)
-	if authHeader == "" {
-		return "", errors.New("no auth header provided")
-	}
-	if !strings.HasPrefix(authHeader, authenticationTokenPrefix) {
-		return "", errors.New("invalid header format")
-	}
-	token := strings.TrimPrefix(authHeader, authenticationTokenPrefix)
-	if token == "" {
-		return "", errors.New("invalid header format")
-	}
-	return token, nil
 }

@@ -107,22 +107,12 @@ func (e *Error) Is(err error) bool {
 	return ok
 }
 
-// NormalizeAndValidate normalizes and validates the given path.
+// Normalize normalizes the given path.
 //
-// This calls Normalize on the path.
-// Returns Error if the path is not relative or jumps context.
-// This can be used to validate that paths are valid to use with Buckets.
-// The error message is safe to pass to users.
-func NormalizeAndValidate(path string) (string, error) {
-	normalizedPath := Normalize(path)
-	if filepath.IsAbs(normalizedPath) {
-		return "", NewError(path, errNotRelative)
-	}
-	// https://github.com/bufbuild/buf/issues/51
-	if strings.HasPrefix(normalizedPath, normalizedRelPathJumpContextPrefix) {
-		return "", NewError(path, errOutsideContextDir)
-	}
-	return normalizedPath, nil
+// This calls filepath.Clean and filepath.ToSlash on the path.
+// If the path is "" or ".", this returns ".".
+func Normalize(path string) string {
+	return filepath.ToSlash(filepath.Clean(path))
 }
 
 // NormalizeAndAbsolute normalizes the path and makes it absolute.
@@ -145,14 +135,6 @@ func NormalizeAndTransformForPathType(path string, pathType PathType) (string, e
 	default:
 		return "", fmt.Errorf("unknown PathType: %v", pathType)
 	}
-}
-
-// Normalize normalizes the given path.
-//
-// This calls filepath.Clean and filepath.ToSlash on the path.
-// If the path is "" or ".", this returns ".".
-func Normalize(path string) string {
-	return filepath.ToSlash(filepath.Clean(path))
 }
 
 // Unnormalize unnormalizes the given path.
@@ -233,39 +215,6 @@ func ByDir(paths ...string) map[string][]string {
 	return m
 }
 
-// Components splits the path into it's components.
-//
-// This calls filepath.Split repeatedly.
-//
-// The path is expected to be normalized.
-func Components(path string) []string {
-	var components []string
-	dir := Unnormalize(path)
-	for {
-		var file string
-		dir, file = filepath.Split(dir)
-		// puts in reverse
-		components = append(components, file)
-		if dir == stringOSPathSeparator {
-			components = append(components, dir)
-			break
-		}
-		dir = strings.TrimSuffix(dir, stringOSPathSeparator)
-		if dir == "" {
-			break
-		}
-	}
-	// https://github.com/golang/go/wiki/SliceTricks#reversing
-	for i := len(components)/2 - 1; i >= 0; i-- {
-		opp := len(components) - 1 - i
-		components[i], components[opp] = components[opp], components[i]
-	}
-	for i, component := range components {
-		components[i] = Normalize(component)
-	}
-	return components
-}
-
 // ContainsPath returns true if the dirPath contains the path.
 //
 // The path and value are expected to be normalized and validated if Relative is used.
@@ -283,73 +232,10 @@ func ContainsPath(dirPath string, path string, pathType PathType) bool {
 	return EqualsOrContainsPath(dirPath, Dir(path), pathType)
 }
 
-// EqualsOrContainsPath returns true if the value is equal to or contains the path.
-//
-// The path and value are expected to be normalized and validated if Relative is used.
-// The path and value are expected to be normalized and absolute if Absolute is used.
-//
-// For a given value:
-//
-//   - If value == PathType, the value contains the path.
-//   - If value == path, the value is equal to the path.
-//   - If value is a directory that contains path, this returns true.
-func EqualsOrContainsPath(value string, path string, pathType PathType) bool {
-	separator := pathType.Separator()
-	if separator == "" {
-		return false
-	}
-	if value == separator {
-		return true
-	}
-	// TODO: can we optimize this with strings.HasPrefix(path, value + "/") somehow?
-	for curPath := path; curPath != separator; curPath = Dir(curPath) {
-		if value == curPath {
-			return true
-		}
-	}
-	return false
-}
-
-// MapHasEqualOrContainingPath returns true if the path matches any file or directory in the map.
-//
-// The path and value are expected to be normalized and validated if Relative is used.
-// The path and value are expected to be normalized and absolute if Absolute is used.
-//
-// For a given key x:
-//
-//   - If x == PathType, the path always matches.
-//   - If x == path, the path matches.
-//   - If x is a directory that contains path, the path matches.
-//
-// If the map is empty, returns false.
-func MapHasEqualOrContainingPath(m map[string]struct{}, path string, pathType PathType) bool {
-	separator := pathType.Separator()
-	if separator == "" {
-		return false
-	}
-	if len(m) == 0 {
-		return false
-	}
-	if _, ok := m[separator]; ok {
-		return true
-	}
-	for curPath := path; curPath != separator; curPath = Dir(curPath) {
-		if _, ok := m[curPath]; ok {
-			return true
-		}
-	}
-	return false
-}
-
 // MapAllEqualOrContainingPaths returns the matching paths in the map in a sorted slice.
 //
-// The path and all keys in m are expected to be normalized and validated.
-//
-// For a given key x:
-//
-//   - If x == PathType, the path always matches.
-//   - If x == path, the path matches.
-//   - If x is a directory that contains path, the path matches.
+// The path and keys in m are expected to be normalized and validated if Relative is used.
+// The path and keys in m are expected to be normalized and absolute if Absolute is used.
 //
 // If the map is empty, returns nil.
 func MapAllEqualOrContainingPaths(m map[string]struct{}, path string, pathType PathType) []string {
@@ -357,41 +243,6 @@ func MapAllEqualOrContainingPaths(m map[string]struct{}, path string, pathType P
 		return nil
 	}
 	return stringutil.MapToSortedSlice(MapAllEqualOrContainingPathMap(m, path, pathType))
-}
-
-// MapAllEqualOrContainingPathMap returns the matching paths in the map in a new map.
-//
-// The path and all keys in m are expected to be normalized and validated.
-//
-// For a given key x:
-//
-//   - If x == PathType, the path always matches.
-//   - If x == path, the path matches.
-//   - If x is a directory that contains path, the path matches.
-//
-// If the map is empty, returns nil.
-func MapAllEqualOrContainingPathMap(m map[string]struct{}, path string, pathType PathType) map[string]struct{} {
-	separator := pathType.Separator()
-	if separator == "" {
-		return nil
-	}
-	if len(m) == 0 {
-		return nil
-	}
-	n := make(map[string]struct{})
-	if _, ok := m[separator]; ok {
-		// also covers if path == separator.
-		n[separator] = struct{}{}
-	}
-	for potentialMatch := range m {
-		for curPath := path; curPath != separator; curPath = Dir(curPath) {
-			if potentialMatch == curPath {
-				n[potentialMatch] = struct{}{}
-				break
-			}
-		}
-	}
-	return n
 }
 
 // StripComponents strips the specified number of components.

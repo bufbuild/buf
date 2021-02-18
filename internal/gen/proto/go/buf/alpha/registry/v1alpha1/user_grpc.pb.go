@@ -33,10 +33,6 @@ const _ = grpc.SupportPackageIsVersion7
 type UserServiceClient interface {
 	// CreateUser creates a new user with the given username.
 	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
-	// GetCurrentUser gets information associated with the current user.
-	//
-	// The user's ID is retrieved from the request's authentication header.
-	GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*GetCurrentUserResponse, error)
 	// GetUser gets a user by ID.
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
 	// GetUserByUsername gets a user by username.
@@ -78,15 +74,6 @@ func NewUserServiceClient(cc grpc.ClientConnInterface) UserServiceClient {
 func (c *userServiceClient) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error) {
 	out := new(CreateUserResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/CreateUser", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *userServiceClient) GetCurrentUser(ctx context.Context, in *GetCurrentUserRequest, opts ...grpc.CallOption) (*GetCurrentUserResponse, error) {
-	out := new(GetCurrentUserResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/GetCurrentUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -225,10 +212,6 @@ func (c *userServiceClient) RemoveUserServerScopeByName(ctx context.Context, in 
 type UserServiceServer interface {
 	// CreateUser creates a new user with the given username.
 	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
-	// GetCurrentUser gets information associated with the current user.
-	//
-	// The user's ID is retrieved from the request's authentication header.
-	GetCurrentUser(context.Context, *GetCurrentUserRequest) (*GetCurrentUserResponse, error)
 	// GetUser gets a user by ID.
 	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
 	// GetUserByUsername gets a user by username.
@@ -265,9 +248,6 @@ type UnimplementedUserServiceServer struct {
 
 func (UnimplementedUserServiceServer) CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
-}
-func (UnimplementedUserServiceServer) GetCurrentUser(context.Context, *GetCurrentUserRequest) (*GetCurrentUserResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetCurrentUser not implemented")
 }
 func (UnimplementedUserServiceServer) GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUser not implemented")
@@ -337,24 +317,6 @@ func _UserService_CreateUser_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).CreateUser(ctx, req.(*CreateUserRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _UserService_GetCurrentUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetCurrentUserRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UserServiceServer).GetCurrentUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.UserService/GetCurrentUser",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).GetCurrentUser(ctx, req.(*GetCurrentUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -621,10 +583,6 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateUser",
 			Handler:    _UserService_CreateUser_Handler,
-		},
-		{
-			MethodName: "GetCurrentUser",
-			Handler:    _UserService_GetCurrentUser_Handler,
 		},
 		{
 			MethodName: "GetUser",

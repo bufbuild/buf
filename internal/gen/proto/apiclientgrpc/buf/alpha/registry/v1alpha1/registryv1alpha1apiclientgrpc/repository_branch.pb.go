@@ -23,8 +23,9 @@ import (
 )
 
 type repositoryBranchService struct {
-	logger *zap.Logger
-	client v1alpha1.RepositoryBranchServiceClient
+	logger          *zap.Logger
+	client          v1alpha1.RepositoryBranchServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // CreateRepositoryBranch creates a new repository branch.
@@ -34,6 +35,9 @@ func (s *repositoryBranchService) CreateRepositoryBranch(
 	name string,
 	parentBranch string,
 ) (repositoryBranch *v1alpha1.RepositoryBranch, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.CreateRepositoryBranch(
 		ctx,
 		&v1alpha1.CreateRepositoryBranchRequest{
@@ -56,6 +60,9 @@ func (s *repositoryBranchService) ListRepositoryBranches(
 	pageToken string,
 	reverse bool,
 ) (repositoryBranches []*v1alpha1.RepositoryBranch, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListRepositoryBranches(
 		ctx,
 		&v1alpha1.ListRepositoryBranchesRequest{

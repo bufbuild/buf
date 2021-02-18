@@ -23,12 +23,16 @@ import (
 )
 
 type organizationService struct {
-	logger *zap.Logger
-	client v1alpha1.OrganizationServiceClient
+	logger          *zap.Logger
+	client          v1alpha1.OrganizationServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // GetOrganization gets a organization by ID.
 func (s *organizationService) GetOrganization(ctx context.Context, id string) (organization *v1alpha1.Organization, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetOrganization(
 		ctx,
 		&v1alpha1.GetOrganizationRequest{
@@ -43,6 +47,9 @@ func (s *organizationService) GetOrganization(ctx context.Context, id string) (o
 
 // GetOrganizationByName gets a organization by name.
 func (s *organizationService) GetOrganizationByName(ctx context.Context, name string) (organization *v1alpha1.Organization, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetOrganizationByName(
 		ctx,
 		&v1alpha1.GetOrganizationByNameRequest{
@@ -62,6 +69,9 @@ func (s *organizationService) ListOrganizations(
 	pageToken string,
 	reverse bool,
 ) (organizations []*v1alpha1.Organization, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListOrganizations(
 		ctx,
 		&v1alpha1.ListOrganizationsRequest{
@@ -84,6 +94,9 @@ func (s *organizationService) ListUserOrganizations(
 	pageToken string,
 	reverse bool,
 ) (organizations []*v1alpha1.Organization, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListUserOrganizations(
 		ctx,
 		&v1alpha1.ListUserOrganizationsRequest{
@@ -101,6 +114,9 @@ func (s *organizationService) ListUserOrganizations(
 
 // CreateOrganization creates a new organization.
 func (s *organizationService) CreateOrganization(ctx context.Context, name string) (organization *v1alpha1.Organization, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.CreateOrganization(
 		ctx,
 		&v1alpha1.CreateOrganizationRequest{
@@ -119,6 +135,9 @@ func (s *organizationService) UpdateOrganizationName(
 	id string,
 	newName string,
 ) (organization *v1alpha1.Organization, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.UpdateOrganizationName(
 		ctx,
 		&v1alpha1.UpdateOrganizationNameRequest{
@@ -138,6 +157,9 @@ func (s *organizationService) UpdateOrganizationNameByName(
 	name string,
 	newName string,
 ) (organization *v1alpha1.Organization, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.UpdateOrganizationNameByName(
 		ctx,
 		&v1alpha1.UpdateOrganizationNameByNameRequest{
@@ -153,6 +175,9 @@ func (s *organizationService) UpdateOrganizationNameByName(
 
 // DeleteOrganization deletes a organization.
 func (s *organizationService) DeleteOrganization(ctx context.Context, id string) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.DeleteOrganization(
 		ctx,
 		&v1alpha1.DeleteOrganizationRequest{
@@ -167,6 +192,9 @@ func (s *organizationService) DeleteOrganization(ctx context.Context, id string)
 
 // DeleteOrganizationByName deletes a organization by name.
 func (s *organizationService) DeleteOrganizationByName(ctx context.Context, name string) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.DeleteOrganizationByName(
 		ctx,
 		&v1alpha1.DeleteOrganizationByNameRequest{
@@ -185,6 +213,9 @@ func (s *organizationService) AddOrganizationBaseRepositoryScope(
 	id string,
 	repositoryScope v1alpha1.RepositoryScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.AddOrganizationBaseRepositoryScope(
 		ctx,
 		&v1alpha1.AddOrganizationBaseRepositoryScopeRequest{
@@ -204,6 +235,9 @@ func (s *organizationService) AddOrganizationBaseRepositoryScopeByName(
 	name string,
 	repositoryScope v1alpha1.RepositoryScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.AddOrganizationBaseRepositoryScopeByName(
 		ctx,
 		&v1alpha1.AddOrganizationBaseRepositoryScopeByNameRequest{
@@ -223,6 +257,9 @@ func (s *organizationService) RemoveOrganizationBaseRepositoryScope(
 	id string,
 	repositoryScope v1alpha1.RepositoryScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.RemoveOrganizationBaseRepositoryScope(
 		ctx,
 		&v1alpha1.RemoveOrganizationBaseRepositoryScopeRequest{
@@ -242,6 +279,9 @@ func (s *organizationService) RemoveOrganizationBaseRepositoryScopeByName(
 	name string,
 	repositoryScope v1alpha1.RepositoryScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.RemoveOrganizationBaseRepositoryScopeByName(
 		ctx,
 		&v1alpha1.RemoveOrganizationBaseRepositoryScopeByNameRequest{
