@@ -221,17 +221,17 @@ func GetInputValue(
 	case 1:
 		arg = container.Arg(0)
 		if arg == "" {
-			return "", errors.New("First argument is present but empty.")
+			return "", errors.New("first argument is present but empty")
 		}
 		// if arg is non-empty and inputHashtag is non-empty, this means two arguments were specified
 		if inputHashtag != "" {
-			return "", errors.New("Only 1 argument allowed but 2 arguments specified.")
+			return "", errors.New("only 1 argument allowed but 2 arguments specified")
 		}
 	default:
-		return "", fmt.Errorf("Only 1 argument allowed but %d arguments specified.", numArgs)
+		return "", fmt.Errorf("only 1 argument allowed but %d arguments specified", numArgs)
 	}
 	if arg != "" && deprecatedFlag != "" {
-		return "", fmt.Errorf("Cannot specify both first argument and deprecated flag --%s.", deprecatedFlagName)
+		return "", fmt.Errorf("cannot specify both first argument and deprecated flag --%s", deprecatedFlagName)
 	}
 	if arg != "" {
 		return arg, nil
@@ -250,7 +250,7 @@ func GetStringFlagOrDeprecatedFlag(
 	deprecatedFlagName string,
 ) (string, error) {
 	if flag != "" && deprecatedFlag != "" {
-		return "", fmt.Errorf("Cannot specify both --%s and --%s.", flagName, deprecatedFlagName)
+		return "", fmt.Errorf("cannot specify both --%s and --%s", flagName, deprecatedFlagName)
 	}
 	if flag != "" {
 		return flag, nil
@@ -266,7 +266,7 @@ func GetStringSliceFlagOrDeprecatedFlag(
 	deprecatedFlagName string,
 ) ([]string, error) {
 	if len(flag) > 0 && len(deprecatedFlag) > 0 {
-		return nil, fmt.Errorf("Cannot specify both --%s and --%s.", flagName, deprecatedFlagName)
+		return nil, fmt.Errorf("cannot specify both --%s and --%s", flagName, deprecatedFlagName)
 	}
 	if len(flag) > 0 {
 		return flag, nil
@@ -431,24 +431,6 @@ func DeleteRemote(container appflag.Container, address string) (bool, error) {
 	)
 }
 
-// WithHeaders adds the root headers.
-func WithHeaders(
-	ctx context.Context,
-	container appflag.Container,
-	address string,
-) (context.Context, error) {
-	machine, err := netrc.GetMachineForName(container, address)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
-	}
-	var password string
-	if machine != nil {
-		password = machine.Password()
-	}
-	ctx = rpc.WithOutgoingHeader(ctx, "buf-version", Version)
-	return rpcauth.WithToken(ctx, password), nil
-}
-
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
 	config, err := NewConfig(container)
@@ -459,7 +441,9 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 	if err != nil {
 		return nil, err
 	}
-	var options []bufapiclient.RegistryProviderOption
+	options := []bufapiclient.RegistryProviderOption{
+		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
+	}
 	if buftransport.IsAPISubdomainEnabled(container) {
 		options = append(options, bufapiclient.RegistryProviderWithAddressMapper(buftransport.PrependAPISubdomain))
 	}
@@ -472,6 +456,34 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 		config.TLS,
 		options...,
 	)
+}
+
+// NewContextModifierProvider returns a new context modifier provider for API providers.
+//
+// Public for use in other packages that provide API provider constructors.
+func NewContextModifierProvider(
+	container appflag.Container,
+) func(string) (func(context.Context) context.Context, error) {
+	return func(address string) (func(context.Context) context.Context, error) {
+		machine, err := netrc.GetMachineForName(container, address)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
+		}
+		var password string
+		if machine != nil {
+			password = machine.Password()
+		}
+		return func(ctx context.Context) context.Context {
+			return rpcauth.WithToken(
+				rpc.WithOutgoingHeader(
+					ctx,
+					"buf-version",
+					Version,
+				),
+				password,
+			)
+		}, nil
+	}
 }
 
 // ModuleResolverReaderProvider provides ModuleResolvers and ModuleReaders.

@@ -16,6 +16,7 @@ package bufmodule
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/internal"
@@ -96,7 +97,7 @@ func (m *module) SourceFileInfos(ctx context.Context) ([]bufcore.FileInfo, error
 		fileInfos = append(fileInfos, bufcore.NewFileInfoForObjectInfo(objectInfo, false))
 		return nil
 	}); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to enumerate module files: %w", err)
 	}
 	if len(fileInfos) == 0 {
 		return nil, internal.ErrNoTargetFiles

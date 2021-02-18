@@ -44,6 +44,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
+			bufcli.NewErrorInterceptor(name),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -83,10 +84,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	ctx, err = bufcli.WithHeaders(ctx, container, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
 	repository, err := service.GetRepositoryByFullName(
 		ctx,
 		moduleIdentity.Owner()+"/"+moduleIdentity.Repository(),
@@ -95,7 +92,7 @@ func run(
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
-		return bufcli.NewRPCError("get repository", moduleIdentity.Remote(), err)
+		return err
 	}
 	return bufcli.PrintRepositories(ctx, apiProvider, moduleIdentity.Remote(), container.Stdout(), flags.Format, repository)
 }

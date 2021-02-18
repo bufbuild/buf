@@ -48,6 +48,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags, moduleResolverReaderProvider)
 			},
+			bufcli.NewErrorInterceptor(name),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -101,10 +102,6 @@ func run(
 	if moduleConfig.ModuleIdentity == nil || moduleConfig.ModuleIdentity.Remote() == "" {
 		return bufcli.ErrNoModuleName
 	}
-	ctx, err = bufcli.WithHeaders(ctx, container, moduleConfig.ModuleIdentity.Remote())
-	if err != nil {
-		return err
-	}
 	var dependencyModulePins []bufmodule.ModulePin
 	if len(moduleConfig.Build.DependencyModuleReferences) != 0 {
 		apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
@@ -120,7 +117,7 @@ func run(
 		)
 		protoDependencyModulePins, err := service.GetModulePins(ctx, protoDependencyModuleReferences)
 		if err != nil {
-			return bufcli.NewRPCError("update module dependencies", moduleConfig.ModuleIdentity.Remote(), err)
+			return err
 		}
 		dependencyModulePins, err = bufmodule.NewModulePinsForProtos(protoDependencyModulePins...)
 		if err != nil {

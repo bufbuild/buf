@@ -29,9 +29,16 @@ type TraceExportCloser interface {
 	io.Closer
 }
 
+// ViewExportCloser describes the interface used to export OpenCensus views
+// and cleaning of resources.
+type ViewExportCloser interface {
+	view.Exporter
+	io.Closer
+}
+
 // TraceViewExportCloser implements both OpenCensus view and trace exporting.
 type TraceViewExportCloser interface {
-	view.Exporter
+	ViewExportCloser
 	TraceExportCloser
 }
 
@@ -58,6 +65,11 @@ func Start(options ...StartOption) io.Closer {
 		trace.RegisterExporter(traceExportCloser)
 		closers = append(closers, traceExportCloser)
 	}
+	for _, viewExportCloser := range startOptions.viewExportClosers {
+		viewExportCloser := viewExportCloser
+		view.RegisterExporter(viewExportCloser)
+		closers = append(closers, viewExportCloser)
+	}
 	for _, traceViewExportCloser := range startOptions.traceViewExportClosers {
 		traceViewExportCloser := traceViewExportCloser
 		trace.RegisterExporter(traceViewExportCloser)
@@ -77,6 +89,13 @@ func StartWithTraceExportCloser(traceExportCloser TraceExportCloser) StartOption
 	}
 }
 
+// StartWithViewExportCloser returns a new StartOption that adds the given TraceExportCloser.
+func StartWithViewExportCloser(viewExportCloser ViewExportCloser) StartOption {
+	return func(startOptions *startOptions) {
+		startOptions.viewExportClosers = append(startOptions.viewExportClosers, viewExportCloser)
+	}
+}
+
 // StartWithTraceViewExportCloser returns a new StartOption that adds the given TraceViewExportCloser.
 func StartWithTraceViewExportCloser(traceViewExportCloser TraceViewExportCloser) StartOption {
 	return func(startOptions *startOptions) {
@@ -86,6 +105,7 @@ func StartWithTraceViewExportCloser(traceViewExportCloser TraceViewExportCloser)
 
 type startOptions struct {
 	traceExportClosers     []TraceExportCloser
+	viewExportClosers      []ViewExportCloser
 	traceViewExportClosers []TraceViewExportCloser
 }
 

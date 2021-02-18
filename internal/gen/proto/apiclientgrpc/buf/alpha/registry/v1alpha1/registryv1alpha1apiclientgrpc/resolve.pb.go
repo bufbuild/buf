@@ -24,8 +24,9 @@ import (
 )
 
 type resolveService struct {
-	logger *zap.Logger
-	client v1alpha1.ResolveServiceClient
+	logger          *zap.Logger
+	client          v1alpha1.ResolveServiceClient
+	contextModifier func(context.Context) context.Context
 }
 
 // GetModulePins finds all the latest digests and respective dependencies of
@@ -36,6 +37,9 @@ type resolveService struct {
 //
 // This function also deals with tiebreaking what ModulePin wins for the same repository.
 func (s *resolveService) GetModulePins(ctx context.Context, moduleReferences []*v1alpha11.ModuleReference) (modulePins []*v1alpha11.ModulePin, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetModulePins(
 		ctx,
 		&v1alpha1.GetModulePinsRequest{

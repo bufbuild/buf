@@ -24,8 +24,9 @@ import (
 )
 
 type downloadService struct {
-	logger *zap.Logger
-	client v1alpha1.DownloadService
+	logger          *zap.Logger
+	client          v1alpha1.DownloadService
+	contextModifier func(context.Context) context.Context
 }
 
 // Download downloads.
@@ -35,6 +36,9 @@ func (s *downloadService) Download(
 	repository string,
 	commit string,
 ) (module *v1alpha11.Module, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.Download(
 		ctx,
 		&v1alpha1.DownloadRequest{

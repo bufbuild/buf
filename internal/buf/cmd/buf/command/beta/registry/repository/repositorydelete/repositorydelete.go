@@ -43,6 +43,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
+			bufcli.NewErrorInterceptor(name),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -82,10 +83,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	ctx, err = bufcli.WithHeaders(ctx, container, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
 	if !flags.Force {
 		if err := bufcli.PromptUserForDelete(container, "repository", container.Arg(0)); err != nil {
 			return err
@@ -95,7 +92,7 @@ func run(
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
-		return bufcli.NewRPCError("delete repository", moduleIdentity.Remote(), err)
+		return err
 	}
 	if _, err := fmt.Fprintln(container.Stdout(), "Repository deleted."); err != nil {
 		return bufcli.NewInternalError(err)

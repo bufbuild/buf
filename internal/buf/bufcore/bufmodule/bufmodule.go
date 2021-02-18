@@ -27,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/uuidutil"
 	"go.uber.org/multierr"
 )
 
@@ -138,32 +137,20 @@ type ModuleReference interface {
 	// Prints either remote/owner/repository:{branch,commit}
 	fmt.Stringer
 
-	// only one of these will be set
-	Branch() string
-	// only one of these will be set
-	Commit() string
+	// Either branch or commit
+	Reference() string
 
 	isModuleReference()
 }
 
-// NewBranchModuleReference returns a new validated ModuleReference for a branch.
-func NewBranchModuleReference(
+// NewModuleReference returns a new validated ModuleReference.
+func NewModuleReference(
 	remote string,
 	owner string,
 	repository string,
-	branch string,
+	reference string,
 ) (ModuleReference, error) {
-	return newModuleReference(remote, owner, repository, branch, "")
-}
-
-// NewCommitModuleReference returns a new validated ModuleReference for a commit.
-func NewCommitModuleReference(
-	remote string,
-	owner string,
-	repository string,
-	commit string,
-) (ModuleReference, error) {
-	return newModuleReference(remote, owner, repository, "", commit)
+	return newModuleReference(remote, owner, repository, reference)
 }
 
 // NewModuleReferenceForProto returns a new ModuleReference for the given proto ModuleReference.
@@ -208,91 +195,25 @@ func NewProtoModuleReferencesForModuleReferences(moduleReferences ...ModuleRefer
 // If a branch or commit is not provided, the "main" branch is used.
 //
 // This parses the path in the form remote/owner/repository{:branch,:commit}.
-func ModuleReferenceForString(path string, options ...ModuleReferenceForStringOption) (ModuleReference, error) {
-	moduleReferenceForStringOptions := newModuleReferenceForStringOptions()
-	for _, option := range options {
-		option(moduleReferenceForStringOptions)
-	}
-	remote, owner, repository, ref, err := parseModuleReferenceComponents(path)
+func ModuleReferenceForString(path string) (ModuleReference, error) {
+	remote, owner, repository, reference, err := parseModuleReferenceComponents(path)
 	if err != nil {
 		return nil, err
 	}
-	if ref == "" && moduleReferenceForStringOptions.requireBranch {
-		return nil, fmt.Errorf("a branch is required in module reference path %q", path)
-	}
-	if ref == "" {
+	if reference == "" {
 		// Default to the main branch if a ':' separator was not specified.
-		return NewBranchModuleReference(remote, owner, repository, MainBranch)
+		reference = MainBranch
 	}
-	if _, err := uuidutil.FromDashless(ref); err == nil {
-		return NewCommitModuleReference(remote, owner, repository, ref)
-	}
-	return NewBranchModuleReference(remote, owner, repository, ref)
+	return NewModuleReference(remote, owner, repository, reference)
 }
 
-// ModuleReferenceForStringOption is an option for ModuleReferenceForString.
-type ModuleReferenceForStringOption func(*moduleReferenceForStringOptions)
-
-// ModuleReferenceForStringRequireBranch returns a new ModuleReferenceForStringOption that
-// requires that a branch was specified in the module reference path.
+// IsCommitModuleReference returns true if the ModuleReference references a commit.
 //
-// The default is to use MainBranch if a branch is not specified.
-func ModuleReferenceForStringRequireBranch() ModuleReferenceForStringOption {
-	return func(moduleReferenceForStringOptions *moduleReferenceForStringOptions) {
-		moduleReferenceForStringOptions.requireBranch = true
-	}
-}
-
-// BranchModuleReferenceForString returns a new ModuleReference for the given string.
-// If a branch is not provided, the "main" branch is used.
-//
-// This parses the path in the form remote/owner/repository:branch.
-// If a commit is provided, an error is returned.
-func BranchModuleReferenceForString(path string, options ...BranchModuleReferenceForStringOption) (ModuleReference, error) {
-	branchModuleReferenceForStringOptions := newBranchModuleReferenceForStringOptions()
-	for _, option := range options {
-		option(branchModuleReferenceForStringOptions)
-	}
-	remote, owner, repository, ref, err := parseModuleReferenceComponents(path)
-	if err != nil {
-		return nil, err
-	}
-	if ref == "" && branchModuleReferenceForStringOptions.requireBranch {
-		return nil, fmt.Errorf("a branch is required in module reference path %q", path)
-	}
-	if ref == "" {
-		// Default to the main branch if a ':' separator was not specified.
-		return NewBranchModuleReference(remote, owner, repository, MainBranch)
-	}
-	return NewBranchModuleReference(remote, owner, repository, ref)
-}
-
-// BranchModuleReferenceForStringOption is an option for BranchModuleReferenceForString.
-type BranchModuleReferenceForStringOption func(*branchModuleReferenceForStringOptions)
-
-// BranchModuleReferenceForStringRequireBranch returns a new BranchModuleReferenceForStringOption that
-// requires that a branch was specified in the module reference path.
-//
-// The default is to use MainBranch if a branch is not specified.
-func BranchModuleReferenceForStringRequireBranch() BranchModuleReferenceForStringOption {
-	return func(branchModuleReferenceForStringOptions *branchModuleReferenceForStringOptions) {
-		branchModuleReferenceForStringOptions.requireBranch = true
-	}
-}
-
-// CommitModuleReferenceForString returns a new ModuleReference for the given string.
-//
-// This parses the path in the form remote/owner/repository:commit.
-// If a commit is not provided, an error is returned.
-func CommitModuleReferenceForString(path string) (ModuleReference, error) {
-	remote, owner, repository, ref, err := parseModuleReferenceComponents(path)
-	if err != nil {
-		return nil, err
-	}
-	if ref == "" {
-		return nil, newInvalidModuleReferenceStringError(path)
-	}
-	return NewCommitModuleReference(remote, owner, repository, ref)
+// If false, this currently means the ModuleReference references a branch, but this
+// will be expanded in the future to include tags. Branch and tag disambiguation
+// needs to be done server-side.
+func IsCommitModuleReference(moduleReference ModuleReference) bool {
+	return isCommitReference(moduleReference.Reference())
 }
 
 // ModulePin is a module pin.
@@ -683,8 +604,7 @@ func ModuleReferenceEqual(a ModuleReference, b ModuleReference) bool {
 	return a.Remote() == b.Remote() &&
 		a.Owner() == b.Owner() &&
 		a.Repository() == b.Repository() &&
-		a.Branch() == b.Branch() &&
-		a.Commit() == b.Commit()
+		a.Reference() == b.Reference()
 }
 
 // ModulePinEqual returns true if a equals b.
@@ -757,20 +677,4 @@ func parseModuleIdentityComponents(path string) (remote string, owner string, re
 		return "", "", "", newInvalidModuleIdentityStringError(path)
 	}
 	return remote, owner, repository, nil
-}
-
-type moduleReferenceForStringOptions struct {
-	requireBranch bool
-}
-
-func newModuleReferenceForStringOptions() *moduleReferenceForStringOptions {
-	return &moduleReferenceForStringOptions{}
-}
-
-type branchModuleReferenceForStringOptions struct {
-	requireBranch bool
-}
-
-func newBranchModuleReferenceForStringOptions() *branchModuleReferenceForStringOptions {
-	return &branchModuleReferenceForStringOptions{}
 }
