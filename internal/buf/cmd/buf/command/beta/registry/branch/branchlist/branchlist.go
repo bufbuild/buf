@@ -49,6 +49,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
+			bufcli.NewErrorInterceptor(name),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -109,16 +110,12 @@ func run(
 	if err != nil {
 		return err
 	}
-	ctx, err = bufcli.WithHeaders(ctx, container, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
 	repository, err := repositoryService.GetRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Repository())
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
-		return bufcli.NewRPCError("list branches", moduleIdentity.Remote(), err)
+		return err
 	}
 	repositoryBranchService, err := apiProvider.NewRepositoryBranchService(ctx, moduleIdentity.Remote())
 	if err != nil {
@@ -132,7 +129,7 @@ func run(
 		flags.Reverse,
 	)
 	if err != nil {
-		return bufcli.NewRPCError("list branches", moduleIdentity.Remote(), err)
+		return err
 	}
 	return bufcli.PrintRepositoryBranches(ctx, container.Stdout(), flags.Format, repositoryBranches...)
 }

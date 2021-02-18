@@ -39,12 +39,6 @@ service UserService {
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
     option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
   }
-  // GetCurrentUser gets information associated with the current user.
-  //
-  // The user's ID is retrieved from the request's authentication header.
-  rpc GetCurrentUser(GetCurrentUserRequest) returns (GetCurrentUserResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
   // GetUser gets a user by ID.
   rpc GetUser(GetUserRequest) returns (GetUserResponse) {
     option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
@@ -108,12 +102,6 @@ message CreateUserRequest {
 }
 
 message CreateUserResponse {
-  User user = 1;
-}
-
-message GetCurrentUserRequest {}
-
-message GetCurrentUserResponse {
   User user = 1;
 }
 

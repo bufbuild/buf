@@ -15,19 +15,21 @@
 package bufcli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
+	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/rpc"
 )
 
 var (
 	// ErrNoModuleName is used when the user does not specify a module name in their configuration file.
-	ErrNoModuleName = errors.New(`Please specify a module name in your configuration file with the "name" key.`)
+	ErrNoModuleName = errors.New(`please specify a module name in your configuration file with the "name" key`)
 
 	// ErrNoConfigFile is used when the user tries to execute a command without a configuration file.
-	ErrNoConfigFile = errors.New(`Please define a configuration file in the current directory; you can create one by running "buf beta mod init".`)
+	ErrNoConfigFile = errors.New(`please define a configuration file in the current directory; you can create one by running "buf beta mod init"`)
 )
 
 // errInternal is returned when the user encounters an unexpected internal buf error.
@@ -51,7 +53,7 @@ func isInternalError(err error) bool {
 }
 
 func (e *errInternal) Error() string {
-	message := "It looks like you have found a bug in buf. " +
+	message := "it looks like you have found a bug in buf. " +
 		"Please file an issue at https://github.com/bufbuild/buf/issues/ " +
 		"and provide the command you ran"
 	if e.cause == nil {
@@ -66,33 +68,24 @@ func (e *errInternal) Is(err error) bool {
 	return ok
 }
 
-// NewRPCError is used when an RPC call fails, regardless of its error code.
-// Note that this function will wrap the error so that the underlying error
-// can be recovered via 'errors.Is'.
-func NewRPCError(action string, address string, err error) error {
-	switch {
-	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
-		return fmt.Errorf(`Failed to %s: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://beta.docs.buf.build/authentication`, action)
-	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnavailable:
-		return fmt.Errorf(`Failed to %s: the server hosted at %q is unavailable: %w.`, action, address, err)
+// NewErrorInterceptor returns a CLI interceptor that wraps Buf CLI errors.
+func NewErrorInterceptor(action string) appflag.Interceptor {
+	return func(next func(context.Context, appflag.Container) error) func(context.Context, appflag.Container) error {
+		return func(ctx context.Context, container appflag.Container) error {
+			return wrapRPCError(action, next(ctx, container))
+		}
 	}
-	return fmt.Errorf("Failed to %s: %w.", action, err)
 }
 
 // NewModuleRefError is used when the client fails to parse a module ref.
 func NewModuleRefError(moduleRef string) error {
-	return fmt.Errorf("Could not parse %q as a module, are you sure this is a valid reference?", moduleRef)
+	return fmt.Errorf("could not parse %q as a module; please verify this is a valid reference", moduleRef)
 }
 
 // NewTooManyEmptyAnswersError is used when the user does not answer a prompt in
 // the given number of attempts.
 func NewTooManyEmptyAnswersError(attempts int) error {
-	return fmt.Errorf("Did not receive an answer in %d attempts.", attempts)
-}
-
-// NewUserNotLoggedInError informs the user they aren't logged-in.
-func NewUserNotLoggedInError() error {
-	return errors.New(`You are not currently authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://beta.docs.buf.build/authentication`)
+	return fmt.Errorf("did not receive an answer in %d attempts", attempts)
 }
 
 // NewFlagIsRequiredError informs the user that a given flag is required.
@@ -103,37 +96,53 @@ func NewFlagIsRequiredError(flagName string) error {
 // NewOrganizationNameAlreadyExistsError informs the user that an organization with
 // that name already exists.
 func NewOrganizationNameAlreadyExistsError(name string) error {
-	return fmt.Errorf("An organization named %q already exists.", name)
+	return fmt.Errorf("an organization named %q already exists", name)
 }
 
 // NewRepositoryNameAlreadyExistsError informs the user that a repository
 // with that name already exists.
 func NewRepositoryNameAlreadyExistsError(name string) error {
-	return fmt.Errorf("A repository named %q already exists.", name)
+	return fmt.Errorf("a repository named %q already exists", name)
 }
 
 // NewBranchNameAlreadyExistsError informs the user that a branch
 // with that name already exists.
 func NewBranchNameAlreadyExistsError(name string) error {
-	return fmt.Errorf("A branch named %q already exists.", name)
+	return fmt.Errorf("a branch named %q already exists", name)
 }
 
 // NewOrganizationNotFoundError informs the user that an organization with
 // that name does not exist.
 func NewOrganizationNotFoundError(name string) error {
-	return fmt.Errorf(`An organization named %q does not exist, use "buf beta registry organization create" to create one.`, name)
+	return fmt.Errorf(`an organization named %q does not exist, use "buf beta registry organization create" to create one`, name)
 }
 
 // NewRepositoryNotFoundError informs the user that a repository with
 // that name does not exist.
 func NewRepositoryNotFoundError(name string) error {
-	return fmt.Errorf(`A repository named %q does not exist, use "buf beta registry repository create" to create one.`, name)
+	return fmt.Errorf(`a repository named %q does not exist, use "buf beta registry repository create" to create one`, name)
 }
 
 // NewTokenNotFoundError informs the user that a token with
 // that identifier does not exist.
 func NewTokenNotFoundError(tokenID string) error {
-	return fmt.Errorf("A token with ID %q does not exist.", tokenID)
+	return fmt.Errorf("a token with ID %q does not exist", tokenID)
+}
+
+// wrapRPCError is used when an RPC call fails, regardless of its error code.
+// Note that this function will wrap the error so that the underlying error
+// can be recovered via 'errors.Is'.
+func wrapRPCError(action string, err error) error {
+	if err == nil {
+		return nil
+	}
+	switch {
+	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
+		return fmt.Errorf(`Failed to %s; you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://beta.docs.buf.build/authentication`, action)
+	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnavailable:
+		return fmt.Errorf(`Failed to %s: the server hosted at that remote is unavailable: %w.`, action, err)
+	}
+	return fmt.Errorf("Failed to %q: %w.", action, err)
 }
 
 // isEmptyUnknownError returns true if the given

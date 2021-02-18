@@ -23,12 +23,16 @@ import (
 )
 
 type repositoryService struct {
-	logger *zap.Logger
-	client v1alpha1.RepositoryService
+	logger          *zap.Logger
+	client          v1alpha1.RepositoryService
+	contextModifier func(context.Context) context.Context
 }
 
 // GetRepository gets a repository by ID.
 func (s *repositoryService) GetRepository(ctx context.Context, id string) (repository *v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetRepository(
 		ctx,
 		&v1alpha1.GetRepositoryRequest{
@@ -43,6 +47,9 @@ func (s *repositoryService) GetRepository(ctx context.Context, id string) (repos
 
 // GetRepositoryByFullName gets a repository by full name.
 func (s *repositoryService) GetRepositoryByFullName(ctx context.Context, fullName string) (repository *v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetRepositoryByFullName(
 		ctx,
 		&v1alpha1.GetRepositoryByFullNameRequest{
@@ -62,6 +69,9 @@ func (s *repositoryService) ListRepositories(
 	pageToken string,
 	reverse bool,
 ) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListRepositories(
 		ctx,
 		&v1alpha1.ListRepositoriesRequest{
@@ -84,6 +94,9 @@ func (s *repositoryService) ListUserRepositories(
 	pageToken string,
 	reverse bool,
 ) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListUserRepositories(
 		ctx,
 		&v1alpha1.ListUserRepositoriesRequest{
@@ -107,6 +120,9 @@ func (s *repositoryService) ListOrganizationRepositories(
 	pageToken string,
 	reverse bool,
 ) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListOrganizationRepositories(
 		ctx,
 		&v1alpha1.ListOrganizationRepositoriesRequest{
@@ -128,6 +144,9 @@ func (s *repositoryService) CreateRepositoryByFullName(
 	fullName string,
 	visibility v1alpha1.Visibility,
 ) (repository *v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.CreateRepositoryByFullName(
 		ctx,
 		&v1alpha1.CreateRepositoryByFullNameRequest{
@@ -147,6 +166,9 @@ func (s *repositoryService) UpdateRepositoryName(
 	id string,
 	newName string,
 ) (repository *v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.UpdateRepositoryName(
 		ctx,
 		&v1alpha1.UpdateRepositoryNameRequest{
@@ -166,6 +188,9 @@ func (s *repositoryService) UpdateRepositoryNameByFullName(
 	fullName string,
 	newName string,
 ) (repository *v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.UpdateRepositoryNameByFullName(
 		ctx,
 		&v1alpha1.UpdateRepositoryNameByFullNameRequest{
@@ -185,6 +210,9 @@ func (s *repositoryService) UpdateRepositoryVisibility(
 	id string,
 	newVisibility v1alpha1.Visibility,
 ) (repository *v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.UpdateRepositoryVisibility(
 		ctx,
 		&v1alpha1.UpdateRepositoryVisibilityRequest{
@@ -205,6 +233,9 @@ func (s *repositoryService) UpdateRepositoryVisibilityByName(
 	repositoryName string,
 	newVisibility v1alpha1.Visibility,
 ) (repository *v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.UpdateRepositoryVisibilityByName(
 		ctx,
 		&v1alpha1.UpdateRepositoryVisibilityByNameRequest{
@@ -221,6 +252,9 @@ func (s *repositoryService) UpdateRepositoryVisibilityByName(
 
 // DeleteRepository deletes a repository.
 func (s *repositoryService) DeleteRepository(ctx context.Context, id string) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.DeleteRepository(
 		ctx,
 		&v1alpha1.DeleteRepositoryRequest{
@@ -235,6 +269,9 @@ func (s *repositoryService) DeleteRepository(ctx context.Context, id string) (_ 
 
 // DeleteRepositoryByFullName deletes a repository by full name.
 func (s *repositoryService) DeleteRepositoryByFullName(ctx context.Context, fullName string) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.DeleteRepositoryByFullName(
 		ctx,
 		&v1alpha1.DeleteRepositoryByFullNameRequest{

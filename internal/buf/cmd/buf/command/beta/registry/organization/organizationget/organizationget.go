@@ -44,6 +44,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
+			bufcli.NewErrorInterceptor(name),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -83,10 +84,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	ctx, err = bufcli.WithHeaders(ctx, container, moduleOwner.Remote())
-	if err != nil {
-		return err
-	}
 	organization, err := service.GetOrganizationByName(
 		ctx,
 		moduleOwner.Owner(),
@@ -95,7 +92,7 @@ func run(
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
 			return bufcli.NewOrganizationNotFoundError(container.Arg(0))
 		}
-		return bufcli.NewRPCError("get organization", moduleOwner.Remote(), err)
+		return err
 	}
 	return bufcli.PrintOrganizations(ctx, moduleOwner.Remote(), container.Stdout(), flags.Format, organization)
 }

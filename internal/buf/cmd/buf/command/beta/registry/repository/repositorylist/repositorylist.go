@@ -47,6 +47,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
+			bufcli.NewErrorInterceptor(name),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -104,10 +105,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	ctx, err = bufcli.WithHeaders(ctx, container, remote)
-	if err != nil {
-		return err
-	}
 	repositories, _, err := service.ListRepositories(
 		ctx,
 		flags.PageSize,
@@ -115,7 +112,7 @@ func run(
 		flags.Reverse,
 	)
 	if err != nil {
-		return bufcli.NewRPCError("list repositories", remote, err)
+		return err
 	}
 	return bufcli.PrintRepositories(ctx, apiProvider, remote, container.Stdout(), flags.Format, repositories...)
 }

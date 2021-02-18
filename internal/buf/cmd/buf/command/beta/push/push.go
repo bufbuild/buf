@@ -51,6 +51,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags, moduleResolverReaderProvider)
 			},
+			bufcli.NewErrorInterceptor(name),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -110,10 +111,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	ctx, err = bufcli.WithHeaders(ctx, container, moduleIdentity.Remote())
-	if err != nil {
-		return err
-	}
 	protoModule, err := bufmodule.ModuleToProtoModule(ctx, module)
 	if err != nil {
 		return err
@@ -134,7 +131,7 @@ func run(
 		protoModule,
 	)
 	if err != nil {
-		return bufcli.NewRPCError("push", moduleIdentity.Remote(), err)
+		return err
 	}
 	if _, err := container.Stdout().Write([]byte(localModulePin.Commit + "\n")); err != nil {
 		return err

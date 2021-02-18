@@ -26,10 +26,8 @@ option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/reg
 message LocalModuleReference {
   string owner = 1;
   string repository = 2;
-  oneof reference {
-    string branch = 3;
-    string commit = 4;
-  }
+  // either branch or commit
+  string reference = 3;
 }
 
 // LocalModulePin is a local module pin.

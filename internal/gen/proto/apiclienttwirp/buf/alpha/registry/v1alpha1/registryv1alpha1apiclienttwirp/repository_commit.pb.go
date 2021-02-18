@@ -23,8 +23,9 @@ import (
 )
 
 type repositoryCommitService struct {
-	logger *zap.Logger
-	client v1alpha1.RepositoryCommitService
+	logger          *zap.Logger
+	client          v1alpha1.RepositoryCommitService
+	contextModifier func(context.Context) context.Context
 }
 
 // ListRepositoryCommits lists the repository commits associated with a repository branch.
@@ -36,6 +37,9 @@ func (s *repositoryCommitService) ListRepositoryCommits(
 	pageToken string,
 	reverse bool,
 ) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListRepositoryCommits(
 		ctx,
 		&v1alpha1.ListRepositoryCommitsRequest{

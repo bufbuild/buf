@@ -22,6 +22,7 @@ import (
 	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/uuidutil"
 	"go.uber.org/multierr"
 )
 
@@ -155,6 +156,11 @@ func getDependencyModulePinsForBucket(
 		return nil, err
 	}
 	return modulePinsForExternalLockFile(externalLockFile)
+}
+
+func isCommitReference(reference string) bool {
+	_, err := uuidutil.FromDashless(reference)
+	return err == nil
 }
 
 func newInvalidModuleOwnerStringError(s string) error {

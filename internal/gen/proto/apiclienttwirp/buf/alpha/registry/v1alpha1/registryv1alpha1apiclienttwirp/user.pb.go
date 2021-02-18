@@ -23,12 +23,16 @@ import (
 )
 
 type userService struct {
-	logger *zap.Logger
-	client v1alpha1.UserService
+	logger          *zap.Logger
+	client          v1alpha1.UserService
+	contextModifier func(context.Context) context.Context
 }
 
 // CreateUser creates a new user with the given username.
 func (s *userService) CreateUser(ctx context.Context, username string) (user *v1alpha1.User, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.CreateUser(
 		ctx,
 		&v1alpha1.CreateUserRequest{
@@ -41,22 +45,11 @@ func (s *userService) CreateUser(ctx context.Context, username string) (user *v1
 	return response.User, nil
 }
 
-// GetCurrentUser gets information associated with the current user.
-//
-// The user's ID is retrieved from the request's authentication header.
-func (s *userService) GetCurrentUser(ctx context.Context) (user *v1alpha1.User, _ error) {
-	response, err := s.client.GetCurrentUser(
-		ctx,
-		&v1alpha1.GetCurrentUserRequest{},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return response.User, nil
-}
-
 // GetUser gets a user by ID.
 func (s *userService) GetUser(ctx context.Context, id string) (user *v1alpha1.User, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetUser(
 		ctx,
 		&v1alpha1.GetUserRequest{
@@ -71,6 +64,9 @@ func (s *userService) GetUser(ctx context.Context, id string) (user *v1alpha1.Us
 
 // GetUserByUsername gets a user by username.
 func (s *userService) GetUserByUsername(ctx context.Context, username string) (user *v1alpha1.User, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.GetUserByUsername(
 		ctx,
 		&v1alpha1.GetUserByUsernameRequest{
@@ -90,6 +86,9 @@ func (s *userService) ListUsers(
 	pageToken string,
 	reverse bool,
 ) (users []*v1alpha1.User, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListUsers(
 		ctx,
 		&v1alpha1.ListUsersRequest{
@@ -112,6 +111,9 @@ func (s *userService) ListOrganizationUsers(
 	pageToken string,
 	reverse bool,
 ) (users []*v1alpha1.User, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListOrganizationUsers(
 		ctx,
 		&v1alpha1.ListOrganizationUsersRequest{
@@ -129,6 +131,9 @@ func (s *userService) ListOrganizationUsers(
 
 // UpdateUserUsername updates a user's username.
 func (s *userService) UpdateUserUsername(ctx context.Context, newUsername string) (user *v1alpha1.User, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.UpdateUserUsername(
 		ctx,
 		&v1alpha1.UpdateUserUsernameRequest{
@@ -143,6 +148,9 @@ func (s *userService) UpdateUserUsername(ctx context.Context, newUsername string
 
 // DeleteUser deletes a user.
 func (s *userService) DeleteUser(ctx context.Context) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.DeleteUser(
 		ctx,
 		&v1alpha1.DeleteUserRequest{},
@@ -160,6 +168,9 @@ func (s *userService) AddUserOrganizationScope(
 	organizationId string,
 	organizationScope v1alpha1.OrganizationScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.AddUserOrganizationScope(
 		ctx,
 		&v1alpha1.AddUserOrganizationScopeRequest{
@@ -181,6 +192,9 @@ func (s *userService) AddUserOrganizationScopeByName(
 	organizationName string,
 	organizationScope v1alpha1.OrganizationScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.AddUserOrganizationScopeByName(
 		ctx,
 		&v1alpha1.AddUserOrganizationScopeByNameRequest{
@@ -202,6 +216,9 @@ func (s *userService) RemoveUserOrganizationScope(
 	organizationId string,
 	organizationScope v1alpha1.OrganizationScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.RemoveUserOrganizationScope(
 		ctx,
 		&v1alpha1.RemoveUserOrganizationScopeRequest{
@@ -223,6 +240,9 @@ func (s *userService) RemoveUserOrganizationScopeByName(
 	organizationName string,
 	organizationScope v1alpha1.OrganizationScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.RemoveUserOrganizationScopeByName(
 		ctx,
 		&v1alpha1.RemoveUserOrganizationScopeByNameRequest{
@@ -243,6 +263,9 @@ func (s *userService) AddUserServerScope(
 	id string,
 	serverScope v1alpha1.ServerScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.AddUserServerScope(
 		ctx,
 		&v1alpha1.AddUserServerScopeRequest{
@@ -262,6 +285,9 @@ func (s *userService) AddUserServerScopeByName(
 	name string,
 	serverScope v1alpha1.ServerScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.AddUserServerScopeByName(
 		ctx,
 		&v1alpha1.AddUserServerScopeByNameRequest{
@@ -281,6 +307,9 @@ func (s *userService) RemoveUserServerScope(
 	id string,
 	serverScope v1alpha1.ServerScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.RemoveUserServerScope(
 		ctx,
 		&v1alpha1.RemoveUserServerScopeRequest{
@@ -300,6 +329,9 @@ func (s *userService) RemoveUserServerScopeByName(
 	name string,
 	serverScope v1alpha1.ServerScope,
 ) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	_, err := s.client.RemoveUserServerScopeByName(
 		ctx,
 		&v1alpha1.RemoveUserServerScopeByNameRequest{

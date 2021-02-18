@@ -35,6 +35,9 @@ type Client interface {
 	// If the address does not have a scheme, this adds https:// if TLS was configured,
 	// and http:// if TLS was not configured.
 	ParseAddress(address string) string
+	// Transport returns the http.RoundTripper configured on
+	// this client.
+	Transport() http.RoundTripper
 }
 
 // NewClient returns a new Client.
@@ -62,6 +65,14 @@ func ClientWithObservability() ClientOption {
 	return func(client *client) {
 		client.observability = true
 	}
+}
+
+// NewClientWithTransport returns a new Client with the
+// given transport. This is a separate constructor so
+// that it's clear it cannot be used in combination
+// with other ClientOptions.
+func NewClientWithTransport(transport http.RoundTripper) (Client, error) {
+	return newClientWithTransport(transport)
 }
 
 // GetResponseBody reads and closes the response body.

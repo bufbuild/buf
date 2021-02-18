@@ -49,6 +49,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags, moduleResolverReaderProvider)
 			},
+			bufcli.NewErrorInterceptor(name),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -95,14 +96,6 @@ func run(
 		return err
 	}
 	moduleReader, err := moduleResolverReaderProvider.GetModuleReader(ctx, container)
-	if err != nil {
-		return err
-	}
-	moduleIdentity, err := bufmodule.ModuleReferenceForString(container.Arg(0))
-	if err != nil {
-		return err
-	}
-	ctx, err = bufcli.WithHeaders(ctx, container, moduleIdentity.Remote())
 	if err != nil {
 		return err
 	}

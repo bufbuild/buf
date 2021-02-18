@@ -129,7 +129,7 @@ func (r *responseWriter) warnUnnormalizedName(name string) error {
 
 func (r *responseWriter) warnDuplicateName(name string) error {
 	_, err := r.container.Stderr().Write([]byte(fmt.Sprintf(
-		`Warning: Duplicate generated file name %q. Buf will continue without error here and drop the second occurrence of thie file, but please raise an issue with the maintainer of the plugin.
+		`Warning: Duplicate generated file name %q. Buf will continue without error here and drop the second occurrence of this file, but please raise an issue with the maintainer of the plugin.
 `,
 		name,
 	)))

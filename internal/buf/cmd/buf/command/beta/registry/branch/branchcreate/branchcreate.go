@@ -48,6 +48,7 @@ func NewCommand(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
 			},
+			bufcli.NewErrorInterceptor(name),
 		),
 		BindFlags: flags.Bind,
 	}
@@ -86,12 +87,14 @@ func run(
 	if flags.Parent == "" {
 		return bufcli.NewFlagIsRequiredError(parentFlagName)
 	}
-	moduleReference, err := bufmodule.BranchModuleReferenceForString(
+	moduleReference, err := bufmodule.ModuleReferenceForString(
 		container.Arg(0),
-		bufmodule.BranchModuleReferenceForStringRequireBranch(),
 	)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+	if bufmodule.IsCommitModuleReference(moduleReference) {
+		return fmt.Errorf("branch is required but commit was given: %q", container.Arg(0))
 	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
@@ -105,10 +108,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	ctx, err = bufcli.WithHeaders(ctx, container, moduleReference.Remote())
-	if err != nil {
-		return err
-	}
 	// TODO: We can add another RPC for creating a repository branch by name so that we don't
 	// have to get the repository separately.
 	repository, err := repositoryService.GetRepositoryByFullName(ctx, moduleReference.Owner()+"/"+moduleReference.Repository())
@@ -116,14 +115,14 @@ func run(
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(moduleReference.Remote() + "/" + moduleReference.Owner() + "/" + moduleReference.Repository())
 		}
-		return bufcli.NewRPCError("get repository", moduleReference.Remote(), err)
+		return err
 	}
-	repositoryBranch, err := repositoryBranchService.CreateRepositoryBranch(ctx, repository.Id, moduleReference.Branch(), flags.Parent)
+	repositoryBranch, err := repositoryBranchService.CreateRepositoryBranch(ctx, repository.Id, moduleReference.Reference(), flags.Parent)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
 			return bufcli.NewBranchNameAlreadyExistsError(moduleReference.String())
 		}
-		return bufcli.NewRPCError("create repository branch", moduleReference.Remote(), err)
+		return err
 	}
 	return bufcli.PrintRepositoryBranches(ctx, container.Stdout(), flags.Format, repositoryBranch)
 }

@@ -89,24 +89,7 @@ func ValidateProtoModuleReference(protoModuleReference *modulev1alpha1.ModuleRef
 	if err := ValidateRepository(protoModuleReference.Repository); err != nil {
 		return err
 	}
-	branch := protoModuleReference.GetBranch()
-	commit := protoModuleReference.GetCommit()
-	switch {
-	case branch == "" && commit == "":
-		return fmt.Errorf("module reference must have either a branch or commit")
-	case branch != "" && commit == "":
-		if err := ValidateBranch(branch); err != nil {
-			return err
-		}
-	case branch == "" && commit != "":
-		if err := ValidateCommit(commit); err != nil {
-			return err
-		}
-	default:
-		// should never happen due to oneof
-		return fmt.Errorf("module reference cannot have both a branch and commit")
-	}
-	return nil
+	return ValidateReference(protoModuleReference.Reference)
 }
 
 // ValidateProtoModulePin verifies the given module pin is well-formed.
@@ -180,6 +163,25 @@ func ValidateRepository(repository string) error {
 	return nil
 }
 
+// ValidateReference validates that the given ModuleReference reference is well-formed.
+func ValidateReference(reference string) error {
+	if isCommitReference(reference) {
+		return ValidateCommit(reference)
+	}
+	return ValidateBranch(reference)
+}
+
+// ValidateCommit verifies the given commit is well-formed.
+func ValidateCommit(commit string) error {
+	if commit == "" {
+		return errors.New("empty commit")
+	}
+	if err := uuidutil.ValidateDashless(commit); err != nil {
+		return fmt.Errorf("commit is invalid: %v", err)
+	}
+	return nil
+}
+
 // ValidateBranch verifies the given repository branch is well-formed.
 func ValidateBranch(branch string) error {
 	if branch == "" {
@@ -195,17 +197,6 @@ func ValidateBranch(branch string) error {
 	}
 	if err := uuidutil.ValidateDashless(branch); err == nil {
 		return fmt.Errorf("repository branch %q must not be parseable as a valid commit", branch)
-	}
-	return nil
-}
-
-// ValidateCommit verifies the given commit is well-formed.
-func ValidateCommit(commit string) error {
-	if commit == "" {
-		return errors.New("empty commit")
-	}
-	if err := uuidutil.ValidateDashless(commit); err != nil {
-		return fmt.Errorf("commit is invalid: %v", err)
 	}
 	return nil
 }

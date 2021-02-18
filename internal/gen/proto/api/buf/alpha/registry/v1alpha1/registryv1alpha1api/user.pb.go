@@ -25,10 +25,6 @@ import (
 type UserService interface {
 	// CreateUser creates a new user with the given username.
 	CreateUser(ctx context.Context, username string) (user *v1alpha1.User, err error)
-	// GetCurrentUser gets information associated with the current user.
-	//
-	// The user's ID is retrieved from the request's authentication header.
-	GetCurrentUser(ctx context.Context) (user *v1alpha1.User, err error)
 	// GetUser gets a user by ID.
 	GetUser(ctx context.Context, id string) (user *v1alpha1.User, err error)
 	// GetUserByUsername gets a user by username.
