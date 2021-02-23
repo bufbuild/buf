@@ -72,7 +72,7 @@ func (e *errInternal) Is(err error) bool {
 func NewErrorInterceptor(action string) appflag.Interceptor {
 	return func(next func(context.Context, appflag.Container) error) func(context.Context, appflag.Container) error {
 		return func(ctx context.Context, container appflag.Container) error {
-			return wrapRPCError(action, next(ctx, container))
+			return wrapError(action, next(ctx, container))
 		}
 	}
 }
@@ -129,12 +129,15 @@ func NewTokenNotFoundError(tokenID string) error {
 	return fmt.Errorf("a token with ID %q does not exist", tokenID)
 }
 
-// wrapRPCError is used when an RPC call fails, regardless of its error code.
+// wrapError is used when a CLI command fails, regardless of its error code.
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
-func wrapRPCError(action string, err error) error {
-	if err == nil {
-		return nil
+func wrapError(action string, err error) error {
+	if err == nil || err.Error() == "" {
+		// If the error is nil or empty, we return
+		// it as-is. This is especially relevant
+		// for commands like lint and breaking.
+		return err
 	}
 	switch {
 	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
