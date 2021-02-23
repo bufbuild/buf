@@ -3,7 +3,9 @@ FROM golang:1.16.0-alpine3.12 as builder
 WORKDIR /workspace
 
 COPY go.mod go.sum /workspace/
-RUN go mod download
+# This replaces go mod download so that we only download what we need
+# https://github.com/golang/go/issues/18387
+RUN go list -test all
 
 COPY cmd /workspace/cmd
 COPY internal /workspace/internal

@@ -71,7 +71,9 @@ initmakego:: upgradegodeps
 
 .PHONY: godeps
 godeps: deps
-	go mod download
+	# This replaces go mod download so that we only download what we need
+	# https://github.com/golang/go/issues/18387
+	go list -test all
 
 .PHONY: gofmtmodtidy
 gofmtmodtidy:

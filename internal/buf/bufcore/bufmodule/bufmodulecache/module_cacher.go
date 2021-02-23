@@ -100,7 +100,7 @@ func (m *moduleCacher) PutModule(
 }
 
 // newCacheKey returns the key associated with the given module pin.
-// The cache key is of the form: owner/repository/commit.
+// The cache key is of the form: remote/owner/repository/commit.
 func newCacheKey(modulePin bufmodule.ModulePin) string {
-	return normalpath.Join(modulePin.Owner(), modulePin.Repository(), modulePin.Commit())
+	return normalpath.Join(modulePin.Remote(), modulePin.Owner(), modulePin.Repository(), modulePin.Commit())
 }
