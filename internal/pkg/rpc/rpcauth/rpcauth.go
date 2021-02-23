@@ -17,6 +17,7 @@ package rpcauth
 import (
 	"context"
 	"errors"
+	"net/http"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/rpc"
@@ -66,10 +67,24 @@ func GetTokenFromHeader(ctx context.Context) (string, error) {
 	if authHeader == "" {
 		return "", errors.New("no auth header provided")
 	}
-	if !strings.HasPrefix(authHeader, authenticationTokenPrefix) {
+	return getTokenFromString(authHeader)
+}
+
+// GetTokenFromHTTPHeaders gets the current authentication token from
+// the HTTP headers, if there is one.
+func GetTokenFromHTTPHeaders(headers http.Header) (string, error) {
+	authHeader := headers.Get(authenticationHeader)
+	if authHeader == "" {
+		return "", errors.New("no auth header provided")
+	}
+	return getTokenFromString(authHeader)
+}
+
+func getTokenFromString(value string) (string, error) {
+	if !strings.HasPrefix(value, authenticationTokenPrefix) {
 		return "", errors.New("invalid header format")
 	}
-	token := strings.TrimPrefix(authHeader, authenticationTokenPrefix)
+	token := strings.TrimPrefix(value, authenticationTokenPrefix)
 	if token == "" {
 		return "", errors.New("invalid header format")
 	}
