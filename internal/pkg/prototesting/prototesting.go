@@ -43,7 +43,6 @@ func GetProtocFileDescriptorSet(
 	realFilePaths []string,
 	includeImports bool,
 	includeSourceInfo bool,
-	experimentalAllowProto3Optional bool,
 ) (_ *descriptorpb.FileDescriptorSet, retErr error) {
 	tempFile, err := ioutil.TempFile("", "")
 	if err != nil {
@@ -62,7 +61,6 @@ func GetProtocFileDescriptorSet(
 		realFilePaths,
 		includeImports,
 		includeSourceInfo,
-		experimentalAllowProto3Optional,
 		nil,
 		nil,
 		fmt.Sprintf("--descriptor_set_out=%s", tempFilePath),
@@ -98,7 +96,6 @@ func RunProtoc(
 	realFilePaths []string,
 	includeImports bool,
 	includeSourceInfo bool,
-	experimentalAllowProto3Optional bool,
 	env map[string]string,
 	stdout io.Writer,
 	extraFlags ...string,
@@ -133,9 +130,6 @@ func RunProtoc(
 	}
 	if includeSourceInfo {
 		args = append(args, "--include_source_info")
-	}
-	if experimentalAllowProto3Optional {
-		args = append(args, "--experimental_allow_proto3_optional")
 	}
 	args = append(args, extraFlags...)
 	args = append(args, realFilePaths...)

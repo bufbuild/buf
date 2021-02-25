@@ -198,5 +198,5 @@ func getFeatureProto3OptionalForVersionString(value string) bool {
 	if major != 3 {
 		return false
 	}
-	return minor > 11
+	return minor > 11 && minor < 15
 }
