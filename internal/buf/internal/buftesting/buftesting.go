@@ -68,7 +68,6 @@ func GetActualProtocFileDescriptorSet(
 		filePaths,
 		includeImports,
 		includeSourceInfo,
-		true,
 	)
 	require.NoError(t, err)
 	return fileDescriptorSet
@@ -92,7 +91,6 @@ func RunActualProtoc(
 		filePaths,
 		includeImports,
 		includeSourceInfo,
-		true,
 		env,
 		stdout,
 		extraFlags...,

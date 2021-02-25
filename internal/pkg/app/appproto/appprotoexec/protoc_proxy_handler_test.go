@@ -28,4 +28,5 @@ func TestGetFeatureProto3OptionalForVersionString(t *testing.T) {
 	assert.False(t, getFeatureProto3OptionalForVersionString("libprotoc 3.11.4"))
 	assert.False(t, getFeatureProto3OptionalForVersionString("libprotoc 2.11.4"))
 	assert.False(t, getFeatureProto3OptionalForVersionString("protoc 3.12.3"))
+	assert.False(t, getFeatureProto3OptionalForVersionString("protoc 3.15.0"))
 }
