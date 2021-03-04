@@ -41,7 +41,6 @@ const _ = twirp.TwirpPackageIsVersion7
 // =================================
 
 // RepositoryCommitService is the Repository commit service.
-// All methods on the Repository commit service require authentication.
 type RepositoryCommitService interface {
 	// ListRepositoryCommits lists the repository commits associated with a repository branch.
 	ListRepositoryCommits(context.Context, *ListRepositoryCommitsRequest) (*ListRepositoryCommitsResponse, error)

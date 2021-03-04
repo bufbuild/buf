@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -28,11 +29,13 @@ import (
 func NewImageFile(
 	t testing.TB,
 	fileDescriptorProto *descriptorpb.FileDescriptorProto,
+	moduleReference bufmodule.ModuleReference,
 	externalPath string,
 	isImport bool,
 ) bufimage.ImageFile {
 	imageFile, err := bufimage.NewImageFile(
 		fileDescriptorProto,
+		moduleReference,
 		externalPath,
 		isImport,
 	)
@@ -69,6 +72,7 @@ func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufima
 				imageFile.Proto().GetName(),
 				imageFile.Proto().GetDependency()...,
 			),
+			imageFile.ModuleReference(),
 			imageFile.ExternalPath(),
 			imageFile.IsImport(),
 		)

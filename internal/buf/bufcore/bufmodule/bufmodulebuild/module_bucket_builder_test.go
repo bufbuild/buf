@@ -19,8 +19,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufcoretesting"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/internal"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -39,15 +39,15 @@ func TestBucketGetFileInfos1(t *testing.T) {
 		[]string{
 			"proto/b",
 		},
-		bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/c/1.proto", "testdata/1/proto/a/c/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/c/2.proto", "testdata/1/proto/a/c/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/c/3.proto", "testdata/1/proto/a/c/3.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/1.proto", "testdata/1/proto/a/c/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/2.proto", "testdata/1/proto/a/c/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/3.proto", "testdata/1/proto/a/c/3.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false), nil),
 	)
 }
 
@@ -61,12 +61,12 @@ func TestBucketGetFileInfos2(t *testing.T) {
 		[]string{
 			"proto/a",
 		},
-		bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false), nil),
 	)
 }
 
@@ -80,15 +80,15 @@ func TestBucketGetFileInfo3(t *testing.T) {
 		[]string{
 			"proto/a/c",
 		},
-		bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false),
-		bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false), nil),
 	)
 }
 
@@ -103,12 +103,12 @@ func TestBucketGetFileInfos4(t *testing.T) {
 			"proto/a/c",
 			"proto/d",
 		},
-		bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false),
-		bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false), nil),
 	)
 }
 
@@ -160,7 +160,7 @@ func testBucketGetFileInfos(
 	relDir string,
 	relRoots []string,
 	relExcludes []string,
-	expectedFileInfos ...bufcore.FileInfo,
+	expectedFileInfos ...bufmodule.FileInfo,
 ) {
 	t.Parallel()
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
@@ -184,7 +184,7 @@ func testBucketGetFileInfos(
 	require.NoError(t, err)
 	fileInfos, err := module.SourceFileInfos(context.Background())
 	assert.NoError(t, err)
-	bufcoretesting.AssertFileInfosEqual(
+	assert.Equal(
 		t,
 		expectedFileInfos,
 		fileInfos,
@@ -208,7 +208,7 @@ func testBucketGetFileInfos(
 		require.NoError(t, err)
 		fileInfos, err := module.TargetFileInfos(context.Background())
 		assert.NoError(t, err)
-		bufcoretesting.AssertFileInfosEqual(
+		assert.Equal(
 			t,
 			expectedFileInfos,
 			fileInfos,

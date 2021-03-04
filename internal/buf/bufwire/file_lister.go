@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -62,7 +62,7 @@ func (e *fileLister) ListFiles(
 	container app.EnvStdinContainer,
 	ref buffetch.Ref,
 	configOverride string,
-) (_ []bufcore.FileInfo, retErr error) {
+) (_ []bufmodule.FileInfo, retErr error) {
 	switch t := ref.(type) {
 	case buffetch.ImageRef:
 		// if we have an image, list the files in the image
@@ -78,7 +78,7 @@ func (e *fileLister) ListFiles(
 			return nil, err
 		}
 		files := image.Files()
-		fileInfos := make([]bufcore.FileInfo, len(files))
+		fileInfos := make([]bufmodule.FileInfo, len(files))
 		for i, file := range files {
 			fileInfos[i] = file
 		}

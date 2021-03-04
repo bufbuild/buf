@@ -41,7 +41,6 @@ const _ = twirp.TwirpPackageIsVersion7
 // ===========================
 
 // RepositoryService is the Repository service.
-// All methods on the Repository service require authentication.
 type RepositoryService interface {
 	// GetRepository gets a repository by ID.
 	GetRepository(context.Context, *GetRepositoryRequest) (*GetRepositoryResponse, error)

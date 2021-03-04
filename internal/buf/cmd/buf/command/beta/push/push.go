@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
+	"github.com/bufbuild/buf/internal/pkg/rpc"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/spf13/cobra"
@@ -60,6 +61,7 @@ func NewCommand(
 type flags struct {
 	Branch      string
 	ErrorFormat string
+	Force       bool
 	// special
 	InputHashtag string
 }
@@ -131,6 +133,17 @@ func run(
 		protoModule,
 	)
 	if err != nil {
+		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists && !flags.Force {
+			if _, err := container.Stderr().Write(
+				[]byte(fmt.Sprintf(
+					"The latest commit on branch %q has the same content, not creating a new commit.\n",
+					flags.Branch,
+				)),
+			); err != nil {
+				return err
+			}
+			return nil
+		}
 		return err
 	}
 	if _, err := container.Stdout().Write([]byte(localModulePin.Commit + "\n")); err != nil {

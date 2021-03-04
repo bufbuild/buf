@@ -98,8 +98,10 @@ func (h *binaryHandler) Handle(
 			return err
 		}
 	}
-	// call AddError even if this is empty
-	if response.Error != nil {
+	// plugin.proto specifies that only non-empty errors are considered errors.
+	// This is also consistent with protoc's behaviour.
+	// Ref: https://github.com/protocolbuffers/protobuf/blob/069f989b483e63005f87ab309de130677718bbec/src/google/protobuf/compiler/plugin.proto#L100-L108.
+	if response.GetError() != "" {
 		responseWriter.AddError(response.GetError())
 	}
 	return nil

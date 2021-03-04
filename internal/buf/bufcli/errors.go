@@ -133,31 +133,16 @@ func NewTokenNotFoundError(tokenID string) error {
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
 func wrapError(action string, err error) error {
-	if err == nil || err.Error() == "" {
-		// If the error is nil or empty, we return
-		// it as-is. This is especially relevant
-		// for commands like lint and breaking.
+	if err == nil || (err.Error() == "" && rpc.GetErrorCode(err) == rpc.ErrorCodeUnknown) {
+		// If the error is nil or empty and not an rpc error, we return it as-is.
+		// This is especially relevant for commands like lint and breaking.
 		return err
 	}
 	switch {
-	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
+	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnauthenticated:
 		return fmt.Errorf(`Failed to %s; you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://beta.docs.buf.build/authentication`, action)
 	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnavailable:
 		return fmt.Errorf(`Failed to %s: the server hosted at that remote is unavailable: %w.`, action, err)
 	}
 	return fmt.Errorf("Failed to %q: %w.", action, err)
-}
-
-// isEmptyUnknownError returns true if the given
-// error is non-nil, but has an empty message
-// and an unknown error code.
-//
-// This is relevant for errors returned by
-// envoyauthd when the client does not provide
-// an authentication header.
-func isEmptyUnknownError(err error) bool {
-	if err == nil {
-		return false
-	}
-	return err.Error() == "" && rpc.GetErrorCode(err) == rpc.ErrorCodeUnknown
 }

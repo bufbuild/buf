@@ -28,9 +28,14 @@ import (
 type module struct {
 	sourceReadBucket     storage.ReadBucket
 	dependencyModulePins []ModulePin
+	moduleReference      ModuleReference
 }
 
-func newModuleForProto(ctx context.Context, protoModule *modulev1alpha1.Module) (*module, error) {
+func newModuleForProto(
+	ctx context.Context,
+	protoModule *modulev1alpha1.Module,
+	options ...ModuleOption,
+) (*module, error) {
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
 	}
@@ -53,48 +58,62 @@ func newModuleForProto(ctx context.Context, protoModule *modulev1alpha1.Module) 
 		ctx,
 		sourceReadBucket,
 		dependencyModulePins,
+		options...,
 	)
 }
 
 func newModuleForBucket(
 	ctx context.Context,
 	sourceReadBucket storage.ReadBucket,
+	options ...ModuleOption,
 ) (*module, error) {
 	dependencyModulePins, err := getDependencyModulePinsForBucket(ctx, sourceReadBucket)
 	if err != nil {
 		return nil, err
 	}
-	return newModuleForBucketWithDependencyModulePins(ctx, sourceReadBucket, dependencyModulePins)
+	return newModuleForBucketWithDependencyModulePins(
+		ctx,
+		sourceReadBucket,
+		dependencyModulePins,
+		options...,
+	)
 }
 
 func newModuleForBucketWithDependencyModulePins(
 	ctx context.Context,
 	sourceReadBucket storage.ReadBucket,
 	dependencyModulePins []ModulePin,
+	options ...ModuleOption,
 ) (*module, error) {
 	if err := ValidateModulePinsUniqueByIdentity(dependencyModulePins); err != nil {
 		return nil, err
+	}
+	moduleOptions := &moduleOptions{}
+	for _, option := range options {
+		option(moduleOptions)
 	}
 	// we rely on this being sorted here
 	SortModulePins(dependencyModulePins)
 	return &module{
 		sourceReadBucket:     storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
 		dependencyModulePins: dependencyModulePins,
+		moduleReference:      moduleOptions.moduleReference,
 	}, nil
 }
 
-func (m *module) TargetFileInfos(ctx context.Context) ([]bufcore.FileInfo, error) {
+func (m *module) TargetFileInfos(ctx context.Context) ([]FileInfo, error) {
 	return m.SourceFileInfos(ctx)
 }
 
-func (m *module) SourceFileInfos(ctx context.Context) ([]bufcore.FileInfo, error) {
-	var fileInfos []bufcore.FileInfo
+func (m *module) SourceFileInfos(ctx context.Context) ([]FileInfo, error) {
+	var fileInfos []FileInfo
 	if err := m.sourceReadBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
 		// super overkill but ok
 		if err := validateModuleFilePathWithoutNormalization(objectInfo.Path()); err != nil {
 			return err
 		}
-		fileInfos = append(fileInfos, bufcore.NewFileInfoForObjectInfo(objectInfo, false))
+		coreFileInfo := bufcore.NewFileInfoForObjectInfo(objectInfo, false)
+		fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.moduleReference))
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("failed to enumerate module files: %w", err)
@@ -102,20 +121,21 @@ func (m *module) SourceFileInfos(ctx context.Context) ([]bufcore.FileInfo, error
 	if len(fileInfos) == 0 {
 		return nil, internal.ErrNoTargetFiles
 	}
-	bufcore.SortFileInfos(fileInfos)
+	sortFileInfos(fileInfos)
 	return fileInfos, nil
 }
 
 func (m *module) GetModuleFile(ctx context.Context, path string) (ModuleFile, error) {
 	// super overkill but ok
-	if err := validateModuleFilePath(path); err != nil {
+	if err := ValidateModuleFilePath(path); err != nil {
 		return nil, err
 	}
 	readObjectCloser, err := m.sourceReadBucket.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
-	return newModuleFile(bufcore.NewFileInfoForObjectInfo(readObjectCloser, false), readObjectCloser), nil
+	coreFileInfo := bufcore.NewFileInfoForObjectInfo(readObjectCloser, false)
+	return newModuleFile(NewFileInfo(coreFileInfo, m.moduleReference), readObjectCloser), nil
 }
 
 func (m *module) DependencyModulePins() []ModulePin {
@@ -125,6 +145,10 @@ func (m *module) DependencyModulePins() []ModulePin {
 
 func (m *module) getSourceReadBucket() storage.ReadBucket {
 	return m.sourceReadBucket
+}
+
+func (m *module) getModuleReference() ModuleReference {
+	return m.moduleReference
 }
 
 func (m *module) isModule() {}

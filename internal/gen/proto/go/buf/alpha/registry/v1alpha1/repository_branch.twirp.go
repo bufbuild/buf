@@ -41,7 +41,6 @@ const _ = twirp.TwirpPackageIsVersion7
 // =================================
 
 // RepositoryBranchService is the Repository branch service.
-// All methods on the Repository branch service require authentication.
 type RepositoryBranchService interface {
 	// CreateRepositoryBranch creates a new repository branch.
 	CreateRepositoryBranch(context.Context, *CreateRepositoryBranchRequest) (*CreateRepositoryBranchResponse, error)

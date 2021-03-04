@@ -48,6 +48,12 @@ message ImageExtension {
   // A given FileDescriptorProto may or may not be an import depending on
   // the image context, so this information is not stored on each FileDescriptorProto.
   repeated ImageImportRef image_import_refs = 1;
+
+  // ModuleReferenceRefs are the module reference references for this specific Image.
+  //
+  // The lack of a ModuleReferenceRef for a given file means that the module
+  // reference information is not known, and must be treated as unknown.
+  repeated ModuleReferenceRef module_reference_refs = 2;
 }
 
 // ImageImportRef is a reference to an image import.
@@ -61,4 +67,22 @@ message ImageImportRef {
   // This signifies that file[file_index] is an import.
   // This field must be set.
   optional uint32 file_index = 1;
+}
+
+// ModuleReferenceRef is a reference to a module reference.
+message ModuleReferenceRef {
+  // file_index is the index within the Image file array.
+  //
+  // This signifies that file[file_index] is the file that
+  // uses this module reference.
+  //
+  // This field must be set.
+  optional uint32 file_index = 1;
+  optional string remote = 2;
+  optional string owner = 3;
+  optional string repository = 4;
+  // This is always a commit for now, but we make this a reference instead of specifically a
+  // commit to give ourselves options in the future. We can easily distinguish between
+  // branches/tags and commits.
+  optional string reference = 5;
 }

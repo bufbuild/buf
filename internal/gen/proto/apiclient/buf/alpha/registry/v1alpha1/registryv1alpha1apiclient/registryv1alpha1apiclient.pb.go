@@ -29,6 +29,7 @@ type Provider interface {
 	RepositoryBranchServiceProvider
 	RepositoryCommitServiceProvider
 	RepositoryServiceProvider
+	RepositoryTagServiceProvider
 	ResolveServiceProvider
 	UserServiceProvider
 }
@@ -61,6 +62,11 @@ type RepositoryCommitServiceProvider interface {
 // RepositoryServiceProvider provides a client-side RepositoryService for an address.
 type RepositoryServiceProvider interface {
 	NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error)
+}
+
+// RepositoryTagServiceProvider provides a client-side RepositoryTagService for an address.
+type RepositoryTagServiceProvider interface {
+	NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error)
 }
 
 // ResolveServiceProvider provides a client-side ResolveService for an address.

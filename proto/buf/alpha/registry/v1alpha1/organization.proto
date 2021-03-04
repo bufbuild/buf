@@ -34,7 +34,6 @@ message Organization {
 }
 
 // OrganizationService is the Organization service.
-// All methods on the Organization service require authentication.
 service OrganizationService {
   // GetOrganization gets a organization by ID.
   rpc GetOrganization(GetOrganizationRequest) returns (GetOrganizationResponse) {

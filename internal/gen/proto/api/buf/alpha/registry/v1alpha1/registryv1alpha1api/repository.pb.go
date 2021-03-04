@@ -22,7 +22,6 @@ import (
 )
 
 // RepositoryService is the Repository service.
-// All methods on the Repository service require authentication.
 type RepositoryService interface {
 	// GetRepository gets a repository by ID.
 	GetRepository(ctx context.Context, id string) (repository *v1alpha1.Repository, err error)

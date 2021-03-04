@@ -40,9 +40,29 @@ const (
 	b1DigestPrefix = "b1"
 )
 
+// FileInfo contains module file info.
+type FileInfo interface {
+	bufcore.FileInfo
+
+	// Note this *can* be nil if we did not build from a named module.
+	// All code must assume this can be nil.
+	// nil checking should work since the backing type is always a pointer
+	ModuleReference() ModuleReference
+
+	isFileInfo()
+}
+
+// NewFileInfo returns a new FileInfo.
+func NewFileInfo(
+	coreFileInfo bufcore.FileInfo,
+	moduleReference ModuleReference,
+) FileInfo {
+	return newFileInfo(coreFileInfo, moduleReference)
+}
+
 // ModuleFile is a module file.
 type ModuleFile interface {
-	bufcore.FileInfo
+	FileInfo
 	io.ReadCloser
 
 	isModuleFile()
@@ -309,13 +329,13 @@ type Module interface {
 	// It does not include dependencies.
 	//
 	// The returned TargetFileInfos are sorted by path.
-	TargetFileInfos(ctx context.Context) ([]bufcore.FileInfo, error)
+	TargetFileInfos(ctx context.Context) ([]FileInfo, error)
 	// SourceFileInfos gets all FileInfos belonging to the module.
 	//
 	// It does not include dependencies.
 	//
 	// The returned SourceFileInfos are sorted by path.
-	SourceFileInfos(ctx context.Context) ([]bufcore.FileInfo, error)
+	SourceFileInfos(ctx context.Context) ([]FileInfo, error)
 	// GetModuleFile gets the source file for the given path.
 	//
 	// Returns storage.IsNotExist error if the file does not exist.
@@ -329,16 +349,31 @@ type Module interface {
 	DependencyModulePins() []ModulePin
 
 	getSourceReadBucket() storage.ReadBucket
+	// Note this *can* be nil if we did not build from a named module.
+	// All code must assume this can be nil.
+	// nil checking should work since the backing type is always a pointer.
+	//
+	// TODO: We can remove the getModuleReference method on the if we fetch
+	// FileInfos from the Module and plumb in the ModuleReference here.
+	//
+	// This approach assumes that all of the FileInfos returned
+	// from SourceFileInfos will have their ModuleReference
+	// set to the same value, which can be validated.
+	getModuleReference() ModuleReference
 	isModule()
 }
+
+// ModuleOption is used to construct Modules.
+type ModuleOption func(*moduleOptions)
 
 // NewModuleForBucket returns a new Module. It attempts reads dependencies
 // from a lock file in the read bucket.
 func NewModuleForBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
+	options ...ModuleOption,
 ) (Module, error) {
-	return newModuleForBucket(ctx, readBucket)
+	return newModuleForBucket(ctx, readBucket, options...)
 }
 
 // NewModuleForBucketWithDependencyModulePins explicitly specifies the dependencies
@@ -348,16 +383,18 @@ func NewModuleForBucketWithDependencyModulePins(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	dependencyModulePins []ModulePin,
+	options ...ModuleOption,
 ) (Module, error) {
-	return newModuleForBucketWithDependencyModulePins(ctx, readBucket, dependencyModulePins)
+	return newModuleForBucketWithDependencyModulePins(ctx, readBucket, dependencyModulePins, options...)
 }
 
 // NewModuleForProto returns a new Module for the given proto Module.
 func NewModuleForProto(
 	ctx context.Context,
 	protoModule *modulev1alpha1.Module,
+	options ...ModuleOption,
 ) (Module, error) {
-	return newModuleForProto(ctx, protoModule)
+	return newModuleForProto(ctx, protoModule, options...)
 }
 
 // ModuleWithTargetPaths returns a new Module that specifies specific file or directory paths to build.
@@ -420,7 +457,7 @@ type ModuleFileSet interface {
 	// AllFileInfos gets all FileInfos associated with the module, including dependencies.
 	//
 	// The returned FileInfos are sorted by path.
-	AllFileInfos(ctx context.Context) ([]bufcore.FileInfo, error)
+	AllFileInfos(ctx context.Context) ([]FileInfo, error)
 
 	isModuleFileSet()
 }
@@ -635,6 +672,66 @@ func SortModulePins(modulePins []ModulePin) {
 	sort.Slice(modulePins, func(i, j int) bool {
 		return modulePinLess(modulePins[i], modulePins[j])
 	})
+}
+
+// ObjectInfo extends the storage.ObjectInfo interface with
+// information specific to Modules.
+//
+// TODO: This type is currently not used outside of this package,
+// so we could instead rely on just the concrete struct type.
+// This includes an interface for consistency, and exports it to
+// prevent name collisions.
+type ObjectInfo interface {
+	storage.ObjectInfo
+
+	// ModuleReference gets this object's ModuleReference, if any.
+	ModuleReference() ModuleReference
+}
+
+// ReadBucket extends the storage.ReadBucket interface with
+// information specific to Modules.
+//
+// TODO: This type is currently not used outside of this package,
+// so we could instead rely on just the concrete struct type.
+// This includes an interface for consistency, and exports it to
+// prevent name collisions.
+type ReadBucket interface {
+	storage.ReadBucket
+
+	// StatModuleFile gets info in the object, including info
+	// specific to the file's module.
+	//
+	// Returns ErrNotExist if the path does not exist, other error
+	// if there is a system error.
+	StatModuleFile(ctx context.Context, path string) (ObjectInfo, error)
+	// WalkModuleFiles walks the bucket with the prefix, calling f on
+	// each path. If the prefix doesn't exist, this is a no-op.
+	//
+	// Note that foo/barbaz will not be called for foo/bar, but will
+	// be called for foo/bar/baz.
+	//
+	// All paths given to f are normalized and validated.
+	// If f returns error, Walk will stop short and return this error.
+	// Returns other error on system error.
+	WalkModuleFiles(ctx context.Context, prefix string, f func(ObjectInfo) error) error
+}
+
+// NewReadBucket returns a new ReadBucket.
+func NewReadBucket(
+	sourceReadBucket storage.ReadBucket,
+	moduleReference ModuleReference,
+) ReadBucket {
+	return newReadBucket(sourceReadBucket, moduleReference)
+}
+
+// sortFileInfos sorts the FileInfos.
+func sortFileInfos(fileInfos []FileInfo) {
+	sort.Slice(
+		fileInfos,
+		func(i int, j int) bool {
+			return fileInfos[i].Path() < fileInfos[j].Path()
+		},
+	)
 }
 
 // parseModuleReferenceComponents parses and returns the remote, owner, repository,
