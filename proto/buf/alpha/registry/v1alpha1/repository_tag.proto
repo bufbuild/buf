@@ -1,0 +1,73 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/api/v1alpha1/api.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1;registryv1alpha1";
+
+message RepositoryTag {
+  // primary key, unique, immutable
+  string id = 1;
+  // immutable
+  google.protobuf.Timestamp create_time = 2;
+  // We reserve field number '3' for the update_time.
+  // google.protobuf.Timestamp update_time = 3;
+  // The name of the repository tag, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
+  string name = 4;
+  // The name of the commit this tag belongs to.
+  string commit_name = 5;
+}
+
+// RepositoryTagService is the Repository tag service.
+service RepositoryTagService {
+  // CreateRepositoryTag creates a new repository tag.
+  rpc CreateRepositoryTag(CreateRepositoryTagRequest) returns (CreateRepositoryTagResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
+  }
+  // ListRepositoryTags lists the repository tags associated with a Repository.
+  rpc ListRepositoryTags(ListRepositoryTagsRequest) returns (ListRepositoryTagsResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+}
+
+message CreateRepositoryTagRequest {
+  // The name of the repository tag, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
+  string name = 1;
+  // The name of the commit this tag should be created for.
+  string commit_name = 2;
+}
+
+message CreateRepositoryTagResponse {
+  RepositoryTag repository_tag = 1;
+}
+
+message ListRepositoryTagsRequest {
+  // The ID of the repository whose tags should be listed.
+  string repository_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  bool reverse = 4;
+}
+
+message ListRepositoryTagsResponse {
+  repeated RepositoryTag repository_tags = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
