@@ -35,7 +35,6 @@ message RepositoryCommit {
 }
 
 // RepositoryCommitService is the Repository commit service.
-// All methods on the Repository commit service require authentication.
 service RepositoryCommitService {
   // ListRepositoryCommits lists the repository commits associated with a repository branch.
   rpc ListRepositoryCommits(ListRepositoryCommitsRequest) returns (ListRepositoryCommitsResponse) {

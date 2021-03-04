@@ -4334,7 +4334,7 @@ func (s *userServiceServer) serveRemoveUserServerScopeByNameProtobuf(ctx context
 }
 
 func (s *userServiceServer) ServiceDescriptor() ([]byte, int) {
-	return twirpFileDescriptor7, 0
+	return twirpFileDescriptor8, 0
 }
 
 func (s *userServiceServer) ProtocGenTwirpVersion() string {
@@ -4348,7 +4348,7 @@ func (s *userServiceServer) PathPrefix() string {
 	return baseServicePath(s.pathPrefix, "buf.alpha.registry.v1alpha1", "UserService")
 }
 
-var twirpFileDescriptor7 = []byte{
+var twirpFileDescriptor8 = []byte{
 	// 1062 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xd4, 0x58, 0xdf, 0x6f, 0xdb, 0x54,
 	0x14, 0xd6, 0x4d, 0x03, 0x6b, 0x4f, 0xb6, 0x76, 0xb9, 0x80, 0x94, 0xba, 0x2d, 0x4d, 0x8d, 0xd6,

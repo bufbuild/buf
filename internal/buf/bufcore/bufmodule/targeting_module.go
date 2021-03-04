@@ -51,13 +51,13 @@ func newTargetingModule(
 	}, nil
 }
 
-func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufcore.FileInfo, retErr error) {
+func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []FileInfo, retErr error) {
 	defer func() {
 		if retErr == nil {
 			if len(fileInfos) == 0 {
 				retErr = internal.ErrNoTargetFiles
 			} else {
-				bufcore.SortFileInfos(fileInfos)
+				sortFileInfos(fileInfos)
 			}
 		}
 	}()
@@ -87,7 +87,8 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufc
 				// add to the nonImportImageFiles if does not already exist
 				if _, ok := fileInfoPaths[targetPath]; !ok {
 					fileInfoPaths[targetPath] = struct{}{}
-					fileInfos = append(fileInfos, bufcore.NewFileInfoForObjectInfo(objectInfo, false))
+					coreFileInfo := bufcore.NewFileInfoForObjectInfo(objectInfo, false)
+					fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.Module.getModuleReference()))
 				}
 			}
 		}
@@ -127,7 +128,8 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufc
 				// then, add the file if it is not added
 				if _, ok := fileInfoPaths[path]; !ok {
 					fileInfoPaths[path] = struct{}{}
-					fileInfos = append(fileInfos, bufcore.NewFileInfoForObjectInfo(objectInfo, false))
+					coreFileInfo := bufcore.NewFileInfoForObjectInfo(objectInfo, false)
+					fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.Module.getModuleReference()))
 				}
 			}
 			return nil

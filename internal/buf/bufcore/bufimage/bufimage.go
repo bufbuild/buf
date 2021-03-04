@@ -15,7 +15,7 @@
 package bufimage
 
 import (
-	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
@@ -26,7 +26,7 @@ import (
 
 // ImageFile is a Protobuf file within an image.
 type ImageFile interface {
-	bufcore.FileInfo
+	bufmodule.FileInfo
 	// Proto is the backing FileDescriptorProto for this File.
 	//
 	// This will never be nil.
@@ -48,11 +48,13 @@ type ImageFile interface {
 // If externalPath is empty, path is used.
 func NewImageFile(
 	fileDescriptorProto *descriptorpb.FileDescriptorProto,
+	moduleReference bufmodule.ModuleReference,
 	externalPath string,
 	isImport bool,
 ) (ImageFile, error) {
 	return newImageFile(
 		fileDescriptorProto,
+		moduleReference,
 		externalPath,
 		isImport,
 	)
@@ -116,10 +118,19 @@ func NewImageForProto(protoImage *imagev1.Image) (Image, error) {
 	if err != nil {
 		return nil, err
 	}
+	moduleReferenceRefs, err := getModuleReferenceRefs(protoImage)
+	if err != nil {
+		return nil, err
+	}
 	imageFiles := make([]ImageFile, len(protoImage.File))
 	for i, fileDescriptorProto := range protoImage.File {
 		_, isImport := importFileIndexes[i]
-		imageFile, err := NewImageFile(fileDescriptorProto, fileDescriptorProto.GetName(), isImport)
+		imageFile, err := NewImageFile(
+			fileDescriptorProto,
+			moduleReferenceRefs[i], // nil is a valid value.
+			fileDescriptorProto.GetName(),
+			isImport,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -234,6 +245,18 @@ func ImageToProtoImage(image Image) *imagev1.Image {
 				protoImage.BufbuildImageExtension.ImageImportRefs,
 				&imagev1.ImageImportRef{
 					FileIndex: proto.Uint32(uint32(i)),
+				},
+			)
+		}
+		if moduleReference := imageFile.ModuleReference(); moduleReference != nil {
+			protoImage.BufbuildImageExtension.ModuleReferenceRefs = append(
+				protoImage.BufbuildImageExtension.ModuleReferenceRefs,
+				&imagev1.ModuleReferenceRef{
+					FileIndex:  proto.Uint32(uint32(i)),
+					Remote:     proto.String(moduleReference.Remote()),
+					Owner:      proto.String(moduleReference.Owner()),
+					Repository: proto.String(moduleReference.Repository()),
+					Reference:  proto.String(moduleReference.Reference()),
 				},
 			)
 		}

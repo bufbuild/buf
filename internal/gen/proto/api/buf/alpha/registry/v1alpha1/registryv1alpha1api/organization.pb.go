@@ -22,7 +22,6 @@ import (
 )
 
 // OrganizationService is the Organization service.
-// All methods on the Organization service require authentication.
 type OrganizationService interface {
 	// GetOrganization gets a organization by ID.
 	GetOrganization(ctx context.Context, id string) (organization *v1alpha1.Organization, err error)

@@ -46,7 +46,6 @@ message Repository {
 }
 
 // RepositoryService is the Repository service.
-// All methods on the Repository service require authentication.
 service RepositoryService {
   // GetRepository gets a repository by ID.
   rpc GetRepository(GetRepositoryRequest) returns (GetRepositoryResponse) {

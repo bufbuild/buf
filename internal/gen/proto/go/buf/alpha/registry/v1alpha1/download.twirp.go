@@ -28,6 +28,7 @@ It is generated from these files:
 	buf/alpha/registry/v1alpha1/repository.proto
 	buf/alpha/registry/v1alpha1/repository_branch.proto
 	buf/alpha/registry/v1alpha1/repository_commit.proto
+	buf/alpha/registry/v1alpha1/repository_tag.proto
 	buf/alpha/registry/v1alpha1/resolve.proto
 	buf/alpha/registry/v1alpha1/user.proto
 */

@@ -35,7 +35,6 @@ message RepositoryBranch {
 }
 
 // RepositoryBranchService is the Repository branch service.
-// All methods on the Repository branch service require authentication.
 service RepositoryBranchService {
   // CreateRepositoryBranch creates a new repository branch.
   rpc CreateRepositoryBranch(CreateRepositoryBranchRequest) returns (CreateRepositoryBranchResponse) {

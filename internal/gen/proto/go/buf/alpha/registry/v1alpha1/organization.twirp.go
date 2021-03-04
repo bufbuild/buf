@@ -41,7 +41,6 @@ const _ = twirp.TwirpPackageIsVersion7
 // =============================
 
 // OrganizationService is the Organization service.
-// All methods on the Organization service require authentication.
 type OrganizationService interface {
 	// GetOrganization gets a organization by ID.
 	GetOrganization(context.Context, *GetOrganizationRequest) (*GetOrganizationResponse, error)

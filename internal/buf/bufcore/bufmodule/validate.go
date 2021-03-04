@@ -55,7 +55,7 @@ func ValidateProtoModule(protoModule *modulev1alpha1.Module) error {
 	totalContentLength := 0
 	filePathMap := make(map[string]struct{}, len(protoModule.Files))
 	for _, protoModuleFile := range protoModule.Files {
-		if err := validateModuleFilePath(protoModuleFile.Path); err != nil {
+		if err := ValidateModuleFilePath(protoModuleFile.Path); err != nil {
 			return err
 		}
 		if _, ok := filePathMap[protoModuleFile.Path]; ok {
@@ -287,7 +287,7 @@ func validateCreateTime(createTime *timestamppb.Timestamp) error {
 	return createTime.CheckValid()
 }
 
-func validateModuleFilePath(path string) error {
+func ValidateModuleFilePath(path string) error {
 	normalizedPath, err := normalpath.NormalizeAndValidate(path)
 	if err != nil {
 		return err

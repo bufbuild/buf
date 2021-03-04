@@ -236,6 +236,7 @@ func testBuildCodeGeneratorRequest(
 		_, isNotImport := nonImportRootRelFilePaths[fileDescriptorProto.GetName()]
 		imageFile, err := bufimage.NewImageFile(
 			fileDescriptorProto,
+			nil,
 			"",
 			!isNotImport,
 		)

@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/internal/bufcorevalidate"
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
@@ -30,11 +31,33 @@ func getImportFileIndexes(protoImage *imagev1.Image) (map[int]struct{}, error) {
 	for _, imageImportRef := range imageImportRefs {
 		if imageImportRef.FileIndex == nil {
 			// this should have been caught in validation but just in case
-			return nil, errors.New("nil fileIndex")
+			return nil, errors.New("nil image import ref fileIndex")
 		}
 		importFileIndexes[int(imageImportRef.GetFileIndex())] = struct{}{}
 	}
 	return importFileIndexes, nil
+}
+
+func getModuleReferenceRefs(protoImage *imagev1.Image) (map[int]bufmodule.ModuleReference, error) {
+	moduleReferenceRefs := protoImage.GetBufbuildImageExtension().GetModuleReferenceRefs()
+	parsedModuleReferenceRefs := make(map[int]bufmodule.ModuleReference, len(moduleReferenceRefs))
+	for _, moduleReferenceRef := range moduleReferenceRefs {
+		if moduleReferenceRef.FileIndex == nil {
+			// this should have been caught in validation but just in case
+			return nil, errors.New("nil module reference ref fileIndex")
+		}
+		parsedModuleReferenceRef, err := bufmodule.NewModuleReference(
+			moduleReferenceRef.GetRemote(),
+			moduleReferenceRef.GetOwner(),
+			moduleReferenceRef.GetRepository(),
+			moduleReferenceRef.GetReference(),
+		)
+		if err != nil {
+			return nil, err
+		}
+		parsedModuleReferenceRefs[int(moduleReferenceRef.GetFileIndex())] = parsedModuleReferenceRef
+	}
+	return parsedModuleReferenceRefs, nil
 }
 
 // paths can be either files (ending in .proto) or directories

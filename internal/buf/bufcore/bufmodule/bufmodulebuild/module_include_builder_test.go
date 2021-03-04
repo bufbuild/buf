@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufcoretesting"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/internal"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -37,18 +38,18 @@ func TestIncludeGetFileInfos1(t *testing.T) {
 		[]string{
 			"proto",
 		},
-		bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/c/1.proto", "testdata/1/proto/a/c/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/c/2.proto", "testdata/1/proto/a/c/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "a/c/3.proto", "testdata/1/proto/a/c/3.proto", false),
-		bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false),
-		bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/1.proto", "testdata/1/proto/a/c/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/2.proto", "testdata/1/proto/a/c/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/3.proto", "testdata/1/proto/a/c/3.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false), nil),
 	)
 }
 
@@ -85,14 +86,14 @@ func testIncludeGetFileInfos(
 	t *testing.T,
 	relDir string,
 	relRoots []string,
-	expectedFileInfos ...bufcore.FileInfo,
+	expectedFileInfos ...bufmodule.FileInfo,
 ) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	for _, isAbs := range []bool{true, false} {
 		isAbs := isAbs
 		expectedFileInfos := expectedFileInfos
 		if isAbs {
-			expectedFileInfos = bufcoretesting.FileInfosToAbs(t, expectedFileInfos)
+			expectedFileInfos = fileInfosToAbs(t, expectedFileInfos)
 		}
 		t.Run(fmt.Sprintf("abs=%v", isAbs), func(t *testing.T) {
 			t.Parallel()
@@ -104,7 +105,7 @@ func testIncludeGetFileInfos(
 			require.NoError(t, err)
 			fileInfos, err := module.SourceFileInfos(context.Background())
 			assert.NoError(t, err)
-			bufcoretesting.AssertFileInfosEqual(
+			assert.Equal(
 				t,
 				expectedFileInfos,
 				fileInfos,
@@ -123,7 +124,7 @@ func testIncludeGetFileInfos(
 				require.NoError(t, err)
 				fileInfos, err := module.TargetFileInfos(context.Background())
 				assert.NoError(t, err)
-				bufcoretesting.AssertFileInfosEqual(
+				assert.Equal(
 					t,
 					expectedFileInfos,
 					fileInfos,
@@ -200,4 +201,21 @@ func testIncludeDirPaths(
 		}
 	}
 	return includeDirPaths
+}
+
+// fileInfosToAbs converts the external paths to absolute.
+func fileInfosToAbs(t *testing.T, fileInfos []bufmodule.FileInfo) []bufmodule.FileInfo {
+	newFileInfos := make([]bufmodule.FileInfo, len(fileInfos))
+	for i, fileInfo := range fileInfos {
+		absExternalPath, err := normalpath.NormalizeAndAbsolute(fileInfo.ExternalPath())
+		require.NoError(t, err)
+		newCoreFileInfo, err := bufcore.NewFileInfo(
+			fileInfo.Path(),
+			absExternalPath,
+			fileInfo.IsImport(),
+		)
+		require.NoError(t, err)
+		newFileInfos[i] = bufmodule.NewFileInfo(newCoreFileInfo, nil)
+	}
+	return newFileInfos
 }

@@ -1,6 +1,7 @@
 BUF_BIN ?= cmd/buf
 
-PROTOREFLECT_VERSION := v1.8.2
+# Remove when protoreflect has a new release > 1.8.2
+PROTOREFLECT_VERSION := 8255811fc3c054aab548f7208e1471b668f4c5b3
 # Remove when https://github.com/spf13/cobra/pull/1070 is released
 COBRA_VERSION := b97b5ead31f7d34f764ac8666e40c214bb8e06dc
 GO_GET_PKGS := $(GO_GET_PKGS) \

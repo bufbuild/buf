@@ -22,7 +22,6 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
@@ -135,7 +134,7 @@ type FileLister interface {
 		container app.EnvStdinContainer,
 		ref buffetch.Ref,
 		configOverride string,
-	) ([]bufcore.FileInfo, error)
+	) ([]bufmodule.FileInfo, error)
 }
 
 // NewFileLister returns a new FileLister.

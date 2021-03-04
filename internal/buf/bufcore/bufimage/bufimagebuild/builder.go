@@ -22,9 +22,9 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufcoreprotoparse"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmoduleprotoparse"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/bufbuild/buf/internal/pkg/thread"
 	"github.com/jhump/protoreflect/desc"
@@ -68,7 +68,7 @@ func (b *builder) build(
 	ctx, span := trace.StartSpan(ctx, "build")
 	defer span.End()
 
-	parserAccessorHandler := bufcoreprotoparse.NewParserAccessorHandler(ctx, moduleFileSet)
+	parserAccessorHandler := bufmoduleprotoparse.NewParserAccessorHandler(ctx, moduleFileSet)
 	targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -121,7 +121,7 @@ func (b *builder) build(
 
 func getBuildResults(
 	ctx context.Context,
-	parserAccessorHandler bufcoreprotoparse.ParserAccessorHandler,
+	parserAccessorHandler bufmoduleprotoparse.ParserAccessorHandler,
 	paths []string,
 	excludeSourceCodeInfo bool,
 ) []*buildResult {
@@ -177,7 +177,7 @@ func getBuildResults(
 
 func getBuildResult(
 	ctx context.Context,
-	parserAccessorHandler bufcoreprotoparse.ParserAccessorHandler,
+	parserAccessorHandler bufmoduleprotoparse.ParserAccessorHandler,
 	paths []string,
 	excludeSourceCodeInfo bool,
 ) *buildResult {
@@ -207,7 +207,7 @@ func getBuildResult(
 					errors.New("got invalid source error from parse but no errors reported"),
 				)
 			}
-			fileAnnotations, err := bufcoreprotoparse.GetFileAnnotations(
+			fileAnnotations, err := bufmoduleprotoparse.GetFileAnnotations(
 				ctx,
 				parserAccessorHandler,
 				errorsWithPos,
@@ -310,7 +310,7 @@ func getImage(
 	ctx context.Context,
 	excludeSourceCodeInfo bool,
 	sortedFileDescriptors []*desc.FileDescriptor,
-	parserAccessorHandler bufcoreprotoparse.ParserAccessorHandler,
+	parserAccessorHandler bufmoduleprotoparse.ParserAccessorHandler,
 ) (bufimage.Image, error) {
 	ctx, span := trace.StartSpan(ctx, "get_image")
 	defer span.End()
@@ -352,7 +352,7 @@ func getImageFilesRec(
 	ctx context.Context,
 	excludeSourceCodeInfo bool,
 	descFileDescriptor *desc.FileDescriptor,
-	parserAccessorHandler bufcoreprotoparse.ParserAccessorHandler,
+	parserAccessorHandler bufmoduleprotoparse.ParserAccessorHandler,
 	alreadySeen map[string]struct{},
 	nonImportFilenames map[string]struct{},
 	imageFiles []bufimage.ImageFile,
@@ -393,6 +393,7 @@ func getImageFilesRec(
 	_, isNotImport := nonImportFilenames[path]
 	imageFile, err := bufimage.NewImageFile(
 		fileDescriptorProto,
+		parserAccessorHandler.ModuleReference(path),
 		// if empty, defaults to path
 		parserAccessorHandler.ExternalPath(path),
 		!isNotImport,
