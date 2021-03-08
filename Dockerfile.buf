@@ -11,7 +11,7 @@ COPY cmd /workspace/cmd
 COPY internal /workspace/internal
 RUN CGO_ENABLED=0 go build -ldflags "-s -w" -trimpath -o /go/bin/buf ./cmd/buf
 
-FROM alpine:3.12.0
+FROM alpine:3.12.4
 
 RUN apk add --update --no-cache \
     ca-certificates \
