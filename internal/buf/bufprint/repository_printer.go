@@ -75,7 +75,7 @@ func (p *repositoryPrinter) PrintRepositories(ctx context.Context, messages ...*
 			}
 			ownerName = user.Username
 		default:
-			return fmt.Errorf("unknown repository owner: %T", owner)
+			return fmt.Errorf("unknown owner: %T", owner)
 		}
 		outputRepository := outputRepository{
 			ID:         repository.Id,

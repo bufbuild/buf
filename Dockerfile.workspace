@@ -30,9 +30,7 @@ RUN wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/s
   rm -rf /var/cache/apk/*
 
 COPY go.mod go.sum /workspace/
-# This replaces go mod download so that we only download what we need
-# https://github.com/golang/go/issues/18387
-RUN go list -test all
+RUN go mod download
 COPY make /workspace/make
 COPY Makefile /workspace/
 RUN make dockerdeps

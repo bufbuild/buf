@@ -202,6 +202,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"bsd-3-clause-lbnl": {
 		id: "BSD-3-Clause-LBNL",
 	},
+	"bsd-3-clause-modification": {
+		id: "BSD-3-Clause-Modification",
+	},
 	"bsd-3-clause-no-nuclear-license": {
 		id: "BSD-3-Clause-No-Nuclear-License",
 	},
@@ -216,6 +219,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"bsd-4-clause": {
 		id: "BSD-4-Clause",
+	},
+	"bsd-4-clause-shortened": {
+		id: "BSD-4-Clause-Shortened",
 	},
 	"bsd-4-clause-uc": {
 		id: "BSD-4-Clause-UC",
@@ -237,6 +243,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"bzip2-1.0.6": {
 		id: "bzip2-1.0.6",
+	},
+	"c-uda-1.0": {
+		id: "C-UDA-1.0",
 	},
 	"cal-1.0": {
 		id: "CAL-1.0",
@@ -342,6 +351,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"cc-by-sa-2.0-uk": {
 		id: "CC-BY-SA-2.0-UK",
+	},
+	"cc-by-sa-2.1-jp": {
+		id: "CC-BY-SA-2.1-JP",
 	},
 	"cc-by-sa-2.5": {
 		id: "CC-BY-SA-2.5",
@@ -463,6 +475,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"dotseqn": {
 		id: "Dotseqn",
 	},
+	"drl-1.0": {
+		id: "DRL-1.0",
+	},
 	"dsdp": {
 		id: "DSDP",
 	},
@@ -526,6 +541,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"frameworx-1.0": {
 		id: "Frameworx-1.0",
 	},
+	"freebsd-doc": {
+		id: "FreeBSD-DOC",
+	},
 	"freeimage": {
 		id: "FreeImage",
 	},
@@ -540,6 +558,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"ftl": {
 		id: "FTL",
+	},
+	"gd": {
+		id: "GD",
 	},
 	"gfdl-1.1": {
 		id: "GFDL-1.1",
@@ -865,6 +886,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	"mit-feh": {
 		id: "MIT-feh",
 	},
+	"mit-modern-variant": {
+		id: "MIT-Modern-Variant",
+	},
 	"mit-open-group": {
 		id: "MIT-open-group",
 	},
@@ -909,6 +933,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"mup": {
 		id: "Mup",
+	},
+	"naist-2003": {
+		id: "NAIST-2003",
 	},
 	"nasa-1.3": {
 		id: "NASA-1.3",
@@ -1014,6 +1041,9 @@ var lowercaseIDToLicenseInfo = map[string]*licenseInfo{
 	},
 	"ogc-1.0": {
 		id: "OGC-1.0",
+	},
+	"ogdl-taiwan-1.0": {
+		id: "OGDL-Taiwan-1.0",
 	},
 	"ogl-canada-2.0": {
 		id: "OGL-Canada-2.0",

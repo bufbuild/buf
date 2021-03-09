@@ -32,7 +32,7 @@ service DownloadService {
 message DownloadRequest {
   string owner = 1;
   string repository = 2;
-  string commit = 3;
+  string reference = 3;
 }
 
 message DownloadResponse {
