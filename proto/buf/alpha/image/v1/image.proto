@@ -81,8 +81,5 @@ message ModuleReferenceRef {
   optional string remote = 2;
   optional string owner = 3;
   optional string repository = 4;
-  // This is always a commit for now, but we make this a reference instead of specifically a
-  // commit to give ourselves options in the future. We can easily distinguish between
-  // branches/tags and commits.
   optional string reference = 5;
 }

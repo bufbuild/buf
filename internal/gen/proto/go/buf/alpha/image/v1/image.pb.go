@@ -239,10 +239,7 @@ type ModuleReferenceRef struct {
 	Remote     *string `protobuf:"bytes,2,opt,name=remote" json:"remote,omitempty"`
 	Owner      *string `protobuf:"bytes,3,opt,name=owner" json:"owner,omitempty"`
 	Repository *string `protobuf:"bytes,4,opt,name=repository" json:"repository,omitempty"`
-	// This is always a commit for now, but we make this a reference instead of specifically a
-	// commit to give ourselves options in the future. We can easily distinguish between
-	// branches/tags and commits.
-	Reference *string `protobuf:"bytes,5,opt,name=reference" json:"reference,omitempty"`
+	Reference  *string `protobuf:"bytes,5,opt,name=reference" json:"reference,omitempty"`
 }
 
 func (x *ModuleReferenceRef) Reset() {

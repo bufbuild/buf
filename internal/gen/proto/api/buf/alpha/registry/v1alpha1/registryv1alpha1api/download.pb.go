@@ -28,6 +28,6 @@ type DownloadService interface {
 		ctx context.Context,
 		owner string,
 		repository string,
-		commit string,
+		reference string,
 	) (module *v1alpha1.Module, err error)
 }

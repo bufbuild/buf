@@ -34,7 +34,7 @@ func (s *downloadService) Download(
 	ctx context.Context,
 	owner string,
 	repository string,
-	commit string,
+	reference string,
 ) (module *v1alpha11.Module, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -44,7 +44,7 @@ func (s *downloadService) Download(
 		&v1alpha1.DownloadRequest{
 			Owner:      owner,
 			Repository: repository,
-			Commit:     commit,
+			Reference:  reference,
 		},
 	)
 	if err != nil {
