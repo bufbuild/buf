@@ -31,5 +31,6 @@ type PushService interface {
 		repository string,
 		branch string,
 		module *v1alpha1.Module,
+		tags []string,
 	) (localModulePin *v1alpha11.LocalModulePin, err error)
 }

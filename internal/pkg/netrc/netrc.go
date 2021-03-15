@@ -16,7 +16,6 @@
 package netrc
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -143,5 +142,5 @@ func putMachineForFilePath(machine Machine, filePath string) (retErr error) {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filePath, bytes, info.Mode())
+	return os.WriteFile(filePath, bytes, info.Mode())
 }

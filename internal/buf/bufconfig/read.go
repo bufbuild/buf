@@ -17,7 +17,7 @@ package bufconfig
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -38,7 +38,7 @@ func readConfig(
 		var err error
 		switch filepath.Ext(readConfigOptions.override) {
 		case ".json", ".yaml":
-			data, err = ioutil.ReadFile(readConfigOptions.override)
+			data, err = os.ReadFile(readConfigOptions.override)
 			if err != nil {
 				return nil, fmt.Errorf("could not read file: %v", err)
 			}

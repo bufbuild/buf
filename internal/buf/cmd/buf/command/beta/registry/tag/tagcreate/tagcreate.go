@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package branchcreate
+package tagcreate
 
 import (
 	"context"
@@ -28,11 +28,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const (
-	formatFlagName      = "format"
-	parentFlagName      = "parent"
-	parentFlagShortName = "p"
-)
+const formatFlagName = "format"
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -41,9 +37,9 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository:branch>",
-		Short: "Create a branch for the specified repository.",
-		Args:  cobra.ExactArgs(1),
+		Use:   name + " <buf.build/owner/repository:commit> <tag>",
+		Short: "Create a tag for the specified commit.",
+		Args:  cobra.ExactArgs(2),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -56,7 +52,6 @@ func NewCommand(
 
 type flags struct {
 	Format string
-	Parent string
 }
 
 func newFlags() *flags {
@@ -70,13 +65,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		bufprint.FormatText.String(),
 		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
 	)
-	flagSet.StringVarP(
-		&f.Parent,
-		parentFlagName,
-		parentFlagShortName,
-		bufmodule.MainBranch,
-		`The parent branch.`,
-	)
 }
 
 func run(
@@ -84,17 +72,14 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	if flags.Parent == "" {
-		return bufcli.NewFlagIsRequiredError(parentFlagName)
-	}
 	moduleReference, err := bufmodule.ModuleReferenceForString(
 		container.Arg(0),
 	)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	if bufmodule.IsCommitModuleReference(moduleReference) {
-		return fmt.Errorf("branch is required but commit was given: %q", container.Arg(0))
+	if !bufmodule.IsCommitModuleReference(moduleReference) {
+		return fmt.Errorf("commit is required, but a branch or tag was given: %q", container.Arg(0))
 	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
@@ -104,12 +89,10 @@ func run(
 	if err != nil {
 		return err
 	}
-	repositoryBranchService, err := apiProvider.NewRepositoryBranchService(ctx, moduleReference.Remote())
+	repositoryTagService, err := apiProvider.NewRepositoryTagService(ctx, moduleReference.Remote())
 	if err != nil {
 		return err
 	}
-	// TODO: We can add another RPC for creating a repository branch by name so that we don't
-	// have to get the repository separately.
 	repository, err := repositoryService.GetRepositoryByFullName(ctx, moduleReference.Owner()+"/"+moduleReference.Repository())
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
@@ -117,12 +100,22 @@ func run(
 		}
 		return err
 	}
-	repositoryBranch, err := repositoryBranchService.CreateRepositoryBranch(ctx, repository.Id, moduleReference.Reference(), flags.Parent)
+	tag := container.Arg(1)
+	commit := moduleReference.Reference()
+	repositoryTag, err := repositoryTagService.CreateRepositoryTag(
+		ctx,
+		repository.Id,
+		tag,
+		commit,
+	)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
-			return bufcli.NewBranchOrTagNameAlreadyExistsError(moduleReference.String())
+			return bufcli.NewBranchOrTagNameAlreadyExistsError(tag)
+		}
+		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
+			return bufcli.NewModuleReferenceNotFoundError(moduleReference)
 		}
 		return err
 	}
-	return bufcli.PrintRepositoryBranches(ctx, container.Stdout(), flags.Format, repositoryBranch)
+	return bufcli.PrintRepositoryTags(ctx, container.Stdout(), flags.Format, repositoryTag)
 }

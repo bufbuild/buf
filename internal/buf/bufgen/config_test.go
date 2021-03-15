@@ -15,7 +15,7 @@
 package bufgen
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -58,7 +58,7 @@ func TestReadConfig(t *testing.T) {
 	config, err := ReadConfig(filepath.Join("testdata", "gen_success1.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
-	data, err := ioutil.ReadFile(filepath.Join("testdata", "gen_success1.yaml"))
+	data, err := os.ReadFile(filepath.Join("testdata", "gen_success1.yaml"))
 	require.NoError(t, err)
 	config, err = ReadConfig(string(data))
 	require.NoError(t, err)
@@ -66,7 +66,7 @@ func TestReadConfig(t *testing.T) {
 	config, err = ReadConfig(filepath.Join("testdata", "gen_success1.json"))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
-	data, err = ioutil.ReadFile(filepath.Join("testdata", "gen_success1.json"))
+	data, err = os.ReadFile(filepath.Join("testdata", "gen_success1.json"))
 	require.NoError(t, err)
 	config, err = ReadConfig(string(data))
 	require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestReadConfig(t *testing.T) {
 	config, err = ReadConfig(filepath.Join("testdata", "gen_success2.yaml"))
 	require.NoError(t, err)
 	require.Equal(t, successConfig2, config)
-	data, err = ioutil.ReadFile(filepath.Join("testdata", "gen_success2.yaml"))
+	data, err = os.ReadFile(filepath.Join("testdata", "gen_success2.yaml"))
 	require.NoError(t, err)
 	config, err = ReadConfig(string(data))
 	require.NoError(t, err)
@@ -83,7 +83,7 @@ func TestReadConfig(t *testing.T) {
 	config, err = ReadConfig(filepath.Join("testdata", "gen_success2.json"))
 	require.NoError(t, err)
 	require.Equal(t, successConfig2, config)
-	data, err = ioutil.ReadFile(filepath.Join("testdata", "gen_success2.json"))
+	data, err = os.ReadFile(filepath.Join("testdata", "gen_success2.json"))
 	require.NoError(t, err)
 	config, err = ReadConfig(string(data))
 	require.NoError(t, err)
@@ -91,7 +91,7 @@ func TestReadConfig(t *testing.T) {
 	config, err = ReadConfig(filepath.Join("testdata", "gen_success3.json"))
 	require.NoError(t, err)
 	require.Equal(t, successConfig3, config)
-	data, err = ioutil.ReadFile(filepath.Join("testdata", "gen_success3.json"))
+	data, err = os.ReadFile(filepath.Join("testdata", "gen_success3.json"))
 	require.NoError(t, err)
 	config, err = ReadConfig(string(data))
 	require.NoError(t, err)
@@ -99,7 +99,7 @@ func TestReadConfig(t *testing.T) {
 
 	_, err = ReadConfig(filepath.Join("testdata", "gen_error1.yaml"))
 	require.Error(t, err)
-	data, err = ioutil.ReadFile(filepath.Join("testdata", "gen_error1.yaml"))
+	data, err = os.ReadFile(filepath.Join("testdata", "gen_error1.yaml"))
 	require.NoError(t, err)
 	_, err = ReadConfig(string(data))
 	require.Error(t, err)

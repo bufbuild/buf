@@ -47,10 +47,12 @@ service RepositoryTagService {
 }
 
 message CreateRepositoryTagRequest {
+  // The ID of the repository this tag should be created on.
+  string repository_id = 1;
   // The name of the repository tag, e.g. "6e2e7f24718a76caa32a80d0e2b1841ef2c61403".
-  string name = 1;
+  string name = 2;
   // The name of the commit this tag should be created for.
-  string commit_name = 2;
+  string commit_name = 3;
 }
 
 message CreateRepositoryTagResponse {

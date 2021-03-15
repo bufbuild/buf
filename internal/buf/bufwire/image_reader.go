@@ -17,7 +17,7 @@ package bufwire
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
@@ -61,7 +61,7 @@ func (i *imageReader) GetImage(
 	defer func() {
 		retErr = multierr.Append(retErr, readCloser.Close())
 	}()
-	data, err := ioutil.ReadAll(readCloser)
+	data, err := io.ReadAll(readCloser)
 	if err != nil {
 		return nil, err
 	}

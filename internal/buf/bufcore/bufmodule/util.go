@@ -17,7 +17,7 @@ package bufmodule
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
@@ -114,7 +114,7 @@ func moduleFileToProto(ctx context.Context, module Module, path string) (_ *modu
 	defer func() {
 		retErr = multierr.Append(retErr, moduleFile.Close())
 	}()
-	protoModuleFile.Content, err = ioutil.ReadAll(moduleFile)
+	protoModuleFile.Content, err = io.ReadAll(moduleFile)
 	if err != nil {
 		return nil, err
 	}

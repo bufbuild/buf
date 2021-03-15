@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -44,7 +43,7 @@ func GetProtocFileDescriptorSet(
 	includeImports bool,
 	includeSourceInfo bool,
 ) (_ *descriptorpb.FileDescriptorSet, retErr error) {
-	tempFile, err := ioutil.TempFile("", "")
+	tempFile, err := os.CreateTemp("", "")
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +67,7 @@ func GetProtocFileDescriptorSet(
 		return nil, err
 	}
 
-	data, err := ioutil.ReadFile(tempFilePath)
+	data, err := os.ReadFile(tempFilePath)
 	if err != nil {
 		return nil, err
 	}

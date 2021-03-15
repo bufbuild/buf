@@ -32,6 +32,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/repository/repositoryget"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/repository/repositorylist"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/tag/tagcreate"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/tag/taglist"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configlsbreakingrules"
@@ -217,6 +219,14 @@ func NewRootCommand(
 								SubCommands: []*appcmd.Command{
 									branchcreate.NewCommand("create", builder),
 									branchlist.NewCommand("list", builder),
+								},
+							},
+							{
+								Use:   "tag",
+								Short: "Repository tag commands.",
+								SubCommands: []*appcmd.Command{
+									tagcreate.NewCommand("create", builder),
+									taglist.NewCommand("list", builder),
 								},
 							},
 						},

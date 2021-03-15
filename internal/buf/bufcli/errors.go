@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/rpc"
@@ -105,10 +106,10 @@ func NewRepositoryNameAlreadyExistsError(name string) error {
 	return fmt.Errorf("a repository named %q already exists", name)
 }
 
-// NewBranchNameAlreadyExistsError informs the user that a branch
-// with that name already exists.
-func NewBranchNameAlreadyExistsError(name string) error {
-	return fmt.Errorf("a branch named %q already exists", name)
+// NewBranchOrTagNameAlreadyExistsError informs the user that a branch
+// or tag with that name already exists.
+func NewBranchOrTagNameAlreadyExistsError(name string) error {
+	return fmt.Errorf("a branch or tag named %q already exists", name)
 }
 
 // NewOrganizationNotFoundError informs the user that an organization with
@@ -123,6 +124,12 @@ func NewRepositoryNotFoundError(name string) error {
 	return fmt.Errorf(`a repository named %q does not exist, use "buf beta registry repository create" to create one`, name)
 }
 
+// NewModuleReferenceNotFoundError informs the user that a module
+// reference does not exist.
+func NewModuleReferenceNotFoundError(reference bufmodule.ModuleReference) error {
+	return fmt.Errorf("%q does not exist", reference)
+}
+
 // NewTokenNotFoundError informs the user that a token with
 // that identifier does not exist.
 func NewTokenNotFoundError(tokenID string) error {
@@ -133,16 +140,30 @@ func NewTokenNotFoundError(tokenID string) error {
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
 func wrapError(action string, err error) error {
-	if err == nil || (err.Error() == "" && rpc.GetErrorCode(err) == rpc.ErrorCodeUnknown) {
+	if err == nil || (err.Error() == "" && !rpc.IsError(err)) {
 		// If the error is nil or empty and not an rpc error, we return it as-is.
 		// This is especially relevant for commands like lint and breaking.
 		return err
 	}
 	switch {
-	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnauthenticated:
-		return fmt.Errorf(`Failed to %s; you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://beta.docs.buf.build/authentication`, action)
+	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
+		return fmt.Errorf(`Failed to %q: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://beta.docs.buf.build/authentication`, action)
 	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnavailable:
-		return fmt.Errorf(`Failed to %s: the server hosted at that remote is unavailable: %w.`, action, err)
+		return fmt.Errorf(`Failed to %q: the server hosted at that remote is unavailable: %w.`, action, err)
 	}
 	return fmt.Errorf("Failed to %q: %w.", action, err)
+}
+
+// isEmptyUnknownError returns true if the given
+// error is non-nil, but has an empty message
+// and an unknown error code.
+//
+// This is relevant for errors returned by
+// envoyauthd when the client does not provide
+// an authentication header.
+func isEmptyUnknownError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return err.Error() == "" && rpc.GetErrorCode(err) == rpc.ErrorCodeUnknown
 }

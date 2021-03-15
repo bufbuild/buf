@@ -35,6 +35,9 @@ message PushRequest {
   string repository = 2;
   string branch = 3;
   buf.alpha.module.v1alpha1.Module module = 4;
+  // Optional; if provided, the provided tags
+  // are created for the pushed commit.
+  repeated string tags = 5;
 }
 
 message PushResponse {

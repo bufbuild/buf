@@ -16,7 +16,7 @@ package bufgen
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -37,7 +37,7 @@ func readConfig(fileOrData string) (*Config, error) {
 }
 
 func getConfigJSONFile(file string) (*Config, error) {
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("could not read file %s: %v", file, err)
 	}
@@ -50,7 +50,7 @@ func getConfigJSONFile(file string) (*Config, error) {
 }
 
 func getConfigYAMLFile(file string) (*Config, error) {
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, fmt.Errorf("could not read file %s: %v", file, err)
 	}

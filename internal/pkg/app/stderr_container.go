@@ -16,9 +16,8 @@ package app
 
 import (
 	"io"
-	"io/ioutil"
 
-	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
+	"github.com/bufbuild/buf/internal/pkg/ioextended"
 )
 
 type stderrContainer struct {
@@ -27,10 +26,10 @@ type stderrContainer struct {
 
 func newStderrContainer(writer io.Writer) *stderrContainer {
 	if writer == nil {
-		writer = ioutil.Discard
+		writer = io.Discard
 	}
 	return &stderrContainer{
-		writer: ioutilextended.LockedWriter(writer),
+		writer: ioextended.LockedWriter(writer),
 	}
 }
 

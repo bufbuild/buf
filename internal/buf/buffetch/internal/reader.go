@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -29,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
-	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
+	"github.com/bufbuild/buf/internal/pkg/ioextended"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
@@ -211,14 +210,14 @@ func (r *reader) getArchiveBucket(
 	case ArchiveTypeZip:
 		var readerAt io.ReaderAt
 		if size < 0 {
-			data, err := ioutil.ReadAll(readCloser)
+			data, err := io.ReadAll(readCloser)
 			if err != nil {
 				return
 			}
 			readerAt = bytes.NewReader(data)
 			size = int64(len(data))
 		} else {
-			readerAt, err = ioutilextended.ReaderAtForReader(readCloser)
+			readerAt, err = ioextended.ReaderAtForReader(readCloser)
 			if err != nil {
 				return nil, err
 			}
@@ -349,9 +348,9 @@ func (r *reader) getFileReadCloserAndSize(
 		if err != nil {
 			return nil, -1, err
 		}
-		return ioutilextended.CompositeReadCloser(
+		return ioextended.CompositeReadCloser(
 			gzipReadCloser,
-			ioutilextended.ChainCloser(
+			ioextended.ChainCloser(
 				gzipReadCloser,
 				readCloser,
 			),
@@ -362,9 +361,9 @@ func (r *reader) getFileReadCloserAndSize(
 			return nil, -1, err
 		}
 		zstdReadCloser := zstdDecoder.IOReadCloser()
-		return ioutilextended.CompositeReadCloser(
+		return ioextended.CompositeReadCloser(
 			zstdReadCloser,
-			ioutilextended.ChainCloser(
+			ioextended.ChainCloser(
 				zstdReadCloser,
 				readCloser,
 			),
@@ -408,11 +407,11 @@ func (r *reader) getFileReadCloserAndSizePotentiallyCompressed(
 		if !r.stdioEnabled {
 			return nil, -1, NewReadStdioDisabledError()
 		}
-		return ioutil.NopCloser(container.Stdin()), -1, nil
+		return io.NopCloser(container.Stdin()), -1, nil
 	case FileSchemeStdout:
 		return nil, -1, errors.New("cannot read from stdout")
 	case FileSchemeNull:
-		return ioutilextended.DiscardReadCloser, 0, nil
+		return ioextended.DiscardReadCloser, 0, nil
 	default:
 		return nil, -1, fmt.Errorf("unknown FileScheme: %v", fileScheme)
 	}

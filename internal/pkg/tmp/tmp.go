@@ -19,7 +19,6 @@ package tmp
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -48,7 +47,7 @@ func NewFileWithData(data []byte) (File, error) {
 	if err != nil {
 		return nil, err
 	}
-	file, err := ioutil.TempFile("", id.String())
+	file, err := os.CreateTemp("", id.String())
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +96,7 @@ func NewDir(options ...DirOption) (Dir, error) {
 	if err != nil {
 		return nil, err
 	}
-	path, err := ioutil.TempDir(dirOptions.basePath, id.String())
+	path, err := os.MkdirTemp(dirOptions.basePath, id.String())
 	if err != nil {
 		return nil, err
 	}

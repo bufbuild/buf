@@ -17,7 +17,7 @@ package app
 import (
 	"io"
 
-	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
+	"github.com/bufbuild/buf/internal/pkg/ioextended"
 )
 
 type stdinContainer struct {
@@ -26,7 +26,7 @@ type stdinContainer struct {
 
 func newStdinContainer(reader io.Reader) *stdinContainer {
 	if reader == nil {
-		reader = ioutilextended.DiscardReader
+		reader = ioextended.DiscardReader
 	}
 	return &stdinContainer{
 		reader: reader,

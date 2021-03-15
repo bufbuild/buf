@@ -17,7 +17,7 @@ package bufconfig
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
@@ -56,7 +56,7 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
 	}()
-	data, err := ioutil.ReadAll(readObjectCloser)
+	data, err := io.ReadAll(readObjectCloser)
 	if err != nil {
 		return nil, err
 	}
