@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -260,7 +259,7 @@ func testCompareGeneratedStubsArchive(
 		nil,
 		genFlags...,
 	)
-	actualData, err := ioutil.ReadFile(actualProtocFile)
+	actualData, err := os.ReadFile(actualProtocFile)
 	require.NoError(t, err)
 	actualReadBucketBuilder := storagemem.NewReadBucketBuilder()
 	err = storagearchive.Unzip(
@@ -274,7 +273,7 @@ func testCompareGeneratedStubsArchive(
 	require.NoError(t, err)
 	actualReadBucket, err := actualReadBucketBuilder.ToReadBucket()
 	require.NoError(t, err)
-	bufData, err := ioutil.ReadFile(bufGenFile)
+	bufData, err := os.ReadFile(bufGenFile)
 	require.NoError(t, err)
 	bufReadBucketBuilder := storagemem.NewReadBucketBuilder()
 	err = storagearchive.Unzip(

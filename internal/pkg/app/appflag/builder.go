@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -163,7 +163,7 @@ func runProfile(
 ) error {
 	var err error
 	if profilePath == "" {
-		profilePath, err = ioutil.TempDir("", "")
+		profilePath, err = os.MkdirTemp("", "")
 		if err != nil {
 			return err
 		}

@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -48,7 +47,7 @@ func Tar(
 		readBucket,
 		"",
 		func(readObject storage.ReadObject) error {
-			data, err := ioutil.ReadAll(readObject)
+			data, err := io.ReadAll(readObject)
 			if err != nil {
 				return err
 			}

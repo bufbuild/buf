@@ -58,6 +58,8 @@ endif
 
 # Runtime ALL
 
+# All variables exported here must also be added to env.sh
+# via the direnv target below
 export GO111MODULE := on
 ifdef GOPRIVATE
 export GOPRIVATE := $(GOPRIVATE),$(GO_MODULE)
@@ -75,6 +77,7 @@ else
 EXTRAPATH := $(GOBIN):$(abspath $(CACHE_BIN))
 endif
 export PATH := $(EXTRAPATH):$(PATH)
+export DOCKER_BUILDKIT := 1
 
 print-%:
 	@echo $($*)
@@ -91,6 +94,8 @@ envrestore:
 	rm -rf "$(ENV_DIR)"
 	cp -R "$(ENV_BACKUP_DIR)" "$(ENV_DIR)"
 
+# All variables set in env.sh by this target need to also be exported
+# above in the Runtime ALL section.
 .PHONY: direnv
 direnv:
 	@mkdir -p $(CACHE_ENV)
@@ -103,6 +108,7 @@ direnv:
 	@echo 'export GOCACHE="$(GOCACHE)"' >> $(CACHE_ENV)/env.sh
 	@echo 'export GOMODCACHE="$(GOPATH)/pkg/mod"' >> $(CACHE_ENV)/env.sh
 	@echo 'export PATH="$(EXTRAPATH):$${PATH}"' >> $(CACHE_ENV)/env.sh
+	@echo 'export DOCKER_BUILDKIT=1' >> $(CACHE_ENV)/env.sh
 	@echo '[ -f "$(abspath $(ENV_SH))" ] && . "$(abspath $(ENV_SH))"' >> $(CACHE_ENV)/env.sh
 	@echo $(CACHE_ENV)/env.sh
 

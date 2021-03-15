@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/format"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sort"
 	"strings"
@@ -117,7 +117,7 @@ func getLicenseInfos(ctx context.Context) (_ []*licenseInfo, retErr error) {
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("expected HTTP status code %d to be %d", response.StatusCode, http.StatusOK)
 	}
-	data, err := ioutil.ReadAll(response.Body)
+	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}

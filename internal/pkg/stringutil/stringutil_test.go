@@ -274,3 +274,40 @@ func TestSliceToChunks(t *testing.T) {
 func testSliceToChunks(t *testing.T, input []string, chunkSize int, expected ...[]string) {
 	assert.Equal(t, expected, SliceToChunks(input, chunkSize))
 }
+
+func TestAlphanumeric(t *testing.T) {
+	t.Parallel()
+	assert.True(t, IsAlphanumeric('0'))
+	assert.False(t, IsAlphanumeric('.'))
+}
+
+func TestIsAlpha(t *testing.T) {
+	t.Parallel()
+	assert.True(t, IsAlpha('r'))
+	assert.False(t, IsAlpha('.'))
+}
+
+func TestIsLowerAlpha(t *testing.T) {
+	t.Parallel()
+	assert.True(t, IsLowerAlpha('r'))
+	assert.False(t, IsLowerAlpha('R'))
+}
+
+func TestIsUpperAlpha(t *testing.T) {
+	t.Parallel()
+	assert.True(t, IsUpperAlpha('R'))
+	assert.False(t, IsUpperAlpha('r'))
+}
+
+func TestIsNumeric(t *testing.T) {
+	t.Parallel()
+	assert.True(t, IsNumeric('0'))
+	assert.False(t, IsNumeric('r'))
+}
+
+func TestIsLowerAlphanumeric(t *testing.T) {
+	t.Parallel()
+	assert.True(t, IsLowerAlphanumeric('0'))
+	assert.True(t, IsLowerAlphanumeric('r'))
+	assert.False(t, IsLowerAlphanumeric('R'))
+}

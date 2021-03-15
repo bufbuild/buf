@@ -16,7 +16,7 @@ package buffetch
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"testing"
 
@@ -92,7 +92,7 @@ func testRoundTripLocalFile(
 
 	readCloser, err := reader.GetFile(ctx, container, fileRef)
 	require.NoError(t, err)
-	actualData, err := ioutil.ReadAll(readCloser)
+	actualData, err := io.ReadAll(readCloser)
 	require.NoError(t, err)
 	require.NoError(t, readCloser.Close())
 

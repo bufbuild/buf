@@ -146,6 +146,23 @@ func NewRepositoryBranchPrinter(writer io.Writer, format Format) (RepositoryBran
 	}
 }
 
+// RepositoryTagPrinter is a repository tag printer.
+type RepositoryTagPrinter interface {
+	PrintRepositoryTags(ctx context.Context, repositoryTags ...*registryv1alpha1.RepositoryTag) error
+}
+
+// NewRepositoryTagPrinter returns a new RepositoryTagPrinter.
+func NewRepositoryTagPrinter(writer io.Writer, format Format) (RepositoryTagPrinter, error) {
+	switch format {
+	case FormatText:
+		return newRepositoryTagPrinter(writer, false), nil
+	case FormatJSON:
+		return newRepositoryTagPrinter(writer, true), nil
+	default:
+		return nil, fmt.Errorf("unknown format: %v", format)
+	}
+}
+
 // PrintProtoMessageJSON prints the Protobuf message as JSON.
 //
 // Shared with internal packages.

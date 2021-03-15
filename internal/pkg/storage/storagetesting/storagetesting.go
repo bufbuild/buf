@@ -19,7 +19,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -117,7 +117,7 @@ func AssertPathToContent(
 		require.NoError(t, err, path)
 		readObjectCloser, err := readBucket.Get(context.Background(), path)
 		require.NoError(t, err, path)
-		data, err := ioutil.ReadAll(readObjectCloser)
+		data, err := io.ReadAll(readObjectCloser)
 		assert.NoError(t, err, path)
 		assert.NoError(t, readObjectCloser.Close())
 		assert.Equal(t, expectedContent, string(data))

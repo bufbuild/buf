@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -204,12 +203,13 @@ func TestFail6(t *testing.T) {
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 	)
-	testRunStdout(
+	testRunStdoutStderr(
 		t,
 		nil,
 		1,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		"", // stderr should be empty
 		"lint",
 		filepath.Join("testdata", "fail"),
 		"--path",
@@ -514,7 +514,7 @@ func TestFailCheckBreaking1(t *testing.T) {
 		"--against-input",
 		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
 	)
-	testRunStdout(
+	testRunStdoutStderr(
 		t,
 		nil,
 		1,
@@ -525,6 +525,7 @@ func TestFailCheckBreaking1(t *testing.T) {
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
 		`,
+		"", // stderr should be empty
 		"breaking",
 		// can't bother right now to filepath.Join this
 		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
@@ -972,7 +973,7 @@ func testConfigInit(t *testing.T, expectedData string, document bool, uncomment 
 		args = append(args, "--dep", dep)
 	}
 	testRun(t, 0, nil, nil, args...)
-	data, err := ioutil.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1Beta1FilePath))
+	data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1Beta1FilePath))
 	require.NoError(t, err)
 	require.Equal(t, expectedData, string(data))
 }
@@ -995,9 +996,28 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 	)
 }
 
+func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
+	t.Helper()
+	appcmdtesting.RunCommandExitCodeStdoutStderr(
+		t,
+		func(use string) *appcmd.Command { return testNewRootCommand(use) },
+		expectedExitCode,
+		expectedStdout,
+		expectedStderr,
+		func(use string) map[string]string {
+			return map[string]string{
+				useEnvVar(use, "CONFIG_DIR"): "testdata/config",
+				useEnvVar(use, "CACHE_DIR"):  "cache",
+			}
+		},
+		stdin,
+		args...,
+	)
+}
+
 func testRunStdoutProfile(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
 	t.Helper()
-	profileDirPath, err := ioutil.TempDir("", "")
+	profileDirPath, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
 	defer func() { assert.NoError(t, os.RemoveAll(profileDirPath)) }()
 	testRunStdout(

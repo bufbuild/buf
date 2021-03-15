@@ -26,6 +26,7 @@ type RepositoryTagService interface {
 	// CreateRepositoryTag creates a new repository tag.
 	CreateRepositoryTag(
 		ctx context.Context,
+		repositoryId string,
 		name string,
 		commitName string,
 	) (repositoryTag *v1alpha1.RepositoryTag, err error)

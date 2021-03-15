@@ -15,7 +15,7 @@
 package bufimagebuildtesting
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -24,7 +24,7 @@ import (
 )
 
 func TestBasic(t *testing.T) {
-	data, err := ioutil.ReadFile(filepath.Join("corpus", "test.proto"))
+	data, err := os.ReadFile(filepath.Join("corpus", "test.proto"))
 	require.NoError(t, err)
 	i, err := fuzz(data)
 	require.NoError(t, err)

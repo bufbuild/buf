@@ -16,13 +16,13 @@ package storage
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"sort"
 
 	"go.uber.org/multierr"
 )
 
-// ReadPath is analogous to ioutil.ReadFile.
+// ReadPath is analogous to os.ReadFile.
 //
 // Returns an error that fufills IsNotExist if the path does not exist.
 func ReadPath(ctx context.Context, readBucket ReadBucket, path string) (_ []byte, retErr error) {
@@ -35,7 +35,7 @@ func ReadPath(ctx context.Context, readBucket ReadBucket, path string) (_ []byte
 			retErr = err
 		}
 	}()
-	return ioutil.ReadAll(readObject)
+	return io.ReadAll(readObject)
 }
 
 // PutPath puts the data at the path.

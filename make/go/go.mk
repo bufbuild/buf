@@ -17,7 +17,7 @@ GO_TEST_BINS ?=
 # Settable
 GO_GET_PKGS ?= ./cmd/... ./internal/...
 # Settable
-GO_MOD_VERSION ?= 1.15
+GO_MOD_VERSION ?= 1.16
 
 # Runtime
 GOPKGS ?= ./...

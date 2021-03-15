@@ -36,6 +36,8 @@ const (
 	repositoryMaxLength = 32
 	branchMinLength     = 2
 	branchMaxLength     = 64
+	tagMinLength        = 2
+	tagMaxLength        = 64
 	// 32MB
 	maxModuleTotalContentLength = 32 << 20
 	protoFileMaxCount           = 16384
@@ -165,10 +167,16 @@ func ValidateRepository(repository string) error {
 
 // ValidateReference validates that the given ModuleReference reference is well-formed.
 func ValidateReference(reference string) error {
+	if reference == "" {
+		return errors.New("repository reference is required")
+	}
 	if isCommitReference(reference) {
 		return ValidateCommit(reference)
 	}
-	return ValidateBranch(reference)
+	if err := ValidateBranch(reference); err == nil {
+		return nil
+	}
+	return ValidateTag(reference)
 }
 
 // ValidateCommit verifies the given commit is well-formed.
@@ -197,6 +205,25 @@ func ValidateBranch(branch string) error {
 	}
 	if err := uuidutil.ValidateDashless(branch); err == nil {
 		return fmt.Errorf("repository branch %q must not be parseable as a valid commit", branch)
+	}
+	return nil
+}
+
+// ValidateTag verifies the given tag is well-formed.
+func ValidateTag(tag string) error {
+	if tag == "" {
+		return errors.New("repository tag is required")
+	}
+	if len(tag) < tagMinLength || len(tag) > tagMaxLength {
+		return fmt.Errorf("repository tag %q must be at least %d and at most %d characters", tag, tagMinLength, tagMaxLength)
+	}
+	for _, char := range tag {
+		if !stringutil.IsLowerAlphanumeric(char) && char != '-' && char != '.' {
+			return fmt.Errorf("repository tag %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", tag)
+		}
+	}
+	if err := uuidutil.ValidateDashless(tag); err == nil {
+		return fmt.Errorf("repository tag %q must not be parseable as a valid commit", tag)
 	}
 	return nil
 }

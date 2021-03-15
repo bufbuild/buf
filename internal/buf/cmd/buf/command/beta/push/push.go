@@ -33,6 +33,8 @@ import (
 const (
 	branchFlagName      = "branch"
 	branchFlagShortName = "b"
+	tagFlagName         = "tag"
+	tagFlagShortName    = "t"
 	errorFormatFlagName = "error-format"
 )
 
@@ -60,6 +62,7 @@ func NewCommand(
 
 type flags struct {
 	Branch      string
+	Tags        []string
 	ErrorFormat string
 	Force       bool
 	// special
@@ -78,6 +81,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		branchFlagShortName,
 		bufmodule.MainBranch,
 		`The branch to push to.`,
+	)
+	flagSet.StringSliceVarP(
+		&f.Tags,
+		tagFlagName,
+		tagFlagShortName,
+		nil,
+		"Create a tag for the pushed commit. If specified multiple times, multiple tags will be created.",
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
@@ -131,6 +141,7 @@ func run(
 		moduleIdentity.Repository(),
 		flags.Branch,
 		protoModule,
+		flags.Tags,
 	)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists && !flags.Force {

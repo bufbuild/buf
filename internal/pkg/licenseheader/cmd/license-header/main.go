@@ -17,7 +17,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"os"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -109,7 +108,7 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 	}
 	for i := 0; i < container.NumArgs(); i++ {
 		filename := container.Arg(i)
-		data, err := ioutil.ReadFile(filename)
+		data, err := os.ReadFile(filename)
 		if err != nil {
 			return err
 		}
@@ -143,7 +142,7 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 				if err != nil {
 					return err
 				}
-				if err := ioutil.WriteFile(filename, modifiedData, fileInfo.Mode().Perm()); err != nil {
+				if err := os.WriteFile(filename, modifiedData, fileInfo.Mode().Perm()); err != nil {
 					return err
 				}
 			}

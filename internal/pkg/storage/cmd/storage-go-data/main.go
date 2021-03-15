@@ -19,7 +19,7 @@ import (
 	"context"
 	"fmt"
 	"go/format"
-	"io/ioutil"
+	"io"
 	"math"
 	"path/filepath"
 	"sort"
@@ -104,7 +104,7 @@ func getPathToData(ctx context.Context, dirPath string) (map[string][]byte, erro
 		readWriteBucket,
 		"",
 		func(readObject storage.ReadObject) error {
-			data, err := ioutil.ReadAll(readObject)
+			data, err := io.ReadAll(readObject)
 			if err != nil {
 				return err
 			}

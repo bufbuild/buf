@@ -15,7 +15,6 @@
 package tmp
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -29,11 +28,11 @@ func TestFile(t *testing.T) {
 	tmpFile, err := NewFileWithData([]byte("foo"))
 	require.NoError(t, err)
 	assert.True(t, filepath.IsAbs(tmpFile.AbsPath()))
-	data, err := ioutil.ReadFile(tmpFile.AbsPath())
+	data, err := os.ReadFile(tmpFile.AbsPath())
 	assert.NoError(t, err)
 	assert.Equal(t, "foo", string(data))
 	assert.NoError(t, tmpFile.Close())
-	_, err = ioutil.ReadFile(tmpFile.AbsPath())
+	_, err = os.ReadFile(tmpFile.AbsPath())
 	assert.Error(t, err)
 }
 

@@ -204,9 +204,34 @@ func ToPascalCase(s string) string {
 	return output
 }
 
+// IsAlpha returns true for [0-9a-zA-Z].
+func IsAlphanumeric(r rune) bool {
+	return IsNumeric(r) || IsAlpha(r)
+}
+
+// IsAlpha returns true for [a-zA-Z].
+func IsAlpha(r rune) bool {
+	return IsLowerAlpha(r) || IsUpperAlpha(r)
+}
+
+// IsLowerAlpha returns true for [a-z].
+func IsLowerAlpha(r rune) bool {
+	return 'a' <= r && r <= 'z'
+}
+
+// IsUpperAlpha returns true for [A-Z].
+func IsUpperAlpha(r rune) bool {
+	return 'A' <= r && r <= 'Z'
+}
+
+// IsNumeric returns true for [0-9].
+func IsNumeric(r rune) bool {
+	return '0' <= r && r <= '9'
+}
+
 // IslowerAlphanumeric returns true for [0-9a-z].
 func IsLowerAlphanumeric(r rune) bool {
-	return ('0' <= r && r <= '9') || ('a' <= r && r <= 'z')
+	return IsNumeric(r) || IsLowerAlpha(r)
 }
 
 func toSnakeCase(s string, options ...SnakeCaseOption) string {

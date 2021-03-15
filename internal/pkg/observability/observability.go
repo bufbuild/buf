@@ -17,7 +17,7 @@ package observability
 import (
 	"io"
 
-	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
+	"github.com/bufbuild/buf/internal/pkg/ioextended"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 )
@@ -52,7 +52,7 @@ func Start(options ...StartOption) io.Closer {
 		option(startOptions)
 	}
 	if len(startOptions.traceExportClosers) == 0 && len(startOptions.traceViewExportClosers) == 0 {
-		return ioutilextended.NopCloser
+		return ioextended.NopCloser
 	}
 	trace.ApplyConfig(
 		trace.Config{
@@ -76,7 +76,7 @@ func Start(options ...StartOption) io.Closer {
 		view.RegisterExporter(traceViewExportCloser)
 		closers = append(closers, traceViewExportCloser)
 	}
-	return ioutilextended.ChainCloser(closers...)
+	return ioextended.ChainCloser(closers...)
 }
 
 // StartOption is an option for start.
