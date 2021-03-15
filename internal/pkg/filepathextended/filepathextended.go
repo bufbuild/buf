@@ -149,7 +149,7 @@ func walk(
 // readDirNames reads the directory named by dirname and returns
 // a sorted list of directory entries.
 //
-// We need to use this instead of ioutil.ReadDir because we want to do the os.Lstat ourselves
+// We need to use this instead of os.ReadDir because we want to do the os.Lstat ourselves
 // separately to completely match filepath.Walk.
 func readDirNames(dirPath string) (_ []string, retErr error) {
 	file, err := os.Open(dirPath)

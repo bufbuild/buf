@@ -19,7 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -27,7 +27,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto"
-	"github.com/bufbuild/buf/internal/pkg/ioutilextended"
+	"github.com/bufbuild/buf/internal/pkg/ioextended"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -116,7 +116,7 @@ func (h *protocProxyHandler) Handle(
 	cmd := exec.CommandContext(ctx, h.protocPath, args...)
 	cmd.Env = app.Environ(container)
 	cmd.Stdin = bytes.NewReader(fileDescriptorSetData)
-	cmd.Stdout = ioutil.Discard
+	cmd.Stdout = io.Discard
 	cmd.Stderr = container.Stderr()
 	if err := cmd.Run(); err != nil {
 		// TODO: strip binary path as well?
@@ -136,7 +136,7 @@ func (h *protocProxyHandler) Handle(
 		readWriteBucket,
 		"",
 		func(readObject storage.ReadObject) error {
-			data, err := ioutil.ReadAll(readObject)
+			data, err := io.ReadAll(readObject)
 			if err != nil {
 				return err
 			}
@@ -158,7 +158,7 @@ func (h *protocProxyHandler) getFeatureProto3Optional(
 	stderrBuffer := bytes.NewBuffer(nil)
 	cmd := exec.CommandContext(ctx, h.protocPath, "--version")
 	cmd.Env = app.Environ(container)
-	cmd.Stdin = ioutilextended.DiscardReader
+	cmd.Stdin = ioextended.DiscardReader
 	// do we want to do this?
 	cmd.Stdout = stdoutBuffer
 	cmd.Stderr = stderrBuffer

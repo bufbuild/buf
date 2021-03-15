@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
@@ -48,7 +48,7 @@ func fuzz(data []byte) (int, error) {
 		if err != nil {
 			return 0, err
 		}
-		content, err := ioutil.ReadAll(buf)
+		content, err := io.ReadAll(buf)
 		if err != nil {
 			return 0, err
 		}

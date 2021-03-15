@@ -17,7 +17,7 @@ package httpclient
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"go.uber.org/multierr"
@@ -87,7 +87,7 @@ func GetResponseBody(client Client, request *http.Request) (_ []byte, retErr err
 	if response.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("got HTTP status code %d", response.StatusCode)
 	}
-	data, err := ioutil.ReadAll(response.Body)
+	data, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("could not read HTTP response: %v", err)
 	}

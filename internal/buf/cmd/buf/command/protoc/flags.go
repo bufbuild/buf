@@ -16,7 +16,7 @@ package protoc
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -279,7 +279,7 @@ func (f *flagsBuilder) buildRec(
 				return nil, newRecursiveReferenceError(flagFilePath)
 			}
 			seenFlagFilePaths[flagFilePath] = struct{}{}
-			data, err := ioutil.ReadFile(flagFilePath)
+			data, err := os.ReadFile(flagFilePath)
 			if err != nil {
 				return nil, err
 			}

@@ -73,6 +73,25 @@ func RunCommandExitCodeStderr(
 	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
 }
 
+// RunCommandExitCodeStdoutStderr runs the command and compares the exit code, stdout, and stderr output.
+func RunCommandExitCodeStdoutStderr(
+	t *testing.T,
+	newCommand func(use string) *appcmd.Command,
+	expectedExitCode int,
+	expectedStdout string,
+	expectedStderr string,
+	newEnv func(use string) map[string]string,
+	stdin io.Reader,
+	args ...string,
+) {
+	t.Helper()
+	stdout := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
+	require.Equal(t, stringutil.TrimLines(expectedStdout), stringutil.TrimLines(stdout.String()))
+	require.Equal(t, stringutil.TrimLines(expectedStderr), stringutil.TrimLines(stderr.String()))
+}
+
 // RunCommandSuccess runs the command and makes sure it was successful.
 func RunCommandSuccess(
 	t *testing.T,

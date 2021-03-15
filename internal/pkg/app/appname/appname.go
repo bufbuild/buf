@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -79,7 +78,7 @@ func NewContainer(envContainer app.EnvContainer, name string) (Container, error)
 // The value should be a pointer to unmarshal into.
 func ReadConfig(container Container, value interface{}) error {
 	configFilePath := filepath.Join(container.ConfigDirPath(), configFileName)
-	data, err := ioutil.ReadFile(configFilePath)
+	data, err := os.ReadFile(configFilePath)
 	if !errors.Is(err, os.ErrNotExist) {
 		if err != nil {
 			return fmt.Errorf("could not read %s configuration file at %s: %w", container.AppName(), configFilePath, err)
@@ -95,7 +94,7 @@ func ReadConfig(container Container, value interface{}) error {
 // filepath.Join(container.ConfigDirPath(), secretRelDirPath, name).
 func ReadSecret(container Container, name string) (string, error) {
 	secretFilePath := filepath.Join(container.ConfigDirPath(), secretRelDirPath, name)
-	data, err := ioutil.ReadFile(secretFilePath)
+	data, err := os.ReadFile(secretFilePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read secret at %s: %w", secretFilePath, err)
 	}
@@ -121,7 +120,7 @@ func WriteConfig(container Container, value interface{}) error {
 	if fileInfo, err := os.Stat(configFilePath); err == nil {
 		fileMode = fileInfo.Mode()
 	}
-	return ioutil.WriteFile(configFilePath, data, fileMode)
+	return os.WriteFile(configFilePath, data, fileMode)
 }
 
 // Listen listens on the container's port, falling back to defaultPort.

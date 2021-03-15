@@ -31,6 +31,7 @@ type repositoryTagService struct {
 // CreateRepositoryTag creates a new repository tag.
 func (s *repositoryTagService) CreateRepositoryTag(
 	ctx context.Context,
+	repositoryId string,
 	name string,
 	commitName string,
 ) (repositoryTag *v1alpha1.RepositoryTag, _ error) {
@@ -40,8 +41,9 @@ func (s *repositoryTagService) CreateRepositoryTag(
 	response, err := s.client.CreateRepositoryTag(
 		ctx,
 		&v1alpha1.CreateRepositoryTagRequest{
-			Name:       name,
-			CommitName: commitName,
+			RepositoryId: repositoryId,
+			Name:         name,
+			CommitName:   commitName,
 		},
 	)
 	if err != nil {

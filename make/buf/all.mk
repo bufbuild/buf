@@ -1,12 +1,8 @@
 BUF_BIN ?= cmd/buf
 
-# Remove when protoreflect has a new release > 1.8.2
 PROTOREFLECT_VERSION := 8255811fc3c054aab548f7208e1471b668f4c5b3
-# Remove when https://github.com/spf13/cobra/pull/1070 is released
-COBRA_VERSION := b97b5ead31f7d34f764ac8666e40c214bb8e06dc
 GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION) \
-	github.com/spf13/cobra@$(COBRA_VERSION)
+	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
 GO_BINS := $(GO_BINS) \
 	$(BUF_BIN) \
 	cmd/protoc-gen-buf-breaking \
@@ -142,7 +138,7 @@ postlint:: buflintproto bufbreakingproto
 
 .PHONY: bufrelease
 bufrelease:
-	DOCKER_IMAGE=golang:1.16.0-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.16.2-buster bash make/buf/scripts/release.bash
 
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)

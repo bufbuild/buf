@@ -18,14 +18,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"io/ioutil"
+	"os"
 )
 
 // newClientTLSConfigFromRootCertFiles creates a new tls.Config from a root certificate files.
 func newClientTLSConfigFromRootCertFiles(rootCertFilePaths ...string) (*tls.Config, error) {
 	rootCertDatas := make([][]byte, len(rootCertFilePaths))
 	for i, rootCertFilePath := range rootCertFilePaths {
-		rootCertData, err := ioutil.ReadFile(rootCertFilePath)
+		rootCertData, err := os.ReadFile(rootCertFilePath)
 		if err != nil {
 			return nil, err
 		}

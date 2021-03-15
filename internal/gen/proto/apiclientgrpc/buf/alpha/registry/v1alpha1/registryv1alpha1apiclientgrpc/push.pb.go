@@ -36,6 +36,7 @@ func (s *pushService) Push(
 	repository string,
 	branch string,
 	module *v1alpha11.Module,
+	tags []string,
 ) (localModulePin *v1alpha1.LocalModulePin, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -47,6 +48,7 @@ func (s *pushService) Push(
 			Repository: repository,
 			Branch:     branch,
 			Module:     module,
+			Tags:       tags,
 		},
 	)
 	if err != nil {

@@ -16,7 +16,7 @@ package appcmd
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"strings"
 	"testing"
 
@@ -51,7 +51,7 @@ func TestBasic(t *testing.T) {
 					actualArgs = app.Args(container)
 					actualFoo = foo
 					actualBar = bar
-					data, err := ioutil.ReadAll(container.Stdin())
+					data, err := io.ReadAll(container.Stdin())
 					if err != nil {
 						return err
 					}

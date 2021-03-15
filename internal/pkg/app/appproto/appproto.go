@@ -20,7 +20,7 @@ package appproto
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
@@ -136,7 +136,7 @@ func NewGenerator(
 // newRunFunc returns a new RunFunc for app.Main and app.Run.
 func newRunFunc(handler Handler) func(context.Context, app.Container) error {
 	return func(ctx context.Context, container app.Container) error {
-		input, err := ioutil.ReadAll(container.Stdin())
+		input, err := io.ReadAll(container.Stdin())
 		if err != nil {
 			return err
 		}

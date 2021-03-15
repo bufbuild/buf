@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ioutilextended provides io utilities.
-package ioutilextended
+// Package ioextended provides io utilities.
+package ioextended
 
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"sync"
 
 	"go.uber.org/multierr"
@@ -28,9 +27,9 @@ var (
 	// DiscardReader is an io.Reader in which all calls return 0 and io.EOF.
 	DiscardReader io.Reader = discardReader{}
 	// DiscardReadCloser is an io.ReadCloser in which all calls return 0 and io.EOF.
-	DiscardReadCloser io.ReadCloser = ioutil.NopCloser(DiscardReader)
+	DiscardReadCloser io.ReadCloser = io.NopCloser(DiscardReader)
 	// DiscardWriteCloser is a discard io.WriteCloser.
-	DiscardWriteCloser io.WriteCloser = NopWriteCloser(ioutil.Discard)
+	DiscardWriteCloser io.WriteCloser = NopWriteCloser(io.Discard)
 	// NopCloser is a no-op closer.
 	NopCloser = nopCloser{}
 )
@@ -65,7 +64,7 @@ func ReaderAtForReader(reader io.Reader) (io.ReaderAt, error) {
 	if readerAt, ok := reader.(io.ReaderAt); ok {
 		return readerAt, nil
 	}
-	data, err := ioutil.ReadAll(reader)
+	data, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
