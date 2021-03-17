@@ -32,13 +32,46 @@ jobs:
           BUF_BREAKING_PROTO_INPUT: 'https://github.com/bufbuild/buf.git#branch=master,subdir=proto'
           BUF_INPUT_HTTPS_USERNAME: ${{ github.actor }}
           BUF_INPUT_HTTPS_PASSWORD: ${{ github.token }}
-      - name: docker
-        if: success()
-        run: bash .github/scripts/docker.bash
-        env:
-          DOCKER_BUILD_MAKE_TARGET: dockerbuildbuf
-          DOCKER_IMAGE: bufbuild/buf
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-          DOCKER_LATEST_BRANCH: master
-          DOCKER_VERSION_TAG_PREFIX: v
+  docker:
+    runs-on: ubuntu-20.04
+    needs: build
+    # This job only runs when
+    # 1. When the previous `build` job has completed successfully
+    # 2. When the repository is not a fork, i.e. it will only run on the official bufbuild/buf
+    # 3. When the workflow run is trigged by master branch OR a tag with v prefix
+    # See https://github.com/bufbuild/buf/pull/289/files#r596207623 for the discussion
+    if:  ${{ success() && github.repository == 'bufbuild/buf' && (github.ref == 'refs/heads/master' || contains(github.ref, 'refs/tags/v')) }}
+    steps:
+      - name: setup-qemu
+        uses: docker/setup-qemu-action@v1
+        id: qemu
+        with:
+          # alpine image doesn't support linux/riscv64
+          platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
+      - name: setup-docker-buildx
+        uses: docker/setup-buildx-action@v1
+      - name: login-docker
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: set-tag
+        # See the following links for setting job outputs
+        # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idoutputs
+        # https://docs.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-output-parameter
+        id: tag
+        run: |
+          if echo "${GITHUB_REF}" | grep ^refs/heads/master$ >/dev/null; then
+            echo ::set-output name=tag::latest
+          elif echo "${GITHUB_REF}" | grep ^refs/tags/v >/dev/null; then
+            echo ::set-output name=tag::"$(echo "${GITHUB_REF}" | sed "s/refs\/tags\/v//")"
+          fi
+      - name: docker-build-push
+        uses: docker/build-push-action@v2
+        with:
+          file: Dockerfile.buf
+          platforms: ${{ steps.qemu.outputs.platforms }}
+          push: true
+          tags: |
+            bufbuild/buf:latest
+            bufbuild/buf:${{ steps.tag.outputs.tag }}
