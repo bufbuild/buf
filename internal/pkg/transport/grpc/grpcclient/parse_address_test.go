@@ -80,6 +80,16 @@ func TestParseAddress(t *testing.T) {
 			input:       "https:///buf.build",
 			expectedErr: errors.New(`unexpected gRPC scheme "https", only "dns" and "unix" are supported`),
 		},
+		{
+			name:        "Missing authority",
+			input:       "dns://buf.build",
+			expectedErr: errors.New(`malformed address "dns://buf.build", expected authority and host`),
+		},
+		{
+			name:        "Empty address",
+			input:       "",
+			expectedErr: errors.New("address is required"),
+		},
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {

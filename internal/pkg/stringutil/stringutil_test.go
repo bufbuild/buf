@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestToLowerSnakeCase(t *testing.T) {
@@ -284,7 +285,14 @@ func TestAlphanumeric(t *testing.T) {
 func TestIsAlpha(t *testing.T) {
 	t.Parallel()
 	assert.True(t, IsAlpha('r'))
+	assert.True(t, IsAlpha('A'))
+	assert.True(t, IsAlpha('Z'))
+	assert.True(t, IsAlpha('a'))
+	assert.True(t, IsAlpha('z'))
 	assert.False(t, IsAlpha('.'))
+	assert.False(t, IsAlpha('0'))
+	assert.False(t, IsAlpha('9'))
+	assert.False(t, IsAlpha('!'))
 }
 
 func TestIsLowerAlpha(t *testing.T) {
@@ -309,5 +317,22 @@ func TestIsLowerAlphanumeric(t *testing.T) {
 	t.Parallel()
 	assert.True(t, IsLowerAlphanumeric('0'))
 	assert.True(t, IsLowerAlphanumeric('r'))
+	assert.True(t, IsLowerAlphanumeric('a'))
+	assert.True(t, IsLowerAlphanumeric('z'))
+	assert.True(t, IsLowerAlphanumeric('9'))
 	assert.False(t, IsLowerAlphanumeric('R'))
+	assert.False(t, IsLowerAlphanumeric('A'))
+	assert.False(t, IsLowerAlphanumeric('Z'))
+	assert.False(t, IsLowerAlphanumeric('!'))
+}
+
+func TestIsAlphanumeric(t *testing.T) {
+	t.Parallel()
+	require.True(t, IsAlphanumeric('A'))
+	require.True(t, IsAlphanumeric('Z'))
+	require.True(t, IsAlphanumeric('a'))
+	require.True(t, IsAlphanumeric('z'))
+	require.True(t, IsAlphanumeric('0'))
+	require.True(t, IsAlphanumeric('9'))
+	require.False(t, IsAlphanumeric('!'))
 }

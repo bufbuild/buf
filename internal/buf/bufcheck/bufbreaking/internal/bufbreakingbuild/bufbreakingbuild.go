@@ -266,6 +266,12 @@ var (
 		"messages have the same value for the message_set_wire_format option",
 		bufbreakingcheck.CheckMessageSameMessageSetWireFormat,
 	)
+	// MessageSameRequiredFieldsRuleBuilder is a rule builder.
+	MessageSameRequiredFieldsRuleBuilder = internal.NewNopRuleBuilder(
+		"MESSAGE_SAME_REQUIRED_FIELDS",
+		"messages have no added or deleted required fields",
+		bufbreakingcheck.CheckMessageSameRequiredFields,
+	)
 	// OneofNoDeleteRuleBuilder is a rule builder.
 	OneofNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"ONEOF_NO_DELETE",

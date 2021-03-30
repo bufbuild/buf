@@ -661,6 +661,7 @@ FIELD_SAME_LABEL                                FILE, PACKAGE, WIRE_JSON, WIRE  
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FIELD_SAME_TYPE                                 FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same types in a given message.
 MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
+MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have no added or deleted required fields.
 RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given enum.
 RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given message.
 RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same client streaming value.
