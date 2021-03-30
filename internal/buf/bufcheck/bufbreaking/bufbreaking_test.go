@@ -410,6 +410,27 @@ func TestRunBreakingMessageSameValues(t *testing.T) {
 	)
 }
 
+func TestRunBreakingMessageSameRequiredFields(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_message_same_required_fields",
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 5, 1, 7, 2, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 6, 3, 6, 27, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 9, 1, 11, 2, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 10, 3, 10, 27, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 13, 1, 30, 2, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 15, 5, 17, 6, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 16, 7, 16, 31, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 18, 5, 20, 6, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 22, 3, 24, 4, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 23, 5, 23, 29, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 27, 5, 27, 29, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "1.proto", 29, 3, 29, 27, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 5, 1, 7, 2, "MESSAGE_SAME_REQUIRED_FIELDS"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 6, 3, 6, 27, "MESSAGE_SAME_REQUIRED_FIELDS"),
+	)
+}
+
 func TestRunBreakingOneofNoDelete(t *testing.T) {
 	testBreaking(
 		t,

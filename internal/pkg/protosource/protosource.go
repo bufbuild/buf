@@ -691,6 +691,27 @@ func NumberToMessageField(message Message) (map[int]Field, error) {
 	return numberToMessageField, nil
 }
 
+// NumberToMessageFieldForLabel maps the Fields with the given label in the message
+// to a map from number to Field.
+//
+// TODO: is this right?
+// Includes extensions.
+//
+// Returns error if the Fields do not have unique numbers within the Message,
+// which should generally never happen for properly-formed Messages.
+func NumberToMessageFieldForLabel(message Message, label FieldDescriptorProtoLabel) (map[int]Field, error) {
+	numberToField, err := NumberToMessageField(message)
+	if err != nil {
+		return nil, err
+	}
+	for number, field := range numberToField {
+		if field.Label() != label {
+			delete(numberToField, number)
+		}
+	}
+	return numberToField, nil
+}
+
 // NameToMessageOneof maps the Oneofs in the Message to a map from name to Oneof.
 //
 // Returns error if the Oneofs do not have unique names within the Message,

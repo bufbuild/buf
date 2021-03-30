@@ -62,6 +62,7 @@ var (
 		bufbreakingbuild.MessageNoDeleteRuleBuilder,
 		bufbreakingbuild.MessageNoRemoveStandardDescriptorAccessorRuleBuilder,
 		bufbreakingbuild.MessageSameMessageSetWireFormatRuleBuilder,
+		bufbreakingbuild.MessageSameRequiredFieldsRuleBuilder,
 		bufbreakingbuild.OneofNoDeleteRuleBuilder,
 		bufbreakingbuild.PackageEnumNoDeleteRuleBuilder,
 		bufbreakingbuild.PackageMessageNoDeleteRuleBuilder,
@@ -251,6 +252,12 @@ var (
 			"PACKAGE",
 		},
 		"MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT": {
+			"FILE",
+			"PACKAGE",
+			"WIRE_JSON",
+			"WIRE",
+		},
+		"MESSAGE_SAME_REQUIRED_FIELDS": {
 			"FILE",
 			"PACKAGE",
 			"WIRE_JSON",

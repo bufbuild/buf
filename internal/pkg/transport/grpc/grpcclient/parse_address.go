@@ -15,6 +15,7 @@
 package grpcclient
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -30,8 +31,13 @@ func parseAddress(address string) (string, error) {
 	var parsedAuthority string
 	var parsedHost string
 
+	if address == "" {
+		return "", errors.New("address is required")
+	}
+
 	schemeAndAddress := strings.SplitN(address, "://", 2)
-	if len(schemeAndAddress) == 1 {
+	switch len(schemeAndAddress) {
+	case 1:
 		parsedHost = address
 		// infer dns scheme
 		parsedScheme = "dns"
@@ -44,7 +50,7 @@ func parseAddress(address string) (string, error) {
 			// For valid IPs, use the passthrough scheme
 			parsedScheme = "passthrough"
 		}
-	} else {
+	case 2:
 		parsedScheme = strings.TrimSuffix(schemeAndAddress[0], "//")
 		switch parsedScheme {
 		case "dns", "unix":
@@ -52,6 +58,9 @@ func parseAddress(address string) (string, error) {
 			return "", fmt.Errorf(`unexpected gRPC scheme %q, only "dns" and "unix" are supported`, parsedScheme)
 		}
 		authorityAndHost := strings.SplitN(schemeAndAddress[1], "/", 2)
+		if len(authorityAndHost) != 2 {
+			return "", fmt.Errorf("malformed address %q, expected authority and host", address)
+		}
 		parsedAuthority = authorityAndHost[0]
 		parsedHost = authorityAndHost[1]
 	}

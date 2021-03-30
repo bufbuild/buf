@@ -572,6 +572,39 @@ func checkMessageSameMessageSetWireFormat(add addFunc, previousMessage protosour
 	return nil
 }
 
+// CheckMessageSameRequiredFields is a check function.
+var CheckMessageSameRequiredFields = newMessagePairCheckFunc(checkMessageSameRequiredFields)
+
+func checkMessageSameRequiredFields(add addFunc, previousMessage protosource.Message, message protosource.Message) error {
+	previousNumberToRequiredField, err := protosource.NumberToMessageFieldForLabel(
+		previousMessage,
+		protosource.FieldDescriptorProtoLabelRequired,
+	)
+	if err != nil {
+		return err
+	}
+	numberToRequiredField, err := protosource.NumberToMessageFieldForLabel(
+		message,
+		protosource.FieldDescriptorProtoLabelRequired,
+	)
+	if err != nil {
+		return err
+	}
+	for previousNumber := range previousNumberToRequiredField {
+		if _, ok := numberToRequiredField[previousNumber]; !ok {
+			// we attach the error to the message as the field no longer exists
+			add(message, message.Location(), `Message %q had required field "%d" deleted. Required fields must always be sent, so if one side does not know about the required field, this will result in a breakage.`, previousMessage.Name(), previousNumber)
+		}
+	}
+	for number, requiredField := range numberToRequiredField {
+		if _, ok := previousNumberToRequiredField[number]; !ok {
+			// we attach the error to the added required field
+			add(message, requiredField.Location(), `Message %q had required field "%d" added. Required fields must always be sent, so if one side does not know about the required field, this will result in a breakage.`, message.Name(), number)
+		}
+	}
+	return nil
+}
+
 // CheckOneofNoDelete is a check function.
 var CheckOneofNoDelete = newMessagePairCheckFunc(checkOneofNoDelete)
 
