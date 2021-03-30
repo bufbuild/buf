@@ -229,7 +229,7 @@ func IsNumeric(r rune) bool {
 	return '0' <= r && r <= '9'
 }
 
-// IslowerAlphanumeric returns true for [0-9a-z].
+// IsLowerAlphanumeric returns true for [0-9a-z].
 func IsLowerAlphanumeric(r rune) bool {
 	return IsNumeric(r) || IsLowerAlpha(r)
 }
