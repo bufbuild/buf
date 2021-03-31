@@ -352,7 +352,7 @@ func run(
 		); err != nil {
 			return err
 		}
-		return errors.New("")
+		return bufcli.ErrFileAnnotation
 	}
 	againstImage := againstImageConfig.Image()
 	if flags.ExcludeImports {
@@ -375,7 +375,7 @@ func run(
 		); err != nil {
 			return err
 		}
-		return errors.New("")
+		return bufcli.ErrFileAnnotation
 	}
 	return nil
 }

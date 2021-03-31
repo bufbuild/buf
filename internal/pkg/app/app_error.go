@@ -16,7 +16,6 @@ package app
 
 import (
 	"fmt"
-	"strconv"
 )
 
 type appError struct {
@@ -40,10 +39,7 @@ func newAppError(exitCode int, message string) *appError {
 }
 
 func (e *appError) Error() string {
-	if e.message != "" {
-		return e.message
-	}
-	return "exit status " + strconv.Itoa(e.exitCode)
+	return e.message
 }
 
 func printError(container StderrContainer, err error) {
