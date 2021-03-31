@@ -16,7 +16,6 @@ package generate
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
@@ -325,7 +324,7 @@ func run(
 		if err := bufanalysis.PrintFileAnnotations(container.Stderr(), fileAnnotations, flags.ErrorFormat); err != nil {
 			return err
 		}
-		return errors.New("")
+		return bufcli.ErrFileAnnotation
 	}
 	return bufgen.NewGenerator(logger, storageosProvider).Generate(
 		ctx,

@@ -20,9 +20,18 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/rpc"
+)
+
+const (
+	// ExitCodeFileAnnotation is the exit code used when we print file annotations.
+	//
+	// We use a different exit code to be able to distinguish user-parsable errors from
+	// system errors.
+	ExitCodeFileAnnotation = 100
 )
 
 var (
@@ -31,6 +40,16 @@ var (
 
 	// ErrNoConfigFile is used when the user tries to execute a command without a configuration file.
 	ErrNoConfigFile = errors.New(`please define a configuration file in the current directory; you can create one by running "buf beta mod init"`)
+
+	// ErrFileAnnotation is used when we print file annotations and want to return an error.
+	//
+	// The app package works on the concept that an error results in a non-zero exit
+	// code, and we already print the messages with PrintFileAnnotations, so we do
+	// not want to print any additional error message.
+	//
+	// We also exit with 100 to be able to distinguish user-parsable errors from
+	// system errors.
+	ErrFileAnnotation = app.NewError(ExitCodeFileAnnotation, "")
 )
 
 // errInternal is returned when the user encounters an unexpected internal buf error.

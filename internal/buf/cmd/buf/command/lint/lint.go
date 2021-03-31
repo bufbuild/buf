@@ -16,7 +16,6 @@ package lint
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
@@ -207,7 +206,7 @@ func run(
 		if err := bufanalysis.PrintFileAnnotations(container.Stdout(), fileAnnotations, formatString); err != nil {
 			return err
 		}
-		return errors.New("")
+		return bufcli.ErrFileAnnotation
 	}
 	fileAnnotations, err = buflint.NewHandler(container.Logger()).Check(
 		ctx,
@@ -225,7 +224,7 @@ func run(
 		); err != nil {
 			return err
 		}
-		return errors.New("")
+		return bufcli.ErrFileAnnotation
 	}
 	return nil
 }

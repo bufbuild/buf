@@ -17,6 +17,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -326,8 +327,9 @@ func GetExitCode(err error) int {
 	if err == nil {
 		return 0
 	}
-	if appError, ok := err.(*appError); ok {
-		return appError.exitCode
+	appErr := &appError{}
+	if errors.As(err, &appErr) {
+		return appErr.exitCode
 	}
 	return 1
 }
