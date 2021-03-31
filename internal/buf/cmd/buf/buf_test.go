@@ -23,6 +23,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
@@ -171,7 +172,7 @@ func TestFail5(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
 		"lint",
@@ -181,7 +182,7 @@ func TestFail5(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
 		"lint",
@@ -194,7 +195,7 @@ func TestFail6(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
 		"lint",
@@ -206,7 +207,7 @@ func TestFail6(t *testing.T) {
 	testRunStdoutStderr(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
 		"", // stderr should be empty
@@ -222,7 +223,7 @@ func TestFail7(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
 		"lint",
@@ -236,7 +237,7 @@ func TestFail7(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
 		"lint",
@@ -253,7 +254,7 @@ func TestFail8(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
 		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`,
 		"lint",
@@ -263,7 +264,7 @@ func TestFail8(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
 		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`,
 		"lint",
@@ -276,7 +277,7 @@ func TestFail9(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
 		"lint",
 		"--input",
@@ -287,7 +288,7 @@ func TestFail9(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
 		"lint",
 		filepath.Join("testdata", "fail2"),
@@ -326,7 +327,7 @@ func TestFail11(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail2/buf/buf2.proto:5:8:buf/buf.proto: does not exist`,
 		"lint",
 		"--path",
@@ -337,7 +338,7 @@ func TestFail11(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`testdata/fail2/buf/buf2.proto:5:8:buf/buf.proto: does not exist`,
 		"lint",
 		"--path",
@@ -351,7 +352,7 @@ func TestFail12(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`version: v1beta1
 lint:
   ignore_only:
@@ -368,7 +369,7 @@ lint:
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`version: v1beta1
 lint:
   ignore_only:
@@ -462,7 +463,7 @@ func TestFailCheckBreaking1(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
@@ -481,7 +482,7 @@ func TestFailCheckBreaking1(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
@@ -499,7 +500,7 @@ func TestFailCheckBreaking1(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
@@ -517,7 +518,7 @@ func TestFailCheckBreaking1(t *testing.T) {
 	testRunStdoutStderr(
 		t,
 		nil,
-		1,
+		bufcli.ExitCodeFileAnnotation,
 		`
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.

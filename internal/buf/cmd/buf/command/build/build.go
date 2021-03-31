@@ -16,7 +16,6 @@ package build
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
@@ -232,13 +231,7 @@ func run(
 		); err != nil {
 			return err
 		}
-		// app works on the concept that an error results in a non-zero exit code
-		// we already printed the messages with PrintFileAnnotations so we do
-		// not want to print any additional error message
-		// we could put the FileAnnotations in this error, but in general with
-		// linting/breaking change detection we actually print them to stdout
-		// so doing this here is consistent with lint/breaking change detection
-		return errors.New("")
+		return bufcli.ErrFileAnnotation
 	}
 	imageRef, err := buffetch.NewImageRefParser(container.Logger()).GetImageRef(ctx, flags.Output)
 	if err != nil {
