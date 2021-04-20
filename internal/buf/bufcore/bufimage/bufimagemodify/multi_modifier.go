@@ -12,27 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+package bufimagemodify
 
-package buf.alpha.registry.v1alpha1;
+import (
+	"context"
 
-import "buf/alpha/api/v1alpha1/api.proto";
-import "buf/alpha/module/v1alpha1/module.proto";
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+)
 
-// DownloadService is the download service.
-service DownloadService {
-  // Download downloads.
-  rpc Download(DownloadRequest) returns (DownloadResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+type multiModifier struct {
+	delegates []Modifier
 }
 
-message DownloadRequest {
-  string owner = 1;
-  string repository = 2;
-  string reference = 3;
+func newMultiModifier(
+	delegates []Modifier,
+) *multiModifier {
+	return &multiModifier{
+		delegates: delegates,
+	}
 }
 
-message DownloadResponse {
-  buf.alpha.module.v1alpha1.Module module = 1;
+func (m *multiModifier) Modify(
+	ctx context.Context,
+	image bufimage.Image,
+) error {
+	for _, delegate := range m.delegates {
+		if err := delegate.Modify(ctx, image); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -29,7 +29,7 @@ func readConfig(fileOrData string) (*Config, error) {
 	switch filepath.Ext(fileOrData) {
 	case ".json":
 		return getConfigJSONFile(fileOrData)
-	case ".yaml":
+	case ".yaml", ".yml":
 		return getConfigYAMLFile(fileOrData)
 	default:
 		return getConfigJSONOrYAMLData(fileOrData)
@@ -112,7 +112,10 @@ func validateExternalConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id stri
 }
 
 func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config, error) {
-	config := &Config{}
+	config := &Config{
+		Managed: externalConfig.Managed,
+		Options: newOptionsConfigV1Beta1(externalConfig.Options),
+	}
 	for _, plugin := range externalConfig.Plugins {
 		strategy, err := ParseStrategy(plugin.Strategy)
 		if err != nil {
@@ -149,4 +152,14 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 		)
 	}
 	return config, nil
+}
+
+func newOptionsConfigV1Beta1(externalOptionsConfig ExternalOptionsConfigV1Beta1) *Options {
+	if externalOptionsConfig == (ExternalOptionsConfigV1Beta1{}) {
+		return nil
+	}
+	return &Options{
+		CcEnableArenas:    externalOptionsConfig.CcEnableArenas,
+		JavaMultipleFiles: externalOptionsConfig.JavaMultipleFiles,
+	}
 }

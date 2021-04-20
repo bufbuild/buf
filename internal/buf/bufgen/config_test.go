@@ -23,6 +23,7 @@ import (
 )
 
 func TestReadConfig(t *testing.T) {
+	truth := true
 	successConfig := &Config{
 		PluginConfigs: []*PluginConfig{
 			{
@@ -33,6 +34,11 @@ func TestReadConfig(t *testing.T) {
 				Strategy: StrategyAll,
 			},
 		},
+		Options: &Options{
+			CcEnableArenas:    &truth,
+			JavaMultipleFiles: &truth,
+		},
+		Managed: true,
 	}
 	successConfig2 := &Config{
 		PluginConfigs: []*PluginConfig{
@@ -88,10 +94,26 @@ func TestReadConfig(t *testing.T) {
 	config, err = ReadConfig(string(data))
 	require.NoError(t, err)
 	require.Equal(t, successConfig2, config)
+	config, err = ReadConfig(filepath.Join("testdata", "gen_success3.yaml"))
+	require.NoError(t, err)
+	require.Equal(t, successConfig3, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "gen_success3.yaml"))
+	require.NoError(t, err)
+	config, err = ReadConfig(string(data))
+	require.NoError(t, err)
+	require.Equal(t, successConfig3, config)
 	config, err = ReadConfig(filepath.Join("testdata", "gen_success3.json"))
 	require.NoError(t, err)
 	require.Equal(t, successConfig3, config)
 	data, err = os.ReadFile(filepath.Join("testdata", "gen_success3.json"))
+	require.NoError(t, err)
+	config, err = ReadConfig(string(data))
+	require.NoError(t, err)
+	require.Equal(t, successConfig3, config)
+	config, err = ReadConfig(filepath.Join("testdata", "gen_success3.yml"))
+	require.NoError(t, err)
+	require.Equal(t, successConfig3, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "gen_success3.yml"))
 	require.NoError(t, err)
 	config, err = ReadConfig(string(data))
 	require.NoError(t, err)
