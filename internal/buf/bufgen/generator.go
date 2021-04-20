@@ -17,13 +17,26 @@ package bufgen
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
+	"golang.org/x/mod/modfile"
+)
+
+const (
+	// goModuleFile is the name of the Go module file.
+	goModuleFile = "go.mod"
+	// goPluginName is the name used to configure the protoc-gen-go plugin.
+	goPluginName = "go"
+	// goGrpcPluginName is the name used to configure the protoc-gen-go-grpc plugin.
+	goGrpcPluginName = "go-grpc"
 )
 
 type generator struct {
@@ -68,7 +81,10 @@ func (g *generator) generate(
 	image bufimage.Image,
 	baseOutDirPath string,
 ) error {
-	// we keep this as a variable so we can cache it if we hit StrategyDirectory
+	if err := modifyImage(ctx, config, image); err != nil {
+		return err
+	}
+	// We keep this as a variable so we can cache it if we hit StrategyDirectory.
 	var imagesByDir []bufimage.Image
 	var err error
 	for _, pluginConfig := range config.PluginConfigs {
@@ -81,7 +97,7 @@ func (g *generator) generate(
 		case StrategyAll:
 			pluginImages = []bufimage.Image{image}
 		case StrategyDirectory:
-			// if we have not already called this, call it
+			// If we have not already called this, call it.
 			if imagesByDir == nil {
 				imagesByDir, err = bufimage.ImageByDir(image)
 				if err != nil {
@@ -113,4 +129,144 @@ type generateOptions struct {
 
 func newGenerateOptions() *generateOptions {
 	return &generateOptions{}
+}
+
+// modifyImage modifies the image according to the given configuration (i.e. Managed Mode).
+func modifyImage(
+	ctx context.Context,
+	config *Config,
+	image bufimage.Image,
+) error {
+	sweeper := bufimagemodify.NewFileOptionSweeper()
+	modifier := modifierFromOptions(config.Options, sweeper)
+	if config.Managed {
+		managedModeModifier, err := managedModeModifier(config.PluginConfigs, sweeper)
+		if err != nil {
+			return err
+		}
+		modifier = bufimagemodify.Merge(modifier, managedModeModifier)
+	}
+	if modifier != nil {
+		// Add the sweeper's modifier last so that all of its marks are swept up.
+		modifier = bufimagemodify.Merge(modifier, bufimagemodify.ModifierFunc(sweeper.Sweep))
+		if err := modifier.Modify(ctx, image); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// managedModeModifier returns the Managed Mode modifier.
+func managedModeModifier(pluginConfigs []*PluginConfig, sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
+	modifier := bufimagemodify.NewMultiModifier( /* TODO */ )
+	goPackageModifier, err := goPackageModifierFromPluginConfigs(pluginConfigs, sweeper)
+	if err != nil {
+		return nil, err
+	}
+	return bufimagemodify.Merge(modifier, goPackageModifier), nil
+}
+
+// modifierFromOptions returns a new Modifier for the given options.
+func modifierFromOptions(options *Options, sweeper bufimagemodify.Sweeper) bufimagemodify.Modifier {
+	if options == nil {
+		return nil
+	}
+	var modifier bufimagemodify.Modifier
+	if options.CcEnableArenas != nil {
+		modifier = bufimagemodify.Merge(
+			modifier,
+			bufimagemodify.CcEnableArenas(sweeper, *options.CcEnableArenas),
+		)
+	}
+	if options.JavaMultipleFiles != nil {
+		modifier = bufimagemodify.Merge(
+			modifier,
+			bufimagemodify.JavaMultipleFiles(sweeper, *options.JavaMultipleFiles),
+		)
+	}
+	// TODO: Add support for JavaStringCheckUTF8, and OptimizeFor.
+	return modifier
+}
+
+// goPackageModifierFromPluginConfigs returns a new Modifier that sets
+// the go_package file option based on the configured output directory
+// for the protoc-gen-go[-grpc] plugin. If the protoc-gen-go[-grpc] plugin
+// is not configured, a 'nil' Modifier is returned. Otherwise, we attempt to
+// resolve the user's Go module name and error if it cannot be resolved.
+//
+// Note that we can resolve the relative output directory from either the
+// protoc-gen-go or protoc-gen-go-grpc plugins because they MUST be placed
+// in the same directory to compile.
+func goPackageModifierFromPluginConfigs(
+	pluginConfigs []*PluginConfig,
+	sweeper bufimagemodify.Sweeper,
+) (bufimagemodify.Modifier, error) {
+	var goPluginOut string
+	for _, pluginConfig := range pluginConfigs {
+		if pluginConfig.Name == goPluginName || pluginConfig.Name == goGrpcPluginName {
+			goPluginOut = pluginConfig.Out
+			break
+		}
+	}
+	if goPluginOut == "" {
+		// The protoc-gen-go[-grpc] plugin was not configured,
+		// so there's nothing to do here.
+		return nil, nil
+	}
+	goModulePath, relativePath, err := resolveGoModulePath()
+	if err != nil {
+		return nil, err
+	}
+	return bufimagemodify.GoPackage(
+		sweeper,
+		normalpath.Join(goModulePath, relativePath, goPluginOut),
+	)
+}
+
+// resolveGoModulePath returns the Go module path specified in the
+// user's go.mod file, if one exists. The relative path between
+// the current working directory and the module root path is also
+// returned, if a go.mod file exists.
+func resolveGoModulePath() (string, string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", "", err
+	}
+	goModuleRoot, err := findGoModuleFromRoot(wd)
+	if err != nil {
+		return "", "", err
+	}
+	relativePath, err := normalpath.Rel(goModuleRoot, wd)
+	if err != nil {
+		return "", "", err
+	}
+	goModuleFilePath := normalpath.Join(goModuleRoot, goModuleFile)
+	goModuleFileData, err := os.ReadFile(goModuleFilePath)
+	if err != nil {
+		return "", "", err
+	}
+	modulePath := modfile.ModulePath(goModuleFileData)
+	if modulePath == "" {
+		return "", "", fmt.Errorf("%s does not define a module path", goModuleFilePath)
+	}
+	return modulePath, relativePath, nil
+}
+
+// findGoModuleRoot returns the relative path to the go.mod
+// based on the current directory. This is referenced from
+// the internal implementation found at:
+// https://github.com/golang/go/blob/4520da486b6d236090b1d98ce4707c5bcd19cb70/src/cmd/go/internal/modload/init.go#L794
+func findGoModuleFromRoot(root string) (string, error) {
+	dir := normalpath.Normalize(root)
+	for {
+		if fileInfo, err := os.Stat(normalpath.Join(dir, goModuleFile)); err == nil && !fileInfo.IsDir() {
+			return dir, nil
+		}
+		parent := normalpath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	return "", fmt.Errorf("failed to find %s from root %s", goModuleFile, root)
 }

@@ -18,8 +18,6 @@ package buf.alpha.api.v1alpha1;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/api/v1alpha1;apiv1alpha1";
-
 // https://developers.google.com/protocol-buffers/docs/proto#customoptions
 // We start at 70001 as an organization.
 

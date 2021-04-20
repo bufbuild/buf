@@ -717,6 +717,25 @@ func TestCheckLsBreakingRules2(t *testing.T) {
 	)
 }
 
+func TestCheckLsBreakingRules3(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+		ID                    CATEGORIES     PURPOSE
+		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
+		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
+		`,
+		"config",
+		"ls-breaking-rules",
+		"--config",
+		// making sure that .yml works
+		filepath.Join("testdata", "small_list_rules_yml", "config.yml"),
+	)
+}
+
 func TestLsFiles(t *testing.T) {
 	t.Parallel()
 	testRunStdout(

@@ -20,8 +20,6 @@ import "buf/alpha/api/v1alpha1/api.proto";
 import "buf/alpha/registry/v1alpha1/scope.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1;registryv1alpha1";
-
 message Organization {
   // primary key, unique, immutable
   string id = 1;

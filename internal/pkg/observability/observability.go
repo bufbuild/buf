@@ -16,8 +16,10 @@ package observability
 
 import (
 	"io"
+	"net/http"
 
 	"github.com/bufbuild/buf/internal/pkg/ioextended"
+	"go.opencensus.io/plugin/ochttp"
 	"go.opencensus.io/stats/view"
 	"go.opencensus.io/trace"
 )
@@ -100,6 +102,21 @@ func StartWithViewExportCloser(viewExportCloser ViewExportCloser) StartOption {
 func StartWithTraceViewExportCloser(traceViewExportCloser TraceViewExportCloser) StartOption {
 	return func(startOptions *startOptions) {
 		startOptions.traceViewExportClosers = append(startOptions.traceViewExportClosers, traceViewExportCloser)
+	}
+}
+
+// NewHTTPTransport returns a HTTP transport instrumented with OpenCensus traces and metrics.
+func NewHTTPTransport(base http.RoundTripper) http.RoundTripper {
+	return &ochttp.Transport{
+		NewClientTrace: ochttp.NewSpanAnnotatingClientTrace,
+		Base:           base,
+	}
+}
+
+// NewHTTPClient returns a HTTP client instrumented with OpenCensus traces and metrics.
+func NewHTTPClient() *http.Client {
+	return &http.Client{
+		Transport: NewHTTPTransport(http.DefaultTransport),
 	}
 }
 

@@ -16,8 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-option go_package = "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1;registryv1alpha1";
-
 enum ServerScope {
   SERVER_SCOPE_UNSPECIFIED = 0;
   SERVER_SCOPE_MEMBER = 1;

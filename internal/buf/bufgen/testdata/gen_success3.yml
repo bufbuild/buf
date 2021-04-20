@@ -1,0 +1,6 @@
+version: v1beta1
+plugins:
+  - name: go
+    out: gen/go
+    path: /path/to/foo
+    strategy: all
