@@ -109,6 +109,10 @@ func GenerateWithBaseOutDirPath(baseOutDirPath string) GenerateOption {
 type Config struct {
 	// Required
 	PluginConfigs []*PluginConfig
+	// Optional
+	Options *Options
+	// Optional
+	Managed bool
 }
 
 // PluginConfig is a plugin configuration.
@@ -123,6 +127,12 @@ type PluginConfig struct {
 	Path string
 	// Required
 	Strategy Strategy
+}
+
+// Options is an option configuration.
+type Options struct {
+	CcEnableArenas    *bool
+	JavaMultipleFiles *bool
 }
 
 // ReadConfig reads the configuration from the OS.
@@ -141,7 +151,9 @@ func ReadConfig(fileOrData string) (*Config, error) {
 // Only use outside of this package for testing.
 type ExternalConfigV1Beta1 struct {
 	Version string                        `json:"version,omitempty" yaml:"version,omitempty"`
+	Managed bool                          `json:"managed,omitempty" yaml:"managed,omitempty"`
 	Plugins []ExternalPluginConfigV1Beta1 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
+	Options ExternalOptionsConfigV1Beta1  `json:"options,omitempty" yaml:"options,omitempty"`
 }
 
 // ExternalPluginConfigV1Beta1 is an external plugin configuration.
@@ -153,6 +165,14 @@ type ExternalPluginConfigV1Beta1 struct {
 	Opt      interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
 	Path     string      `json:"path,omitempty" yaml:"path,omitempty"`
 	Strategy string      `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+}
+
+// ExternalOptionsConfigV1Beta1 is an external options configuration.
+//
+// Only use outside of this package for testing.
+type ExternalOptionsConfigV1Beta1 struct {
+	CcEnableArenas    *bool `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
+	JavaMultipleFiles *bool `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
 }
 
 type externalConfigVersion struct {

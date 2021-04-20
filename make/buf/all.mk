@@ -76,6 +76,9 @@ licensegenerate:: licenseheader
 # and if we have generate depend on installing buf, we have
 # a chicken or egg problem.
 
+# TODO: Remove this after this PR is merged.
+BUFBINARYHEAD=1
+
 .PHONY: bufbinaryinstall
 ifeq ($(BUFBINARYHEAD),)
 BUF_BINARY := $(CACHE_BIN)/buf

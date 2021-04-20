@@ -19,8 +19,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/bufbuild/buf/internal/pkg/observability"
 	"github.com/bufbuild/buf/internal/pkg/rpc/rpchttp"
-	"go.opencensus.io/plugin/ochttp"
 )
 
 type client struct {
@@ -41,10 +41,7 @@ func newClient(options ...ClientOption) (*client, error) {
 		},
 	)
 	if client.observability {
-		roundTripper = &ochttp.Transport{
-			NewClientTrace: ochttp.NewSpanAnnotatingClientTrace,
-			Base:           roundTripper,
-		}
+		roundTripper = observability.NewHTTPTransport(roundTripper)
 	}
 	client.httpClient = &http.Client{
 		Transport: roundTripper,

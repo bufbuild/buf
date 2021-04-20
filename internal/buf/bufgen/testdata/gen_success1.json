@@ -1,5 +1,10 @@
 {
   "version": "v1beta1",
+  "managed": true,
+  "options": {
+    "cc_enable_arenas": true,
+    "java_multiple_files": true
+  },
   "plugins": [
     {
       "name": "go",

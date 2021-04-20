@@ -37,7 +37,7 @@ func readConfig(
 		var data []byte
 		var err error
 		switch filepath.Ext(readConfigOptions.override) {
-		case ".json", ".yaml":
+		case ".json", ".yaml", ".yml":
 			data, err = os.ReadFile(readConfigOptions.override)
 			if err != nil {
 				return nil, fmt.Errorf("could not read file: %v", err)
