@@ -6,8 +6,8 @@
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)](https://hub.docker.com/r/bufbuild/buf)
 [![Homebrew](https://img.shields.io/badge/homebrew-v0.41.0-blue)](https://github.com/bufbuild/homebrew-buf)
 [![AUR](https://img.shields.io/aur/version/buf)](https://aur.archlinux.org/packages/buf)
-[![Google Group](https://img.shields.io/badge/google%20group-bufbuild--announce-blue)](https://groups.google.com/forum/#!forum/bufbuild-announce)
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)](https://join.slack.com/t/bufbuild/shared_invite/zt-f5k547ki-VDs_iC4TblNCu7ubhRD17w)
+[![Twitter](https://img.shields.io/twitter/follow/bufbuild?style=social)](https://twitter.com/intent/follow?screen_name=bufbuild)
 
 **All documentation is hosted at [https://buf.build](https://buf.build). Please head over there for
 more details.**
