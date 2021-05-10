@@ -252,7 +252,7 @@ func run(
 		return err
 	}
 	if againstInput == "" {
-		return appcmd.NewInvalidArgumentErrorf("Flag --%s is required.", againstFlagName)
+		return bufcli.NewFlagIsRequiredError(againstFlagName)
 	}
 	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
 		flags.Paths,

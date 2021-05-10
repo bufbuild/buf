@@ -110,7 +110,7 @@ func NewTooManyEmptyAnswersError(attempts int) error {
 
 // NewFlagIsRequiredError informs the user that a given flag is required.
 func NewFlagIsRequiredError(flagName string) error {
-	return appcmd.NewInvalidArgumentErrorf("--%s is required.", flagName)
+	return appcmd.NewInvalidArgumentErrorf("--%s is required", flagName)
 }
 
 // NewOrganizationNameAlreadyExistsError informs the user that an organization with

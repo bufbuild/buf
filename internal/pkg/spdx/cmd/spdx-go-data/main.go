@@ -201,7 +201,7 @@ func (l *licenseInfo) ID() string {
 }
 
 func newRequiredFlagError(flagName string) error {
-	return appcmd.NewInvalidArgumentErrorf("--%s is required.", flagName)
+	return appcmd.NewInvalidArgumentErrorf("--%s is required", flagName)
 }
 
 type licenseInfoList struct {
