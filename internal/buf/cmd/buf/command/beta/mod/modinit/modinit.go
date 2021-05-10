@@ -117,7 +117,7 @@ func run(
 	flags *flags,
 ) error {
 	if flags.OutDirPath == "" {
-		return appcmd.NewInvalidArgumentErrorf("Flag --%s is required.", outDirPathFlagName)
+		return bufcli.NewFlagIsRequiredError(outDirPathFlagName)
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
