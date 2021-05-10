@@ -166,7 +166,7 @@ func run(
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) error {
 	if flags.Output == "" {
-		return appcmd.NewInvalidArgumentErrorf("Flag --%s is required.", outputFlagName)
+		return bufcli.NewFlagIsRequiredError(outputFlagName)
 	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Source, sourceFlagName, ".")
 	if err != nil {

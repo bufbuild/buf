@@ -80,7 +80,7 @@ func run(
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) error {
 	if flags.Output == "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s is required", outputFlagName)
+		return bufcli.NewFlagIsRequiredError(outputFlagName)
 	}
 	moduleRef, err := buffetch.NewModuleRefParser(
 		container.Logger(),

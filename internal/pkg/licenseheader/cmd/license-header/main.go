@@ -152,5 +152,5 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 }
 
 func newRequiredFlagError(flagName string) error {
-	return appcmd.NewInvalidArgumentErrorf("--%s is required.", flagName)
+	return appcmd.NewInvalidArgumentErrorf("--%s is required", flagName)
 }

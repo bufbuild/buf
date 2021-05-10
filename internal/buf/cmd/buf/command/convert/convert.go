@@ -111,7 +111,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 
 func run(ctx context.Context, container appflag.Container, flags *flags) (retErr error) {
 	if flags.Output == "" {
-		return appcmd.NewInvalidArgumentErrorf("--%s is required", outputFlagName)
+		return bufcli.NewFlagIsRequiredError(outputFlagName)
 	}
 	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
 		flags.Paths,
