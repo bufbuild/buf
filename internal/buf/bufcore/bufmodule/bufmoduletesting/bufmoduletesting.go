@@ -21,6 +21,10 @@ const (
 	//
 	// This matches TestData.
 	TestDigest = "b1-gLO3B_5ClhdU52w1gMOxk4GokvCoM1OqjarxMfjStGQ="
+	// TestDigestWithDocumentation is a valid test digest.
+	//
+	// This matches TestDataWithDocumentation.
+	TestDigestWithDocumentation = "b1-Vqi49Lw-sr3tTLQVwSJrRJnJSwV0yeg97ea957z02B0="
 	// TestModuleReferenceFooBarV1String is a valid module reference string.
 	TestModuleReferenceFooBarV1String = "buf.build/foob/bar:v1"
 	// TestModuleReferenceFooBarV2String is a valid module reference string.
@@ -29,6 +33,8 @@ const (
 	TestModuleReferenceFooBazV1String = "buf.build/foob/baz:v1"
 	// TestModuleReferenceFooBazV2String is a valid module reference string.
 	TestModuleReferenceFooBazV2String = "buf.build/foob/baz:v2"
+	// TestDocumentation is a markdown module documentation file.
+	TestModuleDocumentation = "# Module Documentation"
 )
 
 var (
@@ -36,6 +42,13 @@ var (
 	TestData = map[string][]byte{
 		"file1.proto":        []byte(`syntax="proto3";`),
 		"folder/file2.proto": []byte(`syntax="proto3";`),
+	}
+	// TestDataWithDocumentation is the data that maps to TestDigestWithDocumentation.
+	//
+	// It includes a buf.md file.
+	TestDataWithDocumentation = map[string][]byte{
+		"file1.proto": []byte(`syntax="proto3";`),
+		"buf.md":      []byte(TestModuleDocumentation),
 	}
 	// TestCommit is a valid commit.
 	TestCommit string

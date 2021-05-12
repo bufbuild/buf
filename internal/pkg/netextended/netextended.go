@@ -27,7 +27,7 @@ const (
 )
 
 // ValidateHostname verifies the given hostname is a well-formed IP address
-// or domain name.
+// or domain name, optionally including a port, and returns the hostname part.
 func ValidateHostname(hostname string) (string, error) {
 	if len(hostname) == 0 {
 		return "", errors.New("must not be empty")

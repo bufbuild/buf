@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // ExternalConfigV1Beta1FilePath is the default external configuration file path for v1beta1.
@@ -133,6 +134,7 @@ type PluginConfig struct {
 type Options struct {
 	CcEnableArenas    *bool
 	JavaMultipleFiles *bool
+	OptimizeFor       *descriptorpb.FileOptions_OptimizeMode
 }
 
 // ReadConfig reads the configuration from the OS.
@@ -171,8 +173,9 @@ type ExternalPluginConfigV1Beta1 struct {
 //
 // Only use outside of this package for testing.
 type ExternalOptionsConfigV1Beta1 struct {
-	CcEnableArenas    *bool `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
-	JavaMultipleFiles *bool `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
+	CcEnableArenas    *bool  `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
+	JavaMultipleFiles *bool  `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
+	OptimizeFor       string `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 }
 
 type externalConfigVersion struct {

@@ -33,6 +33,7 @@ var goPackagePath = []int32{8, 11}
 func goPackage(
 	sweeper Sweeper,
 	importPathPrefix string,
+	includeModuleReferences bool,
 ) (Modifier, error) {
 	if importPathPrefix == "" {
 		return nil, fmt.Errorf("a non-empty import path prefix is required")
@@ -40,7 +41,7 @@ func goPackage(
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := goPackageForFile(ctx, sweeper, imageFile, importPathPrefix); err != nil {
+				if err := goPackageForFile(ctx, sweeper, imageFile, importPathPrefix, includeModuleReferences); err != nil {
 					return err
 				}
 			}
@@ -54,6 +55,7 @@ func goPackageForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	importPathPrefix string,
+	includeModuleReferences bool,
 ) error {
 	descriptor := imageFile.Proto()
 	if isWellKnownType(ctx, imageFile) && descriptor.GetOptions().GetGoPackage() != "" {
@@ -65,6 +67,9 @@ func goPackageForFile(
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
+	if moduleReference := imageFile.ModuleReference(); includeModuleReferences && moduleReference != nil {
+		importPathPrefix = normalpath.Join(importPathPrefix, moduleReference.Owner(), moduleReference.Repository())
+	}
 	descriptor.Options.GoPackage = proto.String(goPackageImportPathForFile(imageFile, importPathPrefix))
 	if sweeper != nil {
 		sweeper.mark(imageFile.Path(), goPackagePath)
@@ -74,7 +79,7 @@ func goPackageForFile(
 
 // goPackageImportPathForFile returns the go_package import path for the given
 // ImageFile. If the package contains a version suffix, and if there are more
-// than two comonents, concatenate the final two components. Otherwise, we
+// than two components, concatenate the final two components. Otherwise, we
 // exclude the ';' separator and adopt the default behavior from the import path.
 func goPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix string) string {
 	goPackageImportPath := normalpath.Join(importPathPrefix, normalpath.Dir(imageFile.Path()))

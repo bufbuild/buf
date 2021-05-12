@@ -1,4 +1,6 @@
 version: v1beta1
+options:
+  optimize_for: LITE_RUNTIME
 plugins:
   - name: go
     out: gen/go
