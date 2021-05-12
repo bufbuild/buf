@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 func TestReadConfig(t *testing.T) {
@@ -37,10 +38,14 @@ func TestReadConfig(t *testing.T) {
 		Options: &Options{
 			CcEnableArenas:    &truth,
 			JavaMultipleFiles: &truth,
+			OptimizeFor:       optimizeModePtr(descriptorpb.FileOptions_CODE_SIZE),
 		},
 		Managed: true,
 	}
 	successConfig2 := &Config{
+		Options: &Options{
+			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_SPEED),
+		},
 		PluginConfigs: []*PluginConfig{
 			{
 				Name:     "go",
@@ -52,6 +57,9 @@ func TestReadConfig(t *testing.T) {
 		},
 	}
 	successConfig3 := &Config{
+		Options: &Options{
+			OptimizeFor: optimizeModePtr(descriptorpb.FileOptions_LITE_RUNTIME),
+		},
 		PluginConfigs: []*PluginConfig{
 			{
 				Name:     "go",
@@ -122,6 +130,12 @@ func TestReadConfig(t *testing.T) {
 	_, err = ReadConfig(filepath.Join("testdata", "gen_error1.yaml"))
 	require.Error(t, err)
 	data, err = os.ReadFile(filepath.Join("testdata", "gen_error1.yaml"))
+	require.NoError(t, err)
+	_, err = ReadConfig(string(data))
+	require.Error(t, err)
+	_, err = ReadConfig(filepath.Join("testdata", "gen_error2.yaml"))
+	require.Error(t, err)
+	data, err = os.ReadFile(filepath.Join("testdata", "gen_error2.yaml"))
 	require.NoError(t, err)
 	_, err = ReadConfig(string(data))
 	require.Error(t, err)

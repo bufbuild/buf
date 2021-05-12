@@ -1,5 +1,8 @@
 {
   "version": "v1beta1",
+  "options": {
+    "optimize_for": "SPEED"
+  },
   "plugins": [
     {
       "name": "go",

@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/gen/data/datawkt"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // Modifier modifies Images.
@@ -79,10 +80,24 @@ func Merge(left Modifier, right Modifier) Modifier {
 	return NewMultiModifier(left, right)
 }
 
+// CcEnableArenas returns a Modifier that sets the cc_enable_arenas
+// file option to the given value in all of the files contained in
+// the Image.
+func CcEnableArenas(sweeper Sweeper, value bool) Modifier {
+	return ccEnableArenas(sweeper, value)
+}
+
 // GoPackage returns a Modifier that sets the go_package file option
 // according to the given importPathPrefix.
 func GoPackage(sweeper Sweeper, importPathPrefix string) (Modifier, error) {
-	return goPackage(sweeper, importPathPrefix)
+	return goPackage(sweeper, importPathPrefix, false)
+}
+
+// GoPackage returns a Modifier that sets the go_package file option
+// according to the given pluginSetImportPathPrefix and will automatically
+// insert the correct module owner/name reference on a per-file basis.
+func GoPackageForModuleWithRemoteDependencies(sweeper Sweeper, pluginSetImportPathPrefix string) (Modifier, error) {
+	return goPackage(sweeper, pluginSetImportPathPrefix, true)
 }
 
 // JavaMultipleFiles returns a Modifier that sets the java_multiple_files
@@ -92,11 +107,23 @@ func JavaMultipleFiles(sweeper Sweeper, value bool) Modifier {
 	return javaMultipleFiles(sweeper, value)
 }
 
-// CcEnableArenas returns a Modifier that sets the cc_enable_arenas
-// file option to the given value in all of the files contained in
+// JavaOuterClassname returns a Modifier that sets the java_outer_classname file option
+// in all of the files contained in the Image based on the PascalCase of their filename.
+func JavaOuterClassname(sweeper Sweeper) Modifier {
+	return javaOuterClassname(sweeper)
+}
+
+// JavaPackage returns a Modifier that sets the java_package file option
+// according to the given packagePrefix.
+func JavaPackage(sweeper Sweeper, packagePrefix string) (Modifier, error) {
+	return javaPackage(sweeper, packagePrefix)
+}
+
+// OptimizeFor returns a Modifier that sets the optimize_for file
+// option to the given value in all of the files contained in
 // the Image.
-func CcEnableArenas(sweeper Sweeper, value bool) Modifier {
-	return ccEnableArenas(sweeper, value)
+func OptimizeFor(sweeper Sweeper, value descriptorpb.FileOptions_OptimizeMode) Modifier {
+	return optimizeFor(sweeper, value)
 }
 
 // isWellKnownType returns true if the given path is one of the well-known types.

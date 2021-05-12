@@ -155,6 +155,18 @@ func TestBucketGetFileInfosForExternalPathsError1(t *testing.T) {
 	)
 }
 
+func TestDocumentation(t *testing.T) {
+	testDocumentationBucket(
+		t,
+		"testdata/4",
+		[]string{
+			".",
+		},
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/1.proto", "testdata/4/proto/1.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/2.proto", "testdata/4/proto/a/2.proto", false), nil),
+	)
+}
+
 func testBucketGetFileInfos(
 	t *testing.T,
 	relDir string,
@@ -283,4 +295,40 @@ func testBucketGetFileInfosForExternalPathsError(
 		WithPaths(bucketRelPaths),
 	)
 	assert.Error(t, err)
+}
+
+func testDocumentationBucket(
+	t *testing.T,
+	relDir string,
+	relRoots []string,
+	expectedFileInfos ...bufmodule.FileInfo,
+) {
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		relDir,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	require.NoError(t, err)
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
+			Roots: relRoots,
+		},
+	)
+	require.NoError(t, err)
+	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+		context.Background(),
+		readWriteBucket,
+		config,
+	)
+	require.NoError(t, err)
+	require.NotNil(t, module)
+	assert.NotEmpty(t, module.Documentation())
+	require.NoError(t, err)
+	fileInfos, err := module.TargetFileInfos(context.Background())
+	assert.NoError(t, err)
+	assert.Equal(
+		t,
+		expectedFileInfos,
+		fileInfos,
+	)
 }

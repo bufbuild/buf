@@ -128,6 +128,45 @@ func TestCacherBasic(t *testing.T) {
 	require.True(t, exists)
 }
 
+func TestModuleReaderCacherWithDocumentation(t *testing.T) {
+	ctx := context.Background()
+
+	modulePin, err := bufmodule.NewModulePin(
+		"buf.build",
+		"foob",
+		"bar",
+		"v1",
+		bufmoduletesting.TestCommit,
+		bufmoduletesting.TestDigestWithDocumentation,
+		time.Now(),
+	)
+	require.NoError(t, err)
+	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithDocumentation)
+	require.NoError(t, err)
+	module, err := bufmodule.NewModuleForBucket(ctx, readBucket)
+	require.NoError(t, err)
+
+	readWriteBucket, fileLocker := newTestBucketAndLocker(t)
+	moduleCacher := newModuleCacher(readWriteBucket, fileLocker)
+	err = moduleCacher.PutModule(
+		context.Background(),
+		modulePin,
+		module,
+	)
+	require.NoError(t, err)
+	module, err = moduleCacher.GetModule(ctx, modulePin)
+	require.NoError(t, err)
+	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	require.NoError(t, bufmodule.ModuleToBucket(ctx, module, readBucketBuilder))
+	readBucket, err = readBucketBuilder.ToReadBucket()
+	require.NoError(t, err)
+	// Verify that the buf.md file was created.
+	exists, err := storage.Exists(ctx, readBucket, bufmodule.DocumentationFilePath)
+	require.NoError(t, err)
+	require.True(t, exists)
+	require.Equal(t, bufmoduletesting.TestModuleDocumentation, module.Documentation())
+}
+
 func newTestBucketAndLocker(t *testing.T) (storage.ReadWriteBucket, filelock.Locker) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())

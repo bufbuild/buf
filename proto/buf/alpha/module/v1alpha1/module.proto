@@ -30,6 +30,10 @@ message Module {
   repeated ModuleFile files = 1;
   // dependencies are the dependencies.
   repeated ModulePin dependencies = 2;
+  // documentation is the string representation of the contents of the `buf.md` file.
+  //
+  // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
+  string documentation = 3;
 }
 
 // ModuleFile is a file within a FileSet.
