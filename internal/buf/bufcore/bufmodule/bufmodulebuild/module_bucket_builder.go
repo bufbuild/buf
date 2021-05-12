@@ -64,12 +64,19 @@ func (b *moduleBucketBuilder) buildForBucket(
 ) (bufmodule.Module, error) {
 	roots := make([]string, 0, len(config.RootToExcludes))
 	var rootBuckets []storage.ReadBucket
-	lockFileReadBucket, err := getLockFileReadBucket(ctx, readBucket)
+	lockFileReadBucket, err := getFileReadBucket(ctx, readBucket, bufmodule.LockFilePath)
+	if err != nil {
+		return nil, err
+	}
+	docFileReadBucket, err := getFileReadBucket(ctx, readBucket, bufmodule.DocumentationFilePath)
 	if err != nil {
 		return nil, err
 	}
 	if lockFileReadBucket != nil {
 		rootBuckets = append(rootBuckets, lockFileReadBucket)
+	}
+	if docFileReadBucket != nil {
+		rootBuckets = append(rootBuckets, docFileReadBucket)
 	}
 	for root, excludes := range config.RootToExcludes {
 		roots = append(roots, root)
@@ -117,24 +124,25 @@ func (b *moduleBucketBuilder) buildForBucket(
 	)
 }
 
-// may return nil
-func getLockFileReadBucket(
+// may return nil.
+func getFileReadBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
+	filePath string,
 ) (storage.ReadBucket, error) {
-	lockFileData, err := storage.ReadPath(ctx, readBucket, bufmodule.LockFilePath)
+	fileData, err := storage.ReadPath(ctx, readBucket, filePath)
 	if err != nil {
 		if storage.IsNotExist(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	if len(lockFileData) == 0 {
+	if len(fileData) == 0 {
 		return nil, nil
 	}
 	return storagemem.NewReadBucket(
 		map[string][]byte{
-			bufmodule.LockFilePath: lockFileData,
+			filePath: fileData,
 		},
 	)
 }

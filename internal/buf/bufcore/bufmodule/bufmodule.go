@@ -33,6 +33,8 @@ import (
 const (
 	// LockFilePath defines the path to the lock file, relative to the root of the module.
 	LockFilePath = "buf.lock"
+	// DocumentationFilePath defines the path to the documentation file, relative to the root of the module.
+	DocumentationFilePath = "buf.md"
 	// MainBranch is the name of the branch created for every repository.
 	// This is the default branch used if no branch or commit is specified.
 	MainBranch = "main"
@@ -347,6 +349,9 @@ type Module interface {
 	//
 	// This includes all transitive dependencies.
 	DependencyModulePins() []ModulePin
+	// Documentation gets the contents of the module documentation file, buf.md and returns the string representation.
+	// This may return an empty string if the documentation file does not exist.
+	Documentation() string
 
 	getSourceReadBucket() storage.ReadBucket
 	// Note this *can* be nil if we did not build from a named module.
@@ -496,8 +501,9 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 		protoModulePins[i] = NewProtoModulePinForModulePin(dependencyModulePin)
 	}
 	protoModule := &modulev1alpha1.Module{
-		Files:        protoModuleFiles,
-		Dependencies: protoModulePins,
+		Files:         protoModuleFiles,
+		Dependencies:  protoModulePins,
+		Documentation: module.Documentation(),
 	}
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
@@ -555,6 +561,11 @@ func ModuleDigest(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
+	if docs := module.Documentation(); docs != "" {
+		if _, err := hash.Write([]byte(docs)); err != nil {
+			return "", err
+		}
+	}
 	return fmt.Sprintf("%s-%s", b1DigestPrefix, base64.URLEncoding.EncodeToString(hash.Sum(nil))), nil
 }
 
@@ -573,6 +584,11 @@ func ModuleToBucket(
 	}
 	for _, fileInfo := range fileInfos {
 		if err := putModuleFileToBucket(ctx, module, fileInfo.Path(), writeBucket); err != nil {
+			return err
+		}
+	}
+	if docs := module.Documentation(); docs != "" {
+		if err := storage.PutPath(ctx, writeBucket, DocumentationFilePath, []byte(docs)); err != nil {
 			return err
 		}
 	}

@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/encoding"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 const v1beta1Version = "v1beta1"
@@ -112,10 +113,11 @@ func validateExternalConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id stri
 }
 
 func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config, error) {
-	config := &Config{
-		Managed: externalConfig.Managed,
-		Options: newOptionsConfigV1Beta1(externalConfig.Options),
+	options, err := newOptionsConfigV1Beta1(externalConfig.Options)
+	if err != nil {
+		return nil, err
 	}
+	pluginConfigs := make([]*PluginConfig, 0, len(externalConfig.Plugins))
 	for _, plugin := range externalConfig.Plugins {
 		strategy, err := ParseStrategy(plugin.Strategy)
 		if err != nil {
@@ -140,8 +142,8 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 		default:
 			return nil, fmt.Errorf("%s: unknown type %T for opt", id, t)
 		}
-		config.PluginConfigs = append(
-			config.PluginConfigs,
+		pluginConfigs = append(
+			pluginConfigs,
 			&PluginConfig{
 				Name:     plugin.Name,
 				Out:      plugin.Out,
@@ -151,15 +153,48 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 			},
 		)
 	}
-	return config, nil
+	return &Config{
+		Managed:       externalConfig.Managed,
+		Options:       options,
+		PluginConfigs: pluginConfigs,
+	}, nil
 }
 
-func newOptionsConfigV1Beta1(externalOptionsConfig ExternalOptionsConfigV1Beta1) *Options {
+func newOptionsConfigV1Beta1(externalOptionsConfig ExternalOptionsConfigV1Beta1) (*Options, error) {
 	if externalOptionsConfig == (ExternalOptionsConfigV1Beta1{}) {
-		return nil
+		return nil, nil
+	}
+	var optimizeFor *descriptorpb.FileOptions_OptimizeMode
+	if externalOptionsConfig.OptimizeFor != "" {
+		value, ok := descriptorpb.FileOptions_OptimizeMode_value[externalOptionsConfig.OptimizeFor]
+		if !ok {
+			return nil, fmt.Errorf(
+				"invalid optimize_for value; expected one of %v",
+				enumMapToStringSlice(descriptorpb.FileOptions_OptimizeMode_value),
+			)
+		}
+		optimizeFor = optimizeModePtr(descriptorpb.FileOptions_OptimizeMode(value))
 	}
 	return &Options{
 		CcEnableArenas:    externalOptionsConfig.CcEnableArenas,
 		JavaMultipleFiles: externalOptionsConfig.JavaMultipleFiles,
+		OptimizeFor:       optimizeFor,
+	}, nil
+}
+
+// enumMapToStringSlice is a convenience function for mapping Protobuf enums
+// into a slice of strings.
+func enumMapToStringSlice(enums map[string]int32) []string {
+	slice := make([]string, 0, len(enums))
+	for enum := range enums {
+		slice = append(slice, enum)
 	}
+	return slice
+}
+
+// optimizeModePtr is a convenience function for initializing the
+// *descriptorpb.FileOptions_OptimizeMode type in-line. This is
+// also useful in unit tests.
+func optimizeModePtr(value descriptorpb.FileOptions_OptimizeMode) *descriptorpb.FileOptions_OptimizeMode {
+	return &value
 }

@@ -268,7 +268,7 @@ func isSnakeCaseNewWord(r rune, newWordOnDigits bool) bool {
 }
 
 func isDelimiter(r rune) bool {
-	return r == '-' || r == '_' || r == ' ' || r == '\t' || r == '\n' || r == '\r'
+	return r == '.' || r == '-' || r == '_' || r == ' ' || r == '\t' || r == '\n' || r == '\r'
 }
 
 type snakeCaseOptions struct {

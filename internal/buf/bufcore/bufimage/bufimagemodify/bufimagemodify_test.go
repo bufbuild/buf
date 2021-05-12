@@ -28,7 +28,11 @@ import (
 	"go.uber.org/zap"
 )
 
-const testImportPathPrefix = "github.com/foo/bar/internal/gen/proto/go"
+const (
+	testImportPathPrefix = "github.com/foo/bar/internal/gen/proto/go"
+	testRepositoryOwner  = "testowner"
+	testRepositoryName   = "testrepository"
+)
 
 func assertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32, includeSourceInfo bool) {
 	t.Helper()
@@ -90,12 +94,17 @@ func testGetModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet 
 		dirPath,
 	)
 	require.NoError(t, err)
-	config, err := bufmodulebuild.NewConfigV1Beta1(bufmodulebuild.ExternalConfigV1Beta1{})
+	moduleReference, err := bufmodule.NewModuleReference(
+		"modulerepo.internal",
+		testRepositoryOwner,
+		testRepositoryName,
+		"reference",
+	)
 	require.NoError(t, err)
-	module, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
+	module, err := bufmodule.NewModuleForBucket(
 		context.Background(),
 		readWriteBucket,
-		config,
+		bufmodule.ModuleWithModuleReference(moduleReference),
 	)
 	require.NoError(t, err)
 	moduleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(

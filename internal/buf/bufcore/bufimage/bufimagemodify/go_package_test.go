@@ -25,6 +25,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestGoPackageError(t *testing.T) {
+	t.Parallel()
+	_, err := GoPackage(NewFileOptionSweeper(), "")
+	require.Error(t, err)
+}
+
 func TestGoPackageEmptyOptions(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
@@ -251,6 +257,138 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 		for _, imageFile := range image.Files() {
 			modifiedGoPackage := fmt.Sprintf("%s;%s",
 				normalpath.Dir(testImportPathPrefix+"/"+imageFile.Path()),
+				packageSuffix,
+			)
+			descriptor := imageFile.Proto()
+			if isWellKnownType(context.Background(), imageFile) {
+				assert.NotEmpty(t, descriptor.GetOptions().GetGoPackage())
+				assert.NotEqual(t, modifiedGoPackage, descriptor.GetOptions().GetGoPackage())
+				continue
+			}
+			assert.Equal(t,
+				modifiedGoPackage,
+				descriptor.GetOptions().GetGoPackage(),
+			)
+		}
+	})
+}
+
+func TestGoPackageForModuleWithRemoteDependencies(t *testing.T) {
+	t.Parallel()
+	dirPath := filepath.Join("testdata", "packageversion")
+	packageSuffix := "weatherv1alpha1"
+	importPrefixNoRepository := "go.modulerepo.internal/foo/bar"
+	t.Run("with SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+
+		sweeper := NewFileOptionSweeper()
+		goPackageModifier, err := GoPackageForModuleWithRemoteDependencies(sweeper, importPrefixNoRepository)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			modifiedGoPackage := fmt.Sprintf("%s;%s",
+				normalpath.Dir(normalpath.Join(importPrefixNoRepository, testRepositoryOwner, testRepositoryName, imageFile.Path())),
+				packageSuffix,
+			)
+			descriptor := imageFile.Proto()
+			assert.Equal(t,
+				modifiedGoPackage,
+				descriptor.GetOptions().GetGoPackage(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
+	})
+
+	t.Run("without SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+
+		sweeper := NewFileOptionSweeper()
+		modifier, err := GoPackageForModuleWithRemoteDependencies(sweeper, importPrefixNoRepository)
+		require.NoError(t, err)
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			modifiedGoPackage := fmt.Sprintf("%s;%s",
+				normalpath.Dir(normalpath.Join(importPrefixNoRepository, testRepositoryOwner, testRepositoryName, imageFile.Path())),
+				packageSuffix,
+			)
+			descriptor := imageFile.Proto()
+			assert.Equal(t,
+				modifiedGoPackage,
+				descriptor.GetOptions().GetGoPackage(),
+			)
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
+	})
+}
+
+func TestGoPackageForModuleWithRemoteDependenciesWellKnownTypes(t *testing.T) {
+	t.Parallel()
+	dirPath := filepath.Join("testdata", "wktimport")
+	packageSuffix := "weatherv1alpha1"
+	importPrefixNoRepository := "go.modulerepo.internal/foo/bar"
+	t.Run("with SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+
+		sweeper := NewFileOptionSweeper()
+		goPackageModifier, err := GoPackageForModuleWithRemoteDependencies(sweeper, importPrefixNoRepository)
+		require.NoError(t, err)
+
+		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			modifiedGoPackage := fmt.Sprintf("%s;%s",
+				normalpath.Dir(normalpath.Join(importPrefixNoRepository, testRepositoryOwner, testRepositoryName, imageFile.Path())),
+				packageSuffix,
+			)
+			descriptor := imageFile.Proto()
+			if isWellKnownType(context.Background(), imageFile) {
+				assert.NotEmpty(t, descriptor.GetOptions().GetGoPackage())
+				assert.NotEqual(t, modifiedGoPackage, descriptor.GetOptions().GetGoPackage())
+				continue
+			}
+			assert.Equal(t,
+				modifiedGoPackage,
+				descriptor.GetOptions().GetGoPackage(),
+			)
+		}
+	})
+
+	t.Run("without SourceCodeInfo", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+
+		sweeper := NewFileOptionSweeper()
+		modifier, err := GoPackageForModuleWithRemoteDependencies(sweeper, importPrefixNoRepository)
+		require.NoError(t, err)
+		err = modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			modifiedGoPackage := fmt.Sprintf("%s;%s",
+				normalpath.Dir(normalpath.Join(importPrefixNoRepository, testRepositoryOwner, testRepositoryName, imageFile.Path())),
 				packageSuffix,
 			)
 			descriptor := imageFile.Proto()

@@ -37,6 +37,8 @@ const (
 	goPluginName = "go"
 	// goGrpcPluginName is the name used to configure the protoc-gen-go-grpc plugin.
 	goGrpcPluginName = "go-grpc"
+	// javaPackagePrefix is the default java_package prefix used in the JavaPackage modifier.
+	javaPackagePrefix = "com."
 )
 
 type generator struct {
@@ -158,7 +160,24 @@ func modifyImage(
 
 // managedModeModifier returns the Managed Mode modifier.
 func managedModeModifier(pluginConfigs []*PluginConfig, sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
-	modifier := bufimagemodify.NewMultiModifier( /* TODO */ )
+	modifier := bufimagemodify.NewMultiModifier(
+		// TODO: Implement the following modifiers.
+		//
+		// bufimagemodify.CsharpNamespace(sweeper),
+		bufimagemodify.JavaOuterClassname(sweeper),
+	// bufimagemodify.ObjcClassPrefix(sweeper),
+	// bufimagemodify.SwiftPrefix(sweeper),
+	// bufimagemodify.PhpClassPrefix(sweeper),
+	// bufimagemodify.PhpNamespace(sweeper),
+	// bufimagemodify.PhpMetadataNamespace(sweeper),
+	// bufimagemodify.RubyPackage(sweeper),
+	)
+	javaPackageModifier, err := bufimagemodify.JavaPackage(sweeper, javaPackagePrefix)
+	if err != nil {
+		return nil, err
+	}
+	modifier = bufimagemodify.Merge(modifier, javaPackageModifier)
+
 	goPackageModifier, err := goPackageModifierFromPluginConfigs(pluginConfigs, sweeper)
 	if err != nil {
 		return nil, err
@@ -184,7 +203,13 @@ func modifierFromOptions(options *Options, sweeper bufimagemodify.Sweeper) bufim
 			bufimagemodify.JavaMultipleFiles(sweeper, *options.JavaMultipleFiles),
 		)
 	}
-	// TODO: Add support for JavaStringCheckUTF8, and OptimizeFor.
+	if options.OptimizeFor != nil {
+		modifier = bufimagemodify.Merge(
+			modifier,
+			bufimagemodify.OptimizeFor(sweeper, *options.OptimizeFor),
+		)
+	}
+	// TODO: Add support for JavaStringCheckUTF8.
 	return modifier
 }
 

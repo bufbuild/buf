@@ -173,6 +173,8 @@ func TestToPascalCase(t *testing.T) {
 	assert.Equal(t, "PascalCaseHello", ToPascalCase("PascalCase--Hello"))
 	assert.Equal(t, "FooBarBaz", ToPascalCase("_foo-bar-baz_"))
 	assert.Equal(t, "FooBarBaz", ToPascalCase("  Foo  Bar  _Baz"))
+	assert.Equal(t, "FooBarBaz", ToPascalCase("  Foo.Bar.Baz"))
+	assert.Equal(t, "FooBarBaz", ToPascalCase("foo_bar.baz"))
 }
 
 func TestJoinSliceQuoted(t *testing.T) {

@@ -3,7 +3,8 @@
   "managed": true,
   "options": {
     "cc_enable_arenas": true,
-    "java_multiple_files": true
+    "java_multiple_files": true,
+    "optimize_for": "CODE_SIZE"
   },
   "plugins": [
     {
