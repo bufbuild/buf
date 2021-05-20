@@ -20,18 +20,18 @@ var _ FileInfo = &fileInfo{}
 
 type fileInfo struct {
 	bufcore.FileInfo
-	moduleReference ModuleReference
+	moduleCommit ModuleCommit
 }
 
-func newFileInfo(coreFileInfo bufcore.FileInfo, moduleReference ModuleReference) *fileInfo {
+func newFileInfo(coreFileInfo bufcore.FileInfo, moduleCommit ModuleCommit) *fileInfo {
 	return &fileInfo{
-		FileInfo:        coreFileInfo,
-		moduleReference: moduleReference,
+		FileInfo:     coreFileInfo,
+		moduleCommit: moduleCommit,
 	}
 }
 
-func (f *fileInfo) ModuleReference() ModuleReference {
-	return f.moduleReference
+func (f *fileInfo) ModuleCommit() ModuleCommit {
+	return f.moduleCommit
 }
 
 func (*fileInfo) isFileInfo() {}

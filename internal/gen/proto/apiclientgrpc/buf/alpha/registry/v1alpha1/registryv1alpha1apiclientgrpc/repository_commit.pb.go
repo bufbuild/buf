@@ -28,22 +28,25 @@ type repositoryCommitService struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// ListRepositoryCommits lists the repository commits associated with a repository branch.
-func (s *repositoryCommitService) ListRepositoryCommits(
+// ListRepositoryCommitsByBranch lists the repository commits associated
+// with a repository branch on a repository, ordered by their create time.
+func (s *repositoryCommitService) ListRepositoryCommitsByBranch(
 	ctx context.Context,
-	repositoryId string,
+	repositoryOwner string,
+	repositoryName string,
 	repositoryBranchName string,
 	pageSize uint32,
-	pageToken string,
+	pageToken int64,
 	reverse bool,
-) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
+) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken int64, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.ListRepositoryCommits(
+	response, err := s.client.ListRepositoryCommitsByBranch(
 		ctx,
-		&v1alpha1.ListRepositoryCommitsRequest{
-			RepositoryId:         repositoryId,
+		&v1alpha1.ListRepositoryCommitsByBranchRequest{
+			RepositoryOwner:      repositoryOwner,
+			RepositoryName:       repositoryName,
 			RepositoryBranchName: repositoryBranchName,
 			PageSize:             pageSize,
 			PageToken:            pageToken,
@@ -51,7 +54,59 @@ func (s *repositoryCommitService) ListRepositoryCommits(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, 0, err
 	}
 	return response.RepositoryCommits, response.NextPageToken, nil
+}
+
+// GetRepositoryCommitByReference returns the repository commit matching
+// the provided reference, if it exists.
+func (s *repositoryCommitService) GetRepositoryCommitByReference(
+	ctx context.Context,
+	repositoryOwner string,
+	repositoryName string,
+	reference string,
+) (repositoryCommit *v1alpha1.RepositoryCommit, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetRepositoryCommitByReference(
+		ctx,
+		&v1alpha1.GetRepositoryCommitByReferenceRequest{
+			RepositoryOwner: repositoryOwner,
+			RepositoryName:  repositoryName,
+			Reference:       reference,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.RepositoryCommit, nil
+}
+
+// GetRepositoryCommitBySequenceID returns the repository commit matching
+// the provided sequence ID and branch, if it exists.
+func (s *repositoryCommitService) GetRepositoryCommitBySequenceID(
+	ctx context.Context,
+	repositoryOwner string,
+	repositoryName string,
+	repositoryBranchName string,
+	commitSequenceId int64,
+) (repositoryCommit *v1alpha1.RepositoryCommit, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetRepositoryCommitBySequenceID(
+		ctx,
+		&v1alpha1.GetRepositoryCommitBySequenceIDRequest{
+			RepositoryOwner:      repositoryOwner,
+			RepositoryName:       repositoryName,
+			RepositoryBranchName: repositoryBranchName,
+			CommitSequenceId:     commitSequenceId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.RepositoryCommit, nil
 }

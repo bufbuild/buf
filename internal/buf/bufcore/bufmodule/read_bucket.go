@@ -24,16 +24,16 @@ import (
 type readBucket struct {
 	storage.ReadBucket
 
-	moduleReference ModuleReference
+	moduleCommit ModuleCommit
 }
 
 func newReadBucket(
 	sourceReadBucket storage.ReadBucket,
-	moduleReference ModuleReference,
+	moduleCommit ModuleCommit,
 ) *readBucket {
 	return &readBucket{
-		ReadBucket:      sourceReadBucket,
-		moduleReference: moduleReference,
+		ReadBucket:   sourceReadBucket,
+		moduleCommit: moduleCommit,
 	}
 }
 
@@ -44,7 +44,7 @@ func (r *readBucket) StatModuleFile(ctx context.Context, path string) (ObjectInf
 	if err != nil {
 		return nil, err
 	}
-	return newObjectInfo(objectInfo, r.moduleReference), nil
+	return newObjectInfo(objectInfo, r.moduleCommit), nil
 }
 
 // WalkModuleFiles walks the bucket with the prefix, calling f on
@@ -54,7 +54,7 @@ func (r *readBucket) WalkModuleFiles(ctx context.Context, path string, f func(Ob
 		ctx,
 		path,
 		func(objectInfo storage.ObjectInfo) error {
-			return f(newObjectInfo(objectInfo, r.moduleReference))
+			return f(newObjectInfo(objectInfo, r.moduleCommit))
 		},
 	)
 }

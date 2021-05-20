@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -130,6 +131,7 @@ func run(
 		return err
 	}
 	configProvider := bufconfig.NewProvider(container.Logger())
+	workspaceConfigProvider := bufwork.NewProvider(container.Logger())
 	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
 	if err != nil {
 		return err
@@ -143,6 +145,7 @@ func run(
 		container.Logger(),
 		storageosProvider,
 		configProvider,
+		workspaceConfigProvider,
 		moduleResolver,
 		moduleReader,
 	).ListFiles(

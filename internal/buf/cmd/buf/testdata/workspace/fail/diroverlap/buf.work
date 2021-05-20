@@ -1,0 +1,4 @@
+version: v1beta1
+directories:
+  - foo
+  - foo/bar

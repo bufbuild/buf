@@ -355,6 +355,24 @@ func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
+// ReadBucketCloser is a bucket returned from GetBucket.
+type ReadBucketCloser interface {
+	storage.ReadBucketCloser
+
+	// RelativeRootPath is the relative path to the root of the bucket
+	// based on the current working directory.
+	//
+	// This will be set if a terminate filename was specified and found.
+	RelativeRootPath() string
+	// SubDirPath is the subdir within the Bucket of the actual asset.
+	//
+	// This will be set if a terminate filename was specified and found.
+	// If so, the actual Bucket will be the directory that contained
+	// this terminate file, and the subdir will be the subdir of
+	// the actual asset relative to the terminate file.
+	SubDirPath() string
+}
+
 // Reader is a reader.
 type Reader interface {
 	// GetFile gets the file.
@@ -371,7 +389,7 @@ type Reader interface {
 		container app.EnvStdinContainer,
 		bucketRef BucketRef,
 		options ...GetBucketOption,
-	) (storage.ReadBucketCloser, error)
+	) (ReadBucketCloser, error)
 	// GetModule gets the module.
 	GetModule(
 		ctx context.Context,
@@ -672,6 +690,25 @@ func WithGetFileKeepFileCompression() GetFileOption {
 
 // GetBucketOption is a GetBucket option.
 type GetBucketOption func(*getBucketOptions)
+
+// WithGetBucketTerminateFileName only applies if subdir is specified.
+//
+// This says that if given a subdir, ascend directories until you reach
+// a file with this name, and if you do, the returned bucket will be
+// for the directory with this filename, while SubDirPath on the
+// returned bucket will be set to the original subdir relative
+// to the terminate file.
+//
+// This is used for workspaces. So if you have i.e. "proto/foo"
+// subdir, and terminate file "proto/buf.work", the returned bucket will
+// be for "proto", and the SubDirPath will be "foo".
+//
+// The terminateFileName is expected to be valid and have no slashes.
+func WithGetBucketTerminateFileName(terminateFileName string) GetBucketOption {
+	return func(getBucketOptions *getBucketOptions) {
+		getBucketOptions.terminateFileName = terminateFileName
+	}
+}
 
 // PutFileOption is a PutFile option.
 type PutFileOption func(*putFileOptions)

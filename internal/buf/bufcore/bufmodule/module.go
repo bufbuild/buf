@@ -29,7 +29,7 @@ import (
 type module struct {
 	sourceReadBucket     storage.ReadBucket
 	dependencyModulePins []ModulePin
-	moduleReference      ModuleReference
+	moduleCommit         ModuleCommit
 	documentation        string
 }
 
@@ -117,7 +117,7 @@ func newModuleForBucketWithDependencyModulePins(
 	return &module{
 		sourceReadBucket:     storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
 		dependencyModulePins: dependencyModulePins,
-		moduleReference:      moduleOptions.moduleReference,
+		moduleCommit:         moduleOptions.moduleCommit,
 		documentation:        documentationContents,
 	}, nil
 }
@@ -134,7 +134,7 @@ func (m *module) SourceFileInfos(ctx context.Context) ([]FileInfo, error) {
 			return err
 		}
 		coreFileInfo := bufcore.NewFileInfoForObjectInfo(objectInfo, false)
-		fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.moduleReference))
+		fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.moduleCommit))
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("failed to enumerate module files: %w", err)
@@ -156,7 +156,7 @@ func (m *module) GetModuleFile(ctx context.Context, path string) (ModuleFile, er
 		return nil, err
 	}
 	coreFileInfo := bufcore.NewFileInfoForObjectInfo(readObjectCloser, false)
-	return newModuleFile(NewFileInfo(coreFileInfo, m.moduleReference), readObjectCloser), nil
+	return newModuleFile(NewFileInfo(coreFileInfo, m.moduleCommit), readObjectCloser), nil
 }
 
 func (m *module) DependencyModulePins() []ModulePin {
@@ -172,8 +172,8 @@ func (m *module) getSourceReadBucket() storage.ReadBucket {
 	return m.sourceReadBucket
 }
 
-func (m *module) getModuleReference() ModuleReference {
-	return m.moduleReference
+func (m *module) getModuleCommit() ModuleCommit {
+	return m.moduleCommit
 }
 
 func (m *module) isModule() {}

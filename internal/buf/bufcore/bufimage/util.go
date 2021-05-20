@@ -38,26 +38,26 @@ func getImportFileIndexes(protoImage *imagev1.Image) (map[int]struct{}, error) {
 	return importFileIndexes, nil
 }
 
-func getModuleReferenceRefs(protoImage *imagev1.Image) (map[int]bufmodule.ModuleReference, error) {
-	moduleReferenceRefs := protoImage.GetBufbuildImageExtension().GetModuleReferenceRefs()
-	parsedModuleReferenceRefs := make(map[int]bufmodule.ModuleReference, len(moduleReferenceRefs))
-	for _, moduleReferenceRef := range moduleReferenceRefs {
-		if moduleReferenceRef.FileIndex == nil {
+func getModuleCommitRefs(protoImage *imagev1.Image) (map[int]bufmodule.ModuleCommit, error) {
+	moduleCommitRefs := protoImage.GetBufbuildImageExtension().GetModuleCommitRefs()
+	parsedModuleCommitRefs := make(map[int]bufmodule.ModuleCommit, len(moduleCommitRefs))
+	for _, moduleCommitRef := range moduleCommitRefs {
+		if moduleCommitRef.FileIndex == nil {
 			// this should have been caught in validation but just in case
 			return nil, errors.New("nil module reference ref fileIndex")
 		}
-		parsedModuleReferenceRef, err := bufmodule.NewModuleReference(
-			moduleReferenceRef.GetRemote(),
-			moduleReferenceRef.GetOwner(),
-			moduleReferenceRef.GetRepository(),
-			moduleReferenceRef.GetReference(),
+		parsedModuleCommitRef, err := bufmodule.NewModuleCommit(
+			moduleCommitRef.GetRemote(),
+			moduleCommitRef.GetOwner(),
+			moduleCommitRef.GetRepository(),
+			moduleCommitRef.GetCommit(),
 		)
 		if err != nil {
 			return nil, err
 		}
-		parsedModuleReferenceRefs[int(moduleReferenceRef.GetFileIndex())] = parsedModuleReferenceRef
+		parsedModuleCommitRefs[int(moduleCommitRef.GetFileIndex())] = parsedModuleCommitRef
 	}
-	return parsedModuleReferenceRefs, nil
+	return parsedModuleCommitRefs, nil
 }
 
 // paths can be either files (ending in .proto) or directories

@@ -49,7 +49,7 @@ type FileInfo interface {
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
 	// nil checking should work since the backing type is always a pointer
-	ModuleReference() ModuleReference
+	ModuleCommit() ModuleCommit
 
 	isFileInfo()
 }
@@ -57,9 +57,9 @@ type FileInfo interface {
 // NewFileInfo returns a new FileInfo.
 func NewFileInfo(
 	coreFileInfo bufcore.FileInfo,
-	moduleReference ModuleReference,
+	moduleCommit ModuleCommit,
 ) FileInfo {
-	return newFileInfo(coreFileInfo, moduleReference)
+	return newFileInfo(coreFileInfo, moduleCommit)
 }
 
 // ModuleFile is a module file.
@@ -159,7 +159,7 @@ type ModuleReference interface {
 	// Prints either remote/owner/repository:{branch,commit}
 	fmt.Stringer
 
-	// Either branch or commit
+	// Either branch, tag, or commit
 	Reference() string
 
 	isModuleReference()
@@ -236,6 +236,31 @@ func ModuleReferenceForString(path string) (ModuleReference, error) {
 // needs to be done server-side.
 func IsCommitModuleReference(moduleReference ModuleReference) bool {
 	return isCommitReference(moduleReference.Reference())
+}
+
+// ModuleCommit is a module commit.
+//
+// Note that since commits belong to branches, we can deduce
+// the branch from the commit.
+type ModuleCommit interface {
+	ModuleIdentity
+
+	// Prints remote/owner/repository:commit
+	fmt.Stringer
+
+	Commit() string
+
+	isModuleCommit()
+}
+
+// NewModuleCommit returns a new validated ModuleCommit.
+func NewModuleCommit(
+	remote string,
+	owner string,
+	repository string,
+	commit string,
+) (ModuleCommit, error) {
+	return newModuleCommit(remote, owner, repository, commit)
 }
 
 // ModulePin is a module pin.
@@ -364,7 +389,7 @@ type Module interface {
 	// This approach assumes that all of the FileInfos returned
 	// from SourceFileInfos will have their ModuleReference
 	// set to the same value, which can be validated.
-	getModuleReference() ModuleReference
+	getModuleCommit() ModuleCommit
 	isModule()
 }
 
@@ -473,6 +498,14 @@ func NewModuleFileSet(
 	dependencies []Module,
 ) ModuleFileSet {
 	return newModuleFileSet(module, dependencies)
+}
+
+// Workspace represents a module workspace.
+type Workspace interface {
+	// GetModule gets the module identified by the given ModuleIdentity.
+	GetModule(moduleIdentity ModuleIdentity) (Module, bool)
+	// GetModules returns all of the modules found in the workspace.
+	GetModules() []Module
 }
 
 // ModuleToProtoModule converts the Module to a proto Module.
@@ -700,8 +733,8 @@ func SortModulePins(modulePins []ModulePin) {
 type ObjectInfo interface {
 	storage.ObjectInfo
 
-	// ModuleReference gets this object's ModuleReference, if any.
-	ModuleReference() ModuleReference
+	// ModuleCommit gets this object's ModuleCommit, if any.
+	ModuleCommit() ModuleCommit
 }
 
 // ReadBucket extends the storage.ReadBucket interface with
@@ -735,9 +768,9 @@ type ReadBucket interface {
 // NewReadBucket returns a new ReadBucket.
 func NewReadBucket(
 	sourceReadBucket storage.ReadBucket,
-	moduleReference ModuleReference,
+	moduleCommit ModuleCommit,
 ) ReadBucket {
-	return newReadBucket(sourceReadBucket, moduleReference)
+	return newReadBucket(sourceReadBucket, moduleCommit)
 }
 
 // sortFileInfos sorts the FileInfos.

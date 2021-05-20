@@ -29,13 +29,13 @@ import (
 func NewImageFile(
 	t testing.TB,
 	fileDescriptorProto *descriptorpb.FileDescriptorProto,
-	moduleReference bufmodule.ModuleReference,
+	moduleCommit bufmodule.ModuleCommit,
 	externalPath string,
 	isImport bool,
 ) bufimage.ImageFile {
 	imageFile, err := bufimage.NewImageFile(
 		fileDescriptorProto,
-		moduleReference,
+		moduleCommit,
 		externalPath,
 		isImport,
 	)
@@ -72,7 +72,7 @@ func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufima
 				imageFile.Proto().GetName(),
 				imageFile.Proto().GetDependency()...,
 			),
-			imageFile.ModuleReference(),
+			imageFile.ModuleCommit(),
 			imageFile.ExternalPath(),
 			imageFile.IsImport(),
 		)

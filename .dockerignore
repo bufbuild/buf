@@ -11,6 +11,7 @@ cmd/protoc-gen-buf-lint/protoc-gen-buf-lint
 internal/buf/cmd/buf/cache/
 internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
 internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
+internal/buf/cmd/buf/workspacetests/enterprise/proto/workspacetest/cache/
 internal/buf/internal/buftesting/cache/
 internal/pkg/git/cmd/git-ls-files-unstaged/git-ls-files-unstaged
 internal/pkg/licenseheader/cmd/license-header/license-header

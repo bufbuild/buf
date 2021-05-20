@@ -20,14 +20,16 @@ import (
 )
 
 type moduleConfig struct {
-	module bufmodule.Module
-	config *bufconfig.Config
+	module    bufmodule.Module
+	config    *bufconfig.Config
+	workspace bufmodule.Workspace
 }
 
-func newModuleConfig(module bufmodule.Module, config *bufconfig.Config) *moduleConfig {
+func newModuleConfig(module bufmodule.Module, config *bufconfig.Config, workspace bufmodule.Workspace) *moduleConfig {
 	return &moduleConfig{
-		module: module,
-		config: config,
+		module:    module,
+		config:    config,
+		workspace: workspace,
 	}
 }
 
@@ -37,4 +39,8 @@ func (m *moduleConfig) Module() bufmodule.Module {
 
 func (m *moduleConfig) Config() *bufconfig.Config {
 	return m.config
+}
+
+func (m *moduleConfig) Workspace() bufmodule.Workspace {
+	return m.workspace
 }

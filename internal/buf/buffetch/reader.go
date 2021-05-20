@@ -21,10 +21,10 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
+	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
-	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
@@ -138,8 +138,25 @@ func (a *reader) GetSourceBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceRef SourceRef,
-) (storage.ReadBucketCloser, error) {
-	return a.internalReader.GetBucket(ctx, container, sourceRef.internalBucketRef())
+	options ...GetSourceBucketOption,
+) (ReadBucketCloser, error) {
+	getSourceBucketOptions := &getSourceBucketOptions{}
+	for _, option := range options {
+		option(getSourceBucketOptions)
+	}
+	var getBucketOptions []internal.GetBucketOption
+	if !getSourceBucketOptions.workspacesDisabled {
+		getBucketOptions = append(
+			getBucketOptions,
+			internal.WithGetBucketTerminateFileName(bufwork.ExternalConfigV1Beta1FilePath),
+		)
+	}
+	return a.internalReader.GetBucket(
+		ctx,
+		container,
+		sourceRef.internalBucketRef(),
+		getBucketOptions...,
+	)
 }
 
 func (a *reader) GetModule(

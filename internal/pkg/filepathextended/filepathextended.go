@@ -28,8 +28,33 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/bufbuild/buf/internal/pkg/osextended"
 	"go.uber.org/multierr"
 )
+
+// RealClean does filepath.Clean and filepath.FromSlash,
+// but also handles ..'s in relative paths relative to the
+// current working directory.
+//
+// As an example, if we are in proto, and we pass in
+// ../proto/foo, RealClean will return foo.
+func RealClean(path string) (string, error) {
+	path = filepath.Clean(filepath.FromSlash(path))
+	if !filepath.IsAbs(path) {
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return "", err
+		}
+		pwd, err := osextended.Getwd()
+		if err != nil {
+			return "", err
+		}
+		if relPath, err := filepath.Rel(pwd, absPath); err == nil {
+			return relPath, nil
+		}
+	}
+	return path, nil
+}
 
 // Walk walks the walkPath.
 //

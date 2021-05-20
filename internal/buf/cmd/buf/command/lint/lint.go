@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -171,6 +172,7 @@ func run(
 		return err
 	}
 	configProvider := bufconfig.NewProvider(container.Logger())
+	workspaceConfigProvider := bufwork.NewProvider(container.Logger())
 	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
 	if err != nil {
 		return err
@@ -180,13 +182,14 @@ func run(
 		return err
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	imageConfig, fileAnnotations, err := bufcli.NewWireImageConfigReader(
+	imageConfigs, fileAnnotations, err := bufcli.NewWireImageConfigReader(
 		container.Logger(),
 		storageosProvider,
 		configProvider,
+		workspaceConfigProvider,
 		moduleResolver,
 		moduleReader,
-	).GetImageConfig(
+	).GetImageConfigs(
 		ctx,
 		container,
 		ref,
@@ -208,18 +211,26 @@ func run(
 		}
 		return bufcli.ErrFileAnnotation
 	}
-	fileAnnotations, err = buflint.NewHandler(container.Logger()).Check(
-		ctx,
-		imageConfig.Config().Lint,
-		bufimage.ImageWithoutImports(imageConfig.Image()),
-	)
-	if err != nil {
-		return err
+	var allFileAnnotations []bufanalysis.FileAnnotation
+	for _, imageConfig := range imageConfigs {
+		fileAnnotations, err := buflint.NewHandler(container.Logger()).Check(
+			ctx,
+			imageConfig.Config().Lint,
+			bufimage.ImageWithoutImports(imageConfig.Image()),
+		)
+		if err != nil {
+			return err
+		}
+		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
 	}
-	if len(fileAnnotations) > 0 {
+	if len(allFileAnnotations) > 0 {
+		allFileAnnotations, err = bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations)
+		if err != nil {
+			return err
+		}
 		if err := buflint.PrintFileAnnotations(
 			container.Stdout(),
-			fileAnnotations,
+			allFileAnnotations,
 			flags.ErrorFormat,
 		); err != nil {
 			return err
