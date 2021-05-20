@@ -28,15 +28,6 @@ goarch() {
   esac
 }
 
-hostarch() {
-    case $(uname -m) in
-        x86_64) echo x86_64 ;;
-        arm64) echo arm64 ;;
-        aarch64) echo arm64 ;;
-        *) return 1 ;;
-    esac
-}
-
 sha256() {
   if ! type sha256sum >/dev/null 2>/dev/null; then
     if ! type shasum >/dev/null 2>/dev/null; then
@@ -75,6 +66,9 @@ cd "${RELEASE_DIR}"
 
 for os in Darwin Linux; do
   for arch in x86_64 arm64; do
+    if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
+      arch="aarch64"
+    fi
     dir="${os}/${arch}/${BASE_NAME}"
     mkdir -p "${dir}/bin"
     for binary in \
@@ -92,14 +86,17 @@ done
 
 for os in Darwin Linux; do
   for arch in x86_64 arm64; do
+    if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
+      arch="aarch64"
+    fi
     dir="${os}/${arch}/${BASE_NAME}"
     mkdir -p "${dir}/etc/bash_completion.d"
     mkdir -p "${dir}/share/fish/vendor_completions.d"
     mkdir -p "${dir}/share/zsh/site-functions"
     #mkdir -p "${dir}/share/man/man1"
-    "$(uname -s)/$(hostarch)/${BASE_NAME}/bin/buf" bash-completion > "${dir}/etc/bash_completion.d/buf"
-    "$(uname -s)/$(hostarch)/${BASE_NAME}/bin/buf" fish-completion > "${dir}/share/fish/vendor_completions.d/buf.fish"
-    "$(uname -s)/$(hostarch)/${BASE_NAME}/bin/buf" zsh-completion > "${dir}/share/zsh/site-functions/_buf"
+    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" bash-completion > "${dir}/etc/bash_completion.d/buf"
+    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" fish-completion > "${dir}/share/fish/vendor_completions.d/buf.fish"
+    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" zsh-completion > "${dir}/share/zsh/site-functions/_buf"
     #"$(uname -s)/$(uname -m)/${1}/bin/buf" manpages "${dir}/share/man/man1"
     cp -R "${DIR}/LICENSE" "${dir}/LICENSE"
   done
@@ -107,6 +104,9 @@ done
 
 for os in Darwin Linux; do
   for arch in x86_64 arm64; do
+    if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
+      arch="aarch64"
+    fi
     dir="${os}/${arch}/${BASE_NAME}"
     tar_context_dir="$(dirname "${dir}")"
     tar_dir="${BASE_NAME}"
