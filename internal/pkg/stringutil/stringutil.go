@@ -163,6 +163,30 @@ func SliceToString(s []string) string {
 	return "[" + strings.Join(s, ",") + "]"
 }
 
+// SliceToHumanString prints the slice as "e1, e2, and e3".
+func SliceToHumanString(s []string) string {
+	switch len(s) {
+	case 0:
+		return ""
+	case 1:
+		return s[0]
+	default:
+		return strings.Join(s[:len(s)-1], ", ") + ", and " + s[len(s)-1]
+	}
+}
+
+// SliceToHumanStringQuoted prints the slice as `"e1", "e2", and "e3"``.
+func SliceToHumanStringQuoted(s []string) string {
+	switch len(s) {
+	case 0:
+		return ""
+	case 1:
+		return `"` + s[0] + `"`
+	default:
+		return `"` + strings.Join(s[:len(s)-1], `", "`) + `", and "` + s[len(s)-1] + `"`
+	}
+}
+
 // SnakeCaseOption is an option for snake_case conversions.
 type SnakeCaseOption func(*snakeCaseOptions)
 

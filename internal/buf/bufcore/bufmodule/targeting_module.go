@@ -88,7 +88,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []File
 				if _, ok := fileInfoPaths[targetPath]; !ok {
 					fileInfoPaths[targetPath] = struct{}{}
 					coreFileInfo := bufcore.NewFileInfoForObjectInfo(objectInfo, false)
-					fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.Module.getModuleReference()))
+					fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.Module.getModuleCommit()))
 				}
 			}
 		}
@@ -129,7 +129,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []File
 				if _, ok := fileInfoPaths[path]; !ok {
 					fileInfoPaths[path] = struct{}{}
 					coreFileInfo := bufcore.NewFileInfoForObjectInfo(objectInfo, false)
-					fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.Module.getModuleReference()))
+					fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.Module.getModuleCommit()))
 				}
 			}
 			return nil

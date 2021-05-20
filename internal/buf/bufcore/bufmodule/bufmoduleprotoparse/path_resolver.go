@@ -27,12 +27,12 @@ import (
 )
 
 type parserAccessorHandler struct {
-	ctx                     context.Context
-	module                  bufmodule.Module
-	pathToExternalPath      map[string]string
-	nonImportPaths          map[string]struct{}
-	pathsToModuleReferences map[string]bufmodule.ModuleReference
-	lock                    sync.RWMutex
+	ctx                  context.Context
+	module               bufmodule.Module
+	pathToExternalPath   map[string]string
+	nonImportPaths       map[string]struct{}
+	pathsToModuleCommits map[string]bufmodule.ModuleCommit
+	lock                 sync.RWMutex
 }
 
 func newParserAccessorHandler(
@@ -40,11 +40,11 @@ func newParserAccessorHandler(
 	module bufmodule.Module,
 ) *parserAccessorHandler {
 	return &parserAccessorHandler{
-		ctx:                     ctx,
-		module:                  module,
-		pathToExternalPath:      make(map[string]string),
-		nonImportPaths:          make(map[string]struct{}),
-		pathsToModuleReferences: make(map[string]bufmodule.ModuleReference),
+		ctx:                  ctx,
+		module:               module,
+		pathToExternalPath:   make(map[string]string),
+		nonImportPaths:       make(map[string]struct{}),
+		pathsToModuleCommits: make(map[string]bufmodule.ModuleCommit),
 	}
 }
 
@@ -79,7 +79,7 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 		path,
 		moduleFile.ExternalPath(),
 		moduleFile.IsImport(),
-		moduleFile.ModuleReference(),
+		moduleFile.ModuleCommit(),
 	); err != nil {
 		return nil, err
 	}
@@ -102,17 +102,17 @@ func (p *parserAccessorHandler) IsImport(path string) bool {
 	return !isNotImport
 }
 
-func (p *parserAccessorHandler) ModuleReference(path string) bufmodule.ModuleReference {
+func (p *parserAccessorHandler) ModuleCommit(path string) bufmodule.ModuleCommit {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	return p.pathsToModuleReferences[path] // nil is a valid value.
+	return p.pathsToModuleCommits[path] // nil is a valid value.
 }
 
 func (p *parserAccessorHandler) addPath(
 	path string,
 	externalPath string,
 	isImport bool,
-	moduleReference bufmodule.ModuleReference,
+	moduleCommit bufmodule.ModuleCommit,
 ) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -127,8 +127,8 @@ func (p *parserAccessorHandler) addPath(
 	if !isImport {
 		p.nonImportPaths[path] = struct{}{}
 	}
-	if moduleReference != nil {
-		p.pathsToModuleReferences[path] = moduleReference
+	if moduleCommit != nil {
+		p.pathsToModuleCommits[path] = moduleCommit
 	}
 	return nil
 }

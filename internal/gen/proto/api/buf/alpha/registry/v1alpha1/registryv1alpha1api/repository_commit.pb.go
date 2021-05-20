@@ -23,13 +23,32 @@ import (
 
 // RepositoryCommitService is the Repository commit service.
 type RepositoryCommitService interface {
-	// ListRepositoryCommits lists the repository commits associated with a repository branch.
-	ListRepositoryCommits(
+	// ListRepositoryCommitsByBranch lists the repository commits associated
+	// with a repository branch on a repository, ordered by their create time.
+	ListRepositoryCommitsByBranch(
 		ctx context.Context,
-		repositoryId string,
+		repositoryOwner string,
+		repositoryName string,
 		repositoryBranchName string,
 		pageSize uint32,
-		pageToken string,
+		pageToken int64,
 		reverse bool,
-	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
+	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken int64, err error)
+	// GetRepositoryCommitByReference returns the repository commit matching
+	// the provided reference, if it exists.
+	GetRepositoryCommitByReference(
+		ctx context.Context,
+		repositoryOwner string,
+		repositoryName string,
+		reference string,
+	) (repositoryCommit *v1alpha1.RepositoryCommit, err error)
+	// GetRepositoryCommitBySequenceID returns the repository commit matching
+	// the provided sequence ID and branch, if it exists.
+	GetRepositoryCommitBySequenceID(
+		ctx context.Context,
+		repositoryOwner string,
+		repositoryName string,
+		repositoryBranchName string,
+		commitSequenceId int64,
+	) (repositoryCommit *v1alpha1.RepositoryCommit, err error)
 }

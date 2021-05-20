@@ -176,6 +176,26 @@ func SortFileAnnotations(fileAnnotations []FileAnnotation) {
 	sort.Stable(sortFileAnnotations(fileAnnotations))
 }
 
+// DeduplicateAndSortFileAnnotations deduplicates the FileAnnotations based on their
+// string representation and sorts them according to the order specified in SortFileAnnotations.
+func DeduplicateAndSortFileAnnotations(fileAnnotations []FileAnnotation) ([]FileAnnotation, error) {
+	deduplicated := make([]FileAnnotation, 0, len(fileAnnotations))
+	seen := make(map[string]struct{}, len(fileAnnotations))
+	for _, fileAnnotation := range fileAnnotations {
+		key, err := hash(fileAnnotation)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		deduplicated = append(deduplicated, fileAnnotation)
+	}
+	SortFileAnnotations(deduplicated)
+	return deduplicated, nil
+}
+
 // PrintFileAnnotations prints the file annotations separated by newlines.
 func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, formatString string) error {
 	format, err := ParseFormat(formatString)
@@ -210,6 +230,18 @@ func FormatFileAnnotation(fileAnnotation FileAnnotation, format Format) (string,
 	default:
 		return "", fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}
+}
+
+// hash returns a hash value that uniquely identifies the given FileAnnotation.
+func hash(fileAnnotation FileAnnotation) (string, error) {
+	if fileAnnotation == nil {
+		return "", nil
+	}
+	bytes, err := json.Marshal(fileAnnotation)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }
 
 type sortFileAnnotations []FileAnnotation

@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufprint"
 	"github.com/bufbuild/buf/internal/buf/buftransport"
 	"github.com/bufbuild/buf/internal/buf/bufwire"
+	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/app"
@@ -328,6 +329,7 @@ func NewWireImageConfigReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	configProvider bufconfig.Provider,
+	workspaceConfigProvider bufwork.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) bufwire.ImageConfigReader {
@@ -336,6 +338,7 @@ func NewWireImageConfigReader(
 		storageosProvider,
 		NewFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
 		configProvider,
+		workspaceConfigProvider,
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
@@ -347,6 +350,7 @@ func NewWireModuleConfigReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	configProvider bufconfig.Provider,
+	workspaceConfigProvider bufwork.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) bufwire.ModuleConfigReader {
@@ -355,6 +359,7 @@ func NewWireModuleConfigReader(
 		storageosProvider,
 		NewFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
 		configProvider,
+		workspaceConfigProvider,
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 	)
 }
@@ -364,6 +369,7 @@ func NewWireFileLister(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	configProvider bufconfig.Provider,
+	workspaceConfigProvider bufwork.Provider,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) bufwire.FileLister {
@@ -371,6 +377,7 @@ func NewWireFileLister(
 		logger,
 		NewFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
 		configProvider,
+		workspaceConfigProvider,
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufimagebuild.NewBuilder(logger),
 	)
@@ -536,6 +543,7 @@ func PromptUserForDelete(container app.Container, entityType string, expectedAns
 }
 
 // ReadModule gets a module from a source ref.
+// Workspaces are disabled for this function.
 func ReadModule(
 	ctx context.Context,
 	container appflag.Container,
@@ -558,6 +566,7 @@ func ReadModule(
 		ctx,
 		container,
 		sourceRef,
+		buffetch.GetSourceBucketWithWorkspacesDisabled(),
 	)
 	if err != nil {
 		return nil, nil, err

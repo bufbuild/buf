@@ -25,6 +25,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufwire"
+	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -268,6 +270,7 @@ func run(
 		return err
 	}
 	configProvider := bufconfig.NewProvider(container.Logger())
+	workspaceConfigProvider := bufwork.NewProvider(container.Logger())
 	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
 	if err != nil {
 		return err
@@ -277,13 +280,14 @@ func run(
 		return err
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	imageConfig, fileAnnotations, err := bufcli.NewWireImageConfigReader(
+	imageConfigs, fileAnnotations, err := bufcli.NewWireImageConfigReader(
 		container.Logger(),
 		storageosProvider,
 		configProvider,
+		workspaceConfigProvider,
 		moduleResolver,
 		moduleReader,
-	).GetImageConfig(
+	).GetImageConfigs(
 		ctx,
 		container,
 		ref,
@@ -305,34 +309,27 @@ func run(
 		}
 		return errors.New("")
 	}
-	image := imageConfig.Image()
-	if flags.ExcludeImports {
-		image = bufimage.ImageWithoutImports(image)
-	}
-
 	// TODO: this doesn't actually work because we're using the same file paths for both sides
 	// if the roots change, then we're torched
 	externalPaths := paths
 	if flags.LimitToInputFiles {
-		files := image.Files()
-		// we know that the file descriptors have unique names from validation
-		externalPaths = make([]string, len(files))
-		for i, file := range files {
-			externalPaths[i] = file.ExternalPath()
+		externalPaths, err = getExternalPathsForImages(imageConfigs, flags.ExcludeImports)
+		if err != nil {
+			return err
 		}
 	}
-
 	againstRef, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, againstInput)
 	if err != nil {
 		return err
 	}
-	againstImageConfig, fileAnnotations, err := bufcli.NewWireImageConfigReader(
+	againstImageConfigs, fileAnnotations, err := bufcli.NewWireImageConfigReader(
 		container.Logger(),
 		storageosProvider,
 		configProvider,
+		workspaceConfigProvider,
 		moduleResolver,
 		moduleReader,
-	).GetImageConfig(
+	).GetImageConfigs(
 		ctx,
 		container,
 		againstRef,
@@ -354,23 +351,38 @@ func run(
 		}
 		return bufcli.ErrFileAnnotation
 	}
-	againstImage := againstImageConfig.Image()
-	if flags.ExcludeImports {
-		againstImage = bufimage.ImageWithoutImports(againstImage)
+	if len(imageConfigs) != len(againstImageConfigs) {
+		// If workspaces are being used as input, the number
+		// of images MUST match. Otherwise the results will
+		// be meaningless and yield false positives.
+		//
+		// And similar to the note above, if the roots change,
+		// we're torched.
+		return fmt.Errorf("input contained %d images, whereas against contained %d images", len(imageConfigs), len(againstImageConfigs))
 	}
-	fileAnnotations, err = bufbreaking.NewHandler(container.Logger()).Check(
-		ctx,
-		imageConfig.Config().Breaking,
-		againstImage,
-		image,
-	)
-	if err != nil {
-		return err
+	var allFileAnnotations []bufanalysis.FileAnnotation
+	for i, imageConfig := range imageConfigs {
+		fileAnnotations, err := breakingForImage(
+			ctx,
+			container,
+			imageConfig,
+			againstImageConfigs[i],
+			flags.ExcludeImports,
+			flags.ErrorFormat,
+		)
+		if err != nil {
+			return err
+		}
+		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
 	}
-	if len(fileAnnotations) > 0 {
+	if len(allFileAnnotations) > 0 {
+		allFileAnnotations, err = bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations)
+		if err != nil {
+			return err
+		}
 		if err := bufanalysis.PrintFileAnnotations(
 			container.Stdout(),
-			fileAnnotations,
+			allFileAnnotations,
 			flags.ErrorFormat,
 		); err != nil {
 			return err
@@ -378,4 +390,42 @@ func run(
 		return bufcli.ErrFileAnnotation
 	}
 	return nil
+}
+
+func breakingForImage(
+	ctx context.Context,
+	container appflag.Container,
+	imageConfig bufwire.ImageConfig,
+	againstImageConfig bufwire.ImageConfig,
+	excludeImports bool,
+	errorFormat string,
+) ([]bufanalysis.FileAnnotation, error) {
+	image := imageConfig.Image()
+	if excludeImports {
+		image = bufimage.ImageWithoutImports(image)
+	}
+	againstImage := againstImageConfig.Image()
+	if excludeImports {
+		againstImage = bufimage.ImageWithoutImports(againstImage)
+	}
+	return bufbreaking.NewHandler(container.Logger()).Check(
+		ctx,
+		imageConfig.Config().Breaking,
+		againstImage,
+		image,
+	)
+}
+
+func getExternalPathsForImages(imageConfigs []bufwire.ImageConfig, excludeImports bool) ([]string, error) {
+	externalPaths := make(map[string]struct{})
+	for _, imageConfig := range imageConfigs {
+		image := imageConfig.Image()
+		if excludeImports {
+			image = bufimage.ImageWithoutImports(image)
+		}
+		for _, imageFile := range image.Files() {
+			externalPaths[imageFile.ExternalPath()] = struct{}{}
+		}
+	}
+	return stringutil.MapToSlice(externalPaths), nil
 }

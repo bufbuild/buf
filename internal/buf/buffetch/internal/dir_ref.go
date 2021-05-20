@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/filepathextended"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 )
 
@@ -45,6 +46,10 @@ func newDirRef(
 	}
 	if strings.Contains(path, "://") {
 		return nil, NewInvalidPathError(format, path)
+	}
+	path, err := filepathextended.RealClean(path)
+	if err != nil {
+		return nil, NewRealCleanPathError(path)
 	}
 	return newDirectDirRef(
 		format,

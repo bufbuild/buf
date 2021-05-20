@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -31,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageutil"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/internal/pkg/tmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -1324,5 +1326,40 @@ func RunTestSuite(
 				"file.proto": testProtoContent,
 			},
 		)
+	})
+	t.Run("is_empty", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+
+		readBucket, _ := newReadBucket(t, oneDirPath, defaultProvider)
+		isEmpty, err := storage.IsEmpty(ctx, readBucket, "")
+		require.NoError(t, err)
+		require.False(t, isEmpty)
+		isEmpty, err = storage.IsEmpty(ctx, readBucket, "root/a")
+		require.NoError(t, err)
+		require.False(t, isEmpty)
+
+		tmpDir, err := tmp.NewDir()
+		require.NoError(t, err)
+		readBucket, _ = newReadBucket(t, tmpDir.AbsPath(), defaultProvider)
+		isEmpty, err = storage.IsEmpty(ctx, readBucket, "")
+		require.NoError(t, err)
+		require.True(t, isEmpty)
+		err = ioutil.WriteFile(filepath.Join(tmpDir.AbsPath(), "foo.txt"), []byte("foo"), 0600)
+		require.NoError(t, err)
+		// need to make a new readBucket since the old one won't necessarily have the foo.txt
+		// file in it, ie in-memory buckets
+		readBucket, _ = newReadBucket(t, tmpDir.AbsPath(), defaultProvider)
+		isEmpty, err = storage.IsEmpty(ctx, readBucket, "")
+		require.NoError(t, err)
+		require.False(t, isEmpty)
+		isEmpty, err = storage.IsEmpty(
+			ctx,
+			storage.MapReadBucket(readBucket, storage.MatchPathExt(".proto")),
+			"",
+		)
+		require.NoError(t, err)
+		require.True(t, isEmpty)
+		require.NoError(t, tmpDir.Close())
 	})
 }

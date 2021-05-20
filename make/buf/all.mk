@@ -27,6 +27,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
 	.vscode/ \
 	internal/buf/cmd/buf/cache/ \
+	internal/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
 	internal/buf/internal/buftesting/cache/ \
 	internal/pkg/storage/storageos/tmp/
 LICENSE_HEADER_LICENSE_TYPE := apache

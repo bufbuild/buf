@@ -22,8 +22,25 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestRealClean(t *testing.T) {
+	t.Parallel()
+	path, err := RealClean("../filepathextended")
+	assert.NoError(t, err)
+	assert.Equal(t, ".", path)
+	path, err = RealClean("../filepathextended/foo")
+	assert.NoError(t, err)
+	assert.Equal(t, "foo", path)
+	path, err = RealClean("/foo")
+	assert.NoError(t, err)
+	assert.Equal(t, "/foo", path)
+	path, err = RealClean("/foo/../bar")
+	assert.NoError(t, err)
+	assert.Equal(t, "/bar", path)
+}
 
 func TestWalkSymlinkSuccessNoSymlinks(t *testing.T) {
 	t.Parallel()

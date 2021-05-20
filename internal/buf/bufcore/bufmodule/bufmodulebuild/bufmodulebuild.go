@@ -28,6 +28,7 @@ type ModuleFileSetBuilder interface {
 	Build(
 		ctx context.Context,
 		module bufmodule.Module,
+		options ...BuildModuleFileSetOption,
 	) (bufmodule.ModuleFileSet, error)
 }
 
@@ -37,6 +38,16 @@ func NewModuleFileSetBuilder(
 	moduleReader bufmodule.ModuleReader,
 ) ModuleFileSetBuilder {
 	return newModuleFileSetBuilder(logger, moduleReader)
+}
+
+// BuildModuleFileSetOption is an option for Build.
+type BuildModuleFileSetOption func(*buildModuleFileSetOptions)
+
+// WithWorkspace returns a new BuildModuleFileSetOption that specifies a workspace.
+func WithWorkspace(workspace bufmodule.Workspace) BuildModuleFileSetOption {
+	return func(buildModuleFileSetOptions *buildModuleFileSetOptions) {
+		buildModuleFileSetOptions.workspace = workspace
+	}
 }
 
 // ModuleBucketBuilder builds modules for buckets.

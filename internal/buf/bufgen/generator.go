@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/osextended"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"golang.org/x/mod/modfile"
@@ -253,7 +254,7 @@ func goPackageModifierFromPluginConfigs(
 // the current working directory and the module root path is also
 // returned, if a go.mod file exists.
 func resolveGoModulePath() (string, string, error) {
-	wd, err := os.Getwd()
+	wd, err := osextended.Getwd()
 	if err != nil {
 		return "", "", err
 	}

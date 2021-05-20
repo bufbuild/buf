@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.opencensus.io/trace"
@@ -47,6 +48,7 @@ func newImageConfigReader(
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
+	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
@@ -64,6 +66,7 @@ func newImageConfigReader(
 			storageosProvider,
 			fetchReader,
 			configProvider,
+			workspaceConfigProvider,
 			moduleBucketBuilder,
 		),
 		imageReader: newImageReader(
@@ -73,7 +76,7 @@ func newImageConfigReader(
 	}
 }
 
-func (i *imageConfigReader) GetImageConfig(
+func (i *imageConfigReader) GetImageConfigs(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	ref buffetch.Ref,
@@ -81,7 +84,7 @@ func (i *imageConfigReader) GetImageConfig(
 	externalDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
-) (ImageConfig, []bufanalysis.FileAnnotation, error) {
+) ([]ImageConfig, []bufanalysis.FileAnnotation, error) {
 	switch t := ref.(type) {
 	case buffetch.ImageRef:
 		env, err := i.getImageImageConfig(
@@ -93,9 +96,9 @@ func (i *imageConfigReader) GetImageConfig(
 			externalDirOrFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
 		)
-		return env, nil, err
+		return []ImageConfig{env}, nil, err
 	case buffetch.SourceRef:
-		return i.GetSourceOrModuleImageConfig(
+		return i.GetSourceOrModuleImageConfigs(
 			ctx,
 			container,
 			t,
@@ -105,7 +108,7 @@ func (i *imageConfigReader) GetImageConfig(
 			excludeSourceCodeInfo,
 		)
 	case buffetch.ModuleRef:
-		return i.GetSourceOrModuleImageConfig(
+		return i.GetSourceOrModuleImageConfigs(
 			ctx,
 			container,
 			t,
@@ -119,7 +122,7 @@ func (i *imageConfigReader) GetImageConfig(
 	}
 }
 
-func (i *imageConfigReader) GetSourceOrModuleImageConfig(
+func (i *imageConfigReader) GetSourceOrModuleImageConfigs(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceOrModuleRef buffetch.SourceOrModuleRef,
@@ -127,8 +130,8 @@ func (i *imageConfigReader) GetSourceOrModuleImageConfig(
 	externalDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
-) (ImageConfig, []bufanalysis.FileAnnotation, error) {
-	moduleConfig, err := i.moduleConfigReader.GetModuleConfig(
+) ([]ImageConfig, []bufanalysis.FileAnnotation, error) {
+	moduleConfigs, err := i.moduleConfigReader.GetModuleConfigs(
 		ctx,
 		container,
 		sourceOrModuleRef,
@@ -139,7 +142,34 @@ func (i *imageConfigReader) GetSourceOrModuleImageConfig(
 	if err != nil {
 		return nil, nil, err
 	}
-	return i.buildModule(ctx, moduleConfig.Module(), moduleConfig.Config(), excludeSourceCodeInfo)
+	imageConfigs := make([]ImageConfig, 0, len(moduleConfigs))
+	var allFileAnnotations []bufanalysis.FileAnnotation
+	for _, moduleConfig := range moduleConfigs {
+		imageConfig, fileAnnotations, err := i.buildModule(
+			ctx,
+			moduleConfig.Module(),
+			moduleConfig.Config(),
+			moduleConfig.Workspace(),
+			excludeSourceCodeInfo,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		if imageConfig != nil {
+			imageConfigs = append(imageConfigs, imageConfig)
+		}
+		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
+	}
+	if len(allFileAnnotations) > 0 {
+		// Deduplicate and sort the file annotations again now that we've
+		// consolidated them across multiple images.
+		deduplicated, err := bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations)
+		if err != nil {
+			return nil, nil, err
+		}
+		return nil, deduplicated, nil
+	}
+	return imageConfigs, nil, nil
 }
 
 func (i *imageConfigReader) getImageImageConfig(
@@ -185,11 +215,12 @@ func (i *imageConfigReader) buildModule(
 	ctx context.Context,
 	module bufmodule.Module,
 	config *bufconfig.Config,
+	workspace bufmodule.Workspace,
 	excludeSourceCodeInfo bool,
 ) (ImageConfig, []bufanalysis.FileAnnotation, error) {
 	ctx, span := trace.StartSpan(ctx, "build_module")
 	defer span.End()
-	moduleFileSet, err := i.moduleFileSetBuilder.Build(ctx, module)
+	moduleFileSet, err := i.moduleFileSetBuilder.Build(ctx, module, bufmodulebuild.WithWorkspace(workspace))
 	if err != nil {
 		return nil, nil, err
 	}

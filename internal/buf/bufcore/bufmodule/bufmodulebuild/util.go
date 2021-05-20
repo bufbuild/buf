@@ -18,10 +18,10 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
 func applyModulePaths(
@@ -71,7 +71,12 @@ func pathToTargetPath(roots []string, path string, pathType normalpath.PathType)
 	switch len(matchingRoots) {
 	case 0:
 		// this is a user error and will likely happen often
-		return "", fmt.Errorf("path %q is not contained within any of roots %q - note that specified paths cannot be roots, but must be contained within roots", path, strings.Join(roots, ", "))
+		return "", fmt.Errorf(
+			"path %q is not contained within any of roots %s - note that specified paths "+
+				"cannot be roots, but must be contained within roots",
+			path,
+			stringutil.SliceToHumanStringQuoted(roots),
+		)
 	case 1:
 		targetPath, err := normalpath.Rel(matchingRoots[0], path)
 		if err != nil {
@@ -81,7 +86,7 @@ func pathToTargetPath(roots []string, path string, pathType normalpath.PathType)
 		return normalpath.NormalizeAndValidate(targetPath)
 	default:
 		// this should never happen
-		return "", fmt.Errorf("%q is contained in multiple roots %q", path, strings.Join(roots, ", "))
+		return "", fmt.Errorf("%q is contained in multiple roots %s", path, stringutil.SliceToHumanStringQuoted(roots))
 	}
 }
 
@@ -152,4 +157,8 @@ func sortAndCheckDuplicatePaths(outputs []string, name string, pathType normalpa
 type buildOptions struct {
 	paths              []string
 	pathsAllowNotExist bool
+}
+
+type buildModuleFileSetOptions struct {
+	workspace bufmodule.Workspace
 }

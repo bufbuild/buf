@@ -16,9 +16,12 @@ package bufimagemodify
 
 import (
 	"context"
+	"path"
+	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/gen/data/datawkt"
+	"github.com/bufbuild/buf/internal/pkg/protoversion"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -90,14 +93,7 @@ func CcEnableArenas(sweeper Sweeper, value bool) Modifier {
 // GoPackage returns a Modifier that sets the go_package file option
 // according to the given importPathPrefix.
 func GoPackage(sweeper Sweeper, importPathPrefix string) (Modifier, error) {
-	return goPackage(sweeper, importPathPrefix, false)
-}
-
-// GoPackage returns a Modifier that sets the go_package file option
-// according to the given pluginSetImportPathPrefix and will automatically
-// insert the correct module owner/name reference on a per-file basis.
-func GoPackageForModuleWithRemoteDependencies(sweeper Sweeper, pluginSetImportPathPrefix string) (Modifier, error) {
-	return goPackage(sweeper, pluginSetImportPathPrefix, true)
+	return goPackage(sweeper, importPathPrefix)
 }
 
 // JavaMultipleFiles returns a Modifier that sets the java_multiple_files
@@ -124,6 +120,25 @@ func JavaPackage(sweeper Sweeper, packagePrefix string) (Modifier, error) {
 // the Image.
 func OptimizeFor(sweeper Sweeper, value descriptorpb.FileOptions_OptimizeMode) Modifier {
 	return optimizeFor(sweeper, value)
+}
+
+// GoPackageImportPathForFile returns the go_package import path for the given
+// ImageFile. If the package contains a version suffix, and if there are more
+// than two components, concatenate the final two components. Otherwise, we
+// exclude the ';' separator and adopt the default behavior from the import path.
+//
+// For example, an ImageFile with `package acme.weather.v1;` will include `;weatherv1`
+// in the `go_package` declaration so that the generated package is named as such.
+func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix string) string {
+	goPackageImportPath := path.Join(importPathPrefix, path.Dir(imageFile.Path()))
+	packageName := imageFile.Proto().GetPackage()
+	if _, ok := protoversion.NewPackageVersionForPackage(packageName); ok {
+		parts := strings.Split(packageName, ".")
+		if len(parts) >= 2 {
+			goPackageImportPath += ";" + parts[len(parts)-2] + parts[len(parts)-1]
+		}
+	}
+	return goPackageImportPath
 }
 
 // isWellKnownType returns true if the given path is one of the well-known types.

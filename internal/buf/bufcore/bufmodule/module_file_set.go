@@ -33,17 +33,17 @@ func newModuleFileSet(
 	module Module,
 	dependencies []Module,
 ) *moduleFileSet {
-	// TODO: We can remove the getModuleReference method on the
+	// TODO: We can remove the getModuleCommit method on the
 	// Module type if we fetch FileInfos from the Module
-	// and plumb in the ModuleReference here.
+	// and plumb in the ModuleCommit here.
 	//
 	// This approach assumes that all of the FileInfos returned
-	// from SourceFileInfos will have their ModuleReference
+	// from SourceFileInfos will have their ModuleCommit
 	// set to the same value. That can be enforced here.
 	moduleReadBuckets := []ReadBucket{
 		NewReadBucket(
 			module.getSourceReadBucket(),
-			module.getModuleReference(),
+			module.getModuleCommit(),
 		),
 	}
 	for _, dependency := range dependencies {
@@ -51,7 +51,7 @@ func newModuleFileSet(
 			moduleReadBuckets,
 			NewReadBucket(
 				dependency.getSourceReadBucket(),
-				dependency.getModuleReference(),
+				dependency.getModuleCommit(),
 			),
 		)
 	}
@@ -72,7 +72,7 @@ func (m *moduleFileSet) AllFileInfos(ctx context.Context) ([]FileInfo, error) {
 			return err
 		}
 		coreFileInfo := bufcore.NewFileInfoForObjectInfo(objectInfo, !isNotImport)
-		fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, objectInfo.ModuleReference()))
+		fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, objectInfo.ModuleCommit()))
 		return nil
 	}); err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (m *moduleFileSet) GetModuleFile(ctx context.Context, path string) (ModuleF
 		return nil, err
 	}
 	coreFileInfo := bufcore.NewFileInfoForObjectInfo(readObjectCloser, !isNotImport)
-	return newModuleFile(NewFileInfo(coreFileInfo, objectInfo.ModuleReference()), readObjectCloser), nil
+	return newModuleFile(NewFileInfo(coreFileInfo, objectInfo.ModuleCommit()), readObjectCloser), nil
 }
 
 func (*moduleFileSet) isModuleFileSet() {}
