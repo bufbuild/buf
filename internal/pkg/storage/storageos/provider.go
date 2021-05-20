@@ -34,7 +34,10 @@ func (p *provider) NewReadWriteBucket(rootPath string, options ...ReadWriteBucke
 		option(readWriteBucketOptions)
 	}
 	// need both options for symlinks to be enabled
-	return newBucket(rootPath, p.symlinks && readWriteBucketOptions.symlinksIfSupported)
+	return newBucket(
+		rootPath,
+		p.symlinks && readWriteBucketOptions.symlinksIfSupported,
+	)
 }
 
 // doing this as a separate struct so that it's clear this is resolved

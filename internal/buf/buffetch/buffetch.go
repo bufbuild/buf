@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
-	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"go.uber.org/zap"
@@ -188,6 +187,12 @@ func NewSourceOrModuleRefParser(logger *zap.Logger) SourceOrModuleRefParser {
 	return newSourceOrModuleRefParser(logger)
 }
 
+// ReadBucketCloser is a bucket returned from GetBucket.
+// We need to surface the internal.ReadBucketCloser
+// interface to other packages, so we use a type
+// declaration to do so.
+type ReadBucketCloser internal.ReadBucketCloser
+
 // ImageReader is an image reader.
 type ImageReader interface {
 	// GetImageFile gets the image file.
@@ -209,7 +214,18 @@ type SourceReader interface {
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		sourceRef SourceRef,
-	) (storage.ReadBucketCloser, error)
+		options ...GetSourceBucketOption,
+	) (ReadBucketCloser, error)
+}
+
+// GetSourceBucketOption is an option for GetSourceBucket.
+type GetSourceBucketOption func(*getSourceBucketOptions)
+
+// GetSourceBucketWithWorkspacesDisabled disables workspace mode.
+func GetSourceBucketWithWorkspacesDisabled() GetSourceBucketOption {
+	return func(o *getSourceBucketOptions) {
+		o.workspacesDisabled = true
+	}
 }
 
 // ModuleFetcher is a module fetcher.
@@ -317,4 +333,8 @@ func NewWriter(
 	return newWriter(
 		logger,
 	)
+}
+
+type getSourceBucketOptions struct {
+	workspacesDisabled bool
 }

@@ -16,11 +16,17 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"io"
 	"sort"
 
 	"go.uber.org/multierr"
 )
+
+// errIsNotEmpty is used to break out of the Walk function early in IsEmpty.
+//
+// If errors.Is(err, errIsNotEmpty), the Walk function found a file.
+var errIsNotEmpty = errors.New("__is_not_empty__")
 
 // ReadPath is analogous to os.ReadFile.
 //
@@ -102,6 +108,25 @@ func Exists(ctx context.Context, readBucket ReadBucket, path string) (bool, erro
 	return true, nil
 }
 
+// IsEmpty returns true if the bucket is empty under the prefix.
+//
+// A prefix of "" or "." will check if the entire bucket is empty.
+func IsEmpty(ctx context.Context, readBucket ReadBucket, prefix string) (bool, error) {
+	if err := readBucket.Walk(
+		ctx,
+		prefix,
+		func(ObjectInfo) error {
+			return errIsNotEmpty
+		},
+	); err != nil {
+		if errors.Is(err, errIsNotEmpty) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 // allObjectInfos walks the bucket and gets all the ObjectInfos.
 func allObjectInfos(ctx context.Context, readBucket ReadBucket, prefix string) ([]ObjectInfo, error) {
 	var allObjectInfos []ObjectInfo
@@ -125,6 +150,7 @@ func pathToObjectInfo(objectInfos []ObjectInfo) map[string]ObjectInfo {
 	}
 	return m
 }
+
 func sortObjectInfos(objectInfos []ObjectInfo) {
 	sort.Slice(
 		objectInfos,

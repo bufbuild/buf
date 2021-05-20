@@ -15,12 +15,12 @@
 package bufmodule
 
 type moduleOptions struct {
-	moduleReference ModuleReference
+	moduleCommit ModuleCommit
 }
 
-// ModuleWithModuleReference is used to construct a Module with a ModuleReference.
-func ModuleWithModuleReference(moduleReference ModuleReference) ModuleOption {
+// ModuleWithModuleCommit is used to construct a Module with a ModuleCommit.
+func ModuleWithModuleCommit(moduleCommit ModuleCommit) ModuleOption {
 	return func(options *moduleOptions) {
-		options.moduleReference = moduleReference
+		options.moduleCommit = moduleCommit
 	}
 }

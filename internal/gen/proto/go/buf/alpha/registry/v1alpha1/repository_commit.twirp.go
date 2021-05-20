@@ -42,8 +42,17 @@ const _ = twirp.TwirpPackageIsVersion7
 
 // RepositoryCommitService is the Repository commit service.
 type RepositoryCommitService interface {
-	// ListRepositoryCommits lists the repository commits associated with a repository branch.
-	ListRepositoryCommits(context.Context, *ListRepositoryCommitsRequest) (*ListRepositoryCommitsResponse, error)
+	// ListRepositoryCommitsByBranch lists the repository commits associated
+	// with a repository branch on a repository, ordered by their create time.
+	ListRepositoryCommitsByBranch(context.Context, *ListRepositoryCommitsByBranchRequest) (*ListRepositoryCommitsByBranchResponse, error)
+
+	// GetRepositoryCommitByReference returns the repository commit matching
+	// the provided reference, if it exists.
+	GetRepositoryCommitByReference(context.Context, *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error)
+
+	// GetRepositoryCommitBySequenceID returns the repository commit matching
+	// the provided sequence ID and branch, if it exists.
+	GetRepositoryCommitBySequenceID(context.Context, *GetRepositoryCommitBySequenceIDRequest) (*GetRepositoryCommitBySequenceIDResponse, error)
 }
 
 // =======================================
@@ -52,7 +61,7 @@ type RepositoryCommitService interface {
 
 type repositoryCommitServiceProtobufClient struct {
 	client      HTTPClient
-	urls        [1]string
+	urls        [3]string
 	interceptor twirp.Interceptor
 	opts        twirp.ClientOptions
 }
@@ -72,8 +81,10 @@ func NewRepositoryCommitServiceProtobufClient(baseURL string, client HTTPClient,
 	// Build method URLs: <baseURL>[<prefix>]/<package>.<Service>/<Method>
 	serviceURL := sanitizeBaseURL(baseURL)
 	serviceURL += baseServicePath(clientOpts.PathPrefix(), "buf.alpha.registry.v1alpha1", "RepositoryCommitService")
-	urls := [1]string{
-		serviceURL + "ListRepositoryCommits",
+	urls := [3]string{
+		serviceURL + "ListRepositoryCommitsByBranch",
+		serviceURL + "GetRepositoryCommitByReference",
+		serviceURL + "GetRepositoryCommitBySequenceID",
 	}
 
 	return &repositoryCommitServiceProtobufClient{
@@ -84,26 +95,26 @@ func NewRepositoryCommitServiceProtobufClient(baseURL string, client HTTPClient,
 	}
 }
 
-func (c *repositoryCommitServiceProtobufClient) ListRepositoryCommits(ctx context.Context, in *ListRepositoryCommitsRequest) (*ListRepositoryCommitsResponse, error) {
+func (c *repositoryCommitServiceProtobufClient) ListRepositoryCommitsByBranch(ctx context.Context, in *ListRepositoryCommitsByBranchRequest) (*ListRepositoryCommitsByBranchResponse, error) {
 	ctx = ctxsetters.WithPackageName(ctx, "buf.alpha.registry.v1alpha1")
 	ctx = ctxsetters.WithServiceName(ctx, "RepositoryCommitService")
-	ctx = ctxsetters.WithMethodName(ctx, "ListRepositoryCommits")
-	caller := c.callListRepositoryCommits
+	ctx = ctxsetters.WithMethodName(ctx, "ListRepositoryCommitsByBranch")
+	caller := c.callListRepositoryCommitsByBranch
 	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *ListRepositoryCommitsRequest) (*ListRepositoryCommitsResponse, error) {
+		caller = func(ctx context.Context, req *ListRepositoryCommitsByBranchRequest) (*ListRepositoryCommitsByBranchResponse, error) {
 			resp, err := c.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*ListRepositoryCommitsRequest)
+					typedReq, ok := req.(*ListRepositoryCommitsByBranchRequest)
 					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*ListRepositoryCommitsRequest) when calling interceptor")
+						return nil, twirp.InternalError("failed type assertion req.(*ListRepositoryCommitsByBranchRequest) when calling interceptor")
 					}
-					return c.callListRepositoryCommits(ctx, typedReq)
+					return c.callListRepositoryCommitsByBranch(ctx, typedReq)
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*ListRepositoryCommitsResponse)
+				typedResp, ok := resp.(*ListRepositoryCommitsByBranchResponse)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*ListRepositoryCommitsResponse) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*ListRepositoryCommitsByBranchResponse) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -113,9 +124,101 @@ func (c *repositoryCommitServiceProtobufClient) ListRepositoryCommits(ctx contex
 	return caller(ctx, in)
 }
 
-func (c *repositoryCommitServiceProtobufClient) callListRepositoryCommits(ctx context.Context, in *ListRepositoryCommitsRequest) (*ListRepositoryCommitsResponse, error) {
-	out := new(ListRepositoryCommitsResponse)
+func (c *repositoryCommitServiceProtobufClient) callListRepositoryCommitsByBranch(ctx context.Context, in *ListRepositoryCommitsByBranchRequest) (*ListRepositoryCommitsByBranchResponse, error) {
+	out := new(ListRepositoryCommitsByBranchResponse)
 	ctx, err := doProtobufRequest(ctx, c.client, c.opts.Hooks, c.urls[0], in, out)
+	if err != nil {
+		twerr, ok := err.(twirp.Error)
+		if !ok {
+			twerr = twirp.InternalErrorWith(err)
+		}
+		callClientError(ctx, c.opts.Hooks, twerr)
+		return nil, err
+	}
+
+	callClientResponseReceived(ctx, c.opts.Hooks)
+
+	return out, nil
+}
+
+func (c *repositoryCommitServiceProtobufClient) GetRepositoryCommitByReference(ctx context.Context, in *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error) {
+	ctx = ctxsetters.WithPackageName(ctx, "buf.alpha.registry.v1alpha1")
+	ctx = ctxsetters.WithServiceName(ctx, "RepositoryCommitService")
+	ctx = ctxsetters.WithMethodName(ctx, "GetRepositoryCommitByReference")
+	caller := c.callGetRepositoryCommitByReference
+	if c.interceptor != nil {
+		caller = func(ctx context.Context, req *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error) {
+			resp, err := c.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*GetRepositoryCommitByReferenceRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*GetRepositoryCommitByReferenceRequest) when calling interceptor")
+					}
+					return c.callGetRepositoryCommitByReference(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*GetRepositoryCommitByReferenceResponse)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*GetRepositoryCommitByReferenceResponse) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+	return caller(ctx, in)
+}
+
+func (c *repositoryCommitServiceProtobufClient) callGetRepositoryCommitByReference(ctx context.Context, in *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error) {
+	out := new(GetRepositoryCommitByReferenceResponse)
+	ctx, err := doProtobufRequest(ctx, c.client, c.opts.Hooks, c.urls[1], in, out)
+	if err != nil {
+		twerr, ok := err.(twirp.Error)
+		if !ok {
+			twerr = twirp.InternalErrorWith(err)
+		}
+		callClientError(ctx, c.opts.Hooks, twerr)
+		return nil, err
+	}
+
+	callClientResponseReceived(ctx, c.opts.Hooks)
+
+	return out, nil
+}
+
+func (c *repositoryCommitServiceProtobufClient) GetRepositoryCommitBySequenceID(ctx context.Context, in *GetRepositoryCommitBySequenceIDRequest) (*GetRepositoryCommitBySequenceIDResponse, error) {
+	ctx = ctxsetters.WithPackageName(ctx, "buf.alpha.registry.v1alpha1")
+	ctx = ctxsetters.WithServiceName(ctx, "RepositoryCommitService")
+	ctx = ctxsetters.WithMethodName(ctx, "GetRepositoryCommitBySequenceID")
+	caller := c.callGetRepositoryCommitBySequenceID
+	if c.interceptor != nil {
+		caller = func(ctx context.Context, req *GetRepositoryCommitBySequenceIDRequest) (*GetRepositoryCommitBySequenceIDResponse, error) {
+			resp, err := c.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*GetRepositoryCommitBySequenceIDRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*GetRepositoryCommitBySequenceIDRequest) when calling interceptor")
+					}
+					return c.callGetRepositoryCommitBySequenceID(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*GetRepositoryCommitBySequenceIDResponse)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*GetRepositoryCommitBySequenceIDResponse) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+	return caller(ctx, in)
+}
+
+func (c *repositoryCommitServiceProtobufClient) callGetRepositoryCommitBySequenceID(ctx context.Context, in *GetRepositoryCommitBySequenceIDRequest) (*GetRepositoryCommitBySequenceIDResponse, error) {
+	out := new(GetRepositoryCommitBySequenceIDResponse)
+	ctx, err := doProtobufRequest(ctx, c.client, c.opts.Hooks, c.urls[2], in, out)
 	if err != nil {
 		twerr, ok := err.(twirp.Error)
 		if !ok {
@@ -136,7 +239,7 @@ func (c *repositoryCommitServiceProtobufClient) callListRepositoryCommits(ctx co
 
 type repositoryCommitServiceJSONClient struct {
 	client      HTTPClient
-	urls        [1]string
+	urls        [3]string
 	interceptor twirp.Interceptor
 	opts        twirp.ClientOptions
 }
@@ -156,8 +259,10 @@ func NewRepositoryCommitServiceJSONClient(baseURL string, client HTTPClient, opt
 	// Build method URLs: <baseURL>[<prefix>]/<package>.<Service>/<Method>
 	serviceURL := sanitizeBaseURL(baseURL)
 	serviceURL += baseServicePath(clientOpts.PathPrefix(), "buf.alpha.registry.v1alpha1", "RepositoryCommitService")
-	urls := [1]string{
-		serviceURL + "ListRepositoryCommits",
+	urls := [3]string{
+		serviceURL + "ListRepositoryCommitsByBranch",
+		serviceURL + "GetRepositoryCommitByReference",
+		serviceURL + "GetRepositoryCommitBySequenceID",
 	}
 
 	return &repositoryCommitServiceJSONClient{
@@ -168,26 +273,26 @@ func NewRepositoryCommitServiceJSONClient(baseURL string, client HTTPClient, opt
 	}
 }
 
-func (c *repositoryCommitServiceJSONClient) ListRepositoryCommits(ctx context.Context, in *ListRepositoryCommitsRequest) (*ListRepositoryCommitsResponse, error) {
+func (c *repositoryCommitServiceJSONClient) ListRepositoryCommitsByBranch(ctx context.Context, in *ListRepositoryCommitsByBranchRequest) (*ListRepositoryCommitsByBranchResponse, error) {
 	ctx = ctxsetters.WithPackageName(ctx, "buf.alpha.registry.v1alpha1")
 	ctx = ctxsetters.WithServiceName(ctx, "RepositoryCommitService")
-	ctx = ctxsetters.WithMethodName(ctx, "ListRepositoryCommits")
-	caller := c.callListRepositoryCommits
+	ctx = ctxsetters.WithMethodName(ctx, "ListRepositoryCommitsByBranch")
+	caller := c.callListRepositoryCommitsByBranch
 	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *ListRepositoryCommitsRequest) (*ListRepositoryCommitsResponse, error) {
+		caller = func(ctx context.Context, req *ListRepositoryCommitsByBranchRequest) (*ListRepositoryCommitsByBranchResponse, error) {
 			resp, err := c.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*ListRepositoryCommitsRequest)
+					typedReq, ok := req.(*ListRepositoryCommitsByBranchRequest)
 					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*ListRepositoryCommitsRequest) when calling interceptor")
+						return nil, twirp.InternalError("failed type assertion req.(*ListRepositoryCommitsByBranchRequest) when calling interceptor")
 					}
-					return c.callListRepositoryCommits(ctx, typedReq)
+					return c.callListRepositoryCommitsByBranch(ctx, typedReq)
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*ListRepositoryCommitsResponse)
+				typedResp, ok := resp.(*ListRepositoryCommitsByBranchResponse)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*ListRepositoryCommitsResponse) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*ListRepositoryCommitsByBranchResponse) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -197,9 +302,101 @@ func (c *repositoryCommitServiceJSONClient) ListRepositoryCommits(ctx context.Co
 	return caller(ctx, in)
 }
 
-func (c *repositoryCommitServiceJSONClient) callListRepositoryCommits(ctx context.Context, in *ListRepositoryCommitsRequest) (*ListRepositoryCommitsResponse, error) {
-	out := new(ListRepositoryCommitsResponse)
+func (c *repositoryCommitServiceJSONClient) callListRepositoryCommitsByBranch(ctx context.Context, in *ListRepositoryCommitsByBranchRequest) (*ListRepositoryCommitsByBranchResponse, error) {
+	out := new(ListRepositoryCommitsByBranchResponse)
 	ctx, err := doJSONRequest(ctx, c.client, c.opts.Hooks, c.urls[0], in, out)
+	if err != nil {
+		twerr, ok := err.(twirp.Error)
+		if !ok {
+			twerr = twirp.InternalErrorWith(err)
+		}
+		callClientError(ctx, c.opts.Hooks, twerr)
+		return nil, err
+	}
+
+	callClientResponseReceived(ctx, c.opts.Hooks)
+
+	return out, nil
+}
+
+func (c *repositoryCommitServiceJSONClient) GetRepositoryCommitByReference(ctx context.Context, in *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error) {
+	ctx = ctxsetters.WithPackageName(ctx, "buf.alpha.registry.v1alpha1")
+	ctx = ctxsetters.WithServiceName(ctx, "RepositoryCommitService")
+	ctx = ctxsetters.WithMethodName(ctx, "GetRepositoryCommitByReference")
+	caller := c.callGetRepositoryCommitByReference
+	if c.interceptor != nil {
+		caller = func(ctx context.Context, req *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error) {
+			resp, err := c.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*GetRepositoryCommitByReferenceRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*GetRepositoryCommitByReferenceRequest) when calling interceptor")
+					}
+					return c.callGetRepositoryCommitByReference(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*GetRepositoryCommitByReferenceResponse)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*GetRepositoryCommitByReferenceResponse) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+	return caller(ctx, in)
+}
+
+func (c *repositoryCommitServiceJSONClient) callGetRepositoryCommitByReference(ctx context.Context, in *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error) {
+	out := new(GetRepositoryCommitByReferenceResponse)
+	ctx, err := doJSONRequest(ctx, c.client, c.opts.Hooks, c.urls[1], in, out)
+	if err != nil {
+		twerr, ok := err.(twirp.Error)
+		if !ok {
+			twerr = twirp.InternalErrorWith(err)
+		}
+		callClientError(ctx, c.opts.Hooks, twerr)
+		return nil, err
+	}
+
+	callClientResponseReceived(ctx, c.opts.Hooks)
+
+	return out, nil
+}
+
+func (c *repositoryCommitServiceJSONClient) GetRepositoryCommitBySequenceID(ctx context.Context, in *GetRepositoryCommitBySequenceIDRequest) (*GetRepositoryCommitBySequenceIDResponse, error) {
+	ctx = ctxsetters.WithPackageName(ctx, "buf.alpha.registry.v1alpha1")
+	ctx = ctxsetters.WithServiceName(ctx, "RepositoryCommitService")
+	ctx = ctxsetters.WithMethodName(ctx, "GetRepositoryCommitBySequenceID")
+	caller := c.callGetRepositoryCommitBySequenceID
+	if c.interceptor != nil {
+		caller = func(ctx context.Context, req *GetRepositoryCommitBySequenceIDRequest) (*GetRepositoryCommitBySequenceIDResponse, error) {
+			resp, err := c.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*GetRepositoryCommitBySequenceIDRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*GetRepositoryCommitBySequenceIDRequest) when calling interceptor")
+					}
+					return c.callGetRepositoryCommitBySequenceID(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*GetRepositoryCommitBySequenceIDResponse)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*GetRepositoryCommitBySequenceIDResponse) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+	return caller(ctx, in)
+}
+
+func (c *repositoryCommitServiceJSONClient) callGetRepositoryCommitBySequenceID(ctx context.Context, in *GetRepositoryCommitBySequenceIDRequest) (*GetRepositoryCommitBySequenceIDResponse, error) {
+	out := new(GetRepositoryCommitBySequenceIDResponse)
+	ctx, err := doJSONRequest(ctx, c.client, c.opts.Hooks, c.urls[2], in, out)
 	if err != nil {
 		twerr, ok := err.(twirp.Error)
 		if !ok {
@@ -298,8 +495,14 @@ func (s *repositoryCommitServiceServer) ServeHTTP(resp http.ResponseWriter, req 
 	}
 
 	switch method {
-	case "ListRepositoryCommits":
-		s.serveListRepositoryCommits(ctx, resp, req)
+	case "ListRepositoryCommitsByBranch":
+		s.serveListRepositoryCommitsByBranch(ctx, resp, req)
+		return
+	case "GetRepositoryCommitByReference":
+		s.serveGetRepositoryCommitByReference(ctx, resp, req)
+		return
+	case "GetRepositoryCommitBySequenceID":
+		s.serveGetRepositoryCommitBySequenceID(ctx, resp, req)
 		return
 	default:
 		msg := fmt.Sprintf("no handler for path %q", req.URL.Path)
@@ -308,7 +511,7 @@ func (s *repositoryCommitServiceServer) ServeHTTP(resp http.ResponseWriter, req 
 	}
 }
 
-func (s *repositoryCommitServiceServer) serveListRepositoryCommits(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+func (s *repositoryCommitServiceServer) serveListRepositoryCommitsByBranch(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
 	header := req.Header.Get("Content-Type")
 	i := strings.Index(header, ";")
 	if i == -1 {
@@ -316,9 +519,9 @@ func (s *repositoryCommitServiceServer) serveListRepositoryCommits(ctx context.C
 	}
 	switch strings.TrimSpace(strings.ToLower(header[:i])) {
 	case "application/json":
-		s.serveListRepositoryCommitsJSON(ctx, resp, req)
+		s.serveListRepositoryCommitsByBranchJSON(ctx, resp, req)
 	case "application/protobuf":
-		s.serveListRepositoryCommitsProtobuf(ctx, resp, req)
+		s.serveListRepositoryCommitsByBranchProtobuf(ctx, resp, req)
 	default:
 		msg := fmt.Sprintf("unexpected Content-Type: %q", req.Header.Get("Content-Type"))
 		twerr := badRouteError(msg, req.Method, req.URL.Path)
@@ -326,38 +529,38 @@ func (s *repositoryCommitServiceServer) serveListRepositoryCommits(ctx context.C
 	}
 }
 
-func (s *repositoryCommitServiceServer) serveListRepositoryCommitsJSON(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+func (s *repositoryCommitServiceServer) serveListRepositoryCommitsByBranchJSON(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
 	var err error
-	ctx = ctxsetters.WithMethodName(ctx, "ListRepositoryCommits")
+	ctx = ctxsetters.WithMethodName(ctx, "ListRepositoryCommitsByBranch")
 	ctx, err = callRequestRouted(ctx, s.hooks)
 	if err != nil {
 		s.writeError(ctx, resp, err)
 		return
 	}
 
-	reqContent := new(ListRepositoryCommitsRequest)
+	reqContent := new(ListRepositoryCommitsByBranchRequest)
 	unmarshaler := jsonpb.Unmarshaler{AllowUnknownFields: true}
 	if err = unmarshaler.Unmarshal(req.Body, reqContent); err != nil {
 		s.writeError(ctx, resp, malformedRequestError("the json request could not be decoded"))
 		return
 	}
 
-	handler := s.RepositoryCommitService.ListRepositoryCommits
+	handler := s.RepositoryCommitService.ListRepositoryCommitsByBranch
 	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *ListRepositoryCommitsRequest) (*ListRepositoryCommitsResponse, error) {
+		handler = func(ctx context.Context, req *ListRepositoryCommitsByBranchRequest) (*ListRepositoryCommitsByBranchResponse, error) {
 			resp, err := s.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*ListRepositoryCommitsRequest)
+					typedReq, ok := req.(*ListRepositoryCommitsByBranchRequest)
 					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*ListRepositoryCommitsRequest) when calling interceptor")
+						return nil, twirp.InternalError("failed type assertion req.(*ListRepositoryCommitsByBranchRequest) when calling interceptor")
 					}
-					return s.RepositoryCommitService.ListRepositoryCommits(ctx, typedReq)
+					return s.RepositoryCommitService.ListRepositoryCommitsByBranch(ctx, typedReq)
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*ListRepositoryCommitsResponse)
+				typedResp, ok := resp.(*ListRepositoryCommitsByBranchResponse)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*ListRepositoryCommitsResponse) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*ListRepositoryCommitsByBranchResponse) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -366,7 +569,7 @@ func (s *repositoryCommitServiceServer) serveListRepositoryCommitsJSON(ctx conte
 	}
 
 	// Call service method
-	var respContent *ListRepositoryCommitsResponse
+	var respContent *ListRepositoryCommitsByBranchResponse
 	func() {
 		defer ensurePanicResponses(ctx, resp, s.hooks)
 		respContent, err = handler(ctx, reqContent)
@@ -377,7 +580,7 @@ func (s *repositoryCommitServiceServer) serveListRepositoryCommitsJSON(ctx conte
 		return
 	}
 	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *ListRepositoryCommitsResponse and nil error while calling ListRepositoryCommits. nil responses are not supported"))
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *ListRepositoryCommitsByBranchResponse and nil error while calling ListRepositoryCommitsByBranch. nil responses are not supported"))
 		return
 	}
 
@@ -404,9 +607,9 @@ func (s *repositoryCommitServiceServer) serveListRepositoryCommitsJSON(ctx conte
 	callResponseSent(ctx, s.hooks)
 }
 
-func (s *repositoryCommitServiceServer) serveListRepositoryCommitsProtobuf(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+func (s *repositoryCommitServiceServer) serveListRepositoryCommitsByBranchProtobuf(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
 	var err error
-	ctx = ctxsetters.WithMethodName(ctx, "ListRepositoryCommits")
+	ctx = ctxsetters.WithMethodName(ctx, "ListRepositoryCommitsByBranch")
 	ctx, err = callRequestRouted(ctx, s.hooks)
 	if err != nil {
 		s.writeError(ctx, resp, err)
@@ -418,28 +621,28 @@ func (s *repositoryCommitServiceServer) serveListRepositoryCommitsProtobuf(ctx c
 		s.writeError(ctx, resp, wrapInternal(err, "failed to read request body"))
 		return
 	}
-	reqContent := new(ListRepositoryCommitsRequest)
+	reqContent := new(ListRepositoryCommitsByBranchRequest)
 	if err = proto.Unmarshal(buf, reqContent); err != nil {
 		s.writeError(ctx, resp, malformedRequestError("the protobuf request could not be decoded"))
 		return
 	}
 
-	handler := s.RepositoryCommitService.ListRepositoryCommits
+	handler := s.RepositoryCommitService.ListRepositoryCommitsByBranch
 	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *ListRepositoryCommitsRequest) (*ListRepositoryCommitsResponse, error) {
+		handler = func(ctx context.Context, req *ListRepositoryCommitsByBranchRequest) (*ListRepositoryCommitsByBranchResponse, error) {
 			resp, err := s.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*ListRepositoryCommitsRequest)
+					typedReq, ok := req.(*ListRepositoryCommitsByBranchRequest)
 					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*ListRepositoryCommitsRequest) when calling interceptor")
+						return nil, twirp.InternalError("failed type assertion req.(*ListRepositoryCommitsByBranchRequest) when calling interceptor")
 					}
-					return s.RepositoryCommitService.ListRepositoryCommits(ctx, typedReq)
+					return s.RepositoryCommitService.ListRepositoryCommitsByBranch(ctx, typedReq)
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*ListRepositoryCommitsResponse)
+				typedResp, ok := resp.(*ListRepositoryCommitsByBranchResponse)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*ListRepositoryCommitsResponse) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*ListRepositoryCommitsByBranchResponse) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -448,7 +651,7 @@ func (s *repositoryCommitServiceServer) serveListRepositoryCommitsProtobuf(ctx c
 	}
 
 	// Call service method
-	var respContent *ListRepositoryCommitsResponse
+	var respContent *ListRepositoryCommitsByBranchResponse
 	func() {
 		defer ensurePanicResponses(ctx, resp, s.hooks)
 		respContent, err = handler(ctx, reqContent)
@@ -459,7 +662,357 @@ func (s *repositoryCommitServiceServer) serveListRepositoryCommitsProtobuf(ctx c
 		return
 	}
 	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *ListRepositoryCommitsResponse and nil error while calling ListRepositoryCommits. nil responses are not supported"))
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *ListRepositoryCommitsByBranchResponse and nil error while calling ListRepositoryCommitsByBranch. nil responses are not supported"))
+		return
+	}
+
+	ctx = callResponsePrepared(ctx, s.hooks)
+
+	respBytes, err := proto.Marshal(respContent)
+	if err != nil {
+		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal proto response"))
+		return
+	}
+
+	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
+	resp.Header().Set("Content-Type", "application/protobuf")
+	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
+	resp.WriteHeader(http.StatusOK)
+	if n, err := resp.Write(respBytes); err != nil {
+		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
+		twerr := twirp.NewError(twirp.Unknown, msg)
+		ctx = callError(ctx, s.hooks, twerr)
+	}
+	callResponseSent(ctx, s.hooks)
+}
+
+func (s *repositoryCommitServiceServer) serveGetRepositoryCommitByReference(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+	header := req.Header.Get("Content-Type")
+	i := strings.Index(header, ";")
+	if i == -1 {
+		i = len(header)
+	}
+	switch strings.TrimSpace(strings.ToLower(header[:i])) {
+	case "application/json":
+		s.serveGetRepositoryCommitByReferenceJSON(ctx, resp, req)
+	case "application/protobuf":
+		s.serveGetRepositoryCommitByReferenceProtobuf(ctx, resp, req)
+	default:
+		msg := fmt.Sprintf("unexpected Content-Type: %q", req.Header.Get("Content-Type"))
+		twerr := badRouteError(msg, req.Method, req.URL.Path)
+		s.writeError(ctx, resp, twerr)
+	}
+}
+
+func (s *repositoryCommitServiceServer) serveGetRepositoryCommitByReferenceJSON(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+	var err error
+	ctx = ctxsetters.WithMethodName(ctx, "GetRepositoryCommitByReference")
+	ctx, err = callRequestRouted(ctx, s.hooks)
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+
+	reqContent := new(GetRepositoryCommitByReferenceRequest)
+	unmarshaler := jsonpb.Unmarshaler{AllowUnknownFields: true}
+	if err = unmarshaler.Unmarshal(req.Body, reqContent); err != nil {
+		s.writeError(ctx, resp, malformedRequestError("the json request could not be decoded"))
+		return
+	}
+
+	handler := s.RepositoryCommitService.GetRepositoryCommitByReference
+	if s.interceptor != nil {
+		handler = func(ctx context.Context, req *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error) {
+			resp, err := s.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*GetRepositoryCommitByReferenceRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*GetRepositoryCommitByReferenceRequest) when calling interceptor")
+					}
+					return s.RepositoryCommitService.GetRepositoryCommitByReference(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*GetRepositoryCommitByReferenceResponse)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*GetRepositoryCommitByReferenceResponse) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+
+	// Call service method
+	var respContent *GetRepositoryCommitByReferenceResponse
+	func() {
+		defer ensurePanicResponses(ctx, resp, s.hooks)
+		respContent, err = handler(ctx, reqContent)
+	}()
+
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+	if respContent == nil {
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *GetRepositoryCommitByReferenceResponse and nil error while calling GetRepositoryCommitByReference. nil responses are not supported"))
+		return
+	}
+
+	ctx = callResponsePrepared(ctx, s.hooks)
+
+	var buf bytes.Buffer
+	marshaler := &jsonpb.Marshaler{OrigName: true, EmitDefaults: !s.jsonSkipDefaults}
+	if err = marshaler.Marshal(&buf, respContent); err != nil {
+		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal json response"))
+		return
+	}
+
+	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
+	respBytes := buf.Bytes()
+	resp.Header().Set("Content-Type", "application/json")
+	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
+	resp.WriteHeader(http.StatusOK)
+
+	if n, err := resp.Write(respBytes); err != nil {
+		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
+		twerr := twirp.NewError(twirp.Unknown, msg)
+		ctx = callError(ctx, s.hooks, twerr)
+	}
+	callResponseSent(ctx, s.hooks)
+}
+
+func (s *repositoryCommitServiceServer) serveGetRepositoryCommitByReferenceProtobuf(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+	var err error
+	ctx = ctxsetters.WithMethodName(ctx, "GetRepositoryCommitByReference")
+	ctx, err = callRequestRouted(ctx, s.hooks)
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+
+	buf, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		s.writeError(ctx, resp, wrapInternal(err, "failed to read request body"))
+		return
+	}
+	reqContent := new(GetRepositoryCommitByReferenceRequest)
+	if err = proto.Unmarshal(buf, reqContent); err != nil {
+		s.writeError(ctx, resp, malformedRequestError("the protobuf request could not be decoded"))
+		return
+	}
+
+	handler := s.RepositoryCommitService.GetRepositoryCommitByReference
+	if s.interceptor != nil {
+		handler = func(ctx context.Context, req *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error) {
+			resp, err := s.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*GetRepositoryCommitByReferenceRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*GetRepositoryCommitByReferenceRequest) when calling interceptor")
+					}
+					return s.RepositoryCommitService.GetRepositoryCommitByReference(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*GetRepositoryCommitByReferenceResponse)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*GetRepositoryCommitByReferenceResponse) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+
+	// Call service method
+	var respContent *GetRepositoryCommitByReferenceResponse
+	func() {
+		defer ensurePanicResponses(ctx, resp, s.hooks)
+		respContent, err = handler(ctx, reqContent)
+	}()
+
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+	if respContent == nil {
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *GetRepositoryCommitByReferenceResponse and nil error while calling GetRepositoryCommitByReference. nil responses are not supported"))
+		return
+	}
+
+	ctx = callResponsePrepared(ctx, s.hooks)
+
+	respBytes, err := proto.Marshal(respContent)
+	if err != nil {
+		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal proto response"))
+		return
+	}
+
+	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
+	resp.Header().Set("Content-Type", "application/protobuf")
+	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
+	resp.WriteHeader(http.StatusOK)
+	if n, err := resp.Write(respBytes); err != nil {
+		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
+		twerr := twirp.NewError(twirp.Unknown, msg)
+		ctx = callError(ctx, s.hooks, twerr)
+	}
+	callResponseSent(ctx, s.hooks)
+}
+
+func (s *repositoryCommitServiceServer) serveGetRepositoryCommitBySequenceID(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+	header := req.Header.Get("Content-Type")
+	i := strings.Index(header, ";")
+	if i == -1 {
+		i = len(header)
+	}
+	switch strings.TrimSpace(strings.ToLower(header[:i])) {
+	case "application/json":
+		s.serveGetRepositoryCommitBySequenceIDJSON(ctx, resp, req)
+	case "application/protobuf":
+		s.serveGetRepositoryCommitBySequenceIDProtobuf(ctx, resp, req)
+	default:
+		msg := fmt.Sprintf("unexpected Content-Type: %q", req.Header.Get("Content-Type"))
+		twerr := badRouteError(msg, req.Method, req.URL.Path)
+		s.writeError(ctx, resp, twerr)
+	}
+}
+
+func (s *repositoryCommitServiceServer) serveGetRepositoryCommitBySequenceIDJSON(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+	var err error
+	ctx = ctxsetters.WithMethodName(ctx, "GetRepositoryCommitBySequenceID")
+	ctx, err = callRequestRouted(ctx, s.hooks)
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+
+	reqContent := new(GetRepositoryCommitBySequenceIDRequest)
+	unmarshaler := jsonpb.Unmarshaler{AllowUnknownFields: true}
+	if err = unmarshaler.Unmarshal(req.Body, reqContent); err != nil {
+		s.writeError(ctx, resp, malformedRequestError("the json request could not be decoded"))
+		return
+	}
+
+	handler := s.RepositoryCommitService.GetRepositoryCommitBySequenceID
+	if s.interceptor != nil {
+		handler = func(ctx context.Context, req *GetRepositoryCommitBySequenceIDRequest) (*GetRepositoryCommitBySequenceIDResponse, error) {
+			resp, err := s.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*GetRepositoryCommitBySequenceIDRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*GetRepositoryCommitBySequenceIDRequest) when calling interceptor")
+					}
+					return s.RepositoryCommitService.GetRepositoryCommitBySequenceID(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*GetRepositoryCommitBySequenceIDResponse)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*GetRepositoryCommitBySequenceIDResponse) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+
+	// Call service method
+	var respContent *GetRepositoryCommitBySequenceIDResponse
+	func() {
+		defer ensurePanicResponses(ctx, resp, s.hooks)
+		respContent, err = handler(ctx, reqContent)
+	}()
+
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+	if respContent == nil {
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *GetRepositoryCommitBySequenceIDResponse and nil error while calling GetRepositoryCommitBySequenceID. nil responses are not supported"))
+		return
+	}
+
+	ctx = callResponsePrepared(ctx, s.hooks)
+
+	var buf bytes.Buffer
+	marshaler := &jsonpb.Marshaler{OrigName: true, EmitDefaults: !s.jsonSkipDefaults}
+	if err = marshaler.Marshal(&buf, respContent); err != nil {
+		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal json response"))
+		return
+	}
+
+	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
+	respBytes := buf.Bytes()
+	resp.Header().Set("Content-Type", "application/json")
+	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
+	resp.WriteHeader(http.StatusOK)
+
+	if n, err := resp.Write(respBytes); err != nil {
+		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
+		twerr := twirp.NewError(twirp.Unknown, msg)
+		ctx = callError(ctx, s.hooks, twerr)
+	}
+	callResponseSent(ctx, s.hooks)
+}
+
+func (s *repositoryCommitServiceServer) serveGetRepositoryCommitBySequenceIDProtobuf(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
+	var err error
+	ctx = ctxsetters.WithMethodName(ctx, "GetRepositoryCommitBySequenceID")
+	ctx, err = callRequestRouted(ctx, s.hooks)
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+
+	buf, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		s.writeError(ctx, resp, wrapInternal(err, "failed to read request body"))
+		return
+	}
+	reqContent := new(GetRepositoryCommitBySequenceIDRequest)
+	if err = proto.Unmarshal(buf, reqContent); err != nil {
+		s.writeError(ctx, resp, malformedRequestError("the protobuf request could not be decoded"))
+		return
+	}
+
+	handler := s.RepositoryCommitService.GetRepositoryCommitBySequenceID
+	if s.interceptor != nil {
+		handler = func(ctx context.Context, req *GetRepositoryCommitBySequenceIDRequest) (*GetRepositoryCommitBySequenceIDResponse, error) {
+			resp, err := s.interceptor(
+				func(ctx context.Context, req interface{}) (interface{}, error) {
+					typedReq, ok := req.(*GetRepositoryCommitBySequenceIDRequest)
+					if !ok {
+						return nil, twirp.InternalError("failed type assertion req.(*GetRepositoryCommitBySequenceIDRequest) when calling interceptor")
+					}
+					return s.RepositoryCommitService.GetRepositoryCommitBySequenceID(ctx, typedReq)
+				},
+			)(ctx, req)
+			if resp != nil {
+				typedResp, ok := resp.(*GetRepositoryCommitBySequenceIDResponse)
+				if !ok {
+					return nil, twirp.InternalError("failed type assertion resp.(*GetRepositoryCommitBySequenceIDResponse) when calling interceptor")
+				}
+				return typedResp, err
+			}
+			return nil, err
+		}
+	}
+
+	// Call service method
+	var respContent *GetRepositoryCommitBySequenceIDResponse
+	func() {
+		defer ensurePanicResponses(ctx, resp, s.hooks)
+		respContent, err = handler(ctx, reqContent)
+	}()
+
+	if err != nil {
+		s.writeError(ctx, resp, err)
+		return
+	}
+	if respContent == nil {
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *GetRepositoryCommitBySequenceIDResponse and nil error while calling GetRepositoryCommitBySequenceID. nil responses are not supported"))
 		return
 	}
 
@@ -499,36 +1052,47 @@ func (s *repositoryCommitServiceServer) PathPrefix() string {
 }
 
 var twirpFileDescriptor5 = []byte{
-	// 486 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x53, 0xcd, 0x6e, 0xd3, 0x4c,
-	0x14, 0xd5, 0xa4, 0xf9, 0xfa, 0xb5, 0x37, 0x84, 0x9f, 0x11, 0x2d, 0x56, 0x4a, 0xd5, 0xc8, 0x48,
-	0x28, 0x1b, 0x66, 0xd4, 0x94, 0x0d, 0x74, 0x17, 0x56, 0x48, 0x08, 0x55, 0x6e, 0x57, 0x15, 0x92,
-	0x35, 0xb6, 0x6f, 0x9c, 0x11, 0xb1, 0xc7, 0xcc, 0x8c, 0x23, 0xda, 0x27, 0x40, 0x62, 0x5b, 0x89,
-	0x27, 0x60, 0xcf, 0x9b, 0xf0, 0x4a, 0xc8, 0xe3, 0xba, 0x89, 0x0c, 0x78, 0xc1, 0xce, 0x73, 0xe6,
-	0x9c, 0x73, 0xcf, 0xbd, 0xd7, 0x03, 0x27, 0x51, 0x39, 0xe7, 0x62, 0x59, 0x2c, 0x04, 0xd7, 0x98,
-	0x4a, 0x63, 0xf5, 0x15, 0x5f, 0x1d, 0x3b, 0xe0, 0x98, 0x6b, 0x2c, 0x94, 0x91, 0x56, 0xe9, 0xab,
-	0x30, 0x56, 0x59, 0x26, 0x2d, 0x2b, 0xb4, 0xb2, 0x8a, 0x1e, 0x44, 0xe5, 0x9c, 0x39, 0x0e, 0x6b,
-	0x44, 0xac, 0x11, 0x8d, 0xc6, 0x6b, 0x47, 0x51, 0xc8, 0xb5, 0x99, 0x28, 0x64, 0x2d, 0x1f, 0x1d,
-	0xa5, 0x4a, 0xa5, 0x4b, 0xe4, 0xee, 0x54, 0xb1, 0xad, 0xcc, 0xd0, 0x58, 0x91, 0x15, 0x35, 0xc1,
-	0xff, 0x4a, 0xe0, 0x61, 0x70, 0x57, 0xfb, 0x8d, 0x2b, 0x4d, 0xef, 0x43, 0x4f, 0x26, 0x1e, 0x19,
-	0x93, 0xc9, 0x6e, 0xd0, 0x93, 0x09, 0x3d, 0x85, 0x41, 0xac, 0x51, 0x58, 0x0c, 0x2b, 0xb9, 0xd7,
-	0x1b, 0x93, 0xc9, 0x60, 0x3a, 0x62, 0xb5, 0x37, 0x6b, 0xbc, 0xd9, 0x45, 0xe3, 0x1d, 0x40, 0x4d,
-	0xaf, 0x00, 0xba, 0x0f, 0xdb, 0x89, 0x4c, 0xd1, 0x58, 0x6f, 0xcb, 0x19, 0xde, 0x9e, 0x28, 0x85,
-	0x7e, 0x2e, 0x32, 0xf4, 0xfa, 0x0e, 0x75, 0xdf, 0xfe, 0x4f, 0x02, 0x4f, 0xdf, 0x49, 0x63, 0xdb,
-	0x89, 0x4c, 0x80, 0x9f, 0xca, 0x4a, 0xf4, 0x0c, 0x86, 0x1b, 0x93, 0xba, 0x0b, 0x79, 0x6f, 0x0d,
-	0xbe, 0x4d, 0xe8, 0x4b, 0xd8, 0xdf, 0x20, 0x45, 0x5a, 0xe4, 0xf1, 0x22, 0x74, 0xb5, 0x7a, 0x8e,
-	0xfd, 0x78, 0x7d, 0x3b, 0x73, 0x97, 0xef, 0x45, 0x86, 0xf4, 0x00, 0x76, 0x0b, 0x91, 0x62, 0x68,
-	0xe4, 0x35, 0xba, 0xa8, 0xc3, 0x60, 0xa7, 0x02, 0xce, 0xe5, 0x35, 0xd2, 0x43, 0x00, 0x77, 0x69,
-	0xd5, 0x47, 0xcc, 0x6f, 0x23, 0x3b, 0xfa, 0x45, 0x05, 0x50, 0x0f, 0xfe, 0xd7, 0xb8, 0x42, 0x6d,
-	0xd0, 0xfb, 0x6f, 0x4c, 0x26, 0x3b, 0x41, 0x73, 0xf4, 0xbf, 0x13, 0x38, 0xfc, 0x4b, 0x47, 0xa6,
-	0x50, 0xb9, 0x41, 0xfa, 0x01, 0xe8, 0x6f, 0xcb, 0x37, 0x1e, 0x19, 0x6f, 0x4d, 0x06, 0xd3, 0x17,
-	0xac, 0x63, 0xfd, 0xac, 0xed, 0x19, 0x3c, 0xd2, 0xed, 0x2a, 0xf4, 0x39, 0x3c, 0xc8, 0xf1, 0xb3,
-	0x0d, 0x37, 0xd2, 0xd7, 0x43, 0x18, 0x56, 0xf0, 0x59, 0xd3, 0xc1, 0xf4, 0x07, 0x81, 0x27, 0x6d,
-	0xbf, 0x73, 0xd4, 0x2b, 0x19, 0x23, 0xbd, 0x21, 0xb0, 0xf7, 0xc7, 0x1e, 0xe8, 0xab, 0xce, 0x7c,
-	0x5d, 0x9b, 0x1c, 0xbd, 0xfe, 0x17, 0x69, 0x3d, 0x32, 0xbf, 0xff, 0xe5, 0x9b, 0x4f, 0x66, 0x37,
-	0x04, 0x8e, 0x62, 0x95, 0x75, 0xf9, 0xcc, 0xf6, 0xda, 0x26, 0x67, 0xd5, 0xcf, 0x7a, 0x79, 0x99,
-	0x4a, 0xbb, 0x28, 0x23, 0x16, 0xab, 0x8c, 0x47, 0xe5, 0x3c, 0x2a, 0xe5, 0x32, 0xa9, 0x3e, 0xb8,
-	0xcc, 0x2d, 0xea, 0x5c, 0x2c, 0x79, 0x8a, 0x79, 0xfd, 0x68, 0x78, 0xaa, 0x78, 0xc7, 0xc3, 0x3d,
-	0x6d, 0x90, 0x06, 0x88, 0xb6, 0x9d, 0xec, 0xe4, 0x57, 0x00, 0x00, 0x00, 0xff, 0xff, 0x3c, 0x66,
-	0x40, 0x0a, 0xef, 0x03, 0x00, 0x00,
+	// 665 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x56, 0xdf, 0x4e, 0x13, 0x4f,
+	0x14, 0xce, 0xb4, 0xfd, 0xf1, 0x83, 0x43, 0x80, 0x32, 0x51, 0xdc, 0x14, 0x91, 0x66, 0x23, 0x50,
+	0x13, 0xdd, 0x0d, 0xe0, 0x1d, 0x57, 0x16, 0x12, 0x63, 0x62, 0x94, 0x2c, 0x5c, 0x11, 0x93, 0xcd,
+	0xee, 0xf6, 0x74, 0x99, 0xd8, 0xfd, 0xe3, 0xec, 0x14, 0x2d, 0xd7, 0x6a, 0x7c, 0x00, 0x13, 0xe3,
+	0x3b, 0x68, 0x48, 0x7c, 0x13, 0xdf, 0xc0, 0x47, 0x31, 0x33, 0xd3, 0xa5, 0xb5, 0x95, 0x2d, 0x4a,
+	0x48, 0xbc, 0xdb, 0xf9, 0xe6, 0x3b, 0xdf, 0x39, 0xe7, 0xdb, 0x73, 0xba, 0x85, 0x6d, 0xbf, 0xdb,
+	0xb6, 0xbd, 0x4e, 0x7a, 0xec, 0xd9, 0x1c, 0x43, 0x96, 0x09, 0xde, 0xb3, 0x4f, 0x36, 0x15, 0xb0,
+	0x69, 0x73, 0x4c, 0x93, 0x8c, 0x89, 0x84, 0xf7, 0xdc, 0x20, 0x89, 0x22, 0x26, 0xac, 0x94, 0x27,
+	0x22, 0xa1, 0xcb, 0x7e, 0xb7, 0x6d, 0x29, 0x8e, 0x95, 0x07, 0x59, 0x79, 0x50, 0xad, 0x3e, 0x50,
+	0xf4, 0x52, 0x36, 0x10, 0xf3, 0x52, 0xa6, 0xc3, 0x6b, 0xab, 0x61, 0x92, 0x84, 0x1d, 0xb4, 0xd5,
+	0x49, 0xb2, 0x05, 0x8b, 0x30, 0x13, 0x5e, 0x94, 0x6a, 0x82, 0xf9, 0x9d, 0x40, 0xd5, 0x39, 0xcf,
+	0xbd, 0xab, 0x52, 0xd3, 0x79, 0x28, 0xb1, 0x96, 0x41, 0xea, 0xa4, 0x31, 0xe3, 0x94, 0x58, 0x8b,
+	0xee, 0xc0, 0x6c, 0xc0, 0xd1, 0x13, 0xe8, 0xca, 0x70, 0xa3, 0x54, 0x27, 0x8d, 0xd9, 0xad, 0x9a,
+	0xa5, 0xb5, 0xad, 0x5c, 0xdb, 0x3a, 0xcc, 0xb5, 0x1d, 0xd0, 0x74, 0x09, 0xd0, 0x25, 0x98, 0x6a,
+	0xb1, 0x10, 0x33, 0x61, 0x94, 0x95, 0x60, 0xff, 0x44, 0x29, 0x54, 0x62, 0x2f, 0x42, 0xa3, 0xa2,
+	0x50, 0xf5, 0x2c, 0xb9, 0x3e, 0xf7, 0xe2, 0xe0, 0xd8, 0xf8, 0x4f, 0x73, 0xf5, 0x89, 0xde, 0x07,
+	0xaa, 0x5d, 0x71, 0x33, 0x7c, 0xd5, 0xc5, 0x38, 0x40, 0x97, 0xb5, 0x8c, 0xa9, 0x3a, 0x69, 0x94,
+	0x9d, 0xaa, 0xbe, 0x39, 0xe8, 0x5f, 0x3c, 0x69, 0x99, 0xef, 0x4b, 0x70, 0xf7, 0x29, 0xcb, 0xc4,
+	0x68, 0x5f, 0x59, 0xb3, 0xd7, 0x54, 0x7a, 0x8e, 0xe4, 0x66, 0x82, 0xde, 0x83, 0xea, 0x90, 0xef,
+	0xc9, 0xeb, 0x18, 0x79, 0xbf, 0xeb, 0x85, 0x01, 0xfe, 0x5c, 0xc2, 0x74, 0x03, 0x86, 0x20, 0x57,
+	0x15, 0x5e, 0x52, 0xcc, 0xf9, 0x01, 0xfc, 0x4c, 0xb6, 0xf0, 0x10, 0x96, 0x86, 0x88, 0xba, 0x7e,
+	0xcd, 0xd7, 0xed, 0xdf, 0x18, 0xdc, 0xea, 0x62, 0x54, 0xd4, 0x32, 0xcc, 0xa4, 0x5e, 0x88, 0x6e,
+	0xc6, 0x4e, 0xb5, 0x23, 0x73, 0xce, 0xb4, 0x04, 0x0e, 0xd8, 0x29, 0xd2, 0x15, 0x00, 0x75, 0x29,
+	0x92, 0x97, 0x18, 0x2b, 0x67, 0xca, 0x8e, 0xa2, 0x1f, 0x4a, 0x80, 0x1a, 0xf0, 0x3f, 0xc7, 0x13,
+	0xe4, 0x19, 0x2a, 0x47, 0xa6, 0x9d, 0xfc, 0x68, 0x7e, 0x25, 0xb0, 0x36, 0xc1, 0x88, 0x2c, 0x4d,
+	0xe2, 0x0c, 0xe9, 0x0b, 0xa0, 0x63, 0x13, 0x98, 0x19, 0xa4, 0x5e, 0x6e, 0xcc, 0x6e, 0x3d, 0xb0,
+	0x0a, 0x66, 0xd0, 0x1a, 0xd5, 0x76, 0x16, 0xf9, 0x68, 0x36, 0xba, 0x0e, 0x0b, 0x31, 0xbe, 0x11,
+	0xee, 0x50, 0x17, 0x25, 0xd5, 0xc5, 0x9c, 0x84, 0xf7, 0xf3, 0x4e, 0xcc, 0xcf, 0x04, 0xd6, 0x1e,
+	0xe3, 0x58, 0xb9, 0xcd, 0x9e, 0x83, 0x6d, 0xe4, 0xf2, 0xed, 0x5e, 0xe7, 0x9b, 0xbb, 0x0d, 0x33,
+	0x3c, 0xcf, 0xd3, 0x7f, 0x59, 0x03, 0xc0, 0x7c, 0x4b, 0x60, 0x7d, 0x52, 0x6d, 0x7d, 0x33, 0x8f,
+	0x60, 0x71, 0xcc, 0x4c, 0x55, 0xdd, 0x1f, 0x7b, 0x59, 0x1d, 0xf5, 0xd2, 0xfc, 0x71, 0x51, 0x19,
+	0xe7, 0xf3, 0xbf, 0xf7, 0xef, 0x4d, 0xf7, 0xef, 0xd7, 0xb7, 0x72, 0xc1, 0xfa, 0xbe, 0x23, 0xb0,
+	0x31, 0xb1, 0xc5, 0xeb, 0xb7, 0x7a, 0xeb, 0xac, 0x02, 0xb7, 0x46, 0x69, 0x07, 0xc8, 0x4f, 0x58,
+	0x80, 0xf4, 0x0b, 0x81, 0x95, 0xc2, 0xcd, 0xa2, 0x8f, 0x0a, 0xd3, 0x5f, 0xe6, 0xe7, 0xa9, 0xd6,
+	0xbc, 0x8a, 0x84, 0x36, 0xc8, 0xac, 0x7c, 0xf8, 0x64, 0x12, 0x7a, 0x46, 0xe0, 0x4e, 0xf1, 0xf0,
+	0xd2, 0xe2, 0x64, 0x97, 0xda, 0xca, 0xda, 0xee, 0x95, 0x34, 0x7e, 0xa9, 0xf8, 0x1b, 0x81, 0xd5,
+	0x09, 0x43, 0x40, 0xff, 0x22, 0xdd, 0xd8, 0x96, 0xd4, 0xf6, 0xae, 0x26, 0x32, 0x5c, 0x74, 0xf3,
+	0x23, 0x81, 0xd5, 0x20, 0x89, 0x8a, 0x14, 0x9b, 0x37, 0x47, 0xf5, 0xf6, 0xe5, 0xe7, 0xf3, 0xe8,
+	0x28, 0x64, 0xe2, 0xb8, 0xeb, 0x5b, 0x41, 0x12, 0xd9, 0x7e, 0xb7, 0xed, 0x77, 0x59, 0xa7, 0x25,
+	0x1f, 0x6c, 0x16, 0x0b, 0xe4, 0xb1, 0xd7, 0xb1, 0x43, 0x8c, 0xf5, 0x67, 0xdc, 0x0e, 0x13, 0xbb,
+	0xe0, 0xaf, 0xc4, 0x4e, 0x8e, 0xe4, 0x80, 0x3f, 0xa5, 0xc2, 0xb6, 0x7f, 0x06, 0x00, 0x00, 0xff,
+	0xff, 0xcb, 0xd6, 0x70, 0xa4, 0x81, 0x08, 0x00, 0x00,
 }

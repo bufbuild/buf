@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -94,17 +95,17 @@ func testGetModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet 
 		dirPath,
 	)
 	require.NoError(t, err)
-	moduleReference, err := bufmodule.NewModuleReference(
+	moduleCommit, err := bufmodule.NewModuleCommit(
 		"modulerepo.internal",
 		testRepositoryOwner,
 		testRepositoryName,
-		"reference",
+		bufmoduletesting.TestCommit,
 	)
 	require.NoError(t, err)
 	module, err := bufmodule.NewModuleForBucket(
 		context.Background(),
 		readWriteBucket,
-		bufmodule.ModuleWithModuleReference(moduleReference),
+		bufmodule.ModuleWithModuleCommit(moduleCommit),
 	)
 	require.NoError(t, err)
 	moduleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(

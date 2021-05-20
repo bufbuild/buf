@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/ioextended"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/osextended"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
@@ -110,7 +111,7 @@ func (r *reader) GetBucket(
 	container app.EnvStdinContainer,
 	bucketRef BucketRef,
 	options ...GetBucketOption,
-) (storage.ReadBucketCloser, error) {
+) (ReadBucketCloser, error) {
 	getBucketOptions := newGetBucketOptions()
 	for _, option := range options {
 		option(getBucketOptions)
@@ -121,18 +122,21 @@ func (r *reader) GetBucket(
 			ctx,
 			container,
 			t,
+			getBucketOptions.terminateFileName,
 		)
 	case DirRef:
 		return r.getDirBucket(
 			ctx,
 			container,
 			t,
+			getBucketOptions.terminateFileName,
 		)
 	case GitRef:
 		return r.getGitBucket(
 			ctx,
 			container,
 			t,
+			getBucketOptions.terminateFileName,
 		)
 	default:
 		return nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
@@ -181,7 +185,12 @@ func (r *reader) getArchiveBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
-) (_ storage.ReadBucketCloser, retErr error) {
+	terminateFileName string,
+) (_ ReadBucketCloser, retErr error) {
+	subDirPath, err := normalpath.NormalizeAndValidate(archiveRef.SubDirPath())
+	if err != nil {
+		return nil, err
+	}
 	readCloser, size, err := r.getFileReadCloserAndSize(ctx, container, archiveRef, false)
 	if err != nil {
 		return nil, err
@@ -190,10 +199,6 @@ func (r *reader) getArchiveBucket(
 		retErr = multierr.Append(retErr, readCloser.Close())
 	}()
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
-	var mapper storage.Mapper
-	if archiveRef.SubDirPath() != "" {
-		mapper = storage.MapOnPrefix(archiveRef.SubDirPath())
-	}
 	ctx, span := trace.StartSpan(ctx, "unarchive")
 	defer span.End()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
@@ -202,7 +207,7 @@ func (r *reader) getArchiveBucket(
 			ctx,
 			readCloser,
 			readBucketBuilder,
-			mapper,
+			nil,
 			archiveRef.StripComponents(),
 		); err != nil {
 			return nil, err
@@ -227,7 +232,7 @@ func (r *reader) getArchiveBucket(
 			readerAt,
 			size,
 			readBucketBuilder,
-			mapper,
+			nil,
 			archiveRef.StripComponents(),
 		); err != nil {
 			return nil, err
@@ -239,16 +244,95 @@ func (r *reader) getArchiveBucket(
 	if err != nil {
 		return nil, err
 	}
-	return storage.NopReadBucketCloser(readBucket), nil
+	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readBucket, subDirPath, terminateFileName)
+	if err != nil {
+		return nil, err
+	}
+	if terminateFileDirectoryPath != "" {
+		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
+		if err != nil {
+			return nil, err
+		}
+		return newReadBucketCloser(
+			storage.NopReadBucketCloser(storage.MapReadBucket(readBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
+			terminateFileDirectoryPath,
+			relativeSubDirPath,
+		)
+	}
+	if subDirPath != "." {
+		readBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
+	}
+	return newReadBucketCloser(
+		storage.NopReadBucketCloser(readBucket),
+		"",
+		"",
+	)
 }
 
 func (r *reader) getDirBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
-) (storage.ReadBucketCloser, error) {
+	terminateFileName string,
+) (ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
+	}
+	terminateFileDirectoryAbsPath, err := findTerminateFileDirectoryPathFromOS(dirRef.Path(), terminateFileName)
+	if err != nil {
+		return nil, err
+	}
+	if terminateFileDirectoryAbsPath != "" {
+		// If the terminate file exists, we need to determine the relative path from the
+		// terminateFileDirectoryAbsPath to the target DirRef.Path.
+		wd, err := osextended.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		terminateFileRelativePath, err := normalpath.Rel(wd, terminateFileDirectoryAbsPath)
+		if err != nil {
+			return nil, err
+		}
+		dirRefAbsPath, err := normalpath.NormalizeAndAbsolute(dirRef.Path())
+		if err != nil {
+			return nil, err
+		}
+		dirRefRelativePath, err := normalpath.Rel(terminateFileDirectoryAbsPath, dirRefAbsPath)
+		if err != nil {
+			return nil, err
+		}
+		// It should be impossible for the dirRefRelativePath to be outside of the context
+		// diretory, but we validate just to make sure.
+		dirRefRelativePath, err = normalpath.NormalizeAndValidate(dirRefRelativePath)
+		if err != nil {
+			return nil, err
+		}
+		rootPath := terminateFileRelativePath
+		if filepath.IsAbs(dirRef.Path()) {
+			// If the input was provided as an absolute path,
+			// we preserve it by initializing the workspace
+			// bucket with an absolute path.
+			rootPath = terminateFileDirectoryAbsPath
+		}
+		readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
+			rootPath,
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		if err != nil {
+			return nil, err
+		}
+		// Verify that the subDirPath exists too.
+		if _, err := r.storageosProvider.NewReadWriteBucket(
+			normalpath.Join(rootPath, dirRefRelativePath),
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		); err != nil {
+			return nil, err
+		}
+		return newReadBucketCloser(
+			storage.NopReadBucketCloser(readWriteBucket),
+			rootPath,
+			dirRefRelativePath,
+		)
 	}
 	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
 		dirRef.Path(),
@@ -257,29 +341,34 @@ func (r *reader) getDirBucket(
 	if err != nil {
 		return nil, err
 	}
-	return storage.NopReadBucketCloser(readWriteBucket), nil
+	return newReadBucketCloser(
+		storage.NopReadBucketCloser(readWriteBucket),
+		"",
+		"",
+	)
 }
 
 func (r *reader) getGitBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	gitRef GitRef,
-) (_ storage.ReadBucketCloser, retErr error) {
+	terminateFileName string,
+) (_ ReadBucketCloser, retErr error) {
 	if !r.gitEnabled {
 		return nil, NewReadGitDisabledError()
 	}
 	if r.gitCloner == nil {
 		return nil, errors.New("git cloner is nil")
 	}
+	subDirPath, err := normalpath.NormalizeAndValidate(gitRef.SubDirPath())
+	if err != nil {
+		return nil, err
+	}
 	gitURL, err := getGitURL(gitRef)
 	if err != nil {
 		return nil, err
 	}
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
-	var mapper storage.Mapper
-	if gitRef.SubDirPath() != "" {
-		mapper = storage.MapOnPrefix(gitRef.SubDirPath())
-	}
 	if err := r.gitCloner.CloneToBucket(
 		ctx,
 		container,
@@ -289,7 +378,6 @@ func (r *reader) getGitBucket(
 		git.CloneToBucketOptions{
 			Name:              gitRef.GitName(),
 			RecurseSubmodules: gitRef.RecurseSubmodules(),
-			Mapper:            mapper,
 		},
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
@@ -298,7 +386,29 @@ func (r *reader) getGitBucket(
 	if err != nil {
 		return nil, err
 	}
-	return storage.NopReadBucketCloser(readBucket), nil
+	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readBucket, subDirPath, terminateFileName)
+	if err != nil {
+		return nil, err
+	}
+	if terminateFileDirectoryPath != "" {
+		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
+		if err != nil {
+			return nil, err
+		}
+		return newReadBucketCloser(
+			storage.NopReadBucketCloser(storage.MapReadBucket(readBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
+			terminateFileDirectoryPath,
+			relativeSubDirPath,
+		)
+	}
+	if subDirPath != "." {
+		readBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
+	}
+	return newReadBucketCloser(
+		storage.NopReadBucketCloser(readBucket),
+		"",
+		"",
+	)
 }
 
 func (r *reader) getModule(
@@ -472,6 +582,72 @@ func getGitURL(gitRef GitRef) (string, error) {
 	}
 }
 
+// findTerminateFileDirectoryPathFromBucket returns the directory path that contains
+// the terminateFileName, starting with the subDirPath and ascending until the root
+// of the bucket.
+func findTerminateFileDirectoryPathFromBucket(
+	ctx context.Context,
+	readBucket storage.ReadBucket,
+	subDirPath string,
+	terminateFileName string,
+) (string, error) {
+	if terminateFileName == "" {
+		return "", nil
+	}
+	terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
+	for {
+		exists, err := storage.Exists(ctx, readBucket, normalpath.Join(terminateFileDirectoryPath, terminateFileName))
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return terminateFileDirectoryPath, nil
+		}
+		parent := normalpath.Dir(terminateFileDirectoryPath)
+		if parent == terminateFileDirectoryPath {
+			return "", nil
+		}
+		terminateFileDirectoryPath = parent
+	}
+}
+
+// findTerminateFileDirectoryPathFromOS returns the directory that contains
+// the terminateFileName, starting with the subDirPath and ascending until
+// the root of the local filesysem.
+func findTerminateFileDirectoryPathFromOS(subDirPath string, terminateFileName string) (string, error) {
+	if terminateFileName == "" {
+		return "", nil
+	}
+	fileInfo, err := os.Stat(normalpath.Unnormalize(subDirPath))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", storage.NewErrNotExist(subDirPath)
+		}
+		return "", err
+	}
+	if !fileInfo.IsDir() {
+		return "", normalpath.NewError(subDirPath, errors.New("not a directory"))
+	}
+	terminateFileDirectoryPath, err := normalpath.NormalizeAndAbsolute(subDirPath)
+	if err != nil {
+		return "", err
+	}
+	for {
+		fileInfo, err := os.Stat(normalpath.Unnormalize(normalpath.Join(terminateFileDirectoryPath, terminateFileName)))
+		if err != nil && !os.IsNotExist(err) {
+			return "", err
+		}
+		if fileInfo != nil && !fileInfo.IsDir() {
+			return terminateFileDirectoryPath, nil
+		}
+		parent := normalpath.Dir(terminateFileDirectoryPath)
+		if parent == terminateFileDirectoryPath {
+			return "", nil
+		}
+		terminateFileDirectoryPath = parent
+	}
+}
+
 type getFileOptions struct {
 	keepFileCompression bool
 }
@@ -480,7 +656,9 @@ func newGetFileOptions() *getFileOptions {
 	return &getFileOptions{}
 }
 
-type getBucketOptions struct{}
+type getBucketOptions struct {
+	terminateFileName string
+}
 
 func newGetBucketOptions() *getBucketOptions {
 	return &getBucketOptions{}

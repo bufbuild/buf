@@ -22,21 +22,21 @@ import (
 type objectInfo struct {
 	storage.ObjectInfo
 
-	moduleReference ModuleReference
+	moduleCommit ModuleCommit
 }
 
 // newObjectInfo returns a new ObjectInfo.
 func newObjectInfo(
 	storageObjectInfo storage.ObjectInfo,
-	moduleReference ModuleReference,
+	moduleCommit ModuleCommit,
 ) *objectInfo {
 	return &objectInfo{
-		ObjectInfo:      storageObjectInfo,
-		moduleReference: moduleReference,
+		ObjectInfo:   storageObjectInfo,
+		moduleCommit: moduleCommit,
 	}
 }
 
-// ModuleReference returns this object's ModuleReference, if any.
-func (o *objectInfo) ModuleReference() ModuleReference {
-	return o.moduleReference
+// ModuleCommit returns this object's ModuleCommit, if any.
+func (o *objectInfo) ModuleCommit() ModuleCommit {
+	return o.moduleCommit
 }

@@ -58,16 +58,16 @@ func (m *moduleCacher) GetModule(
 	if !exists {
 		return nil, multierr.Append(storage.NewErrNotExist(modulePath), unlocker.Unlock())
 	}
-	moduleReference, err := bufmodule.NewModuleReference(
+	moduleCommit, err := bufmodule.NewModuleCommit(
 		modulePin.Remote(),
 		modulePin.Owner(),
 		modulePin.Repository(),
-		modulePin.Commit(), // TODO: When a reference is resolved from a pin, we use the commit. A ModuleReferenceToModulePin mapper would be helpful.
+		modulePin.Commit(),
 	)
 	if err != nil {
 		return nil, err
 	}
-	module, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket, bufmodule.ModuleWithModuleReference(moduleReference))
+	module, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket, bufmodule.ModuleWithModuleCommit(moduleCommit))
 	if err != nil {
 		return nil, multierr.Append(err, unlocker.Unlock())
 	}

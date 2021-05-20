@@ -31,34 +31,27 @@ import (
 var errNotDir = errors.New("not a directory")
 
 type bucket struct {
-	rootPath string
-	symlinks bool
+	rootPath         string
+	absoluteRootPath string
+	symlinks         bool
 }
 
 func newBucket(rootPath string, symlinks bool) (*bucket, error) {
 	rootPath = normalpath.Unnormalize(rootPath)
-	var fileInfo os.FileInfo
-	var err error
-	if symlinks {
-		fileInfo, err = os.Stat(rootPath)
-	} else {
-		fileInfo, err = os.Lstat(rootPath)
-	}
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, storage.NewErrNotExist(rootPath)
-		}
+	if err := validateDirPathExists(rootPath, symlinks); err != nil {
 		return nil, err
 	}
-	if !fileInfo.IsDir() {
-		return nil, newErrNotDir(rootPath)
+	absoluteRootPath, err := filepath.Abs(rootPath)
+	if err != nil {
+		return nil, err
 	}
 	// do not validate - allow anything with OS buckets including
 	// absolute paths and jumping context
 	rootPath = normalpath.Normalize(rootPath)
 	return &bucket{
-		rootPath: rootPath,
-		symlinks: symlinks,
+		rootPath:         rootPath,
+		absoluteRootPath: absoluteRootPath,
+		symlinks:         symlinks,
 	}, nil
 }
 
@@ -132,8 +125,12 @@ func (b *bucket) Walk(
 			if err := walkChecker.Check(ctx); err != nil {
 				return err
 			}
+			absoluteExternalPath, err := filepath.Abs(externalPath)
+			if err != nil {
+				return err
+			}
 			if fileInfo.Mode().IsRegular() {
-				path, err := normalpath.Rel(b.rootPath, normalpath.Normalize(externalPath))
+				path, err := normalpath.Rel(b.absoluteRootPath, absoluteExternalPath)
 				if err != nil {
 					return err
 				}
@@ -237,8 +234,11 @@ func (b *bucket) getExternalPath(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// Join calls clean
-	return normalpath.Unnormalize(normalpath.Join(b.rootPath, path)), nil
+	realClean, err := filepathextended.RealClean(normalpath.Join(b.rootPath, path))
+	if err != nil {
+		return "", err
+	}
+	return normalpath.Unnormalize(realClean), nil
 }
 
 func (b *bucket) validateExternalPath(path string, externalPath string) error {
@@ -271,8 +271,11 @@ func (b *bucket) getExternalPrefix(prefix string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// Join calls clean
-	return normalpath.Unnormalize(normalpath.Join(b.rootPath, prefix)), nil
+	realClean, err := filepathextended.RealClean(normalpath.Join(b.rootPath, prefix))
+	if err != nil {
+		return "", err
+	}
+	return normalpath.Unnormalize(realClean), nil
 }
 
 type readObjectCloser struct {
@@ -343,4 +346,26 @@ func toStorageError(err error) error {
 		return storage.ErrClosed
 	}
 	return err
+}
+
+// validateDirPathExists returns a non-nil error if the given dirPath
+// is not a valid directory path.
+func validateDirPathExists(dirPath string, symlinks bool) error {
+	var fileInfo os.FileInfo
+	var err error
+	if symlinks {
+		fileInfo, err = os.Stat(dirPath)
+	} else {
+		fileInfo, err = os.Lstat(dirPath)
+	}
+	if err != nil {
+		if os.IsNotExist(err) {
+			return storage.NewErrNotExist(dirPath)
+		}
+		return err
+	}
+	if !fileInfo.IsDir() {
+		return newErrNotDir(dirPath)
+	}
+	return nil
 }

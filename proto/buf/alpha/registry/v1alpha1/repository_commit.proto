@@ -30,29 +30,76 @@ message RepositoryCommit {
   // This is what is referenced by users.
   // Unique, immutable.
   string name = 4;
+  // The branch on which this commit was created.
+  string branch = 5;
+  // The commit sequence ID for this commit. This
+  // is essentially what number commit this is on
+  // the branch.
+  int64 commit_sequence_id = 6;
 }
 
 // RepositoryCommitService is the Repository commit service.
 service RepositoryCommitService {
-  // ListRepositoryCommits lists the repository commits associated with a repository branch.
-  rpc ListRepositoryCommits(ListRepositoryCommitsRequest) returns (ListRepositoryCommitsResponse) {
+  // ListRepositoryCommitsByBranch lists the repository commits associated
+  // with a repository branch on a repository, ordered by their create time.
+  rpc ListRepositoryCommitsByBranch(ListRepositoryCommitsByBranchRequest) returns (ListRepositoryCommitsByBranchResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // GetRepositoryCommitByReference returns the repository commit matching
+  // the provided reference, if it exists.
+  rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse) {
+    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
+  }
+  // GetRepositoryCommitBySequenceID returns the repository commit matching
+  // the provided sequence ID and branch, if it exists.
+  rpc GetRepositoryCommitBySequenceID(GetRepositoryCommitBySequenceIDRequest) returns (GetRepositoryCommitBySequenceIDResponse) {
     option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
   }
 }
 
-message ListRepositoryCommitsRequest {
-  // The id of the repository which the repository branch belongs to.
-  string repository_id = 1;
+message ListRepositoryCommitsByBranchRequest {
+  // The owner of the repository which the repository branch belongs to.
+  string repository_owner = 1;
+  // The name of the repository which the repository branch belongs to.
+  string repository_name = 2;
   // The name of the repository branch whose commits should be listed.
-  string repository_branch_name = 2;
-  uint32 page_size = 3;
-  // The first page is returned if this is empty.
-  string page_token = 4;
-  bool reverse = 5;
+  string repository_branch_name = 3;
+  uint32 page_size = 4;
+  // The first page is returned if this is 0.
+  int64 page_token = 5;
+  bool reverse = 6;
 }
 
-message ListRepositoryCommitsResponse {
+message ListRepositoryCommitsByBranchResponse {
   repeated RepositoryCommit repository_commits = 1;
-  // There are no more pages if this is empty.
-  string next_page_token = 2;
+  // There are no more pages if this is 0.
+  int64 next_page_token = 2;
+}
+
+message GetRepositoryCommitByReferenceRequest {
+  // The owner of the repository which the repository branch belongs to.
+  string repository_owner = 1;
+  // The name of the repository which the repository branch belongs to.
+  string repository_name = 2;
+  // The reference that should be resolved to a commit. Can be a branch, tag or commit.
+  string reference = 3;
+}
+
+message GetRepositoryCommitByReferenceResponse {
+  RepositoryCommit repository_commit = 1;
+}
+
+message GetRepositoryCommitBySequenceIDRequest {
+  // The owner of the repository which the repository branch belongs to.
+  string repository_owner = 1;
+  // The name of the repository which the repository branch belongs to.
+  string repository_name = 2;
+  // The name of the repository branch which the sequence ID is relative to.
+  string repository_branch_name = 3;
+  // The sequence ID to look up.
+  int64 commit_sequence_id = 4;
+}
+
+message GetRepositoryCommitBySequenceIDResponse {
+  RepositoryCommit repository_commit = 1;
 }

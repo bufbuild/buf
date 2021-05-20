@@ -21,8 +21,10 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufgen"
+	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -302,13 +304,14 @@ func run(
 		return err
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	imageConfig, fileAnnotations, err := bufcli.NewWireImageConfigReader(
+	imageConfigs, fileAnnotations, err := bufcli.NewWireImageConfigReader(
 		logger,
 		storageosProvider,
 		bufconfig.NewProvider(logger),
+		bufwork.NewProvider(logger),
 		moduleResolver,
 		moduleReader,
-	).GetImageConfig(
+	).GetImageConfigs(
 		ctx,
 		container,
 		ref,
@@ -326,11 +329,19 @@ func run(
 		}
 		return bufcli.ErrFileAnnotation
 	}
+	images := make([]bufimage.Image, 0, len(imageConfigs))
+	for _, imageConfig := range imageConfigs {
+		images = append(images, imageConfig.Image())
+	}
+	image, err := bufimage.MergeImages(images...)
+	if err != nil {
+		return err
+	}
 	return bufgen.NewGenerator(logger, storageosProvider).Generate(
 		ctx,
 		container,
 		genConfig,
-		imageConfig.Image(),
+		image,
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
 	)
 }

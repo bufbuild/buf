@@ -141,6 +141,11 @@ func NewInvalidPathError(format string, path string) error {
 	return fmt.Errorf("invalid %spath: %q", format, path)
 }
 
+// NewRealCleanPathError is a fetch error.
+func NewRealCleanPathError(path string) error {
+	return fmt.Errorf("could not clean relative path %q", path)
+}
+
 // NewFormatUnknownError is a fetch error.
 func NewFormatUnknownError(formatString string) error {
 	return fmt.Errorf("unknown format: %q", formatString)

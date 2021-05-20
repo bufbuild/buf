@@ -38,12 +38,48 @@ func newModuleFileSetBuilder(
 func (m *moduleFileSetBuilder) Build(
 	ctx context.Context,
 	module bufmodule.Module,
+	options ...BuildModuleFileSetOption,
+) (bufmodule.ModuleFileSet, error) {
+	buildModuleFileSetOptions := &buildModuleFileSetOptions{}
+	for _, option := range options {
+		option(buildModuleFileSetOptions)
+	}
+	return m.build(
+		ctx,
+		module,
+		buildModuleFileSetOptions.workspace,
+	)
+}
+
+func (m *moduleFileSetBuilder) build(
+	ctx context.Context,
+	module bufmodule.Module,
+	workspace bufmodule.Workspace,
 ) (bufmodule.ModuleFileSet, error) {
 	var dependencyModules []bufmodule.Module
-	// we know these are unique by remote, owner, repository
-	// these also contain all transitive dependencies
-	for _, dependnecyModulePin := range module.DependencyModulePins() {
-		dependencyModule, err := m.moduleReader.GetModule(ctx, dependnecyModulePin)
+	if workspace != nil {
+		// From the perspective of the ModuleFileSet, we include all of the files
+		// specified in the workspace. When we build the Image from the ModuleFileSet,
+		// we construct it based on the TargetFileInfos, and thus only include the files
+		// in the transitive closure.
+		//
+		// We *could* determine which modules could be omitted here, but it would incur
+		// the cost of parsing the target files and detecting exactly which imports are
+		// used. We already get this for free in Image construction, so it's simplest and
+		// most efficient to bundle all of the modules together like so.
+		dependencyModules = workspace.GetModules()
+	}
+	// We know these are unique by remote, owner, repository and
+	// contain all transitive dependencies.
+	for _, dependencyModulePin := range module.DependencyModulePins() {
+		if workspace != nil {
+			if _, ok := workspace.GetModule(dependencyModulePin); ok {
+				// This dependency is already provided by the workspace, so we don't
+				// need to consult the ModuleReader.
+				continue
+			}
+		}
+		dependencyModule, err := m.moduleReader.GetModule(ctx, dependencyModulePin)
 		if err != nil {
 			return nil, err
 		}

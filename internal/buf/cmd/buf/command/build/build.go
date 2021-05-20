@@ -21,7 +21,9 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
@@ -195,6 +197,7 @@ func run(
 		return err
 	}
 	configProvider := bufconfig.NewProvider(container.Logger())
+	workspaceConfigProvider := bufwork.NewProvider(container.Logger())
 	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
 	if err != nil {
 		return err
@@ -204,13 +207,14 @@ func run(
 		return err
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	imageConfig, fileAnnotations, err := bufcli.NewWireImageConfigReader(
+	imageConfigs, fileAnnotations, err := bufcli.NewWireImageConfigReader(
 		container.Logger(),
 		storageosProvider,
 		configProvider,
+		workspaceConfigProvider,
 		moduleResolver,
 		moduleReader,
-	).GetImageConfig(
+	).GetImageConfigs(
 		ctx,
 		container,
 		ref,
@@ -237,13 +241,21 @@ func run(
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
+	images := make([]bufimage.Image, 0, len(imageConfigs))
+	for _, imageConfig := range imageConfigs {
+		images = append(images, imageConfig.Image())
+	}
+	image, err := bufimage.MergeImages(images...)
+	if err != nil {
+		return err
+	}
 	return bufcli.NewWireImageWriter(
 		container.Logger(),
 	).PutImage(
 		ctx,
 		container,
 		imageRef,
-		imageConfig.Image(),
+		image,
 		flags.AsFileDescriptorSet,
 		flags.ExcludeImports,
 	)

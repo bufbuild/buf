@@ -15,6 +15,8 @@
 package bufimage
 
 import (
+	"fmt"
+
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
@@ -48,13 +50,13 @@ type ImageFile interface {
 // If externalPath is empty, path is used.
 func NewImageFile(
 	fileDescriptorProto *descriptorpb.FileDescriptorProto,
-	moduleReference bufmodule.ModuleReference,
+	moduleCommit bufmodule.ModuleCommit,
 	externalPath string,
 	isImport bool,
 ) (ImageFile, error) {
 	return newImageFile(
 		fileDescriptorProto,
-		moduleReference,
+		moduleCommit,
 		externalPath,
 		isImport,
 	)
@@ -104,6 +106,44 @@ func NewMultiImage(images ...Image) (Image, error) {
 	}
 }
 
+// MergeImages returns a new Image for the given Images. ImageFiles
+// treated as non-imports in at least one of the given Images will
+// be treated as non-imports in the returned Image. The first non-import
+// version of a file will be used in the result.
+//
+// Reorders the ImageFiles to be in DAG order.
+// Duplicates can exist across the Images, but only if duplicates are non-imports.
+func MergeImages(images ...Image) (Image, error) {
+	switch len(images) {
+	case 0:
+		return nil, nil
+	case 1:
+		return images[0], nil
+	default:
+		imageFileSet := make(map[string]ImageFile)
+		for _, image := range images {
+			for _, currentImageFile := range image.Files() {
+				storedImageFile, ok := imageFileSet[currentImageFile.Path()]
+				if !ok {
+					imageFileSet[currentImageFile.Path()] = currentImageFile
+					continue
+				}
+				if !storedImageFile.IsImport() && !currentImageFile.IsImport() {
+					return nil, fmt.Errorf("%s is a non-import in multiple images", currentImageFile.Path())
+				}
+				if storedImageFile.IsImport() && !currentImageFile.IsImport() {
+					imageFileSet[currentImageFile.Path()] = currentImageFile
+				}
+			}
+		}
+		imageFiles := make([]ImageFile, 0, len(imageFileSet))
+		for _, imageFile := range imageFileSet {
+			imageFiles = append(imageFiles, imageFile)
+		}
+		return newImage(imageFiles, true)
+	}
+}
+
 // NewImageForProto returns a new Image for the given proto Image.
 //
 // The input Files are expected to be in correct DAG order!
@@ -118,7 +158,7 @@ func NewImageForProto(protoImage *imagev1.Image) (Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	moduleReferenceRefs, err := getModuleReferenceRefs(protoImage)
+	moduleCommitRefs, err := getModuleCommitRefs(protoImage)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +167,7 @@ func NewImageForProto(protoImage *imagev1.Image) (Image, error) {
 		_, isImport := importFileIndexes[i]
 		imageFile, err := NewImageFile(
 			fileDescriptorProto,
-			moduleReferenceRefs[i], // nil is a valid value.
+			moduleCommitRefs[i], // nil is a valid value.
 			fileDescriptorProto.GetName(),
 			isImport,
 		)
@@ -248,15 +288,15 @@ func ImageToProtoImage(image Image) *imagev1.Image {
 				},
 			)
 		}
-		if moduleReference := imageFile.ModuleReference(); moduleReference != nil {
-			protoImage.BufbuildImageExtension.ModuleReferenceRefs = append(
-				protoImage.BufbuildImageExtension.ModuleReferenceRefs,
-				&imagev1.ModuleReferenceRef{
+		if moduleCommit := imageFile.ModuleCommit(); moduleCommit != nil {
+			protoImage.BufbuildImageExtension.ModuleCommitRefs = append(
+				protoImage.BufbuildImageExtension.ModuleCommitRefs,
+				&imagev1.ModuleCommitRef{
 					FileIndex:  proto.Uint32(uint32(i)),
-					Remote:     proto.String(moduleReference.Remote()),
-					Owner:      proto.String(moduleReference.Owner()),
-					Repository: proto.String(moduleReference.Repository()),
-					Reference:  proto.String(moduleReference.Reference()),
+					Remote:     proto.String(moduleCommit.Remote()),
+					Owner:      proto.String(moduleCommit.Owner()),
+					Repository: proto.String(moduleCommit.Repository()),
+					Commit:     proto.String(moduleCommit.Commit()),
 				},
 			)
 		}

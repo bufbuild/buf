@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -43,7 +44,7 @@ type ImageConfigReader interface {
 	// GetImageConfig gets the ImageConfig for the fetch value.
 	//
 	// If externalDirOrFilePaths is empty, this builds all files under Buf control.
-	GetImageConfig(
+	GetImageConfigs(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		ref buffetch.Ref,
@@ -51,9 +52,9 @@ type ImageConfigReader interface {
 		externalDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
-	) (ImageConfig, []bufanalysis.FileAnnotation, error)
+	) ([]ImageConfig, []bufanalysis.FileAnnotation, error)
 	// GetSourceOrModuleImageConfig is the same as GetImageConfig, but only allows source or module values, and always builds.
-	GetSourceOrModuleImageConfig(
+	GetSourceOrModuleImageConfigs(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		sourceOrModuleRef buffetch.SourceOrModuleRef,
@@ -61,7 +62,7 @@ type ImageConfigReader interface {
 		externalDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
-	) (ImageConfig, []bufanalysis.FileAnnotation, error)
+	) ([]ImageConfig, []bufanalysis.FileAnnotation, error)
 }
 
 // NewImageConfigReader returns a new ImageConfigReader.
@@ -70,6 +71,7 @@ func NewImageConfigReader(
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
+	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
@@ -79,6 +81,7 @@ func NewImageConfigReader(
 		storageosProvider,
 		fetchReader,
 		configProvider,
+		workspaceConfigProvider,
 		moduleBucketBuilder,
 		moduleFileSetBuilder,
 		imageBuilder,
@@ -89,6 +92,7 @@ func NewImageConfigReader(
 type ModuleConfig interface {
 	Module() bufmodule.Module
 	Config() *bufconfig.Config
+	Workspace() bufmodule.Workspace
 }
 
 // ModuleConfigReader is a ModuleConfig reader.
@@ -99,14 +103,14 @@ type ModuleConfigReader interface {
 	//
 	// Note that as opposed to ModuleReader, this will return a Module for either
 	// a source or module reference, not just a module reference.
-	GetModuleConfig(
+	GetModuleConfigs(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		sourceOrModuleRef buffetch.SourceOrModuleRef,
 		configOverride string,
 		externalDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
-	) (ModuleConfig, error)
+	) ([]ModuleConfig, error)
 }
 
 // NewModuleConfigReader returns a new ModuleConfigReader
@@ -115,6 +119,7 @@ func NewModuleConfigReader(
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
+	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 ) ModuleConfigReader {
 	return newModuleConfigReader(
@@ -122,6 +127,7 @@ func NewModuleConfigReader(
 		storageosProvider,
 		fetchReader,
 		configProvider,
+		workspaceConfigProvider,
 		moduleBucketBuilder,
 	)
 }
@@ -142,6 +148,7 @@ func NewFileLister(
 	logger *zap.Logger,
 	fetchReader buffetch.Reader,
 	configProvider bufconfig.Provider,
+	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	imageBuilder bufimagebuild.Builder,
 ) FileLister {
@@ -149,6 +156,7 @@ func NewFileLister(
 		logger,
 		fetchReader,
 		configProvider,
+		workspaceConfigProvider,
 		moduleBucketBuilder,
 		imageBuilder,
 	)
