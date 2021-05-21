@@ -7,8 +7,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/dvyukov/go-fuzz/commits/master 20200318 checked 20200707
-GO_FUZZ_VERSION ?= be3528f3a81351d8a438aed216130e1e7da39f7c
+# https://github.com/dvyukov/go-fuzz/commits/master 20210430 checked 20210521
+GO_FUZZ_VERSION ?= fca39067bc7270ea00dd1a7ce4443eba66ff58fe
 
 GO_FUZZ := $(CACHE_VERSIONS)/go-fuzz/$(GO_FUZZ_VERSION)
 $(GO_FUZZ):
