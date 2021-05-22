@@ -85,7 +85,7 @@ func checkCommentNamedDescriptor(
 		// this will magically skip map entry fields as well as a side-effect, although originally unintended
 		return nil
 	}
-	if strings.TrimSpace(location.LeadingComments()) == "" {
+	if !validLeadingComment(location.LeadingComments()) {
 		add(namedDescriptor, location, nil, "%s %q should have a non-empty comment for documentation.", typeName, namedDescriptor.Name())
 	}
 	return nil
