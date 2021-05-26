@@ -263,3 +263,13 @@ service ServiceFoo5 {
 message Baz {
   map<int64, string> one = 1;
 }
+
+// comment
+service ServiceFoo6 {
+  // comment
+  rpc MethodFoo(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  //buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+  // buf:lint:ignore RPC_REQUEST_STANDARD_NAME
+  //
+  rpc MethodBar(google.protobuf.Empty) returns (google.protobuf.Empty);
+}

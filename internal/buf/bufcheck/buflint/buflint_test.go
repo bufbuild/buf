@@ -36,8 +36,10 @@ import (
 )
 
 // Hint on how to get these:
-// 1. cd into the specific diriectory
-// 2. buf lint --error-format=json | jq '[.path, ".", .start_line, .start_column, .end_line, .end_column, .type] | @csv' --raw-output
+// 1. cd into the specific directory
+// 2. buf lint --error-format=json | jq '[.path, .start_line, .start_column, .end_line, .end_column, .type] | @csv' --raw-output
+//      or
+//    buf lint --error-format=json | jq -r '"bufanalysistesting.NewFileAnnotation(t, \"\(.path)\", \(.start_line|tostring), \(.start_column|tostring), \(.end_line|tostring), \(.end_column|tostring), \"\(.type)\"),"'
 
 func TestRunComments(t *testing.T) {
 	testLint(
@@ -140,6 +142,7 @@ func TestRunComments(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 260, 3, 260, 72, "COMMENT_RPC"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 263, 1, 265, 2, "COMMENT_MESSAGE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 264, 3, 264, 30, "COMMENT_FIELD"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 274, 3, 274, 72, "COMMENT_RPC"),
 	)
 }
 
