@@ -1,7 +1,7 @@
 BUF_BIN ?= cmd/buf
 
-# https://github.com/jhump/protoreflect/commits/master 20210426 checked 20210521
-PROTOREFLECT_VERSION := 2837af46645192fc899fb6f9304ba74938871892
+# https://github.com/jhump/protoreflect/commits/master 20210527 checked 20210527
+PROTOREFLECT_VERSION := 05026f325d15a06428b5dbb7e27cbb92b0be249a
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
 GO_BINS := $(GO_BINS) \
@@ -131,15 +131,15 @@ bufgenerate:
 
 pregenerate:: bufgenerate
 
-.PHONY: buflintproto
-buflintproto: bufbinaryinstall
-	$(BUF_BINARY) lint proto
+.PHONY: buflint
+buflint: bufbinaryinstall
+	$(BUF_BINARY) lint
 
 .PHONY: bufbreakingproto
 bufbreakingproto: bufbinaryinstall
 	-$(BUF_BINARY) breaking proto --against $(BUF_BREAKING_PROTO_INPUT)
 
-postlint:: buflintproto bufbreakingproto
+postlint:: buflint bufbreakingproto
 
 .PHONY: bufrelease
 bufrelease:

@@ -30,6 +30,15 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
+const (
+	// CommentIgnorePrefix is the comment ignore prefix.
+	//
+	// Comments with this prefix do not count towards valid comments in the comment checkers.
+	// This is also used in buflint when constructing a new Runner, and is passed to the
+	// RunnerWithIgnorePrefix option.
+	CommentIgnorePrefix = "buf:lint:ignore"
+)
+
 var (
 	// CheckCommentEnum is a check function.
 	CheckCommentEnum = newEnumCheckFunc(checkCommentEnum)
