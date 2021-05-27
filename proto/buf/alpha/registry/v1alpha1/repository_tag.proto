@@ -30,6 +30,8 @@ message RepositoryTag {
   string name = 4;
   // The name of the commit this tag belongs to.
   string commit_name = 5;
+  // The username of the author of the tag.
+  string author = 6;
 }
 
 // RepositoryTagService is the Repository tag service.

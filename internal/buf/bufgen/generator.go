@@ -84,7 +84,7 @@ func (g *generator) generate(
 	image bufimage.Image,
 	baseOutDirPath string,
 ) error {
-	if err := modifyImage(ctx, config, image); err != nil {
+	if err := g.modifyImage(ctx, config, image); err != nil {
 		return err
 	}
 	// We keep this as a variable so we can cache it if we hit StrategyDirectory.
@@ -135,7 +135,7 @@ func newGenerateOptions() *generateOptions {
 }
 
 // modifyImage modifies the image according to the given configuration (i.e. Managed Mode).
-func modifyImage(
+func (g *generator) modifyImage(
 	ctx context.Context,
 	config *Config,
 	image bufimage.Image,
@@ -143,7 +143,7 @@ func modifyImage(
 	sweeper := bufimagemodify.NewFileOptionSweeper()
 	modifier := modifierFromOptions(config.Options, sweeper)
 	if config.Managed {
-		managedModeModifier, err := managedModeModifier(config.PluginConfigs, sweeper)
+		managedModeModifier, err := g.managedModeModifier(config.PluginConfigs, sweeper)
 		if err != nil {
 			return err
 		}
@@ -160,7 +160,7 @@ func modifyImage(
 }
 
 // managedModeModifier returns the Managed Mode modifier.
-func managedModeModifier(pluginConfigs []*PluginConfig, sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
+func (g *generator) managedModeModifier(pluginConfigs []*PluginConfig, sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
 	modifier := bufimagemodify.NewMultiModifier(
 		// TODO: Implement the following modifiers.
 		//
@@ -179,11 +179,50 @@ func managedModeModifier(pluginConfigs []*PluginConfig, sweeper bufimagemodify.S
 	}
 	modifier = bufimagemodify.Merge(modifier, javaPackageModifier)
 
-	goPackageModifier, err := goPackageModifierFromPluginConfigs(pluginConfigs, sweeper)
+	goPackageModifier, err := g.goPackageModifierFromPluginConfigs(pluginConfigs, sweeper)
 	if err != nil {
 		return nil, err
 	}
 	return bufimagemodify.Merge(modifier, goPackageModifier), nil
+}
+
+// goPackageModifierFromPluginConfigs returns a new Modifier that sets
+// the go_package file option based on the configured output directory
+// for the protoc-gen-go[-grpc] plugin. If the protoc-gen-go[-grpc] plugin
+// is not configured, a 'nil' Modifier is returned. Otherwise, we attempt to
+// resolve the user's Go module name and error if it cannot be resolved.
+//
+// Note that we can resolve the relative output directory from either the
+// protoc-gen-go or protoc-gen-go-grpc plugins because they MUST be placed
+// in the same directory to compile.
+func (g *generator) goPackageModifierFromPluginConfigs(
+	pluginConfigs []*PluginConfig,
+	sweeper bufimagemodify.Sweeper,
+) (bufimagemodify.Modifier, error) {
+	var goPluginOut string
+	for _, pluginConfig := range pluginConfigs {
+		if pluginConfig.Name == goPluginName || pluginConfig.Name == goGrpcPluginName {
+			goPluginOut = pluginConfig.Out
+			break
+		}
+	}
+	if goPluginOut == "" {
+		// The protoc-gen-go[-grpc] plugin was not configured,
+		// so there's nothing to do here.
+		return nil, nil
+	}
+	goModulePath, relativePath, err := resolveGoModulePath()
+	if err != nil {
+		// The user specified the protoc-gen-go[-grpc] plugin,
+		// but a go.mod file could not be resolved. We don't
+		// want to fail entirely, but we should at least warn.
+		g.logger.Sugar().Warnf("Managed Mode skipping go_package option: %v", err)
+		return nil, nil
+	}
+	return bufimagemodify.GoPackage(
+		sweeper,
+		normalpath.Join(goModulePath, relativePath, goPluginOut),
+	)
 }
 
 // modifierFromOptions returns a new Modifier for the given options.
@@ -212,41 +251,6 @@ func modifierFromOptions(options *Options, sweeper bufimagemodify.Sweeper) bufim
 	}
 	// TODO: Add support for JavaStringCheckUTF8.
 	return modifier
-}
-
-// goPackageModifierFromPluginConfigs returns a new Modifier that sets
-// the go_package file option based on the configured output directory
-// for the protoc-gen-go[-grpc] plugin. If the protoc-gen-go[-grpc] plugin
-// is not configured, a 'nil' Modifier is returned. Otherwise, we attempt to
-// resolve the user's Go module name and error if it cannot be resolved.
-//
-// Note that we can resolve the relative output directory from either the
-// protoc-gen-go or protoc-gen-go-grpc plugins because they MUST be placed
-// in the same directory to compile.
-func goPackageModifierFromPluginConfigs(
-	pluginConfigs []*PluginConfig,
-	sweeper bufimagemodify.Sweeper,
-) (bufimagemodify.Modifier, error) {
-	var goPluginOut string
-	for _, pluginConfig := range pluginConfigs {
-		if pluginConfig.Name == goPluginName || pluginConfig.Name == goGrpcPluginName {
-			goPluginOut = pluginConfig.Out
-			break
-		}
-	}
-	if goPluginOut == "" {
-		// The protoc-gen-go[-grpc] plugin was not configured,
-		// so there's nothing to do here.
-		return nil, nil
-	}
-	goModulePath, relativePath, err := resolveGoModulePath()
-	if err != nil {
-		return nil, err
-	}
-	return bufimagemodify.GoPackage(
-		sweeper,
-		normalpath.Join(goModulePath, relativePath, goPluginOut),
-	)
 }
 
 // resolveGoModulePath returns the Go module path specified in the
@@ -294,5 +298,5 @@ func findGoModuleFromRoot(root string) (string, error) {
 		}
 		dir = parent
 	}
-	return "", fmt.Errorf("failed to find %s from root %s", goModuleFile, root)
+	return "", fmt.Errorf("failed to find %s within %s", goModuleFile, root)
 }

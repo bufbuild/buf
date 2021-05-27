@@ -33,6 +33,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/bufbuild/buf/internal/pkg/testingextended"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,9 +48,7 @@ var buftestingDirPath = filepath.Join(
 )
 
 func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
+	testingextended.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(t,
@@ -61,9 +60,7 @@ func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
+	testingextended.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubsArchive(t,
@@ -76,9 +73,7 @@ func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
 }
 
 func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
+	testingextended.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubsArchive(t,
@@ -90,22 +85,18 @@ func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
 	)
 }
 
-func TestCompareGeneratedStubsGoogleapisRuby(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
+func TestCompareGeneratedStubsGoogleapisObjc(t *testing.T) {
+	testingextended.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(t,
 		googleapisDirPath,
-		[]testPluginInfo{{name: "ruby"}},
+		[]testPluginInfo{{name: "objc"}},
 	)
 }
 
 func TestCompareInsertionPointOutput(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
+	testingextended.SkipIfShort(t)
 	t.Parallel()
 	insertionTestdataDirPath := filepath.Join("testdata", "insertion")
 	testCompareGeneratedStubs(t,
