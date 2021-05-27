@@ -133,7 +133,6 @@ func Listen(ctx context.Context, container Container, defaultPort uint16) (net.L
 		port = defaultPort
 	}
 	// Must be 0.0.0.0
-	// https://cloud.google.com/run/docs/troubleshooting
 	var listenConfig net.ListenConfig
 	return listenConfig.Listen(ctx, "tcp", fmt.Sprintf("0.0.0.0:%d", port))
 }

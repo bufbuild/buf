@@ -80,6 +80,9 @@ func Merge(left Modifier, right Modifier) Modifier {
 	if left == nil {
 		return right
 	}
+	if right == nil {
+		return left
+	}
 	return NewMultiModifier(left, right)
 }
 

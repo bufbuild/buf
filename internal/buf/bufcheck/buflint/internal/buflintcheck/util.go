@@ -42,12 +42,12 @@ func fieldToUpperSnakeCase(s string) string {
 	return stringutil.ToUpperSnakeCase(s)
 }
 
-// validLeadingComment returns true if comment has at least one line that isn't empty and doesn't start with
-// "buf:lint:ignore"
+// validLeadingComment returns true if comment has at least one line that isn't empty
+// and doesn't start with CommentIgnorePrefix.
 func validLeadingComment(comment string) bool {
 	for _, line := range strings.Split(comment, "\n") {
 		line = strings.TrimSpace(line)
-		if line != "" && !strings.HasPrefix(line, "buf:lint:ignore") {
+		if line != "" && !strings.HasPrefix(line, CommentIgnorePrefix) {
 			return true
 		}
 	}

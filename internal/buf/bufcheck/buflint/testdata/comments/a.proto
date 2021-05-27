@@ -266,10 +266,17 @@ message Baz {
 
 // comment
 service ServiceFoo6 {
-  // comment
+  // this method should pass lint
   rpc MethodFoo(google.protobuf.Empty) returns (google.protobuf.Empty) {}
-  //buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+  //buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE this method should fail lint
+  // buf:lint:ignore RPC_REQUEST_STANDARD_NAME
+  rpc MethodBar(google.protobuf.Empty) returns (google.protobuf.Empty);
+  //buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE this method should also fail lint
   // buf:lint:ignore RPC_REQUEST_STANDARD_NAME
   //
-  rpc MethodBar(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc MethodBaz(google.protobuf.Empty) returns (google.protobuf.Empty);
+  //buf:lint:ignore RPC_REQUEST_RESPONSE_UNIQUE
+  // buf:lint:ignore RPC_REQUEST_STANDARD_NAME
+  // this method should pass lint
+  rpc MethodBat(google.protobuf.Empty) returns (google.protobuf.Empty);
 }

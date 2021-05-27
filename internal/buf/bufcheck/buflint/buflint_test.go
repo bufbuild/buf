@@ -142,7 +142,8 @@ func TestRunComments(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 260, 3, 260, 72, "COMMENT_RPC"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 263, 1, 265, 2, "COMMENT_MESSAGE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 264, 3, 264, 30, "COMMENT_FIELD"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 274, 3, 274, 72, "COMMENT_RPC"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 273, 3, 273, 72, "COMMENT_RPC"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 277, 3, 277, 72, "COMMENT_RPC"),
 	)
 }
 

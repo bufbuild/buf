@@ -25,7 +25,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -105,16 +104,4 @@ func (h *binaryHandler) Handle(
 		responseWriter.AddError(response.GetError())
 	}
 	return nil
-}
-
-func newVersion(major int32, minor int32, patch int32, suffix string) *pluginpb.Version {
-	version := &pluginpb.Version{
-		Major: proto.Int32(major),
-		Minor: proto.Int32(minor),
-		Patch: proto.Int32(patch),
-	}
-	if suffix != "" {
-		version.Suffix = proto.String(suffix)
-	}
-	return version
 }

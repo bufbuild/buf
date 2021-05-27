@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/protosource"
 	"github.com/bufbuild/buf/internal/pkg/prototesting"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/bufbuild/buf/internal/pkg/testingextended"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
@@ -45,6 +46,7 @@ var buftestingDirPath = filepath.Join(
 )
 
 func TestGoogleapis(t *testing.T) {
+	testingextended.SkipIfShort(t)
 	t.Parallel()
 	image := testBuildGoogleapis(t, true)
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
@@ -174,9 +176,7 @@ func TestGoogleapis(t *testing.T) {
 }
 
 func TestCompareGoogleapis(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode")
-	}
+	testingextended.SkipIfShort(t)
 	// Don't run in parallel as it allocates a lot of memory
 	// cannot directly compare with source code info as buf protoc creates additional source
 	// code infos that protoc does not
