@@ -89,10 +89,10 @@ func (e *errInternal) Is(err error) bool {
 }
 
 // NewErrorInterceptor returns a CLI interceptor that wraps Buf CLI errors.
-func NewErrorInterceptor(action string) appflag.Interceptor {
+func NewErrorInterceptor() appflag.Interceptor {
 	return func(next func(context.Context, appflag.Container) error) func(context.Context, appflag.Container) error {
 		return func(ctx context.Context, container appflag.Container) error {
-			return wrapError(action, next(ctx, container))
+			return wrapError(next(ctx, container))
 		}
 	}
 }
@@ -158,7 +158,7 @@ func NewTokenNotFoundError(tokenID string) error {
 // wrapError is used when a CLI command fails, regardless of its error code.
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
-func wrapError(action string, err error) error {
+func wrapError(err error) error {
 	if err == nil || (err.Error() == "" && !rpc.IsError(err)) {
 		// If the error is nil or empty and not an rpc error, we return it as-is.
 		// This is especially relevant for commands like lint and breaking.
@@ -166,11 +166,11 @@ func wrapError(action string, err error) error {
 	}
 	switch {
 	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
-		return fmt.Errorf(`Failed to %q: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://beta.docs.buf.build/authentication`, action)
+		return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://beta.docs.buf.build/authentication`)
 	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnavailable:
-		return fmt.Errorf(`Failed to %q: the server hosted at that remote is unavailable: %w.`, action, err)
+		return fmt.Errorf(`Failure: the server hosted at that remote is unavailable: %w.`, err)
 	}
-	return fmt.Errorf("Failed to %q: %w.", action, err)
+	return fmt.Errorf("Failure: %w.", err)
 }
 
 // isEmptyUnknownError returns true if the given
