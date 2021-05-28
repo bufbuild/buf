@@ -52,7 +52,7 @@ shortall:
 .PHONY: ci
 ci:
 	@$(MAKE) lint
-	@$(MAKE) cover
+	@$(MAKE) testrace
 
 .PHONY: upgradegodeps
 upgradegodeps:
@@ -112,6 +112,10 @@ pretest::
 .PHONY: test
 test: pretest installtest
 	go test $(GO_TEST_FLAGS) $(GOPKGS)
+
+.PHONY: testrace
+testrace: pretest installtest
+	go test -race $(GO_TEST_FLAGS) $(GOPKGS)
 
 .PHONY: shorttest
 shorttest: pretest installtest
