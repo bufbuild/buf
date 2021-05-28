@@ -74,8 +74,7 @@ The Buf CLI incorporates the following components to help you create consistent 
 - A [breaking change detector](https://docs.buf.build/breaking-usage) that enforces compatibility at the source code or wire level.
 - A [generator](https://docs.buf.build/generate-usage) that invokes your protoc plugins based on a configurable
   template.
-  A [protoc replacement](https://docs.buf.build/generate-protoc) that uses Buf's newly-developed [high performance
-  Protobuf compiler](https://docs.buf.build/build-compiler.md).
+  A [protoc replacement](https://docs.buf.build/generate-protoc.md) that uses Buf's newly-developed [high performance Protobuf compiler](https://docs.buf.build/build-compiler).
 - A configurable file [builder](https://docs.buf.build/build-overview) that produces
   [Images](https://docs.buf.build/build-images), our extension of
   [FileDescriptorSets](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto).
