@@ -131,7 +131,7 @@ func TestWorkspaceOverlapSubDirectory(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failed to "build": failed to build input "other/proto/one" because it is contained by module "other/proto" listed in ../../../buf.work; see https://docs.buf.build/faq for more details.`,
+		`Failure: failed to build input "other/proto/one" because it is contained by module "other/proto" listed in ../../../buf.work; see https://docs.buf.build/faq for more details.`,
 		"build",
 		filepath.Join("..", "one"),
 	)
