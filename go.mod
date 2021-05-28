@@ -7,7 +7,7 @@ require (
 	github.com/gofrs/flock v0.8.0
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/google/go-cmp v0.5.6
-	github.com/jhump/protoreflect v1.8.3-0.20210527202629-05026f325d15
+	github.com/jhump/protoreflect v1.8.3-0.20210426154227-2837af466451
 	github.com/klauspost/compress v1.12.3
 	github.com/klauspost/pgzip v1.2.5
 	github.com/pkg/errors v0.9.1 // indirect
