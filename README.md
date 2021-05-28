@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/bufbuild/buf?include_prereleases)](https://github.com/bufbuild/buf/releases)
 [![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)](https://github.com/bufbuild/buf/actions?workflow=ci)
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)](https://hub.docker.com/r/bufbuild/buf)
-[![Homebrew](https://img.shields.io/badge/homebrew-v0.42.1-blue)](https://github.com/bufbuild/homebrew-buf)
+[![Homebrew](https://img.shields.io/badge/homebrew-v0.43.0-blue)](https://github.com/bufbuild/homebrew-buf)
 [![AUR](https://img.shields.io/aur/version/buf)](https://aur.archlinux.org/packages/buf)
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)](https://join.slack.com/t/bufbuild/shared_invite/zt-f5k547ki-VDs_iC4TblNCu7ubhRD17w)
 [![Twitter](https://img.shields.io/twitter/follow/bufbuild?style=social)](https://twitter.com/intent/follow?screen_name=bufbuild)
