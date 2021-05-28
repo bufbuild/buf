@@ -1,7 +1,9 @@
 BUF_BIN ?= cmd/buf
 
 # https://github.com/jhump/protoreflect/commits/master 20210527 checked 20210527
-PROTOREFLECT_VERSION := 05026f325d15a06428b5dbb7e27cbb92b0be249a
+# Reverted to 2837af46645192fc899fb6f9304ba74938871892 until suspected namespace
+# resolution issue resolved.
+PROTOREFLECT_VERSION := 2837af46645192fc899fb6f9304ba74938871892
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
 GO_BINS := $(GO_BINS) \
