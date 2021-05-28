@@ -758,7 +758,7 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failed to "breaking": input contained 1 images, whereas against contained 2 images.`,
+		`Failure: input contained 1 images, whereas against contained 2 images.`,
 		"breaking",
 		filepath.Join("testdata", "workspace", "fail", "breaking"),
 		"--against",
@@ -773,7 +773,7 @@ func TestWorkspaceDuplicateFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failed to "build": foo.proto exists in multiple locations: testdata/workspace/fail/duplicate/other/proto/foo.proto testdata/workspace/fail/duplicate/proto/foo.proto.`,
+		`Failure: foo.proto exists in multiple locations: testdata/workspace/fail/duplicate/other/proto/foo.proto testdata/workspace/fail/duplicate/proto/foo.proto.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "duplicate"),
 	)
@@ -786,7 +786,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failed to "build": module "notexist" listed in testdata/workspace/fail/notexist/buf.work contains no .proto files.`,
+		`Failure: module "notexist" listed in testdata/workspace/fail/notexist/buf.work contains no .proto files.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "notexist"),
 	)
@@ -799,7 +799,7 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failed to "build": ../breaking/other/proto: is outside the context directory.`,
+		`Failure: ../breaking/other/proto: is outside the context directory.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "jumpcontext"),
 	)
@@ -825,7 +825,7 @@ func TestWorkspaceAbsoluteFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failed to "build": module "/home/buf" listed in testdata/workspace/fail/absolute/buf.work must be a relative path.`,
+		`Failure: module "/home/buf" listed in testdata/workspace/fail/absolute/buf.work must be a relative path.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "absolute"),
 	)
@@ -838,7 +838,7 @@ func TestWorkspaceDirOverlapFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failed to "build": module "foo" contains module "foo/bar" in testdata/workspace/fail/diroverlap/buf.work; see https://docs.buf.build/faq for more details.`,
+		`Failure: module "foo" contains module "foo/bar" in testdata/workspace/fail/diroverlap/buf.work; see https://docs.buf.build/faq for more details.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "diroverlap"),
 	)
@@ -852,7 +852,7 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failed to "build": failed to build input "proto/buf" because it is contained by module "proto" listed in testdata/workspace/fail/overlap/buf.work; see https://docs.buf.build/faq for more details.`,
+		`Failure: failed to build input "proto/buf" because it is contained by module "proto" listed in testdata/workspace/fail/overlap/buf.work; see https://docs.buf.build/faq for more details.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "overlap", "proto", "buf"),
 	)
@@ -861,7 +861,7 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failed to "build": failed to build input "other" because it contains module "other/proto" listed in testdata/workspace/success/dir/buf.work; see https://docs.buf.build/faq for more details.`,
+		`Failure: failed to build input "other" because it contains module "other/proto" listed in testdata/workspace/success/dir/buf.work; see https://docs.buf.build/faq for more details.`,
 		"build",
 		filepath.Join("testdata", "workspace", "success", "dir", "other"),
 	)
@@ -874,7 +874,7 @@ func TestWorkspaceRegularFileFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failed to "build": testdata/workspace/success/dir/proto/rpc.proto: not a directory.`,
+		`Failure: testdata/workspace/success/dir/proto/rpc.proto: not a directory.`,
 		"build",
 		filepath.Join("testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
 	)
