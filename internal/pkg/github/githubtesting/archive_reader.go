@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/bufbuild/buf/internal/pkg/filelock"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
@@ -29,6 +30,11 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
+
+// since we are in testing, we care less about making sure this times out early
+// we have had some flaky tests based on this being too low, especially when
+// using the race detector
+const filelockTimeout = 10 * time.Second
 
 type archiveReader struct {
 	logger            *zap.Logger
@@ -62,7 +68,11 @@ func (a *archiveReader) GetArchive(
 	outputDirPath = normalpath.Unnormalize(outputDirPath)
 
 	// creates a file in the same parent directory as outputDirPath
-	unlocker, err := filelock.Lock(ctx, outputDirPath+".lock")
+	unlocker, err := filelock.Lock(
+		ctx,
+		outputDirPath+".lock",
+		filelock.LockWithTimeout(filelockTimeout),
+	)
 	if err != nil {
 		return err
 	}
