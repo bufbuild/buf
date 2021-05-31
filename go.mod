@@ -7,7 +7,7 @@ require (
 	github.com/gofrs/flock v0.8.0
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/google/go-cmp v0.5.6
-	github.com/jhump/protoreflect v1.8.3-0.20210426154227-2837af466451
+	github.com/jhump/protoreflect v1.8.3-0.20210529043835-e5cc6ba99d91
 	github.com/klauspost/compress v1.12.3
 	github.com/klauspost/pgzip v1.2.5
 	github.com/pkg/errors v0.9.1 // indirect
@@ -21,7 +21,7 @@ require (
 	go.uber.org/zap v1.17.0
 	golang.org/x/mod v0.4.2
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5 // indirect
-	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea // indirect
+	golang.org/x/sys v0.0.0-20210531080801-fdfd190a6549 // indirect
 	google.golang.org/genproto v0.0.0-20210524171403-669157292da3 // indirect
 	google.golang.org/grpc v1.39.0-dev.0.20210519181852-3dd75a6888ce
 	google.golang.org/protobuf v1.26.1-0.20210520194023-50a85913fbce
