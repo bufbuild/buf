@@ -11,5 +11,5 @@ message bar2 {
 }
 
 enum baz2 {
-  BAZ_UNSPECIFIED = 0;
+  BAZ2_UNSPECIFIED = 0;
 }
