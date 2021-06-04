@@ -1,7 +1,7 @@
 BUF_BIN ?= cmd/buf
 
-# https://github.com/jhump/protoreflect/commits/master 20210528 checked 20210528
-PROTOREFLECT_VERSION := e5cc6ba99d91bed75bd640f4d5a2e515a6b596a4
+# https://github.com/jhump/protoreflect/commits/master 20210603 checked 20210603
+PROTOREFLECT_VERSION := ac729f7067c33480d1dc8e1377b0c37daa528812
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
 GO_BINS := $(GO_BINS) \

@@ -111,10 +111,11 @@ func handle(
 	}
 	if oldBinaryName != "" && newBinaryName != "" {
 		logger.Sugar().Warnf(
-			"%s is deprecated. Use %s instead. %s can be installed in the same manner as %s, whether from GitHub Releases, Homebrew, AUR, or direct Go installation.",
+			"%s is deprecated. Use %s instead. %s can be installed in the same manner as %s, whether from GitHub Releases, Homebrew, AUR, or direct Go installation. %s will be deleted as a release artifact before v1.0.",
 			oldBinaryName,
 			newBinaryName,
 			newBinaryName,
+			oldBinaryName,
 			oldBinaryName,
 		)
 	}

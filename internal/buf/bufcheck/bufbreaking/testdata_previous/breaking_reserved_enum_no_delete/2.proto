@@ -17,9 +17,9 @@ enum Two2 {
   reserved 300, 301, 1000 to max;
   reserved "foo", "bar";
   reserved "baz";
-  TWO_UNSPECIFIED = 0;
-  TWO_ONE = 1;
-  TWO_TWO = 2;
+  TWO2_UNSPECIFIED = 0;
+  TWO2_ONE = 1;
+  TWO2_TWO = 2;
 }
 
 message Three2 {

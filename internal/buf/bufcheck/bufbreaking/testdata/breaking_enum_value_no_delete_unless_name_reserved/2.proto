@@ -15,9 +15,9 @@ enum One2 {
 }
 
 enum Two2 {
-  TWO_UNSPECIFIED = 0;
-  TWO_ONE = 1;
-  TWO_TWO = 2;
+  TWO2_UNSPECIFIED = 0;
+  TWO2_ONE = 1;
+  TWO2_TWO = 2;
 }
 
 message Three2 {
