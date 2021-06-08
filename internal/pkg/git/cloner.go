@@ -77,7 +77,7 @@ func (c *cloner) CloneToBucket(
 	}
 
 	depthArg := strconv.Itoa(int(depth))
-	args := []string{"clone", "--depth", depthArg}
+	args := []string{"clone", "--no-single-branch", "--depth", depthArg}
 
 	if options.Name != nil {
 		if cloneBranch := options.Name.cloneBranch(); cloneBranch != "" {
