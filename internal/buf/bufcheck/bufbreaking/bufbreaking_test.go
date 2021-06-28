@@ -317,6 +317,15 @@ func TestRunBreakingFileNoDeleteUnstable(t *testing.T) {
 	)
 }
 
+func TestRunBreakingFileNoDeleteIgnores(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_file_no_delete_ignores",
+		// a/a.proto deleted but not ignored
+		bufanalysistesting.NewFileAnnotationNoLocationOrPath(t, "FILE_NO_DELETE"),
+	)
+}
+
 func TestRunBreakingFileSamePackage(t *testing.T) {
 	testBreaking(
 		t,
