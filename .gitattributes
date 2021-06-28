@@ -1,0 +1,7 @@
+# This is similar to the git option core.autocrlf but it applies to all
+# users of the repository and therefore doesn't depend on a developers
+# local configuration.
+* text=auto
+
+# Never attempt EOL conversion on files within testdata
+**/testdata/** binary
