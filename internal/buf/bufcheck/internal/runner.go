@@ -101,8 +101,8 @@ func (r *Runner) Check(ctx context.Context, config *Config, previousFiles []prot
 }
 
 func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
-	return func(id string, descriptor protosource.Descriptor, locations []protosource.Location) bool {
-		if idIsIgnored(id, descriptor, config) {
+	return func(id string, descriptors []protosource.Descriptor, locations []protosource.Location) bool {
+		if idIsIgnored(id, descriptors, config) {
 			return true
 		}
 		// if ignorePrefix is empty, comment ignores are not enabled for the runner
@@ -112,20 +112,27 @@ func (r *Runner) newIgnoreFunc(config *Config) IgnoreFunc {
 			return true
 		}
 		if config.IgnoreUnstablePackages {
-			if descriptor == nil {
-				return false
+			for _, descriptor := range descriptors {
+				if descriptorPackageIsUnstable(descriptor) {
+					return true
+				}
 			}
-			packageVersion, ok := protoversion.NewPackageVersionForPackage(descriptor.File().Package())
-			if !ok {
-				return false
-			}
-			return packageVersion.StabilityLevel() != protoversion.StabilityLevelStable
 		}
 		return false
 	}
 }
 
-func idIsIgnored(id string, descriptor protosource.Descriptor, config *Config) bool {
+func idIsIgnored(id string, descriptors []protosource.Descriptor, config *Config) bool {
+	for _, descriptor := range descriptors {
+		// OR of descriptors
+		if idIsIgnoredForDescriptor(id, descriptor, config) {
+			return true
+		}
+	}
+	return false
+}
+
+func idIsIgnoredForDescriptor(id string, descriptor protosource.Descriptor, config *Config) bool {
 	if descriptor == nil {
 		return false
 	}
@@ -161,6 +168,17 @@ func locationsAreIgnored(id string, ignorePrefix string, locations []protosource
 		}
 	}
 	return false
+}
+
+func descriptorPackageIsUnstable(descriptor protosource.Descriptor) bool {
+	if descriptor == nil {
+		return false
+	}
+	packageVersion, ok := protoversion.NewPackageVersionForPackage(descriptor.File().Package())
+	if !ok {
+		return false
+	}
+	return packageVersion.StabilityLevel() != protoversion.StabilityLevelStable
 }
 
 type result struct {

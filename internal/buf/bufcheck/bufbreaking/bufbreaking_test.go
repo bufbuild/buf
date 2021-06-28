@@ -314,7 +314,6 @@ func TestRunBreakingFileNoDeleteUnstable(t *testing.T) {
 	testBreaking(
 		t,
 		"breaking_file_no_delete_unstable",
-		bufanalysistesting.NewFileAnnotationNoLocationOrPath(t, "FILE_NO_DELETE"),
 	)
 }
 

@@ -46,7 +46,7 @@ func checkEnumNoDelete(add addFunc, previousFile protosource.File, file protosou
 			if err != nil {
 				return err
 			}
-			add(descriptor, location, `Previously present enum %q was deleted from file.`, previousNestedName)
+			add(descriptor, nil, location, `Previously present enum %q was deleted from file.`, previousNestedName)
 		}
 	}
 	return nil
@@ -99,7 +99,7 @@ func checkEnumValueNoDeleteWithRules(add addFunc, previousEnum protosource.Enum,
 					}
 					suffix = fmt.Sprintf(` without reserving the name%s %s`, nameSuffix, stringutil.JoinSliceQuoted(getSortedEnumValueNames(previousNameToEnumValue), ", "))
 				}
-				add(enum, enum.Location(), `Previously present enum value "%d" on enum %q was deleted%s.`, previousNumber, enum.Name(), suffix)
+				add(enum, nil, enum.Location(), `Previously present enum value "%d" on enum %q was deleted%s.`, previousNumber, enum.Name(), suffix)
 			}
 		}
 	}
@@ -140,7 +140,7 @@ func checkEnumValueSameName(add addFunc, previousNameToEnumValue map[string]prot
 			nameSuffix = "s"
 		}
 		for _, enumValue := range nameToEnumValue {
-			add(enumValue, enumValue.NumberLocation(), `Enum value "%d" on enum %q changed name%s from %s to %s.`, enumValue.Number(), enumValue.Enum().Name(), nameSuffix, previousNamesString, namesString)
+			add(enumValue, nil, enumValue.NumberLocation(), `Enum value "%d" on enum %q changed name%s from %s to %s.`, enumValue.Number(), enumValue.Enum().Name(), nameSuffix, previousNamesString, namesString)
 		}
 	}
 	return nil
@@ -154,7 +154,7 @@ func checkExtensionMessageNoDelete(add addFunc, previousMessage protosource.Mess
 	stringToExtensionRange := protosource.StringToExtensionMessageRange(message)
 	for previousString := range previousStringToExtensionRange {
 		if _, ok := stringToExtensionRange[previousString]; !ok {
-			add(message, message.Location(), `Previously present extension range %q on message %q was deleted.`, previousString, message.Name())
+			add(message, nil, message.Location(), `Previously present extension range %q on message %q was deleted.`, previousString, message.Name())
 		}
 	}
 	return nil
@@ -205,7 +205,7 @@ func checkFieldNoDeleteWithRules(add addFunc, previousMessage protosource.Messag
 				if allowIfNameReserved {
 					suffix = fmt.Sprintf(` without reserving the name %q`, previousField.Name())
 				}
-				add(message, message.Location(), `Previously present field %q with name %q on message %q was deleted%s.`, previousNumberString, previousField.Name(), message.Name(), suffix)
+				add(message, nil, message.Location(), `Previously present field %q with name %q on message %q was deleted%s.`, previousNumberString, previousField.Name(), message.Name(), suffix)
 			}
 		}
 	}
@@ -224,7 +224,7 @@ func checkFieldSameCType(add addFunc, previousField protosource.Field, field pro
 	if previousField.CType() != field.CType() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, withBackupLocation(field.CTypeLocation(), field.Location()), `Field %q with name %q on message %q changed option "ctype" from %q to %q.`, numberString, field.Name(), field.Message().Name(), previousField.CType().String(), field.CType().String())
+		add(field, nil, withBackupLocation(field.CTypeLocation(), field.Location()), `Field %q with name %q on message %q changed option "ctype" from %q to %q.`, numberString, field.Name(), field.Message().Name(), previousField.CType().String(), field.CType().String())
 	}
 	return nil
 }
@@ -236,7 +236,7 @@ func checkFieldSameJSONName(add addFunc, previousField protosource.Field, field 
 	if previousField.JSONName() != field.JSONName() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, withBackupLocation(field.JSONNameLocation(), field.Location()), `Field %q with name %q on message %q changed option "json_name" from %q to %q.`, numberString, field.Name(), field.Message().Name(), previousField.JSONName(), field.JSONName())
+		add(field, nil, withBackupLocation(field.JSONNameLocation(), field.Location()), `Field %q with name %q on message %q changed option "json_name" from %q to %q.`, numberString, field.Name(), field.Message().Name(), previousField.JSONName(), field.JSONName())
 	}
 	return nil
 }
@@ -248,7 +248,7 @@ func checkFieldSameJSType(add addFunc, previousField protosource.Field, field pr
 	if previousField.JSType() != field.JSType() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, withBackupLocation(field.JSTypeLocation(), field.Location()), `Field %q with name %q on message %q changed option "jstype" from %q to %q.`, numberString, field.Name(), field.Message().Name(), previousField.JSType().String(), field.JSType().String())
+		add(field, nil, withBackupLocation(field.JSTypeLocation(), field.Location()), `Field %q with name %q on message %q changed option "jstype" from %q to %q.`, numberString, field.Name(), field.Message().Name(), previousField.JSType().String(), field.JSType().String())
 	}
 	return nil
 }
@@ -261,7 +261,7 @@ func checkFieldSameLabel(add addFunc, previousField protosource.Field, field pro
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
 		// TODO: specific label location
-		add(field, field.Location(), `Field %q on message %q changed label from %q to %q.`, numberString, field.Message().Name(), previousField.Label().String(), field.Label().String())
+		add(field, nil, field.Location(), `Field %q on message %q changed label from %q to %q.`, numberString, field.Message().Name(), previousField.Label().String(), field.Label().String())
 	}
 	return nil
 }
@@ -273,7 +273,7 @@ func checkFieldSameName(add addFunc, previousField protosource.Field, field prot
 	if previousField.Name() != field.Name() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
-		add(field, field.NameLocation(), `Field %q on message %q changed name from %q to %q.`, numberString, field.Message().Name(), previousField.Name(), field.Name())
+		add(field, nil, field.NameLocation(), `Field %q on message %q changed name from %q to %q.`, numberString, field.Message().Name(), previousField.Name(), field.Name())
 	}
 	return nil
 }
@@ -293,7 +293,7 @@ func checkFieldSameOneof(add addFunc, previousField protosource.Field, field pro
 		if previousOneof.Name() != oneof.Name() {
 			// otherwise prints as hex
 			numberString := strconv.FormatInt(int64(field.Number()), 10)
-			add(field, field.Location(), `Field %q on message %q moved from oneof %q to oneof %q.`, numberString, field.Message().Name(), previousOneof.Name(), oneof.Name())
+			add(field, nil, field.Location(), `Field %q on message %q moved from oneof %q to oneof %q.`, numberString, field.Message().Name(), previousOneof.Name(), oneof.Name())
 		}
 		return nil
 	}
@@ -306,7 +306,7 @@ func checkFieldSameOneof(add addFunc, previousField protosource.Field, field pro
 	}
 	// otherwise prints as hex
 	numberString := strconv.FormatInt(int64(field.Number()), 10)
-	add(field, field.Location(), `Field %q on message %q moved from %s to %s a oneof.`, numberString, field.Message().Name(), previous, current)
+	add(field, nil, field.Location(), `Field %q on message %q moved from %s to %s a oneof.`, numberString, field.Message().Name(), previous, current)
 	return nil
 }
 
@@ -337,7 +337,7 @@ func checkFieldSameType(add addFunc, previousField protosource.Field, field prot
 	if previousField.Type() != field.Type() {
 		// otherwise prints as hex
 		previousNumberString := strconv.FormatInt(int64(previousField.Number()), 10)
-		add(field, field.TypeLocation(), `Field %q on message %q changed type from %q to %q.`, previousNumberString, field.Message().Name(), previousField.Type().String(), field.Type().String())
+		add(field, nil, field.TypeLocation(), `Field %q on message %q changed type from %q to %q.`, previousNumberString, field.Message().Name(), previousField.Type().String(), field.Type().String())
 		return nil
 	}
 
@@ -348,6 +348,7 @@ func checkFieldSameType(add addFunc, previousField protosource.Field, field prot
 		if previousField.TypeName() != field.TypeName() {
 			add(
 				field,
+				nil,
 				field.TypeNameLocation(),
 				`Field %q on message %q changed type from %q to %q.`,
 				numberString,
@@ -372,9 +373,9 @@ func checkFileNoDelete(add addFunc, previousFiles []protosource.File, files []pr
 	if err != nil {
 		return err
 	}
-	for previousFilePath := range previousFilePathToFile {
+	for previousFilePath, previousFile := range previousFilePathToFile {
 		if _, ok := filePathToFile[previousFilePath]; !ok {
-			add(nil, nil, `Previously present file %q was deleted.`, previousFilePath)
+			add(nil, []protosource.Descriptor{previousFile}, nil, `Previously present file %q was deleted.`, previousFilePath)
 		}
 	}
 	return nil
@@ -522,7 +523,7 @@ func checkFileSameSyntax(add addFunc, previousFile protosource.File, file protos
 
 func checkFileSameValue(add addFunc, previousValue interface{}, value interface{}, file protosource.File, location protosource.Location, name string) error {
 	if previousValue != value {
-		add(file, location, `File %s changed from %q to %q.`, name, previousValue, value)
+		add(file, nil, location, `File %s changed from %q to %q.`, name, previousValue, value)
 	}
 	return nil
 }
@@ -542,7 +543,7 @@ func checkMessageNoDelete(add addFunc, previousFile protosource.File, file proto
 	for previousNestedName := range previousNestedNameToMessage {
 		if _, ok := nestedNameToMessage[previousNestedName]; !ok {
 			descriptor, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
-			add(descriptor, location, `Previously present message %q was deleted from file.`, previousNestedName)
+			add(descriptor, nil, location, `Previously present message %q was deleted from file.`, previousNestedName)
 		}
 	}
 	return nil
@@ -555,7 +556,7 @@ func checkMessageNoRemoveStandardDescriptorAccessor(add addFunc, previousMessage
 	previous := strconv.FormatBool(previousMessage.NoStandardDescriptorAccessor())
 	current := strconv.FormatBool(message.NoStandardDescriptorAccessor())
 	if previous == "false" && current == "true" {
-		add(message, message.NoStandardDescriptorAccessorLocation(), `Message option "no_standard_descriptor_accessor" changed from %q to %q.`, previous, current)
+		add(message, nil, message.NoStandardDescriptorAccessorLocation(), `Message option "no_standard_descriptor_accessor" changed from %q to %q.`, previous, current)
 	}
 	return nil
 }
@@ -567,7 +568,7 @@ func checkMessageSameMessageSetWireFormat(add addFunc, previousMessage protosour
 	previous := strconv.FormatBool(previousMessage.MessageSetWireFormat())
 	current := strconv.FormatBool(message.MessageSetWireFormat())
 	if previous != current {
-		add(message, message.MessageSetWireFormatLocation(), `Message option "message_set_wire_format" changed from %q to %q.`, previous, current)
+		add(message, nil, message.MessageSetWireFormatLocation(), `Message option "message_set_wire_format" changed from %q to %q.`, previous, current)
 	}
 	return nil
 }
@@ -593,13 +594,13 @@ func checkMessageSameRequiredFields(add addFunc, previousMessage protosource.Mes
 	for previousNumber := range previousNumberToRequiredField {
 		if _, ok := numberToRequiredField[previousNumber]; !ok {
 			// we attach the error to the message as the field no longer exists
-			add(message, message.Location(), `Message %q had required field "%d" deleted. Required fields must always be sent, so if one side does not know about the required field, this will result in a breakage.`, previousMessage.Name(), previousNumber)
+			add(message, nil, message.Location(), `Message %q had required field "%d" deleted. Required fields must always be sent, so if one side does not know about the required field, this will result in a breakage.`, previousMessage.Name(), previousNumber)
 		}
 	}
 	for number, requiredField := range numberToRequiredField {
 		if _, ok := previousNumberToRequiredField[number]; !ok {
 			// we attach the error to the added required field
-			add(message, requiredField.Location(), `Message %q had required field "%d" added. Required fields must always be sent, so if one side does not know about the required field, this will result in a breakage.`, message.Name(), number)
+			add(message, nil, requiredField.Location(), `Message %q had required field "%d" added. Required fields must always be sent, so if one side does not know about the required field, this will result in a breakage.`, message.Name(), number)
 		}
 	}
 	return nil
@@ -619,7 +620,7 @@ func checkOneofNoDelete(add addFunc, previousMessage protosource.Message, messag
 	}
 	for previousName := range previousNameToOneof {
 		if _, ok := nameToOneof[previousName]; !ok {
-			add(message, message.Location(), `Previously present oneof %q on message %q was deleted.`, previousName, message.Name())
+			add(message, nil, message.Location(), `Previously present oneof %q on message %q was deleted.`, previousName, message.Name())
 		}
 	}
 	return nil
@@ -658,10 +659,10 @@ func checkPackageEnumNoDelete(add addFunc, previousFiles []protosource.File, fil
 						if err != nil {
 							return err
 						}
-						add(descriptor, location, `Previously present enum %q was deleted from package %q.`, previousNestedName, previousPackage)
+						add(descriptor, nil, location, `Previously present enum %q was deleted from package %q.`, previousNestedName, previousPackage)
 					} else {
 						// file does not exist, we don't know where the enum was deleted from
-						add(nil, nil, `Previously present enum %q was deleted from package %q.`, previousNestedName, previousPackage)
+						add(nil, nil, nil, `Previously present enum %q was deleted from package %q.`, previousNestedName, previousPackage)
 					}
 				}
 			}
@@ -700,10 +701,10 @@ func checkPackageMessageNoDelete(add addFunc, previousFiles []protosource.File, 
 					if ok {
 						// file exists, try to get a location to attach the error to
 						descriptor, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
-						add(descriptor, location, `Previously present message %q was deleted from package %q.`, previousNestedName, previousPackage)
+						add(descriptor, nil, location, `Previously present message %q was deleted from package %q.`, previousNestedName, previousPackage)
 					} else {
 						// file does not exist, we don't know where the message was deleted from
-						add(nil, nil, `Previously present message %q was deleted from package %q.`, previousNestedName, previousPackage)
+						add(nil, nil, nil, `Previously present message %q was deleted from package %q.`, previousNestedName, previousPackage)
 					}
 				}
 			}
@@ -724,9 +725,13 @@ func checkPackageNoDelete(add addFunc, previousFiles []protosource.File, files [
 	if err != nil {
 		return err
 	}
-	for previousPackage := range previousPackageToFiles {
+	for previousPackage, previousFiles := range previousPackageToFiles {
 		if _, ok := packageToFiles[previousPackage]; !ok {
-			add(nil, nil, `Previously present package %q was deleted.`, previousPackage)
+			previousDescriptors := make([]protosource.Descriptor, len(previousFiles))
+			for i, previousFile := range previousFiles {
+				previousDescriptors[i] = previousFile
+			}
+			add(nil, previousDescriptors, nil, `Previously present package %q was deleted.`, previousPackage)
 		}
 	}
 	return nil
@@ -761,11 +766,11 @@ func checkPackageServiceNoDelete(add addFunc, previousFiles []protosource.File, 
 					file, ok := filePathToFile[previousService.File().Path()]
 					if ok {
 						// file exists
-						add(file, nil, `Previously present service %q was deleted from package %q.`, previousName, previousPackage)
+						add(file, nil, nil, `Previously present service %q was deleted from package %q.`, previousName, previousPackage)
 					} else {
 						// file does not exist, we don't know where the service was deleted from
 						// TODO: find the service and print that this moved?
-						add(nil, nil, `Previously present service %q was deleted from package %q.`, previousName, previousPackage)
+						add(nil, nil, nil, `Previously present service %q was deleted from package %q.`, previousName, previousPackage)
 					}
 				}
 			}
@@ -782,14 +787,14 @@ func checkReservedEnumNoDelete(add addFunc, previousEnum protosource.Enum, enum 
 	stringToReservedRange := protosource.StringToReservedTagRange(enum)
 	for previousString := range previousStringToReservedRange {
 		if _, ok := stringToReservedRange[previousString]; !ok {
-			add(enum, enum.Location(), `Previously present reserved range %q on enum %q was deleted.`, previousString, enum.Name())
+			add(enum, nil, enum.Location(), `Previously present reserved range %q on enum %q was deleted.`, previousString, enum.Name())
 		}
 	}
 	previousValueToReservedName := protosource.ValueToReservedName(previousEnum)
 	valueToReservedName := protosource.ValueToReservedName(enum)
 	for previousValue := range previousValueToReservedName {
 		if _, ok := valueToReservedName[previousValue]; !ok {
-			add(enum, enum.Location(), `Previously present reserved name %q on enum %q was deleted.`, previousValue, enum.Name())
+			add(enum, nil, enum.Location(), `Previously present reserved name %q on enum %q was deleted.`, previousValue, enum.Name())
 		}
 	}
 	return nil
@@ -803,14 +808,14 @@ func checkReservedMessageNoDelete(add addFunc, previousMessage protosource.Messa
 	stringToReservedRange := protosource.StringToReservedTagRange(message)
 	for previousString := range previousStringToReservedRange {
 		if _, ok := stringToReservedRange[previousString]; !ok {
-			add(message, message.Location(), `Previously present reserved range %q on message %q was deleted.`, previousString, message.Name())
+			add(message, nil, message.Location(), `Previously present reserved range %q on message %q was deleted.`, previousString, message.Name())
 		}
 	}
 	previousValueToReservedName := protosource.ValueToReservedName(previousMessage)
 	valueToReservedName := protosource.ValueToReservedName(message)
 	for previousValue := range previousValueToReservedName {
 		if _, ok := valueToReservedName[previousValue]; !ok {
-			add(message, message.Location(), `Previously present reserved name %q on message %q was deleted.`, previousValue, message.Name())
+			add(message, nil, message.Location(), `Previously present reserved name %q on message %q was deleted.`, previousValue, message.Name())
 		}
 	}
 	return nil
@@ -830,7 +835,7 @@ func checkRPCNoDelete(add addFunc, previousService protosource.Service, service 
 	}
 	for previousName := range previousNameToMethod {
 		if _, ok := nameToMethod[previousName]; !ok {
-			add(service, service.Location(), `Previously present RPC %q on service %q was deleted.`, previousName, service.Name())
+			add(service, nil, service.Location(), `Previously present RPC %q on service %q was deleted.`, previousName, service.Name())
 		}
 	}
 	return nil
@@ -847,7 +852,7 @@ func checkRPCSameClientStreaming(add addFunc, previousMethod protosource.Method,
 			previous = "unary"
 			current = "streaming"
 		}
-		add(method, method.Location(), `RPC %q on service %q changed from client %s to client %s.`, method.Name(), method.Service().Name(), previous, current)
+		add(method, nil, method.Location(), `RPC %q on service %q changed from client %s to client %s.`, method.Name(), method.Service().Name(), previous, current)
 	}
 	return nil
 }
@@ -859,7 +864,7 @@ func checkRPCSameIdempotencyLevel(add addFunc, previousMethod protosource.Method
 	previous := previousMethod.IdempotencyLevel()
 	current := method.IdempotencyLevel()
 	if previous != current {
-		add(method, method.IdempotencyLevelLocation(), `RPC %q on service %q changed option "idempotency_level" from %q to %q.`, method.Name(), method.Service().Name(), previous.String(), current.String())
+		add(method, nil, method.IdempotencyLevelLocation(), `RPC %q on service %q changed option "idempotency_level" from %q to %q.`, method.Name(), method.Service().Name(), previous.String(), current.String())
 	}
 	return nil
 }
@@ -869,7 +874,7 @@ var CheckRPCSameRequestType = newMethodPairCheckFunc(checkRPCSameRequestType)
 
 func checkRPCSameRequestType(add addFunc, previousMethod protosource.Method, method protosource.Method) error {
 	if previousMethod.InputTypeName() != method.InputTypeName() {
-		add(method, method.InputTypeLocation(), `RPC %q on service %q changed request type from %q to %q.`, method.Name(), method.Service().Name(), previousMethod.InputTypeName(), method.InputTypeName())
+		add(method, nil, method.InputTypeLocation(), `RPC %q on service %q changed request type from %q to %q.`, method.Name(), method.Service().Name(), previousMethod.InputTypeName(), method.InputTypeName())
 	}
 	return nil
 }
@@ -879,7 +884,7 @@ var CheckRPCSameResponseType = newMethodPairCheckFunc(checkRPCSameResponseType)
 
 func checkRPCSameResponseType(add addFunc, previousMethod protosource.Method, method protosource.Method) error {
 	if previousMethod.OutputTypeName() != method.OutputTypeName() {
-		add(method, method.OutputTypeLocation(), `RPC %q on service %q changed response type from %q to %q.`, method.Name(), method.Service().Name(), previousMethod.OutputTypeName(), method.OutputTypeName())
+		add(method, nil, method.OutputTypeLocation(), `RPC %q on service %q changed response type from %q to %q.`, method.Name(), method.Service().Name(), previousMethod.OutputTypeName(), method.OutputTypeName())
 	}
 	return nil
 }
@@ -895,7 +900,7 @@ func checkRPCSameServerStreaming(add addFunc, previousMethod protosource.Method,
 			previous = "unary"
 			current = "streaming"
 		}
-		add(method, method.Location(), `RPC %q on service %q changed from server %s to server %s.`, method.Name(), method.Service().Name(), previous, current)
+		add(method, nil, method.Location(), `RPC %q on service %q changed from server %s to server %s.`, method.Name(), method.Service().Name(), previous, current)
 	}
 	return nil
 }
@@ -914,7 +919,7 @@ func checkServiceNoDelete(add addFunc, previousFile protosource.File, file proto
 	}
 	for previousName := range previousNameToService {
 		if _, ok := nameToService[previousName]; !ok {
-			add(file, nil, `Previously present service %q was deleted from file.`, previousName)
+			add(file, nil, nil, `Previously present service %q was deleted from file.`, previousName)
 		}
 	}
 	return nil
