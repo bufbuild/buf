@@ -26,14 +26,14 @@ import (
 // addFunc adds a FileAnnotation.
 //
 // Both the Descriptor and Location can be nil.
-type addFunc func(protosource.Descriptor, protosource.Location, string, ...interface{})
+type addFunc func(protosource.Descriptor, []protosource.Descriptor, protosource.Location, string, ...interface{})
 
 func newFilesCheckFunc(
 	f func(addFunc, []protosource.File, []protosource.File) error,
 ) func(string, internal.IgnoreFunc, []protosource.File, []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 	return func(id string, ignoreFunc internal.IgnoreFunc, previousFiles []protosource.File, files []protosource.File) ([]bufanalysis.FileAnnotation, error) {
 		helper := internal.NewHelper(id, ignoreFunc)
-		if err := f(helper.AddFileAnnotationf, previousFiles, files); err != nil {
+		if err := f(helper.AddFileAnnotationWithExtraIgnoreDescriptorsf, previousFiles, files); err != nil {
 			return nil, err
 		}
 		return helper.FileAnnotations(), nil
