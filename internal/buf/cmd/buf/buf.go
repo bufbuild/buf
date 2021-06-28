@@ -25,6 +25,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/push"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/branch/branchcreate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/branch/branchlist"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/commit/commitget"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/organization/organizationget"
@@ -227,6 +229,14 @@ func NewRootCommand(
 								SubCommands: []*appcmd.Command{
 									tagcreate.NewCommand("create", builder),
 									taglist.NewCommand("list", builder),
+								},
+							},
+							{
+								Use:   "commit",
+								Short: "Repository commit commands.",
+								SubCommands: []*appcmd.Command{
+									commitget.NewCommand("get", builder),
+									commitlist.NewCommand("list", builder),
 								},
 							},
 						},

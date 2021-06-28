@@ -16,18 +16,23 @@ package modupdate
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
+	"github.com/bufbuild/buf/internal/pkg/rpc"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-const dirFlagName = "dir"
+const (
+	dirFlagName   = "dir"
+	defaultRemote = "buf.build"
+)
 
 // NewCommand returns a new update Command.
 func NewCommand(
@@ -99,16 +104,19 @@ func run(
 	if err != nil {
 		return err
 	}
-	if moduleConfig.ModuleIdentity == nil || moduleConfig.ModuleIdentity.Remote() == "" {
-		return bufcli.ErrNoModuleName
+
+	remote := defaultRemote
+	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
+		remote = moduleConfig.ModuleIdentity.Remote()
 	}
+
 	var dependencyModulePins []bufmodule.ModulePin
 	if len(moduleConfig.Build.DependencyModuleReferences) != 0 {
 		apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 		if err != nil {
 			return err
 		}
-		service, err := apiProvider.NewResolveService(ctx, moduleConfig.ModuleIdentity.Remote())
+		service, err := apiProvider.NewResolveService(ctx, remote)
 		if err != nil {
 			return err
 		}
@@ -117,6 +125,9 @@ func run(
 		)
 		protoDependencyModulePins, err := service.GetModulePins(ctx, protoDependencyModuleReferences)
 		if err != nil {
+			if rpc.GetErrorCode(err) == rpc.ErrorCodeUnimplemented && remote != defaultRemote {
+				return fmt.Errorf("%w. Are you sure %q (derived from module name %q) is a Buf Schema Registry?", err, remote, moduleConfig.ModuleIdentity.IdentityString())
+			}
 			return err
 		}
 		dependencyModulePins, err = bufmodule.NewModulePinsForProtos(protoDependencyModulePins...)

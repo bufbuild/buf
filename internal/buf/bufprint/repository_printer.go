@@ -29,27 +29,60 @@ type repositoryPrinter struct {
 	apiProvider registryv1alpha1apiclient.Provider
 	address     string
 	writer      io.Writer
-	asJSON      bool
 }
 
 func newRepositoryPrinter(
 	apiProvider registryv1alpha1apiclient.Provider,
 	address string,
 	writer io.Writer,
-	asJSON bool,
 ) *repositoryPrinter {
 	return &repositoryPrinter{
 		apiProvider: apiProvider,
 		address:     address,
 		writer:      writer,
-		asJSON:      asJSON,
 	}
 }
 
-func (p *repositoryPrinter) PrintRepositories(ctx context.Context, messages ...*registryv1alpha1.Repository) error {
+func (p *repositoryPrinter) PrintRepository(ctx context.Context, format Format, message *registryv1alpha1.Repository) error {
+	outputRepositories, err := p.registryRepositoriesToOutRepositories(ctx, message)
+	if err != nil {
+		return err
+	}
+	if len(outputRepositories) != 1 {
+		return fmt.Errorf("error converting repositories: expected 1 got %d", len(outputRepositories))
+	}
+	switch format {
+	case FormatText:
+		return p.printRepositoriesText(outputRepositories)
+	case FormatJSON:
+		return json.NewEncoder(p.writer).Encode(outputRepositories[0])
+	default:
+		return fmt.Errorf("unknown format: %v", format)
+	}
+}
+
+func (p *repositoryPrinter) PrintRepositories(ctx context.Context, format Format, nextPageToken string, messages ...*registryv1alpha1.Repository) error {
 	if len(messages) == 0 {
 		return nil
 	}
+	outputRepositories, err := p.registryRepositoriesToOutRepositories(ctx, messages...)
+	if err != nil {
+		return err
+	}
+	switch format {
+	case FormatText:
+		return p.printRepositoriesText(outputRepositories)
+	case FormatJSON:
+		return json.NewEncoder(p.writer).Encode(paginationWrapper{
+			NextPage: nextPageToken,
+			Results:  outputRepositories,
+		})
+	default:
+		return fmt.Errorf("unknown format: %v", format)
+	}
+}
+
+func (p *repositoryPrinter) registryRepositoriesToOutRepositories(ctx context.Context, messages ...*registryv1alpha1.Repository) ([]outputRepository, error) {
 	var outputRepositories []outputRepository
 	for _, repository := range messages {
 		var ownerName string
@@ -57,25 +90,25 @@ func (p *repositoryPrinter) PrintRepositories(ctx context.Context, messages ...*
 		case *registryv1alpha1.Repository_OrganizationId:
 			organizationService, err := p.apiProvider.NewOrganizationService(ctx, p.address)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			organization, err := organizationService.GetOrganization(ctx, owner.OrganizationId)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			ownerName = organization.Name
 		case *registryv1alpha1.Repository_UserId:
 			userService, err := p.apiProvider.NewUserService(ctx, p.address)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			user, err := userService.GetUser(ctx, owner.UserId)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			ownerName = user.Username
 		default:
-			return fmt.Errorf("unknown owner: %T", owner)
+			return nil, fmt.Errorf("unknown owner: %T", owner)
 		}
 		outputRepository := outputRepository{
 			ID:         repository.Id,
@@ -86,34 +119,19 @@ func (p *repositoryPrinter) PrintRepositories(ctx context.Context, messages ...*
 		}
 		outputRepositories = append(outputRepositories, outputRepository)
 	}
-	if p.asJSON {
-		return p.printRepositoriesJSON(outputRepositories)
-	}
-	return p.printRepositoriesText(outputRepositories)
-}
-
-func (p *repositoryPrinter) printRepositoriesJSON(outputRepositories []outputRepository) error {
-	encoder := json.NewEncoder(p.writer)
-	for _, outputRepository := range outputRepositories {
-		if err := encoder.Encode(outputRepository); err != nil {
-			return err
-		}
-	}
-	return nil
+	return outputRepositories, nil
 }
 
 func (p *repositoryPrinter) printRepositoriesText(outputRepositories []outputRepository) error {
 	return WithTabWriter(
 		p.writer,
 		[]string{
-			"ID",
 			"Full name",
 			"Created",
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputRepository := range outputRepositories {
 				if err := tabWriter.Write(
-					outputRepository.ID,
 					outputRepository.Remote+"/"+outputRepository.Owner+"/"+outputRepository.Name,
 					outputRepository.CreateTime.Format(time.RFC3339),
 				); err != nil {

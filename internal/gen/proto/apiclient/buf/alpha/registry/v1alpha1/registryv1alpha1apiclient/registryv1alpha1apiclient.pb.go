@@ -25,7 +25,9 @@ import (
 type Provider interface {
 	DownloadServiceProvider
 	OrganizationServiceProvider
+	OwnerServiceProvider
 	PushServiceProvider
+	ReferenceServiceProvider
 	RepositoryBranchServiceProvider
 	RepositoryCommitServiceProvider
 	RepositoryServiceProvider
@@ -44,9 +46,19 @@ type OrganizationServiceProvider interface {
 	NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error)
 }
 
+// OwnerServiceProvider provides a client-side OwnerService for an address.
+type OwnerServiceProvider interface {
+	NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error)
+}
+
 // PushServiceProvider provides a client-side PushService for an address.
 type PushServiceProvider interface {
 	NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error)
+}
+
+// ReferenceServiceProvider provides a client-side ReferenceService for an address.
+type ReferenceServiceProvider interface {
+	NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error)
 }
 
 // RepositoryBranchServiceProvider provides a client-side RepositoryBranchService for an address.
