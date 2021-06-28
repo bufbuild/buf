@@ -1,0 +1,7 @@
+version: v1beta1
+breaking:
+  use:
+    - FILE_NO_DELETE
+  ignore:
+    - a/c
+    - no_package.proto
