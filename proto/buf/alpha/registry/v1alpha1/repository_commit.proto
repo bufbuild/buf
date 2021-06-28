@@ -17,6 +17,7 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/api/v1alpha1/api.proto";
+import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 import "google/protobuf/timestamp.proto";
 
 message RepositoryCommit {
@@ -38,6 +39,8 @@ message RepositoryCommit {
   int64 commit_sequence_id = 6;
   // The username of the user who authored this commit.
   string author = 7;
+  // The tags associated with this commit
+  repeated buf.alpha.registry.v1alpha1.RepositoryTag tags = 8;
 }
 
 // RepositoryCommitService is the Repository commit service.
@@ -67,15 +70,13 @@ message ListRepositoryCommitsByBranchRequest {
   // The name of the repository branch whose commits should be listed.
   string repository_branch_name = 3;
   uint32 page_size = 4;
-  // The first page is returned if this is 0.
-  int64 page_token = 5;
+  string page_token = 5;
   bool reverse = 6;
 }
 
 message ListRepositoryCommitsByBranchResponse {
   repeated RepositoryCommit repository_commits = 1;
-  // There are no more pages if this is 0.
-  int64 next_page_token = 2;
+  string next_page_token = 2;
 }
 
 message GetRepositoryCommitByReferenceRequest {

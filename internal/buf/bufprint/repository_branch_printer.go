@@ -17,6 +17,7 @@ package bufprint
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
@@ -25,60 +26,60 @@ import (
 
 type repositoryBranchPrinter struct {
 	writer io.Writer
-	asJSON bool
 }
 
 func newRepositoryBranchPrinter(
 	writer io.Writer,
-	asJSON bool,
 ) *repositoryBranchPrinter {
 	return &repositoryBranchPrinter{
 		writer: writer,
-		asJSON: asJSON,
 	}
 }
 
-func (p *repositoryBranchPrinter) PrintRepositoryBranches(ctx context.Context, messages ...*registryv1alpha1.RepositoryBranch) error {
+func (p *repositoryBranchPrinter) PrintRepositoryBranch(ctx context.Context, format Format, message *registryv1alpha1.RepositoryBranch) error {
+	outputBranch := registryBranchToOutputBranch(message)
+	switch format {
+	case FormatText:
+		return p.printRepositoryBranchesText([]outputRepositoryBranch{outputBranch})
+	case FormatJSON:
+		return json.NewEncoder(p.writer).Encode(outputBranch)
+	default:
+		return fmt.Errorf("unknown format: %v", format)
+	}
+}
+
+func (p *repositoryBranchPrinter) PrintRepositoryBranches(ctx context.Context, format Format, nextPageToken string, messages ...*registryv1alpha1.RepositoryBranch) error {
 	if len(messages) == 0 {
 		return nil
 	}
 	var outputRepositoryBranches []outputRepositoryBranch
 	for _, repositoryBranch := range messages {
-		outputRepositoryBranch := outputRepositoryBranch{
-			ID:         repositoryBranch.Id,
-			Name:       repositoryBranch.Name,
-			CreateTime: repositoryBranch.CreateTime.AsTime(),
-		}
+		outputRepositoryBranch := registryBranchToOutputBranch(repositoryBranch)
 		outputRepositoryBranches = append(outputRepositoryBranches, outputRepositoryBranch)
 	}
-	if p.asJSON {
-		return p.printRepositoryBranchesJSON(outputRepositoryBranches)
+	switch format {
+	case FormatText:
+		return p.printRepositoryBranchesText(outputRepositoryBranches)
+	case FormatJSON:
+		return json.NewEncoder(p.writer).Encode(paginationWrapper{
+			NextPage: nextPageToken,
+			Results:  outputRepositoryBranches,
+		})
+	default:
+		return fmt.Errorf("unknown format: %v", format)
 	}
-	return p.printRepositoryBranchesText(outputRepositoryBranches)
-}
-
-func (p *repositoryBranchPrinter) printRepositoryBranchesJSON(outputRepositoryBranches []outputRepositoryBranch) error {
-	encoder := json.NewEncoder(p.writer)
-	for _, outputRepositoryBranch := range outputRepositoryBranches {
-		if err := encoder.Encode(outputRepositoryBranch); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (p *repositoryBranchPrinter) printRepositoryBranchesText(outputRepositoryBranches []outputRepositoryBranch) error {
 	return WithTabWriter(
 		p.writer,
 		[]string{
-			"ID",
 			"Name",
 			"Created",
 		},
 		func(tabWriter TabWriter) error {
 			for _, outputRepositoryBranch := range outputRepositoryBranches {
 				if err := tabWriter.Write(
-					outputRepositoryBranch.ID,
 					outputRepositoryBranch.Name,
 					outputRepositoryBranch.CreateTime.Format(time.RFC3339),
 				); err != nil {
@@ -94,4 +95,12 @@ type outputRepositoryBranch struct {
 	ID         string    `json:"id,omitempty"`
 	Name       string    `json:"name,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty"`
+}
+
+func registryBranchToOutputBranch(repositoryBranch *registryv1alpha1.RepositoryBranch) outputRepositoryBranch {
+	return outputRepositoryBranch{
+		ID:         repositoryBranch.Id,
+		Name:       repositoryBranch.Name,
+		CreateTime: repositoryBranch.CreateTime.AsTime(),
+	}
 }

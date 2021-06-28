@@ -102,6 +102,11 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
+	format, err := bufprint.ParseFormat(flags.Format)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
@@ -121,7 +126,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	repositoryTags, _, err := repositoryTagService.ListRepositoryTags(
+	repositoryTags, nextPageToken, err := repositoryTagService.ListRepositoryTags(
 		ctx,
 		repository.Id,
 		flags.PageSize,
@@ -131,5 +136,5 @@ func run(
 	if err != nil {
 		return err
 	}
-	return bufcli.PrintRepositoryTags(ctx, container.Stdout(), flags.Format, repositoryTags...)
+	return bufprint.NewRepositoryTagPrinter(container.Stdout()).PrintRepositoryTags(ctx, format, nextPageToken, repositoryTags...)
 }

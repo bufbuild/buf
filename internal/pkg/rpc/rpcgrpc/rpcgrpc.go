@@ -217,23 +217,7 @@ func toServerInfo(unaryServerInfo *grpc.UnaryServerInfo) *rpc.ServerInfo {
 	if unaryServerInfo == nil {
 		return &rpc.ServerInfo{}
 	}
-	service, method := toServiceAndMethod(unaryServerInfo)
 	return &rpc.ServerInfo{
-		Service: service,
-		Method:  method,
+		Path: unaryServerInfo.FullMethod,
 	}
-}
-
-func toServiceAndMethod(unaryServerInfo *grpc.UnaryServerInfo) (string, string) {
-	if unaryServerInfo == nil {
-		return "", ""
-	}
-	fullMethod := unaryServerInfo.FullMethod
-	if fullMethod != "" && fullMethod[0] == '/' {
-		fullMethod = fullMethod[1:]
-	}
-	if pos := strings.LastIndex(fullMethod, "/"); pos != -1 {
-		return fullMethod[:pos], fullMethod[pos+1:]
-	}
-	return "", ""
 }

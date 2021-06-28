@@ -20,16 +20,13 @@ import (
 
 // ServerInfo contains server rpc info.
 type ServerInfo struct {
-	// Service is the rpc service component.
+	// Path is the rpc method path.
 	//
-	// May be empty.
-	// Example: "foo.bar.v1" is the service for "/foo.bar.v1/Baz".
-	Service string
-	// Method is the rpc method component.
+	// This is RPC-system dependent, but will be unique for a given RPC method.
+	// For both Twirp and gRPC, this is /package.Service/Method.
 	//
-	// May be empty.
-	// Example: "Baz" is the method for "/foo/bar.v1/Baz".
-	Method string
+	// May be empty, although almost never is in current practice.
+	Path string
 }
 
 // ServerInterceptor is a server interceptor.
@@ -62,23 +59,14 @@ func (i ServerInterceptorFunc) Intercept(
 
 // ServerHandler is a server handler.
 type ServerHandler interface {
-	Handle(
-		ctx context.Context,
-		request interface{},
-	) (interface{}, error)
+	Handle(ctx context.Context, request interface{}) (interface{}, error)
 }
 
 // ServerHandlerFunc is a function that implements ServerHandler.
-type ServerHandlerFunc func(
-	ctx context.Context,
-	request interface{},
-) (interface{}, error)
+type ServerHandlerFunc func(ctx context.Context, request interface{}) (interface{}, error)
 
 // Handle implements ServerHandler.
-func (h ServerHandlerFunc) Handle(
-	ctx context.Context,
-	request interface{},
-) (interface{}, error) {
+func (h ServerHandlerFunc) Handle(ctx context.Context, request interface{}) (interface{}, error) {
 	return h(ctx, request)
 }
 

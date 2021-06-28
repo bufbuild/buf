@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -30,14 +29,11 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/bufprint"
 	"github.com/bufbuild/buf/internal/buf/buftransport"
 	"github.com/bufbuild/buf/internal/buf/bufwire"
 	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
-	registryv1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/app/appname"
 	"github.com/bufbuild/buf/internal/pkg/git"
@@ -601,99 +597,6 @@ func ReadModule(
 		return nil, nil, err
 	}
 	return module, moduleIdentity, err
-}
-
-// PrintUsers prints the provided users to the writer.
-func PrintUsers(
-	ctx context.Context,
-	writer io.Writer,
-	formatString string,
-	users ...*registryv1alpha1.User,
-) error {
-	format, err := bufprint.ParseFormat(formatString)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-	userPrinter, err := bufprint.NewUserPrinter(writer, format)
-	if err != nil {
-		return NewInternalError(err)
-	}
-	return userPrinter.PrintUsers(ctx, users...)
-}
-
-// PrintOrganizations prints the provided organizations to the writer.
-func PrintOrganizations(
-	ctx context.Context,
-	address string,
-	writer io.Writer,
-	formatString string,
-	organizations ...*registryv1alpha1.Organization,
-) error {
-	format, err := bufprint.ParseFormat(formatString)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-	organizationPrinter, err := bufprint.NewOrganizationPrinter(address, writer, format)
-	if err != nil {
-		return NewInternalError(err)
-	}
-	return organizationPrinter.PrintOrganizations(ctx, organizations...)
-}
-
-// PrintRepositories prints the provided repositories to the writer.
-func PrintRepositories(
-	ctx context.Context,
-	apiProvider registryv1alpha1apiclient.Provider,
-	address string,
-	writer io.Writer,
-	formatString string,
-	repositories ...*registryv1alpha1.Repository,
-) error {
-	format, err := bufprint.ParseFormat(formatString)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-	repositoryPrinter, err := bufprint.NewRepositoryPrinter(apiProvider, address, writer, format)
-	if err != nil {
-		return NewInternalError(err)
-	}
-	return repositoryPrinter.PrintRepositories(ctx, repositories...)
-}
-
-// PrintRepositoryBranches prints the provided repositoryBranches to the writer.
-func PrintRepositoryBranches(
-	ctx context.Context,
-	writer io.Writer,
-	formatString string,
-	repositoryBranches ...*registryv1alpha1.RepositoryBranch,
-) error {
-	format, err := bufprint.ParseFormat(formatString)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-	repositoryBranchPrinter, err := bufprint.NewRepositoryBranchPrinter(writer, format)
-	if err != nil {
-		return NewInternalError(err)
-	}
-	return repositoryBranchPrinter.PrintRepositoryBranches(ctx, repositoryBranches...)
-}
-
-// PrintRepositoryTags prints the provided repositoryTags to the writer.
-func PrintRepositoryTags(
-	ctx context.Context,
-	writer io.Writer,
-	formatString string,
-	repositoryTags ...*registryv1alpha1.RepositoryTag,
-) error {
-	format, err := bufprint.ParseFormat(formatString)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-	repositoryTagPrinter, err := bufprint.NewRepositoryTagPrinter(writer, format)
-	if err != nil {
-		return NewInternalError(err)
-	}
-	return repositoryTagPrinter.PrintRepositoryTags(ctx, repositoryTags...)
 }
 
 // modifyRemotes modifies the remotes based on f.

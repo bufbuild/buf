@@ -14,28 +14,7 @@
 
 package bufprint
 
-import (
-	"context"
-	"io"
-
-	registryv1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1"
-)
-
-type jsonUserPrinter struct {
-	writer io.Writer
-}
-
-func newJSONUserPrinter(writer io.Writer) *jsonUserPrinter {
-	return &jsonUserPrinter{
-		writer: writer,
-	}
-}
-
-func (p *jsonUserPrinter) PrintUsers(ctx context.Context, messages ...*registryv1alpha1.User) error {
-	for _, message := range messages {
-		if err := PrintProtoMessageJSON(p.writer, message); err != nil {
-			return err
-		}
-	}
-	return nil
+type paginationWrapper struct {
+	NextPage string      `json:"next_page,omitempty"`
+	Results  interface{} `json:"results"`
 }

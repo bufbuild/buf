@@ -17,6 +17,7 @@ package bufprint
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
@@ -25,54 +26,50 @@ import (
 
 type repositoryTagPrinter struct {
 	writer io.Writer
-	asJSON bool
 }
 
 func newRepositoryTagPrinter(
 	writer io.Writer,
-	asJSON bool,
 ) *repositoryTagPrinter {
 	return &repositoryTagPrinter{
 		writer: writer,
-		asJSON: asJSON,
 	}
 }
 
-func (p *repositoryTagPrinter) PrintRepositoryTags(ctx context.Context, messages ...*registryv1alpha1.RepositoryTag) error {
+func (p *repositoryTagPrinter) PrintRepositoryTag(ctx context.Context, format Format, message *registryv1alpha1.RepositoryTag) error {
+	outRepositoryTag := registryTagToOutputTag(message)
+	switch format {
+	case FormatText:
+		return p.printRepositoryTagsText([]outputRepositoryTag{outRepositoryTag})
+	case FormatJSON:
+		return json.NewEncoder(p.writer).Encode(outRepositoryTag)
+	default:
+		return fmt.Errorf("unknown format: %v", format)
+	}
+}
+
+func (p *repositoryTagPrinter) PrintRepositoryTags(ctx context.Context, format Format, nextPageToken string, messages ...*registryv1alpha1.RepositoryTag) error {
 	if len(messages) == 0 {
 		return nil
 	}
-	var outputRepositoryTags []outputRepositoryTag
-	for _, repositoryTag := range messages {
-		outputRepositoryTag := outputRepositoryTag{
-			ID:         repositoryTag.Id,
-			Name:       repositoryTag.Name,
-			Commit:     repositoryTag.CommitName,
-			CreateTime: repositoryTag.CreateTime.AsTime(),
-		}
-		outputRepositoryTags = append(outputRepositoryTags, outputRepositoryTag)
+	outputRepositoryTags := registryTagsToOutputTags(messages)
+	switch format {
+	case FormatText:
+		return p.printRepositoryTagsText(outputRepositoryTags)
+	case FormatJSON:
+		return json.NewEncoder(p.writer).Encode(paginationWrapper{
+			NextPage: nextPageToken,
+			Results:  outputRepositoryTags,
+		})
+	default:
+		return fmt.Errorf("unknown format: %v", format)
 	}
-	if p.asJSON {
-		return p.printRepositoryTagsJSON(outputRepositoryTags)
-	}
-	return p.printRepositoryTagsText(outputRepositoryTags)
-}
-
-func (p *repositoryTagPrinter) printRepositoryTagsJSON(outputRepositoryTags []outputRepositoryTag) error {
-	encoder := json.NewEncoder(p.writer)
-	for _, outputRepositoryTag := range outputRepositoryTags {
-		if err := encoder.Encode(outputRepositoryTag); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (p *repositoryTagPrinter) printRepositoryTagsText(outputRepositoryTags []outputRepositoryTag) error {
 	return WithTabWriter(
 		p.writer,
 		[]string{
-			"ID",
 			"Name",
 			"Commit",
 			"Created",
@@ -98,4 +95,20 @@ type outputRepositoryTag struct {
 	Name       string    `json:"name,omitempty"`
 	Commit     string    `json:"commit,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty"`
+}
+
+func registryTagToOutputTag(repositoryTag *registryv1alpha1.RepositoryTag) outputRepositoryTag {
+	return outputRepositoryTag{
+		Name:       repositoryTag.Name,
+		Commit:     repositoryTag.CommitName,
+		CreateTime: repositoryTag.CreateTime.AsTime(),
+	}
+}
+
+func registryTagsToOutputTags(tags []*registryv1alpha1.RepositoryTag) []outputRepositoryTag {
+	outputRepositoryTags := make([]outputRepositoryTag, len(tags))
+	for i, repositoryTag := range tags {
+		outputRepositoryTags[i] = registryTagToOutputTag(repositoryTag)
+	}
+	return outputRepositoryTags
 }
