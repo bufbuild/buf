@@ -97,6 +97,11 @@ func run(
 	if remote == "" {
 		return appcmd.NewInvalidArgumentError("a module remote must be specified")
 	}
+	format, err := bufprint.ParseFormat(flags.Format)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
@@ -105,7 +110,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	repositories, _, err := service.ListRepositories(
+	repositories, nextPageToken, err := service.ListRepositories(
 		ctx,
 		flags.PageSize,
 		flags.PageToken,
@@ -114,5 +119,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	return bufcli.PrintRepositories(ctx, apiProvider, remote, container.Stdout(), flags.Format, repositories...)
+	return bufprint.NewRepositoryPrinter(
+		apiProvider,
+		remote,
+		container.Stdout(),
+	).PrintRepositories(ctx, format, nextPageToken, repositories...)
 }

@@ -76,6 +76,11 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
+	format, err := bufprint.ParseFormat(flags.Format)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
@@ -94,5 +99,9 @@ func run(
 		}
 		return err
 	}
-	return bufcli.PrintRepositories(ctx, apiProvider, moduleIdentity.Remote(), container.Stdout(), flags.Format, repository)
+	return bufprint.NewRepositoryPrinter(
+		apiProvider,
+		moduleIdentity.Remote(),
+		container.Stdout(),
+	).PrintRepository(ctx, format, repository)
 }

@@ -373,6 +373,14 @@ type ReadBucketCloser interface {
 	SubDirPath() string
 }
 
+// ReadWriteBucketCloser is a bucket potentially returned from GetBucket.
+//
+// The returned ReadBucketCloser may be upgradeable to a ReadWriteBucketCloser.
+type ReadWriteBucketCloser interface {
+	ReadBucketCloser
+	storage.WriteBucket
+}
+
 // Reader is a reader.
 type Reader interface {
 	// GetFile gets the file.
@@ -384,6 +392,8 @@ type Reader interface {
 		options ...GetFileOption,
 	) (io.ReadCloser, error)
 	// GetBucket gets the bucket.
+	//
+	// The returned ReadBucketCloser may actually be upgradeable to a ReadWriteBucketCloser.
 	GetBucket(
 		ctx context.Context,
 		container app.EnvStdinContainer,

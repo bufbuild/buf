@@ -24,13 +24,15 @@ It is generated from these files:
 	buf/alpha/registry/v1alpha1/module.proto
 	buf/alpha/registry/v1alpha1/scope.proto
 	buf/alpha/registry/v1alpha1/organization.proto
-	buf/alpha/registry/v1alpha1/push.proto
-	buf/alpha/registry/v1alpha1/repository.proto
-	buf/alpha/registry/v1alpha1/repository_branch.proto
-	buf/alpha/registry/v1alpha1/repository_commit.proto
-	buf/alpha/registry/v1alpha1/repository_tag.proto
-	buf/alpha/registry/v1alpha1/resolve.proto
 	buf/alpha/registry/v1alpha1/user.proto
+	buf/alpha/registry/v1alpha1/owner.proto
+	buf/alpha/registry/v1alpha1/push.proto
+	buf/alpha/registry/v1alpha1/repository_branch.proto
+	buf/alpha/registry/v1alpha1/repository_tag.proto
+	buf/alpha/registry/v1alpha1/repository_commit.proto
+	buf/alpha/registry/v1alpha1/reference.proto
+	buf/alpha/registry/v1alpha1/repository.proto
+	buf/alpha/registry/v1alpha1/resolve.proto
 */
 package registryv1alpha1
 

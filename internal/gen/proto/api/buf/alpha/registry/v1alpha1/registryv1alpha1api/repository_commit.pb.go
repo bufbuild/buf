@@ -31,9 +31,9 @@ type RepositoryCommitService interface {
 		repositoryName string,
 		repositoryBranchName string,
 		pageSize uint32,
-		pageToken int64,
+		pageToken string,
 		reverse bool,
-	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken int64, err error)
+	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
 	// GetRepositoryCommitByReference returns the repository commit matching
 	// the provided reference, if it exists.
 	GetRepositoryCommitByReference(

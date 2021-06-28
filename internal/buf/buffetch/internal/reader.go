@@ -328,8 +328,8 @@ func (r *reader) getDirBucket(
 		); err != nil {
 			return nil, err
 		}
-		return newReadBucketCloser(
-			storage.NopReadBucketCloser(readWriteBucket),
+		return newReadWriteBucketCloser(
+			storage.NopReadWriteBucketCloser(readWriteBucket),
 			rootPath,
 			dirRefRelativePath,
 		)
@@ -341,8 +341,8 @@ func (r *reader) getDirBucket(
 	if err != nil {
 		return nil, err
 	}
-	return newReadBucketCloser(
-		storage.NopReadBucketCloser(readWriteBucket),
+	return newReadWriteBucketCloser(
+		storage.NopReadWriteBucketCloser(readWriteBucket),
 		"",
 		"",
 	)

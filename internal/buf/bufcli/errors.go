@@ -164,10 +164,11 @@ func wrapError(err error) error {
 		// This is especially relevant for commands like lint and breaking.
 		return err
 	}
+	rpcCode := rpc.GetErrorCode(err)
 	switch {
-	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
+	case rpcCode == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
 		return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://beta.docs.buf.build/authentication`)
-	case rpc.GetErrorCode(err) == rpc.ErrorCodeUnavailable:
+	case rpcCode == rpc.ErrorCodeUnavailable:
 		return fmt.Errorf(`Failure: the server hosted at that remote is unavailable: %w.`, err)
 	}
 	return fmt.Errorf("Failure: %w.", err)

@@ -81,7 +81,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.DocumentationComments,
 		documentationCommentsFlagName,
 		false,
-		"Do not write inline documentation in the form of comments in the resulting configuration file.",
+		"Write inline documentation in the form of comments in the resulting configuration file.",
 	)
 	flagSet.StringVarP(
 		&f.OutDirPath,

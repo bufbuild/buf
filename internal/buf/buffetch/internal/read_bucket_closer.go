@@ -19,6 +19,8 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
 
+var _ ReadBucketCloser = &readBucketCloser{}
+
 type readBucketCloser struct {
 	storage.ReadBucketCloser
 

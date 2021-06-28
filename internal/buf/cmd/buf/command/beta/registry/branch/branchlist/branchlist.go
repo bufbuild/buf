@@ -102,6 +102,11 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
+	format, err := bufprint.ParseFormat(flags.Format)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
@@ -121,7 +126,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	repositoryBranches, _, err := repositoryBranchService.ListRepositoryBranches(
+	repositoryBranches, nextPageToken, err := repositoryBranchService.ListRepositoryBranches(
 		ctx,
 		repository.Id,
 		flags.PageSize,
@@ -131,5 +136,5 @@ func run(
 	if err != nil {
 		return err
 	}
-	return bufcli.PrintRepositoryBranches(ctx, container.Stdout(), flags.Format, repositoryBranches...)
+	return bufprint.NewRepositoryBranchPrinter(container.Stdout()).PrintRepositoryBranches(ctx, format, nextPageToken, repositoryBranches...)
 }

@@ -96,6 +96,11 @@ func run(
 	if bufmodule.IsCommitModuleReference(moduleReference) {
 		return fmt.Errorf("branch is required but commit was given: %q", container.Arg(0))
 	}
+	format, err := bufprint.ParseFormat(flags.Format)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
+
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
@@ -124,5 +129,5 @@ func run(
 		}
 		return err
 	}
-	return bufcli.PrintRepositoryBranches(ctx, container.Stdout(), flags.Format, repositoryBranch)
+	return bufprint.NewRepositoryBranchPrinter(container.Stdout()).PrintRepositoryBranch(ctx, format, repositoryBranch)
 }

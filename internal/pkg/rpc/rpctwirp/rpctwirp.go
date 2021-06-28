@@ -150,8 +150,7 @@ func toServerInfo(ctx context.Context) *rpc.ServerInfo {
 	methodName, _ := twirp.MethodName(ctx)
 	if serviceName != "" && methodName != "" {
 		return &rpc.ServerInfo{
-			Service: serviceName,
-			Method:  methodName,
+			Path: "/" + serviceName + "/" + methodName,
 		}
 	}
 	return &rpc.ServerInfo{}

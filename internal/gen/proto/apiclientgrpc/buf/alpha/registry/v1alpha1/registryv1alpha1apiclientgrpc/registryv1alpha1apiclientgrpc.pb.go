@@ -112,6 +112,29 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 	}, nil
 }
 
+func (p *provider) NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+	return &ownerService{
+		logger:          p.logger,
+		client:          v1alpha1.NewOwnerServiceClient(clientConn),
+		contextModifier: contextModifier,
+	}, nil
+}
+
 func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -131,6 +154,29 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 	return &pushService{
 		logger:          p.logger,
 		client:          v1alpha1.NewPushServiceClient(clientConn),
+		contextModifier: contextModifier,
+	}, nil
+}
+
+func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+	return &referenceService{
+		logger:          p.logger,
+		client:          v1alpha1.NewReferenceServiceClient(clientConn),
 		contextModifier: contextModifier,
 	}, nil
 }

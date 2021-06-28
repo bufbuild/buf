@@ -69,47 +69,20 @@ func (f Format) String() string {
 	}
 }
 
-// UserPrinter is a user printer.
-type UserPrinter interface {
-	PrintUsers(ctx context.Context, users ...*registryv1alpha1.User) error
-}
-
-// NewUserPrinter returns a new UserPrinter.
-func NewUserPrinter(writer io.Writer, format Format) (UserPrinter, error) {
-	switch format {
-	case FormatText:
-		return newTextUserPrinter(writer), nil
-	case FormatJSON:
-		return newJSONUserPrinter(writer), nil
-	default:
-		return nil, fmt.Errorf("unknown format: %v", format)
-	}
-}
-
 // OrganizationPrinter is an organization printer.
 type OrganizationPrinter interface {
-	PrintOrganizations(ctx context.Context, organizations ...*registryv1alpha1.Organization) error
+	PrintOrganization(ctx context.Context, format Format, organization *registryv1alpha1.Organization) error
 }
 
 // NewOrganizationPrinter returns a new OrganizationPrinter.
-func NewOrganizationPrinter(
-	address string,
-	writer io.Writer,
-	format Format,
-) (OrganizationPrinter, error) {
-	switch format {
-	case FormatText:
-		return newOrganizationPrinter(address, writer, false), nil
-	case FormatJSON:
-		return newOrganizationPrinter(address, writer, true), nil
-	default:
-		return nil, fmt.Errorf("unknown format: %v", format)
-	}
+func NewOrganizationPrinter(address string, writer io.Writer) OrganizationPrinter {
+	return newOrganizationPrinter(address, writer)
 }
 
 // RepositoryPrinter is a repository printer.
 type RepositoryPrinter interface {
-	PrintRepositories(ctx context.Context, repositories ...*registryv1alpha1.Repository) error
+	PrintRepository(ctx context.Context, format Format, repository *registryv1alpha1.Repository) error
+	PrintRepositories(ctx context.Context, format Format, nextPageToken string, repositories ...*registryv1alpha1.Repository) error
 }
 
 // NewRepositoryPrinter returns a new RepositoryPrinter.
@@ -117,50 +90,41 @@ func NewRepositoryPrinter(
 	apiProvider registryv1alpha1apiclient.Provider,
 	address string,
 	writer io.Writer,
-	format Format,
-) (RepositoryPrinter, error) {
-	switch format {
-	case FormatText:
-		return newRepositoryPrinter(apiProvider, address, writer, false), nil
-	case FormatJSON:
-		return newRepositoryPrinter(apiProvider, address, writer, true), nil
-	default:
-		return nil, fmt.Errorf("unknown format: %v", format)
-	}
+) RepositoryPrinter {
+	return newRepositoryPrinter(apiProvider, address, writer)
 }
 
 // RepositoryBranchPrinter is a repository branch printer.
 type RepositoryBranchPrinter interface {
-	PrintRepositoryBranches(ctx context.Context, repositoryBranches ...*registryv1alpha1.RepositoryBranch) error
+	PrintRepositoryBranch(ctx context.Context, format Format, repositoryBranch *registryv1alpha1.RepositoryBranch) error
+	PrintRepositoryBranches(ctx context.Context, format Format, nextPageToken string, repositoryBranches ...*registryv1alpha1.RepositoryBranch) error
 }
 
 // NewRepositoryBranchPrinter returns a new RepositoryBranchPrinter.
-func NewRepositoryBranchPrinter(writer io.Writer, format Format) (RepositoryBranchPrinter, error) {
-	switch format {
-	case FormatText:
-		return newRepositoryBranchPrinter(writer, false), nil
-	case FormatJSON:
-		return newRepositoryBranchPrinter(writer, true), nil
-	default:
-		return nil, fmt.Errorf("unknown format: %v", format)
-	}
+func NewRepositoryBranchPrinter(writer io.Writer) RepositoryBranchPrinter {
+	return newRepositoryBranchPrinter(writer)
 }
 
 // RepositoryTagPrinter is a repository tag printer.
 type RepositoryTagPrinter interface {
-	PrintRepositoryTags(ctx context.Context, repositoryTags ...*registryv1alpha1.RepositoryTag) error
+	PrintRepositoryTag(ctx context.Context, format Format, repositoryTag *registryv1alpha1.RepositoryTag) error
+	PrintRepositoryTags(ctx context.Context, format Format, nextPageToken string, repositoryTags ...*registryv1alpha1.RepositoryTag) error
 }
 
 // NewRepositoryTagPrinter returns a new RepositoryTagPrinter.
-func NewRepositoryTagPrinter(writer io.Writer, format Format) (RepositoryTagPrinter, error) {
-	switch format {
-	case FormatText:
-		return newRepositoryTagPrinter(writer, false), nil
-	case FormatJSON:
-		return newRepositoryTagPrinter(writer, true), nil
-	default:
-		return nil, fmt.Errorf("unknown format: %v", format)
-	}
+func NewRepositoryTagPrinter(writer io.Writer) RepositoryTagPrinter {
+	return newRepositoryTagPrinter(writer)
+}
+
+// RepositoryCommitPrinter is a repository commit printer.
+type RepositoryCommitPrinter interface {
+	PrintRepositoryCommit(ctx context.Context, format Format, repositoryCommit *registryv1alpha1.RepositoryCommit) error
+	PrintRepositoryCommits(ctx context.Context, format Format, nextPageToken string, repositoryCommits ...*registryv1alpha1.RepositoryCommit) error
+}
+
+// NewRepositoryCommitPrinter returns a new RepositoryCommitPrinter.
+func NewRepositoryCommitPrinter(writer io.Writer) RepositoryCommitPrinter {
+	return newRepositoryCommitPrinter(writer)
 }
 
 // PrintProtoMessageJSON prints the Protobuf message as JSON.
