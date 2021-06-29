@@ -228,6 +228,8 @@ func (f *flagsBuilder) Build(args []string) (*env, error) {
 	}
 	if len(f.IncludeDirPaths) == 0 {
 		f.IncludeDirPaths = defaultIncludeDirPaths
+	} else {
+		f.IncludeDirPaths = splitIncludeDirPaths(f.IncludeDirPaths)
 	}
 	if f.ErrorFormat == "" {
 		f.ErrorFormat = defaultErrorFormat
@@ -502,4 +504,22 @@ func normalizeFunc(f func(*pflag.FlagSet, string) string) func(*pflag.FlagSet, s
 	return func(flagSet *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(f(flagSet, name))
 	}
+}
+
+// https://github.com/protocolbuffers/protobuf/blob/336ed1820a4f2649c9aa3953d5059b03b7a77100/src/google/protobuf/compiler/command_line_interface.cc#L1699-L1705
+//
+// This roughly supports the equivalent of Java's -classpath flag.
+// Note that for filenames such as "foo:bar" on unix, this breaks, but our goal is to match
+// this flag from protoc.
+func splitIncludeDirPaths(includeDirPaths []string) []string {
+	copyIncludeDirPaths := make([]string, 0, len(includeDirPaths))
+	for _, includeDirPath := range includeDirPaths {
+		// protocolbuffers/protobuf has true for omit_empty
+		for _, splitIncludeDirPath := range strings.Split(includeDirPath, includeDirPathSeparator) {
+			if len(splitIncludeDirPath) > 0 {
+				copyIncludeDirPaths = append(copyIncludeDirPaths, splitIncludeDirPath)
+			}
+		}
+	}
+	return copyIncludeDirPaths
 }

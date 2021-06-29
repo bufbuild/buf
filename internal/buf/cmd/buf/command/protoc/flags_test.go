@@ -461,6 +461,73 @@ func TestParseFlags(t *testing.T) {
 				},
 			},
 		},
+		{
+			Args: []string{
+				"-I",
+				"foo" + includeDirPathSeparator + "bar" + includeDirPathSeparator + "baz",
+				"-I",
+				"bat",
+				"foo.proto",
+			},
+			Expected: &env{
+				flags: flags{
+					IncludeDirPaths: []string{
+						"foo",
+						"bar",
+						"baz",
+						"bat",
+					},
+					ErrorFormat: defaultErrorFormat,
+				},
+				FilePaths: []string{
+					"foo.proto",
+				},
+			},
+		},
+		{
+			Args: []string{
+				"-I",
+				"foo" + includeDirPathSeparator + includeDirPathSeparator + "baz",
+				"-I",
+				"bat",
+				"foo.proto",
+			},
+			Expected: &env{
+				flags: flags{
+					IncludeDirPaths: []string{
+						"foo",
+						"baz",
+						"bat",
+					},
+					ErrorFormat: defaultErrorFormat,
+				},
+				FilePaths: []string{
+					"foo.proto",
+				},
+			},
+		},
+		{
+			Args: []string{
+				"-I",
+				"foo" + includeDirPathSeparator + "bar" + includeDirPathSeparator,
+				"-I",
+				"bat",
+				"foo.proto",
+			},
+			Expected: &env{
+				flags: flags{
+					IncludeDirPaths: []string{
+						"foo",
+						"bar",
+						"bat",
+					},
+					ErrorFormat: defaultErrorFormat,
+				},
+				FilePaths: []string{
+					"foo.proto",
+				},
+			},
+		},
 	}
 	for i, testCase := range testCases {
 		name := fmt.Sprintf("%d", i)
