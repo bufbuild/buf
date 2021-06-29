@@ -145,6 +145,7 @@ func RunTestSuite(
 	oneDirPath := filepath.Join(storagetestingDirPath, "testdata", "one")
 	twoDirPath := filepath.Join(storagetestingDirPath, "testdata", "two")
 	threeDirPath := filepath.Join(storagetestingDirPath, "testdata", "three")
+	fourDirPath := filepath.Join(storagetestingDirPath, "testdata", "four")
 	symlinkSuccessDirPath := filepath.Join(storagetestingDirPath, "..", "..", "filepathextended", "testdata", "symlink_success")
 	symlinkLoopDirPath := filepath.Join(storagetestingDirPath, "..", "..", "filepathextended", "testdata", "symlink_loop")
 	defaultProvider := storageos.NewProvider()
@@ -351,7 +352,7 @@ func RunTestSuite(
 		)
 	})
 
-	t.Run("multi-overlap", func(t *testing.T) {
+	t.Run("multi-overlapping-files-error", func(t *testing.T) {
 		t.Parallel()
 		readBucket, _ := newReadBucket(t, twoDirPath, defaultProvider)
 		readBucketMulti := storage.MultiReadBucket(
@@ -385,6 +386,75 @@ func RunTestSuite(
 		)
 		assert.Error(t, err)
 		assert.True(t, storage.IsExistsMultipleLocations(err))
+	})
+
+	t.Run("multi-overlapping-files-skip-locations", func(t *testing.T) {
+		t.Parallel()
+		readBucket, _ := newReadBucket(t, twoDirPath, defaultProvider)
+		readBucketMulti := storage.MultiReadBucketSkipMultipleLocations(
+			storage.MapReadBucket(
+				readBucket,
+				storage.MapOnPrefix("root1"),
+			),
+			storage.MapReadBucket(
+				readBucket,
+				storage.MapOnPrefix("rootoverlap"),
+			),
+		)
+		AssertPathToContent(
+			t,
+			readBucketMulti,
+			"",
+			map[string]string{
+				// root1
+				"a/b/1.proto": testProtoContent,
+				"a/b/2.proto": testProtoContent,
+				"a/b/2.txt":   testTxtContent,
+				"ab/1.proto":  testProtoContent,
+				"ab/2.proto":  testProtoContent,
+				"ab/2.txt":    testTxtContent,
+				"a/1.proto":   testProtoContent,
+				"a/1.txt":     testTxtContent,
+				"a/bar.yaml":  testYAMLContent,
+				"c/1.proto":   testProtoContent,
+				"1.proto":     testProtoContent,
+				"foo.yaml":    testYAMLContent,
+				// rootoverlap only
+				"baz.yaml": testYAMLContent,
+				"bat.yaml": testYAMLContent,
+			},
+		)
+	})
+
+	// this is testing that if we have i.e. protoc -I root/a -I root
+	// that even if this is an error in our world, this is not a problem
+	// in terms of storage buckets
+	t.Run("multi-overlapping-dirs-success", func(t *testing.T) {
+		t.Parallel()
+		readBucket, _ := newReadBucket(t, fourDirPath, defaultProvider)
+		readBucketMulti := storage.MultiReadBucket(
+			storage.MapReadBucket(
+				readBucket,
+				storage.MapOnPrefix("root/a"),
+			),
+			storage.MapReadBucket(
+				readBucket,
+				storage.MapOnPrefix("root"),
+			),
+		)
+		AssertPathToContent(
+			t,
+			readBucketMulti,
+			"",
+			map[string]string{
+				"a/b/1.proto": testProtoContent,
+				"a/b/2.proto": testProtoContent,
+				"a/3.proto":   testProtoContent,
+				"b/1.proto":   testProtoContent,
+				"b/2.proto":   testProtoContent,
+				"3.proto":     testProtoContent,
+			},
+		)
 	})
 
 	for _, testCase := range []struct {

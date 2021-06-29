@@ -6,7 +6,6 @@ require (
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid v4.0.0+incompatible
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.6
 	github.com/jhump/protoreflect v1.8.3-0.20210603172055-ac729f7067c3
 	github.com/klauspost/compress v1.13.1
@@ -20,12 +19,11 @@ require (
 	go.opencensus.io v0.23.0
 	go.uber.org/multierr v1.7.0
 	go.uber.org/zap v1.18.1
-	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.4.2
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
 	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect
-	golang.org/x/tools v0.1.4 // indirect
+	google.golang.org/genproto v0.0.0-20210629135825-364e77e5a69d // indirect
 	google.golang.org/grpc v1.39.0-dev.0.20210519181852-3dd75a6888ce
-	google.golang.org/protobuf v1.26.1-0.20210520194023-50a85913fbce
+	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
