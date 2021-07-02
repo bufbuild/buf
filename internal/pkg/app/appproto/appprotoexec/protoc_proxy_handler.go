@@ -17,7 +17,6 @@ package appprotoexec
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os/exec"
@@ -69,9 +68,6 @@ func (h *protocProxyHandler) Handle(
 	ctx, span := trace.StartSpan(ctx, "protoc_proxy")
 	span.AddAttributes(trace.StringAttribute("plugin", filepath.Base(h.pluginName)))
 	defer span.End()
-	if app.DevStdinFilePath == "" {
-		return errors.New("app.DevStdinFilePath is empty for this platform")
-	}
 	protocVersion, err := h.getProtocVersion(ctx, container)
 	if err != nil {
 		return err
@@ -86,6 +82,16 @@ func (h *protocProxyHandler) Handle(
 	if err != nil {
 		return err
 	}
+	descriptorFilePath := app.DevStdinFilePath
+	var tmpFile tmp.File
+	if descriptorFilePath == "" {
+		// since we have no stdin file (i.e. Windows), we're going to have to use a temporary file
+		if tmpFile, err = tmp.NewFileWithData(fileDescriptorSetData); err != nil {
+			return err
+		} else {
+			descriptorFilePath = tmpFile.AbsPath()
+		}
+	}
 	tmpDir, err := tmp.NewDir()
 	if err != nil {
 		return err
@@ -94,7 +100,7 @@ func (h *protocProxyHandler) Handle(
 		retErr = multierr.Append(retErr, tmpDir.Close())
 	}()
 	args := []string{
-		fmt.Sprintf("--descriptor_set_in=%s", app.DevStdinFilePath),
+		fmt.Sprintf("--descriptor_set_in=%s", descriptorFilePath),
 		fmt.Sprintf("--%s_out=%s", h.pluginName, tmpDir.AbsPath()),
 	}
 	featureProto3Optional := getFeatureProto3Optional(protocVersion)
@@ -118,7 +124,9 @@ func (h *protocProxyHandler) Handle(
 	)
 	cmd := exec.CommandContext(ctx, h.protocPath, args...)
 	cmd.Env = app.Environ(container)
-	cmd.Stdin = bytes.NewReader(fileDescriptorSetData)
+	if app.DevStdinFilePath != "" {
+		cmd.Stdin = bytes.NewReader(fileDescriptorSetData)
+	}
 	cmd.Stdout = io.Discard
 	cmd.Stderr = container.Stderr()
 	if err := cmd.Run(); err != nil {
@@ -128,6 +136,9 @@ func (h *protocProxyHandler) Handle(
 	}
 	if featureProto3Optional {
 		responseWriter.SetFeatureProto3Optional()
+	}
+	if tmpFile != nil {
+		_ = tmpFile.Close()
 	}
 	// no need for symlinks here, and don't want to support
 	readWriteBucket, err := h.storageosProvider.NewReadWriteBucket(tmpDir.AbsPath())
