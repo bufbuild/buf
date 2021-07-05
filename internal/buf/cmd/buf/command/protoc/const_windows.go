@@ -17,4 +17,7 @@
 package protoc
 
 // https://github.com/protocolbuffers/protobuf/blob/336ed1820a4f2649c9aa3953d5059b03b7a77100/src/google/protobuf/compiler/command_line_interface.cc#L892-L896
+//
+// This will be ":" for all unix-like platforms including darwin.
+// This will be ";" for windows.
 const includeDirPathSeparator = ";"
