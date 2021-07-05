@@ -20,6 +20,13 @@ import (
 	"os/signal"
 )
 
+var signals = append(
+	[]os.Signal{
+		os.Interrupt,
+	},
+	extraSignals...,
+)
+
 // WithCancel returns a context that is cancelled if interrupt signals are sent.
 func WithCancel(ctx context.Context) (context.Context, context.CancelFunc) {
 	signalC, closer := NewSignalChannel()
