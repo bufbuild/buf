@@ -130,7 +130,7 @@ func (m *module) SourceFileInfos(ctx context.Context) ([]FileInfo, error) {
 	var fileInfos []FileInfo
 	if err := m.sourceReadBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
 		// super overkill but ok
-		if err := validateModuleFilePathWithoutNormalization(objectInfo.Path()); err != nil {
+		if err := ValidateModuleFilePath(objectInfo.Path()); err != nil {
 			return err
 		}
 		coreFileInfo := bufcore.NewFileInfoForObjectInfo(objectInfo, false)

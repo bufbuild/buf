@@ -34,9 +34,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		t,
 		internal.NewDirectParsedDirRef(
 			formatDir,
-			"path/to/dir",
+			"path/to/some/dir",
 		),
-		"path/to/dir",
+		"path/to/some/dir",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -1034,8 +1034,8 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/foo#strip_components=1"),
-		"path/to/foo#strip_components=1",
+		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#strip_components=1"),
+		"path/to/some/foo#strip_components=1",
 	)
 	testGetParsedRefError(
 		t,
@@ -1044,8 +1044,8 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/foo#compression=none"),
-		"path/to/foo#compression=none",
+		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#compression=none"),
+		"path/to/some/foo#compression=none",
 	)
 	testGetParsedRefError(
 		t,

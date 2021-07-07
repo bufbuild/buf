@@ -47,7 +47,7 @@ func TestModuleOwnerForStringError(t *testing.T) {
 		},
 		{
 			Name:  "Module owner with a branch",
-			Input: "foo.com/bar:v1",
+			Input: "foo.com//bar:v1",
 		},
 		{
 			Name:  "Module owner with invalid characters",

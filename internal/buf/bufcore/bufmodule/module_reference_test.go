@@ -83,10 +83,6 @@ func TestModuleReferenceForStringError(t *testing.T) {
 			Name:  "Module without a branch or commit",
 			Input: "foo.com/barr/baz:",
 		},
-		{
-			Name:  "Module with invalid characters",
-			Input: "foo.com/barr/baz@qux:v1",
-		},
 	}
 	for _, testCase := range testCases {
 		testCase := testCase

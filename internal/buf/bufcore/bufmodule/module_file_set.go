@@ -64,7 +64,7 @@ func newModuleFileSet(
 func (m *moduleFileSet) AllFileInfos(ctx context.Context) ([]FileInfo, error) {
 	var fileInfos []FileInfo
 	if err := m.allReadBucket.WalkModuleFiles(ctx, "", func(objectInfo ObjectInfo) error {
-		if err := validateModuleFilePathWithoutNormalization(objectInfo.Path()); err != nil {
+		if err := ValidateModuleFilePath(objectInfo.Path()); err != nil {
 			return err
 		}
 		isNotImport, err := storage.Exists(ctx, m.Module.getSourceReadBucket(), objectInfo.Path())
