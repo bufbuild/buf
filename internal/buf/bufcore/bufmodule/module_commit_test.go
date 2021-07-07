@@ -39,7 +39,7 @@ func TestNewModuleCommitError(t *testing.T) {
 	}{
 		{
 			Name:       "Module commit with an invalid remote",
-			Remote:     "x",
+			Remote:     "x.-",
 			Owner:      "acme",
 			Repository: "weather",
 			Commit:     bufmoduletesting.TestCommit,
@@ -47,7 +47,7 @@ func TestNewModuleCommitError(t *testing.T) {
 		{
 			Name:       "Module commit with an invalid owner",
 			Remote:     "foo.com",
-			Owner:      "x",
+			Owner:      "",
 			Repository: "weather",
 			Commit:     bufmoduletesting.TestCommit,
 		},
@@ -55,7 +55,7 @@ func TestNewModuleCommitError(t *testing.T) {
 			Name:       "Module commit with an invalid repository",
 			Remote:     "foo.com",
 			Owner:      "acme",
-			Repository: "x",
+			Repository: "",
 			Commit:     bufmoduletesting.TestCommit,
 		},
 		{
@@ -63,7 +63,7 @@ func TestNewModuleCommitError(t *testing.T) {
 			Remote:     "foo.com",
 			Owner:      "acme",
 			Repository: "weather",
-			Commit:     "main",
+			Commit:     "",
 		},
 	}
 	for _, testCase := range testCases {

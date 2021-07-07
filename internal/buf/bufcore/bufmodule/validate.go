@@ -23,27 +23,18 @@ import (
 
 	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/netextended"
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
-	"github.com/bufbuild/buf/internal/pkg/uuidutil"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
-	ownerMinLength      = 4
-	ownerMaxLength      = 32
-	repositoryMinLength = 2
-	repositoryMaxLength = 32
-	branchMinLength     = 2
-	branchMaxLength     = 64
-	tagMinLength        = 2
-	tagMaxLength        = 64
 	// 32MB
 	maxModuleTotalContentLength = 32 << 20
 	protoFileMaxCount           = 16384
 )
 
 // ValidateProtoModule verifies the given module is well-formed.
+// It performs client-side validation only, and is limited to fields
+// we do not think will change in the future.
 func ValidateProtoModule(protoModule *modulev1alpha1.Module) error {
 	if protoModule == nil {
 		return errors.New("module is required")
@@ -78,6 +69,8 @@ func ValidateProtoModule(protoModule *modulev1alpha1.Module) error {
 }
 
 // ValidateProtoModuleReference verifies the given module reference is well-formed.
+// It performs client-side validation only, and is limited to fields
+// we do not think will change in the future.
 func ValidateProtoModuleReference(protoModuleReference *modulev1alpha1.ModuleReference) error {
 	if protoModuleReference == nil {
 		return errors.New("module reference is required")
@@ -95,6 +88,8 @@ func ValidateProtoModuleReference(protoModuleReference *modulev1alpha1.ModuleRef
 }
 
 // ValidateProtoModulePin verifies the given module pin is well-formed.
+// It performs client-side validation only, and is limited to fields
+// we do not think will change in the future.
 func ValidateProtoModulePin(protoModulePin *modulev1alpha1.ModulePin) error {
 	if protoModulePin == nil {
 		return errors.New("module pin is required")
@@ -124,106 +119,75 @@ func ValidateProtoModulePin(protoModulePin *modulev1alpha1.ModulePin) error {
 }
 
 // ValidateUser verifies the given user name is well-formed.
+// It performs client-side validation only, and is limited to properties
+// we do not think will change in the future.
 func ValidateUser(user string) error {
 	return ValidateOwner(user, "user")
 }
 
 // ValidateOrganization verifies the given organization name is well-formed.
+// It performs client-side validation only, and is limited to properties
+// we do not think will change in the future.
 func ValidateOrganization(organization string) error {
 	return ValidateOwner(organization, "organization")
 }
 
 // ValidateOwner verifies the given owner name is well-formed.
+// It performs client-side validation only, and is limited to properties
+// we do not think will change in the future.
 func ValidateOwner(owner string, ownerType string) error {
 	if owner == "" {
 		return fmt.Errorf("%s name is required", ownerType)
-	}
-	if len(owner) < ownerMinLength || len(owner) > ownerMaxLength {
-		return fmt.Errorf("%s name %q must be between at least %d and at most %d characters", ownerType, owner, ownerMinLength, ownerMaxLength)
-	}
-	for _, char := range owner {
-		if !stringutil.IsLowerAlphanumeric(char) && char != '-' {
-			return fmt.Errorf("%s name %q must only contain lowercase letters, digits, or hyphens (-)", ownerType, owner)
-		}
 	}
 	return nil
 }
 
 // ValidateRepository verifies the given repository name is well-formed.
+// It performs client-side validation only, and is limited to properties
+// we do not think will change in the future.
 func ValidateRepository(repository string) error {
 	if repository == "" {
 		return errors.New("repository name is required")
-	}
-	if len(repository) < repositoryMinLength || len(repository) > repositoryMaxLength {
-		return fmt.Errorf("repository name must be at least %d and at most %d characters", repositoryMinLength, repositoryMaxLength)
-	}
-	for _, char := range repository {
-		if !stringutil.IsLowerAlphanumeric(char) && char != '-' {
-			return fmt.Errorf("repository name %q must only contain lowercase letters, digits, or hyphens (-)", repository)
-		}
 	}
 	return nil
 }
 
 // ValidateReference validates that the given ModuleReference reference is well-formed.
+// It performs client-side validation only, and is limited to properties
+// we do not think will change in the future.
 func ValidateReference(reference string) error {
 	if reference == "" {
 		return errors.New("repository reference is required")
 	}
-	if isCommitReference(reference) {
-		return ValidateCommit(reference)
-	}
-	if err := ValidateBranch(reference); err == nil {
-		return nil
-	}
-	return ValidateTag(reference)
+	return nil
 }
 
 // ValidateCommit verifies the given commit is well-formed.
+// It performs client-side validation only, and is limited to properties
+// we do not think will change in the future.
 func ValidateCommit(commit string) error {
 	if commit == "" {
 		return errors.New("empty commit")
-	}
-	if err := uuidutil.ValidateDashless(commit); err != nil {
-		return fmt.Errorf("commit is invalid: %v", err)
 	}
 	return nil
 }
 
 // ValidateBranch verifies the given repository branch is well-formed.
+// It performs client-side validation only, and is limited to properties
+// we do not think will change in the future.
 func ValidateBranch(branch string) error {
 	if branch == "" {
 		return errors.New("repository branch is required")
-	}
-	if len(branch) < branchMinLength || len(branch) > branchMaxLength {
-		return fmt.Errorf("repository branch %q must be at least %d and at most %d characters", branch, branchMinLength, branchMaxLength)
-	}
-	for _, char := range branch {
-		if !stringutil.IsLowerAlphanumeric(char) && char != '-' && char != '.' {
-			return fmt.Errorf("repository branch %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", branch)
-		}
-	}
-	if err := uuidutil.ValidateDashless(branch); err == nil {
-		return fmt.Errorf("repository branch %q must not be parseable as a valid commit", branch)
 	}
 	return nil
 }
 
 // ValidateTag verifies the given tag is well-formed.
+// It performs client-side validation only, and is limited to properties
+// we do not think will change in the future.
 func ValidateTag(tag string) error {
 	if tag == "" {
 		return errors.New("repository tag is required")
-	}
-	if len(tag) < tagMinLength || len(tag) > tagMaxLength {
-		return fmt.Errorf("repository tag %q must be at least %d and at most %d characters", tag, tagMinLength, tagMaxLength)
-	}
-	for _, char := range tag {
-		if !stringutil.IsLowerAlphanumeric(char) && char != '-' && char != '.' {
-			return fmt.Errorf("repository tag %q must only contain lowercase letters, digits, periods (.), or hyphens (-)", tag)
-		}
-	}
-	if err := uuidutil.ValidateDashless(tag); err == nil {
-		return fmt.Errorf("repository tag %q must not be parseable as a valid commit", tag)
 	}
 	return nil
 }
@@ -264,6 +228,16 @@ func ValidateModuleMatchesDigest(ctx context.Context, module Module, modulePin M
 	}
 	if digest != modulePin.Digest() {
 		return fmt.Errorf("mismatched module digest for %q: expected: %q got: %q", modulePin.IdentityString(), modulePin.Digest(), digest)
+	}
+	return nil
+}
+
+// ValidateModuleFilePath validates that the module file path is not empty.
+// It performs client-side validation only, and is limited to properties
+// we do not think will change in the future.
+func ValidateModuleFilePath(path string) error {
+	if path == "" {
+		return errors.New("empty path")
 	}
 	return nil
 }
@@ -312,25 +286,4 @@ func validateCreateTime(createTime *timestamppb.Timestamp) error {
 		return errors.New("create_time must not be 0")
 	}
 	return createTime.CheckValid()
-}
-
-func ValidateModuleFilePath(path string) error {
-	normalizedPath, err := normalpath.NormalizeAndValidate(path)
-	if err != nil {
-		return err
-	}
-	if path != normalizedPath {
-		return fmt.Errorf("module file had non-normalized path: %s", path)
-	}
-	return validateModuleFilePathWithoutNormalization(path)
-}
-
-func validateModuleFilePathWithoutNormalization(path string) error {
-	if path == "" {
-		return errors.New("empty path")
-	}
-	if normalpath.Ext(path) != ".proto" {
-		return fmt.Errorf("path %s did not have extension .proto", path)
-	}
-	return nil
 }

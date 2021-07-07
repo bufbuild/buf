@@ -116,6 +116,12 @@ func run(
 		return err
 	}
 
+	// Cobra 1.2.0 introduced default completion commands under
+	// "<binary> completion <bash/zsh/fish/powershell>"". Since we have
+	// our own completion commands, disable the generation of the default
+	// commands.
+	cobraCommand.CompletionOptions.DisableDefaultCmd = true
+
 	// If the root command is not the only command, add hidden bash-completion,
 	// fish-completion, and zsh-completion commands.
 	if len(command.SubCommands) > 0 {

@@ -50,6 +50,8 @@ import (
 const (
 	// Version is the version of buf.
 	Version = "0.44.0-dev"
+	// VersionHeaderName is the name of the header carrying the bufcli version.
+	VersionHeaderName = "buf-version"
 
 	// FlagDeprecationMessageSuffix is the suffix for flag deprecation messages.
 	FlagDeprecationMessageSuffix = `
@@ -480,7 +482,7 @@ func NewContextModifierProvider(
 			return rpcauth.WithToken(
 				rpc.WithOutgoingHeader(
 					ctx,
-					"buf-version",
+					VersionHeaderName,
 					Version,
 				),
 				password,

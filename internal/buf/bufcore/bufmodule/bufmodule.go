@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcore"
 	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/uuidutil"
 	"go.uber.org/multierr"
 )
 
@@ -136,7 +137,7 @@ func NewModuleIdentity(
 
 // ModuleIdentityForString returns a new ModuleIdentity for the given string.
 //
-// This parses the path in the form remote/owner/repository:{branch,commit}.
+// This parses the path in the form remote/owner/repository
 //
 // TODO: we may want to add a special error if we detect / or @ as this may be a common mistake.
 func ModuleIdentityForString(path string) (ModuleIdentity, error) {
@@ -231,11 +232,16 @@ func ModuleReferenceForString(path string) (ModuleReference, error) {
 
 // IsCommitModuleReference returns true if the ModuleReference references a commit.
 //
-// If false, this currently means the ModuleReference references a branch, but this
-// will be expanded in the future to include tags. Branch and tag disambiguation
-// needs to be done server-side.
+// If false, this means the ModuleReference references a branch or tag.
+// Branch and tag disambiguation needs to be done server-side.
 func IsCommitModuleReference(moduleReference ModuleReference) bool {
-	return isCommitReference(moduleReference.Reference())
+	return IsCommitReference(moduleReference.Reference())
+}
+
+// IsCommitReference returns whether the provided reference is a commit.
+func IsCommitReference(reference string) bool {
+	_, err := uuidutil.FromDashless(reference)
+	return err == nil
 }
 
 // ModuleCommit is a module commit.
