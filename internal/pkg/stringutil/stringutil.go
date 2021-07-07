@@ -170,6 +170,8 @@ func SliceToHumanString(s []string) string {
 		return ""
 	case 1:
 		return s[0]
+	case 2:
+		return s[0] + " and " + s[1]
 	default:
 		return strings.Join(s[:len(s)-1], ", ") + ", and " + s[len(s)-1]
 	}
@@ -182,6 +184,8 @@ func SliceToHumanStringQuoted(s []string) string {
 		return ""
 	case 1:
 		return `"` + s[0] + `"`
+	case 2:
+		return `"` + s[0] + `" and "` + s[1] + `"`
 	default:
 		return `"` + strings.Join(s[:len(s)-1], `", "`) + `", and "` + s[len(s)-1] + `"`
 	}

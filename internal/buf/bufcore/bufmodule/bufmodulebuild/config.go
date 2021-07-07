@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 )
 
-// all of this code can likely be simplified
 func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Config, error) {
 	dependencyModuleReferences, err := parseDependencyModuleReferences(deps...)
 	if err != nil {
@@ -105,6 +104,35 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Co
 			return nil, fmt.Errorf("excludes %v are not unique (system error)", excludes)
 		}
 		rootToExcludes[root] = uniqueSortedExcludes
+	}
+	return &Config{
+		RootToExcludes:             rootToExcludes,
+		DependencyModuleReferences: dependencyModuleReferences,
+	}, nil
+}
+
+func newConfigV1(externalConfig ExternalConfigV1, deps ...string) (*Config, error) {
+	dependencyModuleReferences, err := parseDependencyModuleReferences(deps...)
+	if err != nil {
+		return nil, err
+	}
+	// this also verifies that the excludes are unique, normalized, and validated
+	excludes, err := normalizeAndCheckPaths(externalConfig.Excludes, "exclude", normalpath.Relative, true)
+	if err != nil {
+		return nil, err
+	}
+	for _, exclude := range excludes {
+		if normalpath.Ext(exclude) == ".proto" {
+			return nil, fmt.Errorf("excludes can only be directories but file %s discovered", exclude)
+		}
+	}
+	uniqueSortedExcludes := stringutil.SliceToUniqueSortedSliceFilterEmptyStrings(excludes)
+	if len(excludes) != len(uniqueSortedExcludes) {
+		// this should never happen, but just in case
+		return nil, fmt.Errorf("excludes %v are not unique (system error)", excludes)
+	}
+	rootToExcludes := map[string][]string{
+		".": excludes, // all excludes are relative to the root
 	}
 	return &Config{
 		RootToExcludes:             rootToExcludes,

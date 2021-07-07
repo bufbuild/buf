@@ -14,7 +14,7 @@
 
 // Package bufbreakingv1beta1 contains the VersionSpec for v1beta1.
 //
-// It uses bufbreakingfunc and bufbreakingbuild.
+// It uses bufbreakingcheck and bufbreakingbuild.
 package bufbreakingv1beta1
 
 import "github.com/bufbuild/buf/internal/buf/bufcheck/internal"

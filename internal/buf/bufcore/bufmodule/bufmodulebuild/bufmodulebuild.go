@@ -106,7 +106,7 @@ type BuildOption func(*buildOptions)
 // This is done within bufmodulebuild so we can resolve the paths relative to their roots.
 func WithPaths(paths []string) BuildOption {
 	return func(buildOptions *buildOptions) {
-		buildOptions.paths = paths
+		buildOptions.paths = &paths
 	}
 }
 
@@ -122,8 +122,20 @@ func WithPaths(paths []string) BuildOption {
 // This is done within bufmodulebuild so we can resolve the paths relative to their roots.
 func WithPathsAllowNotExist(paths []string) BuildOption {
 	return func(buildOptions *buildOptions) {
-		buildOptions.paths = paths
+		buildOptions.paths = &paths
 		buildOptions.pathsAllowNotExist = true
+	}
+}
+
+// WithModuleIdentity returns a new BuildOption that is used to construct a Module with a ModuleIdentity.
+//
+// TODO: this is never called
+// TODO: we also have ModuleWithModuleIdentityAndCommit in bufmodule
+// We need to disambiguate module building between bufmodule and bufmodulebuild
+// bufimage and bufimagebuild work, but bufmodule and bufmodulebuild are a mess
+func WithModuleIdentity(moduleIdentity bufmodule.ModuleIdentity) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.moduleIdentity = moduleIdentity
 	}
 }
 
@@ -157,8 +169,18 @@ func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Co
 	return newConfigV1Beta1(externalConfig, deps...)
 }
 
+// NewConfigV1 returns a new, validated Config for the ExternalConfig.
+func NewConfigV1(externalConfig ExternalConfigV1, deps ...string) (*Config, error) {
+	return newConfigV1(externalConfig, deps...)
+}
+
 // ExternalConfigV1Beta1 is an external config.
 type ExternalConfigV1Beta1 struct {
 	Roots    []string `json:"roots,omitempty" yaml:"roots,omitempty"`
+	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
+}
+
+// ExternalConfigV1 is an external config.
+type ExternalConfigV1 struct {
 	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }

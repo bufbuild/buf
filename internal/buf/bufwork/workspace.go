@@ -22,11 +22,10 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
-
-const faqPage = "https://docs.buf.build/faq"
 
 type workspace struct {
 	// bufmodule.ModuleIdentity -> bufmodule.Module
@@ -36,19 +35,23 @@ type workspace struct {
 
 func newWorkspace(
 	ctx context.Context,
-	config *Config,
+	workspaceConfig *Config,
 	readBucket storage.ReadBucket,
 	configProvider bufconfig.Provider,
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	relativeRootPath string,
 	targetSubDirPath string,
+	configOverride string,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
 ) (*workspace, error) {
-	if config == nil {
+	if workspaceConfig == nil {
 		return nil, errors.New("received a nil workspace config")
 	}
-	workspaceID := filepath.Join(normalpath.Unnormalize(relativeRootPath), ExternalConfigV1Beta1FilePath)
-	namedModules := make(map[string]bufmodule.Module, len(config.Directories))
-	allModules := make([]bufmodule.Module, 0, len(config.Directories))
-	for _, directory := range config.Directories {
+	workspaceID := filepath.Join(normalpath.Unnormalize(relativeRootPath), ExternalConfigFilePath)
+	namedModules := make(map[string]bufmodule.Module, len(workspaceConfig.Directories))
+	allModules := make([]bufmodule.Module, 0, len(workspaceConfig.Directories))
+	for _, directory := range workspaceConfig.Directories {
 		if err := validateWorkspaceDirectoryNonEmpty(ctx, readBucket, directory, workspaceID); err != nil {
 			return nil, err
 		}
@@ -61,7 +64,12 @@ func newWorkspace(
 			return nil, err
 		}
 		readBucketForDirectory := storage.MapReadBucket(readBucket, storage.MapOnPrefix(directory))
-		moduleConfig, err := configProvider.GetConfig(ctx, readBucketForDirectory)
+		moduleConfig, err := bufconfig.ReadConfig(
+			ctx,
+			configProvider,
+			readBucketForDirectory,
+			bufconfig.ReadConfigWithOverride(configOverride),
+		)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"failed to get module config for directory %q listed in %s: %w",
@@ -70,9 +78,23 @@ func newWorkspace(
 				err,
 			)
 		}
-		module, err := bufmodule.NewModuleForBucket(
+		buildOptions, err := BuildOptionsForWorkspaceDirectory(
+			ctx,
+			workspaceConfig,
+			moduleConfig,
+			relativeRootPath,
+			directory,
+			externalDirOrFilePaths,
+			externalDirOrFilePathsAllowNotExist,
+		)
+		if err != nil {
+			return nil, err
+		}
+		module, err := moduleBucketBuilder.BuildForBucket(
 			ctx,
 			readBucketForDirectory,
+			moduleConfig.Build,
+			buildOptions...,
 		)
 		if err != nil {
 			return nil, fmt.Errorf(
@@ -125,7 +147,7 @@ func validateWorkspaceDirectoryNonEmpty(
 	}
 	if isEmpty {
 		return fmt.Errorf(
-			"module %q listed in %s contains no .proto files",
+			"directory %q listed in %s contains no .proto files",
 			normalpath.Unnormalize(workspaceDirectory),
 			workspaceID,
 		)
@@ -147,21 +169,19 @@ func validateInputOverlap(
 ) error {
 	if normalpath.ContainsPath(workspaceDirectory, targetSubDirPath, normalpath.Relative) {
 		return fmt.Errorf(
-			"failed to build input %q because it is contained by module %q listed in %s; see %s for more details",
+			"failed to build input %q because it is contained by directory %q listed in %s",
 			normalpath.Unnormalize(targetSubDirPath),
 			normalpath.Unnormalize(workspaceDirectory),
 			workspaceID,
-			faqPage,
 		)
 	}
 
 	if normalpath.ContainsPath(targetSubDirPath, workspaceDirectory, normalpath.Relative) {
 		return fmt.Errorf(
-			"failed to build input %q because it contains module %q listed in %s; see %s for more details",
+			"failed to build input %q because it contains directory %q listed in %s",
 			normalpath.Unnormalize(targetSubDirPath),
 			normalpath.Unnormalize(workspaceDirectory),
 			workspaceID,
-			faqPage,
 		)
 	}
 	return nil

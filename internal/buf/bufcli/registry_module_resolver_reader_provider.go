@@ -29,10 +29,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 )
 
-const modDir = "mod"
-
-var lockDir = normalpath.Join("lock", "mod")
-
 type registryModuleResolverReaderProvider struct {
 	registryProvider registryv1alpha1apiclient.Provider
 	setupErr         error
@@ -65,27 +61,35 @@ func (m *registryModuleResolverReaderProvider) GetModuleReader(ctx context.Conte
 	if m.setupErr != nil {
 		return nil, m.setupErr
 	}
-	modCacheDirPath := normalpath.Join(container.CacheDirPath(), modDir)
-	if err := os.MkdirAll(normalpath.Unnormalize(modCacheDirPath), 0755); err != nil {
-		return nil, err
-	}
-	lockCacheDirPath := normalpath.Join(container.CacheDirPath(), lockDir)
-	if err := os.MkdirAll(normalpath.Unnormalize(lockCacheDirPath), 0755); err != nil {
+	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
+	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
+	cacheModuleSumDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleSumRelDirPath)
+	if err := createCacheDirs(
+		cacheModuleDataDirPath,
+		cacheModuleLockDirPath,
+		cacheModuleSumDirPath,
+	); err != nil {
 		return nil, err
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	// do NOT want to enable symlinks for our cache
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(modCacheDirPath)
+	dataReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDataDirPath)
 	if err != nil {
 		return nil, err
 	}
-	fileLocker, err := filelock.NewLocker(lockCacheDirPath)
+	// do NOT want to enable symlinks for our cache
+	sumReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleSumDirPath)
+	if err != nil {
+		return nil, err
+	}
+	fileLocker, err := filelock.NewLocker(cacheModuleLockDirPath)
 	if err != nil {
 		return nil, err
 	}
 	moduleReader := bufmodulecache.NewModuleReader(
 		container.Logger(),
-		readWriteBucket,
+		dataReadWriteBucket,
+		sumReadWriteBucket,
 		bufapimodule.NewModuleReader(
 			m.registryProvider,
 		),
@@ -95,4 +99,13 @@ func (m *registryModuleResolverReaderProvider) GetModuleReader(ctx context.Conte
 		bufmodulecache.WithFileLocker(fileLocker),
 	)
 	return moduleReader, nil
+}
+
+func createCacheDirs(dirPaths ...string) error {
+	for _, dirPath := range dirPaths {
+		if err := os.MkdirAll(normalpath.Unnormalize(dirPath), 0755); err != nil {
+			return err
+		}
+	}
+	return nil
 }

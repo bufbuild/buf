@@ -31,12 +31,12 @@ import (
 
 const (
 	testImportPathPrefix = "github.com/foo/bar/internal/gen/proto/go"
+	testRemote           = "modulerepo.internal"
 	testRepositoryOwner  = "testowner"
 	testRepositoryName   = "testrepository"
 )
 
 func assertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32, includeSourceInfo bool) {
-	t.Helper()
 	for _, imageFile := range image.Files() {
 		descriptor := imageFile.Proto()
 
@@ -57,7 +57,6 @@ func assertFileOptionSourceCodeInfoEmpty(t *testing.T, image bufimage.Image, fil
 }
 
 func assertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, fileOptionPath []int32) {
-	t.Helper()
 	for _, imageFile := range image.Files() {
 		descriptor := imageFile.Proto()
 
@@ -73,7 +72,6 @@ func assertFileOptionSourceCodeInfoNotEmpty(t *testing.T, image bufimage.Image, 
 }
 
 func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage.Image {
-	t.Helper()
 	moduleFileSet := testGetModuleFileSet(t, dirPath)
 	var options []bufimagebuild.BuildOption
 	if !includeSourceInfo {
@@ -89,23 +87,21 @@ func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage
 }
 
 func testGetModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet {
-	t.Helper()
 	storageosProvider := storageos.NewProvider()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
 	)
 	require.NoError(t, err)
-	moduleCommit, err := bufmodule.NewModuleCommit(
-		"modulerepo.internal",
+	moduleIdentity, err := bufmodule.NewModuleIdentity(
+		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
-		bufmoduletesting.TestCommit,
 	)
 	require.NoError(t, err)
 	module, err := bufmodule.NewModuleForBucket(
 		context.Background(),
 		readWriteBucket,
-		bufmodule.ModuleWithModuleCommit(moduleCommit),
+		bufmodule.ModuleWithModuleIdentityAndCommit(moduleIdentity, bufmoduletesting.TestCommit),
 	)
 	require.NoError(t, err)
 	moduleFileSet, err := bufmodulebuild.NewModuleFileSetBuilder(

@@ -27,14 +27,14 @@ import (
 func applyModulePaths(
 	module bufmodule.Module,
 	roots []string,
-	fileOrDirPaths []string,
+	fileOrDirPaths *[]string,
 	fileOrDirPathsAllowNotExist bool,
 	pathType normalpath.PathType,
 ) (bufmodule.Module, error) {
-	if len(fileOrDirPaths) == 0 {
+	if fileOrDirPaths == nil {
 		return module, nil
 	}
-	targetPaths, err := pathsToTargetPaths(roots, fileOrDirPaths, pathType)
+	targetPaths, err := pathsToTargetPaths(roots, *fileOrDirPaths, pathType)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,10 @@ func sortAndCheckDuplicatePaths(outputs []string, name string, pathType normalpa
 }
 
 type buildOptions struct {
-	paths              []string
+	moduleIdentity bufmodule.ModuleIdentity
+	// If nil, all files are considered targets.
+	// If empty (but non-nil), the module will have no target paths.
+	paths              *[]string
 	pathsAllowNotExist bool
 }
 

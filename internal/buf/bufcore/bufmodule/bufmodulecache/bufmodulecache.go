@@ -27,11 +27,18 @@ import (
 // delegate as the source of truth.
 func NewModuleReader(
 	logger *zap.Logger,
-	readWriteBucket storage.ReadWriteBucket,
+	dataReadWriteBucket storage.ReadWriteBucket,
+	sumReadWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
 	options ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
-	return newModuleReader(logger, readWriteBucket, delegate, options...)
+	return newModuleReader(
+		logger,
+		dataReadWriteBucket,
+		sumReadWriteBucket,
+		delegate,
+		options...,
+	)
 }
 
 // ModuleReaderOption is an option for a new ModuleReader.

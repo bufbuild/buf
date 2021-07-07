@@ -115,6 +115,25 @@ func TestRunLint4(t *testing.T) {
 }
 
 func TestRunLint5(t *testing.T) {
+	testRunLint(
+		t,
+		filepath.Join("testdata", "fail"),
+		[]string{
+			filepath.Join("testdata", "fail", "buf", "buf.proto"),
+			filepath.Join("testdata", "fail", "buf", "buf_two.proto"),
+		},
+		`{"input_config":{"version":"v1","lint":{"use":["PACKAGE_DIRECTORY_MATCH"]}}}`,
+		[]string{
+			filepath.Join("buf", "buf.proto"),
+		},
+		0,
+		`
+		buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+		`,
+	)
+}
+
+func TestRunLint6(t *testing.T) {
 	// specifically testing that output is stable
 	testRunLint(
 		t,
@@ -124,6 +143,25 @@ func TestRunLint5(t *testing.T) {
 			filepath.Join("testdata", "fail", "buf", "buf_two.proto"),
 		},
 		`{"input_config":{"lint":{"use":["PACKAGE_DIRECTORY_MATCH"]}},"error_format":"json"}`,
+		[]string{
+			filepath.Join("buf", "buf.proto"),
+		},
+		0,
+		`
+		{"path":"buf/buf.proto","start_line":3,"start_column":1,"end_line":3,"end_column":15,"type":"PACKAGE_DIRECTORY_MATCH","message":"Files with package \"other\" must be within a directory \"other\" relative to root but were in directory \"buf\"."}
+		`,
+	)
+}
+
+func TestRunLint7(t *testing.T) {
+	testRunLint(
+		t,
+		filepath.Join("testdata", "fail"),
+		[]string{
+			filepath.Join("testdata", "fail", "buf", "buf.proto"),
+			filepath.Join("testdata", "fail", "buf", "buf_two.proto"),
+		},
+		`{"input_config":{"version":"v1","lint":{"use":["PACKAGE_DIRECTORY_MATCH"]}},"error_format":"json"}`,
 		[]string{
 			filepath.Join("buf", "buf.proto"),
 		},
@@ -237,6 +275,7 @@ func testBuildCodeGeneratorRequest(
 		imageFile, err := bufimage.NewImageFile(
 			fileDescriptorProto,
 			nil,
+			"",
 			"",
 			!isNotImport,
 		)

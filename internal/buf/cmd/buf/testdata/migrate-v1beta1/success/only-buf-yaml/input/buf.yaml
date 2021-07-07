@@ -1,0 +1,11 @@
+version: v1beta1
+name: buf.build/test/test
+deps:
+  - buf.build/beta/googleapis
+  - buf.build/beta/envoy
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE

@@ -94,11 +94,15 @@ func run(
 		)
 	}
 
+	var buildOption bufmodulebuild.BuildOption
+	if len(env.FilePaths) > 0 {
+		buildOption = bufmodulebuild.WithPaths(env.FilePaths)
+	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	module, err := bufmodulebuild.NewModuleIncludeBuilder(container.Logger(), storageosProvider).BuildForIncludes(
 		ctx,
 		env.IncludeDirPaths,
-		bufmodulebuild.WithPaths(env.FilePaths),
+		buildOption,
 	)
 	if err != nil {
 		return err

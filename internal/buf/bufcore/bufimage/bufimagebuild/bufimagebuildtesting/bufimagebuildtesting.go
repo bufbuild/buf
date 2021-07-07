@@ -60,7 +60,7 @@ func fuzz(data []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	config, err := bufmodulebuild.NewConfigV1Beta1(bufmodulebuild.ExternalConfigV1Beta1{})
+	config, err := bufmodulebuild.NewConfigV1(bufmodulebuild.ExternalConfigV1{})
 	if err != nil {
 		return 0, err
 	}

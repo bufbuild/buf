@@ -1,0 +1,5 @@
+version: v1
+lint:
+  use:
+    - RPC_REQUEST_RESPONSE_UNIQUE
+  rpc_allow_same_request_response: true

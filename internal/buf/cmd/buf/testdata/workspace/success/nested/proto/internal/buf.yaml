@@ -1,4 +1,0 @@
-version: v1beta1
-name: bufbuild.test/workspace/internal
-deps:
-  - bufbuild.test/workspace/external

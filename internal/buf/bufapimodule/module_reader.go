@@ -53,14 +53,16 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmodule.Module
 		}
 		return nil, err
 	}
-	moduleCommit, err := bufmodule.NewModuleCommit(
+	moduleIdentity, err := bufmodule.NewModuleIdentity(
 		modulePin.Remote(),
 		modulePin.Owner(),
 		modulePin.Repository(),
-		modulePin.Commit(),
 	)
 	if err != nil {
 		return nil, err
 	}
-	return bufmodule.NewModuleForProto(ctx, module, bufmodule.ModuleWithModuleCommit(moduleCommit))
+	return bufmodule.NewModuleForProto(
+		ctx, module,
+		bufmodule.ModuleWithModuleIdentityAndCommit(moduleIdentity, modulePin.Commit()),
+	)
 }

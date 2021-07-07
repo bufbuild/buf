@@ -44,16 +44,19 @@ type Container interface {
 	//
 	// First checks for $APP_NAME_CONFIG_DIR.
 	// If this is not set, uses app.ConfigDirPath()/app-name.
+	// Unnormalized.
 	ConfigDirPath() string
 	// CacheDirPath is the cache directory path for the named application.
 	//
 	// First checks for $APP_NAME_CACHE_DIR.
 	// If this is not set, uses app.CacheDirPath()/app-name.
+	// Unnormalized.
 	CacheDirPath() string
 	// DataDirPath is the data directory path for the named application.
 	//
 	// First checks for $APP_NAME_DATA_DIR.
 	// If this is not set, uses app.DataDirPath()/app-name.
+	// Unnormalized.
 	DataDirPath() string
 	// Port is the port to use for serving.
 	//

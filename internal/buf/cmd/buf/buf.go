@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/mod/modclearcache"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/mod/modexport"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/mod/modinit"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/mod/modupdate"
@@ -40,6 +41,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configlsbreakingrules"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configlslintrules"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configmigratev1beta1"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lint"
@@ -153,6 +155,7 @@ func NewRootCommand(
 				SubCommands: []*appcmd.Command{
 					configlslintrules.NewCommand("ls-lint-rules", builder, "", false),
 					configlsbreakingrules.NewCommand("ls-breaking-rules", builder, "", false),
+					configmigratev1beta1.NewCommand("migrate-v1beta1", builder),
 				},
 			},
 			{
@@ -190,6 +193,7 @@ func NewRootCommand(
 							modinit.NewCommand("init", builder, "", false),
 							modupdate.NewCommand("update", builder, moduleResolverReaderProvider),
 							modexport.NewCommand("export", builder, moduleResolverReaderProvider),
+							modclearcache.NewCommand("clear-cache", builder, "cc"),
 						},
 					},
 					{

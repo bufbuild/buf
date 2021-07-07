@@ -1,7 +1,7 @@
 BUF_BIN ?= cmd/buf
 
-# https://github.com/jhump/protoreflect/commits/master 20210603 checked 20210603
-PROTOREFLECT_VERSION := ac729f7067c33480d1dc8e1377b0c37daa528812
+# https://github.com/jhump/protoreflect/commits/master 20210616 checked 20210624
+PROTOREFLECT_VERSION := 6cc1efa697caed9b0ed8a0f3b093fbe7da7125a6
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
 GO_BINS := $(GO_BINS) \
@@ -78,8 +78,8 @@ licensegenerate:: licenseheader
 # and if we have generate depend on installing buf, we have
 # a chicken or egg problem.
 
-# TODO: Remove this after this PR is merged.
-BUFBINARYHEAD=1
+# TODO: remove when v1.0 is released
+BUFBINARYHEAD := 1
 
 .PHONY: bufbinaryinstall
 ifeq ($(BUFBINARYHEAD),)

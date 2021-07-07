@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
-	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
@@ -57,23 +56,4 @@ func BindLSRulesFormat(flagSet *pflag.FlagSet, addr *string, flagName string) {
 			stringutil.SliceToString(bufcheck.AllRuleFormatStrings),
 		),
 	)
-}
-
-// BindLSRulesCategories binds the categories flag for an ls rules command.
-func BindLSRulesCategories(flagSet *pflag.FlagSet, addr *[]string, flagName string) {
-	flagSet.StringSliceVar(
-		addr,
-		flagName,
-		nil,
-		"Only list the rules in these categories.",
-	)
-	_ = flagSet.MarkHidden(flagName)
-}
-
-// CheckLSRulesCategories checks that value is empty as this flag is deprecated.
-func CheckLSRulesCategories(value []string, flagName string) error {
-	if len(value) > 0 {
-		return appcmd.NewInvalidArgumentErrorf("Flag --%s has been removed in v0.26.0 in preparation for v1.0. This flag is difficult to reconcile with the concept of configuration versions. If filtering by category is necessary, print in JSON format and filter.", flagName)
-	}
-	return nil
 }

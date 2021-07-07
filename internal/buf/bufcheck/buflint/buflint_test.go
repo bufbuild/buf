@@ -737,6 +737,26 @@ func TestRunIgnores3(t *testing.T) {
 	)
 }
 
+func TestRunIgnores4(t *testing.T) {
+	testLint(
+		t,
+		"ignores4",
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 9, 9, 9, 13, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/bar/bar2.proto", 13, 6, 13, 10, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/baz/baz.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 6, 9, 6, 15, "FIELD_LOWER_SNAKE_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 9, 9, 9, 12, "MESSAGE_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "buf/foo/buf.proto", 13, 6, 13, 9, "ENUM_PASCAL_CASE"),
+	)
+}
+
 func TestCommentIgnoresOff(t *testing.T) {
 	testLint(
 		t,

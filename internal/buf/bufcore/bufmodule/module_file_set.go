@@ -26,53 +26,55 @@ var _ ModuleFileSet = &moduleFileSet{}
 type moduleFileSet struct {
 	Module
 
-	allReadBucket ReadBucket
+	allModuleReadBucket moduleReadBucket
 }
 
 func newModuleFileSet(
 	module Module,
 	dependencies []Module,
 ) *moduleFileSet {
-	// TODO: We can remove the getModuleCommit method on the
+	// TODO: We can remove the getModuleRef method on the
 	// Module type if we fetch FileInfos from the Module
-	// and plumb in the ModuleCommit here.
+	// and plumb in the ModuleRef here.
 	//
 	// This approach assumes that all of the FileInfos returned
-	// from SourceFileInfos will have their ModuleCommit
+	// from SourceFileInfos will have their ModuleRef
 	// set to the same value. That can be enforced here.
-	moduleReadBuckets := []ReadBucket{
-		NewReadBucket(
+	moduleReadBuckets := []moduleReadBucket{
+		newSingleModuleReadBucket(
 			module.getSourceReadBucket(),
-			module.getModuleCommit(),
+			module.getModuleIdentity(),
+			module.getCommit(),
 		),
 	}
 	for _, dependency := range dependencies {
 		moduleReadBuckets = append(
 			moduleReadBuckets,
-			NewReadBucket(
+			newSingleModuleReadBucket(
 				dependency.getSourceReadBucket(),
-				dependency.getModuleCommit(),
+				dependency.getModuleIdentity(),
+				dependency.getCommit(),
 			),
 		)
 	}
 	return &moduleFileSet{
-		Module:        module,
-		allReadBucket: newMultiReadBucket(moduleReadBuckets...),
+		Module:              module,
+		allModuleReadBucket: newMultiModuleReadBucket(moduleReadBuckets...),
 	}
 }
 
 func (m *moduleFileSet) AllFileInfos(ctx context.Context) ([]FileInfo, error) {
 	var fileInfos []FileInfo
-	if err := m.allReadBucket.WalkModuleFiles(ctx, "", func(objectInfo ObjectInfo) error {
-		if err := ValidateModuleFilePath(objectInfo.Path()); err != nil {
+	if err := m.allModuleReadBucket.WalkModuleFiles(ctx, "", func(moduleObjectInfo *moduleObjectInfo) error {
+		if err := ValidateModuleFilePath(moduleObjectInfo.Path()); err != nil {
 			return err
 		}
-		isNotImport, err := storage.Exists(ctx, m.Module.getSourceReadBucket(), objectInfo.Path())
+		isNotImport, err := storage.Exists(ctx, m.Module.getSourceReadBucket(), moduleObjectInfo.Path())
 		if err != nil {
 			return err
 		}
-		coreFileInfo := bufcore.NewFileInfoForObjectInfo(objectInfo, !isNotImport)
-		fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, objectInfo.ModuleCommit()))
+		coreFileInfo := bufcore.NewFileInfoForObjectInfo(moduleObjectInfo, !isNotImport)
+		fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, moduleObjectInfo.ModuleIdentity(), moduleObjectInfo.Commit()))
 		return nil
 	}); err != nil {
 		return nil, err
@@ -85,7 +87,7 @@ func (m *moduleFileSet) GetModuleFile(ctx context.Context, path string) (ModuleF
 	if err := ValidateModuleFilePath(path); err != nil {
 		return nil, err
 	}
-	readObjectCloser, err := m.allReadBucket.Get(ctx, path)
+	readObjectCloser, err := m.allModuleReadBucket.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -93,12 +95,12 @@ func (m *moduleFileSet) GetModuleFile(ctx context.Context, path string) (ModuleF
 	if err != nil {
 		return nil, err
 	}
-	objectInfo, err := m.allReadBucket.StatModuleFile(ctx, path)
+	moduleObjectInfo, err := m.allModuleReadBucket.StatModuleFile(ctx, path)
 	if err != nil {
 		return nil, err
 	}
 	coreFileInfo := bufcore.NewFileInfoForObjectInfo(readObjectCloser, !isNotImport)
-	return newModuleFile(NewFileInfo(coreFileInfo, objectInfo.ModuleCommit()), readObjectCloser), nil
+	return newModuleFile(NewFileInfo(coreFileInfo, moduleObjectInfo.ModuleIdentity(), moduleObjectInfo.Commit()), readObjectCloser), nil
 }
 
 func (*moduleFileSet) isModuleFileSet() {}

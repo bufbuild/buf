@@ -32,35 +32,54 @@ import (
 )
 
 const (
-	// LockFilePath defines the path to the lock file, relative to the root of the module.
-	LockFilePath = "buf.lock"
 	// DocumentationFilePath defines the path to the documentation file, relative to the root of the module.
 	DocumentationFilePath = "buf.md"
 	// MainBranch is the name of the branch created for every repository.
 	// This is the default branch used if no branch or commit is specified.
 	MainBranch = "main"
 
+	// b1DigestPrefix is the digest prefix for the first version of the digest function.
+	//
+	// This is used in lockfiles, and stored in the BSR.
+	// It is intended to be eventually removed.
 	b1DigestPrefix = "b1"
+
+	// b2DigestPrefix is the digest prefix for the second version of the digest function.
+	//
+	// It is used by the CLI cache and intended to eventually replace b2.
+	b2DigestPrefix = "b2"
 )
 
 // FileInfo contains module file info.
 type FileInfo interface {
 	bufcore.FileInfo
 
+	// ModuleIdentity is the module that this file came from.
+	//
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
-	// nil checking should work since the backing type is always a pointer
-	ModuleCommit() ModuleCommit
+	// Note that nil checking should work since the backing type is always a pointer.
+	ModuleIdentity() ModuleIdentity
+	// Commit is the commit for the module that this file came from.
+	//
+	// This will only be set if ModuleIdentity is set. but may not be set
+	// even if ModuleIdentity is set, that is commit is optional information
+	// even if we know what module this file came from.
+	Commit() string
 
 	isFileInfo()
 }
 
 // NewFileInfo returns a new FileInfo.
+//
+// TODO: we should make moduleIdentity and commit options.
+// TODO: we don't validate commit
 func NewFileInfo(
 	coreFileInfo bufcore.FileInfo,
-	moduleCommit ModuleCommit,
+	moduleIdentity ModuleIdentity,
+	commit string,
 ) FileInfo {
-	return newFileInfo(coreFileInfo, moduleCommit)
+	return newFileInfo(coreFileInfo, moduleIdentity, commit)
 }
 
 // ModuleFile is a module file.
@@ -150,8 +169,7 @@ func ModuleIdentityForString(path string) (ModuleIdentity, error) {
 
 // ModuleReference is a module reference.
 //
-// It references either a branch, or a commit.
-// Only one of Branch and Commit will be set.
+// It references either a branch, tag, or a commit.
 // Note that since commits belong to branches, we can deduce
 // the branch from the commit when resolving.
 type ModuleReference interface {
@@ -242,31 +260,6 @@ func IsCommitModuleReference(moduleReference ModuleReference) bool {
 func IsCommitReference(reference string) bool {
 	_, err := uuidutil.FromDashless(reference)
 	return err == nil
-}
-
-// ModuleCommit is a module commit.
-//
-// Note that since commits belong to branches, we can deduce
-// the branch from the commit.
-type ModuleCommit interface {
-	ModuleIdentity
-
-	// Prints remote/owner/repository:commit
-	fmt.Stringer
-
-	Commit() string
-
-	isModuleCommit()
-}
-
-// NewModuleCommit returns a new validated ModuleCommit.
-func NewModuleCommit(
-	remote string,
-	owner string,
-	repository string,
-	commit string,
-) (ModuleCommit, error) {
-	return newModuleCommit(remote, owner, repository, commit)
 }
 
 // ModulePin is a module pin.
@@ -395,12 +388,29 @@ type Module interface {
 	// This approach assumes that all of the FileInfos returned
 	// from SourceFileInfos will have their ModuleReference
 	// set to the same value, which can be validated.
-	getModuleCommit() ModuleCommit
+	getModuleIdentity() ModuleIdentity
+	// Note this can be empty.
+	getCommit() string
 	isModule()
 }
 
 // ModuleOption is used to construct Modules.
-type ModuleOption func(*moduleOptions)
+type ModuleOption func(*module)
+
+// ModuleWithModuleIdentity is used to construct a Module with a ModuleIdentity.
+func ModuleWithModuleIdentity(moduleIdentity ModuleIdentity) ModuleOption {
+	return func(module *module) {
+		module.moduleIdentity = moduleIdentity
+	}
+}
+
+// ModuleWithModuleIdentityAndCommit is used to construct a Module with a ModuleIdentity and commit.
+func ModuleWithModuleIdentityAndCommit(moduleIdentity ModuleIdentity, commit string) ModuleOption {
+	return func(module *module) {
+		module.moduleIdentity = moduleIdentity
+		module.commit = commit
+	}
+}
 
 // NewModuleForBucket returns a new Module. It attempts reads dependencies
 // from a lock file in the read bucket.
@@ -550,7 +560,7 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 	return protoModule, nil
 }
 
-// ModuleDigest returns the b1 digest for the Module.
+// ModuleDigestB1 returns the b1 digest for the Module.
 //
 // To create the module digest (SHA256):
 // 	1. For every file in the module (sorted lexicographically by path):
@@ -558,7 +568,7 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 //		b. Add the file contents
 // 	2. Add the dependency hashes (sorted lexicographically by the string representation)
 //	3. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
-func ModuleDigest(ctx context.Context, module Module) (string, error) {
+func ModuleDigestB1(ctx context.Context, module Module) (string, error) {
 	hash := sha256.New()
 	// DependencyModulePins returns these sorted
 	for _, dependencyModulePin := range module.DependencyModulePins() {
@@ -608,6 +618,66 @@ func ModuleDigest(ctx context.Context, module Module) (string, error) {
 	return fmt.Sprintf("%s-%s", b1DigestPrefix, base64.URLEncoding.EncodeToString(hash.Sum(nil))), nil
 }
 
+// ModuleDigestB2 returns the b2 digest for the Module.
+//
+// To create the module digest (SHA256):
+// 	1. For every file in the module (sorted lexicographically by path):
+// 		a. Add the file path
+//		b. Add the file contents
+// 	2. Add the dependency commits (sorted lexicographically by remote/owner/repository/commit)
+//	3. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
+func ModuleDigestB2(ctx context.Context, module Module) (string, error) {
+	hash := sha256.New()
+	// We do not want to change the sort order as the rest of the codebase relies on it,
+	// but we only want to use commit as part of the sort order, so we make a copy of
+	// the slice and sort it by commit
+	for _, dependencyModulePin := range copyModulePinsSortedByOnlyCommit(module.DependencyModulePins()) {
+		// We include each of these individually as opposed to using String
+		// so that if the String representation changes, we still get the same digest.
+		//
+		// Note that this does mean that changing a repository name or owner
+		// will result in a different digest, this is something we may
+		// want to revisit.
+		if _, err := hash.Write([]byte(dependencyModulePin.Remote())); err != nil {
+			return "", err
+		}
+		if _, err := hash.Write([]byte(dependencyModulePin.Owner())); err != nil {
+			return "", err
+		}
+		if _, err := hash.Write([]byte(dependencyModulePin.Repository())); err != nil {
+			return "", err
+		}
+		if _, err := hash.Write([]byte(dependencyModulePin.Commit())); err != nil {
+			return "", err
+		}
+	}
+	sourceFileInfos, err := module.SourceFileInfos(ctx)
+	if err != nil {
+		return "", err
+	}
+	for _, sourceFileInfo := range sourceFileInfos {
+		if _, err := hash.Write([]byte(sourceFileInfo.Path())); err != nil {
+			return "", err
+		}
+		moduleFile, err := module.GetModuleFile(ctx, sourceFileInfo.Path())
+		if err != nil {
+			return "", err
+		}
+		if _, err := io.Copy(hash, moduleFile); err != nil {
+			return "", multierr.Append(err, moduleFile.Close())
+		}
+		if err := moduleFile.Close(); err != nil {
+			return "", err
+		}
+	}
+	if docs := module.Documentation(); docs != "" {
+		if _, err := hash.Write([]byte(docs)); err != nil {
+			return "", err
+		}
+	}
+	return fmt.Sprintf("%s-%s", b2DigestPrefix, base64.URLEncoding.EncodeToString(hash.Sum(nil))), nil
+}
+
 // ModuleToBucket writes the given Module to the WriteBucket.
 //
 // This writes the sources and the buf.lock file.
@@ -631,7 +701,7 @@ func ModuleToBucket(
 			return err
 		}
 	}
-	return putDependencyModulePinsToBucket(ctx, writeBucket, module.DependencyModulePins())
+	return PutModuleDependencyModulePinsToBucket(ctx, writeBucket, module)
 }
 
 // TargetModuleFilesToBucket writes the target files of the given Module to the WriteBucket.
@@ -718,8 +788,7 @@ func ModulePinEqual(a ModulePin, b ModulePin) bool {
 
 // PutModuleDependencyModulePinsToBucket writes the module dependencies to the write bucket in the form of a lock file.
 func PutModuleDependencyModulePinsToBucket(ctx context.Context, writeBucket storage.WriteBucket, module Module) error {
-	// we know module dependency module pins are sorted and unique
-	return putDependencyModulePinsToBucket(ctx, writeBucket, module.DependencyModulePins())
+	return putModulePinsToBucket(ctx, writeBucket, module.DependencyModulePins())
 }
 
 // SortModulePins sorts the ModulePins.
@@ -727,106 +796,4 @@ func SortModulePins(modulePins []ModulePin) {
 	sort.Slice(modulePins, func(i, j int) bool {
 		return modulePinLess(modulePins[i], modulePins[j])
 	})
-}
-
-// ObjectInfo extends the storage.ObjectInfo interface with
-// information specific to Modules.
-//
-// TODO: This type is currently not used outside of this package,
-// so we could instead rely on just the concrete struct type.
-// This includes an interface for consistency, and exports it to
-// prevent name collisions.
-type ObjectInfo interface {
-	storage.ObjectInfo
-
-	// ModuleCommit gets this object's ModuleCommit, if any.
-	ModuleCommit() ModuleCommit
-}
-
-// ReadBucket extends the storage.ReadBucket interface with
-// information specific to Modules.
-//
-// TODO: This type is currently not used outside of this package,
-// so we could instead rely on just the concrete struct type.
-// This includes an interface for consistency, and exports it to
-// prevent name collisions.
-type ReadBucket interface {
-	storage.ReadBucket
-
-	// StatModuleFile gets info in the object, including info
-	// specific to the file's module.
-	//
-	// Returns ErrNotExist if the path does not exist, other error
-	// if there is a system error.
-	StatModuleFile(ctx context.Context, path string) (ObjectInfo, error)
-	// WalkModuleFiles walks the bucket with the prefix, calling f on
-	// each path. If the prefix doesn't exist, this is a no-op.
-	//
-	// Note that foo/barbaz will not be called for foo/bar, but will
-	// be called for foo/bar/baz.
-	//
-	// All paths given to f are normalized and validated.
-	// If f returns error, Walk will stop short and return this error.
-	// Returns other error on system error.
-	WalkModuleFiles(ctx context.Context, prefix string, f func(ObjectInfo) error) error
-}
-
-// NewReadBucket returns a new ReadBucket.
-func NewReadBucket(
-	sourceReadBucket storage.ReadBucket,
-	moduleCommit ModuleCommit,
-) ReadBucket {
-	return newReadBucket(sourceReadBucket, moduleCommit)
-}
-
-// sortFileInfos sorts the FileInfos.
-func sortFileInfos(fileInfos []FileInfo) {
-	sort.Slice(
-		fileInfos,
-		func(i int, j int) bool {
-			return fileInfos[i].Path() < fileInfos[j].Path()
-		},
-	)
-}
-
-// parseModuleReferenceComponents parses and returns the remote, owner, repository,
-// and ref (branch or commit) from the given path.
-func parseModuleReferenceComponents(path string) (remote string, owner string, repository string, ref string, err error) {
-	remote, owner, rest, err := parseModuleIdentityComponents(path)
-	if err != nil {
-		return "", "", "", "", newInvalidModuleReferenceStringError(path)
-	}
-	restSplit := strings.Split(rest, ":")
-	repository = strings.TrimSpace(restSplit[0])
-	if len(restSplit) == 1 {
-		return remote, owner, repository, "", nil
-	}
-	if len(restSplit) == 2 {
-		ref := strings.TrimSpace(restSplit[1])
-		if ref == "" {
-			return "", "", "", "", newInvalidModuleReferenceStringError(path)
-		}
-		return remote, owner, repository, ref, nil
-	}
-	return "", "", "", "", newInvalidModuleReferenceStringError(path)
-}
-
-func parseModuleIdentityComponents(path string) (remote string, owner string, repository string, err error) {
-	slashSplit := strings.Split(path, "/")
-	if len(slashSplit) != 3 {
-		return "", "", "", newInvalidModuleIdentityStringError(path)
-	}
-	remote = strings.TrimSpace(slashSplit[0])
-	if remote == "" {
-		return "", "", "", newInvalidModuleIdentityStringError(path)
-	}
-	owner = strings.TrimSpace(slashSplit[1])
-	if owner == "" {
-		return "", "", "", newInvalidModuleIdentityStringError(path)
-	}
-	repository = strings.TrimSpace(slashSplit[2])
-	if repository == "" {
-		return "", "", "", newInvalidModuleIdentityStringError(path)
-	}
-	return remote, owner, repository, nil
 }

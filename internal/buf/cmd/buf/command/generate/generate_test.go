@@ -139,7 +139,7 @@ func testCompareGeneratedStubs(
 		"--input",
 		dirPath,
 		"--template",
-		newExternalConfigV1Beta1String(t, plugins, bufGenDir),
+		newExternalConfigV1String(t, plugins, bufGenDir),
 	}
 	for _, filePath := range filePaths {
 		genFlags = append(
@@ -223,7 +223,7 @@ func testCompareGeneratedStubsArchive(
 		"--input",
 		dirPath,
 		"--template",
-		newExternalConfigV1Beta1String(t, plugins, bufGenFile),
+		newExternalConfigV1String(t, plugins, bufGenFile),
 	}
 	for _, filePath := range filePaths {
 		genFlags = append(
@@ -292,14 +292,14 @@ type testPluginInfo struct {
 	opt  string
 }
 
-func newExternalConfigV1Beta1String(t *testing.T, plugins []testPluginInfo, out string) string {
-	externalConfig := bufgen.ExternalConfigV1Beta1{
-		Version: "v1beta1",
+func newExternalConfigV1String(t *testing.T, plugins []testPluginInfo, out string) string {
+	externalConfig := bufgen.ExternalConfigV1{
+		Version: "v1",
 	}
 	for _, plugin := range plugins {
 		externalConfig.Plugins = append(
 			externalConfig.Plugins,
-			bufgen.ExternalPluginConfigV1Beta1{
+			bufgen.ExternalPluginConfigV1{
 				Name: plugin.name,
 				Out:  out,
 				Opt:  plugin.opt,
