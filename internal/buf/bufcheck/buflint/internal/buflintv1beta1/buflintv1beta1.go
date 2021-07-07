@@ -14,7 +14,7 @@
 
 // Package buflintv1beta1 contains the VersionSpec for v1beta1.
 //
-// It uses buflintfunc and buflintbuild.
+// It uses buflintcheck and buflintbuild.
 package buflintv1beta1
 
 import "github.com/bufbuild/buf/internal/buf/bufcheck/internal"

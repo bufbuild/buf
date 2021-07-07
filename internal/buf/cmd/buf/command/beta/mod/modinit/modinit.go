@@ -47,7 +47,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:        name,
-		Short:      fmt.Sprintf("Initializes and writes a new %s configuration file.", bufconfig.ExternalConfigV1Beta1FilePath),
+		Short:      fmt.Sprintf("Initializes and writes a new %s configuration file.", bufconfig.ExternalConfigFilePath),
 		Args:       cobra.NoArgs,
 		Deprecated: deprecated,
 		Hidden:     hidden,
@@ -132,7 +132,7 @@ func run(
 		return err
 	}
 	if exists {
-		return appcmd.NewInvalidArgumentErrorf("%s already exists, not overwriting", bufconfig.ExternalConfigV1Beta1FilePath)
+		return appcmd.NewInvalidArgumentErrorf("%s already exists, not overwriting", bufconfig.ExternalConfigFilePath)
 	}
 	var writeConfigOptions []bufconfig.WriteConfigOption
 	if flags.DocumentationComments {

@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/gen/data/datawkt"
 	"github.com/bufbuild/buf/internal/pkg/protoversion"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -94,9 +95,20 @@ func CcEnableArenas(sweeper Sweeper, value bool) Modifier {
 }
 
 // GoPackage returns a Modifier that sets the go_package file option
-// according to the given importPathPrefix.
-func GoPackage(sweeper Sweeper, importPathPrefix string) (Modifier, error) {
-	return goPackage(sweeper, importPathPrefix)
+// according to the given defaultImportPathPrefix, exceptions, and
+// overrides.
+func GoPackage(
+	sweeper Sweeper,
+	defaultImportPathPrefix string,
+	except []bufmodule.ModuleIdentity,
+	override map[bufmodule.ModuleIdentity]string,
+) (Modifier, error) {
+	return goPackage(
+		sweeper,
+		defaultImportPathPrefix,
+		except,
+		override,
+	)
 }
 
 // JavaMultipleFiles returns a Modifier that sets the java_multiple_files

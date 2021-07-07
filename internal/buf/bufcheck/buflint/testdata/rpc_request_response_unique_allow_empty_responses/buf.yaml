@@ -1,5 +1,0 @@
-version: v1beta1
-lint:
-  use:
-    - RPC_REQUEST_RESPONSE_UNIQUE
-  rpc_allow_google_protobuf_empty_responses: true

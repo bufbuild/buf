@@ -26,11 +26,23 @@ import (
 	"go.uber.org/zap"
 )
 
-// ExternalConfigV1Beta1FilePath is the default configuration file path for v1beta1.
-const ExternalConfigV1Beta1FilePath = "buf.yaml"
+const (
+	// ExternalConfigFilePath is the default configuration file path.
+	ExternalConfigFilePath = "buf.mod"
+
+	// ExternalConfigV1Beta1FilePath is the v1beta1 file path.
+	ExternalConfigV1Beta1FilePath = "buf.yaml"
+
+	// V1Version is the v1 version.
+	V1Version = "v1"
+
+	// V1Beta1Version is the v1beta1 version.
+	V1Beta1Version = "v1beta1"
+)
 
 // Config is the user config.
 type Config struct {
+	Version        string
 	ModuleIdentity bufmodule.ModuleIdentity
 	Build          *bufmodulebuild.Config
 	Breaking       *bufbreaking.Config
@@ -109,7 +121,7 @@ func WriteConfigWithUncomment() WriteConfigOption {
 	}
 }
 
-// ReadConfig reads the configuration, including potentially reading from the OS for an override.
+// ReadConfig reads the configuration from the OS or an override, if any.
 //
 // Only use in CLI tools.
 func ReadConfig(
@@ -135,7 +147,7 @@ type ReadConfigOption func(*readConfigOptions)
 // this reads the file at this path and uses it. Otherwise, this assumes this is configuration
 // data in either JSON or YAML format, and unmarshals it.
 //
-// If no override is set, this reads ConfigFilePath in the bucket..
+// If no override is set, this reads ExternalConfigFilePath in the bucket.
 func ReadConfigWithOverride(override string) ReadConfigOption {
 	return func(readConfigOptions *readConfigOptions) {
 		readConfigOptions.override = override
@@ -144,18 +156,41 @@ func ReadConfigWithOverride(override string) ReadConfigOption {
 
 // ConfigExists checks if a configuration file exists.
 func ConfigExists(ctx context.Context, readBucket storage.ReadBucket) (bool, error) {
+	exists, err := storage.Exists(ctx, readBucket, ExternalConfigFilePath)
+	if err != nil {
+		return false, err
+	}
+	if exists {
+		return true, nil
+	}
+	// If the default filename does not exist, fallback to previous versions.
 	return storage.Exists(ctx, readBucket, ExternalConfigV1Beta1FilePath)
 }
 
-type externalConfigV1Beta1 struct {
+// ExternalConfigV1Beta1 represents the on-disk representation of the Config
+// at version v1beta1.
+type ExternalConfigV1Beta1 struct {
 	Version  string                               `json:"version,omitempty" yaml:"version,omitempty"`
 	Name     string                               `json:"name,omitempty" yaml:"name,omitempty"`
+	Deps     []string                             `json:"deps,omitempty" yaml:"deps,omitempty"`
 	Build    bufmodulebuild.ExternalConfigV1Beta1 `json:"build,omitempty" yaml:"build,omitempty"`
 	Breaking bufbreaking.ExternalConfigV1Beta1    `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 	Lint     buflint.ExternalConfigV1Beta1        `json:"lint,omitempty" yaml:"lint,omitempty"`
-	Deps     []string                             `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 
-type externalConfigVersion struct {
+// ExternalConfigV1 represents the on-disk representation of the Config
+// at version v1.
+type ExternalConfigV1 struct {
+	Version  string                          `json:"version,omitempty" yaml:"version,omitempty"`
+	Name     string                          `json:"name,omitempty" yaml:"name,omitempty"`
+	Deps     []string                        `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Build    bufmodulebuild.ExternalConfigV1 `json:"build,omitempty" yaml:"build,omitempty"`
+	Breaking bufbreaking.ExternalConfigV1    `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Lint     buflint.ExternalConfigV1        `json:"lint,omitempty" yaml:"lint,omitempty"`
+}
+
+// ExternalConfigVersion defines the subset of all config
+// file versions that is used to determine the configuration version.
+type ExternalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }

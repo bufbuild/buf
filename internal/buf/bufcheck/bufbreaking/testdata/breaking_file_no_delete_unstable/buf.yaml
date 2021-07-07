@@ -1,3 +1,0 @@
-version: v1beta1
-breaking:
-  ignore_unstable_packages: true

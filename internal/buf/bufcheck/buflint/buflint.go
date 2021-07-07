@@ -26,6 +26,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/internal/buflintv1"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/internal/buflintv1beta1"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
@@ -103,6 +104,28 @@ func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
 	return internalConfigToConfig(internalConfig), nil
 }
 
+// NewConfigV1 returns a new Config.
+func NewConfigV1(externalConfig ExternalConfigV1) (*Config, error) {
+	internalConfig, err := internal.ConfigBuilder{
+		Use:                                  externalConfig.Use,
+		Except:                               externalConfig.Except,
+		IgnoreRootPaths:                      externalConfig.Ignore,
+		IgnoreIDOrCategoryToRootPaths:        externalConfig.IgnoreOnly,
+		AllowCommentIgnores:                  externalConfig.AllowCommentIgnores,
+		EnumZeroValueSuffix:                  externalConfig.EnumZeroValueSuffix,
+		RPCAllowSameRequestResponse:          externalConfig.RPCAllowSameRequestResponse,
+		RPCAllowGoogleProtobufEmptyRequests:  externalConfig.RPCAllowGoogleProtobufEmptyRequests,
+		RPCAllowGoogleProtobufEmptyResponses: externalConfig.RPCAllowGoogleProtobufEmptyResponses,
+		ServiceSuffix:                        externalConfig.ServiceSuffix,
+	}.NewConfig(
+		buflintv1.VersionSpec,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return internalConfigToConfig(internalConfig), nil
+}
+
 // GetAllRulesV1Beta1 gets all known rules.
 //
 // Should only be used for printing.
@@ -118,8 +141,39 @@ func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 	return rulesToBufcheckRules(config.Rules), nil
 }
 
+// GetAllRulesV1 gets all known rules.
+//
+// Should only be used for printing.
+func GetAllRulesV1() ([]bufcheck.Rule, error) {
+	config, err := NewConfigV1(
+		ExternalConfigV1{
+			Use: buflintv1.VersionSpec.AllCategories,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return rulesToBufcheckRules(config.Rules), nil
+}
+
 // ExternalConfigV1Beta1 is an external config.
 type ExternalConfigV1Beta1 struct {
+	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
+	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
+	// IgnoreRootPaths
+	Ignore []string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
+	// IgnoreIDOrCategoryToRootPaths
+	IgnoreOnly                           map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
+	EnumZeroValueSuffix                  string              `json:"enum_zero_value_suffix,omitempty" yaml:"enum_zero_value_suffix,omitempty"`
+	RPCAllowSameRequestResponse          bool                `json:"rpc_allow_same_request_response,omitempty" yaml:"rpc_allow_same_request_response,omitempty"`
+	RPCAllowGoogleProtobufEmptyRequests  bool                `json:"rpc_allow_google_protobuf_empty_requests,omitempty" yaml:"rpc_allow_google_protobuf_empty_requests,omitempty"`
+	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
+	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
+	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
+}
+
+// ExternalConfigV1 is an external config.
+type ExternalConfigV1 struct {
 	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
 	Except []string `json:"except,omitempty" yaml:"except,omitempty"`
 	// IgnoreRootPaths
@@ -188,7 +242,7 @@ func printFileAnnotationsConfigIgnoreYAML(
 	sort.Strings(sortedIgnoreIDs)
 
 	buffer := bytes.NewBuffer(nil)
-	_, _ = buffer.WriteString(`version: v1beta1
+	_, _ = buffer.WriteString(`version: v1
 lint:
   ignore_only:
 `)

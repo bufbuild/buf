@@ -1,0 +1,11 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: ../invalid/path
+plugins:
+  - name: go
+    out: gen/go
+    opt: plugins=grpc
+    path: /path/to/foo
+    strategy: all

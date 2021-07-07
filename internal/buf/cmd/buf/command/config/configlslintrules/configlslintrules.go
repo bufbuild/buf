@@ -29,10 +29,9 @@ import (
 )
 
 const (
-	allFlagName        = "all"
-	categoriesFlagName = "category"
-	configFlagName     = "config"
-	formatFlagName     = "format"
+	allFlagName    = "all"
+	configFlagName = "config"
+	formatFlagName = "format"
 )
 
 // NewCommand returns a new Command.
@@ -59,11 +58,9 @@ func NewCommand(
 }
 
 type flags struct {
-	All bool
-	// TODO: remove for v1.0
-	Categories []string
-	Config     string
-	Format     string
+	All    bool
+	Config string
+	Format string
 }
 
 func newFlags() *flags {
@@ -72,7 +69,6 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	configinternal.BindLSRulesAll(flagSet, &f.All, allFlagName)
-	configinternal.BindLSRulesCategories(flagSet, &f.Categories, categoriesFlagName)
 	configinternal.BindLSRulesConfig(flagSet, &f.Config, configFlagName, allFlagName)
 	configinternal.BindLSRulesFormat(flagSet, &f.Format, formatFlagName)
 }
@@ -82,34 +78,38 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	if err := configinternal.CheckLSRulesCategories(flags.Categories, categoriesFlagName); err != nil {
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		".",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	config, err := bufconfig.ReadConfig(
+		ctx,
+		bufconfig.NewProvider(container.Logger()),
+		readWriteBucket,
+		bufconfig.ReadConfigWithOverride(flags.Config),
+	)
+	if err != nil {
+		return err
+	}
 	var rules []bufcheck.Rule
-	var err error
 	if flags.All {
-		rules, err = buflint.GetAllRulesV1Beta1()
-		if err != nil {
-			return err
+		switch config.Version {
+		case bufconfig.V1Beta1Version:
+			rules, err = buflint.GetAllRulesV1Beta1()
+			if err != nil {
+				return err
+			}
+		case bufconfig.V1Version:
+			rules, err = buflint.GetAllRulesV1()
+			if err != nil {
+				return err
+			}
 		}
 	} else {
-		readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-			".",
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		)
-		if err != nil {
-			return err
-		}
-		config, err := bufconfig.ReadConfig(
-			ctx,
-			bufconfig.NewProvider(container.Logger()),
-			readWriteBucket,
-			bufconfig.ReadConfigWithOverride(flags.Config),
-		)
-		if err != nil {
-			return err
-		}
 		rules = config.Lint.GetRules()
 	}
 	return bufcheck.PrintRules(

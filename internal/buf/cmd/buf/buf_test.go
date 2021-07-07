@@ -16,6 +16,7 @@ package buf
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -27,6 +28,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
+	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -247,6 +250,33 @@ func TestFail7(t *testing.T) {
 		"--config",
 		`{"lint":{"use":["BASIC"]}}`,
 	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		"lint",
+		"--path",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+		"--input",
+		filepath.Join("testdata"),
+		"--input-config",
+		`{"version":"v1","lint":{"use":["BASIC"]}}`,
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		"lint",
+		"--path",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+		filepath.Join("testdata"),
+		"--config",
+		`{"version":"v1","lint":{"use":["BASIC"]}}`,
+	)
 }
 
 func TestFail8(t *testing.T) {
@@ -353,7 +383,7 @@ func TestFail12(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`version: v1beta1
+		`version: v1
 lint:
   ignore_only:
     FIELD_LOWER_SNAKE_CASE:
@@ -370,7 +400,7 @@ lint:
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`version: v1beta1
+		`version: v1
 lint:
   ignore_only:
     FIELD_LOWER_SNAKE_CASE:
@@ -538,6 +568,89 @@ func TestFailCheckBreaking1(t *testing.T) {
 func TestCheckLsLintRules1(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
+ID                                CATEGORIES               PURPOSE
+DIRECTORY_SAME_PACKAGE            MINIMAL, BASIC, DEFAULT  Checks that all files in a given directory are in the same package.
+PACKAGE_DEFINED                   MINIMAL, BASIC, DEFAULT  Checks that all files have a package defined.
+PACKAGE_DIRECTORY_MATCH           MINIMAL, BASIC, DEFAULT  Checks that all files are in a directory that matches their package name.
+PACKAGE_SAME_DIRECTORY            MINIMAL, BASIC, DEFAULT  Checks that all files with a given package are in the same directory.
+ENUM_FIRST_VALUE_ZERO             BASIC, DEFAULT           Checks that all first values of enums have a numeric value of 0.
+ENUM_NO_ALLOW_ALIAS               BASIC, DEFAULT           Checks that enums do not have the allow_alias option set.
+ENUM_PASCAL_CASE                  BASIC, DEFAULT           Checks that enums are PascalCase.
+ENUM_VALUE_UPPER_SNAKE_CASE       BASIC, DEFAULT           Checks that enum values are UPPER_SNAKE_CASE.
+FIELD_LOWER_SNAKE_CASE            BASIC, DEFAULT           Checks that field names are lower_snake_case.
+IMPORT_NO_PUBLIC                  BASIC, DEFAULT           Checks that imports are not public.
+IMPORT_NO_WEAK                    BASIC, DEFAULT           Checks that imports are not weak.
+MESSAGE_PASCAL_CASE               BASIC, DEFAULT           Checks that messages are PascalCase.
+ONEOF_LOWER_SNAKE_CASE            BASIC, DEFAULT           Checks that oneof names are lower_snake_case.
+PACKAGE_LOWER_SNAKE_CASE          BASIC, DEFAULT           Checks that packages are lower_snake.case.
+PACKAGE_SAME_CSHARP_NAMESPACE     BASIC, DEFAULT           Checks that all files with a given package have the same value for the csharp_namespace option.
+PACKAGE_SAME_GO_PACKAGE           BASIC, DEFAULT           Checks that all files with a given package have the same value for the go_package option.
+PACKAGE_SAME_JAVA_MULTIPLE_FILES  BASIC, DEFAULT           Checks that all files with a given package have the same value for the java_multiple_files option.
+PACKAGE_SAME_JAVA_PACKAGE         BASIC, DEFAULT           Checks that all files with a given package have the same value for the java_package option.
+PACKAGE_SAME_PHP_NAMESPACE        BASIC, DEFAULT           Checks that all files with a given package have the same value for the php_namespace option.
+PACKAGE_SAME_RUBY_PACKAGE         BASIC, DEFAULT           Checks that all files with a given package have the same value for the ruby_package option.
+PACKAGE_SAME_SWIFT_PREFIX         BASIC, DEFAULT           Checks that all files with a given package have the same value for the swift_prefix option.
+RPC_PASCAL_CASE                   BASIC, DEFAULT           Checks that RPCs are PascalCase.
+SERVICE_PASCAL_CASE               BASIC, DEFAULT           Checks that services are PascalCase.
+ENUM_VALUE_PREFIX                 DEFAULT                  Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
+ENUM_ZERO_VALUE_SUFFIX            DEFAULT                  Checks that enum zero values are suffixed with _UNSPECIFIED (suffix is configurable).
+FILE_LOWER_SNAKE_CASE             DEFAULT                  Checks that filenames are lower_snake_case.
+PACKAGE_VERSION_SUFFIX            DEFAULT                  Checks that the last component of all packages is a version of the form v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+, where numbers are >=1.
+RPC_REQUEST_RESPONSE_UNIQUE       DEFAULT                  Checks that RPC request and response types are only used in one RPC (configurable).
+RPC_REQUEST_STANDARD_NAME         DEFAULT                  Checks that RPC request type names are RPCNameRequest or ServiceNameRPCNameRequest (configurable).
+RPC_RESPONSE_STANDARD_NAME        DEFAULT                  Checks that RPC response type names are RPCNameResponse or ServiceNameRPCNameResponse (configurable).
+SERVICE_SUFFIX                    DEFAULT                  Checks that services are suffixed with Service (suffix is configurable).
+COMMENT_ENUM                      COMMENTS                 Checks that enums have non-empty comments.
+COMMENT_ENUM_VALUE                COMMENTS                 Checks that enum values have non-empty comments.
+COMMENT_FIELD                     COMMENTS                 Checks that fields have non-empty comments.
+COMMENT_MESSAGE                   COMMENTS                 Checks that messages have non-empty comments.
+COMMENT_ONEOF                     COMMENTS                 Checks that oneof have non-empty comments.
+COMMENT_RPC                       COMMENTS                 Checks that RPCs have non-empty comments.
+COMMENT_SERVICE                   COMMENTS                 Checks that services have non-empty comments.
+RPC_NO_CLIENT_STREAMING           UNARY_RPC                Checks that RPCs are not client streaming.
+RPC_NO_SERVER_STREAMING           UNARY_RPC                Checks that RPCs are not server streaming.
+		`
+	testRunStdout(
+		t,
+		nil,
+		0,
+		expectedStdout,
+		"check",
+		"ls-lint-checkers",
+		"--all",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		expectedStdout,
+		"config",
+		"ls-lint-rules",
+		"--all",
+	)
+}
+
+func TestCheckLsLintRules2(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+		ID                       CATEGORIES                            PURPOSE
+		PACKAGE_DIRECTORY_MATCH  MINIMAL, BASIC, DEFAULT, FILE_LAYOUT  Checks that all files are in a directory that matches their package name.
+		ENUM_NO_ALLOW_ALIAS      MINIMAL, BASIC, DEFAULT, SENSIBLE     Checks that enums do not have the allow_alias option set.
+		`,
+		"config",
+		"ls-lint-rules",
+		"--config",
+		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1Beta1FilePath),
+	)
+}
+
+func TestCheckLsLintRules3(t *testing.T) {
+	t.Parallel()
+	expectedStdout := `
 ID                                CATEGORIES                                  PURPOSE
 DIRECTORY_SAME_PACKAGE            MINIMAL, BASIC, DEFAULT, FILE_LAYOUT        Checks that all files in a given directory are in the same package.
 PACKAGE_DIRECTORY_MATCH           MINIMAL, BASIC, DEFAULT, FILE_LAYOUT        Checks that all files are in a directory that matches their package name.
@@ -586,36 +699,11 @@ ENUM_FIRST_VALUE_ZERO             OTHER                                       Ch
 		nil,
 		0,
 		expectedStdout,
-		"check",
-		"ls-lint-checkers",
-		"--all",
-	)
-	testRunStdout(
-		t,
-		nil,
-		0,
-		expectedStdout,
 		"config",
 		"ls-lint-rules",
 		"--all",
-	)
-}
-
-func TestCheckLsLintRules2(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		0,
-		`
-		ID                       CATEGORIES                            PURPOSE
-		PACKAGE_DIRECTORY_MATCH  MINIMAL, BASIC, DEFAULT, FILE_LAYOUT  Checks that all files are in a directory that matches their package name.
-		ENUM_NO_ALLOW_ALIAS      MINIMAL, BASIC, DEFAULT, SENSIBLE     Checks that enums do not have the allow_alias option set.
-		`,
-		"config",
-		"ls-lint-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1Beta1FilePath),
+		`{"version": "v1beta1"}`,
 	)
 }
 
@@ -625,7 +713,6 @@ func TestCheckLsBreakingRules1(t *testing.T) {
 ID                                              CATEGORIES                      PURPOSE
 ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
 FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
-FILE_SAME_PACKAGE                               FILE                            Checks that files have the same package.
 MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
 SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
 ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
@@ -661,6 +748,7 @@ FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        
 FIELD_SAME_LABEL                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same labels in a given message.
 FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
 FIELD_SAME_TYPE                                 FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same types in a given message.
+FILE_SAME_PACKAGE                               FILE, PACKAGE, WIRE_JSON, WIRE  Checks that files have the same package.
 MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
 MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have no added or deleted required fields.
 RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given enum.
@@ -733,6 +821,90 @@ func TestCheckLsBreakingRules3(t *testing.T) {
 		"--config",
 		// making sure that .yml works
 		filepath.Join("testdata", "small_list_rules_yml", "config.yml"),
+	)
+}
+
+func TestCheckLsBreakingRules4(t *testing.T) {
+	t.Parallel()
+	expectedStdout := `
+ID                                              CATEGORIES                      PURPOSE
+ENUM_NO_DELETE                                  FILE                            Checks that enums are not deleted from a given file.
+FILE_NO_DELETE                                  FILE                            Checks that files are not deleted.
+FILE_SAME_PACKAGE                               FILE                            Checks that files have the same package.
+MESSAGE_NO_DELETE                               FILE                            Checks that messages are not deleted from a given file.
+SERVICE_NO_DELETE                               FILE                            Checks that services are not deleted from a given file.
+ENUM_VALUE_NO_DELETE                            FILE, PACKAGE                   Checks that enum values are not deleted from a given enum.
+EXTENSION_MESSAGE_NO_DELETE                     FILE, PACKAGE                   Checks that extension ranges are not deleted from a given message.
+FIELD_NO_DELETE                                 FILE, PACKAGE                   Checks that fields are not deleted from a given message.
+FIELD_SAME_CTYPE                                FILE, PACKAGE                   Checks that fields have the same value for the ctype option.
+FIELD_SAME_JSTYPE                               FILE, PACKAGE                   Checks that fields have the same value for the jstype option.
+FILE_SAME_CC_ENABLE_ARENAS                      FILE, PACKAGE                   Checks that files have the same value for the cc_enable_arenas option.
+FILE_SAME_CC_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the cc_generic_services option.
+FILE_SAME_CSHARP_NAMESPACE                      FILE, PACKAGE                   Checks that files have the same value for the csharp_namespace option.
+FILE_SAME_GO_PACKAGE                            FILE, PACKAGE                   Checks that files have the same value for the go_package option.
+FILE_SAME_JAVA_GENERIC_SERVICES                 FILE, PACKAGE                   Checks that files have the same value for the java_generic_services option.
+FILE_SAME_JAVA_MULTIPLE_FILES                   FILE, PACKAGE                   Checks that files have the same value for the java_multiple_files option.
+FILE_SAME_JAVA_OUTER_CLASSNAME                  FILE, PACKAGE                   Checks that files have the same value for the java_outer_classname option.
+FILE_SAME_JAVA_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the java_package option.
+FILE_SAME_JAVA_STRING_CHECK_UTF8                FILE, PACKAGE                   Checks that files have the same value for the java_string_check_utf8 option.
+FILE_SAME_OBJC_CLASS_PREFIX                     FILE, PACKAGE                   Checks that files have the same value for the objc_class_prefix option.
+FILE_SAME_OPTIMIZE_FOR                          FILE, PACKAGE                   Checks that files have the same value for the optimize_for option.
+FILE_SAME_PHP_CLASS_PREFIX                      FILE, PACKAGE                   Checks that files have the same value for the php_class_prefix option.
+FILE_SAME_PHP_GENERIC_SERVICES                  FILE, PACKAGE                   Checks that files have the same value for the php_generic_services option.
+FILE_SAME_PHP_METADATA_NAMESPACE                FILE, PACKAGE                   Checks that files have the same value for the php_metadata_namespace option.
+FILE_SAME_PHP_NAMESPACE                         FILE, PACKAGE                   Checks that files have the same value for the php_namespace option.
+FILE_SAME_PY_GENERIC_SERVICES                   FILE, PACKAGE                   Checks that files have the same value for the py_generic_services option.
+FILE_SAME_RUBY_PACKAGE                          FILE, PACKAGE                   Checks that files have the same value for the ruby_package option.
+FILE_SAME_SWIFT_PREFIX                          FILE, PACKAGE                   Checks that files have the same value for the swift_prefix option.
+FILE_SAME_SYNTAX                                FILE, PACKAGE                   Checks that files have the same syntax.
+MESSAGE_NO_REMOVE_STANDARD_DESCRIPTOR_ACCESSOR  FILE, PACKAGE                   Checks that messages do not change the no_standard_descriptor_accessor option from false or unset to true.
+ONEOF_NO_DELETE                                 FILE, PACKAGE                   Checks that oneofs are not deleted from a given message.
+RPC_NO_DELETE                                   FILE, PACKAGE                   Checks that rpcs are not deleted from a given service.
+ENUM_VALUE_SAME_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that enum values have the same name.
+FIELD_SAME_JSON_NAME                            FILE, PACKAGE, WIRE_JSON        Checks that fields have the same value for the json_name option.
+FIELD_SAME_NAME                                 FILE, PACKAGE, WIRE_JSON        Checks that fields have the same names in a given message.
+FIELD_SAME_LABEL                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same labels in a given message.
+FIELD_SAME_ONEOF                                FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same oneofs in a given message.
+FIELD_SAME_TYPE                                 FILE, PACKAGE, WIRE_JSON, WIRE  Checks that fields have the same types in a given message.
+MESSAGE_SAME_MESSAGE_SET_WIRE_FORMAT            FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have the same value for the message_set_wire_format option.
+MESSAGE_SAME_REQUIRED_FIELDS                    FILE, PACKAGE, WIRE_JSON, WIRE  Checks that messages have no added or deleted required fields.
+RESERVED_ENUM_NO_DELETE                         FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given enum.
+RESERVED_MESSAGE_NO_DELETE                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that reserved ranges and names are not deleted from a given message.
+RPC_SAME_CLIENT_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same client streaming value.
+RPC_SAME_IDEMPOTENCY_LEVEL                      FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same value for the idempotency_level option.
+RPC_SAME_REQUEST_TYPE                           FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same request type.
+RPC_SAME_RESPONSE_TYPE                          FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs are have the same response type.
+RPC_SAME_SERVER_STREAMING                       FILE, PACKAGE, WIRE_JSON, WIRE  Checks that rpcs have the same server streaming value.
+PACKAGE_ENUM_NO_DELETE                          PACKAGE                         Checks that enums are not deleted from a given package.
+PACKAGE_MESSAGE_NO_DELETE                       PACKAGE                         Checks that messages are not deleted from a given package.
+PACKAGE_NO_DELETE                               PACKAGE                         Checks that packages are not deleted.
+PACKAGE_SERVICE_NO_DELETE                       PACKAGE                         Checks that services are not deleted from a given package.
+ENUM_VALUE_NO_DELETE_UNLESS_NAME_RESERVED       WIRE_JSON                       Checks that enum values are not deleted from a given enum unless the name is reserved.
+FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                       Checks that fields are not deleted from a given message unless the name is reserved.
+ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
+FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
+		`
+	testRunStdout(
+		t,
+		nil,
+		0,
+		expectedStdout,
+		"check",
+		"ls-breaking-checkers",
+		"--all",
+		"--config",
+		`{"version": "v1beta1"}`,
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		expectedStdout,
+		"config",
+		"ls-breaking-rules",
+		"--all",
+		"--config",
+		`{"version": "v1beta1"}`,
 	)
 }
 
@@ -911,10 +1083,7 @@ func TestConfigInitBasic(t *testing.T) {
 	t.Parallel()
 	testConfigInit(
 		t,
-		`version: v1beta1
-build:
-  roots:
-    - .
+		`version: v1
 lint:
   use:
     - DEFAULT
@@ -932,11 +1101,8 @@ func TestConfigInitName(t *testing.T) {
 	t.Parallel()
 	testConfigInit(
 		t,
-		`version: v1beta1
+		`version: v1
 name: buf.build/foob/bar
-build:
-  roots:
-    - .
 lint:
   use:
     - DEFAULT
@@ -954,14 +1120,11 @@ func TestConfigInitNameDeps(t *testing.T) {
 	t.Parallel()
 	testConfigInit(
 		t,
-		`version: v1beta1
+		`version: v1
 name: buf.build/foob/bar
 deps:
   - buf.build/foob/baz:v1
   - buf.build/foob/bat:v1
-build:
-  roots:
-    - .
 lint:
   use:
     - DEFAULT
@@ -977,8 +1140,246 @@ breaking:
 	)
 }
 
+func TestMigrateV1Beta1(t *testing.T) {
+	t.Parallel()
+	storageosProvider := storageos.NewProvider()
+
+	// These test cases are ordered alphabetically to align with the folders in testadata.
+	t.Run("buf-gen-yaml-without-version", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"buf-gen-yaml-without-version",
+			"Successfully migrated your buf.gen.yaml to v1.",
+		)
+	})
+	t.Run("buf-yaml-without-version", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"buf-yaml-without-version",
+			"Successfully migrated your buf.yaml to v1.",
+		)
+	})
+	t.Run("complex", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"complex",
+			`The ignored file "file3.proto" was not found in any roots and has been removed.
+Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
+		)
+	})
+	t.Run("deps-without-name", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"deps-without-name",
+			"Successfully migrated your buf.yaml to v1.",
+		)
+	})
+	t.Run("flat-deps-without-name", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"flat-deps-without-name",
+			"Successfully migrated your buf.yaml and buf.lock to v1.",
+		)
+	})
+	t.Run("lock-file-without-deps", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"lock-file-without-deps",
+			`Successfully migrated your buf.yaml and buf.lock to v1.`,
+		)
+	})
+	t.Run("nested-folder", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"nested-folder",
+			"Successfully migrated your buf.yaml to v1.",
+		)
+	})
+	t.Run("nested-root", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"nested-root",
+			"Successfully migrated your buf.yaml and buf.gen.yaml to v1.",
+		)
+	})
+	t.Run("no-deps", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"no-deps",
+			"Successfully migrated your buf.yaml and buf.gen.yaml to v1.",
+		)
+	})
+	t.Run("noop", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"noop",
+			"",
+		)
+	})
+	t.Run("only-buf-gen-yaml", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"only-buf-gen-yaml",
+			"Successfully migrated your buf.gen.yaml to v1.",
+		)
+	})
+	t.Run("only-buf-lock", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"only-buf-lock",
+			"Successfully migrated your buf.lock to v1.",
+		)
+	})
+	t.Run("only-buf-yaml", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"only-buf-yaml",
+			"Successfully migrated your buf.yaml to v1.",
+		)
+	})
+	t.Run("only-old-buf-gen-yaml", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"only-old-buf-gen-yaml",
+			"Successfully migrated your buf.gen.yaml to v1.",
+		)
+	})
+	t.Run("only-old-buf-lock", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"only-old-buf-lock",
+			`Successfully migrated your buf.lock to v1.`,
+		)
+	})
+	t.Run("only-old-buf-yaml", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"only-old-buf-yaml",
+			"Successfully migrated your buf.yaml to v1.",
+		)
+	})
+	t.Run("simple", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"simple",
+			"Successfully migrated your buf.yaml, buf.gen.yaml, and buf.lock to v1.",
+		)
+	})
+	t.Run("v1beta1-lock-file", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Diff(
+			t,
+			storageosProvider,
+			"v1beta1-lock-file",
+			`Successfully migrated your buf.yaml and buf.lock to v1.`,
+		)
+	})
+
+	t.Run("fails-on-invalid-version", func(t *testing.T) {
+		t.Parallel()
+		testMigrateV1Beta1Failure(
+			t,
+			storageosProvider,
+			"invalid-version",
+			`failed to migrate config: unknown config file version: spaghetti`,
+		)
+	})
+}
+
+func testMigrateV1Beta1Diff(t *testing.T, storageosProvider storageos.Provider, scenario string, expectedStderr string) {
+	// Copy test setup to temporary directory to avoid writing to filesystem
+	inputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "success", scenario, "input"))
+	require.NoError(t, err)
+	tempDir, readWriteBucket := testCopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
+
+	testRunStdoutStderr(
+		t,
+		nil,
+		0,
+		"",
+		expectedStderr,
+		"config",
+		"migrate-v1beta1",
+		tempDir,
+	)
+
+	expectedOutputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "success", scenario, "output"))
+	require.NoError(t, err)
+
+	diff, err := storage.DiffBytes(context.Background(), expectedOutputBucket, readWriteBucket)
+	require.NoError(t, err)
+	require.Empty(t, string(diff))
+}
+
+func testMigrateV1Beta1Failure(t *testing.T, storageosProvider storageos.Provider, scenario string, expectedStderr string) {
+	// Copy test setup to temporary directory to avoid writing to filesystem
+	inputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "failure", scenario))
+	require.NoError(t, err)
+	tempDir, _ := testCopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
+
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		expectedStderr,
+		"config",
+		"migrate-v1beta1",
+		tempDir,
+	)
+}
+
+func testCopyReadBucketToTempDir(
+	ctx context.Context,
+	tb testing.TB,
+	storageosProvider storageos.Provider,
+	readBucket storage.ReadBucket,
+) (string, storage.ReadWriteBucket) {
+	tb.Helper()
+	// Copy to temporary directory to avoid writing to filesystem
+	tempDir := tb.TempDir()
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(tempDir)
+	require.NoError(tb, err)
+	_, err = storage.Copy(ctx, readBucket, readWriteBucket)
+	require.NoError(tb, err)
+	return tempDir, readWriteBucket
+}
+
 func testConfigInit(t *testing.T, expectedData string, document bool, uncomment bool, name string, deps ...string) {
-	t.Helper()
 	tempDir := t.TempDir()
 	args := []string{"beta", "config", "init", "-o", tempDir}
 	if document {
@@ -994,13 +1395,12 @@ func testConfigInit(t *testing.T, expectedData string, document bool, uncomment 
 		args = append(args, "--dep", dep)
 	}
 	testRun(t, 0, nil, nil, args...)
-	data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1Beta1FilePath))
+	data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigFilePath))
 	require.NoError(t, err)
 	require.Equal(t, expectedData, string(data))
 }
 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
-	t.Helper()
 	appcmdtesting.RunCommandExitCodeStdout(
 		t,
 		func(use string) *appcmd.Command { return testNewRootCommand(use) },
@@ -1018,7 +1418,6 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 }
 
 func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
-	t.Helper()
 	appcmdtesting.RunCommandExitCodeStdoutStderr(
 		t,
 		func(use string) *appcmd.Command { return testNewRootCommand(use) },
@@ -1037,7 +1436,6 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 }
 
 func testRunStdoutProfile(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
-	t.Helper()
 	profileDirPath, err := os.MkdirTemp("", "")
 	require.NoError(t, err)
 	defer func() { assert.NoError(t, os.RemoveAll(profileDirPath)) }()
@@ -1063,7 +1461,6 @@ func testRun(
 	stdout io.Writer,
 	args ...string,
 ) {
-	t.Helper()
 	stderr := bytes.NewBuffer(nil)
 	appcmdtesting.RunCommandExitCode(
 		t,

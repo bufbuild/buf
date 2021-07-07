@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -29,15 +30,34 @@ var goPackagePath = []int32{8, 11}
 
 func goPackage(
 	sweeper Sweeper,
-	importPathPrefix string,
+	defaultImportPathPrefix string,
+	except []bufmodule.ModuleIdentity,
+	override map[bufmodule.ModuleIdentity]string,
 ) (Modifier, error) {
-	if importPathPrefix == "" {
+	if defaultImportPathPrefix == "" {
 		return nil, fmt.Errorf("a non-empty import path prefix is required")
+	}
+	// Convert the bufmodule.ModuleIdentity types into
+	// strings so that they're comparable.
+	exceptModuleIdentityStrings := make(map[string]struct{}, len(except))
+	for _, moduleIdentity := range except {
+		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
+	}
+	overrideModuleIdentityStrings := make(map[string]string, len(override))
+	for moduleIdentity, goPackagePrefix := range override {
+		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = goPackagePrefix
 	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := goPackageForFile(ctx, sweeper, imageFile, importPathPrefix); err != nil {
+				if err := goPackageForFile(
+					ctx,
+					sweeper,
+					imageFile,
+					defaultImportPathPrefix,
+					exceptModuleIdentityStrings,
+					overrideModuleIdentityStrings,
+				); err != nil {
 					return err
 				}
 			}
@@ -50,21 +70,45 @@ func goPackageForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
-	importPathPrefix string,
+	defaultImportPathPrefix string,
+	exceptModuleIdentityStrings map[string]struct{},
+	overrideModuleIdentityStrings map[string]string,
 ) error {
-	descriptor := imageFile.Proto()
-	if isWellKnownType(ctx, imageFile) && descriptor.GetOptions().GetGoPackage() != "" {
-		// The well-known type defines the go_package option, so this is a no-op.
-		// If a well-known type ever omits the go_package option, we make sure
-		// to include it.
+	if shouldSkipGoPackageForFile(ctx, imageFile, exceptModuleIdentityStrings) {
 		return nil
 	}
+	descriptor := imageFile.Proto()
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
+	}
+	importPathPrefix := defaultImportPathPrefix
+	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+		if override, ok := overrideModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+			importPathPrefix = override
+		}
 	}
 	descriptor.Options.GoPackage = proto.String(GoPackageImportPathForFile(imageFile, importPathPrefix))
 	if sweeper != nil {
 		sweeper.mark(imageFile.Path(), goPackagePath)
 	}
 	return nil
+}
+
+func shouldSkipGoPackageForFile(
+	ctx context.Context,
+	imageFile bufimage.ImageFile,
+	exceptModuleIdentityStrings map[string]struct{},
+) bool {
+	if isWellKnownType(ctx, imageFile) && imageFile.Proto().GetOptions().GetGoPackage() != "" {
+		// The well-known type defines the go_package option, so this is a no-op.
+		// If a well-known type ever omits the go_package option, we make sure
+		// to include it.
+		return true
+	}
+	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+			return true
+		}
+	}
+	return false
 }

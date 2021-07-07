@@ -38,8 +38,8 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/appname"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
-	"github.com/bufbuild/buf/internal/pkg/netconfig"
 	"github.com/bufbuild/buf/internal/pkg/netrc"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/rpc"
 	"github.com/bufbuild/buf/internal/pkg/rpc/rpcauth"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -90,6 +90,49 @@ var (
 		SSHKeyFileEnvKey:         inputSSHKeyFileEnvKey,
 		SSHKnownHostsFilesEnvKey: inputSSHKnownHostsFilesEnvKey,
 	}
+
+	// AllCacheModuleRelDirPaths are all directory paths for all time concerning the module cache.
+	//
+	// These are normalized.
+	// These are relative to container.CacheDirPath().
+	//
+	// This variable is used for clearing the cache.
+	AllCacheModuleRelDirPaths = []string{
+		v1beta1CacheModuleDataRelDirPath,
+		v1beta1CacheModuleLockRelDirPath,
+		v1CacheModuleDataRelDirPath,
+		v1CacheModuleLockRelDirPath,
+		v1CacheModuleSumRelDirPath,
+	}
+
+	// v1CacheModuleDataRelDirPath is the relative path to the cache directory where module data
+	// was stored in v1beta1.
+	//
+	// Normalized.
+	v1beta1CacheModuleDataRelDirPath = "mod"
+
+	// v1CacheModuleLockRelDirPath is the relative path to the cache directory where module lock files
+	// were stored in v1beta1.
+	//
+	// Normalized.
+	v1beta1CacheModuleLockRelDirPath = normalpath.Join("lock", "mod")
+
+	// v1CacheModuleDataRelDirPath is the relative path to the cache directory where module data is stored.
+	//
+	// Normalized.
+	// This is where the actual "clones" of the modules are located.
+	v1CacheModuleDataRelDirPath = normalpath.Join("v1", "module", "data")
+	// v1CacheModuleLockRelDirPath is the relative path to the cache directory where module lock files are stored.
+	//
+	// Normalized.
+	// These lock files are used to make sure that multiple buf processes do not corrupt the cache.
+	v1CacheModuleLockRelDirPath = normalpath.Join("v1", "module", "lock")
+	// v1CacheModuleSumRelDirPath is the relative path to the cache directory where module digests are stored.
+	//
+	// Normalized.
+	// These digests are used to make sure that the data written is actually what we expect, and if it is not,
+	// we clear an entry from the cache, i.e. delete the relevant data directory.
+	v1CacheModuleSumRelDirPath = normalpath.Join("v1", "module", "sum")
 )
 
 // BindAsFileDescriptorSet binds the exclude-imports flag.
@@ -413,29 +456,6 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 	return bufapp.NewConfig(container, externalConfig)
 }
 
-// UpdateRemote writes the user credentials to the user configuration.
-func UpdateRemote(container appflag.Container, address string, token string) error {
-	_, err := modifyRemotes(
-		container,
-		func(remoteProvider netconfig.RemoteProvider) (netconfig.RemoteProvider, bool, error) {
-			updatedRemoteProvider, err := remoteProvider.WithUpdatedRemote(address, token)
-			return updatedRemoteProvider, true, err
-		},
-	)
-	return err
-}
-
-// DeleteRemote deletes the user credentials from the user configuration.
-func DeleteRemote(container appflag.Container, address string) (bool, error) {
-	return modifyRemotes(
-		container,
-		func(remoteProvider netconfig.RemoteProvider) (netconfig.RemoteProvider, bool, error) {
-			updatedRemoteProvider, ok := remoteProvider.WithoutRemote(address)
-			return updatedRemoteProvider, ok, nil
-		},
-	)
-}
-
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
 	config, err := NewConfig(container)
@@ -599,32 +619,6 @@ func ReadModule(
 		return nil, nil, err
 	}
 	return module, moduleIdentity, err
-}
-
-// modifyRemotes modifies the remotes based on f.
-//
-// if f returns false, this performs no update and returns false.
-func modifyRemotes(container appflag.Container, f func(netconfig.RemoteProvider) (netconfig.RemoteProvider, bool, error)) (bool, error) {
-	externalConfig := bufapp.ExternalConfig{}
-	if err := appname.ReadConfig(container, &externalConfig); err != nil {
-		return false, err
-	}
-	config, err := bufapp.NewConfig(container, externalConfig)
-	if err != nil {
-		return false, err
-	}
-	updatedRemoteProvider, ok, err := f(config.RemoteProvider)
-	if err != nil {
-		return false, err
-	}
-	if !ok {
-		return false, nil
-	}
-	externalConfig.Remotes = updatedRemoteProvider.ToExternalRemotes()
-	if err := appname.WriteConfig(container, &externalConfig); err != nil {
-		return false, err
-	}
-	return true, nil
 }
 
 // promptUser reads a line from Stdin, prompting the user with the prompt first.

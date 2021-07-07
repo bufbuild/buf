@@ -16,11 +16,9 @@ package bufmodule
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/internal"
 	"github.com/bufbuild/buf/internal/buf/bufcore/internal/bufcorevalidate"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
@@ -38,9 +36,6 @@ func newTargetingModule(
 	targetPaths []string,
 	targetPathsAllowNotExistOnWalk bool,
 ) (*targetingModule, error) {
-	if len(targetPaths) == 0 {
-		return nil, errors.New("targetingModule created without any target paths")
-	}
 	if err := bufcorevalidate.ValidateFileOrDirPaths(targetPaths); err != nil {
 		return nil, err
 	}
@@ -54,11 +49,7 @@ func newTargetingModule(
 func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []FileInfo, retErr error) {
 	defer func() {
 		if retErr == nil {
-			if len(fileInfos) == 0 {
-				retErr = internal.ErrNoTargetFiles
-			} else {
-				sortFileInfos(fileInfos)
-			}
+			sortFileInfos(fileInfos)
 		}
 	}()
 	sourceReadBucket := m.getSourceReadBucket()
@@ -88,7 +79,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []File
 				if _, ok := fileInfoPaths[targetPath]; !ok {
 					fileInfoPaths[targetPath] = struct{}{}
 					coreFileInfo := bufcore.NewFileInfoForObjectInfo(objectInfo, false)
-					fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.Module.getModuleCommit()))
+					fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.Module.getModuleIdentity(), m.Module.getCommit()))
 				}
 			}
 		}
@@ -129,7 +120,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []File
 				if _, ok := fileInfoPaths[path]; !ok {
 					fileInfoPaths[path] = struct{}{}
 					coreFileInfo := bufcore.NewFileInfoForObjectInfo(objectInfo, false)
-					fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.Module.getModuleCommit()))
+					fileInfos = append(fileInfos, NewFileInfo(coreFileInfo, m.Module.getModuleIdentity(), m.Module.getCommit()))
 				}
 			}
 			return nil

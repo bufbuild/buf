@@ -1,4 +1,0 @@
-version: v1beta1
-breaking:
-  use:
-    - FILE_SAME_PACKAGE

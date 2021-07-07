@@ -56,7 +56,6 @@ func AssertNotExist(
 	readBucket storage.ReadBucket,
 	path string,
 ) {
-	t.Helper()
 	_, err := readBucket.Stat(context.Background(), path)
 	assert.Error(t, err)
 	assert.True(t, storage.IsNotExist(err))
@@ -69,7 +68,6 @@ func AssertObjectInfo(
 	path string,
 	externalPath string,
 ) {
-	t.Helper()
 	objectInfo, err := readBucket.Stat(context.Background(), path)
 	require.NoError(t, err)
 	AssertObjectInfoEqual(
@@ -88,7 +86,6 @@ func AssertObjectInfoEqual(
 	expected storage.ObjectInfo,
 	actual storage.ObjectInfo,
 ) {
-	t.Helper()
 	assert.Equal(t, expected.Path(), actual.Path())
 	assert.Equal(t, expected.ExternalPath(), actual.ExternalPath())
 }
@@ -100,7 +97,6 @@ func AssertPathToContent(
 	walkPrefix string,
 	expectedPathToContent map[string]string,
 ) {
-	t.Helper()
 	var paths []string
 	require.NoError(t, readBucket.Walk(
 		context.Background(),
@@ -141,7 +137,6 @@ func RunTestSuite(
 	newWriteBucket func(*testing.T, storageos.Provider) storage.WriteBucket,
 	writeBucketToReadBucket func(*testing.T, storage.WriteBucket) storage.ReadBucket,
 ) {
-	t.Helper()
 	oneDirPath := filepath.Join(storagetestingDirPath, "testdata", "one")
 	twoDirPath := filepath.Join(storagetestingDirPath, "testdata", "two")
 	threeDirPath := filepath.Join(storagetestingDirPath, "testdata", "three")

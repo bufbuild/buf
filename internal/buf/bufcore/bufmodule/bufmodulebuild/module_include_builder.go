@@ -59,7 +59,7 @@ func (b *moduleIncludeBuilder) BuildForIncludes(
 func (b *moduleIncludeBuilder) buildForIncludes(
 	ctx context.Context,
 	includeDirPaths []string,
-	fileOrDirPaths []string,
+	fileOrDirPaths *[]string,
 	fileOrDirPathsAllowNotExist bool,
 ) (bufmodule.Module, error) {
 	if len(includeDirPaths) == 0 {
@@ -74,14 +74,20 @@ func (b *moduleIncludeBuilder) buildForIncludes(
 	if err != nil {
 		return nil, err
 	}
-	absFileOrDirPaths, err := normalizeAndCheckPaths(
-		fileOrDirPaths,
-		"input file",
-		normalpath.Absolute,
-		false,
-	)
-	if err != nil {
-		return nil, err
+	var absFileOrDirPaths *[]string
+	if fileOrDirPaths != nil {
+		normalizedAndCheckedFileOrDirPaths, err := normalizeAndCheckPaths(
+			*fileOrDirPaths,
+			"input file",
+			normalpath.Absolute,
+			false,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if len(normalizedAndCheckedFileOrDirPaths) > 0 {
+			absFileOrDirPaths = &normalizedAndCheckedFileOrDirPaths
+		}
 	}
 	var rootBuckets []storage.ReadBucket
 	for _, includeDirPath := range includeDirPaths {

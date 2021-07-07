@@ -1,0 +1,12 @@
+version: v1
+managed:
+  enabled: true
+  cc_enable_arenas: true
+  java_multiple_files: true
+  optimize_for: CODE_SIZE
+plugins:
+  - name: go
+    out: gen/go
+    opt: plugins=grpc
+    path: /path/to/foo
+    strategy: all

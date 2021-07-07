@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/buflock"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/rpc"
@@ -43,10 +44,10 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: "Update the modules dependencies. Updates the " + bufmodule.LockFilePath + " file.",
+		Short: "Update the modules dependencies. Updates the " + buflock.ExternalConfigFilePath + " file.",
 		Long: "Gets the latest digests for the specified branches in the config file, " +
 			"and writes them and their transitive dependencies to the " +
-			bufmodule.LockFilePath +
+			buflock.ExternalConfigFilePath +
 			" file.",
 		Args: cobra.NoArgs,
 		Run: builder.NewRunFunc(

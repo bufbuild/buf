@@ -64,12 +64,12 @@ func TestTargetingModuleBasic(t *testing.T) {
 	assert.Equal(
 		t,
 		[]FileInfo{
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "a/a.proto", "a/a.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "a/b.proto", "a/b.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "c/c.proto/a.proto", "c/c.proto/a.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "c/c.proto/b.proto", "c/c.proto/b.proto", false), nil),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "a/a.proto", "a/a.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "a/b.proto", "a/b.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "c/c.proto/a.proto", "c/c.proto/a.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "c/c.proto/b.proto", "c/c.proto/b.proto", false), nil, ""),
 		},
 		fileInfos,
 	)
@@ -87,8 +87,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 	assert.Equal(
 		t,
 		[]FileInfo{
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil, ""),
 		},
 		targetFileInfos,
 	)
@@ -105,8 +105,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 	assert.Equal(
 		t,
 		[]FileInfo{
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil, ""),
 		},
 		targetFileInfos,
 	)
@@ -124,8 +124,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 	assert.Equal(
 		t,
 		[]FileInfo{
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil, ""),
 		},
 		targetFileInfos,
 	)
@@ -143,10 +143,10 @@ func TestTargetingModuleBasic(t *testing.T) {
 	assert.Equal(
 		t,
 		[]FileInfo{
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "a/a.proto", "a/a.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "a/b.proto", "a/b.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "a/a.proto", "a/a.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "a/b.proto", "a/b.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil, ""),
 		},
 		targetFileInfos,
 	)
@@ -177,8 +177,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 	assert.Equal(
 		t,
 		[]FileInfo{
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil, ""),
 		},
 		targetFileInfos,
 	)
@@ -196,10 +196,10 @@ func TestTargetingModuleBasic(t *testing.T) {
 	assert.Equal(
 		t,
 		[]FileInfo{
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "c/c.proto/a.proto", "c/c.proto/a.proto", false), nil),
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "c/c.proto/b.proto", "c/c.proto/b.proto", false), nil),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/a.proto", "b/a.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "c/c.proto/a.proto", "c/c.proto/a.proto", false), nil, ""),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "c/c.proto/b.proto", "c/c.proto/b.proto", false), nil, ""),
 		},
 		targetFileInfos,
 	)
@@ -216,7 +216,7 @@ func TestTargetingModuleBasic(t *testing.T) {
 	assert.Equal(
 		t,
 		[]FileInfo{
-			NewFileInfo(bufcoretesting.NewFileInfo(t, "c/c.proto/a.proto", "c/c.proto/a.proto", false), nil),
+			NewFileInfo(bufcoretesting.NewFileInfo(t, "c/c.proto/a.proto", "c/c.proto/a.proto", false), nil, ""),
 		},
 		targetFileInfos,
 	)

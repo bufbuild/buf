@@ -1,4 +1,0 @@
-version: v1beta1
-breaking:
-  use:
-    - FIELD_SAME_NAME

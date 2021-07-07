@@ -83,7 +83,7 @@ var (
 		"STYLE_DEFAULT",
 		"OTHER",
 	}
-	// v1beta1IDToCategories are the ID to categories.
+	// v1beta1IDToCategories associates IDs to categories.
 	v1beta1IDToCategories = map[string][]string{
 		"COMMENT_ENUM": {
 			"COMMENTS",

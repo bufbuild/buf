@@ -31,7 +31,8 @@ type parserAccessorHandler struct {
 	module               bufmodule.Module
 	pathToExternalPath   map[string]string
 	nonImportPaths       map[string]struct{}
-	pathsToModuleCommits map[string]bufmodule.ModuleCommit
+	pathToModuleIdentity map[string]bufmodule.ModuleIdentity
+	pathToCommit         map[string]string
 	lock                 sync.RWMutex
 }
 
@@ -44,7 +45,8 @@ func newParserAccessorHandler(
 		module:               module,
 		pathToExternalPath:   make(map[string]string),
 		nonImportPaths:       make(map[string]struct{}),
-		pathsToModuleCommits: make(map[string]bufmodule.ModuleCommit),
+		pathToModuleIdentity: make(map[string]bufmodule.ModuleIdentity),
+		pathToCommit:         make(map[string]string),
 	}
 }
 
@@ -59,7 +61,7 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 				// this should never happen, but just in case
 				return nil, fmt.Errorf("parser accessor requested path %q but got %q", path, wktModuleFile.Path())
 			}
-			if err := p.addPath(path, path, true, nil); err != nil {
+			if err := p.addPath(path, path, true, nil, ""); err != nil {
 				return nil, err
 			}
 			return wktModuleFile, nil
@@ -79,7 +81,8 @@ func (p *parserAccessorHandler) Open(path string) (_ io.ReadCloser, retErr error
 		path,
 		moduleFile.ExternalPath(),
 		moduleFile.IsImport(),
-		moduleFile.ModuleCommit(),
+		moduleFile.ModuleIdentity(),
+		moduleFile.Commit(),
 	); err != nil {
 		return nil, err
 	}
@@ -102,17 +105,24 @@ func (p *parserAccessorHandler) IsImport(path string) bool {
 	return !isNotImport
 }
 
-func (p *parserAccessorHandler) ModuleCommit(path string) bufmodule.ModuleCommit {
+func (p *parserAccessorHandler) ModuleIdentity(path string) bufmodule.ModuleIdentity {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
-	return p.pathsToModuleCommits[path] // nil is a valid value.
+	return p.pathToModuleIdentity[path] // nil is a valid value.
+}
+
+func (p *parserAccessorHandler) Commit(path string) string {
+	p.lock.RLock()
+	defer p.lock.RUnlock()
+	return p.pathToCommit[path] // empty is a valid value.
 }
 
 func (p *parserAccessorHandler) addPath(
 	path string,
 	externalPath string,
 	isImport bool,
-	moduleCommit bufmodule.ModuleCommit,
+	moduleIdentity bufmodule.ModuleIdentity,
+	commit string,
 ) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -127,8 +137,11 @@ func (p *parserAccessorHandler) addPath(
 	if !isImport {
 		p.nonImportPaths[path] = struct{}{}
 	}
-	if moduleCommit != nil {
-		p.pathsToModuleCommits[path] = moduleCommit
+	if moduleIdentity != nil {
+		p.pathToModuleIdentity[path] = moduleIdentity
+	}
+	if commit != "" {
+		p.pathToCommit[path] = commit
 	}
 	return nil
 }

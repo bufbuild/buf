@@ -48,15 +48,19 @@ type ImageFile interface {
 // NewImageFile returns a new ImageFile.
 //
 // If externalPath is empty, path is used.
+//
+// TODO: moduleIdentity and commit should be options since they are optional.
 func NewImageFile(
 	fileDescriptorProto *descriptorpb.FileDescriptorProto,
-	moduleCommit bufmodule.ModuleCommit,
+	moduleIdentity bufmodule.ModuleIdentity,
+	commit string,
 	externalPath string,
 	isImport bool,
 ) (ImageFile, error) {
 	return newImageFile(
 		fileDescriptorProto,
-		moduleCommit,
+		moduleIdentity,
+		commit,
 		externalPath,
 		isImport,
 	)
@@ -158,21 +162,45 @@ func NewImageForProto(protoImage *imagev1.Image) (Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	moduleCommitRefs, err := getModuleCommitRefs(protoImage)
+	fileIndexToProtoModuleRef, err := getFileIndexToProtoModuleRef(protoImage)
 	if err != nil {
 		return nil, err
 	}
 	imageFiles := make([]ImageFile, len(protoImage.File))
 	for i, fileDescriptorProto := range protoImage.File {
 		_, isImport := importFileIndexes[i]
-		imageFile, err := NewImageFile(
-			fileDescriptorProto,
-			moduleCommitRefs[i], // nil is a valid value.
-			fileDescriptorProto.GetName(),
-			isImport,
-		)
-		if err != nil {
-			return nil, err
+		var imageFile ImageFile
+		var err error
+		if protoModuleRef, ok := fileIndexToProtoModuleRef[i]; ok {
+			moduleIdentity, err := bufmodule.NewModuleIdentity(
+				protoModuleRef.GetRemote(),
+				protoModuleRef.GetOwner(),
+				protoModuleRef.GetRepository(),
+			)
+			if err != nil {
+				return nil, err
+			}
+			imageFile, err = NewImageFile(
+				fileDescriptorProto,
+				moduleIdentity,
+				protoModuleRef.GetCommit(),
+				fileDescriptorProto.GetName(),
+				isImport,
+			)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			imageFile, err = NewImageFile(
+				fileDescriptorProto,
+				nil,
+				"",
+				fileDescriptorProto.GetName(),
+				isImport,
+			)
+			if err != nil {
+				return nil, err
+			}
 		}
 		imageFiles[i] = imageFile
 	}
@@ -288,15 +316,19 @@ func ImageToProtoImage(image Image) *imagev1.Image {
 				},
 			)
 		}
-		if moduleCommit := imageFile.ModuleCommit(); moduleCommit != nil {
-			protoImage.BufbuildImageExtension.ModuleCommitRefs = append(
-				protoImage.BufbuildImageExtension.ModuleCommitRefs,
-				&imagev1.ModuleCommitRef{
+		if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+			var commit *string
+			if imageFile.Commit() != "" {
+				commit = proto.String(imageFile.Commit())
+			}
+			protoImage.BufbuildImageExtension.ModuleRefs = append(
+				protoImage.BufbuildImageExtension.ModuleRefs,
+				&imagev1.ModuleRef{
 					FileIndex:  proto.Uint32(uint32(i)),
-					Remote:     proto.String(moduleCommit.Remote()),
-					Owner:      proto.String(moduleCommit.Owner()),
-					Repository: proto.String(moduleCommit.Repository()),
-					Commit:     proto.String(moduleCommit.Commit()),
+					Remote:     proto.String(moduleIdentity.Remote()),
+					Owner:      proto.String(moduleIdentity.Owner()),
+					Repository: proto.String(moduleIdentity.Repository()),
+					Commit:     commit,
 				},
 			)
 		}

@@ -66,6 +66,27 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`../one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
+        ../one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".`,
+		"lint",
+		filepath.Join("..", "..", ".."),
+		"--path",
+		filepath.Join("..", "one"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`../two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`,
+		"lint",
+		filepath.Join("..", "..", ".."),
+		"--path",
+		filepath.Join("..", "two"),
+	)
+	testRunStdout(
+		t,
+		nil,
 		0,
 		``,
 		"build",
@@ -121,6 +142,31 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		"--against",
 		filepath.Join("..", "..", "..", "other", "proto"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		fmt.Sprintf(`%s/one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
+        %s/one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".`,
+			parentDirectory, parentDirectory,
+		),
+		"lint",
+		filepath.Join(wd, "..", "..", ".."),
+		"--path",
+		filepath.Join(wd, "..", "one"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		fmt.Sprintf(`%s/two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`,
+			parentDirectory,
+		),
+		"lint",
+		filepath.Join(wd, "..", "..", ".."),
+		"--path",
+		filepath.Join(wd, "..", "two"),
+	)
 }
 
 func TestWorkspaceOverlapSubDirectory(t *testing.T) {
@@ -131,14 +177,13 @@ func TestWorkspaceOverlapSubDirectory(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: failed to build input "other/proto/one" because it is contained by module "other/proto" listed in ../../../buf.work; see https://docs.buf.build/faq for more details.`,
+		`Failure: failed to build input "other/proto/one" because it is contained by directory "other/proto" listed in ../../../buf.work.`,
 		"build",
 		filepath.Join("..", "one"),
 	)
 }
 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
-	t.Helper()
 	appcmdtesting.RunCommandExitCodeStdout(
 		t,
 		func(use string) *appcmd.Command { return testNewRootCommand(use) },
@@ -155,7 +200,6 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 }
 
 func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
-	t.Helper()
 	appcmdtesting.RunCommandExitCodeStdoutStderr(
 		t,
 		func(use string) *appcmd.Command { return testNewRootCommand(use) },

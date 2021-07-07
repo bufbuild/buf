@@ -84,7 +84,6 @@ func RunActualProtoc(
 	stdout io.Writer,
 	extraFlags ...string,
 ) {
-	t.Helper()
 	err := prototesting.RunProtoc(
 		context.Background(),
 		[]string{dirPath},
@@ -119,7 +118,6 @@ func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
 // Limit limits the number of files returned if > 0.
 // protoc has a fixed size for number of characters to argument list.
 func GetProtocFilePaths(t *testing.T, dirPath string, limit int) []string {
-	t.Helper()
 	module, err := bufmodulebuild.NewModuleIncludeBuilder(zap.NewNop(), testStorageosProvider).BuildForIncludes(
 		context.Background(),
 		[]string{dirPath},

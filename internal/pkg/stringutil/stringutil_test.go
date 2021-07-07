@@ -191,7 +191,7 @@ func TestSliceToHumanString(t *testing.T) {
 	assert.Equal(t, ``, SliceToHumanString(nil))
 	assert.Equal(t, ``, SliceToHumanString([]string{}))
 	assert.Equal(t, `a`, SliceToHumanString([]string{"a"}))
-	assert.Equal(t, `a, and b`, SliceToHumanString([]string{"a", "b"}))
+	assert.Equal(t, `a and b`, SliceToHumanString([]string{"a", "b"}))
 	assert.Equal(t, `a, b, and c`, SliceToHumanString([]string{"a", "b", "c"}))
 }
 
@@ -200,7 +200,7 @@ func TestSliceToHumanStringQuoted(t *testing.T) {
 	assert.Equal(t, ``, SliceToHumanStringQuoted(nil))
 	assert.Equal(t, ``, SliceToHumanStringQuoted([]string{}))
 	assert.Equal(t, `"a"`, SliceToHumanStringQuoted([]string{"a"}))
-	assert.Equal(t, `"a", and "b"`, SliceToHumanStringQuoted([]string{"a", "b"}))
+	assert.Equal(t, `"a" and "b"`, SliceToHumanStringQuoted([]string{"a", "b"}))
 	assert.Equal(t, `"a", "b", and "c"`, SliceToHumanStringQuoted([]string{"a", "b", "c"}))
 }
 

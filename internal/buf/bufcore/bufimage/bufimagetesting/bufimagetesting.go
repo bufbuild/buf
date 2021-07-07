@@ -26,16 +26,20 @@ import (
 )
 
 // NewImageFile returns a new ImageFile for testing.
+//
+// TODO: moduleIdentity and commit should be options.
 func NewImageFile(
 	t testing.TB,
 	fileDescriptorProto *descriptorpb.FileDescriptorProto,
-	moduleCommit bufmodule.ModuleCommit,
+	moduleIdentity bufmodule.ModuleIdentity,
+	commit string,
 	externalPath string,
 	isImport bool,
 ) bufimage.ImageFile {
 	imageFile, err := bufimage.NewImageFile(
 		fileDescriptorProto,
-		moduleCommit,
+		moduleIdentity,
+		commit,
 		externalPath,
 		isImport,
 	)
@@ -72,7 +76,8 @@ func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufima
 				imageFile.Proto().GetName(),
 				imageFile.Proto().GetDependency()...,
 			),
-			imageFile.ModuleCommit(),
+			imageFile.ModuleIdentity(),
+			imageFile.Commit(),
 			imageFile.ExternalPath(),
 			imageFile.IsImport(),
 		)
