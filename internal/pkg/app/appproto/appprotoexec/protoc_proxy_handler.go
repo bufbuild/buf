@@ -86,11 +86,14 @@ func (h *protocProxyHandler) Handle(
 	var tmpFile tmp.File
 	if descriptorFilePath == "" {
 		// since we have no stdin file (i.e. Windows), we're going to have to use a temporary file
-		if tmpFile, err = tmp.NewFileWithData(fileDescriptorSetData); err != nil {
+		tmpFile, err = tmp.NewFileWithData(fileDescriptorSetData)
+		if err != nil {
 			return err
-		} else {
-			descriptorFilePath = tmpFile.AbsPath()
 		}
+		defer func() {
+			retErr = multierr.Append(retErr, tmpFile.Close())
+		}()
+		descriptorFilePath = tmpFile.AbsPath()
 	}
 	tmpDir, err := tmp.NewDir()
 	if err != nil {
@@ -124,7 +127,7 @@ func (h *protocProxyHandler) Handle(
 	)
 	cmd := exec.CommandContext(ctx, h.protocPath, args...)
 	cmd.Env = app.Environ(container)
-	if app.DevStdinFilePath != "" {
+	if descriptorFilePath != "" && descriptorFilePath == app.DevStdinFilePath {
 		cmd.Stdin = bytes.NewReader(fileDescriptorSetData)
 	}
 	cmd.Stdout = io.Discard
@@ -136,9 +139,6 @@ func (h *protocProxyHandler) Handle(
 	}
 	if featureProto3Optional {
 		responseWriter.SetFeatureProto3Optional()
-	}
-	if tmpFile != nil {
-		_ = tmpFile.Close()
 	}
 	// no need for symlinks here, and don't want to support
 	readWriteBucket, err := h.storageosProvider.NewReadWriteBucket(tmpDir.AbsPath())

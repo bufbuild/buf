@@ -19,7 +19,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"math"
 	"sync"
 
 	"github.com/bufbuild/buf/internal/pkg/rpc/rpcgrpc"
@@ -29,6 +28,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
+
+const maxMessageSizeBytes = 128 << 20
 
 type clientConnProvider struct {
 	ctx           context.Context
@@ -119,9 +120,9 @@ func (c *clientConnProvider) getDialOptions() ([]grpc.DialOption, error) {
 	dialOptions := []grpc.DialOption{
 		grpc.WithDefaultCallOptions(
 			// NOT Recv, this is the client
-			grpc.MaxCallSendMsgSize(math.MaxInt32),
+			grpc.MaxCallSendMsgSize(maxMessageSizeBytes),
 			// NOT Send, this is the client
-			grpc.MaxCallRecvMsgSize(math.MaxInt32),
+			grpc.MaxCallRecvMsgSize(maxMessageSizeBytes),
 		),
 		grpc.WithUnaryInterceptor(
 			rpcgrpc.NewUnaryClientInterceptor(),
