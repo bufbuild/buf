@@ -39,7 +39,8 @@ type moduleReader struct {
 
 func newModuleReader(
 	logger *zap.Logger,
-	readWriteBucket storage.ReadWriteBucket,
+	dataReadWriteBucket storage.ReadWriteBucket,
+	sumReadWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
 	options ...ModuleReaderOption,
 ) *moduleReader {
@@ -51,7 +52,11 @@ func newModuleReader(
 	for _, option := range options {
 		option(moduleReader)
 	}
-	moduleReader.cache = newModuleCacher(readWriteBucket, moduleReader.fileLocker)
+	moduleReader.cache = newModuleCacher(
+		dataReadWriteBucket,
+		sumReadWriteBucket,
+		moduleReader.fileLocker,
+	)
 	return moduleReader
 }
 

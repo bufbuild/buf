@@ -1,4 +1,0 @@
-version: v1beta1
-breaking:
-  use:
-    - ONEOF_NO_DELETE

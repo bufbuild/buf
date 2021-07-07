@@ -63,8 +63,8 @@ func NewCommand(
 
 # The version of the generation template.
 # Required.
-# The only currently-valid value is v1beta1.
-version: v1beta1
+# The valid values are v1beta1, v1.
+version: v1
 # The plugins to run.
 plugins:
     # The name of the plugin.
@@ -108,10 +108,10 @@ plugins:
   - name: java
     out: gen/java
 
-As an example, here's a typical "buf.gen.yaml" go and grpc, assuming
+As an example, here's a typical "buf.gen" go and grpc, assuming
 "protoc-gen-go" and "protoc-gen-go-grpc" are on your "$PATH":
 
-version: v1beta1
+version: v1
 plugins:
   - name: go
     out: gen/go
@@ -121,7 +121,7 @@ plugins:
     opt: paths=source_relative,require_unimplemented_servers=false
 
 By default, buf generate will look for a file of this shape named
-"buf.gen.yaml" in your current directory. This can be thought of as a template
+"buf.gen" in your current directory. This can be thought of as a template
 for the set of plugins you want to invoke.
 
 The first argument is the source, module, or image to generate from.
@@ -129,14 +129,14 @@ If no argument is specified, defaults to ".".
 
 Call with:
 
-# uses buf.gen.yaml as template, current directory as input
+# uses buf.gen as template, current directory as input
 $ buf generate
 
-# same as the defaults (template of "buf.gen.yaml", current directory as input)
-$ buf generate --template buf.gen.yaml .
+# same as the defaults (template of "buf.gen", current directory as input)
+$ buf generate --template buf.gen .
 
 # --template also takes YAML or JSON data as input, so it can be used without a file
-$ buf generate --template '{"version":"v1beta1","plugins":[{"name":"go","out":"gen/go"}]}'
+$ buf generate --template '{"version":"v1","plugins":[{"name":"go","out":"gen/go"}]}'
 
 # download the repository, compile it, and generate per the bar.yaml template
 $ buf generate --template bar.yaml https://github.com/foo/bar.git
@@ -156,7 +156,7 @@ $ buf generate --path proto/foo --path proto/bar
 $ buf generate --path proto/foo/foo.proto --path proto/foo/bar.proto
 
 # Only generate for the files in the directory proto/foo on your GitHub repository
-$ buf generate --template buf.gen.yaml https://github.com/foo/bar.git --path proto/foo
+$ buf generate --template buf.gen https://github.com/foo/bar.git --path proto/foo
 
 Note that all paths must be contained within a root. For example, if you have the single
 root "proto", you cannot specify "--path proto", however "--path proto/foo" is allowed
@@ -203,7 +203,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
 		&f.Template,
 		templateFlagName,
-		bufgen.ExternalConfigV1Beta1FilePath,
+		"",
 		`The generation template file or data to use. Must be in either YAML or JSON format.`,
 	)
 	flagSet.StringVarP(
@@ -299,11 +299,23 @@ func run(
 	if err != nil {
 		return err
 	}
-	genConfig, err := bufgen.ReadConfig(flags.Template)
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+		".",
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	genConfig, err := bufgen.ReadConfig(
+		ctx,
+		bufgen.NewProvider(logger),
+		readWriteBucket,
+		bufgen.ReadConfigWithOverride(flags.Template),
+	)
+	if err != nil {
+		return err
+	}
 	imageConfigs, fileAnnotations, err := bufcli.NewWireImageConfigReader(
 		logger,
 		storageosProvider,

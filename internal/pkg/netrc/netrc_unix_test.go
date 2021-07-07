@@ -122,7 +122,6 @@ func testPutMachineSuccess(
 	password string,
 	createNetrcBeforePut bool,
 ) {
-	t.Helper()
 	filePath := filepath.Join(t.TempDir(), netrcFilename)
 	envContainer := app.NewEnvContainer(map[string]string{"NETRC": filePath})
 	machine, err := GetMachineForName(envContainer, name)
@@ -149,7 +148,6 @@ func testPutMachineError(
 	login string,
 	password string,
 ) {
-	t.Helper()
 	filePath := filepath.Join(t.TempDir(), netrcFilename)
 	envContainer := app.NewEnvContainer(map[string]string{"NETRC": filePath})
 	_, err := os.Create(filePath)
@@ -169,7 +167,6 @@ func testGetMachineForNameSuccess(
 	expectedPassword string,
 	expectedAccount string,
 ) {
-	t.Helper()
 	machine, err := GetMachineForName(app.NewEnvContainer(map[string]string{"HOME": homeDirPath}), name)
 	require.NoError(t, err)
 	require.NotNil(t, machine)
@@ -184,7 +181,6 @@ func testGetMachineForNameNil(
 	name string,
 	homeDirPath string,
 ) {
-	t.Helper()
 	machine, err := GetMachineForName(app.NewEnvContainer(map[string]string{"HOME": homeDirPath}), name)
 	require.NoError(t, err)
 	require.Nil(t, machine)

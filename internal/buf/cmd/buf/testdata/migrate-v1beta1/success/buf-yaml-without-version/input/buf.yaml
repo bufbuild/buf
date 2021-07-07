@@ -1,0 +1,25 @@
+name: buf.build/test/test
+deps:
+  - buf.build/beta/googleapis
+  - buf.build/beta/envoy
+build:
+  roots:
+    - .
+  excludes:
+    - dir1
+lint:
+  use:
+    - DEFAULT
+  ignore:
+    - dir2/file.proto
+  ignore_only:
+    ENUM_PASCAL_CASE:
+      - dir3/file.proto
+breaking:
+  use:
+    - FILE
+  ignore:
+    - dir2/file.proto
+  ignore_only:
+    FIELD_SAME_JSON_NAME:
+      - dir3/file.proto

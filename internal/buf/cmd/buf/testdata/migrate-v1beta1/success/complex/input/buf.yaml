@@ -1,0 +1,33 @@
+version: v1beta1
+name: buf.build/test/test
+deps:
+  - buf.build/beta/googleapis
+  - buf.build/beta/envoy
+build:
+  roots:
+    - dir1
+    - dir2/dir3
+    - dir4/dir5/dir6
+    - dir2/dir4
+  excludes:
+    - dir1/dir2
+    - dir4/dir5/dir6/dir7
+    - dir2/dir4/dir5
+lint:
+  use:
+    - DEFAULT
+  ignore:
+    - file.proto
+    # This file doesn't exist in any hierarchy
+    - file3.proto
+  ignore_only:
+    ENUM_PASCAL_CASE:
+      - file2.proto
+breaking:
+  use:
+    - FILE
+  ignore:
+    - file.proto
+  ignore_only:
+    FIELD_SAME_JSON_NAME:
+      - file2.proto

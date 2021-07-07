@@ -1,4 +1,0 @@
-version: v1beta1
-lint:
-  use:
-    - ENUM_PASCAL_CASE

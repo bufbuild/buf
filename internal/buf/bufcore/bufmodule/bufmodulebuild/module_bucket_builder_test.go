@@ -21,7 +21,6 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufcoretesting"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/internal"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
@@ -30,121 +29,261 @@ import (
 )
 
 func TestBucketGetFileInfos1(t *testing.T) {
+	config, err := NewConfigV1(
+		ExternalConfigV1{
+			Excludes: []string{"proto/b"},
+		},
+	)
+	require.NoError(t, err)
 	testBucketGetFileInfos(
 		t,
 		"testdata/1",
-		[]string{
-			"proto",
-		},
-		[]string{
-			"proto/b",
-		},
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/1.proto", "testdata/1/proto/a/c/1.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/2.proto", "testdata/1/proto/a/c/2.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/3.proto", "testdata/1/proto/a/c/3.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false), nil),
+		config,
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/1.proto", "testdata/1/proto/a/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/2.proto", "testdata/1/proto/a/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/3.proto", "testdata/1/proto/a/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/c/1.proto", "testdata/1/proto/a/c/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/c/2.proto", "testdata/1/proto/a/c/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/c/3.proto", "testdata/1/proto/a/c/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/d/1.proto", "testdata/1/proto/d/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/d/2.proto", "testdata/1/proto/d/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/d/3.proto", "testdata/1/proto/d/3.proto", false), nil, ""),
 	)
 }
 
 func TestBucketGetFileInfos2(t *testing.T) {
+	config, err := NewConfigV1(
+		ExternalConfigV1{
+			Excludes: []string{"proto/a"},
+		},
+	)
+	require.NoError(t, err)
 	testBucketGetFileInfos(
 		t,
 		"testdata/1",
-		[]string{
-			"proto",
-		},
-		[]string{
-			"proto/a",
-		},
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false), nil),
+		config,
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/b/1.proto", "testdata/1/proto/b/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/b/2.proto", "testdata/1/proto/b/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/b/3.proto", "testdata/1/proto/b/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/d/1.proto", "testdata/1/proto/d/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/d/2.proto", "testdata/1/proto/d/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/d/3.proto", "testdata/1/proto/d/3.proto", false), nil, ""),
 	)
 }
 
 func TestBucketGetFileInfo3(t *testing.T) {
+	config, err := NewConfigV1(
+		ExternalConfigV1{
+			Excludes: []string{"proto/a/c"},
+		},
+	)
+	require.NoError(t, err)
 	testBucketGetFileInfos(
 		t,
 		"testdata/1",
-		[]string{
-			"proto",
-		},
-		[]string{
-			"proto/a/c",
-		},
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false), nil),
+		config,
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/1.proto", "testdata/1/proto/a/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/2.proto", "testdata/1/proto/a/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/3.proto", "testdata/1/proto/a/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/b/1.proto", "testdata/1/proto/b/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/b/2.proto", "testdata/1/proto/b/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/b/3.proto", "testdata/1/proto/b/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/d/1.proto", "testdata/1/proto/d/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/d/2.proto", "testdata/1/proto/d/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/d/3.proto", "testdata/1/proto/d/3.proto", false), nil, ""),
 	)
 }
 
 func TestBucketGetFileInfos4(t *testing.T) {
+	config, err := NewConfigV1(
+		ExternalConfigV1{
+			Excludes: []string{
+				"proto/a/c",
+				"proto/d",
+			},
+		},
+	)
+	require.NoError(t, err)
 	testBucketGetFileInfos(
 		t,
 		"testdata/1",
-		[]string{
-			"proto",
-		},
-		[]string{
-			"proto/a/c",
-			"proto/d",
-		},
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false), nil),
+		config,
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/1.proto", "testdata/1/proto/a/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/2.proto", "testdata/1/proto/a/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/3.proto", "testdata/1/proto/a/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/b/1.proto", "testdata/1/proto/b/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/b/2.proto", "testdata/1/proto/b/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/b/3.proto", "testdata/1/proto/b/3.proto", false), nil, ""),
 	)
 }
 
-func TestBucketGetAllFileInfosError1(t *testing.T) {
+func TestBucketGetAllFileInfos5(t *testing.T) {
+	config, err := NewConfigV1(
+		ExternalConfigV1{},
+	)
+	require.NoError(t, err)
+	testBucketGetFileInfos(
+		t,
+		"testdata/3",
+		config,
+	)
+}
+
+func TestConfigV1Beta1BucketGetFileInfos1(t *testing.T) {
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
+			Roots: []string{
+				"proto",
+			},
+			Excludes: []string{
+				"proto/b",
+			},
+		},
+	)
+	require.NoError(t, err)
+	testBucketGetFileInfos(
+		t,
+		"testdata/1",
+		config,
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/1.proto", "testdata/1/proto/a/c/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/2.proto", "testdata/1/proto/a/c/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/c/3.proto", "testdata/1/proto/a/c/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false), nil, ""),
+	)
+}
+
+func TestConfigV1Beta1BucketGetFileInfos2(t *testing.T) {
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
+			Roots: []string{
+				"proto",
+			},
+			Excludes: []string{
+				"proto/a",
+			},
+		},
+	)
+	require.NoError(t, err)
+	testBucketGetFileInfos(
+		t,
+		"testdata/1",
+		config,
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false), nil, ""),
+	)
+}
+
+func TestConfigV1Beta1BucketGetFileInfo3(t *testing.T) {
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
+			Roots: []string{
+				"proto",
+			},
+			Excludes: []string{
+				"proto/a/c",
+			},
+		},
+	)
+	require.NoError(t, err)
+	testBucketGetFileInfos(
+		t,
+		"testdata/1",
+		config,
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/1.proto", "testdata/1/proto/d/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/2.proto", "testdata/1/proto/d/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "d/3.proto", "testdata/1/proto/d/3.proto", false), nil, ""),
+	)
+}
+
+func TestConfigV1Beta1BucketGetFileInfos4(t *testing.T) {
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
+			Roots: []string{
+				"proto",
+			},
+			Excludes: []string{
+				"proto/a/c",
+				"proto/d",
+			},
+		},
+	)
+	require.NoError(t, err)
+	testBucketGetFileInfos(
+		t,
+		"testdata/1",
+		config,
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/1.proto", "testdata/1/proto/a/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/2.proto", "testdata/1/proto/a/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "a/3.proto", "testdata/1/proto/a/3.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/1.proto", "testdata/1/proto/b/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/2.proto", "testdata/1/proto/b/2.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "b/3.proto", "testdata/1/proto/b/3.proto", false), nil, ""),
+	)
+}
+
+func TestConfigV1Beta1BucketGetAllFileInfos5(t *testing.T) {
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
+			Roots: []string{
+				".",
+			},
+		},
+	)
+	require.NoError(t, err)
+	testBucketGetFileInfos(
+		t,
+		"testdata/3",
+		config,
+	)
+}
+
+func TestConfigV1Beta1BucketGetAllFileInfosError1(t *testing.T) {
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
+			Roots: []string{
+				"a",
+				"b",
+			},
+		},
+	)
+	require.NoError(t, err)
 	testBucketGetAllFileInfosError(
 		t,
 		"testdata/2",
-		[]string{
-			"a",
-			"b",
-		},
-		[]string{},
+		config,
 		nil,
 	)
 }
 
-func TestBucketGetAllFileInfosError2(t *testing.T) {
-	testBucketGetAllFileInfosError(
-		t,
-		"testdata/3",
-		[]string{
-			".",
+func TestConfigV1Beta1BucketGetFileInfosForExternalPathsError1(t *testing.T) {
+	config, err := NewConfigV1Beta1(
+		ExternalConfigV1Beta1{
+			Roots: []string{
+				"a",
+				"b",
+			},
 		},
-		[]string{},
-		internal.ErrNoTargetFiles,
 	)
-}
-
-func TestBucketGetFileInfosForExternalPathsError1(t *testing.T) {
+	require.NoError(t, err)
 	testBucketGetFileInfosForExternalPathsError(
 		t,
 		"testdata/2",
-		[]string{
-			"a",
-			"b",
-		},
+		config,
 		[]string{
 			"testdata/2/a/1.proto",
 			"testdata/2/a/2.proto",
@@ -159,19 +298,15 @@ func TestDocumentation(t *testing.T) {
 	testDocumentationBucket(
 		t,
 		"testdata/4",
-		[]string{
-			".",
-		},
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/1.proto", "testdata/4/proto/1.proto", false), nil),
-		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/2.proto", "testdata/4/proto/a/2.proto", false), nil),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/1.proto", "testdata/4/proto/1.proto", false), nil, ""),
+		bufmodule.NewFileInfo(bufcoretesting.NewFileInfo(t, "proto/a/2.proto", "testdata/4/proto/a/2.proto", false), nil, ""),
 	)
 }
 
 func testBucketGetFileInfos(
 	t *testing.T,
 	relDir string,
-	relRoots []string,
-	relExcludes []string,
+	config *Config,
 	expectedFileInfos ...bufmodule.FileInfo,
 ) {
 	t.Parallel()
@@ -179,13 +314,6 @@ func testBucketGetFileInfos(
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		relDir,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	require.NoError(t, err)
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
-			Roots:    relRoots,
-			Excludes: relExcludes,
-		},
 	)
 	require.NoError(t, err)
 	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
@@ -231,21 +359,13 @@ func testBucketGetFileInfos(
 func testBucketGetAllFileInfosError(
 	t *testing.T,
 	relDir string,
-	relRoots []string,
-	relExcludes []string,
+	config *Config,
 	expectedSpecificError error,
 ) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		relDir,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	require.NoError(t, err)
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
-			Roots:    relRoots,
-			Excludes: relExcludes,
-		},
 	)
 	require.NoError(t, err)
 	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
@@ -265,19 +385,13 @@ func testBucketGetAllFileInfosError(
 func testBucketGetFileInfosForExternalPathsError(
 	t *testing.T,
 	relDir string,
-	relRoots []string,
+	config *Config,
 	externalPaths []string,
 ) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		relDir,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	require.NoError(t, err)
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
-			Roots: relRoots,
-		},
 	)
 	require.NoError(t, err)
 	bucketRelPaths := make([]string, len(externalPaths))
@@ -300,7 +414,6 @@ func testBucketGetFileInfosForExternalPathsError(
 func testDocumentationBucket(
 	t *testing.T,
 	relDir string,
-	relRoots []string,
 	expectedFileInfos ...bufmodule.FileInfo,
 ) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
@@ -309,10 +422,8 @@ func testDocumentationBucket(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
-			Roots: relRoots,
-		},
+	config, err := NewConfigV1(
+		ExternalConfigV1{},
 	)
 	require.NoError(t, err)
 	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(

@@ -393,7 +393,8 @@ func getImageFilesRec(
 	_, isNotImport := nonImportFilenames[path]
 	imageFile, err := bufimage.NewImageFile(
 		fileDescriptorProto,
-		parserAccessorHandler.ModuleCommit(path),
+		parserAccessorHandler.ModuleIdentity(path),
+		parserAccessorHandler.Commit(path),
 		// if empty, defaults to path
 		parserAccessorHandler.ExternalPath(path),
 		!isNotImport,

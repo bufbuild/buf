@@ -1106,7 +1106,6 @@ func testGetParsedRef(
 	expectedErr error,
 	value string,
 ) {
-	t.Helper()
 	t.Run(value, func(t *testing.T) {
 		t.Parallel()
 		parsedRef, err := newRefParser(zap.NewNop()).getParsedRef(

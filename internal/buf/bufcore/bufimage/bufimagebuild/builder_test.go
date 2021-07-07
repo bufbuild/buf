@@ -229,7 +229,6 @@ func TestCompareSemicolons(t *testing.T) {
 }
 
 func testCompare(t *testing.T, relDirPath string) {
-	t.Helper()
 	dirPath := filepath.Join("testdata", relDirPath)
 	image, fileAnnotations := testBuild(t, false, dirPath)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
@@ -278,7 +277,7 @@ func testGetModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet 
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	config, err := bufmodulebuild.NewConfigV1Beta1(bufmodulebuild.ExternalConfigV1Beta1{})
+	config, err := bufmodulebuild.NewConfigV1(bufmodulebuild.ExternalConfigV1{})
 	require.NoError(t, err)
 	module, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),

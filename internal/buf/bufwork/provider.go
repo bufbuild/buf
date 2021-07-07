@@ -30,8 +30,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const v1beta1Version = "v1beta1"
-
 type provider struct {
 	logger *zap.Logger
 }
@@ -46,10 +44,10 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket,
 	ctx, span := trace.StartSpan(ctx, "get_config")
 	defer span.End()
 
-	readObjectCloser, err := readBucket.Get(ctx, ExternalConfigV1Beta1FilePath)
+	readObjectCloser, err := readBucket.Get(ctx, ExternalConfigFilePath)
 	if err != nil {
 		if storage.IsNotExist(err) {
-			return p.newConfigV1Beta1(externalConfigV1Beta1{}, "default configuration")
+			return p.newConfigV1(ExternalConfigV1{}, "default configuration")
 		}
 		return nil, err
 	}
@@ -64,9 +62,9 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket,
 		ctx,
 		encoding.UnmarshalYAMLNonStrict,
 		encoding.UnmarshalYAMLStrict,
-		filepath.Join(normalpath.Unnormalize(relativeRootPath), ExternalConfigV1Beta1FilePath),
+		filepath.Join(normalpath.Unnormalize(relativeRootPath), ExternalConfigFilePath),
 		data,
-		`File "`+readObjectCloser.ExternalPath()+`"`,
+		readObjectCloser.ExternalPath(),
 	)
 }
 
@@ -98,19 +96,25 @@ func (p *provider) getConfigForData(
 	if err := p.validateExternalConfigVersion(externalConfigVersion, id); err != nil {
 		return nil, err
 	}
-	var externalConfigV1Beta1 externalConfigV1Beta1
-	if err := unmarshalStrict(data, &externalConfigV1Beta1); err != nil {
+	var externalConfigV1 ExternalConfigV1
+	if err := unmarshalStrict(data, &externalConfigV1); err != nil {
 		return nil, err
 	}
-	return p.newConfigV1Beta1(externalConfigV1Beta1, workspaceID)
+	return p.newConfigV1(externalConfigV1, workspaceID)
 }
 
-func (p *provider) newConfigV1Beta1(externalConfig externalConfigV1Beta1, workspaceID string) (*Config, error) {
+func (p *provider) newConfigV1(externalConfig ExternalConfigV1, workspaceID string) (*Config, error) {
+	if len(externalConfig.Directories) == 0 {
+		return nil, fmt.Errorf(
+			`%s has no directories set. Please add "directories: [...]"`,
+			workspaceID,
+		)
+	}
 	directorySet := make(map[string]struct{}, len(externalConfig.Directories))
 	for _, directory := range externalConfig.Directories {
 		if filepath.IsAbs(directory) {
 			return nil, fmt.Errorf(
-				"module %q listed in %s must be a relative path",
+				"directory %q listed in %s must be a relative path",
 				normalpath.Unnormalize(directory),
 				workspaceID,
 			)
@@ -121,7 +125,7 @@ func (p *provider) newConfigV1Beta1(externalConfig externalConfigV1Beta1, worksp
 		}
 		if _, ok := directorySet[normalizedDirectory]; ok {
 			return nil, fmt.Errorf(
-				"module %q is listed more than once in %s",
+				"directory %q is listed more than once in %s",
 				normalpath.Unnormalize(normalizedDirectory),
 				workspaceID,
 			)
@@ -151,20 +155,18 @@ func validateConfigurationOverlap(directories []string, workspaceID string) erro
 			right := directories[j]
 			if normalpath.ContainsPath(left, right, normalpath.Relative) {
 				return fmt.Errorf(
-					"module %q contains module %q in %s; see %s for more details",
+					"directory %q contains directory %q in %s",
 					normalpath.Unnormalize(left),
 					normalpath.Unnormalize(right),
 					workspaceID,
-					faqPage,
 				)
 			}
 			if normalpath.ContainsPath(right, left, normalpath.Relative) {
 				return fmt.Errorf(
-					"module %q contains module %q in %s; see %s for more details",
+					"directory %q contains directory %q in %s",
 					normalpath.Unnormalize(right),
 					normalpath.Unnormalize(left),
 					workspaceID,
-					faqPage,
 				)
 			}
 		}
@@ -175,11 +177,19 @@ func validateConfigurationOverlap(directories []string, workspaceID string) erro
 func (p *provider) validateExternalConfigVersion(externalConfigVersion externalConfigVersion, id string) error {
 	switch externalConfigVersion.Version {
 	case "":
-		p.logger.Sugar().Warnf(`%s has no version set. Please add "version: %s". See https://docs.buf.build/faq for more details.`, id, v1beta1Version)
-		return nil
-	case v1beta1Version:
+		return fmt.Errorf(
+			`%s has no version set. Please add "version: %s"`,
+			id,
+			V1Version,
+		)
+	case V1Version:
 		return nil
 	default:
-		return fmt.Errorf("%s has unknown configuration version: %s", id, externalConfigVersion.Version)
+		return fmt.Errorf(
+			`%s has an invalid "version: %s" set. Please add "version: %s"`,
+			id,
+			externalConfigVersion.Version,
+			V1Version,
+		)
 	}
 }

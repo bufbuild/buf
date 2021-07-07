@@ -1,0 +1,15 @@
+{
+  "version": "v1",
+  "managed": {
+    "enabled": true,
+    "optimize_for": "LITE_RUNTIME"
+  },
+  "plugins": [
+    {
+      "name": "go",
+      "out": "gen/go",
+      "path": "/path/to/foo",
+      "strategy": "all"
+    }
+  ]
+}

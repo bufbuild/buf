@@ -23,14 +23,22 @@ import (
 	"strconv"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// ExternalConfigV1Beta1FilePath is the default external configuration file path for v1beta1.
-const ExternalConfigV1Beta1FilePath = "buf.gen.yaml"
+const (
+	// ExternalConfigFilePath is the default external configuration file path.
+	ExternalConfigFilePath = "buf.gen.yaml"
+	// V1Version is the string used to identify the v1 version of the generate template.
+	V1Version = "v1"
+	// V1Beta1Version is the string used to identify the v1beta1 version of the generate template.
+	V1Beta1Version = "v1beta1"
+)
 
 const (
 	// StrategyDirectory is the strategy that says to generate per directory.
@@ -68,6 +76,19 @@ func (s Strategy) String() string {
 	default:
 		return strconv.Itoa(int(s))
 	}
+}
+
+// Provider is a provider.
+type Provider interface {
+	// GetConfig gets the Config for the YAML data at ExternalConfigFilePath.
+	//
+	// If the data is of length 0, returns the default config.
+	GetConfig(ctx context.Context, readBucket storage.ReadBucket) (*Config, error)
+}
+
+// NewProvider returns a new Provider.
+func NewProvider(logger *zap.Logger) Provider {
+	return newProvider(logger)
 }
 
 // Generator generates Protobuf stubs based on configurations.
@@ -111,9 +132,7 @@ type Config struct {
 	// Required
 	PluginConfigs []*PluginConfig
 	// Optional
-	Options *Options
-	// Optional
-	Managed bool
+	ManagedConfig *ManagedConfig
 }
 
 // PluginConfig is a plugin configuration.
@@ -130,27 +149,110 @@ type PluginConfig struct {
 	Strategy Strategy
 }
 
-// Options is an option configuration.
-type Options struct {
-	CcEnableArenas    *bool
-	JavaMultipleFiles *bool
-	OptimizeFor       *descriptorpb.FileOptions_OptimizeMode
+// ManagedConfig is the Managed Mode configuration.
+type ManagedConfig struct {
+	CcEnableArenas        *bool
+	JavaMultipleFiles     *bool
+	OptimizeFor           *descriptorpb.FileOptions_OptimizeMode
+	GoPackagePrefixConfig *GoPackagePrefixConfig
 }
 
-// ReadConfig reads the configuration from the OS.
+// GoPackagePrefixConfig is the go_package prefix configuration.
+type GoPackagePrefixConfig struct {
+	Default string
+	Except  []bufmodule.ModuleIdentity
+	// bufmodule.ModuleIdentity -> go_package prefix.
+	Override map[bufmodule.ModuleIdentity]string
+}
+
+// ReadConfig reads the configuration from the OS or an override, if any.
 //
-// This will first check if the override ends in .json or .yaml, if so,
+// Only use in CLI tools.
+func ReadConfig(
+	ctx context.Context,
+	provider Provider,
+	readBucket storage.ReadBucket,
+	options ...ReadConfigOption,
+) (*Config, error) {
+	return readConfig(
+		ctx,
+		provider,
+		readBucket,
+		options...,
+	)
+}
+
+// ReadConfigOption is an option for ReadConfig.
+type ReadConfigOption func(*readConfigOptions)
+
+// ReadConfigWithOverride sets the override.
+//
+// If override is set, this will first check if the override ends in .json or .yaml, if so,
 // this reads the file at this path and uses it. Otherwise, this assumes this is configuration
 // data in either JSON or YAML format, and unmarshals it.
 //
-// Only use in CLI tools.
-func ReadConfig(fileOrData string) (*Config, error) {
-	return readConfig(fileOrData)
+// If no override is set, this reads ExternalConfigFilePath in the bucket.
+func ReadConfigWithOverride(override string) ReadConfigOption {
+	return func(readConfigOptions *readConfigOptions) {
+		readConfigOptions.override = override
+	}
+}
+
+// ConfigExists checks if a generation configuration file exists.
+func ConfigExists(ctx context.Context, readBucket storage.ReadBucket) (bool, error) {
+	return storage.Exists(ctx, readBucket, ExternalConfigFilePath)
+}
+
+// ExternalConfigV1 is an external configuration.
+type ExternalConfigV1 struct {
+	Version string                   `json:"version,omitempty" yaml:"version,omitempty"`
+	Plugins []ExternalPluginConfigV1 `json:"plugins,omitempty" yaml:"plugins,omitempty"`
+	Managed ExternalManagedConfigV1  `json:"managed,omitempty" yaml:"managed,omitempty"`
+}
+
+// ExternalPluginConfigV1 is an external plugin configuration.
+type ExternalPluginConfigV1 struct {
+	Name     string      `json:"name,omitempty" yaml:"name,omitempty"`
+	Out      string      `json:"out,omitempty" yaml:"out,omitempty"`
+	Opt      interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
+	Path     string      `json:"path,omitempty" yaml:"path,omitempty"`
+	Strategy string      `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+}
+
+// ExternalManagedConfigV1 is an external Managed Mode configuration.
+//
+// Only use outside of this package for testing.
+type ExternalManagedConfigV1 struct {
+	Enabled           bool                            `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	CcEnableArenas    *bool                           `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
+	JavaMultipleFiles *bool                           `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
+	OptimizeFor       string                          `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
+	GoPackagePrefix   ExternalGoPackagePrefixConfigV1 `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
+}
+
+// IsEmpty returns true if the config is empty, excluding the 'Enabled' setting.
+func (e ExternalManagedConfigV1) IsEmpty() bool {
+	return e.CcEnableArenas == nil &&
+		e.JavaMultipleFiles == nil &&
+		e.OptimizeFor == "" &&
+		e.GoPackagePrefix.IsEmpty()
+}
+
+// ExternalGoPackagePrefixConfigV1 is the external go_package prefix configuration.
+type ExternalGoPackagePrefixConfigV1 struct {
+	Default  string            `json:"default,omitempty" yaml:"default,omitempty"`
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// IsEmpty returns true if the config is empty.
+func (e ExternalGoPackagePrefixConfigV1) IsEmpty() bool {
+	return e.Default == "" &&
+		len(e.Except) == 0 &&
+		len(e.Override) == 0
 }
 
 // ExternalConfigV1Beta1 is an external configuration.
-//
-// Only use outside of this package for testing.
 type ExternalConfigV1Beta1 struct {
 	Version string                        `json:"version,omitempty" yaml:"version,omitempty"`
 	Managed bool                          `json:"managed,omitempty" yaml:"managed,omitempty"`
@@ -159,8 +261,6 @@ type ExternalConfigV1Beta1 struct {
 }
 
 // ExternalPluginConfigV1Beta1 is an external plugin configuration.
-//
-// Only use outside of this package for testing.
 type ExternalPluginConfigV1Beta1 struct {
 	Name     string      `json:"name,omitempty" yaml:"name,omitempty"`
 	Out      string      `json:"out,omitempty" yaml:"out,omitempty"`
@@ -170,14 +270,14 @@ type ExternalPluginConfigV1Beta1 struct {
 }
 
 // ExternalOptionsConfigV1Beta1 is an external options configuration.
-//
-// Only use outside of this package for testing.
 type ExternalOptionsConfigV1Beta1 struct {
 	CcEnableArenas    *bool  `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
 	JavaMultipleFiles *bool  `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
 	OptimizeFor       string `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 }
 
-type externalConfigVersion struct {
+// ExternalConfigVersion defines the subset of all config
+// file versions that is used to determine the configuration version.
+type ExternalConfigVersion struct {
 	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }

@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/buflock"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
@@ -50,6 +51,7 @@ func (b *moduleBucketBuilder) BuildForBucket(
 		ctx,
 		readBucket,
 		config,
+		buildOptions.moduleIdentity,
 		buildOptions.paths,
 		buildOptions.pathsAllowNotExist,
 	)
@@ -59,12 +61,13 @@ func (b *moduleBucketBuilder) buildForBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	config *Config,
-	bucketRelPaths []string,
+	moduleIdentity bufmodule.ModuleIdentity,
+	bucketRelPaths *[]string,
 	bucketRelPathsAllowNotExist bool,
 ) (bufmodule.Module, error) {
 	roots := make([]string, 0, len(config.RootToExcludes))
 	var rootBuckets []storage.ReadBucket
-	lockFileReadBucket, err := getFileReadBucket(ctx, readBucket, bufmodule.LockFilePath)
+	lockFileReadBucket, err := getFileReadBucket(ctx, readBucket, buflock.ExternalConfigFilePath)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +114,11 @@ func (b *moduleBucketBuilder) buildForBucket(
 			),
 		)
 	}
-	module, err := bufmodule.NewModuleForBucket(ctx, storage.MultiReadBucket(rootBuckets...))
+	module, err := bufmodule.NewModuleForBucket(
+		ctx,
+		storage.MultiReadBucket(rootBuckets...),
+		bufmodule.ModuleWithModuleIdentity(moduleIdentity /* This may be nil */),
+	)
 	if err != nil {
 		return nil, err
 	}

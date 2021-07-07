@@ -90,7 +90,7 @@ var (
 		"WIRE_JSON",
 		"WIRE",
 	}
-	// v1beta1IDToCategories are the revision 1 ID to categories.
+	// v1beta1IDToCategories associates IDs to categories.
 	v1beta1IDToCategories = map[string][]string{
 		"ENUM_NO_DELETE": {
 			"FILE",

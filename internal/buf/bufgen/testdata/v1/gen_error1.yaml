@@ -1,0 +1,3 @@
+version: v1
+plugins:
+  - name: go

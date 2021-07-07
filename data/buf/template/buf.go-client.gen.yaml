@@ -1,7 +1,10 @@
 # This template generates grpc-go, twirp, and helper client-side packages.
 # This is for situations where the client-side is OSS.
-version: v1beta1
-managed: true
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/bufbuild/buf/internal/gen/proto/go
 plugins:
   - name: go-grpc
     out: internal/gen/proto/go

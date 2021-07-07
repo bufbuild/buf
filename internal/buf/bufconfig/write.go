@@ -28,14 +28,11 @@ import (
 
 const (
 	exampleName          = "buf.build/acme/weather"
-	tmplUndocumentedData = `{{$top := .}}version: v1beta1
+	tmplUndocumentedData = `{{$top := .}}version: v1
 {{if not .NameUnset}}name: {{.Name}}
 {{end}}{{if not .DepsUnset}}deps:
 {{range $dep := .Deps}}  - {{$dep}}
-{{end}}{{end}}build:
-  roots:
-{{range $root := .Roots}}    - {{$root}}
-{{end}}lint:
+{{end}}{{end}}lint:
   use:
 {{range $lint_id := .LintIDs}}    - {{$lint_id}}
 {{end}}breaking:
@@ -48,18 +45,14 @@ const (
 # rules and rule categories. Buf takes breaking changes seriously in
 # all aspects, and none of these will ever change for a given version.
 #
-# The only currently valid version is "v1beta1".
-# This key will be required for Buf v1.0.
-version: v1beta1
+# The only valid versions are "v1beta1", "v1".
+# This key is required.
+version: v1
 
 # name is the module name.
-#
-# This is an upcoming feature for the Buf Schema Registry.
 {{if .NameUnset}}#{{end}}name: {{.Name}}
 
 # deps are the module dependencies
-#
-# This is an upcoming feature for the Buf Schema Registry.
 {{if .DepsUnset}}#{{end}}deps:
 {{range $dep := .Deps}}{{if $top.DepsUnset}}#{{end}}  - {{$dep}}
 {{end}}
@@ -73,31 +66,14 @@ version: v1beta1
 # omitted.
 build:
 
-  # roots is the directories that all .proto files are contained within, and
-  # all imports must derive from.
-  #
-  # Only .proto files within these directory will be compiled. This path must
-  # be relative to directory that buf.yaml is in (usually the root of your
-  # repository).
-  #
-  # Roots can not overlap, that is one root can not contain another root. For
-  # example, "a", and "a/b" would be invalid.
-  #
-  # The default is [.], i.e. the directory of your buf.yaml (usually the root of
-  # your repository). If all of your imports start from this directory, this
-  # option can be left unset.
-  roots:
-{{range $root := .Roots}}    - {{$root}}
-{{end}}
-  # excludes is the list of directories within root to exclude.
+  # excludes is the list of directories to exclude.
   #
   # These directories will not be built or checked. If a directory is excluded,
   # buf treats the directory as if it does not exist.
   #
   # All directory paths in exclude must be relative to the directory of
-  # your buf.yaml. Only directories can be specified, and all specified
-  # directories must be within a root directory. For example, if your
-  # only root is "proto", all excludes must start with "proto".
+  # your buf.mod. Only directories can be specified, and all specified
+  # directories must within the root directory.
   {{if not .Uncomment}}#{{end}}excludes:
   {{if not .Uncomment}}#{{end}}  - foo
   {{if not .Uncomment}}#{{end}}  - bar/baz
@@ -126,12 +102,7 @@ lint:
 
   # ignore is the list of directories or files to ignore for all rules.
   #
-  # All directories and file paths are specified relative to a root directory,
-  # that is *with the root directory stripped*. For example, if you have a root
-  # "proto" and want to ignore the directory "proto/bat", you would specify
-  # "bat" in the ignore list. This is so that these configuration options work
-  # for both sources and images.
-  #
+  # All directories and file paths are specified relative to the root directory.
   # The directory "." is not allowed - this is equivalent to ignoring
   # everything.
   {{if not .Uncomment}}#{{end}}ignore:
@@ -141,9 +112,7 @@ lint:
   # ignore_only is the map from rule id or category to file or directory to
   # ignore.
   #
-  # All directories and file paths are specified relative to a root directory,
-  # that is *with the root directory stripped*, as described above.
-  #
+  # All directories and file paths are specified relative to the root directory.
   # The directory "." is not allowed - this is equivalent to using the "except"
   # option.
   #
@@ -250,12 +219,7 @@ breaking:
 
   # ignore is the list of directories or files to ignore for all rules.
   #
-  # All directories and file paths are specified relative to a root directory,
-  # that is *with the root directory stripped*. For example, if you have a root
-  # "proto" and want to ignore the directory "proto/bat", you would specify
-  # "bat" in the ignore list. This is so that these configuration options work
-  # for both sources and images.
-  #
+  # All directories and file paths are specified relative to the root directory.
   # The directory "." is not allowed - this is equivalent to ignoring
   # everything.
   {{if not .Uncomment}}#{{end}}ignore:
@@ -265,9 +229,7 @@ breaking:
   # ignore_only is the map from rule id or category to file or directory to
   # ignore.
   #
-  # All directories and file paths are specified relative to a root directory,
-  # that is *with the root directory stripped*, as described above.
-  #
+  # All directories and file paths are specified relative to a root directory.
   # The directory "." is not allowed - this is equivalent to using the "except"
   # option.
   {{if not .Uncomment}}#{{end}}ignore_only:
@@ -294,13 +256,12 @@ breaking:
 )
 
 var (
-	defaultRoots       = []string{"."}
 	defaultLintIDs     = []string{"DEFAULT"}
 	defaultBreakingIDs = []string{"FILE"}
 	exampleDeps        = []string{
-		"buf.build/buf/standard",
-		"buf.build/acme/pkg:v1",
-		"buf.build/acme/payments@7e8b594e68324329a7aefc6e750d18b9",
+		"buf.build/acme/petapis",
+		"buf.build/acme/pkg:alpha",
+		"buf.build/acme/paymentapis:7e8b594e68324329a7aefc6e750d18b9",
 	}
 )
 
@@ -319,18 +280,17 @@ func writeConfig(
 	if !writeConfigOptions.documentationComments && writeConfigOptions.uncomment {
 		return errors.New("cannot set uncomment without documentationComments for WriteConfig")
 	}
-	externalConfigV1Beta1 := externalConfigV1Beta1{
-		Version: v1beta1Version,
+	externalConfigV1 := ExternalConfigV1{
+		Version: V1Version,
 	}
-	externalConfigV1Beta1.Build.Roots = defaultRoots
-	externalConfigV1Beta1.Lint.Use = defaultLintIDs
-	externalConfigV1Beta1.Breaking.Use = defaultBreakingIDs
+	externalConfigV1.Lint.Use = defaultLintIDs
+	externalConfigV1.Breaking.Use = defaultBreakingIDs
 	if writeConfigOptions.moduleIdentity != nil {
-		externalConfigV1Beta1.Name = writeConfigOptions.moduleIdentity.IdentityString()
+		externalConfigV1.Name = writeConfigOptions.moduleIdentity.IdentityString()
 	}
 	for _, dependencyModuleReference := range writeConfigOptions.dependencyModuleReferences {
-		externalConfigV1Beta1.Deps = append(
-			externalConfigV1Beta1.Deps,
+		externalConfigV1.Deps = append(
+			externalConfigV1.Deps,
 			dependencyModuleReference.String(),
 		)
 	}
@@ -346,13 +306,13 @@ func writeConfig(
 	if err := tmpl.Execute(
 		buffer,
 		newTmplParam(
-			externalConfigV1Beta1,
+			externalConfigV1,
 			writeConfigOptions.uncomment,
 		),
 	); err != nil {
 		return err
 	}
-	return storage.PutPath(ctx, writeBucket, ExternalConfigV1Beta1FilePath, buffer.Bytes())
+	return storage.PutPath(ctx, writeBucket, ExternalConfigFilePath, buffer.Bytes())
 }
 
 type tmplParam struct {
@@ -360,19 +320,17 @@ type tmplParam struct {
 	NameUnset   bool
 	Deps        []string
 	DepsUnset   bool
-	Roots       []string
 	LintIDs     []string
 	BreakingIDs []string
 	Uncomment   bool
 }
 
-func newTmplParam(externalConfigV1Beta1 externalConfigV1Beta1, uncomment bool) *tmplParam {
+func newTmplParam(externalConfigV1 ExternalConfigV1, uncomment bool) *tmplParam {
 	tmplParam := &tmplParam{
-		Name:        externalConfigV1Beta1.Name,
-		Deps:        externalConfigV1Beta1.Deps,
-		Roots:       externalConfigV1Beta1.Build.Roots,
-		LintIDs:     externalConfigV1Beta1.Lint.Use,
-		BreakingIDs: externalConfigV1Beta1.Breaking.Use,
+		Name:        externalConfigV1.Name,
+		Deps:        externalConfigV1.Deps,
+		LintIDs:     externalConfigV1.Lint.Use,
+		BreakingIDs: externalConfigV1.Breaking.Use,
 		Uncomment:   uncomment,
 	}
 	if tmplParam.Name == "" {

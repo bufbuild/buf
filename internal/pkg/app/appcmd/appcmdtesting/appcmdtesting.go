@@ -35,7 +35,6 @@ func RunCommandSuccessStdout(
 	stdin io.Reader,
 	args ...string,
 ) {
-	t.Helper()
 	RunCommandExitCodeStdout(t, newCommand, 0, expectedStdout, newEnv, stdin, args...)
 }
 
@@ -49,7 +48,6 @@ func RunCommandExitCodeStdout(
 	stdin io.Reader,
 	args ...string,
 ) {
-	t.Helper()
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
@@ -66,7 +64,6 @@ func RunCommandExitCodeStderr(
 	stdin io.Reader,
 	args ...string,
 ) {
-	t.Helper()
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
@@ -84,7 +81,6 @@ func RunCommandExitCodeStdoutStderr(
 	stdin io.Reader,
 	args ...string,
 ) {
-	t.Helper()
 	stdout := bytes.NewBuffer(nil)
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, expectedExitCode, newEnv, stdin, stdout, stderr, args...)
@@ -101,7 +97,6 @@ func RunCommandSuccess(
 	stdout io.Writer,
 	args ...string,
 ) {
-	t.Helper()
 	stderr := bytes.NewBuffer(nil)
 	RunCommandExitCode(t, newCommand, 0, newEnv, stdin, stdout, stderr, args...)
 }
@@ -117,7 +112,6 @@ func RunCommandExitCode(
 	stderr io.Writer,
 	args ...string,
 ) {
-	t.Helper()
 	// make the use something different than the actual command
 	// to make sure that all code is binary-name-agnostic.
 	use := "test"

@@ -150,6 +150,89 @@ func TestWorkspaceDir(t *testing.T) {
 		"--against",
 		filepath.Join("testdata", "workspace", "success", "dir"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/workspace/success/dir/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".
+        testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"--config",
+		`{"lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
+        testdata/workspace/success/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/workspace/success/dir/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".
+        testdata/workspace/success/dir/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "dir", "other", "proto", "request.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"--config",
+		`{"lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/workspace/success/dir/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"--config",
+		`{"lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "dir", "other", "proto", "request.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/workspace/success/dir/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"--config",
+		`{"lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+		"--path",
+		filepath.Join(wd, "testdata", "workspace", "success", "dir", "other", "proto", "request.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		fmt.Sprintf(`%s/testdata/workspace/success/dir/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`,
+			wd,
+		),
+		"lint",
+		filepath.Join(wd, "testdata", "workspace", "success", "dir"),
+		"--config",
+		`{"lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+		"--path",
+		filepath.Join(wd, "testdata", "workspace", "success", "dir", "other", "proto", "request.proto"),
+	)
 }
 
 func TestWorkspaceArchiveDir(t *testing.T) {
@@ -184,6 +267,17 @@ func TestWorkspaceArchiveDir(t *testing.T) {
         proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`,
 		"lint",
 		filepath.Join(zipDir, "archive.zip#subdir=proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
+        proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`,
+		"lint",
+		filepath.Join(zipDir, "archive.zip#subdir=proto"),
+		"--path",
+		filepath.Join("proto", "rpc.proto"),
 	)
 }
 
@@ -220,6 +314,17 @@ func TestWorkspaceNestedArchive(t *testing.T) {
 		"lint",
 		filepath.Join(zipDir, "archive.zip#subdir=proto/internal"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`proto/internal/internal.proto:3:1:Files with package "internal" must be within a directory "internal" relative to root but were in directory ".".
+        proto/internal/internal.proto:3:1:Package name "internal" should be suffixed with a correctly formed version, such as "internal.v1".`,
+		"lint",
+		filepath.Join(zipDir, "archive.zip#subdir=proto/internal"),
+		"--path",
+		filepath.Join("proto", "internal", "internal.proto"),
+	)
 }
 
 func TestWorkspaceGit(t *testing.T) {
@@ -231,7 +336,7 @@ func TestWorkspaceGit(t *testing.T) {
 		0,
 		``,
 		"build",
-		filepath.Join("testdata", "workspace", "success", "../../../../../../../.git#ref=HEAD,subdir=internal/buf/cmd/buf/testdata/workspace/success/dir/proto"),
+		"../../../../.git#ref=HEAD,subdir=internal/buf/cmd/buf/testdata/workspace/success/dir/proto",
 	)
 	testRunStdout(
 		t,
@@ -239,7 +344,7 @@ func TestWorkspaceGit(t *testing.T) {
 		0,
 		`internal/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto`,
 		"ls-files",
-		filepath.Join("testdata", "workspace", "success", "../../../../../../../.git#ref=HEAD,subdir=internal/buf/cmd/buf/testdata/workspace/success/dir/proto"),
+		"../../../../.git#ref=HEAD,subdir=internal/buf/cmd/buf/testdata/workspace/success/dir/proto",
 	)
 	testRunStdout(
 		t,
@@ -248,7 +353,18 @@ func TestWorkspaceGit(t *testing.T) {
 		`internal/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
         internal/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`,
 		"lint",
-		filepath.Join("testdata", "workspace", "success", "../../../../../../../.git#ref=HEAD,subdir=internal/buf/cmd/buf/testdata/workspace/success/dir/proto"),
+		"../../../../.git#ref=HEAD,subdir=internal/buf/cmd/buf/testdata/workspace/success/dir/proto",
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`internal/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
+        internal/buf/cmd/buf/testdata/workspace/success/dir/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`,
+		"lint",
+		"../../../../.git#ref=HEAD,subdir=internal/buf/cmd/buf/testdata/workspace/success/dir/proto",
+		"--path",
+		filepath.Join("internal", "buf", "cmd", "buf", "testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
 	)
 }
 
@@ -334,7 +450,7 @@ func TestWorkspaceDetached(t *testing.T) {
 }
 
 func TestWorkspaceNoModuleConfig(t *testing.T) {
-	// The workspace points to modules that don't contain a buf.yaml.
+	// The workspace points to modules that don't contain a buf.mod.
 	t.Parallel()
 	testRunStdout(
 		t,
@@ -742,6 +858,79 @@ func TestWorkspaceWKT(t *testing.T) {
 	)
 }
 
+func TestWorkspaceRoots(t *testing.T) {
+	// Workspaces should support modules with multiple roots specified in a v1beta1 buf.yaml.
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "workspace", "success", "roots"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`testdata/workspace/success/roots/module1/a/a.proto
+        testdata/workspace/success/roots/module2/root1/b/b.proto
+        testdata/workspace/success/roots/module2/root2/c/c.proto`,
+		"ls-files",
+		filepath.Join("testdata", "workspace", "success", "roots"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/workspace/success/roots/module1/a/a.proto:3:1:Package name "a" should be suffixed with a correctly formed version, such as "a.v1".
+        testdata/workspace/success/roots/module2/root1/b/b.proto:3:1:Package name "b" should be suffixed with a correctly formed version, such as "b.v1".
+		testdata/workspace/success/roots/module2/root2/c/c.proto:3:1:Package name "c" should be suffixed with a correctly formed version, such as "c.v1".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "roots"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"breaking",
+		filepath.Join("testdata", "workspace", "success", "roots"),
+		"--against",
+		filepath.Join("testdata", "workspace", "success", "roots"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/workspace/success/roots/module1/a/a.proto:3:1:Package name "a" should be suffixed with a correctly formed version, such as "a.v1".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "roots"),
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "roots", "module1", "a"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/workspace/success/roots/module2/root1/b/b.proto:3:1:Package name "b" should be suffixed with a correctly formed version, such as "b.v1".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "roots"),
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "roots", "module2", "root1", "b"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/workspace/success/roots/module2/root2/c/c.proto:3:1:Package name "c" should be suffixed with a correctly formed version, such as "c.v1".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "roots"),
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "roots", "module2", "root2", "c"),
+	)
+}
+
 func TestWorkspaceBreakingFail(t *testing.T) {
 	// The two workspaces define a different number of
 	// images, so it's impossible to verify compatibility.
@@ -786,7 +975,7 @@ func TestWorkspaceNotExistFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: module "notexist" listed in testdata/workspace/fail/notexist/buf.work contains no .proto files.`,
+		`Failure: directory "notexist" listed in testdata/workspace/fail/notexist/buf.work contains no .proto files.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "notexist"),
 	)
@@ -825,7 +1014,7 @@ func TestWorkspaceAbsoluteFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: module "/home/buf" listed in testdata/workspace/fail/absolute/buf.work must be a relative path.`,
+		`Failure: directory "/home/buf" listed in testdata/workspace/fail/absolute/buf.work must be a relative path.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "absolute"),
 	)
@@ -838,7 +1027,7 @@ func TestWorkspaceDirOverlapFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: module "foo" contains module "foo/bar" in testdata/workspace/fail/diroverlap/buf.work; see https://docs.buf.build/faq for more details.`,
+		`Failure: directory "foo" contains directory "foo/bar" in testdata/workspace/fail/diroverlap/buf.work.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "diroverlap"),
 	)
@@ -852,7 +1041,7 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: failed to build input "proto/buf" because it is contained by module "proto" listed in testdata/workspace/fail/overlap/buf.work; see https://docs.buf.build/faq for more details.`,
+		`Failure: failed to build input "proto/buf" because it is contained by directory "proto" listed in testdata/workspace/fail/overlap/buf.work.`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "overlap", "proto", "buf"),
 	)
@@ -861,7 +1050,7 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: failed to build input "other" because it contains module "other/proto" listed in testdata/workspace/success/dir/buf.work; see https://docs.buf.build/faq for more details.`,
+		`Failure: failed to build input "other" because it contains directory "other/proto" listed in testdata/workspace/success/dir/buf.work.`,
 		"build",
 		filepath.Join("testdata", "workspace", "success", "dir", "other"),
 	)
@@ -880,8 +1069,153 @@ func TestWorkspaceRegularFileFail(t *testing.T) {
 	)
 }
 
+func TestWorkspaceNoVersionFail(t *testing.T) {
+	// The buf.work must specify a version.
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: testdata/workspace/fail/noversion/buf.work has no version set. Please add "version: v1".`,
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "noversion"),
+	)
+}
+
+func TestWorkspaceInvalidVersionFail(t *testing.T) {
+	// The buf.work must specify a valid version.
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: testdata/workspace/fail/invalidversion/buf.work has an invalid "version: v9" set. Please add "version: v1".`,
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "invalidversion"),
+	)
+}
+
+func TestWorkspaceNoDirectoriesFail(t *testing.T) {
+	// The buf.work must specify at least one directory.
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: testdata/workspace/fail/nodirectories/buf.work has no directories set. Please add "directories: [...]".`,
+		"build",
+		filepath.Join("testdata", "workspace", "fail", "nodirectories"),
+	)
+}
+
+func TestWorkspaceWithWorkspacePathFail(t *testing.T) {
+	// The --path flag cannot match the workspace directory (i.e. root requirements).
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: path "testdata/workspace/success/dir" is equal to the workspace defined in "testdata/workspace/success/dir/buf.work".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+	)
+}
+
+func TestWorkspaceWithWorkspaceDirectoryPathFail(t *testing.T) {
+	// The --path flag cannot match one of the workspace directories (i.e. root requirements).
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: path "testdata/workspace/success/dir/proto" is equal to workspace directory "proto" defined in "testdata/workspace/success/dir/buf.work".`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "dir", "proto"),
+	)
+}
+
+func TestWorkspaceWithInvalidWorkspaceDirectoryPathFail(t *testing.T) {
+	// The --path flag did not reference a file found in either of the
+	// workspace directories.
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: no .proto target files found.`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "dir", "notexist"),
+	)
+}
+
+func TestWorkspaceWithInvalidDirPathFail(t *testing.T) {
+	// The --path flag did not reference a file found outside of
+	// one of the workspace directories.
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: path "notexist" has no matching file in the module.`,
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "detached", "proto"),
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "detached", "proto", "notexist"),
+	)
+}
+
+func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
+	// The --path flag did not reference a file found in the archive.
+	zipDir := createZipFromDir(
+		t,
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"archive.zip",
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: path "notexist" has no matching file in the module.`,
+		"lint",
+		filepath.Join(zipDir, "archive.zip#subdir=proto"),
+		"--path",
+		filepath.Join("proto", "notexist"),
+	)
+}
+
+func TestWorkspaceWithInvalidArchiveAbsolutePathFail(t *testing.T) {
+	// The --path flag did not reference an absolute file patfound in the archive.
+	zipDir := createZipFromDir(
+		t,
+		filepath.Join("testdata", "workspace", "success", "dir"),
+		"archive.zip",
+	)
+	wd, err := osextended.Getwd()
+	require.NoError(t, err)
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		fmt.Sprintf(
+			`Failure: %s/proto/rpc.proto: expected to be relative.`,
+			wd,
+		),
+		"lint",
+		filepath.Join(zipDir, "archive.zip#subdir=proto"),
+		"--path",
+		filepath.Join(wd, "proto", "rpc.proto"),
+	)
+}
+
 func createZipFromDir(t *testing.T, rootPath string, archiveName string) string {
-	t.Helper()
 	zipDir := filepath.Join(os.TempDir(), rootPath)
 	t.Cleanup(
 		func() {

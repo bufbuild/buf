@@ -238,14 +238,160 @@ func TestNewConfigV1Beta1Equal2(t *testing.T) {
 	)
 }
 
+func TestNewConfigV1Success1(t *testing.T) {
+	// https://github.com/bufbuild/buf/issues/56
+	t.Parallel()
+	testNewConfigV1Success(
+		t,
+		[]string{
+			"a",
+			"b",
+		},
+		[]string{},
+	)
+}
+
+func TestNewConfigV1Error1(t *testing.T) {
+	t.Parallel()
+	testNewConfigV1Error(
+		t,
+		[]string{
+			"/a/b",
+		},
+		[]string{},
+	)
+}
+
+func TestNewConfigV1Error2(t *testing.T) {
+	t.Parallel()
+	testNewConfigV1Error(
+		t,
+		[]string{
+			"a/b",
+			"a/b/c",
+		},
+		[]string{},
+	)
+}
+
+func TestNewConfigV1Error3(t *testing.T) {
+	t.Parallel()
+	testNewConfigV1Error(
+		t,
+		[]string{
+			".",
+			"a",
+		},
+		[]string{},
+	)
+}
+
+func TestNewConfigV1Error4(t *testing.T) {
+	t.Parallel()
+	testNewConfigV1Error(
+		t,
+		[]string{
+			"proto/a/c",
+			// error since not a directory
+			"proto/d/1.proto",
+		},
+		[]string{},
+	)
+}
+
+func TestNewConfigV1Error5(t *testing.T) {
+	t.Parallel()
+	testNewConfigV1Error(
+		t,
+		[]string{},
+		[]string{
+			// Duplicate dependency
+			bufmoduletesting.TestModuleReferenceFooBarV1String,
+			bufmoduletesting.TestModuleReferenceFooBarV2String,
+		},
+	)
+}
+
+func TestNewConfigV1Error6(t *testing.T) {
+	t.Parallel()
+	testNewConfigV1Error(
+		t,
+		[]string{},
+		[]string{
+			// Duplicate dependency
+			bufmoduletesting.TestModuleReferenceFooBarV1String,
+			bufmoduletesting.TestModuleReferenceFooBarCommitString,
+		},
+	)
+}
+
+func TestNewConfigV1Error7(t *testing.T) {
+	t.Parallel()
+	testNewConfigV1Error(
+		t,
+		[]string{},
+		[]string{
+			// Duplicate dependency
+			bufmoduletesting.TestModuleReferenceFooBarV1String,
+			bufmoduletesting.TestModuleReferenceFooBarV1String,
+		},
+	)
+}
+
+func TestNewConfigV1Equal1(t *testing.T) {
+	t.Parallel()
+	testNewConfigV1Equal(
+		t,
+		[]string{
+			"a/foob",
+		},
+		[]string{
+			bufmoduletesting.TestModuleReferenceFooBarV1String,
+			bufmoduletesting.TestModuleReferenceFooBazCommitString,
+		},
+		&Config{
+			RootToExcludes: map[string][]string{
+				".": {
+					"a/foob",
+				},
+			},
+			DependencyModuleReferences: testParseDependencyModuleReferences(
+				t,
+				bufmoduletesting.TestModuleReferenceFooBarV1String,
+				bufmoduletesting.TestModuleReferenceFooBazCommitString,
+			),
+		},
+	)
+}
+
+func TestNewConfigV1Equal2(t *testing.T) {
+	t.Parallel()
+	testNewConfigV1Equal(
+		t,
+		[]string{
+			"a/foob",
+			"b/foob",
+			"b/barr",
+		},
+		[]string{},
+		&Config{
+			RootToExcludes: map[string][]string{
+				".": {
+					"a/foob",
+					"b/barr",
+					"b/foob",
+				},
+			},
+		},
+	)
+}
+
 func testNewConfigV1Beta1Success(t *testing.T, roots []string, excludes []string, deps []string) {
-	t.Helper()
 	_, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.NoError(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 }
 
 func testNewConfigV1Beta1Error(t *testing.T, roots []string, excludes []string, deps []string) {
-	t.Helper()
 	_, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.Error(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 }
@@ -257,15 +403,34 @@ func testNewConfigV1Beta1Equal(
 	deps []string,
 	expectedConfig *Config,
 ) {
-	t.Helper()
 	config, err := NewConfigV1Beta1(ExternalConfigV1Beta1{Roots: roots, Excludes: excludes}, deps...)
 	assert.NoError(t, err, fmt.Sprintf("%v %v %v", roots, excludes, deps))
 	assert.Equal(t, expectedConfig, config)
 }
 
+func testNewConfigV1Success(t *testing.T, excludes []string, deps []string) {
+	_, err := NewConfigV1(ExternalConfigV1{Excludes: excludes}, deps...)
+	assert.NoError(t, err, fmt.Sprintf("%v %v", excludes, deps))
+}
+
+func testNewConfigV1Error(t *testing.T, excludes []string, deps []string) {
+	_, err := NewConfigV1(ExternalConfigV1{Excludes: excludes}, deps...)
+	assert.Error(t, err, fmt.Sprintf("%v %v", excludes, deps))
+}
+
+func testNewConfigV1Equal(
+	t *testing.T,
+	excludes []string,
+	deps []string,
+	expectedConfig *Config,
+) {
+	config, err := NewConfigV1(ExternalConfigV1{Excludes: excludes}, deps...)
+	assert.NoError(t, err, fmt.Sprintf("%v %v", excludes, deps))
+	assert.Equal(t, expectedConfig, config)
+}
+
 func testParseDependencyModuleReferences(t *testing.T, deps ...string) []bufmodule.ModuleReference {
-	t.Helper()
-	moduleNames, err := parseDependencyModuleReferences(deps...)
+	moduleReferences, err := parseDependencyModuleReferences(deps...)
 	require.NoError(t, err)
-	return moduleNames
+	return moduleReferences
 }

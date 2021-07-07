@@ -148,7 +148,7 @@ func (a *reader) GetSourceBucket(
 	if !getSourceBucketOptions.workspacesDisabled {
 		getBucketOptions = append(
 			getBucketOptions,
-			internal.WithGetBucketTerminateFileName(bufwork.ExternalConfigV1Beta1FilePath),
+			internal.WithGetBucketTerminateFileName(bufwork.ExternalConfigFilePath),
 		)
 	}
 	return a.internalReader.GetBucket(

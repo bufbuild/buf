@@ -21,7 +21,9 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/internal/buf/buflock"
 	"github.com/bufbuild/buf/internal/pkg/filelock"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -47,8 +49,8 @@ func TestReaderBasic(t *testing.T) {
 	module, err := bufmodule.NewModuleForBucket(ctx, readBucket)
 	require.NoError(t, err)
 
-	readWriteBucket, fileLocker := newTestBucketAndLocker(t)
-	moduleCacher := newModuleCacher(readWriteBucket, fileLocker)
+	delegateDataReadWriteBucket, delegateSumReadWriteBucket, delegateFileLocker := newTestDataSumBucketsAndLocker(t)
+	moduleCacher := newModuleCacher(delegateDataReadWriteBucket, delegateSumReadWriteBucket, delegateFileLocker)
 	err = moduleCacher.PutModule(
 		context.Background(),
 		modulePin,
@@ -56,11 +58,23 @@ func TestReaderBasic(t *testing.T) {
 	)
 	require.NoError(t, err)
 	// the delegate uses the cache we just populated
-	delegateModuleReader := newModuleReader(zap.NewNop(), readWriteBucket, moduleCacher, WithFileLocker(fileLocker))
+	delegateModuleReader := newModuleReader(
+		zap.NewNop(),
+		delegateDataReadWriteBucket,
+		delegateSumReadWriteBucket,
+		moduleCacher,
+		WithFileLocker(delegateFileLocker),
+	)
 
 	// the main does not, so there will be a cache miss
-	mainReadWriteBucket, mainFileLocker := newTestBucketAndLocker(t)
-	moduleReader := newModuleReader(zap.NewNop(), mainReadWriteBucket, delegateModuleReader, WithFileLocker(mainFileLocker))
+	mainDataReadWriteBucket, mainSumReadWriteBucket, mainFileLocker := newTestDataSumBucketsAndLocker(t)
+	moduleReader := newModuleReader(
+		zap.NewNop(),
+		mainDataReadWriteBucket,
+		mainSumReadWriteBucket,
+		delegateModuleReader,
+		WithFileLocker(mainFileLocker),
+	)
 	getModule, err := moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
 	getReadBucketBuilder := storagemem.NewReadBucketBuilder()
@@ -69,7 +83,7 @@ func TestReaderBasic(t *testing.T) {
 	getReadBucket, err := getReadBucketBuilder.ToReadBucket()
 	require.NoError(t, err)
 	// Verify that the buf.lock file was created.
-	exists, err := storage.Exists(ctx, getReadBucket, bufmodule.LockFilePath)
+	exists, err := storage.Exists(ctx, getReadBucket, buflock.ExternalConfigFilePath)
 	require.NoError(t, err)
 	require.True(t, exists)
 
@@ -81,9 +95,69 @@ func TestReaderBasic(t *testing.T) {
 
 	_, err = moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
-
 	require.Equal(t, 2, moduleReader.getCount())
 	require.Equal(t, 1, moduleReader.getCacheHits())
+
+	// put some data that will not match the sum and make sure that we have a cache miss
+	require.NoError(t, storage.PutPath(ctx, mainDataReadWriteBucket, normalpath.Join(newCacheKey(modulePin), "1234.proto"), []byte("foo")))
+	getModule, err = moduleReader.GetModule(ctx, modulePin)
+	require.NoError(t, err)
+	getReadBucketBuilder = storagemem.NewReadBucketBuilder()
+	err = bufmodule.ModuleToBucket(ctx, getModule, getReadBucketBuilder)
+	require.NoError(t, err)
+	getReadBucket, err = getReadBucketBuilder.ToReadBucket()
+	require.NoError(t, err)
+	// Exclude non-proto files for the diff check
+	filteredReadBucket = storage.MapReadBucket(getReadBucket, storage.MatchPathExt(".proto"))
+	diff, err = storage.DiffBytes(ctx, readBucket, filteredReadBucket)
+	require.NoError(t, err)
+	require.Empty(t, string(diff))
+	require.Equal(t, 3, moduleReader.getCount())
+	require.Equal(t, 1, moduleReader.getCacheHits())
+
+	_, err = moduleReader.GetModule(ctx, modulePin)
+	require.NoError(t, err)
+	require.Equal(t, 4, moduleReader.getCount())
+	require.Equal(t, 2, moduleReader.getCacheHits())
+
+	// overwrite the sum file and make sure that we have a cache miss
+	require.NoError(t, storage.PutPath(ctx, mainSumReadWriteBucket, newCacheKey(modulePin), []byte("foo")))
+	getModule, err = moduleReader.GetModule(ctx, modulePin)
+	require.NoError(t, err)
+	getReadBucketBuilder = storagemem.NewReadBucketBuilder()
+	err = bufmodule.ModuleToBucket(ctx, getModule, getReadBucketBuilder)
+	require.NoError(t, err)
+	getReadBucket, err = getReadBucketBuilder.ToReadBucket()
+	require.NoError(t, err)
+	// Exclude non-proto files for the diff check
+	filteredReadBucket = storage.MapReadBucket(getReadBucket, storage.MatchPathExt(".proto"))
+	diff, err = storage.DiffBytes(ctx, readBucket, filteredReadBucket)
+	require.NoError(t, err)
+	require.Empty(t, string(diff))
+	require.Equal(t, 5, moduleReader.getCount())
+	require.Equal(t, 2, moduleReader.getCacheHits())
+
+	_, err = moduleReader.GetModule(ctx, modulePin)
+	require.NoError(t, err)
+	require.Equal(t, 6, moduleReader.getCount())
+	require.Equal(t, 3, moduleReader.getCacheHits())
+
+	// delete the sum file and make sure that we have a cache miss
+	require.NoError(t, mainSumReadWriteBucket.Delete(ctx, newCacheKey(modulePin)))
+	getModule, err = moduleReader.GetModule(ctx, modulePin)
+	require.NoError(t, err)
+	getReadBucketBuilder = storagemem.NewReadBucketBuilder()
+	err = bufmodule.ModuleToBucket(ctx, getModule, getReadBucketBuilder)
+	require.NoError(t, err)
+	getReadBucket, err = getReadBucketBuilder.ToReadBucket()
+	require.NoError(t, err)
+	// Exclude non-proto files for the diff check
+	filteredReadBucket = storage.MapReadBucket(getReadBucket, storage.MatchPathExt(".proto"))
+	diff, err = storage.DiffBytes(ctx, readBucket, filteredReadBucket)
+	require.NoError(t, err)
+	require.Empty(t, string(diff))
+	require.Equal(t, 7, moduleReader.getCount())
+	require.Equal(t, 3, moduleReader.getCacheHits())
 }
 
 func TestCacherBasic(t *testing.T) {
@@ -104,8 +178,8 @@ func TestCacherBasic(t *testing.T) {
 	module, err := bufmodule.NewModuleForBucket(ctx, readBucket)
 	require.NoError(t, err)
 
-	readWriteBucket, fileLocker := newTestBucketAndLocker(t)
-	moduleCacher := newModuleCacher(readWriteBucket, fileLocker)
+	dataReadWriteBucket, sumReadWriteBucket, fileLocker := newTestDataSumBucketsAndLocker(t)
+	moduleCacher := newModuleCacher(dataReadWriteBucket, sumReadWriteBucket, fileLocker)
 	_, err = moduleCacher.GetModule(ctx, modulePin)
 	require.True(t, storage.IsNotExist(err))
 
@@ -123,7 +197,7 @@ func TestCacherBasic(t *testing.T) {
 	require.NoError(t, err)
 	getReadBucket, err := getReadBucketBuilder.ToReadBucket()
 	require.NoError(t, err)
-	exists, err := storage.Exists(ctx, getReadBucket, bufmodule.LockFilePath)
+	exists, err := storage.Exists(ctx, getReadBucket, buflock.ExternalConfigFilePath)
 	require.NoError(t, err)
 	require.True(t, exists)
 }
@@ -137,7 +211,7 @@ func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 		"bar",
 		"v1",
 		bufmoduletesting.TestCommit,
-		bufmoduletesting.TestDigestWithDocumentation,
+		bufmoduletesting.TestDigest,
 		time.Now(),
 	)
 	require.NoError(t, err)
@@ -146,8 +220,8 @@ func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 	module, err := bufmodule.NewModuleForBucket(ctx, readBucket)
 	require.NoError(t, err)
 
-	readWriteBucket, fileLocker := newTestBucketAndLocker(t)
-	moduleCacher := newModuleCacher(readWriteBucket, fileLocker)
+	dataReadWriteBucket, sumReadWriteBucket, fileLocker := newTestDataSumBucketsAndLocker(t)
+	moduleCacher := newModuleCacher(dataReadWriteBucket, sumReadWriteBucket, fileLocker)
 	err = moduleCacher.PutModule(
 		context.Background(),
 		modulePin,
@@ -167,11 +241,13 @@ func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 	require.Equal(t, bufmoduletesting.TestModuleDocumentation, module.Documentation())
 }
 
-func newTestBucketAndLocker(t *testing.T) (storage.ReadWriteBucket, filelock.Locker) {
+func newTestDataSumBucketsAndLocker(t *testing.T) (storage.ReadWriteBucket, storage.ReadWriteBucket, filelock.Locker) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
+	dataReadWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
+	require.NoError(t, err)
+	sumReadWriteBucket, err := storageosProvider.NewReadWriteBucket(t.TempDir())
 	require.NoError(t, err)
 	fileLocker, err := filelock.NewLocker(t.TempDir())
 	require.NoError(t, err)
-	return readWriteBucket, fileLocker
+	return dataReadWriteBucket, sumReadWriteBucket, fileLocker
 }

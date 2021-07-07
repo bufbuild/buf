@@ -29,7 +29,7 @@ func TestModuleDigestB1(t *testing.T) {
 	require.NoError(t, err)
 	module, err := bufmodule.NewModuleForBucket(context.Background(), readBucket)
 	require.NoError(t, err)
-	digest, err := bufmodule.ModuleDigest(context.Background(), module)
+	digest, err := bufmodule.ModuleDigestB1(context.Background(), module)
 	require.NoError(t, err)
 	require.Equal(t, digest, bufmoduletesting.TestDigest)
 }

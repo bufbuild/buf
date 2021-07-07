@@ -31,6 +31,8 @@ type Command struct {
 	// Use is the one-line usage message.
 	// Required.
 	Use string
+	// Aliases are aliases that can be used instead of the first word in Use.
+	Aliases []string
 	// Short is the short message shown in the 'help' output.
 	// Required if Long is set.
 	Short string
@@ -197,6 +199,7 @@ func commandToCobra(
 	}
 	cobraCommand := &cobra.Command{
 		Use:        command.Use,
+		Aliases:    command.Aliases,
 		Args:       command.Args,
 		Deprecated: command.Deprecated,
 		Hidden:     command.Hidden,

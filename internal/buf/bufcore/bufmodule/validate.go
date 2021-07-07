@@ -15,7 +15,6 @@
 package bufmodule
 
 import (
-	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -214,20 +213,6 @@ func ValidateDigest(digest string) error {
 	}
 	if len(decoded) != 32 {
 		return fmt.Errorf("invalid sha256 hash, expected 32 bytes: %s", digestValue)
-	}
-	return nil
-}
-
-// ValidateModuleMatchesDigest validates that the Module matches the digest.
-//
-// This is just a convenience function.
-func ValidateModuleMatchesDigest(ctx context.Context, module Module, modulePin ModulePin) error {
-	digest, err := ModuleDigest(ctx, module)
-	if err != nil {
-		return err
-	}
-	if digest != modulePin.Digest() {
-		return fmt.Errorf("mismatched module digest for %q: expected: %q got: %q", modulePin.IdentityString(), modulePin.Digest(), digest)
 	}
 	return nil
 }

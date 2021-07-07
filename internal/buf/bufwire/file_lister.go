@@ -96,7 +96,7 @@ func (e *fileLister) ListFiles(
 		defer func() {
 			retErr = multierr.Append(retErr, readBucketCloser.Close())
 		}()
-		exists, err := storage.Exists(ctx, readBucketCloser, bufwork.ExternalConfigV1Beta1FilePath)
+		exists, err := bufwork.ConfigExists(ctx, readBucketCloser)
 		if err != nil {
 			return nil, err
 		}

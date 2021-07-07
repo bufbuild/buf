@@ -42,8 +42,8 @@ message Image {
 // and not by protoc, and so that we can add fields in a freeform manner
 // without worrying about conflicts with google.protobuf.FileDescriptorSet.
 message ImageExtension {
-  reserved 2;
-  reserved "module_reference_refs";
+  reserved 2, 3;
+  reserved "module_reference_refs", "module_commit_refs";
 
   // image_import_refs are the image import references for this specific Image.
   //
@@ -51,11 +51,11 @@ message ImageExtension {
   // the image context, so this information is not stored on each FileDescriptorProto.
   repeated ImageImportRef image_import_refs = 1;
 
-  // ModuleCommitRefs are the module commit commits for this specific Image.
+  // ModuleRefs are the module references for this specific Image.
   //
-  // The lack of a ModuleCommitRef for a given file means that the module
-  // commit information is not known, and must be treated as unknown.
-  repeated ModuleCommitRef module_commit_refs = 3;
+  // The lack of a ModuleRef for a given file means that the module
+  // reference information is not known, and must be treated as unknown.
+  repeated ModuleRef module_refs = 4;
 }
 
 // ImageImportRef is a reference to an image import.
@@ -71,8 +71,8 @@ message ImageImportRef {
   optional uint32 file_index = 1;
 }
 
-// ModuleCommitRef is a commit to a module commit.
-message ModuleCommitRef {
+// ModuleRef is a reference to a module.
+message ModuleRef {
   // file_index is the index within the Image file array.
   //
   // This signifies that file[file_index] is the file that
@@ -83,5 +83,7 @@ message ModuleCommitRef {
   optional string remote = 2;
   optional string owner = 3;
   optional string repository = 4;
+
+  // Optional
   optional string commit = 5;
 }

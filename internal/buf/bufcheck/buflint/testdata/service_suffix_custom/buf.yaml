@@ -1,5 +1,0 @@
-version: v1beta1
-lint:
-  use:
-    - SERVICE_SUFFIX
-  service_suffix: API

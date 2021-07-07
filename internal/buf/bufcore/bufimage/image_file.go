@@ -31,7 +31,8 @@ type imageFile struct {
 
 func newImageFile(
 	fileDescriptorProto *descriptorpb.FileDescriptorProto,
-	moduleCommit bufmodule.ModuleCommit,
+	moduleIdentity bufmodule.ModuleIdentity,
+	commit string,
 	externalPath string,
 	isImport bool,
 ) (*imageFile, error) {
@@ -47,7 +48,7 @@ func newImageFile(
 		return nil, err
 	}
 	return &imageFile{
-		FileInfo:            bufmodule.NewFileInfo(coreFileInfo, moduleCommit),
+		FileInfo:            bufmodule.NewFileInfo(coreFileInfo, moduleIdentity, commit),
 		fileDescriptorProto: fileDescriptorProto,
 	}, nil
 }
@@ -62,7 +63,11 @@ func (f *imageFile) ImportPaths() []string {
 
 func (f *imageFile) withIsImport(isImport bool) ImageFile {
 	return &imageFile{
-		FileInfo:            bufmodule.NewFileInfo(f.FileInfo.WithIsImport(isImport), f.FileInfo.ModuleCommit()),
+		FileInfo: bufmodule.NewFileInfo(
+			f.FileInfo.WithIsImport(isImport),
+			f.FileInfo.ModuleIdentity(),
+			f.FileInfo.Commit(),
+		),
 		fileDescriptorProto: f.fileDescriptorProto,
 	}
 }

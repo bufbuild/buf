@@ -1,4 +1,0 @@
-version: v1beta1
-lint:
-  use:
-    - FILE_LOWER_SNAKE_CASE
