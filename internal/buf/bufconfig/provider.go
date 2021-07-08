@@ -114,6 +114,7 @@ func (p *provider) getConfigForData(
 		}
 		return p.newConfigV1Beta1(externalConfigV1Beta1)
 	case V1Version:
+		p.logger.Sugar().Warnf(`%s uses version %s which is in beta. The shape, lint rules, and breaking rules of %s may change in the next month before %s is released.`, id, V1Version, V1Version, V1Version)
 		var externalConfigV1 ExternalConfigV1
 		if err := unmarshalStrict(data, &externalConfigV1); err != nil {
 			return nil, err
