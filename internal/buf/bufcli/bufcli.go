@@ -49,7 +49,7 @@ import (
 
 const (
 	// Version is the version of buf.
-	Version = "0.44.0-dev"
+	Version = "0.44.0"
 	// VersionHeaderName is the name of the header carrying the bufcli version.
 	VersionHeaderName = "buf-version"
 
