@@ -1431,7 +1431,12 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 			}
 		},
 		stdin,
-		args...,
+		// we do not want warnings to be part of our stderr test calculation
+		append(
+			args,
+			"--log-level",
+			"error",
+		)...,
 	)
 }
 
