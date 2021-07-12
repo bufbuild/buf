@@ -53,7 +53,8 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 		readObjectCloser, err = readBucket.Get(ctx, ExternalConfigV1Beta1FilePath)
 		if err != nil {
 			if storage.IsNotExist(err) {
-				return p.newConfigV1(ExternalConfigV1{})
+				// TODO: change to V1 when we make V1 the default
+				return p.newConfigV1Beta1(ExternalConfigV1Beta1{})
 			}
 			return nil, err
 		}

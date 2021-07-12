@@ -16,6 +16,7 @@ package configlslintrules
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
@@ -29,9 +30,10 @@ import (
 )
 
 const (
-	allFlagName    = "all"
-	configFlagName = "config"
-	formatFlagName = "format"
+	allFlagName     = "all"
+	configFlagName  = "config"
+	formatFlagName  = "format"
+	versionFlagName = "version"
 )
 
 // NewCommand returns a new Command.
@@ -58,9 +60,10 @@ func NewCommand(
 }
 
 type flags struct {
-	All    bool
-	Config string
-	Format string
+	All     bool
+	Config  string
+	Format  string
+	Version string
 }
 
 func newFlags() *flags {
@@ -69,8 +72,9 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	configinternal.BindLSRulesAll(flagSet, &f.All, allFlagName)
-	configinternal.BindLSRulesConfig(flagSet, &f.Config, configFlagName, allFlagName)
+	configinternal.BindLSRulesConfig(flagSet, &f.Config, configFlagName, allFlagName, versionFlagName)
 	configinternal.BindLSRulesFormat(flagSet, &f.Format, formatFlagName)
+	configinternal.BindLSRulesVersion(flagSet, &f.Version, versionFlagName, allFlagName)
 }
 
 func run(
@@ -78,6 +82,18 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	if flags.All {
+		// We explicitly document that if all is set, config is ignored.
+		// If a user wants to override the version while using all, they should use version.
+		flags.Config = ""
+	}
+	if flags.Version != "" {
+		// If version is set, all is implied, and we use the config override to specify the
+		// version that bufconfig.ReadConfig will return.
+		flags.All = true
+		// This also results in config being ignored per the documentation.
+		flags.Config = fmt.Sprintf(`{"version":"%s"}`, flags.Version)
+	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		".",

@@ -48,6 +48,7 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 		[]*modulev1alpha1.ModuleReference{
 			bufmodule.NewProtoModuleReferenceForModuleReference(moduleReference),
 		},
+		nil,
 	)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {

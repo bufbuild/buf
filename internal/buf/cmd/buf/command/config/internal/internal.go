@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
+	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
@@ -33,14 +34,15 @@ func BindLSRulesAll(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 }
 
 // BindLSRulesConfig binds the config flag for an ls rules command.
-func BindLSRulesConfig(flagSet *pflag.FlagSet, addr *string, flagName string, allFlagName string) {
+func BindLSRulesConfig(flagSet *pflag.FlagSet, addr *string, flagName string, allFlagName string, versionFlagName string) {
 	flagSet.StringVar(
 		addr,
 		flagName,
 		"",
 		fmt.Sprintf(
-			`The config file or data to use. If --%s is specified, this is ignored.`,
+			`The config file or data to use. If --%s or --%s are specified, this is ignored.`,
 			allFlagName,
+			versionFlagName,
 		),
 	)
 }
@@ -54,6 +56,20 @@ func BindLSRulesFormat(flagSet *pflag.FlagSet, addr *string, flagName string) {
 		fmt.Sprintf(
 			"The format to print rules as. Must be one of %s.",
 			stringutil.SliceToString(bufcheck.AllRuleFormatStrings),
+		),
+	)
+}
+
+// BindLSRulesVersion binds the version flag for an ls rules command.
+func BindLSRulesVersion(flagSet *pflag.FlagSet, addr *string, flagName string, allFlagName string) {
+	flagSet.StringVar(
+		addr,
+		flagName,
+		"",
+		fmt.Sprintf(
+			"List all the rules for the given configuration version. Implies --%s. Must be one of %s.",
+			allFlagName,
+			stringutil.SliceToString(bufconfig.AllVersions),
 		),
 	)
 }

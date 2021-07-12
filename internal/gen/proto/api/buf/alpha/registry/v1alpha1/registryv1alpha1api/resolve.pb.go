@@ -32,5 +32,9 @@ type ResolveService interface {
 	// to make sure this function can do dependency resolution.
 	//
 	// This function also deals with tiebreaking what ModulePin wins for the same repository.
-	GetModulePins(ctx context.Context, moduleReferences []*v1alpha1.ModuleReference) (modulePins []*v1alpha1.ModulePin, err error)
+	GetModulePins(
+		ctx context.Context,
+		moduleReferences []*v1alpha1.ModuleReference,
+		currentModulePins []*v1alpha1.ModulePin,
+	) (modulePins []*v1alpha1.ModulePin, err error)
 }

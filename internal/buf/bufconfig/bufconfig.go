@@ -40,6 +40,14 @@ const (
 	V1Beta1Version = "v1beta1"
 )
 
+var (
+	// All versions are all the versions in order.
+	AllVersions = []string{
+		V1Beta1Version,
+		V1Version,
+	}
+)
+
 // Config is the user config.
 type Config struct {
 	Version        string
