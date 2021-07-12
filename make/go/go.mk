@@ -52,7 +52,7 @@ shortall:
 .PHONY: ci
 ci:
 	@$(MAKE) lint
-	@$(MAKE) testrace
+	@$(MAKE) test
 
 .PHONY: upgradegodeps
 upgradegodeps:

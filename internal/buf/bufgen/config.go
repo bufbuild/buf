@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
@@ -132,24 +131,9 @@ func newConfigV1(externalConfig ExternalConfigV1, id string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		var opt string
-		switch t := plugin.Opt.(type) {
-		case string:
-			opt = t
-		case []interface{}:
-			opts := make([]string, len(t))
-			for i, elem := range t {
-				s, ok := elem.(string)
-				if !ok {
-					return nil, fmt.Errorf("%s: could not convert opt element %T to a string", id, elem)
-				}
-				opts[i] = s
-			}
-			opt = strings.Join(opts, ",")
-		case nil:
-			// If opt is omitted, plugin.Opt is nil
-		default:
-			return nil, fmt.Errorf("%s: unknown type %T for opt", id, t)
+		opt, err := encoding.InterfaceSliceOrStringToCommaSepString(plugin.Opt)
+		if err != nil {
+			return nil, err
 		}
 		pluginConfigs = append(
 			pluginConfigs,
@@ -271,24 +255,9 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, id string) (*Config,
 		if err != nil {
 			return nil, err
 		}
-		var opt string
-		switch t := plugin.Opt.(type) {
-		case string:
-			opt = t
-		case []interface{}:
-			opts := make([]string, len(t))
-			for i, elem := range t {
-				s, ok := elem.(string)
-				if !ok {
-					return nil, fmt.Errorf("%s: could not convert opt element %T to a string", id, elem)
-				}
-				opts[i] = s
-			}
-			opt = strings.Join(opts, ",")
-		case nil:
-			// If opt is omitted, plugin.Opt is nil
-		default:
-			return nil, fmt.Errorf("%s: unknown type %T for opt", id, t)
+		opt, err := encoding.InterfaceSliceOrStringToCommaSepString(plugin.Opt)
+		if err != nil {
+			return nil, err
 		}
 		pluginConfigs = append(
 			pluginConfigs,

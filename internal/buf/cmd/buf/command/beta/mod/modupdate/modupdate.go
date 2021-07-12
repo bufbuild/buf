@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/buflock"
+	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/rpc"
@@ -32,6 +33,7 @@ import (
 
 const (
 	dirFlagName   = "dir"
+	onlyFlagName  = "only"
 	defaultRemote = "buf.build"
 )
 
@@ -63,6 +65,8 @@ func NewCommand(
 type flags struct {
 	// for testing only
 	Dir string
+
+	Only []string
 }
 
 func newFlags() *flags {
@@ -70,6 +74,12 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.StringSliceVar(
+		&f.Only,
+		onlyFlagName,
+		nil,
+		"The name of a dependency to update. When used, only this dependency (and possibly its dependencies) will be updated. May be passed multiple times.",
+	)
 	flagSet.StringVar(
 		&f.Dir,
 		dirFlagName,
@@ -121,10 +131,31 @@ func run(
 		if err != nil {
 			return err
 		}
-		protoDependencyModuleReferences := bufmodule.NewProtoModuleReferencesForModuleReferences(
-			moduleConfig.Build.DependencyModuleReferences...,
-		)
-		protoDependencyModulePins, err := service.GetModulePins(ctx, protoDependencyModuleReferences)
+		var protoDependencyModuleReferences []*modulev1alpha1.ModuleReference
+		var currentModulePins []*modulev1alpha1.ModulePin
+		if len(flags.Only) > 0 {
+			referencesByIdentity := map[string]bufmodule.ModuleReference{}
+			for _, reference := range moduleConfig.Build.DependencyModuleReferences {
+				referencesByIdentity[reference.IdentityString()] = reference
+			}
+			for _, only := range flags.Only {
+				moduleReference, ok := referencesByIdentity[only]
+				if !ok {
+					return fmt.Errorf("%q is not a valid --only input: no such dependency in current module deps", only)
+				}
+				protoDependencyModuleReferences = append(protoDependencyModuleReferences, bufmodule.NewProtoModuleReferenceForModuleReference(moduleReference))
+			}
+			module, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
+			if err != nil {
+				return fmt.Errorf("couldn't read current dependencies: %w", err)
+			}
+			currentModulePins = bufmodule.NewProtoModulePinsForModulePins(module.DependencyModulePins()...)
+		} else {
+			protoDependencyModuleReferences = bufmodule.NewProtoModuleReferencesForModuleReferences(
+				moduleConfig.Build.DependencyModuleReferences...,
+			)
+		}
+		protoDependencyModulePins, err := service.GetModulePins(ctx, protoDependencyModuleReferences, currentModulePins)
 		if err != nil {
 			if rpc.GetErrorCode(err) == rpc.ErrorCodeUnimplemented && remote != defaultRemote {
 				return fmt.Errorf("%w. Are you sure %q (derived from module name %q) is a Buf Schema Registry?", err, remote, moduleConfig.ModuleIdentity.IdentityString())
