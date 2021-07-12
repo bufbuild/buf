@@ -617,7 +617,8 @@ RPC_NO_SERVER_STREAMING           UNARY_RPC                Checks that RPCs are 
 		expectedStdout,
 		"check",
 		"ls-lint-checkers",
-		"--all",
+		"--version",
+		"v1",
 	)
 	testRunStdout(
 		t,
@@ -626,7 +627,8 @@ RPC_NO_SERVER_STREAMING           UNARY_RPC                Checks that RPCs are 
 		expectedStdout,
 		"config",
 		"ls-lint-rules",
-		"--all",
+		"--version",
+		"v1",
 	)
 }
 
@@ -702,8 +704,6 @@ ENUM_FIRST_VALUE_ZERO             OTHER                                       Ch
 		"config",
 		"ls-lint-rules",
 		"--all",
-		"--config",
-		`{"version": "v1beta1"}`,
 	)
 }
 
@@ -774,7 +774,8 @@ FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 
 		expectedStdout,
 		"check",
 		"ls-breaking-checkers",
-		"--all",
+		"--version",
+		"v1",
 	)
 	testRunStdout(
 		t,
@@ -783,7 +784,8 @@ FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 
 		expectedStdout,
 		"config",
 		"ls-breaking-rules",
-		"--all",
+		"--version",
+		"v1",
 	)
 }
 
@@ -891,9 +893,8 @@ FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 
 		expectedStdout,
 		"check",
 		"ls-breaking-checkers",
-		"--all",
-		"--config",
-		`{"version": "v1beta1"}`,
+		"--version",
+		"v1beta1",
 	)
 	testRunStdout(
 		t,
@@ -902,9 +903,8 @@ FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 
 		expectedStdout,
 		"config",
 		"ls-breaking-rules",
-		"--all",
-		"--config",
-		`{"version": "v1beta1"}`,
+		"--version",
+		"v1beta1",
 	)
 }
 

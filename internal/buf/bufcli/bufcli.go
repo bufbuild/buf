@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/buftransport"
 	"github.com/bufbuild/buf/internal/buf/bufwire"
 	"github.com/bufbuild/buf/internal/buf/bufwork"
+	"github.com/bufbuild/buf/internal/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/internal/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
@@ -40,7 +41,6 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/netrc"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/rpc"
 	"github.com/bufbuild/buf/internal/pkg/rpc/rpcauth"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/spf13/pflag"
@@ -48,10 +48,8 @@ import (
 )
 
 const (
-	// Version is the version of buf.
+	// Version is the CLI version of buf.
 	Version = "0.45.0-dev"
-	// VersionHeaderName is the name of the header carrying the bufcli version.
-	VersionHeaderName = "buf-version"
 
 	// FlagDeprecationMessageSuffix is the suffix for flag deprecation messages.
 	FlagDeprecationMessageSuffix = `
@@ -500,9 +498,8 @@ func NewContextModifierProvider(
 		}
 		return func(ctx context.Context) context.Context {
 			return rpcauth.WithToken(
-				rpc.WithOutgoingHeader(
+				bufrpc.WithOutgoingCLIVersionHeader(
 					ctx,
-					VersionHeaderName,
 					Version,
 				),
 				password,

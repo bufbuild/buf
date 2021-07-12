@@ -36,14 +36,19 @@ type resolveService struct {
 // to make sure this function can do dependency resolution.
 //
 // This function also deals with tiebreaking what ModulePin wins for the same repository.
-func (s *resolveService) GetModulePins(ctx context.Context, moduleReferences []*v1alpha11.ModuleReference) (modulePins []*v1alpha11.ModulePin, _ error) {
+func (s *resolveService) GetModulePins(
+	ctx context.Context,
+	moduleReferences []*v1alpha11.ModuleReference,
+	currentModulePins []*v1alpha11.ModulePin,
+) (modulePins []*v1alpha11.ModulePin, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
 	response, err := s.client.GetModulePins(
 		ctx,
 		&v1alpha1.GetModulePinsRequest{
-			ModuleReferences: moduleReferences,
+			ModuleReferences:  moduleReferences,
+			CurrentModulePins: currentModulePins,
 		},
 	)
 	if err != nil {

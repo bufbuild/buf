@@ -77,7 +77,6 @@ func (p *repositoryTagPrinter) printRepositoryTagsText(outputRepositoryTags []ou
 		func(tabWriter TabWriter) error {
 			for _, outputRepositoryTag := range outputRepositoryTags {
 				if err := tabWriter.Write(
-					outputRepositoryTag.ID,
 					outputRepositoryTag.Name,
 					outputRepositoryTag.Commit,
 					outputRepositoryTag.CreateTime.Format(time.RFC3339),

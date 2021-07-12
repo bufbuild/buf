@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"go.uber.org/multierr"
 	"gopkg.in/yaml.v3"
@@ -161,4 +162,31 @@ func NewYAMLDecoderStrict(reader io.Reader) *yaml.Decoder {
 // NewYAMLDecoderNonStrict creates a new YAML decoder from the reader.
 func NewYAMLDecoderNonStrict(reader io.Reader) *yaml.Decoder {
 	return yaml.NewDecoder(reader)
+}
+
+// InterfaceSliceOrStringToCommaSepString parses the input as a
+// slice or string into a comma separated string. This is commonly
+// used with JSON or YAML fields that need to support both string slices
+// and string literals.
+func InterfaceSliceOrStringToCommaSepString(in interface{}) (string, error) {
+	var opt string
+	switch t := in.(type) {
+	case string:
+		opt = t
+	case []interface{}:
+		opts := make([]string, len(t))
+		for i, elem := range t {
+			s, ok := elem.(string)
+			if !ok {
+				return "", fmt.Errorf("could not convert element %T to a string", elem)
+			}
+			opts[i] = s
+		}
+		opt = strings.Join(opts, ",")
+	case nil:
+		// If the variable is omitted, the value is nil
+	default:
+		return "", fmt.Errorf("unknown type %T for opt", t)
+	}
+	return opt, nil
 }

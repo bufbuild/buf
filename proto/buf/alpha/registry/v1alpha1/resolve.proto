@@ -38,6 +38,18 @@ service ResolveService {
 
 message GetModulePinsRequest {
   repeated buf.alpha.module.v1alpha1.ModuleReference module_references = 1;
+
+  // current_module_pins allows for partial depenency updates by letting clients
+  // send a request with the pins for their current module and only the
+  // identities of the dependencies they want to update in module_references.
+  //
+  // When resolving, if a client supplied module pin is:
+  // - in the transitive closure of pins resolved from the module_references,
+  //   the client supplied module pin will be an extra candidate for tie
+  //   breaking.
+  // - NOT in the in the transitive closure of pins resolved from the
+  //   module_references, it will be returned as is.
+  repeated buf.alpha.module.v1alpha1.ModulePin current_module_pins = 2;
 }
 
 message GetModulePinsResponse {
