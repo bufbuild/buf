@@ -107,12 +107,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			buffetch.ImageFormatsString,
 		),
 	)
+	_ = cobra.MarkFlagRequired(flagSet, outputFlagName)
 }
 
 func run(ctx context.Context, container appflag.Container, flags *flags) (retErr error) {
-	if flags.Output == "" {
-		return bufcli.NewFlagIsRequiredError(outputFlagName)
-	}
 	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
 		flags.Paths,
 		pathsFlagName,

@@ -679,6 +679,14 @@ func TestRunServiceSuffixCustom(t *testing.T) {
 	)
 }
 
+func TestRunSyntaxSpecified(t *testing.T) {
+	testLint(
+		t,
+		"syntax_specified",
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "a/a.proto", "SYNTAX_SPECIFIED"),
+	)
+}
+
 func TestRunIgnores1(t *testing.T) {
 	testLint(
 		t,

@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/pkg/diff"
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -75,9 +76,7 @@ func GetProtocFileDescriptorSet(
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(data, firstFileDescriptorSet); err != nil {
 		return nil, err
 	}
-	resolver, err := protoencoding.NewResolver(
-		firstFileDescriptorSet.File...,
-	)
+	resolver, err := protoencoding.NewResolver(protodescriptor.FileDescriptorsForFileDescriptorSet(firstFileDescriptorSet)...)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +183,7 @@ func DiffFileDescriptorSetsJSON(
 	oneName string,
 	twoName string,
 ) (string, error) {
-	oneResolver, err := protoencoding.NewResolver(one.File...)
+	oneResolver, err := protoencoding.NewResolver(protodescriptor.FileDescriptorsForFileDescriptorSet(one)...)
 	if err != nil {
 		return "", err
 	}
@@ -192,7 +191,7 @@ func DiffFileDescriptorSetsJSON(
 	if err != nil {
 		return "", err
 	}
-	twoResolver, err := protoencoding.NewResolver(two.File...)
+	twoResolver, err := protoencoding.NewResolver(protodescriptor.FileDescriptorsForFileDescriptorSet(two)...)
 	if err != nil {
 		return "", err
 	}

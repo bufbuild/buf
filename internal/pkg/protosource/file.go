@@ -17,6 +17,7 @@ package protosource
 import (
 	"fmt"
 
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -24,13 +25,13 @@ type file struct {
 	FileInfo
 	descriptor
 
-	fileDescriptorProto *descriptorpb.FileDescriptorProto
-	syntax              Syntax
-	fileImports         []FileImport
-	messages            []Message
-	enums               []Enum
-	services            []Service
-	optimizeMode        FileOptionsOptimizeMode
+	fileDescriptor protodescriptor.FileDescriptor
+	syntax         Syntax
+	fileImports    []FileImport
+	messages       []Message
+	enums          []Enum
+	services       []Service
+	optimizeMode   FileOptionsOptimizeMode
 }
 
 func (f *file) Syntax() Syntax {
@@ -38,7 +39,7 @@ func (f *file) Syntax() Syntax {
 }
 
 func (f *file) Package() string {
-	return f.fileDescriptorProto.GetPackage()
+	return f.fileDescriptor.GetPackage()
 }
 
 func (f *file) FileImports() []FileImport {
@@ -58,51 +59,51 @@ func (f *file) Services() []Service {
 }
 
 func (f *file) CsharpNamespace() string {
-	return f.fileDescriptorProto.GetOptions().GetCsharpNamespace()
+	return f.fileDescriptor.GetOptions().GetCsharpNamespace()
 }
 
 func (f *file) GoPackage() string {
-	return f.fileDescriptorProto.GetOptions().GetGoPackage()
+	return f.fileDescriptor.GetOptions().GetGoPackage()
 }
 
 func (f *file) JavaMultipleFiles() bool {
-	return f.fileDescriptorProto.GetOptions().GetJavaMultipleFiles()
+	return f.fileDescriptor.GetOptions().GetJavaMultipleFiles()
 }
 
 func (f *file) JavaOuterClassname() string {
-	return f.fileDescriptorProto.GetOptions().GetJavaOuterClassname()
+	return f.fileDescriptor.GetOptions().GetJavaOuterClassname()
 }
 
 func (f *file) JavaPackage() string {
-	return f.fileDescriptorProto.GetOptions().GetJavaPackage()
+	return f.fileDescriptor.GetOptions().GetJavaPackage()
 }
 
 func (f *file) JavaStringCheckUtf8() bool {
-	return f.fileDescriptorProto.GetOptions().GetJavaStringCheckUtf8()
+	return f.fileDescriptor.GetOptions().GetJavaStringCheckUtf8()
 }
 
 func (f *file) ObjcClassPrefix() string {
-	return f.fileDescriptorProto.GetOptions().GetObjcClassPrefix()
+	return f.fileDescriptor.GetOptions().GetObjcClassPrefix()
 }
 
 func (f *file) PhpClassPrefix() string {
-	return f.fileDescriptorProto.GetOptions().GetPhpClassPrefix()
+	return f.fileDescriptor.GetOptions().GetPhpClassPrefix()
 }
 
 func (f *file) PhpNamespace() string {
-	return f.fileDescriptorProto.GetOptions().GetPhpNamespace()
+	return f.fileDescriptor.GetOptions().GetPhpNamespace()
 }
 
 func (f *file) PhpMetadataNamespace() string {
-	return f.fileDescriptorProto.GetOptions().GetPhpMetadataNamespace()
+	return f.fileDescriptor.GetOptions().GetPhpMetadataNamespace()
 }
 
 func (f *file) RubyPackage() string {
-	return f.fileDescriptorProto.GetOptions().GetRubyPackage()
+	return f.fileDescriptor.GetOptions().GetRubyPackage()
 }
 
 func (f *file) SwiftPrefix() string {
-	return f.fileDescriptorProto.GetOptions().GetSwiftPrefix()
+	return f.fileDescriptor.GetOptions().GetSwiftPrefix()
 }
 
 func (f *file) OptimizeFor() FileOptionsOptimizeMode {
@@ -110,23 +111,23 @@ func (f *file) OptimizeFor() FileOptionsOptimizeMode {
 }
 
 func (f *file) CcGenericServices() bool {
-	return f.fileDescriptorProto.GetOptions().GetCcGenericServices()
+	return f.fileDescriptor.GetOptions().GetCcGenericServices()
 }
 
 func (f *file) JavaGenericServices() bool {
-	return f.fileDescriptorProto.GetOptions().GetJavaGenericServices()
+	return f.fileDescriptor.GetOptions().GetJavaGenericServices()
 }
 
 func (f *file) PyGenericServices() bool {
-	return f.fileDescriptorProto.GetOptions().GetPyGenericServices()
+	return f.fileDescriptor.GetOptions().GetPyGenericServices()
 }
 
 func (f *file) PhpGenericServices() bool {
-	return f.fileDescriptorProto.GetOptions().GetPhpGenericServices()
+	return f.fileDescriptor.GetOptions().GetPhpGenericServices()
 }
 
 func (f *file) CcEnableArenas() bool {
-	return f.fileDescriptorProto.GetOptions().GetCcEnableArenas()
+	return f.fileDescriptor.GetOptions().GetCcEnableArenas()
 }
 
 func (f *file) PackageLocation() Location {
@@ -213,25 +214,32 @@ func (f *file) SyntaxLocation() Location {
 // does no duplicate checking by name - could just have maps ie importToFileImport, enumNameToEnum, etc
 func newFile(inputFile InputFile) (*file, error) {
 	f := &file{
-		FileInfo:            inputFile,
-		fileDescriptorProto: inputFile.Proto(),
+		FileInfo:       inputFile,
+		fileDescriptor: inputFile.FileDescriptor(),
 	}
 	descriptor := newDescriptor(
 		f,
-		newLocationStore(f.fileDescriptorProto.GetSourceCodeInfo().GetLocation()),
+		newLocationStore(f.fileDescriptor.GetSourceCodeInfo().GetLocation()),
 	)
 	f.descriptor = descriptor
 
-	syntaxString := f.fileDescriptorProto.GetSyntax()
-	if syntaxString == "" || syntaxString == "proto2" {
-		f.syntax = SyntaxProto2
-	} else if syntaxString == "proto3" {
-		f.syntax = SyntaxProto3
+	if inputFile.IsSyntaxUnspecified() {
+		f.syntax = SyntaxUnspecified
 	} else {
-		return nil, fmt.Errorf("unknown syntax: %q", syntaxString)
+		switch syntaxString := f.fileDescriptor.GetSyntax(); syntaxString {
+		// if the syntax is "proto2", protoc and buf will not set the syntax
+		// field even if it was explicitly set, this is why we have
+		// IsSyntaxUnspecified
+		case "", "proto2":
+			f.syntax = SyntaxProto2
+		case "proto3":
+			f.syntax = SyntaxProto3
+		default:
+			return nil, fmt.Errorf("unknown syntax: %q", syntaxString)
+		}
 	}
 
-	for dependencyIndex, dependency := range f.fileDescriptorProto.GetDependency() {
+	for dependencyIndex, dependency := range f.fileDescriptor.GetDependency() {
 		fileImport, err := newFileImport(
 			f.descriptor,
 			dependency,
@@ -242,8 +250,8 @@ func newFile(inputFile InputFile) (*file, error) {
 		}
 		f.fileImports = append(f.fileImports, fileImport)
 	}
-	for _, dependencyIndex := range f.fileDescriptorProto.GetPublicDependency() {
-		if len(f.fileImports) <= int(dependencyIndex) {
+	for _, dependencyIndex := range f.fileDescriptor.GetPublicDependency() {
+		if int(dependencyIndex) < 0 || len(f.fileImports) <= int(dependencyIndex) {
 			return nil, fmt.Errorf("got dependency index of %d but length of imports is %d", dependencyIndex, len(f.fileImports))
 		}
 		fileImport, ok := f.fileImports[dependencyIndex].(*fileImport)
@@ -252,8 +260,8 @@ func newFile(inputFile InputFile) (*file, error) {
 		}
 		fileImport.setIsPublic()
 	}
-	for _, dependencyIndex := range f.fileDescriptorProto.GetWeakDependency() {
-		if len(f.fileImports) <= int(dependencyIndex) {
+	for _, dependencyIndex := range f.fileDescriptor.GetWeakDependency() {
+		if int(dependencyIndex) < 0 || len(f.fileImports) <= int(dependencyIndex) {
 			return nil, fmt.Errorf("got dependency index of %d but length of imports is %d", dependencyIndex, len(f.fileImports))
 		}
 		fileImport, ok := f.fileImports[dependencyIndex].(*fileImport)
@@ -262,7 +270,17 @@ func newFile(inputFile InputFile) (*file, error) {
 		}
 		fileImport.setIsWeak()
 	}
-	for enumIndex, enumDescriptorProto := range f.fileDescriptorProto.GetEnumType() {
+	for _, dependencyIndex := range inputFile.UnusedDependencyIndexes() {
+		if int(dependencyIndex) < 0 || len(f.fileImports) <= int(dependencyIndex) {
+			return nil, fmt.Errorf("got dependency index of %d but length of imports is %d", dependencyIndex, len(f.fileImports))
+		}
+		fileImport, ok := f.fileImports[dependencyIndex].(*fileImport)
+		if !ok {
+			return nil, fmt.Errorf("could not cast %T to a *fileImport", f.fileImports[dependencyIndex])
+		}
+		fileImport.setIsUnused()
+	}
+	for enumIndex, enumDescriptorProto := range f.fileDescriptor.GetEnumType() {
 		enum, err := f.populateEnum(
 			enumDescriptorProto,
 			enumIndex,
@@ -274,7 +292,7 @@ func newFile(inputFile InputFile) (*file, error) {
 		}
 		f.enums = append(f.enums, enum)
 	}
-	for messageIndex, descriptorProto := range f.fileDescriptorProto.GetMessageType() {
+	for messageIndex, descriptorProto := range f.fileDescriptor.GetMessageType() {
 		message, err := f.populateMessage(
 			descriptorProto,
 			messageIndex,
@@ -287,7 +305,7 @@ func newFile(inputFile InputFile) (*file, error) {
 		}
 		f.messages = append(f.messages, message)
 	}
-	for serviceIndex, serviceDescriptorProto := range f.fileDescriptorProto.GetService() {
+	for serviceIndex, serviceDescriptorProto := range f.fileDescriptor.GetService() {
 		service, err := f.populateService(
 			serviceDescriptorProto,
 			serviceIndex,
@@ -297,7 +315,7 @@ func newFile(inputFile InputFile) (*file, error) {
 		}
 		f.services = append(f.services, service)
 	}
-	optimizeMode, err := getFileOptionsOptimizeMode(f.fileDescriptorProto.GetOptions().GetOptimizeFor())
+	optimizeMode, err := getFileOptionsOptimizeMode(f.fileDescriptor.GetOptions().GetOptimizeFor())
 	if err != nil {
 		return nil, err
 	}

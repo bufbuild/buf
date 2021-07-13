@@ -580,6 +580,7 @@ ENUM_VALUE_UPPER_SNAKE_CASE       BASIC, DEFAULT           Checks that enum valu
 FIELD_LOWER_SNAKE_CASE            BASIC, DEFAULT           Checks that field names are lower_snake_case.
 IMPORT_NO_PUBLIC                  BASIC, DEFAULT           Checks that imports are not public.
 IMPORT_NO_WEAK                    BASIC, DEFAULT           Checks that imports are not weak.
+IMPORT_USED                       BASIC, DEFAULT           Checks that imports are used.
 MESSAGE_PASCAL_CASE               BASIC, DEFAULT           Checks that messages are PascalCase.
 ONEOF_LOWER_SNAKE_CASE            BASIC, DEFAULT           Checks that oneof names are lower_snake_case.
 PACKAGE_LOWER_SNAKE_CASE          BASIC, DEFAULT           Checks that packages are lower_snake.case.
@@ -592,6 +593,7 @@ PACKAGE_SAME_RUBY_PACKAGE         BASIC, DEFAULT           Checks that all files
 PACKAGE_SAME_SWIFT_PREFIX         BASIC, DEFAULT           Checks that all files with a given package have the same value for the swift_prefix option.
 RPC_PASCAL_CASE                   BASIC, DEFAULT           Checks that RPCs are PascalCase.
 SERVICE_PASCAL_CASE               BASIC, DEFAULT           Checks that services are PascalCase.
+SYNTAX_SPECIFIED                  BASIC, DEFAULT           Checks that all files have a syntax specified.
 ENUM_VALUE_PREFIX                 DEFAULT                  Checks that enum values are prefixed with ENUM_NAME_UPPER_SNAKE_CASE.
 ENUM_ZERO_VALUE_SUFFIX            DEFAULT                  Checks that enum zero values are suffixed with _UNSPECIFIED (suffix is configurable).
 FILE_LOWER_SNAKE_CASE             DEFAULT                  Checks that filenames are lower_snake_case.

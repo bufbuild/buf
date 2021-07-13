@@ -82,12 +82,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The name of the generated package.",
 	)
+	_ = cobra.MarkFlagRequired(flagSet, pkgFlagName)
 }
 
 func run(ctx context.Context, container app.Container, flags *flags) error {
-	if flags.Pkg == "" {
-		return newRequiredFlagError(pkgFlagName)
-	}
 	licenseInfos, err := getLicenseInfos(ctx)
 	if err != nil {
 		return err
@@ -198,10 +196,6 @@ func (l *licenseInfo) ID() string {
 	return l.id
 }`)
 	return format.Source(buffer.Bytes())
-}
-
-func newRequiredFlagError(flagName string) error {
-	return appcmd.NewInvalidArgumentErrorf("--%s is required", flagName)
 }
 
 type licenseInfoList struct {

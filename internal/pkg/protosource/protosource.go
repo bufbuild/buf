@@ -31,12 +31,16 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"google.golang.org/protobuf/types/descriptorpb"
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 )
 
 const (
+	// SyntaxUnspecified represents no syntax being specified.
+	//
+	// This is functionally equivalent to SyntaxProto2.
+	SyntaxUnspecified Syntax = iota + 1
 	// SyntaxProto2 represents the proto2 syntax.
-	SyntaxProto2 Syntax = iota + 1
+	SyntaxProto2
 	// SyntaxProto3 represents the proto3 syntax.
 	SyntaxProto3
 )
@@ -47,6 +51,8 @@ type Syntax int
 // String returns the string representation of s
 func (s Syntax) String() string {
 	switch s {
+	case SyntaxUnspecified:
+		return "unspecified"
 	case SyntaxProto2:
 		return "proto2"
 	case SyntaxProto3:
@@ -125,6 +131,13 @@ type Location interface {
 	LeadingDetachedComments() []string
 }
 
+// ModuleIdentity is a module identity.
+type ModuleIdentity interface {
+	Remote() string
+	Owner() string
+	Repository() string
+}
+
 // FileInfo contains Protobuf file info.
 type FileInfo interface {
 	// Path is the path of the file relative to the root it is contained within.
@@ -143,6 +156,18 @@ type FileInfo interface {
 	//   RootDirPath: proto
 	//   ExternalPath: /foo/bar/proto/one/one.proto
 	ExternalPath() string
+	// ModuleIdentity is the module that this file came from.
+	//
+	// Note this *can* be nil if we did not build from a named module.
+	// All code must assume this can be nil.
+	// Note that nil checking should work since the backing type is always a pointer.
+	ModuleIdentity() ModuleIdentity
+	// Commit is the commit for the module that this file came from.
+	//
+	// This will only be set if ModuleIdentity is set, but may not be set
+	// even if ModuleIdentity is set, that is commit is optional information
+	// even if we know what module this file came from.
+	Commit() string
 }
 
 // File is a file descriptor.
@@ -208,6 +233,7 @@ type FileImport interface {
 	Import() string
 	IsPublic() bool
 	IsWeak() bool
+	IsUnused() bool
 }
 
 // TagRange is a tag range from start to end.
@@ -358,26 +384,19 @@ type Method interface {
 // InputFile is an input file for NewFile.
 type InputFile interface {
 	FileInfo
-	// Proto is the backing FileDescriptorProto for this File.
+	// FileDescriptor is the backing FileDescriptor for this File.
 	//
 	// This will never be nil.
-	// The value Path() is equal to Proto.GetName() .
-	// The value ImportPaths() is equal to Proto().GetDependency().
-	Proto() *descriptorpb.FileDescriptorProto
-}
-
-// NewInputFileForProto returns a new InputFile for the given FileDescriptorProto.
-func NewInputFileForProto(fileDescriptorProto *descriptorpb.FileDescriptorProto) InputFile {
-	return newInputFile(fileDescriptorProto)
-}
-
-// NewInputFilesForProtos returns new InputFiles for the given FileDescriptorProtos.
-func NewInputFilesForProtos(fileDescriptorProtos ...*descriptorpb.FileDescriptorProto) []InputFile {
-	inputFiles := make([]InputFile, len(fileDescriptorProtos))
-	for i, fileDescriptorProto := range fileDescriptorProtos {
-		inputFiles[i] = NewInputFileForProto(fileDescriptorProto)
-	}
-	return inputFiles
+	// The value Path() is equal to FileDescriptor().GetName() .
+	FileDescriptor() protodescriptor.FileDescriptor
+	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
+	IsSyntaxUnspecified() bool
+	// UnusedDependencyIndexes returns the indexes of the unused dependencies within
+	// FileDescriptor.GetDependency().
+	//
+	// All indexes will be valid.
+	// Will return nil if empty.
+	UnusedDependencyIndexes() []int32
 }
 
 // NewFile returns a new File.

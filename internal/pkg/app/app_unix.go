@@ -20,6 +20,7 @@
 // was a blocker, see https://github.com/bufbuild/buf/issues/362 and the linked discussions.
 // We still only officially support linux and darwin for buf as a whole.
 
+//go:build aix || darwin || dragonfly || freebsd || (js && wasm) || linux || netbsd || openbsd || solaris
 // +build aix darwin dragonfly freebsd js,wasm linux netbsd openbsd solaris
 
 package app

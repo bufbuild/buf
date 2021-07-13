@@ -21,87 +21,79 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-func TestMergeImages(t *testing.T) {
+func TestMergeImagesWithImports(t *testing.T) {
 	t.Parallel()
-	t.Run("merge with import", func(t *testing.T) {
-		t.Parallel()
-		firstProtoImage := &imagev1.Image{
-			File: []*descriptorpb.FileDescriptorProto{
-				{
-					Syntax:     proto.String("proto3"),
-					Name:       proto.String("a.proto"),
-					Dependency: []string{"b.proto"},
-				},
-				{
-					Syntax: proto.String("proto3"),
-					Name:   proto.String("b.proto"),
-				},
-				{
-					Syntax: proto.String("proto3"),
-					Name:   proto.String("c.proto"),
+	firstProtoImage := &imagev1.Image{
+		File: []*imagev1.ImageFile{
+			{
+				Syntax:     proto.String("proto3"),
+				Name:       proto.String("a.proto"),
+				Dependency: []string{"b.proto"},
+			},
+			{
+				Syntax: proto.String("proto3"),
+				Name:   proto.String("b.proto"),
+				BufExtension: &imagev1.ImageFileExtension{
+					IsImport: proto.Bool(true),
 				},
 			},
-			BufbuildImageExtension: &imagev1.ImageExtension{
-				ImageImportRefs: []*imagev1.ImageImportRef{
-					{
-						FileIndex: proto.Uint32(1),
-					},
-					{
-						FileIndex: proto.Uint32(2),
-					},
+			{
+				Syntax: proto.String("proto3"),
+				Name:   proto.String("c.proto"),
+				BufExtension: &imagev1.ImageFileExtension{
+					IsImport: proto.Bool(true),
 				},
 			},
-		}
-		secondProtoImage := &imagev1.Image{
-			File: []*descriptorpb.FileDescriptorProto{
-				{
-					Syntax: proto.String("proto3"),
-					Name:   proto.String("b.proto"),
-				},
+		},
+	}
+	secondProtoImage := &imagev1.Image{
+		File: []*imagev1.ImageFile{
+			{
+				Syntax: proto.String("proto3"),
+				Name:   proto.String("b.proto"),
 			},
-		}
+		},
+	}
 
-		firstImage, err := NewImageForProto(firstProtoImage)
-		require.NoError(t, err)
-		secondImage, err := NewImageForProto(secondProtoImage)
-		require.NoError(t, err)
-		mergedImage, err := MergeImages(firstImage, secondImage)
-		require.NoError(t, err)
+	firstImage, err := NewImageForProto(firstProtoImage)
+	require.NoError(t, err)
+	secondImage, err := NewImageForProto(secondProtoImage)
+	require.NoError(t, err)
+	mergedImage, err := MergeImages(firstImage, secondImage)
+	require.NoError(t, err)
 
-		imageFiles := mergedImage.Files()
-		require.Len(t, imageFiles, 3)
-		assert.False(t, mergedImage.GetFile("a.proto").IsImport())
-		assert.False(t, mergedImage.GetFile("b.proto").IsImport())
-		assert.True(t, mergedImage.GetFile("c.proto").IsImport())
-	})
+	imageFiles := mergedImage.Files()
+	require.Len(t, imageFiles, 3)
+	assert.False(t, mergedImage.GetFile("a.proto").IsImport())
+	assert.False(t, mergedImage.GetFile("b.proto").IsImport())
+	assert.True(t, mergedImage.GetFile("c.proto").IsImport())
+}
 
-	t.Run("duplicate file", func(t *testing.T) {
-		t.Parallel()
-		firstProtoImage := &imagev1.Image{
-			File: []*descriptorpb.FileDescriptorProto{
-				{
-					Syntax: proto.String("proto3"),
-					Name:   proto.String("a.proto"),
-				},
+func TestMergeImagesWithDuplicateFile(t *testing.T) {
+	t.Parallel()
+	firstProtoImage := &imagev1.Image{
+		File: []*imagev1.ImageFile{
+			{
+				Syntax: proto.String("proto3"),
+				Name:   proto.String("a.proto"),
 			},
-		}
-		secondProtoImage := &imagev1.Image{
-			File: []*descriptorpb.FileDescriptorProto{
-				{
-					Syntax: proto.String("proto3"),
-					Name:   proto.String("a.proto"),
-				},
+		},
+	}
+	secondProtoImage := &imagev1.Image{
+		File: []*imagev1.ImageFile{
+			{
+				Syntax: proto.String("proto3"),
+				Name:   proto.String("a.proto"),
 			},
-		}
+		},
+	}
 
-		firstImage, err := NewImageForProto(firstProtoImage)
-		require.NoError(t, err)
-		secondImage, err := NewImageForProto(secondProtoImage)
-		require.NoError(t, err)
-		_, err = MergeImages(firstImage, secondImage)
-		require.Error(t, err)
-	})
+	firstImage, err := NewImageForProto(firstProtoImage)
+	require.NoError(t, err)
+	secondImage, err := NewImageForProto(secondProtoImage)
+	require.NoError(t, err)
+	_, err = MergeImages(firstImage, secondImage)
+	require.Error(t, err)
 }

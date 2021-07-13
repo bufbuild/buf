@@ -17,7 +17,6 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/api/v1alpha1/api.proto";
-import "buf/alpha/registry/v1alpha1/module.proto";
 import "buf/alpha/module/v1alpha1/module.proto";
 
 // ResolveService is the resolve service.

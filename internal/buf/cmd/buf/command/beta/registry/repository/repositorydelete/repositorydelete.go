@@ -84,7 +84,7 @@ func run(
 		return err
 	}
 	if !flags.Force {
-		if err := bufcli.PromptUserForDelete(container, "repository", container.Arg(0)); err != nil {
+		if err := bufcli.PromptUserForDelete(container, "repository", moduleIdentity.Repository()); err != nil {
 			return err
 		}
 	}

@@ -85,7 +85,7 @@ func run(
 	flags *flags,
 ) error {
 	if flags.Parent == "" {
-		return bufcli.NewFlagIsRequiredError(parentFlagName)
+		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", parentFlagName)
 	}
 	moduleReference, err := bufmodule.ModuleReferenceForString(
 		container.Arg(0),

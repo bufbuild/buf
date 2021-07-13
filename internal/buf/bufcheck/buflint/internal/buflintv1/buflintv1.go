@@ -24,6 +24,9 @@ import "github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 
 // VersionSpec is the version specification for v1.
 //
+// The SYNTAX_SPECIFIED rule was added to BASIC, DEFAULT.
+// The IMPORT_USED rule was added to BASIC, DEFAULT.
+//
 // A number of categories were removed between v1beta1 and v1. The difference
 // is shown below:
 //

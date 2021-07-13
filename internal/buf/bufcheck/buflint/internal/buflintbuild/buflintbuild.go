@@ -151,6 +151,12 @@ var (
 		"imports are not weak",
 		newAdapter(buflintcheck.CheckImportNoWeak),
 	)
+	// ImportUsedRuleBuilder is a rule builder.
+	ImportUsedRuleBuilder = internal.NewNopRuleBuilder(
+		"IMPORT_USED",
+		"imports are used",
+		newAdapter(buflintcheck.CheckImportUsed),
+	)
 	// MessagePascalCaseRuleBuilder is a rule builder.
 	MessagePascalCaseRuleBuilder = internal.NewNopRuleBuilder(
 		"MESSAGE_PASCAL_CASE",
@@ -329,6 +335,12 @@ var (
 				return buflintcheck.CheckServiceSuffix(id, ignoreFunc, files, configBuilder.ServiceSuffix)
 			}), nil
 		},
+	)
+	// SyntaxSpecifiedRuleBuilder is a rule builder.
+	SyntaxSpecifiedRuleBuilder = internal.NewNopRuleBuilder(
+		"SYNTAX_SPECIFIED",
+		"all files have a syntax specified",
+		newAdapter(buflintcheck.CheckSyntaxSpecified),
 	)
 )
 
