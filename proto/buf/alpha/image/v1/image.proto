@@ -21,69 +21,107 @@ import "google/protobuf/descriptor.proto";
 option cc_enable_arenas = true;
 option optimize_for = SPEED;
 
-// Image is analogous to a FileDescriptorSet.
+// Image is an extended FileDescriptorSet.
+//
+// See https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto
 message Image {
-  // file matches the file field of a FileDescriptorSet.
-  repeated google.protobuf.FileDescriptorProto file = 1;
+  repeated ImageFile file = 1;
+}
 
-  // bufbuild_image_extension is the ImageExtension for this image.
+// ImageFile is an extended FileDescriptorProto.
+//
+// Since FileDescriptorProto does not have extensions, we copy the fields from
+// FileDescriptorProto, and then add our own extensions via the
+// buf_image_file_extension field. This is compatible with a
+// FileDescriptorProto.
+//
+// See https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto
+message ImageFile {
+  optional string name = 1;
+  optional string package = 2;
+  repeated string dependency = 3;
+  repeated int32 public_dependency = 10;
+  repeated int32 weak_dependency = 11;
+  repeated google.protobuf.DescriptorProto message_type = 4;
+  repeated google.protobuf.EnumDescriptorProto enum_type = 5;
+  repeated google.protobuf.ServiceDescriptorProto service = 6;
+  repeated google.protobuf.FieldDescriptorProto extension = 7;
+  optional google.protobuf.FileOptions options = 8;
+  optional google.protobuf.SourceCodeInfo source_code_info = 9;
+  optional string syntax = 12;
+
+  // buf_extension contains buf-specific extensions to FileDescriptorProtos.
   //
   // The prefixed name and high tag value is used to all but guarantee there
-  // will never be any conflict with Google's FileDescriptorSet definition.
-  // The definition of a FileDescriptorSet has not changed in 11 years, so
+  // will never be any conflict with Google's FileDescriptorProto definition.
+  // The definition of a FileDescriptorProto has not changed in years, so
   // we're not too worried about a conflict here.
-  optional ImageExtension bufbuild_image_extension = 8042;
+  optional ImageFileExtension buf_extension = 8042;
 }
 
-// ImageExtension contains extensions to Images.
+// ImageFileExtension contains extensions to ImageFiles.
 //
-// The fields are not included directly on the Image so that we can both
-// detect if extensions exist, which signifies this was created by buf
-// and not by protoc, and so that we can add fields in a freeform manner
-// without worrying about conflicts with google.protobuf.FileDescriptorSet.
-message ImageExtension {
-  reserved 2, 3;
-  reserved "module_reference_refs", "module_commit_refs";
-
-  // image_import_refs are the image import references for this specific Image.
+// The fields are not included directly on the ImageFile so that we can both
+// detect if extensions exist, which signifies this was created by buf and not
+// by protoc, and so that we can add fields in a freeform manner without
+// worrying about conflicts with FileDescriptorProto.
+message ImageFileExtension {
+  // is_import denotes whether this file is considered an "import".
   //
-  // A given FileDescriptorProto may or may not be an import depending on
-  // the image context, so this information is not stored on each FileDescriptorProto.
-  repeated ImageImportRef image_import_refs = 1;
-
-  // ModuleRefs are the module references for this specific Image.
+  // An import is a file which was not derived from the local source files.
+  // There are two cases where this could be true:
   //
-  // The lack of a ModuleRef for a given file means that the module
-  // reference information is not known, and must be treated as unknown.
-  repeated ModuleRef module_refs = 4;
+  // 1. A Well-Known Type included from the compiler.
+  // 2. A file that was included from a Buf module dependency.
+  //
+  // We use "import" as this matches with the protoc concept of
+  // --include_imports, however import is a bit of an overloaded term.
+  //
+  // This will always be set.
+  optional bool is_import = 1;
+  // ModuleInfo contains information about the Buf module this file belongs to.
+  //
+  // This field is optional and will not be set if the module is not known.
+  optional ModuleInfo module_info = 2;
+  // is_syntax_unspecified denotes whether the file did not have a syntax
+  // explicitly specified.
+  //
+  // Per the FileDescriptorProto spec, it would be fine in this case to just
+  // leave the syntax field unset to denote this and to set the syntax field
+  // to "proto2" if it is specified. However, protoc does not set the syntax
+  // field if it was "proto2", and plugins may (incorrectly) depend on this.
+  // We also want to maintain consistency with protoc as much as possible.
+  // So instead, we have this field which will denote whether syntax was not
+  // specified.
+  //
+  // This will always be set.
+  optional bool is_syntax_unspecified = 3;
+  // unused_dependency are the indexes within the dependency field on
+  // FileDescriptorProto for those dependencies that are not used.
+  //
+  // This matches the shape of the public_dependency and weak_dependency
+  // fields.
+  repeated int32 unused_dependency = 4;
 }
 
-// ImageImportRef is a reference to an image import.
+// ModuleInfo contains information about a Buf module that an ImageFile
+// belongs to.
+message ModuleInfo {
+  // name is the name of the Buf module.
+  //
+  // This will always be set.
+  optional ModuleName name = 1;
+  // commit is the repository commit.
+  //
+  // This field is optional and will not be set if the commit is not known.
+  optional string commit = 2;
+}
+
+// ModuleName is a module name.
 //
-// This is a message type instead of a scalar type so that we can add
-// additional information about an import reference in the future, such as
-// the external location of the import.
-message ImageImportRef {
-  // file_index is the index within the Image file array of the import.
-  //
-  // This signifies that file[file_index] is an import.
-  // This field must be set.
-  optional uint32 file_index = 1;
-}
-
-// ModuleRef is a reference to a module.
-message ModuleRef {
-  // file_index is the index within the Image file array.
-  //
-  // This signifies that file[file_index] is the file that
-  // uses this module commit.
-  //
-  // This field must be set.
-  optional uint32 file_index = 1;
-  optional string remote = 2;
-  optional string owner = 3;
-  optional string repository = 4;
-
-  // Optional
-  optional string commit = 5;
+// All fields will always be set.
+message ModuleName {
+  optional string remote = 1;
+  optional string owner = 2;
+  optional string repository = 3;
 }

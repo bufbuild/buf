@@ -117,7 +117,7 @@ func run(
 	flags *flags,
 ) error {
 	if flags.OutDirPath == "" {
-		return bufcli.NewFlagIsRequiredError(outDirPathFlagName)
+		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outDirPathFlagName)
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(

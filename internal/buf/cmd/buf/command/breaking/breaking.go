@@ -254,7 +254,7 @@ func run(
 		return err
 	}
 	if againstInput == "" {
-		return bufcli.NewFlagIsRequiredError(againstFlagName)
+		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", againstFlagName)
 	}
 	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
 		flags.Paths,

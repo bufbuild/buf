@@ -15,9 +15,9 @@
 package protoencoding
 
 import (
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // Resolver is a Resolver.
@@ -31,10 +31,10 @@ type Resolver interface {
 // NewResolver creates a New Resolver.
 //
 // If the input slice is empty, this returns nil
-// The given FileDescriptorProtos must be self-contained, that is they must contain all imports.
+// The given FileDescriptors must be self-contained, that is they must contain all imports.
 // This can NOT be guaranteed for FileDescriptorSets given over the wire, and can only be guaranteed from builds.
-func NewResolver(fileDescriptorProtos ...*descriptorpb.FileDescriptorProto) (Resolver, error) {
-	return newResolver(fileDescriptorProtos...)
+func NewResolver(fileDescriptors ...protodescriptor.FileDescriptor) (Resolver, error) {
+	return newResolver(fileDescriptors...)
 }
 
 // Marshaler marshals Messages.

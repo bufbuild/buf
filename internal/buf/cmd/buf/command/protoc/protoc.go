@@ -196,7 +196,7 @@ func run(
 		return nil
 	}
 	if env.Output == "" {
-		return bufcli.NewFlagIsRequiredError(outputFlagName)
+		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outputFlagName)
 	}
 	imageRef, err := buffetch.NewImageRefParser(container.Logger()).GetImageRef(ctx, env.Output)
 	if err != nil {

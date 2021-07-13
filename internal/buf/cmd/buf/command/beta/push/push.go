@@ -106,7 +106,7 @@ func run(
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) (retErr error) {
 	if flags.Branch == "" {
-		return bufcli.NewFlagIsRequiredError(branchFlagName)
+		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", branchFlagName)
 	}
 	source, err := bufcli.GetInputValue(container, flags.InputHashtag, "", "", ".")
 	if err != nil {

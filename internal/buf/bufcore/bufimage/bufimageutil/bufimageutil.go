@@ -22,11 +22,15 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/protosource"
 )
 
-// NewInputFiles gets around Go's lack of generics.
+// NewInputFiles converts the ImageFiles to InputFiles.
+//
+// Since protosource is a pkg package, it cannot depend on bufmodule, which has the
+// definition for bufmodule.ModuleIdentity, so we have our own interfaces for this
+// in protosource. Given Go's type system, we need to do a conversion here.
 func NewInputFiles(imageFiles []bufimage.ImageFile) []protosource.InputFile {
 	inputFiles := make([]protosource.InputFile, len(imageFiles))
 	for i, imageFile := range imageFiles {
-		inputFiles[i] = imageFile
+		inputFiles[i] = newInputFile(imageFile)
 	}
 	return inputFiles
 }
@@ -45,7 +49,7 @@ func FreeMessageRangeStrings(
 		if imageFile == nil {
 			return nil, fmt.Errorf("unexpected nil image file: %q", filePath)
 		}
-		file, err := protosource.NewFile(imageFile)
+		file, err := protosource.NewFile(newInputFile(imageFile))
 		if err != nil {
 			return nil, err
 		}

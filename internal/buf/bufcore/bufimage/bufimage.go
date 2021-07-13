@@ -29,17 +29,27 @@ import (
 // ImageFile is a Protobuf file within an image.
 type ImageFile interface {
 	bufmodule.FileInfo
-	// Proto is the backing FileDescriptorProto for this File.
+	// Proto is the backing *descriptorpb.FileDescriptorProto for this File.
+	//
+	// FileDescriptor should be preferred to Proto. We keep this method around
+	// because we have code that does modification to the ImageFile via this.
 	//
 	// This will never be nil.
 	// The value Path() is equal to Proto.GetName() .
-	// The value ImportPaths() is equal to Proto().GetDependency().
 	Proto() *descriptorpb.FileDescriptorProto
-	// ImportPaths returns the root relative file paths of the imports.
+	// FileDescriptor is the backing FileDescriptor for this File.
 	//
-	// The values will be normalized, validated, and never empty.
-	// This is equal to Proto.GetDependency().
-	ImportPaths() []string
+	// This will never be nil.
+	// The value Path() is equal to FileDescriptor.GetName() .
+	FileDescriptor() protodescriptor.FileDescriptor
+	// IsSyntaxUnspecified will be true if the syntax was not explicitly specified.
+	IsSyntaxUnspecified() bool
+	// UnusedDependencyIndexes returns the indexes of the unused dependencies within
+	// FileDescriptor.GetDependency().
+	//
+	// All indexes will be valid.
+	// Will return nil if empty.
+	UnusedDependencyIndexes() []int32
 
 	withIsImport(isImport bool) ImageFile
 	isImageFile()
@@ -51,18 +61,22 @@ type ImageFile interface {
 //
 // TODO: moduleIdentity and commit should be options since they are optional.
 func NewImageFile(
-	fileDescriptorProto *descriptorpb.FileDescriptorProto,
+	fileDescriptor protodescriptor.FileDescriptor,
 	moduleIdentity bufmodule.ModuleIdentity,
 	commit string,
 	externalPath string,
 	isImport bool,
+	isSyntaxUnspecified bool,
+	unusedDependencyIndexes []int32,
 ) (ImageFile, error) {
 	return newImageFile(
-		fileDescriptorProto,
+		fileDescriptor,
 		moduleIdentity,
 		commit,
 		externalPath,
 		isImport,
+		isSyntaxUnspecified,
+		unusedDependencyIndexes,
 	)
 }
 
@@ -155,52 +169,47 @@ func MergeImages(images ...Image) (Image, error) {
 //
 // TODO: do we want to add the ability to do external path resolution here?
 func NewImageForProto(protoImage *imagev1.Image) (Image, error) {
-	if err := validateProtoImageExceptFileDescriptorProtos(protoImage); err != nil {
-		return nil, err
-	}
-	importFileIndexes, err := getImportFileIndexes(protoImage)
-	if err != nil {
-		return nil, err
-	}
-	fileIndexToProtoModuleRef, err := getFileIndexToProtoModuleRef(protoImage)
-	if err != nil {
+	if err := validateProtoImage(protoImage); err != nil {
 		return nil, err
 	}
 	imageFiles := make([]ImageFile, len(protoImage.File))
-	for i, fileDescriptorProto := range protoImage.File {
-		_, isImport := importFileIndexes[i]
-		var imageFile ImageFile
+	for i, protoImageFile := range protoImage.File {
+		var isImport bool
+		var isSyntaxUnspecified bool
+		var unusedDependencyIndexes []int32
+		var moduleIdentity bufmodule.ModuleIdentity
+		var commit string
 		var err error
-		if protoModuleRef, ok := fileIndexToProtoModuleRef[i]; ok {
-			moduleIdentity, err := bufmodule.NewModuleIdentity(
-				protoModuleRef.GetRemote(),
-				protoModuleRef.GetOwner(),
-				protoModuleRef.GetRepository(),
-			)
-			if err != nil {
-				return nil, err
+		if protoImageFileExtension := protoImageFile.GetBufExtension(); protoImageFileExtension != nil {
+			isImport = protoImageFileExtension.GetIsImport()
+			isSyntaxUnspecified = protoImageFileExtension.GetIsSyntaxUnspecified()
+			unusedDependencyIndexes = protoImageFileExtension.GetUnusedDependency()
+			if protoModuleInfo := protoImageFileExtension.GetModuleInfo(); protoModuleInfo != nil {
+				if protoModuleName := protoModuleInfo.GetName(); protoModuleName != nil {
+					moduleIdentity, err = bufmodule.NewModuleIdentity(
+						protoModuleName.GetRemote(),
+						protoModuleName.GetOwner(),
+						protoModuleName.GetRepository(),
+					)
+					if err != nil {
+						return nil, err
+					}
+					// we only want to set this if there is a module name
+					commit = protoModuleInfo.GetCommit()
+				}
 			}
-			imageFile, err = NewImageFile(
-				fileDescriptorProto,
-				moduleIdentity,
-				protoModuleRef.GetCommit(),
-				fileDescriptorProto.GetName(),
-				isImport,
-			)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			imageFile, err = NewImageFile(
-				fileDescriptorProto,
-				nil,
-				"",
-				fileDescriptorProto.GetName(),
-				isImport,
-			)
-			if err != nil {
-				return nil, err
-			}
+		}
+		imageFile, err := NewImageFile(
+			protoImageFile,
+			moduleIdentity,
+			commit,
+			protoImageFile.GetName(),
+			isImport,
+			isSyntaxUnspecified,
+			unusedDependencyIndexes,
+		)
+		if err != nil {
+			return nil, err
 		}
 		imageFiles[i] = imageFile
 	}
@@ -215,9 +224,15 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) (Im
 	if err := protodescriptor.ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
 		return nil, err
 	}
+	protoImageFiles := make([]*imagev1.ImageFile, len(request.GetProtoFile()))
+	for i, fileDescriptorProto := range request.GetProtoFile() {
+		// we filter whether something is an import or not in ImageWithOnlyPaths
+		// we cannot determine if the syntax was unset
+		protoImageFiles[i] = fileDescriptorProtoToProtoImageFile(fileDescriptorProto, false, false, nil, nil, "")
+	}
 	image, err := NewImageForProto(
 		&imagev1.Image{
-			File: request.GetProtoFile(),
+			File: protoImageFiles,
 		},
 	)
 	if err != nil {
@@ -301,56 +316,27 @@ func ImageByDir(image Image) ([]Image, error) {
 func ImageToProtoImage(image Image) *imagev1.Image {
 	imageFiles := image.Files()
 	protoImage := &imagev1.Image{
-		File: make([]*descriptorpb.FileDescriptorProto, len(imageFiles)),
-		BufbuildImageExtension: &imagev1.ImageExtension{
-			ImageImportRefs: make([]*imagev1.ImageImportRef, 0),
-		},
+		File: make([]*imagev1.ImageFile, len(imageFiles)),
 	}
 	for i, imageFile := range imageFiles {
-		protoImage.File[i] = imageFile.Proto()
-		if imageFile.IsImport() {
-			protoImage.BufbuildImageExtension.ImageImportRefs = append(
-				protoImage.BufbuildImageExtension.ImageImportRefs,
-				&imagev1.ImageImportRef{
-					FileIndex: proto.Uint32(uint32(i)),
-				},
-			)
-		}
-		if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-			var commit *string
-			if imageFile.Commit() != "" {
-				commit = proto.String(imageFile.Commit())
-			}
-			protoImage.BufbuildImageExtension.ModuleRefs = append(
-				protoImage.BufbuildImageExtension.ModuleRefs,
-				&imagev1.ModuleRef{
-					FileIndex:  proto.Uint32(uint32(i)),
-					Remote:     proto.String(moduleIdentity.Remote()),
-					Owner:      proto.String(moduleIdentity.Owner()),
-					Repository: proto.String(moduleIdentity.Repository()),
-					Commit:     commit,
-				},
-			)
-		}
+		protoImage.File[i] = imageFileToProtoImageFile(imageFile)
 	}
 	return protoImage
 }
 
 // ImageToFileDescriptorSet returns a new FileDescriptorSet for the Image.
 func ImageToFileDescriptorSet(image Image) *descriptorpb.FileDescriptorSet {
-	return &descriptorpb.FileDescriptorSet{
-		File: ImageToFileDescriptorProtos(image),
-	}
+	return protodescriptor.FileDescriptorSetForFileDescriptors(ImageToFileDescriptors(image)...)
 }
 
-// ImageToFileDescriptorProtos returns a the FileDescriptorProtos for the Image.
+// ImageToFileDescriptors returns the FileDescriptors for the Image.
+func ImageToFileDescriptors(image Image) []protodescriptor.FileDescriptor {
+	return imageFilesToFileDescriptors(image.Files())
+}
+
+// ImageToFileDescriptorProtos returns the FileDescriptorProtos for the Image.
 func ImageToFileDescriptorProtos(image Image) []*descriptorpb.FileDescriptorProto {
-	imageFiles := image.Files()
-	fileDescriptorProtos := make([]*descriptorpb.FileDescriptorProto, len(imageFiles))
-	for i, imageFile := range imageFiles {
-		fileDescriptorProtos[i] = imageFile.Proto()
-	}
-	return fileDescriptorProtos
+	return imageFilesToFileDescriptorProtos(image.Files())
 }
 
 // ImageToCodeGeneratorRequest returns a new CodeGeneratorRequest for the Image.
@@ -382,4 +368,9 @@ func ImagesToCodeGeneratorRequests(images []Image, parameter string) []*pluginpb
 		requests[i] = ImageToCodeGeneratorRequest(image, parameter)
 	}
 	return requests
+}
+
+// ProtoImageToFileDescriptors returns the FileDescriptors for the proto Image.
+func ProtoImageToFileDescriptors(protoImage *imagev1.Image) []protodescriptor.FileDescriptor {
+	return protoImageFilesToFileDescriptors(protoImage.File)
 }

@@ -40,6 +40,7 @@ var (
 		buflintbuild.FileLowerSnakeCaseRuleBuilder,
 		buflintbuild.ImportNoPublicRuleBuilder,
 		buflintbuild.ImportNoWeakRuleBuilder,
+		buflintbuild.ImportUsedRuleBuilder,
 		buflintbuild.MessagePascalCaseRuleBuilder,
 		buflintbuild.OneofLowerSnakeCaseRuleBuilder,
 		buflintbuild.PackageDefinedRuleBuilder,
@@ -62,6 +63,7 @@ var (
 		buflintbuild.RPCResponseStandardNameRuleBuilder,
 		buflintbuild.ServicePascalCaseRuleBuilder,
 		buflintbuild.ServiceSuffixRuleBuilder,
+		buflintbuild.SyntaxSpecifiedRuleBuilder,
 	}
 
 	// v1DefaultCategories are the default categories.
@@ -138,6 +140,10 @@ var (
 			"DEFAULT",
 		},
 		"IMPORT_NO_WEAK": {
+			"BASIC",
+			"DEFAULT",
+		},
+		"IMPORT_USED": {
 			"BASIC",
 			"DEFAULT",
 		},
@@ -223,6 +229,10 @@ var (
 			"DEFAULT",
 		},
 		"SERVICE_SUFFIX": {
+			"DEFAULT",
+		},
+		"SYNTAX_SPECIFIED": {
+			"BASIC",
 			"DEFAULT",
 		},
 	}

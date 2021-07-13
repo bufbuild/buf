@@ -21,40 +21,53 @@ import (
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1"
 )
 
-// we validate the FileDescriptorProtos as part of NewFile
-func validateProtoImageExceptFileDescriptorProtos(protoImage *imagev1.Image) error {
+// we validate the actual fields of the FileDescriptorProtos as part of newImageFile
+func validateProtoImage(protoImage *imagev1.Image) error {
 	if protoImage == nil {
-		return errors.New("nil image")
+		return errors.New("nil Image")
 	}
 	if len(protoImage.File) == 0 {
 		return errors.New("image contains no files")
 	}
-	if protoImage.BufbuildImageExtension != nil {
-		return validateProtoImageExtension(protoImage.BufbuildImageExtension, uint32(len(protoImage.File)))
+	for _, protoImageFile := range protoImage.File {
+		if err := validateProtoImageFile(protoImageFile); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func validateProtoImageExtension(
-	protoImageExtension *imagev1.ImageExtension,
-	numFiles uint32,
-) error {
-	seenFileIndexes := make(map[uint32]struct{}, len(protoImageExtension.ImageImportRefs))
-	for _, imageImportRef := range protoImageExtension.ImageImportRefs {
-		if imageImportRef == nil {
-			return errors.New("nil ImageImportRef")
+func validateProtoImageFile(protoImageFile *imagev1.ImageFile) error {
+	if protoImageFileExtension := protoImageFile.GetBufExtension(); protoImageFileExtension != nil {
+		lenDependencies := len(protoImageFile.GetDependency())
+		for _, index := range protoImageFileExtension.GetUnusedDependency() {
+			if int(index) >= lenDependencies || int(index) < 0 {
+				return fmt.Errorf("unused dependency index %d is out of range", index)
+			}
 		}
-		if imageImportRef.FileIndex == nil {
-			return errors.New("nil ImageImportRef.FileIndex")
+		if protoModuleInfo := protoImageFileExtension.GetModuleInfo(); protoModuleInfo != nil {
+			return validateProtoModuleInfo(protoModuleInfo)
 		}
-		fileIndex := *imageImportRef.FileIndex
-		if fileIndex >= numFiles {
-			return fmt.Errorf("invalid ImageImportRef file index: %d", fileIndex)
-		}
-		if _, ok := seenFileIndexes[fileIndex]; ok {
-			return fmt.Errorf("duplicate ImageImportRef file index: %d", fileIndex)
-		}
-		seenFileIndexes[fileIndex] = struct{}{}
+	}
+	return nil
+}
+
+func validateProtoModuleInfo(protoModuleInfo *imagev1.ModuleInfo) error {
+	if protoModuleName := protoModuleInfo.GetName(); protoModuleName != nil {
+		return validateProtoModuleName(protoModuleInfo.Name)
+	}
+	return nil
+}
+
+func validateProtoModuleName(protoModuleName *imagev1.ModuleName) error {
+	if protoModuleName.GetRemote() == "" {
+		return errors.New("empty ModuleName.Remote")
+	}
+	if protoModuleName.GetOwner() == "" {
+		return errors.New("empty ModuleName.Owner")
+	}
+	if protoModuleName.GetRepository() == "" {
+		return errors.New("empty ModuleName.Repository")
 	}
 	return nil
 }

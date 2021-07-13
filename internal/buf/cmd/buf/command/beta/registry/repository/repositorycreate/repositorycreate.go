@@ -82,9 +82,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(
 		&f.Visibility,
 		visibilityFlagName,
-		publicVisibility,
+		"",
 		fmt.Sprintf(`The repository's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
+	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
 }
 
 func run(

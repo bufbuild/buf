@@ -71,6 +71,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"Required. The location to export the module to. Must be a local directory.",
 	)
+	_ = cobra.MarkFlagRequired(flagSet, outputFlagName)
 }
 
 func run(
@@ -79,9 +80,6 @@ func run(
 	flags *flags,
 	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) error {
-	if flags.Output == "" {
-		return bufcli.NewFlagIsRequiredError(outputFlagName)
-	}
 	moduleRef, err := buffetch.NewModuleRefParser(
 		container.Logger(),
 	).GetModuleRef(

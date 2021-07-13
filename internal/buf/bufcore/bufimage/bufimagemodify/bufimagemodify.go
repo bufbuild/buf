@@ -146,7 +146,7 @@ func OptimizeFor(sweeper Sweeper, value descriptorpb.FileOptions_OptimizeMode) M
 // in the `go_package` declaration so that the generated package is named as such.
 func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix string) string {
 	goPackageImportPath := path.Join(importPathPrefix, path.Dir(imageFile.Path()))
-	packageName := imageFile.Proto().GetPackage()
+	packageName := imageFile.FileDescriptor().GetPackage()
 	if _, ok := protoversion.NewPackageVersionForPackage(packageName); ok {
 		parts := strings.Split(packageName, ".")
 		if len(parts) >= 2 {

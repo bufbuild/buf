@@ -27,29 +27,42 @@ type imageFile struct {
 	bufmodule.FileInfo
 
 	fileDescriptorProto *descriptorpb.FileDescriptorProto
+
+	isSyntaxUnspecified           bool
+	storedUnusedDependencyIndexes []int32
 }
 
 func newImageFile(
-	fileDescriptorProto *descriptorpb.FileDescriptorProto,
+	fileDescriptor protodescriptor.FileDescriptor,
 	moduleIdentity bufmodule.ModuleIdentity,
 	commit string,
 	externalPath string,
 	isImport bool,
+	isSyntaxUnspecified bool,
+	unusedDependencyIndexes []int32,
 ) (*imageFile, error) {
-	if err := protodescriptor.ValidateFileDescriptorProto(fileDescriptorProto); err != nil {
+	if err := protodescriptor.ValidateFileDescriptor(fileDescriptor); err != nil {
 		return nil, err
 	}
 	coreFileInfo, err := bufcore.NewFileInfo(
-		fileDescriptorProto.GetName(),
+		fileDescriptor.GetName(),
 		externalPath,
 		isImport,
 	)
 	if err != nil {
 		return nil, err
 	}
+	// just to normalize in other places between empty and unset
+	if len(unusedDependencyIndexes) == 0 {
+		unusedDependencyIndexes = nil
+	}
 	return &imageFile{
-		FileInfo:            bufmodule.NewFileInfo(coreFileInfo, moduleIdentity, commit),
-		fileDescriptorProto: fileDescriptorProto,
+		FileInfo: bufmodule.NewFileInfo(coreFileInfo, moduleIdentity, commit),
+		// protodescriptor.FileDescriptorProtoForFileDescriptor is a no-op if fileDescriptor
+		// is already a *descriptorpb.FileDescriptorProto
+		fileDescriptorProto:           protodescriptor.FileDescriptorProtoForFileDescriptor(fileDescriptor),
+		isSyntaxUnspecified:           isSyntaxUnspecified,
+		storedUnusedDependencyIndexes: unusedDependencyIndexes,
 	}, nil
 }
 
@@ -57,8 +70,16 @@ func (f *imageFile) Proto() *descriptorpb.FileDescriptorProto {
 	return f.fileDescriptorProto
 }
 
-func (f *imageFile) ImportPaths() []string {
-	return f.fileDescriptorProto.GetDependency()
+func (f *imageFile) FileDescriptor() protodescriptor.FileDescriptor {
+	return f.fileDescriptorProto
+}
+
+func (f *imageFile) IsSyntaxUnspecified() bool {
+	return f.isSyntaxUnspecified
+}
+
+func (f *imageFile) UnusedDependencyIndexes() []int32 {
+	return f.storedUnusedDependencyIndexes
 }
 
 func (f *imageFile) withIsImport(isImport bool) ImageFile {
@@ -69,6 +90,7 @@ func (f *imageFile) withIsImport(isImport bool) ImageFile {
 			f.FileInfo.Commit(),
 		),
 		fileDescriptorProto: f.fileDescriptorProto,
+		isSyntaxUnspecified: f.isSyntaxUnspecified,
 	}
 }
 

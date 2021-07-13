@@ -54,7 +54,7 @@ func ccEnableArenasForFile(
 		// option with the given value, so this is a no-op.
 		return nil
 	}
-	if descriptor.Options == nil {
+	if descriptor.GetOptions() == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.CcEnableArenas = proto.Bool(value)

@@ -12,28 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package protosource
+package bufimageutil
 
-import "google.golang.org/protobuf/types/descriptorpb"
+import (
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/pkg/protosource"
+)
 
 type inputFile struct {
-	fileDescriptorProto *descriptorpb.FileDescriptorProto
+	bufimage.ImageFile
 }
 
-func newInputFile(fileDescriptorProto *descriptorpb.FileDescriptorProto) *inputFile {
+func newInputFile(imageFile bufimage.ImageFile) *inputFile {
 	return &inputFile{
-		fileDescriptorProto: fileDescriptorProto,
+		ImageFile: imageFile,
 	}
 }
 
-func (i *inputFile) Path() string {
-	return i.fileDescriptorProto.GetName()
-}
-
-func (i *inputFile) ExternalPath() string {
-	return i.fileDescriptorProto.GetName()
-}
-
-func (i *inputFile) Proto() *descriptorpb.FileDescriptorProto {
-	return i.fileDescriptorProto
+func (i *inputFile) ModuleIdentity() protosource.ModuleIdentity {
+	return i.ImageFile.ModuleIdentity()
 }

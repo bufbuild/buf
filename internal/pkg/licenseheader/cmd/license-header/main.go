@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/diff"
 	"github.com/bufbuild/buf/internal/pkg/licenseheader"
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -70,6 +71,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		"The license type. Must be one of [none,apache,proprietary].",
 	)
+	_ = cobra.MarkFlagRequired(flagSet, licenseTypeFlagName)
 	flagSet.StringVar(
 		&f.CopyrightHolder,
 		copyrightHolderFlagName,
@@ -91,9 +93,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 }
 
 func run(ctx context.Context, container app.Container, flags *flags) error {
-	if flags.LicenseType == "" {
-		return newRequiredFlagError(licenseTypeFlagName)
-	}
 	licenseType, err := licenseheader.ParseLicenseType(flags.LicenseType)
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("--%s: %v", licenseTypeFlagName, err)
@@ -152,5 +151,5 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 }
 
 func newRequiredFlagError(flagName string) error {
-	return appcmd.NewInvalidArgumentErrorf("--%s is required", flagName)
+	return appcmd.NewInvalidArgumentErrorf("required flag %q not set", flagName)
 }

@@ -278,6 +278,8 @@ func testBuildCodeGeneratorRequest(
 			"",
 			"",
 			!isNotImport,
+			false,
+			nil,
 		)
 		require.NoError(t, err)
 		imageFiles[i] = imageFile
