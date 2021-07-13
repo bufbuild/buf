@@ -18,36 +18,15 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufcore/internal/bufcorevalidate"
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
-
-func getImportFileIndexes(protoImage *imagev1.Image) (map[int]struct{}, error) {
-	imageImportRefs := protoImage.GetBufbuildImageExtension().GetImageImportRefs()
-	importFileIndexes := make(map[int]struct{}, len(imageImportRefs))
-	for _, imageImportRef := range imageImportRefs {
-		if imageImportRef.FileIndex == nil {
-			// this should have been caught in validation but just in case
-			return nil, errors.New("nil image import ref fileIndex")
-		}
-		importFileIndexes[int(imageImportRef.GetFileIndex())] = struct{}{}
-	}
-	return importFileIndexes, nil
-}
-
-func getFileIndexToProtoModuleRef(protoImage *imagev1.Image) (map[int]*imagev1.ModuleRef, error) {
-	fileIndexToProtoModuleRef := make(map[int]*imagev1.ModuleRef)
-	for _, protoModuleRef := range protoImage.GetBufbuildImageExtension().GetModuleRefs() {
-		if protoModuleRef.FileIndex == nil {
-			// this should have been caught in validation but just in case
-			return nil, errors.New("nil module reference ref fileIndex")
-		}
-		fileIndexToProtoModuleRef[int(protoModuleRef.GetFileIndex())] = protoModuleRef
-	}
-	return fileIndexToProtoModuleRef, nil
-}
 
 // paths can be either files (ending in .proto) or directories
 // paths must be normalized and validated, and not duplicated
@@ -178,7 +157,7 @@ func addFileWithImports(
 	seenPaths[path] = struct{}{}
 
 	// then, add imports first, for proper ordering
-	for _, importPath := range imageFile.ImportPaths() {
+	for _, importPath := range imageFile.FileDescriptor().GetDependency() {
 		if importFile := image.GetFile(importPath); importFile != nil {
 			accumulator = addFileWithImports(
 				accumulator,
@@ -198,4 +177,87 @@ func addFileWithImports(
 		imageFile.withIsImport(!isNotImport),
 	)
 	return accumulator
+}
+
+func protoImageFilesToFileDescriptors(protoImageFiles []*imagev1.ImageFile) []protodescriptor.FileDescriptor {
+	fileDescriptors := make([]protodescriptor.FileDescriptor, len(protoImageFiles))
+	for i, protoImageFile := range protoImageFiles {
+		fileDescriptors[i] = protoImageFile
+	}
+	return fileDescriptors
+}
+
+func imageFilesToFileDescriptors(imageFiles []ImageFile) []protodescriptor.FileDescriptor {
+	fileDescriptors := make([]protodescriptor.FileDescriptor, len(imageFiles))
+	for i, imageFile := range imageFiles {
+		fileDescriptors[i] = imageFile.FileDescriptor()
+	}
+	return fileDescriptors
+}
+
+func imageFilesToFileDescriptorProtos(imageFiles []ImageFile) []*descriptorpb.FileDescriptorProto {
+	fileDescriptorProtos := make([]*descriptorpb.FileDescriptorProto, len(imageFiles))
+	for i, imageFile := range imageFiles {
+		fileDescriptorProtos[i] = imageFile.Proto()
+	}
+	return fileDescriptorProtos
+}
+
+func imageFileToProtoImageFile(imageFile ImageFile) *imagev1.ImageFile {
+	return fileDescriptorProtoToProtoImageFile(
+		imageFile.Proto(),
+		imageFile.IsImport(),
+		imageFile.IsSyntaxUnspecified(),
+		imageFile.UnusedDependencyIndexes(),
+		imageFile.ModuleIdentity(),
+		imageFile.Commit(),
+	)
+}
+
+func fileDescriptorProtoToProtoImageFile(
+	fileDescriptorProto *descriptorpb.FileDescriptorProto,
+	isImport bool,
+	isSyntaxUnspecified bool,
+	unusedDependencyIndexes []int32,
+	moduleIdentity bufmodule.ModuleIdentity,
+	moduleCommit string,
+) *imagev1.ImageFile {
+	var protoModuleInfo *imagev1.ModuleInfo
+	if moduleIdentity != nil {
+		protoModuleInfo = &imagev1.ModuleInfo{
+			Name: &imagev1.ModuleName{
+				Remote:     proto.String(moduleIdentity.Remote()),
+				Owner:      proto.String(moduleIdentity.Owner()),
+				Repository: proto.String(moduleIdentity.Repository()),
+			},
+		}
+		if moduleCommit != "" {
+			protoModuleInfo.Commit = proto.String(moduleCommit)
+		}
+	}
+	if len(unusedDependencyIndexes) == 0 {
+		unusedDependencyIndexes = nil
+	}
+	return &imagev1.ImageFile{
+		Name:             fileDescriptorProto.Name,
+		Package:          fileDescriptorProto.Package,
+		Syntax:           fileDescriptorProto.Syntax,
+		Dependency:       fileDescriptorProto.GetDependency(),
+		PublicDependency: fileDescriptorProto.GetPublicDependency(),
+		WeakDependency:   fileDescriptorProto.GetWeakDependency(),
+		MessageType:      fileDescriptorProto.GetMessageType(),
+		EnumType:         fileDescriptorProto.GetEnumType(),
+		Service:          fileDescriptorProto.GetService(),
+		Extension:        fileDescriptorProto.GetExtension(),
+		Options:          fileDescriptorProto.GetOptions(),
+		SourceCodeInfo:   fileDescriptorProto.GetSourceCodeInfo(),
+		BufExtension: &imagev1.ImageFileExtension{
+			// we might actually want to differentiate between unset and false
+			IsImport: proto.Bool(isImport),
+			// we might actually want to differentiate between unset and false
+			IsSyntaxUnspecified: proto.Bool(isSyntaxUnspecified),
+			UnusedDependency:    unusedDependencyIndexes,
+			ModuleInfo:          protoModuleInfo,
+		},
+	}
 }

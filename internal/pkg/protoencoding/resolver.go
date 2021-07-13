@@ -15,24 +15,22 @@
 package protoencoding
 
 import (
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
-func newResolver(fileDescriptorProtos ...*descriptorpb.FileDescriptorProto) (Resolver, error) {
-	if len(fileDescriptorProtos) == 0 {
+func newResolver(fileDescriptors ...protodescriptor.FileDescriptor) (Resolver, error) {
+	if len(fileDescriptors) == 0 {
 		return nil, nil
 	}
 	// TODO: handle if resolvable
 	files, err := protodesc.FileOptions{
 		AllowUnresolvable: true,
 	}.NewFiles(
-		&descriptorpb.FileDescriptorSet{
-			File: fileDescriptorProtos,
-		},
+		protodescriptor.FileDescriptorSetForFileDescriptors(fileDescriptors...),
 	)
 	if err != nil {
 		return nil, err

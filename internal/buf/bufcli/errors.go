@@ -21,7 +21,6 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/rpc"
 )
@@ -106,11 +105,6 @@ func NewModuleRefError(moduleRef string) error {
 // the given number of attempts.
 func NewTooManyEmptyAnswersError(attempts int) error {
 	return fmt.Errorf("did not receive an answer in %d attempts", attempts)
-}
-
-// NewFlagIsRequiredError informs the user that a given flag is required.
-func NewFlagIsRequiredError(flagName string) error {
-	return appcmd.NewInvalidArgumentErrorf("--%s is required", flagName)
 }
 
 // NewOrganizationNameAlreadyExistsError informs the user that an organization with

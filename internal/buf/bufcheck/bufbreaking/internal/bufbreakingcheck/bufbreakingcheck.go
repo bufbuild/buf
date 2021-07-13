@@ -518,7 +518,15 @@ func checkFileSameCcEnableArenas(add addFunc, previousFile protosource.File, fil
 var CheckFileSameSyntax = newFilePairCheckFunc(checkFileSameSyntax)
 
 func checkFileSameSyntax(add addFunc, previousFile protosource.File, file protosource.File) error {
-	return checkFileSameValue(add, previousFile.Syntax().String(), file.Syntax().String(), file, file.SyntaxLocation(), `syntax`)
+	previousSyntax := previousFile.Syntax()
+	if previousSyntax == protosource.SyntaxUnspecified {
+		previousSyntax = protosource.SyntaxProto2
+	}
+	syntax := file.Syntax()
+	if syntax == protosource.SyntaxUnspecified {
+		syntax = protosource.SyntaxProto2
+	}
+	return checkFileSameValue(add, previousSyntax.String(), syntax.String(), file, file.SyntaxLocation(), `syntax`)
 }
 
 func checkFileSameValue(add addFunc, previousValue interface{}, value interface{}, file protosource.File, location protosource.Location, name string) error {

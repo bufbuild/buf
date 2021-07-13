@@ -22,6 +22,7 @@ type fileImport struct {
 	imp      string
 	isPublic bool
 	isWeak   bool
+	isUnused bool
 	path     []int32
 }
 
@@ -52,6 +53,10 @@ func (f *fileImport) IsWeak() bool {
 	return f.isWeak
 }
 
+func (f *fileImport) IsUnused() bool {
+	return f.isUnused
+}
+
 func (f *fileImport) Location() Location {
 	return f.getLocation(f.path)
 }
@@ -62,4 +67,8 @@ func (f *fileImport) setIsPublic() {
 
 func (f *fileImport) setIsWeak() {
 	f.isWeak = true
+}
+
+func (f *fileImport) setIsUnused() {
+	f.isUnused = true
 }

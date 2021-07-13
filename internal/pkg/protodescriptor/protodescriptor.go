@@ -19,30 +19,118 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-// ValidateFileDescriptorProto validates the FileDescriptorProto.
-func ValidateFileDescriptorProto(fileDescriptorProto *descriptorpb.FileDescriptorProto) error {
-	if fileDescriptorProto == nil {
-		return errors.New("nil FileDescriptorProto")
-	}
-	if err := ValidateProtoPath("FileDescriptorProto.Name", fileDescriptorProto.GetName()); err != nil {
-		return err
-	}
-	if err := ValidateProtoPaths("FileDescriptorProto.Dependency", fileDescriptorProto.GetDependency()); err != nil {
-		return err
-	}
-	return nil
+// FileDescriptor is an interface that matches the methods on a *descriptorpb.FileDescriptorProto.
+//
+// Note that a FileDescriptor is not necessarily validated, unlike other interfaces in buf.
+type FileDescriptor interface {
+	GetName() string
+	GetPackage() string
+	GetDependency() []string
+	GetPublicDependency() []int32
+	GetWeakDependency() []int32
+	GetMessageType() []*descriptorpb.DescriptorProto
+	GetEnumType() []*descriptorpb.EnumDescriptorProto
+	GetService() []*descriptorpb.ServiceDescriptorProto
+	GetExtension() []*descriptorpb.FieldDescriptorProto
+	GetOptions() *descriptorpb.FileOptions
+	GetSourceCodeInfo() *descriptorpb.SourceCodeInfo
+	GetSyntax() string
 }
 
-// ValidateFileDescriptorProtos validates the FileDescriptorProtos.
-func ValidateFileDescriptorProtos(fileDescriptorProtos []*descriptorpb.FileDescriptorProto) error {
-	for _, fileDescriptorProto := range fileDescriptorProtos {
-		if err := ValidateFileDescriptorProto(fileDescriptorProto); err != nil {
-			return err
-		}
+// FileDescriptorsForFileDescriptorProtos is a convenience function since Go does not have generics.
+func FileDescriptorsForFileDescriptorProtos(fileDescriptorProtos ...*descriptorpb.FileDescriptorProto) []FileDescriptor {
+	fileDescriptors := make([]FileDescriptor, len(fileDescriptorProtos))
+	for i, fileDescriptorProto := range fileDescriptorProtos {
+		fileDescriptors[i] = fileDescriptorProto
+	}
+	return fileDescriptors
+}
+
+// FileDescriptorsForFileDescriptorSet is a convenience function since Go does not have generics.
+func FileDescriptorsForFileDescriptorSet(fileDescriptorSet *descriptorpb.FileDescriptorSet) []FileDescriptor {
+	return FileDescriptorsForFileDescriptorProtos(fileDescriptorSet.File...)
+}
+
+// FileDescriptorProtoForFileDescriptor creates a new *descriptorpb.FileDescriptorProto for the fileDescriptor.
+//
+// If the FileDescriptor is already a *descriptorpb.FileDescriptorProto, this returns the input value.
+//
+// Note that this will not round trip exactly. If a *descriptorpb.FileDescriptorProto is turned into another
+// object that is a FileDescriptor, and then passed to this function, the return value will not be equal
+// if name, package, or syntax are set but empty. Instead, the return value will have these values unset.
+// For our/most purposes, this is fine.
+func FileDescriptorProtoForFileDescriptor(fileDescriptor FileDescriptor) *descriptorpb.FileDescriptorProto {
+	if fileDescriptorProto, ok := fileDescriptor.(*descriptorpb.FileDescriptorProto); ok {
+		return fileDescriptorProto
+	}
+	fileDescriptorProto := &descriptorpb.FileDescriptorProto{
+		Dependency:       fileDescriptor.GetDependency(),
+		PublicDependency: fileDescriptor.GetPublicDependency(),
+		WeakDependency:   fileDescriptor.GetWeakDependency(),
+		MessageType:      fileDescriptor.GetMessageType(),
+		EnumType:         fileDescriptor.GetEnumType(),
+		Service:          fileDescriptor.GetService(),
+		Extension:        fileDescriptor.GetExtension(),
+		Options:          fileDescriptor.GetOptions(),
+		SourceCodeInfo:   fileDescriptor.GetSourceCodeInfo(),
+	}
+	// Note that if a *descriptorpb.FileDescriptorProto has a set but empty name, package,
+	// or syntax, this won't be an exact round trip. But for our use, we say this is fine.
+	if name := fileDescriptor.GetName(); name != "" {
+		fileDescriptorProto.Name = proto.String(name)
+	}
+	if pkg := fileDescriptor.GetPackage(); pkg != "" {
+		fileDescriptorProto.Package = proto.String(pkg)
+	}
+	if syntax := fileDescriptor.GetSyntax(); syntax != "" {
+		fileDescriptorProto.Syntax = proto.String(syntax)
+	}
+	return fileDescriptorProto
+}
+
+// FileDescriptorProtosForFileDescriptors is a convenience function since Go does not have generics.
+//
+// Note that this will not round trip exactly. If a *descriptorpb.FileDescriptorProto is turned into another
+// object that is a FileDescriptor, and then passed to this function, the return value will not be equal
+// if name, package, or syntax are set but empty. Instead, the return value will have these values unset.
+// For our/most purposes, this is fine.
+func FileDescriptorProtosForFileDescriptors(fileDescriptors ...FileDescriptor) []*descriptorpb.FileDescriptorProto {
+	fileDescriptorProtos := make([]*descriptorpb.FileDescriptorProto, len(fileDescriptors))
+	for i, fileDescriptor := range fileDescriptors {
+		fileDescriptorProtos[i] = FileDescriptorProtoForFileDescriptor(fileDescriptor)
+	}
+	return fileDescriptorProtos
+}
+
+// FileDescriptorSetForFileDescriptors returns a new *descriptorpb.FileDescriptorSet for the given FileDescriptors.
+//
+// Note that this will not round trip exactly. If a *descriptorpb.FileDescriptorProto is turned into another
+// object that is a FileDescriptor, and then passed to this function, the return value will not be equal
+// if name, package, or syntax are set but empty. Instead, the return value will have these values unset.
+// For our/most purposes, this is fine.
+func FileDescriptorSetForFileDescriptors(fileDescriptors ...FileDescriptor) *descriptorpb.FileDescriptorSet {
+	return &descriptorpb.FileDescriptorSet{
+		File: FileDescriptorProtosForFileDescriptors(fileDescriptors...),
+	}
+}
+
+// ValidateFileDescriptor validates the FileDescriptor.
+//
+// A *descriptorpb.FileDescriptorProto can be passed to this.
+func ValidateFileDescriptor(fileDescriptor FileDescriptor) error {
+	if fileDescriptor == nil {
+		return errors.New("nil FileDescriptor")
+	}
+	if err := ValidateProtoPath("FileDescriptor.Name", fileDescriptor.GetName()); err != nil {
+		return err
+	}
+	if err := ValidateProtoPaths("FileDescriptor.Dependency", fileDescriptor.GetDependency()); err != nil {
+		return err
 	}
 	return nil
 }
@@ -52,7 +140,12 @@ func ValidateCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) error 
 	if err := ValidateCodeGeneratorRequestExceptFileDescriptorProtos(request); err != nil {
 		return err
 	}
-	return ValidateFileDescriptorProtos(request.ProtoFile)
+	for _, fileDescriptorProto := range request.ProtoFile {
+		if err := ValidateFileDescriptor(fileDescriptorProto); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ValidateCodeGeneratorRequestExceptFileDescriptorProtos validates the CodeGeneratorRequest

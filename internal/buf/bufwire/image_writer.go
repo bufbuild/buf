@@ -96,7 +96,7 @@ func (i *imageWriter) imageMarshal(
 	case buffetch.ImageEncodingJSON:
 		// TODO: verify that image is complete
 		resolver, err := protoencoding.NewResolver(
-			bufimage.ImageToFileDescriptorProtos(
+			bufimage.ImageToFileDescriptors(
 				image,
 			)...,
 		)

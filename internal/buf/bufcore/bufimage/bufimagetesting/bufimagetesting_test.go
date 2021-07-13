@@ -33,7 +33,7 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistFileOnly(b *testing.B) {
 			imageFiles,
 			NewImageFile(
 				b,
-				NewFileDescriptorProto(
+				NewProtoImageFile(
 					b,
 					fmt.Sprintf("a%d.proto/a%d.proto", i, i),
 				),
@@ -41,6 +41,8 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistFileOnly(b *testing.B) {
 				"",
 				fmt.Sprintf("foo/two/a%d.proto/a%d.proto", i, i),
 				false,
+				false,
+				nil,
 			),
 		)
 	}
@@ -63,7 +65,7 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistDirOnly(b *testing.B) {
 			imageFiles,
 			NewImageFile(
 				b,
-				NewFileDescriptorProto(
+				NewProtoImageFile(
 					b,
 					fmt.Sprintf("a%d.proto/a%d.proto", i, i),
 				),
@@ -71,6 +73,8 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistDirOnly(b *testing.B) {
 				"",
 				fmt.Sprintf("foo/two/a%d.proto/a%d.proto", i, i),
 				false,
+				false,
+				nil,
 			),
 		)
 	}
@@ -87,33 +91,33 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistDirOnly(b *testing.B) {
 func TestBasic(t *testing.T) {
 	t.Parallel()
 
-	fileDescriptorProtoImport := NewFileDescriptorProto(
+	protoImageFileImport := NewProtoImageFileIsImport(
 		t,
 		"import.proto",
 	)
-	fileDescriptorProtoAA := NewFileDescriptorProto(
+	protoImageFileAA := NewProtoImageFile(
 		t,
 		"a/a.proto",
 	)
-	fileDescriptorProtoAB := NewFileDescriptorProto(
+	protoImageFileAB := NewProtoImageFile(
 		t,
 		"a/b.proto",
 		"import.proto",
 	)
-	fileDescriptorProtoBA := NewFileDescriptorProto(
+	protoImageFileBA := NewProtoImageFile(
 		t,
 		"b/a.proto",
 		"a/a.proto",
 		"a/b.proto",
 	)
-	fileDescriptorProtoBB := NewFileDescriptorProto(
+	protoImageFileBB := NewProtoImageFile(
 		t,
 		"b/b.proto",
 		"a/a.proto",
 		"a/b.proto",
 		"b/b.proto",
 	)
-	fileDescriptorProtoOutlandishDirectoryName := NewFileDescriptorProto(
+	protoImageFileOutlandishDirectoryName := NewProtoImageFile(
 		t,
 		"d/d.proto/d.proto",
 		"import.proto",
@@ -121,51 +125,63 @@ func TestBasic(t *testing.T) {
 
 	fileImport := NewImageFile(
 		t,
-		fileDescriptorProtoImport,
+		protoImageFileImport,
 		nil,
 		"",
 		"some/import/import.proto",
 		true,
+		false,
+		nil,
 	)
 	fileOneAA := NewImageFile(
 		t,
-		fileDescriptorProtoAA,
+		protoImageFileAA,
 		nil,
 		"",
 		"foo/one/a/a.proto",
 		false,
+		false,
+		nil,
 	)
 	fileOneAB := NewImageFile(
 		t,
-		fileDescriptorProtoAB,
+		protoImageFileAB,
 		nil,
 		"",
 		"foo/one/a/b.proto",
 		false,
+		false,
+		nil,
 	)
 	fileTwoBA := NewImageFile(
 		t,
-		fileDescriptorProtoBA,
+		protoImageFileBA,
 		nil,
 		"",
 		"foo/two/b/a.proto",
 		false,
+		false,
+		nil,
 	)
 	fileTwoBB := NewImageFile(
 		t,
-		fileDescriptorProtoBB,
+		protoImageFileBB,
 		nil,
 		"",
 		"foo/two/b/b.proto",
 		false,
+		false,
+		nil,
 	)
 	fileOutlandishDirectoryName := NewImageFile(
 		t,
-		fileDescriptorProtoOutlandishDirectoryName,
+		protoImageFileOutlandishDirectoryName,
 		nil,
 		"",
 		"foo/three/d/d.proto/d.proto",
 		false,
+		false,
+		nil,
 	)
 
 	image, err := bufimage.NewImage(
@@ -182,12 +198,12 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "foo/one/a/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoImport, nil, "", "some/import/import.proto", true),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "foo/one/a/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoBA, nil, "", "foo/two/b/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoBB, nil, "", "foo/two/b/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
 		},
 		image.Files(),
 	)
@@ -196,11 +212,11 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "foo/one/a/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "foo/one/a/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoBA, nil, "", "foo/two/b/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoBB, nil, "", "foo/two/b/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
 		},
 		bufimage.ImageWithoutImports(image).Files(),
 	)
@@ -216,10 +232,10 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "foo/one/a/a.proto", true),
-			NewImageFile(t, fileDescriptorProtoImport, nil, "", "some/import/import.proto", true),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "foo/one/a/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoBA, nil, "", "foo/two/b/a.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -246,10 +262,10 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "foo/one/a/a.proto", true),
-			NewImageFile(t, fileDescriptorProtoImport, nil, "", "some/import/import.proto", true),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "foo/one/a/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoBA, nil, "", "foo/two/b/a.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -263,9 +279,9 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "foo/one/a/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoImport, nil, "", "some/import/import.proto", true),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "foo/one/a/b.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -279,11 +295,11 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "foo/one/a/a.proto", true),
-			NewImageFile(t, fileDescriptorProtoImport, nil, "", "some/import/import.proto", true),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "foo/one/a/b.proto", true),
-			NewImageFile(t, fileDescriptorProtoBA, nil, "", "foo/two/b/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoBB, nil, "", "foo/two/b/b.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", true, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -298,10 +314,10 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "foo/one/a/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoImport, nil, "", "some/import/import.proto", true),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "foo/one/a/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoBA, nil, "", "foo/two/b/a.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -326,10 +342,10 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "foo/one/a/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoImport, nil, "", "some/import/import.proto", true),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "foo/one/a/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoBA, nil, "", "foo/two/b/a.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -345,11 +361,11 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "foo/one/a/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoImport, nil, "", "some/import/import.proto", true),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "foo/one/a/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoBA, nil, "", "foo/two/b/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -365,30 +381,23 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "foo/one/a/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoImport, nil, "", "some/import/import.proto", true),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "foo/one/a/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoBA, nil, "", "foo/two/b/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
 
 	protoImage := &imagev1.Image{
-		File: []*descriptorpb.FileDescriptorProto{
-			fileDescriptorProtoAA,
-			fileDescriptorProtoImport,
-			fileDescriptorProtoAB,
-			fileDescriptorProtoBA,
-			fileDescriptorProtoBB,
-			fileDescriptorProtoOutlandishDirectoryName,
-		},
-		BufbuildImageExtension: &imagev1.ImageExtension{
-			ImageImportRefs: []*imagev1.ImageImportRef{
-				{
-					FileIndex: proto.Uint32(1),
-				},
-			},
+		File: []*imagev1.ImageFile{
+			protoImageFileAA,
+			protoImageFileImport,
+			protoImageFileAB,
+			protoImageFileBA,
+			protoImageFileBB,
+			protoImageFileOutlandishDirectoryName,
 		},
 	}
 	newImage, err = bufimage.NewImageForProto(protoImage)
@@ -396,12 +405,12 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "a/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoImport, nil, "", "import.proto", true),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "a/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoBA, nil, "", "b/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoBB, nil, "", "b/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoOutlandishDirectoryName, nil, "", "d/d.proto/d.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, "", "b/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "d/d.proto/d.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
@@ -414,24 +423,24 @@ func TestBasic(t *testing.T) {
 		t,
 		&descriptorpb.FileDescriptorSet{
 			File: []*descriptorpb.FileDescriptorProto{
-				fileDescriptorProtoAA,
-				fileDescriptorProtoImport,
-				fileDescriptorProtoAB,
-				fileDescriptorProtoBA,
-				fileDescriptorProtoBB,
-				fileDescriptorProtoOutlandishDirectoryName,
+				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+				testProtoImageFileToFileDescriptorProto(protoImageFileBA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileBB),
+				testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
 			},
 		},
 		bufimage.ImageToFileDescriptorSet(image),
 	)
 	codeGeneratorRequest := &pluginpb.CodeGeneratorRequest{
 		ProtoFile: []*descriptorpb.FileDescriptorProto{
-			fileDescriptorProtoAA,
-			fileDescriptorProtoImport,
-			fileDescriptorProtoAB,
-			fileDescriptorProtoBA,
-			fileDescriptorProtoBB,
-			fileDescriptorProtoOutlandishDirectoryName,
+			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+			testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
 		},
 		Parameter: proto.String("foo"),
 		FileToGenerate: []string{
@@ -452,13 +461,20 @@ func TestBasic(t *testing.T) {
 	AssertImageFilesEqual(
 		t,
 		[]bufimage.ImageFile{
-			NewImageFile(t, fileDescriptorProtoAA, nil, "", "a/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoImport, nil, "", "import.proto", true),
-			NewImageFile(t, fileDescriptorProtoAB, nil, "", "a/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoBA, nil, "", "b/a.proto", false),
-			NewImageFile(t, fileDescriptorProtoBB, nil, "", "b/b.proto", false),
-			NewImageFile(t, fileDescriptorProtoOutlandishDirectoryName, nil, "", "d/d.proto/d.proto", false),
+			NewImageFile(t, protoImageFileAA, nil, "", "a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "a/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, "", "b/b.proto", false, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "d/d.proto/d.proto", false, false, nil),
 		},
 		newImage.Files(),
 	)
+}
+
+func testProtoImageFileToFileDescriptorProto(imageFile *imagev1.ImageFile) *descriptorpb.FileDescriptorProto {
+	return &descriptorpb.FileDescriptorProto{
+		Name:       imageFile.Name,
+		Dependency: imageFile.Dependency,
+	}
 }

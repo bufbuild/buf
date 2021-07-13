@@ -19,10 +19,11 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1"
+	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // NewImageFile returns a new ImageFile for testing.
@@ -30,32 +31,60 @@ import (
 // TODO: moduleIdentity and commit should be options.
 func NewImageFile(
 	t testing.TB,
-	fileDescriptorProto *descriptorpb.FileDescriptorProto,
+	fileDescriptor protodescriptor.FileDescriptor,
 	moduleIdentity bufmodule.ModuleIdentity,
 	commit string,
 	externalPath string,
 	isImport bool,
+	isSyntaxUnspecified bool,
+	unusedDependencyIndexes []int32,
 ) bufimage.ImageFile {
 	imageFile, err := bufimage.NewImageFile(
-		fileDescriptorProto,
+		fileDescriptor,
 		moduleIdentity,
 		commit,
 		externalPath,
 		isImport,
+		isSyntaxUnspecified,
+		unusedDependencyIndexes,
 	)
 	require.NoError(t, err)
 	return imageFile
 }
 
-// NewFileDescriptorProto returns a new FileDescriptorProto for testing.
-func NewFileDescriptorProto(
+// NewProtoImageFile returns a new *imagev1.ImageFile for testing.
+//
+// This is also a protodescriptor.FileDescriptor.
+func NewProtoImageFile(
 	t testing.TB,
 	path string,
 	importPaths ...string,
-) *descriptorpb.FileDescriptorProto {
-	return &descriptorpb.FileDescriptorProto{
+) *imagev1.ImageFile {
+	return &imagev1.ImageFile{
 		Name:       proto.String(path),
 		Dependency: importPaths,
+		BufExtension: &imagev1.ImageFileExtension{
+			IsImport:            proto.Bool(false),
+			IsSyntaxUnspecified: proto.Bool(false),
+		},
+	}
+}
+
+// NewProtoImageFileIsImport returns a new *imagev1.ImageFile for testing that is an import.
+//
+// This is also a protodescriptor.FileDescriptor.
+func NewProtoImageFileIsImport(
+	t testing.TB,
+	path string,
+	importPaths ...string,
+) *imagev1.ImageFile {
+	return &imagev1.ImageFile{
+		Name:       proto.String(path),
+		Dependency: importPaths,
+		BufExtension: &imagev1.ImageFileExtension{
+			IsImport:            proto.Bool(true),
+			IsSyntaxUnspecified: proto.Bool(false),
+		},
 	}
 }
 
@@ -71,15 +100,17 @@ func normalizeImageFiles(t testing.TB, imageFiles []bufimage.ImageFile) []bufima
 	for i, imageFile := range imageFiles {
 		normalizedImageFiles[i] = NewImageFile(
 			t,
-			NewFileDescriptorProto(
+			NewProtoImageFile(
 				t,
-				imageFile.Proto().GetName(),
-				imageFile.Proto().GetDependency()...,
+				imageFile.FileDescriptor().GetName(),
+				imageFile.FileDescriptor().GetDependency()...,
 			),
 			imageFile.ModuleIdentity(),
 			imageFile.Commit(),
 			imageFile.ExternalPath(),
 			imageFile.IsImport(),
+			imageFile.IsSyntaxUnspecified(),
+			imageFile.UnusedDependencyIndexes(),
 		)
 	}
 	return normalizedImageFiles
