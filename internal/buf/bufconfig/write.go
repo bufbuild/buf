@@ -61,8 +61,7 @@ version: v1
 # This affects the behavior of buf build, as well as the build behavior
 # for source lint and breaking change rules.
 #
-# If you want to build all files in your repository, and all imports in your
-# .proto files derive from the root of your repository, this section can be
+# If you want to build all files in your repository, this section can be
 # omitted.
 build:
 
@@ -123,7 +122,7 @@ lint:
   {{if not .Uncomment}}#{{end}}  ENUM_PASCAL_CASE:
   {{if not .Uncomment}}#{{end}}    - foo/foo.proto
   {{if not .Uncomment}}#{{end}}    - bar
-  {{if not .Uncomment}}#{{end}}  PACKAGE_AFFINITY:
+  {{if not .Uncomment}}#{{end}}  FIELD_LOWER_SNAKE_CASE:
   {{if not .Uncomment}}#{{end}}    - foo
 
   # enum_zero_value_suffix affects the behavior of the ENUM_ZERO_VALUE_SUFFIX
