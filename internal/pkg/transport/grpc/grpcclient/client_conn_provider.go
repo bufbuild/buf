@@ -27,15 +27,17 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/encoding/gzip"
 )
 
 const maxMessageSizeBytes = 128 << 20
 
 type clientConnProvider struct {
-	ctx           context.Context
-	logger        *zap.Logger
-	tlsConfig     *tls.Config
-	observability bool
+	ctx             context.Context
+	logger          *zap.Logger
+	tlsConfig       *tls.Config
+	observability   bool
+	gzipCompression bool
 
 	cachedDialOptions []grpc.DialOption
 	cache             map[string]*grpc.ClientConn
@@ -117,12 +119,25 @@ func (c *clientConnProvider) monitorClientConnStatus(parsedAddress string, clien
 }
 
 func (c *clientConnProvider) getDialOptions() ([]grpc.DialOption, error) {
+	defaultCallOptions := []grpc.CallOption{
+		// NOT Recv, this is the client
+		grpc.MaxCallSendMsgSize(maxMessageSizeBytes),
+		// NOT Send, this is the client
+		grpc.MaxCallRecvMsgSize(maxMessageSizeBytes),
+	}
+	if !c.gzipCompression {
+		defaultCallOptions = append(
+			defaultCallOptions,
+			// By using gzip.Name, gzip is imported, which registers the
+			// gzip Compressor.
+			//
+			// https://pkg.go.dev/google.golang.org/grpc@v1.39.0/encoding/gzip
+			grpc.UseCompressor(gzip.Name),
+		)
+	}
 	dialOptions := []grpc.DialOption{
 		grpc.WithDefaultCallOptions(
-			// NOT Recv, this is the client
-			grpc.MaxCallSendMsgSize(maxMessageSizeBytes),
-			// NOT Send, this is the client
-			grpc.MaxCallRecvMsgSize(maxMessageSizeBytes),
+			defaultCallOptions...,
 		),
 		grpc.WithUnaryInterceptor(
 			rpcgrpc.NewUnaryClientInterceptor(),

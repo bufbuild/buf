@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/api/v1alpha1/api.proto";
 import "google/protobuf/timestamp.proto";
 
 message RepositoryBranch {
@@ -35,13 +34,9 @@ message RepositoryBranch {
 // RepositoryBranchService is the Repository branch service.
 service RepositoryBranchService {
   // CreateRepositoryBranch creates a new repository branch.
-  rpc CreateRepositoryBranch(CreateRepositoryBranchRequest) returns (CreateRepositoryBranchResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc CreateRepositoryBranch(CreateRepositoryBranchRequest) returns (CreateRepositoryBranchResponse);
   // ListRepositoryBranches lists the repository branches associated with a Repository.
-  rpc ListRepositoryBranches(ListRepositoryBranchesRequest) returns (ListRepositoryBranchesResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc ListRepositoryBranches(ListRepositoryBranchesRequest) returns (ListRepositoryBranchesResponse);
 }
 
 message CreateRepositoryBranchRequest {

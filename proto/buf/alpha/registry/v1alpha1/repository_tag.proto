@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/api/v1alpha1/api.proto";
 import "google/protobuf/timestamp.proto";
 
 message RepositoryTag {
@@ -37,13 +36,9 @@ message RepositoryTag {
 // RepositoryTagService is the Repository tag service.
 service RepositoryTagService {
   // CreateRepositoryTag creates a new repository tag.
-  rpc CreateRepositoryTag(CreateRepositoryTagRequest) returns (CreateRepositoryTagResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc CreateRepositoryTag(CreateRepositoryTagRequest) returns (CreateRepositoryTagResponse);
   // ListRepositoryTags lists the repository tags associated with a Repository.
-  rpc ListRepositoryTags(ListRepositoryTagsRequest) returns (ListRepositoryTagsResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc ListRepositoryTags(ListRepositoryTagsRequest) returns (ListRepositoryTagsResponse);
 }
 
 message CreateRepositoryTagRequest {

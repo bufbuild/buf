@@ -16,6 +16,7 @@ package protosource
 
 type message struct {
 	namedDescriptor
+	optionExtensionDescriptor
 
 	fields                           []Field
 	extensions                       []Field
@@ -35,6 +36,7 @@ type message struct {
 
 func newMessage(
 	namedDescriptor namedDescriptor,
+	optionExtensionDescriptor optionExtensionDescriptor,
 	parent Message,
 	isMapEntry bool,
 	messageSetWireFormat bool,
@@ -44,6 +46,7 @@ func newMessage(
 ) *message {
 	return &message{
 		namedDescriptor:                  namedDescriptor,
+		optionExtensionDescriptor:        optionExtensionDescriptor,
 		isMapEntry:                       isMapEntry,
 		messageSetWireFormat:             messageSetWireFormat,
 		noStandardDescriptorAccessor:     noStandardDescriptorAccessor,

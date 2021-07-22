@@ -1,5 +1,5 @@
 version: v1
-name: buf.build/bufbuild/bufapis
+name: buf.build/bufbuild/buf
 lint:
   use:
     - DEFAULT

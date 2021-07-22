@@ -112,6 +112,7 @@ func NewGRPCClientConnProvider(
 			tlsConfig,
 		),
 		grpcclient.ClientConnProviderWithObservability(),
+		grpcclient.ClientConnProviderWithGZIPCompression(),
 	)
 }
 

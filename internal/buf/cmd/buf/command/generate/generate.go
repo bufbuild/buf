@@ -20,11 +20,9 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufgen"
-	"github.com/bufbuild/buf/internal/buf/bufwork"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -53,7 +51,6 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -169,7 +166,7 @@ before writing the result. This is equivalent behavior to "buf protoc --by_dir".
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
-				return run(ctx, container, flags, moduleResolverReaderProvider)
+				return run(ctx, container, flags)
 			},
 			bufcli.NewErrorInterceptor(),
 		),
@@ -262,7 +259,6 @@ func run(
 	ctx context.Context,
 	container appflag.Container,
 	flags *flags,
-	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) (retErr error) {
 	logger := container.Logger()
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
@@ -291,14 +287,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
-	if err != nil {
-		return err
-	}
-	moduleReader, err := moduleResolverReaderProvider.GetModuleReader(ctx, container)
-	if err != nil {
-		return err
-	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		".",
@@ -316,14 +304,19 @@ func run(
 	if err != nil {
 		return err
 	}
-	imageConfigs, fileAnnotations, err := bufcli.NewWireImageConfigReader(
-		logger,
+	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	if err != nil {
+		return err
+	}
+	imageConfigReader, err := bufcli.NewWireImageConfigReader(
+		container,
 		storageosProvider,
-		bufconfig.NewProvider(logger),
-		bufwork.NewProvider(logger),
-		moduleResolver,
-		moduleReader,
-	).GetImageConfigs(
+		registryProvider,
+	)
+	if err != nil {
+		return err
+	}
+	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
 		ctx,
 		container,
 		ref,

@@ -29,7 +29,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/internal/buflintv1"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/internal/buflintv1beta1"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"go.uber.org/zap"
 )
 

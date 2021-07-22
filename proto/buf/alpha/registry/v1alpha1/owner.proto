@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/api/v1alpha1/api.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
 import "buf/alpha/registry/v1alpha1/organization.proto";
 
@@ -34,9 +33,7 @@ message Owner {
 service OwnerService {
   // GetOwnerByName takes an owner name and returns the owner as
   // either a user or organization.
-  rpc GetOwnerByName(GetOwnerByNameRequest) returns (GetOwnerByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc GetOwnerByName(GetOwnerByNameRequest) returns (GetOwnerByNameResponse);
 }
 
 message GetOwnerByNameRequest {

@@ -16,6 +16,7 @@ package protosource
 
 type enumValue struct {
 	namedDescriptor
+	optionExtensionDescriptor
 
 	enum       Enum
 	number     int
@@ -24,15 +25,17 @@ type enumValue struct {
 
 func newEnumValue(
 	namedDescriptor namedDescriptor,
+	optionExtensionDescriptor optionExtensionDescriptor,
 	enum Enum,
 	number int,
 	numberPath []int32,
 ) *enumValue {
 	return &enumValue{
-		namedDescriptor: namedDescriptor,
-		enum:            enum,
-		number:          number,
-		numberPath:      numberPath,
+		namedDescriptor:           namedDescriptor,
+		optionExtensionDescriptor: optionExtensionDescriptor,
+		enum:                      enum,
+		number:                    number,
+		numberPath:                numberPath,
 	}
 }
 

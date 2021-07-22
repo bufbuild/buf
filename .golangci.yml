@@ -3,6 +3,17 @@ run:
 linters-settings:
   errcheck:
     check-type-assertions: true
+  forbidigo:
+    forbid:
+      - 'fmt\.Print.*'
+  importas:
+    alias:
+      - pkg: github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1
+        alias: imagev1
+      - pkg: github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1
+        alias: modulev1
+      - pkg: github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1
+        alias: registryv1alpha1
 linters:
   enable:
     - govet
@@ -13,6 +24,8 @@ linters:
     - dogsled
     - errcheck
     - exportloopref
+    - forbidigo
+    - forcetypeassert
     - gochecknoinits
     - gofmt
     - goheader
@@ -22,12 +35,16 @@ linters:
     - gosimple
     - gosec
     - govet
+    - importas
     - ineffassign
+    - makezero
     - misspell
     - nakedret
+    - nilerr
     - nolintlint
+    - predeclared
+    - promlinter
     - rowserrcheck
-    - scopelint
     - staticcheck
     - structcheck
     - stylecheck
@@ -35,6 +52,7 @@ linters:
     - unconvert
     - unused
     - varcheck
+    - wastedassign
     - whitespace
   disable-all: true
 issues:
@@ -70,4 +88,4 @@ issues:
       # we actually want to use this init in testing
     - linters:
         - gochecknoinits
-      path: internal/buf/bufcore/bufmodule/bufmoduletesting/bufmoduletesting.go
+      path: internal/buf/bufmodule/bufmoduletesting/bufmoduletesting.go

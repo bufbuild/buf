@@ -130,6 +130,7 @@ package `)
 import (
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 )
 
 var (
@@ -176,7 +177,16 @@ func init() {
 		panic(err.Error())
 	}
 	ReadBucket = readBucket
-}`)
+}
+
+// Exists returns true if the given path exists in the static data.
+//
+// The path is normalized within this function.
+func Exists(path string) bool {
+	_, ok := pathToData[normalpath.Normalize(path)]
+	return ok
+}
+`)
 
 	return format.Source(buffer.Bytes())
 }

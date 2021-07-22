@@ -20,8 +20,9 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/buflock"
+	"github.com/bufbuild/buf/internal/buf/bufmodule"
+	"github.com/bufbuild/buf/internal/bufpkg/bufrpc"
 	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
@@ -32,16 +33,14 @@ import (
 )
 
 const (
-	dirFlagName   = "dir"
-	onlyFlagName  = "only"
-	defaultRemote = "buf.build"
+	dirFlagName  = "dir"
+	onlyFlagName = "only"
 )
 
 // NewCommand returns a new update Command.
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -54,7 +53,7 @@ func NewCommand(
 		Args: cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
-				return run(ctx, container, flags, moduleResolverReaderProvider)
+				return run(ctx, container, flags)
 			},
 			bufcli.NewErrorInterceptor(),
 		),
@@ -94,7 +93,6 @@ func run(
 	ctx context.Context,
 	container appflag.Container,
 	flags *flags,
-	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) error {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
@@ -116,7 +114,7 @@ func run(
 		return err
 	}
 
-	remote := defaultRemote
+	remote := bufrpc.DefaultRemote
 	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
 		remote = moduleConfig.ModuleIdentity.Remote()
 	}
@@ -157,7 +155,7 @@ func run(
 		}
 		protoDependencyModulePins, err := service.GetModulePins(ctx, protoDependencyModuleReferences, currentModulePins)
 		if err != nil {
-			if rpc.GetErrorCode(err) == rpc.ErrorCodeUnimplemented && remote != defaultRemote {
+			if rpc.GetErrorCode(err) == rpc.ErrorCodeUnimplemented && remote != bufrpc.DefaultRemote {
 				return fmt.Errorf("%w. Are you sure %q (derived from module name %q) is a Buf Schema Registry?", err, remote, moduleConfig.ModuleIdentity.IdentityString())
 			}
 			return err
@@ -175,7 +173,7 @@ func run(
 	if err != nil {
 		return bufcli.NewInternalError(err)
 	}
-	if err := bufmodule.PutModuleDependencyModulePinsToBucket(ctx, readWriteBucket, module); err != nil {
+	if err := bufmodule.PutModuleDependencyModulePinsToBucket(ctx, readWriteBucket, module.DependencyModulePins()); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil

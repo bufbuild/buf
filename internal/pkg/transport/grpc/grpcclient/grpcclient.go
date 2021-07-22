@@ -61,3 +61,13 @@ func ClientConnProviderWithObservability() ClientConnProviderOption {
 		clientConnProvider.observability = true
 	}
 }
+
+// ClientConnProviderWithGZIPCompression returns a new ClientConnProviderOption that
+// enables gzip compression.
+//
+// The default is to not use compression.
+func ClientConnProviderWithGZIPCompression() ClientConnProviderOption {
+	return func(clientConnProvider *clientConnProvider) {
+		clientConnProvider.gzipCompression = true
+	}
+}

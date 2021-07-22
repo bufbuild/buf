@@ -20,7 +20,7 @@ import (
 	"errors"
 	"text/template"
 
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
 
