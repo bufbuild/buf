@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
-	"github.com/bufbuild/buf/internal/buf/bufcore"
+	"github.com/bufbuild/buf/internal/buf/bufmodule"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -87,13 +87,15 @@ func newFileAnnotation(
 	typeString string,
 	message string,
 ) bufanalysis.FileAnnotation {
-	var fileInfo bufcore.FileInfo
+	var fileInfo bufmodule.FileInfo
 	var err error
 	if path != "" {
-		fileInfo, err = bufcore.NewFileInfo(
+		fileInfo, err = bufmodule.NewFileInfo(
 			path,
 			"",
 			false,
+			nil,
+			"",
 		)
 		require.NoError(t, err)
 	}
@@ -140,10 +142,12 @@ func normalizeFileAnnotations(
 		fileInfo := a.FileInfo()
 		var err error
 		if fileInfo != nil {
-			fileInfo, err = bufcore.NewFileInfo(
+			fileInfo, err = bufmodule.NewFileInfo(
 				fileInfo.Path(),
 				"",
 				false,
+				nil,
+				"",
 			)
 			require.NoError(t, err)
 		}

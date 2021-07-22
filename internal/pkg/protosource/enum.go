@@ -16,6 +16,7 @@ package protosource
 
 type enum struct {
 	namedDescriptor
+	optionExtensionDescriptor
 
 	values             []EnumValue
 	allowAlias         bool
@@ -26,13 +27,15 @@ type enum struct {
 
 func newEnum(
 	namedDescriptor namedDescriptor,
+	optionExtensionDescriptor optionExtensionDescriptor,
 	allowAlias bool,
 	allowAliasPath []int32,
 ) *enum {
 	return &enum{
-		namedDescriptor: namedDescriptor,
-		allowAlias:      allowAlias,
-		allowAliasPath:  allowAliasPath,
+		namedDescriptor:           namedDescriptor,
+		optionExtensionDescriptor: optionExtensionDescriptor,
+		allowAlias:                allowAlias,
+		allowAliasPath:            allowAliasPath,
 	}
 }
 

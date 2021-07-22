@@ -61,7 +61,7 @@ func PrintRules(writer io.Writer, rules []Rule, formatString string) (retErr err
 	if len(rules) == 0 {
 		return nil
 	}
-	asJSON := false
+	var asJSON bool
 	switch s := strings.ToLower(strings.TrimSpace(formatString)); s {
 	case "", "text":
 		asJSON = false

@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/api/v1alpha1/api.proto";
 import "buf/alpha/module/v1alpha1/module.proto";
 
 // ResolveService is the resolve service.
@@ -30,9 +29,7 @@ service ResolveService {
   // to make sure this function can do dependency resolution.
   //
   // This function also deals with tiebreaking what ModulePin wins for the same repository.
-  rpc GetModulePins(GetModulePinsRequest) returns (GetModulePinsResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc GetModulePins(GetModulePinsRequest) returns (GetModulePinsResponse);
 }
 
 message GetModulePinsRequest {

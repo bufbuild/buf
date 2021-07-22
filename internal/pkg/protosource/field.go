@@ -16,6 +16,7 @@ package protosource
 
 type field struct {
 	namedDescriptor
+	optionExtensionDescriptor
 
 	message  Message
 	number   int
@@ -41,6 +42,7 @@ type field struct {
 
 func newField(
 	namedDescriptor namedDescriptor,
+	optionExtensionDescriptor optionExtensionDescriptor,
 	message Message,
 	number int,
 	label FieldDescriptorProtoLabel,
@@ -61,25 +63,26 @@ func newField(
 	packedPath []int32,
 ) *field {
 	return &field{
-		namedDescriptor: namedDescriptor,
-		message:         message,
-		number:          number,
-		label:           label,
-		typ:             typ,
-		typeName:        typeName,
-		oneof:           oneof,
-		proto3Optional:  proto3Optional,
-		jsonName:        jsonName,
-		jsType:          jsType,
-		cType:           cType,
-		packed:          packed,
-		numberPath:      numberPath,
-		typePath:        typePath,
-		typeNamePath:    typeNamePath,
-		jsonNamePath:    jsonNamePath,
-		jsTypePath:      jsTypePath,
-		cTypePath:       cTypePath,
-		packedPath:      packedPath,
+		namedDescriptor:           namedDescriptor,
+		optionExtensionDescriptor: optionExtensionDescriptor,
+		message:                   message,
+		number:                    number,
+		label:                     label,
+		typ:                       typ,
+		typeName:                  typeName,
+		oneof:                     oneof,
+		proto3Optional:            proto3Optional,
+		jsonName:                  jsonName,
+		jsType:                    jsType,
+		cType:                     cType,
+		packed:                    packed,
+		numberPath:                numberPath,
+		typePath:                  typePath,
+		typeNamePath:              typeNamePath,
+		jsonNamePath:              jsonNamePath,
+		jsTypePath:                jsTypePath,
+		cTypePath:                 cTypePath,
+		packedPath:                packedPath,
 	}
 }
 

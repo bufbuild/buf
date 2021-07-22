@@ -18,6 +18,7 @@ import "fmt"
 
 type method struct {
 	namedDescriptor
+	optionExtensionDescriptor
 
 	service              Service
 	inputTypeName        string
@@ -32,6 +33,7 @@ type method struct {
 
 func newMethod(
 	namedDescriptor namedDescriptor,
+	optionExtensionDescriptor optionExtensionDescriptor,
 	service Service,
 	inputTypeName string,
 	outputTypeName string,
@@ -49,16 +51,17 @@ func newMethod(
 		return nil, fmt.Errorf("no outputTypeName on %q", namedDescriptor.name)
 	}
 	return &method{
-		namedDescriptor:      namedDescriptor,
-		service:              service,
-		inputTypeName:        inputTypeName,
-		outputTypeName:       outputTypeName,
-		clientStreaming:      clientStreaming,
-		serverStreaming:      serverStreaming,
-		inputTypePath:        inputTypePath,
-		outputTypePath:       outputTypePath,
-		idempotencyLevel:     idempotencyLevel,
-		idempotencyLevelPath: idempotencyLevelPath,
+		namedDescriptor:           namedDescriptor,
+		optionExtensionDescriptor: optionExtensionDescriptor,
+		service:                   service,
+		inputTypeName:             inputTypeName,
+		outputTypeName:            outputTypeName,
+		clientStreaming:           clientStreaming,
+		serverStreaming:           serverStreaming,
+		inputTypePath:             inputTypePath,
+		outputTypePath:            outputTypePath,
+		idempotencyLevel:          idempotencyLevel,
+		idempotencyLevelPath:      idempotencyLevelPath,
 	}, nil
 }
 

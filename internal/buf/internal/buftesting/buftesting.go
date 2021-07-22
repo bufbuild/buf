@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/prototesting"

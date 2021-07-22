@@ -17,7 +17,7 @@ package internal
 import (
 	"strings"
 
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/app"
 )
 

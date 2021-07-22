@@ -18,9 +18,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/internal/buf/bufapimodule"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
@@ -38,7 +39,6 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -47,7 +47,7 @@ func NewCommand(
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
-				return run(ctx, container, flags, moduleResolverReaderProvider)
+				return run(ctx, container, flags)
 			},
 			bufcli.NewErrorInterceptor(),
 		),
@@ -78,7 +78,6 @@ func run(
 	ctx context.Context,
 	container appflag.Container,
 	flags *flags,
-	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) error {
 	moduleRef, err := buffetch.NewModuleRefParser(
 		container.Logger(),
@@ -89,11 +88,15 @@ func run(
 	if err != nil {
 		return bufcli.NewModuleRefError(container.Arg(0))
 	}
-	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
+	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
 	}
-	moduleReader, err := moduleResolverReaderProvider.GetModuleReader(ctx, container)
+	moduleResolver := bufapimodule.NewModuleResolver(container.Logger(), registryProvider)
+	if err != nil {
+		return err
+	}
+	moduleReader, err := bufcli.NewModuleReaderAndCreateCacheDirs(container, registryProvider)
 	if err != nil {
 		return err
 	}

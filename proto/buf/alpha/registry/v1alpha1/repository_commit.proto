@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/api/v1alpha1/api.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -47,19 +46,16 @@ message RepositoryCommit {
 service RepositoryCommitService {
   // ListRepositoryCommitsByBranch lists the repository commits associated
   // with a repository branch on a repository, ordered by their create time.
-  rpc ListRepositoryCommitsByBranch(ListRepositoryCommitsByBranchRequest) returns (ListRepositoryCommitsByBranchResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc ListRepositoryCommitsByBranch(ListRepositoryCommitsByBranchRequest) returns (ListRepositoryCommitsByBranchResponse);
+  // ListRepositoryCommitsByReference returns repository commits up-to and including
+  // the provided reference.
+  rpc ListRepositoryCommitsByReference(ListRepositoryCommitsByReferenceRequest) returns (ListRepositoryCommitsByReferenceResponse);
   // GetRepositoryCommitByReference returns the repository commit matching
   // the provided reference, if it exists.
-  rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse);
   // GetRepositoryCommitBySequenceID returns the repository commit matching
   // the provided sequence ID and branch, if it exists.
-  rpc GetRepositoryCommitBySequenceID(GetRepositoryCommitBySequenceIDRequest) returns (GetRepositoryCommitBySequenceIDResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc GetRepositoryCommitBySequenceID(GetRepositoryCommitBySequenceIDRequest) returns (GetRepositoryCommitBySequenceIDResponse);
 }
 
 message ListRepositoryCommitsByBranchRequest {
@@ -75,6 +71,23 @@ message ListRepositoryCommitsByBranchRequest {
 }
 
 message ListRepositoryCommitsByBranchResponse {
+  repeated RepositoryCommit repository_commits = 1;
+  string next_page_token = 2;
+}
+
+message ListRepositoryCommitsByReferenceRequest {
+  // The owner of the repository which the repository reference belongs to.
+  string repository_owner = 1;
+  // The name of the repository which the repository reference belongs to.
+  string repository_name = 2;
+  // The reference used to resolve repository commits. Can be a branch, tag or commit.
+  string reference = 3;
+  uint32 page_size = 4;
+  string page_token = 5;
+  bool reverse = 6;
+}
+
+message ListRepositoryCommitsByReferenceResponse {
   repeated RepositoryCommit repository_commits = 1;
   string next_page_token = 2;
 }

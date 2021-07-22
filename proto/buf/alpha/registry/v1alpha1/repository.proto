@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/api/v1alpha1/api.proto";
 import "google/protobuf/timestamp.proto";
 
 enum Visibility {
@@ -46,53 +45,29 @@ message Repository {
 // RepositoryService is the Repository service.
 service RepositoryService {
   // GetRepository gets a repository by ID.
-  rpc GetRepository(GetRepositoryRequest) returns (GetRepositoryResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc GetRepository(GetRepositoryRequest) returns (GetRepositoryResponse);
   // GetRepositoryByFullName gets a repository by full name.
-  rpc GetRepositoryByFullName(GetRepositoryByFullNameRequest) returns (GetRepositoryByFullNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc GetRepositoryByFullName(GetRepositoryByFullNameRequest) returns (GetRepositoryByFullNameResponse);
   // ListRepositories lists all repositories.
-  rpc ListRepositories(ListRepositoriesRequest) returns (ListRepositoriesResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc ListRepositories(ListRepositoriesRequest) returns (ListRepositoriesResponse);
   // ListUserRepositories lists all repositories belonging to a user.
-  rpc ListUserRepositories(ListUserRepositoriesRequest) returns (ListUserRepositoriesResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc ListUserRepositories(ListUserRepositoriesRequest) returns (ListUserRepositoriesResponse);
   // ListOrganizationRepositories lists all repositories for an organization.
-  rpc ListOrganizationRepositories(ListOrganizationRepositoriesRequest) returns (ListOrganizationRepositoriesResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc ListOrganizationRepositories(ListOrganizationRepositoriesRequest) returns (ListOrganizationRepositoriesResponse);
   // CreateRepositoryByFullName creates a new repository by full name.
-  rpc CreateRepositoryByFullName(CreateRepositoryByFullNameRequest) returns (CreateRepositoryByFullNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc CreateRepositoryByFullName(CreateRepositoryByFullNameRequest) returns (CreateRepositoryByFullNameResponse);
   // UpdateRepositoryName updates a repository's name.
-  rpc UpdateRepositoryName(UpdateRepositoryNameRequest) returns (UpdateRepositoryNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc UpdateRepositoryName(UpdateRepositoryNameRequest) returns (UpdateRepositoryNameResponse);
   // UpdateRepositoryNameByFullName updates a repository's name by full name.
-  rpc UpdateRepositoryNameByFullName(UpdateRepositoryNameByFullNameRequest) returns (UpdateRepositoryNameByFullNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc UpdateRepositoryNameByFullName(UpdateRepositoryNameByFullNameRequest) returns (UpdateRepositoryNameByFullNameResponse);
   // UpdateRepositoryVisibility updates a repository's visibility.
-  rpc UpdateRepositoryVisibility(UpdateRepositoryVisibilityRequest) returns (UpdateRepositoryVisibilityResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc UpdateRepositoryVisibility(UpdateRepositoryVisibilityRequest) returns (UpdateRepositoryVisibilityResponse);
   // UpdateRepositoryVisibilityByName updates a repository's visibility by name.
-  rpc UpdateRepositoryVisibilityByName(UpdateRepositoryVisibilityByNameRequest) returns (UpdateRepositoryVisibilityByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc UpdateRepositoryVisibilityByName(UpdateRepositoryVisibilityByNameRequest) returns (UpdateRepositoryVisibilityByNameResponse);
   // DeleteRepository deletes a repository.
-  rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse);
   // DeleteRepositoryByFullName deletes a repository by full name.
-  rpc DeleteRepositoryByFullName(DeleteRepositoryByFullNameRequest) returns (DeleteRepositoryByFullNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc DeleteRepositoryByFullName(DeleteRepositoryByFullNameRequest) returns (DeleteRepositoryByFullNameResponse);
 }
 
 message GetRepositoryRequest {

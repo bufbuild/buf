@@ -17,6 +17,7 @@
 package datawkt
 
 import (
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 )
@@ -71,4 +72,12 @@ func init() {
 		panic(err.Error())
 	}
 	ReadBucket = readBucket
+}
+
+// Exists returns true if the given path exists in the static data.
+//
+// The path is normalized within this function.
+func Exists(path string) bool {
+	_, ok := pathToData[normalpath.Normalize(path)]
+	return ok
 }

@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/rpc"
@@ -42,7 +42,6 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -52,7 +51,7 @@ func NewCommand(
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
-				return run(ctx, container, flags, moduleResolverReaderProvider)
+				return run(ctx, container, flags)
 			},
 			bufcli.NewErrorInterceptor(),
 		),
@@ -103,7 +102,6 @@ func run(
 	ctx context.Context,
 	container appflag.Container,
 	flags *flags,
-	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) (retErr error) {
 	if flags.Branch == "" {
 		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", branchFlagName)
@@ -113,7 +111,9 @@ func run(
 		return err
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	module, moduleIdentity, err := bufcli.ReadModule(
+	// We are pushing to the BSR, this module has to be independently buildable
+	// given the configuration it has without any enclosing workspace.
+	module, moduleIdentity, err := bufcli.ReadModuleWithWorkspacesDisabled(
 		ctx,
 		container,
 		storageosProvider,

@@ -231,9 +231,9 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 			}
 			g.P(errorReturnString)
 			g.P(`}`)
-			returnValueStrings := make([]string, len(method.Output.Fields))
-			for i, field := range method.Output.Fields {
-				returnValueStrings[i] = "response." + field.GoName
+			returnValueStrings := make([]string, 0, len(method.Output.Fields))
+			for _, field := range method.Output.Fields {
+				returnValueStrings = append(returnValueStrings, "response."+field.GoName)
 			}
 			returnValueStrings = append(returnValueStrings, "nil")
 			g.P(`return `, strings.Join(returnValueStrings, ", "))

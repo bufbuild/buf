@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking/internal/bufbreakingv1"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking/internal/bufbreakingv1beta1"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"go.uber.org/zap"
 )
 

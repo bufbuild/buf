@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufgen"
 	"github.com/bufbuild/buf/internal/buf/internal/buftesting"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
@@ -154,7 +153,6 @@ func testCompareGeneratedStubs(
 			return NewCommand(
 				name,
 				appflag.NewBuilder(name),
-				bufcli.NopModuleResolverReaderProvider{},
 			)
 		},
 		func(string) map[string]string {
@@ -238,7 +236,6 @@ func testCompareGeneratedStubsArchive(
 			return NewCommand(
 				name,
 				appflag.NewBuilder(name),
-				bufcli.NopModuleResolverReaderProvider{},
 			)
 		},
 		func(string) map[string]string {

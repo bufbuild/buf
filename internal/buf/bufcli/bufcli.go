@@ -20,15 +20,18 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufapiclient"
+	"github.com/bufbuild/buf/internal/buf/bufapimodule"
 	"github.com/bufbuild/buf/internal/buf/bufapp"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/internal/buf/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/internal/buf/buftransport"
 	"github.com/bufbuild/buf/internal/buf/bufwire"
 	"github.com/bufbuild/buf/internal/buf/bufwork"
@@ -37,6 +40,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/app/appname"
+	"github.com/bufbuild/buf/internal/pkg/filelock"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
 	"github.com/bufbuild/buf/internal/pkg/netrc"
@@ -132,6 +136,17 @@ var (
 	// we clear an entry from the cache, i.e. delete the relevant data directory.
 	v1CacheModuleSumRelDirPath = normalpath.Join("v1", "module", "sum")
 )
+
+// GlobalFlags contains global flags for buf commands.
+type GlobalFlags struct{}
+
+// NewGlobalFlags creates a new GlobalFlags with default values..
+func NewGlobalFlags() *GlobalFlags {
+	return &GlobalFlags{}
+}
+
+// BindRoot binds the global flags to the root command flag set.
+func (*GlobalFlags) BindRoot(*pflag.FlagSet) {}
 
 // BindAsFileDescriptorSet binds the exclude-imports flag.
 func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string) {
@@ -314,112 +329,72 @@ func GetStringSliceFlagOrDeprecatedFlag(
 	return deprecatedFlag, nil
 }
 
-// NewFetchReader creates a new buffetch.Reader with the default HTTP client
-// and git cloner.
-func NewFetchReader(
-	logger *zap.Logger,
-	storageosProvider storageos.Provider,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
-) buffetch.Reader {
-	return buffetch.NewReader(
-		logger,
-		storageosProvider,
-		defaultHTTPClient,
-		defaultHTTPAuthenticator,
-		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
-		moduleResolver,
-		moduleReader,
-	)
-}
-
-// NewFetchSourceReader creates a new buffetch.SourceReader with the default HTTP client
-// and git cloner.
-func NewFetchSourceReader(
-	logger *zap.Logger,
-	storageosProvider storageos.Provider,
-) buffetch.SourceReader {
-	return buffetch.NewSourceReader(
-		logger,
-		storageosProvider,
-		defaultHTTPClient,
-		defaultHTTPAuthenticator,
-		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
-	)
-}
-
-// NewFetchImageReader creates a new buffetch.ImageReader with the default HTTP client
-// and git cloner.
-func NewFetchImageReader(
-	logger *zap.Logger,
-	storageosProvider storageos.Provider,
-) buffetch.ImageReader {
-	return buffetch.NewImageReader(
-		logger,
-		storageosProvider,
-		defaultHTTPClient,
-		defaultHTTPAuthenticator,
-		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
-	)
-}
-
 // NewWireImageConfigReader returns a new ImageConfigReader.
 func NewWireImageConfigReader(
-	logger *zap.Logger,
+	container appflag.Container,
 	storageosProvider storageos.Provider,
-	configProvider bufconfig.Provider,
-	workspaceConfigProvider bufwork.Provider,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
-) bufwire.ImageConfigReader {
+	registryProvider registryv1alpha1apiclient.Provider,
+) (bufwire.ImageConfigReader, error) {
+	logger := container.Logger()
+	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
+	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	if err != nil {
+		return nil, err
+	}
 	return bufwire.NewImageConfigReader(
 		logger,
 		storageosProvider,
-		NewFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		configProvider,
-		workspaceConfigProvider,
+		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
+		bufconfig.NewProvider(logger),
+		bufwork.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
-	)
+	), nil
 }
 
 // NewWireModuleConfigReader returns a new ModuleConfigReader.
 func NewWireModuleConfigReader(
-	logger *zap.Logger,
+	container appflag.Container,
 	storageosProvider storageos.Provider,
-	configProvider bufconfig.Provider,
-	workspaceConfigProvider bufwork.Provider,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
-) bufwire.ModuleConfigReader {
+	registryProvider registryv1alpha1apiclient.Provider,
+) (bufwire.ModuleConfigReader, error) {
+	logger := container.Logger()
+	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
+	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	if err != nil {
+		return nil, err
+	}
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
-		NewFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		configProvider,
-		workspaceConfigProvider,
+		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
+		bufconfig.NewProvider(logger),
+		bufwork.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
-	)
+	), nil
 }
 
 // NewWireFileLister returns a new FileLister.
 func NewWireFileLister(
-	logger *zap.Logger,
+	container appflag.Container,
 	storageosProvider storageos.Provider,
-	configProvider bufconfig.Provider,
-	workspaceConfigProvider bufwork.Provider,
-	moduleResolver bufmodule.ModuleResolver,
-	moduleReader bufmodule.ModuleReader,
-) bufwire.FileLister {
+	registryProvider registryv1alpha1apiclient.Provider,
+) (bufwire.FileLister, error) {
+	logger := container.Logger()
+	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
+	moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, registryProvider)
+	if err != nil {
+		return nil, err
+	}
 	return bufwire.NewFileLister(
 		logger,
-		NewFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		configProvider,
-		workspaceConfigProvider,
+		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
+		bufconfig.NewProvider(logger),
+		bufwork.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufimagebuild.NewBuilder(logger),
-	)
+	), nil
 }
 
 // NewWireImageReader returns a new ImageReader.
@@ -429,7 +404,7 @@ func NewWireImageReader(
 ) bufwire.ImageReader {
 	return bufwire.NewImageReader(
 		logger,
-		NewFetchImageReader(logger, storageosProvider),
+		newFetchImageReader(logger, storageosProvider),
 	)
 }
 
@@ -443,6 +418,52 @@ func NewWireImageWriter(
 			logger,
 		),
 	)
+}
+
+// NewModuleReaderAndCreateCacheDirs returns a new ModuleReader while creating the
+// required cache directories.
+func NewModuleReaderAndCreateCacheDirs(
+	container appflag.Container,
+	registryProvider registryv1alpha1apiclient.Provider,
+) (bufmodule.ModuleReader, error) {
+	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
+	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
+	cacheModuleSumDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleSumRelDirPath)
+	if err := createCacheDirs(
+		cacheModuleDataDirPath,
+		cacheModuleLockDirPath,
+		cacheModuleSumDirPath,
+	); err != nil {
+		return nil, err
+	}
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	// do NOT want to enable symlinks for our cache
+	dataReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleDataDirPath)
+	if err != nil {
+		return nil, err
+	}
+	// do NOT want to enable symlinks for our cache
+	sumReadWriteBucket, err := storageosProvider.NewReadWriteBucket(cacheModuleSumDirPath)
+	if err != nil {
+		return nil, err
+	}
+	fileLocker, err := filelock.NewLocker(cacheModuleLockDirPath)
+	if err != nil {
+		return nil, err
+	}
+	moduleReader := bufmodulecache.NewModuleReader(
+		container.Logger(),
+		dataReadWriteBucket,
+		sumReadWriteBucket,
+		bufapimodule.NewModuleReader(
+			registryProvider,
+		),
+		bufmodulecache.WithMessageWriter(
+			container.Stderr(),
+		),
+		bufmodulecache.WithFileLocker(fileLocker),
+	)
+	return moduleReader, nil
 }
 
 // NewConfig creates a new Config.
@@ -508,30 +529,6 @@ func NewContextModifierProvider(
 	}
 }
 
-// ModuleResolverReaderProvider provides ModuleResolvers and ModuleReaders.
-type ModuleResolverReaderProvider interface {
-	GetModuleReader(context.Context, appflag.Container) (bufmodule.ModuleReader, error)
-	GetModuleResolver(context.Context, appflag.Container) (bufmodule.ModuleResolver, error)
-}
-
-// NopModuleResolverReaderProvider is a no-op ModuleResolverReaderProvider.
-type NopModuleResolverReaderProvider struct{}
-
-// GetModuleReader returns a no-op module reader.
-func (NopModuleResolverReaderProvider) GetModuleReader(_ context.Context, _ appflag.Container) (bufmodule.ModuleReader, error) {
-	return bufmodule.NewNopModuleReader(), nil
-}
-
-// GetModuleResolver returns a no-op module resolver.
-func (NopModuleResolverReaderProvider) GetModuleResolver(_ context.Context, _ appflag.Container) (bufmodule.ModuleResolver, error) {
-	return bufmodule.NewNopModuleResolver(), nil
-}
-
-// NewRegistryModuleResolverReaderProvider returns a new registry-backed ModuleResolverReaderProvider.
-func NewRegistryModuleResolverReaderProvider() ModuleResolverReaderProvider {
-	return newRegistryModuleResolverReaderProvider()
-}
-
 // PromptUserForDelete is used to receieve user confirmation that a specific
 // entity should be deleted. If the user's answer does not match the expected
 // answer, an error is returned.
@@ -539,9 +536,10 @@ func PromptUserForDelete(container app.Container, entityType string, expectedAns
 	confirmation, err := promptUser(
 		container,
 		fmt.Sprintf(
-			"Please confirm that you want to DELETE this %s by entering its name again."+
+			"Please confirm that you want to DELETE this %s by entering its name (%s) again."+
 				"\nWARNING: This action is NOT reversible!\n",
 			entityType,
+			expectedAnswer,
 		),
 	)
 	if err != nil {
@@ -557,9 +555,10 @@ func PromptUserForDelete(container app.Container, entityType string, expectedAns
 	return nil
 }
 
-// ReadModule gets a module from a source ref.
+// ReadModuleWithWorkspacesDisabled gets a module from a source ref.
+//
 // Workspaces are disabled for this function.
-func ReadModule(
+func ReadModuleWithWorkspacesDisabled(
 	ctx context.Context,
 	container appflag.Container,
 	storageosProvider storageos.Provider,
@@ -574,7 +573,7 @@ func ReadModule(
 	if err != nil {
 		return nil, nil, err
 	}
-	sourceBucket, err := NewFetchSourceReader(
+	sourceBucket, err := newFetchSourceReader(
 		container.Logger(),
 		storageosProvider,
 	).GetSourceBucket(
@@ -655,4 +654,61 @@ func promptUser(container app.Container, prompt string) (string, error) {
 		}
 	}
 	return "", NewTooManyEmptyAnswersError(userPromptAttempts)
+}
+
+// newFetchReader creates a new buffetch.Reader with the default HTTP client
+// and git cloner.
+func newFetchReader(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	moduleResolver bufmodule.ModuleResolver,
+	moduleReader bufmodule.ModuleReader,
+) buffetch.Reader {
+	return buffetch.NewReader(
+		logger,
+		storageosProvider,
+		defaultHTTPClient,
+		defaultHTTPAuthenticator,
+		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
+		moduleResolver,
+		moduleReader,
+	)
+}
+
+// newFetchSourceReader creates a new buffetch.SourceReader with the default HTTP client
+// and git cloner.
+func newFetchSourceReader(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) buffetch.SourceReader {
+	return buffetch.NewSourceReader(
+		logger,
+		storageosProvider,
+		defaultHTTPClient,
+		defaultHTTPAuthenticator,
+		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
+	)
+}
+
+// newFetchImageReader creates a new buffetch.ImageReader with the default HTTP client
+// and git cloner.
+func newFetchImageReader(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) buffetch.ImageReader {
+	return buffetch.NewImageReader(
+		logger,
+		storageosProvider,
+		defaultHTTPClient,
+		defaultHTTPAuthenticator,
+		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
+	)
+}
+func createCacheDirs(dirPaths ...string) error {
+	for _, dirPath := range dirPaths {
+		if err := os.MkdirAll(normalpath.Unnormalize(dirPath), 0755); err != nil {
+			return err
+		}
+	}
+	return nil
 }

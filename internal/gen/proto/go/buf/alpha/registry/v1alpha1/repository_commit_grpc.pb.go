@@ -39,6 +39,9 @@ type RepositoryCommitServiceClient interface {
 	// ListRepositoryCommitsByBranch lists the repository commits associated
 	// with a repository branch on a repository, ordered by their create time.
 	ListRepositoryCommitsByBranch(ctx context.Context, in *ListRepositoryCommitsByBranchRequest, opts ...grpc.CallOption) (*ListRepositoryCommitsByBranchResponse, error)
+	// ListRepositoryCommitsByReference returns repository commits up-to and including
+	// the provided reference.
+	ListRepositoryCommitsByReference(ctx context.Context, in *ListRepositoryCommitsByReferenceRequest, opts ...grpc.CallOption) (*ListRepositoryCommitsByReferenceResponse, error)
 	// GetRepositoryCommitByReference returns the repository commit matching
 	// the provided reference, if it exists.
 	GetRepositoryCommitByReference(ctx context.Context, in *GetRepositoryCommitByReferenceRequest, opts ...grpc.CallOption) (*GetRepositoryCommitByReferenceResponse, error)
@@ -58,6 +61,15 @@ func NewRepositoryCommitServiceClient(cc grpc.ClientConnInterface) RepositoryCom
 func (c *repositoryCommitServiceClient) ListRepositoryCommitsByBranch(ctx context.Context, in *ListRepositoryCommitsByBranchRequest, opts ...grpc.CallOption) (*ListRepositoryCommitsByBranchResponse, error) {
 	out := new(ListRepositoryCommitsByBranchResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByBranch", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryCommitServiceClient) ListRepositoryCommitsByReference(ctx context.Context, in *ListRepositoryCommitsByReferenceRequest, opts ...grpc.CallOption) (*ListRepositoryCommitsByReferenceResponse, error) {
+	out := new(ListRepositoryCommitsByReferenceResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByReference", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -89,6 +101,9 @@ type RepositoryCommitServiceServer interface {
 	// ListRepositoryCommitsByBranch lists the repository commits associated
 	// with a repository branch on a repository, ordered by their create time.
 	ListRepositoryCommitsByBranch(context.Context, *ListRepositoryCommitsByBranchRequest) (*ListRepositoryCommitsByBranchResponse, error)
+	// ListRepositoryCommitsByReference returns repository commits up-to and including
+	// the provided reference.
+	ListRepositoryCommitsByReference(context.Context, *ListRepositoryCommitsByReferenceRequest) (*ListRepositoryCommitsByReferenceResponse, error)
 	// GetRepositoryCommitByReference returns the repository commit matching
 	// the provided reference, if it exists.
 	GetRepositoryCommitByReference(context.Context, *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error)
@@ -103,6 +118,9 @@ type UnimplementedRepositoryCommitServiceServer struct {
 
 func (UnimplementedRepositoryCommitServiceServer) ListRepositoryCommitsByBranch(context.Context, *ListRepositoryCommitsByBranchRequest) (*ListRepositoryCommitsByBranchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRepositoryCommitsByBranch not implemented")
+}
+func (UnimplementedRepositoryCommitServiceServer) ListRepositoryCommitsByReference(context.Context, *ListRepositoryCommitsByReferenceRequest) (*ListRepositoryCommitsByReferenceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRepositoryCommitsByReference not implemented")
 }
 func (UnimplementedRepositoryCommitServiceServer) GetRepositoryCommitByReference(context.Context, *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRepositoryCommitByReference not implemented")
@@ -136,6 +154,24 @@ func _RepositoryCommitService_ListRepositoryCommitsByBranch_Handler(srv interfac
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RepositoryCommitServiceServer).ListRepositoryCommitsByBranch(ctx, req.(*ListRepositoryCommitsByBranchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryCommitService_ListRepositoryCommitsByReference_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRepositoryCommitsByReferenceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryCommitServiceServer).ListRepositoryCommitsByReference(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByReference",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryCommitServiceServer).ListRepositoryCommitsByReference(ctx, req.(*ListRepositoryCommitsByReferenceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -186,6 +222,10 @@ var RepositoryCommitService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRepositoryCommitsByBranch",
 			Handler:    _RepositoryCommitService_ListRepositoryCommitsByBranch_Handler,
+		},
+		{
+			MethodName: "ListRepositoryCommitsByReference",
+			Handler:    _RepositoryCommitService_ListRepositoryCommitsByReference_Handler,
 		},
 		{
 			MethodName: "GetRepositoryCommitByReference",

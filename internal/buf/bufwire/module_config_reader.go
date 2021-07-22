@@ -17,11 +17,12 @@ package bufwire
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
@@ -50,7 +51,7 @@ func newModuleConfigReader(
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 ) *moduleConfigReader {
 	return &moduleConfigReader{
-		logger:                  logger.Named("bufwire"),
+		logger:                  logger,
 		storageosProvider:       storageosProvider,
 		fetchReader:             fetchReader,
 		configProvider:          configProvider,
@@ -404,6 +405,17 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	if err != nil {
 		return nil, err
 	}
+	if missingReferences := detectMissingDependencies(
+		moduleConfig.Build.DependencyModuleReferences,
+		module.DependencyModulePins(),
+	); len(missingReferences) > 0 {
+		var builder strings.Builder
+		_, _ = builder.WriteString(`Specified deps are not covered in your buf.lock, run "buf beta mod update":`)
+		for _, moduleReference := range missingReferences {
+			_, _ = builder.WriteString("\n\t- " + moduleReference.IdentityString())
+		}
+		m.logger.Warn(builder.String())
+	}
 	return newModuleConfig(module, moduleConfig, workspace), nil
 }
 
@@ -417,4 +429,19 @@ func workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig *bufwork.Confi
 		}
 	}
 	return false
+}
+
+func detectMissingDependencies(references []bufmodule.ModuleReference, pins []bufmodule.ModulePin) []bufmodule.ModuleReference {
+	pinSet := make(map[string]struct{})
+	for _, pin := range pins {
+		pinSet[pin.IdentityString()] = struct{}{}
+	}
+
+	var missingReferences []bufmodule.ModuleReference
+	for _, reference := range references {
+		if _, ok := pinSet[reference.IdentityString()]; !ok {
+			missingReferences = append(missingReferences, reference)
+		}
+	}
+	return missingReferences
 }

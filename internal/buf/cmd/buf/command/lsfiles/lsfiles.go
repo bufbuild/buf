@@ -19,9 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/bufwork"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
@@ -42,7 +40,6 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -52,7 +49,7 @@ func NewCommand(
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
-				return run(ctx, container, flags, moduleResolverReaderProvider)
+				return run(ctx, container, flags)
 			},
 			bufcli.NewErrorInterceptor(),
 		),
@@ -111,7 +108,6 @@ func run(
 	ctx context.Context,
 	container appflag.Container,
 	flags *flags,
-	moduleResolverReaderProvider bufcli.ModuleResolverReaderProvider,
 ) error {
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
 	if err != nil {
@@ -130,25 +126,20 @@ func run(
 	if err != nil {
 		return err
 	}
-	configProvider := bufconfig.NewProvider(container.Logger())
-	workspaceConfigProvider := bufwork.NewProvider(container.Logger())
-	moduleResolver, err := moduleResolverReaderProvider.GetModuleResolver(ctx, container)
-	if err != nil {
-		return err
-	}
-	moduleReader, err := moduleResolverReaderProvider.GetModuleReader(ctx, container)
-	if err != nil {
-		return err
-	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	fileRefs, err := bufcli.NewWireFileLister(
-		container.Logger(),
+	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	if err != nil {
+		return err
+	}
+	fileLister, err := bufcli.NewWireFileLister(
+		container,
 		storageosProvider,
-		configProvider,
-		workspaceConfigProvider,
-		moduleResolver,
-		moduleReader,
-	).ListFiles(
+		registryProvider,
+	)
+	if err != nil {
+		return err
+	}
+	fileRefs, err := fileLister.ListFiles(
 		ctx,
 		container,
 		ref,

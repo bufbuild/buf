@@ -95,7 +95,7 @@ func Main(name string, options ...MainOption) {
 type MainOption func(*mainOptions)
 
 // WithRootCommandModifier returns a new MainOption that modifies the root Command.
-func WithRootCommandModifier(rootCommandModifier func(*appcmd.Command, appflag.Builder, bufcli.ModuleResolverReaderProvider)) MainOption {
+func WithRootCommandModifier(rootCommandModifier func(*appcmd.Command, appflag.Builder, *bufcli.GlobalFlags)) MainOption {
 	return func(mainOptions *mainOptions) {
 		mainOptions.rootCommandModifier = rootCommandModifier
 	}
@@ -106,18 +106,18 @@ func WithRootCommandModifier(rootCommandModifier func(*appcmd.Command, appflag.B
 // This is public for use in testing.
 func NewRootCommand(
 	name string,
-	rootCommandModifier func(*appcmd.Command, appflag.Builder, bufcli.ModuleResolverReaderProvider),
+	rootCommandModifier func(*appcmd.Command, appflag.Builder, *bufcli.GlobalFlags),
 ) *appcmd.Command {
 	builder := appflag.NewBuilder(
 		name,
 		appflag.BuilderWithTimeout(120*time.Second),
 		appflag.BuilderWithTracing(),
 	)
-	moduleResolverReaderProvider := bufcli.NewRegistryModuleResolverReaderProvider()
+	globalFlags := bufcli.NewGlobalFlags()
 	rootCommand := &appcmd.Command{
 		Use: name,
 		SubCommands: []*appcmd.Command{
-			build.NewCommand("build", builder, moduleResolverReaderProvider, "", false),
+			build.NewCommand("build", builder, "", false),
 			{
 				Use:        "image",
 				Short:      "Work with Images and FileDescriptorSets.",
@@ -126,7 +126,7 @@ func NewRootCommand(
 				SubCommands: []*appcmd.Command{
 					build.NewCommand(
 						"build",
-						builder, moduleResolverReaderProvider,
+						builder,
 						imageDeprecationMessage,
 						true,
 					),
@@ -138,17 +138,17 @@ func NewRootCommand(
 				Deprecated: checkDeprecationMessage,
 				Hidden:     true,
 				SubCommands: []*appcmd.Command{
-					lint.NewCommand("lint", builder, moduleResolverReaderProvider, checkLintDeprecationMessage, true),
-					breaking.NewCommand("breaking", builder, moduleResolverReaderProvider, checkBreakingDeprecationMessage, true),
+					lint.NewCommand("lint", builder, checkLintDeprecationMessage, true),
+					breaking.NewCommand("breaking", builder, checkBreakingDeprecationMessage, true),
 					configlslintrules.NewCommand("ls-lint-checkers", builder, checkLSLintCheckersDeprecationMessage, true),
 					configlsbreakingrules.NewCommand("ls-breaking-checkers", builder, checkLSBreakingCheckersDeprecationMessage, true),
 				},
 			},
-			lint.NewCommand("lint", builder, moduleResolverReaderProvider, "", false),
-			breaking.NewCommand("breaking", builder, moduleResolverReaderProvider, "", false),
-			generate.NewCommand("generate", builder, moduleResolverReaderProvider),
-			protoc.NewCommand("protoc", builder, moduleResolverReaderProvider),
-			lsfiles.NewCommand("ls-files", builder, moduleResolverReaderProvider),
+			lint.NewCommand("lint", builder, "", false),
+			breaking.NewCommand("breaking", builder, "", false),
+			generate.NewCommand("generate", builder),
+			protoc.NewCommand("protoc", builder),
+			lsfiles.NewCommand("ls-files", builder),
 			{
 				Use:   "config",
 				Short: "Interact with the configuration of Buf.",
@@ -185,14 +185,14 @@ func NewRootCommand(
 							),
 						},
 					},
-					push.NewCommand("push", builder, moduleResolverReaderProvider),
+					push.NewCommand("push", builder),
 					{
 						Use:   "mod",
 						Short: "Configure and update buf modules.",
 						SubCommands: []*appcmd.Command{
 							modinit.NewCommand("init", builder, "", false),
-							modupdate.NewCommand("update", builder, moduleResolverReaderProvider),
-							modexport.NewCommand("export", builder, moduleResolverReaderProvider),
+							modupdate.NewCommand("update", builder),
+							modexport.NewCommand("export", builder),
 							modclearcache.NewCommand("clear-cache", builder, "cc"),
 						},
 					},
@@ -272,17 +272,17 @@ See https://docs.buf.build/faq for more details.`,
 				},
 			},
 		},
-		BindPersistentFlags: builder.BindRoot,
+		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		Version:             bufcli.Version,
 	}
 	if rootCommandModifier != nil {
-		rootCommandModifier(rootCommand, builder, moduleResolverReaderProvider)
+		rootCommandModifier(rootCommand, builder, globalFlags)
 	}
 	return rootCommand
 }
 
 type mainOptions struct {
-	rootCommandModifier func(*appcmd.Command, appflag.Builder, bufcli.ModuleResolverReaderProvider)
+	rootCommandModifier func(*appcmd.Command, appflag.Builder, *bufcli.GlobalFlags)
 }
 
 func newMainOptions() *mainOptions {

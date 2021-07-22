@@ -24,10 +24,10 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufanalysis/bufanalysistesting"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagebuild"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild"
+	"github.com/bufbuild/buf/internal/buf/bufmodule"
+	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/stretchr/testify/assert"
@@ -175,6 +175,16 @@ func TestRunImportNoWeak(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 6, 1, 6, 30, "IMPORT_NO_WEAK"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 7, 1, 7, 29, "IMPORT_NO_WEAK"),
 		bufanalysistesting.NewFileAnnotation(t, "one/one.proto", 6, 1, 6, 30, "IMPORT_NO_WEAK"),
+	)
+}
+
+func TestRunImportUsed(t *testing.T) {
+	testLint(
+		t,
+		"import_used",
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 5, 1, 5, 25, "IMPORT_USED"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 7, 1, 7, 24, "IMPORT_USED"),
+		bufanalysistesting.NewFileAnnotation(t, "one/one.proto", 6, 1, 6, 25, "IMPORT_USED"),
 	)
 }
 

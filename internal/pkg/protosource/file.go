@@ -24,6 +24,7 @@ import (
 type file struct {
 	FileInfo
 	descriptor
+	optionExtensionDescriptor
 
 	fileDescriptor protodescriptor.FileDescriptor
 	syntax         Syntax
@@ -216,6 +217,9 @@ func newFile(inputFile InputFile) (*file, error) {
 	f := &file{
 		FileInfo:       inputFile,
 		fileDescriptor: inputFile.FileDescriptor(),
+		optionExtensionDescriptor: newOptionExtensionDescriptor(
+			inputFile.FileDescriptor().GetOptions(),
+		),
 	}
 	descriptor := newDescriptor(
 		f,
@@ -346,6 +350,9 @@ func (f *file) populateEnum(
 	}
 	enum := newEnum(
 		enumNamedDescriptor,
+		newOptionExtensionDescriptor(
+			enumDescriptorProto.GetOptions(),
+		),
 		enumDescriptorProto.GetOptions().GetAllowAlias(),
 		getEnumAllowAliasPath(enumIndex, nestedMessageIndexes...),
 	)
@@ -365,6 +372,9 @@ func (f *file) populateEnum(
 		}
 		enumValue := newEnumValue(
 			enumValueNamedDescriptor,
+			newOptionExtensionDescriptor(
+				enumValueDescriptorProto.GetOptions(),
+			),
 			enum,
 			int(enumValueDescriptorProto.GetNumber()),
 			getEnumValueNumberPath(enumIndex, enumValueIndex, nestedMessageIndexes...),
@@ -426,6 +436,9 @@ func (f *file) populateMessage(
 	}
 	message := newMessage(
 		messageNamedDescriptor,
+		newOptionExtensionDescriptor(
+			descriptorProto.GetOptions(),
+		),
 		parent,
 		descriptorProto.GetOptions().GetMapEntry(),
 		descriptorProto.GetOptions().GetMessageSetWireFormat(),
@@ -449,6 +462,9 @@ func (f *file) populateMessage(
 		}
 		oneof := newOneof(
 			oneofNamedDescriptor,
+			newOptionExtensionDescriptor(
+				oneofDescriptorProto.GetOptions(),
+			),
 			message,
 		)
 		message.addOneof(oneof)
@@ -499,6 +515,9 @@ func (f *file) populateMessage(
 		}
 		field := newField(
 			fieldNamedDescriptor,
+			newOptionExtensionDescriptor(
+				fieldDescriptorProto.GetOptions(),
+			),
 			message,
 			int(fieldDescriptorProto.GetNumber()),
 			label,
@@ -568,6 +587,9 @@ func (f *file) populateMessage(
 		}
 		field := newField(
 			fieldNamedDescriptor,
+			newOptionExtensionDescriptor(
+				fieldDescriptorProto.GetOptions(),
+			),
 			message,
 			int(fieldDescriptorProto.GetNumber()),
 			label,
@@ -680,6 +702,9 @@ func (f *file) populateService(
 	}
 	service := newService(
 		serviceNamedDescriptor,
+		newOptionExtensionDescriptor(
+			serviceDescriptorProto.GetOptions(),
+		),
 	)
 	for methodIndex, methodDescriptorProto := range serviceDescriptorProto.GetMethod() {
 		methodNamedDescriptor, err := newNamedDescriptor(
@@ -700,6 +725,9 @@ func (f *file) populateService(
 		}
 		method, err := newMethod(
 			methodNamedDescriptor,
+			newOptionExtensionDescriptor(
+				methodDescriptorProto.GetOptions(),
+			),
 			service,
 			methodDescriptorProto.GetInputType(),
 			methodDescriptorProto.GetOutputType(),
