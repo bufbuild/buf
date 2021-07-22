@@ -170,7 +170,10 @@ func newHeaderMap(contextValue interface{}, additionalLen int) map[string]string
 	if contextValue == nil {
 		return make(map[string]string, additionalLen)
 	}
-	existing := contextValue.(map[string]string)
+	existing, ok := contextValue.(map[string]string)
+	if !ok {
+		return make(map[string]string, additionalLen)
+	}
 	m := make(map[string]string, len(existing)+additionalLen)
 	for key, value := range existing {
 		m[key] = value

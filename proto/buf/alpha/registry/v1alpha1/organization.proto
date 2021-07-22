@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/api/v1alpha1/api.proto";
 import "buf/alpha/registry/v1alpha1/scope.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -34,57 +33,31 @@ message Organization {
 // OrganizationService is the Organization service.
 service OrganizationService {
   // GetOrganization gets a organization by ID.
-  rpc GetOrganization(GetOrganizationRequest) returns (GetOrganizationResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc GetOrganization(GetOrganizationRequest) returns (GetOrganizationResponse);
   // GetOrganizationByName gets a organization by name.
-  rpc GetOrganizationByName(GetOrganizationByNameRequest) returns (GetOrganizationByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc GetOrganizationByName(GetOrganizationByNameRequest) returns (GetOrganizationByNameResponse);
   // ListOrganizations lists all organizations.
-  rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc ListOrganizations(ListOrganizationsRequest) returns (ListOrganizationsResponse);
   // ListUserOrganizations lists all organizations a user is member of.
-  rpc ListUserOrganizations(ListUserOrganizationsRequest) returns (ListUserOrganizationsResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc ListUserOrganizations(ListUserOrganizationsRequest) returns (ListUserOrganizationsResponse);
   // CreateOrganization creates a new organization.
-  rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
   // UpdateOrganizationName updates a organization's name.
-  rpc UpdateOrganizationName(UpdateOrganizationNameRequest) returns (UpdateOrganizationNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc UpdateOrganizationName(UpdateOrganizationNameRequest) returns (UpdateOrganizationNameResponse);
   // UpdateOrganizationNameByName updates a organization's name by name.
-  rpc UpdateOrganizationNameByName(UpdateOrganizationNameByNameRequest) returns (UpdateOrganizationNameByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc UpdateOrganizationNameByName(UpdateOrganizationNameByNameRequest) returns (UpdateOrganizationNameByNameResponse);
   // DeleteOrganization deletes a organization.
-  rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse);
   // DeleteOrganizationByName deletes a organization by name.
-  rpc DeleteOrganizationByName(DeleteOrganizationByNameRequest) returns (DeleteOrganizationByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc DeleteOrganizationByName(DeleteOrganizationByNameRequest) returns (DeleteOrganizationByNameResponse);
   // AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
-  rpc AddOrganizationBaseRepositoryScope(AddOrganizationBaseRepositoryScopeRequest) returns (AddOrganizationBaseRepositoryScopeResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc AddOrganizationBaseRepositoryScope(AddOrganizationBaseRepositoryScopeRequest) returns (AddOrganizationBaseRepositoryScopeResponse);
   // AddOrganizationBaseRepositoryScopeByName adds a base repository scope to an organization by name.
-  rpc AddOrganizationBaseRepositoryScopeByName(AddOrganizationBaseRepositoryScopeByNameRequest) returns (AddOrganizationBaseRepositoryScopeByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc AddOrganizationBaseRepositoryScopeByName(AddOrganizationBaseRepositoryScopeByNameRequest) returns (AddOrganizationBaseRepositoryScopeByNameResponse);
   // RemoveOrganizationBaseRepositoryScope removes a base repository scope from an organization by ID.
-  rpc RemoveOrganizationBaseRepositoryScope(RemoveOrganizationBaseRepositoryScopeRequest) returns (RemoveOrganizationBaseRepositoryScopeResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc RemoveOrganizationBaseRepositoryScope(RemoveOrganizationBaseRepositoryScopeRequest) returns (RemoveOrganizationBaseRepositoryScopeResponse);
   // RemoveOrganizationBaseRepositoryScopeByName removes a base repository scope from an organization by name.
-  rpc RemoveOrganizationBaseRepositoryScopeByName(RemoveOrganizationBaseRepositoryScopeByNameRequest) returns (RemoveOrganizationBaseRepositoryScopeByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc RemoveOrganizationBaseRepositoryScopeByName(RemoveOrganizationBaseRepositoryScopeByNameRequest) returns (RemoveOrganizationBaseRepositoryScopeByNameResponse);
 }
 
 message GetOrganizationRequest {

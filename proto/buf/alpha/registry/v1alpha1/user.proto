@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/api/v1alpha1/api.proto";
 import "buf/alpha/registry/v1alpha1/scope.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -34,65 +33,35 @@ message User {
 // UserService is the User service.
 service UserService {
   // CreateUser creates a new user with the given username.
-  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
   // GetUser gets a user by ID.
-  rpc GetUser(GetUserRequest) returns (GetUserResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
   // GetUserByUsername gets a user by username.
-  rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserByUsernameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserByUsernameResponse);
   // ListUsers lists all users.
-  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
   // ListOrganizationUsers lists all users for an organization.
-  rpc ListOrganizationUsers(ListOrganizationUsersRequest) returns (ListOrganizationUsersResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc ListOrganizationUsers(ListOrganizationUsersRequest) returns (ListOrganizationUsersResponse);
   // UpdateUserUsername updates a user's username.
-  rpc UpdateUserUsername(UpdateUserUsernameRequest) returns (UpdateUserUsernameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc UpdateUserUsername(UpdateUserUsernameRequest) returns (UpdateUserUsernameResponse);
   // DeleteUser deletes a user.
-  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   // AddUserOrganizationScope adds an organization scope for a specific organization to a user by ID.
-  rpc AddUserOrganizationScope(AddUserOrganizationScopeRequest) returns (AddUserOrganizationScopeResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc AddUserOrganizationScope(AddUserOrganizationScopeRequest) returns (AddUserOrganizationScopeResponse);
   // AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
-  rpc AddUserOrganizationScopeByName(AddUserOrganizationScopeByNameRequest) returns (AddUserOrganizationScopeByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc AddUserOrganizationScopeByName(AddUserOrganizationScopeByNameRequest) returns (AddUserOrganizationScopeByNameResponse);
   // RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
-  rpc RemoveUserOrganizationScope(RemoveUserOrganizationScopeRequest) returns (RemoveUserOrganizationScopeResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc RemoveUserOrganizationScope(RemoveUserOrganizationScopeRequest) returns (RemoveUserOrganizationScopeResponse);
   // RemoveUserOrganizationScopeByName removes an organization scope for a specific organization from a user by name.
-  rpc RemoveUserOrganizationScopeByName(RemoveUserOrganizationScopeByNameRequest) returns (RemoveUserOrganizationScopeByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc RemoveUserOrganizationScopeByName(RemoveUserOrganizationScopeByNameRequest) returns (RemoveUserOrganizationScopeByNameResponse);
   // AddUserServerScope adds a server scope for a user by ID.
-  rpc AddUserServerScope(AddUserServerScopeRequest) returns (AddUserServerScopeResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc AddUserServerScope(AddUserServerScopeRequest) returns (AddUserServerScopeResponse);
   // AddUserServerScopeByName adds a server scope for a user by name.
-  rpc AddUserServerScopeByName(AddUserServerScopeByNameRequest) returns (AddUserServerScopeByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc AddUserServerScopeByName(AddUserServerScopeByNameRequest) returns (AddUserServerScopeByNameResponse);
   // RemoveUserServerScope removes a server scope for a user by ID.
-  rpc RemoveUserServerScope(RemoveUserServerScopeRequest) returns (RemoveUserServerScopeResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc RemoveUserServerScope(RemoveUserServerScopeRequest) returns (RemoveUserServerScopeResponse);
   // RemoveUserServerScopeByName removes a server scope for a user by name.
-  rpc RemoveUserServerScopeByName(RemoveUserServerScopeByNameRequest) returns (RemoveUserServerScopeByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_WRITE;
-  }
+  rpc RemoveUserServerScopeByName(RemoveUserServerScopeByNameRequest) returns (RemoveUserServerScopeByNameResponse);
 }
 
 message CreateUserRequest {

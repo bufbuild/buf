@@ -16,7 +16,6 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/api/v1alpha1/api.proto";
 import "buf/alpha/registry/v1alpha1/repository_branch.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
@@ -37,9 +36,7 @@ message Reference {
 service ReferenceService {
   // GetReferenceByName takes a reference name and returns the
   // reference either as a tag, branch, or commit.
-  rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse);
 }
 
 message GetReferenceByNameRequest {

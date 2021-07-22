@@ -44,9 +44,7 @@ func parseVersionForCLIVersion(value string) (_ *pluginpb.Version, retErr error)
 	}()
 
 	// protoc always starts with "libprotoc "
-	if strings.HasPrefix(value, "libprotoc ") {
-		value = strings.TrimPrefix(value, "libprotoc ")
-	}
+	value = strings.TrimPrefix(value, "libprotoc ")
 	split := strings.Split(value, ".")
 	if len(split) != 3 {
 		return nil, errors.New("more than three components split by '.'")

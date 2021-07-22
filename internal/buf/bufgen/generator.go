@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage"
-	"github.com/bufbuild/buf/internal/buf/bufcore/bufimage/bufimagemodify"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"

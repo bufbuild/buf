@@ -32,6 +32,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 const (
@@ -115,6 +116,21 @@ type ContainerDescriptor interface {
 	Messages() []Message
 }
 
+// OptionExtensionDescriptor contains option extensions.
+type OptionExtensionDescriptor interface {
+	// OptionExtension returns the value for an options extension field.
+	//
+	// Returns false if the extension is not set.
+	// Panics if the ExtensionType does not extend the message.
+	//
+	// TODO: handle the panic by figuring out if ExtensionType extends the
+	// message before passing to HasExtension or GetExtension.
+	//
+	// See https://pkg.go.dev/google.golang.org/protobuf/proto#HasExtension
+	// See https://pkg.go.dev/google.golang.org/protobuf/proto#GetExtension
+	OptionExtension(extensionType protoreflect.ExtensionType) (interface{}, bool)
+}
+
 // Location defines source code info location information.
 //
 // May be extended in the future to include comments.
@@ -177,6 +193,7 @@ type File interface {
 
 	// Top-level only.
 	ContainerDescriptor
+	OptionExtensionDescriptor
 
 	Syntax() Syntax
 	Package() string
@@ -280,6 +297,7 @@ type MessageRange interface {
 type Enum interface {
 	NamedDescriptor
 	ReservedDescriptor
+	OptionExtensionDescriptor
 
 	Values() []EnumValue
 	ReservedEnumRanges() []EnumRange
@@ -291,6 +309,7 @@ type Enum interface {
 // EnumValue is an enum value descriptor.
 type EnumValue interface {
 	NamedDescriptor
+	OptionExtensionDescriptor
 
 	Enum() Enum
 	Number() int
@@ -304,6 +323,7 @@ type Message interface {
 	// Only those directly nested under this message.
 	ContainerDescriptor
 	ReservedDescriptor
+	OptionExtensionDescriptor
 
 	// Includes fields in oneofs.
 	Fields() []Field
@@ -325,6 +345,7 @@ type Message interface {
 // Field is a field descriptor.
 type Field interface {
 	NamedDescriptor
+	OptionExtensionDescriptor
 
 	Message() Message
 	Number() int
@@ -353,6 +374,7 @@ type Field interface {
 // Oneof is a oneof descriptor.
 type Oneof interface {
 	NamedDescriptor
+	OptionExtensionDescriptor
 
 	Message() Message
 	Fields() []Field
@@ -361,6 +383,7 @@ type Oneof interface {
 // Service is a service descriptor.
 type Service interface {
 	NamedDescriptor
+	OptionExtensionDescriptor
 
 	Methods() []Method
 }
@@ -368,6 +391,7 @@ type Service interface {
 // Method is a method descriptor.
 type Method interface {
 	NamedDescriptor
+	OptionExtensionDescriptor
 
 	Service() Service
 	InputTypeName() string

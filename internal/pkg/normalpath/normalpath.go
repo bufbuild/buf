@@ -293,3 +293,26 @@ func ValidatePathComponents(components ...string) error {
 	}
 	return nil
 }
+
+// ValidatePathsNormalizedValidatedUnique validates the file or diretory paths are normalized
+// and validated, and not duplicated.
+func ValidatePathsNormalizedValidatedUnique(paths []string) error {
+	pathMap := make(map[string]struct{}, len(paths))
+	for _, path := range paths {
+		if path == "" {
+			return errors.New("path is empty")
+		}
+		normalized, err := NormalizeAndValidate(path)
+		if err != nil {
+			return fmt.Errorf("path had normalization error: %w", err)
+		}
+		if path != normalized {
+			return fmt.Errorf("path %s was not normalized to %s", path, normalized)
+		}
+		if _, ok := pathMap[path]; ok {
+			return fmt.Errorf("duplicate path: %s", path)
+		}
+		pathMap[path] = struct{}{}
+	}
+	return nil
+}

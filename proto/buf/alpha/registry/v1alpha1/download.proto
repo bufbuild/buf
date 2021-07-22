@@ -16,15 +16,12 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/api/v1alpha1/api.proto";
 import "buf/alpha/module/v1alpha1/module.proto";
 
 // DownloadService is the download service.
 service DownloadService {
   // Download downloads.
-  rpc Download(DownloadRequest) returns (DownloadResponse) {
-    option (buf.alpha.api.v1alpha1.access_type) = ACCESS_TYPE_READ;
-  }
+  rpc Download(DownloadRequest) returns (DownloadResponse);
 }
 
 message DownloadRequest {

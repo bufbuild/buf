@@ -16,15 +16,18 @@ package protosource
 
 type service struct {
 	namedDescriptor
+	optionExtensionDescriptor
 
 	methods []Method
 }
 
 func newService(
 	namedDescriptor namedDescriptor,
+	optionExtensionDescriptor optionExtensionDescriptor,
 ) *service {
 	return &service{
-		namedDescriptor: namedDescriptor,
+		namedDescriptor:           namedDescriptor,
+		optionExtensionDescriptor: optionExtensionDescriptor,
 	}
 }
 
