@@ -42,13 +42,17 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
+	deprecated string,
+	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
-		Short: "Push a module to a registry.",
-		Long:  bufcli.GetInputLong(`the source or module to push`),
-		Args:  cobra.MaximumNArgs(1),
+		Use:        name + " <input>",
+		Short:      "Push a module to a registry.",
+		Long:       bufcli.GetInputLong(`the source or module to push`),
+		Args:       cobra.MaximumNArgs(1),
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

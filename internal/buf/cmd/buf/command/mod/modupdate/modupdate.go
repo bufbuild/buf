@@ -41,6 +41,8 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
+	deprecated string,
+	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -50,7 +52,9 @@ func NewCommand(
 			"and writes them and their transitive dependencies to the " +
 			buflock.ExternalConfigFilePath +
 			" file.",
-		Args: cobra.NoArgs,
+		Args:       cobra.NoArgs,
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -156,7 +160,7 @@ func run(
 		protoDependencyModulePins, err := service.GetModulePins(ctx, protoDependencyModuleReferences, currentModulePins)
 		if err != nil {
 			if rpc.GetErrorCode(err) == rpc.ErrorCodeUnimplemented && remote != bufrpc.DefaultRemote {
-				return fmt.Errorf("%w. Are you sure %q (derived from module name %q) is a Buf Schema Registry?", err, remote, moduleConfig.ModuleIdentity.IdentityString())
+				return bufcli.NewUnimplementedRemoteError(err, remote, moduleConfig.ModuleIdentity.IdentityString())
 			}
 			return err
 		}
