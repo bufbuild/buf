@@ -26,6 +26,7 @@ type Provider interface {
 	DownloadServiceProvider
 	OrganizationServiceProvider
 	OwnerServiceProvider
+	PluginServiceProvider
 	PushServiceProvider
 	ReferenceServiceProvider
 	RepositoryBranchServiceProvider
@@ -49,6 +50,11 @@ type OrganizationServiceProvider interface {
 // OwnerServiceProvider provides a client-side OwnerService for an address.
 type OwnerServiceProvider interface {
 	NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error)
+}
+
+// PluginServiceProvider provides a client-side PluginService for an address.
+type PluginServiceProvider interface {
+	NewPluginService(ctx context.Context, address string) (registryv1alpha1api.PluginService, error)
 }
 
 // PushServiceProvider provides a client-side PushService for an address.

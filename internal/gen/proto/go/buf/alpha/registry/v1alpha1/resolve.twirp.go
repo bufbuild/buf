@@ -526,7 +526,7 @@ func (s *resolveServiceServer) serveGetModulePinsProtobuf(ctx context.Context, r
 }
 
 func (s *resolveServiceServer) ServiceDescriptor() ([]byte, int) {
-	return twirpFileDescriptor10, 0
+	return twirpFileDescriptor11, 0
 }
 
 func (s *resolveServiceServer) ProtocGenTwirpVersion() string {
@@ -540,7 +540,7 @@ func (s *resolveServiceServer) PathPrefix() string {
 	return baseServicePath(s.pathPrefix, "buf.alpha.registry.v1alpha1", "ResolveService")
 }
 
-var twirpFileDescriptor10 = []byte{
+var twirpFileDescriptor11 = []byte{
 	// 322 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x92, 0x4f, 0x4b, 0xc3, 0x30,
 	0x18, 0xc6, 0xa9, 0x82, 0x87, 0x4c, 0xc5, 0x45, 0x85, 0x31, 0x0f, 0xca, 0x10, 0x51, 0x0f, 0x09,

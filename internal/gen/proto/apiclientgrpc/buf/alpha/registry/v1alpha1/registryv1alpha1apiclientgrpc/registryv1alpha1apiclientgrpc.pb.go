@@ -135,6 +135,29 @@ func (p *provider) NewOwnerService(ctx context.Context, address string) (registr
 	}, nil
 }
 
+func (p *provider) NewPluginService(ctx context.Context, address string) (registryv1alpha1api.PluginService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+	return &pluginService{
+		logger:          p.logger,
+		client:          v1alpha1.NewPluginServiceClient(clientConn),
+		contextModifier: contextModifier,
+	}, nil
+}
+
 func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error

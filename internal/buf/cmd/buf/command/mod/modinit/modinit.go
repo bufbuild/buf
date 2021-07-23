@@ -102,11 +102,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The module dependencies.",
 	)
+	_ = flagSet.MarkHidden(depFlagName)
 	flagSet.BoolVar(
 		&f.Uncomment,
 		uncommentFlagName,
 		false,
-		"Uncomment examples in the resutling configuration file.",
+		"Uncomment examples in the resulting configuration file.",
 	)
 	_ = flagSet.MarkHidden(uncommentFlagName)
 }

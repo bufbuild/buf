@@ -518,7 +518,7 @@ func (s *pushServiceServer) servePushProtobuf(ctx context.Context, resp http.Res
 }
 
 func (s *pushServiceServer) ServiceDescriptor() ([]byte, int) {
-	return twirpFileDescriptor4, 0
+	return twirpFileDescriptor5, 0
 }
 
 func (s *pushServiceServer) ProtocGenTwirpVersion() string {
@@ -532,7 +532,7 @@ func (s *pushServiceServer) PathPrefix() string {
 	return baseServicePath(s.pathPrefix, "buf.alpha.registry.v1alpha1", "PushService")
 }
 
-var twirpFileDescriptor4 = []byte{
+var twirpFileDescriptor5 = []byte{
 	// 347 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x52, 0xcd, 0x4a, 0x33, 0x31,
 	0x14, 0x65, 0xbe, 0xfe, 0x40, 0xd3, 0x0f, 0x91, 0x20, 0x32, 0x54, 0xd0, 0xda, 0x85, 0x8c, 0x08,
