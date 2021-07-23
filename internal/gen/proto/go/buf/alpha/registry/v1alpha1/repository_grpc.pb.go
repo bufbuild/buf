@@ -44,6 +44,8 @@ type RepositoryServiceClient interface {
 	ListRepositories(ctx context.Context, in *ListRepositoriesRequest, opts ...grpc.CallOption) (*ListRepositoriesResponse, error)
 	// ListUserRepositories lists all repositories belonging to a user.
 	ListUserRepositories(ctx context.Context, in *ListUserRepositoriesRequest, opts ...grpc.CallOption) (*ListUserRepositoriesResponse, error)
+	// ListUserRepositories lists all repositories a user can access.
+	ListRepositoriesUserCanAccess(ctx context.Context, in *ListRepositoriesUserCanAccessRequest, opts ...grpc.CallOption) (*ListRepositoriesUserCanAccessResponse, error)
 	// ListOrganizationRepositories lists all repositories for an organization.
 	ListOrganizationRepositories(ctx context.Context, in *ListOrganizationRepositoriesRequest, opts ...grpc.CallOption) (*ListOrganizationRepositoriesResponse, error)
 	// CreateRepositoryByFullName creates a new repository by full name.
@@ -100,6 +102,15 @@ func (c *repositoryServiceClient) ListRepositories(ctx context.Context, in *List
 func (c *repositoryServiceClient) ListUserRepositories(ctx context.Context, in *ListUserRepositoriesRequest, opts ...grpc.CallOption) (*ListUserRepositoriesResponse, error) {
 	out := new(ListUserRepositoriesResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/ListUserRepositories", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryServiceClient) ListRepositoriesUserCanAccess(ctx context.Context, in *ListRepositoriesUserCanAccessRequest, opts ...grpc.CallOption) (*ListRepositoriesUserCanAccessResponse, error) {
+	out := new(ListRepositoriesUserCanAccessResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoriesUserCanAccess", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -190,6 +201,8 @@ type RepositoryServiceServer interface {
 	ListRepositories(context.Context, *ListRepositoriesRequest) (*ListRepositoriesResponse, error)
 	// ListUserRepositories lists all repositories belonging to a user.
 	ListUserRepositories(context.Context, *ListUserRepositoriesRequest) (*ListUserRepositoriesResponse, error)
+	// ListUserRepositories lists all repositories a user can access.
+	ListRepositoriesUserCanAccess(context.Context, *ListRepositoriesUserCanAccessRequest) (*ListRepositoriesUserCanAccessResponse, error)
 	// ListOrganizationRepositories lists all repositories for an organization.
 	ListOrganizationRepositories(context.Context, *ListOrganizationRepositoriesRequest) (*ListOrganizationRepositoriesResponse, error)
 	// CreateRepositoryByFullName creates a new repository by full name.
@@ -223,6 +236,9 @@ func (UnimplementedRepositoryServiceServer) ListRepositories(context.Context, *L
 }
 func (UnimplementedRepositoryServiceServer) ListUserRepositories(context.Context, *ListUserRepositoriesRequest) (*ListUserRepositoriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListUserRepositories not implemented")
+}
+func (UnimplementedRepositoryServiceServer) ListRepositoriesUserCanAccess(context.Context, *ListRepositoriesUserCanAccessRequest) (*ListRepositoriesUserCanAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRepositoriesUserCanAccess not implemented")
 }
 func (UnimplementedRepositoryServiceServer) ListOrganizationRepositories(context.Context, *ListOrganizationRepositoriesRequest) (*ListOrganizationRepositoriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListOrganizationRepositories not implemented")
@@ -328,6 +344,24 @@ func _RepositoryService_ListUserRepositories_Handler(srv interface{}, ctx contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RepositoryServiceServer).ListUserRepositories(ctx, req.(*ListUserRepositoriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryService_ListRepositoriesUserCanAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRepositoriesUserCanAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).ListRepositoriesUserCanAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoriesUserCanAccess",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).ListRepositoriesUserCanAccess(ctx, req.(*ListRepositoriesUserCanAccessRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -498,6 +532,10 @@ var RepositoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListUserRepositories",
 			Handler:    _RepositoryService_ListUserRepositories_Handler,
+		},
+		{
+			MethodName: "ListRepositoriesUserCanAccess",
+			Handler:    _RepositoryService_ListRepositoriesUserCanAccess_Handler,
 		},
 		{
 			MethodName: "ListOrganizationRepositories",

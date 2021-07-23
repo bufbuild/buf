@@ -37,13 +37,13 @@ import (
 func TestCloneBranchToBucket(t *testing.T) {
 	t.Parallel()
 	// TODO: we can't assume that our CI platform will always have both
-	// the master branch and the current branch, we need to reconfigure
-	// this test to potentially use a remote public URL with a master branch
+	// the main branch and the current branch, we need to reconfigure
+	// this test to potentially use a remote public URL with a main branch
 	//
 	// CI is always set in GitHub Actions
 	// https://docs.github.com/en/free-pro-team@latest/actions/reference/environment-variables#default-environment-variables
 	if os.Getenv("CI") == "true" {
-		t.Skip("we do not necessarily have a master branch in CI")
+		t.Skip("we do not necessarily have a main branch in CI")
 	}
 	absGitPath, err := filepath.Abs("../../../.git")
 	require.NoError(t, err)
@@ -75,7 +75,7 @@ func TestCloneBranchToBucket(t *testing.T) {
 		readBucketBuilder,
 		CloneToBucketOptions{
 			Mapper: storage.MatchPathExt(".go"),
-			Name:   NewBranchName("master"),
+			Name:   NewBranchName("main"),
 		},
 	)
 	require.NoError(t, err)
@@ -136,13 +136,13 @@ func TestCloneRefToBucket(t *testing.T) {
 func TestCloneBranchAndRefToBucket(t *testing.T) {
 	t.Parallel()
 	// TODO: we can't assume that our CI platform will always have both
-	// the master branch and the current branch, we need to reconfigure
-	// this test to potentially use a remote public URL with a master branch
+	// the main branch and the current branch, we need to reconfigure
+	// this test to potentially use a remote public URL with a main branch
 	//
 	// CI is always set in GitHub Actions
 	// https://docs.github.com/en/free-pro-team@latest/actions/reference/environment-variables#default-environment-variables
 	if os.Getenv("CI") == "true" {
-		t.Skip("we do not necessarily have a master branch in CI")
+		t.Skip("we do not necessarily have a main branch in CI")
 	}
 	absGitPath, err := filepath.Abs("../../../.git")
 	require.NoError(t, err)
@@ -174,7 +174,7 @@ func TestCloneBranchAndRefToBucket(t *testing.T) {
 		readBucketBuilder,
 		CloneToBucketOptions{
 			Mapper: storage.MatchPathExt(".go"),
-			Name:   newRefWithBranch("refs/remotes/origin/master", "master"), // Should hopefully always exist
+			Name:   newRefWithBranch("refs/remotes/origin/main", "main"), // Should hopefully always exist
 		},
 	)
 	require.NoError(t, err)
