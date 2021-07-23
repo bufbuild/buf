@@ -1081,9 +1081,9 @@ func TestImageConvertRoundtripJSONBinaryJSON(t *testing.T) {
 	require.Equal(t, json1, stdout.Bytes())
 }
 
-func TestConfigInitBasic(t *testing.T) {
+func TestModInitBasic(t *testing.T) {
 	t.Parallel()
-	testConfigInit(
+	testModInit(
 		t,
 		`version: v1
 lint:
@@ -1093,15 +1093,14 @@ breaking:
   use:
     - FILE
 `,
-		false,
 		false,
 		"",
 	)
 }
 
-func TestConfigInitName(t *testing.T) {
+func TestModInitName(t *testing.T) {
 	t.Parallel()
-	testConfigInit(
+	testModInit(
 		t,
 		`version: v1
 name: buf.build/foob/bar
@@ -1113,32 +1112,7 @@ breaking:
     - FILE
 `,
 		false,
-		false,
 		"buf.build/foob/bar",
-	)
-}
-
-func TestConfigInitNameDeps(t *testing.T) {
-	t.Parallel()
-	testConfigInit(
-		t,
-		`version: v1
-name: buf.build/foob/bar
-deps:
-  - buf.build/foob/baz:v1
-  - buf.build/foob/bat:v1
-lint:
-  use:
-    - DEFAULT
-breaking:
-  use:
-    - FILE
-`,
-		false,
-		false,
-		"buf.build/foob/bar",
-		"buf.build/foob/baz:v1",
-		"buf.build/foob/bat:v1",
 	)
 }
 
@@ -1381,25 +1355,26 @@ func testCopyReadBucketToTempDir(
 	return tempDir, readWriteBucket
 }
 
-func testConfigInit(t *testing.T, expectedData string, document bool, uncomment bool, name string, deps ...string) {
-	tempDir := t.TempDir()
-	args := []string{"beta", "config", "init", "-o", tempDir}
-	if document {
-		args = append(args, "--doc")
+func testModInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {
+	for _, baseArgs := range [][]string{
+		// deprecated commands as well
+		{"mod", "init"},
+		{"beta", "mod", "init"},
+		{"beta", "config", "init"},
+	} {
+		tempDir := t.TempDir()
+		args := append(baseArgs, "-o", tempDir)
+		if document {
+			args = append(args, "--doc")
+		}
+		if name != "" {
+			args = append(args, "--name", name)
+		}
+		testRun(t, 0, nil, nil, args...)
+		data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigFilePath))
+		require.NoError(t, err)
+		require.Equal(t, expectedData, string(data))
 	}
-	if uncomment {
-		args = append(args, "--uncomment")
-	}
-	if name != "" {
-		args = append(args, "--name", name)
-	}
-	for _, dep := range deps {
-		args = append(args, "--dep", dep)
-	}
-	testRun(t, 0, nil, nil, args...)
-	data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigFilePath))
-	require.NoError(t, err)
-	require.Equal(t, expectedData, string(data))
 }
 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {

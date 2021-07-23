@@ -39,12 +39,16 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
+	deprecated string,
+	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <module_name>",
-		Short: "Export a module to a directory.",
-		Args:  cobra.ExactArgs(1),
+		Use:        name + " <module_name>",
+		Short:      "Export a module to a directory.",
+		Args:       cobra.ExactArgs(1),
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

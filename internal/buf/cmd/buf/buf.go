@@ -19,11 +19,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/mod/modclearcache"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/mod/modexport"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/mod/modinit"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/mod/modupdate"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/push"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/branch/branchcreate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/branch/branchlist"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/commit/commitget"
@@ -31,12 +27,21 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/organization/organizationget"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/plugin/plugincreate"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/plugin/pluginlist"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/plugin/pluginversion/pluginversionlist"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/repository/repositoryget"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/repository/repositorylist"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/tag/tagcreate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/tag/taglist"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/template/templatecreate"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/template/templatedelete"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/template/templatelist"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/template/templateversion/templateversioncreate"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configlsbreakingrules"
@@ -46,7 +51,12 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lsfiles"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/mod/modclearcache"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/mod/modinit"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/mod/modprune"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/mod/modupdate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/protoc"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 )
@@ -72,7 +82,11 @@ We recommend migrating, however this command continues to work.
 See https://docs.buf.build/faq for more details.`
 	betaConfigDeprecationMessage = `"buf beta config" has been moved to "buf beta mod".
 We recommend migrating, however this command continues to work.`
-	betaConfigInitDeprecationMessage = `"buf beta config init" has been moved to "buf beta mod init".
+	betaConfigInitDeprecationMessage = `"buf beta config init" has been moved to "buf mod init".
+We recommend migrating, however this command continues to work.`
+	betaPushDeprecationMessage = `"buf beta push" has been moved to "buf push".
+We recommend migrating, however this command continues to work.`
+	betaModDeprecationMessage = `"buf beta mod ..." has been moved to "buf mod ...".
 We recommend migrating, however this command continues to work.`
 )
 
@@ -150,6 +164,16 @@ func NewRootCommand(
 			protoc.NewCommand("protoc", builder),
 			lsfiles.NewCommand("ls-files", builder),
 			{
+				Use:   "mod",
+				Short: "Configure and update buf modules.",
+				SubCommands: []*appcmd.Command{
+					modinit.NewCommand("init", builder, "", false),
+					modprune.NewCommand("prune", builder),
+					modupdate.NewCommand("update", builder, "", false),
+					modclearcache.NewCommand("clear-cache", builder, "", false, "cc"),
+				},
+			},
+			{
 				Use:   "config",
 				Short: "Interact with the configuration of Buf.",
 				SubCommands: []*appcmd.Command{
@@ -185,15 +209,18 @@ func NewRootCommand(
 							),
 						},
 					},
-					push.NewCommand("push", builder),
+					push.NewCommand("push", builder, betaPushDeprecationMessage, true),
 					{
 						Use:   "mod",
 						Short: "Configure and update buf modules.",
+						// TODO: readd when export is deprecated
+						//Deprecated: betaModDeprecationMessage,
+						//Hidden:     true,
 						SubCommands: []*appcmd.Command{
-							modinit.NewCommand("init", builder, "", false),
-							modupdate.NewCommand("update", builder),
-							modexport.NewCommand("export", builder),
-							modclearcache.NewCommand("clear-cache", builder, "cc"),
+							modinit.NewCommand("init", builder, betaModDeprecationMessage, true),
+							modupdate.NewCommand("update", builder, betaModDeprecationMessage, true),
+							modexport.NewCommand("export", builder, "", false),
+							modclearcache.NewCommand("clear-cache", builder, betaModDeprecationMessage, true, "cc"),
 						},
 					},
 					{
@@ -243,6 +270,39 @@ func NewRootCommand(
 									commitlist.NewCommand("list", builder),
 								},
 							},
+							{
+								Use:   "plugin",
+								Short: "Plugin commands.",
+								SubCommands: []*appcmd.Command{
+									plugincreate.NewCommand("create", builder),
+									pluginlist.NewCommand("list", builder),
+									plugindelete.NewCommand("delete", builder),
+									{
+										Use:   "version",
+										Short: "Plugin version commands.",
+										SubCommands: []*appcmd.Command{
+											pluginversionlist.NewCommand("list", builder),
+										},
+									},
+								},
+							},
+							{
+								Use:   "template",
+								Short: "Template commands.",
+								SubCommands: []*appcmd.Command{
+									templatecreate.NewCommand("create", builder),
+									templatelist.NewCommand("list", builder),
+									templatedelete.NewCommand("delete", builder),
+									{
+										Use:   "version",
+										Short: "Template version commands.",
+										SubCommands: []*appcmd.Command{
+											templateversioncreate.NewCommand("create", builder),
+											templateversionlist.NewCommand("list", builder),
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -271,6 +331,7 @@ See https://docs.buf.build/faq for more details.`,
 					},
 				},
 			},
+			push.NewCommand("push", builder, "", false),
 		},
 		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		Version:             bufcli.Version,

@@ -127,6 +127,49 @@ func NewRepositoryCommitPrinter(writer io.Writer) RepositoryCommitPrinter {
 	return newRepositoryCommitPrinter(writer)
 }
 
+// PluginPrinter is a printer for plugins.
+type PluginPrinter interface {
+	PrintPlugin(ctx context.Context, format Format, plugin *registryv1alpha1.Plugin) error
+	PrintPlugins(ctx context.Context, format Format, nextPageToken string, plugins ...*registryv1alpha1.Plugin) error
+}
+
+// NewPluginPrinter returns a new PluginPrinter.
+func NewPluginPrinter(writer io.Writer) PluginPrinter {
+	return newPluginPrinter(writer)
+}
+
+// PluginVersionPrinter is a printer for PluginVersions.
+type PluginVersionPrinter interface {
+	PrintPluginVersions(ctx context.Context, format Format, nextPageToken string, plugins ...*registryv1alpha1.PluginVersion) error
+}
+
+// NewPluginVersionPrinter returns a new NewPluginVersionPrinter.
+func NewPluginVersionPrinter(writer io.Writer) PluginVersionPrinter {
+	return newPluginVersionPrinter(writer)
+}
+
+// TemplatePrinter is a printer for Templates.
+type TemplatePrinter interface {
+	PrintTemplate(ctx context.Context, format Format, plugin *registryv1alpha1.Template) error
+	PrintTemplates(ctx context.Context, format Format, nextPageToken string, plugins ...*registryv1alpha1.Template) error
+}
+
+// NewTemplatePrinter returns a new NewTemplatePrinter.
+func NewTemplatePrinter(writer io.Writer) TemplatePrinter {
+	return newTemplatePrinter(writer)
+}
+
+// TemplateVersionPrinter is a printer for TemplateVersions.
+type TemplateVersionPrinter interface {
+	PrintTemplateVersion(ctx context.Context, format Format, plugin *registryv1alpha1.TemplateVersion) error
+	PrintTemplateVersions(ctx context.Context, format Format, nextPageToken string, plugins ...*registryv1alpha1.TemplateVersion) error
+}
+
+// NewTemplateVersionPrinter returns a new NewTemplateVersionPrinter.
+func NewTemplateVersionPrinter(writer io.Writer) TemplateVersionPrinter {
+	return newTemplateVersionPrinter(writer)
+}
+
 // PrintProtoMessageJSON prints the Protobuf message as JSON.
 //
 // Shared with internal packages.
