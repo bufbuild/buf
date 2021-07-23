@@ -205,7 +205,7 @@ copytomakego:
 	@cd $(TMP)/makego; git status; git diff
 	@echo cd $(TMP)/makego
 	@echo git diff
-	@echo git push origin master
+	@echo git push origin main
 	@echo cd -
 
 .PHONY: initmakego

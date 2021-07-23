@@ -47,7 +47,7 @@ include make/go/go.mk
 include make/go/docker.mk
 
 # Settable
-BUF_BREAKING_PROTO_INPUT ?= .git\#branch=master,subdir=proto
+BUF_BREAKING_PROTO_INPUT ?= .git\#branch=main,subdir=proto
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
