@@ -52,6 +52,8 @@ service RepositoryService {
   rpc ListRepositories(ListRepositoriesRequest) returns (ListRepositoriesResponse);
   // ListUserRepositories lists all repositories belonging to a user.
   rpc ListUserRepositories(ListUserRepositoriesRequest) returns (ListUserRepositoriesResponse);
+  // ListUserRepositories lists all repositories a user can access.
+  rpc ListRepositoriesUserCanAccess(ListRepositoriesUserCanAccessRequest) returns (ListRepositoriesUserCanAccessResponse);
   // ListOrganizationRepositories lists all repositories for an organization.
   rpc ListOrganizationRepositories(ListOrganizationRepositoriesRequest) returns (ListOrganizationRepositoriesResponse);
   // CreateRepositoryByFullName creates a new repository by full name.
@@ -109,6 +111,19 @@ message ListUserRepositoriesRequest {
 }
 
 message ListUserRepositoriesResponse {
+  repeated Repository repositories = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message ListRepositoriesUserCanAccessRequest {
+  uint32 page_size = 1;
+  // The first page is returned if this is empty.
+  string page_token = 2;
+  bool reverse = 3;
+}
+
+message ListRepositoriesUserCanAccessResponse {
   repeated Repository repositories = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;

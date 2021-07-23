@@ -112,6 +112,30 @@ func (s *repositoryService) ListUserRepositories(
 	return response.Repositories, response.NextPageToken, nil
 }
 
+// ListUserRepositories lists all repositories a user can access.
+func (s *repositoryService) ListRepositoriesUserCanAccess(
+	ctx context.Context,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListRepositoriesUserCanAccess(
+		ctx,
+		&v1alpha1.ListRepositoriesUserCanAccessRequest{
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Reverse:   reverse,
+		},
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.Repositories, response.NextPageToken, nil
+}
+
 // ListOrganizationRepositories lists all repositories for an organization.
 func (s *repositoryService) ListOrganizationRepositories(
 	ctx context.Context,

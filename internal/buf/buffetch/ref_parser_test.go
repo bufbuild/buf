@@ -266,12 +266,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"path/to/dir.git",
 			internal.GitSchemeLocal,
-			git.NewBranchName("master"),
+			git.NewBranchName("main"),
 			false,
 			1,
 			"",
 		),
-		"path/to/dir.git#branch=master",
+		"path/to/dir.git#branch=main",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -279,12 +279,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"/path/to/dir.git",
 			internal.GitSchemeLocal,
-			git.NewBranchName("master"),
+			git.NewBranchName("main"),
 			false,
 			1,
 			"",
 		),
-		"file:///path/to/dir.git#branch=master",
+		"file:///path/to/dir.git#branch=main",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -305,12 +305,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"hello.com/path/to/dir.git",
 			internal.GitSchemeHTTP,
-			git.NewBranchName("master"),
+			git.NewBranchName("main"),
 			false,
 			1,
 			"",
 		),
-		"http://hello.com/path/to/dir.git#branch=master",
+		"http://hello.com/path/to/dir.git#branch=main",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -318,12 +318,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"hello.com/path/to/dir.git",
 			internal.GitSchemeHTTPS,
-			git.NewBranchName("master"),
+			git.NewBranchName("main"),
 			false,
 			1,
 			"",
 		),
-		"https://hello.com/path/to/dir.git#branch=master",
+		"https://hello.com/path/to/dir.git#branch=main",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -331,12 +331,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"user@hello.com:path/to/dir.git",
 			internal.GitSchemeSSH,
-			git.NewBranchName("master"),
+			git.NewBranchName("main"),
 			false,
 			1,
 			"",
 		),
-		"ssh://user@hello.com:path/to/dir.git#branch=master",
+		"ssh://user@hello.com:path/to/dir.git#branch=main",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -357,12 +357,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"user@hello.com:path/to/dir.git",
 			internal.GitSchemeSSH,
-			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "master"),
+			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "main"),
 			false,
 			50,
 			"",
 		),
-		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,branch=master",
+		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,branch=main",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -383,12 +383,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"user@hello.com:path/to/dir.git",
 			internal.GitSchemeSSH,
-			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "master"),
+			git.NewRefNameWithBranch("refs/remotes/origin/HEAD", "main"),
 			false,
 			10,
 			"",
 		),
-		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,branch=master,depth=10",
+		"ssh://user@hello.com:path/to/dir.git#ref=refs/remotes/origin/HEAD,branch=main,depth=10",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -435,12 +435,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"user@hello.com:path/to/dir.git",
 			internal.GitSchemeGit,
-			git.NewBranchName("master"),
+			git.NewBranchName("main"),
 			false,
 			1,
 			"",
 		),
-		"git://user@hello.com:path/to/dir.git#branch=master",
+		"git://user@hello.com:path/to/dir.git#branch=main",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -448,12 +448,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"path/to/dir.git",
 			internal.GitSchemeGit,
-			git.NewBranchName("master"),
+			git.NewBranchName("main"),
 			false,
 			1,
 			"",
 		),
-		"git://path/to/dir.git#branch=master",
+		"git://path/to/dir.git#branch=main",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -603,12 +603,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"/path/to/dir",
 			internal.GitSchemeLocal,
-			git.NewBranchName("master"),
+			git.NewBranchName("main"),
 			false,
 			1,
 			"",
 		),
-		"/path/to/dir#branch=master,format=git",
+		"/path/to/dir#branch=main,format=git",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -616,12 +616,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"/path/to/dir",
 			internal.GitSchemeLocal,
-			git.NewBranchName("master/foo"),
+			git.NewBranchName("main/foo"),
 			false,
 			1,
 			"",
 		),
-		"/path/to/dir#format=git,branch=master/foo",
+		"/path/to/dir#format=git,branch=main/foo",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -629,12 +629,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"path/to/dir",
 			internal.GitSchemeLocal,
-			git.NewTagName("master/foo"),
+			git.NewTagName("main/foo"),
 			false,
 			1,
 			"",
 		),
-		"path/to/dir#tag=master/foo,format=git",
+		"path/to/dir#tag=main/foo,format=git",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -642,12 +642,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"path/to/dir",
 			internal.GitSchemeLocal,
-			git.NewTagName("master/foo"),
+			git.NewTagName("main/foo"),
 			false,
 			1,
 			"",
 		),
-		"path/to/dir#format=git,tag=master/foo",
+		"path/to/dir#format=git,tag=main/foo",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -655,12 +655,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"path/to/dir",
 			internal.GitSchemeLocal,
-			git.NewTagName("master/foo"),
+			git.NewTagName("main/foo"),
 			true,
 			1,
 			"",
 		),
-		"path/to/dir#format=git,tag=master/foo,recurse_submodules=true",
+		"path/to/dir#format=git,tag=main/foo,recurse_submodules=true",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -668,12 +668,12 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			formatGit,
 			"path/to/dir",
 			internal.GitSchemeLocal,
-			git.NewTagName("master/foo"),
+			git.NewTagName("main/foo"),
 			false,
 			1,
 			"",
 		),
-		"path/to/dir#format=git,tag=master/foo,recurse_submodules=false",
+		"path/to/dir#format=git,tag=main/foo,recurse_submodules=false",
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -919,8 +919,8 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewValueMultipleHashtagsError("foo#format=git#branch=master"),
-		"foo#format=git#branch=master",
+		internal.NewValueMultipleHashtagsError("foo#format=git#branch=main"),
+		"foo#format=git#branch=main",
 	)
 	testGetParsedRefError(
 		t,
@@ -940,7 +940,7 @@ func TestGetParsedRefError(t *testing.T) {
 	testGetParsedRefError(
 		t,
 		internal.NewInvalidPathError(formatGit, "-"),
-		"-#format=git,branch=master",
+		"-#format=git,branch=main",
 	)
 	testGetParsedRefError(
 		t,
@@ -1029,8 +1029,8 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsInvalidForFormatError(formatTar, "path/to/foo.tar.gz#branch=master"),
-		"path/to/foo.tar.gz#branch=master",
+		internal.NewOptionsInvalidForFormatError(formatTar, "path/to/foo.tar.gz#branch=main"),
+		"path/to/foo.tar.gz#branch=main",
 	)
 	testGetParsedRefError(
 		t,
