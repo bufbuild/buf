@@ -156,6 +156,23 @@ func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix s
 	return goPackageImportPath
 }
 
+// ObjcClassPrefix returns a Modifier that sets the objc_class_prefix file option
+// according to the package name. It is set to the uppercase first letter of each package sub-name,
+// not including the package version, with the following rules:
+//  * If the resulting abbreviation is 2 characters, add "X".
+//  * If the resulting abbreviation is 1 character, add "XX".
+//  * If the resulting abbreviation is "GPB", change it to "GPX".
+//    "GPB" is reserved by Google for the Protocol Buffers implementation.
+func ObjcClassPrefix(sweeper Sweeper) Modifier {
+	return objcClassPrefix(sweeper)
+}
+
+// CsharpNamespace returns a Modifier that sets the objc_class_prefix file option
+// according to the package name. It is set to the package name with each package sub-name capitalized.
+func CsharpNamespace(sweeper Sweeper) Modifier {
+	return csharpNamespace(sweeper)
+}
+
 // isWellKnownType returns true if the given path is one of the well-known types.
 func isWellKnownType(ctx context.Context, imageFile bufimage.ImageFile) bool {
 	if _, err := datawkt.ReadBucket.Stat(ctx, imageFile.Path()); err == nil {

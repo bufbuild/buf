@@ -44,20 +44,25 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	ctx, span := trace.StartSpan(ctx, "get_config")
 	defer span.End()
 
-	readObjectCloser, err := readBucket.Get(ctx, ExternalConfigFilePath)
-	if err != nil {
-		if !storage.IsNotExist(err) {
-			return nil, err
-		}
-		// Look for old config file
-		readObjectCloser, err = readBucket.Get(ctx, ExternalConfigV1Beta1FilePath)
+	var readObjectCloser storage.ReadObjectCloser
+	// go through all valid config file paths and see if we have one
+	for _, configFilePath := range allConfigFilePaths {
+		var err error
+		readObjectCloser, err = readBucket.Get(ctx, configFilePath)
 		if err != nil {
+			// if we do not, go to the next config file path
 			if storage.IsNotExist(err) {
-				// TODO: change to V1 when we make V1 the default
-				return p.newConfigV1Beta1(ExternalConfigV1Beta1{})
+				continue
 			}
 			return nil, err
 		}
+		// we found a readObjectCloser
+		break
+	}
+	// we did not discover any config file, return the default configuration
+	if readObjectCloser == nil {
+		// TODO: change to V1 when we make V1 the default
+		return p.newConfigV1Beta1(ExternalConfigV1Beta1{})
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())

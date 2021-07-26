@@ -28,7 +28,7 @@ import (
 
 const (
 	// ExternalConfigFilePath is the default configuration file path.
-	ExternalConfigFilePath = "buf.mod"
+	ExternalConfigV1FilePath = "buf.yaml"
 
 	// ExternalConfigV1Beta1FilePath is the v1beta1 file path.
 	ExternalConfigV1Beta1FilePath = "buf.yaml"
@@ -38,6 +38,13 @@ const (
 
 	// V1Beta1Version is the v1beta1 version.
 	V1Beta1Version = "v1beta1"
+
+	// backupExternalConfigV1FilePath is another acceptable configuration file path for v1.
+	//
+	// Originally we thought we were going to move to buf.mod, and had this around for
+	// a while, but then reverted back to buf.yaml. We still need to support buf.mod as
+	// we released with it, however.
+	backupExternalConfigV1FilePath = "buf.mod"
 )
 
 var (
@@ -45,6 +52,14 @@ var (
 	AllVersions = []string{
 		V1Beta1Version,
 		V1Version,
+	}
+
+	// allConfigFilePaths are all acceptable config file paths without overrides.
+	//
+	// These are in the order we should check.
+	allConfigFilePaths = []string{
+		ExternalConfigV1FilePath,
+		backupExternalConfigV1FilePath,
 	}
 )
 
@@ -162,17 +177,21 @@ func ReadConfigWithOverride(override string) ReadConfigOption {
 	}
 }
 
-// ConfigExists checks if a configuration file exists.
-func ConfigExists(ctx context.Context, readBucket storage.ReadBucket) (bool, error) {
-	exists, err := storage.Exists(ctx, readBucket, ExternalConfigFilePath)
-	if err != nil {
-		return false, err
+// ExistingConfigFilePath checks if a configuration file exists, and if so, returns the path
+// within the ReadBucket of this configuration file.
+//
+// Returns empty string and no error if no configuration file exists.
+func ExistingConfigFilePath(ctx context.Context, readBucket storage.ReadBucket) (string, error) {
+	for _, configFilePath := range allConfigFilePaths {
+		exists, err := storage.Exists(ctx, readBucket, configFilePath)
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return configFilePath, nil
+		}
 	}
-	if exists {
-		return true, nil
-	}
-	// If the default filename does not exist, fallback to previous versions.
-	return storage.Exists(ctx, readBucket, ExternalConfigV1Beta1FilePath)
+	return "", nil
 }
 
 // ExternalConfigV1Beta1 represents the on-disk representation of the Config

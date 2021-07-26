@@ -44,12 +44,26 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket,
 	ctx, span := trace.StartSpan(ctx, "get_config")
 	defer span.End()
 
-	readObjectCloser, err := readBucket.Get(ctx, ExternalConfigFilePath)
-	if err != nil {
-		if storage.IsNotExist(err) {
-			return p.newConfigV1(ExternalConfigV1{}, "default configuration")
+	var readObjectCloser storage.ReadObjectCloser
+	var workspaceID string
+	// go through all valid config file paths and see if we have one
+	for _, configFilePath := range AllConfigFilePaths {
+		workspaceID = filepath.Join(normalpath.Unnormalize(relativeRootPath), configFilePath)
+		var err error
+		readObjectCloser, err = readBucket.Get(ctx, configFilePath)
+		if err != nil {
+			// if we do not, go to the next config file path
+			if storage.IsNotExist(err) {
+				continue
+			}
+			return nil, err
 		}
-		return nil, err
+		// we found a readObjectCloser
+		break
+	}
+	// we did not discover any config file, return the default configuration
+	if readObjectCloser == nil {
+		return p.newConfigV1(ExternalConfigV1{}, "default configuration")
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, readObjectCloser.Close())
@@ -62,7 +76,7 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket,
 		ctx,
 		encoding.UnmarshalYAMLNonStrict,
 		encoding.UnmarshalYAMLStrict,
-		filepath.Join(normalpath.Unnormalize(relativeRootPath), ExternalConfigFilePath),
+		workspaceID,
 		data,
 		readObjectCloser.ExternalPath(),
 	)

@@ -167,7 +167,7 @@ func (m *v1beta1Migrator) maybeMigrateConfig(dirPath string) (bool, error) {
 			Breaking: bufbreaking.ExternalConfigV1(v1beta1Config.Breaking),
 			Lint:     buflint.ExternalConfigV1(v1beta1Config.Lint),
 		}
-		newConfigPath := filepath.Join(dirPath, bufconfig.ExternalConfigFilePath)
+		newConfigPath := filepath.Join(dirPath, bufconfig.ExternalConfigV1FilePath)
 		if err := m.writeV1Config(newConfigPath, v1Config, ".", v1beta1Config.Name); err != nil {
 			return false, err
 		}
@@ -235,7 +235,7 @@ func (m *v1beta1Migrator) maybeMigrateConfig(dirPath string) (bool, error) {
 			return false, err
 		}
 		if err := m.writeV1Config(
-			filepath.Join(dirPath, root, bufconfig.ExternalConfigFilePath),
+			filepath.Join(dirPath, root, bufconfig.ExternalConfigV1FilePath),
 			v1Config,
 			root,
 			v1beta1Config.Name,
@@ -281,7 +281,7 @@ func (m *v1beta1Migrator) maybeMigrateConfig(dirPath string) (bool, error) {
 			header = fmt.Sprintf(bufWorkHeaderWithoutName, m.commandName, bufconfig.ExternalConfigV1Beta1FilePath)
 		}
 		if err := os.WriteFile(
-			filepath.Join(dirPath, bufwork.ExternalConfigFilePath),
+			filepath.Join(dirPath, bufwork.ExternalConfigV1FilePath),
 			append([]byte(header), workConfigBytes...),
 			0600,
 		); err != nil {
