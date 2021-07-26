@@ -77,12 +77,13 @@ func testGetImage(t *testing.T, dirPath string, includeSourceInfo bool) bufimage
 	if !includeSourceInfo {
 		options = append(options, bufimagebuild.WithExcludeSourceCodeInfo())
 	}
-	image, _, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
+	image, annotations, err := bufimagebuild.NewBuilder(zap.NewNop()).Build(
 		context.Background(),
 		moduleFileSet,
 		options...,
 	)
 	require.NoError(t, err)
+	require.Empty(t, annotations)
 	return image
 }
 

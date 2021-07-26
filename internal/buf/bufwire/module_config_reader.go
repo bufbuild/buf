@@ -115,11 +115,11 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 	defer func() {
 		retErr = multierr.Append(retErr, readBucketCloser.Close())
 	}()
-	exists, err := bufwork.ConfigExists(ctx, readBucketCloser)
+	existingConfigFilePath, err := bufwork.ExistingConfigFilePath(ctx, readBucketCloser)
 	if err != nil {
 		return nil, err
 	}
-	if exists {
+	if existingConfigFilePath != "" {
 		return m.getWorkspaceModuleConfigs(
 			ctx,
 			sourceRef,
@@ -341,13 +341,13 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 			}
 			// The subDirPath is contained within one of the workspace directories, so
 			// we first need to reformat the externalDirOrFilePaths so that they accommodate
-			// for the relativeRootPath (the path to the directory containing the buf.work).
+			// for the relativeRootPath (the path to the directory containing the buf.work.yaml).
 			//
 			// For example,
 			//
 			//  $ buf build ../../proto --path ../../proto/buf
 			//
-			//  // buf.work
+			//  // buf.work.yaml
 			//  version: v1
 			//  directories:
 			//    - proto
@@ -410,7 +410,7 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 		module.DependencyModulePins(),
 	); len(missingReferences) > 0 {
 		var builder strings.Builder
-		_, _ = builder.WriteString(`Specified deps are not covered in your buf.lock, run "buf beta mod update":`)
+		_, _ = builder.WriteString(`Specified deps are not covered in your buf.lock, run "buf mod update":`)
 		for _, moduleReference := range missingReferences {
 			_, _ = builder.WriteString("\n\t- " + moduleReference.IdentityString())
 		}

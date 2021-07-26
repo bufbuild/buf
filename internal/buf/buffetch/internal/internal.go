@@ -701,22 +701,22 @@ func WithGetFileKeepFileCompression() GetFileOption {
 // GetBucketOption is a GetBucket option.
 type GetBucketOption func(*getBucketOptions)
 
-// WithGetBucketTerminateFileName only applies if subdir is specified.
+// WithGetBucketTerminateFileNames only applies if subdir is specified.
 //
 // This says that if given a subdir, ascend directories until you reach
-// a file with this name, and if you do, the returned bucket will be
+// a file one of these names, and if you do, the returned bucket will be
 // for the directory with this filename, while SubDirPath on the
 // returned bucket will be set to the original subdir relative
 // to the terminate file.
 //
 // This is used for workspaces. So if you have i.e. "proto/foo"
-// subdir, and terminate file "proto/buf.work", the returned bucket will
+// subdir, and terminate file "proto/buf.work.yaml", the returned bucket will
 // be for "proto", and the SubDirPath will be "foo".
 //
-// The terminateFileName is expected to be valid and have no slashes.
-func WithGetBucketTerminateFileName(terminateFileName string) GetBucketOption {
+// The terminateFileNames are expected to be valid and have no slashes.
+func WithGetBucketTerminateFileNames(terminateFileNames ...string) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
-		getBucketOptions.terminateFileName = terminateFileName
+		getBucketOptions.terminateFileNames = terminateFileNames
 	}
 }
 

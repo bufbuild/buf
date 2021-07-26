@@ -122,21 +122,21 @@ func (r *reader) GetBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFileName,
+			getBucketOptions.terminateFileNames,
 		)
 	case DirRef:
 		return r.getDirBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFileName,
+			getBucketOptions.terminateFileNames,
 		)
 	case GitRef:
 		return r.getGitBucket(
 			ctx,
 			container,
 			t,
-			getBucketOptions.terminateFileName,
+			getBucketOptions.terminateFileNames,
 		)
 	default:
 		return nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
@@ -185,7 +185,7 @@ func (r *reader) getArchiveBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
-	terminateFileName string,
+	terminateFileNames []string,
 ) (_ ReadBucketCloser, retErr error) {
 	subDirPath, err := normalpath.NormalizeAndValidate(archiveRef.SubDirPath())
 	if err != nil {
@@ -244,7 +244,7 @@ func (r *reader) getArchiveBucket(
 	if err != nil {
 		return nil, err
 	}
-	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readBucket, subDirPath, terminateFileName)
+	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -273,12 +273,12 @@ func (r *reader) getDirBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
-	terminateFileName string,
+	terminateFileNames []string,
 ) (ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	terminateFileDirectoryAbsPath, err := findTerminateFileDirectoryPathFromOS(dirRef.Path(), terminateFileName)
+	terminateFileDirectoryAbsPath, err := findTerminateFileDirectoryPathFromOS(dirRef.Path(), terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -352,7 +352,7 @@ func (r *reader) getGitBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	gitRef GitRef,
-	terminateFileName string,
+	terminateFileNames []string,
 ) (_ ReadBucketCloser, retErr error) {
 	if !r.gitEnabled {
 		return nil, NewReadGitDisabledError()
@@ -386,7 +386,7 @@ func (r *reader) getGitBucket(
 	if err != nil {
 		return nil, err
 	}
-	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readBucket, subDirPath, terminateFileName)
+	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -583,20 +583,24 @@ func getGitURL(gitRef GitRef) (string, error) {
 }
 
 // findTerminateFileDirectoryPathFromBucket returns the directory path that contains
-// the terminateFileName, starting with the subDirPath and ascending until the root
+// one of the terminateFileNames, starting with the subDirPath and ascending until the root
 // of the bucket.
 func findTerminateFileDirectoryPathFromBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	subDirPath string,
-	terminateFileName string,
+	terminateFileNames []string,
 ) (string, error) {
-	if terminateFileName == "" {
+	if len(terminateFileNames) == 0 {
 		return "", nil
 	}
 	terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
 	for {
-		exists, err := storage.Exists(ctx, readBucket, normalpath.Join(terminateFileDirectoryPath, terminateFileName))
+		fullTerminateFileNames := make([]string, len(terminateFileNames))
+		for i, terminateFileName := range terminateFileNames {
+			fullTerminateFileNames[i] = normalpath.Join(terminateFileDirectoryPath, terminateFileName)
+		}
+		exists, err := anyExistsBucket(ctx, readBucket, fullTerminateFileNames)
 		if err != nil {
 			return "", err
 		}
@@ -611,11 +615,28 @@ func findTerminateFileDirectoryPathFromBucket(
 	}
 }
 
+func anyExistsBucket(
+	ctx context.Context,
+	readBucket storage.ReadBucket,
+	paths []string,
+) (bool, error) {
+	for _, path := range paths {
+		exists, err := storage.Exists(ctx, readBucket, path)
+		if err != nil {
+			return false, err
+		}
+		if exists {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 // findTerminateFileDirectoryPathFromOS returns the directory that contains
 // the terminateFileName, starting with the subDirPath and ascending until
 // the root of the local filesysem.
-func findTerminateFileDirectoryPathFromOS(subDirPath string, terminateFileName string) (string, error) {
-	if terminateFileName == "" {
+func findTerminateFileDirectoryPathFromOS(subDirPath string, terminateFileNames []string) (string, error) {
+	if len(terminateFileNames) == 0 {
 		return "", nil
 	}
 	fileInfo, err := os.Stat(normalpath.Unnormalize(subDirPath))
@@ -633,11 +654,15 @@ func findTerminateFileDirectoryPathFromOS(subDirPath string, terminateFileName s
 		return "", err
 	}
 	for {
-		fileInfo, err := os.Stat(normalpath.Unnormalize(normalpath.Join(terminateFileDirectoryPath, terminateFileName)))
-		if err != nil && !os.IsNotExist(err) {
+		fullTerminateFileNames := make([]string, len(terminateFileNames))
+		for i, terminateFileName := range terminateFileNames {
+			fullTerminateFileNames[i] = normalpath.Unnormalize(normalpath.Join(terminateFileDirectoryPath, terminateFileName))
+		}
+		exists, err := anyExistsOS(fullTerminateFileNames)
+		if err != nil {
 			return "", err
 		}
-		if fileInfo != nil && !fileInfo.IsDir() {
+		if exists {
 			return terminateFileDirectoryPath, nil
 		}
 		parent := normalpath.Dir(terminateFileDirectoryPath)
@@ -646,6 +671,19 @@ func findTerminateFileDirectoryPathFromOS(subDirPath string, terminateFileName s
 		}
 		terminateFileDirectoryPath = parent
 	}
+}
+
+func anyExistsOS(paths []string) (bool, error) {
+	for _, path := range paths {
+		fileInfo, err := os.Stat(path)
+		if err != nil && !os.IsNotExist(err) {
+			return false, err
+		}
+		if fileInfo != nil && !fileInfo.IsDir() {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 type getFileOptions struct {
@@ -657,7 +695,7 @@ func newGetFileOptions() *getFileOptions {
 }
 
 type getBucketOptions struct {
-	terminateFileName string
+	terminateFileNames []string
 }
 
 func newGetBucketOptions() *getBucketOptions {

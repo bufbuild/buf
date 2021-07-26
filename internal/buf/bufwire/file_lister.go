@@ -96,11 +96,11 @@ func (e *fileLister) ListFiles(
 		defer func() {
 			retErr = multierr.Append(retErr, readBucketCloser.Close())
 		}()
-		exists, err := bufwork.ConfigExists(ctx, readBucketCloser)
+		existingConfigFilePath, err := bufwork.ExistingConfigFilePath(ctx, readBucketCloser)
 		if err != nil {
 			return nil, err
 		}
-		if subDirPath := readBucketCloser.SubDirPath(); !exists || subDirPath != "." {
+		if subDirPath := readBucketCloser.SubDirPath(); existingConfigFilePath == "" || subDirPath != "." {
 			return e.sourceFileInfosForDirectory(ctx, readBucketCloser, subDirPath, configOverride)
 		}
 		workspaceConfig, err := e.workspaceConfigProvider.GetConfig(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())

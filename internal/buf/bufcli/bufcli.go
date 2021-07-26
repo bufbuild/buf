@@ -585,11 +585,11 @@ func ReadModuleWithWorkspacesDisabled(
 	if err != nil {
 		return nil, nil, err
 	}
-	exists, err := bufconfig.ConfigExists(ctx, sourceBucket)
+	existingConfigFilePath, err := bufconfig.ExistingConfigFilePath(ctx, sourceBucket)
 	if err != nil {
 		return nil, nil, NewInternalError(err)
 	}
-	if !exists {
+	if existingConfigFilePath == "" {
 		return nil, nil, ErrNoConfigFile
 	}
 	// TODO: This should just read a lock file

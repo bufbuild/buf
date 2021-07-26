@@ -192,8 +192,6 @@ func managedModeModifier(pluginConfigs []*PluginConfig, sweeper bufimagemodify.S
 	// TODO: Implement the following modifiers and include them in
 	// the NewMultiModifier below.
 	//
-	// bufimagemodify.CsharpNamespace(sweeper),
-	// bufimagemodify.ObjcClassPrefix(sweeper),
 	// bufimagemodify.SwiftPrefix(sweeper),
 	// bufimagemodify.PhpClassPrefix(sweeper),
 	// bufimagemodify.PhpNamespace(sweeper),
@@ -201,6 +199,8 @@ func managedModeModifier(pluginConfigs []*PluginConfig, sweeper bufimagemodify.S
 	// bufimagemodify.RubyPackage(sweeper),
 	modifier := bufimagemodify.NewMultiModifier(
 		bufimagemodify.JavaOuterClassname(sweeper),
+		bufimagemodify.ObjcClassPrefix(sweeper),
+		bufimagemodify.CsharpNamespace(sweeper),
 	)
 	javaPackageModifier, err := bufimagemodify.JavaPackage(sweeper, javaPackagePrefix)
 	if err != nil {
