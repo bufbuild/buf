@@ -71,7 +71,7 @@ build:
   # buf treats the directory as if it does not exist.
   #
   # All directory paths in exclude must be relative to the directory of
-  # your buf.mod. Only directories can be specified, and all specified
+  # your buf.yaml. Only directories can be specified, and all specified
   # directories must within the root directory.
   {{if not .Uncomment}}#{{end}}excludes:
   {{if not .Uncomment}}#{{end}}  - foo
@@ -311,7 +311,7 @@ func writeConfig(
 	); err != nil {
 		return err
 	}
-	return storage.PutPath(ctx, writeBucket, ExternalConfigFilePath, buffer.Bytes())
+	return storage.PutPath(ctx, writeBucket, ExternalConfigV1FilePath, buffer.Bytes())
 }
 
 type tmplParam struct {

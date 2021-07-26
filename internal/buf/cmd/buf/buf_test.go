@@ -414,6 +414,20 @@ lint:
 	)
 }
 
+func TestFail13(t *testing.T) {
+	t.Parallel()
+	// this tests that we still use buf.mod if it exists
+	// this has an ignore for FIELD_LOWER_SNAKE_CASE to make sure we are actually reading the config
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`testdata/fail_buf_mod/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".`,
+		"lint",
+		filepath.Join("testdata", "fail_buf_mod"),
+	)
+}
+
 func TestFailArgAndDeprecatedFlag1(t *testing.T) {
 	t.Parallel()
 	testRunStdout(
@@ -648,7 +662,7 @@ func TestCheckLsLintRules2(t *testing.T) {
 		"config",
 		"ls-lint-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1Beta1FilePath),
+		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1FilePath),
 	)
 }
 
@@ -805,7 +819,7 @@ func TestCheckLsBreakingRules2(t *testing.T) {
 		"config",
 		"ls-breaking-rules",
 		"--config",
-		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1Beta1FilePath),
+		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1FilePath),
 	)
 }
 
@@ -1371,7 +1385,7 @@ func testModInit(t *testing.T, expectedData string, document bool, name string, 
 			args = append(args, "--name", name)
 		}
 		testRun(t, 0, nil, nil, args...)
-		data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigFilePath))
+		data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1FilePath))
 		require.NoError(t, err)
 		require.Equal(t, expectedData, string(data))
 	}

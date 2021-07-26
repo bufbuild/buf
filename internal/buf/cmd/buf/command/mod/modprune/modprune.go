@@ -88,11 +88,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	exists, err := bufconfig.ConfigExists(ctx, readWriteBucket)
+	existingConfigFilePath, err := bufconfig.ExistingConfigFilePath(ctx, readWriteBucket)
 	if err != nil {
 		return err
 	}
-	if !exists {
+	if existingConfigFilePath == "" {
 		return bufcli.ErrNoConfigFile
 	}
 	config, err := bufconfig.NewProvider(container.Logger()).GetConfig(ctx, readWriteBucket)

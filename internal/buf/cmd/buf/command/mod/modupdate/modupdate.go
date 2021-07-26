@@ -106,11 +106,11 @@ func run(
 	if err != nil {
 		return bufcli.NewInternalError(err)
 	}
-	exists, err := bufconfig.ConfigExists(ctx, readWriteBucket)
+	existingConfigFilePath, err := bufconfig.ExistingConfigFilePath(ctx, readWriteBucket)
 	if err != nil {
 		return bufcli.NewInternalError(err)
 	}
-	if !exists {
+	if existingConfigFilePath == "" {
 		return bufcli.ErrNoConfigFile
 	}
 	moduleConfig, err := bufconfig.NewProvider(container.Logger()).GetConfig(ctx, readWriteBucket)

@@ -48,7 +48,10 @@ func newWorkspace(
 	if workspaceConfig == nil {
 		return nil, errors.New("received a nil workspace config")
 	}
-	workspaceID := filepath.Join(normalpath.Unnormalize(relativeRootPath), ExternalConfigFilePath)
+	// We know that if the file is actually buf.work for legacy reasons, this will be wrong,
+	// but we accept that as this shouldn't happen often anymore and this is just
+	// used for error messages.
+	workspaceID := filepath.Join(normalpath.Unnormalize(relativeRootPath), ExternalConfigV1FilePath)
 	namedModules := make(map[string]bufmodule.Module, len(workspaceConfig.Directories))
 	allModules := make([]bufmodule.Module, 0, len(workspaceConfig.Directories))
 	for _, directory := range workspaceConfig.Directories {
@@ -159,9 +162,9 @@ func validateWorkspaceDirectoryNonEmpty(
 // overlap in either direction. The last argument is only used for
 // error reporting.
 //
-//  validateInputOverlap("foo", "bar", "buf.work")     -> OK
-//  validateInputOverlap("foo/bar", "foo", "buf.work") -> NOT OK
-//  validateInputOverlap("foo", "foo/bar", "buf.work") -> NOT OK
+//  validateInputOverlap("foo", "bar", "buf.work.yaml")     -> OK
+//  validateInputOverlap("foo/bar", "foo", "buf.work.yaml") -> NOT OK
+//  validateInputOverlap("foo", "foo/bar", "buf.work.yaml") -> NOT OK
 func validateInputOverlap(
 	workspaceDirectory string,
 	targetSubDirPath string,
