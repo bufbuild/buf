@@ -52,13 +52,9 @@ func NewRegistryProvider(
 			registryv1alpha1apiclientgrpc.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
 		), nil
 	}
-	httpClient, err := NewHTTPClient(tlsConfig)
-	if err != nil {
-		return nil, err
-	}
 	return registryv1alpha1apiclienttwirp.NewProvider(
 		logger,
-		httpClient,
+		NewHTTPClient(tlsConfig),
 		registryv1alpha1apiclienttwirp.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclienttwirp.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
 	), nil
@@ -121,7 +117,7 @@ func NewGRPCClientConnProvider(
 // TODO: move this to another location.
 func NewHTTPClient(
 	tlsConfig *tls.Config,
-) (httpclient.Client, error) {
+) httpclient.Client {
 	return httpclient.NewClient(
 		httpclient.ClientWithTLSConfig(
 			tlsConfig,

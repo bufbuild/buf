@@ -41,7 +41,7 @@ type Client interface {
 }
 
 // NewClient returns a new Client.
-func NewClient(options ...ClientOption) (Client, error) {
+func NewClient(options ...ClientOption) Client {
 	return newClient(options...)
 }
 
@@ -71,7 +71,7 @@ func ClientWithObservability() ClientOption {
 // given transport. This is a separate constructor so
 // that it's clear it cannot be used in combination
 // with other ClientOptions.
-func NewClientWithTransport(transport http.RoundTripper) (Client, error) {
+func NewClientWithTransport(transport http.RoundTripper) Client {
 	return newClientWithTransport(transport)
 }
 

@@ -166,6 +166,9 @@ func run(
 	if flags.Output == "" {
 		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", outputFlagName)
 	}
+	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
+		return err
+	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Source, sourceFlagName, ".")
 	if err != nil {
 		return err

@@ -23,9 +23,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufapiclient"
 	"github.com/bufbuild/buf/internal/buf/bufapimodule"
 	"github.com/bufbuild/buf/internal/buf/bufapp"
+	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild"
@@ -38,6 +40,7 @@ import (
 	"github.com/bufbuild/buf/internal/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/internal/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/app/appname"
 	"github.com/bufbuild/buf/internal/pkg/filelock"
@@ -49,6 +52,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
+	"golang.org/x/term"
 )
 
 const (
@@ -106,6 +110,9 @@ var (
 		v1CacheModuleLockRelDirPath,
 		v1CacheModuleSumRelDirPath,
 	}
+
+	// ErrNotATTY is returned when an input io.Reader is not a TTY where it is expected.
+	ErrNotATTY = errors.New("reader was not a TTY as expected")
 
 	// v1CacheModuleDataRelDirPath is the relative path to the cache directory where module data
 	// was stored in v1beta1.
@@ -532,8 +539,9 @@ func NewContextModifierProvider(
 // PromptUserForDelete is used to receieve user confirmation that a specific
 // entity should be deleted. If the user's answer does not match the expected
 // answer, an error is returned.
+// ErrNotATTY is returned if the input containers Stdin is not a terminal.
 func PromptUserForDelete(container app.Container, entityType string, expectedAnswer string) error {
-	confirmation, err := promptUser(
+	confirmation, err := PromptUser(
 		container,
 		fmt.Sprintf(
 			"Please confirm that you want to DELETE this %s by entering its name (%s) again."+
@@ -543,6 +551,9 @@ func PromptUserForDelete(container app.Container, entityType string, expectedAns
 		),
 	)
 	if err != nil {
+		if errors.Is(err, ErrNotATTY) {
+			return errors.New("cannot perform an interactive delete from a non-TTY device")
+		}
 		return err
 	}
 	if confirmation != expectedAnswer {
@@ -553,6 +564,73 @@ func PromptUserForDelete(container app.Container, entityType string, expectedAns
 		)
 	}
 	return nil
+}
+
+// PromptUser reads a line from Stdin, prompting the user with the prompt first.
+// The prompt is repeatedly shown until the user provides a non-empty response.
+// ErrNotATTY is returned if the input containers Stdin is not a terminal.
+func PromptUser(container app.Container, prompt string) (string, error) {
+	return promptUser(container, prompt, false)
+}
+
+// PromptUserForPassword reads a line from Stdin, prompting the user with the prompt first.
+// The prompt is repeatedly shown until the user provides a non-empty response.
+// ErrNotATTY is returned if the input containers Stdin is not a terminal.
+func PromptUserForPassword(container app.Container, prompt string) (string, error) {
+	return promptUser(container, prompt, true)
+}
+
+// promptUser reads a line from Stdin, prompting the user with the prompt first.
+// The prompt is repeatedly shown until the user provides a non-empty response.
+// ErrNotATTY is returned if the input containers Stdin is not a terminal.
+func promptUser(container app.Container, prompt string, isPassword bool) (string, error) {
+	file, ok := container.Stdin().(*os.File)
+	if !ok || !term.IsTerminal(int(file.Fd())) {
+		return "", ErrNotATTY
+	}
+	var attempts int
+	for attempts < userPromptAttempts {
+		attempts++
+		if _, err := fmt.Fprint(
+			container.Stdout(),
+			prompt,
+		); err != nil {
+			return "", NewInternalError(err)
+		}
+		var value string
+		if isPassword {
+			data, err := term.ReadPassword(int(file.Fd()))
+			if err != nil {
+				return "", NewInternalError(err)
+			}
+			value = string(data)
+		} else {
+			scanner := bufio.NewScanner(container.Stdin())
+			if !scanner.Scan() {
+				return "", NewInternalError(scanner.Err())
+			}
+			value = scanner.Text()
+			if err := scanner.Err(); err != nil {
+				return "", NewInternalError(err)
+			}
+		}
+		if len(strings.TrimSpace(value)) != 0 {
+			// We want to preserve spaces in user input, so we only apply
+			// strings.TrimSpace to verify an answer was provided.
+			return value, nil
+		}
+		if attempts < userPromptAttempts {
+			// We only want to ask the user to try again if they actually
+			// have another attempt.
+			if _, err := fmt.Fprintln(
+				container.Stdout(),
+				"An answer was not provided; please try again.",
+			); err != nil {
+				return "", NewInternalError(err)
+			}
+		}
+	}
+	return "", NewTooManyEmptyAnswersError(userPromptAttempts)
 }
 
 // ReadModuleWithWorkspacesDisabled gets a module from a source ref.
@@ -617,43 +695,23 @@ func ReadModuleWithWorkspacesDisabled(
 	return module, moduleIdentity, err
 }
 
-// promptUser reads a line from Stdin, prompting the user with the prompt first.
-// The prompt is repeatedly shown until the user provides a non-empty response.
-func promptUser(container app.Container, prompt string) (string, error) {
-	var attempts int
-	for attempts < userPromptAttempts {
-		attempts++
-		if _, err := fmt.Fprint(
-			container.Stdout(),
-			prompt,
-		); err != nil {
-			return "", NewInternalError(err)
-		}
-		scanner := bufio.NewScanner(container.Stdin())
-		if !scanner.Scan() {
-			return "", NewInternalError(scanner.Err())
-		}
-		value := scanner.Text()
-		if err := scanner.Err(); err != nil {
-			return "", NewInternalError(err)
-		}
-		if len(strings.TrimSpace(value)) != 0 {
-			// We want to preserve spaces in user input, so we only apply
-			// strings.TrimSpace to verify an answer was provided.
-			return value, nil
-		}
-		if attempts < userPromptAttempts {
-			// We only want to ask the user to try again if they actually
-			// have another attempt.
-			if _, err := fmt.Fprintln(
-				container.Stdout(),
-				"An answer was not provided; please try again.",
-			); err != nil {
-				return "", NewInternalError(err)
-			}
+// ValidateErrorFormatFlag validates the error format flag for all commands but lint.
+func ValidateErrorFormatFlag(errorFormatString string, errorFormatFlagName string) error {
+	return validateErrorFormatFlag(bufanalysis.AllFormatStrings, errorFormatString, errorFormatFlagName)
+}
+
+// ValidateErrorFormatFlagLint validates the error format flag for lint.
+func ValidateErrorFormatFlagLint(errorFormatString string, errorFormatFlagName string) error {
+	return validateErrorFormatFlag(buflint.AllFormatStrings, errorFormatString, errorFormatFlagName)
+}
+
+func validateErrorFormatFlag(validFormatStrings []string, errorFormatString string, errorFormatFlagName string) error {
+	for _, formatString := range validFormatStrings {
+		if errorFormatString == formatString {
+			return nil
 		}
 	}
-	return "", NewTooManyEmptyAnswersError(userPromptAttempts)
+	return appcmd.NewInvalidArgumentErrorf("--%s: invalid format: %q", errorFormatFlagName, errorFormatString)
 }
 
 // newFetchReader creates a new buffetch.Reader with the default HTTP client

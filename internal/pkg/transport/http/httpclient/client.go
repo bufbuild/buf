@@ -30,7 +30,7 @@ type client struct {
 	observability bool
 }
 
-func newClient(options ...ClientOption) (*client, error) {
+func newClient(options ...ClientOption) *client {
 	client := &client{}
 	for _, option := range options {
 		option(client)
@@ -46,15 +46,15 @@ func newClient(options ...ClientOption) (*client, error) {
 	client.httpClient = &http.Client{
 		Transport: roundTripper,
 	}
-	return client, nil
+	return client
 }
 
-func newClientWithTransport(transport http.RoundTripper) (*client, error) {
+func newClientWithTransport(transport http.RoundTripper) *client {
 	return &client{
 		httpClient: &http.Client{
 			Transport: transport,
 		},
-	}, nil
+	}
 }
 
 func (c *client) Do(request *http.Request) (*http.Response, error) {
