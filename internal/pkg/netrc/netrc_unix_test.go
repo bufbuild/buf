@@ -30,6 +30,7 @@ import (
 )
 
 func TestGetMachineForName(t *testing.T) {
+	t.Parallel()
 	testGetMachineForNameSuccess(
 		t,
 		"foo.com",
@@ -93,20 +94,43 @@ func TestGetMachineForName(t *testing.T) {
 	)
 }
 
-func TestPutMachine(t *testing.T) {
-	testPutMachineSuccess(
+func TestPutMachines(t *testing.T) {
+	t.Parallel()
+	testPutMachinesSuccess(
 		t,
-		"foo.com",
-		"test@foo.com",
-		"password",
 		false,
+		NewMachine(
+			"foo.com",
+			"test@foo.com",
+			"password",
+			"",
+		),
 	)
-	testPutMachineSuccess(
+	testPutMachinesSuccess(
 		t,
-		"foo.com",
-		"test@foo.com",
-		"password",
 		true,
+		NewMachine(
+			"foo.com",
+			"test@foo.com",
+			"password",
+			"",
+		),
+	)
+	testPutMachinesSuccess(
+		t,
+		false,
+		NewMachine(
+			"bar.com",
+			"test@bar.com",
+			"password",
+			"",
+		),
+		NewMachine(
+			"baz.com",
+			"test@baz.com",
+			"password",
+			"",
+		),
 	)
 	testPutMachineError(
 		t,
@@ -116,31 +140,66 @@ func TestPutMachine(t *testing.T) {
 	)
 }
 
-func testPutMachineSuccess(
+func TestDeleteMachineForName(t *testing.T) {
+	t.Parallel()
+	filePath := filepath.Join(t.TempDir(), netrcFilename)
+	envContainer := app.NewEnvContainer(map[string]string{"NETRC": filePath})
+	err := PutMachines(
+		envContainer,
+		NewMachine(
+			"bar.com",
+			"test@bar.com",
+			"password",
+			"",
+		),
+		NewMachine(
+			"baz.com",
+			"test@baz.com",
+			"password",
+			"",
+		),
+	)
+	require.NoError(t, err)
+	exists, err := DeleteMachineForName(envContainer, "bar.com")
+	require.NoError(t, err)
+	require.True(t, exists)
+	machine, err := GetMachineForName(envContainer, "bar.com")
+	require.NoError(t, err)
+	assert.Nil(t, machine)
+	machine, err = GetMachineForName(envContainer, "baz.com")
+	require.NoError(t, err)
+	assert.NotNil(t, machine)
+	exists, err = DeleteMachineForName(envContainer, "bar.com")
+	require.NoError(t, err)
+	require.False(t, exists)
+}
+
+func testPutMachinesSuccess(
 	t *testing.T,
-	name string,
-	login string,
-	password string,
 	createNetrcBeforePut bool,
+	machines ...Machine,
 ) {
 	filePath := filepath.Join(t.TempDir(), netrcFilename)
 	envContainer := app.NewEnvContainer(map[string]string{"NETRC": filePath})
-	machine, err := GetMachineForName(envContainer, name)
-	require.NoError(t, err)
-	require.Nil(t, machine)
+	for _, machine := range machines {
+		machine, err := GetMachineForName(envContainer, machine.Name())
+		require.NoError(t, err)
+		require.Nil(t, machine)
+	}
 
 	if createNetrcBeforePut {
-		_, err = os.Create(filePath)
+		_, err := os.Create(filePath)
 		require.NoError(t, err)
 	}
 
-	expectedMachine := NewMachine(name, login, password, "")
-	err = PutMachine(envContainer, expectedMachine)
+	err := PutMachines(envContainer, machines...)
 	require.NoError(t, err)
 
-	actualMachine, err := GetMachineForName(envContainer, name)
-	require.NoError(t, err)
-	assert.Equal(t, expectedMachine, actualMachine)
+	for _, machine := range machines {
+		actualMachine, err := GetMachineForName(envContainer, machine.Name())
+		require.NoError(t, err)
+		assert.Equal(t, machine, actualMachine)
+	}
 }
 
 func testPutMachineError(
@@ -155,7 +214,7 @@ func testPutMachineError(
 	require.NoError(t, err)
 	err = os.WriteFile(filePath, []byte("invalid netrc"), 0600)
 	require.NoError(t, err)
-	err = PutMachine(envContainer, NewMachine(name, login, password, ""))
+	err = PutMachines(envContainer, NewMachine(name, login, password, ""))
 	require.Error(t, err)
 }
 

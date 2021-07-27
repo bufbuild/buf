@@ -261,6 +261,9 @@ func run(
 	flags *flags,
 ) (retErr error) {
 	logger := container.Logger()
+	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
+		return err
+	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
 	if err != nil {
 		return err

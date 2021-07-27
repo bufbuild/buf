@@ -50,6 +50,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lint"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/login"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/logout"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/mod/modinit"
@@ -182,6 +184,8 @@ func NewRootCommand(
 					configmigratev1beta1.NewCommand("migrate-v1beta1", builder),
 				},
 			},
+			login.NewCommand("login", builder),
+			logout.NewCommand("logout", builder),
 			{
 				Use:   "beta",
 				Short: "Beta commands. Unstable and will likely change.",
