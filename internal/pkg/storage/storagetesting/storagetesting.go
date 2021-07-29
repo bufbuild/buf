@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 
@@ -120,6 +121,26 @@ func AssertPathToContent(
 		assert.NoError(t, readObjectCloser.Close())
 		assert.Equal(t, expectedContent, string(data))
 	}
+}
+
+// AssertPaths asserts the paths.
+func AssertPaths(
+	t *testing.T,
+	readBucket storage.ReadBucket,
+	walkPrefix string,
+	expectedPaths ...string,
+) {
+	var paths []string
+	require.NoError(t, readBucket.Walk(
+		context.Background(),
+		walkPrefix,
+		func(objectInfo storage.ObjectInfo) error {
+			paths = append(paths, objectInfo.Path())
+			return nil
+		},
+	))
+	sort.Strings(paths)
+	assert.Equal(t, stringutil.SliceToUniqueSortedSlice(expectedPaths), paths)
 }
 
 // GetExternalPathFunc can be used to get the external path of

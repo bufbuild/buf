@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/bufbuild/buf/internal/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -1127,6 +1128,79 @@ breaking:
 `,
 		false,
 		"buf.build/foob/bar",
+	)
+}
+
+func TestExportAll(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "workspace", "success", "dir", "proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"rpc.proto",
+	)
+}
+
+func TestExportExcludeImports(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--exclude-imports",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "workspace", "success", "dir", "proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"rpc.proto",
+	)
+}
+
+func TestExportPaths(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "dir", "other", "proto", "request.proto"),
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "workspace", "success", "dir"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
 	)
 }
 
