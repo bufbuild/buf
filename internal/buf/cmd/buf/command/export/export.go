@@ -168,7 +168,10 @@ func run(
 		return err
 	}
 	fileInfosFunc := bufmodule.ModuleFileSet.AllFileInfos
-	// if we filtered on some paths, only use the targets
+	// If we filtered on some paths, only use the targets.
+	// Otherwise, we want to print everything, including potentially imports.
+	// We can have duplicates across the ModuleFileSets and that's OK - they will
+	// only be written once via writtenPaths, and we aren't building here.
 	if len(flags.Paths) > 0 {
 		fileInfosFunc = func(
 			moduleFileSet bufmodule.ModuleFileSet,
@@ -188,6 +191,8 @@ func run(
 			if _, ok := writtenPaths[path]; ok {
 				continue
 			}
+			// If the file is not an import in some ModuleFileSet, it will
+			// eventually be written via the iteration over moduleFileSets.
 			if flags.ExcludeImports && fileInfo.IsImport() {
 				continue
 			}
