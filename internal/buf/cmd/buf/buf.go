@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/mod/modexport"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/branch/branchcreate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/branch/branchlist"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/commit/commitget"
@@ -48,6 +47,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configlslintrules"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/config/configmigratev1beta1"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/convert"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/login"
@@ -89,6 +89,8 @@ We recommend migrating, however this command continues to work.`
 	betaPushDeprecationMessage = `"buf beta push" has been moved to "buf push".
 We recommend migrating, however this command continues to work.`
 	betaModDeprecationMessage = `"buf beta mod ..." has been moved to "buf mod ...".
+We recommend migrating, however this command continues to work.`
+	betaModExportDeprecationMessage = `"buf beta mod export" has been moved to "buf export".
 We recommend migrating, however this command continues to work.`
 )
 
@@ -134,6 +136,7 @@ func NewRootCommand(
 		Use: name,
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder, "", false),
+			export.NewCommand("export", builder, "", false),
 			{
 				Use:        "image",
 				Short:      "Work with Images and FileDescriptorSets.",
@@ -215,15 +218,14 @@ func NewRootCommand(
 					},
 					push.NewCommand("push", builder, betaPushDeprecationMessage, true),
 					{
-						Use:   "mod",
-						Short: "Configure and update buf modules.",
-						// TODO: readd when export is deprecated
-						//Deprecated: betaModDeprecationMessage,
-						//Hidden:     true,
+						Use:        "mod",
+						Short:      "Configure and update buf modules.",
+						Deprecated: betaModDeprecationMessage,
+						Hidden:     true,
 						SubCommands: []*appcmd.Command{
 							modinit.NewCommand("init", builder, betaModDeprecationMessage, true),
 							modupdate.NewCommand("update", builder, betaModDeprecationMessage, true),
-							modexport.NewCommand("export", builder, "", false),
+							export.NewCommand("export", builder, betaModExportDeprecationMessage, true),
 							modclearcache.NewCommand("clear-cache", builder, betaModDeprecationMessage, true, "cc"),
 						},
 					},

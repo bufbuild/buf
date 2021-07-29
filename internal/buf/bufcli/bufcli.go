@@ -382,6 +382,26 @@ func NewWireModuleConfigReader(
 	), nil
 }
 
+// NewWireModuleConfigReaderForModuleReader returns a new ModuleConfigReader using
+// the given ModuleReader.
+func NewWireModuleConfigReaderForModuleReader(
+	container appflag.Container,
+	storageosProvider storageos.Provider,
+	registryProvider registryv1alpha1apiclient.Provider,
+	moduleReader bufmodule.ModuleReader,
+) (bufwire.ModuleConfigReader, error) {
+	logger := container.Logger()
+	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
+	return bufwire.NewModuleConfigReader(
+		logger,
+		storageosProvider,
+		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
+		bufconfig.NewProvider(logger),
+		bufwork.NewProvider(logger),
+		bufmodulebuild.NewModuleBucketBuilder(logger),
+	), nil
+}
+
 // NewWireFileLister returns a new FileLister.
 func NewWireFileLister(
 	container appflag.Container,
