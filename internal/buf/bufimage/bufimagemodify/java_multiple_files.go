@@ -49,12 +49,20 @@ func javaMultipleFilesForFile(
 	value bool,
 ) error {
 	descriptor := imageFile.Proto()
-	if options := descriptor.GetOptions(); isWellKnownType(ctx, imageFile) || (options != nil && options.GetJavaMultipleFiles() == value) {
-		// The file is a well-known type or already defines the java_multiple_files
-		// option with the given value, so this is a no-op.
+	options := descriptor.GetOptions()
+	switch {
+	case isWellKnownType(ctx, imageFile):
+		// The file is a well-known type, don't do anything.
+		return nil
+	case options != nil && options.GetJavaMultipleFiles() == value:
+		// The option is already set to the same value, don't do anything.
+		return nil
+	case options == nil && descriptorpb.Default_FileOptions_JavaMultipleFiles == value:
+		// The option is not set, but the value we want to set is the
+		// same as the default, don't do anything.
 		return nil
 	}
-	if descriptor.Options == nil {
+	if options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
 	descriptor.Options.JavaMultipleFiles = proto.Bool(value)

@@ -18,21 +18,19 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// optimizeFor is the SourceCodeInfo path for the optimize_for option.
-// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L385
-var optimizeForPath = []int32{8, 9}
+// javaStringCheckUtf8Path is the SourceCodeInfo path for the java_string_check_utf8 option.
+// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L375
+var javaStringCheckUtf8Path = []int32{8, 27}
 
-func optimizeFor(
-	sweeper Sweeper,
-	value descriptorpb.FileOptions_OptimizeMode,
-) Modifier {
+func javaStringCheckUtf8(sweeper Sweeper, value bool) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := optimizeForForFile(ctx, sweeper, imageFile, value); err != nil {
+				if err := javaStringCheckUtf8ForFile(ctx, sweeper, imageFile, value); err != nil {
 					return err
 				}
 			}
@@ -41,11 +39,11 @@ func optimizeFor(
 	)
 }
 
-func optimizeForForFile(
+func javaStringCheckUtf8ForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
-	value descriptorpb.FileOptions_OptimizeMode,
+	value bool,
 ) error {
 	descriptor := imageFile.Proto()
 	options := descriptor.GetOptions()
@@ -53,10 +51,10 @@ func optimizeForForFile(
 	case isWellKnownType(ctx, imageFile):
 		// The file is a well-known type, don't do anything.
 		return nil
-	case options != nil && options.GetOptimizeFor() == value:
+	case options != nil && options.GetJavaStringCheckUtf8() == value:
 		// The option is already set to the same value, don't do anything.
 		return nil
-	case options == nil && descriptorpb.Default_FileOptions_OptimizeFor == value:
+	case options == nil && descriptorpb.Default_FileOptions_JavaStringCheckUtf8 == value:
 		// The option is not set, but the value we want to set is the
 		// same as the default, don't do anything.
 		return nil
@@ -64,9 +62,9 @@ func optimizeForForFile(
 	if options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
-	descriptor.Options.OptimizeFor = &value
+	descriptor.Options.JavaStringCheckUtf8 = proto.Bool(value)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), optimizeForPath)
+		sweeper.mark(imageFile.Path(), javaStringCheckUtf8Path)
 	}
 	return nil
 }

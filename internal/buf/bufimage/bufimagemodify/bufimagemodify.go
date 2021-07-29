@@ -130,6 +130,12 @@ func JavaPackage(sweeper Sweeper, packagePrefix string) (Modifier, error) {
 	return javaPackage(sweeper, packagePrefix)
 }
 
+// JavaStringCheckUtf8 returns a Modifier that sets the java_string_check_utf8 file option according
+// to the given value.
+func JavaStringCheckUtf8(sweeper Sweeper, value bool) Modifier {
+	return javaStringCheckUtf8(sweeper, value)
+}
+
 // OptimizeFor returns a Modifier that sets the optimize_for file
 // option to the given value in all of the files contained in
 // the Image.
@@ -167,10 +173,17 @@ func ObjcClassPrefix(sweeper Sweeper) Modifier {
 	return objcClassPrefix(sweeper)
 }
 
-// CsharpNamespace returns a Modifier that sets the objc_class_prefix file option
+// CsharpNamespace returns a Modifier that sets the csharp_namespace file option
 // according to the package name. It is set to the package name with each package sub-name capitalized.
 func CsharpNamespace(sweeper Sweeper) Modifier {
 	return csharpNamespace(sweeper)
+}
+
+// PhpNamespace returns a Modifier that sets the php_namespace file option
+// according to the package name. It is set to the package name with each package sub-name capitalized
+// and each "." replaced with "\".
+func PhpNamespace(sweeper Sweeper) Modifier {
+	return phpNamespace(sweeper)
 }
 
 // isWellKnownType returns true if the given path is one of the well-known types.

@@ -30,7 +30,7 @@ import (
 	"google.golang.org/grpc/encoding/gzip"
 )
 
-const maxMessageSizeBytes = 128 << 20
+const maxMessageSizeBytes = 256 << 20
 
 type clientConnProvider struct {
 	ctx             context.Context
