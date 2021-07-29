@@ -162,6 +162,12 @@ func modifierFromManagedConfig(managedConfig *ManagedConfig, sweeper bufimagemod
 			bufimagemodify.JavaMultipleFiles(sweeper, *managedConfig.JavaMultipleFiles),
 		)
 	}
+	if managedConfig.JavaStringCheckUtf8 != nil {
+		modifier = bufimagemodify.Merge(
+			modifier,
+			bufimagemodify.JavaStringCheckUtf8(sweeper, *managedConfig.JavaStringCheckUtf8),
+		)
+	}
 	if managedConfig.OptimizeFor != nil {
 		modifier = bufimagemodify.Merge(
 			modifier,
@@ -183,7 +189,6 @@ func modifierFromManagedConfig(managedConfig *ManagedConfig, sweeper bufimagemod
 			goPackageModifier,
 		)
 	}
-	// TODO: Add support for JavaStringCheckUTF8.
 	return modifier, nil
 }
 
@@ -194,13 +199,13 @@ func managedModeModifier(pluginConfigs []*PluginConfig, sweeper bufimagemodify.S
 	//
 	// bufimagemodify.SwiftPrefix(sweeper),
 	// bufimagemodify.PhpClassPrefix(sweeper),
-	// bufimagemodify.PhpNamespace(sweeper),
 	// bufimagemodify.PhpMetadataNamespace(sweeper),
 	// bufimagemodify.RubyPackage(sweeper),
 	modifier := bufimagemodify.NewMultiModifier(
 		bufimagemodify.JavaOuterClassname(sweeper),
 		bufimagemodify.ObjcClassPrefix(sweeper),
 		bufimagemodify.CsharpNamespace(sweeper),
+		bufimagemodify.PhpNamespace(sweeper),
 	)
 	javaPackageModifier, err := bufimagemodify.JavaPackage(sweeper, javaPackagePrefix)
 	if err != nil {

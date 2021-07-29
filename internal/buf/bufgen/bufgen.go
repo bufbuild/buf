@@ -153,6 +153,7 @@ type PluginConfig struct {
 type ManagedConfig struct {
 	CcEnableArenas        *bool
 	JavaMultipleFiles     *bool
+	JavaStringCheckUtf8   *bool
 	OptimizeFor           *descriptorpb.FileOptions_OptimizeMode
 	GoPackagePrefixConfig *GoPackagePrefixConfig
 }
@@ -223,11 +224,12 @@ type ExternalPluginConfigV1 struct {
 //
 // Only use outside of this package for testing.
 type ExternalManagedConfigV1 struct {
-	Enabled           bool                            `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	CcEnableArenas    *bool                           `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
-	JavaMultipleFiles *bool                           `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
-	OptimizeFor       string                          `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
-	GoPackagePrefix   ExternalGoPackagePrefixConfigV1 `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
+	Enabled             bool                            `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	CcEnableArenas      *bool                           `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
+	JavaMultipleFiles   *bool                           `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
+	JavaStringCheckUtf8 *bool                           `json:"java_string_check_utf8,omitempty" yaml:"java_string_check_utf8,omitempty"`
+	OptimizeFor         string                          `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
+	GoPackagePrefix     ExternalGoPackagePrefixConfigV1 `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
 }
 
 // IsEmpty returns true if the config is empty, excluding the 'Enabled' setting.
