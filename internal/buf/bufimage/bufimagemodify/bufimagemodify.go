@@ -181,9 +181,16 @@ func CsharpNamespace(sweeper Sweeper) Modifier {
 
 // PhpNamespace returns a Modifier that sets the php_namespace file option
 // according to the package name. It is set to the package name with each package sub-name capitalized
-// and each "." replaced with "\".
+// and each "." replaced with "\\".
 func PhpNamespace(sweeper Sweeper) Modifier {
 	return phpNamespace(sweeper)
+}
+
+// RubyPackage returns a Modifier that sets the ruby_package file option
+// according to the given packagePrefix. It is set to the package name with each package sub-name capitalized
+// and each "." replaced with "::".
+func RubyPackage(sweeper Sweeper) Modifier {
+	return rubyPackage(sweeper)
 }
 
 // isWellKnownType returns true if the given path is one of the well-known types.

@@ -109,21 +109,25 @@ func (c *cloner) CloneToBucket(
 		return newGitCommandError(err, buffer, tmpDir)
 	}
 
-	fetchRef, checkoutRefs := getRefspecsForName(options.Name)
-	args := []string{
-		"fetch",
-		"--depth", depthArg,
-		bufCloneOrigin,
-		fetchRef,
-	}
-
+	var args []string
 	if strings.HasPrefix(url, "https://") {
+		// These extraArgs MUST be first, as the -c flag potentially produced
+		// is only a flag on the parent git command, not on git fetch.
 		extraArgs, err := c.getArgsForHTTPSCommand(envContainer)
 		if err != nil {
 			return err
 		}
 		args = append(args, extraArgs...)
 	}
+	fetchRef, checkoutRefs := getRefspecsForName(options.Name)
+	args = append(
+		args,
+		"fetch",
+		"--depth", depthArg,
+		bufCloneOrigin,
+		fetchRef,
+	)
+
 	if strings.HasPrefix(url, "ssh://") {
 		envContainer, err = c.getEnvContainerWithGitSSHCommand(envContainer)
 		if err != nil {
@@ -201,7 +205,7 @@ func (c *cloner) getArgsForHTTPSCommand(envContainer app.EnvContainer) ([]string
 	}
 	c.logger.Debug("git_credential_helper_override")
 	return []string{
-		"--config",
+		"-c",
 		fmt.Sprintf(
 			// TODO: is this OK for windows/other platforms?
 			// we might need an alternate flow where the binary has a sub-command to do this, and calls itself
