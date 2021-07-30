@@ -23,18 +23,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPhpNamespaceEmptyOptions(t *testing.T) {
+func TestRubyPackageEmptyOptions(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(sweeper)
+		rubyPackageModifier := RubyPackage(sweeper)
 
-		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -46,10 +46,10 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(sweeper)
+		modifier := RubyPackage(sweeper)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -59,18 +59,18 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 	})
 }
 
-func TestPhpNamespaceAllOptions(t *testing.T) {
+func TestRubyPackageAllOptions(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(sweeper)
+		rubyPackageModifier := RubyPackage(sweeper)
 
-		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -79,18 +79,18 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpNamespace())
+			assert.Equal(t, "foo", descriptor.GetOptions().GetRubyPackage())
 		}
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(sweeper)
+		modifier := RubyPackage(sweeper)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -99,29 +99,29 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpNamespace())
+			assert.Equal(t, "foo", descriptor.GetOptions().GetRubyPackage())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 	})
 }
 
-func TestPhpNamespaceObjcOptions(t *testing.T) {
+func TestRubyPackageObjcOptions(t *testing.T) {
 	t.Parallel()
-	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "single"), `Acme\\V1`)
-	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "double"), `Acme\\Weather\\V1`)
-	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "triple"), `Acme\\Weather\\Data\\V1`)
+	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "single"), `Acme::V1`)
+	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "double"), `Acme::Weather::V1`)
+	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "triple"), `Acme::Weather::Data::V1`)
 }
 
-func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
+func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(sweeper)
+		rubyPackageModifier := RubyPackage(sweeper)
 
-		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -131,18 +131,18 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpNamespace())
+			assert.Equal(t, classPrefix, descriptor.GetOptions().GetRubyPackage())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(sweeper)
+		modifier := RubyPackage(sweeper)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -152,24 +152,24 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpNamespace())
+			assert.Equal(t, classPrefix, descriptor.GetOptions().GetRubyPackage())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 	})
 }
 
-func TestPhpNamespaceWellKnownTypes(t *testing.T) {
+func TestRubyPackageWellKnownTypes(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "wktimport")
-	modifiedPhpNamespace := `Acme\\Weather\\V1alpha1`
+	modifiedRubyPackage := `Acme::Weather::V1alpha1`
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(sweeper)
+		rubyPackageModifier := RubyPackage(sweeper)
 
-		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -180,12 +180,12 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 			descriptor := imageFile.Proto()
 			if isWellKnownType(context.Background(), imageFile) {
 				// php_namespace is unset for the well-known types
-				assert.Empty(t, descriptor.GetOptions().GetPhpNamespace())
+				assert.Empty(t, descriptor.GetOptions().GetRubyPackage())
 				continue
 			}
 			assert.Equal(t,
-				modifiedPhpNamespace,
-				descriptor.GetOptions().GetPhpNamespace(),
+				modifiedRubyPackage,
+				descriptor.GetOptions().GetRubyPackage(),
 			)
 		}
 	})
@@ -195,7 +195,7 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(sweeper)
+		modifier := RubyPackage(sweeper)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -206,12 +206,12 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 			descriptor := imageFile.Proto()
 			if isWellKnownType(context.Background(), imageFile) {
 				// php_namespace is unset for the well-known types
-				assert.Empty(t, descriptor.GetOptions().GetPhpNamespace())
+				assert.Empty(t, descriptor.GetOptions().GetRubyPackage())
 				continue
 			}
 			assert.Equal(t,
-				modifiedPhpNamespace,
-				descriptor.GetOptions().GetPhpNamespace(),
+				modifiedRubyPackage,
+				descriptor.GetOptions().GetRubyPackage(),
 			)
 		}
 	})
