@@ -109,7 +109,7 @@ func (c *cloner) CloneToBucket(
 		return newGitCommandError(err, buffer, tmpDir)
 	}
 
-	var args []string
+	var gitConfigAuthArgs []string
 	if strings.HasPrefix(url, "https://") {
 		// These extraArgs MUST be first, as the -c flag potentially produced
 		// is only a flag on the parent git command, not on git fetch.
@@ -117,11 +117,11 @@ func (c *cloner) CloneToBucket(
 		if err != nil {
 			return err
 		}
-		args = append(args, extraArgs...)
+		gitConfigAuthArgs = append(gitConfigAuthArgs, extraArgs...)
 	}
 	fetchRef, checkoutRefs := getRefspecsForName(options.Name)
-	args = append(
-		args,
+	fetchArgs := append(
+		gitConfigAuthArgs,
 		"fetch",
 		"--depth", depthArg,
 		bufCloneOrigin,
@@ -136,7 +136,7 @@ func (c *cloner) CloneToBucket(
 	}
 
 	buffer.Reset()
-	cmd = exec.CommandContext(ctx, "git", args...)
+	cmd = exec.CommandContext(ctx, "git", fetchArgs...)
 	cmd.Dir = tmpDir.AbsPath()
 	cmd.Env = app.Environ(envContainer)
 	cmd.Stderr = buffer
@@ -146,7 +146,12 @@ func (c *cloner) CloneToBucket(
 
 	for _, checkoutRef := range checkoutRefs {
 		buffer.Reset()
-		cmd = exec.CommandContext(ctx, "git", "checkout", checkoutRef)
+		args := append(
+			gitConfigAuthArgs,
+			"checkout",
+			checkoutRef,
+		)
+		cmd = exec.CommandContext(ctx, "git", args...)
 		cmd.Dir = tmpDir.AbsPath()
 		cmd.Env = app.Environ(envContainer)
 		cmd.Stderr = buffer
@@ -156,16 +161,17 @@ func (c *cloner) CloneToBucket(
 	}
 
 	if options.RecurseSubmodules {
-		args = []string{
+		submoduleArgs := append(
+			gitConfigAuthArgs,
 			"submodule",
 			"update",
 			"--init",
 			"--recursive",
 			"--depth",
 			depthArg,
-		}
+		)
 		buffer.Reset()
-		cmd = exec.CommandContext(ctx, "git", args...)
+		cmd = exec.CommandContext(ctx, "git", submoduleArgs...)
 		cmd.Env = app.Environ(envContainer)
 		cmd.Dir = tmpDir.AbsPath()
 		cmd.Stderr = buffer
