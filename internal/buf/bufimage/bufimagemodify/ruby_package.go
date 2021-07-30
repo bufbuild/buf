@@ -23,15 +23,15 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// phpNamespacePath is the SourceCodeInfo path for the php_namespace option.
-// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L443
-var phpNamespacePath = []int32{8, 41}
+// rubyPackagePath is the SourceCodeInfo path for the ruby_package option.
+// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L453
+var rubyPackagePath = []int32{8, 45}
 
-func phpNamespace(sweeper Sweeper) Modifier {
+func rubyPackage(sweeper Sweeper) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := phpNamespaceForFile(ctx, sweeper, imageFile); err != nil {
+				if err := rubyPackageForFile(ctx, sweeper, imageFile); err != nil {
 					return err
 				}
 			}
@@ -40,32 +40,32 @@ func phpNamespace(sweeper Sweeper) Modifier {
 	)
 }
 
-func phpNamespaceForFile(
+func rubyPackageForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 ) error {
 	descriptor := imageFile.Proto()
-	phpNamespaceValue := phpNamespaceValue(imageFile)
-	if isWellKnownType(ctx, imageFile) || phpNamespaceValue == "" {
-		// This is a well-known type or we could not resolve a non-empty php_namespace
+	rubyPackageValue := rubyPackageValue(imageFile)
+	if isWellKnownType(ctx, imageFile) || rubyPackageValue == "" {
+		// This is a well-known type or we could not resolve a non-empty ruby_package
 		// value, so this is a no-op.
 		return nil
 	}
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
-	descriptor.Options.PhpNamespace = proto.String(phpNamespaceValue)
+	descriptor.Options.RubyPackage = proto.String(rubyPackageValue)
 	if sweeper != nil {
-		sweeper.mark(imageFile.Path(), phpNamespacePath)
+		sweeper.mark(imageFile.Path(), rubyPackagePath)
 	}
 	return nil
 }
 
-// phpNamespaceValue returns the php_namespace for the given ImageFile based on its
+// rubyPackageValue returns the ruby_package for the given ImageFile based on its
 // package declaration. If the image file doesn't have a package declaration, an
 // empty string is returned.
-func phpNamespaceValue(imageFile bufimage.ImageFile) string {
+func rubyPackageValue(imageFile bufimage.ImageFile) string {
 	pkg := imageFile.Proto().GetPackage()
 	if pkg == "" {
 		return ""
@@ -74,5 +74,5 @@ func phpNamespaceValue(imageFile bufimage.ImageFile) string {
 	for i, part := range packageParts {
 		packageParts[i] = strings.Title(part)
 	}
-	return strings.Join(packageParts, `\\`)
+	return strings.Join(packageParts, "::")
 }

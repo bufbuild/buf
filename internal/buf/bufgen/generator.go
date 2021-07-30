@@ -122,30 +122,33 @@ func modifyImage(
 	config *Config,
 	image bufimage.Image,
 ) error {
+	if config.ManagedConfig == nil {
+		// If the config is nil, it implies that the
+		// user has not enabled managed mode.
+		return nil
+	}
 	sweeper := bufimagemodify.NewFileOptionSweeper()
-	modifier, err := modifierFromManagedConfig(config.ManagedConfig, sweeper)
+	// Apply the default managed mode modifiers.
+	defaultModifier, err := defaultManagedModeModifier(sweeper)
 	if err != nil {
 		return err
 	}
-	if config.ManagedConfig != nil {
-		managedModeModifier, err := managedModeModifier(config.PluginConfigs, sweeper)
-		if err != nil {
-			return err
-		}
-		modifier = bufimagemodify.Merge(modifier, managedModeModifier)
+	// Apply the user-specified modifiers, which may override the defaults.
+	// E.g. JavaMultipleFiles, etc.
+	configModifier, err := managedConfigModifier(config.ManagedConfig, sweeper)
+	if err != nil {
+		return err
 	}
-	if modifier != nil {
-		// Add the sweeper's modifier last so that all of its marks are swept up.
-		modifier = bufimagemodify.Merge(modifier, bufimagemodify.ModifierFunc(sweeper.Sweep))
-		if err := modifier.Modify(ctx, image); err != nil {
-			return err
-		}
-	}
-	return nil
+	// Add the sweeper's modifier last so that all of its marks are swept up.
+	modifier := bufimagemodify.Merge(
+		bufimagemodify.Merge(defaultModifier, configModifier),
+		bufimagemodify.ModifierFunc(sweeper.Sweep),
+	)
+	return modifier.Modify(ctx, image)
 }
 
-// modifierFromManagedConfig returns a new Modifier for the given ManagedConfig.
-func modifierFromManagedConfig(managedConfig *ManagedConfig, sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
+// managedConfigModifier returns a new Modifier for the given ManagedConfig.
+func managedConfigModifier(managedConfig *ManagedConfig, sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
 	if managedConfig == nil {
 		return nil, nil
 	}
@@ -192,20 +195,19 @@ func modifierFromManagedConfig(managedConfig *ManagedConfig, sweeper bufimagemod
 	return modifier, nil
 }
 
-// managedModeModifier returns the Managed Mode modifier.
-func managedModeModifier(pluginConfigs []*PluginConfig, sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
+func defaultManagedModeModifier(sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
 	// TODO: Implement the following modifiers and include them in
 	// the NewMultiModifier below.
 	//
-	// bufimagemodify.SwiftPrefix(sweeper),
 	// bufimagemodify.PhpClassPrefix(sweeper),
 	// bufimagemodify.PhpMetadataNamespace(sweeper),
-	// bufimagemodify.RubyPackage(sweeper),
 	modifier := bufimagemodify.NewMultiModifier(
 		bufimagemodify.JavaOuterClassname(sweeper),
 		bufimagemodify.ObjcClassPrefix(sweeper),
 		bufimagemodify.CsharpNamespace(sweeper),
 		bufimagemodify.PhpNamespace(sweeper),
+		bufimagemodify.RubyPackage(sweeper),
+		bufimagemodify.JavaMultipleFiles(sweeper, true),
 	)
 	javaPackageModifier, err := bufimagemodify.JavaPackage(sweeper, javaPackagePrefix)
 	if err != nil {
