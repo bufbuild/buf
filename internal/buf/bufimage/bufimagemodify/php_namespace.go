@@ -23,9 +23,109 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// phpNamespacePath is the SourceCodeInfo path for the php_namespace option.
-// https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L443
-var phpNamespacePath = []int32{8, 41}
+var (
+	// phpNamespacePath is the SourceCodeInfo path for the php_namespace option.
+	// Ref: https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L443
+	phpNamespacePath = []int32{8, 41}
+
+	// Keywords and classes that could be produced by our heuristic.
+	// They must not be used in a php_namespace.
+	// Ref: https://www.php.net/manual/en/reserved.php
+	phpReservedKeywords = map[string]struct{}{
+		// Reserved classes as per above.
+		"directory":           {},
+		"exception":           {},
+		"errorexception":      {},
+		"closure":             {},
+		"generator":           {},
+		"arithmeticerror":     {},
+		"assertionerror":      {},
+		"divisionbyzeroerror": {},
+		"error":               {},
+		"throwable":           {},
+		"parseerror":          {},
+		"typeerror":           {},
+		// Keywords avoided by protoc.
+		// Ref: https://github.com/protocolbuffers/protobuf/blob/66d749188ff2a2e30e932110222d58da7c6a8d49/src/google/protobuf/compiler/php/php_generator.cc#L50-L66
+		"abstract":     {},
+		"and":          {},
+		"array":        {},
+		"as":           {},
+		"break":        {},
+		"callable":     {},
+		"case":         {},
+		"catch":        {},
+		"class":        {},
+		"clone":        {},
+		"const":        {},
+		"continue":     {},
+		"declare":      {},
+		"default":      {},
+		"die":          {},
+		"do":           {},
+		"echo":         {},
+		"else":         {},
+		"elseif":       {},
+		"empty":        {},
+		"enddeclare":   {},
+		"endfor":       {},
+		"endforeach":   {},
+		"endif":        {},
+		"endswitch":    {},
+		"endwhile":     {},
+		"eval":         {},
+		"exit":         {},
+		"extends":      {},
+		"final":        {},
+		"finally":      {},
+		"fn":           {},
+		"for":          {},
+		"foreach":      {},
+		"function":     {},
+		"global":       {},
+		"goto":         {},
+		"if":           {},
+		"implements":   {},
+		"include":      {},
+		"include_once": {},
+		"instanceof":   {},
+		"insteadof":    {},
+		"interface":    {},
+		"isset":        {},
+		"list":         {},
+		"match":        {},
+		"namespace":    {},
+		"new":          {},
+		"or":           {},
+		"print":        {},
+		"private":      {},
+		"protected":    {},
+		"public":       {},
+		"require":      {},
+		"require_once": {},
+		"return":       {},
+		"static":       {},
+		"switch":       {},
+		"throw":        {},
+		"trait":        {},
+		"try":          {},
+		"unset":        {},
+		"use":          {},
+		"var":          {},
+		"while":        {},
+		"xor":          {},
+		"yield":        {},
+		"int":          {},
+		"float":        {},
+		"bool":         {},
+		"string":       {},
+		"true":         {},
+		"false":        {},
+		"null":         {},
+		"void":         {},
+		"iterable":     {},
+	}
+)
 
 func phpNamespace(sweeper Sweeper) Modifier {
 	return ModifierFunc(
@@ -72,6 +172,10 @@ func phpNamespaceValue(imageFile bufimage.ImageFile) string {
 	}
 	packageParts := strings.Split(pkg, ".")
 	for i, part := range packageParts {
+		// Append _ to the package part if it is a reserved keyword.
+		if _, ok := phpReservedKeywords[strings.ToLower(part)]; ok {
+			part += "_"
+		}
 		packageParts[i] = strings.Title(part)
 	}
 	return strings.Join(packageParts, `\\`)

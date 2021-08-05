@@ -79,7 +79,7 @@ func run(
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
 	if !bufmodule.IsCommitModuleReference(moduleReference) {
-		return fmt.Errorf("commit is required, but a branch or tag was given: %q", container.Arg(0))
+		return fmt.Errorf("commit is required, but a tag was given: %q", container.Arg(0))
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {

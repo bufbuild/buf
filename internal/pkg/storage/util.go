@@ -159,3 +159,13 @@ func sortObjectInfos(objectInfos []ObjectInfo) {
 		},
 	)
 }
+
+type compositeReadObjectCloser struct {
+	ObjectInfo
+	io.ReadCloser
+}
+
+type compositeReadWriteBucket struct {
+	ReadBucket
+	WriteBucket
+}

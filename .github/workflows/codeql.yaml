@@ -1,0 +1,33 @@
+# Broadly based on example Github action from
+# https://github.com/github/codeql-action#usage
+name: codeql
+# Prevent writing to the repository using the CI token.
+# Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
+permissions: read-all
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # Runs at 01:30 on Sundays. This is to catch
+    # existing problems in the code from updated rules.
+    - cron: "30 1 * * 0"
+jobs:
+  codeql:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: initialize
+        uses: github/codeql-action/init@v1
+        with:
+          # Limit analysis to Go for now.
+          # Available languages: https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#changing-the-languages-that-are-analyzed
+          languages: go
+      - name: autobuild
+        uses: github/codeql-action/autobuild@v1
+      - name: analyze
+        uses: github/codeql-action/analyze@v1

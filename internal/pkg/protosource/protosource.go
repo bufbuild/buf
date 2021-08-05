@@ -199,6 +199,7 @@ type File interface {
 	Package() string
 	FileImports() []FileImport
 	Services() []Service
+	Extensions() []Field
 
 	CsharpNamespace() string
 	GoPackage() string
@@ -347,6 +348,7 @@ type Field interface {
 	NamedDescriptor
 	OptionExtensionDescriptor
 
+	// May be nil if this is attached to a file.
 	Message() Message
 	Number() int
 	Label() FieldDescriptorProtoLabel
@@ -361,6 +363,8 @@ type Field interface {
 	// Set vs unset matters for packed
 	// See the comments on descriptor.proto
 	Packed() *bool
+	// Empty string unless the field is part of an extension
+	Extendee() string
 
 	NumberLocation() Location
 	TypeLocation() Location
@@ -369,6 +373,7 @@ type Field interface {
 	JSTypeLocation() Location
 	CTypeLocation() Location
 	PackedLocation() Location
+	ExtendeeLocation() Location
 }
 
 // Oneof is a oneof descriptor.

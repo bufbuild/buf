@@ -19,8 +19,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/branch/branchcreate"
-	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/branch/branchlist"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
@@ -252,14 +250,14 @@ func NewRootCommand(
 									repositorydelete.NewCommand("delete", builder),
 								},
 							},
-							{
-								Use:   "branch",
-								Short: "Repository branch commands.",
-								SubCommands: []*appcmd.Command{
-									branchcreate.NewCommand("create", builder),
-									branchlist.NewCommand("list", builder),
-								},
-							},
+							//{
+							//	Use:   "branch",
+							//	Short: "Repository branch commands.",
+							//	SubCommands: []*appcmd.Command{
+							//		branchcreate.NewCommand("create", builder),
+							//		branchlist.NewCommand("list", builder),
+							//	},
+							//},
 							{
 								Use:   "tag",
 								Short: "Repository tag commands.",

@@ -23,6 +23,8 @@ type field struct {
 	label    FieldDescriptorProtoLabel
 	typ      FieldDescriptorProtoType
 	typeName string
+	// if the field is an extension, this is the type being extended
+	extendee string
 	// this has to be the pointer to the private struct or you have the bug where the
 	// interface is nil but value == nil is false
 	oneof          *oneof
@@ -38,6 +40,7 @@ type field struct {
 	jsTypePath     []int32
 	cTypePath      []int32
 	packedPath     []int32
+	extendeePath   []int32
 }
 
 func newField(
@@ -48,6 +51,7 @@ func newField(
 	label FieldDescriptorProtoLabel,
 	typ FieldDescriptorProtoType,
 	typeName string,
+	extendee string,
 	oneof *oneof,
 	proto3Optional bool,
 	jsonName string,
@@ -61,6 +65,7 @@ func newField(
 	jsTypePath []int32,
 	cTypePath []int32,
 	packedPath []int32,
+	extendeePath []int32,
 ) *field {
 	return &field{
 		namedDescriptor:           namedDescriptor,
@@ -70,6 +75,7 @@ func newField(
 		label:                     label,
 		typ:                       typ,
 		typeName:                  typeName,
+		extendee:                  extendee,
 		oneof:                     oneof,
 		proto3Optional:            proto3Optional,
 		jsonName:                  jsonName,
@@ -83,6 +89,7 @@ func newField(
 		jsTypePath:                jsTypePath,
 		cTypePath:                 cTypePath,
 		packedPath:                packedPath,
+		extendeePath:              extendeePath,
 	}
 }
 
@@ -104,6 +111,10 @@ func (f *field) Type() FieldDescriptorProtoType {
 
 func (f *field) TypeName() string {
 	return f.typeName
+}
+
+func (f *field) Extendee() string {
+	return f.extendee
 }
 
 func (f *field) Oneof() Oneof {
@@ -161,4 +172,8 @@ func (f *field) CTypeLocation() Location {
 
 func (f *field) PackedLocation() Location {
 	return f.getLocation(f.packedPath)
+}
+
+func (f *field) ExtendeeLocation() Location {
+	return f.getLocation(f.extendeePath)
 }
