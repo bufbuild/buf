@@ -42,18 +42,32 @@ sha256() {
 }
 
 if [ -z "${INSIDE_DOCKER}" ]; then
+  if [ -z "${RELEASE_MINISIGN_PRIVATE_KEY}" ]; then
+    fail "RELEASE_MINISIGN_PRIVATE_KEY must be set."
+  fi
   if [ -z "${DOCKER_IMAGE}" ]; then
     fail "DOCKER_IMAGE must be set"
   fi
   docker run --volume \
     "${DIR}:/app" \
     --workdir "/app" \
+    --rm \
     -e INSIDE_DOCKER=1 \
     "${DOCKER_IMAGE}" \
     bash -x make/buf/scripts/release.bash
   if [ "$(uname -s)" == "Linux" ]; then
-    sudo chown -R "$(whoami):$(whoami)" .build
+    sudo chown -R "$(id -u):$(id -g)" .build
   fi
+  # Produce the signature outside the docker image where we have
+  # minisign installed.
+  secret_key_file="$(mktemp)"
+  trap "rm ${secret_key_file}" EXIT
+  # Prevent printing of private key
+  set +x
+  echo "${RELEASE_MINISIGN_PRIVATE_KEY}" > "${secret_key_file}"
+  set -x
+  echo -e "\n\n\n--- BE READY TO ENTER THE PASSWORD OF THE RELEASE SIGNING KEY ---"
+  minisign -S -s "${secret_key_file}" -m .build/release/buf/assets/sha256.txt
   exit 0
 fi
 

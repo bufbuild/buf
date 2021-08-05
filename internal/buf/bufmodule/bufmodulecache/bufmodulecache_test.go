@@ -38,7 +38,7 @@ func TestReaderBasic(t *testing.T) {
 		"buf.build",
 		"foob",
 		"bar",
-		"v1",
+		"main",
 		bufmoduletesting.TestCommit,
 		bufmoduletesting.TestDigest,
 		time.Now(),
@@ -77,6 +77,7 @@ func TestReaderBasic(t *testing.T) {
 	)
 	getModule, err := moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
+	testFile1HasNoExternalPath(t, ctx, getModule)
 	getReadBucketBuilder := storagemem.NewReadBucketBuilder()
 	err = bufmodule.ModuleToBucket(ctx, getModule, getReadBucketBuilder)
 	require.NoError(t, err)
@@ -93,8 +94,9 @@ func TestReaderBasic(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
 
-	_, err = moduleReader.GetModule(ctx, modulePin)
+	getModule, err = moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
+	testFile1HasNoExternalPath(t, ctx, getModule)
 	require.Equal(t, 2, moduleReader.getCount())
 	require.Equal(t, 1, moduleReader.getCacheHits())
 
@@ -167,7 +169,7 @@ func TestCacherBasic(t *testing.T) {
 		"buf.build",
 		"foob",
 		"bar",
-		"v1",
+		"main",
 		bufmoduletesting.TestCommit,
 		bufmoduletesting.TestDigest,
 		time.Now(),
@@ -209,7 +211,7 @@ func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 		"buf.build",
 		"foob",
 		"bar",
-		"v1",
+		"main",
 		bufmoduletesting.TestCommit,
 		bufmoduletesting.TestDigest,
 		time.Now(),
@@ -250,4 +252,14 @@ func newTestDataSumBucketsAndLocker(t *testing.T) (storage.ReadWriteBucket, stor
 	fileLocker, err := filelock.NewLocker(t.TempDir())
 	require.NoError(t, err)
 	return dataReadWriteBucket, sumReadWriteBucket, fileLocker
+}
+
+// This is to make sure that if we get a file from the cache, we strip the
+// external path via storage.NoExternalPathReadBucket.
+func testFile1HasNoExternalPath(t *testing.T, ctx context.Context, module bufmodule.Module) {
+	file1ModuleFile, err := module.GetModuleFile(ctx, bufmoduletesting.TestFile1Path)
+	require.NoError(t, err)
+	require.Equal(t, bufmoduletesting.TestFile1Path, file1ModuleFile.Path())
+	require.Equal(t, bufmoduletesting.TestFile1Path, file1ModuleFile.ExternalPath())
+	require.NoError(t, file1ModuleFile.Close())
 }

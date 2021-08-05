@@ -110,6 +110,7 @@ func TestPhpNamespaceObjcOptions(t *testing.T) {
 	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "single"), `Acme\\V1`)
 	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "double"), `Acme\\Weather\\V1`)
 	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "triple"), `Acme\\Weather\\Data\\V1`)
+	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "reserved"), `Acme\\Error_\\V1`)
 }
 
 func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {

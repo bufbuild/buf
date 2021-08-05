@@ -137,9 +137,12 @@ func (m *moduleCacher) getModuleAndStoredDigest(
 		retErr = multierr.Append(retErr, unlocker.Unlock())
 	}()
 
-	dataReadWriteBucket := storage.MapReadWriteBucket(
-		m.dataReadWriteBucket,
-		storage.MapOnPrefix(modulePath),
+	// We do not want the external path of the cache to be propagated to the user.
+	dataReadWriteBucket := storage.NoExternalPathReadBucket(
+		storage.MapReadWriteBucket(
+			m.dataReadWriteBucket,
+			storage.MapOnPrefix(modulePath),
+		),
 	)
 	exists, err := storage.Exists(ctx, dataReadWriteBucket, buflock.ExternalConfigFilePath)
 	if err != nil {

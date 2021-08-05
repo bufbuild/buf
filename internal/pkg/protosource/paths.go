@@ -97,6 +97,10 @@ func getMessageFieldPackedPath(fieldIndex int, topLevelMessageIndex int, nestedM
 	return append(getMessageFieldPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...), 8, 2)
 }
 
+func getMessageFieldExtendeePath(fieldIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
+	return append(getMessageFieldPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...), 2)
+}
+
 func getMessageExtensionPath(extensionIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
 	return append(getMessagePath(topLevelMessageIndex, nestedMessageIndexes...), 6, int32(extensionIndex))
 }
@@ -131,6 +135,10 @@ func getMessageExtensionCTypePath(extensionIndex int, topLevelMessageIndex int, 
 
 func getMessageExtensionPackedPath(extensionIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
 	return append(getMessageExtensionPath(extensionIndex, topLevelMessageIndex, nestedMessageIndexes...), 8, 2)
+}
+
+func getMessageExtensionExtendeePath(extensionIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
+	return append(getMessageExtensionPath(extensionIndex, topLevelMessageIndex, nestedMessageIndexes...), 2)
 }
 
 func getMessageOneofPath(oneofIndex int, topLevelMessageIndex int, nestedMessageIndexes ...int) []int32 {
@@ -217,4 +225,44 @@ func getMethodOutputTypePath(serviceIndex int, methodIndex int) []int32 {
 
 func getMethodIdempotencyLevelPath(serviceIndex int, methodIndex int) []int32 {
 	return append(getMethodPath(serviceIndex, methodIndex), 4, 34)
+}
+
+func getFileExtensionPath(fieldIndex int) []int32 {
+	return []int32{7, int32(fieldIndex)}
+}
+
+func getFileExtensionNamePath(fieldIndex int) []int32 {
+	return append(getFileExtensionPath(fieldIndex), 1)
+}
+
+func getFileExtensionNumberPath(fieldIndex int) []int32 {
+	return append(getFileExtensionPath(fieldIndex), 3)
+}
+
+func getFileExtensionTypePath(fieldIndex int) []int32 {
+	return append(getFileExtensionPath(fieldIndex), 5)
+}
+
+func getFileExtensionTypeNamePath(fieldIndex int) []int32 {
+	return append(getFileExtensionPath(fieldIndex), 6)
+}
+
+func getFileExtensionJSONNamePath(fieldIndex int) []int32 {
+	return append(getFileExtensionPath(fieldIndex), 10)
+}
+
+func getFileExtensionJSTypePath(fieldIndex int) []int32 {
+	return append(getFileExtensionPath(fieldIndex), 8, 6)
+}
+
+func getFileExtensionCTypePath(fieldIndex int) []int32 {
+	return append(getFileExtensionPath(fieldIndex), 8, 1)
+}
+
+func getFileExtensionPackedPath(fieldIndex int) []int32 {
+	return append(getFileExtensionPath(fieldIndex), 8, 2)
+}
+
+func getFileExtensionExtendeePath(fieldIndex int) []int32 {
+	return append(getFileExtensionPath(fieldIndex), 2)
 }
