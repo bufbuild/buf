@@ -48,7 +48,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name,
 		Short: "Update the modules dependencies. Updates the " + buflock.ExternalConfigFilePath + " file.",
-		Long: "Gets the latest digests for the specified branches in the config file, " +
+		Long: "Gets the latest digests for the specified references in the config file, " +
 			"and writes them and their transitive dependencies to the " +
 			buflock.ExternalConfigFilePath +
 			" file.",

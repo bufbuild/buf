@@ -1,0 +1,3 @@
+package acme.error.v1;
+
+option php_namespace = "foo";

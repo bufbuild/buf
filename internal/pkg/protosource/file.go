@@ -32,6 +32,7 @@ type file struct {
 	messages       []Message
 	enums          []Enum
 	services       []Service
+	extensions     []Field
 	optimizeMode   FileOptionsOptimizeMode
 }
 
@@ -57,6 +58,10 @@ func (f *file) Enums() []Enum {
 
 func (f *file) Services() []Service {
 	return f.services
+}
+
+func (f *file) Extensions() []Field {
+	return f.extensions
 }
 
 func (f *file) CsharpNamespace() string {
@@ -319,12 +324,21 @@ func newFile(inputFile InputFile) (*file, error) {
 		}
 		f.services = append(f.services, service)
 	}
+	for extensionIndex, extensionDescriptorProto := range f.fileDescriptor.GetExtension() {
+		extension, err := f.populateExtension(
+			extensionDescriptorProto,
+			extensionIndex,
+		)
+		if err != nil {
+			return nil, err
+		}
+		f.extensions = append(f.extensions, extension)
+	}
 	optimizeMode, err := getFileOptionsOptimizeMode(f.fileDescriptor.GetOptions().GetOptimizeFor())
 	if err != nil {
 		return nil, err
 	}
 	f.optimizeMode = optimizeMode
-
 	return f, nil
 }
 
@@ -523,6 +537,7 @@ func (f *file) populateMessage(
 			label,
 			typ,
 			fieldDescriptorProto.GetTypeName(),
+			fieldDescriptorProto.GetExtendee(),
 			oneof,
 			fieldDescriptorProto.GetProto3Optional(),
 			fieldDescriptorProto.GetJsonName(),
@@ -536,13 +551,13 @@ func (f *file) populateMessage(
 			getMessageFieldJSTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageFieldCTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageFieldPackedPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
+			getMessageFieldExtendeePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 		)
 		message.addField(field)
 		if oneof != nil {
 			oneof.addField(field)
 		}
 	}
-	// TODO: is this right?
 	for fieldIndex, fieldDescriptorProto := range descriptorProto.GetExtension() {
 		fieldNamedDescriptor, err := newNamedDescriptor(
 			newLocationDescriptor(
@@ -595,6 +610,7 @@ func (f *file) populateMessage(
 			label,
 			typ,
 			fieldDescriptorProto.GetTypeName(),
+			fieldDescriptorProto.GetExtendee(),
 			oneof,
 			fieldDescriptorProto.GetProto3Optional(),
 			fieldDescriptorProto.GetJsonName(),
@@ -608,7 +624,11 @@ func (f *file) populateMessage(
 			getMessageExtensionJSTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionCTypePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 			getMessageExtensionPackedPath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
+			getMessageExtensionExtendeePath(fieldIndex, topLevelMessageIndex, nestedMessageIndexes...),
 		)
+		if err != nil {
+			return nil, err
+		}
 		message.addExtension(field)
 		if oneof != nil {
 			oneof.addField(field)
@@ -744,4 +764,68 @@ func (f *file) populateService(
 		service.addMethod(method)
 	}
 	return service, nil
+}
+
+func (f *file) populateExtension(
+	fieldDescriptorProto *descriptorpb.FieldDescriptorProto,
+	fieldIndex int,
+) (Field, error) {
+	fieldNamedDescriptor, err := newNamedDescriptor(
+		newLocationDescriptor(
+			f.descriptor,
+			getFileExtensionPath(fieldIndex),
+		),
+		fieldDescriptorProto.GetName(),
+		getFileExtensionNamePath(fieldIndex),
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	var packed *bool
+	if fieldDescriptorProto.Options != nil {
+		packed = fieldDescriptorProto.GetOptions().Packed
+	}
+	label, err := getFieldDescriptorProtoLabel(fieldDescriptorProto.GetLabel())
+	if err != nil {
+		return nil, err
+	}
+	typ, err := getFieldDescriptorProtoType(fieldDescriptorProto.GetType())
+	if err != nil {
+		return nil, err
+	}
+	jsType, err := getFieldOptionsJSType(fieldDescriptorProto.GetOptions().GetJstype())
+	if err != nil {
+		return nil, err
+	}
+	cType, err := getFieldOptionsCType(fieldDescriptorProto.GetOptions().GetCtype())
+	if err != nil {
+		return nil, err
+	}
+	return newField(
+		fieldNamedDescriptor,
+		newOptionExtensionDescriptor(
+			fieldDescriptorProto.GetOptions(),
+		),
+		nil,
+		int(fieldDescriptorProto.GetNumber()),
+		label,
+		typ,
+		fieldDescriptorProto.GetTypeName(),
+		fieldDescriptorProto.GetExtendee(),
+		nil,
+		fieldDescriptorProto.GetProto3Optional(),
+		fieldDescriptorProto.GetJsonName(),
+		jsType,
+		cType,
+		packed,
+		getFileExtensionNumberPath(fieldIndex),
+		getFileExtensionTypePath(fieldIndex),
+		getFileExtensionTypeNamePath(fieldIndex),
+		getFileExtensionJSONNamePath(fieldIndex),
+		getFileExtensionJSTypePath(fieldIndex),
+		getFileExtensionCTypePath(fieldIndex),
+		getFileExtensionPackedPath(fieldIndex),
+		getFileExtensionExtendeePath(fieldIndex),
+	), nil
 }

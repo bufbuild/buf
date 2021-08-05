@@ -244,20 +244,10 @@ func replaceWriteObjectCloserExternalPathNotSupported(writeObjectCloser WriteObj
 	return writeObjectCloserExternalPathNotSuppoted{writeObjectCloser}
 }
 
-type compositeReadObjectCloser struct {
-	ObjectInfo
-	io.ReadCloser
-}
-
 type writeObjectCloserExternalPathNotSuppoted struct {
 	io.WriteCloser
 }
 
 func (writeObjectCloserExternalPathNotSuppoted) SetExternalPath(string) error {
 	return ErrSetExternalPathUnsupported
-}
-
-type compositeReadWriteBucket struct {
-	ReadBucket
-	WriteBucket
 }

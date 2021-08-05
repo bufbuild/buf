@@ -31,8 +31,8 @@ import (
 )
 
 const (
-	branchFlagName      = "branch"
-	branchFlagShortName = "b"
+	//banchFlagName      = "branch"
+	//branchFlagShortName = "b"
 	tagFlagName         = "tag"
 	tagFlagShortName    = "t"
 	errorFormatFlagName = "error-format"
@@ -64,7 +64,7 @@ func NewCommand(
 }
 
 type flags struct {
-	Branch      string
+	//Branch      string
 	Tags        []string
 	ErrorFormat string
 	// special
@@ -77,13 +77,13 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
-	flagSet.StringVarP(
-		&f.Branch,
-		branchFlagName,
-		branchFlagShortName,
-		bufmodule.MainBranch,
-		`The branch to push to.`,
-	)
+	//flagSet.StringVarP(
+	//	&f.Branch,
+	//	branchFlagName,
+	//	branchFlagShortName,
+	//	bufmodule.MainBranch,
+	//	`The branch to push to.`,
+	//)
 	flagSet.StringSliceVarP(
 		&f.Tags,
 		tagFlagName,
@@ -107,9 +107,9 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) (retErr error) {
-	if flags.Branch == "" {
-		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", branchFlagName)
-	}
+	//if flags.Branch == "" {
+	//	return appcmd.NewInvalidArgumentErrorf("required flag %q not set", branchFlagName)
+	//}
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
@@ -145,17 +145,15 @@ func run(
 		ctx,
 		moduleIdentity.Owner(),
 		moduleIdentity.Repository(),
-		flags.Branch,
+		//flags.Branch,
+		bufmodule.MainBranch,
 		protoModule,
 		flags.Tags,
 	)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
 			if _, err := container.Stderr().Write(
-				[]byte(fmt.Sprintf(
-					"The latest commit on branch %q has the same content, not creating a new commit.\n",
-					flags.Branch,
-				)),
+				[]byte("The latest commit has the same content, not creating a new commit."),
 			); err != nil {
 				return err
 			}

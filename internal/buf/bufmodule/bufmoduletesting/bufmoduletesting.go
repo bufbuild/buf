@@ -46,16 +46,20 @@ const (
 var (
 	// TestData is the data that maps to TestDigest with TestModuleReferenceString.
 	TestData = map[string][]byte{
-		"file1.proto":        []byte(`syntax="proto3";`),
-		"folder/file2.proto": []byte(`syntax="proto3";`),
+		TestFile1Path: []byte(`syntax="proto3";`),
+		TestFile2Path: []byte(`syntax="proto3";`),
 	}
 	// TestDataWithDocumentation is the data that maps to TestDigestWithDocumentation.
 	//
 	// It includes a buf.md file.
 	TestDataWithDocumentation = map[string][]byte{
-		"file1.proto": []byte(`syntax="proto3";`),
+		TestFile1Path: []byte(`syntax="proto3";`),
 		"buf.md":      []byte(TestModuleDocumentation),
 	}
+	// TestFile1Path is the path of file1.proto.
+	TestFile1Path = "file1.proto"
+	// TestFile2Path is the path of file2.proto.
+	TestFile2Path = "folder/file2.proto"
 	// TestCommit is a valid commit.
 	TestCommit string
 	// TestModuleReferenceFooBarCommitString is a valid module reference string.

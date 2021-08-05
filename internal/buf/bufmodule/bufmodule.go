@@ -33,6 +33,7 @@ import (
 const (
 	// DocumentationFilePath defines the path to the documentation file, relative to the root of the module.
 	DocumentationFilePath = "buf.md"
+
 	// MainBranch is the name of the branch created for every repository.
 	// This is the default branch used if no branch or commit is specified.
 	MainBranch = "main"
