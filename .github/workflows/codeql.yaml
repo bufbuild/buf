@@ -18,19 +18,15 @@ on:
 jobs:
   codeql:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        # Limit analysis to Go and JS/TS for now.
-        # Available languages: https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#changing-the-languages-that-are-analyzed
-        language:
-          - javascript
-          - go
     steps:
       - name: checkout
         uses: actions/checkout@v2
       - name: initialize
         uses: github/codeql-action/init@v1
+        with:
+          # Limit analysis to Go and JS/TS for now.
+          # Available languages: https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#changing-the-languages-that-are-analyzed
+          languages: javascript, go
       - name: autobuild
         uses: github/codeql-action/autobuild@v1
       - name: analyze
