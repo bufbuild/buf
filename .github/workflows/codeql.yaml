@@ -24,9 +24,9 @@ jobs:
       - name: initialize
         uses: github/codeql-action/init@v1
         with:
-          # Limit analysis to Go and JS/TS for now.
+          # Limit analysis to Go for now.
           # Available languages: https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#changing-the-languages-that-are-analyzed
-          languages: javascript, go
+          languages: go
       - name: autobuild
         uses: github/codeql-action/autobuild@v1
       - name: analyze
