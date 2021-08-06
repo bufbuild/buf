@@ -929,6 +929,32 @@ func NameInReservedNames(name string, reservedNames ...ReservedName) bool {
 	return false
 }
 
+// EnumIsSubset checks if subsetEnum is a subset of supersetEnum.
+func EnumIsSubset(supersetEnum Enum, subsetEnum Enum) (bool, error) {
+	supersetNameToEnumValue, err := NameToEnumValue(supersetEnum)
+	if err != nil {
+		return false, err
+	}
+	subsetNameToEnumValue, err := NameToEnumValue(subsetEnum)
+	if err != nil {
+		return false, err
+	}
+	for subsetName, subsetEnumValue := range subsetNameToEnumValue {
+		supersetEnumValue, ok := supersetNameToEnumValue[subsetName]
+		if !ok {
+			// The enum value does not exist by name, this is not a superset.
+			return false, nil
+		}
+		if subsetEnumValue.Number() != supersetEnumValue.Number() {
+			// The enum values are not equal, this is not a superset.
+			return false, nil
+		}
+	}
+	// All enum values by name exist in the superset and have the same number,
+	// subsetEnum is a subset of supersetEnum.
+	return true, nil
+}
+
 // TagRangeString returns the string representation of the range.
 func TagRangeString(tagRange TagRange) string {
 	start := tagRange.Start()

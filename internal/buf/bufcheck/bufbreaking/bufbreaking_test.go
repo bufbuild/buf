@@ -300,6 +300,58 @@ func TestRunBreakingFieldSameType(t *testing.T) {
 	)
 }
 
+func TestRunBreakingFieldWireCompatibleType(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_field_wire_compatible_type",
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 31, 3, 31, 11, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 32, 3, 32, 9, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 33, 3, 33, 8, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 34, 3, 34, 8, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 35, 3, 35, 9, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 36, 3, 36, 10, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 37, 3, 37, 11, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 38, 3, 38, 9, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 39, 3, 39, 9, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 40, 3, 40, 9, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 41, 3, 41, 8, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 42, 3, 42, 9, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 43, 3, 43, 8, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 44, 3, 44, 9, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 45, 3, 45, 7, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 78, 3, 78, 6, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 79, 3, 79, 6, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 80, 3, 80, 6, "FIELD_WIRE_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 85, 3, 85, 9, "FIELD_WIRE_COMPATIBLE_TYPE"),
+	)
+}
+func TestRunBreakingFieldWireJSONCompatibleType(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_field_wire_json_compatible_type",
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 34, 3, 34, 11, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 35, 3, 35, 9, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 36, 3, 36, 8, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 37, 3, 37, 8, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 38, 3, 38, 9, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 39, 3, 39, 10, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 40, 3, 40, 11, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 41, 3, 41, 9, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 42, 3, 42, 9, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 43, 3, 43, 9, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 44, 3, 44, 8, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 45, 3, 45, 9, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 46, 3, 46, 8, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 47, 3, 47, 9, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 48, 3, 48, 7, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 81, 3, 81, 6, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 82, 3, 82, 6, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 83, 3, 83, 6, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 87, 3, 87, 8, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+		bufanalysistesting.NewFileAnnotation(t, "2.proto", 88, 3, 88, 9, "FIELD_WIRE_JSON_COMPATIBLE_TYPE"),
+	)
+}
+
 func TestRunBreakingFileNoDelete(t *testing.T) {
 	testBreaking(
 		t,

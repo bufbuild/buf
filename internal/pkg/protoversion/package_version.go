@@ -191,7 +191,7 @@ func positiveNumber(s string) (int, bool) {
 	if s == "" {
 		return 0, false
 	}
-	value, err := strconv.ParseUint(s, 10, 64)
+	value, err := strconv.ParseInt(s, 10, 32)
 	if err != nil {
 		return 0, false
 	}

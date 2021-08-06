@@ -105,7 +105,7 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 	})
 }
 
-func TestPhpNamespaceObjcOptions(t *testing.T) {
+func TestPhpNamespaceOptions(t *testing.T) {
 	t.Parallel()
 	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "single"), `Acme\\V1`)
 	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "double"), `Acme\\Weather\\V1`)
