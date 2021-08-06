@@ -186,6 +186,12 @@ func PhpNamespace(sweeper Sweeper) Modifier {
 	return phpNamespace(sweeper)
 }
 
+// PhpMetadataNamespace returns a Modifier that sets the php_metadata_namespace file option
+// according to the package name. It appends "\\GPBMetadata" to the heuristic used by PhpNamespace.
+func PhpMetadataNamespace(sweeper Sweeper) Modifier {
+	return phpMetadataNamespace(sweeper)
+}
+
 // RubyPackage returns a Modifier that sets the ruby_package file option
 // according to the given packagePrefix. It is set to the package name with each package sub-name capitalized
 // and each "." replaced with "::".

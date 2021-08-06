@@ -23,8 +23,13 @@ import "github.com/bufbuild/buf/internal/buf/bufcheck/internal"
 
 // VersionSpec is the version specification for v1.
 //
-// The only change from v1beta1 adds FILE_SAME_PACKAGE
-// to PACKAGE, WIRE, and WIRE_JSON.
+// Changes from v1beta1:
+//
+// Adds FILE_SAME_PACKAGE to PACKAGE, WIRE, and WIRE_JSON.
+//
+// Splits FIELD_SAME_TYPE into FIELD_SAME_TYPE for FILE AND PACKAGE,
+// FIRE_WIRE_JSON_COMPATIBLE_TYPE for WIRE_JSON, and
+// FIELD_WIRE_COMPATIBLE_TYPE for WIRE.
 var VersionSpec = &internal.VersionSpec{
 	RuleBuilders:      v1RuleBuilders,
 	DefaultCategories: v1DefaultCategories,

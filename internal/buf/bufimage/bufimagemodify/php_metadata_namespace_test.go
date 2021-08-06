@@ -23,18 +23,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCsharpNamespaceEmptyOptions(t *testing.T) {
+func TestPhpMetadataNamespaceEmptyOptions(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpMetadataNamespacePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper)
+		phpMetadataNamespaceModifier := PhpMetadataNamespace(sweeper)
 
-		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(phpMetadataNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -46,10 +46,10 @@ func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpMetadataNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper)
+		modifier := PhpMetadataNamespace(sweeper)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -59,18 +59,18 @@ func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 	})
 }
 
-func TestCsharpNamespaceAllOptions(t *testing.T) {
+func TestPhpMetadataNamespaceAllOptions(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "alloptions")
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, csharpNamespacePath)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpMetadataNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper)
+		phpMetadataNamespaceModifier := PhpMetadataNamespace(sweeper)
 
-		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(phpMetadataNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -79,18 +79,18 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, "foo", descriptor.GetOptions().GetCsharpNamespace())
+			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpMetadataNamespace())
 		}
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, csharpNamespacePath)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpMetadataNamespacePath)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpMetadataNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper)
+		modifier := PhpMetadataNamespace(sweeper)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -99,29 +99,30 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, "foo", descriptor.GetOptions().GetCsharpNamespace())
+			assert.Equal(t, "foo", descriptor.GetOptions().GetPhpMetadataNamespace())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpMetadataNamespacePath, false)
 	})
 }
 
-func TestCsharpNamespaceOptions(t *testing.T) {
+func TestPhpMetadataNamespaceOptions(t *testing.T) {
 	t.Parallel()
-	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "single"), "Acme.V1")
-	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "double"), "Acme.Weather.V1")
-	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "triple"), "Acme.Weather.Data.V1")
+	testPhpMetadataNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "single"), `Acme\\V1\\GPBMetadata`)
+	testPhpMetadataNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "double"), `Acme\\Weather\\V1\\GPBMetadata`)
+	testPhpMetadataNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "triple"), `Acme\\Weather\\Data\\V1\\GPBMetadata`)
+	testPhpMetadataNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "reserved"), `Acme\\Error_\\V1\\GPBMetadata`)
 }
 
-func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
+func testPhpMetadataNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, csharpNamespacePath)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpMetadataNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper)
+		phpMetadataNamespaceModifier := PhpMetadataNamespace(sweeper)
 
-		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(phpMetadataNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -131,18 +132,18 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, classPrefix, descriptor.GetOptions().GetCsharpNamespace())
+			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpMetadataNamespace())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpMetadataNamespacePath, true)
 	})
 
 	t.Run("without SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, false)
-		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpMetadataNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper)
+		modifier := PhpMetadataNamespace(sweeper)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -152,24 +153,24 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, classPrefix, descriptor.GetOptions().GetCsharpNamespace())
+			assert.Equal(t, classPrefix, descriptor.GetOptions().GetPhpMetadataNamespace())
 		}
-		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, phpMetadataNamespacePath, false)
 	})
 }
 
-func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
+func TestPhpMetadataNamespaceWellKnownTypes(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "wktimport")
-	modifiedCsharpNamespace := "Acme.Weather.V1alpha1"
+	modifiedPhpMetadataNamespace := `Acme\\Weather\\V1alpha1\\GPBMetadata`
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper)
+		phpMetadataNamespaceModifier := PhpMetadataNamespace(sweeper)
 
-		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(phpMetadataNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -179,13 +180,13 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			if isWellKnownType(context.Background(), imageFile) {
-				assert.NotEmpty(t, descriptor.GetOptions().GetCsharpNamespace())
-				assert.NotEqual(t, modifiedCsharpNamespace, descriptor.GetOptions().GetCsharpNamespace())
+				// php_namespace is unset for the well-known types
+				assert.Empty(t, descriptor.GetOptions().GetPhpMetadataNamespace())
 				continue
 			}
 			assert.Equal(t,
-				modifiedCsharpNamespace,
-				descriptor.GetOptions().GetCsharpNamespace(),
+				modifiedPhpMetadataNamespace,
+				descriptor.GetOptions().GetPhpMetadataNamespace(),
 			)
 		}
 	})
@@ -195,7 +196,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper)
+		modifier := PhpMetadataNamespace(sweeper)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -205,13 +206,13 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			if isWellKnownType(context.Background(), imageFile) {
-				assert.NotEmpty(t, descriptor.GetOptions().GetCsharpNamespace())
-				assert.NotEqual(t, modifiedCsharpNamespace, descriptor.GetOptions().GetCsharpNamespace())
+				// php_namespace is unset for the well-known types
+				assert.Empty(t, descriptor.GetOptions().GetPhpMetadataNamespace())
 				continue
 			}
 			assert.Equal(t,
-				modifiedCsharpNamespace,
-				descriptor.GetOptions().GetCsharpNamespace(),
+				modifiedPhpMetadataNamespace,
+				descriptor.GetOptions().GetPhpMetadataNamespace(),
 			)
 		}
 	})

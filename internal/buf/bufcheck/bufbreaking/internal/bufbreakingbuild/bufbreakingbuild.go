@@ -122,6 +122,18 @@ var (
 		"fields have the same types in a given message",
 		bufbreakingcheck.CheckFieldSameType,
 	)
+	// FieldWireCompatibleTypeRuleBuilder is a rule builder.
+	FieldWireCompatibleTypeRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_WIRE_COMPATIBLE_TYPE",
+		"fields have wire-compatible types in a given message",
+		bufbreakingcheck.CheckFieldWireCompatibleType,
+	)
+	// FieldWireJSONCompatibleTypeRuleBuilder is a rule builder.
+	FieldWireJSONCompatibleTypeRuleBuilder = internal.NewNopRuleBuilder(
+		"FIELD_WIRE_JSON_COMPATIBLE_TYPE",
+		"fields have wire and JSON compatible types in a given message",
+		bufbreakingcheck.CheckFieldWireJSONCompatibleType,
+	)
 	// FileNoDeleteRuleBuilder is a rule builder.
 	FileNoDeleteRuleBuilder = internal.NewNopRuleBuilder(
 		"FILE_NO_DELETE",

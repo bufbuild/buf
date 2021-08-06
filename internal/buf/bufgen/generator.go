@@ -196,16 +196,12 @@ func managedConfigModifier(managedConfig *ManagedConfig, sweeper bufimagemodify.
 }
 
 func defaultManagedModeModifier(sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
-	// TODO: Implement the following modifiers and include them in
-	// the NewMultiModifier below.
-	//
-	// bufimagemodify.PhpClassPrefix(sweeper),
-	// bufimagemodify.PhpMetadataNamespace(sweeper),
 	modifier := bufimagemodify.NewMultiModifier(
 		bufimagemodify.JavaOuterClassname(sweeper),
 		bufimagemodify.ObjcClassPrefix(sweeper),
 		bufimagemodify.CsharpNamespace(sweeper),
 		bufimagemodify.PhpNamespace(sweeper),
+		bufimagemodify.PhpMetadataNamespace(sweeper),
 		bufimagemodify.RubyPackage(sweeper),
 		bufimagemodify.JavaMultipleFiles(sweeper, true),
 	)
