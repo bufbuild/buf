@@ -1133,6 +1133,55 @@ breaking:
 	)
 }
 
+func TestExportProto(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "export", "proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	// This should NOT include unimported.proto
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"rpc.proto",
+	)
+}
+
+func TestExportOtherProto(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "export", "other", "proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"unimported.proto",
+	)
+}
+
 func TestExportAll(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
@@ -1144,7 +1193,7 @@ func TestExportAll(t *testing.T) {
 		"export",
 		"-o",
 		tempDir,
-		filepath.Join("testdata", "workspace", "success", "dir", "proto"),
+		filepath.Join("testdata", "export"),
 	)
 	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
 	require.NoError(t, err)
@@ -1152,8 +1201,10 @@ func TestExportAll(t *testing.T) {
 		t,
 		readWriteBucket,
 		"",
+		"another.proto",
 		"request.proto",
 		"rpc.proto",
+		"unimported.proto",
 	)
 }
 
@@ -1169,7 +1220,7 @@ func TestExportExcludeImports(t *testing.T) {
 		"--exclude-imports",
 		"-o",
 		tempDir,
-		filepath.Join("testdata", "workspace", "success", "dir", "proto"),
+		filepath.Join("testdata", "export", "proto"),
 	)
 	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
 	require.NoError(t, err)
@@ -1191,10 +1242,10 @@ func TestExportPaths(t *testing.T) {
 		``,
 		"export",
 		"--path",
-		filepath.Join("testdata", "workspace", "success", "dir", "other", "proto", "request.proto"),
+		filepath.Join("testdata", "export", "other", "proto", "request.proto"),
 		"-o",
 		tempDir,
-		filepath.Join("testdata", "workspace", "success", "dir"),
+		filepath.Join("testdata", "export"),
 	)
 	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
 	require.NoError(t, err)
