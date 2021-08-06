@@ -38,6 +38,8 @@ var (
 		bufbreakingbuild.FieldSameNameRuleBuilder,
 		bufbreakingbuild.FieldSameOneofRuleBuilder,
 		bufbreakingbuild.FieldSameTypeRuleBuilder,
+		bufbreakingbuild.FieldWireCompatibleTypeRuleBuilder,
+		bufbreakingbuild.FieldWireJSONCompatibleTypeRuleBuilder,
 		bufbreakingbuild.FileNoDeleteRuleBuilder,
 		bufbreakingbuild.FileSameCsharpNamespaceRuleBuilder,
 		bufbreakingbuild.FileSameGoPackageRuleBuilder,
@@ -159,8 +161,12 @@ var (
 		"FIELD_SAME_TYPE": {
 			"FILE",
 			"PACKAGE",
-			"WIRE_JSON",
+		},
+		"FIELD_WIRE_COMPATIBLE_TYPE": {
 			"WIRE",
+		},
+		"FIELD_WIRE_JSON_COMPATIBLE_TYPE": {
+			"WIRE_JSON",
 		},
 		"FILE_NO_DELETE": {
 			"FILE",

@@ -30,7 +30,7 @@ import (
 // CheckEnumNoDelete is a check function.
 var CheckEnumNoDelete = newFilePairCheckFunc(checkEnumNoDelete)
 
-func checkEnumNoDelete(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkEnumNoDelete(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	previousNestedNameToEnum, err := protosource.NestedNameToEnum(previousFile)
 	if err != nil {
 		return err
@@ -55,21 +55,21 @@ func checkEnumNoDelete(add addFunc, previousFile protosource.File, file protosou
 // CheckEnumValueNoDelete is a check function.
 var CheckEnumValueNoDelete = newEnumPairCheckFunc(checkEnumValueNoDelete)
 
-func checkEnumValueNoDelete(add addFunc, previousEnum protosource.Enum, enum protosource.Enum) error {
+func checkEnumValueNoDelete(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
 	return checkEnumValueNoDeleteWithRules(add, previousEnum, enum, false, false)
 }
 
 // CheckEnumValueNoDeleteUnlessNumberReserved is a check function.
 var CheckEnumValueNoDeleteUnlessNumberReserved = newEnumPairCheckFunc(checkEnumValueNoDeleteUnlessNumberReserved)
 
-func checkEnumValueNoDeleteUnlessNumberReserved(add addFunc, previousEnum protosource.Enum, enum protosource.Enum) error {
+func checkEnumValueNoDeleteUnlessNumberReserved(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
 	return checkEnumValueNoDeleteWithRules(add, previousEnum, enum, true, false)
 }
 
 // CheckEnumValueNoDeleteUnlessNameReserved is a check function.
 var CheckEnumValueNoDeleteUnlessNameReserved = newEnumPairCheckFunc(checkEnumValueNoDeleteUnlessNameReserved)
 
-func checkEnumValueNoDeleteUnlessNameReserved(add addFunc, previousEnum protosource.Enum, enum protosource.Enum) error {
+func checkEnumValueNoDeleteUnlessNameReserved(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
 	return checkEnumValueNoDeleteWithRules(add, previousEnum, enum, false, true)
 }
 
@@ -125,7 +125,7 @@ func isDeletedEnumValueAllowedWithRules(previousNumber int, previousNameToEnumVa
 // CheckEnumValueSameName is a check function.
 var CheckEnumValueSameName = newEnumValuePairCheckFunc(checkEnumValueSameName)
 
-func checkEnumValueSameName(add addFunc, previousNameToEnumValue map[string]protosource.EnumValue, nameToEnumValue map[string]protosource.EnumValue) error {
+func checkEnumValueSameName(add addFunc, corpus *corpus, previousNameToEnumValue map[string]protosource.EnumValue, nameToEnumValue map[string]protosource.EnumValue) error {
 	previousNames := getSortedEnumValueNames(previousNameToEnumValue)
 	names := getSortedEnumValueNames(nameToEnumValue)
 	// all current names for this number need to be in the previous set
@@ -149,7 +149,7 @@ func checkEnumValueSameName(add addFunc, previousNameToEnumValue map[string]prot
 // CheckExtensionMessageNoDelete is a check function.
 var CheckExtensionMessageNoDelete = newMessagePairCheckFunc(checkExtensionMessageNoDelete)
 
-func checkExtensionMessageNoDelete(add addFunc, previousMessage protosource.Message, message protosource.Message) error {
+func checkExtensionMessageNoDelete(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
 	previousStringToExtensionRange := protosource.StringToExtensionMessageRange(previousMessage)
 	stringToExtensionRange := protosource.StringToExtensionMessageRange(message)
 	for previousString := range previousStringToExtensionRange {
@@ -163,21 +163,21 @@ func checkExtensionMessageNoDelete(add addFunc, previousMessage protosource.Mess
 // CheckFieldNoDelete is a check function.
 var CheckFieldNoDelete = newMessagePairCheckFunc(checkFieldNoDelete)
 
-func checkFieldNoDelete(add addFunc, previousMessage protosource.Message, message protosource.Message) error {
+func checkFieldNoDelete(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
 	return checkFieldNoDeleteWithRules(add, previousMessage, message, false, false)
 }
 
 // CheckFieldNoDeleteUnlessNumberReserved is a check function.
 var CheckFieldNoDeleteUnlessNumberReserved = newMessagePairCheckFunc(checkFieldNoDeleteUnlessNumberReserved)
 
-func checkFieldNoDeleteUnlessNumberReserved(add addFunc, previousMessage protosource.Message, message protosource.Message) error {
+func checkFieldNoDeleteUnlessNumberReserved(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
 	return checkFieldNoDeleteWithRules(add, previousMessage, message, true, false)
 }
 
 // CheckFieldNoDeleteUnlessNameReserved is a check function.
 var CheckFieldNoDeleteUnlessNameReserved = newMessagePairCheckFunc(checkFieldNoDeleteUnlessNameReserved)
 
-func checkFieldNoDeleteUnlessNameReserved(add addFunc, previousMessage protosource.Message, message protosource.Message) error {
+func checkFieldNoDeleteUnlessNameReserved(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
 	return checkFieldNoDeleteWithRules(add, previousMessage, message, false, true)
 }
 
@@ -220,7 +220,7 @@ func isDeletedFieldAllowedWithRules(previousField protosource.Field, message pro
 // CheckFieldSameCType is a check function.
 var CheckFieldSameCType = newFieldPairCheckFunc(checkFieldSameCType)
 
-func checkFieldSameCType(add addFunc, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameCType(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
 	if previousField.CType() != field.CType() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
@@ -232,7 +232,7 @@ func checkFieldSameCType(add addFunc, previousField protosource.Field, field pro
 // CheckFieldSameJSONName is a check function.
 var CheckFieldSameJSONName = newFieldPairCheckFunc(checkFieldSameJSONName)
 
-func checkFieldSameJSONName(add addFunc, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameJSONName(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
 	if previousField.JSONName() != field.JSONName() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
@@ -244,7 +244,7 @@ func checkFieldSameJSONName(add addFunc, previousField protosource.Field, field 
 // CheckFieldSameJSType is a check function.
 var CheckFieldSameJSType = newFieldPairCheckFunc(checkFieldSameJSType)
 
-func checkFieldSameJSType(add addFunc, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameJSType(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
 	if previousField.JSType() != field.JSType() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
@@ -256,7 +256,7 @@ func checkFieldSameJSType(add addFunc, previousField protosource.Field, field pr
 // CheckFieldSameLabel is a check function.
 var CheckFieldSameLabel = newFieldPairCheckFunc(checkFieldSameLabel)
 
-func checkFieldSameLabel(add addFunc, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameLabel(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
 	if previousField.Label() != field.Label() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
@@ -269,7 +269,7 @@ func checkFieldSameLabel(add addFunc, previousField protosource.Field, field pro
 // CheckFieldSameName is a check function.
 var CheckFieldSameName = newFieldPairCheckFunc(checkFieldSameName)
 
-func checkFieldSameName(add addFunc, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameName(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
 	if previousField.Name() != field.Name() {
 		// otherwise prints as hex
 		numberString := strconv.FormatInt(int64(field.Number()), 10)
@@ -281,7 +281,7 @@ func checkFieldSameName(add addFunc, previousField protosource.Field, field prot
 // CheckFieldSameOneof is a check function.
 var CheckFieldSameOneof = newFieldPairCheckFunc(checkFieldSameOneof)
 
-func checkFieldSameOneof(add addFunc, previousField protosource.Field, field protosource.Field) error {
+func checkFieldSameOneof(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
 	previousOneof := previousField.Oneof()
 	oneof := field.Oneof()
 	previousInsideOneof := previousOneof != nil
@@ -310,9 +310,6 @@ func checkFieldSameOneof(add addFunc, previousField protosource.Field, field pro
 	return nil
 }
 
-// CheckFieldSameType is a check function.
-var CheckFieldSameType = newFieldPairCheckFunc(checkFieldSameType)
-
 // TODO: locations not working for map entries
 // TODO: weird output for map entries:
 //
@@ -333,43 +330,189 @@ var CheckFieldSameType = newFieldPairCheckFunc(checkFieldSameType)
 // breaking_field_same_type/1.proto:40:5:Field "5" on message "Seven" changed type from ".a.Three.Seven.FiveEntry" to ".a.Two".
 // breaking_field_same_type/2.proto:64:5:Field "1" on message "Nine" changed type from "int32" to "int64".
 // breaking_field_same_type/2.proto:65:5:Field "2" on message "Nine" changed type from ".a.One" to ".a.Nine".
-func checkFieldSameType(add addFunc, previousField protosource.Field, field protosource.Field) error {
+
+// CheckFieldSameType is a check function.
+var CheckFieldSameType = newFieldPairCheckFunc(checkFieldSameType)
+
+func checkFieldSameType(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
 	if previousField.Type() != field.Type() {
-		// otherwise prints as hex
-		previousNumberString := strconv.FormatInt(int64(previousField.Number()), 10)
-		add(field, nil, field.TypeLocation(), `Field %q on message %q changed type from %q to %q.`, previousNumberString, field.Message().Name(), previousField.Type().String(), field.Type().String())
+		addFieldChangedType(add, previousField, field)
 		return nil
 	}
 
 	switch field.Type() {
-	case protosource.FieldDescriptorProtoTypeEnum, protosource.FieldDescriptorProtoTypeGroup, protosource.FieldDescriptorProtoTypeMessage:
-		// otherwise prints as hex
-		numberString := strconv.FormatInt(int64(previousField.Number()), 10)
+	case protosource.FieldDescriptorProtoTypeEnum,
+		protosource.FieldDescriptorProtoTypeGroup,
+		protosource.FieldDescriptorProtoTypeMessage:
 		if previousField.TypeName() != field.TypeName() {
-			add(
-				field,
-				nil,
-				field.TypeNameLocation(),
-				`Field %q on message %q changed type from %q to %q.`,
-				numberString,
-				field.Message().Name(),
-				strings.TrimPrefix(previousField.TypeName(), "."),
-				strings.TrimPrefix(field.TypeName(), "."),
-			)
+			addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
 		}
 	}
 	return nil
 }
 
-// CheckFileNoDelete is a check function.
-var CheckFileNoDelete = newFilesCheckFunc(checkFileNoDelete)
+// CheckFieldWireCompatibleType is a check function.
+var CheckFieldWireCompatibleType = newFieldPairCheckFunc(checkFieldWireCompatibleType)
 
-func checkFileNoDelete(add addFunc, previousFiles []protosource.File, files []protosource.File) error {
-	previousFilePathToFile, err := protosource.FilePathToFile(previousFiles...)
+func checkFieldWireCompatibleType(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+	previousWireCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireCompatiblityGroup[previousField.Type()]
+	if !ok {
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousField.Type())
+	}
+	wireCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireCompatiblityGroup[field.Type()]
+	if !ok {
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", field.Type())
+	}
+	if previousWireCompatibilityGroup != wireCompatibilityGroup {
+		extraMessages := []string{
+			"See https://developers.google.com/protocol-buffers/docs/proto3#updating for wire compatibility rules.",
+		}
+		switch {
+		case previousField.Type() == protosource.FieldDescriptorProtoTypeString && field.Type() == protosource.FieldDescriptorProtoTypeBytes:
+			// It is OK to evolve from string to bytes
+			return nil
+		case previousField.Type() == protosource.FieldDescriptorProtoTypeBytes && field.Type() == protosource.FieldDescriptorProtoTypeString:
+			extraMessages = append(
+				extraMessages,
+				"Note that while string and bytes are compatible if the data is valid UTF-8, there is no way to enforce that a field is UTF-8, so these fields may be incompatible.",
+			)
+		}
+		addFieldChangedType(add, previousField, field, extraMessages...)
+		return nil
+	}
+	switch field.Type() {
+	case protosource.FieldDescriptorProtoTypeEnum:
+		if previousField.TypeName() != field.TypeName() {
+			return checkEnumWireCompatibleForField(add, corpus, previousField, field)
+		}
+	case protosource.FieldDescriptorProtoTypeGroup,
+		protosource.FieldDescriptorProtoTypeMessage:
+		if previousField.TypeName() != field.TypeName() {
+			addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
+			return nil
+		}
+	}
+	return nil
+}
+
+// CheckFieldWireJSONCompatibleType is a check function.
+var CheckFieldWireJSONCompatibleType = newFieldPairCheckFunc(checkFieldWireJSONCompatibleType)
+
+func checkFieldWireJSONCompatibleType(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+	previousWireJSONCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireJSONCompatiblityGroup[previousField.Type()]
+	if !ok {
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", previousField.Type())
+	}
+	wireJSONCompatibilityGroup, ok := fieldDescriptorProtoTypeToWireJSONCompatiblityGroup[field.Type()]
+	if !ok {
+		return fmt.Errorf("unknown FieldDescriptorProtoType: %v", field.Type())
+	}
+	if previousWireJSONCompatibilityGroup != wireJSONCompatibilityGroup {
+		addFieldChangedType(
+			add,
+			previousField,
+			field,
+			"See https://developers.google.com/protocol-buffers/docs/proto3#updating for wire compatibility rules and https://developers.google.com/protocol-buffers/docs/proto3#json for JSON compatibility rules.",
+		)
+		return nil
+	}
+	switch field.Type() {
+	case protosource.FieldDescriptorProtoTypeEnum:
+		if previousField.TypeName() != field.TypeName() {
+			return checkEnumWireCompatibleForField(add, corpus, previousField, field)
+		}
+	case protosource.FieldDescriptorProtoTypeGroup,
+		protosource.FieldDescriptorProtoTypeMessage:
+		if previousField.TypeName() != field.TypeName() {
+			addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
+			return nil
+		}
+	}
+	return nil
+}
+
+func checkEnumWireCompatibleForField(add addFunc, corpus *corpus, previousField protosource.Field, field protosource.Field) error {
+	previousEnum, err := getEnumByFullName(
+		corpus.previousFiles,
+		strings.TrimPrefix(previousField.TypeName(), "."),
+	)
 	if err != nil {
 		return err
 	}
-	filePathToFile, err := protosource.FilePathToFile(files...)
+	enum, err := getEnumByFullName(
+		corpus.files,
+		strings.TrimPrefix(field.TypeName(), "."),
+	)
+	if err != nil {
+		return err
+	}
+	if previousEnum.Name() != enum.Name() {
+		// If the short names are not equal, we say that this is a different enum.
+		addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
+		return nil
+	}
+	isSubset, err := protosource.EnumIsSubset(enum, previousEnum)
+	if err != nil {
+		return err
+	}
+	if !isSubset {
+		// If the previous enum is not a subset of the new enum, we say that
+		// this is a different enum.
+		// We allow subsets so that enum values can be added within the
+		// same change.
+		addEnumGroupMessageFieldChangedTypeName(add, previousField, field)
+		return nil
+	}
+	return nil
+}
+
+func addFieldChangedType(add addFunc, previousField protosource.Field, field protosource.Field, extraMessages ...string) {
+	combinedExtraMessage := ""
+	if len(extraMessages) > 0 {
+		// protect against mistakenly added empty extra messages
+		if joined := strings.TrimSpace(strings.Join(extraMessages, " ")); joined != "" {
+			combinedExtraMessage = " " + joined
+		}
+	}
+	// otherwise prints as hex
+	previousNumberString := strconv.FormatInt(int64(previousField.Number()), 10)
+	add(
+		field,
+		nil,
+		field.TypeLocation(),
+		`Field %q on message %q changed type from %q to %q.%s`,
+		previousNumberString,
+		field.Message().Name(),
+		previousField.Type().String(),
+		field.Type().String(),
+		combinedExtraMessage,
+	)
+}
+
+func addEnumGroupMessageFieldChangedTypeName(add addFunc, previousField protosource.Field, field protosource.Field) {
+	// otherwise prints as hex
+	numberString := strconv.FormatInt(int64(previousField.Number()), 10)
+	add(
+		field,
+		nil,
+		field.TypeNameLocation(),
+		`Field %q on message %q changed type from %q to %q.`,
+		numberString,
+		field.Message().Name(),
+		strings.TrimPrefix(previousField.TypeName(), "."),
+		strings.TrimPrefix(field.TypeName(), "."),
+	)
+}
+
+// CheckFileNoDelete is a check function.
+var CheckFileNoDelete = newFilesCheckFunc(checkFileNoDelete)
+
+func checkFileNoDelete(add addFunc, corpus *corpus) error {
+	previousFilePathToFile, err := protosource.FilePathToFile(corpus.previousFiles...)
+	if err != nil {
+		return err
+	}
+	filePathToFile, err := protosource.FilePathToFile(corpus.files...)
 	if err != nil {
 		return err
 	}
@@ -384,140 +527,140 @@ func checkFileNoDelete(add addFunc, previousFiles []protosource.File, files []pr
 // CheckFileSameCsharpNamespace is a check function.
 var CheckFileSameCsharpNamespace = newFilePairCheckFunc(checkFileSameCsharpNamespace)
 
-func checkFileSameCsharpNamespace(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameCsharpNamespace(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.CsharpNamespace(), file.CsharpNamespace(), file, file.CsharpNamespaceLocation(), `option "csharp_namespace"`)
 }
 
 // CheckFileSameGoPackage is a check function.
 var CheckFileSameGoPackage = newFilePairCheckFunc(checkFileSameGoPackage)
 
-func checkFileSameGoPackage(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameGoPackage(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.GoPackage(), file.GoPackage(), file, file.GoPackageLocation(), `option "go_package"`)
 }
 
 // CheckFileSameJavaMultipleFiles is a check function.
 var CheckFileSameJavaMultipleFiles = newFilePairCheckFunc(checkFileSameJavaMultipleFiles)
 
-func checkFileSameJavaMultipleFiles(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameJavaMultipleFiles(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.JavaMultipleFiles()), strconv.FormatBool(file.JavaMultipleFiles()), file, file.JavaMultipleFilesLocation(), `option "java_multiple_files"`)
 }
 
 // CheckFileSameJavaOuterClassname is a check function.
 var CheckFileSameJavaOuterClassname = newFilePairCheckFunc(checkFileSameJavaOuterClassname)
 
-func checkFileSameJavaOuterClassname(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameJavaOuterClassname(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.JavaOuterClassname(), file.JavaOuterClassname(), file, file.JavaOuterClassnameLocation(), `option "java_outer_classname"`)
 }
 
 // CheckFileSameJavaPackage is a check function.
 var CheckFileSameJavaPackage = newFilePairCheckFunc(checkFileSameJavaPackage)
 
-func checkFileSameJavaPackage(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameJavaPackage(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.JavaPackage(), file.JavaPackage(), file, file.JavaPackageLocation(), `option "java_package"`)
 }
 
 // CheckFileSameJavaStringCheckUtf8 is a check function.
 var CheckFileSameJavaStringCheckUtf8 = newFilePairCheckFunc(checkFileSameJavaStringCheckUtf8)
 
-func checkFileSameJavaStringCheckUtf8(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameJavaStringCheckUtf8(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.JavaStringCheckUtf8()), strconv.FormatBool(file.JavaStringCheckUtf8()), file, file.JavaStringCheckUtf8Location(), `option "java_string_check_utf8"`)
 }
 
 // CheckFileSameObjcClassPrefix is a check function.
 var CheckFileSameObjcClassPrefix = newFilePairCheckFunc(checkFileSameObjcClassPrefix)
 
-func checkFileSameObjcClassPrefix(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameObjcClassPrefix(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.ObjcClassPrefix(), file.ObjcClassPrefix(), file, file.ObjcClassPrefixLocation(), `option "objc_class_prefix"`)
 }
 
 // CheckFileSamePackage is a check function.
 var CheckFileSamePackage = newFilePairCheckFunc(checkFileSamePackage)
 
-func checkFileSamePackage(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSamePackage(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.Package(), file.Package(), file, file.PackageLocation(), `package`)
 }
 
 // CheckFileSamePhpClassPrefix is a check function.
 var CheckFileSamePhpClassPrefix = newFilePairCheckFunc(checkFileSamePhpClassPrefix)
 
-func checkFileSamePhpClassPrefix(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSamePhpClassPrefix(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.PhpClassPrefix(), file.PhpClassPrefix(), file, file.PhpClassPrefixLocation(), `option "php_class_prefix"`)
 }
 
 // CheckFileSamePhpNamespace is a check function.
 var CheckFileSamePhpNamespace = newFilePairCheckFunc(checkFileSamePhpNamespace)
 
-func checkFileSamePhpNamespace(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSamePhpNamespace(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.PhpNamespace(), file.PhpNamespace(), file, file.PhpNamespaceLocation(), `option "php_namespace"`)
 }
 
 // CheckFileSamePhpMetadataNamespace is a check function.
 var CheckFileSamePhpMetadataNamespace = newFilePairCheckFunc(checkFileSamePhpMetadataNamespace)
 
-func checkFileSamePhpMetadataNamespace(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSamePhpMetadataNamespace(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.PhpMetadataNamespace(), file.PhpMetadataNamespace(), file, file.PhpMetadataNamespaceLocation(), `option "php_metadata_namespace"`)
 }
 
 // CheckFileSameRubyPackage is a check function.
 var CheckFileSameRubyPackage = newFilePairCheckFunc(checkFileSameRubyPackage)
 
-func checkFileSameRubyPackage(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameRubyPackage(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.RubyPackage(), file.RubyPackage(), file, file.RubyPackageLocation(), `option "ruby_package"`)
 }
 
 // CheckFileSameSwiftPrefix is a check function.
 var CheckFileSameSwiftPrefix = newFilePairCheckFunc(checkFileSameSwiftPrefix)
 
-func checkFileSameSwiftPrefix(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameSwiftPrefix(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.SwiftPrefix(), file.SwiftPrefix(), file, file.SwiftPrefixLocation(), `option "swift_prefix"`)
 }
 
 // CheckFileSameOptimizeFor is a check function.
 var CheckFileSameOptimizeFor = newFilePairCheckFunc(checkFileSameOptimizeFor)
 
-func checkFileSameOptimizeFor(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameOptimizeFor(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, previousFile.OptimizeFor().String(), file.OptimizeFor().String(), file, file.OptimizeForLocation(), `option "optimize_for"`)
 }
 
 // CheckFileSameCcGenericServices is a check function.
 var CheckFileSameCcGenericServices = newFilePairCheckFunc(checkFileSameCcGenericServices)
 
-func checkFileSameCcGenericServices(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameCcGenericServices(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.CcGenericServices()), strconv.FormatBool(file.CcGenericServices()), file, file.CcGenericServicesLocation(), `option "cc_generic_services"`)
 }
 
 // CheckFileSameJavaGenericServices is a check function.
 var CheckFileSameJavaGenericServices = newFilePairCheckFunc(checkFileSameJavaGenericServices)
 
-func checkFileSameJavaGenericServices(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameJavaGenericServices(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.JavaGenericServices()), strconv.FormatBool(file.JavaGenericServices()), file, file.JavaGenericServicesLocation(), `option "java_generic_services"`)
 }
 
 // CheckFileSamePyGenericServices is a check function.
 var CheckFileSamePyGenericServices = newFilePairCheckFunc(checkFileSamePyGenericServices)
 
-func checkFileSamePyGenericServices(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSamePyGenericServices(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.PyGenericServices()), strconv.FormatBool(file.PyGenericServices()), file, file.PyGenericServicesLocation(), `option "py_generic_services"`)
 }
 
 // CheckFileSamePhpGenericServices is a check function.
 var CheckFileSamePhpGenericServices = newFilePairCheckFunc(checkFileSamePhpGenericServices)
 
-func checkFileSamePhpGenericServices(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSamePhpGenericServices(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.PhpGenericServices()), strconv.FormatBool(file.PhpGenericServices()), file, file.PhpGenericServicesLocation(), `option "php_generic_services"`)
 }
 
 // CheckFileSameCcEnableArenas is a check function.
 var CheckFileSameCcEnableArenas = newFilePairCheckFunc(checkFileSameCcEnableArenas)
 
-func checkFileSameCcEnableArenas(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameCcEnableArenas(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	return checkFileSameValue(add, strconv.FormatBool(previousFile.CcEnableArenas()), strconv.FormatBool(file.CcEnableArenas()), file, file.CcEnableArenasLocation(), `option "cc_enable_arenas"`)
 }
 
 // CheckFileSameSyntax is a check function.
 var CheckFileSameSyntax = newFilePairCheckFunc(checkFileSameSyntax)
 
-func checkFileSameSyntax(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkFileSameSyntax(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	previousSyntax := previousFile.Syntax()
 	if previousSyntax == protosource.SyntaxUnspecified {
 		previousSyntax = protosource.SyntaxProto2
@@ -539,7 +682,7 @@ func checkFileSameValue(add addFunc, previousValue interface{}, value interface{
 // CheckMessageNoDelete is a check function.
 var CheckMessageNoDelete = newFilePairCheckFunc(checkMessageNoDelete)
 
-func checkMessageNoDelete(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkMessageNoDelete(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	previousNestedNameToMessage, err := protosource.NestedNameToMessage(previousFile)
 	if err != nil {
 		return err
@@ -560,7 +703,7 @@ func checkMessageNoDelete(add addFunc, previousFile protosource.File, file proto
 // CheckMessageNoRemoveStandardDescriptorAccessor is a check function.
 var CheckMessageNoRemoveStandardDescriptorAccessor = newMessagePairCheckFunc(checkMessageNoRemoveStandardDescriptorAccessor)
 
-func checkMessageNoRemoveStandardDescriptorAccessor(add addFunc, previousMessage protosource.Message, message protosource.Message) error {
+func checkMessageNoRemoveStandardDescriptorAccessor(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
 	previous := strconv.FormatBool(previousMessage.NoStandardDescriptorAccessor())
 	current := strconv.FormatBool(message.NoStandardDescriptorAccessor())
 	if previous == "false" && current == "true" {
@@ -572,7 +715,7 @@ func checkMessageNoRemoveStandardDescriptorAccessor(add addFunc, previousMessage
 // CheckMessageSameMessageSetWireFormat is a check function.
 var CheckMessageSameMessageSetWireFormat = newMessagePairCheckFunc(checkMessageSameMessageSetWireFormat)
 
-func checkMessageSameMessageSetWireFormat(add addFunc, previousMessage protosource.Message, message protosource.Message) error {
+func checkMessageSameMessageSetWireFormat(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
 	previous := strconv.FormatBool(previousMessage.MessageSetWireFormat())
 	current := strconv.FormatBool(message.MessageSetWireFormat())
 	if previous != current {
@@ -584,7 +727,7 @@ func checkMessageSameMessageSetWireFormat(add addFunc, previousMessage protosour
 // CheckMessageSameRequiredFields is a check function.
 var CheckMessageSameRequiredFields = newMessagePairCheckFunc(checkMessageSameRequiredFields)
 
-func checkMessageSameRequiredFields(add addFunc, previousMessage protosource.Message, message protosource.Message) error {
+func checkMessageSameRequiredFields(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
 	previousNumberToRequiredField, err := protosource.NumberToMessageFieldForLabel(
 		previousMessage,
 		protosource.FieldDescriptorProtoLabelRequired,
@@ -617,7 +760,7 @@ func checkMessageSameRequiredFields(add addFunc, previousMessage protosource.Mes
 // CheckOneofNoDelete is a check function.
 var CheckOneofNoDelete = newMessagePairCheckFunc(checkOneofNoDelete)
 
-func checkOneofNoDelete(add addFunc, previousMessage protosource.Message, message protosource.Message) error {
+func checkOneofNoDelete(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
 	previousNameToOneof, err := protosource.NameToMessageOneof(previousMessage)
 	if err != nil {
 		return err
@@ -637,12 +780,12 @@ func checkOneofNoDelete(add addFunc, previousMessage protosource.Message, messag
 // CheckPackageEnumNoDelete is a check function.
 var CheckPackageEnumNoDelete = newFilesCheckFunc(checkPackageEnumNoDelete)
 
-func checkPackageEnumNoDelete(add addFunc, previousFiles []protosource.File, files []protosource.File) error {
-	previousPackageToNestedNameToEnum, err := protosource.PackageToNestedNameToEnum(previousFiles...)
+func checkPackageEnumNoDelete(add addFunc, corpus *corpus) error {
+	previousPackageToNestedNameToEnum, err := protosource.PackageToNestedNameToEnum(corpus.previousFiles...)
 	if err != nil {
 		return err
 	}
-	packageToNestedNameToEnum, err := protosource.PackageToNestedNameToEnum(files...)
+	packageToNestedNameToEnum, err := protosource.PackageToNestedNameToEnum(corpus.files...)
 	if err != nil {
 		return err
 	}
@@ -654,7 +797,7 @@ func checkPackageEnumNoDelete(add addFunc, previousFiles []protosource.File, fil
 				if _, ok := nestedNameToEnum[previousNestedName]; !ok {
 					// if cache not populated, populate it
 					if filePathToFile == nil {
-						filePathToFile, err = protosource.FilePathToFile(files...)
+						filePathToFile, err = protosource.FilePathToFile(corpus.files...)
 						if err != nil {
 							return err
 						}
@@ -682,12 +825,12 @@ func checkPackageEnumNoDelete(add addFunc, previousFiles []protosource.File, fil
 // CheckPackageMessageNoDelete is a check function.
 var CheckPackageMessageNoDelete = newFilesCheckFunc(checkPackageMessageNoDelete)
 
-func checkPackageMessageNoDelete(add addFunc, previousFiles []protosource.File, files []protosource.File) error {
-	previousPackageToNestedNameToMessage, err := protosource.PackageToNestedNameToMessage(previousFiles...)
+func checkPackageMessageNoDelete(add addFunc, corpus *corpus) error {
+	previousPackageToNestedNameToMessage, err := protosource.PackageToNestedNameToMessage(corpus.previousFiles...)
 	if err != nil {
 		return err
 	}
-	packageToNestedNameToMessage, err := protosource.PackageToNestedNameToMessage(files...)
+	packageToNestedNameToMessage, err := protosource.PackageToNestedNameToMessage(corpus.files...)
 	if err != nil {
 		return err
 	}
@@ -699,7 +842,7 @@ func checkPackageMessageNoDelete(add addFunc, previousFiles []protosource.File, 
 				if _, ok := nestedNameToMessage[previousNestedName]; !ok {
 					// if cache not populated, populate it
 					if filePathToFile == nil {
-						filePathToFile, err = protosource.FilePathToFile(files...)
+						filePathToFile, err = protosource.FilePathToFile(corpus.files...)
 						if err != nil {
 							return err
 						}
@@ -724,12 +867,12 @@ func checkPackageMessageNoDelete(add addFunc, previousFiles []protosource.File, 
 // CheckPackageNoDelete is a check function.
 var CheckPackageNoDelete = newFilesCheckFunc(checkPackageNoDelete)
 
-func checkPackageNoDelete(add addFunc, previousFiles []protosource.File, files []protosource.File) error {
-	previousPackageToFiles, err := protosource.PackageToFiles(previousFiles...)
+func checkPackageNoDelete(add addFunc, corpus *corpus) error {
+	previousPackageToFiles, err := protosource.PackageToFiles(corpus.previousFiles...)
 	if err != nil {
 		return err
 	}
-	packageToFiles, err := protosource.PackageToFiles(files...)
+	packageToFiles, err := protosource.PackageToFiles(corpus.files...)
 	if err != nil {
 		return err
 	}
@@ -748,12 +891,12 @@ func checkPackageNoDelete(add addFunc, previousFiles []protosource.File, files [
 // CheckPackageServiceNoDelete is a check function.
 var CheckPackageServiceNoDelete = newFilesCheckFunc(checkPackageServiceNoDelete)
 
-func checkPackageServiceNoDelete(add addFunc, previousFiles []protosource.File, files []protosource.File) error {
-	previousPackageToNameToService, err := protosource.PackageToNameToService(previousFiles...)
+func checkPackageServiceNoDelete(add addFunc, corpus *corpus) error {
+	previousPackageToNameToService, err := protosource.PackageToNameToService(corpus.previousFiles...)
 	if err != nil {
 		return err
 	}
-	packageToNameToService, err := protosource.PackageToNameToService(files...)
+	packageToNameToService, err := protosource.PackageToNameToService(corpus.files...)
 	if err != nil {
 		return err
 	}
@@ -765,7 +908,7 @@ func checkPackageServiceNoDelete(add addFunc, previousFiles []protosource.File, 
 				if _, ok := nameToService[previousName]; !ok {
 					// if cache not populated, populate it
 					if filePathToFile == nil {
-						filePathToFile, err = protosource.FilePathToFile(files...)
+						filePathToFile, err = protosource.FilePathToFile(corpus.files...)
 						if err != nil {
 							return err
 						}
@@ -790,7 +933,7 @@ func checkPackageServiceNoDelete(add addFunc, previousFiles []protosource.File, 
 // CheckReservedEnumNoDelete is a check function.
 var CheckReservedEnumNoDelete = newEnumPairCheckFunc(checkReservedEnumNoDelete)
 
-func checkReservedEnumNoDelete(add addFunc, previousEnum protosource.Enum, enum protosource.Enum) error {
+func checkReservedEnumNoDelete(add addFunc, corpus *corpus, previousEnum protosource.Enum, enum protosource.Enum) error {
 	previousStringToReservedRange := protosource.StringToReservedTagRange(previousEnum)
 	stringToReservedRange := protosource.StringToReservedTagRange(enum)
 	for previousString := range previousStringToReservedRange {
@@ -811,7 +954,7 @@ func checkReservedEnumNoDelete(add addFunc, previousEnum protosource.Enum, enum 
 // CheckReservedMessageNoDelete is a check function.
 var CheckReservedMessageNoDelete = newMessagePairCheckFunc(checkReservedMessageNoDelete)
 
-func checkReservedMessageNoDelete(add addFunc, previousMessage protosource.Message, message protosource.Message) error {
+func checkReservedMessageNoDelete(add addFunc, corpus *corpus, previousMessage protosource.Message, message protosource.Message) error {
 	previousStringToReservedRange := protosource.StringToReservedTagRange(previousMessage)
 	stringToReservedRange := protosource.StringToReservedTagRange(message)
 	for previousString := range previousStringToReservedRange {
@@ -832,7 +975,7 @@ func checkReservedMessageNoDelete(add addFunc, previousMessage protosource.Messa
 // CheckRPCNoDelete is a check function.
 var CheckRPCNoDelete = newServicePairCheckFunc(checkRPCNoDelete)
 
-func checkRPCNoDelete(add addFunc, previousService protosource.Service, service protosource.Service) error {
+func checkRPCNoDelete(add addFunc, corpus *corpus, previousService protosource.Service, service protosource.Service) error {
 	previousNameToMethod, err := protosource.NameToMethod(previousService)
 	if err != nil {
 		return err
@@ -852,7 +995,7 @@ func checkRPCNoDelete(add addFunc, previousService protosource.Service, service 
 // CheckRPCSameClientStreaming is a check function.
 var CheckRPCSameClientStreaming = newMethodPairCheckFunc(checkRPCSameClientStreaming)
 
-func checkRPCSameClientStreaming(add addFunc, previousMethod protosource.Method, method protosource.Method) error {
+func checkRPCSameClientStreaming(add addFunc, corpus *corpus, previousMethod protosource.Method, method protosource.Method) error {
 	if previousMethod.ClientStreaming() != method.ClientStreaming() {
 		previous := "streaming"
 		current := "unary"
@@ -868,7 +1011,7 @@ func checkRPCSameClientStreaming(add addFunc, previousMethod protosource.Method,
 // CheckRPCSameIdempotencyLevel is a check function.
 var CheckRPCSameIdempotencyLevel = newMethodPairCheckFunc(checkRPCSameIdempotencyLevel)
 
-func checkRPCSameIdempotencyLevel(add addFunc, previousMethod protosource.Method, method protosource.Method) error {
+func checkRPCSameIdempotencyLevel(add addFunc, corpus *corpus, previousMethod protosource.Method, method protosource.Method) error {
 	previous := previousMethod.IdempotencyLevel()
 	current := method.IdempotencyLevel()
 	if previous != current {
@@ -880,7 +1023,7 @@ func checkRPCSameIdempotencyLevel(add addFunc, previousMethod protosource.Method
 // CheckRPCSameRequestType is a check function.
 var CheckRPCSameRequestType = newMethodPairCheckFunc(checkRPCSameRequestType)
 
-func checkRPCSameRequestType(add addFunc, previousMethod protosource.Method, method protosource.Method) error {
+func checkRPCSameRequestType(add addFunc, corpus *corpus, previousMethod protosource.Method, method protosource.Method) error {
 	if previousMethod.InputTypeName() != method.InputTypeName() {
 		add(method, nil, method.InputTypeLocation(), `RPC %q on service %q changed request type from %q to %q.`, method.Name(), method.Service().Name(), previousMethod.InputTypeName(), method.InputTypeName())
 	}
@@ -890,7 +1033,7 @@ func checkRPCSameRequestType(add addFunc, previousMethod protosource.Method, met
 // CheckRPCSameResponseType is a check function.
 var CheckRPCSameResponseType = newMethodPairCheckFunc(checkRPCSameResponseType)
 
-func checkRPCSameResponseType(add addFunc, previousMethod protosource.Method, method protosource.Method) error {
+func checkRPCSameResponseType(add addFunc, corpus *corpus, previousMethod protosource.Method, method protosource.Method) error {
 	if previousMethod.OutputTypeName() != method.OutputTypeName() {
 		add(method, nil, method.OutputTypeLocation(), `RPC %q on service %q changed response type from %q to %q.`, method.Name(), method.Service().Name(), previousMethod.OutputTypeName(), method.OutputTypeName())
 	}
@@ -900,7 +1043,7 @@ func checkRPCSameResponseType(add addFunc, previousMethod protosource.Method, me
 // CheckRPCSameServerStreaming is a check function.
 var CheckRPCSameServerStreaming = newMethodPairCheckFunc(checkRPCSameServerStreaming)
 
-func checkRPCSameServerStreaming(add addFunc, previousMethod protosource.Method, method protosource.Method) error {
+func checkRPCSameServerStreaming(add addFunc, corpus *corpus, previousMethod protosource.Method, method protosource.Method) error {
 	if previousMethod.ServerStreaming() != method.ServerStreaming() {
 		previous := "streaming"
 		current := "unary"
@@ -916,7 +1059,7 @@ func checkRPCSameServerStreaming(add addFunc, previousMethod protosource.Method,
 // CheckServiceNoDelete is a check function.
 var CheckServiceNoDelete = newFilePairCheckFunc(checkServiceNoDelete)
 
-func checkServiceNoDelete(add addFunc, previousFile protosource.File, file protosource.File) error {
+func checkServiceNoDelete(add addFunc, corpus *corpus, previousFile protosource.File, file protosource.File) error {
 	previousNameToService, err := protosource.NameToService(previousFile)
 	if err != nil {
 		return err

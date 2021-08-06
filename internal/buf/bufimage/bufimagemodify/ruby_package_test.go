@@ -105,7 +105,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 	})
 }
 
-func TestRubyPackageObjcOptions(t *testing.T) {
+func TestRubyPackageOptions(t *testing.T) {
 	t.Parallel()
 	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "single"), `Acme::V1`)
 	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "double"), `Acme::Weather::V1`)

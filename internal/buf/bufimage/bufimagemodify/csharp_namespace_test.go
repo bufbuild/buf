@@ -105,7 +105,7 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 	})
 }
 
-func TestCsharpNamespaceObjcOptions(t *testing.T) {
+func TestCsharpNamespaceOptions(t *testing.T) {
 	t.Parallel()
 	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "single"), "Acme.V1")
 	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "double"), "Acme.Weather.V1")
