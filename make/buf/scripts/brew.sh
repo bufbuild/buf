@@ -2,7 +2,7 @@
 
 set -e
 
-DIR="$(cd "$(dirname "${0}")/../../.." && pwd)"
+DIR="$(CDPATH= cd "$(dirname "${0}")/../../.." && pwd)"
 cd "${DIR}"
 
 if [ -z "${1}" ]; then

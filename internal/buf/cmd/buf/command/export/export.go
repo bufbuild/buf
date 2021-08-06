@@ -19,8 +19,11 @@ import (
 	"errors"
 	"os"
 
+	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
+	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/internal/buf/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
@@ -157,6 +160,53 @@ func run(
 		}
 		moduleFileSets[i] = moduleFileSet
 	}
+
+	// Unless we are excluding imports, we only want to export those
+	// imports that are actually used. To figure this out, we build an image of images
+	// and use the fact that something is in an image to determine if it is actually used.
+	var mergedImage bufimage.Image
+	// We gate on flags.ExcludeImports so that we don't waste time building if the
+	// result of the build is not relevant.
+	if !flags.ExcludeImports {
+		imageBuilder := bufimagebuild.NewBuilder(container.Logger())
+		images := make([]bufimage.Image, 0, len(moduleFileSets))
+		for _, moduleFileSet := range moduleFileSets {
+			targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
+			if err != nil {
+				return err
+			}
+			if len(targetFileInfos) == 0 {
+				// This ModuleFileSet doesn't have any targets, so we shouldn't build
+				// an image for it.
+				continue
+			}
+			image, fileAnnotations, err := imageBuilder.Build(
+				ctx,
+				moduleFileSet,
+				bufimagebuild.WithExcludeSourceCodeInfo(),
+			)
+			if err != nil {
+				return err
+			}
+			if len(fileAnnotations) > 0 {
+				// stderr since we do output to stdout potentially
+				if err := bufanalysis.PrintFileAnnotations(
+					container.Stderr(),
+					fileAnnotations,
+					bufanalysis.FormatText.String(),
+				); err != nil {
+					return err
+				}
+				return bufcli.ErrFileAnnotation
+			}
+			images = append(images, image)
+		}
+		mergedImage, err = bufimage.MergeImages(images...)
+		if err != nil {
+			return err
+		}
+	}
+
 	if err := os.MkdirAll(flags.Output, 0755); err != nil {
 		return err
 	}
@@ -193,8 +243,16 @@ func run(
 			}
 			// If the file is not an import in some ModuleFileSet, it will
 			// eventually be written via the iteration over moduleFileSets.
-			if flags.ExcludeImports && fileInfo.IsImport() {
-				continue
+			if fileInfo.IsImport() {
+				if flags.ExcludeImports {
+					// Exclude imports, don't output here
+					continue
+				} else if mergedImage.GetFile(path) == nil {
+					// We check the merged image to see if the path exists. If it does,
+					// we use this import, so we want to output the file. If it doesn't,
+					// continue.
+					continue
+				}
 			}
 			moduleFile, err := moduleFileSet.GetModuleFile(ctx, path)
 			if err != nil {
