@@ -1,0 +1,284 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/registry/v1alpha1/scope.proto";
+import "google/protobuf/timestamp.proto";
+
+message Team {
+  // primary key, unique, immutable
+  string id = 1;
+  // immutable
+  google.protobuf.Timestamp create_time = 2;
+  // mutable
+  google.protobuf.Timestamp update_time = 3;
+  // unique, mutable
+  string name = 4;
+  // foreign key, immutable
+  string organization_id = 5;
+}
+
+// TeamService is the Team service.
+// All methods on the Team service require authentication.
+service TeamService {
+  // GetTeam gets a team by ID.
+  rpc GetTeam(GetTeamRequest) returns (GetTeamResponse);
+  // GetTeamByName gets a team by the combination of its name and organization.
+  rpc GetTeamByName(GetTeamByNameRequest) returns (GetTeamByNameResponse);
+  // ListOrganizationTeams lists all teams belonging to an organization.
+  rpc ListOrganizationTeams(ListOrganizationTeamsRequest) returns (ListOrganizationTeamsResponse);
+  // CreateTeam creates a new team within an organization.
+  rpc CreateTeam(CreateTeamRequest) returns (CreateTeamResponse);
+  // CreateTeamByName creates a new team within an organization, looking up the organization by name.
+  rpc CreateTeamByName(CreateTeamByNameRequest) returns (CreateTeamByNameResponse);
+  // UpdateTeamName updates a team's name.
+  rpc UpdateTeamName(UpdateTeamNameRequest) returns (UpdateTeamNameResponse);
+  // AddUserToTeam adds a user to a team by their respective IDs.
+  rpc AddUserToTeam(AddUserToTeamRequest) returns (AddUserToTeamResponse);
+  // AddUserToTeamByName adds a user to a team, looking up the entities by user, team, and organization names.
+  rpc AddUserToTeamByName(AddUserToTeamByNameRequest) returns (AddUserToTeamByNameResponse);
+  // RemoveUserFromTeam removes a user from a team by their respective IDs.
+  rpc RemoveUserFromTeam(RemoveUserFromTeamRequest) returns (RemoveUserFromTeamResponse);
+  // RemoveUserFromTeamByName removes a user from a team, looking up the entities by user, team, and organization names.
+  rpc RemoveUserFromTeamByName(RemoveUserFromTeamByNameRequest) returns (RemoveUserFromTeamByNameResponse);
+  // DeleteTeam deletes a team by ID.
+  rpc DeleteTeam(DeleteTeamRequest) returns (DeleteTeamResponse);
+  // DeleteTeamByName deletes a team by the combination of its name and organization.
+  rpc DeleteTeamByName(DeleteTeamByNameRequest) returns (DeleteTeamByNameResponse);
+  // AddTeamOrganizationScope adds an organization scope to a team by ID.
+  rpc AddTeamOrganizationScope(AddTeamOrganizationScopeRequest) returns (AddTeamOrganizationScopeResponse);
+  // AddTeamOrganizationScopeByName adds an organization scope to a team by name.
+  rpc AddTeamOrganizationScopeByName(AddTeamOrganizationScopeByNameRequest) returns (AddTeamOrganizationScopeByNameResponse);
+  // RemoveTeamOrganizationScope removes an organization scope from a team by ID.
+  rpc RemoveTeamOrganizationScope(RemoveTeamOrganizationScopeRequest) returns (RemoveTeamOrganizationScopeResponse);
+  // RemoveTeamOrganizationScopeByName removes an organization scope from a team by name.
+  rpc RemoveTeamOrganizationScopeByName(RemoveTeamOrganizationScopeByNameRequest) returns (RemoveTeamOrganizationScopeByNameResponse);
+  // AddTeamBaseRepositoryScope adds a base repository scope to a team by ID.
+  rpc AddTeamBaseRepositoryScope(AddTeamBaseRepositoryScopeRequest) returns (AddTeamBaseRepositoryScopeResponse);
+  // AddTeamBaseRepositoryScopeByName adds a base repository scope to a team by name.
+  rpc AddTeamBaseRepositoryScopeByName(AddTeamBaseRepositoryScopeByNameRequest) returns (AddTeamBaseRepositoryScopeByNameResponse);
+  // RemoveTeamBaseRepositoryScope removes a base repository scope from a team by ID.
+  rpc RemoveTeamBaseRepositoryScope(RemoveTeamBaseRepositoryScopeRequest) returns (RemoveTeamBaseRepositoryScopeResponse);
+  // RemoveTeamBaseRepositoryScopeByName removes a base repository scope from a team by name.
+  rpc RemoveTeamBaseRepositoryScopeByName(RemoveTeamBaseRepositoryScopeByNameRequest) returns (RemoveTeamBaseRepositoryScopeByNameResponse);
+  // AddTeamRepositoryScope adds a repository scope for a specific repository to a team by ID.
+  rpc AddTeamRepositoryScope(AddTeamRepositoryScopeRequest) returns (AddTeamRepositoryScopeResponse);
+  // AddTeamRepositoryScopeByName adds a repository scope for a specific repository to a team by name.
+  rpc AddTeamRepositoryScopeByName(AddTeamRepositoryScopeByNameRequest) returns (AddTeamRepositoryScopeByNameResponse);
+  // RemoveTeamRepositoryScope removes a repository scope for a specific repository from a team by ID.
+  rpc RemoveTeamRepositoryScope(RemoveTeamRepositoryScopeRequest) returns (RemoveTeamRepositoryScopeResponse);
+  // RemoveTeamRepositoryScopeByName removes a repository scope for a specific repository from a team by name.
+  rpc RemoveTeamRepositoryScopeByName(RemoveTeamRepositoryScopeByNameRequest) returns (RemoveTeamRepositoryScopeByNameResponse);
+}
+
+message GetTeamRequest {
+  string id = 1;
+}
+
+message GetTeamResponse {
+  Team team = 1;
+}
+
+message GetTeamByNameRequest {
+  string name = 1;
+  string organization_name = 2;
+}
+
+message GetTeamByNameResponse {
+  Team team = 1;
+}
+
+message ListOrganizationTeamsRequest {
+  // The ID of the organization whose teams should be listed.
+  string organization_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  bool reverse = 4;
+}
+
+message ListOrganizationTeamsResponse {
+  repeated Team teams = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message CreateTeamRequest {
+  // Must be unique within organization.
+  string name = 1;
+  string organization_id = 2;
+}
+
+message CreateTeamResponse {
+  Team team = 1;
+}
+
+message CreateTeamByNameRequest {
+  // Must be unique within organization.
+  string name = 1;
+  string organization_name = 2;
+}
+
+message CreateTeamByNameResponse {
+  Team team = 1;
+}
+
+message UpdateTeamNameRequest {
+  string id = 1;
+  string new_name = 2;
+}
+
+message UpdateTeamNameResponse {
+  Team team = 1;
+}
+
+message AddUserToTeamRequest {
+  string id = 1;
+  string user_id = 2;
+}
+
+message AddUserToTeamResponse {}
+
+message AddUserToTeamByNameRequest {
+  string name = 1;
+  string user_name = 2;
+  string organization_name = 3;
+}
+
+message AddUserToTeamByNameResponse {}
+
+message RemoveUserFromTeamRequest {
+  string id = 1;
+  string user_id = 2;
+}
+
+message RemoveUserFromTeamResponse {}
+
+message RemoveUserFromTeamByNameRequest {
+  string name = 1;
+  string user_name = 2;
+  string organization_name = 3;
+}
+
+message RemoveUserFromTeamByNameResponse {}
+
+message DeleteTeamRequest {
+  string id = 1;
+}
+
+message DeleteTeamResponse {}
+
+message DeleteTeamByNameRequest {
+  string name = 1;
+  string organization_name = 2;
+}
+
+message DeleteTeamByNameResponse {}
+
+message AddTeamOrganizationScopeRequest {
+  string id = 1;
+  buf.alpha.registry.v1alpha1.OrganizationScope organization_scope = 2;
+}
+
+message AddTeamOrganizationScopeResponse {}
+
+message AddTeamOrganizationScopeByNameRequest {
+  string name = 1;
+  string organization_name = 2;
+  buf.alpha.registry.v1alpha1.OrganizationScope organization_scope = 3;
+}
+
+message AddTeamOrganizationScopeByNameResponse {}
+
+message RemoveTeamOrganizationScopeRequest {
+  string id = 1;
+  buf.alpha.registry.v1alpha1.OrganizationScope organization_scope = 2;
+}
+
+message RemoveTeamOrganizationScopeResponse {}
+
+message RemoveTeamOrganizationScopeByNameRequest {
+  string name = 1;
+  string organization_name = 2;
+  buf.alpha.registry.v1alpha1.OrganizationScope organization_scope = 3;
+}
+
+message RemoveTeamOrganizationScopeByNameResponse {}
+
+message AddTeamBaseRepositoryScopeRequest {
+  string id = 1;
+  buf.alpha.registry.v1alpha1.RepositoryScope repository_scope = 2;
+}
+
+message AddTeamBaseRepositoryScopeResponse {}
+
+message AddTeamBaseRepositoryScopeByNameRequest {
+  string name = 1;
+  string organization_name = 2;
+  buf.alpha.registry.v1alpha1.RepositoryScope repository_scope = 3;
+}
+
+message AddTeamBaseRepositoryScopeByNameResponse {}
+
+message RemoveTeamBaseRepositoryScopeRequest {
+  string id = 1;
+  buf.alpha.registry.v1alpha1.RepositoryScope repository_scope = 2;
+}
+
+message RemoveTeamBaseRepositoryScopeResponse {}
+
+message RemoveTeamBaseRepositoryScopeByNameRequest {
+  string name = 1;
+  string organization_name = 2;
+  buf.alpha.registry.v1alpha1.RepositoryScope repository_scope = 3;
+}
+
+message RemoveTeamBaseRepositoryScopeByNameResponse {}
+
+message AddTeamRepositoryScopeRequest {
+  string id = 1;
+  string repository_id = 2;
+  buf.alpha.registry.v1alpha1.RepositoryScope repository_scope = 3;
+}
+
+message AddTeamRepositoryScopeResponse {}
+
+message AddTeamRepositoryScopeByNameRequest {
+  string name = 1;
+  string organization_name = 2;
+  string repository_name = 3;
+  buf.alpha.registry.v1alpha1.RepositoryScope repository_scope = 4;
+}
+
+message AddTeamRepositoryScopeByNameResponse {}
+
+message RemoveTeamRepositoryScopeRequest {
+  string id = 1;
+  string repository_id = 2;
+  buf.alpha.registry.v1alpha1.RepositoryScope repository_scope = 3;
+}
+
+message RemoveTeamRepositoryScopeResponse {}
+
+message RemoveTeamRepositoryScopeByNameRequest {
+  string name = 1;
+  string organization_name = 2;
+  string repository_name = 3;
+  buf.alpha.registry.v1alpha1.RepositoryScope repository_scope = 4;
+}
+
+message RemoveTeamRepositoryScopeByNameResponse {}

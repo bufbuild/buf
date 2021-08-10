@@ -70,17 +70,39 @@ func NewHandler(f func(*protogen.Plugin) error, options ...HandlerOption) apppro
 	)
 }
 
+// NewFileHandler returns a newHandler for the protogen file function.
+//
+// This will invoke f with every file marked for generation.
+func NewFileHandler(f func(*protogen.Plugin, []*protogen.File) error, options ...HandlerOption) appproto.Handler {
+	return NewHandler(
+		func(plugin *protogen.Plugin) error {
+			generateFiles := make([]*protogen.File, 0, len(plugin.Files))
+			for _, file := range plugin.Files {
+				if file.Generate {
+					generateFiles = append(generateFiles, file)
+				}
+			}
+			sort.Slice(
+				generateFiles,
+				func(i int, j int) bool {
+					return generateFiles[i].Proto.GetName() < generateFiles[j].Proto.GetName()
+				},
+			)
+			return f(plugin, generateFiles)
+		},
+		options...,
+	)
+}
+
 // NewPerFileHandler returns a newHandler for the protogen per-file function.
 //
 // This will invoke f for every file marked for generation.
 func NewPerFileHandler(f func(*protogen.Plugin, *protogen.File) error, options ...HandlerOption) appproto.Handler {
-	return NewHandler(
-		func(plugin *protogen.Plugin) error {
-			for _, file := range plugin.Files {
-				if file.Generate {
-					if err := f(plugin, file); err != nil {
-						return err
-					}
+	return NewFileHandler(
+		func(plugin *protogen.Plugin, files []*protogen.File) error {
+			for _, file := range files {
+				if err := f(plugin, file); err != nil {
+					return err
 				}
 			}
 			return nil
@@ -89,13 +111,13 @@ func NewPerFileHandler(f func(*protogen.Plugin, *protogen.File) error, options .
 	)
 }
 
-// NewPerGoPackageHandler returns a newHandler for the protogen per-package function.
+// NewGoPackageHandler returns a newHandler for the protogen package function.
 //
 // This validates that all files marked for generation that would be generated to
 // the same directory also have the same go package and go import path.
 //
-// This will invoke f for every set of files in a package marked for generation.
-func NewPerGoPackageHandler(f func(*protogen.Plugin, *GoPackageFileSet) error, options ...HandlerOption) appproto.Handler {
+// This will invoke f with every file marked for generation.
+func NewGoPackageHandler(f func(*protogen.Plugin, []*GoPackageFileSet) error, options ...HandlerOption) appproto.Handler {
 	return NewHandler(
 		func(plugin *protogen.Plugin) error {
 			generatedDirToGoPackageFileSet := make(map[string]*GoPackageFileSet)
@@ -108,6 +130,7 @@ func NewPerGoPackageHandler(f func(*protogen.Plugin, *GoPackageFileSet) error, o
 							GeneratedDir:  generatedDir,
 							GoImportPath:  file.GoImportPath,
 							GoPackageName: file.GoPackageName,
+							ProtoPackage:  file.Proto.GetPackage(),
 							Files:         []*protogen.File{file},
 						}
 					} else {
@@ -127,11 +150,44 @@ func NewPerGoPackageHandler(f func(*protogen.Plugin, *GoPackageFileSet) error, o
 								string(file.GoPackageName),
 							)
 						}
+						if goPackageFileSet.ProtoPackage != file.Proto.GetPackage() {
+							return fmt.Errorf(
+								"mismatched proto package names for generated directory %q: %q %q",
+								generatedDir,
+								goPackageFileSet.ProtoPackage,
+								file.Proto.GetPackage(),
+							)
+						}
 						goPackageFileSet.Files = append(goPackageFileSet.Files, file)
 					}
 				}
 			}
+			goPackageFileSets := make([]*GoPackageFileSet, 0, len(generatedDirToGoPackageFileSet))
 			for _, goPackageFileSet := range generatedDirToGoPackageFileSet {
+				goPackageFileSets = append(goPackageFileSets, goPackageFileSet)
+			}
+			sort.Slice(
+				goPackageFileSets,
+				func(i int, j int) bool {
+					return goPackageFileSets[i].ProtoPackage < goPackageFileSets[j].ProtoPackage
+				},
+			)
+			return f(plugin, goPackageFileSets)
+		},
+		options...,
+	)
+}
+
+// NewPerGoPackageHandler returns a newHandler for the protogen per-package function.
+//
+// This validates that all files marked for generation that would be generated to
+// the same directory also have the same go package and go import path.
+//
+// This will invoke f for every file marked for generation.
+func NewPerGoPackageHandler(f func(*protogen.Plugin, *GoPackageFileSet) error, options ...HandlerOption) appproto.Handler {
+	return NewGoPackageHandler(
+		func(plugin *protogen.Plugin, goPackageFileSets []*GoPackageFileSet) error {
+			for _, goPackageFileSet := range goPackageFileSets {
 				if err := f(plugin, goPackageFileSet); err != nil {
 					return err
 				}
@@ -162,7 +218,9 @@ type GoPackageFileSet struct {
 	GoImportPath protogen.GoImportPath
 	// The Go package name the golang/protobuf files would be generated to.
 	GoPackageName protogen.GoPackageName
-	// The files within this package.
+	// ProtoPackage is the proto package for all files.
+	ProtoPackage string
+	// The files within this package that are marked for generate.
 	Files []*protogen.File
 }
 
@@ -201,6 +259,10 @@ type NamedHelper interface {
 		goPackageFileSet *GoPackageFileSet,
 		pluginName string,
 	) (protogen.GoImportPath, error)
+	// NewGlobalImportPath gets the helper GoImportPath for the pluginName.
+	NewGlobalGoImportPath(
+		pluginName string,
+	) (protogen.GoImportPath, error)
 	// NewGeneratedFile returns a new individual GeneratedFile for a named plugin.
 	//
 	// This should be used for named plugins that have a 1-1 mapping between Protobuf files
@@ -224,6 +286,26 @@ type NamedHelper interface {
 		goPackageFileSet *GoPackageFileSet,
 		pluginName string,
 	) (*protogen.GeneratedFile, error)
+	// NewGlobalGeneratedFile returns a new global GeneratedFile for a named plugin.
+	//
+	// This also prints the file header and package.
+	NewGlobalGeneratedFile(
+		plugin *protogen.Plugin,
+		pluginName string,
+	) (*protogen.GeneratedFile, error)
+}
+
+// NewNamedFileHandler returns a new file handler for a named plugin.
+func NewNamedFileHandler(f func(NamedHelper, *protogen.Plugin, []*protogen.File) error) appproto.Handler {
+	namedHelper := newNamedHelper()
+	return NewFileHandler(
+		func(plugin *protogen.Plugin, files []*protogen.File) error {
+			return f(namedHelper, plugin, files)
+		},
+		HandlerWithOptionHandler(
+			namedHelper.handleOption,
+		),
+	)
 }
 
 // NewNamedPerFileHandler returns a new per-file handler for a named plugin.
@@ -232,6 +314,19 @@ func NewNamedPerFileHandler(f func(NamedHelper, *protogen.Plugin, *protogen.File
 	return NewPerFileHandler(
 		func(plugin *protogen.Plugin, file *protogen.File) error {
 			return f(namedHelper, plugin, file)
+		},
+		HandlerWithOptionHandler(
+			namedHelper.handleOption,
+		),
+	)
+}
+
+// NewNamedGoPackageHandler returns a new go package handler for a named plugin.
+func NewNamedGoPackageHandler(f func(NamedHelper, *protogen.Plugin, []*GoPackageFileSet) error) appproto.Handler {
+	namedHelper := newNamedHelper()
+	return NewGoPackageHandler(
+		func(plugin *protogen.Plugin, goPackageFileSets []*GoPackageFileSet) error {
+			return f(namedHelper, plugin, goPackageFileSets)
 		},
 		HandlerWithOptionHandler(
 			namedHelper.handleOption,
@@ -434,6 +529,18 @@ func GetFieldGoZeroValue(
 	default:
 		return "", fmt.Errorf("unknown Kind: %T", field.Desc.Kind())
 	}
+}
+
+// ProtoPackagePascalCase converts a package in the form foo.bar.baz to FooBarBaz.
+func ProtoPackagePascalCase(protoPackage string) string {
+	if protoPackage == "" {
+		return ""
+	}
+	packageParts := strings.Split(protoPackage, ".")
+	for i, part := range packageParts {
+		packageParts[i] = strings.Title(part)
+	}
+	return strings.Join(packageParts, "")
 }
 
 type handlerOptions struct {

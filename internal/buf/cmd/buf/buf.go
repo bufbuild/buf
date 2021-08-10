@@ -19,6 +19,11 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
+	registrygenerate "github.com/bufbuild/buf/internal/buf/cmd/buf/command/alpha/registry/generate"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/alpha/registry/token/tokencreate"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/alpha/registry/token/tokendelete"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/alpha/registry/token/tokenget"
+	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
@@ -92,45 +97,21 @@ We recommend migrating, however this command continues to work.`
 We recommend migrating, however this command continues to work.`
 )
 
-// Main is the main.
-func Main(name string, options ...MainOption) {
-	mainOptions := newMainOptions()
-	for _, option := range options {
-		option(mainOptions)
-	}
-	appcmd.Main(
-		context.Background(),
-		NewRootCommand(
-			name,
-			mainOptions.rootCommandModifier,
-		),
-	)
-}
-
-// MainOption is an option for command construction.
-type MainOption func(*mainOptions)
-
-// WithRootCommandModifier returns a new MainOption that modifies the root Command.
-func WithRootCommandModifier(rootCommandModifier func(*appcmd.Command, appflag.Builder, *bufcli.GlobalFlags)) MainOption {
-	return func(mainOptions *mainOptions) {
-		mainOptions.rootCommandModifier = rootCommandModifier
-	}
+func Main(name string) {
+	appcmd.Main(context.Background(), NewRootCommand(name))
 }
 
 // NewRootCommand returns a new root command.
 //
 // This is public for use in testing.
-func NewRootCommand(
-	name string,
-	rootCommandModifier func(*appcmd.Command, appflag.Builder, *bufcli.GlobalFlags),
-) *appcmd.Command {
+func NewRootCommand(name string) *appcmd.Command {
 	builder := appflag.NewBuilder(
 		name,
 		appflag.BuilderWithTimeout(120*time.Second),
 		appflag.BuilderWithTracing(),
 	)
 	globalFlags := bufcli.NewGlobalFlags()
-	rootCommand := &appcmd.Command{
+	return &appcmd.Command{
 		Use: name,
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder, "", false),
@@ -335,21 +316,34 @@ See https://docs.buf.build/faq for more details.`,
 					},
 				},
 			},
+			{
+				Use:    "alpha",
+				Short:  "Alpha commands. These are so early in development that they should not be used except in development.",
+				Hidden: true,
+				SubCommands: []*appcmd.Command{
+					{
+						Use:   "registry",
+						Short: "Interact with the Buf Schema Registry.",
+						SubCommands: []*appcmd.Command{
+							{
+								Use:   "token",
+								Short: "Token commands.",
+								SubCommands: []*appcmd.Command{
+									tokencreate.NewCommand("create", builder),
+									tokenget.NewCommand("get", builder),
+									tokenlist.NewCommand("list", builder),
+									tokendelete.NewCommand("delete", builder),
+								},
+							},
+
+							registrygenerate.NewCommand("generate", builder),
+						},
+					},
+				},
+			},
 			push.NewCommand("push", builder, "", false),
 		},
 		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		Version:             bufcli.Version,
 	}
-	if rootCommandModifier != nil {
-		rootCommandModifier(rootCommand, builder, globalFlags)
-	}
-	return rootCommand
-}
-
-type mainOptions struct {
-	rootCommandModifier func(*appcmd.Command, appflag.Builder, *bufcli.GlobalFlags)
-}
-
-func newMainOptions() *mainOptions {
-	return &mainOptions{}
 }

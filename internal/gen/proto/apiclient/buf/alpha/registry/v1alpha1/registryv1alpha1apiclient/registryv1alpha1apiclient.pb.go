@@ -23,7 +23,13 @@ import (
 
 // Provider provides all the types in registryv1alpha1apiclient.
 type Provider interface {
+	AuthnServiceProvider
+	AuthzServiceProvider
+	DocServiceProvider
 	DownloadServiceProvider
+	GenerateServiceProvider
+	ImageServiceProvider
+	LocalResolveServiceProvider
 	OrganizationServiceProvider
 	OwnerServiceProvider
 	PluginServiceProvider
@@ -34,12 +40,45 @@ type Provider interface {
 	RepositoryServiceProvider
 	RepositoryTagServiceProvider
 	ResolveServiceProvider
+	SearchServiceProvider
+	TeamServiceProvider
+	TokenServiceProvider
 	UserServiceProvider
+}
+
+// AuthnServiceProvider provides a client-side AuthnService for an address.
+type AuthnServiceProvider interface {
+	NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error)
+}
+
+// AuthzServiceProvider provides a client-side AuthzService for an address.
+type AuthzServiceProvider interface {
+	NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error)
+}
+
+// DocServiceProvider provides a client-side DocService for an address.
+type DocServiceProvider interface {
+	NewDocService(ctx context.Context, address string) (registryv1alpha1api.DocService, error)
 }
 
 // DownloadServiceProvider provides a client-side DownloadService for an address.
 type DownloadServiceProvider interface {
 	NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error)
+}
+
+// GenerateServiceProvider provides a client-side GenerateService for an address.
+type GenerateServiceProvider interface {
+	NewGenerateService(ctx context.Context, address string) (registryv1alpha1api.GenerateService, error)
+}
+
+// ImageServiceProvider provides a client-side ImageService for an address.
+type ImageServiceProvider interface {
+	NewImageService(ctx context.Context, address string) (registryv1alpha1api.ImageService, error)
+}
+
+// LocalResolveServiceProvider provides a client-side LocalResolveService for an address.
+type LocalResolveServiceProvider interface {
+	NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error)
 }
 
 // OrganizationServiceProvider provides a client-side OrganizationService for an address.
@@ -90,6 +129,21 @@ type RepositoryTagServiceProvider interface {
 // ResolveServiceProvider provides a client-side ResolveService for an address.
 type ResolveServiceProvider interface {
 	NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error)
+}
+
+// SearchServiceProvider provides a client-side SearchService for an address.
+type SearchServiceProvider interface {
+	NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error)
+}
+
+// TeamServiceProvider provides a client-side TeamService for an address.
+type TeamServiceProvider interface {
+	NewTeamService(ctx context.Context, address string) (registryv1alpha1api.TeamService, error)
+}
+
+// TokenServiceProvider provides a client-side TokenService for an address.
+type TokenServiceProvider interface {
+	NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error)
 }
 
 // UserServiceProvider provides a client-side UserService for an address.

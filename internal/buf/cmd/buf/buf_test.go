@@ -1521,7 +1521,7 @@ func testModInit(t *testing.T, expectedData string, document bool, name string, 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStdout(
 		t,
-		func(use string) *appcmd.Command { return testNewRootCommand(use) },
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		expectedExitCode,
 		expectedStdout,
 		func(use string) map[string]string {
@@ -1538,7 +1538,7 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStdoutStderr(
 		t,
-		func(use string) *appcmd.Command { return testNewRootCommand(use) },
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		expectedExitCode,
 		expectedStdout,
 		expectedStderr,
@@ -1587,7 +1587,7 @@ func testRun(
 	stderr := bytes.NewBuffer(nil)
 	appcmdtesting.RunCommandExitCode(
 		t,
-		func(use string) *appcmd.Command { return testNewRootCommand(use) },
+		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		expectedExitCode,
 		func(use string) map[string]string {
 			return map[string]string{
@@ -1600,10 +1600,6 @@ func testRun(
 		stderr,
 		args...,
 	)
-}
-
-func testNewRootCommand(use string) *appcmd.Command {
-	return NewRootCommand(use, nil)
 }
 
 func useEnvVar(use string, suffix string) string {

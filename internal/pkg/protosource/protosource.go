@@ -725,14 +725,20 @@ func NumberToMessageField(message Message) (map[int]Field, error) {
 	for _, messageField := range message.Fields() {
 		number := messageField.Number()
 		if _, ok := numberToMessageField[number]; ok {
-			return nil, fmt.Errorf("duplicate message field: %q", number)
+			return nil, fmt.Errorf("duplicate message field: %d", number)
 		}
 		numberToMessageField[number] = messageField
 	}
 	for _, messageField := range message.Extensions() {
+		if messageField.Extendee() != "."+message.FullName() {
+			// TODO: ideally we want this field to be returned when
+			// the Extendee message is passed into some function,
+			// need to investigate what index is necessary for that.
+			continue
+		}
 		number := messageField.Number()
 		if _, ok := numberToMessageField[number]; ok {
-			return nil, fmt.Errorf("duplicate message field: %q", number)
+			return nil, fmt.Errorf("duplicate message field: %d", number)
 		}
 		numberToMessageField[number] = messageField
 	}

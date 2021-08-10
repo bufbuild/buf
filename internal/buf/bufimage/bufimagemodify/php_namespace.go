@@ -178,5 +178,5 @@ func phpNamespaceValue(imageFile bufimage.ImageFile) string {
 		}
 		packageParts[i] = strings.Title(part)
 	}
-	return strings.Join(packageParts, `\\`)
+	return strings.Join(packageParts, `\`)
 }

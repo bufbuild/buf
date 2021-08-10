@@ -186,7 +186,7 @@ func TestWorkspaceOverlapSubDirectory(t *testing.T) {
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStdout(
 		t,
-		func(use string) *appcmd.Command { return testNewRootCommand(use) },
+		func(use string) *appcmd.Command { return buf.NewRootCommand(use) },
 		expectedExitCode,
 		expectedStdout,
 		func(use string) map[string]string {
@@ -202,7 +202,7 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStdoutStderr(
 		t,
-		func(use string) *appcmd.Command { return testNewRootCommand(use) },
+		func(use string) *appcmd.Command { return buf.NewRootCommand(use) },
 		expectedExitCode,
 		expectedStdout,
 		expectedStderr,
@@ -214,10 +214,6 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 		stdin,
 		args...,
 	)
-}
-
-func testNewRootCommand(use string) *appcmd.Command {
-	return buf.NewRootCommand(use, nil)
 }
 
 func useEnvVar(use string, suffix string) string {
