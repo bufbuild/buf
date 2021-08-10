@@ -798,7 +798,7 @@ func (s *repositoryTagServiceServer) serveListRepositoryTagsProtobuf(ctx context
 }
 
 func (s *repositoryTagServiceServer) ServiceDescriptor() ([]byte, int) {
-	return twirpFileDescriptor12, 0
+	return twirpFileDescriptor14, 0
 }
 
 func (s *repositoryTagServiceServer) ProtocGenTwirpVersion() string {
@@ -812,7 +812,7 @@ func (s *repositoryTagServiceServer) PathPrefix() string {
 	return baseServicePath(s.pathPrefix, "buf.alpha.registry.v1alpha1", "RepositoryTagService")
 }
 
-var twirpFileDescriptor12 = []byte{
+var twirpFileDescriptor14 = []byte{
 	// 532 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0x41, 0x8b, 0xd3, 0x40,
 	0x14, 0x26, 0xe9, 0x5a, 0x77, 0x5f, 0x6d, 0x17, 0x46, 0x91, 0x98, 0x22, 0x2d, 0x15, 0x64, 0xf1,

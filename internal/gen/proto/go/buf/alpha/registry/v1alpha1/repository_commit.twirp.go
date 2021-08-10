@@ -1362,7 +1362,7 @@ func (s *repositoryCommitServiceServer) serveGetRepositoryCommitBySequenceIDProt
 }
 
 func (s *repositoryCommitServiceServer) ServiceDescriptor() ([]byte, int) {
-	return twirpFileDescriptor13, 0
+	return twirpFileDescriptor15, 0
 }
 
 func (s *repositoryCommitServiceServer) ProtocGenTwirpVersion() string {
@@ -1376,7 +1376,7 @@ func (s *repositoryCommitServiceServer) PathPrefix() string {
 	return baseServicePath(s.pathPrefix, "buf.alpha.registry.v1alpha1", "RepositoryCommitService")
 }
 
-var twirpFileDescriptor13 = []byte{
+var twirpFileDescriptor15 = []byte{
 	// 752 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x56, 0xdf, 0x4e, 0x13, 0x4d,
 	0x14, 0xcf, 0x6c, 0xcb, 0xbf, 0x43, 0x80, 0x32, 0xf9, 0x3e, 0xbe, 0x4d, 0xf9, 0x90, 0xa6, 0x11,

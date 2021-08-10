@@ -320,6 +320,29 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 	}, nil
 }
 
+func (p *provider) NewRecommendationService(ctx context.Context, address string) (registryv1alpha1api.RecommendationService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	return &recommendationService{
+		logger: p.logger,
+		client: v1alpha1.NewRecommendationServiceProtobufClient(
+			p.httpClient.ParseAddress(address),
+			p.httpClient,
+			twirpclient.NewClientOptions()...,
+		),
+		contextModifier: contextModifier,
+	}, nil
+}
+
 func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
