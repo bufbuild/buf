@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -56,6 +57,7 @@ func executePlugin(
 		bufimage.ImagesToCodeGeneratorRequests(
 			images,
 			strings.Join(pluginInfo.Opt, ","),
+			appprotoexec.DefaultVersion,
 		),
 		appprotoos.GenerateWithPluginPath(pluginInfo.Path),
 	); err != nil {

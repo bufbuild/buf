@@ -1,0 +1,300 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+// DocService defines a set of APIs that are intended for use by bufwebd only.
+// This is not intended for general use; changes and use cases are subject to executive approval.
+service DocService {
+  // GetSourceDirectoryInfo retrieves the directory and file structure for the
+  // given owner, repository and reference.
+  //
+  // The purpose of this is to get a representation of the file tree for a given
+  // module to enable exploring the module by navigating through its contents.
+  rpc GetSourceDirectoryInfo(GetSourceDirectoryInfoRequest) returns (GetSourceDirectoryInfoResponse);
+  // GetSourceFile retrieves the source contents for the given owner, repository,
+  // reference, and path.
+  rpc GetSourceFile(GetSourceFileRequest) returns (GetSourceFileResponse);
+  // GetModuleDocumentation retrieves the documentation for module based on the given
+  // owner, repository, and reference.
+  rpc GetModuleDocumentation(GetModuleDocumentationRequest) returns (GetModuleDocumentationResponse);
+  // GetPackageDocumentation retrieves a a slice of documentation structures
+  // for the given owner, repository, reference, and package name.
+  rpc GetPackageDocumentation(GetPackageDocumentationRequest) returns (GetPackageDocumentationResponse);
+}
+
+// GetSourceDirectoryInfoRequest takes an owner, repository, and reference.
+message GetSourceDirectoryInfoRequest {
+  string owner = 1;
+  string repository = 2;
+  string reference = 3;
+}
+
+// GetSourceDirectoryInfoResponse returns the root FileInfo for the requested module.
+message GetSourceDirectoryInfoResponse {
+  FileInfo root = 1;
+}
+
+// FileInfo is a nested structure that contains the file path, whether or not it's a directory,
+// and if so, the FileInfo children of that directory.
+message FileInfo {
+  // the normalized path of the directory, relative to the root of the module.
+  string path = 1;
+  bool is_dir = 2;
+  repeated FileInfo children = 3;
+}
+
+// GetSourceFileRequest takes an owner, repository, reference, and normalized path.
+message GetSourceFileRequest {
+  string owner = 1;
+  string repository = 2;
+  string reference = 3;
+  // the normalized path to the requested file, relative to the root of the module.
+  string path = 4;
+}
+
+// GetSourceFileResponse returns the source code contents of the requested file.
+message GetSourceFileResponse {
+  // content is the content of the file.
+  bytes content = 1;
+}
+
+// GetModuleDocumentationRequest takes an owner, repository, and reference.
+message GetModuleDocumentationRequest {
+  string owner = 1;
+  string repository = 2;
+  string reference = 3;
+}
+
+// GetModuleDocumentationResponse returns the ModuleDocumentation for the requested module.
+message GetModuleDocumentationResponse {
+  ModuleDocumentation module_documentation = 1;
+}
+
+// ModuleDocumentation provides the name of the module and associated documentation.
+message ModuleDocumentation {
+  string name = 1;
+  repeated string packages = 2;
+  // This is the string representation of the contents of the buf.md file for module-level documentation.
+  //
+  // The buf.md file is a part of the module.
+  // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
+  string documentation = 3;
+}
+
+// GetPackageDocumentationRequest takes an owner, repository, reference, and package name.
+message GetPackageDocumentationRequest {
+  string owner = 1;
+  string repository = 2;
+  string reference = 3;
+  // this is the fully qualified package name.
+  string package_name = 4;
+}
+
+// GetPackageDocumentationReponse returns the documentation for the requested package.
+message GetPackageDocumentationResponse {
+  PackageDocumentation package_documentation = 1;
+}
+
+// PackageDocumentation provides the name, description, and top level types defined in the package.
+message PackageDocumentation {
+  string name = 1;
+  // description contains the package-level comment documentation.
+  // There is currently no convention for this.
+  //
+  // This is derived from the leading comments at the top level of the package.
+  // Paragraph newlines (double new lines) are respected, however single newlines are not.
+  // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+  string description = 2;
+  // services contains all the services defined in the package in alphabetical order.
+  repeated Service services = 3;
+  // enums contains all the enums defined in the package in alphabetical order.
+  repeated Enum enums = 4;
+  // messages contains all the messages defined in the package in alphabetical order.
+  repeated Message messages = 5;
+  // extensions contains all the file level extensions in the package in alphabetical order.
+  repeated FileExtension file_extensions = 6;
+}
+
+// Location provides the location information for the source code.
+//
+// This does not provide the leading or trailing comments as these will
+// be parsed into descriptions or dropped respectively.
+message Location {
+  int32 start_line = 1;
+  int32 start_column = 2;
+  int32 end_line = 3;
+  int32 end_column = 4;
+}
+
+// Service provides information for the documentation for a given service type in a file.
+message Service {
+  string name = 1;
+  // nested_name includes the nested types for a given type definition.
+  string nested_name = 2;
+  // full_name includes the package name and nested types for a given type definition.
+  string full_name = 3;
+  // description is derived from the leading comments of a given service.
+  //
+  // Paragraph newlines (double new lines) are respected, however single newlines are not.
+  // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+  string description = 4;
+  // file_path is the normalized path of the file containing the service.
+  // This is used for navigating to the source code for the service.
+  string file_path = 5;
+  Location location = 6;
+  repeated Method methods = 7;
+}
+
+// Method provides information for the documentation for a method of a given service.
+message Method {
+  string name = 1;
+  // description is derived from the leading comments of a given method.
+  //
+  // Paragraph newlines (double new lines) are respected, however single newlines are not.
+  // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+  string description = 2;
+  MethodRequestResponse request = 3;
+  MethodRequestResponse response = 4;
+}
+
+// MethodRequestResponse provides information for the documentation of a Method request or response message.
+message MethodRequestResponse {
+  // nested_type is the nested name of the message of the request or response. This includes nested definitions.
+  string nested_type = 1;
+  // full_type is the fully qualified name of the message of the request or response. This includes package and nested definitions.
+  string full_type = 2;
+  // boolean flag for whether the streaming label is set on an method request or response.
+  bool streaming = 3;
+  Message message = 4;
+  // import_module_ref is included if the request or response is an imported type.
+  // It contains all the metadata for the import.
+  ImportModuleRef import_module_ref = 5;
+}
+
+// Enum provides information for the documentation of an enum.
+message Enum {
+  string name = 1;
+  // nested_name includes the nested types for a given type definition.
+  string nested_name = 2;
+  // full_name includes the package name and nested types for a given type definition.
+  string full_name = 3;
+  // description is derived from the leading comments of a given Enum.
+  //
+  // Paragraph newlines (double new lines) are respected, however single newlines are not.
+  // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+  string description = 4;
+  // file_path is the normalized path of the file containing the enum.
+  string file_path = 5;
+  Location location = 6;
+  repeated EnumValue values = 7;
+}
+
+// EnumValue provides information for the documentation of an enum value.
+message EnumValue {
+  string name = 1;
+  int32 number = 2;
+  // description is derived from the leading comments of a given enum value.
+  //
+  // Paragraph newlines (double new lines) are respected, however single newlines are not.
+  // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+  string description = 3;
+}
+
+// ImportRef provides the import metadata if a type is imported.
+message ImportModuleRef {
+  string remote = 1;
+  string owner = 2;
+  string repository = 3;
+  // the commit is based on the module commit of the imported type provided
+  // by the image.
+  string commit = 4;
+  string package_name = 5;
+}
+
+// Message provides information for the documentation of a protobuf message.
+message Message {
+  string name = 1;
+  // nested_name includes the nested types for a given type definition.
+  string nested_name = 2;
+  // full_name includes the package name and nested types for a given type definition.
+  string full_name = 3;
+  // description is derived from the leading comments of a given message.
+  //
+  // Paragraph newlines (double new lines) are respected, however single newlines are not.
+  // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+  string description = 4;
+  // file_path is the normalized path of the file containing the message.
+  string file_path = 5;
+  bool is_map_entry = 6;
+  repeated Field fields = 7;
+  Location location = 8;
+  repeated Field message_extensions = 9;
+}
+
+// Field provides information for the documentation of a message field.
+message Field {
+  string name = 1;
+  // description is derived from the leading comments of a given message field.
+  //
+  // Paragraph newlines (double new lines) are respected, however single newlines are not.
+  // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+  string description = 2;
+  string label = 3;
+  // string representation of the nested name of the field type, which includes nested definitions.
+  string nested_type = 4;
+  // string representation of the full name of the field type, which includes package name
+  // and nested definitions.
+  string full_type = 5;
+  uint32 tag = 6;
+  // MapEntry is present if the field is a map type.
+  MapEntry map_entry = 7;
+  // import_module_ref is included if the field is an imported type.
+  // It contains all the metadata for the import.
+  ImportModuleRef import_module_ref = 8;
+  // Extendee is the name of the type that is being extended if the field is an extension.
+  // This is an empty string for fields that are not extenions.
+  string extendee = 9;
+}
+
+// MapEntry provides the key and value types for the MapEntry type for a map field.
+message MapEntry {
+  // string representation of the full name of the type for the map key. keys can only be
+	// scalar types: https://developers.google.com/protocol-buffers/docs/overview#maps
+  string key_full_type = 1;
+  // string representation of the nested name of the type for the map value.
+  string value_nested_type = 2;
+  // string representation of the full name of the type for the map value.
+  string value_full_type = 3;
+  // if the value is an imported type, this is the import module ref
+  ImportModuleRef value_import_module_ref = 4;
+}
+
+// FileExtension provides the information for the documentation of a file extension.
+message FileExtension {
+  // extension_type is the string representation of the type being extended.
+  string extension_type = 1;
+  // description is derived from the leading comments of a given message field.
+  //
+  // Paragraph newlines (double new lines) are respected, however single newlines are not.
+  // Note that any leading and trailing `//` or spaces within a `/* */` block will be stripped.
+  string description = 2;
+  // file_path is the normalized path of the file containing the message.
+  string file_path = 3;
+  Location location = 4;
+  // fields are all the fields that are associated with the extension.
+  repeated Field fields = 5;
+}

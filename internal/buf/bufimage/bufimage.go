@@ -342,10 +342,11 @@ func ImageToFileDescriptorProtos(image Image) []*descriptorpb.FileDescriptorProt
 // ImageToCodeGeneratorRequest returns a new CodeGeneratorRequest for the Image.
 //
 // All non-imports are added as files to generate.
-func ImageToCodeGeneratorRequest(image Image, parameter string) *pluginpb.CodeGeneratorRequest {
+func ImageToCodeGeneratorRequest(image Image, parameter string, compilerVersion *pluginpb.Version) *pluginpb.CodeGeneratorRequest {
 	imageFiles := image.Files()
 	request := &pluginpb.CodeGeneratorRequest{
-		ProtoFile: make([]*descriptorpb.FileDescriptorProto, len(imageFiles)),
+		ProtoFile:       make([]*descriptorpb.FileDescriptorProto, len(imageFiles)),
+		CompilerVersion: compilerVersion,
 	}
 	if parameter != "" {
 		request.Parameter = proto.String(parameter)
@@ -362,10 +363,10 @@ func ImageToCodeGeneratorRequest(image Image, parameter string) *pluginpb.CodeGe
 // ImagesToCodeGeneratorRequests converts the Images to CodeGeneratorRequests.
 //
 // All non-imports are added as files to generate.
-func ImagesToCodeGeneratorRequests(images []Image, parameter string) []*pluginpb.CodeGeneratorRequest {
+func ImagesToCodeGeneratorRequests(images []Image, parameter string, compilerVersion *pluginpb.Version) []*pluginpb.CodeGeneratorRequest {
 	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
 	for i, image := range images {
-		requests[i] = ImageToCodeGeneratorRequest(image, parameter)
+		requests[i] = ImageToCodeGeneratorRequest(image, parameter, compilerVersion)
 	}
 	return requests
 }

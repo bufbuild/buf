@@ -1,11 +1,9 @@
-BUF_BIN ?= cmd/buf
-
 # https://github.com/jhump/protoreflect/commits/master 20210712 checked 20210712
 PROTOREFLECT_VERSION := d3608faa83b85e64a0e2880cba9be9c951460727
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
 GO_BINS := $(GO_BINS) \
-	$(BUF_BIN) \
+	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
 	cmd/protoc-gen-buf-check-breaking \
@@ -79,7 +77,7 @@ licensegenerate:: licenseheader
 # a chicken or egg problem.
 
 # TODO: remove when v1.0 is released
-BUFBINARYHEAD := 1
+#BUFBINARYHEAD := 1
 
 .PHONY: bufbinaryinstall
 ifeq ($(BUFBINARYHEAD),)

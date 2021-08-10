@@ -139,7 +139,7 @@ func run(
 	return bufprint.NewTemplatePrinter(container.Stdout()).PrintTemplate(ctx, format, template)
 }
 
-// visibilityFlagToVisibility parses the given string as a experimentalv1alpha1.PluginVisibility.
+// visibilityFlagToVisibility parses the given string as a registryv1alpha1.PluginVisibility.
 func visibilityFlagToVisibility(visibility string) (registryv1alpha1.PluginVisibility, error) {
 	switch visibility {
 	case publicVisibility:

@@ -153,6 +153,18 @@ func NewUnimplementedRemoteError(err error, remote string, moduleIdentity string
 	return fmt.Errorf("%w. Are you sure %q (derived from module name %q) is a Buf Schema Registry?", err, remote, moduleIdentity)
 }
 
+// NewPluginNotFoundError informs the user that a plugin with
+// that owner and name does not exist.
+func NewPluginNotFoundError(owner string, name string) error {
+	return fmt.Errorf("the plugin %s/%s does not exist", owner, name)
+}
+
+// NewTemplateNotFoundError informs the user that a template with
+// that owner and name does not exist.
+func NewTemplateNotFoundError(owner string, name string) error {
+	return fmt.Errorf("the template %s/%s does not exist", owner, name)
+}
+
 // wrapError is used when a CLI command fails, regardless of its error code.
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
@@ -184,16 +196,4 @@ func isEmptyUnknownError(err error) bool {
 		return false
 	}
 	return err.Error() == "" && rpc.GetErrorCode(err) == rpc.ErrorCodeUnknown
-}
-
-// NewPluginNotFoundError informs the user that a plugin with
-// that owner and name does not exist.
-func NewPluginNotFoundError(owner string, name string) error {
-	return fmt.Errorf("the plugin %s/%s does not exist", owner, name)
-}
-
-// NewTemplateNotFoundError informs the user that a template with
-// that owner and name does not exist.
-func NewTemplateNotFoundError(owner string, name string) error {
-	return fmt.Errorf("the template %s/%s does not exist", owner, name)
 }

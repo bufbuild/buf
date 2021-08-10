@@ -1,0 +1,70 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+message RepositorySearchResult {
+  string id = 1;
+  string name = 2;
+  // The name of the user or organization
+  // who is the owner of this repository
+  string owner = 3;
+}
+
+message OrganizationSearchResult {
+  string id = 1;
+  string name = 2;
+}
+
+message UserSearchResult {
+  string id = 1;
+  string username = 2;
+}
+
+message TeamSearchResult {
+  string id = 1;
+  string name = 2;
+  string organization_name = 3;
+}
+
+message SearchResult {
+  oneof item {
+    RepositorySearchResult repository = 1;
+    OrganizationSearchResult organization = 2;
+    UserSearchResult user = 3;
+    TeamSearchResult team = 4;
+  }
+}
+
+// SearchService is the search service.
+service SearchService {
+  // Search searches the BSR.
+  rpc Search(SearchRequest) returns (SearchResponse);
+}
+
+message SearchRequest {
+  // The search string.
+  string query = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is 0.
+  uint32 page_token = 3;
+}
+
+message SearchResponse {
+  repeated SearchResult search_results = 1;
+  // There are no more pages if this is 0.
+  uint32 next_page_token = 2;
+}

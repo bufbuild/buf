@@ -170,16 +170,25 @@ func NewTemplateVersionPrinter(writer io.Writer) TemplateVersionPrinter {
 	return newTemplateVersionPrinter(writer)
 }
 
-// PrintProtoMessageJSON prints the Protobuf message as JSON.
+// TokenPrinter is a printer Tokens.
 //
-// Shared with internal packages.
-func PrintProtoMessageJSON(writer io.Writer, message proto.Message) error {
-	data, err := protoencoding.NewJSONMarshalerIndent(nil).Marshal(message)
-	if err != nil {
-		return err
+// TODO: update to same format as other printers.
+type TokenPrinter interface {
+	PrintTokens(ctx context.Context, tokens ...*registryv1alpha1.Token) error
+}
+
+// NewTokenPrinter returns a new TokenPrinter.
+//
+// TODO: update to same format as other printers.
+func NewTokenPrinter(writer io.Writer, format Format) (TokenPrinter, error) {
+	switch format {
+	case FormatText:
+		return newTokenTextPrinter(writer), nil
+	case FormatJSON:
+		return newTokenJSONPrinter(writer), nil
+	default:
+		return nil, fmt.Errorf("unknown format: %v", format)
 	}
-	_, err = writer.Write(append(data, []byte("\n")...))
-	return err
 }
 
 // TabWriter is a tab writer.
@@ -203,4 +212,14 @@ func WithTabWriter(
 		return err
 	}
 	return f(tabWriter)
+}
+
+// printProtoMessageJSON prints the Protobuf message as JSON.
+func printProtoMessageJSON(writer io.Writer, message proto.Message) error {
+	data, err := protoencoding.NewJSONMarshalerIndent(nil).Marshal(message)
+	if err != nil {
+		return err
+	}
+	_, err = writer.Write(append(data, []byte("\n")...))
+	return err
 }

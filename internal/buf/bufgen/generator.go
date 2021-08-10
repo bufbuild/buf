@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufimage"
 	"github.com/bufbuild/buf/internal/buf/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -106,7 +107,7 @@ func (g *generator) generate(
 			container,
 			pluginConfig.Name,
 			out,
-			bufimage.ImagesToCodeGeneratorRequests(pluginImages, pluginConfig.Opt),
+			bufimage.ImagesToCodeGeneratorRequests(pluginImages, pluginConfig.Opt, appprotoexec.DefaultVersion),
 			appprotoos.GenerateWithPluginPath(pluginConfig.Path),
 			appprotoos.GenerateWithCreateOutDirIfNotExists(),
 		); err != nil {
