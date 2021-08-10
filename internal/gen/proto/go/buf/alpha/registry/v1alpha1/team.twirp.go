@@ -6959,7 +6959,7 @@ func (s *teamServiceServer) serveRemoveTeamRepositoryScopeByNameProtobuf(ctx con
 }
 
 func (s *teamServiceServer) ServiceDescriptor() ([]byte, int) {
-	return twirpFileDescriptor18, 0
+	return twirpFileDescriptor19, 0
 }
 
 func (s *teamServiceServer) ProtocGenTwirpVersion() string {
@@ -6973,7 +6973,7 @@ func (s *teamServiceServer) PathPrefix() string {
 	return baseServicePath(s.pathPrefix, "buf.alpha.registry.v1alpha1", "TeamService")
 }
 
-var twirpFileDescriptor18 = []byte{
+var twirpFileDescriptor19 = []byte{
 	// 1471 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x5a, 0xdd, 0x6f, 0xdb, 0x54,
 	0x14, 0xd7, 0x4d, 0xbb, 0xb5, 0x3d, 0xa5, 0xed, 0x76, 0x59, 0xd7, 0xcc, 0x59, 0x59, 0xe6, 0x6e,

@@ -1364,7 +1364,7 @@ func (s *tokenServiceServer) serveDeleteTokenProtobuf(ctx context.Context, resp 
 }
 
 func (s *tokenServiceServer) ServiceDescriptor() ([]byte, int) {
-	return twirpFileDescriptor19, 0
+	return twirpFileDescriptor20, 0
 }
 
 func (s *tokenServiceServer) ProtocGenTwirpVersion() string {
@@ -1378,7 +1378,7 @@ func (s *tokenServiceServer) PathPrefix() string {
 	return baseServicePath(s.pathPrefix, "buf.alpha.registry.v1alpha1", "TokenService")
 }
 
-var twirpFileDescriptor19 = []byte{
+var twirpFileDescriptor20 = []byte{
 	// 548 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0x49, 0x6f, 0xd3, 0x40,
 	0x14, 0x96, 0x9d, 0x2e, 0xe9, 0x0b, 0xa5, 0x30, 0x05, 0x29, 0x24, 0x42, 0x8d, 0x7c, 0x80, 0x4a,
