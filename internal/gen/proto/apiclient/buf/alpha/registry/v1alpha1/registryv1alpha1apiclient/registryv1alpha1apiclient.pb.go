@@ -34,6 +34,7 @@ type Provider interface {
 	OwnerServiceProvider
 	PluginServiceProvider
 	PushServiceProvider
+	RecommendationServiceProvider
 	ReferenceServiceProvider
 	RepositoryBranchServiceProvider
 	RepositoryCommitServiceProvider
@@ -99,6 +100,11 @@ type PluginServiceProvider interface {
 // PushServiceProvider provides a client-side PushService for an address.
 type PushServiceProvider interface {
 	NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error)
+}
+
+// RecommendationServiceProvider provides a client-side RecommendationService for an address.
+type RecommendationServiceProvider interface {
+	NewRecommendationService(ctx context.Context, address string) (registryv1alpha1api.RecommendationService, error)
 }
 
 // ReferenceServiceProvider provides a client-side ReferenceService for an address.
