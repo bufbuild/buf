@@ -23,4 +23,3 @@
 /internal/protoplugin/cmd/protoc-gen-go-apiclient/protoc-gen-go-apiclient
 /internal/protoplugin/cmd/protoc-gen-go-apiclientgrpc/protoc-gen-go-apiclientgrpc
 /internal/protoplugin/cmd/protoc-gen-go-apiclienttwirp/protoc-gen-go-apiclienttwirp
-/internal/protoplugin/cmd/protoc-gen-proxy/protoc-gen-proxy

@@ -16,8 +16,7 @@ GO_BINS := $(GO_BINS) \
 	internal/protoplugin/cmd/protoc-gen-go-api \
 	internal/protoplugin/cmd/protoc-gen-go-apiclient \
 	internal/protoplugin/cmd/protoc-gen-go-apiclientgrpc \
-	internal/protoplugin/cmd/protoc-gen-go-apiclienttwirp \
-	internal/protoplugin/cmd/protoc-gen-proxy
+	internal/protoplugin/cmd/protoc-gen-go-apiclienttwirp
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer
