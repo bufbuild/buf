@@ -145,6 +145,4 @@ bufrelease:
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)
 	@rm -rf $(TMP)/gofuzz
-	@mkdir -p $(TMP)/gofuzz
-	cd internal/buf/bufbuild/bufbuildtesting; go-fuzz-build -o $(abspath $(TMP))/gofuzz/gofuzz.zip
-	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz
+	FUZZ_DIR=$(abspath $(TMP))/gofuzz GO_FUZZ_VERSION=$(GO_FUZZ_VERSION) make/buf/scripts/fuzz.sh

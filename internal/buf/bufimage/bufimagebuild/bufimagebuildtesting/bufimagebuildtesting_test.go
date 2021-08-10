@@ -15,18 +15,52 @@
 package bufimagebuildtesting
 
 import (
+	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestBasic(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("corpus", "test.proto"))
+// testFuzz runs a fuzz test and fails if data is invalid or if the Fuzz would have panicked
+func testFuzz(t *testing.T, data []byte) {
+	t.Helper()
+	ctx := context.Background()
+	result, err := fuzz(ctx, data)
 	require.NoError(t, err)
-	i, err := fuzz(data)
+	require.NoError(t, result.error(ctx))
+}
+
+func TestCorpus(t *testing.T) {
+	dir, err := os.ReadDir("corpus")
 	require.NoError(t, err)
-	assert.Equal(t, 1, i)
+	for _, entry := range dir {
+		if entry.IsDir() {
+			continue
+		}
+		t.Run(entry.Name(), func(t *testing.T) {
+			data, err := os.ReadFile(filepath.Join("corpus", entry.Name()))
+			require.NoError(t, err)
+			testFuzz(t, data)
+		})
+	}
+}
+
+func TestCrashers(t *testing.T) {
+	dir, err := os.ReadDir("crashers")
+	require.NoError(t, err)
+	for _, entry := range dir {
+		if entry.IsDir() ||
+			strings.HasSuffix(entry.Name(), ".quoted") ||
+			strings.HasSuffix(entry.Name(), ".output") {
+			continue
+		}
+		t.Run(entry.Name(), func(t *testing.T) {
+			data, err := os.ReadFile(filepath.Join("crashers", entry.Name()))
+			require.NoError(t, err)
+			testFuzz(t, data)
+		})
+	}
 }
