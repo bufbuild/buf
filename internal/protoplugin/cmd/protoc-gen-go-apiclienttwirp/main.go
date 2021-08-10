@@ -32,10 +32,19 @@ const (
 )
 
 func main() {
-	appproto.Main(context.Background(), protogenutil.NewNamedPerGoPackageHandler(handle))
+	appproto.Main(context.Background(), protogenutil.NewNamedGoPackageHandler(handle))
 }
 
-func handle(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPackageFileSet *protogenutil.GoPackageFileSet) error {
+func handle(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPackageFileSets []*protogenutil.GoPackageFileSet) error {
+	for _, goPackageFileSet := range goPackageFileSets {
+		if err := handleGoPackage(helper, plugin, goPackageFileSet); err != nil {
+			return err
+		}
+	}
+	return handleGlobal(helper, plugin, goPackageFileSets)
+}
+
+func handleGoPackage(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPackageFileSet *protogenutil.GoPackageFileSet) error {
 	if len(goPackageFileSet.Services()) == 0 {
 		return nil
 	}
@@ -244,5 +253,157 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		}
 		g.P()
 	}
+	return nil
+}
+
+func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPackageFileSets []*protogenutil.GoPackageFileSet) error {
+	goPackageFileSetsWithServices := make([]*protogenutil.GoPackageFileSet, 0, len(goPackageFileSets))
+	for _, goPackageFileSet := range goPackageFileSets {
+		if len(goPackageFileSet.Services()) > 0 {
+			goPackageFileSetsWithServices = append(goPackageFileSetsWithServices, goPackageFileSet)
+		}
+	}
+	if len(goPackageFileSetsWithServices) == 0 {
+		return nil
+	}
+
+	g, err := helper.NewGlobalGeneratedFile(plugin, pluginName)
+	if err != nil {
+		return err
+	}
+	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
+	httpClientGoIdentString := g.QualifiedGoIdent(httpclientPackage.Ident("Client"))
+	loggerGoIdentString := g.QualifiedGoIdent(zapPackage.Ident("Logger"))
+	globalAPIClientGoImportPath, err := helper.NewGlobalGoImportPath("apiclient")
+	if err != nil {
+		return err
+	}
+	globalProviderGoIdent := globalAPIClientGoImportPath.Ident("Provider")
+	globalProviderGoIdentString := g.QualifiedGoIdent(globalProviderGoIdent)
+
+	g.P(`// NewProvider returns a new Provider.`)
+	g.P(`func NewProvider(`)
+	g.P(`logger *`, loggerGoIdentString, `,`)
+	g.P(`httpClient `, httpClientGoIdentString, `,`)
+	g.P(`options `, `...ProviderOption`, `,`)
+	g.P(`) `, globalProviderGoIdentString, `{`)
+	g.P(`providerOptions := &providerOptions{}`)
+	g.P(`for _, option := range options {`)
+	g.P(`option(providerOptions)`)
+	g.P(`}`)
+	g.P(`return &provider{`)
+	for _, goPackageFileSet := range goPackageFileSetsWithServices {
+		apiclienttwirpGoImportPath, err := helper.NewPackageGoImportPath(goPackageFileSet, "apiclienttwirp")
+		if err != nil {
+			return err
+		}
+		newProviderGoIdent := apiclienttwirpGoImportPath.Ident("NewProvider")
+		newProviderGoIdentString := g.QualifiedGoIdent(newProviderGoIdent)
+		optionsName := protogenutil.GetUnexportGoName(
+			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+		) + "ProviderOptions"
+		providerName := protogenutil.GetUnexportGoName(
+			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+		) + "Provider"
+		g.P(providerName, `:`, newProviderGoIdentString, `(`)
+		g.P(`logger,`)
+		g.P(`httpClient,`)
+		g.P(`providerOptions.`, optionsName, `...,`)
+		g.P(`),`)
+	}
+	g.P(`}`)
+	g.P(`}`)
+	g.P()
+	g.P(`type provider struct {`)
+	for _, goPackageFileSet := range goPackageFileSetsWithServices {
+		goImportPath, err := helper.NewPackageGoImportPath(goPackageFileSet, "apiclient")
+		if err != nil {
+			return err
+		}
+		providerGoIdent := goImportPath.Ident("Provider")
+		providerGoIdentString := g.QualifiedGoIdent(providerGoIdent)
+		providerName := protogenutil.GetUnexportGoName(
+			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+		) + "Provider"
+		g.P(providerName, ` `, providerGoIdentString)
+	}
+	g.P(`}`)
+	g.P()
+	g.P(`// ProviderOption is an option for a new Provider.`)
+	g.P(`type ProviderOption func(*providerOptions)`)
+	g.P()
+	g.P(`// WithAddressMapper maps the address with the given function.`)
+	g.P(`func WithAddressMapper(addressMapper func(string) string) ProviderOption {`)
+	g.P(`return func(providerOptions *providerOptions) {`)
+	for _, goPackageFileSet := range goPackageFileSetsWithServices {
+		goImportPath, err := helper.NewPackageGoImportPath(goPackageFileSet, "apiclienttwirp")
+		if err != nil {
+			return err
+		}
+		withAddressMapperGoIdent := goImportPath.Ident("WithAddressMapper")
+		withAddressMapperGoIdentString := g.QualifiedGoIdent(withAddressMapperGoIdent)
+		optionsName := protogenutil.GetUnexportGoName(
+			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+		) + "ProviderOptions"
+		g.P(`providerOptions.`, optionsName, ` = append(`)
+		g.P(`providerOptions.`, optionsName, `,`)
+		g.P(withAddressMapperGoIdentString, `(addressMapper),`)
+		g.P(`)`)
+	}
+	g.P(`}`)
+	g.P(`}`)
+	g.P()
+	g.P(`// WithContextModifierProvider provides a function that  modifies the context before every RPC invocation.`)
+	g.P(`// Applied before the address mapper.`)
+	g.P(`func WithContextModifierProvider(contextModifierProvider func(address string) (func(`, contextGoIdentString, `) `, contextGoIdentString, `, error)) ProviderOption {`)
+	g.P(`return func(providerOptions *providerOptions) {`)
+	for _, goPackageFileSet := range goPackageFileSetsWithServices {
+		goImportPath, err := helper.NewPackageGoImportPath(goPackageFileSet, "apiclienttwirp")
+		if err != nil {
+			return err
+		}
+		withContextModifierProviderGoIdent := goImportPath.Ident("WithContextModifierProvider")
+		withContextModifierProviderGoIdentString := g.QualifiedGoIdent(withContextModifierProviderGoIdent)
+		optionsName := protogenutil.GetUnexportGoName(
+			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+		) + "ProviderOptions"
+		g.P(`providerOptions.`, optionsName, ` = append(`)
+		g.P(`providerOptions.`, optionsName, `,`)
+		g.P(withContextModifierProviderGoIdentString, `(contextModifierProvider),`)
+		g.P(`)`)
+	}
+	g.P(`}`)
+	g.P(`}`)
+	g.P()
+	for _, goPackageFileSet := range goPackageFileSetsWithServices {
+		apiclientGoImportPath, err := helper.NewPackageGoImportPath(goPackageFileSet, "apiclient")
+		if err != nil {
+			return err
+		}
+		providerGoIdent := apiclientGoImportPath.Ident("Provider")
+		providerGoIdentString := g.QualifiedGoIdent(providerGoIdent)
+		providerName := protogenutil.GetUnexportGoName(
+			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+		) + "Provider"
+		funcName := protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage)
+		g.P(`func (p *provider) `, funcName, `() `, providerGoIdentString, `{`)
+		g.P(`return p.`, providerName)
+		g.P(`}`)
+		g.P()
+	}
+	g.P(`type providerOptions struct {`)
+	for _, goPackageFileSet := range goPackageFileSetsWithServices {
+		goImportPath, err := helper.NewPackageGoImportPath(goPackageFileSet, "apiclienttwirp")
+		if err != nil {
+			return err
+		}
+		providerOptionGoIdent := goImportPath.Ident("ProviderOption")
+		providerOptionGoIdentString := g.QualifiedGoIdent(providerOptionGoIdent)
+		optionsName := protogenutil.GetUnexportGoName(
+			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+		) + "ProviderOptions"
+		g.P(optionsName, `[]`, providerOptionGoIdentString)
+	}
+	g.P(`}`)
 	return nil
 }

@@ -1,0 +1,207 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+// AuthzService supplies authorization helpers.
+service AuthzService {
+  // UserCanAddUserOrganizationScopes returns whether the user is authorized
+  // to remove user scopes from an organization.
+  rpc UserCanAddUserOrganizationScopes(UserCanAddUserOrganizationScopesRequest) returns (UserCanAddUserOrganizationScopesResponse);
+  // UserCanRemoveUserOrganizationScopes returns whether the user is authorized
+  // to remove user scopes from an organization.
+  rpc UserCanRemoveUserOrganizationScopes(UserCanRemoveUserOrganizationScopesRequest) returns (UserCanRemoveUserOrganizationScopesResponse);
+  // UserCanCreateOrganizationRepository returns whether the user is authorized
+  // to create repositories in an organization.
+  rpc UserCanCreateOrganizationRepository(UserCanCreateOrganizationRepositoryRequest) returns (UserCanCreateOrganizationRepositoryResponse);
+  // UserCanCreateOrganizationTeam returns whether the user is authorized
+  // to create teams in an organization.
+  rpc UserCanCreateOrganizationTeam(UserCanCreateOrganizationTeamRequest) returns (UserCanCreateOrganizationTeamResponse);
+  // UserCanListOrganizationTeams returns whether the user is authorized
+  // to list teams in an organization.
+  rpc UserCanListOrganizationTeams(UserCanListOrganizationTeamsRequest) returns (UserCanListOrganizationTeamsResponse);
+  // UserCanSeeRepositorySettings returns whether the user is authorized
+  // to see repository settings.
+  rpc UserCanSeeRepositorySettings(UserCanSeeRepositorySettingsRequest) returns (UserCanSeeRepositorySettingsResponse);
+  // UserCanSeeOrganizationSettings returns whether the user is authorized
+  // to see organization settings.
+  rpc UserCanSeeOrganizationSettings(UserCanSeeOrganizationSettingsRequest) returns (UserCanSeeOrganizationSettingsResponse);
+  // UserCanReadPlugin returns whether the user has read access to the specified plugin.
+  rpc UserCanReadPlugin(UserCanReadPluginRequest) returns (UserCanReadPluginResponse);
+  // UserCanCreatePluginVersion returns whether the user is authorized
+  // to create a plugin version under the specified plugin.
+  rpc UserCanCreatePluginVersion(UserCanCreatePluginVersionRequest) returns (UserCanCreatePluginVersionResponse);
+  // UserCanCreateTemplateVersion returns whether the user is authorized
+  // to create a template version under the specified template.
+  rpc UserCanCreateTemplateVersion(UserCanCreateTemplateVersionRequest) returns (UserCanCreateTemplateVersionResponse);
+  // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
+  // a plugin in an organization.
+  rpc UserCanCreateOrganizationPlugin(UserCanCreateOrganizationPluginRequest) returns (UserCanCreateOrganizationPluginResponse);
+  // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
+  // a template in an organization.
+  rpc UserCanCreateOrganizationTemplate(UserCanCreateOrganizationTemplateRequest) returns (UserCanCreateOrganizationTemplateResponse);
+  // UserCanSeePluginSettings returns whether the user is authorized
+  // to see plugin settings.
+  rpc UserCanSeePluginSettings(UserCanSeePluginSettingsRequest) returns (UserCanSeePluginSettingsResponse);
+  // UserCanSeeTemplateSettings returns whether the user is authorized
+  // to see template settings.
+  rpc UserCanSeeTemplateSettings(UserCanSeeTemplateSettingsRequest) returns (UserCanSeeTemplateSettingsResponse);
+}
+
+message UserCanAddUserOrganizationScopesRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized to add user scopes.
+  string organization_id = 1;
+}
+
+message UserCanAddUserOrganizationScopesResponse {
+  bool authorized = 1;
+}
+
+message UserCanRemoveUserOrganizationScopesRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized to remove user scopes.
+  string organization_id = 1;
+}
+
+message UserCanRemoveUserOrganizationScopesResponse {
+  bool authorized = 1;
+}
+
+message UserCanCreateOrganizationRepositoryRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized.
+  string organization_id = 1;
+}
+
+message UserCanCreateOrganizationRepositoryResponse {
+  bool authorized = 1;
+}
+
+message UserCanCreateOrganizationTeamRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized.
+  string organization_id = 1;
+}
+
+message UserCanCreateOrganizationTeamResponse {
+  bool authorized = 1;
+}
+
+message UserCanListOrganizationTeamsRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized.
+  string organization_id = 1;
+}
+
+message UserCanListOrganizationTeamsResponse {
+  bool authorized = 1;
+}
+
+message UserCanSeeRepositorySettingsRequest {
+  // The ID of the repository for which to check
+  // whether the user is authorized.
+  string repository_id = 1;
+}
+
+message UserCanSeeRepositorySettingsResponse {
+  bool authorized = 1;
+}
+
+message UserCanSeeOrganizationSettingsRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized.
+  string organization_id = 1;
+}
+
+message UserCanSeeOrganizationSettingsResponse {
+  bool authorized = 1;
+}
+
+message UserCanReadPluginRequest {
+  // The owner of the plugin.
+  string owner = 1;
+  // The name of the plugin.
+  string name = 2;
+}
+
+message UserCanReadPluginResponse {
+  bool authorized = 1;
+}
+
+message UserCanCreatePluginVersionRequest {
+  // The owner of the plugin.
+  string owner = 1;
+  // The name of the plugin.
+  string name = 2;
+}
+
+message UserCanCreatePluginVersionResponse {
+  bool authorized = 1;
+}
+
+message UserCanCreateTemplateVersionRequest {
+  // The owner of the template.
+  string owner = 1;
+  // The name of the template.
+  string name = 2;
+}
+
+message UserCanCreateTemplateVersionResponse {
+  bool authorized = 1;
+}
+
+message UserCanCreateOrganizationPluginRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized.
+  string organization_id = 1;
+}
+
+message UserCanCreateOrganizationPluginResponse {
+  bool authorized = 1;
+}
+
+message UserCanCreateOrganizationTemplateRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized.
+  string organization_id = 1;
+}
+
+message UserCanCreateOrganizationTemplateResponse {
+  bool authorized = 1;
+}
+
+message UserCanSeePluginSettingsRequest {
+  // The owner of the plugin.
+  string owner = 1;
+  // The name of the plugin.
+  string name = 2;
+}
+
+message UserCanSeePluginSettingsResponse {
+  bool authorized = 1;
+}
+
+message UserCanSeeTemplateSettingsRequest {
+  // The owner of the template.
+  string owner = 1;
+  // The name of the template.
+  string name = 2;
+}
+
+message UserCanSeeTemplateSettingsResponse {
+  bool authorized = 1;
+}

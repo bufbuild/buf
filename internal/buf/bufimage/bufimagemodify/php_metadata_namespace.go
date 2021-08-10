@@ -71,5 +71,5 @@ func phpMetadataNamespaceValue(imageFile bufimage.ImageFile) string {
 	if phpNamespace == "" {
 		return ""
 	}
-	return phpNamespace + `\\GPBMetadata`
+	return phpNamespace + `\GPBMetadata`
 }

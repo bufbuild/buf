@@ -28,13 +28,6 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-var defaultVersion = newVersion(
-	DefaultMajorVersion,
-	DefaultMinorVersion,
-	DefaultPatchVersion,
-	DefaultSuffixVersion,
-)
-
 type binaryHandler struct {
 	logger     *zap.Logger
 	pluginPath string
@@ -62,7 +55,7 @@ func (h *binaryHandler) Handle(
 	unsetRequestVersion := false
 	if request.CompilerVersion == nil {
 		unsetRequestVersion = true
-		request.CompilerVersion = defaultVersion
+		request.CompilerVersion = DefaultVersion
 	}
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
 	if unsetRequestVersion {

@@ -17,6 +17,7 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/module/v1alpha1/module.proto";
+import "buf/alpha/registry/v1alpha1/module.proto";
 
 // ResolveService is the resolve service.
 //
@@ -50,4 +51,52 @@ message GetModulePinsRequest {
 
 message GetModulePinsResponse {
   repeated buf.alpha.module.v1alpha1.ModulePin module_pins = 1;
+}
+
+// LocalResolveService is the local resolve service.
+//
+// This is called by ResolveService implementations, and is enterprise.
+service LocalResolveService {
+  // GetLocalModulePins gets the latest pins for the specified local module references.
+  // It also includes all of the modules transitive dependencies for the specified references.
+  //
+  // We want this for two reasons:
+  //
+  // 1. It makes it easy to say "we know we're looking for owner/repo on this specific remote".
+  //    While we could just do this in GetModulePins by being aware of what our remote is
+  //    (something we probably still need to know, DNS problems aside, which are more
+  //    theoretical), this helps.
+  // 2. Having a separate method makes us able to say "do not make decisions about what
+  //    wins between competing pins for the same repo". This should only be done in
+  //    GetModulePins, not in this function, i.e. only done at the top level.
+  rpc GetLocalModulePins(GetLocalModulePinsRequest) returns (GetLocalModulePinsResponse);
+}
+
+message GetLocalModulePinsRequest {
+  repeated buf.alpha.registry.v1alpha1.LocalModuleReference local_module_references = 1;
+}
+
+enum ResolvedReferenceType {
+  RESOLVED_REFERENCE_TYPE_UNSPECIFIED = 0;
+  RESOLVED_REFERENCE_TYPE_COMMIT = 1;
+  RESOLVED_REFERENCE_TYPE_BRANCH = 2;
+  RESOLVED_REFERENCE_TYPE_TAG = 3;
+}
+
+message LocalModuleResolveResult {
+  // A copy of the reference that was resolved.
+  buf.alpha.registry.v1alpha1.LocalModuleReference reference = 1;
+  // The pin the reference resolved to.
+  buf.alpha.registry.v1alpha1.LocalModulePin pin = 2;
+  // The type the reference resolved as.
+  ResolvedReferenceType resolved_reference_type = 3;
+}
+
+message GetLocalModulePinsResponse {
+  repeated LocalModuleResolveResult local_module_resolve_results = 1;
+
+  // dependencies are the dependencies of the LocalModulePins.
+  //
+  // This includes the transitive deps.
+  repeated buf.alpha.module.v1alpha1.ModulePin dependencies = 2;
 }

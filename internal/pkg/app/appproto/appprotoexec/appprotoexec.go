@@ -29,13 +29,13 @@ import (
 
 const (
 	// DefaultMajorVersion is the default major version.
-	DefaultMajorVersion = 3
+	defaultMajorVersion = 3
 	// DefaultMinorVersion is the default minor version.
-	DefaultMinorVersion = 17
+	defaultMinorVersion = 17
 	// DefaultPatchVersion is the default patch version.
-	DefaultPatchVersion = 3
+	defaultPatchVersion = 3
 	// DefaultSuffixVersion is the default suffix version.
-	DefaultSuffixVersion = ""
+	defaultSuffixVersion = ""
 )
 
 var (
@@ -52,6 +52,14 @@ var (
 		"ruby":   {},
 		"kotlin": {},
 	}
+
+	// DefaultVersion represents the default version to use as compiler version for codegen requests.
+	DefaultVersion = newVersion(
+		defaultMajorVersion,
+		defaultMinorVersion,
+		defaultPatchVersion,
+		defaultSuffixVersion,
+	)
 )
 
 // NewHandler returns a new Handler based on the plugin name and optional path.

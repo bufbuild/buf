@@ -28,10 +28,19 @@ const (
 )
 
 func main() {
-	appproto.Main(context.Background(), protogenutil.NewNamedPerGoPackageHandler(handle))
+	appproto.Main(context.Background(), protogenutil.NewNamedGoPackageHandler(handle))
 }
 
-func handle(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPackageFileSet *protogenutil.GoPackageFileSet) error {
+func handle(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPackageFileSets []*protogenutil.GoPackageFileSet) error {
+	for _, goPackageFileSet := range goPackageFileSets {
+		if err := handleGoPackage(helper, plugin, goPackageFileSet); err != nil {
+			return err
+		}
+	}
+	return handleGlobal(helper, plugin, goPackageFileSets)
+}
+
+func handleGoPackage(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPackageFileSet *protogenutil.GoPackageFileSet) error {
 	services := goPackageFileSet.Services()
 	if len(services) == 0 {
 		return nil
@@ -68,5 +77,35 @@ func handle(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPackageF
 		g.P(`}`)
 		g.P()
 	}
+	return nil
+}
+
+func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPackageFileSets []*protogenutil.GoPackageFileSet) error {
+	goPackageFileSetsWithServices := make([]*protogenutil.GoPackageFileSet, 0, len(goPackageFileSets))
+	for _, goPackageFileSet := range goPackageFileSets {
+		if len(goPackageFileSet.Services()) > 0 {
+			goPackageFileSetsWithServices = append(goPackageFileSetsWithServices, goPackageFileSet)
+		}
+	}
+	if len(goPackageFileSetsWithServices) == 0 {
+		return nil
+	}
+	g, err := helper.NewGlobalGeneratedFile(plugin, pluginName)
+	if err != nil {
+		return err
+	}
+	g.P(`// Provider provides all Providers.`)
+	g.P(`type Provider interface {`)
+	for _, goPackageFileSet := range goPackageFileSetsWithServices {
+		goImportPath, err := helper.NewPackageGoImportPath(goPackageFileSet, pluginName)
+		if err != nil {
+			return err
+		}
+		providerGoIdent := goImportPath.Ident("Provider")
+		providerGoIdentString := g.QualifiedGoIdent(providerGoIdent)
+		funcName := protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage)
+		g.P(funcName, `() `, providerGoIdentString)
+	}
+	g.P(`}`)
 	return nil
 }

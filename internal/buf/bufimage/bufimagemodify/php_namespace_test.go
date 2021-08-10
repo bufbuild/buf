@@ -107,10 +107,10 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 
 func TestPhpNamespaceOptions(t *testing.T) {
 	t.Parallel()
-	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "single"), `Acme\\V1`)
-	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "double"), `Acme\\Weather\\V1`)
-	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "triple"), `Acme\\Weather\\Data\\V1`)
-	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "reserved"), `Acme\\Error_\\V1`)
+	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "single"), `Acme\V1`)
+	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "double"), `Acme\Weather\V1`)
+	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "triple"), `Acme\Weather\Data\V1`)
+	testPhpNamespaceOptions(t, filepath.Join("testdata", "phpoptions", "reserved"), `Acme\Error_\V1`)
 }
 
 func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
@@ -162,7 +162,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "wktimport")
-	modifiedPhpNamespace := `Acme\\Weather\\V1alpha1`
+	modifiedPhpNamespace := `Acme\Weather\V1alpha1`
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
