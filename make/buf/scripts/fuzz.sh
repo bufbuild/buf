@@ -4,8 +4,9 @@ set -e
 
 DIR="$(CDPATH= cd "$(dirname "${0}")/../../.." && pwd)"
 cd "${DIR}"
-FUZZ_DIR="${FUZZ_DIR:-$(pwd)/.tmp/gofuzz}"
-GO_FUZZ_VERSION="${GO_FUZZ_VERSION:-master}"
+
+[ -n "$FUZZ_DIR" ] || (echo "FUZZ_DIR is required" && exit 1)
+[ -n "$GO_FUZZ_VERSION" ] || (echo "GO_FUZZ_VERSION is required" && exit 1)
 
 git diff --exit-code --quiet go.mod go.sum || (echo "go.sum and go.mod must be unmodified" && exit 1)
 
