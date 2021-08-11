@@ -29,6 +29,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/internal/buftesting"
 	"github.com/bufbuild/buf/internal/pkg/prototesting"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/bufbuild/buf/internal/pkg/tmp"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"golang.org/x/tools/txtar"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -49,42 +51,37 @@ func Fuzz(data []byte) int {
 }
 
 func fuzz(ctx context.Context, data []byte) (_ *fuzzResult, retErr error) {
-	dirPath, err := os.MkdirTemp("", "buffuzz")
+	dir, err := tmp.NewDir()
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		err := os.RemoveAll(dirPath)
-		if retErr == nil {
-			retErr = err
-		}
+		retErr = multierr.Append(retErr, dir.Close())
 	}()
-	err = untxtar(data, dirPath)
-	if err != nil {
+	if err := untxtar(data, dir.AbsPath()); err != nil {
 		return nil, err
 	}
 
-	filePaths, err := buftesting.GetProtocFilePathsErr(ctx, dirPath, 0)
+	filePaths, err := buftesting.GetProtocFilePathsErr(ctx, dir.AbsPath(), 0)
 	if err != nil {
 		return nil, err
 	}
 
 	actualProtocFileDescriptorSet, protocErr := prototesting.GetProtocFileDescriptorSet(
 		ctx,
-		[]string{dirPath},
+		[]string{dir.AbsPath()},
 		filePaths,
 		false,
 		false,
 	)
 
-	image, bufAnnotations, bufErr := fuzzBuild(ctx, dirPath)
-	return &fuzzResult{
-		bufAnnotations:                bufAnnotations,
-		bufErr:                        bufErr,
-		protocErr:                     protocErr,
-		actualProtocFileDescriptorSet: actualProtocFileDescriptorSet,
-		image:                         image,
-	}, nil
+	image, bufAnnotations, bufErr := fuzzBuild(ctx, dir.AbsPath())
+	return newFuzzResult(
+		bufAnnotations,
+		bufErr,
+		protocErr,
+		actualProtocFileDescriptorSet,
+		image), nil
 }
 
 // fuzzBuild does a builder.Build for a fuzz test.
@@ -143,8 +140,8 @@ func txtarParse(data []byte) (_ *txtar.Archive, retErr error) {
 	return txtar.Parse(data), nil
 }
 
-// untxtar extracts txtar data to destDir.
-func untxtar(data []byte, destDir string) error {
+// untxtar extracts txtar data to destDirPath.
+func untxtar(data []byte, destDirPath string) error {
 	archive, err := txtarParse(data)
 	if err != nil {
 		return err
@@ -153,19 +150,17 @@ func untxtar(data []byte, destDir string) error {
 		return fmt.Errorf("txtar contains no files")
 	}
 	for _, file := range archive.Files {
-		dir := filepath.Dir(file.Name)
-		if dir != "" {
-			err = os.MkdirAll(filepath.Join(destDir, dir), 0700)
-			if err != nil {
+		dirPath := filepath.Dir(file.Name)
+		if dirPath != "" {
+			if err := os.MkdirAll(filepath.Join(destDirPath, dirPath), 0700); err != nil {
 				return err
 			}
 		}
-		err = os.WriteFile(
-			filepath.Join(destDir, file.Name),
+		if err := os.WriteFile(
+			filepath.Join(destDirPath, file.Name),
 			file.Data,
 			0600,
-		)
-		if err != nil {
+		); err != nil {
 			return err
 		}
 	}
@@ -180,10 +175,25 @@ type fuzzResult struct {
 	image                         bufimage.Image
 }
 
+func newFuzzResult(
+	bufAnnotations []bufanalysis.FileAnnotation,
+	bufErr error,
+	protocErr error,
+	actualProtocFileDescriptorSet *descriptorpb.FileDescriptorSet,
+	image bufimage.Image,
+) *fuzzResult {
+	return &fuzzResult{
+		bufAnnotations:                bufAnnotations,
+		bufErr:                        bufErr,
+		protocErr:                     protocErr,
+		actualProtocFileDescriptorSet: actualProtocFileDescriptorSet,
+		image:                         image,
+	}
+}
+
 // panicOrN panics if there is an error or returns the appropriate value for Fuzz to return.
 func (f *fuzzResult) panicOrN(ctx context.Context) int {
-	err := f.error(ctx)
-	if err != nil {
+	if err := f.error(ctx); err != nil {
 		panic(err.Error())
 	}
 	// This will return 1 for valid protobufs and 0 for invalid in order to encourage the fuzzer to generate more
@@ -196,9 +206,6 @@ func (f *fuzzResult) panicOrN(ctx context.Context) int {
 
 // error returns an error that should cause Fuzz to panic.
 func (f *fuzzResult) error(ctx context.Context) error {
-	if f == nil {
-		return nil
-	}
 	if f.protocErr != nil {
 		if f.bufErr == nil && len(f.bufAnnotations) == 0 {
 			return fmt.Errorf("protoc has error but buf does not: %v", f.protocErr)
