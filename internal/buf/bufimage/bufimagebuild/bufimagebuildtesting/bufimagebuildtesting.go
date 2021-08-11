@@ -142,6 +142,7 @@ func untxtar(data []byte, destDir string) (retErr error) {
 	if len(archive.Files) == 0 {
 		return fmt.Errorf("txtar contains no files")
 	}
+	var err error
 	for _, file := range archive.Files {
 		dir := filepath.Dir(file.Name)
 		if dir != "" {
