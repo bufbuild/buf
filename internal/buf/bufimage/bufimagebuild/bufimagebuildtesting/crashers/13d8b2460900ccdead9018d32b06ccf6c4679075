@@ -1,0 +1,3 @@
+-- .proto --
+syntax="proto3";package a;message e{int32 s=1;int32 _=2;int32 l=3;int32 o=4;int32 e=5;int32 _r_=6;int32 __v=7;}message o{message e{message r{int32 s=1;int32 _=2;int32 l=3;int32 o=4;int32 e=5;int32 _r_=6;int32 __v=7;}int32 s=1;int32 _=2;int32 l=3;int32 o=4;int32 e=5;int32 _r_=6;int32 __v=7;}}message v{int32 s=1;int32 _=2;int32 s_=3;int32 __=4;}
+-- l --

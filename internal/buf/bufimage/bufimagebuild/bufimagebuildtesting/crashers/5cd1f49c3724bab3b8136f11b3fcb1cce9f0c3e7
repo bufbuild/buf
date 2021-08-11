@@ -1,0 +1,40 @@
+-- a.proto --
+syntax="proto3";
+
+//
+//
+
+package a;
+
+import"google/protobuf/empty.proto";
+
+//
+//
+enum o{
+//
+option allow_alias=true;
+//
+e=0;
+n=1;
+w=1;
+}
+
+//
+//
+//
+message oo{
+//
+//
+//
+message r{
+//
+//
+message e{
+//
+//
+enum m{
+//
+option allow_alias=true;
+//
+enumFooone=0;
+       enumFooOne=1;o=1;}int64 oo=1;oneof r{int64 z=2;}}int64 o=1;oneof r{int64 z=2;}}int64 o=1;oneof r{int64 z=2;}}

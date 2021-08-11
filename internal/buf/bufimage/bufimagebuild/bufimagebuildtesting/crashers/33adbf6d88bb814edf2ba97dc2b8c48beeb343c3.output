@@ -1,0 +1,15 @@
+panic: protoc has error but buf does not: /Users/wroden/.cache/buf/Darwin/x86_64/bin/protoc returned error: exit status 1 .proto:1:285: The JSON camel-case name of field "__" conflicts with field "_". This is not allowed in proto3.
+.proto:1:328: The JSON camel-case name of field "s_" conflicts with field "s". This is not allowed in proto3.
+.proto:1:339: The JSON camel-case name of field "__" conflicts with field "_". This is not allowed in proto3.
+
+
+goroutine 1 [running]:
+github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting.(*fuzzResult).panicOrN(0xc00031b900, 0x193f220, 0xc0001b4000, 0x16d)
+	/Users/wroden/repos/WillAbides/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/bufimagebuildtesting.go:205 +0x16c
+github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting.Fuzz(0xc381000, 0x16d, 0x16d, 0x4)
+	/Users/wroden/repos/WillAbides/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/bufimagebuildtesting.go:49 +0x118
+go-fuzz-dep.Main(0xc00055ff70, 0x1, 0x1)
+	go-fuzz-dep/main.go:36 +0x1b8
+main.main()
+	github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/go.fuzz.main/main.go:15 +0x52
+exit status 2

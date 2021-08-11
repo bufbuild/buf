@@ -1,0 +1,14 @@
+panic: protoc has error but buf does not: /Users/wroden/.cache/buf/Darwin/x86_64/bin/protoc returned error: exit status 1 [libprotobuf WARNING ../../src/google/protobuf/compiler/parser.cc:651] No syntax specified for the proto file: 0.proto. Please use 'syntax = "proto2";' or 'syntax = "proto3";' to specify a syntax version. (Defaulted to proto2 syntax.)
+0.proto:1:203: Need space between number and identifier.
+
+
+goroutine 1 [running]:
+github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting.(*fuzzResult).panicOrN(0xc000224cd0, 0x193f220, 0xc00002c108, 0x161)
+	/Users/wroden/repos/WillAbides/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/bufimagebuildtesting.go:205 +0x16c
+github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting.Fuzz(0xaa21000, 0x161, 0x161, 0x3)
+	/Users/wroden/repos/WillAbides/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/bufimagebuildtesting.go:49 +0x118
+go-fuzz-dep.Main(0xc00053ff70, 0x1, 0x1)
+	go-fuzz-dep/main.go:36 +0x1b8
+main.main()
+	github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/go.fuzz.main/main.go:15 +0x52
+exit status 2

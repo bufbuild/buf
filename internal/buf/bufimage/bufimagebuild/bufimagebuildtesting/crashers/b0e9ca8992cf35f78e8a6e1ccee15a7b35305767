@@ -1,0 +1,22 @@
+-- buf/foo/bar/bar.proto --
+syntax="proto3";package buf.foo.bar;message o{int64 o=1;}message r{int64 e=3;}enum z{D=0;}
+-- o --
+;
+}
+-- buf/foo/buf.proto --
+syntax = "proto3";
+
+package buf.foo;
+
+message Foo {
+  int64 oneTwo = 1;
+}
+
+message bar {
+  int64 three = 3;
+}
+
+enum baz {
+  BAZ_UNSPECIFIED = 0;
+}
+-- buf.yaml --

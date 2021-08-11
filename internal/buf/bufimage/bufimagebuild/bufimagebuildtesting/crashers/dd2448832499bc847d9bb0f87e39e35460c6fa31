@@ -1,0 +1,17 @@
+-- buf/foo/baz/baz.proto --
+syntax="proto3";package buf.foo.baz;message o{int64 o=1;}message r{int64 e=3;}enum z{D=0;}
+-- buf/foo/buf.proto --
+syntax="proto3";
+
+package buf.foo;
+
+message o{
+int64 o=1;
+}
+
+message r{
+int64 e=3;
+}
+
+enum baz{D=0;}
+-- l --

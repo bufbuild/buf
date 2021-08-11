@@ -1,0 +1,18 @@
+	"-- 0.proto --\nenum M" +
+	"yEnum{t=0;t1=1;t0=10" +
+	";}message Test{requi" +
+	"red string f=1;requi" +
+	"red int64 f2=2;repea" +
+	"ted int64 a=3;repeat" +
+	"ed int32 b=4;repeate" +
+	"d int32 c=5[packed=t" +
+	"rue];repeated Pair s" +
+	"=6;optional bytes bb" +
+	"=7;extensions 10to m" +
+	"ax;}message Pair{req" +
+	"uired string y=1;opt" +
+	"ional string e=2;}ex" +
+	"tend Test{optional b" +
+	"ool tt=10;optional d" +
+	"ouble g=11;repeated " +
+	"MyEnum m=12;}"

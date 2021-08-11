@@ -1,0 +1,12 @@
+panic: buf has file annotations but protoc has no error: [/var/folders/gt/cvjl_x695bg3n1p617s0gs6c0000gn/T/buffuzz136699593/000.proto:1:1:syntax error: unexpected $unk]
+
+goroutine 1 [running]:
+github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting.(*fuzzResult).panicOrN(0xc000270f00, 0x193f220, 0xc00002c108, 0x13)
+	/Users/wroden/repos/WillAbides/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/bufimagebuildtesting.go:205 +0x16c
+github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting.Fuzz(0xb210000, 0x13, 0x13, 0x4)
+	/Users/wroden/repos/WillAbides/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/bufimagebuildtesting.go:49 +0x118
+go-fuzz-dep.Main(0xc00045ff70, 0x1, 0x1)
+	go-fuzz-dep/main.go:36 +0x1b8
+main.main()
+	github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/go.fuzz.main/main.go:15 +0x52
+exit status 2

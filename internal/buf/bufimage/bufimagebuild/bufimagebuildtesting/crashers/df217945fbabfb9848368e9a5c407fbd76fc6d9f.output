@@ -1,0 +1,13 @@
+panic: protoc has error but buf does not: /Users/wroden/.cache/buf/Darwin/x86_64/bin/protoc returned error: exit status 1 a.proto:40:9: Enum name enumFooOne has the same name as enumFooone if you ignore case and strip out the enum name prefix (if any). This is error-prone and can lead to undefined behavior. Please avoid doing this. If you are using allow_alias, please assign the same numeric value to both enums.
+
+
+goroutine 1 [running]:
+github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting.(*fuzzResult).panicOrN(0xc000298cd0, 0x193f220, 0xc000132000, 0x50c)
+	/Users/wroden/repos/WillAbides/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/bufimagebuildtesting.go:205 +0x16c
+github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting.Fuzz(0x4270000, 0x50c, 0x50c, 0x4)
+	/Users/wroden/repos/WillAbides/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/bufimagebuildtesting.go:49 +0x118
+go-fuzz-dep.Main(0xc0004dff70, 0x1, 0x1)
+	go-fuzz-dep/main.go:36 +0x1b8
+main.main()
+	github.com/bufbuild/buf/internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/go.fuzz.main/main.go:15 +0x52
+exit status 2

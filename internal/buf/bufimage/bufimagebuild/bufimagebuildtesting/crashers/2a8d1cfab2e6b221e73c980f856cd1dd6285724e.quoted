@@ -1,0 +1,32 @@
+	"-- a.proto --\nsyntax" +
+	"=\"proto3\";\n\npackage " +
+	"a;\n\nimport\"google/pr" +
+	"otobuf/empty.proto\";" +
+	"\n\nmessage One{}\nmess" +
+	"age Two{}\nmessage Th" +
+	"ree{}\nmessage Four{}" +
+	"\nmessage Five{}\nmess" +
+	"age Six{}\nmessage Se" +
+	"ven{}\nmessage Eight{" +
+	"}\nmessage Nine{}\nmes" +
+	"sage Ten{}\nmessage E" +
+	"leven{}\nmessage Twel" +
+	"ve{}\n\nservice o{\n  r" +
+	"pc On(One) returns (" +
+	"Two){}rpc Tw(Three)r" +
+	"eturns(Three){}rpc T" +
+	"hree(Four)returns(On" +
+	"e){}rpc r(Five)retur" +
+	"ns(Six){}rpc e(Three" +
+	")returns(Seven){}rpc" +
+	" x(Eight)returns(Nin" +
+	"e){}rpc n(google.pro" +
+	"tobuf.Empty)returns(" +
+	"Ten){}rpc t(Eleven)r" +
+	"eturns(google.protob" +
+	"uf.Empty){}rpc ne(go" +
+	"ogle.protobuf.Empty)" +
+	"returns(google.proto" +
+	"buf.Empty){}rpc en(T" +
+	"welve)returns(Twelve" +
+	"){}}\n-- o --\n"

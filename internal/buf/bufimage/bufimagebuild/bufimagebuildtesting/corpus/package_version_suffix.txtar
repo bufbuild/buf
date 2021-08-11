@@ -1,0 +1,55 @@
+-- buf.yaml --
+version: v1
+lint:
+  use:
+    - PACKAGE_VERSION_SUFFIX
+-- foo.proto --
+syntax = "proto3";
+
+package foo;
+-- foo_bar.proto --
+syntax = "proto3";
+
+package foo.bar;
+-- foo_bar_v0beta1.proto --
+syntax = "proto3";
+
+package foo.bar.v0beta1;
+-- foo_bar_v1.proto --
+syntax = "proto3";
+
+package foo.bar.v1;
+-- foo_bar_v1beta1.proto --
+syntax = "proto3";
+
+package foo.bar.v1beta1;
+-- foo_bar_v1test.proto --
+syntax = "proto3";
+
+package foo.bar.v1test;
+-- foo_bar_v1test_foo.proto --
+syntax = "proto3";
+
+package foo.bar.v1test.foo;
+-- foo_bar_v1testfoo.proto --
+syntax = "proto3";
+
+package foo.bar.v1testfoo;
+-- foo_bar_v2.proto --
+syntax = "proto3";
+
+package foo.bar.v2;
+-- foo_bar_v2beta0.proto --
+syntax = "proto3";
+
+package foo.bar.v2beta0;
+-- foo_bar_vv1beta1.proto --
+syntax = "proto3";
+
+package foo.bar.vv1beta1;
+-- no_package.proto --
+syntax = "proto3";
+-- v1.proto --
+syntax = "proto3";
+
+package v1;

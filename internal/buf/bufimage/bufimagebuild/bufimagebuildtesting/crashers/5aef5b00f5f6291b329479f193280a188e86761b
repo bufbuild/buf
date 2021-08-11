@@ -1,0 +1,3 @@
+-- f00.proto --
+
+message A{}

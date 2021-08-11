@@ -1,0 +1,5 @@
+-- foo.proto --
+syntax="proto2";
+message A{
+
+extensions 100to max;}

@@ -1,0 +1,40 @@
+-- a.proto --
+syntax = "proto3";
+
+package a;
+
+import "sub/sub1.proto";
+import "sub/sub2.proto";
+import "one/one.proto";
+
+message A {
+  sub.Sub2 sub2 = 1;
+}
+-- buf.yaml --
+version: v1
+lint:
+  use:
+    - IMPORT_USED
+-- one/one.proto --
+syntax = "proto3";
+
+package one;
+
+import "sub/sub1.proto";
+import "sub/sub2.proto";
+
+message One {
+  sub.Sub1 sub1 = 1;
+}
+-- sub/sub1.proto --
+syntax = "proto3";
+
+package sub;
+
+message Sub1 {}
+-- sub/sub2.proto --
+syntax = "proto3";
+
+package sub;
+
+message Sub2 {}
