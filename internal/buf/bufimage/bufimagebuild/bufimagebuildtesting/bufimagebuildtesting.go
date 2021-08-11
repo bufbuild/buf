@@ -183,6 +183,8 @@ func (f *fuzzResult) panicOrN(ctx context.Context) int {
 	if err != nil {
 		panic(err.Error())
 	}
+	// This will return 1 for valid protobufs and 0 for invalid in order to encourage the fuzzer to generate more
+	// realistic looking data.
 	if f.protocErr == nil {
 		return 1
 	}

@@ -53,6 +53,8 @@ func TestCrashers(t *testing.T) {
 	dir, err := os.ReadDir("crashers")
 	require.NoError(t, err)
 	for _, entry := range dir {
+		// We only want files that don't end in .quoted or .output. *.quoted and *.output files are created by go-fuzz
+		// for human consumption. They are not valid test data.
 		if entry.IsDir() ||
 			strings.HasSuffix(entry.Name(), ".quoted") ||
 			strings.HasSuffix(entry.Name(), ".output") {
