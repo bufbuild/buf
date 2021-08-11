@@ -2,7 +2,8 @@
 
 set -e
 
-CDPATH="" cd "$(dirname "${0}")/../../.."
+DIR="$(CDPATH= cd "$(dirname "${0}")/../../.." && pwd)"
+cd "${DIR}"
 FUZZ_DIR="${FUZZ_DIR:-$(pwd)/.tmp/gofuzz}"
 GO_FUZZ_VERSION="${GO_FUZZ_VERSION:-master}"
 

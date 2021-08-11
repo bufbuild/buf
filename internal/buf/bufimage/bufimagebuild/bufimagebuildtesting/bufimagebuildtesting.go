@@ -49,15 +49,15 @@ func Fuzz(data []byte) int {
 	return result.panicOrN(ctx)
 }
 
-func fuzz(ctx context.Context, data []byte) (_ *fuzzResult, err error) {
+func fuzz(ctx context.Context, data []byte) (_ *fuzzResult, retErr error) {
 	dirPath, err := ioutil.TempDir("", "buffuzz")
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
-		e := os.RemoveAll(dirPath)
-		if err == nil {
-			err = e
+		err := os.RemoveAll(dirPath)
+		if retErr == nil {
+			retErr = err
 		}
 	}()
 	err = untxtar(data, dirPath)
@@ -132,10 +132,10 @@ func fuzzGetModuleFileSet(ctx context.Context, dirPath string) (bufmodule.Module
 }
 
 // untxtar extracts txtar data to destDir.
-func untxtar(data []byte, destDir string) (err error) {
+func untxtar(data []byte, destDir string) (retErr error) {
 	defer func() {
 		if p := recover(); p != nil {
-			err = fmt.Errorf("panic: %v", p)
+			retErr = fmt.Errorf("panic: %v", p)
 		}
 	}()
 	archive := txtar.Parse(data)
@@ -150,7 +150,7 @@ func untxtar(data []byte, destDir string) (err error) {
 				return err
 			}
 		}
-		err = ioutil.WriteFile(
+		err = os.WriteFile(
 			filepath.Join(destDir, file.Name),
 			file.Data,
 			0600,
