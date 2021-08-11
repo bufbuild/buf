@@ -33,6 +33,11 @@ LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2021
 LICENSE_HEADER_IGNORES := \/testdata enterprise
 
+# TODO: remove when https://github.com/census-ecosystem/opencensus-go-exporter-prometheus/issues/27 is fixed
+# https://github.com/census-ecosystem/opencensus-go-exporter-prometheus/commits/master 20210621 checked 20210806
+PROMETHEUS_EXPORTER_VERSION := f3a7283b300296b21a74844bcdca927845f89a07
+GO_GET_PRE_MOD_TIDY_PKGS := contrib.go.opencensus.io/exporter/prometheus@$(PROMETHEUS_EXPORTER_VERSION)
+
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk
 include make/go/dep_protoc.mk
