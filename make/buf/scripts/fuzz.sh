@@ -7,12 +7,17 @@ cd "${DIR}"
 
 [ -n "$FUZZ_DIR" ] || (echo "FUZZ_DIR is required" && exit 1)
 [ -n "$GO_FUZZ_VERSION" ] || (echo "GO_FUZZ_VERSION is required" && exit 1)
+[ -n "$CACHE_BIN" ] || (echo "CACHE_BIN is required" && exit 1)
 
 git diff --exit-code --quiet go.mod go.sum || (echo "go.sum and go.mod must be unmodified" && exit 1)
 
 go get github.com/dvyukov/go-fuzz/go-fuzz-dep@"$GO_FUZZ_VERSION"
+GOBIN="$CACHE_BIN" go install github.com/dvyukov/go-fuzz/go-fuzz@"$GO_FUZZ_VERSION"
+GOBIN="$CACHE_BIN" go install github.com/dvyukov/go-fuzz/go-fuzz-build@"$GO_FUZZ_VERSION"
+
 trap "git checkout -- go.mod go.sum" EXIT
 
+rm -rf "$FUZZ_DIR"
 mkdir -p "$FUZZ_DIR"/corpus "$FUZZ_DIR"/crashers
 cp internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/corpus/* "$FUZZ_DIR"/corpus
 cp internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/crashers/* "$FUZZ_DIR"/crashers

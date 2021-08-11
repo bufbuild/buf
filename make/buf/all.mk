@@ -148,6 +148,8 @@ bufrelease:
 	DOCKER_IMAGE=golang:1.16.6-buster bash make/buf/scripts/release.bash
 
 .PHONY: gofuzz
-gofuzz: $(GO_FUZZ)
-	@rm -rf $(TMP)/gofuzz
-	FUZZ_DIR=$(abspath $(TMP))/gofuzz GO_FUZZ_VERSION=$(GO_FUZZ_VERSION) make/buf/scripts/fuzz.sh
+gofuzz:
+	FUZZ_DIR=$(abspath $(TMP))/gofuzz \
+	GO_FUZZ_VERSION=$(GO_FUZZ_VERSION) \
+	CACHE_BIN=$(CACHE_BIN) \
+	make/buf/scripts/fuzz.sh
