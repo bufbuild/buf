@@ -12,13 +12,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-  schedule:
-    # Runs at 01:30 on Sundays. This is to catch
-    # existing problems in the code from updated rules.
-    - cron: "30 1 * * 0"
 jobs:
   codeql:
     runs-on: ubuntu-latest
