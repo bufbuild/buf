@@ -150,4 +150,4 @@ bufrelease:
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)
 	@rm -rf $(TMP)/gofuzz
-	FUZZ_DIR=$(abspath $(TMP))/gofuzz GO_FUZZ_VERSION=$(GO_FUZZ_VERSION) make/buf/scripts/fuzz.sh
+	FUZZ_DIR=$(abspath $(TMP))/gofuzz GO_FUZZ_VERSION=$(GO_FUZZ_VERSION) make/buf/scripts/fuzz.bash
