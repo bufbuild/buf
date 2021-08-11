@@ -146,6 +146,9 @@ func txtarParse(data []byte) (_ *txtar.Archive, retErr error) {
 // untxtar extracts txtar data to destDir.
 func untxtar(data []byte, destDir string) error {
 	archive, err := txtarParse(data)
+	if err != nil {
+		return err
+	}
 	if len(archive.Files) == 0 {
 		return fmt.Errorf("txtar contains no files")
 	}
