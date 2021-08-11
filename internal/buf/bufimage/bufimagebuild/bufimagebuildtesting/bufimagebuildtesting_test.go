@@ -63,7 +63,6 @@ func TestCrashers(t *testing.T) {
 
 // testFuzz runs a fuzz test and fails if data is invalid or if the Fuzz would have panicked
 func testFuzz(t *testing.T, data []byte) {
-	t.Helper()
 	ctx := context.Background()
 	result, err := fuzz(ctx, data)
 	require.NoError(t, err)
