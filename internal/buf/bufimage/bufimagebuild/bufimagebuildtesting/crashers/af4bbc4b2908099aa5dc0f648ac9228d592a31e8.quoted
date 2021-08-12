@@ -1,4 +1,0 @@
-	"-- foo.proto --\nsynt" +
-	"ax=\"proto2\";\nmessage" +
-	" A{\n\nextensions 100t" +
-	"o max;}"
