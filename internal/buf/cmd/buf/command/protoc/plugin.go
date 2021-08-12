@@ -58,6 +58,7 @@ func executePlugin(
 			images,
 			strings.Join(pluginInfo.Opt, ","),
 			appprotoexec.DefaultVersion,
+			false,
 		),
 		appprotoos.GenerateWithPluginPath(pluginInfo.Path),
 	); err != nil {

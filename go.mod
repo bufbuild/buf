@@ -9,7 +9,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-cmp v0.5.6
 	github.com/jhump/protoreflect v1.9.0
-	github.com/klauspost/compress v1.13.3
+	github.com/klauspost/compress v1.13.4
 	github.com/klauspost/pgzip v1.2.5
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.6.0
