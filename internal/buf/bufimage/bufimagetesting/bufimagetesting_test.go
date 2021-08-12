@@ -454,7 +454,7 @@ func TestBasic(t *testing.T) {
 	require.Equal(
 		t,
 		codeGeneratorRequest,
-		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil),
+		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false),
 	)
 	newImage, err = bufimage.NewImageForCodeGeneratorRequest(codeGeneratorRequest)
 	require.NoError(t, err)

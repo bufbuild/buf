@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufmodule"
+	"github.com/bufbuild/buf/internal/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/protodescriptor"
@@ -342,7 +343,13 @@ func ImageToFileDescriptorProtos(image Image) []*descriptorpb.FileDescriptorProt
 // ImageToCodeGeneratorRequest returns a new CodeGeneratorRequest for the Image.
 //
 // All non-imports are added as files to generate.
-func ImageToCodeGeneratorRequest(image Image, parameter string, compilerVersion *pluginpb.Version) *pluginpb.CodeGeneratorRequest {
+// If includeImports is set, all non-well-known-type imports are also added as files to generate.
+func ImageToCodeGeneratorRequest(
+	image Image,
+	parameter string,
+	compilerVersion *pluginpb.Version,
+	includeImports bool,
+) *pluginpb.CodeGeneratorRequest {
 	imageFiles := image.Files()
 	request := &pluginpb.CodeGeneratorRequest{
 		ProtoFile:       make([]*descriptorpb.FileDescriptorProto, len(imageFiles)),
@@ -353,7 +360,7 @@ func ImageToCodeGeneratorRequest(image Image, parameter string, compilerVersion 
 	}
 	for i, imageFile := range imageFiles {
 		request.ProtoFile[i] = imageFile.Proto()
-		if !imageFile.IsImport() {
+		if (includeImports && !datawkt.Exists(imageFile.Path())) || !imageFile.IsImport() {
 			request.FileToGenerate = append(request.FileToGenerate, imageFile.Path())
 		}
 	}
@@ -363,10 +370,21 @@ func ImageToCodeGeneratorRequest(image Image, parameter string, compilerVersion 
 // ImagesToCodeGeneratorRequests converts the Images to CodeGeneratorRequests.
 //
 // All non-imports are added as files to generate.
-func ImagesToCodeGeneratorRequests(images []Image, parameter string, compilerVersion *pluginpb.Version) []*pluginpb.CodeGeneratorRequest {
+// If includeImports is set, all non-well-known-type imports are also added as files to generate.
+func ImagesToCodeGeneratorRequests(
+	images []Image,
+	parameter string,
+	compilerVersion *pluginpb.Version,
+	includeImports bool,
+) []*pluginpb.CodeGeneratorRequest {
 	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
 	for i, image := range images {
-		requests[i] = ImageToCodeGeneratorRequest(image, parameter, compilerVersion)
+		requests[i] = ImageToCodeGeneratorRequest(
+			image,
+			parameter,
+			compilerVersion,
+			includeImports,
+		)
 	}
 	return requests
 }

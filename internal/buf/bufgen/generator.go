@@ -65,6 +65,7 @@ func (g *generator) Generate(
 		config,
 		image,
 		generateOptions.baseOutDirPath,
+		generateOptions.includeImports,
 	)
 }
 
@@ -74,6 +75,7 @@ func (g *generator) generate(
 	config *Config,
 	image bufimage.Image,
 	baseOutDirPath string,
+	includeImports bool,
 ) error {
 	if err := modifyImage(ctx, config, image); err != nil {
 		return err
@@ -107,7 +109,12 @@ func (g *generator) generate(
 			container,
 			pluginConfig.Name,
 			out,
-			bufimage.ImagesToCodeGeneratorRequests(pluginImages, pluginConfig.Opt, appprotoexec.DefaultVersion),
+			bufimage.ImagesToCodeGeneratorRequests(
+				pluginImages,
+				pluginConfig.Opt,
+				appprotoexec.DefaultVersion,
+				includeImports,
+			),
 			appprotoos.GenerateWithPluginPath(pluginConfig.Path),
 			appprotoos.GenerateWithCreateOutDirIfNotExists(),
 		); err != nil {
@@ -215,6 +222,7 @@ func defaultManagedModeModifier(sweeper bufimagemodify.Sweeper) (bufimagemodify.
 
 type generateOptions struct {
 	baseOutDirPath string
+	includeImports bool
 }
 
 func newGenerateOptions() *generateOptions {
