@@ -127,6 +127,15 @@ func GenerateWithBaseOutDirPath(baseOutDirPath string) GenerateOption {
 	}
 }
 
+// GenerateWithIncludeImports says to also generate imports.
+//
+// Note that this does NOT result in the Well-Known Types being generated.
+func GenerateWithIncludeImports() GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.includeImports = true
+	}
+}
+
 // Config is a configuration.
 type Config struct {
 	// Required
