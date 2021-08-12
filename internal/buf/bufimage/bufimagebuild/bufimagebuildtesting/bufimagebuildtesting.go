@@ -81,7 +81,8 @@ func fuzz(ctx context.Context, data []byte) (_ *fuzzResult, retErr error) {
 		bufErr,
 		protocErr,
 		actualProtocFileDescriptorSet,
-		image), nil
+		image,
+	), nil
 }
 
 // fuzzBuild does a builder.Build for a fuzz test.
@@ -92,8 +93,7 @@ func fuzzBuild(ctx context.Context, dirPath string) (bufimage.Image, []bufanalys
 	}
 	builder := bufimagebuild.NewBuilder(zap.NewNop())
 	opt := bufimagebuild.WithExcludeSourceCodeInfo()
-	image, annotations, err := builder.Build(ctx, moduleFileSet, opt)
-	return image, annotations, err
+	return builder.Build(ctx, moduleFileSet, opt)
 }
 
 // fuzzGetModuleFileSet gets the bufmodule.ModuleFileSet for a fuzz test.
