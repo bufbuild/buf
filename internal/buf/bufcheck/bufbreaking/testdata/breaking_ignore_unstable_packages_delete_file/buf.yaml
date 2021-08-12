@@ -1,0 +1,5 @@
+version: v1beta1
+breaking:
+  use:
+    - PACKAGE
+  ignore_unstable_packages: true

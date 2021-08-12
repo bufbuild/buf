@@ -655,6 +655,13 @@ func TestRunBreakingIgnoreUnstablePackagesFalse(t *testing.T) {
 	)
 }
 
+func TestRunBreakingIgnoreUnstablePackagesDeleteFile(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_ignore_unstable_packages_delete_file",
+	)
+}
+
 func testBreaking(
 	t *testing.T,
 	relDirPath string,

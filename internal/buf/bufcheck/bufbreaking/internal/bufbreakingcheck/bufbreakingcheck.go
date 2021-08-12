@@ -518,6 +518,9 @@ func checkFileNoDelete(add addFunc, corpus *corpus) error {
 	}
 	for previousFilePath, previousFile := range previousFilePathToFile {
 		if _, ok := filePathToFile[previousFilePath]; !ok {
+			// Add previous descriptor to check for ignores. This will mean that if
+			// we have ignore_unstable_packages set, this file will cause the ignore
+			// to happen.
 			add(nil, []protosource.Descriptor{previousFile}, nil, `Previously present file %q was deleted.`, previousFilePath)
 		}
 	}
@@ -802,18 +805,21 @@ func checkPackageEnumNoDelete(add addFunc, corpus *corpus) error {
 							return err
 						}
 					}
-					// check if the file still exists
+					// Check if the file still exists.
 					file, ok := filePathToFile[previousEnum.File().Path()]
 					if ok {
-						// file exists, try to get a location to attach the error to
+						// File exists, try to get a location to attach the error to.
 						descriptor, location, err := getDescriptorAndLocationForDeletedEnum(file, previousNestedName)
 						if err != nil {
 							return err
 						}
 						add(descriptor, nil, location, `Previously present enum %q was deleted from package %q.`, previousNestedName, previousPackage)
 					} else {
-						// file does not exist, we don't know where the enum was deleted from
-						add(nil, nil, nil, `Previously present enum %q was deleted from package %q.`, previousNestedName, previousPackage)
+						// File does not exist, we don't know where the enum was deleted from.
+						// Add the previous enum to check for ignores. This means that if
+						// ignore_unstable_packages is set, this will be triggered if the
+						// previous enum was in an unstable package.
+						add(nil, []protosource.Descriptor{previousEnum}, nil, `Previously present enum %q was deleted from package %q.`, previousNestedName, previousPackage)
 					}
 				}
 			}
@@ -847,15 +853,18 @@ func checkPackageMessageNoDelete(add addFunc, corpus *corpus) error {
 							return err
 						}
 					}
-					// check if the file still exists
+					// Check if the file still exists.
 					file, ok := filePathToFile[previousMessage.File().Path()]
 					if ok {
-						// file exists, try to get a location to attach the error to
+						// File exists, try to get a location to attach the error to.
 						descriptor, location := getDescriptorAndLocationForDeletedMessage(file, nestedNameToMessage, previousNestedName)
 						add(descriptor, nil, location, `Previously present message %q was deleted from package %q.`, previousNestedName, previousPackage)
 					} else {
-						// file does not exist, we don't know where the message was deleted from
-						add(nil, nil, nil, `Previously present message %q was deleted from package %q.`, previousNestedName, previousPackage)
+						// File does not exist, we don't know where the message was deleted from.
+						// Add the previous message to check for ignores. This means that if
+						// ignore_unstable_packages is set, this will be triggered if the
+						// previous message was in an unstable package.
+						add(nil, []protosource.Descriptor{previousMessage}, nil, `Previously present message %q was deleted from package %q.`, previousNestedName, previousPackage)
 					}
 				}
 			}
@@ -878,6 +887,11 @@ func checkPackageNoDelete(add addFunc, corpus *corpus) error {
 	}
 	for previousPackage, previousFiles := range previousPackageToFiles {
 		if _, ok := packageToFiles[previousPackage]; !ok {
+			// Add previous descriptors in the same package as other descriptors to check
+			// for ignores. This will mean that if we have ignore_unstable_packages set,
+			// any one of these files will cause the ignore to happen. Note that we
+			// could probably just attach a single file, but we do this in case we
+			// have other ways to ignore in the future.
 			previousDescriptors := make([]protosource.Descriptor, len(previousFiles))
 			for i, previousFile := range previousFiles {
 				previousDescriptors[i] = previousFile
@@ -913,15 +927,18 @@ func checkPackageServiceNoDelete(add addFunc, corpus *corpus) error {
 							return err
 						}
 					}
-					// check if the file still exists
+					// Check if the file still exists.
 					file, ok := filePathToFile[previousService.File().Path()]
 					if ok {
-						// file exists
+						// File exists.
 						add(file, nil, nil, `Previously present service %q was deleted from package %q.`, previousName, previousPackage)
 					} else {
-						// file does not exist, we don't know where the service was deleted from
+						// File does not exist, we don't know where the service was deleted from.
+						// Add the previous service to check for ignores. This means that if
+						// ignore_unstable_packages is set, this will be triggered if the
+						// previous service was in an unstable package.
 						// TODO: find the service and print that this moved?
-						add(nil, nil, nil, `Previously present service %q was deleted from package %q.`, previousName, previousPackage)
+						add(nil, []protosource.Descriptor{previousService}, nil, `Previously present service %q was deleted from package %q.`, previousName, previousPackage)
 					}
 				}
 			}
