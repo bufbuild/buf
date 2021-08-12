@@ -42,8 +42,8 @@ sha256() {
 }
 
 if [ -z "${INSIDE_DOCKER}" ]; then
-  if [ -z "${RELEASE_MINISIGN_PRIVATE_KEY}" ]; then
-    fail "RELEASE_MINISIGN_PRIVATE_KEY must be set."
+  if [ -z "${RELEASE_MINISIGN_PRIVATE_KEY}" -o -z "${RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}" ]; then
+    fail "RELEASE_MINISIGN_PRIVATE_KEY and RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD must be set."
   fi
   if [ -z "${DOCKER_IMAGE}" ]; then
     fail "DOCKER_IMAGE must be set"
@@ -62,12 +62,11 @@ if [ -z "${INSIDE_DOCKER}" ]; then
   # minisign installed.
   secret_key_file="$(mktemp)"
   trap "rm ${secret_key_file}" EXIT
-  # Prevent printing of private key
+  # Prevent printing of private key and password
   set +x
   echo "${RELEASE_MINISIGN_PRIVATE_KEY}" > "${secret_key_file}"
+  echo "${RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}" | minisign -S -s "${secret_key_file}" -m .build/release/buf/assets/sha256.txt
   set -x
-  echo -e "\n\n\n--- BE READY TO ENTER THE PASSWORD OF THE RELEASE SIGNING KEY ---"
-  minisign -S -s "${secret_key_file}" -m .build/release/buf/assets/sha256.txt
   exit 0
 fi
 
