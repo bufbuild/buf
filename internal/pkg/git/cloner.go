@@ -32,11 +32,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// bufCloneOrigin is the name for the remote. It helps distinguish the origin of
-// the repo we're cloning from the "origin" of our clone (which is the repo
-// being cloned).
-const bufCloneOrigin = "bufCloneOrigin"
-
 type cloner struct {
 	logger            *zap.Logger
 	storageosProvider storageos.Provider
@@ -83,30 +78,28 @@ func (c *cloner) CloneToBucket(
 
 	depthArg := strconv.Itoa(int(depth))
 
-	tmpDir, err := tmp.NewDir()
+	bareDir, err := tmp.NewDir()
 	if err != nil {
 		return err
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, tmpDir.Close())
+		retErr = multierr.Append(retErr, bareDir.Close())
+	}()
+	worktreeDir, err := tmp.NewDir()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, worktreeDir.Close())
 	}()
 
 	buffer := bytes.NewBuffer(nil)
-	cmd := exec.CommandContext(ctx, "git", "init")
-	cmd.Dir = tmpDir.AbsPath()
+	cmd := exec.CommandContext(ctx, "git", "init", "--bare")
+	cmd.Dir = bareDir.AbsPath()
 	cmd.Env = app.Environ(envContainer)
 	cmd.Stderr = buffer
 	if err := cmd.Run(); err != nil {
-		return newGitCommandError(err, buffer, tmpDir)
-	}
-
-	buffer.Reset()
-	cmd = exec.CommandContext(ctx, "git", "remote", "add", bufCloneOrigin, url)
-	cmd.Dir = tmpDir.AbsPath()
-	cmd.Env = app.Environ(envContainer)
-	cmd.Stderr = buffer
-	if err := cmd.Run(); err != nil {
-		return newGitCommandError(err, buffer, tmpDir)
+		return newGitCommandError(err, buffer, bareDir)
 	}
 
 	var gitConfigAuthArgs []string
@@ -122,9 +115,10 @@ func (c *cloner) CloneToBucket(
 	fetchRef, checkoutRefs := getRefspecsForName(options.Name)
 	fetchArgs := append(
 		gitConfigAuthArgs,
+		"--git-dir="+bareDir.AbsPath(),
 		"fetch",
 		"--depth", depthArg,
-		bufCloneOrigin,
+		url,
 		fetchRef,
 	)
 
@@ -137,32 +131,34 @@ func (c *cloner) CloneToBucket(
 
 	buffer.Reset()
 	cmd = exec.CommandContext(ctx, "git", fetchArgs...)
-	cmd.Dir = tmpDir.AbsPath()
 	cmd.Env = app.Environ(envContainer)
 	cmd.Stderr = buffer
 	if err := cmd.Run(); err != nil {
-		return newGitCommandError(err, buffer, tmpDir)
+		return newGitCommandError(err, buffer, bareDir)
 	}
 
 	for _, checkoutRef := range checkoutRefs {
 		buffer.Reset()
 		args := append(
 			gitConfigAuthArgs,
+			"--git-dir="+bareDir.AbsPath(),
+			"--work-tree="+worktreeDir.AbsPath(),
 			"checkout",
 			checkoutRef,
 		)
 		cmd = exec.CommandContext(ctx, "git", args...)
-		cmd.Dir = tmpDir.AbsPath()
 		cmd.Env = app.Environ(envContainer)
 		cmd.Stderr = buffer
 		if err := cmd.Run(); err != nil {
-			return newGitCommandError(err, buffer, tmpDir)
+			return newGitCommandError(err, buffer, worktreeDir)
 		}
 	}
 
 	if options.RecurseSubmodules {
 		submoduleArgs := append(
 			gitConfigAuthArgs,
+			"--git-dir="+bareDir.AbsPath(),
+			"--work-tree="+worktreeDir.AbsPath(),
 			"submodule",
 			"update",
 			"--init",
@@ -173,16 +169,15 @@ func (c *cloner) CloneToBucket(
 		buffer.Reset()
 		cmd = exec.CommandContext(ctx, "git", submoduleArgs...)
 		cmd.Env = app.Environ(envContainer)
-		cmd.Dir = tmpDir.AbsPath()
 		cmd.Stderr = buffer
 		if err := cmd.Run(); err != nil {
 			// Suppress printing of temp path
-			return fmt.Errorf("%v\n%v", err, strings.Replace(buffer.String(), tmpDir.AbsPath(), "", -1))
+			return fmt.Errorf("%v\n%v", err, strings.Replace(buffer.String(), worktreeDir.AbsPath(), "", -1))
 		}
 	}
 
 	// we do NOT want to read in symlinks
-	tmpReadWriteBucket, err := c.storageosProvider.NewReadWriteBucket(tmpDir.AbsPath())
+	tmpReadWriteBucket, err := c.storageosProvider.NewReadWriteBucket(worktreeDir.AbsPath())
 	if err != nil {
 		return err
 	}

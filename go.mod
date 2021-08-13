@@ -20,12 +20,12 @@ require (
 	go.opencensus.io v0.23.0
 	go.uber.org/multierr v1.7.0
 	go.uber.org/zap v1.19.0
-	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
+	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
 	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.5
-	google.golang.org/genproto v0.0.0-20210811021853-ddbe55d93216 // indirect
+	google.golang.org/genproto v0.0.0-20210813162853-db860fec028c // indirect
 	google.golang.org/grpc v1.40.0-dev.0.20210708170655-30dfb4b933a5
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
