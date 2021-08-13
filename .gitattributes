@@ -6,6 +6,5 @@
 # Never attempt EOL conversion on files within testdata
 **/testdata/** binary
 
-# corpus and crashers are generated
-**/crashers/** linguist-generated
+# corpus is generated
 **/corpus/** linguist-generated
