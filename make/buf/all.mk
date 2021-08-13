@@ -153,10 +153,10 @@ gofuzz: $(GO_FUZZ)
 	@mkdir -p $(TMP)/gofuzz $(TMP)/gofuzz/corpus $(TMP)/gofuzz/crashers
 	# go-fuzz-build requires github.com/dvyukov/go-fuzz be in go.mod, but we don't need that dependency otherwise.
 	# This adds go-fuzz-dep to go.mod, runs go-fuzz-build, then restores go.mod.
-	cp go.mod go.mod.bak; cp go.sum go.sum.bak
+	cp go.mod $(TMP)/go.mod.bak; cp go.sum $(TMP)/go.sum.bak
 	go get github.com/dvyukov/go-fuzz/go-fuzz-dep@$(GO_FUZZ_VERSION)
 	cd internal/buf/bufimage/bufimagebuild/bufimagebuildtesting; go-fuzz-build -o $(abspath $(TMP))/gofuzz/gofuzz.zip
-	rm go.mod go.sum; mv go.mod.bak go.mod; mv go.sum.bak go.sum
+	rm go.mod go.sum; mv $(TMP)/go.mod.bak go.mod; mv $(TMP)/go.sum.bak go.sum
 	cp internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/corpus/* $(TMP)/gofuzz/corpus
 	cp internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/crashers/* $(TMP)/gofuzz/crashers
 	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz
