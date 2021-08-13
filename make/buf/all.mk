@@ -29,7 +29,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	internal/buf/internal/buftesting/cache/ \
 	internal/pkg/storage/storageos/tmp/ \
 	**/crashers/*.output \
-    **/crashers/*.quoted
+	**/crashers/*.quoted
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2021
