@@ -64,38 +64,40 @@ func newPackageVersionForPackage(pkg string) (*packageVersion, bool) {
 		return newPackageVersion(major, StabilityLevelTest, 0, 0, split[1]), true
 	}
 
-	if strings.Contains(version, "alpha") {
+	var stabilityLevel StabilityLevel
+	containsAlpha := strings.Contains(version, "alpha")
+	containsBeta := strings.Contains(version, "beta")
+	switch {
+	case !containsAlpha && !containsBeta:
+		stabilityLevel = StabilityLevelStable
+	case containsAlpha && !containsBeta:
+		stabilityLevel = StabilityLevelAlpha
+	case !containsAlpha && containsBeta:
+		stabilityLevel = StabilityLevelBeta
+	case containsAlpha && containsBeta:
+		return nil, false
+	}
+	if stabilityLevel != StabilityLevelStable {
 		// 1alpha1 -> [1, 1]
 		// 1p1alpha1 ->[1p1, 1]
-		split := strings.SplitN(version, "alpha", 2)
+		// 1alpha -> [1, ""]
+		split := strings.SplitN(version, stabilityLevel.String(), 2)
 		if len(split) != 2 {
 			return nil, false
 		}
-		minor, ok := positiveNumber(split[1])
-		if !ok {
-			return nil, false
+		minor := 0
+		var ok bool
+		if split[1] != "" {
+			minor, ok = positiveNumber(split[1])
+			if !ok {
+				return nil, false
+			}
 		}
 		major, patch, ok := getAlphaBetaMajorPatch(split[0])
 		if !ok {
 			return nil, false
 		}
-		return newPackageVersion(major, StabilityLevelAlpha, minor, patch, ""), true
-	}
-
-	if strings.Contains(version, "beta") {
-		split := strings.SplitN(version, "beta", 2)
-		if len(split) != 2 {
-			return nil, false
-		}
-		minor, ok := positiveNumber(split[1])
-		if !ok {
-			return nil, false
-		}
-		major, patch, ok := getAlphaBetaMajorPatch(split[0])
-		if !ok {
-			return nil, false
-		}
-		return newPackageVersion(major, StabilityLevelBeta, minor, patch, ""), true
+		return newPackageVersion(major, stabilityLevel, minor, patch, ""), true
 	}
 
 	// no suffix that is valid, make sure we just have a number
