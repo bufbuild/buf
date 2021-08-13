@@ -54,8 +54,11 @@ func (s StabilityLevel) String() string {
 // PackageVersion is a package version.
 //
 // A package has a version if the last component is a version of the form
-// v\d+, v\d+test.*, v\d+(alpha|beta)\d+, or v\d+p\d+(alpha|beta)\d+
+// v\d+, v\d+test.*, v\d+(alpha|beta)\d*, or v\d+p\d+(alpha|beta)\d*
 // where numbers are >=1.
+//
+// See https://cloud.google.com/apis/design/versioning#channel-based_versioning
+// See https://cloud.google.com/apis/design/versioning#release-based_versioning
 type PackageVersion interface {
 	fmt.Stringer
 
