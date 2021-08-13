@@ -1,2 +1,0 @@
--- .proto --
-syntax="proto3";package a;enum t{D=0;S=1;O=2;_3=3;L=4;_5=5;s___=6;}message o{message r{enum t{T=0;TS=1;TO=2;T3=3;tL=4;t5=5;t6=6;_=7;}}enum t{T=0;TS=1;TO=2;T3=3;tL=4;t5=5;t6=6;_=7;}}

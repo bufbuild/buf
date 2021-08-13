@@ -19,13 +19,13 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestCorpus(t *testing.T) {
+	ctx := context.Background()
 	require.NoError(t, filepath.Walk("corpus", func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -36,35 +36,10 @@ func TestCorpus(t *testing.T) {
 		t.Run(info.Name(), func(t *testing.T) {
 			data, err := os.ReadFile(filepath.Join("corpus", info.Name()))
 			require.NoError(t, err)
-			testFuzz(t, data)
-		})
-		return nil
-	}))
-}
-
-func TestCrashers(t *testing.T) {
-	t.Skip("skipping known crashers")
-	require.NoError(t, filepath.Walk("corpus", func(path string, entry fs.FileInfo, err error) error {
-		// We only want files that don't end in .quoted or .output. *.quoted and *.output files are created by go-fuzz
-		// for human consumption. They are not valid test data.
-		if entry.IsDir() ||
-			strings.HasSuffix(entry.Name(), ".quoted") ||
-			strings.HasSuffix(entry.Name(), ".output") {
-			return nil
-		}
-		t.Run(entry.Name(), func(t *testing.T) {
-			data, err := os.ReadFile(filepath.Join("crashers", entry.Name()))
+			result, err := fuzz(ctx, data)
 			require.NoError(t, err)
-			testFuzz(t, data)
+			require.NoError(t, result.error(ctx))
 		})
 		return nil
 	}))
-}
-
-// testFuzz runs a fuzz test and fails if data is invalid or if the Fuzz would have panicked
-func testFuzz(t *testing.T, data []byte) {
-	ctx := context.Background()
-	result, err := fuzz(ctx, data)
-	require.NoError(t, err)
-	require.NoError(t, result.error(ctx))
 }

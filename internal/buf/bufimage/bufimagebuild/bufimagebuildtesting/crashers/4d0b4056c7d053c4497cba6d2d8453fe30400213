@@ -1,2 +1,0 @@
--- 0.proto --
-enum MyEnum{t=0;t1=1;t0=10;}message Test{required string f=1;required int64 f2=2;repeated int64 a=3;repeated int32 b=4;repeated int32 c=5[packed=true];repeated Pair s=6;optional bytes bb=7;extensions 10to max;}message Pair{required string y=1;optional string e=2;}extend Test{optional bool tt=10;optional double g=11;repeated MyEnum m=12;}
