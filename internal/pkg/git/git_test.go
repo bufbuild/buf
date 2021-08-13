@@ -91,6 +91,17 @@ func TestGitCloner(t *testing.T) {
 		assert.True(t, storage.IsNotExist(err))
 	})
 
+	t.Run("branch_and_main_ref", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(t, workDir, 2, NewRefNameWithBranch("HEAD~", "main"))
+
+		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 0", string(content))
+		_, err = readBucket.Stat(context.Background(), "nonexistent")
+		assert.True(t, storage.IsNotExist(err))
+	})
+
 	t.Run("branch_and_ref", func(t *testing.T) {
 		t.Parallel()
 		readBucket := readBucketForName(t, workDir, 2, NewRefNameWithBranch("local-branch~", "local-branch"))
@@ -173,6 +184,9 @@ func createGitDirs(t *testing.T) (string, string) {
 	runCommand(t, "git", "-C", originPath, "config", "user.email", "tests@buf.build")
 	runCommand(t, "git", "-C", originPath, "config", "user.name", "Buf go tests")
 	runCommand(t, "git", "-C", originPath, "checkout", "-b", "main")
+	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 0"), 0600))
+	runCommand(t, "git", "-C", originPath, "add", "test.proto")
+	runCommand(t, "git", "-C", originPath, "commit", "-m", "commit 0")
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 1"), 0600))
 	runCommand(t, "git", "-C", originPath, "add", "test.proto")
 	runCommand(t, "git", "-C", originPath, "commit", "-m", "commit 1")
