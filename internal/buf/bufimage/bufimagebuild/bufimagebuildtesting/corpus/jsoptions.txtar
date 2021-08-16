@@ -1,0 +1,2 @@
+-- a.proto --
+option optimize_for = CODE_SIZE;

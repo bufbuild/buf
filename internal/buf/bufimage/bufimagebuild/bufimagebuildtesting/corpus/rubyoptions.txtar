@@ -1,0 +1,12 @@
+-- double/ruby.proto --
+package acme.weather.v1;
+
+option ruby_package = "foo";
+-- single/ruby.proto --
+package acme.v1;
+
+option ruby_package = "foo";
+-- triple/ruby.proto --
+package acme.weather.data.v1;
+
+option ruby_package = "foo";

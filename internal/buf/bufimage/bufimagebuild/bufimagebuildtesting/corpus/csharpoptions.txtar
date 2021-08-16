@@ -1,0 +1,12 @@
+-- double/csharp.proto --
+package acme.weather.v1;
+
+option csharp_namespace = "foo";
+-- single/csharp.proto --
+package acme.v1;
+
+option csharp_namespace = "foo";
+-- triple/csharp.proto --
+package acme.weather.data.v1;
+
+option csharp_namespace = "foo";

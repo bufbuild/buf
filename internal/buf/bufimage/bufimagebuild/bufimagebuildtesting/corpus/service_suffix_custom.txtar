@@ -1,0 +1,18 @@
+-- a.proto --
+syntax = "proto3";
+
+package a;
+
+service SuccessAPI {}
+service SuccessTwoAPI {}
+service SuccessThree_API {}
+service Fail {}
+service FailService {}
+service FailAPI_ {}
+service FailApi_ {}
+-- buf.yaml --
+version: v1
+lint:
+  use:
+    - SERVICE_SUFFIX
+  service_suffix: API

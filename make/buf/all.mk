@@ -150,6 +150,12 @@ bufrelease:
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)
 	@rm -rf $(TMP)/gofuzz
-	@mkdir -p $(TMP)/gofuzz
-	cd internal/buf/bufbuild/bufbuildtesting; go-fuzz-build -o $(abspath $(TMP))/gofuzz/gofuzz.zip
-	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz
+	@mkdir -p $(TMP)/gofuzz $(TMP)/gofuzz/corpus
+	# go-fuzz-build requires github.com/dvyukov/go-fuzz be in go.mod, but we don't need that dependency otherwise.
+	# This adds go-fuzz-dep to go.mod, runs go-fuzz-build, then restores go.mod.
+	cp go.mod $(TMP)/go.mod.bak; cp go.sum $(TMP)/go.sum.bak
+	go get github.com/dvyukov/go-fuzz/go-fuzz-dep@$(GO_FUZZ_VERSION)
+	cd internal/buf/bufimage/bufimagebuild/bufimagebuildtesting; go-fuzz-build -o $(abspath $(TMP))/gofuzz/gofuzz.zip
+	rm go.mod go.sum; mv $(TMP)/go.mod.bak go.mod; mv $(TMP)/go.sum.bak go.sum
+	cp internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/corpus/* $(TMP)/gofuzz/corpus
+	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz $(GO_FUZZ_EXTRA_ARGS)

@@ -1,0 +1,39 @@
+-- 1.proto --
+syntax = "proto3";
+
+package a;
+-- 2.proto --
+syntax = "proto3";
+
+package a.b;
+-- 3.proto --
+syntax = "proto3";
+
+package a.b_cde;
+-- 4.proto --
+syntax = "proto3";
+
+package a.b_cde.f;
+-- 5.proto --
+syntax = "proto3";
+
+package a.b_cdE.f;
+-- 6.proto --
+syntax = "proto3";
+
+package a.b_cde.F;
+-- 7.proto --
+syntax = "proto3";
+
+package a.bcde.F;
+-- 8.proto --
+syntax = "proto3";
+
+package a.b_cde.f_;
+-- buf.yaml --
+version: v1
+lint:
+  use:
+    - PACKAGE_LOWER_SNAKE_CASE
+-- no_package.proto --
+syntax = "proto3";

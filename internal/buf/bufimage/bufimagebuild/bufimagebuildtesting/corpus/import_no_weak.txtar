@@ -1,0 +1,28 @@
+-- a.proto --
+syntax = "proto3";
+
+package a;
+
+import "sub/sub1.proto";
+import weak "sub/sub2.proto";
+import weak "one/one.proto";
+-- buf.yaml --
+version: v1
+lint:
+  use:
+    - IMPORT_NO_WEAK
+-- one/one.proto --
+syntax = "proto3";
+
+package one;
+
+import "sub/sub1.proto";
+import weak "sub/sub2.proto";
+-- sub/sub1.proto --
+syntax = "proto3";
+
+package sub;
+-- sub/sub2.proto --
+syntax = "proto3";
+
+package sub;

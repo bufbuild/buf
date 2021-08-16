@@ -1,0 +1,28 @@
+-- a.proto --
+syntax = "proto3";
+
+package a;
+
+import "sub/sub1.proto";
+import public "sub/sub2.proto";
+import public "one/one.proto";
+-- buf.yaml --
+version: v1
+lint:
+  use:
+    - IMPORT_NO_PUBLIC
+-- one/one.proto --
+syntax = "proto3";
+
+package one;
+
+import "sub/sub1.proto";
+import public "sub/sub2.proto";
+-- sub/sub1.proto --
+syntax = "proto3";
+
+package sub;
+-- sub/sub2.proto --
+syntax = "proto3";
+
+package sub;
