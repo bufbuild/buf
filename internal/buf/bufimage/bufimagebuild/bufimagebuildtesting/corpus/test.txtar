@@ -1,18 +1,4 @@
-// Copyright 2020-2021 Buf Technologies, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// 0.proto
+-- 0.proto --
 syntax = "proto3";
 
 package a.v1;
@@ -37,8 +23,7 @@ message MethodResponse {
   // field is a protobuf message field
   string field = 1;
 }
-----------------
-// 1.proto
+-- 1.proto --
 syntax = "proto3";
 
 package b.v1;
@@ -61,8 +46,7 @@ enum EnumType {
   ENUM_TYPE_UNSPECIFIED = 0;
   ENUM_TYPE_ONE = 1;
 }
-----------------
-// 2.proto
+-- 2.proto --
 syntax = "proto2";
 
 package c.v1;

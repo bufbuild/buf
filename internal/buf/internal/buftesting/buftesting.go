@@ -118,19 +118,30 @@ func GetGoogleapisDirPath(t *testing.T, buftestingDirPath string) string {
 // Limit limits the number of files returned if > 0.
 // protoc has a fixed size for number of characters to argument list.
 func GetProtocFilePaths(t *testing.T, dirPath string, limit int) []string {
+	realFilePaths, err := GetProtocFilePathsErr(context.Background(), dirPath, limit)
+	require.NoError(t, err)
+	return realFilePaths
+}
+
+// GetProtocFilePathsErr is like GetProtocFilePaths except it returns an error and accepts a ctx.
+func GetProtocFilePathsErr(ctx context.Context, dirPath string, limit int) ([]string, error) {
 	module, err := bufmodulebuild.NewModuleIncludeBuilder(zap.NewNop(), testStorageosProvider).BuildForIncludes(
-		context.Background(),
+		ctx,
 		[]string{dirPath},
 	)
-	require.NoError(t, err)
-	targetFileInfos, err := module.TargetFileInfos(context.Background())
-	require.NoError(t, err)
+	if err != nil {
+		return nil, err
+	}
+	targetFileInfos, err := module.TargetFileInfos(ctx)
+	if err != nil {
+		return nil, err
+	}
 	realFilePaths := make([]string, len(targetFileInfos))
 	for i, fileInfo := range targetFileInfos {
 		realFilePaths[i] = normalpath.Unnormalize(normalpath.Join(dirPath, fileInfo.Path()))
 	}
 	if limit > 0 && len(realFilePaths) > limit {
-		return realFilePaths[:limit]
+		realFilePaths = realFilePaths[:limit]
 	}
-	return realFilePaths
+	return realFilePaths, nil
 }

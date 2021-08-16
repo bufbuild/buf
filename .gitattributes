@@ -5,3 +5,6 @@
 
 # Never attempt EOL conversion on files within testdata
 **/testdata/** binary
+
+# corpus is generated
+**/corpus/** linguist-generated

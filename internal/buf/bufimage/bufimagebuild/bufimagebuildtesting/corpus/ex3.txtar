@@ -1,0 +1,18 @@
+-- 0.proto --
+syntax = "proto3";
+import "google/protobuf/descriptor.proto";
+message Input {
+  string name = 1;
+  int32 id = 2;  // Unique ID number for this person.
+  Address add = 3;
+  repeated PhoneNumber phones = 4;  //List
+
+  message PhoneNumber {
+    string number = 1;
+  }
+
+  message Address {
+    string zip = 1;
+    string street = 2;
+  }
+}

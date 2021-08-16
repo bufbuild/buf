@@ -15,18 +15,31 @@
 package bufimagebuildtesting
 
 import (
+	"context"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestBasic(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join("corpus", "test.proto"))
-	require.NoError(t, err)
-	i, err := fuzz(data)
-	require.NoError(t, err)
-	assert.Equal(t, 1, i)
+func TestCorpus(t *testing.T) {
+	ctx := context.Background()
+	require.NoError(t, filepath.Walk("corpus", func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		t.Run(info.Name(), func(t *testing.T) {
+			data, err := os.ReadFile(filepath.Join("corpus", info.Name()))
+			require.NoError(t, err)
+			result, err := fuzz(ctx, data)
+			require.NoError(t, err)
+			require.NoError(t, result.error(ctx))
+		})
+		return nil
+	}))
 }

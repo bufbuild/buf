@@ -1,0 +1,32 @@
+-- 0.proto --
+syntax = "proto2";
+
+enum MyEnum
+{
+  Default = 0;
+  Variant1 = 1;
+  Variant100 = 100;
+}
+
+message Test {
+  required string f1 = 1;
+  required int64 f2 = 2;
+  repeated uint64 fa = 3;
+  repeated int32 fb = 4;
+  repeated int32 fc = 5 [packed = true];
+  repeated Pair pairs = 6;
+  optional bytes bbbb = 7;
+
+  extensions 100 to max;
+}
+
+message Pair {
+  required string key = 1;
+  optional string value = 2;
+}
+
+extend Test {
+  optional bool gtt = 100;
+  optional double gtg = 101;
+  repeated MyEnum someEnum = 102;
+}

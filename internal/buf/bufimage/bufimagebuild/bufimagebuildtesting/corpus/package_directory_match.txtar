@@ -1,0 +1,19 @@
+-- a/b/a_b.proto --
+syntax = "proto3";
+
+package a.b;
+-- a/b/a_c.proto --
+syntax = "proto3";
+
+package a.c;
+-- buf.yaml --
+version: v1
+lint:
+  use:
+    - PACKAGE_DIRECTORY_MATCH
+-- no_package.proto --
+syntax = "proto3";
+-- sub/a/b/a_b.proto --
+syntax = "proto3";
+
+package a.b;

@@ -1,0 +1,20 @@
+-- double/objc.proto --
+package acme.weather.v1;
+
+option objc_class_prefix = "foo";
+-- gpb/objc.proto --
+package google.protobuf.bla.v1;
+
+option objc_class_prefix = "foo";
+-- single/objc.proto --
+package acme.v1;
+
+option objc_class_prefix = "foo";
+-- triple/objc.proto --
+package acme.weather.data.v1;
+
+option objc_class_prefix = "foo";
+-- unversioned/objc.proto --
+package acme.weather.data;
+
+option objc_class_prefix = "foo";

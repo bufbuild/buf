@@ -1,0 +1,20 @@
+-- double/php.proto --
+package acme.weather.v1;
+
+option php_namespace = "foo";
+option php_metadata_namespace = "foo";
+-- reserved/php.proto --
+package acme.error.v1;
+
+option php_namespace = "foo";
+option php_metadata_namespace = "foo";
+-- single/php.proto --
+package acme.v1;
+
+option php_namespace = "foo";
+option php_metadata_namespace = "foo";
+-- triple/php.proto --
+package acme.weather.data.v1;
+
+option php_namespace = "foo";
+option php_metadata_namespace = "foo";

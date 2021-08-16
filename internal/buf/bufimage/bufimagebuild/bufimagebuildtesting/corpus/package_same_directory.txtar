@@ -1,0 +1,13 @@
+-- a.proto --
+syntax = "proto3";
+
+package a;
+-- buf.yaml --
+version: v1
+lint:
+  use:
+    - PACKAGE_SAME_DIRECTORY
+-- one/a.proto --
+syntax = "proto3";
+
+package a;
