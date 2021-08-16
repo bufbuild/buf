@@ -32,6 +32,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// bufCloneOrigin is the name for the remote. It helps distinguish the origin of
+// the repo we're cloning from the "origin" of our clone (which is the repo
+// being cloned).
+// We can fetch directly from an origin URL, but without any remote set git LFS
+// will fail to fetch so we need to pick something.
+const bufCloneOrigin = "bufCloneOrigin"
+
 type cloner struct {
 	logger            *zap.Logger
 	storageosProvider storageos.Provider
@@ -102,6 +109,21 @@ func (c *cloner) CloneToBucket(
 		return newGitCommandError(err, buffer, bareDir)
 	}
 
+	buffer.Reset()
+	remoteArgs := []string{
+		"--git-dir=" + bareDir.AbsPath(),
+		"remote",
+		"add",
+		bufCloneOrigin,
+		url,
+	}
+	cmd = exec.CommandContext(ctx, "git", remoteArgs...)
+	cmd.Env = app.Environ(envContainer)
+	cmd.Stderr = buffer
+	if err := cmd.Run(); err != nil {
+		return newGitCommandError(err, buffer, bareDir)
+	}
+
 	var gitConfigAuthArgs []string
 	if strings.HasPrefix(url, "https://") {
 		// These extraArgs MUST be first, as the -c flag potentially produced
@@ -118,7 +140,7 @@ func (c *cloner) CloneToBucket(
 		"--git-dir="+bareDir.AbsPath(),
 		"fetch",
 		"--depth", depthArg,
-		url,
+		bufCloneOrigin,
 		fetchRef,
 	)
 
