@@ -1,5 +1,5 @@
-# https://github.com/jhump/protoreflect/commits/master 20210712 checked 20210712
-PROTOREFLECT_VERSION := d3608faa83b85e64a0e2880cba9be9c951460727
+# https://github.com/jhump/protoreflect/commits/master 20210817 checked 20210817
+PROTOREFLECT_VERSION := db1a327a393ec12e4a565f4813c154abd843376a
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
 GO_BINS := $(GO_BINS) \
@@ -145,7 +145,7 @@ postlint:: buflint bufbreakingproto
 
 .PHONY: bufrelease
 bufrelease:
-	DOCKER_IMAGE=golang:1.16.6-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.17.0-buster bash make/buf/scripts/release.bash
 
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)
