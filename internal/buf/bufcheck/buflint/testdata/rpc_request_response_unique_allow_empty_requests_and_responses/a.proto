@@ -18,14 +18,14 @@ message Eleven {}
 message Twelve {}
 
 service Foo {
-  rpc One(One) returns (Two) {}
-  rpc Two(Three) returns (Three) {}
-  rpc Three(Four) returns (One) {}
-  rpc Four(Five) returns (Six) {}
-  rpc Five(Three) returns (Seven) {}
-  rpc Six(Eight) returns (Nine) {}
-  rpc Seven(google.protobuf.Empty) returns (Ten) {}
-  rpc Eight(Eleven) returns (google.protobuf.Empty) {}
-  rpc Nine(google.protobuf.Empty) returns (google.protobuf.Empty) {}
-  rpc Ten(Twelve) returns (Twelve) {}
+  rpc one(One) returns (Two) {}
+  rpc two(Three) returns (Three) {}
+  rpc three(Four) returns (One) {}
+  rpc four(Five) returns (Six) {}
+  rpc five(Three) returns (Seven) {}
+  rpc six(Eight) returns (Nine) {}
+  rpc seven(google.protobuf.Empty) returns (Ten) {}
+  rpc eight(Eleven) returns (google.protobuf.Empty) {}
+  rpc nine(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc ten(Twelve) returns (Twelve) {}
 }
