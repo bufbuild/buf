@@ -25,12 +25,17 @@ import (
 )
 
 func TestCorpus(t *testing.T) {
+	// To focus on just one test in the corpus, put its file name here. Don't forget to revert before committing.
+	focus := ""
 	ctx := context.Background()
 	require.NoError(t, filepath.Walk("corpus", func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.IsDir() {
+			return nil
+		}
+		if focus != "" && info.Name() != focus {
 			return nil
 		}
 		t.Run(info.Name(), func(t *testing.T) {

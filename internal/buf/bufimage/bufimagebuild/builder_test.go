@@ -201,12 +201,29 @@ func TestCompareProto3Optional1(t *testing.T) {
 
 func TestCustomOptionsError1(t *testing.T) {
 	t.Parallel()
-	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", "customoptionserror1"))
-	require.Equal(t, 1, len(fileAnnotations), fileAnnotations)
-	require.Equal(
+	testFileAnnotations(
 		t,
+		"customoptionserror1",
 		"field a.Baz.bat: option (a.foo).bat: field bat of a.Foo does not exist",
-		fileAnnotations[0].Message(),
+	)
+}
+
+func TestNotAMessageType(t *testing.T) {
+	t.Parallel()
+	testFileAnnotations(
+		t,
+		"notamessagetype",
+		"method a.MyService.Foo: invalid request type: a.MyService.Foo is a method, not a message",
+	)
+}
+
+func TestSpaceBetweenNumberAndID(t *testing.T) {
+	t.Parallel()
+	testFileAnnotations(
+		t,
+		"spacebetweennumberandid",
+		"invalid syntax in integer value: 10to",
+		"syntax error: unexpected error, expecting int literal",
 	)
 }
 
@@ -313,4 +330,13 @@ func testGetImageImportPaths(image bufimage.Image) []string {
 	}
 	sort.Strings(importNames)
 	return importNames
+}
+
+func testFileAnnotations(t *testing.T, relDirPath string, wantMessages ...string) {
+	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", relDirPath))
+	gotMessages := make([]string, len(fileAnnotations))
+	for i, annotation := range fileAnnotations {
+		gotMessages[i] = annotation.Message()
+	}
+	require.Equal(t, wantMessages, gotMessages)
 }
