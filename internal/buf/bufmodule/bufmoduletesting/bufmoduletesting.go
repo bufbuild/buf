@@ -15,11 +15,7 @@
 package bufmoduletesting
 
 import (
-	"testing"
-
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/uuidutil"
-	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -80,24 +76,4 @@ func init() {
 	TestCommit = testCommitDashless
 	TestModuleReferenceFooBarCommitString = "buf.build/foob/bar:" + TestCommit
 	TestModuleReferenceFooBazCommitString = "buf.build/foob/baz:" + TestCommit
-}
-
-// NewFileInfo returns a new FileInfo for testing.
-func NewFileInfo(
-	t *testing.T,
-	path string,
-	externalPath string,
-	isImport bool,
-	moduleIdentity bufmodule.ModuleIdentity,
-	commit string,
-) bufmodule.FileInfo {
-	fileInfo, err := bufmodule.NewFileInfo(
-		path,
-		externalPath,
-		isImport,
-		moduleIdentity,
-		commit,
-	)
-	require.NoError(t, err)
-	return fileInfo
 }

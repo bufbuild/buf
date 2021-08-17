@@ -184,8 +184,10 @@ func TestNormalizeAndCheckPathsAbsEqual1(t *testing.T) {
 	t.Parallel()
 	absA, err := filepath.Abs("a")
 	require.NoError(t, err)
+	absA = filepath.ToSlash(absA)
 	absB, err := filepath.Abs("b")
 	require.NoError(t, err)
+	absB = filepath.ToSlash(absB)
 	testNormalizeAndCheckPathsAbsEqual(
 		t,
 		[]string{
@@ -246,6 +248,12 @@ func TestNormalizeAndCheckPathsAbsErrorAbs3(t *testing.T) {
 
 func TestNormalizeAndCheckPathsAbsEqualAbs1(t *testing.T) {
 	t.Parallel()
+	absA, err := filepath.Abs("/a")
+	require.NoError(t, err)
+	absA = filepath.ToSlash(absA)
+	absB, err := filepath.Abs("/b")
+	require.NoError(t, err)
+	absB = filepath.ToSlash(absB)
 	testNormalizeAndCheckPathsAbsEqual(
 		t,
 		[]string{
@@ -253,8 +261,8 @@ func TestNormalizeAndCheckPathsAbsEqualAbs1(t *testing.T) {
 			"/a/../a",
 		},
 		[]string{
-			"/a",
-			"/b",
+			absA,
+			absB,
 		},
 	)
 }
