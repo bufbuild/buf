@@ -182,14 +182,14 @@ func fileInfosToAbs(t *testing.T, fileInfos []bufmodule.FileInfo) []bufmodule.Fi
 	for i, fileInfo := range fileInfos {
 		absExternalPath, err := normalpath.NormalizeAndAbsolute(fileInfo.ExternalPath())
 		require.NoError(t, err)
-		newFileInfo, err := bufmodule.NewFileInfo(
+		newFileInfo := bufmoduletesting.NewFileInfo(
+			t,
 			fileInfo.Path(),
 			absExternalPath,
 			fileInfo.IsImport(),
 			nil,
 			"",
 		)
-		require.NoError(t, err)
 		newFileInfos[i] = newFileInfo
 	}
 	return newFileInfos

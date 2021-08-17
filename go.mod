@@ -8,7 +8,7 @@ require (
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-cmp v0.5.6
-	github.com/jhump/protoreflect v1.9.0
+	github.com/jhump/protoreflect v1.9.1-0.20210817181203-db1a327a393e
 	github.com/klauspost/compress v1.13.4
 	github.com/klauspost/pgzip v1.2.5
 	github.com/pkg/errors v0.9.1 // indirect
@@ -21,7 +21,7 @@ require (
 	go.uber.org/multierr v1.7.0
 	go.uber.org/zap v1.19.0
 	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
-	golang.org/x/sys v0.0.0-20210816183151-1e6c022a8912 // indirect
+	golang.org/x/sys v0.0.0-20210817190340-bfb29a6856f2 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.2
