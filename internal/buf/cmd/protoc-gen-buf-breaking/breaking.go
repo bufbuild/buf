@@ -40,11 +40,7 @@ import (
 const defaultTimeout = 10 * time.Second
 
 // Main is the main.
-func Main(options ...MainOption) {
-	mainOptions := newMainOptions()
-	for _, option := range options {
-		option(mainOptions)
-	}
+func Main() {
 	appproto.Main(
 		context.Background(),
 		appproto.HandlerFunc(
@@ -59,24 +55,10 @@ func Main(options ...MainOption) {
 					container,
 					responseWriter,
 					request,
-					mainOptions.oldBinaryName,
-					mainOptions.newBinaryName,
 				)
 			},
 		),
 	)
-}
-
-// MainOption is an option for Main.
-type MainOption func(*mainOptions)
-
-// WithDeprecatedBinaryName returns a new MainOption that marks this binary
-// as deprecated and points from the old binary name to the new binary name.
-func WithDeprecatedBinaryName(oldBinaryName string, newBinaryName string) MainOption {
-	return func(mainOptions *mainOptions) {
-		mainOptions.oldBinaryName = oldBinaryName
-		mainOptions.newBinaryName = newBinaryName
-	}
 }
 
 func handle(
@@ -84,8 +66,6 @@ func handle(
 	container app.EnvStderrContainer,
 	responseWriter appproto.ResponseWriter,
 	request *pluginpb.CodeGeneratorRequest,
-	oldBinaryName string,
-	newBinaryName string,
 ) error {
 	responseWriter.SetFeatureProto3Optional()
 	externalConfig := &externalConfig{}
@@ -109,17 +89,6 @@ func handle(
 	if err != nil {
 		return err
 	}
-	if oldBinaryName != "" && newBinaryName != "" {
-		logger.Sugar().Warnf(
-			"%s is deprecated. Use %s instead. %s can be installed in the same manner as %s, whether from GitHub Releases, Homebrew, AUR, or direct Go installation. %s will be deleted as a release artifact before v1.0.",
-			oldBinaryName,
-			newBinaryName,
-			newBinaryName,
-			oldBinaryName,
-			oldBinaryName,
-		)
-	}
-
 	files := request.FileToGenerate
 	if !externalConfig.LimitToInputFiles {
 		files = nil
@@ -208,13 +177,4 @@ func newContainer(c app.EnvContainer) *container {
 		// cannot read against input from stdin, this is for the CodeGeneratorRequest
 		StdinContainer: app.NewStdinContainer(nil),
 	}
-}
-
-type mainOptions struct {
-	oldBinaryName string
-	newBinaryName string
-}
-
-func newMainOptions() *mainOptions {
-	return &mainOptions{}
 }
