@@ -197,8 +197,6 @@ func testRunLint(
 					container,
 					responseWriter,
 					request,
-					"",
-					"",
 				)
 			},
 		),
