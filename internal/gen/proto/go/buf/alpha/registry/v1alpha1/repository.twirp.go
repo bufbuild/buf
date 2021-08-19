@@ -3878,7 +3878,7 @@ func (s *repositoryServiceServer) serveDeleteRepositoryByFullNameProtobuf(ctx co
 }
 
 func (s *repositoryServiceServer) ServiceDescriptor() ([]byte, int) {
-	return twirpFileDescriptor11, 0
+	return twirpFileDescriptor16, 0
 }
 
 func (s *repositoryServiceServer) ProtocGenTwirpVersion() string {
@@ -3892,7 +3892,7 @@ func (s *repositoryServiceServer) PathPrefix() string {
 	return baseServicePath(s.pathPrefix, "buf.alpha.registry.v1alpha1", "RepositoryService")
 }
 
-var twirpFileDescriptor11 = []byte{
+var twirpFileDescriptor16 = []byte{
 	// 1146 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x58, 0x4b, 0x6f, 0xdc, 0x54,
 	0x14, 0xee, 0x9d, 0xa4, 0x79, 0x9c, 0x90, 0x47, 0xaf, 0xda, 0x66, 0xea, 0x34, 0x4d, 0x62, 0xda,

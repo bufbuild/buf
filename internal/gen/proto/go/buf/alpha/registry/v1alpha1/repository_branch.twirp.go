@@ -798,7 +798,7 @@ func (s *repositoryBranchServiceServer) serveListRepositoryBranchesProtobuf(ctx 
 }
 
 func (s *repositoryBranchServiceServer) ServiceDescriptor() ([]byte, int) {
-	return twirpFileDescriptor13, 0
+	return twirpFileDescriptor12, 0
 }
 
 func (s *repositoryBranchServiceServer) ProtocGenTwirpVersion() string {
@@ -812,7 +812,7 @@ func (s *repositoryBranchServiceServer) PathPrefix() string {
 	return baseServicePath(s.pathPrefix, "buf.alpha.registry.v1alpha1", "RepositoryBranchService")
 }
 
-var twirpFileDescriptor13 = []byte{
+var twirpFileDescriptor12 = []byte{
 	// 523 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x54, 0x41, 0x6f, 0xd3, 0x30,
 	0x14, 0x96, 0xd3, 0x01, 0xdb, 0x2b, 0x85, 0x61, 0x04, 0x44, 0xad, 0xba, 0x55, 0x45, 0x42, 0xbb,
