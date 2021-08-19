@@ -29,7 +29,7 @@ type recommendationService struct {
 }
 
 // RecommendedRepositories returns a list of recommended repositories.
-func (s *recommendationService) RecommendedRepositories(ctx context.Context) (repositories []*v1alpha1.Repository, _ error) {
+func (s *recommendationService) RecommendedRepositories(ctx context.Context) (repositories []*v1alpha1.RecommendedRepository, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}

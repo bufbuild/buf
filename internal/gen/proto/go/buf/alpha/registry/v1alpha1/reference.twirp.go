@@ -520,7 +520,7 @@ func (s *referenceServiceServer) serveGetReferenceByNameProtobuf(ctx context.Con
 }
 
 func (s *referenceServiceServer) ServiceDescriptor() ([]byte, int) {
-	return twirpFileDescriptor16, 0
+	return twirpFileDescriptor15, 0
 }
 
 func (s *referenceServiceServer) ProtocGenTwirpVersion() string {
@@ -534,7 +534,7 @@ func (s *referenceServiceServer) PathPrefix() string {
 	return baseServicePath(s.pathPrefix, "buf.alpha.registry.v1alpha1", "ReferenceService")
 }
 
-var twirpFileDescriptor16 = []byte{
+var twirpFileDescriptor15 = []byte{
 	// 416 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x92, 0xcf, 0xaa, 0xd3, 0x40,
 	0x14, 0xc6, 0x9b, 0x46, 0x0b, 0x99, 0x42, 0x95, 0xc1, 0x45, 0x6d, 0x17, 0x4a, 0x17, 0x2a, 0x8a,

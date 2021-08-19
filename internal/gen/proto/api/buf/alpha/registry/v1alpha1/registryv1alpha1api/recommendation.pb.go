@@ -24,5 +24,5 @@ import (
 // RecommendationService is the recommendation service.
 type RecommendationService interface {
 	// RecommendedRepositories returns a list of recommended repositories.
-	RecommendedRepositories(ctx context.Context) (repositories []*v1alpha1.Repository, err error)
+	RecommendedRepositories(ctx context.Context) (repositories []*v1alpha1.RecommendedRepository, err error)
 }
