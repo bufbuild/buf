@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/internal/pkg/stringutil"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -44,40 +45,47 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket)
 	ctx, span := trace.StartSpan(ctx, "get_config")
 	defer span.End()
 
-	var readObjectCloser storage.ReadObjectCloser
-	// go through all valid config file paths and see if we have one
+	// This will be in the order of precedence.
+	var foundConfigFilePaths []string
+	// Go through all valid config file paths and see which ones are present.
+	// If none are present, return the default config.
+	// If multiple are present, error.
 	for _, configFilePath := range allConfigFilePaths {
-		var err error
-		readObjectCloser, err = readBucket.Get(ctx, configFilePath)
+		exists, err := storage.Exists(ctx, readBucket, configFilePath)
 		if err != nil {
-			// if we do not, go to the next config file path
-			if storage.IsNotExist(err) {
-				continue
-			}
 			return nil, err
 		}
-		// we found a readObjectCloser
-		break
+		if exists {
+			foundConfigFilePaths = append(foundConfigFilePaths, configFilePath)
+		}
 	}
-	// we did not discover any config file, return the default configuration
-	if readObjectCloser == nil {
+	switch len(foundConfigFilePaths) {
+	case 0:
+		// Did not find anything, return the default.
 		// TODO: change to V1 when we make V1 the default
 		return p.newConfigV1Beta1(ExternalConfigV1Beta1{})
+	case 1:
+		readObjectCloser, err := readBucket.Get(ctx, foundConfigFilePaths[0])
+		if err != nil {
+			return nil, err
+		}
+		defer func() {
+			retErr = multierr.Append(retErr, readObjectCloser.Close())
+		}()
+		data, err := io.ReadAll(readObjectCloser)
+		if err != nil {
+			return nil, err
+		}
+		return p.getConfigForData(
+			ctx,
+			encoding.UnmarshalYAMLNonStrict,
+			encoding.UnmarshalYAMLStrict,
+			data,
+			readObjectCloser.ExternalPath(),
+		)
+	default:
+		return nil, fmt.Errorf("only one configuration file can exist but found multiple configuration files: %s", stringutil.SliceToString(foundConfigFilePaths))
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, readObjectCloser.Close())
-	}()
-	data, err := io.ReadAll(readObjectCloser)
-	if err != nil {
-		return nil, err
-	}
-	return p.getConfigForData(
-		ctx,
-		encoding.UnmarshalYAMLNonStrict,
-		encoding.UnmarshalYAMLStrict,
-		data,
-		readObjectCloser.ExternalPath(),
-	)
 }
 
 func (p *provider) GetConfigForData(ctx context.Context, data []byte) (*Config, error) {

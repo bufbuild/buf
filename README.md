@@ -13,7 +13,6 @@
 more details.**
 
 ## Goal
----
 
 Buf’s long-term goal is to enable schema-driven development: a future where APIs are defined consistently, in a way that service owners and clients can depend on.
 
@@ -33,14 +32,14 @@ Our second tool, the **Buf Schema Registry (“BSR”)**, will be the hub of our
 
 However, we recommend you read the below introduction first!
 
-- [Tour of existing functionality- takes about 10 minutes to complete](https://docs.buf.build/tour-1)
-- [Overview of our 40 lint rules](https://docs.buf.build/lint-rules)
-- [Overview of our 54 breaking change rules](https://docs.buf.build/breaking-rules)
-- [Simple code generation](https://docs.buf.build/generate-usage)
-- [High-performance protoc replacement](https://docs.buf.build/generate-protoc)
-- [Protobuf Style Guide](https://docs.buf.build/style-guide)
-- [Migration from Protolock](https://docs.buf.build/migration-protolock)
-- [Migration from Prototool](https://docs.buf.build/migration-prototool)
+- [Tour of existing functionality- takes about 10 minutes to complete](https://docs.buf.build/tour/introduction/)
+- [Overview of our 40 lint rules](https://docs.buf.build/lint/rules/)
+- [Overview of our 54 breaking change rules](https://docs.buf.build/breaking/rules/)
+- [Simple code generation](https://docs.buf.build/generate/usage/)
+- [High-performance protoc replacement](https://docs.buf.build/generate/high-performance-protoc-replacement/)
+- [Protobuf Style Guide](https://docs.buf.build/best-practices/style-guide/)
+- [Migration from Protolock](https://docs.buf.build/how-to/migrate-from-protolock/)
+- [Migration from Prototool](https://docs.buf.build/how-to/migrate-from-prototool/)
 
 ## The problems we aim to solve
 
@@ -70,19 +69,19 @@ Our tools will address many of the problems above, ultimately allowing you to re
 
 The Buf CLI incorporates the following components to help you create consistent Protobuf APIs:
 
-- A [linter](https://docs.buf.build/lint-usage) that enforces good API design choices and structure.
-- A [breaking change detector](https://docs.buf.build/breaking-usage) that enforces compatibility at the source code or wire level.
-- A [generator](https://docs.buf.build/generate-usage) that invokes your protoc plugins based on a configurable
+- A [linter](https://docs.buf.build/lint/usage/) that enforces good API design choices and structure.
+- A [breaking change detector](https://docs.buf.build/breaking/usage/) that enforces compatibility at the source code or wire level.
+- A [generator](https://docs.buf.build/generate/usage/) that invokes your protoc plugins based on a configurable
   template.
-  A [protoc replacement](https://docs.buf.build/generate-protoc.md) that uses Buf's newly-developed [high performance Protobuf compiler](https://docs.buf.build/build-compiler).
-- A configurable file [builder](https://docs.buf.build/build-overview) that produces
-  [Images](https://docs.buf.build/build-images), our extension of
+  A [protoc replacement](https://docs.buf.build/generate/high-performance-protoc-replacement/) that uses Buf's newly-developed [high performance Protobuf compiler](https://docs.buf.build/build/internal-compiler/).
+- A configurable file [builder](https://docs.buf.build/build/usage/) that produces
+  [Images](https://docs.buf.build/reference/images/), our extension of
   [FileDescriptorSets](https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto).
 
 The Buf CLI is designed to be extremely simple to use, while providing functionality for advanced use cases. Features of the CLI include:
 
 - **Automatic file discovery**: By default, Buf will build your `.proto` files by walking your file
-  tree and building them per your [build configuration](https://docs.buf.build/build-configuration). This means you no longer need to
+  tree and building them per your [build configuration](https://docs.buf.build/build/usage/#configuration). This means you no longer need to
   manually specify your `--proto_paths` and files every time you run the tool. However, Buf does
   allow manual file specification through command-line flags if you want no file discovery to
   occur, for example in Bazel setups.
@@ -91,8 +90,8 @@ The Buf CLI is designed to be extremely simple to use, while providing functiona
   While we recommend using the defaults, Buf allows you to easily understand and select the exact set
   of lint and breaking change rules your organization needs.
 
-  Buf provides [40 available lint rules](https://docs.buf.build/lint-rules) and [54 available breaking
-  rules](https://docs.buf.build/breaking-rules.md) to cover most needs. We believe our breaking change detection truly
+  Buf provides [40 available lint rules](https://docs.buf.build/lint/rules/) and [54 available breaking
+  rules](https://docs.buf.build/breaking/rules/) to cover most needs. We believe our breaking change detection truly
   covers every scenario for your APIs.
 
 - **Selectable error output**: By default, Buf outputs `file:line:col:message` information
@@ -103,18 +102,18 @@ The Buf CLI is designed to be extremely simple to use, while providing functiona
 
 - **Editor integration**: The default error output is easily parseable by any editor, making the
   feedback loop for issues very short. Currently, we only provide
-  [Vim and Visual Studio Code integration](https://docs.buf.build/editor-integration) for linting but will extend this
+  [Vim and Visual Studio Code integration](https://docs.buf.build/editor-integration/) for linting but will extend this
   in the future to include other editors such as Emacs and Intellij IDEs.
 
 - **Check anything from anywhere**: Buf allows you to not only check a Protobuf schema stored
-  locally as `.proto` files, but allows you to check many different [Inputs](https://docs.buf.build/inputs):
+  locally as `.proto` files, but allows you to check many different [Inputs](https://docs.buf.build/reference/inputs/):
 
   - Tar or zip archives containing `.proto` files, both local and remote.
   - Git repository branches or tags containing `.proto` files, both local and remote.
-  - Pre-built [Images](https://docs.buf.build/build-images) or FileDescriptorSets from `protoc`, from both local and remote
+  - Pre-built [Images](https://docs.buf.build/reference/images/) or FileDescriptorSets from `protoc`, from both local and remote
     (http/https) locations.
 
-- **Speed**: Buf's [internal Protobuf compiler](https://docs.buf.build/build-compiler) utilizes all available cores to compile
+- **Speed**: Buf's [internal Protobuf compiler](https://docs.buf.build/build/internal-compiler/) utilizes all available cores to compile
   your Protobuf schema, while still maintaining deterministic output. Additionally files are copied into
   memory before processing. As an unscientific example, Buf can compile all 2,311 `.proto` files in
   [googleapis](https://github.com/googleapis/googleapis) in about **0.8s** on a four-core machine,
@@ -134,14 +133,14 @@ Initially, the BSR will offer the following key features:
 
 - **Generated libraries produced by a managed compiler**: Language-specific stub generation using Buf’s high-performance, drop-in protoc replacement.
 
-Over time, our goal is to make the BSR the only tool you need to manage your Protobuf workflow from end to end. To that end, there's a lot we are planning with the Buf Schema Registry. For a quick overview, see our [roadmap](https://docs.buf.build/roadmap).
+Over time, our goal is to make the BSR the only tool you need to manage your Protobuf workflow from end to end. To that end, there's a lot we are planning with the Buf Schema Registry. For a quick overview, see our [roadmap](https://docs.buf.build/roadmap/).
 
 ## Where to go from here
 
-To install Buf, proceed to [installation](https://docs.buf.build/installation). This includes links to an example
+To install Buf, proceed to [installation](https://docs.buf.build/installation/). This includes links to an example
 repository for Travis CI and GitHub Actions integration.
 
-Next, we recommend completing the [tour](https://docs.buf.build/tour-1). This tour should only take about 10 minutes, and
+Next, we recommend completing the [tour](https://docs.buf.build/tour/introduction/). This tour should only take about 10 minutes, and
 will give you an overview of most of the existing functionality of Buf.
 
 After completing the tour, check out the remainder of the docs for your specific areas of interest.
@@ -149,4 +148,4 @@ We've aimed to provide as much documentation as we can for the various component
 you a full understanding of Buf's surface area.
 
 Finally, [follow the project on GitHub](https://github.com/bufbuild/buf),
-and [contact us](https://docs.buf.build/contact) if you'd like to get involved.
+and [contact us](https://docs.buf.build/contact/) if you'd like to get involved.

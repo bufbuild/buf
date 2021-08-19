@@ -174,6 +174,11 @@ upgrade:
 	@$(MAKE) generate
 	@$(MAKE) postupgrade
 
+.PHONY: upgradenopost
+upgradenopost:
+	@$(MAKE) preupgrade
+	@$(MAKE) generate
+
 .PHONY: updatemakego
 updatemakego:
 ifndef CONFIRM
