@@ -72,7 +72,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []File
 				// in .proto,  this could be a directory - we need to check it
 				potentialDirPaths = append(potentialDirPaths, targetPath)
 			} else {
-				// we have a file, therefile the targetPath was a file path
+				// we have a file, therefore the targetPath was a file path
 				// add to the nonImportImageFiles if does not already exist
 				if _, ok := fileInfoPaths[targetPath]; !ok {
 					fileInfoPaths[targetPath] = struct{}{}

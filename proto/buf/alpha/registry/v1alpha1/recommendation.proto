@@ -16,7 +16,15 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/repository.proto";
+import "google/protobuf/timestamp.proto";
+
+// RecommendedRepository is the information about a repository needed to link to
+// its owner page.
+message RecommendedRepository {
+  string owner = 1;
+  string name = 2;
+  google.protobuf.Timestamp create_time = 3;
+}
 
 // RecommendationService is the recommendation service.
 service RecommendationService {
@@ -27,5 +35,5 @@ service RecommendationService {
 message RecommendedRepositoriesRequest {}
 
 message RecommendedRepositoriesResponse {
-  repeated buf.alpha.registry.v1alpha1.Repository repositories = 1;
+  repeated RecommendedRepository repositories = 1;
 }

@@ -47,7 +47,7 @@ func newReadBucket(
 		if _, ok := pathToObject[path]; ok {
 			return nil, normalpath.NewError(path, errDuplicatePath)
 		}
-		externalPath := path
+		externalPath := normalpath.Unnormalize(path)
 		if len(pathToExternalPath) > 0 {
 			if mapExternalPath := pathToExternalPath[path]; mapExternalPath != "" {
 				externalPath = mapExternalPath
