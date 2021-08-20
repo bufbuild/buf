@@ -16,7 +16,7 @@ package bufmodulecache
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 
 	"github.com/bufbuild/buf/internal/bufpkg/buflock"
 	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
@@ -172,7 +172,7 @@ func (m *moduleCacher) getModuleAndStoredDigest(
 	defer func() {
 		retErr = multierr.Append(retErr, digestReadObjectCloser.Close())
 	}()
-	digestData, err := ioutil.ReadAll(digestReadObjectCloser)
+	digestData, err := io.ReadAll(digestReadObjectCloser)
 	if err != nil {
 		return nil, "", err
 	}
