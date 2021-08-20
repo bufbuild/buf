@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	internal "github.com/bufbuild/buf/internal/buf/bufplugin"
+	internal "github.com/bufbuild/buf/internal/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/rpc"

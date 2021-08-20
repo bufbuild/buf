@@ -21,9 +21,9 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/buf/bufwork"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"

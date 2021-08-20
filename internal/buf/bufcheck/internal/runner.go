@@ -18,7 +18,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/protosource"
 	"github.com/bufbuild/buf/internal/pkg/protoversion"

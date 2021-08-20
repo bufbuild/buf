@@ -20,12 +20,12 @@ package bufbreaking
 import (
 	"context"
 
-	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking/internal/bufbreakingv1"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking/internal/bufbreakingv1beta1"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/internal/bufpkg/bufimage"
 	"go.uber.org/zap"
 )
 

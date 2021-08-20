@@ -20,7 +20,7 @@ import (
 	"io"
 
 	"github.com/bufbuild/buf/internal/buf/buffetch"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/bufpkg/bufimage"
 	imagev1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/protoencoding"

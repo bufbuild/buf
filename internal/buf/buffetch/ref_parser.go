@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"

@@ -17,19 +17,31 @@ package buffetch
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/git"
+	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
 
 func TestGetParsedRefSuccess(t *testing.T) {
+	// This allows us to test an os-agnostic root directory
+	root, err := filepath.Abs("/")
+	require.NoError(t, err)
+
+	// This lets us test an os-agnostic absolute path
+	absPath, err := filepath.Abs("/foo/bar/..")
+	require.NoError(t, err)
+	expectedAbsDir, err := filepath.Abs("/foo")
+	require.NoError(t, err)
+
 	testGetParsedRefSuccess(
 		t,
 		internal.NewDirectParsedDirRef(
@@ -50,9 +62,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		t,
 		internal.NewDirectParsedDirRef(
 			formatDir,
-			"/",
+			normalpath.Normalize(root),
 		),
-		"/",
+		root,
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -74,9 +86,9 @@ func TestGetParsedRefSuccess(t *testing.T) {
 		t,
 		internal.NewDirectParsedDirRef(
 			formatDir,
-			"/foo",
+			normalpath.Normalize(expectedAbsDir),
 		),
-		"/foo/bar/..",
+		absPath,
 	)
 	testGetParsedRefSuccess(
 		t,
@@ -544,28 +556,6 @@ func TestGetParsedRefSuccess(t *testing.T) {
 			internal.CompressionTypeNone,
 		),
 		app.DevNullFilePath,
-	)
-	// TODO: this needs to be moved to a unix-only test
-	testGetParsedRefSuccess(
-		t,
-		internal.NewDirectParsedSingleRef(
-			formatBin,
-			"",
-			internal.FileSchemeStdin,
-			internal.CompressionTypeNone,
-		),
-		app.DevStdinFilePath,
-	)
-	// TODO: this needs to be moved to a unix-only test
-	testGetParsedRefSuccess(
-		t,
-		internal.NewDirectParsedSingleRef(
-			formatBin,
-			"",
-			internal.FileSchemeStdout,
-			internal.CompressionTypeNone,
-		),
-		app.DevStdoutFilePath,
 	)
 	testGetParsedRefSuccess(
 		t,

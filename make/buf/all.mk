@@ -8,15 +8,15 @@ GO_BINS := $(GO_BINS) \
 	cmd/protoc-gen-buf-lint \
 	cmd/protoc-gen-buf-check-breaking \
 	cmd/protoc-gen-buf-check-lint \
+	internal/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
+	internal/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
+	internal/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc \
+	internal/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclienttwirp \
 	internal/pkg/git/cmd/git-ls-files-unstaged \
 	internal/pkg/storage/cmd/ddiff \
 	internal/pkg/storage/cmd/storage-go-data \
 	internal/pkg/licenseheader/cmd/license-header \
-	internal/pkg/spdx/cmd/spdx-go-data \
-	internal/protoplugin/cmd/protoc-gen-go-api \
-	internal/protoplugin/cmd/protoc-gen-go-apiclient \
-	internal/protoplugin/cmd/protoc-gen-go-apiclientgrpc \
-	internal/protoplugin/cmd/protoc-gen-go-apiclienttwirp
+	internal/pkg/spdx/cmd/spdx-go-data
 GO_TEST_BINS := $(GO_TEST_BINS) \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver \
 	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer
@@ -26,7 +26,7 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.vscode/ \
 	internal/buf/cmd/buf/cache/ \
 	internal/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
-	internal/buf/internal/buftesting/cache/ \
+	internal/bufpkg/buftesting/cache/ \
 	internal/pkg/storage/storageos/tmp/
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
@@ -155,7 +155,7 @@ gofuzz: $(GO_FUZZ)
 	# This adds go-fuzz-dep to go.mod, runs go-fuzz-build, then restores go.mod.
 	cp go.mod $(TMP)/go.mod.bak; cp go.sum $(TMP)/go.sum.bak
 	go get github.com/dvyukov/go-fuzz/go-fuzz-dep@$(GO_FUZZ_VERSION)
-	cd internal/buf/bufimage/bufimagebuild/bufimagebuildtesting; go-fuzz-build -o $(abspath $(TMP))/gofuzz/gofuzz.zip
+	cd internal/bufpkg/bufimage/bufimagebuild/bufimagebuildtesting; go-fuzz-build -o $(abspath $(TMP))/gofuzz/gofuzz.zip
 	rm go.mod go.sum; mv $(TMP)/go.mod.bak go.mod; mv $(TMP)/go.sum.bak go.sum
-	cp internal/buf/bufimage/bufimagebuild/bufimagebuildtesting/corpus/* $(TMP)/gofuzz/corpus
+	cp internal/bufpkg/bufimage/bufimagebuild/bufimagebuildtesting/corpus/* $(TMP)/gofuzz/corpus
 	go-fuzz -bin $(TMP)/gofuzz/gofuzz.zip -workdir $(TMP)/gofuzz $(GO_FUZZ_EXTRA_ARGS)

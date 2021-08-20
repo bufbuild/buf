@@ -88,4 +88,4 @@ issues:
       # we actually want to use this init in testing
     - linters:
         - gochecknoinits
-      path: internal/buf/bufmodule/bufmoduletesting/bufmoduletesting.go
+      path: internal/bufpkg/bufmodule/bufmoduletesting/bufmoduletesting.go

@@ -20,8 +20,8 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/buflock"
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
+	"github.com/bufbuild/buf/internal/bufpkg/buflock"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/internal/bufpkg/bufrpc"
 	modulev1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
