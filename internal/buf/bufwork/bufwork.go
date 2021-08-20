@@ -63,8 +63,8 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"go.uber.org/zap"
@@ -206,7 +206,7 @@ func BuildOptionsForWorkspaceDirectory(
 		absExternalDirOrFilePath, err := normalpath.NormalizeAndAbsolute(externalDirOrFilePath)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"path %q could not be resolved",
+				`path "%s" could not be resolved`,
 				normalpath.Unnormalize(externalDirOrFilePath),
 			)
 		}
@@ -220,7 +220,7 @@ func BuildOptionsForWorkspaceDirectory(
 	for i, absExternalDirOrFilePath := range absExternalDirOrFilePaths {
 		if absRelativeRootPath == absExternalDirOrFilePath {
 			return nil, fmt.Errorf(
-				"path %q is equal to the workspace defined in %q",
+				`path "%s" is equal to the workspace defined in "%s"`,
 				normalpath.Unnormalize(externalDirOrFilePaths[i]),
 				workspaceID,
 			)
@@ -229,7 +229,7 @@ func BuildOptionsForWorkspaceDirectory(
 			relativeRootRelPath, err := normalpath.Rel(absRelativeRootPath, absExternalDirOrFilePath)
 			if err != nil {
 				return nil, fmt.Errorf(
-					"a relative path could not be resolved between %q and %q",
+					`a relative path could not be resolved between "%s" and "%s"`,
 					normalpath.Unnormalize(externalDirOrFilePaths[i]),
 					workspaceID,
 				)
@@ -256,7 +256,7 @@ func BuildOptionsForWorkspaceDirectory(
 	for i, relativeRootRelPath := range relativeRootRelPaths {
 		if subDirPath == relativeRootRelPath {
 			return nil, fmt.Errorf(
-				"path %q is equal to workspace directory %q defined in %q",
+				`path "%s" is equal to workspace directory "%s" defined in "%s"`,
 				normalpath.Unnormalize(externalDirOrFilePaths[i]),
 				normalpath.Unnormalize(subDirPath),
 				workspaceID,
@@ -266,7 +266,7 @@ func BuildOptionsForWorkspaceDirectory(
 			subDirRelPath, err := normalpath.Rel(subDirPath, relativeRootRelPath)
 			if err != nil {
 				return nil, fmt.Errorf(
-					"a relative path could not be resolved between %q and %q",
+					`a relative path could not be resolved between "%s" and "%s"`,
 					normalpath.Unnormalize(externalDirOrFilePaths[i]),
 					subDirPath,
 				)

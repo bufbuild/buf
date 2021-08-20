@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"

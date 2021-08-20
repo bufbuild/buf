@@ -175,7 +175,7 @@ func validateConfigurationOverlap(directories []string, workspaceID string) erro
 			right := directories[j]
 			if normalpath.ContainsPath(left, right, normalpath.Relative) {
 				return fmt.Errorf(
-					"directory %q contains directory %q in %s",
+					`directory "%s" contains directory "%s" in %s`,
 					normalpath.Unnormalize(left),
 					normalpath.Unnormalize(right),
 					workspaceID,
@@ -183,7 +183,7 @@ func validateConfigurationOverlap(directories []string, workspaceID string) erro
 			}
 			if normalpath.ContainsPath(right, left, normalpath.Relative) {
 				return fmt.Errorf(
-					"directory %q contains directory %q in %s",
+					`directory "%s" contains directory "%s" in %s`,
 					normalpath.Unnormalize(right),
 					normalpath.Unnormalize(left),
 					workspaceID,

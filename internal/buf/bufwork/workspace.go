@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 )
@@ -75,7 +75,7 @@ func newWorkspace(
 		)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"failed to get module config for directory %q listed in %s: %w",
+				`failed to get module config for directory "%s" listed in %s: %w`,
 				normalpath.Unnormalize(directory),
 				workspaceID,
 				err,
@@ -101,7 +101,7 @@ func newWorkspace(
 		)
 		if err != nil {
 			return nil, fmt.Errorf(
-				"failed to initialize module for directory %q listed in %s: %w",
+				`failed to initialize module for directory "%s" listed in %s: %w`,
 				normalpath.Unnormalize(directory),
 				workspaceID,
 				err,
@@ -150,7 +150,7 @@ func validateWorkspaceDirectoryNonEmpty(
 	}
 	if isEmpty {
 		return fmt.Errorf(
-			"directory %q listed in %s contains no .proto files",
+			`directory "%s" listed in %s contains no .proto files`,
 			normalpath.Unnormalize(workspaceDirectory),
 			workspaceID,
 		)
@@ -172,7 +172,7 @@ func validateInputOverlap(
 ) error {
 	if normalpath.ContainsPath(workspaceDirectory, targetSubDirPath, normalpath.Relative) {
 		return fmt.Errorf(
-			"failed to build input %q because it is contained by directory %q listed in %s",
+			`failed to build input "%s" because it is contained by directory "%s" listed in %s`,
 			normalpath.Unnormalize(targetSubDirPath),
 			normalpath.Unnormalize(workspaceDirectory),
 			workspaceID,
@@ -181,7 +181,7 @@ func validateInputOverlap(
 
 	if normalpath.ContainsPath(targetSubDirPath, workspaceDirectory, normalpath.Relative) {
 		return fmt.Errorf(
-			"failed to build input %q because it contains directory %q listed in %s",
+			`failed to build input "%s" because it contains directory "%s" listed in %s`,
 			normalpath.Unnormalize(targetSubDirPath),
 			normalpath.Unnormalize(workspaceDirectory),
 			workspaceID,

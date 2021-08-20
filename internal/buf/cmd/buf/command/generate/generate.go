@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/internal/buf/bufgen"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/internal/bufpkg/bufimage"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/storage/storageos"

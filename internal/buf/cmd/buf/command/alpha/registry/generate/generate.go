@@ -19,9 +19,9 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufplugin"
 	"github.com/bufbuild/buf/internal/buf/bufprint"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/internal/bufpkg/bufplugin"
 	registryv1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"

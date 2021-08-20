@@ -24,7 +24,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/git"
 	"github.com/bufbuild/buf/internal/pkg/httpauth"
@@ -647,7 +647,7 @@ func findTerminateFileDirectoryPathFromOS(subDirPath string, terminateFileNames 
 		return "", err
 	}
 	if !fileInfo.IsDir() {
-		return "", normalpath.NewError(subDirPath, errors.New("not a directory"))
+		return "", normalpath.NewError(normalpath.Unnormalize(subDirPath), errors.New("not a directory"))
 	}
 	terminateFileDirectoryPath, err := normalpath.NormalizeAndAbsolute(subDirPath)
 	if err != nil {

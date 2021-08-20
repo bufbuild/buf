@@ -19,8 +19,8 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
 	"github.com/bufbuild/buf/internal/buf/bufprint"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
 	"github.com/bufbuild/buf/internal/pkg/rpc"
