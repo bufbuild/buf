@@ -177,8 +177,8 @@ func TestFail5(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
@@ -187,8 +187,8 @@ func TestFail5(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
 		filepath.Join("testdata", "fail"),
 	)
@@ -200,8 +200,8 @@ func TestFail6(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
@@ -212,8 +212,8 @@ func TestFail6(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"", // stderr should be empty
 		"lint",
 		filepath.Join("testdata", "fail"),
@@ -228,8 +228,8 @@ func TestFail7(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -242,8 +242,8 @@ func TestFail7(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -255,8 +255,8 @@ func TestFail7(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -269,8 +269,8 @@ func TestFail7(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -286,8 +286,8 @@ func TestFail8(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
-		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`,
+		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
+		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail2"),
@@ -296,8 +296,8 @@ func TestFail8(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
-		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`,
+		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
+		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
 		"lint",
 		filepath.Join("testdata", "fail2"),
 	)
@@ -309,7 +309,7 @@ func TestFail9(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail2"),
@@ -320,7 +320,7 @@ func TestFail9(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`,
+		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
 		"lint",
 		filepath.Join("testdata", "fail2"),
 		"--path",
@@ -359,7 +359,7 @@ func TestFail11(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail2/buf/buf2.proto:5:8:buf/buf.proto: does not exist`,
+		fmt.Sprintf("%v:5:8:buf/buf.proto: does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
@@ -370,7 +370,7 @@ func TestFail11(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail2/buf/buf2.proto:5:8:buf/buf.proto: does not exist`,
+		fmt.Sprintf("%v:5:8:buf/buf.proto: does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
@@ -423,7 +423,7 @@ func TestFail13(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`testdata/fail_buf_mod/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".`,
+		filepath.FromSlash(`testdata/fail_buf_mod/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".`),
 		"lint",
 		filepath.Join("testdata", "fail_buf_mod"),
 	)
@@ -509,13 +509,13 @@ func TestFailCheckBreaking1(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`
+		filepath.FromSlash(`
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
-		`,
+		`),
 		"check",
 		"breaking",
 		"--input",
@@ -528,13 +528,13 @@ func TestFailCheckBreaking1(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`
+		filepath.FromSlash(`
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
-		`,
+		`),
 		"check",
 		"breaking",
 		// can't bother right now to filepath.Join this
@@ -546,13 +546,13 @@ func TestFailCheckBreaking1(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`
+		filepath.FromSlash(`
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
-		`,
+		`),
 		"breaking",
 		"--input",
 		// can't bother right now to filepath.Join this
@@ -564,13 +564,13 @@ func TestFailCheckBreaking1(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`
+		filepath.FromSlash(`
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
-		`,
+		`),
 		"", // stderr should be empty
 		"breaking",
 		// can't bother right now to filepath.Join this
@@ -933,9 +933,7 @@ func TestLsFiles(t *testing.T) {
 		t,
 		nil,
 		0,
-		`
-		testdata/success/buf/buf.proto
-		`,
+		filepath.FromSlash(`testdata/success/buf/buf.proto`),
 		"ls-files",
 		"--input",
 		filepath.Join("testdata", "success"),
@@ -944,9 +942,7 @@ func TestLsFiles(t *testing.T) {
 		t,
 		nil,
 		0,
-		`
-		testdata/success/buf/buf.proto
-		`,
+		filepath.FromSlash(`testdata/success/buf/buf.proto`),
 		"ls-files",
 		filepath.Join("testdata", "success"),
 	)

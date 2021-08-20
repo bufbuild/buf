@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/internal/buf/internal/buftesting"
+	"github.com/bufbuild/buf/internal/bufpkg/buftesting"
 	"github.com/bufbuild/buf/internal/pkg/app"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
@@ -44,7 +44,8 @@ var buftestingDirPath = filepath.Join(
 	"..",
 	"..",
 	"..",
-	"internal",
+	"..",
+	"bufpkg",
 	"buftesting",
 )
 

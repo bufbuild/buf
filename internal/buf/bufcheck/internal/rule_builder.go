@@ -15,7 +15,7 @@
 package internal
 
 import (
-	"github.com/bufbuild/buf/internal/buf/bufanalysis"
+	"github.com/bufbuild/buf/internal/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/internal/pkg/protosource"
 )
 

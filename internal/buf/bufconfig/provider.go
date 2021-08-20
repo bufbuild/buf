@@ -21,8 +21,8 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/internal/buf/bufmodule"
-	"github.com/bufbuild/buf/internal/buf/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/internal/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/internal/pkg/encoding"
 	"github.com/bufbuild/buf/internal/pkg/storage"
 	"github.com/bufbuild/buf/internal/pkg/stringutil"

@@ -24,7 +24,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufgen"
-	"github.com/bufbuild/buf/internal/buf/internal/buftesting"
+	"github.com/bufbuild/buf/internal/bufpkg/buftesting"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
 	"github.com/bufbuild/buf/internal/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/internal/pkg/app/appflag"
@@ -37,12 +37,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TODO: this has to change if we split up this repository
 var buftestingDirPath = filepath.Join(
 	"..",
 	"..",
 	"..",
 	"..",
-	"internal",
+	"..",
+	"bufpkg",
 	"buftesting",
 )
 

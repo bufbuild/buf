@@ -22,8 +22,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
+	"github.com/bufbuild/buf/internal/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/internal/pkg/normalpath"
 	"github.com/bufbuild/buf/internal/pkg/protosource"
 	"github.com/bufbuild/buf/internal/pkg/protoversion"
@@ -393,7 +393,7 @@ func checkPackageDirectoryMatch(add addFunc, file protosource.File) error {
 	// need to check case where in root relative directory and no package defined
 	// this should be valid although if SENSIBLE is turned on this will be invalid
 	if dirPath != expectedDirPath {
-		add(file, file.PackageLocation(), nil, "Files with package %q must be within a directory %q relative to root but were in directory %q.", pkg, normalpath.Unnormalize(expectedDirPath), dirPath)
+		add(file, file.PackageLocation(), nil, `Files with package %q must be within a directory "%s" relative to root but were in directory "%s".`, pkg, normalpath.Unnormalize(expectedDirPath), normalpath.Unnormalize(dirPath))
 	}
 	return nil
 }

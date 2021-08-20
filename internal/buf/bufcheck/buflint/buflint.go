@@ -24,12 +24,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/internal/buf/bufanalysis"
 	"github.com/bufbuild/buf/internal/buf/bufcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/internal/buflintv1"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/internal/buflintv1beta1"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/buf/bufimage"
+	"github.com/bufbuild/buf/internal/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/internal/bufpkg/bufimage"
 	"go.uber.org/zap"
 )
 
