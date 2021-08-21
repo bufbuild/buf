@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
 	"github.com/bufbuild/buf/internal/bufpkg/bufrpc"
@@ -107,7 +107,7 @@ func run(
 	}
 	var token string
 	if flags.TokenStdin {
-		data, err := ioutil.ReadAll(container.Stdin())
+		data, err := io.ReadAll(container.Stdin())
 		if err != nil {
 			return err
 		}
