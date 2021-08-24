@@ -20,8 +20,8 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/buflint/internal/buflintcheck"
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/internal/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/pkg/protosource"
 )
 
 var (

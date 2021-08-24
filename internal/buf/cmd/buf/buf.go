@@ -62,8 +62,8 @@ import (
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/mod/modupdate"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/protoc"
 	"github.com/bufbuild/buf/internal/buf/cmd/buf/command/push"
-	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
-	"github.com/bufbuild/buf/internal/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"github.com/bufbuild/buf/private/pkg/app/appflag"
 )
 
 const (

@@ -23,9 +23,9 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/internal/buf/bufcli"
-	"github.com/bufbuild/buf/internal/pkg/osextended"
-	"github.com/bufbuild/buf/internal/pkg/storage/storagearchive"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/osextended"
+	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/stretchr/testify/require"
 )
 
@@ -766,42 +766,6 @@ func TestWorkspaceWithDiamondDependency(t *testing.T) {
 	)
 }
 
-func TestWorkspaceSymlink(t *testing.T) {
-	// The workspace includes valid symlinks.
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		0,
-		``,
-		"build",
-		filepath.Join("testdata", "workspace", "success", "symlink"),
-	)
-	testRunStdout(
-		t,
-		nil,
-		0,
-		filepath.FromSlash(`testdata/workspace/success/symlink/a/a.proto
-        testdata/workspace/success/symlink/b/b.proto
-        testdata/workspace/success/symlink/c/c.proto`),
-		"ls-files",
-		filepath.Join("testdata", "workspace", "success", "symlink"),
-	)
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/workspace/success/symlink/a/a.proto:3:1:Files with package "a" must be within a directory "a" relative to root but were in directory ".".
-        testdata/workspace/success/symlink/a/a.proto:3:1:Package name "a" should be suffixed with a correctly formed version, such as "a.v1".
-        testdata/workspace/success/symlink/b/b.proto:3:1:Files with package "b" must be within a directory "b" relative to root but were in directory ".".
-        testdata/workspace/success/symlink/b/b.proto:3:1:Package name "b" should be suffixed with a correctly formed version, such as "b.v1".
-        testdata/workspace/success/symlink/c/c.proto:3:1:Files with package "c" must be within a directory "c" relative to root but were in directory ".".
-        testdata/workspace/success/symlink/c/c.proto:3:1:Package name "c" should be suffixed with a correctly formed version, such as "c.v1".`),
-		"lint",
-		filepath.Join("testdata", "workspace", "success", "symlink"),
-	)
-}
-
 func TestWorkspaceWKT(t *testing.T) {
 	// The workspace includes multiple images that import the same
 	// well-known type (empty.proto).
@@ -1000,35 +964,13 @@ func TestWorkspaceJumpContextFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: ../breaking/other/proto: is outside the context directory.`,
+		fmt.Sprintf(
+			"%s: %s",
+			filepath.FromSlash(`Failure: directory "../breaking/other/proto" listed in testdata/workspace/fail/jumpcontext/buf.work.yaml is invalid`),
+			"../breaking/other/proto: is outside the context directory.",
+		),
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "jumpcontext"),
-	)
-}
-
-func TestWorkspaceSymlinkFail(t *testing.T) {
-	// The workspace includes a symlink that isn't buildable.
-	testRunStdoutStderr(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		``,
-		filepath.FromSlash(`testdata/workspace/fail/symlink/b/b.proto:5:8:c.proto: does not exist`),
-		"build",
-		filepath.Join("testdata", "workspace", "fail", "symlink"),
-	)
-}
-
-func TestWorkspaceAbsoluteFail(t *testing.T) {
-	// The buf.work.yaml file cannot specify absolute paths.
-	testRunStdoutStderr(
-		t,
-		nil,
-		1,
-		``,
-		filepath.FromSlash(`Failure: directory "/home/buf" listed in testdata/workspace/fail/absolute/buf.work.yaml must be a relative path.`),
-		"build",
-		filepath.Join("testdata", "workspace", "fail", "absolute"),
 	)
 }
 

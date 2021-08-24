@@ -19,7 +19,7 @@ import (
 	"io"
 
 	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
-	"github.com/bufbuild/buf/internal/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"go.uber.org/zap"
 )
 

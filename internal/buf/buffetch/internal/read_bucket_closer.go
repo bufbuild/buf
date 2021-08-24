@@ -15,8 +15,8 @@
 package internal
 
 import (
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 var _ ReadBucketCloser = &readBucketCloser{}
