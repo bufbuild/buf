@@ -456,6 +456,30 @@ func TestBasic(t *testing.T) {
 		codeGeneratorRequest,
 		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false),
 	)
+	codeGeneratorRequestIncludeImports := &pluginpb.CodeGeneratorRequest{
+		ProtoFile: []*descriptorpb.FileDescriptorProto{
+			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+			testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
+		},
+		Parameter: proto.String("foo"),
+		FileToGenerate: []string{
+			"a/a.proto",
+			"import.proto",
+			"a/b.proto",
+			"b/a.proto",
+			"b/b.proto",
+			"d/d.proto/d.proto",
+		},
+	}
+	require.Equal(
+		t,
+		codeGeneratorRequestIncludeImports,
+		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true),
+	)
 	newImage, err = bufimage.NewImageForCodeGeneratorRequest(codeGeneratorRequest)
 	require.NoError(t, err)
 	AssertImageFilesEqual(
@@ -469,6 +493,125 @@ func TestBasic(t *testing.T) {
 			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "d/d.proto/d.proto", false, false, nil),
 		},
 		newImage.Files(),
+	)
+	// imagesByDir and multiple Image tests
+	imagesByDir, err := bufimage.ImageByDir(image)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(imagesByDir))
+	AssertImageFilesEqual(
+		t,
+		[]bufimage.ImageFile{
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
+		},
+		imagesByDir[0].Files(),
+	)
+	AssertImageFilesEqual(
+		t,
+		[]bufimage.ImageFile{
+			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", true, false, nil),
+			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
+			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
+		},
+		imagesByDir[1].Files(),
+	)
+	AssertImageFilesEqual(
+		t,
+		[]bufimage.ImageFile{
+			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
+		},
+		imagesByDir[2].Files(),
+	)
+	codeGeneratorRequests := []*pluginpb.CodeGeneratorRequest{
+		{
+			ProtoFile: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+			},
+			Parameter: proto.String("foo"),
+			FileToGenerate: []string{
+				"a/a.proto",
+				"a/b.proto",
+			},
+		},
+		{
+			ProtoFile: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+				testProtoImageFileToFileDescriptorProto(protoImageFileBA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileBB),
+			},
+			Parameter: proto.String("foo"),
+			FileToGenerate: []string{
+				"b/a.proto",
+				"b/b.proto",
+			},
+		},
+		{
+			ProtoFile: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
+			},
+			Parameter: proto.String("foo"),
+			FileToGenerate: []string{
+				"d/d.proto/d.proto",
+			},
+		},
+	}
+	require.Equal(
+		t,
+		codeGeneratorRequests,
+		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, false),
+	)
+	codeGeneratorRequestsIncludeImports := []*pluginpb.CodeGeneratorRequest{
+		{
+			ProtoFile: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+			},
+			Parameter: proto.String("foo"),
+			FileToGenerate: []string{
+				"a/a.proto",
+				"import.proto",
+				"a/b.proto",
+			},
+		},
+		{
+			ProtoFile: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+				testProtoImageFileToFileDescriptorProto(protoImageFileBA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileBB),
+			},
+			Parameter: proto.String("foo"),
+			FileToGenerate: []string{
+				"b/a.proto",
+				"b/b.proto",
+			},
+		},
+		{
+			ProtoFile: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
+			},
+			Parameter: proto.String("foo"),
+			FileToGenerate: []string{
+				"d/d.proto/d.proto",
+			},
+		},
+	}
+	require.Equal(
+		t,
+		codeGeneratorRequestsIncludeImports,
+		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, true),
 	)
 }
 
