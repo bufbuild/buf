@@ -15,10 +15,7 @@ GO_GET_PKGS := $(GO_GET_PKGS) github.com/twitchtv/twirp@$(PROTOC_GEN_TWIRP_VERSI
 PROTOC_GEN_TWIRP := $(CACHE_VERSIONS)/protoc-gen-twirp/$(PROTOC_GEN_TWIRP_VERSION)
 $(PROTOC_GEN_TWIRP):
 	@rm -f $(CACHE_BIN)/protoc-gen-twirp
-	$(eval PROTOC_GEN_TWIRP_TMP := $(shell mktemp -d))
-	cd $(PROTOC_GEN_TWIRP_TMP); GOBIN=$(CACHE_BIN) go get \
-		github.com/twitchtv/twirp/protoc-gen-twirp@$(PROTOC_GEN_TWIRP_VERSION)
-	@rm -rf $(PROTOC_GEN_TWIRP_TMP)
+	GOBIN=$(CACHE_BIN) go install github.com/twitchtv/twirp/protoc-gen-twirp@$(PROTOC_GEN_TWIRP_VERSION)
 	@rm -rf $(dir $(PROTOC_GEN_TWIRP))
 	@mkdir -p $(dir $(PROTOC_GEN_TWIRP))
 	@touch $(PROTOC_GEN_TWIRP)
