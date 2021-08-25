@@ -13,9 +13,7 @@ BUF_VERSION ?= v0.52.0
 BUF := $(CACHE_VERSIONS)/buf/$(BUF_VERSION)
 $(BUF):
 	@rm -f $(CACHE_BIN)/buf
-	$(eval BUF_TMP := $(shell mktemp -d))
-	cd $(BUF_TMP); GOBIN=$(CACHE_BIN) go get github.com/bufbuild/buf/cmd/buf@$(BUF_VERSION)
-	@rm -rf $(BUF_TMP)
+	GOBIN=$(CACHE_BIN) go install github.com/bufbuild/buf/cmd/buf@$(BUF_VERSION)
 	@rm -rf $(dir $(BUF))
 	@mkdir -p $(dir $(BUF))
 	@touch $(BUF)
