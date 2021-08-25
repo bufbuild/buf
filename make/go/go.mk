@@ -60,9 +60,6 @@ upgradegodeps:
 	rm -f go.mod go.sum
 	go mod init $(GO_MODULE)
 	go mod edit -go=$(GO_MOD_VERSION)
-ifneq ($(GO_GET_PRE_MOD_TIDY_PKGS),)
-	go get $(GO_GET_PRE_MOD_TIDY_PKGS)
-endif
 	go mod tidy -v
 	go get -u -t $(GO_GET_PKGS)
 ifneq ($(GO_GET_PKGS),)

@@ -14,9 +14,7 @@ GOLANGCI_LINT_VERSION ?= v1.41.1
 GOLANGCI_LINT := $(CACHE_VERSIONS)/golangci-lint/$(GOLANGCI_LINT_VERSION)
 $(GOLANGCI_LINT):
 	@rm -f $(CACHE_BIN)/golangci-lint
-	$(eval GOLANGCI_LINT_TMP := $(shell mktemp -d))
-	cd $(GOLANGCI_LINT_TMP); GOBIN=$(CACHE_BIN) go get github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
-	@rm -rf $(GOLANGCI_LINT_TMP)
+	GOBIN=$(CACHE_BIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 	@rm -rf $(dir $(GOLANGCI_LINT))
 	@mkdir -p $(dir $(GOLANGCI_LINT))
 	@touch $(GOLANGCI_LINT)
