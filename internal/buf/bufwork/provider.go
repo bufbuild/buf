@@ -21,10 +21,10 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/bufbuild/buf/internal/pkg/encoding"
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/storage"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -132,20 +132,13 @@ func (p *provider) newConfigV1(externalConfig ExternalConfigV1, workspaceID stri
 	}
 	directorySet := make(map[string]struct{}, len(externalConfig.Directories))
 	for _, directory := range externalConfig.Directories {
-		if filepath.IsAbs(directory) {
-			return nil, fmt.Errorf(
-				"directory %q listed in %s must be a relative path",
-				normalpath.Unnormalize(directory),
-				workspaceID,
-			)
-		}
 		normalizedDirectory, err := normalpath.NormalizeAndValidate(directory)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf(`directory "%s" listed in %s is invalid: %w`, normalpath.Unnormalize(directory), workspaceID, err)
 		}
 		if _, ok := directorySet[normalizedDirectory]; ok {
 			return nil, fmt.Errorf(
-				"directory %q is listed more than once in %s",
+				`directory "%s" is listed more than once in %s`,
 				normalpath.Unnormalize(normalizedDirectory),
 				workspaceID,
 			)

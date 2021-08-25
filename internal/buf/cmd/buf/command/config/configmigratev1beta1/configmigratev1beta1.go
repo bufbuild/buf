@@ -18,9 +18,9 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/buf/bufmigrate"
-	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/appcmd"
-	"github.com/bufbuild/buf/internal/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )

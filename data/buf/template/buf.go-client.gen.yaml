@@ -4,41 +4,41 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/bufbuild/buf/internal/gen/proto/go
+    default: github.com/bufbuild/buf/private/gen/proto/go
 plugins:
   - name: go-grpc
-    out: internal/gen/proto/go
+    out: private/gen/proto/go
     opt:
       - paths=source_relative
       - require_unimplemented_servers=false
   - name: twirp
-    out: internal/gen/proto/go
+    out: private/gen/proto/go
     opt: paths=source_relative
   - name: go-api
-    out: internal/gen/proto/api
+    out: private/gen/proto/api
     opt:
       - paths=source_relative
-      - named_go_package=api=github.com/bufbuild/buf/internal/gen/proto/api
+      - named_go_package=api=github.com/bufbuild/buf/private/gen/proto/api
   - name: go-apiclient
-    out: internal/gen/proto/apiclient
+    out: private/gen/proto/apiclient
     opt:
       - paths=source_relative
-      - named_go_package=api=github.com/bufbuild/buf/internal/gen/proto/api
-      - named_go_package=apiclient=github.com/bufbuild/buf/internal/gen/proto/apiclient
+      - named_go_package=api=github.com/bufbuild/buf/private/gen/proto/api
+      - named_go_package=apiclient=github.com/bufbuild/buf/private/gen/proto/apiclient
     strategy: all
   - name: go-apiclientgrpc
-    out: internal/gen/proto/apiclientgrpc
+    out: private/gen/proto/apiclientgrpc
     opt:
       - paths=source_relative
-      - named_go_package=api=github.com/bufbuild/buf/internal/gen/proto/api
-      - named_go_package=apiclient=github.com/bufbuild/buf/internal/gen/proto/apiclient
-      - named_go_package=apiclientgrpc=github.com/bufbuild/buf/internal/gen/proto/apiclientgrpc
+      - named_go_package=api=github.com/bufbuild/buf/private/gen/proto/api
+      - named_go_package=apiclient=github.com/bufbuild/buf/private/gen/proto/apiclient
+      - named_go_package=apiclientgrpc=github.com/bufbuild/buf/private/gen/proto/apiclientgrpc
     strategy: all
   - name: go-apiclienttwirp
-    out: internal/gen/proto/apiclienttwirp
+    out: private/gen/proto/apiclienttwirp
     opt:
       - paths=source_relative
-      - named_go_package=api=github.com/bufbuild/buf/internal/gen/proto/api
-      - named_go_package=apiclient=github.com/bufbuild/buf/internal/gen/proto/apiclient
-      - named_go_package=apiclienttwirp=github.com/bufbuild/buf/internal/gen/proto/apiclienttwirp
+      - named_go_package=api=github.com/bufbuild/buf/private/gen/proto/api
+      - named_go_package=apiclient=github.com/bufbuild/buf/private/gen/proto/apiclient
+      - named_go_package=apiclienttwirp=github.com/bufbuild/buf/private/gen/proto/apiclienttwirp
     strategy: all

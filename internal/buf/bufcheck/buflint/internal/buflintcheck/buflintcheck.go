@@ -23,11 +23,11 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/protosource"
-	"github.com/bufbuild/buf/internal/pkg/protoversion"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/protosource"
+	"github.com/bufbuild/buf/private/pkg/protoversion"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 const (

@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/internal/bufpkg/bufimage"
-	"github.com/bufbuild/buf/internal/bufpkg/bufimage/bufimagemodify"
-	"github.com/bufbuild/buf/internal/pkg/app"
-	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoexec"
-	"github.com/bufbuild/buf/internal/pkg/app/appproto/appprotoos"
-	"github.com/bufbuild/buf/internal/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
+	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
 

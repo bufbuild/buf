@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"io"
 
-	registryv1alpha1 "github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 type templateVersionPrinter struct {
