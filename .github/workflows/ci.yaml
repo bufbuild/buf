@@ -25,7 +25,7 @@ jobs:
             ~/.cache/buf/${{ runner.os }}/x86_64/go/pkg/mod
             ~/.cache/buf/${{ runner.os }}/x86_64/include
             ~/.cache/buf/${{ runner.os }}/x86_64/versions
-          key: ${{ runner.os }}-buf-${{ hashFiles('**/go.sum', '/make/**') }}-2
+          key: ${{ runner.os }}-buf-${{ hashFiles('**/go.sum', '/make/**') }}
           restore-keys: |
             ${{ runner.os }}-buf-
       - name: make-ci

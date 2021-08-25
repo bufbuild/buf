@@ -14,7 +14,7 @@ BUF_BREAKING_AGAINST_INPUT ?=
 # Settable
 
 .PHONY: bufgeneratedeps
-bufgeneratedeps::
+bufgeneratedeps:: $(BUF)
 
 .PHONY: bufgenerateclean
 bufgenerateclean::
