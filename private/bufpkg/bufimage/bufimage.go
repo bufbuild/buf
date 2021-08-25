@@ -16,13 +16,12 @@ package bufimage
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -302,8 +301,19 @@ func ImageByDir(image Image) ([]Image, error) {
 		}
 	}
 	dirToPaths := normalpath.ByDir(paths...)
+	// we need this to produce a deterministic order of the returned Images
+	dirs := make([]string, 0, len(dirToPaths))
+	for dir := range dirToPaths {
+		dirs = append(dirs, dir)
+	}
+	sort.Strings(dirs)
 	newImages := make([]Image, 0, len(dirToPaths))
-	for _, paths := range dirToPaths {
+	for _, dir := range dirs {
+		paths, ok := dirToPaths[dir]
+		if !ok {
+			// this should never happen
+			return nil, fmt.Errorf("no dir for %q in dirToPaths", dir)
+		}
 		newImage, err := ImageWithOnlyPaths(image, paths)
 		if err != nil {
 			return nil, err
@@ -350,27 +360,21 @@ func ImageToCodeGeneratorRequest(
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
 ) *pluginpb.CodeGeneratorRequest {
-	imageFiles := image.Files()
-	request := &pluginpb.CodeGeneratorRequest{
-		ProtoFile:       make([]*descriptorpb.FileDescriptorProto, len(imageFiles)),
-		CompilerVersion: compilerVersion,
-	}
-	if parameter != "" {
-		request.Parameter = proto.String(parameter)
-	}
-	for i, imageFile := range imageFiles {
-		request.ProtoFile[i] = imageFile.Proto()
-		if (includeImports && !datawkt.Exists(imageFile.Path())) || !imageFile.IsImport() {
-			request.FileToGenerate = append(request.FileToGenerate, imageFile.Path())
-		}
-	}
-	return request
+	return imageToCodeGeneratorRequest(
+		image,
+		parameter,
+		compilerVersion,
+		includeImports,
+		nil,
+		nil,
+	)
 }
 
 // ImagesToCodeGeneratorRequests converts the Images to CodeGeneratorRequests.
 //
 // All non-imports are added as files to generate.
 // If includeImports is set, all non-well-known-type imports are also added as files to generate.
+// If includeImports is set, only one CodeGeneratorRequest will contain any given file as a FileToGenerate.
 func ImagesToCodeGeneratorRequests(
 	images []Image,
 	parameter string,
@@ -378,12 +382,28 @@ func ImagesToCodeGeneratorRequests(
 	includeImports bool,
 ) []*pluginpb.CodeGeneratorRequest {
 	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
+	// we don't need to track these if includeImports as false, so don't waste the time
+	var alreadyUsedPaths map[string]struct{}
+	var nonImportPaths map[string]struct{}
+	if includeImports {
+		alreadyUsedPaths = make(map[string]struct{})
+		nonImportPaths = make(map[string]struct{})
+		for _, image := range images {
+			for _, imageFile := range image.Files() {
+				if !imageFile.IsImport() {
+					nonImportPaths[imageFile.Path()] = struct{}{}
+				}
+			}
+		}
+	}
 	for i, image := range images {
-		requests[i] = ImageToCodeGeneratorRequest(
+		requests[i] = imageToCodeGeneratorRequest(
 			image,
 			parameter,
 			compilerVersion,
 			includeImports,
+			alreadyUsedPaths,
+			nonImportPaths,
 		)
 	}
 	return requests

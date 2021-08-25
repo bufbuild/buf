@@ -19,12 +19,14 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 // paths can be either files (ending in .proto) or directories
@@ -259,4 +261,78 @@ func fileDescriptorProtoToProtoImageFile(
 			ModuleInfo:          protoModuleInfo,
 		},
 	}
+}
+
+func imageToCodeGeneratorRequest(
+	image Image,
+	parameter string,
+	compilerVersion *pluginpb.Version,
+	includeImports bool,
+	alreadyUsedPaths map[string]struct{},
+	nonImportPaths map[string]struct{},
+) *pluginpb.CodeGeneratorRequest {
+	imageFiles := image.Files()
+	request := &pluginpb.CodeGeneratorRequest{
+		ProtoFile:       make([]*descriptorpb.FileDescriptorProto, len(imageFiles)),
+		CompilerVersion: compilerVersion,
+	}
+	if parameter != "" {
+		request.Parameter = proto.String(parameter)
+	}
+	for i, imageFile := range imageFiles {
+		request.ProtoFile[i] = imageFile.Proto()
+		if isFileToGenerate(
+			imageFile,
+			alreadyUsedPaths,
+			nonImportPaths,
+			includeImports,
+		) {
+			request.FileToGenerate = append(request.FileToGenerate, imageFile.Path())
+		}
+	}
+	return request
+}
+
+func isFileToGenerate(
+	imageFile ImageFile,
+	alreadyUsedPaths map[string]struct{},
+	nonImportPaths map[string]struct{},
+	includeImports bool,
+) bool {
+	path := imageFile.Path()
+	if !imageFile.IsImport() {
+		if alreadyUsedPaths != nil {
+			// set as already used
+			alreadyUsedPaths[path] = struct{}{}
+		}
+		// this is a non-import in this image, we always want to generate
+		return true
+	}
+	if !includeImports {
+		// we don't want to include imports
+		return false
+	}
+	if datawkt.Exists(path) {
+		// we don't want to generate wkt even if includeImports is set
+		return false
+	}
+	if alreadyUsedPaths != nil {
+		if _, ok := alreadyUsedPaths[path]; ok {
+			// this was already added for generate to another image
+			return false
+		}
+	}
+	if nonImportPaths != nil {
+		if _, ok := nonImportPaths[path]; ok {
+			// this is a non-import in another image so it will be generated
+			// from another image
+			return false
+		}
+	}
+	// includeImports is set, this isn't a wkt, and it won't be generated in another image
+	if alreadyUsedPaths != nil {
+		// set as already used
+		alreadyUsedPaths[path] = struct{}{}
+	}
+	return true
 }
