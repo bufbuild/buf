@@ -140,6 +140,9 @@ pregenerate::
 .PHONY: prepostgenerate
 prepostgenerate::
 
+.PHONY: postprepostgenerate
+postprepostgenerate::
+
 .PHONY: postgenerate
 postgenerate::
 
@@ -151,6 +154,7 @@ generate:
 	@$(MAKE) preinstallgenerate
 	@$(MAKE) pregenerate
 	@$(MAKE) prepostgenerate
+	@$(MAKE) postprepostgenerate
 	@$(MAKE) postgenerate
 	@$(MAKE) licensegenerate
 

@@ -18,8 +18,8 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/bufbuild/buf/internal/pkg/app/appname"
-	"github.com/bufbuild/buf/internal/pkg/cert/certclient"
+	"github.com/bufbuild/buf/private/pkg/app/appname"
+	"github.com/bufbuild/buf/private/pkg/cert/certclient"
 )
 
 const currentVersion = "v1"

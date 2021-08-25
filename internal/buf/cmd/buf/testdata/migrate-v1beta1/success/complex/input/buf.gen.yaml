@@ -4,5 +4,5 @@ options:
   optimize_for: CODE_SIZE
 plugins:
   - name: go
-    out: internal/gen/proto/go
+    out: private/gen/proto/go
     opt: paths=source_relative

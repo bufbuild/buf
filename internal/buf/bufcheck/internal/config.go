@@ -19,8 +19,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 const (

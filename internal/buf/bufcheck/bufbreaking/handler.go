@@ -18,10 +18,10 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/internal/buf/bufcheck/internal"
-	"github.com/bufbuild/buf/internal/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/internal/bufpkg/bufimage"
-	"github.com/bufbuild/buf/internal/bufpkg/bufimage/bufimageutil"
-	"github.com/bufbuild/buf/internal/pkg/protosource"
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
+	"github.com/bufbuild/buf/private/pkg/protosource"
 	"go.uber.org/zap"
 )
 

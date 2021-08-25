@@ -27,10 +27,10 @@ import (
 	"github.com/bufbuild/buf/internal/buf/bufconfig"
 	"github.com/bufbuild/buf/internal/buf/bufgen"
 	"github.com/bufbuild/buf/internal/buf/bufwork"
-	"github.com/bufbuild/buf/internal/bufpkg/buflock"
-	"github.com/bufbuild/buf/internal/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/internal/pkg/encoding"
-	"github.com/bufbuild/buf/internal/pkg/stringutil"
+	"github.com/bufbuild/buf/private/bufpkg/buflock"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/pkg/encoding"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/multierr"
 )
 

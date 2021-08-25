@@ -20,8 +20,8 @@ import (
 	"errors"
 	"text/template"
 
-	"github.com/bufbuild/buf/internal/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/internal/pkg/storage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 // If this is updated, make sure to update docs.buf.build TODO automate this

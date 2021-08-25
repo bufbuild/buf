@@ -18,7 +18,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/internal/buf/buffetch/internal"
-	"github.com/bufbuild/buf/internal/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
 
 var _ SourceRef = &sourceRef{}

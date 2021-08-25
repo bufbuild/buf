@@ -8,11 +8,11 @@ linters-settings:
       - 'fmt\.Print.*'
   importas:
     alias:
-      - pkg: github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/image/v1
+      - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1
         alias: imagev1
-      - pkg: github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/module/v1
+      - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1
         alias: modulev1
-      - pkg: github.com/bufbuild/buf/internal/gen/proto/go/buf/alpha/registry/v1alpha1
+      - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1
         alias: registryv1alpha1
 linters:
   enable:
@@ -66,7 +66,7 @@ issues:
       # is no error, but it would be very unidiomatic to return an error from
       # the functions that do these casts, and we completely control the
       # context values within this file
-      path: internal/pkg/rpc/headers.go
+      path: private/pkg/rpc/headers.go
     - linters:
         - gosec
       # G101 checks for hardcoded credentials, and the variables named "*Password*
@@ -77,15 +77,19 @@ issues:
         - gosec
       # G204 checks that exec.Command is not called with non-constants.
       # We call exec.Command for protoc and plugin proxying, and control the arguments completely.
-      path: internal/pkg/app/appproto/appprotoexec/binary_handler.go
+      path: private/pkg/app/appproto/appprotoexec/binary_handler.go
       text: "G204:"
     - linters:
         - gosec
       # G204 checks that exec.Command is not called with non-constants.
       # We call exec.Command for protoc and plugin proxying, and control the arguments completely.
-      path: internal/pkg/app/appproto/appprotoexec/protoc_proxy_handler.go
+      path: private/pkg/app/appproto/appprotoexec/protoc_proxy_handler.go
       text: "G204:"
       # we actually want to use this init in testing
     - linters:
         - gochecknoinits
-      path: internal/bufpkg/bufmodule/bufmoduletesting/bufmoduletesting.go
+      path: private/bufpkg/bufmodule/bufmoduletesting/bufmoduletesting.go
+      # we actually want to use this init
+    - linters:
+        - gochecknoinits
+      path: internal/privateusage/privateusage.go
