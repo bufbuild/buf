@@ -14,7 +14,7 @@
 
 package main
 
-import breaking "github.com/bufbuild/buf/internal/buf/cmd/protoc-gen-buf-breaking"
+import breaking "github.com/bufbuild/buf/private/buf/cmd/protoc-gen-buf-breaking"
 
 func main() {
 	breaking.Main()
