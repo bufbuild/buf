@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "google/protobuf/compiler/plugin.proto";
 import "buf/alpha/image/v1/image.proto";
 
 // File defines a file with a path and some content.
@@ -42,14 +43,53 @@ message RuntimeLibrary {
   string version = 2;
 }
 
-// GenerateService manages remote generation requests.
-service GenerateService {
-  // Generate generates an array of files given the provided
-  // module reference and template version ID.
-  rpc Generate(GenerateRequest) returns (GenerateResponse);
+message PluginReference {
+// The owner of the plugin which identifies the
+// plugins to use with this generation.
+  string owner = 1;
+  // The name of the plugin which identifies the
+  // plugins to use with this generation.
+  string name = 2;
+  // The plugin version to use with this generation.
+  string version = 3;
+  // The parameters to pass to the plugin. These will
+  // be merged into a single, comma-separated string.
+  repeated string parameters = 4;
 }
 
-message GenerateRequest {
+// GenerateService manages remote generation requests.
+service GenerateService {
+  // GeneratePlugins generates an array of files given the provided
+  // module reference and plugin version and option tuples. No attempt
+  // is made at merging insertion points.
+  rpc GeneratePlugins(GeneratePluginsRequest) returns (GeneratePluginsResponse);
+  // GenerateTemplate generates an array of files given the provided
+  // module reference and template version.
+  rpc GenerateTemplate(GenerateTemplateRequest) returns (GenerateTemplateResponse);
+}
+
+message GeneratePluginsRequest {
+  // The image to run plugins against to generate the
+  // desired file outputs.
+  buf.alpha.image.v1.Image image = 1;
+  // The array of plugins to use.
+  repeated PluginReference plugins = 2;
+}
+
+message GeneratePluginsResponse {
+  // Contains all the responses from the generated plugins. The order
+  // is defined by the order of the plugins in the request.
+  repeated google.protobuf.compiler.CodeGeneratorResponse responses = 1;
+  // An optional array defining runtime libraries that the generated code
+  // requires to run, as specified by the plugin author. This may contain
+  // duplicate entries as the generation can be the result of multiple plugins,
+  // each of which declares its own runtime library dependencies. The libraries
+  // returned are lexicographically ordered by their name, but not deduplicated.
+  // How to handle duplicate libraries is left to the user.
+  repeated RuntimeLibrary runtime_libraries = 2;
+}
+
+message GenerateTemplateRequest {
   // The image to run plugins against to generate the
   // desired file outputs.
   buf.alpha.image.v1.Image image = 1;
@@ -64,13 +104,13 @@ message GenerateRequest {
   string template_version = 4;
 }
 
-message GenerateResponse {
+message GenerateTemplateResponse {
   // files contains all the files output by the generation,
   // in lexicographical order.
   repeated File files = 1;
   // An optional array defining runtime libraries that the generated code
   // requires to run. This may contain duplicate entries as the generation
-  // can be the result of multiple plugins running, each of which declares
-  // its own runtime library dependencies.
+  // can be the result of multiple plugins, each of which declares its own
+  // runtime library dependencies.
   repeated RuntimeLibrary runtime_libraries = 2;
 }
