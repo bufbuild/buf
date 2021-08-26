@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -63,7 +64,7 @@ func newModuleReader(
 func (m *moduleReader) GetModule(
 	ctx context.Context,
 	modulePin bufmodule.ModulePin,
-) (bufmodule.Module, error) {
+) (module bufmodule.Module, retErr error) {
 	module, err := m.cache.GetModule(ctx, modulePin)
 	if err != nil {
 		if storage.IsNotExist(err) {
@@ -71,12 +72,34 @@ func (m *moduleReader) GetModule(
 				"cache_miss",
 				zap.String("module_pin", modulePin.String()),
 			)
+			// We need to use a separate file lock in this case because it would otherwise contend with
+			// the file lock used to read and write from the cache (i.e. deadlock).
+			unlocker, err := m.fileLocker.Lock(ctx, newCacheKey(modulePin)+".download")
+			if err != nil {
+				return nil, err
+			}
+			defer func() {
+				retErr = multierr.Append(retErr, unlocker.Unlock())
+			}()
+			// Now that we have acquired the write lock, we're guaranteed to be the only running process in this branch.
+			// Another process might have already made it here, so first check if the module was already fetched and
+			// stored in the cache before continuing.
+			module, err := m.cache.GetModule(ctx, modulePin)
+			if err != nil {
+				if !storage.IsNotExist(err) {
+					return nil, err
+				}
+			}
+			if err == nil {
+				// Another process fetched the module before us, so we can return early.
+				return module, nil
+			}
 			if m.messageWriter != nil {
 				if _, err := m.messageWriter.Write([]byte("buf: downloading " + modulePin.String() + "\n")); err != nil {
 					return nil, err
 				}
 			}
-			module, err := m.delegate.GetModule(ctx, modulePin)
+			module, err = m.delegate.GetModule(ctx, modulePin)
 			if err != nil {
 				return nil, err
 			}
