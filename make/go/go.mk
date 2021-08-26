@@ -76,7 +76,8 @@ godeps: deps
 
 .PHONY: gofmtmodtidy
 gofmtmodtidy:
-	gofmt -s -w $(shell find . -name '*.go')
+	@echo gofmt -s -w ALL_GO_FILES
+	@gofmt -s -w $(shell find . -name '*.go')
 	go mod tidy -v
 
 postgenerate:: gofmtmodtidy

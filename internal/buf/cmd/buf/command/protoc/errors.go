@@ -36,10 +36,6 @@ func newRecursiveReferenceError(flagFilePath string) error {
 	return fmt.Errorf("%s recursively referenced", flagFilePath)
 }
 
-func newOutMultipleColonsError(pluginName string, out string) error {
-	return fmt.Errorf("invalid value for --%s_out=%s (multiple colons)", pluginName, out)
-}
-
 func newDuplicateOutError(pluginName string) error {
 	return fmt.Errorf("duplicate --%s_out", pluginName)
 }

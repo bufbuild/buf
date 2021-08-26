@@ -161,8 +161,8 @@ func RunTestSuite(
 	twoDirPath := filepath.Join(storagetestingDirPath, "testdata", "two")
 	threeDirPath := filepath.Join(storagetestingDirPath, "testdata", "three")
 	fourDirPath := filepath.Join(storagetestingDirPath, "testdata", "four")
-	symlinkSuccessDirPath := filepath.Join(storagetestingDirPath, "..", "..", "filepathextended", "testdata", "symlink_success")
-	symlinkLoopDirPath := filepath.Join(storagetestingDirPath, "..", "..", "filepathextended", "testdata", "symlink_loop")
+	symlinkSuccessDirPath := filepath.Join(storagetestingDirPath, "testdata", "symlink_success")
+	symlinkLoopDirPath := filepath.Join(storagetestingDirPath, "testdata", "symlink_loop")
 	defaultProvider := storageos.NewProvider()
 
 	for _, prefix := range []string{
