@@ -188,6 +188,16 @@ func TestReadConfigV1(t *testing.T) {
 			},
 		},
 	}
+	successConfig4 := &Config{
+		PluginConfigs: []*PluginConfig{
+			{
+				Remote:   "someremote.com/owner/plugins/myplugin",
+				Out:      "gen/go",
+				Version:  "v1.1.0-1",
+				Strategy: StrategyDirectory,
+			},
+		},
+	}
 	ctx := context.Background()
 	provider := NewProvider(zap.NewNop())
 	readBucket, err := storagemem.NewReadBucket(nil)
@@ -249,10 +259,38 @@ func TestReadConfigV1(t *testing.T) {
 	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig3, config)
+	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success4.yaml")))
+	require.NoError(t, err)
+	require.Equal(t, successConfig4, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success4.yaml"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride((string(data))))
+	require.NoError(t, err)
+	require.Equal(t, successConfig4, config)
+	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success4.json")))
+	require.NoError(t, err)
+	require.Equal(t, successConfig4, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success4.json"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(string(data)))
+	require.NoError(t, err)
+	require.Equal(t, successConfig4, config)
+	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "gen_success4.yml")))
+	require.NoError(t, err)
+	require.Equal(t, successConfig4, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "gen_success4.yml"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(string(data)))
+	require.NoError(t, err)
+	require.Equal(t, successConfig4, config)
 
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error1.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error2.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error3.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error4.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error5.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error6.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error7.yaml"))
 
 	successConfig = &Config{
 		PluginConfigs: []*PluginConfig{

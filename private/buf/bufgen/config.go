@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -139,6 +141,8 @@ func newConfigV1(externalConfig ExternalConfigV1, id string) (*Config, error) {
 			pluginConfigs,
 			&PluginConfig{
 				Name:     plugin.Name,
+				Remote:   plugin.Remote,
+				Version:  plugin.Version,
 				Out:      plugin.Out,
 				Opt:      opt,
 				Path:     plugin.Path,
@@ -157,11 +161,31 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 		return fmt.Errorf("%s: no plugins set", id)
 	}
 	for _, plugin := range externalConfig.Plugins {
-		if plugin.Name == "" {
-			return fmt.Errorf("%s: plugin name is required", id)
+		if plugin.Name == "" && plugin.Remote == "" {
+			return fmt.Errorf("%s: plugin name or remote plugin name is required", id)
+		}
+		if plugin.Name != "" && plugin.Remote != "" {
+			return fmt.Errorf("%s: only one of plugin name and remote plugin name can be set", id)
 		}
 		if plugin.Out == "" {
 			return fmt.Errorf("%s: plugin %s out is required", id, plugin.Name)
+		}
+		if plugin.Remote != "" {
+			if _, _, _, err := bufplugin.ParsePluginPath(plugin.Remote); err != nil {
+				return fmt.Errorf("%s: invalid remote plugin name: %w", id, err)
+			}
+			// We limit the amount of validation done on the client side intentionally
+			if plugin.Version == "" {
+				return fmt.Errorf("%s: remote plugin %s requires a version", id, plugin.Remote)
+			}
+			if plugin.Path != "" {
+				return fmt.Errorf("%s: remote plugin %s cannot specify a path", id, plugin.Remote)
+			}
+			continue
+		}
+		// Check that the plugin name doesn't look like a remote plugin
+		if _, _, _, err := bufplugin.ParsePluginPath(plugin.Name); err == nil {
+			return fmt.Errorf("%s: invalid plugin name, did you mean to use a remote plugin?", id)
 		}
 	}
 	return nil
@@ -338,4 +362,9 @@ type readConfigOptions struct {
 
 func newReadConfigOptions() *readConfigOptions {
 	return &readConfigOptions{}
+}
+
+func pluginNameIsRemote(pluginName string) bool {
+	// Local plugins cannot contain "/"
+	return strings.Contains(pluginName, "/")
 }

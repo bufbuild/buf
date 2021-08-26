@@ -1,0 +1,5 @@
+version: v1
+plugins:
+  - remote: someremote.com/owner/plugins/myplugin
+    out: gen/go
+    # No version, should error
