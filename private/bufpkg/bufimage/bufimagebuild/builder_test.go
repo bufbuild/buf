@@ -34,7 +34,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 var buftestingDirPath = filepath.Join(
@@ -173,21 +172,6 @@ func TestGoogleapis(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestCompareGoogleapis(t *testing.T) {
-	testingextended.SkipIfShort(t)
-	// Don't run in parallel as it allocates a lot of memory
-	// cannot directly compare with source code info as buf protoc creates additional source
-	// code infos that protoc does not
-	image := testBuildGoogleapis(t, false)
-	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
-	actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, false)
-	prototesting.AssertFileDescriptorSetsEqual(
-		t,
-		fileDescriptorSet,
-		actualProtocFileDescriptorSet,
-	)
-}
-
 func TestCompareCustomOptions1(t *testing.T) {
 	t.Parallel()
 	testCompare(t, "customoptions1")
@@ -259,15 +243,6 @@ func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {
 	image, fileAnnotations := testBuild(t, includeSourceInfo, googleapisDirPath)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	return image
-}
-
-func testBuildActualProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
-	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 0)
-	fileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, true, includeSourceInfo, googleapisDirPath, filePaths)
-	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(fileDescriptorSet.GetFile()))
-
-	return fileDescriptorSet
 }
 
 func testBuild(t *testing.T, includeSourceInfo bool, dirPath string) (bufimage.Image, []bufanalysis.FileAnnotation) {
