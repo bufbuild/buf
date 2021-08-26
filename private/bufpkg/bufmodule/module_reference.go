@@ -84,6 +84,9 @@ func (m *moduleReference) Reference() string {
 }
 
 func (m *moduleReference) String() string {
+	if m.reference == MainBranch {
+		return m.remote + "/" + m.owner + "/" + m.repository
+	}
 	return m.remote + "/" + m.owner + "/" + m.repository + ":" + m.reference
 }
 

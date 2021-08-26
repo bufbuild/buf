@@ -202,6 +202,7 @@ type ModuleReference interface {
 	ModuleIdentity
 
 	// Prints either remote/owner/repository:{branch,commit}
+	// If the reference is equal to MainBranch, prints remote/owner/repository.
 	fmt.Stringer
 
 	// Either branch, tag, or commit
