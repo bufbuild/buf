@@ -124,6 +124,27 @@ bufrelease:
 updatehomebrewbadge:
 	$(SED_I) "s/HOMEBREW_VERSION/v$(shell bash make/buf/scripts/homebrewversion.bash)/g" README.md
 
+.PHONY: updateversion
+updateversion:
+ifndef VERSION
+	$(error "VERSION must be set")
+endif
+	$(SED_I) "s/Version.*=.*\"0\.[0-9][0-9]*\.[0-9][0-9]*.*\"/Version = \"$(VERSION)\"/g" private/buf/bufcli/bufcli.go
+	gofmt -s -w private/buf/bufcli/bufcli.go
+
+.PHONY: updategoversion
+updategoversion: installgit-ls-files-unstaged
+ifndef GOVERSION
+	$(error "GOVERSION must be set")
+endif
+	# make sure both of these docker images exist
+	# the release of these images will lag the actual release
+	docker pull golang:$(GOVERSION)-buster
+	docker pull golang:$(GOVERSION)-alpine3.14
+	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
+	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
+	$(SED_I) "s/go-version: 1\.[0-9][0-9]*\.[0-9][0-9]*/go-version: $(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)
+
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)
 	@rm -rf $(TMP)/gofuzz
