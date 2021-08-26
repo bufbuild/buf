@@ -98,27 +98,14 @@ func RunProtoc(
 	stdout io.Writer,
 	extraFlags ...string,
 ) error {
-	protocBinPath, err := exec.LookPath("protoc")
+	protocBinPath, err := getProtocBinPath()
 	if err != nil {
 		return err
 	}
-	protocBinPath, err = filepath.Abs(protocBinPath)
+	protocIncludePath, err := getProtocIncludePath(protocBinPath)
 	if err != nil {
 		return err
 	}
-	protocIncludePath, err := filepath.Abs(filepath.Join(filepath.Dir(protocBinPath), "..", "include"))
-	if err != nil {
-		return err
-	}
-	// OK to use os.Stat here
-	wktFileInfo, err := os.Stat(filepath.Join(protocIncludePath, "google", "protobuf", "any.proto"))
-	if err != nil {
-		return err
-	}
-	if !wktFileInfo.Mode().IsRegular() {
-		return fmt.Errorf("could not find google/protobuf/any.proto in %s", protocIncludePath)
-	}
-
 	args := []string{"-I", protocIncludePath}
 	for _, root := range roots {
 		args = append(args, "-I", root)
@@ -222,4 +209,27 @@ func AssertFileDescriptorSetsEqual(t *testing.T, one *descriptorpb.FileDescripto
 	assert.Empty(t, diff)
 	diff = DiffFileDescriptorSetsCompare(one, two)
 	assert.Empty(t, diff)
+}
+
+// getProtocBinPath gets the os-specific path for the protoc binary on disk.
+func getProtocBinPath() (string, error) {
+	protocBinPath, err := exec.LookPath("protoc")
+	if err != nil {
+		return "", err
+	}
+	return filepath.Abs(protocBinPath)
+}
+
+// checkWKT checks that the well-known types are in included in the protoc libraries and returns an error if
+// they are not present.
+func checkWKT(protocIncludePath string) error {
+	// OK to use os.Stat here
+	wktFileInfo, err := os.Stat(filepath.Join(protocIncludePath, "google", "protobuf", "any.proto"))
+	if err != nil {
+		return err
+	}
+	if !wktFileInfo.Mode().IsRegular() {
+		return fmt.Errorf("could not find google/protobuf/any.proto in %s", protocIncludePath)
+	}
+	return nil
 }

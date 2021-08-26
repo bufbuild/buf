@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/internal/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
 )
@@ -276,7 +277,7 @@ func (f *flagsBuilder) buildRec(
 		if arg[0] != '@' {
 			filePaths = append(filePaths, arg)
 		} else {
-			flagFilePath := arg[1:]
+			flagFilePath := normalpath.Unnormalize(arg[1:])
 			if _, ok := seenFlagFilePaths[flagFilePath]; ok {
 				return nil, newRecursiveReferenceError(flagFilePath)
 			}
@@ -359,14 +360,14 @@ func (f *flagsBuilder) parsePluginNameToPluginInfo(pluginNameToPluginInfo map[st
 		case 1:
 			out := f.pluginFake[pluginValue.OutIndexes[0]]
 			var opt string
-			split := strings.Split(out, ":")
-			switch len(split) {
-			case 1:
-			case 2:
-				out = split[1]
-				opt = split[0]
-			default:
-				return newOutMultipleColonsError(pluginName, out)
+			if isOutNotAFullPath(out) {
+				split := strings.SplitN(out, ":", 2)
+				switch len(split) {
+				case 1:
+				case 2:
+					out = split[1]
+					opt = split[0]
+				}
 			}
 			pluginInfo, ok := pluginNameToPluginInfo[pluginName]
 			if !ok {

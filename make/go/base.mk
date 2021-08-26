@@ -56,6 +56,13 @@ ifeq ($(UNAME_OS),Linux)
 OPEN_CMD := xdg-open
 endif
 
+ifeq ($(UNAME_OS),Darwin)
+SED_I := sed -i ''
+endif
+ifeq ($(UNAME_OS),Linux)
+SED_I := sed -i
+endif
+
 # Runtime ALL
 
 # All variables exported here must also be added to env.sh
