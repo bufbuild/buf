@@ -8,10 +8,10 @@
 /cmd/protoc-gen-buf-check-breaking/protoc-gen-buf-check-breaking
 /cmd/protoc-gen-buf-check-lint/protoc-gen-buf-check-lint
 /cmd/protoc-gen-buf-lint/protoc-gen-buf-lint
-/internal/buf/cmd/buf/cache/
-/internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
-/internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
-/internal/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/
+/private/buf/cmd/buf/cache/
+/private/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
+/private/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
+/private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/
 /private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api/protoc-gen-go-api
 /private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient/protoc-gen-go-apiclient
 /private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc/protoc-gen-go-apiclientgrpc
