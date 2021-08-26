@@ -1,0 +1,167 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package bandeps
+
+import (
+	"context"
+	"sync"
+
+	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/thread"
+	"go.opencensus.io/trace"
+	"go.uber.org/zap"
+)
+
+type checker struct {
+	logger *zap.Logger
+}
+
+func newChecker(logger *zap.Logger) *checker {
+	return &checker{
+		logger: logger,
+	}
+}
+
+func (c *checker) Check(
+	ctx context.Context,
+	envContainer app.EnvContainer,
+	externalConfig ExternalConfig,
+) ([]Violation, error) {
+	state := newState(c.logger, envContainer)
+	if err := c.populateState(ctx, state, externalConfig); err != nil {
+		return nil, err
+	}
+	for _, externalBanConfig := range externalConfig.Bans {
+		if err := c.checkBan(ctx, state, externalBanConfig); err != nil {
+			return nil, err
+		}
+	}
+	return state.Violations(), nil
+}
+
+func (c *checker) checkBan(
+	ctx context.Context,
+	state *state,
+	externalBanConfig ExternalBanConfig,
+) error {
+	ctx, span := trace.StartSpan(ctx, "checkBan")
+	defer span.End()
+
+	packages, err := c.getPackages(ctx, state, externalBanConfig.Packages)
+	if err != nil {
+		return err
+	}
+	banPackages, err := c.getPackages(ctx, state, externalBanConfig.Deps)
+	if err != nil {
+		return err
+	}
+
+	for pkg := range packages {
+		deps, err := state.DepsForPackages(ctx, pkg)
+		if err != nil {
+			return err
+		}
+		for dep := range deps {
+			if _, ok := banPackages[dep]; ok {
+				state.AddViolation(
+					newViolation(
+						pkg,
+						dep,
+						externalBanConfig.Note,
+					),
+				)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (c *checker) getPackages(
+	ctx context.Context,
+	state *state,
+	externalPackageConfig ExternalPackageConfig,
+) (map[string]struct{}, error) {
+	usePackages, err := state.PackagesForPackageExpressions(ctx, externalPackageConfig.Use...)
+	if err != nil {
+		return nil, err
+	}
+	exceptPackages, err := state.PackagesForPackageExpressions(ctx, externalPackageConfig.Except...)
+	if err != nil {
+		return nil, err
+	}
+	subtractMaps(usePackages, exceptPackages)
+	return usePackages, nil
+}
+
+func (c *checker) populateState(ctx context.Context, state *state, externalConfig ExternalConfig) error {
+	ctx, span := trace.StartSpan(ctx, "populateState")
+	defer span.End()
+
+	var depPackageExpressions []string
+	var packageExpressions []string
+	for _, externalBanConfig := range externalConfig.Bans {
+		depPackageExpressions = append(depPackageExpressions, externalBanConfig.Packages.Use...)
+		depPackageExpressions = append(depPackageExpressions, externalBanConfig.Packages.Except...)
+		packageExpressions = append(packageExpressions, externalBanConfig.Deps.Use...)
+		packageExpressions = append(packageExpressions, externalBanConfig.Deps.Except...)
+	}
+
+	depPackages := make(map[string]struct{})
+	var lock sync.Mutex
+	var jobs []func() error
+	for _, packageExpression := range depPackageExpressions {
+		packageExpression := packageExpression
+		jobs = append(
+			jobs,
+			func() error {
+				pkgs, err := state.PackagesForPackageExpressions(ctx, packageExpression)
+				if err != nil {
+					return err
+				}
+				lock.Lock()
+				addMaps(depPackages, pkgs)
+				lock.Unlock()
+				return nil
+			},
+		)
+	}
+	for _, packageExpression := range packageExpressions {
+		packageExpression := packageExpression
+		jobs = append(
+			jobs,
+			func() error {
+				_, err := state.PackagesForPackageExpressions(ctx, packageExpression)
+				return err
+			},
+		)
+	}
+	if err := thread.Parallelize(jobs...); err != nil {
+		return err
+	}
+
+	jobs = make([]func() error, 0)
+	for pkg := range depPackages {
+		pkg := pkg
+		jobs = append(
+			jobs,
+			func() error {
+				_, err := state.DepsForPackages(ctx, pkg)
+				return err
+			},
+		)
+	}
+	return thread.Parallelize(jobs...)
+}

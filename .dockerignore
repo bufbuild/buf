@@ -17,6 +17,7 @@ private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient/protoc-gen-go-apiclien
 private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc/protoc-gen-go-apiclientgrpc
 private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclienttwirp/protoc-gen-go-apiclienttwirp
 private/bufpkg/buftesting/cache/
+private/pkg/bandeps/cmd/bandeps/bandeps
 private/pkg/git/cmd/git-ls-files-unstaged/git-ls-files-unstaged
 private/pkg/licenseheader/cmd/license-header/license-header
 private/pkg/spdx/cmd/spdx-go-data/spdx-go-data

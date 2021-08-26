@@ -12,6 +12,7 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclienttwirp \
+	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
 	private/pkg/storage/cmd/storage-go-data \
@@ -50,6 +51,12 @@ include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
+.PHONY: bandeps
+bandeps: installbandeps
+	bandeps -f data/bandeps/bandeps.yaml
+
+postlonglint:: bandeps
+
 .PHONY: godata
 godata: installspdx-go-data installstorage-go-data $(PROTOC)
 	rm -rf private/gen/data
@@ -62,7 +69,12 @@ prepostgenerate:: godata
 
 .PHONY: licenseheader
 licenseheader: installlicense-header installgit-ls-files-unstaged
-	license-header \
+	@echo license-header \
+		--license-type "$(LICENSE_HEADER_LICENSE_TYPE)" \
+		--copyright-holder "$(LICENSE_HEADER_COPYRIGHT_HOLDER)" \
+		--year-range "$(LICENSE_HEADER_YEAR_RANGE)" \
+		ALL_FILES
+	@license-header \
 		--license-type "$(LICENSE_HEADER_LICENSE_TYPE)" \
 		--copyright-holder "$(LICENSE_HEADER_COPYRIGHT_HOLDER)" \
 		--year-range "$(LICENSE_HEADER_YEAR_RANGE)" \
@@ -91,11 +103,11 @@ bufgenerateclean:: bufgeneratecleango
 
 .PHONY: bufgenerateprotogo
 bufgenerateprotogo:
-	buf generate proto --template data/buf/template/buf.go.gen.yaml
+	buf generate proto --template data/template/buf.go.gen.yaml
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
-	buf generate proto --template data/buf/template/buf.go-client.gen.yaml
+	buf generate proto --template data/template/buf.go-client.gen.yaml
 
 bufgeneratesteps:: \
 	bufgenerateprotogo \
@@ -104,6 +116,13 @@ bufgeneratesteps:: \
 .PHONY: bufrelease
 bufrelease:
 	DOCKER_IMAGE=golang:1.17.0-buster bash make/buf/scripts/release.bash
+
+# We have to manually set the Homebrew version on the Homebrew badge as there
+# is no badge on shields.io for Homebrew packages outside of homebrew-core
+
+.PHONY: updatehomebrewbadge
+updatehomebrewbadge:
+	$(SED_I) "s/HOMEBREW_VERSION/v$(shell bash make/buf/scripts/homebrewversion.bash)/g" README.md
 
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)

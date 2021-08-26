@@ -25,6 +25,8 @@ import (
 )
 
 func TestParseFlags(t *testing.T) {
+	absFilePath, err := filepath.Abs("out")
+	require.NoError(t, err)
 	testCases := []struct {
 		Args          []string
 		Expected      *env
@@ -522,6 +524,61 @@ func TestParseFlags(t *testing.T) {
 						"bat",
 					},
 					ErrorFormat: defaultErrorFormat,
+				},
+				FilePaths: []string{
+					"foo.proto",
+				},
+			},
+		},
+		{
+			Args: []string{
+				"-I",
+				"proto",
+				"foo.proto",
+				fmt.Sprintf("--go_out=%s", absFilePath),
+			},
+			Expected: &env{
+				flags: flags{
+					IncludeDirPaths: []string{
+						"proto",
+					},
+					ErrorFormat: "gcc",
+				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
+				},
+				PluginNameToPluginInfo: map[string]*pluginInfo{
+					"go": {
+						Out: absFilePath,
+					},
+				},
+				FilePaths: []string{
+					"foo.proto",
+				},
+			},
+		},
+		{
+			Args: []string{
+				"-I",
+				"proto",
+				"foo.proto",
+				fmt.Sprintf("--go_out=opt:%s", absFilePath),
+			},
+			Expected: &env{
+				flags: flags{
+					IncludeDirPaths: []string{
+						"proto",
+					},
+					ErrorFormat: "gcc",
+				},
+				PluginNamesSortedByOutIndex: []string{
+					"go",
+				},
+				PluginNameToPluginInfo: map[string]*pluginInfo{
+					"go": {
+						Out: absFilePath,
+						Opt: []string{"opt"},
+					},
 				},
 				FilePaths: []string{
 					"foo.proto",
