@@ -15,6 +15,8 @@
 package bufplugin
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -23,7 +25,9 @@ import (
 
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/encoding"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const (
@@ -235,6 +239,61 @@ func ParseTemplateVersionConfig(config string) (*TemplateVersionConfig, error) {
 		templateVersionConfig.PluginVersions = append(templateVersionConfig.PluginVersions, PluginVersion(pluginVersion))
 	}
 	return templateVersionConfig, nil
+}
+
+// PluginResult describes the result of executing a plugin.
+type PluginResult struct {
+	Plugin   PluginVersion
+	Response *pluginpb.CodeGeneratorResponse
+}
+
+// MergeInsertionPoints traverses the plugin results and merges any insertion points present in any responses.
+// The order of inserts depends on the order of the input plugins.
+func MergeInsertionPoints(ctx context.Context, pluginResults []PluginResult) (map[string][]byte, error) {
+	files := make(map[string][]byte)
+	for _, pluginResult := range pluginResults {
+		if pluginResult.Response.Error != nil {
+			return nil, fmt.Errorf("unexpected response error: %s", *pluginResult.Response.Error)
+		}
+		for _, file := range pluginResult.Response.File {
+			fileName := file.GetName()
+			insertionPoint := file.GetInsertionPoint()
+			if insertionPoint != "" {
+				parentFile, ok := files[fileName]
+				if !ok {
+					return nil, fmt.Errorf(
+						"plugin %s/%s requested insertion point in file %q which does not exist",
+						pluginResult.Plugin.Owner,
+						pluginResult.Plugin.Name,
+						fileName,
+					)
+				}
+				newFileContents, err := appproto.ApplyInsertionPoint(
+					context.Background(),
+					file,
+					bytes.NewBuffer(parentFile),
+				)
+				if err != nil {
+					return nil, fmt.Errorf(
+						"failed to apply insertion point %q in file %q for plugin %s/%s: %w",
+						insertionPoint,
+						fileName,
+						pluginResult.Plugin.Owner,
+						pluginResult.Plugin.Name,
+						err,
+					)
+				}
+				files[fileName] = newFileContents
+				continue
+			}
+			if _, ok := files[fileName]; ok {
+				return nil, fmt.Errorf("file %q defined multiple times", fileName)
+			}
+			files[fileName] = []byte(file.GetContent())
+		}
+	}
+
+	return files, nil
 }
 
 type externalTemplateConfig struct {

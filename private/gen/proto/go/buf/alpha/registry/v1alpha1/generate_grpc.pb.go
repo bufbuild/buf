@@ -36,9 +36,13 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GenerateServiceClient interface {
-	// Generate generates an array of files given the provided
-	// module reference and template version ID.
-	Generate(ctx context.Context, in *GenerateRequest, opts ...grpc.CallOption) (*GenerateResponse, error)
+	// GeneratePlugins generates an array of files given the provided
+	// module reference and plugin version and option tuples. No attempt
+	// is made at merging insertion points.
+	GeneratePlugins(ctx context.Context, in *GeneratePluginsRequest, opts ...grpc.CallOption) (*GeneratePluginsResponse, error)
+	// GenerateTemplate generates an array of files given the provided
+	// module reference and template version.
+	GenerateTemplate(ctx context.Context, in *GenerateTemplateRequest, opts ...grpc.CallOption) (*GenerateTemplateResponse, error)
 }
 
 type generateServiceClient struct {
@@ -49,9 +53,18 @@ func NewGenerateServiceClient(cc grpc.ClientConnInterface) GenerateServiceClient
 	return &generateServiceClient{cc}
 }
 
-func (c *generateServiceClient) Generate(ctx context.Context, in *GenerateRequest, opts ...grpc.CallOption) (*GenerateResponse, error) {
-	out := new(GenerateResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.GenerateService/Generate", in, out, opts...)
+func (c *generateServiceClient) GeneratePlugins(ctx context.Context, in *GeneratePluginsRequest, opts ...grpc.CallOption) (*GeneratePluginsResponse, error) {
+	out := new(GeneratePluginsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.GenerateService/GeneratePlugins", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *generateServiceClient) GenerateTemplate(ctx context.Context, in *GenerateTemplateRequest, opts ...grpc.CallOption) (*GenerateTemplateResponse, error) {
+	out := new(GenerateTemplateResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.GenerateService/GenerateTemplate", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,17 +75,24 @@ func (c *generateServiceClient) Generate(ctx context.Context, in *GenerateReques
 // All implementations should embed UnimplementedGenerateServiceServer
 // for forward compatibility
 type GenerateServiceServer interface {
-	// Generate generates an array of files given the provided
-	// module reference and template version ID.
-	Generate(context.Context, *GenerateRequest) (*GenerateResponse, error)
+	// GeneratePlugins generates an array of files given the provided
+	// module reference and plugin version and option tuples. No attempt
+	// is made at merging insertion points.
+	GeneratePlugins(context.Context, *GeneratePluginsRequest) (*GeneratePluginsResponse, error)
+	// GenerateTemplate generates an array of files given the provided
+	// module reference and template version.
+	GenerateTemplate(context.Context, *GenerateTemplateRequest) (*GenerateTemplateResponse, error)
 }
 
 // UnimplementedGenerateServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedGenerateServiceServer struct {
 }
 
-func (UnimplementedGenerateServiceServer) Generate(context.Context, *GenerateRequest) (*GenerateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Generate not implemented")
+func (UnimplementedGenerateServiceServer) GeneratePlugins(context.Context, *GeneratePluginsRequest) (*GeneratePluginsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GeneratePlugins not implemented")
+}
+func (UnimplementedGenerateServiceServer) GenerateTemplate(context.Context, *GenerateTemplateRequest) (*GenerateTemplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateTemplate not implemented")
 }
 
 // UnsafeGenerateServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -86,20 +106,38 @@ func RegisterGenerateServiceServer(s grpc.ServiceRegistrar, srv GenerateServiceS
 	s.RegisterService(&GenerateService_ServiceDesc, srv)
 }
 
-func _GenerateService_Generate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GenerateRequest)
+func _GenerateService_GeneratePlugins_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GeneratePluginsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(GenerateServiceServer).Generate(ctx, in)
+		return srv.(GenerateServiceServer).GeneratePlugins(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.GenerateService/Generate",
+		FullMethod: "/buf.alpha.registry.v1alpha1.GenerateService/GeneratePlugins",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GenerateServiceServer).Generate(ctx, req.(*GenerateRequest))
+		return srv.(GenerateServiceServer).GeneratePlugins(ctx, req.(*GeneratePluginsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GenerateService_GenerateTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GenerateServiceServer).GenerateTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.GenerateService/GenerateTemplate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GenerateServiceServer).GenerateTemplate(ctx, req.(*GenerateTemplateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -112,8 +150,12 @@ var GenerateService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*GenerateServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Generate",
-			Handler:    _GenerateService_Generate_Handler,
+			MethodName: "GeneratePlugins",
+			Handler:    _GenerateService_GeneratePlugins_Handler,
+		},
+		{
+			MethodName: "GenerateTemplate",
+			Handler:    _GenerateService_GenerateTemplate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

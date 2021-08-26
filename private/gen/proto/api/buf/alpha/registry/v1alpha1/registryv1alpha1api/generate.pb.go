@@ -20,13 +20,22 @@ import (
 	context "context"
 	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	pluginpb "google.golang.org/protobuf/types/pluginpb"
 )
 
 // GenerateService manages remote generation requests.
 type GenerateService interface {
-	// Generate generates an array of files given the provided
-	// module reference and template version ID.
-	Generate(
+	// GeneratePlugins generates an array of files given the provided
+	// module reference and plugin version and option tuples. No attempt
+	// is made at merging insertion points.
+	GeneratePlugins(
+		ctx context.Context,
+		image *v1.Image,
+		plugins []*v1alpha1.PluginReference,
+	) (responses []*pluginpb.CodeGeneratorResponse, runtimeLibraries []*v1alpha1.RuntimeLibrary, err error)
+	// GenerateTemplate generates an array of files given the provided
+	// module reference and template version.
+	GenerateTemplate(
 		ctx context.Context,
 		image *v1.Image,
 		templateOwner string,

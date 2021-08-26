@@ -116,7 +116,7 @@ func run(
 	if err != nil {
 		return fmt.Errorf("failed to get image for reference %q: %w", moduleReference, err)
 	}
-	files, runtimeLibraries, err := generateService.Generate(
+	files, runtimeLibraries, err := generateService.GenerateTemplate(
 		ctx,
 		image,
 		templateOwner,
