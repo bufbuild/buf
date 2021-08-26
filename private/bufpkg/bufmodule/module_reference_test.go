@@ -25,7 +25,7 @@ func TestModuleReferenceForString(t *testing.T) {
 	t.Parallel()
 	expectedModuleReference, err := NewModuleReference("foo.com", "barr", "baz", "main")
 	require.NoError(t, err)
-	require.Equal(t, "foo.com/barr/baz:main", expectedModuleReference.String())
+	require.Equal(t, "foo.com/barr/baz", expectedModuleReference.String())
 	moduleReference, err := ModuleReferenceForString("foo.com/barr/baz")
 	require.NoError(t, err)
 	require.Equal(t, expectedModuleReference, moduleReference)
