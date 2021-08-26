@@ -15,10 +15,12 @@
 package bufplugin
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 func TestParseTemplateConfigJSONFile(t *testing.T) {
@@ -410,4 +412,48 @@ plugin_versions:
     version: v2.1.0
 `)
 	require.Error(t, err)
+}
+
+func TestMergeInsertionPoints(t *testing.T) {
+	results := []PluginResult{
+		{
+			Plugin: PluginVersion{
+				Owner:   "owner1",
+				Name:    "plugin1",
+				Version: "version1",
+			},
+			Response: &pluginpb.CodeGeneratorResponse{
+				File: []*pluginpb.CodeGeneratorResponse_File{
+					{
+						Name:    testStringPointer("file1.java"),
+						Content: testStringPointer("// @@protoc_insertion_point(insertionPoint1)"),
+					},
+				},
+			},
+		},
+		{
+			Plugin: PluginVersion{
+				Owner:   "owner2",
+				Name:    "plugin2",
+				Version: "version2",
+			},
+			Response: &pluginpb.CodeGeneratorResponse{
+				File: []*pluginpb.CodeGeneratorResponse_File{
+					{
+						Name:           testStringPointer("file1.java"),
+						Content:        testStringPointer("!! this was inserted !!"),
+						InsertionPoint: testStringPointer("insertionPoint1"),
+					},
+				},
+			},
+		},
+	}
+	files, err := MergeInsertionPoints(context.Background(), results)
+	require.NoError(t, err)
+	require.Len(t, files, 1)
+	require.EqualValues(t, "!! this was inserted !!\n// @@protoc_insertion_point(insertionPoint1)", files["file1.java"])
+}
+
+func testStringPointer(s string) *string {
+	return &s
 }

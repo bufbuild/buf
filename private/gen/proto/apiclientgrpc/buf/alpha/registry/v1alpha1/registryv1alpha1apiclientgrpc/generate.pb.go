@@ -21,6 +21,7 @@ import (
 	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	zap "go.uber.org/zap"
+	pluginpb "google.golang.org/protobuf/types/pluginpb"
 )
 
 type generateService struct {
@@ -29,9 +30,33 @@ type generateService struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// Generate generates an array of files given the provided
-// module reference and template version ID.
-func (s *generateService) Generate(
+// GeneratePlugins generates an array of files given the provided
+// module reference and plugin version and option tuples. No attempt
+// is made at merging insertion points.
+func (s *generateService) GeneratePlugins(
+	ctx context.Context,
+	image *v1.Image,
+	plugins []*v1alpha1.PluginReference,
+) (responses []*pluginpb.CodeGeneratorResponse, runtimeLibraries []*v1alpha1.RuntimeLibrary, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GeneratePlugins(
+		ctx,
+		&v1alpha1.GeneratePluginsRequest{
+			Image:   image,
+			Plugins: plugins,
+		},
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	return response.Responses, response.RuntimeLibraries, nil
+}
+
+// GenerateTemplate generates an array of files given the provided
+// module reference and template version.
+func (s *generateService) GenerateTemplate(
 	ctx context.Context,
 	image *v1.Image,
 	templateOwner string,
@@ -41,9 +66,9 @@ func (s *generateService) Generate(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.Generate(
+	response, err := s.client.GenerateTemplate(
 		ctx,
-		&v1alpha1.GenerateRequest{
+		&v1alpha1.GenerateTemplateRequest{
 			Image:           image,
 			TemplateOwner:   templateOwner,
 			TemplateName:    templateName,
