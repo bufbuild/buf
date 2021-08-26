@@ -71,7 +71,7 @@ issues:
         - gosec
       # G101 checks for hardcoded credentials, and the variables named "*Password*
       # trip this off.
-      path: internal/buf/bufcli/bufcli.go
+      path: private/buf/bufcli/bufcli.go
       text: "G101:"
     - linters:
         - gosec
@@ -92,4 +92,4 @@ issues:
       # we actually want to use this init
     - linters:
         - gochecknoinits
-      path: internal/privateusage/privateusage.go
+      path: private/usage/usage.go

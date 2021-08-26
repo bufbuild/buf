@@ -14,7 +14,7 @@
 
 package main
 
-import lint "github.com/bufbuild/buf/internal/buf/cmd/protoc-gen-buf-lint"
+import lint "github.com/bufbuild/buf/private/buf/cmd/protoc-gen-buf-lint"
 
 func main() {
 	lint.Main()

@@ -19,14 +19,14 @@ GO_BINS := $(GO_BINS) \
 	private/pkg/licenseheader/cmd/license-header \
 	private/pkg/spdx/cmd/spdx-go-data
 GO_TEST_BINS := $(GO_TEST_BINS) \
-	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver \
-	internal/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer
+	private/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver \
+	private/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
 	.vscode/ \
-	internal/buf/cmd/buf/cache/ \
-	internal/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
+	private/buf/cmd/buf/cache/ \
+	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
 	private/bufpkg/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/
 LICENSE_HEADER_LICENSE_TYPE := apache
