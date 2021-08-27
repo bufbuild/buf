@@ -1,4 +1,3 @@
-# This script expects to be called in an administrator powershell
 $installedApps = choco list --localonly | Out-String
 
 $apps = @('diffutils', 'golang', 'protoc')
