@@ -18,9 +18,6 @@ jobs:
       - name: setup-external-plugins
         if: success()
         run: ./windows/setupExternalPlugins.ps1
-      - name: setup-internal-plugins
-        if: success()
-        run: ./windows/setupInternalPlugins.ps1
       - name: install-buf
         if: success()
         run: go install ./cmd/buf
