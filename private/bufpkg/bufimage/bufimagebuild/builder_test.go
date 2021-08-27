@@ -17,6 +17,7 @@ package bufimagebuild
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path/filepath"
 	"sort"
 	"testing"
@@ -187,7 +188,7 @@ func TestCustomOptionsError1(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"customoptionserror1",
-		filepath.ToSlash("testdata/customoptionserror1/b.proto:9:27:field a.Baz.bat: option (a.foo).bat: field bat of a.Foo does not exist"),
+		filepath.FromSlash("testdata/customoptionserror1/b.proto:9:27:field a.Baz.bat: option (a.foo).bat: field bat of a.Foo does not exist"),
 	)
 }
 
@@ -196,7 +197,7 @@ func TestNotAMessageType(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"notamessagetype",
-		filepath.ToSlash("testdata/notamessagetype/a.proto:9:11:method a.MyService.Foo: invalid request type: a.MyService.Foo is a method, not a message"),
+		filepath.FromSlash("testdata/notamessagetype/a.proto:9:11:method a.MyService.Foo: invalid request type: a.MyService.Foo is a method, not a message"),
 	)
 }
 
@@ -205,8 +206,8 @@ func TestSpaceBetweenNumberAndID(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"spacebetweennumberandid",
-		filepath.ToSlash("testdata/spacebetweennumberandid/a.proto:6:3:invalid syntax in integer value: 10to"),
-		filepath.ToSlash("testdata/spacebetweennumberandid/a.proto:6:3:syntax error: unexpected error, expecting int literal"),
+		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:3:invalid syntax in integer value: 10to"),
+		filepath.FromSlash("testdata/spacebetweennumberandid/a.proto:6:3:syntax error: unexpected error, expecting int literal"),
 	)
 }
 
@@ -215,7 +216,7 @@ func TestCyclicImport(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"cyclicimport",
-		filepath.ToSlash(`testdata/cyclicimport/a/a.proto:5:8:cycle found in imports: "a/a.proto" -> "b/b.proto" -> "a/a.proto"`),
+		fmt.Sprintf(`%s:5:8:cycle found in imports: "a/a.proto" -> "b/b.proto" -> "a/a.proto"`, filepath.FromSlash("testdata/cyclicimport/a/a.proto")),
 	)
 }
 
