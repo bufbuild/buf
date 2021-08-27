@@ -14,17 +14,20 @@ on:
       - main
 jobs:
   codeql:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: checkout
         uses: actions/checkout@v2
       - name: initialize
+        if: success()
         uses: github/codeql-action/init@v1
         with:
           # Limit analysis to Go for now.
           # Available languages: https://docs.github.com/en/code-security/secure-coding/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#changing-the-languages-that-are-analyzed
           languages: go
       - name: autobuild
+        if: success()
         uses: github/codeql-action/autobuild@v1
       - name: analyze
+        if: success()
         uses: github/codeql-action/analyze@v1
