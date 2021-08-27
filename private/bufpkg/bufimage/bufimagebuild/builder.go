@@ -99,7 +99,7 @@ func (b *builder) build(
 		fileAnnotations = append(fileAnnotations, buildResult.FileAnnotations...)
 	}
 	if len(fileAnnotations) > 0 {
-		bufanalysis.SortFileAnnotations(fileAnnotations)
+		bufanalysis.DeduplicateAndSortFileAnnotations(fileAnnotations)
 		return nil, fileAnnotations, nil
 	}
 
