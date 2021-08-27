@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build aix || darwin || dragonfly || freebsd || (js && wasm) || linux || netbsd || openbsd || solaris
+// +build aix darwin dragonfly freebsd js,wasm linux netbsd openbsd solaris
+
 package bufimagebuildtesting
 
 import (

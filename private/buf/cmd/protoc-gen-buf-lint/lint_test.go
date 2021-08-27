@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -40,8 +41,8 @@ func TestRunLint1(t *testing.T) {
 		},
 		"",
 		[]string{
-			filepath.Join("buf", "buf.proto"),
-			filepath.Join("buf", "buf_two.proto"),
+			normalpath.Join("buf", "buf.proto"),
+			normalpath.Join("buf", "buf_two.proto"),
 		},
 		0,
 		`
@@ -65,7 +66,7 @@ func TestRunLint2(t *testing.T) {
 		},
 		"",
 		[]string{
-			filepath.Join("buf", "buf.proto"),
+			normalpath.Join("buf", "buf.proto"),
 		},
 		0,
 		`
@@ -86,7 +87,7 @@ func TestRunLint3(t *testing.T) {
 		},
 		`{"input_config":"testdata/fail/something.yaml"}`,
 		[]string{
-			filepath.Join("buf", "buf.proto"),
+			normalpath.Join("buf", "buf.proto"),
 		},
 		0,
 		`
@@ -105,7 +106,7 @@ func TestRunLint4(t *testing.T) {
 		},
 		`{"input_config":{"lint":{"use":["PACKAGE_DIRECTORY_MATCH"]}}}`,
 		[]string{
-			filepath.Join("buf", "buf.proto"),
+			normalpath.Join("buf", "buf.proto"),
 		},
 		0,
 		`
@@ -124,7 +125,7 @@ func TestRunLint5(t *testing.T) {
 		},
 		`{"input_config":{"version":"v1","lint":{"use":["PACKAGE_DIRECTORY_MATCH"]}}}`,
 		[]string{
-			filepath.Join("buf", "buf.proto"),
+			normalpath.Join("buf", "buf.proto"),
 		},
 		0,
 		`
@@ -144,7 +145,7 @@ func TestRunLint6(t *testing.T) {
 		},
 		`{"input_config":{"lint":{"use":["PACKAGE_DIRECTORY_MATCH"]}},"error_format":"json"}`,
 		[]string{
-			filepath.Join("buf", "buf.proto"),
+			normalpath.Join("buf", "buf.proto"),
 		},
 		0,
 		`
@@ -163,7 +164,7 @@ func TestRunLint7(t *testing.T) {
 		},
 		`{"input_config":{"version":"v1","lint":{"use":["PACKAGE_DIRECTORY_MATCH"]}},"error_format":"json"}`,
 		[]string{
-			filepath.Join("buf", "buf.proto"),
+			normalpath.Join("buf", "buf.proto"),
 		},
 		0,
 		`
