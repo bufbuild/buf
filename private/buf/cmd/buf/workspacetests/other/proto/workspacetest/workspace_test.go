@@ -47,9 +47,9 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		t,
 		nil,
 		0,
-		`../one/a.proto
+		filepath.FromSlash(`../one/a.proto
         ../one/b.proto
-        ../two/c.proto`,
+        ../two/c.proto`),
 		"ls-files",
 		filepath.Join("..", "..", ".."),
 	)
@@ -57,9 +57,9 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`../one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
+		filepath.FromSlash(`../one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
         ../one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
-        ../two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`,
+        ../two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`),
 		"lint",
 		filepath.Join("..", "..", ".."),
 	)
@@ -67,8 +67,8 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`../one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
-        ../one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".`,
+		filepath.FromSlash(`../one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
+        ../one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".`),
 		"lint",
 		filepath.Join("..", "..", ".."),
 		"--path",
@@ -78,7 +78,7 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		`../two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`,
+		filepath.FromSlash(`../two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`),
 		"lint",
 		filepath.Join("..", "..", ".."),
 		"--path",
@@ -96,9 +96,9 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		t,
 		nil,
 		0,
-		fmt.Sprintf(`%s/one/a.proto
+		filepath.FromSlash(fmt.Sprintf(`%s/one/a.proto
         %s/one/b.proto
-        %s/two/c.proto`, parentDirectory, parentDirectory, parentDirectory),
+        %s/two/c.proto`, parentDirectory, parentDirectory, parentDirectory)),
 		"ls-files",
 		filepath.Join(wd, "..", "..", ".."),
 	)
@@ -106,11 +106,11 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		fmt.Sprintf(`%s/one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
+		filepath.FromSlash(fmt.Sprintf(`%s/one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
         %s/one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
         %s/two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`,
 			parentDirectory, parentDirectory, parentDirectory,
-		),
+		)),
 		"lint",
 		filepath.Join(wd, "..", "..", ".."),
 	)
@@ -126,9 +126,9 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		t,
 		nil,
 		0,
-		`../one/a.proto
+		filepath.FromSlash(`../one/a.proto
         ../one/b.proto
-        ../two/c.proto`,
+        ../two/c.proto`),
 		"ls-files",
 		filepath.Join("..", "..", "..", "other", "proto"),
 	)
@@ -146,10 +146,10 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		fmt.Sprintf(`%s/one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
+		filepath.FromSlash(fmt.Sprintf(`%s/one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
         %s/one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".`,
 			parentDirectory, parentDirectory,
-		),
+		)),
 		"lint",
 		filepath.Join(wd, "..", "..", ".."),
 		"--path",
@@ -159,9 +159,9 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		fmt.Sprintf(`%s/two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`,
+		filepath.FromSlash(fmt.Sprintf(`%s/two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`,
 			parentDirectory,
-		),
+		)),
 		"lint",
 		filepath.Join(wd, "..", "..", ".."),
 		"--path",
@@ -177,7 +177,7 @@ func TestWorkspaceOverlapSubDirectory(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: failed to build input "other/proto/one" because it is contained by directory "other/proto" listed in ../../../buf.work.yaml.`,
+		filepath.FromSlash(`Failure: failed to build input "other/proto/one" because it is contained by directory "other/proto" listed in ../../../buf.work.yaml.`),
 		"build",
 		filepath.Join("..", "one"),
 	)
