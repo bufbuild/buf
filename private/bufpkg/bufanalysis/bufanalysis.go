@@ -15,6 +15,7 @@
 package bufanalysis
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -178,14 +179,11 @@ func SortFileAnnotations(fileAnnotations []FileAnnotation) {
 
 // DeduplicateAndSortFileAnnotations deduplicates the FileAnnotations based on their
 // string representation and sorts them according to the order specified in SortFileAnnotations.
-func DeduplicateAndSortFileAnnotations(fileAnnotations []FileAnnotation) ([]FileAnnotation, error) {
+func DeduplicateAndSortFileAnnotations(fileAnnotations []FileAnnotation) []FileAnnotation {
 	deduplicated := make([]FileAnnotation, 0, len(fileAnnotations))
 	seen := make(map[string]struct{}, len(fileAnnotations))
 	for _, fileAnnotation := range fileAnnotations {
-		key, err := hash(fileAnnotation)
-		if err != nil {
-			return nil, err
-		}
+		key := hash(fileAnnotation)
 		if _, ok := seen[key]; ok {
 			continue
 		}
@@ -193,7 +191,7 @@ func DeduplicateAndSortFileAnnotations(fileAnnotations []FileAnnotation) ([]File
 		deduplicated = append(deduplicated, fileAnnotation)
 	}
 	SortFileAnnotations(deduplicated)
-	return deduplicated, nil
+	return deduplicated
 }
 
 // PrintFileAnnotations prints the file annotations separated by newlines.
@@ -233,15 +231,20 @@ func FormatFileAnnotation(fileAnnotation FileAnnotation, format Format) (string,
 }
 
 // hash returns a hash value that uniquely identifies the given FileAnnotation.
-func hash(fileAnnotation FileAnnotation) (string, error) {
-	if fileAnnotation == nil {
-		return "", nil
+func hash(fileAnnotation FileAnnotation) string {
+	path := ""
+	if fileInfo := fileAnnotation.FileInfo(); fileInfo != nil {
+		path = fileInfo.ExternalPath()
 	}
-	bytes, err := json.Marshal(fileAnnotation)
-	if err != nil {
-		return "", err
-	}
-	return string(bytes), nil
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(path))
+	_, _ = hash.Write([]byte(strconv.Itoa(fileAnnotation.StartLine())))
+	_, _ = hash.Write([]byte(strconv.Itoa(fileAnnotation.StartColumn())))
+	_, _ = hash.Write([]byte(strconv.Itoa(fileAnnotation.EndLine())))
+	_, _ = hash.Write([]byte(strconv.Itoa(fileAnnotation.EndColumn())))
+	_, _ = hash.Write([]byte(fileAnnotation.Type()))
+	_, _ = hash.Write([]byte(fileAnnotation.Message()))
+	return string(hash.Sum(nil))
 }
 
 type sortFileAnnotations []FileAnnotation

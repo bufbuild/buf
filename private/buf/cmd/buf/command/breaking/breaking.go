@@ -363,13 +363,9 @@ func run(
 		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
 	}
 	if len(allFileAnnotations) > 0 {
-		allFileAnnotations, err = bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations)
-		if err != nil {
-			return err
-		}
 		if err := bufanalysis.PrintFileAnnotations(
 			container.Stdout(),
-			allFileAnnotations,
+			bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations),
 			flags.ErrorFormat,
 		); err != nil {
 			return err
