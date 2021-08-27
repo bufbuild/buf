@@ -86,6 +86,10 @@ for os in Darwin Linux Windows; do
     if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
       arch="aarch64"
     fi
+    extension=""
+    if [ "${os}" == "Windows" ]; then
+      extension=".exe"
+    fi
     dir="${os}/${arch}/${BASE_NAME}"
     mkdir -p "${dir}/bin"
     for binary in \
@@ -95,8 +99,8 @@ for os in Darwin Linux Windows; do
       protoc-gen-buf-check-breaking \
       protoc-gen-buf-check-lint; do
       CGO_ENABLED=0 GOOS=$(goos "${os}") GOARCH=$(goarch "${arch}") \
-        go build -a -ldflags "-s -w" -trimpath -o "${dir}/bin/${binary}" "${DIR}/cmd/${binary}/main.go"
-      cp "${dir}/bin/${binary}" "${binary}-${os}-${arch}"
+        go build -a -ldflags "-s -w" -trimpath -o "${dir}/bin/${binary}${extension}" "${DIR}/cmd/${binary}/main.go"
+      cp "${dir}/bin/${binary}${extension}" "${binary}-${os}-${arch}${extension}"
     done
   done
 done
@@ -119,7 +123,7 @@ for os in Darwin Linux Windows; do
   done
 done
 
-for os in Darwin Linux Windows; do
+for os in Darwin Linux; do
   for arch in x86_64 arm64; do
     if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
       arch="aarch64"
@@ -129,6 +133,22 @@ for os in Darwin Linux Windows; do
     tar_dir="${BASE_NAME}"
     tarball="${BASE_NAME}-${os}-${arch}.tar.gz"
     tar -C "${tar_context_dir}" -cvzf "${tarball}" "${tar_dir}"
+  done
+done
+
+for os in Darwin Linux Windows; do
+  for arch in x86_64 arm64; do
+    if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
+      arch="aarch64"
+    fi
+    dir="${os}/${arch}/${BASE_NAME}"
+    zip_context_dir="$(dirname "${dir}")"
+    zip_dir="${BASE_NAME}"
+    zip_file="${BASE_NAME}-${os}-${arch}.zip"
+    pushd "${zip_context_dir}" >/dev/null
+    zip -r -v "${zip_file}" "${zip_dir}"
+    popd >/dev/null
+    mv "${zip_context_dir}/${zip_file}" .
   done
 done
 
