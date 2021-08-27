@@ -102,10 +102,11 @@ for os in Darwin Linux Windows; do
         go build -a -ldflags "-s -w" -trimpath -o "${dir}/bin/${binary}${extension}" "${DIR}/cmd/${binary}/main.go"
       cp "${dir}/bin/${binary}${extension}" "${binary}-${os}-${arch}${extension}"
     done
+    cp -R "${DIR}/LICENSE" "${dir}/LICENSE"
   done
 done
 
-for os in Darwin Linux Windows; do
+for os in Darwin Linux; do
   for arch in x86_64 arm64; do
     if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
       arch="aarch64"
@@ -119,20 +120,6 @@ for os in Darwin Linux Windows; do
     "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" fish-completion > "${dir}/share/fish/vendor_completions.d/buf.fish"
     "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" zsh-completion > "${dir}/share/zsh/site-functions/_buf"
     #"$(uname -s)/$(uname -m)/${1}/bin/buf" manpages "${dir}/share/man/man1"
-    cp -R "${DIR}/LICENSE" "${dir}/LICENSE"
-  done
-done
-
-for os in Darwin Linux; do
-  for arch in x86_64 arm64; do
-    if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
-      arch="aarch64"
-    fi
-    dir="${os}/${arch}/${BASE_NAME}"
-    tar_context_dir="$(dirname "${dir}")"
-    tar_dir="${BASE_NAME}"
-    tarball="${BASE_NAME}-${os}-${arch}.tar.gz"
-    tar -C "${tar_context_dir}" -cvzf "${tarball}" "${tar_dir}"
   done
 done
 
@@ -142,13 +129,10 @@ for os in Darwin Linux Windows; do
       arch="aarch64"
     fi
     dir="${os}/${arch}/${BASE_NAME}"
-    zip_context_dir="$(dirname "${dir}")"
-    zip_dir="${BASE_NAME}"
-    zip_file="${BASE_NAME}-${os}-${arch}.zip"
-    pushd "${zip_context_dir}" >/dev/null
-    zip -r -v "${zip_file}" "${zip_dir}"
-    popd >/dev/null
-    mv "${zip_context_dir}/${zip_file}" .
+    tar_context_dir="$(dirname "${dir}")"
+    tar_dir="${BASE_NAME}"
+    tarball="${BASE_NAME}-${os}-${arch}.tar.gz"
+    tar -C "${tar_context_dir}" -cvzf "${tarball}" "${tar_dir}"
   done
 done
 
