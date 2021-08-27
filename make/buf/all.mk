@@ -24,6 +24,7 @@ GO_TEST_BINS := $(GO_TEST_BINS) \
 DOCKER_BINS := $(DOCKER_BINS) buf
 FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
+	.ctrlp \
 	.vscode/ \
 	private/buf/cmd/buf/cache/ \
 	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
