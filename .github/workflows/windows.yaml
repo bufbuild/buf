@@ -1,0 +1,32 @@
+name: windows
+on: push
+permissions: read-all
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: setup-go
+        if: success()
+        uses: actions/setup-go@v2.1.4 # this contains a fix for Windows file extraction
+        with:
+          go-version: 1.17.0
+      - name: setup-deps
+        if: success()
+        run: |
+          ./windows/setupDeps.ps1
+      - name: setup-external-plugins
+        if: success()
+        run: |
+          ./windows/setupExternalPlugins.ps1
+      - name: setup-internal-plugins
+        if: success()
+        run: |
+          ./windows/setupInternalPlugins.ps1
+      - name: install-buf
+        if: success()
+        run: go install github.com/bufbuild/buf/cmd/buf@v0.52.0
+      - name: go test
+        if: success()
+        run: go test ./...
