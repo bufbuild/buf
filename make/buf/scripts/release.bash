@@ -15,6 +15,7 @@ goos() {
   case "${1}" in
     Darwin) echo darwin ;;
     Linux) echo linux ;;
+    Windows) echo windows ;;
     *) return 1 ;;
   esac
 }
@@ -77,7 +78,7 @@ rm -rf "${RELEASE_DIR}"
 mkdir -p "${RELEASE_DIR}"
 cd "${RELEASE_DIR}"
 
-for os in Darwin Linux; do
+for os in Darwin Linux Windows; do
   for arch in x86_64 arm64; do
     # our goal is to have the binaries be suffixed with $(uname -s)-$(uname -m)
     # on mac, this is arm64, on linux, this is aarch64, for historical reasons
@@ -100,7 +101,7 @@ for os in Darwin Linux; do
   done
 done
 
-for os in Darwin Linux; do
+for os in Darwin Linux Windows; do
   for arch in x86_64 arm64; do
     if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
       arch="aarch64"
@@ -118,7 +119,7 @@ for os in Darwin Linux; do
   done
 done
 
-for os in Darwin Linux; do
+for os in Darwin Linux Windows; do
   for arch in x86_64 arm64; do
     if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
       arch="aarch64"
