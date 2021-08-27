@@ -102,7 +102,6 @@ for os in Darwin Linux Windows; do
         go build -a -ldflags "-s -w" -trimpath -o "${dir}/bin/${binary}${extension}" "${DIR}/cmd/${binary}/main.go"
       cp "${dir}/bin/${binary}${extension}" "${binary}-${os}-${arch}${extension}"
     done
-    cp -R "${DIR}/LICENSE" "${dir}/LICENSE"
   done
 done
 
@@ -120,10 +119,11 @@ for os in Darwin Linux; do
     "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" fish-completion > "${dir}/share/fish/vendor_completions.d/buf.fish"
     "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" zsh-completion > "${dir}/share/zsh/site-functions/_buf"
     #"$(uname -s)/$(uname -m)/${1}/bin/buf" manpages "${dir}/share/man/man1"
+    cp -R "${DIR}/LICENSE" "${dir}/LICENSE"
   done
 done
 
-for os in Darwin Linux Windows; do
+for os in Darwin Linux; do
   for arch in x86_64 arm64; do
     if [ "${os}" == "Linux" ] && [ "${arch}" == "arm64" ]; then
       arch="aarch64"
