@@ -231,6 +231,17 @@ func getBuildResult(
 			}
 			return newBuildResult(nil, nil, nil, fileAnnotations, nil)
 		}
+		if errorWithPos, ok := err.(protoparse.ErrorWithPos); ok {
+			fileAnnotations, err := bufmoduleprotoparse.GetFileAnnotations(
+				ctx,
+				parserAccessorHandler,
+				[]protoparse.ErrorWithPos{errorWithPos},
+			)
+			if err != nil {
+				return newBuildResult(nil, nil, nil, nil, err)
+			}
+			return newBuildResult(nil, nil, nil, fileAnnotations, nil)
+		}
 		return newBuildResult(nil, nil, nil, nil, err)
 	} else if len(errorsWithPos) > 0 {
 		// https://github.com/jhump/protoreflect/pull/331
