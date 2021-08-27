@@ -6,7 +6,7 @@ permissions: read-all
 env:
   MAKEFLAGS: '-j 2'
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-20.04
     steps:
       - name: checkout
@@ -28,18 +28,45 @@ jobs:
           key: ${{ runner.os }}-buf-${{ hashFiles('**/go.sum', '/make/**') }}
           restore-keys: |
             ${{ runner.os }}-buf-
-      - name: make-ci
+      - name: make-lint
         if: success()
-        run: make ci
+        run: make lint
         env:
           BUF_BREAKING_AGAINST_INPUT: 'https://github.com/bufbuild/buf.git#branch=main'
           BUF_INPUT_HTTPS_USERNAME: ${{ github.actor }}
           BUF_INPUT_HTTPS_PASSWORD: ${{ github.token }}
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: setup-go
+        if: success()
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17.0
+      - name: cache
+        if: success()
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/buf/${{ runner.os }}/x86_64/bin
+            ~/.cache/buf/${{ runner.os }}/x86_64/go/pkg/mod
+            ~/.cache/buf/${{ runner.os }}/x86_64/include
+            ~/.cache/buf/${{ runner.os }}/x86_64/versions
+          key: ${{ runner.os }}-buf-${{ hashFiles('**/go.sum', '/make/**') }}
+          restore-keys: |
+            ${{ runner.os }}-buf-
+      - name: make-test
+        if: success()
+        run: make test
   docker:
     runs-on: ubuntu-20.04
-    needs: build
+    needs:
+      - lint
+      - test
     # This job only runs when
-    # 1. The previous `build` job has completed successfully
+    # 1. The previous lint and test jobs have completed successfully
     # 2. The repository is not a fork, i.e. it will only run on the official bufbuild/buf
     # 3. The workflow run is trigged by master branch OR a tag with v prefix
     # See https://github.com/bufbuild/buf/pull/289/files#r596207623 for the discussion
