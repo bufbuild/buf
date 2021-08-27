@@ -187,7 +187,7 @@ func TestCustomOptionsError1(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"customoptionserror1",
-		"field a.Baz.bat: option (a.foo).bat: field bat of a.Foo does not exist",
+		filepath.ToSlash("testdata/customoptionserror1/b.proto:9:27:field a.Baz.bat: option (a.foo).bat: field bat of a.Foo does not exist"),
 	)
 }
 
@@ -196,7 +196,7 @@ func TestNotAMessageType(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"notamessagetype",
-		"method a.MyService.Foo: invalid request type: a.MyService.Foo is a method, not a message",
+		filepath.ToSlash("testdata/notamessagetype/a.proto:9:11:method a.MyService.Foo: invalid request type: a.MyService.Foo is a method, not a message"),
 	)
 }
 
@@ -205,8 +205,17 @@ func TestSpaceBetweenNumberAndID(t *testing.T) {
 	testFileAnnotations(
 		t,
 		"spacebetweennumberandid",
-		"invalid syntax in integer value: 10to",
-		"syntax error: unexpected error, expecting int literal",
+		filepath.ToSlash("testdata/spacebetweennumberandid/a.proto:6:3:invalid syntax in integer value: 10to"),
+		filepath.ToSlash("testdata/spacebetweennumberandid/a.proto:6:3:syntax error: unexpected error, expecting int literal"),
+	)
+}
+
+func TestCyclicImport(t *testing.T) {
+	t.Parallel()
+	testFileAnnotations(
+		t,
+		"cyclicimport",
+		filepath.ToSlash(`testdata/cyclicimport/a/a.proto:5:8:cycle found in imports: "a/a.proto" -> "b/b.proto" -> "a/a.proto"`),
 	)
 }
 
@@ -306,11 +315,11 @@ func testGetImageImportPaths(image bufimage.Image) []string {
 	return importNames
 }
 
-func testFileAnnotations(t *testing.T, relDirPath string, wantMessages ...string) {
-	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", relDirPath))
-	gotMessages := make([]string, len(fileAnnotations))
+func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
+	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", filepath.FromSlash(relDirPath)))
+	got := make([]string, len(fileAnnotations))
 	for i, annotation := range fileAnnotations {
-		gotMessages[i] = annotation.Message()
+		got[i] = annotation.String()
 	}
-	require.Equal(t, wantMessages, gotMessages)
+	require.Equal(t, want, got)
 }

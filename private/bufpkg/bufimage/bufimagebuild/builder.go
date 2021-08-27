@@ -99,8 +99,7 @@ func (b *builder) build(
 		fileAnnotations = append(fileAnnotations, buildResult.FileAnnotations...)
 	}
 	if len(fileAnnotations) > 0 {
-		bufanalysis.SortFileAnnotations(fileAnnotations)
-		return nil, fileAnnotations, nil
+		return nil, bufanalysis.DeduplicateAndSortFileAnnotations(fileAnnotations), nil
 	}
 
 	descFileDescriptors, err := getDescFileDescriptorsFromBuildResults(buildResults, paths)
@@ -225,6 +224,17 @@ func getBuildResult(
 				ctx,
 				parserAccessorHandler,
 				errorsWithPos,
+			)
+			if err != nil {
+				return newBuildResult(nil, nil, nil, nil, err)
+			}
+			return newBuildResult(nil, nil, nil, fileAnnotations, nil)
+		}
+		if errorWithPos, ok := err.(protoparse.ErrorWithPos); ok {
+			fileAnnotations, err := bufmoduleprotoparse.GetFileAnnotations(
+				ctx,
+				parserAccessorHandler,
+				[]protoparse.ErrorWithPos{errorWithPos},
 			)
 			if err != nil {
 				return newBuildResult(nil, nil, nil, nil, err)
