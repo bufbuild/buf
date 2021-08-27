@@ -99,8 +99,7 @@ func (b *builder) build(
 		fileAnnotations = append(fileAnnotations, buildResult.FileAnnotations...)
 	}
 	if len(fileAnnotations) > 0 {
-		bufanalysis.DeduplicateAndSortFileAnnotations(fileAnnotations)
-		return nil, fileAnnotations, nil
+		return nil, bufanalysis.DeduplicateAndSortFileAnnotations(fileAnnotations), nil
 	}
 
 	descFileDescriptors, err := getDescFileDescriptorsFromBuildResults(buildResults, paths)

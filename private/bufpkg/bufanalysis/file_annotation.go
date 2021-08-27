@@ -16,6 +16,7 @@ package bufanalysis
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"strconv"
 )
@@ -175,6 +176,22 @@ func (f *fileAnnotation) toExternalFileAnnotation() externalFileAnnotation {
 		Type:        f.typeString,
 		Message:     f.message,
 	}
+}
+
+func (f *fileAnnotation) hash() string {
+	path := ""
+	if f.fileInfo != nil {
+		path = f.fileInfo.ExternalPath()
+	}
+	hash := sha256.New()
+	_, _ = hash.Write([]byte(path))
+	_, _ = hash.Write([]byte(strconv.Itoa(f.startLine)))
+	_, _ = hash.Write([]byte(strconv.Itoa(f.startColumn)))
+	_, _ = hash.Write([]byte(strconv.Itoa(f.endLine)))
+	_, _ = hash.Write([]byte(strconv.Itoa(f.endColumn)))
+	_, _ = hash.Write([]byte(f.typeString))
+	_, _ = hash.Write([]byte(f.message))
+	return string(hash.Sum(nil))
 }
 
 type externalFileAnnotation struct {

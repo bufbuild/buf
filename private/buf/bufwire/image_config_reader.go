@@ -180,11 +180,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	if len(allFileAnnotations) > 0 {
 		// Deduplicate and sort the file annotations again now that we've
 		// consolidated them across multiple images.
-		deduplicated, err := bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations)
-		if err != nil {
-			return nil, nil, err
-		}
-		return nil, deduplicated, nil
+		return nil, bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations), nil
 	}
 	if len(imageConfigs) == 0 {
 		return nil, nil, errors.New("no .proto target files found")
