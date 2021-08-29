@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -72,7 +73,7 @@ func csharpNamespaceValue(imageFile bufimage.ImageFile) string {
 	}
 	packageParts := strings.Split(pkg, ".")
 	for i, part := range packageParts {
-		packageParts[i] = strings.Title(part)
+		packageParts[i] = stringutil.ToPascalCase(part)
 	}
 	return strings.Join(packageParts, ".")
 }
