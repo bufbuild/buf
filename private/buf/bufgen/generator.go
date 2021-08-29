@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	// javaPackagePrefix is the default java_package prefix used in the JavaPackage modifier.
-	javaPackagePrefix = "com."
+	// defaultJavaPackagePrefix is the default java_package prefix used in the JavaPackage modifier.
+	defaultJavaPackagePrefix = "com."
 )
 
 type generator struct {
@@ -142,7 +142,7 @@ func modifyImage(
 		return err
 	}
 	// Apply the user-specified modifiers, which may override the defaults.
-	// E.g. JavaMultipleFiles, etc.
+	// E.g. JavaMultipleFiles, JavaPackage, etc.
 	configModifier, err := managedConfigModifier(config.ManagedConfig, sweeper)
 	if err != nil {
 		return err
@@ -179,6 +179,16 @@ func managedConfigModifier(managedConfig *ManagedConfig, sweeper bufimagemodify.
 			bufimagemodify.JavaStringCheckUtf8(sweeper, *managedConfig.JavaStringCheckUtf8),
 		)
 	}
+	if managedConfig.JavaPackagePrefix != "" {
+		javaPackage, err := bufimagemodify.JavaPackage(sweeper, managedConfig.JavaPackagePrefix)
+		if err != nil {
+			return nil, err
+		}
+		modifier = bufimagemodify.Merge(
+			modifier,
+			javaPackage,
+		)
+	}
 	if managedConfig.OptimizeFor != nil {
 		modifier = bufimagemodify.Merge(
 			modifier,
@@ -211,9 +221,10 @@ func defaultManagedModeModifier(sweeper bufimagemodify.Sweeper) (bufimagemodify.
 		bufimagemodify.PhpNamespace(sweeper),
 		bufimagemodify.PhpMetadataNamespace(sweeper),
 		bufimagemodify.RubyPackage(sweeper),
-		bufimagemodify.JavaMultipleFiles(sweeper, true),
+		bufimagemodify.JavaMultipleFiles(sweeper, true), // JavaMultipleFiles can be overridden by configuration.
 	)
-	javaPackageModifier, err := bufimagemodify.JavaPackage(sweeper, javaPackagePrefix)
+	// JavaPackage can be overridden by configuration.
+	javaPackageModifier, err := bufimagemodify.JavaPackage(sweeper, defaultJavaPackagePrefix)
 	if err != nil {
 		return nil, err
 	}

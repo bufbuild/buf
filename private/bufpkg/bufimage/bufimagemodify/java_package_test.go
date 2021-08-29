@@ -171,13 +171,14 @@ func TestJavaPackageJavaOptions(t *testing.T) {
 func TestJavaPackageWellKnownTypes(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "wktimport")
-	modifiedJavaPackage := "com.acme.weather.v1alpha1"
+	javaPackagePrefix := "org."
+	modifiedJavaPackage := "org.acme.weather.v1alpha1"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		javaPackageModifier, err := JavaPackage(sweeper, testJavaPackagePrefix)
+		javaPackageModifier, err := JavaPackage(sweeper, javaPackagePrefix)
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(javaPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -206,7 +207,7 @@ func TestJavaPackageWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := JavaPackage(sweeper, testJavaPackagePrefix)
+		modifier, err := JavaPackage(sweeper, javaPackagePrefix)
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),

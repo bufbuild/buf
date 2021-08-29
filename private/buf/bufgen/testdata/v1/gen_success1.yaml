@@ -4,6 +4,7 @@ managed:
   cc_enable_arenas: true
   java_multiple_files: true
   java_string_check_utf8: true
+  java_package_prefix: org.
   optimize_for: CODE_SIZE
 plugins:
   - name: go
