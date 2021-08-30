@@ -458,6 +458,15 @@ func NewModuleReaderAndCreateCacheDirs(
 	cacheModuleDataDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleDataRelDirPath)
 	cacheModuleLockDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleLockRelDirPath)
 	cacheModuleSumDirPath := normalpath.Join(container.CacheDirPath(), v1CacheModuleSumRelDirPath)
+	if err := checkExistingCacheDirs(
+		container.CacheDirPath(),
+		container.CacheDirPath(),
+		cacheModuleDataDirPath,
+		cacheModuleLockDirPath,
+		cacheModuleSumDirPath,
+	); err != nil {
+		return nil, err
+	}
 	if err := createCacheDirs(
 		cacheModuleDataDirPath,
 		cacheModuleLockDirPath,
@@ -782,8 +791,31 @@ func newFetchImageReader(
 		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
 	)
 }
+
+func checkExistingCacheDirs(baseCacheDirPath string, dirPaths ...string) error {
+	for _, dirPath := range dirPaths {
+		dirPath = normalpath.Unnormalize(dirPath)
+		// OK to use os.Stat instead of os.LStat here as this is CLI-only
+		fileInfo, err := os.Stat(dirPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil
+			}
+			return err
+		}
+		if !fileInfo.IsDir() {
+			return fmt.Errorf("Expected %q to be a directory. This is used for buf's cache. The base cache directory %q can be overridden by setting the $BUF_CACHE_DIR environment variable.", dirPath, baseCacheDirPath)
+		}
+		if fileInfo.Mode().Perm()&0700 != 0700 {
+			return fmt.Errorf("Expected %q to be a writeable directory. This is used for buf's cache. The base cache directory %q can be overridden by setting the $BUF_CACHE_DIR environment variable.", dirPath, baseCacheDirPath)
+		}
+	}
+	return nil
+}
+
 func createCacheDirs(dirPaths ...string) error {
 	for _, dirPath := range dirPaths {
+		// os.MkdirAll does nothing if the directory already exists
 		if err := os.MkdirAll(normalpath.Unnormalize(dirPath), 0755); err != nil {
 			return err
 		}
