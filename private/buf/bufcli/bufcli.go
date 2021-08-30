@@ -69,6 +69,8 @@ See https://docs.buf.build/faq for more details.`
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
 	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
 
+	tokenEnvKey = "BUF_TOKEN"
+
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
 
@@ -536,22 +538,20 @@ func NewContextModifierProvider(
 	container appflag.Container,
 ) func(string) (func(context.Context) context.Context, error) {
 	return func(address string) (func(context.Context) context.Context, error) {
-		machine, err := netrc.GetMachineForName(container, address)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
-		}
-		var password string
-		if machine != nil {
-			password = machine.Password()
+		token := container.Env(tokenEnvKey)
+		if token == "" {
+			machine, err := netrc.GetMachineForName(container, address)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
+			}
+			token = machine.Password()
 		}
 		return func(ctx context.Context) context.Context {
-			return rpcauth.WithToken(
-				bufrpc.WithOutgoingCLIVersionHeader(
-					ctx,
-					Version,
-				),
-				password,
-			)
+			ctx = bufrpc.WithOutgoingCLIVersionHeader(ctx, Version)
+			if token != "" {
+				return rpcauth.WithToken(ctx, token)
+			}
+			return ctx
 		}, nil
 	}
 }
