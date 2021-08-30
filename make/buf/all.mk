@@ -41,6 +41,7 @@ BUF_BREAKING_AGAINST_INPUT ?= .git\#branch=main
 
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk
+include make/go/dep_minisign.mk
 include make/go/dep_protoc.mk
 include make/go/dep_protoc_gen_go.mk
 include make/go/dep_protoc_gen_go_grpc.mk
@@ -115,7 +116,7 @@ bufgeneratesteps:: \
 	bufgenerateprotogoclient
 
 .PHONY: bufrelease
-bufrelease:
+bufrelease: $(MINISIGN)
 	DOCKER_IMAGE=golang:1.17.0-buster bash make/buf/scripts/release.bash
 
 # We have to manually set the Homebrew version on the Homebrew badge as there
