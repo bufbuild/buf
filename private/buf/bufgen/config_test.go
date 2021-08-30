@@ -157,7 +157,7 @@ func TestReadConfigV1(t *testing.T) {
 			CcEnableArenas:      &truth,
 			JavaMultipleFiles:   &truth,
 			JavaStringCheckUtf8: &truth,
-			JavaPackagePrefix:   "org.",
+			JavaPackagePrefix:   "org",
 			OptimizeFor:         optimizeModePtr(descriptorpb.FileOptions_CODE_SIZE),
 		},
 	}

@@ -74,7 +74,7 @@ func javaPackageForFile(
 // empty string is returned.
 func javaPackageValue(imageFile bufimage.ImageFile, packagePrefix string) string {
 	if pkg := imageFile.Proto().GetPackage(); pkg != "" {
-		return packagePrefix + pkg
+		return packagePrefix + "." + pkg
 	}
 	return ""
 }

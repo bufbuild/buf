@@ -30,7 +30,7 @@ import (
 
 const (
 	// defaultJavaPackagePrefix is the default java_package prefix used in the JavaPackage modifier.
-	defaultJavaPackagePrefix = "com."
+	defaultJavaPackagePrefix = "com"
 )
 
 type generator struct {

@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testJavaPackagePrefix = "com."
+const testJavaPackagePrefix = "com"
 
 func TestJavaPackageError(t *testing.T) {
 	t.Parallel()
@@ -171,7 +171,7 @@ func TestJavaPackageJavaOptions(t *testing.T) {
 func TestJavaPackageWellKnownTypes(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "wktimport")
-	javaPackagePrefix := "org."
+	javaPackagePrefix := "org"
 	modifiedJavaPackage := "org.acme.weather.v1alpha1"
 	t.Run("with SourceCodeInfo", func(t *testing.T) {
 		t.Parallel()
