@@ -145,3 +145,5 @@ mkdir -p assets
 for file in $(find . -maxdepth 1 -type f | sed 's/^\.\///' | sort | uniq); do
   mv "${file}" "assets/${file}"
 done
+
+echo Upload all the files in this directory to GitHub: open "${RELEASE_DIR}/assets"
