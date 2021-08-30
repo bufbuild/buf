@@ -104,7 +104,7 @@ func TestRunLint4(t *testing.T) {
 			filepath.Join("testdata", "fail", "buf", "buf.proto"),
 			filepath.Join("testdata", "fail", "buf", "buf_two.proto"),
 		},
-		`{"input_config":{"lint":{"use":["PACKAGE_DIRECTORY_MATCH"]}}}`,
+		`{"input_config":{"version":"v1","lint":{"use":["PACKAGE_DIRECTORY_MATCH"]}}}`,
 		[]string{
 			normalpath.Join("buf", "buf.proto"),
 		},
@@ -143,7 +143,7 @@ func TestRunLint6(t *testing.T) {
 			filepath.Join("testdata", "fail", "buf", "buf.proto"),
 			filepath.Join("testdata", "fail", "buf", "buf_two.proto"),
 		},
-		`{"input_config":{"lint":{"use":["PACKAGE_DIRECTORY_MATCH"]}},"error_format":"json"}`,
+		`{"input_config":{"version":"v1","lint":{"use":["PACKAGE_DIRECTORY_MATCH"]}},"error_format":"json"}`,
 		[]string{
 			normalpath.Join("buf", "buf.proto"),
 		},
