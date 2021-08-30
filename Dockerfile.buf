@@ -6,7 +6,6 @@ COPY go.mod go.sum /workspace/
 RUN go mod download
 
 COPY cmd /workspace/cmd
-COPY internal /workspace/internal
 COPY private /workspace/private
 
 ARG TARGETOS
