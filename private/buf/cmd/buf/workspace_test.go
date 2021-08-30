@@ -170,7 +170,7 @@ func TestWorkspaceDir(t *testing.T) {
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
-			`{"lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
 		)
 		testRunStdout(
 			t,
@@ -202,7 +202,7 @@ func TestWorkspaceDir(t *testing.T) {
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
-			`{"lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "proto", "rpc.proto"),
 		)
@@ -214,7 +214,7 @@ func TestWorkspaceDir(t *testing.T) {
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
-			`{"lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
@@ -226,7 +226,7 @@ func TestWorkspaceDir(t *testing.T) {
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
-			`{"lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
 			"--path",
 			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
@@ -240,7 +240,7 @@ func TestWorkspaceDir(t *testing.T) {
 			"lint",
 			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath),
 			"--config",
-			`{"lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
 			"--path",
 			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)

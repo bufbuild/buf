@@ -236,7 +236,7 @@ func TestFail7(t *testing.T) {
 		"--input",
 		filepath.Join("testdata"),
 		"--input-config",
-		`{"lint":{"use":["BASIC"]}}`,
+		`{"version":"v1beta1","lint":{"use":["BASIC"]}}`,
 	)
 	testRunStdout(
 		t,
@@ -249,7 +249,7 @@ func TestFail7(t *testing.T) {
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		filepath.Join("testdata"),
 		"--config",
-		`{"lint":{"use":["BASIC"]}}`,
+		`{"version":"v1beta1","lint":{"use":["BASIC"]}}`,
 	)
 	testRunStdout(
 		t,
