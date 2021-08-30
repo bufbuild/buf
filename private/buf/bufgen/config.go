@@ -116,7 +116,7 @@ func getConfig(
 		}
 		return newConfigV1(externalConfigV1, id)
 	default:
-		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, V1Beta1Version)
+		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s"`, id, V1Version)
 	}
 }
 
