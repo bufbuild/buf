@@ -124,7 +124,7 @@ bufrelease: $(MINISIGN)
 
 .PHONY: updatehomebrewbadge
 updatehomebrewbadge:
-	$(SED_I) "s/HOMEBREW_VERSION/v$(shell bash make/buf/scripts/homebrewversion.bash)/g" README.md
+	$(SED_I) "s/badge\/homebrew-v.*-blue/badge\/homebrew-v$(shell bash make/buf/scripts/homebrewversion.bash)-blue/g" README.md
 
 .PHONY: updateversion
 updateversion:
