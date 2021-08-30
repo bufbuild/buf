@@ -193,6 +193,7 @@ func newManagedConfigV1(externalManagedConfig ExternalManagedConfigV1) (*Managed
 		CcEnableArenas:        externalManagedConfig.CcEnableArenas,
 		JavaMultipleFiles:     externalManagedConfig.JavaMultipleFiles,
 		JavaStringCheckUtf8:   externalManagedConfig.JavaStringCheckUtf8,
+		JavaPackagePrefix:     externalManagedConfig.JavaPackagePrefix,
 		OptimizeFor:           optimizeFor,
 		GoPackagePrefixConfig: goPackagePrefixConfig,
 	}, nil
