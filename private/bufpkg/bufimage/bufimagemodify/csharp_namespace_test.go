@@ -110,6 +110,7 @@ func TestCsharpNamespaceOptions(t *testing.T) {
 	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "single"), "Acme.V1")
 	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "double"), "Acme.Weather.V1")
 	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "triple"), "Acme.Weather.Data.V1")
+	testCsharpNamespaceOptions(t, filepath.Join("testdata", "csharpoptions", "underscore"), "Acme.Weather.FooBar.V1")
 }
 
 func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {

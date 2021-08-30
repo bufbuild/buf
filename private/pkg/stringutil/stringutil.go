@@ -232,7 +232,7 @@ func ToPascalCase(s string) string {
 	return output
 }
 
-// IsAlpha returns true for [0-9a-zA-Z].
+// IsAlphanumeric returns true for [0-9a-zA-Z].
 func IsAlphanumeric(r rune) bool {
 	return IsNumeric(r) || IsAlpha(r)
 }
