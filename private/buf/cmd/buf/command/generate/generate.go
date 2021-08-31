@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -39,6 +40,7 @@ const (
 	configFlagName              = "config"
 	pathsFlagName               = "path"
 	includeImportsFlagName      = "include-imports"
+	formatFlagName              = "format"
 
 	// deprecated
 	inputFlagName = "input"
@@ -63,21 +65,23 @@ func NewCommand(
 # Required.
 # The valid values are v1beta1, v1.
 version: v1
-# The plugins to run.
+# The plugins to run. One of "name" and "remote" is required.
 plugins:
     # The name of the plugin.
-    # Required.
     # By default, buf generate will look for a binary named protoc-gen-NAME on your $PATH.
+    # Alternatively, use a remote reference:
+    # remote: buf.build/protocolbuffers/plugins/go
   - name: go
     # The the relative output directory.
     # Required.
     out: gen/go
     # Any options to provide to the plugin.
-    # Optional.
     # This can be either a single string or a list of strings.
+    # Optional.
     opt: paths=source_relative
     # The custom path to the plugin binary, if not protoc-gen-NAME on your $PATH.
-    path: custom-gen-go  # optional
+	# Optional, and exclusive with "remote".
+    path: custom-gen-go
     # The generation strategy to use. There are two options:
     #
     # 1. "directory"
@@ -101,10 +105,16 @@ plugins:
     #
     #   This is needed for certain plugins that expect all files to be given at once.
     #
-    # Optional. If omitted, "directory" is used. Most users should not need to set this option.
+	# If omitted, "directory" is used. Most users should not need to set this option.
+    # Optional.
     strategy: directory
   - name: java
     out: gen/java
+  - remote: buf.build/protocolbuffers/plugins/python
+    # The version of the remote plugin to use.
+	# Required when using "remote".
+    version: v3.17.0-1
+    out: gen/python
 
 As an example, here's a typical "buf.gen.yaml" go and grpc, assuming
 "protoc-gen-go" and "protoc-gen-go-grpc" are on your "$PATH":
@@ -156,13 +166,15 @@ $ buf generate --path proto/foo/foo.proto --path proto/foo/bar.proto
 # Only generate for the files in the directory proto/foo on your GitHub repository
 $ buf generate --template buf.gen.yaml https://github.com/foo/bar.git --path proto/foo
 
-Note that all paths must be contained within a root. For example, if you have the single
-root "proto", you cannot specify "--path proto", however "--path proto/foo" is allowed
+Note that all paths must be contained within the same module. For example, if you have a
+module in "proto", you cannot specify "--path proto", however "--path proto/foo" is allowed
 as "proto/foo" is contained within "proto".
 
 Plugins are invoked in the order they are specified in the template, but each plugin
 has a per-directory parallel invocation, with results from each invocation combined
 before writing the result. This is equivalent behavior to "buf protoc --by_dir".
+
+Insertion points are processed in the order the plugins are specified in the template.
 `,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -183,6 +195,7 @@ type flags struct {
 	Config         string
 	Paths          []string
 	IncludeImports bool
+	Format         string
 
 	// deprecated
 	Input string
@@ -232,6 +245,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		configFlagName,
 		"",
 		`The config file or data to use.`,
+	)
+	flagSet.StringVar(
+		&f.Format,
+		formatFlagName,
+		bufprint.FormatText.String(),
+		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
 	)
 
 	// deprecated
@@ -294,6 +313,10 @@ func run(
 	if err != nil {
 		return err
 	}
+	format, err := bufprint.ParseFormat(flags.Format)
+	if err != nil {
+		return appcmd.NewInvalidArgumentError(err.Error())
+	}
 	ref, err := buffetch.NewRefParser(logger).GetRef(ctx, input)
 	if err != nil {
 		return err
@@ -355,6 +378,7 @@ func run(
 	}
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
+		bufgen.GenerateWithPrintFormat(format),
 	}
 	if flags.IncludeImports {
 		generateOptions = append(
@@ -362,7 +386,11 @@ func run(
 			bufgen.GenerateWithIncludeImports(),
 		)
 	}
-	return bufgen.NewGenerator(logger, storageosProvider).Generate(
+	return bufgen.NewGenerator(
+		logger,
+		storageosProvider,
+		registryProvider,
+	).Generate(
 		ctx,
 		container,
 		genConfig,

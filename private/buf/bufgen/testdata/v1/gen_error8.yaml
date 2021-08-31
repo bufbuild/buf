@@ -1,0 +1,7 @@
+version: v1
+plugins:
+  - remote: someremote.com/owner/plugins/myplugin
+    # Remote and strategy specified at the same time, error
+    strategy: directory
+    version: v1.1.0-1
+    out: gen/go

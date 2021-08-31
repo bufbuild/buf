@@ -22,8 +22,10 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -110,8 +112,9 @@ type Generator interface {
 func NewGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	registryProvider registryv1alpha1apiclient.Provider,
 ) Generator {
-	return newGenerator(logger, storageosProvider)
+	return newGenerator(logger, storageosProvider, registryProvider)
 }
 
 // GenerateOption is an option for Generate.
@@ -133,6 +136,15 @@ func GenerateWithBaseOutDirPath(baseOutDirPath string) GenerateOption {
 func GenerateWithIncludeImports() GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.includeImports = true
+	}
+}
+
+// GenerateWithPrintFormat configures what output format to use for output log messages.
+//
+// By default, uses the text format.
+func GenerateWithPrintFormat(printFormat bufprint.Format) GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.printFormat = printFormat
 	}
 }
 

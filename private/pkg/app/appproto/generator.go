@@ -91,7 +91,7 @@ func (g *generator) getResponseFiles(
 	if err := thread.Parallelize(jobs...); err != nil {
 		return nil, err
 	}
-	response := responseWriter.toResponse()
+	response := responseWriter.ToResponse()
 	if err := protodescriptor.ValidateCodeGeneratorResponse(response); err != nil {
 		return nil, err
 	}

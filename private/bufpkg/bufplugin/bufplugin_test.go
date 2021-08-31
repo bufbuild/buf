@@ -417,11 +417,7 @@ plugin_versions:
 func TestMergeInsertionPoints(t *testing.T) {
 	results := []PluginResult{
 		{
-			Plugin: PluginVersion{
-				Owner:   "owner1",
-				Name:    "plugin1",
-				Version: "version1",
-			},
+			Name: "plugin1",
 			Response: &pluginpb.CodeGeneratorResponse{
 				File: []*pluginpb.CodeGeneratorResponse_File{
 					{
@@ -432,11 +428,7 @@ func TestMergeInsertionPoints(t *testing.T) {
 			},
 		},
 		{
-			Plugin: PluginVersion{
-				Owner:   "owner2",
-				Name:    "plugin2",
-				Version: "version2",
-			},
+			Name: "plugin2",
 			Response: &pluginpb.CodeGeneratorResponse{
 				File: []*pluginpb.CodeGeneratorResponse_File{
 					{
@@ -448,10 +440,12 @@ func TestMergeInsertionPoints(t *testing.T) {
 			},
 		},
 	}
-	files, err := MergeInsertionPoints(context.Background(), results)
+	mergedResults, err := MergeInsertionPoints(context.Background(), results)
 	require.NoError(t, err)
-	require.Len(t, files, 1)
-	require.EqualValues(t, "!! this was inserted !!\n// @@protoc_insertion_point(insertionPoint1)", files["file1.java"])
+	require.Len(t, mergedResults, 2)
+	require.Len(t, mergedResults[0].Files, 1)
+	require.EqualValues(t, "file1.java", mergedResults[0].Files[0].Name)
+	require.EqualValues(t, "!! this was inserted !!\n// @@protoc_insertion_point(insertionPoint1)", string(mergedResults[0].Files[0].Content))
 }
 
 func testStringPointer(s string) *string {

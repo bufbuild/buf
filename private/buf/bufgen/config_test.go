@@ -291,6 +291,7 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error5.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error6.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error7.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error8.yaml"))
 
 	successConfig = &Config{
 		PluginConfigs: []*PluginConfig{

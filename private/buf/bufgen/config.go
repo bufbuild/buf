@@ -133,6 +133,10 @@ func newConfigV1(externalConfig ExternalConfigV1, id string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+		if plugin.Remote != "" {
+			// Always use StrategyAll for remote plugins
+			strategy = StrategyAll
+		}
 		opt, err := encoding.InterfaceSliceOrStringToCommaSepString(plugin.Opt)
 		if err != nil {
 			return nil, err
@@ -180,6 +184,9 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 			}
 			if plugin.Path != "" {
 				return fmt.Errorf("%s: remote plugin %s cannot specify a path", id, plugin.Remote)
+			}
+			if plugin.Strategy != "" {
+				return fmt.Errorf("%s: remote plugin %s cannot specify a strategy", id, plugin.Remote)
 			}
 			continue
 		}

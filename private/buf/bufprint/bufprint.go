@@ -140,7 +140,7 @@ func NewPluginPrinter(writer io.Writer) PluginPrinter {
 
 // PluginVersionPrinter is a printer for PluginVersions.
 type PluginVersionPrinter interface {
-	PrintPluginVersions(ctx context.Context, format Format, nextPageToken string, plugins ...*registryv1alpha1.PluginVersion) error
+	PrintPluginVersions(ctx context.Context, format Format, nextPageToken string, pluginVersions ...*registryv1alpha1.PluginVersion) error
 }
 
 // NewPluginVersionPrinter returns a new NewPluginVersionPrinter.
@@ -150,8 +150,8 @@ func NewPluginVersionPrinter(writer io.Writer) PluginVersionPrinter {
 
 // TemplatePrinter is a printer for Templates.
 type TemplatePrinter interface {
-	PrintTemplate(ctx context.Context, format Format, plugin *registryv1alpha1.Template) error
-	PrintTemplates(ctx context.Context, format Format, nextPageToken string, plugins ...*registryv1alpha1.Template) error
+	PrintTemplate(ctx context.Context, format Format, template *registryv1alpha1.Template) error
+	PrintTemplates(ctx context.Context, format Format, nextPageToken string, templates ...*registryv1alpha1.Template) error
 }
 
 // NewTemplatePrinter returns a new NewTemplatePrinter.
@@ -161,13 +161,23 @@ func NewTemplatePrinter(writer io.Writer) TemplatePrinter {
 
 // TemplateVersionPrinter is a printer for TemplateVersions.
 type TemplateVersionPrinter interface {
-	PrintTemplateVersion(ctx context.Context, format Format, plugin *registryv1alpha1.TemplateVersion) error
-	PrintTemplateVersions(ctx context.Context, format Format, nextPageToken string, plugins ...*registryv1alpha1.TemplateVersion) error
+	PrintTemplateVersion(ctx context.Context, format Format, templateVersion *registryv1alpha1.TemplateVersion) error
+	PrintTemplateVersions(ctx context.Context, format Format, nextPageToken string, templateVersions ...*registryv1alpha1.TemplateVersion) error
 }
 
 // NewTemplateVersionPrinter returns a new NewTemplateVersionPrinter.
 func NewTemplateVersionPrinter(writer io.Writer) TemplateVersionPrinter {
 	return newTemplateVersionPrinter(writer)
+}
+
+// RuntimeLibraryPrinter is a printer for RuntimeLibraries.
+type RuntimeLibraryPrinter interface {
+	PrintRuntimeLibraries(ctx context.Context, format Format, runtimeLibraries ...*registryv1alpha1.RuntimeLibrary) error
+}
+
+// NewRuntimeLibraryPrinter returns a new NewRuntimeLibraryPrinter.
+func NewRuntimeLibraryPrinter(writer io.Writer) RuntimeLibraryPrinter {
+	return newRuntimeLibraryPrinter(writer)
 }
 
 // TokenPrinter is a printer Tokens.
