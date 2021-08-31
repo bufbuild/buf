@@ -166,6 +166,7 @@ type ManagedConfig struct {
 	JavaPackagePrefix     string
 	OptimizeFor           *descriptorpb.FileOptions_OptimizeMode
 	GoPackagePrefixConfig *GoPackagePrefixConfig
+	Overrides             map[string]map[string]string
 }
 
 // GoPackagePrefixConfig is the go_package prefix configuration.
@@ -241,6 +242,7 @@ type ExternalManagedConfigV1 struct {
 	JavaPackagePrefix   string                          `json:"java_package_prefix,omitempty" yaml:"java_package_prefix,omitempty"`
 	OptimizeFor         string                          `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
 	GoPackagePrefix     ExternalGoPackagePrefixConfigV1 `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
+	Overrides           map[string]map[string]string    `json:"overrides,omitempty" yaml:"overrides,omitempty"`
 }
 
 // IsEmpty returns true if the config is empty, excluding the 'Enabled' setting.
@@ -250,7 +252,8 @@ func (e ExternalManagedConfigV1) IsEmpty() bool {
 		e.JavaStringCheckUtf8 == nil &&
 		e.JavaPackagePrefix == "" &&
 		e.OptimizeFor == "" &&
-		e.GoPackagePrefix.IsEmpty()
+		e.GoPackagePrefix.IsEmpty() &&
+		e.Overrides == nil
 }
 
 // ExternalGoPackagePrefixConfigV1 is the external go_package prefix configuration.

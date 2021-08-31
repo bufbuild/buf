@@ -33,11 +33,13 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, true)
 
 		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(sweeper, descriptorpb.FileOptions_LITE_RUNTIME, map[string]string{})
+		assert.NoError(t, err)
 		modifier := NewMultiModifier(
-			OptimizeFor(sweeper, descriptorpb.FileOptions_LITE_RUNTIME),
+			optimizeForModifier,
 			ModifierFunc(sweeper.Sweep),
 		)
-		err := modifier.Modify(
+		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -56,7 +58,9 @@ func TestOptimizeForEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := OptimizeFor(sweeper, descriptorpb.FileOptions_LITE_RUNTIME).Modify(
+		optimizeForModifier, err := OptimizeFor(sweeper, descriptorpb.FileOptions_LITE_RUNTIME, map[string]string{})
+		assert.NoError(t, err)
+		err = optimizeForModifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -79,11 +83,13 @@ func TestOptimizeForAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
 
 		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(sweeper, descriptorpb.FileOptions_LITE_RUNTIME, map[string]string{})
+		assert.NoError(t, err)
 		modifier := NewMultiModifier(
-			OptimizeFor(sweeper, descriptorpb.FileOptions_LITE_RUNTIME),
+			optimizeForModifier,
 			ModifierFunc(sweeper.Sweep),
 		)
-		err := modifier.Modify(
+		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -103,7 +109,9 @@ func TestOptimizeForAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := OptimizeFor(sweeper, descriptorpb.FileOptions_LITE_RUNTIME).Modify(
+		optimizeForModifier, err := OptimizeFor(sweeper, descriptorpb.FileOptions_LITE_RUNTIME, map[string]string{})
+		assert.NoError(t, err)
+		err = optimizeForModifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -126,11 +134,13 @@ func TestOptimizeForCcOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
 
 		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(sweeper, descriptorpb.FileOptions_SPEED, map[string]string{})
+		assert.NoError(t, err)
 		modifier := NewMultiModifier(
-			OptimizeFor(sweeper, descriptorpb.FileOptions_SPEED),
+			optimizeForModifier,
 			ModifierFunc(sweeper.Sweep),
 		)
-		err := modifier.Modify(
+		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -150,7 +160,9 @@ func TestOptimizeForCcOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, optimizeForPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := OptimizeFor(sweeper, descriptorpb.FileOptions_SPEED).Modify(
+		optimizeForModifier, err := OptimizeFor(sweeper, descriptorpb.FileOptions_SPEED, map[string]string{})
+		assert.NoError(t, err)
+		err = optimizeForModifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -173,11 +185,13 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
+		optimizeForModifier, err := OptimizeFor(sweeper, descriptorpb.FileOptions_SPEED, map[string]string{})
+		assert.NoError(t, err)
 		modifier := NewMultiModifier(
-			OptimizeFor(sweeper, descriptorpb.FileOptions_SPEED),
+			optimizeForModifier,
 			ModifierFunc(sweeper.Sweep),
 		)
-		err := modifier.Modify(
+		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -194,7 +208,9 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := OptimizeFor(sweeper, descriptorpb.FileOptions_SPEED).Modify(
+		optimizeForModifier, err := OptimizeFor(sweeper, descriptorpb.FileOptions_SPEED, map[string]string{})
+		assert.NoError(t, err)
+		err = optimizeForModifier.Modify(
 			context.Background(),
 			image,
 		)

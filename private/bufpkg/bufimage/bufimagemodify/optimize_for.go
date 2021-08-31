@@ -21,6 +21,9 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// OptimizeForOverridesID is the ID for the setting override valudes on a per file bases
+const OptimizeForOverridesID = "OPTMIZE_FOR"
+
 // optimizeFor is the SourceCodeInfo path for the optimize_for option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L385
 var optimizeForPath = []int32{8, 9}
@@ -28,11 +31,16 @@ var optimizeForPath = []int32{8, 9}
 func optimizeFor(
 	sweeper Sweeper,
 	value descriptorpb.FileOptions_OptimizeMode,
+	overrides map[string]descriptorpb.FileOptions_OptimizeMode,
 ) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := optimizeForForFile(ctx, sweeper, imageFile, value); err != nil {
+				modifierValue := value
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					modifierValue = overrideValue
+				}
+				if err := optimizeForForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
 					return err
 				}
 			}

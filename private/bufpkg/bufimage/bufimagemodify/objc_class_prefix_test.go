@@ -32,7 +32,7 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		objcClassPrefixModifier := ObjcClassPrefix(sweeper)
+		objcClassPrefixModifier := ObjcClassPrefix(sweeper, map[string]string{})
 
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -49,7 +49,7 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := ObjcClassPrefix(sweeper)
+		modifier := ObjcClassPrefix(sweeper, map[string]string{})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -68,7 +68,7 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
-		objcClassPrefixModifier := ObjcClassPrefix(sweeper)
+		objcClassPrefixModifier := ObjcClassPrefix(sweeper, map[string]string{})
 
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -90,7 +90,7 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := ObjcClassPrefix(sweeper)
+		modifier := ObjcClassPrefix(sweeper, map[string]string{})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -121,7 +121,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
-		objcClassPrefixModifier := ObjcClassPrefix(sweeper)
+		objcClassPrefixModifier := ObjcClassPrefix(sweeper, map[string]string{})
 
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -144,7 +144,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := ObjcClassPrefix(sweeper)
+		modifier := ObjcClassPrefix(sweeper, map[string]string{})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -169,7 +169,7 @@ func TestObjcClassPrefixWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		objcClassPrefixModifier := ObjcClassPrefix(sweeper)
+		objcClassPrefixModifier := ObjcClassPrefix(sweeper, map[string]string{})
 
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -197,7 +197,7 @@ func TestObjcClassPrefixWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := ObjcClassPrefix(sweeper)
+		modifier := ObjcClassPrefix(sweeper, map[string]string{})
 		err := modifier.Modify(
 			context.Background(),
 			image,

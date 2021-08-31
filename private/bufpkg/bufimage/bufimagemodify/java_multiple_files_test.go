@@ -32,11 +32,13 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
 
 		sweeper := NewFileOptionSweeper()
+		javaMultipleFilesModifier, err := JavaMultipleFiles(sweeper, true, map[string]string{})
+		assert.NoError(t, err)
 		modifier := NewMultiModifier(
-			JavaMultipleFiles(sweeper, true),
+			javaMultipleFilesModifier,
 			ModifierFunc(sweeper.Sweep),
 		)
-		err := modifier.Modify(
+		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -56,7 +58,9 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaMultipleFiles(sweeper, true).Modify(
+		javaMultipleFilesModifier, err := JavaMultipleFiles(sweeper, true, map[string]string{})
+		assert.NoError(t, err)
+		err = javaMultipleFilesModifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -80,11 +84,13 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
 
 		sweeper := NewFileOptionSweeper()
+		javaMultipleFilesModifier, err := JavaMultipleFiles(sweeper, true, map[string]string{})
+		assert.NoError(t, err)
 		modifier := NewMultiModifier(
-			JavaMultipleFiles(sweeper, true),
+			javaMultipleFilesModifier,
 			ModifierFunc(sweeper.Sweep),
 		)
-		err := modifier.Modify(
+		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -104,7 +110,9 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaMultipleFiles(sweeper, true).Modify(
+		javaMultipleFilesModifier, err := JavaMultipleFiles(sweeper, true, map[string]string{})
+		assert.NoError(t, err)
+		err = javaMultipleFilesModifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -127,11 +135,13 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaMultipleFilesPath)
 
 		sweeper := NewFileOptionSweeper()
+		javaMultipleFilesModifier, err := JavaMultipleFiles(sweeper, false, map[string]string{})
+		assert.NoError(t, err)
 		modifier := NewMultiModifier(
-			JavaMultipleFiles(sweeper, false),
+			javaMultipleFilesModifier,
 			ModifierFunc(sweeper.Sweep),
 		)
-		err := modifier.Modify(
+		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -150,7 +160,9 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaMultipleFiles(sweeper, false).Modify(
+		javaMultipleFilesModifier, err := JavaMultipleFiles(sweeper, false, map[string]string{})
+		assert.NoError(t, err)
+		err = javaMultipleFilesModifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -172,11 +184,13 @@ func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
+		javaMultipleFilesModifier, err := JavaMultipleFiles(sweeper, true, map[string]string{})
+		assert.NoError(t, err)
 		modifier := NewMultiModifier(
-			JavaMultipleFiles(sweeper, true),
+			javaMultipleFilesModifier,
 			ModifierFunc(sweeper.Sweep),
 		)
-		err := modifier.Modify(
+		err = modifier.Modify(
 			context.Background(),
 			image,
 		)
@@ -192,7 +206,9 @@ func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaMultipleFiles(sweeper, true).Modify(
+		javaMultipleFilesModifier, err := JavaMultipleFiles(sweeper, true, map[string]string{})
+		assert.NoError(t, err)
+		err = javaMultipleFilesModifier.Modify(
 			context.Background(),
 			image,
 		)

@@ -23,6 +23,9 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// PhpNamespaceOverridesID is the ID used to set per file overrides for the php_namespace modifier.
+const PhpNamespaceOverridesID = "PHP_NAMESPACE"
+
 var (
 	// phpNamespacePath is the SourceCodeInfo path for the php_namespace option.
 	// Ref: https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L443
@@ -127,11 +130,15 @@ var (
 	}
 )
 
-func phpNamespace(sweeper Sweeper) Modifier {
+func phpNamespace(sweeper Sweeper, overrides map[string]string) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := phpNamespaceForFile(ctx, sweeper, imageFile); err != nil {
+				phpNamespaceValue := phpNamespaceValue(imageFile)
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					phpNamespaceValue = overrideValue
+				}
+				if err := phpNamespaceForFile(ctx, sweeper, imageFile, phpNamespaceValue); err != nil {
 					return err
 				}
 			}
@@ -144,9 +151,9 @@ func phpNamespaceForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
+	phpNamespaceValue string,
 ) error {
 	descriptor := imageFile.Proto()
-	phpNamespaceValue := phpNamespaceValue(imageFile)
 	if isWellKnownType(ctx, imageFile) || phpNamespaceValue == "" {
 		// This is a well-known type or we could not resolve a non-empty php_namespace
 		// value, so this is a no-op.

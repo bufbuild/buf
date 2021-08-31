@@ -24,15 +24,22 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// CsharpNamespaceOverridesID is the ID used to set per file overrides for the csharp_namespace modifier.
+const CsharpNamespaceOverridesID = "CSHARP_NAMESPACE"
+
 // csharpNamespacePath is the SourceCodeInfo path for the csharp_namespace option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L428
 var csharpNamespacePath = []int32{8, 37}
 
-func csharpNamespace(sweeper Sweeper) Modifier {
+func csharpNamespace(sweeper Sweeper, overrides map[string]string) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := csharpNamespaceForFile(ctx, sweeper, imageFile); err != nil {
+				csharpNamespaceValue := csharpNamespaceValue(imageFile)
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					csharpNamespaceValue = overrideValue
+				}
+				if err := csharpNamespaceForFile(ctx, sweeper, imageFile, csharpNamespaceValue); err != nil {
 					return err
 				}
 			}
@@ -45,9 +52,9 @@ func csharpNamespaceForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
+	csharpNamespaceValue string,
 ) error {
 	descriptor := imageFile.Proto()
-	csharpNamespaceValue := csharpNamespaceValue(imageFile)
 	if isWellKnownType(ctx, imageFile) || csharpNamespaceValue == "" {
 		// This is a well-known type or we could not resolve a non-empty csharp_namespace
 		// value, so this is a no-op.

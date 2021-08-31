@@ -22,17 +22,24 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// PhpMetadataNamespaceOverridesID is the ID used to set per file overrides for the php_namespace_metadata modifier.
+const PhpMetadataNamespaceOverridesID = "PHP_NAMESPACE_METADATA"
+
 var (
 	// phpMetadataNamespacePath is the SourceCodeInfo path for the php_metadata_namespace option.
 	// Ref: https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L448
 	phpMetadataNamespacePath = []int32{8, 41}
 )
 
-func phpMetadataNamespace(sweeper Sweeper) Modifier {
+func phpMetadataNamespace(sweeper Sweeper, overrides map[string]string) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := phpMetadataNamespaceForFile(ctx, sweeper, imageFile); err != nil {
+				phpMetadataNamespaceValue := phpMetadataNamespaceValue(imageFile)
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					phpMetadataNamespaceValue = overrideValue
+				}
+				if err := phpMetadataNamespaceForFile(ctx, sweeper, imageFile, phpMetadataNamespaceValue); err != nil {
 					return err
 				}
 			}
@@ -45,9 +52,9 @@ func phpMetadataNamespaceForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
+	phpMetadataNamespaceValue string,
 ) error {
 	descriptor := imageFile.Proto()
-	phpMetadataNamespaceValue := phpMetadataNamespaceValue(imageFile)
 	if isWellKnownType(ctx, imageFile) || phpMetadataNamespaceValue == "" {
 		// This is a well-known type or we could not resolve a non-empty php_metadata_namespace
 		// value, so this is a no-op.

@@ -33,7 +33,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
-			JavaOuterClassname(sweeper),
+			JavaOuterClassname(sweeper, map[string]string{}),
 			ModifierFunc(sweeper.Sweep),
 		)
 		err := modifier.Modify(
@@ -56,7 +56,7 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaOuterClassname(sweeper).Modify(
+		err := JavaOuterClassname(sweeper, map[string]string{}).Modify(
 			context.Background(),
 			image,
 		)
@@ -81,7 +81,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
-			JavaOuterClassname(sweeper),
+			JavaOuterClassname(sweeper, map[string]string{}),
 			ModifierFunc(sweeper.Sweep),
 		)
 		err := modifier.Modify(
@@ -104,7 +104,7 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaOuterClassname(sweeper).Modify(
+		err := JavaOuterClassname(sweeper, map[string]string{}).Modify(
 			context.Background(),
 			image,
 		)
@@ -128,7 +128,7 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
-			JavaOuterClassname(sweeper),
+			JavaOuterClassname(sweeper, map[string]string{}),
 			ModifierFunc(sweeper.Sweep),
 		)
 		err := modifier.Modify(
@@ -150,7 +150,7 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaOuterClassname(sweeper).Modify(
+		err := JavaOuterClassname(sweeper, map[string]string{}).Modify(
 			context.Background(),
 			image,
 		)
@@ -173,7 +173,7 @@ func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 
 		sweeper := NewFileOptionSweeper()
 		modifier := NewMultiModifier(
-			JavaOuterClassname(sweeper),
+			JavaOuterClassname(sweeper, map[string]string{}),
 			ModifierFunc(sweeper.Sweep),
 		)
 		err := modifier.Modify(
@@ -200,7 +200,7 @@ func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		err := JavaOuterClassname(sweeper).Modify(
+		err := JavaOuterClassname(sweeper, map[string]string{}).Modify(
 			context.Background(),
 			image,
 		)

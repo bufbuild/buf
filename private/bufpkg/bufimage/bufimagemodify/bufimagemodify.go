@@ -16,7 +16,9 @@ package bufimagemodify
 
 import (
 	"context"
+	"fmt"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -90,8 +92,12 @@ func Merge(left Modifier, right Modifier) Modifier {
 // CcEnableArenas returns a Modifier that sets the cc_enable_arenas
 // file option to the given value in all of the files contained in
 // the Image.
-func CcEnableArenas(sweeper Sweeper, value bool) Modifier {
-	return ccEnableArenas(sweeper, value)
+func CcEnableArenas(sweeper Sweeper, value bool, overrides map[string]string) (Modifier, error) {
+	validatedOverrides, err := stringOverridesToBoolOverrides(overrides)
+	if err != nil {
+		return nil, err
+	}
+	return ccEnableArenas(sweeper, value, validatedOverrides), nil
 }
 
 // GoPackage returns a Modifier that sets the go_package file option
@@ -101,46 +107,68 @@ func GoPackage(
 	sweeper Sweeper,
 	defaultImportPathPrefix string,
 	except []bufmodule.ModuleIdentity,
-	override map[bufmodule.ModuleIdentity]string,
+	moduleOverrides map[bufmodule.ModuleIdentity]string,
+	overrides map[string]string,
 ) (Modifier, error) {
 	return goPackage(
 		sweeper,
 		defaultImportPathPrefix,
 		except,
-		override,
+		moduleOverrides,
+		overrides,
 	)
 }
 
 // JavaMultipleFiles returns a Modifier that sets the java_multiple_files
 // file option to the given value in all of the files contained in
 // the Image.
-func JavaMultipleFiles(sweeper Sweeper, value bool) Modifier {
-	return javaMultipleFiles(sweeper, value)
+func JavaMultipleFiles(sweeper Sweeper, value bool, overrides map[string]string) (Modifier, error) {
+	validatedOverrides, err := stringOverridesToBoolOverrides(overrides)
+	if err != nil {
+		return nil, err
+	}
+	return javaMultipleFiles(sweeper, value, validatedOverrides), nil
 }
 
 // JavaOuterClassname returns a Modifier that sets the java_outer_classname file option
 // in all of the files contained in the Image based on the PascalCase of their filename.
-func JavaOuterClassname(sweeper Sweeper) Modifier {
-	return javaOuterClassname(sweeper)
+func JavaOuterClassname(sweeper Sweeper, overrides map[string]string) Modifier {
+	return javaOuterClassname(sweeper, overrides)
 }
 
 // JavaPackage returns a Modifier that sets the java_package file option
 // according to the given packagePrefix.
-func JavaPackage(sweeper Sweeper, packagePrefix string) (Modifier, error) {
-	return javaPackage(sweeper, packagePrefix)
+func JavaPackage(sweeper Sweeper, packagePrefix string, overrides map[string]string) (Modifier, error) {
+	return javaPackage(sweeper, packagePrefix, overrides)
 }
 
 // JavaStringCheckUtf8 returns a Modifier that sets the java_string_check_utf8 file option according
 // to the given value.
-func JavaStringCheckUtf8(sweeper Sweeper, value bool) Modifier {
-	return javaStringCheckUtf8(sweeper, value)
+func JavaStringCheckUtf8(sweeper Sweeper, value bool, overrides map[string]string) (Modifier, error) {
+	validatedOverrides, err := stringOverridesToBoolOverrides(overrides)
+	if err != nil {
+		return nil, err
+	}
+	return javaStringCheckUtf8(sweeper, value, validatedOverrides), nil
 }
 
 // OptimizeFor returns a Modifier that sets the optimize_for file
 // option to the given value in all of the files contained in
 // the Image.
-func OptimizeFor(sweeper Sweeper, value descriptorpb.FileOptions_OptimizeMode) Modifier {
-	return optimizeFor(sweeper, value)
+func OptimizeFor(
+	sweeper Sweeper,
+	value descriptorpb.FileOptions_OptimizeMode,
+	overrides map[string]string,
+) (Modifier, error) {
+	validatedOverrides := map[string]descriptorpb.FileOptions_OptimizeMode{}
+	for fileImportPath, overrideString := range overrides {
+		overrideOptimizeMode, err := overrideStringToFileOptionOptimizeMode(overrideString)
+		if err != nil {
+			return nil, fmt.Errorf("invalid override for file %s: %w", fileImportPath, err)
+		}
+		validatedOverrides[fileImportPath] = overrideOptimizeMode
+	}
+	return optimizeFor(sweeper, value, validatedOverrides), nil
 }
 
 // GoPackageImportPathForFile returns the go_package import path for the given
@@ -169,34 +197,34 @@ func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix s
 //  * If the resulting abbreviation is 1 character, add "XX".
 //  * If the resulting abbreviation is "GPB", change it to "GPX".
 //    "GPB" is reserved by Google for the Protocol Buffers implementation.
-func ObjcClassPrefix(sweeper Sweeper) Modifier {
-	return objcClassPrefix(sweeper)
+func ObjcClassPrefix(sweeper Sweeper, overrides map[string]string) Modifier {
+	return objcClassPrefix(sweeper, overrides)
 }
 
 // CsharpNamespace returns a Modifier that sets the csharp_namespace file option
 // according to the package name. It is set to the package name with each package sub-name capitalized.
-func CsharpNamespace(sweeper Sweeper) Modifier {
-	return csharpNamespace(sweeper)
+func CsharpNamespace(sweeper Sweeper, overrides map[string]string) Modifier {
+	return csharpNamespace(sweeper, overrides)
 }
 
 // PhpNamespace returns a Modifier that sets the php_namespace file option
 // according to the package name. It is set to the package name with each package sub-name capitalized
 // and each "." replaced with "\\".
-func PhpNamespace(sweeper Sweeper) Modifier {
-	return phpNamespace(sweeper)
+func PhpNamespace(sweeper Sweeper, overrides map[string]string) Modifier {
+	return phpNamespace(sweeper, overrides)
 }
 
 // PhpMetadataNamespace returns a Modifier that sets the php_metadata_namespace file option
 // according to the package name. It appends "\\GPBMetadata" to the heuristic used by PhpNamespace.
-func PhpMetadataNamespace(sweeper Sweeper) Modifier {
-	return phpMetadataNamespace(sweeper)
+func PhpMetadataNamespace(sweeper Sweeper, overrides map[string]string) Modifier {
+	return phpMetadataNamespace(sweeper, overrides)
 }
 
 // RubyPackage returns a Modifier that sets the ruby_package file option
 // according to the given packagePrefix. It is set to the package name with each package sub-name capitalized
 // and each "." replaced with "::".
-func RubyPackage(sweeper Sweeper) Modifier {
-	return rubyPackage(sweeper)
+func RubyPackage(sweeper Sweeper, overrides map[string]string) Modifier {
+	return rubyPackage(sweeper, overrides)
 }
 
 // isWellKnownType returns true if the given path is one of the well-known types.
@@ -218,4 +246,28 @@ func int32SliceIsEqual(x []int32, y []int32) bool {
 		}
 	}
 	return true
+}
+
+func stringOverridesToBoolOverrides(stringOverrides map[string]string) (map[string]bool, error) {
+	validatedOverrides := map[string]bool{}
+	for fileImportPath, overrideString := range stringOverrides {
+		overrideBool, err := strconv.ParseBool(overrideString)
+		if err != nil {
+			return nil, fmt.Errorf("non-boolean override %s set for file %s", overrideString, fileImportPath)
+		}
+		validatedOverrides[fileImportPath] = overrideBool
+	}
+	return validatedOverrides, nil
+}
+
+func overrideStringToFileOptionOptimizeMode(overrideString string) (descriptorpb.FileOptions_OptimizeMode, error) {
+	switch overrideString {
+	case "SPEED":
+		return descriptorpb.FileOptions_SPEED, nil
+	case "CODE_SIZE":
+		return descriptorpb.FileOptions_CODE_SIZE, nil
+	case "LITE_RUNTIME":
+		return descriptorpb.FileOptions_LITE_RUNTIME, nil
+	}
+	return descriptorpb.FileOptions_SPEED, fmt.Errorf("invalid optimize for value: %s", overrideString)
 }

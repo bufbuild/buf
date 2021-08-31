@@ -23,15 +23,22 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// RubyPackageOverridesID is the ID used to set per file overrides for the ruby_package modifier.
+const RubyPackageOverridesID = "RUBY_PACKAGE"
+
 // rubyPackagePath is the SourceCodeInfo path for the ruby_package option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L453
 var rubyPackagePath = []int32{8, 45}
 
-func rubyPackage(sweeper Sweeper) Modifier {
+func rubyPackage(sweeper Sweeper, overrides map[string]string) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := rubyPackageForFile(ctx, sweeper, imageFile); err != nil {
+				rubyPackageValue := rubyPackageValue(imageFile)
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					rubyPackageValue = overrideValue
+				}
+				if err := rubyPackageForFile(ctx, sweeper, imageFile, rubyPackageValue); err != nil {
 					return err
 				}
 			}
@@ -44,9 +51,9 @@ func rubyPackageForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
+	rubyPackageValue string,
 ) error {
 	descriptor := imageFile.Proto()
-	rubyPackageValue := rubyPackageValue(imageFile)
 	if isWellKnownType(ctx, imageFile) || rubyPackageValue == "" {
 		// This is a well-known type or we could not resolve a non-empty ruby_package
 		// value, so this is a no-op.
