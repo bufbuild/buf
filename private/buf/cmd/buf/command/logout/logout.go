@@ -31,15 +31,19 @@ import (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
+	deprecated string,
+	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		// Not documenting the first arg (remote) as this is just for testing for now.
 		// TODO: Update when we have self-hosted.
-		Use:   name,
-		Short: `Logout of the Buf Schema Registry.`,
-		Long:  fmt.Sprintf(`This will remove any BSR credentials from your %s file.`, netrc.Filename),
-		Args:  cobra.MaximumNArgs(1),
+		Use:        name,
+		Short:      `Logout of the Buf Schema Registry.`,
+		Long:       fmt.Sprintf(`This will remove any BSR credentials from your %s file.`, netrc.Filename),
+		Args:       cobra.MaximumNArgs(1),
+		Deprecated: deprecated,
+		Hidden:     hidden,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

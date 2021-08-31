@@ -48,7 +48,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configmigratev1beta1"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
@@ -66,36 +65,40 @@ import (
 )
 
 const (
-	checkDeprecationMessage = `"buf check" sub-commands are now all implemented with the top-level "buf lint" and "buf breaking" commands.
+	checkDeprecationMessage                   = `"buf check" sub-commands are now all implemented with the top-level "buf lint" and "buf breaking" commands.`
+	checkLintDeprecationMessage               = `"buf check lint" has been moved to "buf lint".`
+	checkBreakingDeprecationMessage           = `"buf check breaking" has been moved to "buf breaking".`
+	checkLsLintCheckersDeprecationMessage     = `"buf check ls-lint-checkers" has been moved to "buf config ls-lint-rules".`
+	checkLsBreakingCheckersDeprecationMessage = `"buf check ls-breaking-checkers" has been moved to "buf config ls-breaking-rules".`
+	imageDeprecationMessage                   = `"buf image" sub-commands are now all implemented under the top-level "buf build" command.`
+	imageBuildDeprecationMessage              = `"buf image build" has been moved to "buf build".`
+	experimentalDeprecationMessage            = `"buf experimental" sub-commands have moved to "buf beta".`
+	betaConfigDeprecationMessage              = `"buf beta config ..." has been moved to "buf mod ...".`
+	betaConfigInitDeprecationMessage          = `"buf beta config init" has been moved to "buf mod init".`
+	betaModDeprecationMessage                 = `"buf beta mod ..." has been moved to "buf mod ...".`
+	betaModInitDeprecationMessage             = `"buf beta mod init" has been moved to "buf mod init".`
+	betaModExportDeprecationMessage           = `"buf beta mod export" has been moved to "buf mod export".`
+	betaModUpdateDeprecationMessage           = `"buf beta mod update" has been moved to "buf mod update".`
+	betaModClearCacheDeprecationMessage       = `"buf beta mod clear-cache" has been moved to "buf mod clear-cache".`
+	betaPushDeprecationMessage                = `"buf beta push" has been moved to "buf mod push".`
+	exportDeprecationMessage                  = `"buf export" has been moved to "buf mod export".
 We recommend migrating, however this command continues to work.
 See https://docs.buf.build/faq for more details.`
-	checkBreakingDeprecationMessage = `"buf check breaking" has been moved to "buf breaking", use "buf breaking" instead.
+	loginDeprecationMessage = `"buf login" has been moved to "buf registry login".
 We recommend migrating, however this command continues to work.
 See https://docs.buf.build/faq for more details.`
-	checkLintDeprecationMessage = `"buf check lint" has been moved to "buf lint", use "buf lint" instead.
+	logoutDeprecationMessage = `"buf logout" has been moved to "buf registry logout".
 We recommend migrating, however this command continues to work.
 See https://docs.buf.build/faq for more details.`
-	checkLSBreakingCheckersDeprecationMessage = `"buf check ls-breaking-checkers" has been moved to "buf config ls-breaking-rules", use "buf config ls-breaking-rules" instead.
+	pushDeprecationMessage = `"buf push" has been moved to "buf mod push".
 We recommend migrating, however this command continues to work.
 See https://docs.buf.build/faq for more details.`
-	checkLSLintCheckersDeprecationMessage = `"buf check ls-lint-checkers" has been moved to "buf config ls-lint-rules", use "buf config ls-lint-rules" instead.
+	modInitDeprecationMessage = `"buf mod init" has been moved to "buf config init".
 We recommend migrating, however this command continues to work.
 See https://docs.buf.build/faq for more details.`
-	imageDeprecationMessage = `"buf image" sub-commands are now all implemented under the top-level "buf build" command, use "buf build" instead.
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
-	betaConfigDeprecationMessage = `"buf beta config" has been moved to "buf beta mod".
-We recommend migrating, however this command continues to work.`
-	betaConfigInitDeprecationMessage = `"buf beta config init" has been moved to "buf mod init".
-We recommend migrating, however this command continues to work.`
-	betaPushDeprecationMessage = `"buf beta push" has been moved to "buf push".
-We recommend migrating, however this command continues to work.`
-	betaModDeprecationMessage = `"buf beta mod ..." has been moved to "buf mod ...".
-We recommend migrating, however this command continues to work.`
-	betaModExportDeprecationMessage = `"buf beta mod export" has been moved to "buf export".
-We recommend migrating, however this command continues to work.`
 )
 
+// Main is the entrypoint to the buf CLI.
 func Main(name string) {
 	appcmd.Main(context.Background(), NewRootCommand(name))
 }
@@ -114,19 +117,14 @@ func NewRootCommand(name string) *appcmd.Command {
 		Use: name,
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder, "", false),
-			export.NewCommand("export", builder, "", false),
+			export.NewCommand("export", builder, exportDeprecationMessage, false),
 			{
 				Use:        "image",
 				Short:      "Work with Images and FileDescriptorSets.",
 				Deprecated: imageDeprecationMessage,
 				Hidden:     true,
 				SubCommands: []*appcmd.Command{
-					build.NewCommand(
-						"build",
-						builder,
-						imageDeprecationMessage,
-						true,
-					),
+					appcmd.NewDeletedCommand("build", imageBuildDeprecationMessage),
 				},
 			},
 			{
@@ -135,10 +133,10 @@ func NewRootCommand(name string) *appcmd.Command {
 				Deprecated: checkDeprecationMessage,
 				Hidden:     true,
 				SubCommands: []*appcmd.Command{
-					lint.NewCommand("lint", builder, checkLintDeprecationMessage, true),
-					breaking.NewCommand("breaking", builder, checkBreakingDeprecationMessage, true),
-					configlslintrules.NewCommand("ls-lint-checkers", builder, checkLSLintCheckersDeprecationMessage, true),
-					configlsbreakingrules.NewCommand("ls-breaking-checkers", builder, checkLSBreakingCheckersDeprecationMessage, true),
+					appcmd.NewDeletedCommand("lint", checkLintDeprecationMessage),
+					appcmd.NewDeletedCommand("breaking", checkBreakingDeprecationMessage),
+					appcmd.NewDeletedCommand("ls-lint-checkers", checkLsLintCheckersDeprecationMessage),
+					appcmd.NewDeletedCommand("ls-breaking-checkers", checkLsBreakingCheckersDeprecationMessage),
 				},
 			},
 			lint.NewCommand("lint", builder, "", false),
@@ -150,23 +148,36 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "mod",
 				Short: "Configure and update buf modules.",
 				SubCommands: []*appcmd.Command{
-					modinit.NewCommand("init", builder, "", false),
+					modinit.NewCommand("init", builder, modInitDeprecationMessage, true), // TODO(alex): Think about this one (see TODO below).
+					export.NewCommand("export", builder, "", false),                      // TODO(alex): Move this command into the modexport package.
 					modprune.NewCommand("prune", builder),
+					push.NewCommand("push", builder, "", false), // TODO(alex): Move this command into the modpush package.
 					modupdate.NewCommand("update", builder, "", false),
 					modclearcache.NewCommand("clear-cache", builder, "", false, "cc"),
 				},
 			},
+			// TODO(alex): We might actually want to keep "buf mod init" in the "mod" sub-command since it's directly tied to
+			// the other "mod" commands. For example, I initialize a module with "buf mod init", then push it immediately after
+			// with "buf mod push". Otherwise, we would need to jump between multiple sub-commands (initialize with "config",
+			// then push with "mod").
+			//
+			// However, keeping it in mod is awkward for "config ls-{breaking,lint}-rules" - listing the content of the `buf.yaml`
+			// should exist alongside how it's initialized.
+			//
+			// How do we foresee future configuration commands for `buf.work.yaml` and `buf.gen.yaml` to look? Will these be new
+			// sub-commands under the "config" sub-command? What does that suggest about how we should structure this (i.e. "buf config mod-init")?
 			{
 				Use:   "config",
 				Short: "Interact with the configuration of Buf.",
 				SubCommands: []*appcmd.Command{
+					modinit.NewCommand("init", builder, "", false), // TODO(alex): Move this command into the configinit package.
 					configlslintrules.NewCommand("ls-lint-rules", builder, "", false),
 					configlsbreakingrules.NewCommand("ls-breaking-rules", builder, "", false),
 					configmigratev1beta1.NewCommand("migrate-v1beta1", builder),
 				},
 			},
-			login.NewCommand("login", builder),
-			logout.NewCommand("logout", builder),
+			login.NewCommand("login", builder, loginDeprecationMessage, true),
+			logout.NewCommand("logout", builder, logoutDeprecationMessage, true),
 			{
 				Use:   "beta",
 				Short: "Beta commands. Unstable and will likely change.",
@@ -177,7 +188,7 @@ func NewRootCommand(name string) *appcmd.Command {
 						Deprecated: betaConfigDeprecationMessage,
 						Hidden:     true,
 						SubCommands: []*appcmd.Command{
-							modinit.NewCommand("init", builder, betaConfigInitDeprecationMessage, true),
+							appcmd.NewDeletedCommand("init", betaConfigInitDeprecationMessage),
 						},
 					},
 					{
@@ -186,31 +197,29 @@ func NewRootCommand(name string) *appcmd.Command {
 						Deprecated: imageDeprecationMessage,
 						Hidden:     true,
 						SubCommands: []*appcmd.Command{
-							convert.NewCommand(
-								"convert",
-								builder,
-								imageDeprecationMessage,
-								true,
-							),
+							appcmd.NewDeletedCommand("convert", "Command deleted."),
 						},
 					},
-					push.NewCommand("push", builder, betaPushDeprecationMessage, true),
+					appcmd.NewDeletedCommand("push", betaPushDeprecationMessage),
 					{
 						Use:        "mod",
 						Short:      "Configure and update buf modules.",
 						Deprecated: betaModDeprecationMessage,
 						Hidden:     true,
 						SubCommands: []*appcmd.Command{
-							modinit.NewCommand("init", builder, betaModDeprecationMessage, true),
-							modupdate.NewCommand("update", builder, betaModDeprecationMessage, true),
-							export.NewCommand("export", builder, betaModExportDeprecationMessage, true),
-							modclearcache.NewCommand("clear-cache", builder, betaModDeprecationMessage, true, "cc"),
+							appcmd.NewDeletedCommand("init", betaModInitDeprecationMessage),
+							appcmd.NewDeletedCommand("update", betaModUpdateDeprecationMessage),
+							appcmd.NewDeletedCommand("export", betaModExportDeprecationMessage),
+							appcmd.NewDeletedCommand("clear-cache", betaModClearCacheDeprecationMessage, "cc"),
 						},
 					},
 					{
 						Use:   "registry",
 						Short: "Interact with the Buf Schema Registry.",
 						SubCommands: []*appcmd.Command{
+							// TODO(alex): Move these packages into registry/{login,logout}.
+							login.NewCommand("login", builder, "", false),
+							logout.NewCommand("logout", builder, "", false),
 							{
 								Use:   "organization",
 								Short: "Organization commands.",
@@ -292,12 +301,10 @@ func NewRootCommand(name string) *appcmd.Command {
 				},
 			},
 			{
-				Use:   "experimental",
-				Short: "Experimental commands. Unstable and will likely change.",
-				Deprecated: `use "beta" instead.
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`,
-				Hidden: true,
+				Use:        "experimental",
+				Short:      "Experimental commands. Unstable and will likely change.",
+				Deprecated: experimentalDeprecationMessage,
+				Hidden:     true,
 				SubCommands: []*appcmd.Command{
 					{
 						Use:        "image",
@@ -305,16 +312,13 @@ See https://docs.buf.build/faq for more details.`,
 						Deprecated: imageDeprecationMessage,
 						Hidden:     true,
 						SubCommands: []*appcmd.Command{
-							convert.NewCommand(
-								"convert",
-								builder,
-								imageDeprecationMessage,
-								true,
-							),
+							appcmd.NewDeletedCommand("convert", "Command deleted."),
 						},
 					},
 				},
 			},
+			// TODO(alex): Can we just get rid of these alpha commands for now? We can remove them in an isolated
+			// commit so that they're easy to restore if they're ever needed.
 			{
 				Use:    "alpha",
 				Short:  "Alpha commands. These are so early in development that they should not be used except in development.",
@@ -338,7 +342,7 @@ See https://docs.buf.build/faq for more details.`,
 					},
 				},
 			},
-			push.NewCommand("push", builder, "", false),
+			push.NewCommand("push", builder, pushDeprecationMessage, true),
 		},
 		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		Version:             bufcli.Version,
