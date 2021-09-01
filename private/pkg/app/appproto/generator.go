@@ -78,17 +78,19 @@ func (g *generator) getResponseFiles(
 	requests []*pluginpb.CodeGeneratorRequest,
 ) ([]*pluginpb.CodeGeneratorResponse_File, error) {
 	responseWriter := newResponseWriter(container)
-	jobs := make([]func() error, len(requests))
+	jobs := make([]func(context.Context) error, len(requests))
 	for i, request := range requests {
 		request := request
-		jobs[i] = func() error {
+		jobs[i] = func(ctx context.Context) error {
 			if err := protodescriptor.ValidateCodeGeneratorRequest(request); err != nil {
 				return err
 			}
 			return g.handler.Handle(ctx, container, responseWriter, request)
 		}
 	}
-	if err := thread.Parallelize(jobs); err != nil {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	if err := thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancel(cancel)); err != nil {
 		return nil, err
 	}
 	response := responseWriter.ToResponse()

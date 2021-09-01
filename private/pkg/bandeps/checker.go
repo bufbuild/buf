@@ -121,12 +121,12 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 
 	depPackages := make(map[string]struct{})
 	var lock sync.Mutex
-	var jobs []func() error
+	var jobs []func(context.Context) error
 	for _, packageExpression := range depPackageExpressions {
 		packageExpression := packageExpression
 		jobs = append(
 			jobs,
-			func() error {
+			func(ctx context.Context) error {
 				pkgs, err := state.PackagesForPackageExpressions(ctx, packageExpression)
 				if err != nil {
 					return err
@@ -142,26 +142,28 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 		packageExpression := packageExpression
 		jobs = append(
 			jobs,
-			func() error {
+			func(ctx context.Context) error {
 				_, err := state.PackagesForPackageExpressions(ctx, packageExpression)
 				return err
 			},
 		)
 	}
-	if err := thread.Parallelize(jobs); err != nil {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	if err := thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancel(cancel)); err != nil {
 		return err
 	}
 
-	jobs = make([]func() error, 0)
+	jobs = make([]func(context.Context) error, 0)
 	for pkg := range depPackages {
 		pkg := pkg
 		jobs = append(
 			jobs,
-			func() error {
+			func(ctx context.Context) error {
 				_, err := state.DepsForPackages(ctx, pkg)
 				return err
 			},
 		)
 	}
-	return thread.Parallelize(jobs)
+	return thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancel(cancel))
 }
