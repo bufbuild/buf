@@ -15,6 +15,7 @@
 package thread
 
 import (
+	"context"
 	"runtime"
 	"sync"
 
@@ -52,14 +53,22 @@ func SetParallelism(parallelism int) {
 //
 // A max of Parallelism jobs will be run at once.
 // Returns the combined error from the jobs.
-func Parallelize(jobs ...func() error) error {
+func Parallelize(jobs []func() error, options ...ParallelizeOption) error {
+	parallelizeOptions := newParallelizeOptions()
+	for _, option := range options {
+		option(parallelizeOptions)
+	}
 	switch len(jobs) {
 	case 0:
 		return nil
 	case 1:
 		return jobs[0]()
 	default:
-		semaphoreC := make(chan struct{}, Parallelism())
+		multiplier := parallelizeOptions.multiplier
+		if multiplier < 1 {
+			multiplier = 1
+		}
+		semaphoreC := make(chan struct{}, Parallelism()*multiplier)
 		var retErr error
 		var wg sync.WaitGroup
 		var lock sync.Mutex
@@ -72,6 +81,9 @@ func Parallelize(jobs ...func() error) error {
 					lock.Lock()
 					retErr = multierr.Append(retErr, err)
 					lock.Unlock()
+					if parallelizeOptions.cancel != nil {
+						parallelizeOptions.cancel()
+					}
 				}
 				<-semaphoreC
 				wg.Done()
@@ -80,4 +92,35 @@ func Parallelize(jobs ...func() error) error {
 		wg.Wait()
 		return retErr
 	}
+}
+
+// ParallelizeOption is an option to Parallelize.
+type ParallelizeOption func(*parallelizeOptions)
+
+// ParallelizeWithMultiplier returns a new ParallelizeOption that will use a multiple
+// of Parallelism() for the number of jobs that can be run at once.
+//
+// The default is to only do Parallelism() number of jobs.
+// A multiplier of <1 has no meaning.
+func ParallelizeWithMultiplier(multiplier int) ParallelizeOption {
+	return func(parallelizeOptions *parallelizeOptions) {
+		parallelizeOptions.multiplier = multiplier
+	}
+}
+
+// ParallelizeWithCancel returns a new ParallelizeOption that will call the
+// given context.CancelFunc if any job fails.
+func ParallelizeWithCancel(cancel context.CancelFunc) ParallelizeOption {
+	return func(parallelizeOptions *parallelizeOptions) {
+		parallelizeOptions.cancel = cancel
+	}
+}
+
+type parallelizeOptions struct {
+	multiplier int
+	cancel     context.CancelFunc
+}
+
+func newParallelizeOptions() *parallelizeOptions {
+	return &parallelizeOptions{}
 }
