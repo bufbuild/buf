@@ -119,7 +119,7 @@ func copyPaths(
 			return nil
 		}
 	}
-	err = thread.Parallelize(jobs...)
+	err = thread.Parallelize(jobs)
 	return count, err
 }
 
