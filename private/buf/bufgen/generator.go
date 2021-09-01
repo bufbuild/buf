@@ -106,17 +106,16 @@ func (g *generator) generate(
 		}
 		break
 	}
-	remoteToPlugins := make(map[string][]remotePluginOptions)
-	var localPluginResponses []localPluginResponse
+	remoteToPlugins := make(map[string][]*remotePlugin)
+	var localPluginResponses []*localPluginResponse
 	// Parallelize local and remote plugin execution with an errgroup.
-	// Note: not using thread.Parallelize because we want to be able to
-	// cancel all execution if one plugin errors. Limit concurrent execution
-	// of local plugins using semaphore channel.
-	semaphoreC := make(chan struct{}, thread.Parallelism())
-	defer close(semaphoreC)
+	// Limit concurrent execution of local plugins using semaphore.
+	localSemaphore := newSemaphore(thread.Parallelism())
+	defer localSemaphore.Discard()
 	eg, ctx := errgroup.WithContext(ctx)
 	// pluginResults contains the response for each plugin, in the same order
-	// as they are specified in the plugin configs.
+	// as they are specified in the plugin configs. We need to store each response
+	// for processing insertion points after all plugins have finished.
 	pluginResults := make([]bufplugin.PluginResult, len(config.PluginConfigs))
 	for i, pluginConfig := range config.PluginConfigs {
 		switch {
@@ -157,17 +156,10 @@ func (g *generator) generate(
 				eg.Go(func() error {
 					// Limit concurrent invocations using semaphore channel, since
 					// most of this work is CPU/MEM intensive.
-					select {
-					case semaphoreC <- struct{}{}:
-					case <-ctx.Done():
-						return ctx.Err()
+					if err := localSemaphore.Acquire(ctx); err != nil {
+						return err
 					}
-					defer func() {
-						select {
-						case <-semaphoreC:
-						case <-ctx.Done():
-						}
-					}()
+					defer localSemaphore.Release(ctx)
 					if err := handler.Handle(ctx, container, responseWriter, request); err != nil {
 						return fmt.Errorf("failed to generate: %w", err)
 					}
@@ -175,43 +167,49 @@ func (g *generator) generate(
 				})
 			}
 			// Responses are not valid until parallelized jobs have finished
-			localPluginResponses = append(localPluginResponses, localPluginResponse{
-				responseWriter: responseWriter,
-				// Store the index so we know where to put the response
-				index: i,
-				name:  pluginConfig.Name,
-			})
+			localPluginResponses = append(
+				localPluginResponses,
+				newLocalPluginResponse(responseWriter, pluginConfig.Name, i),
+			)
 		case pluginConfig.Remote != "": // Remote plugin
 			remote, owner, name, err := bufplugin.ParsePluginPath(pluginConfig.Remote)
 			if err != nil {
 				return fmt.Errorf("invalid plugin path: %w", err)
 			}
+			// Group remote plugins by remote to execute together.
 			remoteToPlugins[remote] = append(
 				remoteToPlugins[remote],
-				remotePluginOptions{
-					reference: &registryv1alpha1.PluginReference{
+				newRemotePlugin(
+					&registryv1alpha1.PluginReference{
 						Owner:      owner,
 						Name:       name,
 						Version:    pluginConfig.Version,
 						Parameters: []string{pluginConfig.Opt},
 					},
 					// So we know the order this plugins response should slot in
-					index: i,
-				},
+					i,
+				),
 			)
 		default:
 			// Already guaranteed by config validation, but best to be safe.
 			return fmt.Errorf("either remote or name must be specified")
 		}
 	}
+	// Limit concurrent execution of remote plugins using separate semaphore channel.
+	// This time we can use a higher concurrency limit since the work is almost
+	// exclusively I/O bound.
+	remoteSemaphore := newSemaphore(thread.Parallelism() * 10)
+	defer remoteSemaphore.Discard()
 	for remote, plugins := range remoteToPlugins {
 		// prevent issues with asynchronously executed closures
 		remote := remote
 		plugins := plugins
 		// Add a job for each remote.
-		// Note: jobs are not limited by concurrency, since
-		// this work is almost exclusively I/O.
 		eg.Go(func() error {
+			if err := remoteSemaphore.Acquire(ctx); err != nil {
+				return err
+			}
+			defer remoteSemaphore.Release(ctx)
 			generateService, err := g.registryProvider.NewGenerateService(ctx, remote)
 			if err != nil {
 				return fmt.Errorf("failed to create generate service for remote %q: %w", remote, err)
@@ -403,7 +401,48 @@ type localPluginResponse struct {
 	index          int
 }
 
-type remotePluginOptions struct {
+func newLocalPluginResponse(responseWriter appproto.ResponseWriter, name string, index int) *localPluginResponse {
+	return &localPluginResponse{
+		responseWriter: responseWriter,
+		name:           name,
+		index:          index,
+	}
+}
+
+type remotePlugin struct {
 	reference *registryv1alpha1.PluginReference
 	index     int
+}
+
+func newRemotePlugin(reference *registryv1alpha1.PluginReference, index int) *remotePlugin {
+	return &remotePlugin{
+		reference: reference,
+		index:     index,
+	}
+}
+
+type semaphore chan struct{}
+
+func newSemaphore(limit int) semaphore {
+	return make(semaphore, limit)
+}
+
+func (s semaphore) Acquire(ctx context.Context) error {
+	select {
+	case s <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func (s semaphore) Release(ctx context.Context) {
+	select {
+	case <-s:
+	case <-ctx.Done():
+	}
+}
+
+func (s semaphore) Discard() {
+	close(s)
 }
