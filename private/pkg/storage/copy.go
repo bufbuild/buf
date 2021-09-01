@@ -106,10 +106,10 @@ func copyPaths(
 	}
 	var count int
 	var lock sync.Mutex
-	jobs := make([]func() error, len(paths))
+	jobs := make([]func(context.Context) error, len(paths))
 	for i, path := range paths {
 		path := path
-		jobs[i] = func() error {
+		jobs[i] = func(ctx context.Context) error {
 			if err := copyPath(ctx, from, to, path, copyExternalPaths); err != nil {
 				return err
 			}

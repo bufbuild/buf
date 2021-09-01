@@ -53,7 +53,7 @@ func SetParallelism(parallelism int) {
 //
 // A max of Parallelism jobs will be run at once.
 // Returns the combined error from the jobs.
-func Parallelize(ctx context.Context, jobs []func() error, options ...ParallelizeOption) error {
+func Parallelize(ctx context.Context, jobs []func(context.Context) error, options ...ParallelizeOption) error {
 	parallelizeOptions := newParallelizeOptions()
 	for _, option := range options {
 		option(parallelizeOptions)
@@ -62,7 +62,7 @@ func Parallelize(ctx context.Context, jobs []func() error, options ...Paralleliz
 	case 0:
 		return nil
 	case 1:
-		return jobs[0]()
+		return jobs[0](ctx)
 	default:
 		multiplier := parallelizeOptions.multiplier
 		if multiplier < 1 {
@@ -100,7 +100,7 @@ func Parallelize(ctx context.Context, jobs []func() error, options ...Paralleliz
 			case semaphoreC <- struct{}{}:
 				wg.Add(1)
 				go func() {
-					if err := job(); err != nil {
+					if err := job(ctx); err != nil {
 						lock.Lock()
 						retErr = multierr.Append(retErr, err)
 						lock.Unlock()
