@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
@@ -449,18 +450,6 @@ func NewModuleForBucket(
 	return newModuleForBucket(ctx, readBucket, options...)
 }
 
-// NewModuleForBucketWithDependencyModulePins explicitly specifies the dependencies
-// that should be used when creating the Module. The module names must be resolved
-// and unique.
-func NewModuleForBucketWithDependencyModulePins(
-	ctx context.Context,
-	readBucket storage.ReadBucket,
-	dependencyModulePins []ModulePin,
-	options ...ModuleOption,
-) (Module, error) {
-	return newModuleForBucketWithDependencyModulePins(ctx, readBucket, dependencyModulePins, options...)
-}
-
 // NewModuleForProto returns a new Module for the given proto Module.
 func NewModuleForProto(
 	ctx context.Context,
@@ -728,7 +717,7 @@ func ModuleToBucket(
 			return err
 		}
 	}
-	return PutModuleDependencyModulePinsToBucket(ctx, writeBucket, module.DependencyModulePins())
+	return PutDependencyModulePinsToBucket(ctx, writeBucket, module.DependencyModulePins())
 }
 
 // TargetModuleFilesToBucket writes the target files of the given Module to the WriteBucket.
@@ -813,9 +802,67 @@ func ModulePinEqual(a ModulePin, b ModulePin) bool {
 		a.CreateTime().Equal(b.CreateTime())
 }
 
-// PutModuleDependencyModulePinsToBucket writes the module dependencies to the write bucket in the form of a lock file.
-func PutModuleDependencyModulePinsToBucket(ctx context.Context, writeBucket storage.WriteBucket, pins []ModulePin) error {
-	return putModulePinsToBucket(ctx, writeBucket, pins)
+// DependencyModulePinsForBucket reads the module dependencies from the lock file in the bucket.
+func DependencyModulePinsForBucket(
+	ctx context.Context,
+	readBucket storage.ReadBucket,
+) ([]ModulePin, error) {
+	lockFile, err := buflock.ReadConfig(ctx, readBucket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read lock file: %w", err)
+	}
+	modulePins := make([]ModulePin, 0, len(lockFile.Dependencies))
+	for _, dep := range lockFile.Dependencies {
+		modulePin, err := NewModulePin(
+			dep.Remote,
+			dep.Owner,
+			dep.Repository,
+			dep.Branch,
+			dep.Commit,
+			dep.Digest,
+			dep.CreateTime,
+		)
+		if err != nil {
+			return nil, err
+		}
+		modulePins = append(modulePins, modulePin)
+	}
+	// just to be safe
+	SortModulePins(modulePins)
+	if err := ValidateModulePinsUniqueByIdentity(modulePins); err != nil {
+		return nil, err
+	}
+	return modulePins, nil
+}
+
+// PutDependencyModulePinsToBucket writes the module dependencies to the write bucket in the form of a lock file.
+func PutDependencyModulePinsToBucket(
+	ctx context.Context,
+	writeBucket storage.WriteBucket,
+	modulePins []ModulePin,
+) error {
+	if err := ValidateModulePinsUniqueByIdentity(modulePins); err != nil {
+		return err
+	}
+	SortModulePins(modulePins)
+	lockFile := &buflock.Config{
+		Dependencies: make([]buflock.Dependency, 0, len(modulePins)),
+	}
+	for _, pin := range modulePins {
+		lockFile.Dependencies = append(
+			lockFile.Dependencies,
+			buflock.Dependency{
+				Remote:     pin.Remote(),
+				Owner:      pin.Owner(),
+				Repository: pin.Repository(),
+				Branch:     pin.Branch(),
+				Commit:     pin.Commit(),
+				Digest:     pin.Digest(),
+				CreateTime: pin.CreateTime(),
+			},
+		)
+	}
+	return buflock.WriteConfig(ctx, writeBucket, lockFile)
 }
 
 // SortModulePins sorts the ModulePins.
