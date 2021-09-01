@@ -88,7 +88,7 @@ func (g *generator) getResponseFiles(
 			return g.handler.Handle(ctx, container, responseWriter, request)
 		}
 	}
-	if err := thread.Parallelize(jobs); err != nil {
+	if err := thread.Parallelize(ctx, jobs); err != nil {
 		return nil, err
 	}
 	response := responseWriter.toResponse()

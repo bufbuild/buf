@@ -148,7 +148,7 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 			},
 		)
 	}
-	if err := thread.Parallelize(jobs); err != nil {
+	if err := thread.Parallelize(ctx, jobs); err != nil {
 		return err
 	}
 
@@ -163,5 +163,5 @@ func (c *checker) populateState(ctx context.Context, state *state, externalConfi
 			},
 		)
 	}
-	return thread.Parallelize(jobs)
+	return thread.Parallelize(ctx, jobs)
 }

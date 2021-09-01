@@ -53,7 +53,7 @@ func SetParallelism(parallelism int) {
 //
 // A max of Parallelism jobs will be run at once.
 // Returns the combined error from the jobs.
-func Parallelize(jobs []func() error, options ...ParallelizeOption) error {
+func Parallelize(ctx context.Context, jobs []func() error, options ...ParallelizeOption) error {
 	parallelizeOptions := newParallelizeOptions()
 	for _, option := range options {
 		option(parallelizeOptions)
@@ -72,22 +72,47 @@ func Parallelize(jobs []func() error, options ...ParallelizeOption) error {
 		var retErr error
 		var wg sync.WaitGroup
 		var lock sync.Mutex
+		stop := false
 		for _, job := range jobs {
+			if stop {
+				break
+			}
 			job := job
-			wg.Add(1)
-			semaphoreC <- struct{}{}
-			go func() {
-				if err := job(); err != nil {
-					lock.Lock()
-					retErr = multierr.Append(retErr, err)
-					lock.Unlock()
-					if parallelizeOptions.cancel != nil {
-						parallelizeOptions.cancel()
+			// First, check if the context is done before even hitting a new job start.
+			// We don't want to do the select with the semaphore as we want the context
+			// being done to take precedence.
+			select {
+			case <-ctx.Done():
+				stop = true
+			default:
+			}
+			if stop {
+				// We want to break the for loop without using labels/gotos but if
+				// we put a break inside the select then it only breaks the select
+				break
+			}
+			// Next, we still do a select between the context and the semaphore, so that
+			// if we are blocking on the semaphore, and then the context is cancelled,
+			// we will then end up breaking.
+			select {
+			case <-ctx.Done():
+				stop = true
+			case semaphoreC <- struct{}{}:
+				wg.Add(1)
+				go func() {
+					if err := job(); err != nil {
+						lock.Lock()
+						retErr = multierr.Append(retErr, err)
+						lock.Unlock()
+						if parallelizeOptions.cancel != nil {
+							parallelizeOptions.cancel()
+						}
 					}
-				}
-				<-semaphoreC
-				wg.Done()
-			}()
+					// This will never block.
+					<-semaphoreC
+					wg.Done()
+				}()
+			}
 		}
 		wg.Wait()
 		return retErr
