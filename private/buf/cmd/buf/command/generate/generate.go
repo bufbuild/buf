@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufgen"
-	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -40,7 +39,6 @@ const (
 	configFlagName              = "config"
 	pathsFlagName               = "path"
 	includeImportsFlagName      = "include-imports"
-	formatFlagName              = "format"
 
 	// deprecated
 	inputFlagName = "input"
@@ -195,7 +193,6 @@ type flags struct {
 	Config         string
 	Paths          []string
 	IncludeImports bool
-	Format         string
 
 	// deprecated
 	Input string
@@ -245,12 +242,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		configFlagName,
 		"",
 		`The config file or data to use.`,
-	)
-	flagSet.StringVar(
-		&f.Format,
-		formatFlagName,
-		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
 	)
 
 	// deprecated
@@ -313,10 +304,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	format, err := bufprint.ParseFormat(flags.Format)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
 	ref, err := buffetch.NewRefParser(logger).GetRef(ctx, input)
 	if err != nil {
 		return err
@@ -378,7 +365,6 @@ func run(
 	}
 	generateOptions := []bufgen.GenerateOption{
 		bufgen.GenerateWithBaseOutDirPath(flags.BaseOutDirPath),
-		bufgen.GenerateWithPrintFormat(format),
 	}
 	if flags.IncludeImports {
 		generateOptions = append(

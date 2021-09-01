@@ -18,10 +18,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
-	"sort"
-	"sync"
 
-	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
@@ -78,7 +75,6 @@ func (g *generator) Generate(
 		image,
 		generateOptions.baseOutDirPath,
 		generateOptions.includeImports,
-		generateOptions.printFormat,
 	)
 }
 
@@ -89,7 +85,6 @@ func (g *generator) generate(
 	image bufimage.Image,
 	baseOutDirPath string,
 	includeImports bool,
-	printFormat bufprint.Format,
 ) error {
 	if err := modifyImage(ctx, config, image); err != nil {
 		return err
@@ -209,8 +204,6 @@ func (g *generator) generate(
 			return fmt.Errorf("either remote or name must be specified")
 		}
 	}
-	var allRuntimeLibraries []*registryv1alpha1.RuntimeLibrary
-	var runtimeLibrariesLock sync.Mutex
 	for remote, plugins := range remoteToPlugins {
 		// prevent issues with asynchronously executed closures
 		remote := remote
@@ -227,16 +220,13 @@ func (g *generator) generate(
 			for _, pluginOption := range plugins {
 				references = append(references, pluginOption.reference)
 			}
-			responses, runtimeLibraries, err := generateService.GeneratePlugins(ctx, bufimage.ImageToProtoImage(image), references)
+			responses, _, err := generateService.GeneratePlugins(ctx, bufimage.ImageToProtoImage(image), references)
 			if err != nil {
 				return fmt.Errorf("failed to generate files for remote %q: %w", remote, err)
 			}
 			if len(responses) != len(references) {
 				return fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), len(references))
 			}
-			runtimeLibrariesLock.Lock()
-			allRuntimeLibraries = append(allRuntimeLibraries, runtimeLibraries...)
-			runtimeLibrariesLock.Unlock()
 			for i, response := range responses {
 				// Map each plugin response back to the right place.
 				// Note: does not require a lock, since each response is
@@ -286,18 +276,6 @@ func (g *generator) generate(
 			); err != nil {
 				return fmt.Errorf("failed to write generated file: %w", err)
 			}
-		}
-	}
-	// Sort for deterministic output
-	sort.Slice(allRuntimeLibraries, func(i, j int) bool {
-		return allRuntimeLibraries[i].Name < allRuntimeLibraries[j].Name
-	})
-	if len(allRuntimeLibraries) > 0 {
-		if _, err := fmt.Fprintln(container.Stdout(), "The remote plugins defined the following runtime library dependencies:"); err != nil {
-			return fmt.Errorf("failed to print runtime library header to stdout: %w", err)
-		}
-		if err := bufprint.NewRuntimeLibraryPrinter(container.Stdout()).PrintRuntimeLibraries(ctx, printFormat, allRuntimeLibraries...); err != nil {
-			return fmt.Errorf("failed to print runtime libraries to stdout: %w", err)
 		}
 	}
 	return nil
@@ -413,13 +391,10 @@ func defaultManagedModeModifier(sweeper bufimagemodify.Sweeper) (bufimagemodify.
 type generateOptions struct {
 	baseOutDirPath string
 	includeImports bool
-	printFormat    bufprint.Format
 }
 
 func newGenerateOptions() *generateOptions {
-	return &generateOptions{
-		printFormat: bufprint.FormatText,
-	}
+	return &generateOptions{}
 }
 
 type localPluginResponse struct {

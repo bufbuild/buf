@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
@@ -136,15 +135,6 @@ func GenerateWithBaseOutDirPath(baseOutDirPath string) GenerateOption {
 func GenerateWithIncludeImports() GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.includeImports = true
-	}
-}
-
-// GenerateWithPrintFormat configures what output format to use for output log messages.
-//
-// By default, uses the text format.
-func GenerateWithPrintFormat(printFormat bufprint.Format) GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.printFormat = printFormat
 	}
 }
 
