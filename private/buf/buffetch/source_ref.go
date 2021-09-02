@@ -24,8 +24,9 @@ import (
 var _ SourceRef = &sourceRef{}
 
 type sourceRef struct {
-	bucketRef internal.BucketRef
-	dirPath   string
+	bucketRef  internal.BucketRef
+	dirPath    string
+	subDirPath string
 }
 
 func newSourceRef(bucketRef internal.BucketRef) *sourceRef {
@@ -33,13 +34,45 @@ func newSourceRef(bucketRef internal.BucketRef) *sourceRef {
 	if dirRef, ok := bucketRef.(internal.DirRef); ok {
 		dirPath = dirRef.Path()
 	}
+	var subDirPath string
+	if archiveRef, ok := bucketRef.(internal.ArchiveRef); ok {
+		subDirPath = archiveRef.SubDirPath()
+	}
+	if subDirPath == "" {
+		// Note that a bucketRef cannot be both an ArchiveRef and
+		// a GitRef, but we encapsulate this in an empty check just
+		// to be safe.
+		if gitRef, ok := bucketRef.(internal.GitRef); ok {
+			subDirPath = gitRef.SubDirPath()
+		}
+	}
 	return &sourceRef{
-		bucketRef: bucketRef,
-		dirPath:   dirPath,
+		bucketRef:  bucketRef,
+		dirPath:    dirPath,
+		subDirPath: subDirPath,
 	}
 }
 
 func (r *sourceRef) PathForExternalPath(externalPath string) (string, error) {
+	if r.subDirPath != "" {
+		path, err := normalpath.NormalizeAndValidate(externalPath)
+		if err != nil {
+			return "", err
+		}
+		if normalpath.ContainsPath(r.subDirPath, path, normalpath.Relative) {
+			// If the path is contained by the subDirPath, we want it to be relative
+			// to the subDirPath.
+			//
+			//  $ buf build petapis.zip#subdir=proto --path proto/foo/foo.proto
+			//
+			// The path inside the bucket is foo/foo.proto.
+			path, err = normalpath.Rel(r.subDirPath, path)
+			if err != nil {
+				return "", err
+			}
+		}
+		return path, nil
+	}
 	if r.dirPath == "" {
 		return normalpath.NormalizeAndValidate(externalPath)
 	}

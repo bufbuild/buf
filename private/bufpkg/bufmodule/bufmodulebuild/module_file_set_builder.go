@@ -48,6 +48,8 @@ func (m *moduleFileSetBuilder) Build(
 		ctx,
 		module,
 		buildModuleFileSetOptions.workspace,
+		buildModuleFileSetOptions.targetPaths,
+		buildModuleFileSetOptions.targetPathsAllowNotExist,
 	)
 }
 
@@ -55,6 +57,8 @@ func (m *moduleFileSetBuilder) build(
 	ctx context.Context,
 	module bufmodule.Module,
 	workspace bufmodule.Workspace,
+	targetPaths [][]string,
+	targetPathsAllowNotExist bool,
 ) (bufmodule.ModuleFileSet, error) {
 	var dependencyModules []bufmodule.Module
 	if workspace != nil {
@@ -85,5 +89,17 @@ func (m *moduleFileSetBuilder) build(
 		}
 		dependencyModules = append(dependencyModules, dependencyModule)
 	}
-	return bufmodule.NewModuleFileSet(module, dependencyModules), nil
+	var options []bufmodule.ModuleFileSetOption
+	if len(targetPaths) > 0 {
+		if targetPathsAllowNotExist {
+			options = append(options, bufmodule.ModuleFileSetWithTargetPathsAllowNotExist(targetPaths))
+		} else {
+			options = append(options, bufmodule.ModuleFileSetWithTargetPaths(targetPaths))
+		}
+	}
+	return bufmodule.NewModuleFileSet(
+		module,
+		dependencyModules,
+		options...,
+	), nil
 }

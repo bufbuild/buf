@@ -83,6 +83,7 @@ type ModuleConfig interface {
 	Module() bufmodule.Module
 	Config() *bufconfig.Config
 	Workspace() bufmodule.Workspace
+	WorkspaceConfig() *bufwork.Config
 }
 
 // ModuleConfigReader is a ModuleConfig reader.

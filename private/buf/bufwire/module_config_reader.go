@@ -202,7 +202,7 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 	if err != nil {
 		return nil, err
 	}
-	return newModuleConfig(module, config, nil /* Workspaces aren't supported for ModuleRefs */), nil
+	return newModuleConfig(module, config, nil /* Workspaces aren't supported for ModuleRefs */, nil), nil
 }
 
 func (m *moduleConfigReader) getWorkspaceModuleConfigs(
@@ -335,7 +335,12 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 			// We have to do this ahead of time as we are not using PathForExternalPath
 			// in this if branch. This is really bad.
 			for _, externalDirOrFilePath := range externalDirOrFilePaths {
-				if _, err := sourceRef.PathForExternalPath(externalDirOrFilePath); err != nil {
+				_, err := sourceRef.PathForExternalPath(externalDirOrFilePath)
+				switch {
+				case normalpath.IsOutsideContextDirError(err):
+					// This can happen if the path is specified as an import,
+					// which is expected.
+				case err != nil:
 					return nil, err
 				}
 			}
@@ -381,13 +386,18 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 				// Managed Mode, which supports module-specific overrides.
 				bufmodulebuild.WithModuleIdentity(moduleConfig.ModuleIdentity),
 			}
-			bucketRelPaths := make([]string, len(externalDirOrFilePaths))
-			for i, externalDirOrFilePath := range externalDirOrFilePaths {
+			bucketRelPaths := make([]string, 0, len(externalDirOrFilePaths))
+			for _, externalDirOrFilePath := range externalDirOrFilePaths {
 				bucketRelPath, err := sourceRef.PathForExternalPath(externalDirOrFilePath)
-				if err != nil {
+				switch {
+				case normalpath.IsOutsideContextDirError(err):
+					// The file isn't contained in this module, but it might be contained
+					// in the ModuleFileSet.
+					continue
+				case err != nil:
 					return nil, err
 				}
-				bucketRelPaths[i] = bucketRelPath
+				bucketRelPaths = append(bucketRelPaths, bucketRelPath)
 			}
 			if externalDirOrFilePathsAllowNotExist {
 				buildOptions = append(buildOptions, bufmodulebuild.WithPathsAllowNotExist(bucketRelPaths))
@@ -416,7 +426,7 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 		}
 		m.logger.Warn(builder.String())
 	}
-	return newModuleConfig(module, moduleConfig, workspace), nil
+	return newModuleConfig(module, moduleConfig, workspace, workspaceConfig), nil
 }
 
 func workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig *bufwork.Config, subDirPath string) bool {

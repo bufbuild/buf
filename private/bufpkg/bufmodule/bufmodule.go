@@ -524,12 +524,33 @@ type ModuleFileSet interface {
 	isModuleFileSet()
 }
 
+// ModuleFileSetOption is used to construct Modules.
+type ModuleFileSetOption func(*moduleFileSet)
+
+// ModuleFileSetWithTargetPaths configures the ModuleFileSet with specific file or directory paths to build.
+// Unlike ModuleWithTargetPaths, this option can include imports.
+func ModuleFileSetWithTargetPaths(targetPaths [][]string) ModuleFileSetOption {
+	return func(m *moduleFileSet) {
+		m.targetPaths = targetPaths
+	}
+}
+
+// ModuleFileSetWithTargetPathsAllowNotExist configures the ModuleFileSet with specific file or directory paths to build,
+// but allows the specified paths to not exist.
+func ModuleFileSetWithTargetPathsAllowNotExist(targetPaths [][]string) ModuleFileSetOption {
+	return func(m *moduleFileSet) {
+		m.targetPaths = targetPaths
+		m.targetPathsAllowNotExist = true
+	}
+}
+
 // NewModuleFileSet returns a new ModuleFileSet.
 func NewModuleFileSet(
 	module Module,
 	dependencies []Module,
+	options ...ModuleFileSetOption,
 ) ModuleFileSet {
-	return newModuleFileSet(module, dependencies)
+	return newModuleFileSet(module, dependencies, options...)
 }
 
 // Workspace represents a module workspace.

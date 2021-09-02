@@ -16,20 +16,28 @@ package bufwire
 
 import (
 	"github.com/bufbuild/buf/private/buf/bufconfig"
+	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 )
 
 type moduleConfig struct {
-	module    bufmodule.Module
-	config    *bufconfig.Config
-	workspace bufmodule.Workspace
+	module          bufmodule.Module
+	config          *bufconfig.Config
+	workspace       bufmodule.Workspace
+	workspaceConfig *bufwork.Config
 }
 
-func newModuleConfig(module bufmodule.Module, config *bufconfig.Config, workspace bufmodule.Workspace) *moduleConfig {
+func newModuleConfig(
+	module bufmodule.Module,
+	config *bufconfig.Config,
+	workspace bufmodule.Workspace,
+	workspaceConfig *bufwork.Config,
+) *moduleConfig {
 	return &moduleConfig{
-		module:    module,
-		config:    config,
-		workspace: workspace,
+		module:          module,
+		config:          config,
+		workspace:       workspace,
+		workspaceConfig: workspaceConfig,
 	}
 }
 
@@ -43,4 +51,8 @@ func (m *moduleConfig) Config() *bufconfig.Config {
 
 func (m *moduleConfig) Workspace() bufmodule.Workspace {
 	return m.workspace
+}
+
+func (m *moduleConfig) WorkspaceConfig() *bufwork.Config {
+	return m.workspaceConfig
 }

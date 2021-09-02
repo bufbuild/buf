@@ -107,6 +107,15 @@ func (e *Error) Is(err error) bool {
 	return ok
 }
 
+// IsOutsideContextDirError returns true if the given err
+// is an errOutsideContextDir error.
+func IsOutsideContextDirError(err error) bool {
+	if v, ok := err.(*Error); ok {
+		return v.Unwrap() == errOutsideContextDir
+	}
+	return false
+}
+
 // Normalize normalizes the given path.
 //
 // This calls filepath.Clean and filepath.ToSlash on the path.
