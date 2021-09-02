@@ -33,9 +33,10 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+// Constants used to create .jar files
 var (
-	manifestPath    = normalpath.Join("META-INF", "MANIFEST.MF")
-	manifestContent = []byte(`Manifest-Version: 1.0
+	ManifestPath    = normalpath.Join("META-INF", "MANIFEST.MF")
+	ManifestContent = []byte(`Manifest-Version: 1.0
 Created-By: 1.6.0 (protoc)
 
 `)
@@ -142,7 +143,7 @@ func (g *generator) generateZip(
 		return err
 	}
 	if includeManifest {
-		if err := storage.PutPath(ctx, readBucketBuilder, manifestPath, manifestContent); err != nil {
+		if err := storage.PutPath(ctx, readBucketBuilder, ManifestPath, ManifestContent); err != nil {
 			return err
 		}
 	}

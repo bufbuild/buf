@@ -28,7 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -43,14 +43,6 @@ import (
 const (
 	// defaultJavaPackagePrefix is the default java_package prefix used in the JavaPackage modifier.
 	defaultJavaPackagePrefix = "com"
-)
-
-var (
-	manifestPath    = normalpath.Join("META-INF", "MANIFEST.MF")
-	manifestContent = []byte(`Manifest-Version: 1.0
-Created-By: 1.6.0 (protoc)
-
-`)
 )
 
 type generator struct {
@@ -348,7 +340,7 @@ func (g *generator) generateZip(
 		}
 	}
 	if includeManifest {
-		if err := storage.PutPath(ctx, readBucketBuilder, manifestPath, manifestContent); err != nil {
+		if err := storage.PutPath(ctx, readBucketBuilder, appprotoos.ManifestPath, appprotoos.ManifestContent); err != nil {
 			return fmt.Errorf("failed to write manifest file: %w", err)
 		}
 	}
