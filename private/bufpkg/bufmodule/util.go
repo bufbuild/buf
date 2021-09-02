@@ -21,7 +21,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
@@ -230,62 +229,18 @@ func moduleFileToProto(ctx context.Context, module Module, path string) (_ *modu
 	return protoModuleFile, nil
 }
 
-// modulePins expected to be sorted and unique
-func putModulePinsToBucket(
+func getDocumentationForBucket(
 	ctx context.Context,
-	writeBucket storage.WriteBucket,
-	modulePins []ModulePin,
-) error {
-	lockFile := &buflock.Config{
-		Dependencies: make([]buflock.Dependency, 0, len(modulePins)),
-	}
-	for _, pin := range modulePins {
-		lockFile.Dependencies = append(
-			lockFile.Dependencies,
-			buflock.Dependency{
-				Remote:     pin.Remote(),
-				Owner:      pin.Owner(),
-				Repository: pin.Repository(),
-				Branch:     pin.Branch(),
-				Commit:     pin.Commit(),
-				Digest:     pin.Digest(),
-				CreateTime: pin.CreateTime(),
-			},
-		)
-	}
-	return buflock.WriteConfig(ctx, writeBucket, lockFile)
-}
-
-func getDependencyModulePinsForBucket(
-	ctx context.Context,
-	sourceReadBucket storage.ReadBucket,
-) ([]ModulePin, error) {
-	lockFile, err := buflock.ReadConfig(ctx, sourceReadBucket)
+	readBucket storage.ReadBucket,
+) (string, error) {
+	documentationData, err := storage.ReadPath(ctx, readBucket, DocumentationFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read lock file: %w", err)
-	}
-	modulePins := make([]ModulePin, 0, len(lockFile.Dependencies))
-	for _, dep := range lockFile.Dependencies {
-		modulePin, err := NewModulePin(
-			dep.Remote,
-			dep.Owner,
-			dep.Repository,
-			dep.Branch,
-			dep.Commit,
-			dep.Digest,
-			dep.CreateTime,
-		)
-		if err != nil {
-			return nil, err
+		if storage.IsNotExist(err) {
+			return "", nil
 		}
-		modulePins = append(modulePins, modulePin)
+		return "", err
 	}
-	// just to be safe
-	SortModulePins(modulePins)
-	if err := ValidateModulePinsUniqueByIdentity(modulePins); err != nil {
-		return nil, err
-	}
-	return modulePins, nil
+	return string(documentationData), nil
 }
 
 func newInvalidModuleOwnerStringError(s string) error {

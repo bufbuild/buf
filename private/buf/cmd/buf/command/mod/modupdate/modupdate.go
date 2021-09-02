@@ -122,7 +122,6 @@ func run(
 	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
 		remote = moduleConfig.ModuleIdentity.Remote()
 	}
-
 	var dependencyModulePins []bufmodule.ModulePin
 	if len(moduleConfig.Build.DependencyModuleReferences) != 0 {
 		apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
@@ -134,7 +133,7 @@ func run(
 			return err
 		}
 		var protoDependencyModuleReferences []*modulev1alpha1.ModuleReference
-		var currentModulePins []*modulev1alpha1.ModulePin
+		var currentProtoModulePins []*modulev1alpha1.ModulePin
 		if len(flags.Only) > 0 {
 			referencesByIdentity := map[string]bufmodule.ModuleReference{}
 			for _, reference := range moduleConfig.Build.DependencyModuleReferences {
@@ -147,17 +146,21 @@ func run(
 				}
 				protoDependencyModuleReferences = append(protoDependencyModuleReferences, bufmodule.NewProtoModuleReferenceForModuleReference(moduleReference))
 			}
-			module, err := bufmodule.NewModuleForBucket(ctx, readWriteBucket)
+			currentModulePins, err := bufmodule.DependencyModulePinsForBucket(ctx, readWriteBucket)
 			if err != nil {
 				return fmt.Errorf("couldn't read current dependencies: %w", err)
 			}
-			currentModulePins = bufmodule.NewProtoModulePinsForModulePins(module.DependencyModulePins()...)
+			currentProtoModulePins = bufmodule.NewProtoModulePinsForModulePins(currentModulePins...)
 		} else {
 			protoDependencyModuleReferences = bufmodule.NewProtoModuleReferencesForModuleReferences(
 				moduleConfig.Build.DependencyModuleReferences...,
 			)
 		}
-		protoDependencyModulePins, err := service.GetModulePins(ctx, protoDependencyModuleReferences, currentModulePins)
+		protoDependencyModulePins, err := service.GetModulePins(
+			ctx,
+			protoDependencyModuleReferences,
+			currentProtoModulePins,
+		)
 		if err != nil {
 			if rpc.GetErrorCode(err) == rpc.ErrorCodeUnimplemented && remote != bufrpc.DefaultRemote {
 				return bufcli.NewUnimplementedRemoteError(err, remote, moduleConfig.ModuleIdentity.IdentityString())
@@ -169,15 +172,7 @@ func run(
 			return bufcli.NewInternalError(err)
 		}
 	}
-	module, err := bufmodule.NewModuleForBucketWithDependencyModulePins(
-		ctx,
-		readWriteBucket,
-		dependencyModulePins,
-	)
-	if err != nil {
-		return bufcli.NewInternalError(err)
-	}
-	if err := bufmodule.PutModuleDependencyModulePinsToBucket(ctx, readWriteBucket, module.DependencyModulePins()); err != nil {
+	if err := bufmodule.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil
