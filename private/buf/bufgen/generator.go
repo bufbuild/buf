@@ -311,6 +311,11 @@ func (g *generator) generateConcurrently(
 	for _, localResponse := range localPluginResponses {
 		pluginResponses[localResponse.index] = localResponse.responseWriter.ToResponse()
 	}
+	for i, response := range pluginResponses {
+		if response == nil {
+			return nil, fmt.Errorf("concurrent execution failed to populate response %d", i)
+		}
+	}
 	return pluginResponses, nil
 }
 
