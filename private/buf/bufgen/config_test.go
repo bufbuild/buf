@@ -327,6 +327,14 @@ func TestReadConfigV1(t *testing.T) {
 	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
+
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error1.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error2.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error3.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error4.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error5.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error6.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error7.yaml"))
 }
 
 func testReadConfigError(t *testing.T, provider Provider, readBucket storage.ReadBucket, testFilePath string) {
