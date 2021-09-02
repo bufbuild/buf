@@ -55,18 +55,22 @@ func ParsePluginPath(pluginPath string) (remote string, owner string, name strin
 	return components[0], components[1], components[3], nil
 }
 
-// ParsePluginVersionPath parses a string in the format <buf.build/owner/plugins/name:version>
-// into remote, owner, name and version.
+// ParsePluginVersionPath parses a string in the format <buf.build/owner/plugins/name[:version]>
+// into remote, owner, name and version. The version is empty if not specified.
 func ParsePluginVersionPath(pluginVersionPath string) (remote string, owner string, name string, version string, _ error) {
 	remote, owner, name, err := ParsePluginPath(pluginVersionPath)
 	if err != nil {
 		return "", "", "", "", err
 	}
 	components := strings.Split(name, ":")
-	if len(components) != 2 {
+	switch len(components) {
+	case 2:
+		return remote, owner, components[0], components[1], nil
+	case 1:
+		return remote, owner, name, "", nil
+	default:
 		return "", "", "", "", fmt.Errorf("invalid version: %q", name)
 	}
-	return remote, owner, components[0], components[1], nil
 }
 
 // ParseTemplatePath parses a string in the format <buf.build/owner/templates/name>
