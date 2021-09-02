@@ -135,15 +135,7 @@ func run(
 			return bufcli.NewInternalError(err)
 		}
 	}
-	module, err = bufmodule.NewModuleForBucketWithDependencyModulePins(
-		ctx,
-		readWriteBucket,
-		dependencyModulePins,
-	)
-	if err != nil {
-		return err
-	}
-	if err := bufmodule.PutModuleDependencyModulePinsToBucket(ctx, readWriteBucket, module.DependencyModulePins()); err != nil {
+	if err := bufmodule.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
 		return err
 	}
 	return nil

@@ -17,12 +17,11 @@ package bufmodule
 import (
 	"context"
 	"fmt"
-	"io"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
-	"go.uber.org/multierr"
 )
 
 type module struct {
@@ -43,13 +42,11 @@ func newModuleForProto(
 	}
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
 	for _, moduleFile := range protoModule.Files {
+		if normalpath.Ext(moduleFile.Path) != ".proto" {
+			return nil, fmt.Errorf("expected .proto file but got %q", moduleFile)
+		}
 		// we already know that paths are unique from validation
 		if err := storage.PutPath(ctx, readBucketBuilder, moduleFile.Path, moduleFile.Content); err != nil {
-			return nil, err
-		}
-	}
-	if docs := protoModule.GetDocumentation(); docs != "" {
-		if err := storage.PutPath(ctx, readBucketBuilder, DocumentationFilePath, []byte(docs)); err != nil {
 			return nil, err
 		}
 	}
@@ -61,10 +58,11 @@ func newModuleForProto(
 	if err != nil {
 		return nil, err
 	}
-	return newModuleForBucketWithDependencyModulePins(
+	return newModule(
 		ctx,
 		sourceReadBucket,
 		dependencyModulePins,
+		protoModule.GetDocumentation(),
 		options...,
 	)
 }
@@ -74,49 +72,41 @@ func newModuleForBucket(
 	sourceReadBucket storage.ReadBucket,
 	options ...ModuleOption,
 ) (*module, error) {
-	dependencyModulePins, err := getDependencyModulePinsForBucket(ctx, sourceReadBucket)
+	dependencyModulePins, err := DependencyModulePinsForBucket(ctx, sourceReadBucket)
 	if err != nil {
 		return nil, err
 	}
-	return newModuleForBucketWithDependencyModulePins(
+	documentation, err := getDocumentationForBucket(ctx, sourceReadBucket)
+	if err != nil {
+		return nil, err
+	}
+	return newModule(
 		ctx,
-		sourceReadBucket,
+		storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
 		dependencyModulePins,
+		documentation,
 		options...,
 	)
 }
 
-func newModuleForBucketWithDependencyModulePins(
+// this should only be called by other newModule constructors
+func newModule(
 	ctx context.Context,
+	// must only contain .proto files
 	sourceReadBucket storage.ReadBucket,
 	dependencyModulePins []ModulePin,
+	documentation string,
 	options ...ModuleOption,
 ) (_ *module, retErr error) {
 	if err := ValidateModulePinsUniqueByIdentity(dependencyModulePins); err != nil {
 		return nil, err
 	}
-	documentationReader, err := sourceReadBucket.Get(ctx, DocumentationFilePath)
-	// we allow the lack of documentation file
-	if err != nil && !storage.IsNotExist(err) {
-		return nil, err
-	}
-	documentationContents := ""
-	if documentationReader != nil {
-		defer func() {
-			retErr = multierr.Append(retErr, documentationReader.Close())
-		}()
-		documentationBytes, err := io.ReadAll(documentationReader)
-		if err != nil {
-			return nil, err
-		}
-		documentationContents = string(documentationBytes)
-	}
 	// we rely on this being sorted here
 	SortModulePins(dependencyModulePins)
 	module := &module{
-		sourceReadBucket:     storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
+		sourceReadBucket:     sourceReadBucket,
 		dependencyModulePins: dependencyModulePins,
-		documentation:        documentationContents,
+		documentation:        documentation,
 	}
 	for _, option := range options {
 		option(module)
