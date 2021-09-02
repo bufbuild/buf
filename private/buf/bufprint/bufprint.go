@@ -170,16 +170,6 @@ func NewTemplateVersionPrinter(writer io.Writer) TemplateVersionPrinter {
 	return newTemplateVersionPrinter(writer)
 }
 
-// RuntimeLibraryPrinter is a printer for RuntimeLibraries.
-type RuntimeLibraryPrinter interface {
-	PrintRuntimeLibraries(ctx context.Context, format Format, runtimeLibraries ...*registryv1alpha1.RuntimeLibrary) error
-}
-
-// NewRuntimeLibraryPrinter returns a new NewRuntimeLibraryPrinter.
-func NewRuntimeLibraryPrinter(writer io.Writer) RuntimeLibraryPrinter {
-	return newRuntimeLibraryPrinter(writer)
-}
-
 // TokenPrinter is a printer Tokens.
 //
 // TODO: update to same format as other printers.
