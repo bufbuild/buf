@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -39,6 +40,14 @@ import (
 const (
 	// defaultJavaPackagePrefix is the default java_package prefix used in the JavaPackage modifier.
 	defaultJavaPackagePrefix = "com"
+)
+
+var (
+	manifestPath    = normalpath.Join("META-INF", "MANIFEST.MF")
+	manifestContent = []byte(`Manifest-Version: 1.0
+Created-By: 1.6.0 (protoc)
+
+`)
 )
 
 type generator struct {
