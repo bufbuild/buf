@@ -32,7 +32,7 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(sweeper, map[string]string{})
+		phpNamespaceModifier := PhpNamespace(sweeper, nil)
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -49,7 +49,7 @@ func TestPhpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(sweeper, map[string]string{})
+		modifier := PhpNamespace(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -68,7 +68,7 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(sweeper, map[string]string{})
+		phpNamespaceModifier := PhpNamespace(sweeper, nil)
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -90,7 +90,7 @@ func TestPhpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(sweeper, map[string]string{})
+		modifier := PhpNamespace(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -120,7 +120,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(sweeper, map[string]string{})
+		phpNamespaceModifier := PhpNamespace(sweeper, nil)
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -143,7 +143,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(sweeper, map[string]string{})
+		modifier := PhpNamespace(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -168,7 +168,7 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(sweeper, map[string]string{})
+		phpNamespaceModifier := PhpNamespace(sweeper, nil)
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -196,7 +196,7 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(sweeper, map[string]string{})
+		modifier := PhpNamespace(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,

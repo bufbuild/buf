@@ -23,8 +23,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// PhpNamespaceOverridesID is the ID used to set per file overrides for the php_namespace modifier.
-const PhpNamespaceOverridesID = "PHP_NAMESPACE"
+// PhpNamespaceID is the ID of the php_namespace modifier.
+const PhpNamespaceID = "PHP_NAMESPACE"
 
 var (
 	// phpNamespacePath is the SourceCodeInfo path for the php_namespace option.

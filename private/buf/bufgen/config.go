@@ -191,13 +191,14 @@ func newManagedConfigV1(externalManagedConfig ExternalManagedConfigV1) (*Managed
 	}
 	overrides := externalManagedConfig.Overrides
 	// validate overrides
-	for _, override := range overrides {
+	for overrideID, override := range overrides {
 		// validate the path for each data is normalized
 		for importPath := range override {
 			if importPath != normalpath.Normalize(importPath) {
 				return nil, fmt.Errorf(
-					"invalid override, an unnormalized proto import path: %s",
+					"overrides can only take normlaised import paths, invalid import path: %s provided for: %s",
 					importPath,
+					overrideID,
 				)
 			}
 		}

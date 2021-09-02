@@ -32,7 +32,7 @@ func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, map[string]string{})
+		csharpNamespaceModifier := CsharpNamespace(sweeper, nil)
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -49,7 +49,7 @@ func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, map[string]string{})
+		modifier := CsharpNamespace(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -68,7 +68,7 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, csharpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, map[string]string{})
+		csharpNamespaceModifier := CsharpNamespace(sweeper, nil)
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -90,7 +90,7 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, map[string]string{})
+		modifier := CsharpNamespace(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -120,7 +120,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, csharpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, map[string]string{})
+		csharpNamespaceModifier := CsharpNamespace(sweeper, nil)
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -143,7 +143,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, map[string]string{})
+		modifier := CsharpNamespace(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -168,7 +168,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, map[string]string{})
+		csharpNamespaceModifier := CsharpNamespace(sweeper, nil)
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -196,7 +196,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, map[string]string{})
+		modifier := CsharpNamespace(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,

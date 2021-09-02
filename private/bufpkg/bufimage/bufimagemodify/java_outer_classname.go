@@ -24,9 +24,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// JavaOuterClassNameOverridesID is the ID for setting override values on a per file basis
-// for the JavaOuterClassName modifier.
-const JavaOuterClassNameOverridesID = "JAVA_OUTER_CLASSNAME"
+// JavaOuterClassNameID is the ID for the java_outer_classname modifier.
+const JavaOuterClassNameID = "JAVA_OUTER_CLASSNAME"
 
 // javaOuterClassnamePath is the SourceCodeInfo path for the java_outer_classname option.
 // https://github.com/protocolbuffers/protobuf/blob/87d140f851131fb8a6e8a80449cf08e73e568259/src/google/protobuf/descriptor.proto#L356

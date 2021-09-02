@@ -22,7 +22,13 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-const JavaMultipleFilesOverridesID = "JAVA_MULTIPLE_FILES"
+const (
+	// DefaultJavaMultipleFilesValue is the default value for the java_multiple_files modifier.
+	DefaultJavaMultipleFilesValue = true
+
+	// JavaMultipleFilesID is the ID of the java_mutliple_files modifier.
+	JavaMultipleFilesID = "JAVA_MULTIPLE_FILES"
+)
 
 // javaMultipleFilesPath is the SourceCodeInfo path for the java_multiple_files option.
 // https://github.com/protocolbuffers/protobuf/blob/ee04809540c098718121e092107fbc0abc231725/src/google/protobuf/descriptor.proto#L364

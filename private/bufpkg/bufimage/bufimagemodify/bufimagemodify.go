@@ -95,7 +95,7 @@ func Merge(left Modifier, right Modifier) Modifier {
 func CcEnableArenas(sweeper Sweeper, value bool, overrides map[string]string) (Modifier, error) {
 	validatedOverrides, err := stringOverridesToBoolOverrides(overrides)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid override for %s: %w", CcEnableArenasID, err)
 	}
 	return ccEnableArenas(sweeper, value, validatedOverrides), nil
 }
@@ -125,7 +125,7 @@ func GoPackage(
 func JavaMultipleFiles(sweeper Sweeper, value bool, overrides map[string]string) (Modifier, error) {
 	validatedOverrides, err := stringOverridesToBoolOverrides(overrides)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid override for %s: %w", JavaMultipleFilesID, err)
 	}
 	return javaMultipleFiles(sweeper, value, validatedOverrides), nil
 }
@@ -147,7 +147,7 @@ func JavaPackage(sweeper Sweeper, packagePrefix string, overrides map[string]str
 func JavaStringCheckUtf8(sweeper Sweeper, value bool, overrides map[string]string) (Modifier, error) {
 	validatedOverrides, err := stringOverridesToBoolOverrides(overrides)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid override for %s: %w", JavaStringCheckUtf8ID, err)
 	}
 	return javaStringCheckUtf8(sweeper, value, validatedOverrides), nil
 }
@@ -164,7 +164,7 @@ func OptimizeFor(
 	for fileImportPath, overrideString := range overrides {
 		overrideOptimizeMode, err := overrideStringToFileOptionOptimizeMode(overrideString)
 		if err != nil {
-			return nil, fmt.Errorf("invalid override for file %s: %w", fileImportPath, err)
+			return nil, fmt.Errorf("invalid override for modifier %s and file %s: %w", OptimizeForID, fileImportPath, err)
 		}
 		validatedOverrides[fileImportPath] = overrideOptimizeMode
 	}

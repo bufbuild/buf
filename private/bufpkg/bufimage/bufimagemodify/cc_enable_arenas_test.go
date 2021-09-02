@@ -32,8 +32,8 @@ func TestCcEnableArenasEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, ccEnableArenasPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		ccEnableArenasModifier, err := CcEnableArenas(sweeper, false, map[string]string{})
-		assert.NoError(t, err)
+		ccEnableArenasModifier, err := CcEnableArenas(sweeper, false, nil)
+		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			ccEnableArenasModifier,
 			ModifierFunc(sweeper.Sweep),
@@ -57,8 +57,8 @@ func TestCcEnableArenasEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, ccEnableArenasPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		ccEnableArenasModifier, err := CcEnableArenas(sweeper, false, map[string]string{})
-		assert.NoError(t, err)
+		ccEnableArenasModifier, err := CcEnableArenas(sweeper, false, nil)
+		require.NoError(t, err)
 		err = ccEnableArenasModifier.Modify(
 			context.Background(),
 			image,
@@ -82,8 +82,8 @@ func TestCcEnableArenasAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, ccEnableArenasPath)
 
 		sweeper := NewFileOptionSweeper()
-		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, map[string]string{})
-		assert.NoError(t, err)
+		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, nil)
+		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			ccEnableArenasModifier,
 			ModifierFunc(sweeper.Sweep),
@@ -108,8 +108,8 @@ func TestCcEnableArenasAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, ccEnableArenasPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, map[string]string{})
-		assert.NoError(t, err)
+		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, nil)
+		require.NoError(t, err)
 		err = ccEnableArenasModifier.Modify(
 			context.Background(),
 			image,
@@ -133,8 +133,8 @@ func TestCcEnableArenasCcOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, ccEnableArenasPath)
 
 		sweeper := NewFileOptionSweeper()
-		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, map[string]string{})
-		assert.NoError(t, err)
+		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, nil)
+		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			ccEnableArenasModifier,
 			ModifierFunc(sweeper.Sweep),
@@ -159,8 +159,8 @@ func TestCcEnableArenasCcOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, ccEnableArenasPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, map[string]string{})
-		assert.NoError(t, err)
+		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, nil)
+		require.NoError(t, err)
 		err = ccEnableArenasModifier.Modify(
 			context.Background(),
 			image,
@@ -184,8 +184,8 @@ func TestCcEnableArenasWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, map[string]string{})
-		assert.NoError(t, err)
+		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, nil)
+		require.NoError(t, err)
 		modifier := NewMultiModifier(
 			ccEnableArenasModifier,
 			ModifierFunc(sweeper.Sweep),
@@ -206,8 +206,8 @@ func TestCcEnableArenasWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, map[string]string{})
-		assert.NoError(t, err)
+		ccEnableArenasModifier, err := CcEnableArenas(sweeper, true, nil)
+		require.NoError(t, err)
 		err = ccEnableArenasModifier.Modify(
 			context.Background(),
 			image,

@@ -22,8 +22,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// CcEnableArenasOverridesID is the ID for setting override values on a per file basis
-const CcEnableArenasOverridesID = "CC_ENABLE_ARENAS"
+// CcEnableArenasID is the ID of the cc_enable_arenas modifier.
+const CcEnableArenasID = "CC_ENABLE_ARENAS"
 
 // ccEnableArenas is the SourceCodeInfo path for the cc_enable_arenas option.
 // https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L420

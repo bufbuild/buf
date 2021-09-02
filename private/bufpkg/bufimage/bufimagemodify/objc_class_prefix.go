@@ -25,8 +25,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// ObjcClassPrefixOverridesID is the ID used to set per file overrides for the objc_class_prefix modifier.
-const ObjcClassPrefixOverridesID = "OBJC_CLASS_PREFIX"
+// ObjcClassPrefixID is the ID of the objc_class_prefix modifier.
+const ObjcClassPrefixID = "OBJC_CLASS_PREFIX"
 
 // objcClassPrefixPath is the SourceCodeInfo path for the objc_class_prefix option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L425

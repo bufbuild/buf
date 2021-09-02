@@ -24,8 +24,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// CsharpNamespaceOverridesID is the ID used to set per file overrides for the csharp_namespace modifier.
-const CsharpNamespaceOverridesID = "CSHARP_NAMESPACE"
+// CsharpNamespaceID is the ID of the csharp_namespace modifier.
+const CsharpNamespaceID = "CSHARP_NAMESPACE"
 
 // csharpNamespacePath is the SourceCodeInfo path for the csharp_namespace option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L428

@@ -32,7 +32,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, map[string]string{})
+		rubyPackageModifier := RubyPackage(sweeper, nil)
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -49,7 +49,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, map[string]string{})
+		modifier := RubyPackage(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -68,7 +68,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, map[string]string{})
+		rubyPackageModifier := RubyPackage(sweeper, nil)
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -90,7 +90,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, map[string]string{})
+		modifier := RubyPackage(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -119,7 +119,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, map[string]string{})
+		rubyPackageModifier := RubyPackage(sweeper, nil)
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -142,7 +142,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, map[string]string{})
+		modifier := RubyPackage(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -167,7 +167,7 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, map[string]string{})
+		rubyPackageModifier := RubyPackage(sweeper, nil)
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -195,7 +195,7 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, map[string]string{})
+		modifier := RubyPackage(sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,

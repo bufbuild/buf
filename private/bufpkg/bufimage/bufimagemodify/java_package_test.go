@@ -27,7 +27,7 @@ const testJavaPackagePrefix = "com"
 
 func TestJavaPackageError(t *testing.T) {
 	t.Parallel()
-	_, err := JavaPackage(NewFileOptionSweeper(), "", map[string]string{})
+	_, err := JavaPackage(NewFileOptionSweeper(), "", nil)
 	require.Error(t, err)
 }
 
@@ -40,7 +40,7 @@ func TestJavaPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		javaPackageModifier, err := JavaPackage(sweeper, testJavaPackagePrefix, map[string]string{})
+		javaPackageModifier, err := JavaPackage(sweeper, testJavaPackagePrefix, nil)
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(javaPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -58,7 +58,7 @@ func TestJavaPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := JavaPackage(sweeper, testJavaPackagePrefix, map[string]string{})
+		modifier, err := JavaPackage(sweeper, testJavaPackagePrefix, nil)
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
@@ -78,7 +78,7 @@ func TestJavaPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		javaPackageModifier, err := JavaPackage(sweeper, testJavaPackagePrefix, map[string]string{})
+		javaPackageModifier, err := JavaPackage(sweeper, testJavaPackagePrefix, nil)
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(javaPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -101,7 +101,7 @@ func TestJavaPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := JavaPackage(sweeper, testJavaPackagePrefix, map[string]string{})
+		modifier, err := JavaPackage(sweeper, testJavaPackagePrefix, nil)
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
@@ -127,7 +127,7 @@ func TestJavaPackageJavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		javaPackageModifier, err := JavaPackage(sweeper, testJavaPackagePrefix, map[string]string{})
+		javaPackageModifier, err := JavaPackage(sweeper, testJavaPackagePrefix, nil)
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(javaPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -151,7 +151,7 @@ func TestJavaPackageJavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := JavaPackage(sweeper, testJavaPackagePrefix, map[string]string{})
+		modifier, err := JavaPackage(sweeper, testJavaPackagePrefix, nil)
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
@@ -178,7 +178,7 @@ func TestJavaPackageWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		javaPackageModifier, err := JavaPackage(sweeper, javaPackagePrefix, map[string]string{})
+		javaPackageModifier, err := JavaPackage(sweeper, javaPackagePrefix, nil)
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(javaPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -207,7 +207,7 @@ func TestJavaPackageWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := JavaPackage(sweeper, javaPackagePrefix, map[string]string{})
+		modifier, err := JavaPackage(sweeper, javaPackagePrefix, nil)
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),

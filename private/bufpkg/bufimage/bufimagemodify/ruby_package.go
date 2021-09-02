@@ -23,8 +23,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// RubyPackageOverridesID is the ID used to set per file overrides for the ruby_package modifier.
-const RubyPackageOverridesID = "RUBY_PACKAGE"
+// RubyPackageID is the ID of the ruby_package modifier.
+const RubyPackageID = "RUBY_PACKAGE"
 
 // rubyPackagePath is the SourceCodeInfo path for the ruby_package option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L453

@@ -32,8 +32,8 @@ func TestJavaStringCheckUtf8EmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, true)
 
 		sweeper := NewFileOptionSweeper()
-		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(sweeper, false, map[string]string{})
-		assert.NoError(t, err)
+		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(sweeper, false, nil)
+		require.NoError(t, err)
 		modifier := NewMultiModifier(JavaStringCheckUtf8Modifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
@@ -49,8 +49,8 @@ func TestJavaStringCheckUtf8EmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := JavaStringCheckUtf8(sweeper, false, map[string]string{})
-		assert.NoError(t, err)
+		modifier, err := JavaStringCheckUtf8(sweeper, false, nil)
+		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
 			image,
@@ -69,8 +69,8 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaStringCheckUtf8Path)
 
 		sweeper := NewFileOptionSweeper()
-		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(sweeper, false, map[string]string{})
-		assert.NoError(t, err)
+		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(sweeper, false, nil)
+		require.NoError(t, err)
 		modifier := NewMultiModifier(JavaStringCheckUtf8Modifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
@@ -91,8 +91,8 @@ func TestJavaStringCheckUtf8AllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := JavaStringCheckUtf8(sweeper, false, map[string]string{})
-		assert.NoError(t, err)
+		modifier, err := JavaStringCheckUtf8(sweeper, false, nil)
+		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
 			image,
@@ -116,8 +116,8 @@ func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaStringCheckUtf8Path)
 
 		sweeper := NewFileOptionSweeper()
-		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(sweeper, true, map[string]string{})
-		assert.NoError(t, err)
+		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(sweeper, true, nil)
+		require.NoError(t, err)
 		modifier := NewMultiModifier(JavaStringCheckUtf8Modifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
@@ -139,8 +139,8 @@ func TestJavaStringCheckUtf8JavaOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaStringCheckUtf8Path, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := JavaStringCheckUtf8(sweeper, true, map[string]string{})
-		assert.NoError(t, err)
+		modifier, err := JavaStringCheckUtf8(sweeper, true, nil)
+		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
 			image,
@@ -164,8 +164,8 @@ func TestJavaStringCheckUtf8WellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(sweeper, true, map[string]string{})
-		assert.NoError(t, err)
+		JavaStringCheckUtf8Modifier, err := JavaStringCheckUtf8(sweeper, true, nil)
+		require.NoError(t, err)
 		modifier := NewMultiModifier(JavaStringCheckUtf8Modifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
@@ -188,8 +188,8 @@ func TestJavaStringCheckUtf8WellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := JavaStringCheckUtf8(sweeper, true, map[string]string{})
-		assert.NoError(t, err)
+		modifier, err := JavaStringCheckUtf8(sweeper, true, nil)
+		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
 			image,

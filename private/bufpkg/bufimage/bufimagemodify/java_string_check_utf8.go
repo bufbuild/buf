@@ -22,8 +22,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// JavaStringCheckUtf8OverridesID is the ID used to set per file overrides for the java_string_check_utf8 modifier.
-const JavaStringCheckUtf8OverridesID = "JAVA_STRING_CHECK_UTF8"
+// JavaStringCheckUtf8ID is the ID of the java_String_check_utf8 modifier.
+const JavaStringCheckUtf8ID = "JAVA_STRING_CHECK_UTF8"
 
 // javaStringCheckUtf8Path is the SourceCodeInfo path for the java_string_check_utf8 option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L375

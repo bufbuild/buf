@@ -27,8 +27,8 @@ const (
 	// DefaultJavaPackagePrefix is the default java_package prefix used in the java_package modifier.
 	DefaultJavaPackagePrefix = "com"
 
-	// JavaPackageOverridesID is the ID used to set per file overrides for the java_package modifier.
-	JavaPackageOverridesID = "JAVA_PACKAGE"
+	// JavaPackageID is the ID of the java_package modifier.
+	JavaPackageID = "JAVA_PACKAGE"
 )
 
 // javaPackagePath is the SourceCodeInfo path for the java_package option.
