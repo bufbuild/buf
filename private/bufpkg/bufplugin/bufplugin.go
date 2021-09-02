@@ -55,6 +55,20 @@ func ParsePluginPath(pluginPath string) (remote string, owner string, name strin
 	return components[0], components[1], components[3], nil
 }
 
+// ParsePluginVersionPath parses a string in the format <buf.build/owner/plugins/name:version>
+// into remote, owner, name and version.
+func ParsePluginVersionPath(pluginVersionPath string) (remote string, owner string, name string, version string, _ error) {
+	remote, owner, name, err := ParsePluginPath(pluginVersionPath)
+	if err != nil {
+		return "", "", "", "", err
+	}
+	components := strings.Split(name, ":")
+	if len(components) != 2 {
+		return "", "", "", "", fmt.Errorf("invalid version: %q", name)
+	}
+	return remote, owner, components[0], components[1], nil
+}
+
 // ParseTemplatePath parses a string in the format <buf.build/owner/templates/name>
 // into remote, owner and name.
 func ParseTemplatePath(templatePath string) (remote string, owner string, name string, _ error) {
@@ -241,59 +255,73 @@ func ParseTemplateVersionConfig(config string) (*TemplateVersionConfig, error) {
 	return templateVersionConfig, nil
 }
 
-// PluginResult describes the result of executing a plugin.
-type PluginResult struct {
-	Plugin   PluginVersion
-	Response *pluginpb.CodeGeneratorResponse
+// File represents a generated file
+type File struct {
+	Name    string
+	Content []byte
+}
+
+// MergedPluginResult holds the files for a plugin result.
+type MergedPluginResult struct {
+	Files []*File
 }
 
 // MergeInsertionPoints traverses the plugin results and merges any insertion points present in any responses.
-// The order of inserts depends on the order of the input plugins.
-func MergeInsertionPoints(ctx context.Context, pluginResults []PluginResult) (map[string][]byte, error) {
-	files := make(map[string][]byte)
-	for _, pluginResult := range pluginResults {
-		if pluginResult.Response.Error != nil {
-			return nil, fmt.Errorf("unexpected response error: %s", *pluginResult.Response.Error)
+// The order of inserts depends on the order of the input plugins. The returned results are in the same order
+// as the input plugin results.
+func MergeInsertionPoints(responses []*pluginpb.CodeGeneratorResponse) ([]MergedPluginResult, error) {
+	allFiles := make(map[string]*File)
+	results := make([]MergedPluginResult, len(responses))
+	for i, response := range responses {
+		if response.Error != nil {
+			return nil, fmt.Errorf("unexpected response error: %s", *response.Error)
 		}
-		for _, file := range pluginResult.Response.File {
-			fileName := file.GetName()
-			insertionPoint := file.GetInsertionPoint()
+		var files []*File
+		for _, generatedFile := range response.File {
+			fileName := generatedFile.GetName()
+			insertionPoint := generatedFile.GetInsertionPoint()
 			if insertionPoint != "" {
-				parentFile, ok := files[fileName]
+				parentFile, ok := allFiles[fileName]
 				if !ok {
 					return nil, fmt.Errorf(
-						"plugin %s/%s requested insertion point in file %q which does not exist",
-						pluginResult.Plugin.Owner,
-						pluginResult.Plugin.Name,
+						"response %d requested insertion point in file %q which does not exist",
+						i,
 						fileName,
 					)
 				}
 				newFileContents, err := appproto.ApplyInsertionPoint(
 					context.Background(),
-					file,
-					bytes.NewBuffer(parentFile),
+					generatedFile,
+					bytes.NewBuffer(parentFile.Content),
 				)
 				if err != nil {
 					return nil, fmt.Errorf(
-						"failed to apply insertion point %q in file %q for plugin %s/%s: %w",
+						"failed to apply insertion point %q in file %q for response %d: %w",
 						insertionPoint,
 						fileName,
-						pluginResult.Plugin.Owner,
-						pluginResult.Plugin.Name,
+						i,
 						err,
 					)
 				}
-				files[fileName] = newFileContents
+				allFiles[fileName].Content = newFileContents
 				continue
 			}
-			if _, ok := files[fileName]; ok {
+			if _, ok := allFiles[fileName]; ok {
 				return nil, fmt.Errorf("file %q defined multiple times", fileName)
 			}
-			files[fileName] = []byte(file.GetContent())
+			file := &File{
+				Name:    fileName,
+				Content: []byte(generatedFile.GetContent()),
+			}
+			files = append(files, file)
+			allFiles[fileName] = file
+		}
+		results[i] = MergedPluginResult{
+			Files: files,
 		}
 	}
 
-	return files, nil
+	return results, nil
 }
 
 type externalTemplateConfig struct {

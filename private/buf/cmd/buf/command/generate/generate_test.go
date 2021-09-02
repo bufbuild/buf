@@ -222,7 +222,6 @@ func testCompareGeneratedStubsArchive(
 		actualProtocPluginFlags...,
 	)
 	genFlags := []string{
-		"--input",
 		dirPath,
 		"--template",
 		newExternalConfigV1String(t, plugins, bufGenFile),

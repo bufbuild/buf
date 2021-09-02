@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	registrygenerate "github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
@@ -335,8 +334,6 @@ See https://docs.buf.build/faq for more details.`,
 									tokendelete.NewCommand("delete", builder),
 								},
 							},
-
-							registrygenerate.NewCommand("generate", builder),
 						},
 					},
 				},
