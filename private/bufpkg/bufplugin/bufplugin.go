@@ -269,9 +269,9 @@ type MergedPluginResult struct {
 // MergeInsertionPoints traverses the plugin results and merges any insertion points present in any responses.
 // The order of inserts depends on the order of the input plugins. The returned results are in the same order
 // as the input plugin results.
-func MergeInsertionPoints(responses []*pluginpb.CodeGeneratorResponse) ([]*MergedPluginResult, error) {
+func MergeInsertionPoints(responses []*pluginpb.CodeGeneratorResponse) ([]MergedPluginResult, error) {
 	allFiles := make(map[string]*File)
-	results := make([]*MergedPluginResult, len(responses))
+	results := make([]MergedPluginResult, len(responses))
 	for i, response := range responses {
 		if response.Error != nil {
 			return nil, fmt.Errorf("unexpected response error: %s", *response.Error)
@@ -316,7 +316,7 @@ func MergeInsertionPoints(responses []*pluginpb.CodeGeneratorResponse) ([]*Merge
 			files = append(files, file)
 			allFiles[fileName] = file
 		}
-		results[i] = &MergedPluginResult{
+		results[i] = MergedPluginResult{
 			Files: files,
 		}
 	}

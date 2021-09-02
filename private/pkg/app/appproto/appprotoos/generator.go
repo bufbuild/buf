@@ -78,62 +78,45 @@ func (g *generator) Generate(
 		return err
 	}
 	appprotoGenerator := appproto.NewGenerator(g.logger, handler)
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
-	if err := appprotoGenerator.Generate(ctx, container, readBucketBuilder, requests); err != nil {
-		return err
-	}
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	if err != nil {
-		return err
-	}
-	return writePluginOutput(
-		ctx,
-		readBucket,
-		pluginOut,
-		generateOptions.createOutDirIfNotExists,
-		g.storageosProvider,
-	)
-}
-
-func writePluginOutput(
-	ctx context.Context,
-	readBucket storage.ReadBucket,
-	pluginOut string,
-	createOutDirIfNotExists bool,
-	storageosProvider storageos.Provider,
-) error {
 	switch filepath.Ext(pluginOut) {
 	case ".jar":
-		return generateZip(
+		return g.generateZip(
 			ctx,
-			readBucket,
+			container,
+			appprotoGenerator,
 			pluginOut,
+			requests,
 			true,
-			createOutDirIfNotExists,
+			generateOptions.createOutDirIfNotExists,
 		)
 	case ".zip":
-		return generateZip(
+		return g.generateZip(
 			ctx,
-			readBucket,
+			container,
+			appprotoGenerator,
 			pluginOut,
+			requests,
 			false,
-			createOutDirIfNotExists,
+			generateOptions.createOutDirIfNotExists,
 		)
 	default:
-		return generateDirectory(
+		return g.generateDirectory(
 			ctx,
-			readBucket,
+			container,
+			appprotoGenerator,
 			pluginOut,
-			createOutDirIfNotExists,
-			storageosProvider,
+			requests,
+			generateOptions.createOutDirIfNotExists,
 		)
 	}
 }
 
-func generateZip(
+func (g *generator) generateZip(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
+	container app.EnvStderrContainer,
+	appprotoGenerator appproto.Generator,
 	outFilePath string,
+	requests []*pluginpb.CodeGeneratorRequest,
 	includeManifest bool,
 	createOutDirIfNotExists bool,
 ) (retErr error) {
@@ -154,16 +137,12 @@ func generateZip(
 	} else if !fileInfo.IsDir() {
 		return fmt.Errorf("not a directory: %s", outDirPath)
 	}
+	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	if err := appprotoGenerator.Generate(ctx, container, readBucketBuilder, requests); err != nil {
+		return err
+	}
 	if includeManifest {
-		readBucketBuilder := storagemem.NewReadBucketBuilder()
-		if _, err := storage.Copy(ctx, readBucket, readBucketBuilder); err != nil {
-			return err
-		}
 		if err := storage.PutPath(ctx, readBucketBuilder, manifestPath, manifestContent); err != nil {
-			return err
-		}
-		readBucket, err = readBucketBuilder.ToReadBucket()
-		if err != nil {
 			return err
 		}
 	}
@@ -174,16 +153,21 @@ func generateZip(
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
+	readBucket, err := readBucketBuilder.ToReadBucket()
+	if err != nil {
+		return err
+	}
 	// protoc does not compress
 	return storagearchive.Zip(ctx, readBucket, file, false)
 }
 
-func generateDirectory(
+func (g *generator) generateDirectory(
 	ctx context.Context,
-	readBucket storage.ReadBucket,
+	container app.EnvStderrContainer,
+	appprotoGenerator appproto.Generator,
 	outDirPath string,
+	requests []*pluginpb.CodeGeneratorRequest,
 	createOutDirIfNotExists bool,
-	storageosProvider storageos.Provider,
 ) error {
 	if createOutDirIfNotExists {
 		if err := os.MkdirAll(outDirPath, 0755); err != nil {
@@ -191,17 +175,20 @@ func generateDirectory(
 		}
 	}
 	// this checks that the directory exists
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+	readWriteBucket, err := g.storageosProvider.NewReadWriteBucket(
 		outDirPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
 		return err
 	}
-	if _, err := storage.Copy(ctx, readBucket, readWriteBucket); err != nil {
-		return err
-	}
-	return nil
+	return appprotoGenerator.Generate(
+		ctx,
+		container,
+		readWriteBucket,
+		requests,
+		appproto.GenerateWithInsertionPointReadBucket(readWriteBucket),
+	)
 }
 
 type generateOptions struct {

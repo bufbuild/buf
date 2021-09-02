@@ -19,7 +19,6 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -65,18 +64,4 @@ func GenerateWithCreateOutDirIfNotExists() GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.createOutDirIfNotExists = true
 	}
-}
-
-// WritePluginOutput writes the plugin output in the
-// read bucket to the path defined by pluginOut. It will
-// automatically package .zip and .jar file outputs into
-// their respective packaging formats.
-func WritePluginOutput(
-	ctx context.Context,
-	readBucket storage.ReadBucket,
-	pluginOut string,
-	createOutDirIfNotExists bool,
-	storageosProvider storageos.Provider,
-) error {
-	return writePluginOutput(ctx, readBucket, pluginOut, createOutDirIfNotExists, storageosProvider)
 }
