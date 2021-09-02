@@ -109,6 +109,7 @@ plugins:
   - name: java
     out: gen/java
     # Use the plugin hosted at buf.build/protocolbuffers/plugins/python at version v3.17.0-1.
+    # If version is omitted, uses the latest version of the plugin.
   - remote: buf.build/protocolbuffers/plugins/python:v3.17.0-1
     out: gen/python
 
