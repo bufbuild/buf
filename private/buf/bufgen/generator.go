@@ -17,8 +17,6 @@ package bufgen
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
@@ -28,13 +26,12 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
+	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -125,33 +122,18 @@ func (g *generator) generate(
 	}
 	for i, mergedPluginResult := range mergedPluginResults {
 		pluginOut := config.PluginConfigs[i].Out
-		switch filepath.Ext(pluginOut) {
-		case ".jar":
-			if err := g.generateZip(
-				ctx,
-				pluginOut,
-				mergedPluginResult.Files,
-				true,
-			); err != nil {
-				return fmt.Errorf("failed to generate jar: %w", err)
+		readBucketBuilder := storagemem.NewReadBucketBuilder()
+		for _, file := range mergedPluginResult.Files {
+			if err := storage.PutPath(ctx, readBucketBuilder, file.Name, file.Content); err != nil {
+				return fmt.Errorf("failed to copy generated file to read bucket: %w", err)
 			}
-		case ".zip":
-			if err := g.generateZip(
-				ctx,
-				pluginOut,
-				mergedPluginResult.Files,
-				false,
-			); err != nil {
-				return fmt.Errorf("failed to generate zip: %w", err)
-			}
-		default:
-			if err := g.generateDirectory(
-				ctx,
-				pluginOut,
-				mergedPluginResult.Files,
-			); err != nil {
-				return fmt.Errorf("failed to generate directory: %w", err)
-			}
+		}
+		readBucket, err := readBucketBuilder.ToReadBucket()
+		if err != nil {
+			return fmt.Errorf("failed to convert read bucket builder to read bucket: %w", err)
+		}
+		if err := appprotoos.WritePluginOutput(ctx, readBucket, pluginOut, true, g.storageosProvider); err != nil {
+			return fmt.Errorf("failed to write plugin output to disk: %w", err)
 		}
 	}
 	return nil
@@ -320,78 +302,6 @@ func (g *generator) generateConcurrently(
 		pluginResponses[localResponse.index] = localResponse.responseWriter.ToResponse()
 	}
 	return pluginResponses, nil
-}
-
-func (g *generator) generateZip(
-	ctx context.Context,
-	outFilePath string,
-	files []*bufplugin.File,
-	includeManifest bool,
-) (retErr error) {
-	outDirPath := filepath.Dir(outFilePath)
-	// OK to use os.Stat instead of os.Lstat here
-	fileInfo, err := os.Stat(outDirPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(outDirPath, 0755); err != nil {
-				return fmt.Errorf("failed to create output directory: %w", err)
-			}
-		}
-		return err
-	} else if !fileInfo.IsDir() {
-		return fmt.Errorf("not a directory: %s", outDirPath)
-	}
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
-	for _, file := range files {
-		if err := storage.PutPath(ctx, readBucketBuilder, file.Name, file.Content); err != nil {
-			return fmt.Errorf("failed to write generated file: %w", err)
-		}
-	}
-	if includeManifest {
-		if err := storage.PutPath(ctx, readBucketBuilder, manifestPath, manifestContent); err != nil {
-			return fmt.Errorf("failed to write manifest file: %w", err)
-		}
-	}
-	file, err := os.Create(outFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to create output file: %w", err)
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
-	}()
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	if err != nil {
-		return fmt.Errorf("failed to convert in-memory bucket to read bucket: %w", err)
-	}
-	// protoc does not compress
-	if err := storagearchive.Zip(ctx, readBucket, file, false); err != nil {
-		return fmt.Errorf("failed to zip results: %w", err)
-	}
-	return nil
-}
-
-func (g *generator) generateDirectory(
-	ctx context.Context,
-	outDirPath string,
-	files []*bufplugin.File,
-) error {
-	if err := os.MkdirAll(outDirPath, 0755); err != nil {
-		return err
-	}
-	// this checks that the directory exists
-	readWriteBucket, err := g.storageosProvider.NewReadWriteBucket(
-		outDirPath,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return err
-	}
-	for _, file := range files {
-		if err := storage.PutPath(ctx, readWriteBucket, file.Name, file.Content); err != nil {
-			return fmt.Errorf("failed to write generated file: %w", err)
-		}
-	}
-	return nil
 }
 
 // modifyImage modifies the image according to the given configuration (i.e. Managed Mode).
