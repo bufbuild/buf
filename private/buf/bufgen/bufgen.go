@@ -151,8 +151,6 @@ type PluginConfig struct {
 	// One of Name and Remote is required
 	Name   string
 	Remote string
-	// Required if Remote is set
-	Version string
 	// Required
 	Out string
 	// Optional
@@ -230,7 +228,6 @@ type ExternalConfigV1 struct {
 type ExternalPluginConfigV1 struct {
 	Name     string      `json:"name,omitempty" yaml:"name,omitempty"`
 	Remote   string      `json:"remote,omitempty" yaml:"remote,omitempty"`
-	Version  string      `json:"version,omitempty" yaml:"version,omitempty"`
 	Out      string      `json:"out,omitempty" yaml:"out,omitempty"`
 	Opt      interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
 	Path     string      `json:"path,omitempty" yaml:"path,omitempty"`

@@ -68,7 +68,7 @@ plugins:
     # The name of the plugin.
     # By default, buf generate will look for a binary named protoc-gen-NAME on your $PATH.
     # Alternatively, use a remote reference:
-    # remote: buf.build/protocolbuffers/plugins/go
+    # remote: buf.build/protocolbuffers/plugins/go:v1.27.0-1
   - name: go
     # The the relative output directory.
     # Required.
@@ -78,7 +78,7 @@ plugins:
     # Optional.
     opt: paths=source_relative
     # The custom path to the plugin binary, if not protoc-gen-NAME on your $PATH.
-	# Optional, and exclusive with "remote".
+    # Optional, and exclusive with "remote".
     path: custom-gen-go
     # The generation strategy to use. There are two options:
     #
@@ -103,15 +103,13 @@ plugins:
     #
     #   This is needed for certain plugins that expect all files to be given at once.
     #
-	# If omitted, "directory" is used. Most users should not need to set this option.
+    # If omitted, "directory" is used. Most users should not need to set this option.
     # Optional.
     strategy: directory
   - name: java
     out: gen/java
-  - remote: buf.build/protocolbuffers/plugins/python
-    # The version of the remote plugin to use.
-	# Required when using "remote".
-    version: v3.17.0-1
+    # Use the plugin hosted at buf.build/protocolbuffers/plugins/python at version v3.17.0-1.
+  - remote: buf.build/protocolbuffers/plugins/python:v3.17.0-1
     out: gen/python
 
 As an example, here's a typical "buf.gen.yaml" go and grpc, assuming

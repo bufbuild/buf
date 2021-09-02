@@ -15,7 +15,6 @@
 package bufplugin
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 
@@ -415,32 +414,26 @@ plugin_versions:
 }
 
 func TestMergeInsertionPoints(t *testing.T) {
-	results := []PluginResult{
+	results := []*pluginpb.CodeGeneratorResponse{
 		{
-			Name: "plugin1",
-			Response: &pluginpb.CodeGeneratorResponse{
-				File: []*pluginpb.CodeGeneratorResponse_File{
-					{
-						Name:    testStringPointer("file1.java"),
-						Content: testStringPointer("// @@protoc_insertion_point(insertionPoint1)"),
-					},
+			File: []*pluginpb.CodeGeneratorResponse_File{
+				{
+					Name:    testStringPointer("file1.java"),
+					Content: testStringPointer("// @@protoc_insertion_point(insertionPoint1)"),
 				},
 			},
 		},
 		{
-			Name: "plugin2",
-			Response: &pluginpb.CodeGeneratorResponse{
-				File: []*pluginpb.CodeGeneratorResponse_File{
-					{
-						Name:           testStringPointer("file1.java"),
-						Content:        testStringPointer("!! this was inserted !!"),
-						InsertionPoint: testStringPointer("insertionPoint1"),
-					},
+			File: []*pluginpb.CodeGeneratorResponse_File{
+				{
+					Name:           testStringPointer("file1.java"),
+					Content:        testStringPointer("!! this was inserted !!"),
+					InsertionPoint: testStringPointer("insertionPoint1"),
 				},
 			},
 		},
 	}
-	mergedResults, err := MergeInsertionPoints(context.Background(), results)
+	mergedResults, err := MergeInsertionPoints(results)
 	require.NoError(t, err)
 	require.Len(t, mergedResults, 2)
 	require.Len(t, mergedResults[0].Files, 1)

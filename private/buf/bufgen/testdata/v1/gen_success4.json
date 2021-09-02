@@ -2,8 +2,7 @@
   "version": "v1",
   "plugins": [
     {
-      "remote": "someremote.com/owner/plugins/myplugin",
-      "version": "v1.1.0-1",
+      "remote": "someremote.com/owner/plugins/myplugin:v1.1.0-1",
       "out": "gen/go"
     }
   ]

@@ -191,10 +191,9 @@ func TestReadConfigV1(t *testing.T) {
 	successConfig4 := &Config{
 		PluginConfigs: []*PluginConfig{
 			{
-				Remote:   "someremote.com/owner/plugins/myplugin",
+				Remote:   "someremote.com/owner/plugins/myplugin:v1.1.0-1",
 				Out:      "gen/go",
-				Version:  "v1.1.0-1",
-				Strategy: StrategyDirectory,
+				Strategy: StrategyAll,
 			},
 		},
 	}
@@ -291,7 +290,6 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error5.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error6.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error7.yaml"))
-	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error8.yaml"))
 
 	successConfig = &Config{
 		PluginConfigs: []*PluginConfig{
@@ -329,14 +327,6 @@ func TestReadConfigV1(t *testing.T) {
 	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(string(data)))
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
-
-	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error1.yaml"))
-	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error2.yaml"))
-	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error3.yaml"))
-	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error4.yaml"))
-	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error5.yaml"))
-	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error6.yaml"))
-	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error7.yaml"))
 }
 
 func testReadConfigError(t *testing.T, provider Provider, readBucket storage.ReadBucket, testFilePath string) {

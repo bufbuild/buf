@@ -1,5 +1,4 @@
 version: v1
 plugins:
-  - remote: buf.build/myuser/plugins/myplugin
-    version: v1.1.0-1
+  - remote: buf.build/myuser/plugins/myplugin:v1.1.0-1
     # No out specified, error

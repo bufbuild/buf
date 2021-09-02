@@ -17,6 +17,7 @@ package bufgen
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -27,16 +28,29 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const (
 	// defaultJavaPackagePrefix is the default java_package prefix used in the JavaPackage modifier.
 	defaultJavaPackagePrefix = "com"
+)
+
+var (
+	manifestPath    = normalpath.Join("META-INF", "MANIFEST.MF")
+	manifestContent = []byte(`Manifest-Version: 1.0
+Created-By: 1.6.0 (protoc)
+
+`)
 )
 
 type generator struct {
@@ -89,6 +103,70 @@ func (g *generator) generate(
 	if err := modifyImage(ctx, config, image); err != nil {
 		return err
 	}
+	pluginResponses, err := g.generateConcurrently(
+		ctx,
+		container,
+		config,
+		image,
+		includeImports,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to generate plugins concurrently: %w", err)
+	}
+	if len(pluginResponses) != len(config.PluginConfigs) {
+		return fmt.Errorf("unexpected number of responses, got %d, wanted %d", len(pluginResponses), len(config.PluginConfigs))
+	}
+	mergedPluginResults, err := bufplugin.MergeInsertionPoints(pluginResponses)
+	if err != nil {
+		return fmt.Errorf("failed to map insertion points: %w", err)
+	}
+	if len(mergedPluginResults) != len(config.PluginConfigs) {
+		return fmt.Errorf("unexpected number of merged results, got %d, wanted %d", len(mergedPluginResults), len(config.PluginConfigs))
+	}
+	for i, mergedPluginResult := range mergedPluginResults {
+		pluginOut := config.PluginConfigs[i].Out
+		switch filepath.Ext(pluginOut) {
+		case ".jar":
+			if err := g.generateZip(
+				ctx,
+				pluginOut,
+				mergedPluginResult.Files,
+				true,
+			); err != nil {
+				return fmt.Errorf("failed to generate jar: %w", err)
+			}
+		case ".zip":
+			if err := g.generateZip(
+				ctx,
+				pluginOut,
+				mergedPluginResult.Files,
+				false,
+			); err != nil {
+				return fmt.Errorf("failed to generate zip: %w", err)
+			}
+		default:
+			if err := g.generateDirectory(
+				ctx,
+				pluginOut,
+				mergedPluginResult.Files,
+			); err != nil {
+				return fmt.Errorf("failed to generate directory: %w", err)
+			}
+		}
+	}
+	return nil
+}
+
+// generateConcurrently starts a separate goroutine for each per-image-directory
+// invocation of local plugins, and single grouped invocation of remote plugins,
+// to run concurrently, with different and independent concurrency restrictions.
+func (g *generator) generateConcurrently(
+	ctx context.Context,
+	container app.EnvStdioContainer,
+	config *Config,
+	image bufimage.Image,
+	includeImports bool,
+) ([]*pluginpb.CodeGeneratorResponse, error) {
 	// Cache imagesByDir up-front if at least one plugin requires it
 	var imagesByDir []bufimage.Image
 	for _, pluginConfig := range config.PluginConfigs {
@@ -97,12 +175,12 @@ func (g *generator) generate(
 		}
 		// Already guaranteed by config validation, but best to be safe.
 		if pluginConfig.Remote != "" {
-			return fmt.Errorf("remote plugin %q cannot set strategy directory", pluginConfig.Remote)
+			return nil, fmt.Errorf("remote plugin %q cannot set strategy directory", pluginConfig.Remote)
 		}
 		var err error
 		imagesByDir, err = bufimage.ImageByDir(image)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		break
 	}
@@ -112,11 +190,12 @@ func (g *generator) generate(
 	// Limit concurrent execution of local plugins using semaphore.
 	localSemaphore := newSemaphore(thread.Parallelism())
 	defer localSemaphore.Discard()
+	// Note: this new context will be cancelled after eg.Wait() returns.
 	eg, ctx := errgroup.WithContext(ctx)
-	// pluginResults contains the response for each plugin, in the same order
+	// pluginResponses contains the response for each plugin, in the same order
 	// as they are specified in the plugin configs. We need to store each response
 	// for processing insertion points after all plugins have finished.
-	pluginResults := make([]bufplugin.PluginResult, len(config.PluginConfigs))
+	pluginResponses := make([]*pluginpb.CodeGeneratorResponse, len(config.PluginConfigs))
 	for i, pluginConfig := range config.PluginConfigs {
 		switch {
 		case pluginConfig.Name != "": // Local plugin
@@ -127,7 +206,7 @@ func (g *generator) generate(
 			case StrategyDirectory:
 				pluginImages = imagesByDir
 			default:
-				return fmt.Errorf("unknown strategy: %v", pluginConfig.Strategy)
+				return nil, fmt.Errorf("unknown strategy: %v", pluginConfig.Strategy)
 			}
 			var handlerOptions []appprotoexec.HandlerOption
 			if pluginConfig.Path != "" {
@@ -140,7 +219,7 @@ func (g *generator) generate(
 				handlerOptions...,
 			)
 			if err != nil {
-				return fmt.Errorf("failed to create handler: %w", err)
+				return nil, fmt.Errorf("failed to create handler: %w", err)
 			}
 			requests := bufimage.ImagesToCodeGeneratorRequests(
 				pluginImages,
@@ -157,7 +236,7 @@ func (g *generator) generate(
 					// Limit concurrent invocations using semaphore channel, since
 					// most of this work is CPU/MEM intensive.
 					if err := localSemaphore.Acquire(ctx); err != nil {
-						return err
+						return fmt.Errorf("failed to acquire semaphore: %w", err)
 					}
 					defer localSemaphore.Release(ctx)
 					if err := handler.Handle(ctx, container, responseWriter, request); err != nil {
@@ -169,12 +248,12 @@ func (g *generator) generate(
 			// Responses are not valid until parallelized jobs have finished
 			localPluginResponses = append(
 				localPluginResponses,
-				newLocalPluginResponse(responseWriter, pluginConfig.Name, i),
+				newLocalPluginResponse(responseWriter, i),
 			)
 		case pluginConfig.Remote != "": // Remote plugin
-			remote, owner, name, err := bufplugin.ParsePluginPath(pluginConfig.Remote)
+			remote, owner, name, version, err := bufplugin.ParsePluginVersionPath(pluginConfig.Remote)
 			if err != nil {
-				return fmt.Errorf("invalid plugin path: %w", err)
+				return nil, fmt.Errorf("invalid plugin path: %w", err)
 			}
 			// Group remote plugins by remote to execute together.
 			remoteToPlugins[remote] = append(
@@ -183,7 +262,7 @@ func (g *generator) generate(
 					&registryv1alpha1.PluginReference{
 						Owner:      owner,
 						Name:       name,
-						Version:    pluginConfig.Version,
+						Version:    version,
 						Parameters: []string{pluginConfig.Opt},
 					},
 					// So we know the order this plugins response should slot in
@@ -192,7 +271,7 @@ func (g *generator) generate(
 			)
 		default:
 			// Already guaranteed by config validation, but best to be safe.
-			return fmt.Errorf("either remote or name must be specified")
+			return nil, fmt.Errorf("either remote or name must be specified")
 		}
 	}
 	// Limit concurrent execution of remote plugins using separate semaphore channel.
@@ -207,7 +286,7 @@ func (g *generator) generate(
 		// Add a job for each remote.
 		eg.Go(func() error {
 			if err := remoteSemaphore.Acquire(ctx); err != nil {
-				return err
+				return fmt.Errorf("failed to acquire semaphore: %w", err)
 			}
 			defer remoteSemaphore.Release(ctx)
 			generateService, err := g.registryProvider.NewGenerateService(ctx, remote)
@@ -229,51 +308,87 @@ func (g *generator) generate(
 				// Map each plugin response back to the right place.
 				// Note: does not require a lock, since each response is
 				// assigned to its own index in the slice.
-				pluginResults[plugins[i].index] = bufplugin.PluginResult{
-					Name: fmt.Sprintf(
-						"%s/%s/%s/%s@%s",
-						remote,
-						plugins[i].reference.Owner,
-						bufplugin.PluginsPathName,
-						plugins[i].reference.Name,
-						plugins[i].reference.Version,
-					),
-					Response: response,
-				}
+				pluginResponses[plugins[i].index] = response
 			}
 			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
-		return fmt.Errorf("failed to execute plugins concurrently: %w", err)
+		return nil, fmt.Errorf("failed to execute plugins concurrently: %w", err)
 	}
 	for _, localResponse := range localPluginResponses {
-		pluginResults[localResponse.index] = bufplugin.PluginResult{
-			Name:     localResponse.name,
-			Response: localResponse.responseWriter.ToResponse(),
+		pluginResponses[localResponse.index] = localResponse.responseWriter.ToResponse()
+	}
+	return pluginResponses, nil
+}
+
+func (g *generator) generateZip(
+	ctx context.Context,
+	outFilePath string,
+	files []*bufplugin.File,
+	includeManifest bool,
+) (retErr error) {
+	outDirPath := filepath.Dir(outFilePath)
+	// OK to use os.Stat instead of os.Lstat here
+	fileInfo, err := os.Stat(outDirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(outDirPath, 0755); err != nil {
+				return fmt.Errorf("failed to create output directory: %w", err)
+			}
+		}
+		return err
+	} else if !fileInfo.IsDir() {
+		return fmt.Errorf("not a directory: %s", outDirPath)
+	}
+	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	for _, file := range files {
+		if err := storage.PutPath(ctx, readBucketBuilder, file.Name, file.Content); err != nil {
+			return fmt.Errorf("failed to write generated file: %w", err)
 		}
 	}
-	mergedResults, err := bufplugin.MergeInsertionPoints(ctx, pluginResults)
+	if includeManifest {
+		if err := storage.PutPath(ctx, readBucketBuilder, manifestPath, manifestContent); err != nil {
+			return fmt.Errorf("failed to write manifest file: %w", err)
+		}
+	}
+	file, err := os.Create(outFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to map insertion points: %w", err)
+		return fmt.Errorf("failed to create output file: %w", err)
 	}
-	if len(mergedResults) != len(config.PluginConfigs) {
-		return fmt.Errorf("unexpected number of merged results, got %d, wanted %d", len(mergedResults), len(config.PluginConfigs))
-	}
-	writeBucket, err := g.storageosProvider.NewReadWriteBucket(baseOutDirPath)
+	defer func() {
+		retErr = multierr.Append(retErr, file.Close())
+	}()
+	readBucket, err := readBucketBuilder.ToReadBucket()
 	if err != nil {
-		return fmt.Errorf("failed to create output bucket: %w", err)
+		return fmt.Errorf("failed to convert in-memory bucket to read bucket: %w", err)
 	}
-	for i, mergedResult := range mergedResults {
-		for _, file := range mergedResult.Files {
-			if err := storage.PutPath(
-				ctx,
-				writeBucket,
-				filepath.Join(config.PluginConfigs[i].Out, file.Name),
-				file.Content,
-			); err != nil {
-				return fmt.Errorf("failed to write generated file: %w", err)
-			}
+	// protoc does not compress
+	if err := storagearchive.Zip(ctx, readBucket, file, false); err != nil {
+		return fmt.Errorf("failed to zip results: %w", err)
+	}
+	return nil
+}
+
+func (g *generator) generateDirectory(
+	ctx context.Context,
+	outDirPath string,
+	files []*bufplugin.File,
+) error {
+	if err := os.MkdirAll(outDirPath, 0755); err != nil {
+		return err
+	}
+	// this checks that the directory exists
+	readWriteBucket, err := g.storageosProvider.NewReadWriteBucket(
+		outDirPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		if err := storage.PutPath(ctx, readWriteBucket, file.Name, file.Content); err != nil {
+			return fmt.Errorf("failed to write generated file: %w", err)
 		}
 	}
 	return nil
@@ -397,14 +512,12 @@ func newGenerateOptions() *generateOptions {
 
 type localPluginResponse struct {
 	responseWriter appproto.ResponseWriter
-	name           string
 	index          int
 }
 
-func newLocalPluginResponse(responseWriter appproto.ResponseWriter, name string, index int) *localPluginResponse {
+func newLocalPluginResponse(responseWriter appproto.ResponseWriter, index int) *localPluginResponse {
 	return &localPluginResponse{
 		responseWriter: responseWriter,
-		name:           name,
 		index:          index,
 	}
 }
