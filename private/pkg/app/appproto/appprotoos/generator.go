@@ -156,16 +156,14 @@ func generateZip(
 	}
 	if includeManifest {
 		readBucketBuilder := storagemem.NewReadBucketBuilder()
-		if _, err := storage.Copy(ctx, readBucket, readBucketBuilder); err != nil {
-			return err
-		}
 		if err := storage.PutPath(ctx, readBucketBuilder, manifestPath, manifestContent); err != nil {
 			return err
 		}
-		readBucket, err = readBucketBuilder.ToReadBucket()
+		manifestReadBucket, err := readBucketBuilder.ToReadBucket()
 		if err != nil {
 			return err
 		}
+		readBucket = storage.MultiReadBucket(readBucket, manifestReadBucket)
 	}
 	file, err := os.Create(outFilePath)
 	if err != nil {
