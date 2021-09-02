@@ -15,7 +15,6 @@
 package bufplugin
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 
@@ -415,43 +414,31 @@ plugin_versions:
 }
 
 func TestMergeInsertionPoints(t *testing.T) {
-	results := []PluginResult{
+	results := []*pluginpb.CodeGeneratorResponse{
 		{
-			Plugin: PluginVersion{
-				Owner:   "owner1",
-				Name:    "plugin1",
-				Version: "version1",
-			},
-			Response: &pluginpb.CodeGeneratorResponse{
-				File: []*pluginpb.CodeGeneratorResponse_File{
-					{
-						Name:    testStringPointer("file1.java"),
-						Content: testStringPointer("// @@protoc_insertion_point(insertionPoint1)"),
-					},
+			File: []*pluginpb.CodeGeneratorResponse_File{
+				{
+					Name:    testStringPointer("file1.java"),
+					Content: testStringPointer("// @@protoc_insertion_point(insertionPoint1)"),
 				},
 			},
 		},
 		{
-			Plugin: PluginVersion{
-				Owner:   "owner2",
-				Name:    "plugin2",
-				Version: "version2",
-			},
-			Response: &pluginpb.CodeGeneratorResponse{
-				File: []*pluginpb.CodeGeneratorResponse_File{
-					{
-						Name:           testStringPointer("file1.java"),
-						Content:        testStringPointer("!! this was inserted !!"),
-						InsertionPoint: testStringPointer("insertionPoint1"),
-					},
+			File: []*pluginpb.CodeGeneratorResponse_File{
+				{
+					Name:           testStringPointer("file1.java"),
+					Content:        testStringPointer("!! this was inserted !!"),
+					InsertionPoint: testStringPointer("insertionPoint1"),
 				},
 			},
 		},
 	}
-	files, err := MergeInsertionPoints(context.Background(), results)
+	mergedResults, err := MergeInsertionPoints(results)
 	require.NoError(t, err)
-	require.Len(t, files, 1)
-	require.EqualValues(t, "!! this was inserted !!\n// @@protoc_insertion_point(insertionPoint1)", files["file1.java"])
+	require.Len(t, mergedResults, 2)
+	require.Len(t, mergedResults[0].Files, 1)
+	require.EqualValues(t, "file1.java", mergedResults[0].Files[0].Name)
+	require.EqualValues(t, "!! this was inserted !!\n// @@protoc_insertion_point(insertionPoint1)", string(mergedResults[0].Files[0].Content))
 }
 
 func testStringPointer(s string) *string {

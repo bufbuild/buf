@@ -24,6 +24,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -110,8 +111,9 @@ type Generator interface {
 func NewGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	registryProvider registryv1alpha1apiclient.Provider,
 ) Generator {
-	return newGenerator(logger, storageosProvider)
+	return newGenerator(logger, storageosProvider, registryProvider)
 }
 
 // GenerateOption is an option for Generate.
@@ -146,13 +148,14 @@ type Config struct {
 
 // PluginConfig is a plugin configuration.
 type PluginConfig struct {
-	// Required
-	Name string
+	// One of Name and Remote is required
+	Name   string
+	Remote string
 	// Required
 	Out string
 	// Optional
 	Opt string
-	// Optional
+	// Optional, exclusive with Remote
 	Path string
 	// Required
 	Strategy Strategy
@@ -224,6 +227,7 @@ type ExternalConfigV1 struct {
 // ExternalPluginConfigV1 is an external plugin configuration.
 type ExternalPluginConfigV1 struct {
 	Name     string      `json:"name,omitempty" yaml:"name,omitempty"`
+	Remote   string      `json:"remote,omitempty" yaml:"remote,omitempty"`
 	Out      string      `json:"out,omitempty" yaml:"out,omitempty"`
 	Opt      interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
 	Path     string      `json:"path,omitempty" yaml:"path,omitempty"`

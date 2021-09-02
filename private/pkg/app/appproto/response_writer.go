@@ -101,9 +101,9 @@ func (r *responseWriter) SetFeatureProto3Optional() {
 	r.featureProto3Optional = true
 }
 
-// should only be called once
-// should be private
-func (r *responseWriter) toResponse() *pluginpb.CodeGeneratorResponse {
+// ToResponse turns the response writer into a Protobuf CodeGeneratorResponse.
+// It should be run after all writing to the response has finished.
+func (r *responseWriter) ToResponse() *pluginpb.CodeGeneratorResponse {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	response := &pluginpb.CodeGeneratorResponse{

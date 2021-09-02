@@ -553,7 +553,9 @@ func NewContextModifierProvider(
 			if err != nil {
 				return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
 			}
-			token = machine.Password()
+			if machine != nil {
+				token = machine.Password()
+			}
 		}
 		return func(ctx context.Context) context.Context {
 			ctx = bufrpc.WithOutgoingCLIVersionHeader(ctx, Version)
