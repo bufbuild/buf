@@ -24,6 +24,9 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// GoPackageID is the ID of the go_package modifier.
+const GoPackageID = "GO_PACKAGE"
+
 // goPackagePath is the SourceCodeInfo path for the go_package option.
 // https://github.com/protocolbuffers/protobuf/blob/ee04809540c098718121e092107fbc0abc231725/src/google/protobuf/descriptor.proto#L392
 var goPackagePath = []int32{8, 11}
@@ -32,7 +35,8 @@ func goPackage(
 	sweeper Sweeper,
 	defaultImportPathPrefix string,
 	except []bufmodule.ModuleIdentity,
-	override map[bufmodule.ModuleIdentity]string,
+	moduleOverrides map[bufmodule.ModuleIdentity]string,
+	overrides map[string]string,
 ) (Modifier, error) {
 	if defaultImportPathPrefix == "" {
 		return nil, fmt.Errorf("a non-empty import path prefix is required")
@@ -43,20 +47,29 @@ func goPackage(
 	for _, moduleIdentity := range except {
 		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
 	}
-	overrideModuleIdentityStrings := make(map[string]string, len(override))
-	for moduleIdentity, goPackagePrefix := range override {
+	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
+	for moduleIdentity, goPackagePrefix := range moduleOverrides {
 		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = goPackagePrefix
 	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
+				importPathPrefix := defaultImportPathPrefix
+				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+					if modulePrefixOverride, ok := overrideModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+						importPathPrefix = modulePrefixOverride
+					}
+				}
+				goPackageValue := GoPackageImportPathForFile(imageFile, importPathPrefix)
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					goPackageValue = overrideValue
+				}
 				if err := goPackageForFile(
 					ctx,
 					sweeper,
 					imageFile,
-					defaultImportPathPrefix,
+					goPackageValue,
 					exceptModuleIdentityStrings,
-					overrideModuleIdentityStrings,
 				); err != nil {
 					return err
 				}
@@ -70,9 +83,8 @@ func goPackageForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
-	defaultImportPathPrefix string,
+	goPackageValue string,
 	exceptModuleIdentityStrings map[string]struct{},
-	overrideModuleIdentityStrings map[string]string,
 ) error {
 	if shouldSkipGoPackageForFile(ctx, imageFile, exceptModuleIdentityStrings) {
 		return nil
@@ -81,13 +93,7 @@ func goPackageForFile(
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
-	importPathPrefix := defaultImportPathPrefix
-	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-		if override, ok := overrideModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
-			importPathPrefix = override
-		}
-	}
-	descriptor.Options.GoPackage = proto.String(GoPackageImportPathForFile(imageFile, importPathPrefix))
+	descriptor.Options.GoPackage = proto.String(goPackageValue)
 	if sweeper != nil {
 		sweeper.mark(imageFile.Path(), goPackagePath)
 	}

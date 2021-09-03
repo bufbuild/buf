@@ -6,7 +6,12 @@
     "java_multiple_files": true,
     "java_string_check_utf8": true,
     "java_package_prefix": "org",
-    "optimize_for": "CODE_SIZE"
+    "optimize_for": "CODE_SIZE",
+    "override": {
+      "JAVA_PACKAGE": {
+        "a.proto": "override"
+      }
+    }
   },
   "plugins": [
     {

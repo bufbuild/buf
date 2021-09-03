@@ -25,15 +25,22 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// ObjcClassPrefixID is the ID of the objc_class_prefix modifier.
+const ObjcClassPrefixID = "OBJC_CLASS_PREFIX"
+
 // objcClassPrefixPath is the SourceCodeInfo path for the objc_class_prefix option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L425
 var objcClassPrefixPath = []int32{8, 36}
 
-func objcClassPrefix(sweeper Sweeper) Modifier {
+func objcClassPrefix(sweeper Sweeper, overrides map[string]string) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := objcClassPrefixForFile(ctx, sweeper, imageFile); err != nil {
+				objcClassPrefixValue := objcClassPrefixValue(imageFile)
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					objcClassPrefixValue = overrideValue
+				}
+				if err := objcClassPrefixForFile(ctx, sweeper, imageFile, objcClassPrefixValue); err != nil {
 					return err
 				}
 			}
@@ -46,9 +53,9 @@ func objcClassPrefixForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
+	objcClassPrefixValue string,
 ) error {
 	descriptor := imageFile.Proto()
-	objcClassPrefixValue := objcClassPrefixValue(imageFile)
 	if isWellKnownType(ctx, imageFile) || objcClassPrefixValue == "" {
 		// This is a well-known type or we could not resolve a non-empty objc_class_prefix
 		// value, so this is a no-op.

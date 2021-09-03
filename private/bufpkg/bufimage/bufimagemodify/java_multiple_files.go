@@ -22,6 +22,14 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+const (
+	// DefaultJavaMultipleFilesValue is the default value for the java_multiple_files modifier.
+	DefaultJavaMultipleFilesValue = true
+
+	// JavaMultipleFilesID is the ID of the java_multiple_files modifier.
+	JavaMultipleFilesID = "JAVA_MULTIPLE_FILES"
+)
+
 // javaMultipleFilesPath is the SourceCodeInfo path for the java_multiple_files option.
 // https://github.com/protocolbuffers/protobuf/blob/ee04809540c098718121e092107fbc0abc231725/src/google/protobuf/descriptor.proto#L364
 var javaMultipleFilesPath = []int32{8, 10}
@@ -29,11 +37,16 @@ var javaMultipleFilesPath = []int32{8, 10}
 func javaMultipleFiles(
 	sweeper Sweeper,
 	value bool,
+	overrides map[string]bool,
 ) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := javaMultipleFilesForFile(ctx, sweeper, imageFile, value); err != nil {
+				modifierValue := value
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					modifierValue = overrideValue
+				}
+				if err := javaMultipleFilesForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
 					return err
 				}
 			}

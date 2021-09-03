@@ -22,15 +22,22 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// JavaStringCheckUtf8ID is the ID of the java_string_check_utf8 modifier.
+const JavaStringCheckUtf8ID = "JAVA_STRING_CHECK_UTF8"
+
 // javaStringCheckUtf8Path is the SourceCodeInfo path for the java_string_check_utf8 option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L375
 var javaStringCheckUtf8Path = []int32{8, 27}
 
-func javaStringCheckUtf8(sweeper Sweeper, value bool) Modifier {
+func javaStringCheckUtf8(sweeper Sweeper, value bool, overrides map[string]bool) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := javaStringCheckUtf8ForFile(ctx, sweeper, imageFile, value); err != nil {
+				modifierValue := value
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					modifierValue = overrideValue
+				}
+				if err := javaStringCheckUtf8ForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
 					return err
 				}
 			}

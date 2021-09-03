@@ -23,6 +23,14 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+const (
+	// DefaultJavaPackagePrefix is the default java_package prefix used in the java_package modifier.
+	DefaultJavaPackagePrefix = "com"
+
+	// JavaPackageID is the ID of the java_package modifier.
+	JavaPackageID = "JAVA_PACKAGE"
+)
+
 // javaPackagePath is the SourceCodeInfo path for the java_package option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L348
 var javaPackagePath = []int32{8, 1}
@@ -30,6 +38,7 @@ var javaPackagePath = []int32{8, 1}
 func javaPackage(
 	sweeper Sweeper,
 	packagePrefix string,
+	overrides map[string]string,
 ) (Modifier, error) {
 	if packagePrefix == "" {
 		return nil, fmt.Errorf("a non-empty package prefix is required")
@@ -37,7 +46,11 @@ func javaPackage(
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := javaPackageForFile(ctx, sweeper, imageFile, packagePrefix); err != nil {
+				javaPackageValue := javaPackageValue(imageFile, packagePrefix)
+				if overridePackagePrefix, ok := overrides[imageFile.Path()]; ok {
+					javaPackageValue = overridePackagePrefix
+				}
+				if err := javaPackageForFile(ctx, sweeper, imageFile, javaPackageValue); err != nil {
 					return err
 				}
 			}
@@ -50,10 +63,9 @@ func javaPackageForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
-	packagePrefix string,
+	javaPackageValue string,
 ) error {
 	descriptor := imageFile.Proto()
-	javaPackageValue := javaPackageValue(imageFile, packagePrefix)
 	if isWellKnownType(ctx, imageFile) || javaPackageValue == "" {
 		// This is a well-known type or we could not resolve a non-empty java_package
 		// value, so this is a no-op.

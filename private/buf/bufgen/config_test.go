@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -159,6 +160,9 @@ func TestReadConfigV1(t *testing.T) {
 			JavaStringCheckUtf8: &truth,
 			JavaPackagePrefix:   "org",
 			OptimizeFor:         optimizeModePtr(descriptorpb.FileOptions_CODE_SIZE),
+			Override: map[string]map[string]string{
+				bufimagemodify.JavaPackageID: {"a.proto": "override"},
+			},
 		},
 	}
 	successConfig2 := &Config{
@@ -323,6 +327,8 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error5.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error6.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error7.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error8.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error9.yaml"))
 
 	successConfig = &Config{
 		PluginConfigs: []*PluginConfig{

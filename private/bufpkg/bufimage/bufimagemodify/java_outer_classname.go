@@ -24,17 +24,25 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// JavaOuterClassNameID is the ID for the java_outer_classname modifier.
+const JavaOuterClassNameID = "JAVA_OUTER_CLASSNAME"
+
 // javaOuterClassnamePath is the SourceCodeInfo path for the java_outer_classname option.
 // https://github.com/protocolbuffers/protobuf/blob/87d140f851131fb8a6e8a80449cf08e73e568259/src/google/protobuf/descriptor.proto#L356
 var javaOuterClassnamePath = []int32{8, 8}
 
 func javaOuterClassname(
 	sweeper Sweeper,
+	overrides map[string]string,
 ) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := javaOuterClassnameForFile(ctx, sweeper, imageFile); err != nil {
+				javaOuterClassnameValue := javaOuterClassnameValue(imageFile)
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					javaOuterClassnameValue = overrideValue
+				}
+				if err := javaOuterClassnameForFile(ctx, sweeper, imageFile, javaOuterClassnameValue); err != nil {
 					return err
 				}
 			}
@@ -47,9 +55,9 @@ func javaOuterClassnameForFile(
 	ctx context.Context,
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
+	javaOuterClassnameValue string,
 ) error {
 	descriptor := imageFile.Proto()
-	javaOuterClassnameValue := javaOuterClassnameValue(imageFile)
 	if options := descriptor.GetOptions(); isWellKnownType(ctx, imageFile) || (options != nil && options.GetJavaOuterClassname() == javaOuterClassnameValue) {
 		// The file is a well-known type or already defines the java_outer_classname
 		// option with the given value, so this is a no-op.
@@ -65,8 +73,6 @@ func javaOuterClassnameForFile(
 	return nil
 }
 
-// javaOuterClassnameValue returns the java_outer_classname for the given ImageFile
-// based on the PascalCase of the filename.
 func javaOuterClassnameValue(imageFile bufimage.ImageFile) string {
 	return stringutil.ToPascalCase(normalpath.Base(imageFile.Path()))
 }
