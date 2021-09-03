@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodulebuild
+package internal
 
 import (
 	"path/filepath"
@@ -268,12 +268,12 @@ func TestNormalizeAndCheckPathsAbsEqualAbs1(t *testing.T) {
 }
 
 func testNormalizeAndCheckPathsRelSuccess(t *testing.T, paths []string) {
-	_, err := normalizeAndCheckPaths(paths, "test", normalpath.Relative, true)
+	_, err := NormalizeAndCheckPaths(paths, "test", normalpath.Relative, true)
 	assert.NoError(t, err, paths)
 }
 
 func testNormalizeAndCheckPathsRelError(t *testing.T, paths []string) {
-	_, err := normalizeAndCheckPaths(paths, "test", normalpath.Relative, true)
+	_, err := NormalizeAndCheckPaths(paths, "test", normalpath.Relative, true)
 	assert.Error(t, err, paths)
 }
 
@@ -282,18 +282,18 @@ func testNormalizeAndCheckPathsRelEqual(
 	paths []string,
 	expected []string,
 ) {
-	actual, err := normalizeAndCheckPaths(paths, "test", normalpath.Relative, true)
+	actual, err := NormalizeAndCheckPaths(paths, "test", normalpath.Relative, true)
 	assert.NoError(t, err, paths)
 	assert.Equal(t, expected, actual)
 }
 
 func testNormalizeAndCheckPathsAbsSuccess(t *testing.T, paths []string) {
-	_, err := normalizeAndCheckPaths(paths, "test", normalpath.Absolute, true)
+	_, err := NormalizeAndCheckPaths(paths, "test", normalpath.Absolute, true)
 	assert.NoError(t, err, paths)
 }
 
 func testNormalizeAndCheckPathsAbsError(t *testing.T, paths []string) {
-	_, err := normalizeAndCheckPaths(paths, "test", normalpath.Absolute, true)
+	_, err := NormalizeAndCheckPaths(paths, "test", normalpath.Absolute, true)
 	assert.Error(t, err, paths)
 }
 
@@ -302,7 +302,7 @@ func testNormalizeAndCheckPathsAbsEqual(
 	paths []string,
 	expected []string,
 ) {
-	actual, err := normalizeAndCheckPaths(paths, "test", normalpath.Absolute, true)
+	actual, err := NormalizeAndCheckPaths(paths, "test", normalpath.Absolute, true)
 	assert.NoError(t, err, paths)
 	assert.Equal(t, expected, actual)
 }

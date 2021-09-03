@@ -22,13 +22,13 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.uber.org/multierr"
@@ -145,7 +145,7 @@ func (m *v1beta1Migrator) maybeMigrateConfig(dirPath string) (bool, error) {
 			err,
 		)
 	}
-	buildConfig, err := bufmodulebuild.NewConfigV1Beta1(v1beta1Config.Build, v1beta1Config.Deps...)
+	buildConfig, err := bufmoduleconfig.NewConfigV1Beta1(v1beta1Config.Build, v1beta1Config.Deps...)
 	if err != nil {
 		return false, err
 	}
@@ -155,11 +155,11 @@ func (m *v1beta1Migrator) maybeMigrateConfig(dirPath string) (bool, error) {
 			Version: bufconfig.V1Version,
 			Name:    v1beta1Config.Name,
 			Deps:    v1beta1Config.Deps,
-			Build: bufmodulebuild.ExternalConfigV1{
+			Build: bufmoduleconfig.ExternalConfigV1{
 				Excludes: excludes,
 			},
-			Breaking: bufbreaking.ExternalConfigV1(v1beta1Config.Breaking),
-			Lint:     buflint.ExternalConfigV1(v1beta1Config.Lint),
+			Breaking: bufbreakingconfig.ExternalConfigV1(v1beta1Config.Breaking),
+			Lint:     buflintconfig.ExternalConfigV1(v1beta1Config.Lint),
 		}
 		newConfigPath := filepath.Join(dirPath, bufconfig.ExternalConfigV1FilePath)
 		if err := m.writeV1Config(newConfigPath, v1Config, ".", v1beta1Config.Name); err != nil {
@@ -191,15 +191,15 @@ func (m *v1beta1Migrator) maybeMigrateConfig(dirPath string) (bool, error) {
 			Version: bufconfig.V1Version,
 			Name:    name,
 			Deps:    v1beta1Config.Deps,
-			Build: bufmodulebuild.ExternalConfigV1{
+			Build: bufmoduleconfig.ExternalConfigV1{
 				Excludes: excludes,
 			},
-			Breaking: bufbreaking.ExternalConfigV1{
+			Breaking: bufbreakingconfig.ExternalConfigV1{
 				Use:                    v1beta1Config.Breaking.Use,
 				Except:                 v1beta1Config.Breaking.Except,
 				IgnoreUnstablePackages: v1beta1Config.Breaking.IgnoreUnstablePackages,
 			},
-			Lint: buflint.ExternalConfigV1{
+			Lint: buflintconfig.ExternalConfigV1{
 				Use:                                  v1beta1Config.Lint.Use,
 				Except:                               v1beta1Config.Lint.Except,
 				ServiceSuffix:                        v1beta1Config.Lint.ServiceSuffix,

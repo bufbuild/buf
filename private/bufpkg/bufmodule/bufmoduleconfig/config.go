@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodulebuild
+package bufmoduleconfig
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
@@ -38,7 +39,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Co
 	if len(roots) == 0 {
 		roots = []string{"."}
 	}
-	roots, err = normalizeAndCheckPaths(roots, "root", normalpath.Relative, true)
+	roots, err = internal.NormalizeAndCheckPaths(roots, "root", normalpath.Relative, true)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +59,7 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1, deps ...string) (*Co
 	}
 
 	// this also verifies that fullExcludes is unique
-	fullExcludes, err = normalizeAndCheckPaths(fullExcludes, "exclude", normalpath.Relative, true)
+	fullExcludes, err = internal.NormalizeAndCheckPaths(fullExcludes, "exclude", normalpath.Relative, true)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +118,7 @@ func newConfigV1(externalConfig ExternalConfigV1, deps ...string) (*Config, erro
 		return nil, err
 	}
 	// this also verifies that the excludes are unique, normalized, and validated
-	excludes, err := normalizeAndCheckPaths(externalConfig.Excludes, "exclude", normalpath.Relative, true)
+	excludes, err := internal.NormalizeAndCheckPaths(externalConfig.Excludes, "exclude", normalpath.Relative, true)
 	if err != nil {
 		return nil, err
 	}

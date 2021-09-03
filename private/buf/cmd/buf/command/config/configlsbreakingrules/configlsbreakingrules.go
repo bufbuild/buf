@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcheck"
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	configinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/config/internal"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -115,12 +115,12 @@ func run(
 	if flags.All {
 		switch config.Version {
 		case bufconfig.V1Beta1Version:
-			rules, err = bufbreaking.GetAllRulesV1Beta1()
+			rules, err = bufbreakingconfig.GetAllRulesV1Beta1()
 			if err != nil {
 				return err
 			}
 		case bufconfig.V1Version:
-			rules, err = bufbreaking.GetAllRulesV1()
+			rules, err = bufbreakingconfig.GetAllRulesV1()
 			if err != nil {
 				return err
 			}

@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -65,7 +66,7 @@ func (b *moduleIncludeBuilder) buildForIncludes(
 	if len(includeDirPaths) == 0 {
 		includeDirPaths = []string{"."}
 	}
-	absIncludeDirPaths, err := normalizeAndCheckPaths(
+	absIncludeDirPaths, err := internal.NormalizeAndCheckPaths(
 		includeDirPaths,
 		"include directory",
 		normalpath.Absolute,
@@ -76,7 +77,7 @@ func (b *moduleIncludeBuilder) buildForIncludes(
 	}
 	var absFileOrDirPaths *[]string
 	if fileOrDirPaths != nil {
-		normalizedAndCheckedFileOrDirPaths, err := normalizeAndCheckPaths(
+		normalizedAndCheckedFileOrDirPaths, err := internal.NormalizeAndCheckPaths(
 			*fileOrDirPaths,
 			"input file",
 			normalpath.Absolute,
