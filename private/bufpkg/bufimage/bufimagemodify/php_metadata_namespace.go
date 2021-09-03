@@ -22,8 +22,8 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// PhpMetadataNamespaceID is the ID of the php_namespace_metadata modifier.
-const PhpMetadataNamespaceID = "PHP_NAMESPACE_METADATA"
+// PhpMetadataNamespaceID is the ID of the php_metadata_namespace modifier.
+const PhpMetadataNamespaceID = "PHP_METADATA_NAMESPACE"
 
 var (
 	// phpMetadataNamespacePath is the SourceCodeInfo path for the php_metadata_namespace option.
