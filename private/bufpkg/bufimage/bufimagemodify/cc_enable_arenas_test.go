@@ -194,7 +194,6 @@ func TestCcEnableArenasAllOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		// The modifier value provided is `true`, but the file is overriden with `false`
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
@@ -302,7 +301,6 @@ func TestCcEnableArenasCcOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		// The modifier value provided is `true`, but the file is overriden with `false`
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
@@ -313,7 +311,6 @@ func TestCcEnableArenasCcOptions(t *testing.T) {
 			}
 			assert.True(t, descriptor.GetOptions().GetCcEnableArenas())
 		}
-		// The modifier value provided is `true`, but the file is overriden with `false`
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, ccEnableArenasPath)
 	})
 
@@ -330,7 +327,6 @@ func TestCcEnableArenasCcOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		// The modifier value provided is `true`, but the file is overriden with `false`
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {

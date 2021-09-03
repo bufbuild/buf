@@ -8,10 +8,11 @@ managed:
   optimize_for: CODE_SIZE
   overrides:
     JAVA_PACKAGE:
-      a.proto: override
+      ..\unnormalised\path: override
 plugins:
   - name: go
     out: gen/go
     opt: plugins=grpc
     path: /path/to/foo
     strategy: all
+
