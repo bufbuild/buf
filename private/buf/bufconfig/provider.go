@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/buf/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -137,7 +137,7 @@ func (p *provider) getConfigForData(
 }
 
 func (p *provider) newConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
-	buildConfig, err := bufmodulebuild.NewConfigV1Beta1(externalConfig.Build, externalConfig.Deps...)
+	buildConfig, err := bufmoduleconfig.NewConfigV1Beta1(externalConfig.Build, externalConfig.Deps...)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func (p *provider) newConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Conf
 }
 
 func (p *provider) newConfigV1(externalConfig ExternalConfigV1) (*Config, error) {
-	buildConfig, err := bufmodulebuild.NewConfigV1(externalConfig.Build, externalConfig.Deps...)
+	buildConfig, err := bufmoduleconfig.NewConfigV1(externalConfig.Build, externalConfig.Deps...)
 	if err != nil {
 		return nil, err
 	}
