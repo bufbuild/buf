@@ -245,7 +245,7 @@ func int32SliceIsEqual(x []int32, y []int32) bool {
 }
 
 func stringOverridesToBoolOverrides(stringOverrides map[string]string) (map[string]bool, error) {
-	validatedOverrides := make(map[string]bool{}, len(stringOverrides))
+	validatedOverrides := make(map[string]bool, len(stringOverrides))
 	for fileImportPath, overrideString := range stringOverrides {
 		overrideBool, err := strconv.ParseBool(overrideString)
 		if err != nil {
@@ -257,13 +257,13 @@ func stringOverridesToBoolOverrides(stringOverrides map[string]string) (map[stri
 }
 
 func stringOverridesToOptimizeModeOverrides(stringOverrides map[string]string) (map[string]descriptorpb.FileOptions_OptimizeMode, error) {
-	validatedOverrides := make(map[string]bool{}, len(stringOverrides))
+	validatedOverrides := make(map[string]descriptorpb.FileOptions_OptimizeMode, len(stringOverrides))
 	for fileImportPath, stringOverride := range stringOverrides {
 		optimizeMode, ok := descriptorpb.FileOptions_OptimizeMode_value[stringOverride]
 		if !ok {
 			return nil, fmt.Errorf("invalid optimize mode %s set for file %s", stringOverride, fileImportPath)
 		}
-		validatedOverride[fileImportPath] = descriptorpb.FileOptions_OptimizeMode(optimizeMode)
+		validatedOverrides[fileImportPath] = descriptorpb.FileOptions_OptimizeMode(optimizeMode)
 	}
 	return validatedOverrides, nil
 }
