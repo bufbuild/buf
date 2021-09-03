@@ -33,6 +33,9 @@ func javaStringCheckUtf8(sweeper Sweeper, value bool, overrides map[string]bool)
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					value = overrideValue
+				}
 				if err := javaStringCheckUtf8ForFile(ctx, sweeper, imageFile, value); err != nil {
 					return err
 				}

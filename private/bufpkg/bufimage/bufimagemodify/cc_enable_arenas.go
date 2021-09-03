@@ -37,11 +37,10 @@ func ccEnableArenas(
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				modifierValue := value
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
-					modifierValue = overrideValue
+					value = overrideValue
 				}
-				if err := ccEnableArenasForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
+				if err := ccEnableArenasForFile(ctx, sweeper, imageFile, value); err != nil {
 					return err
 				}
 			}

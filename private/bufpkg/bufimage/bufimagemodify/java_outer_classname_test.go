@@ -69,6 +69,50 @@ func TestJavaOuterClassnameEmptyOptions(t *testing.T) {
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 	})
+
+	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+
+		sweeper := NewFileOptionSweeper()
+		modifier := NewMultiModifier(
+			JavaOuterClassname(sweeper, map[string]string{"a.proto": "override"}),
+			ModifierFunc(sweeper.Sweep),
+		)
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+	})
+
+	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		err := JavaOuterClassname(sweeper, map[string]string{"a.proto": "override"}).Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+	})
 }
 
 func TestJavaOuterClassnameAllOptions(t *testing.T) {
@@ -116,6 +160,49 @@ func TestJavaOuterClassnameAllOptions(t *testing.T) {
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
 	})
+
+	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
+
+		sweeper := NewFileOptionSweeper()
+		modifier := NewMultiModifier(
+			JavaOuterClassname(sweeper, map[string]string{"a.proto": "override"}),
+			ModifierFunc(sweeper.Sweep),
+		)
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+	})
+
+	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		err := JavaOuterClassname(sweeper, map[string]string{"a.proto": "override"}).Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+	})
 }
 
 func TestJavaOuterClassnameJavaOptions(t *testing.T) {
@@ -158,6 +245,56 @@ func TestJavaOuterClassnameJavaOptions(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
+			assert.Equal(t, "JavaFileProto", descriptor.GetOptions().GetJavaOuterClassname())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+	})
+
+	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+		assertFileOptionSourceCodeInfoNotEmpty(t, image, javaOuterClassnamePath)
+
+		sweeper := NewFileOptionSweeper()
+		modifier := NewMultiModifier(
+			JavaOuterClassname(sweeper, map[string]string{"a.proto": "override"}),
+			ModifierFunc(sweeper.Sweep),
+		)
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			if imageFile.Path() == "a.proto" {
+				assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
+				continue
+			}
+			assert.Equal(t, "JavaFileProto", descriptor.GetOptions().GetJavaOuterClassname())
+		}
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, true)
+	})
+
+	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
+
+		sweeper := NewFileOptionSweeper()
+		err := JavaOuterClassname(sweeper, map[string]string{"a.proto": "override"}).Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			if imageFile.Path() == "a.proto" {
+				assert.Equal(t, "override", descriptor.GetOptions().GetJavaOuterClassname())
+				continue
+			}
 			assert.Equal(t, "JavaFileProto", descriptor.GetOptions().GetJavaOuterClassname())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaOuterClassnamePath, false)
@@ -214,6 +351,58 @@ func TestJavaOuterClassnameWellKnownTypes(t *testing.T) {
 			}
 			assert.Equal(t,
 				"AProto",
+				descriptor.GetOptions().GetJavaOuterClassname(),
+			)
+		}
+	})
+
+	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, true)
+
+		sweeper := NewFileOptionSweeper()
+		modifier := NewMultiModifier(
+			JavaOuterClassname(sweeper, map[string]string{"a.proto": "override"}),
+			ModifierFunc(sweeper.Sweep),
+		)
+		err := modifier.Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			if isWellKnownType(context.Background(), imageFile) {
+				assert.Equal(t, javaOuterClassnameValue(imageFile), descriptor.GetOptions().GetJavaOuterClassname())
+				continue
+			}
+			assert.Equal(t,
+				"override",
+				descriptor.GetOptions().GetJavaOuterClassname(),
+			)
+		}
+	})
+
+	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
+		t.Parallel()
+		image := testGetImage(t, dirPath, false)
+
+		sweeper := NewFileOptionSweeper()
+		err := JavaOuterClassname(sweeper, map[string]string{"a.proto": "override"}).Modify(
+			context.Background(),
+			image,
+		)
+		require.NoError(t, err)
+
+		for _, imageFile := range image.Files() {
+			descriptor := imageFile.Proto()
+			if isWellKnownType(context.Background(), imageFile) {
+				assert.Equal(t, javaOuterClassnameValue(imageFile), descriptor.GetOptions().GetJavaOuterClassname())
+				continue
+			}
+			assert.Equal(t,
+				"override",
 				descriptor.GetOptions().GetJavaOuterClassname(),
 			)
 		}
