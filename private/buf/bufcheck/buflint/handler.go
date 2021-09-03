@@ -17,6 +17,7 @@ package buflint
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/internal/buflintcheck"
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -47,7 +48,7 @@ func newHandler(logger *zap.Logger) *handler {
 
 func (h *handler) Check(
 	ctx context.Context,
-	config *Config,
+	config *buflintconfig.Config,
 	image bufimage.Image,
 ) ([]bufanalysis.FileAnnotation, error) {
 	files, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
@@ -55,4 +56,24 @@ func (h *handler) Check(
 		return nil, err
 	}
 	return h.runner.Check(ctx, configToInternalConfig(config), nil, files)
+}
+
+func configToInternalConfig(config *buflintconfig.Config) *internal.Config {
+	return &internal.Config{
+		Rules:               rulesToInternalRules(config.Rules),
+		IgnoreIDToRootPaths: config.IgnoreIDToRootPaths,
+		IgnoreRootPaths:     config.IgnoreRootPaths,
+		AllowCommentIgnores: config.AllowCommentIgnores,
+	}
+}
+
+func rulesToInternalRules(rules []buflintconfig.Rule) []*internal.Rule {
+	if rules == nil {
+		return nil
+	}
+	internalRules := make([]*internal.Rule, len(rules))
+	for i, rule := range rules {
+		internalRules[i] = rule.InternalRule()
+	}
+	return internalRules
 }

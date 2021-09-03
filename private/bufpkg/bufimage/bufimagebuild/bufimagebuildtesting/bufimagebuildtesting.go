@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -106,7 +107,7 @@ func fuzzGetModuleFileSet(ctx context.Context, dirPath string) (bufmodule.Module
 	if err != nil {
 		return nil, err
 	}
-	config, err := bufmodulebuild.NewConfigV1(bufmodulebuild.ExternalConfigV1{})
+	config, err := bufmoduleconfig.NewConfigV1(bufmoduleconfig.ExternalConfigV1{})
 	if err != nil {
 		return nil, err
 	}

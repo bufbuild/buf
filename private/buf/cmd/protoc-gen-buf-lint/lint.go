@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -114,7 +115,7 @@ func handle(
 	}
 	if len(fileAnnotations) > 0 {
 		buffer := bytes.NewBuffer(nil)
-		if err := buflint.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
+		if err := buflintconfig.PrintFileAnnotations(buffer, fileAnnotations, externalConfig.ErrorFormat); err != nil {
 			return err
 		}
 		responseWriter.AddError(strings.TrimSpace(buffer.String()))

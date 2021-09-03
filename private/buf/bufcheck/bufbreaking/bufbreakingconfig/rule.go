@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buflint
+package bufbreakingconfig
 
-import (
-	"github.com/bufbuild/buf/private/buf/bufcheck/internal"
-)
+import "github.com/bufbuild/buf/private/buf/bufcheck/internal"
 
 type rule struct {
 	*internal.Rule
@@ -26,28 +24,6 @@ func newRule(internalRule *internal.Rule) *rule {
 	return &rule{Rule: internalRule}
 }
 
-func (c *rule) internalLint() *internal.Rule {
+func (c *rule) InternalRule() *internal.Rule {
 	return c.Rule
-}
-
-func internalRulesToRules(internalRules []*internal.Rule) []Rule {
-	if internalRules == nil {
-		return nil
-	}
-	rules := make([]Rule, len(internalRules))
-	for i, internalRule := range internalRules {
-		rules[i] = newRule(internalRule)
-	}
-	return rules
-}
-
-func rulesToInternalRules(rules []Rule) []*internal.Rule {
-	if rules == nil {
-		return nil
-	}
-	internalRules := make([]*internal.Rule, len(rules))
-	for i, rule := range rules {
-		internalRules[i] = rule.internalLint()
-	}
-	return internalRules
 }
