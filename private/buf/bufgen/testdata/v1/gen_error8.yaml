@@ -8,7 +8,7 @@ managed:
   optimize_for: CODE_SIZE
   overrides:
     JAVA_PACKAGE:
-      ..\unnormalised\path: override
+      ./path: override
 plugins:
   - name: go
     out: gen/go

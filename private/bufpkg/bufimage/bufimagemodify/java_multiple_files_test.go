@@ -91,12 +91,10 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		// The modifier value provided is `true`, but the file is overriden with `false`
 		assert.NotEqual(t, testGetImage(t, dirPath, false), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			// The modifier value provided is `true`, but the file is overriden with `false`
 			assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, true)
@@ -115,12 +113,10 @@ func TestJavaMultipleFilesEmptyOptions(t *testing.T) {
 			image,
 		)
 		require.NoError(t, err)
-		// The modifier value provided is `true`, but the file is overriden with `false`
 		assert.NotEqual(t, testGetImage(t, dirPath, true), image)
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			// The modifier value provided is `true`, but the file is overriden with `false`
 			assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaMultipleFilesPath, false)
@@ -199,7 +195,6 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			if imageFile.Path() == "a.proto" {
-				// The modifier value provided is `true`, but the file is overriden with `false`
 				assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 				continue
 			}
@@ -225,7 +220,6 @@ func TestJavaMultipleFilesAllOptions(t *testing.T) {
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			if imageFile.Path() == "a.proto" {
-				// The modifier value provided is `true`, but the file is overriden with `false`
 				assert.False(t, descriptor.GetOptions().GetJavaMultipleFiles())
 				continue
 			}
@@ -280,7 +274,6 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			if imageFile.Path() == "a.proto" {
-				// The modifier value provided is `false`, but the file is overriden with `true`
 				assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 				continue
 			}
@@ -310,7 +303,6 @@ func TestJavaMultipleFilesJavaOptions(t *testing.T) {
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
 			if imageFile.Path() == "a.proto" {
-				// The modifier value provided is `false`, but the file is overriden with `true`
 				assert.True(t, descriptor.GetOptions().GetJavaMultipleFiles())
 				continue
 			}
@@ -403,7 +395,6 @@ func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			if imageFile.Path() == "a.proto" {
-				// The modifier value provided is `true`, but the file is overriden with `false`
 				assert.False(t, imageFile.Proto().GetOptions().GetJavaMultipleFiles())
 				continue
 			}
@@ -426,7 +417,6 @@ func TestJavaMultipleFilesWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			if imageFile.Path() == "a.proto" {
-				// The modifier value provided is `true`, but the file is overriden with `false`
 				assert.False(t, imageFile.Proto().GetOptions().GetJavaMultipleFiles())
 				continue
 			}
