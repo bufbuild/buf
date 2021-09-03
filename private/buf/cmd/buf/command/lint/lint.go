@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -218,7 +219,7 @@ func run(
 		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
 	}
 	if len(allFileAnnotations) > 0 {
-		if err := buflint.PrintFileAnnotations(
+		if err := buflintconfig.PrintFileAnnotations(
 			container.Stdout(),
 			bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations),
 			flags.ErrorFormat,

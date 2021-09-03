@@ -20,7 +20,7 @@ import (
 	"io"
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -145,7 +145,7 @@ func (p *provider) newConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Conf
 	if err != nil {
 		return nil, err
 	}
-	lintConfig, err := buflint.NewConfigV1Beta1(externalConfig.Lint)
+	lintConfig, err := buflintconfig.NewConfigV1Beta1(externalConfig.Lint)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (p *provider) newConfigV1(externalConfig ExternalConfigV1) (*Config, error)
 	if err != nil {
 		return nil, err
 	}
-	lintConfig, err := buflint.NewConfigV1(externalConfig.Lint)
+	lintConfig, err := buflintconfig.NewConfigV1(externalConfig.Lint)
 	if err != nil {
 		return nil, err
 	}

@@ -19,7 +19,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -69,7 +69,7 @@ type Config struct {
 	ModuleIdentity bufmodule.ModuleIdentity
 	Build          *bufmoduleconfig.Config
 	Breaking       *bufbreaking.Config
-	Lint           *buflint.Config
+	Lint           *buflintconfig.Config
 }
 
 // Provider is a provider.
@@ -202,7 +202,7 @@ type ExternalConfigV1Beta1 struct {
 	Deps     []string                              `json:"deps,omitempty" yaml:"deps,omitempty"`
 	Build    bufmoduleconfig.ExternalConfigV1Beta1 `json:"build,omitempty" yaml:"build,omitempty"`
 	Breaking bufbreaking.ExternalConfigV1Beta1     `json:"breaking,omitempty" yaml:"breaking,omitempty"`
-	Lint     buflint.ExternalConfigV1Beta1         `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Lint     buflintconfig.ExternalConfigV1Beta1   `json:"lint,omitempty" yaml:"lint,omitempty"`
 }
 
 // ExternalConfigV1 represents the on-disk representation of the Config
@@ -213,7 +213,7 @@ type ExternalConfigV1 struct {
 	Deps     []string                         `json:"deps,omitempty" yaml:"deps,omitempty"`
 	Build    bufmoduleconfig.ExternalConfigV1 `json:"build,omitempty" yaml:"build,omitempty"`
 	Breaking bufbreaking.ExternalConfigV1     `json:"breaking,omitempty" yaml:"breaking,omitempty"`
-	Lint     buflint.ExternalConfigV1         `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Lint     buflintconfig.ExternalConfigV1   `json:"lint,omitempty" yaml:"lint,omitempty"`
 }
 
 // ExternalConfigVersion defines the subset of all config

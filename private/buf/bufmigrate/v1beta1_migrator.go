@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking"
-	"github.com/bufbuild/buf/private/buf/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/bufgen"
 	"github.com/bufbuild/buf/private/buf/bufwork"
@@ -159,7 +159,7 @@ func (m *v1beta1Migrator) maybeMigrateConfig(dirPath string) (bool, error) {
 				Excludes: excludes,
 			},
 			Breaking: bufbreaking.ExternalConfigV1(v1beta1Config.Breaking),
-			Lint:     buflint.ExternalConfigV1(v1beta1Config.Lint),
+			Lint:     buflintconfig.ExternalConfigV1(v1beta1Config.Lint),
 		}
 		newConfigPath := filepath.Join(dirPath, bufconfig.ExternalConfigV1FilePath)
 		if err := m.writeV1Config(newConfigPath, v1Config, ".", v1beta1Config.Name); err != nil {
@@ -199,7 +199,7 @@ func (m *v1beta1Migrator) maybeMigrateConfig(dirPath string) (bool, error) {
 				Except:                 v1beta1Config.Breaking.Except,
 				IgnoreUnstablePackages: v1beta1Config.Breaking.IgnoreUnstablePackages,
 			},
-			Lint: buflint.ExternalConfigV1{
+			Lint: buflintconfig.ExternalConfigV1{
 				Use:                                  v1beta1Config.Lint.Use,
 				Except:                               v1beta1Config.Lint.Except,
 				ServiceSuffix:                        v1beta1Config.Lint.ServiceSuffix,
