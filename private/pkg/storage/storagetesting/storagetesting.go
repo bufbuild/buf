@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -1025,10 +1024,6 @@ func RunTestSuite(
 		diff2 := `@@ -1 +0,0 @@
 -dddd
 `
-		if runtime.GOOS == "windows" {
-			diff1 = strings.ReplaceAll(diff1, "\n", "\r\n")
-			diff2 = strings.ReplaceAll(diff2, "\n", "\r\n")
-		}
 		expectDiff := fmt.Sprintf(
 			`diff -u %s %s
 --- %s
