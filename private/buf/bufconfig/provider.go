@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
@@ -141,7 +141,7 @@ func (p *provider) newConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Conf
 	if err != nil {
 		return nil, err
 	}
-	breakingConfig, err := bufbreaking.NewConfigV1Beta1(externalConfig.Breaking)
+	breakingConfig, err := bufbreakingconfig.NewConfigV1Beta1(externalConfig.Breaking)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (p *provider) newConfigV1(externalConfig ExternalConfigV1) (*Config, error)
 	if err != nil {
 		return nil, err
 	}
-	breakingConfig, err := bufbreaking.NewConfigV1(externalConfig.Breaking)
+	breakingConfig, err := bufbreakingconfig.NewConfigV1(externalConfig.Breaking)
 	if err != nil {
 		return nil, err
 	}

@@ -22,7 +22,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/bufgen"
@@ -158,7 +158,7 @@ func (m *v1beta1Migrator) maybeMigrateConfig(dirPath string) (bool, error) {
 			Build: bufmoduleconfig.ExternalConfigV1{
 				Excludes: excludes,
 			},
-			Breaking: bufbreaking.ExternalConfigV1(v1beta1Config.Breaking),
+			Breaking: bufbreakingconfig.ExternalConfigV1(v1beta1Config.Breaking),
 			Lint:     buflintconfig.ExternalConfigV1(v1beta1Config.Lint),
 		}
 		newConfigPath := filepath.Join(dirPath, bufconfig.ExternalConfigV1FilePath)
@@ -194,7 +194,7 @@ func (m *v1beta1Migrator) maybeMigrateConfig(dirPath string) (bool, error) {
 			Build: bufmoduleconfig.ExternalConfigV1{
 				Excludes: excludes,
 			},
-			Breaking: bufbreaking.ExternalConfigV1{
+			Breaking: bufbreakingconfig.ExternalConfigV1{
 				Use:                    v1beta1Config.Breaking.Use,
 				Except:                 v1beta1Config.Breaking.Except,
 				IgnoreUnstablePackages: v1beta1Config.Breaking.IgnoreUnstablePackages,

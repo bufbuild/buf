@@ -18,7 +18,7 @@ package bufconfig
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
@@ -68,7 +68,7 @@ type Config struct {
 	Version        string
 	ModuleIdentity bufmodule.ModuleIdentity
 	Build          *bufmoduleconfig.Config
-	Breaking       *bufbreaking.Config
+	Breaking       *bufbreakingconfig.Config
 	Lint           *buflintconfig.Config
 }
 
@@ -197,23 +197,23 @@ func ExistingConfigFilePath(ctx context.Context, readBucket storage.ReadBucket) 
 // ExternalConfigV1Beta1 represents the on-disk representation of the Config
 // at version v1beta1.
 type ExternalConfigV1Beta1 struct {
-	Version  string                                `json:"version,omitempty" yaml:"version,omitempty"`
-	Name     string                                `json:"name,omitempty" yaml:"name,omitempty"`
-	Deps     []string                              `json:"deps,omitempty" yaml:"deps,omitempty"`
-	Build    bufmoduleconfig.ExternalConfigV1Beta1 `json:"build,omitempty" yaml:"build,omitempty"`
-	Breaking bufbreaking.ExternalConfigV1Beta1     `json:"breaking,omitempty" yaml:"breaking,omitempty"`
-	Lint     buflintconfig.ExternalConfigV1Beta1   `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Version  string                                  `json:"version,omitempty" yaml:"version,omitempty"`
+	Name     string                                  `json:"name,omitempty" yaml:"name,omitempty"`
+	Deps     []string                                `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Build    bufmoduleconfig.ExternalConfigV1Beta1   `json:"build,omitempty" yaml:"build,omitempty"`
+	Breaking bufbreakingconfig.ExternalConfigV1Beta1 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Lint     buflintconfig.ExternalConfigV1Beta1     `json:"lint,omitempty" yaml:"lint,omitempty"`
 }
 
 // ExternalConfigV1 represents the on-disk representation of the Config
 // at version v1.
 type ExternalConfigV1 struct {
-	Version  string                           `json:"version,omitempty" yaml:"version,omitempty"`
-	Name     string                           `json:"name,omitempty" yaml:"name,omitempty"`
-	Deps     []string                         `json:"deps,omitempty" yaml:"deps,omitempty"`
-	Build    bufmoduleconfig.ExternalConfigV1 `json:"build,omitempty" yaml:"build,omitempty"`
-	Breaking bufbreaking.ExternalConfigV1     `json:"breaking,omitempty" yaml:"breaking,omitempty"`
-	Lint     buflintconfig.ExternalConfigV1   `json:"lint,omitempty" yaml:"lint,omitempty"`
+	Version  string                             `json:"version,omitempty" yaml:"version,omitempty"`
+	Name     string                             `json:"name,omitempty" yaml:"name,omitempty"`
+	Deps     []string                           `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Build    bufmoduleconfig.ExternalConfigV1   `json:"build,omitempty" yaml:"build,omitempty"`
+	Breaking bufbreakingconfig.ExternalConfigV1 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
+	Lint     buflintconfig.ExternalConfigV1     `json:"lint,omitempty" yaml:"lint,omitempty"`
 }
 
 // ExternalConfigVersion defines the subset of all config
