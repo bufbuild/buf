@@ -6,9 +6,9 @@ managed:
   java_string_check_utf8: true
   java_package_prefix: org
   optimize_for: CODE_SIZE
-  overrides:
+  override:
     JAVA_PACKAGE:
-      ./path: override
+      ./foo.proto: override
 plugins:
   - name: go
     out: gen/go

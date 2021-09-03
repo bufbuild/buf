@@ -160,7 +160,7 @@ func TestReadConfigV1(t *testing.T) {
 			JavaStringCheckUtf8: &truth,
 			JavaPackagePrefix:   "org",
 			OptimizeFor:         optimizeModePtr(descriptorpb.FileOptions_CODE_SIZE),
-			Overrides: map[string]map[string]string{
+			Override: map[string]map[string]string{
 				bufimagemodify.JavaPackageID: {"a.proto": "override"},
 			},
 		},
@@ -328,6 +328,7 @@ func TestReadConfigV1(t *testing.T) {
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error6.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error7.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error8.yaml"))
+	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "gen_error9.yaml"))
 
 	successConfig = &Config{
 		PluginConfigs: []*PluginConfig{

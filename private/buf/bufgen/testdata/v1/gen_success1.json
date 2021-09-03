@@ -7,7 +7,7 @@
     "java_string_check_utf8": true,
     "java_package_prefix": "org",
     "optimize_for": "CODE_SIZE",
-    "overrides": {
+    "override": {
       "JAVA_PACKAGE": {
         "a.proto": "override"
       }

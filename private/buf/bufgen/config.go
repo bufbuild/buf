@@ -215,12 +215,20 @@ func newManagedConfigV1(externalManagedConfig ExternalManagedConfigV1) (*Managed
 	if err != nil {
 		return nil, err
 	}
-	overrides := externalManagedConfig.Overrides
-	for overrideID, override := range overrides {
-		for importPath := range override {
-			if importPath != normalpath.Normalize(importPath) {
+	override := externalManagedConfig.Override
+	for overrideID, overrideValue := range override {
+		for importPath := range overrideValue {
+			normalizedImportPath, err := normalpath.NormalizeAndValidate(importPath)
+			if err != nil {
 				return nil, fmt.Errorf(
-					"overrides can only take normalized import paths, invalid import path: %s provided for: %s",
+					"failed to normalize import path: %s provided for override: %s",
+					importPath,
+					overrideID,
+				)
+			}
+			if importPath != normalizedImportPath {
+				return nil, fmt.Errorf(
+					"override can only take normalized import paths, invalid import path: %s provided for override: %s",
 					importPath,
 					overrideID,
 				)
@@ -234,7 +242,7 @@ func newManagedConfigV1(externalManagedConfig ExternalManagedConfigV1) (*Managed
 		JavaPackagePrefix:     externalManagedConfig.JavaPackagePrefix,
 		OptimizeFor:           optimizeFor,
 		GoPackagePrefixConfig: goPackagePrefixConfig,
-		Overrides:             overrides,
+		Override:              override,
 	}, nil
 }
 
