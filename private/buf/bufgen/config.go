@@ -215,6 +215,26 @@ func newManagedConfigV1(externalManagedConfig ExternalManagedConfigV1) (*Managed
 	if err != nil {
 		return nil, err
 	}
+	override := externalManagedConfig.Override
+	for overrideID, overrideValue := range override {
+		for importPath := range overrideValue {
+			normalizedImportPath, err := normalpath.NormalizeAndValidate(importPath)
+			if err != nil {
+				return nil, fmt.Errorf(
+					"failed to normalize import path: %s provided for override: %s",
+					importPath,
+					overrideID,
+				)
+			}
+			if importPath != normalizedImportPath {
+				return nil, fmt.Errorf(
+					"override can only take normalized import paths, invalid import path: %s provided for override: %s",
+					importPath,
+					overrideID,
+				)
+			}
+		}
+	}
 	return &ManagedConfig{
 		CcEnableArenas:        externalManagedConfig.CcEnableArenas,
 		JavaMultipleFiles:     externalManagedConfig.JavaMultipleFiles,
@@ -222,6 +242,7 @@ func newManagedConfigV1(externalManagedConfig ExternalManagedConfigV1) (*Managed
 		JavaPackagePrefix:     externalManagedConfig.JavaPackagePrefix,
 		OptimizeFor:           optimizeFor,
 		GoPackagePrefixConfig: goPackagePrefixConfig,
+		Override:              override,
 	}, nil
 }
 

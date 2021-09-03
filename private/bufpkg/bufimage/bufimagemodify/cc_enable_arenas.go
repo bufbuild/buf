@@ -22,6 +22,9 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
+// CcEnableArenasID is the ID of the cc_enable_arenas modifier.
+const CcEnableArenasID = "CC_ENABLE_ARENAS"
+
 // ccEnableArenas is the SourceCodeInfo path for the cc_enable_arenas option.
 // https://github.com/protocolbuffers/protobuf/blob/29152fbc064921ca982d64a3a9eae1daa8f979bb/src/google/protobuf/descriptor.proto#L420
 var ccEnableArenasPath = []int32{8, 31}
@@ -29,11 +32,16 @@ var ccEnableArenasPath = []int32{8, 31}
 func ccEnableArenas(
 	sweeper Sweeper,
 	value bool,
+	overrides map[string]bool,
 ) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
-				if err := ccEnableArenasForFile(ctx, sweeper, imageFile, value); err != nil {
+				modifierValue := value
+				if overrideValue, ok := overrides[imageFile.Path()]; ok {
+					modifierValue = overrideValue
+				}
+				if err := ccEnableArenasForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
 					return err
 				}
 			}

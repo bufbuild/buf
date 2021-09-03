@@ -40,11 +40,6 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-const (
-	// defaultJavaPackagePrefix is the default java_package prefix used in the JavaPackage modifier.
-	defaultJavaPackagePrefix = "com"
-)
-
 type generator struct {
 	logger            *zap.Logger
 	storageosProvider storageos.Provider
@@ -403,63 +398,83 @@ func modifyImage(
 		return nil
 	}
 	sweeper := bufimagemodify.NewFileOptionSweeper()
-	// Apply the default managed mode modifiers.
-	defaultModifier, err := defaultManagedModeModifier(sweeper)
+	modifier, err := newModifier(config.ManagedConfig, sweeper)
 	if err != nil {
 		return err
 	}
-	// Apply the user-specified modifiers, which may override the defaults.
-	// E.g. JavaMultipleFiles, JavaPackage, etc.
-	configModifier, err := managedConfigModifier(config.ManagedConfig, sweeper)
-	if err != nil {
-		return err
-	}
-	// Add the sweeper's modifier last so that all of its marks are swept up.
-	modifier := bufimagemodify.Merge(
-		bufimagemodify.Merge(defaultModifier, configModifier),
-		bufimagemodify.ModifierFunc(sweeper.Sweep),
-	)
+	modifier = bufimagemodify.Merge(modifier, bufimagemodify.ModifierFunc(sweeper.Sweep))
 	return modifier.Modify(ctx, image)
 }
 
-// managedConfigModifier returns a new Modifier for the given ManagedConfig.
-func managedConfigModifier(managedConfig *ManagedConfig, sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
-	if managedConfig == nil {
-		return nil, nil
+func newModifier(managedConfig *ManagedConfig, sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
+	modifier := bufimagemodify.NewMultiModifier(
+		bufimagemodify.JavaOuterClassname(sweeper, managedConfig.Override[bufimagemodify.JavaOuterClassNameID]),
+		bufimagemodify.ObjcClassPrefix(sweeper, managedConfig.Override[bufimagemodify.ObjcClassPrefixID]),
+		bufimagemodify.CsharpNamespace(sweeper, managedConfig.Override[bufimagemodify.CsharpNamespaceID]),
+		bufimagemodify.PhpNamespace(sweeper, managedConfig.Override[bufimagemodify.PhpNamespaceID]),
+		bufimagemodify.PhpMetadataNamespace(sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
+		bufimagemodify.RubyPackage(sweeper, managedConfig.Override[bufimagemodify.RubyPackageID]),
+	)
+	javaPackagePrefix := bufimagemodify.DefaultJavaPackagePrefix
+	if managedConfig.JavaPackagePrefix != "" {
+		javaPackagePrefix = managedConfig.JavaPackagePrefix
 	}
-	var modifier bufimagemodify.Modifier
-	if managedConfig.CcEnableArenas != nil {
-		modifier = bufimagemodify.Merge(
-			modifier,
-			bufimagemodify.CcEnableArenas(sweeper, *managedConfig.CcEnableArenas),
-		)
+	javaPackageModifier, err := bufimagemodify.JavaPackage(
+		sweeper,
+		javaPackagePrefix,
+		managedConfig.Override[bufimagemodify.JavaPackageID],
+	)
+	if err != nil {
+		return nil, err
 	}
+	modifier = bufimagemodify.Merge(modifier, javaPackageModifier)
+	javaMultipleFilesValue := bufimagemodify.DefaultJavaMultipleFilesValue
 	if managedConfig.JavaMultipleFiles != nil {
-		modifier = bufimagemodify.Merge(
-			modifier,
-			bufimagemodify.JavaMultipleFiles(sweeper, *managedConfig.JavaMultipleFiles),
+		javaMultipleFilesValue = *managedConfig.JavaMultipleFiles
+	}
+	javaMultipleFilesModifier, err := bufimagemodify.JavaMultipleFiles(
+		sweeper,
+		javaMultipleFilesValue,
+		managedConfig.Override[bufimagemodify.JavaMultipleFilesID],
+	)
+	if err != nil {
+		return nil, err
+	}
+	modifier = bufimagemodify.Merge(modifier, javaMultipleFilesModifier)
+	if managedConfig.CcEnableArenas != nil {
+		ccEnableArenasModifier, err := bufimagemodify.CcEnableArenas(
+			sweeper,
+			*managedConfig.CcEnableArenas,
+			managedConfig.Override[bufimagemodify.CcEnableArenasID],
 		)
+		if err != nil {
+			return nil, err
+		}
+		modifier = bufimagemodify.Merge(modifier, ccEnableArenasModifier)
 	}
 	if managedConfig.JavaStringCheckUtf8 != nil {
-		modifier = bufimagemodify.Merge(
-			modifier,
-			bufimagemodify.JavaStringCheckUtf8(sweeper, *managedConfig.JavaStringCheckUtf8),
+		javaStringCheckUtf8, err := bufimagemodify.JavaStringCheckUtf8(
+			sweeper,
+			*managedConfig.JavaStringCheckUtf8,
+			managedConfig.Override[bufimagemodify.JavaStringCheckUtf8ID],
 		)
+		if err != nil {
+			return nil, err
+		}
+		modifier = bufimagemodify.Merge(modifier, javaStringCheckUtf8)
 	}
-	if managedConfig.JavaPackagePrefix != "" {
-		javaPackage, err := bufimagemodify.JavaPackage(sweeper, managedConfig.JavaPackagePrefix)
+	if managedConfig.OptimizeFor != nil {
+		optimizeFor, err := bufimagemodify.OptimizeFor(
+			sweeper,
+			*managedConfig.OptimizeFor,
+			managedConfig.Override[bufimagemodify.OptimizeForID],
+		)
 		if err != nil {
 			return nil, err
 		}
 		modifier = bufimagemodify.Merge(
 			modifier,
-			javaPackage,
-		)
-	}
-	if managedConfig.OptimizeFor != nil {
-		modifier = bufimagemodify.Merge(
-			modifier,
-			bufimagemodify.OptimizeFor(sweeper, *managedConfig.OptimizeFor),
+			optimizeFor,
 		)
 	}
 	if managedConfig.GoPackagePrefixConfig != nil {
@@ -468,6 +483,7 @@ func managedConfigModifier(managedConfig *ManagedConfig, sweeper bufimagemodify.
 			managedConfig.GoPackagePrefixConfig.Default,
 			managedConfig.GoPackagePrefixConfig.Except,
 			managedConfig.GoPackagePrefixConfig.Override,
+			managedConfig.Override[bufimagemodify.GoPackageID],
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to construct go_package modifier: %w", err)
@@ -478,24 +494,6 @@ func managedConfigModifier(managedConfig *ManagedConfig, sweeper bufimagemodify.
 		)
 	}
 	return modifier, nil
-}
-
-func defaultManagedModeModifier(sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
-	modifier := bufimagemodify.NewMultiModifier(
-		bufimagemodify.JavaOuterClassname(sweeper),
-		bufimagemodify.ObjcClassPrefix(sweeper),
-		bufimagemodify.CsharpNamespace(sweeper),
-		bufimagemodify.PhpNamespace(sweeper),
-		bufimagemodify.PhpMetadataNamespace(sweeper),
-		bufimagemodify.RubyPackage(sweeper),
-		bufimagemodify.JavaMultipleFiles(sweeper, true), // JavaMultipleFiles can be overridden by configuration.
-	)
-	// JavaPackage can be overridden by configuration.
-	javaPackageModifier, err := bufimagemodify.JavaPackage(sweeper, defaultJavaPackagePrefix)
-	if err != nil {
-		return nil, err
-	}
-	return bufimagemodify.Merge(modifier, javaPackageModifier), nil
 }
 
 type generateOptions struct {
