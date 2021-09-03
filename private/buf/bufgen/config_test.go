@@ -161,7 +161,7 @@ func TestReadConfigV1(t *testing.T) {
 			JavaPackagePrefix:   "org",
 			OptimizeFor:         optimizeModePtr(descriptorpb.FileOptions_CODE_SIZE),
 			Overrides: map[string]map[string]string{
-				bufimagemodify.JavaPackageID: map[string]string{"a.proto": "override"},
+				bufimagemodify.JavaPackageID: {"a.proto": "override"},
 			},
 		},
 	}
