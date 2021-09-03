@@ -22,7 +22,7 @@ import (
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
-// JavaStringCheckUtf8ID is the ID of the java_String_check_utf8 modifier.
+// JavaStringCheckUtf8ID is the ID of the java_string_check_utf8 modifier.
 const JavaStringCheckUtf8ID = "JAVA_STRING_CHECK_UTF8"
 
 // javaStringCheckUtf8Path is the SourceCodeInfo path for the java_string_check_utf8 option.

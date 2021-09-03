@@ -22,7 +22,7 @@ import (
 )
 
 // OptimizeForID is the ID for the optimize_for modifier.
-const OptimizeForID = "OPTMIZE_FOR"
+const OptimizeForID = "OPTIMIZE_FOR"
 
 // optimizeFor is the SourceCodeInfo path for the optimize_for option.
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L385
