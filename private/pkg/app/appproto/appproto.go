@@ -58,6 +58,9 @@ type ResponseWriter interface {
 	AddError(message string)
 	// SetFeatureProto3Optional sets the proto3 optional feature.
 	SetFeatureProto3Optional()
+	// ToResponse returns the resulting CodeGeneratorResponse. This must
+	// only be called after all writing has been completed.
+	ToResponse() *pluginpb.CodeGeneratorResponse
 }
 
 // Handler is a protoc plugin handler
@@ -166,7 +169,7 @@ func newRunFunc(handler Handler) func(context.Context, app.Container) error {
 		if err := handler.Handle(ctx, container, responseWriter, request); err != nil {
 			return err
 		}
-		response := responseWriter.toResponse()
+		response := responseWriter.ToResponse()
 		if err := protodescriptor.ValidateCodeGeneratorResponse(response); err != nil {
 			return err
 		}
@@ -177,6 +180,11 @@ func newRunFunc(handler Handler) func(context.Context, app.Container) error {
 		_, err = container.Stdout().Write(data)
 		return err
 	}
+}
+
+// NewReponseWriter returns a new ResponseWriter.
+func NewResponseWriter(container app.StderrContainer) ResponseWriter {
+	return newResponseWriter(container)
 }
 
 // ApplyInsertionPoint applies the insertion point defined in insertionPointFile
