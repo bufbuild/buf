@@ -247,7 +247,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, csharpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, map[string]string{"csharp.proto": "Acme.Override.V1"})
+		csharpNamespaceModifier := CsharpNamespace(sweeper, map[string]string{"override.proto": "Acme.Override.V1"})
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -259,7 +259,11 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, "Acme.Override.V1", descriptor.GetOptions().GetCsharpNamespace())
+			if imageFile.Path() == "override.proto" {
+				assert.Equal(t, "Acme.Override.V1", descriptor.GetOptions().GetCsharpNamespace())
+				continue
+			}
+			assert.Equal(t, classPrefix, descriptor.GetOptions().GetCsharpNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, true)
 	})
@@ -270,7 +274,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, map[string]string{"csharp.proto": "Acme.Override.V1"})
+		modifier := CsharpNamespace(sweeper, map[string]string{"override.proto": "Acme.Override.V1"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -280,7 +284,11 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, "Acme.Override.V1", descriptor.GetOptions().GetCsharpNamespace())
+			if imageFile.Path() == "override.proto" {
+				assert.Equal(t, "Acme.Override.V1", descriptor.GetOptions().GetCsharpNamespace())
+				continue
+			}
+			assert.Equal(t, classPrefix, descriptor.GetOptions().GetCsharpNamespace())
 		}
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
 	})
@@ -339,61 +347,6 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 			}
 			assert.Equal(t,
 				modifiedCsharpNamespace,
-				descriptor.GetOptions().GetCsharpNamespace(),
-			)
-		}
-	})
-
-	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-
-		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, map[string]string{"a.proto": "override"})
-
-		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
-		err := modifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
-				assert.NotEmpty(t, descriptor.GetOptions().GetCsharpNamespace())
-				assert.NotEqual(t, modifiedCsharpNamespace, descriptor.GetOptions().GetCsharpNamespace())
-				continue
-			}
-			assert.Equal(t,
-				"override",
-				descriptor.GetOptions().GetCsharpNamespace(),
-			)
-		}
-	})
-
-	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-
-		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, map[string]string{"a.proto": "override"})
-		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
-		err := modifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
-				assert.NotEmpty(t, descriptor.GetOptions().GetCsharpNamespace())
-				assert.NotEqual(t, modifiedCsharpNamespace, descriptor.GetOptions().GetCsharpNamespace())
-				continue
-			}
-			assert.Equal(t,
-				"override",
 				descriptor.GetOptions().GetCsharpNamespace(),
 			)
 		}

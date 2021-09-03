@@ -249,7 +249,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, map[string]string{"a.proto": "override"})
+		rubyPackageModifier := RubyPackage(sweeper, map[string]string{"override.proto": "override"})
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -260,7 +260,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
+			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
 				continue
 			}
@@ -275,7 +275,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, map[string]string{"a.proto": "override"})
+		modifier := RubyPackage(sweeper, map[string]string{"override.proto": "override"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -284,7 +284,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
+			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
 				continue
 			}
@@ -349,54 +349,6 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 				modifiedRubyPackage,
 				descriptor.GetOptions().GetRubyPackage(),
 			)
-		}
-	})
-
-	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-
-		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, map[string]string{"a.proto": "override"})
-
-		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
-		err := modifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
-				// php_namespace is unset for the well-known types
-				assert.Empty(t, descriptor.GetOptions().GetRubyPackage())
-				continue
-			}
-			assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
-		}
-	})
-
-	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-
-		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, map[string]string{"a.proto": "override"})
-		err := modifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
-				// php_namespace is unset for the well-known types
-				assert.Empty(t, descriptor.GetOptions().GetRubyPackage())
-				continue
-			}
-			assert.Equal(t, "override", descriptor.GetOptions().GetRubyPackage())
 		}
 	})
 }

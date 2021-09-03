@@ -250,7 +250,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, phpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(sweeper, map[string]string{"a.proto": "override"})
+		phpNamespaceModifier := PhpNamespace(sweeper, map[string]string{"override.proto": "override"})
 
 		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -262,7 +262,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
+			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
 				continue
 			}
@@ -277,7 +277,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, phpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(sweeper, map[string]string{"a.proto": "override"})
+		modifier := PhpNamespace(sweeper, map[string]string{"override.proto": "override"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -287,7 +287,7 @@ func testPhpNamespaceOptions(t *testing.T, dirPath string, classPrefix string) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
+			if imageFile.Path() == "override.proto" {
 				assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
 				continue
 			}
@@ -352,54 +352,6 @@ func TestPhpNamespaceWellKnownTypes(t *testing.T) {
 				modifiedPhpNamespace,
 				descriptor.GetOptions().GetPhpNamespace(),
 			)
-		}
-	})
-
-	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-
-		sweeper := NewFileOptionSweeper()
-		phpNamespaceModifier := PhpNamespace(sweeper, map[string]string{"a.proto": "override"})
-
-		modifier := NewMultiModifier(phpNamespaceModifier, ModifierFunc(sweeper.Sweep))
-		err := modifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
-				// php_namespace is unset for the well-known types
-				assert.Empty(t, descriptor.GetOptions().GetPhpNamespace())
-				continue
-			}
-			assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
-		}
-	})
-
-	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-
-		sweeper := NewFileOptionSweeper()
-		modifier := PhpNamespace(sweeper, map[string]string{"a.proto": "override"})
-		err := modifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if isWellKnownType(context.Background(), imageFile) {
-				// php_namespace is unset for the well-known types
-				assert.Empty(t, descriptor.GetOptions().GetPhpNamespace())
-				continue
-			}
-			assert.Equal(t, "override", descriptor.GetOptions().GetPhpNamespace())
 		}
 	})
 }

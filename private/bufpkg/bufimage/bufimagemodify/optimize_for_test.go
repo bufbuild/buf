@@ -310,7 +310,6 @@ func TestOptimizeForCcOptions(t *testing.T) {
 			}
 			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 		}
-		assertFileOptionSourceCodeInfoNotEmpty(t, image, optimizeForPath)
 	})
 
 	t.Run("without SourceCodeInfo and with per-file overrides", func(t *testing.T) {
@@ -380,56 +379,6 @@ func TestOptimizeForWellKnownTypes(t *testing.T) {
 
 		for _, imageFile := range image.Files() {
 			descriptor := imageFile.Proto()
-			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
-		}
-	})
-
-	t.Run("with SourceCodeInfo and per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, true)
-
-		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(sweeper, descriptorpb.FileOptions_LITE_RUNTIME, map[string]string{"a.proto": "LITE_RUNTIME"})
-		require.NoError(t, err)
-		modifier := NewMultiModifier(
-			optimizeForModifier,
-			ModifierFunc(sweeper.Sweep),
-		)
-		err = modifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
-				assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
-				continue
-			}
-			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
-		}
-	})
-
-	t.Run("without SourceCodeInfo and per-file overrides", func(t *testing.T) {
-		t.Parallel()
-		image := testGetImage(t, dirPath, false)
-
-		sweeper := NewFileOptionSweeper()
-		optimizeForModifier, err := OptimizeFor(sweeper, descriptorpb.FileOptions_LITE_RUNTIME, map[string]string{"a.proto": "LITE_RUNTIME"})
-		require.NoError(t, err)
-		err = optimizeForModifier.Modify(
-			context.Background(),
-			image,
-		)
-		require.NoError(t, err)
-
-		for _, imageFile := range image.Files() {
-			descriptor := imageFile.Proto()
-			if imageFile.Path() == "a.proto" {
-				assert.Equal(t, descriptorpb.FileOptions_LITE_RUNTIME, descriptor.GetOptions().GetOptimizeFor())
-				continue
-			}
 			assert.Equal(t, descriptorpb.FileOptions_SPEED, descriptor.GetOptions().GetOptimizeFor())
 		}
 	})
