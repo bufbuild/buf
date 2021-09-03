@@ -17,6 +17,7 @@ package bufbreaking
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -43,7 +44,7 @@ func newHandler(
 
 func (h *handler) Check(
 	ctx context.Context,
-	config *Config,
+	config *bufbreakingconfig.Config,
 	previousImage bufimage.Image,
 	image bufimage.Image,
 ) ([]bufanalysis.FileAnnotation, error) {
@@ -56,4 +57,24 @@ func (h *handler) Check(
 		return nil, err
 	}
 	return h.runner.Check(ctx, configToInternalConfig(config), previousFiles, files)
+}
+
+func configToInternalConfig(config *bufbreakingconfig.Config) *internal.Config {
+	return &internal.Config{
+		Rules:                  rulesToInternalRules(config.Rules),
+		IgnoreIDToRootPaths:    config.IgnoreIDToRootPaths,
+		IgnoreRootPaths:        config.IgnoreRootPaths,
+		IgnoreUnstablePackages: config.IgnoreUnstablePackages,
+	}
+}
+
+func rulesToInternalRules(rules []bufbreakingconfig.Rule) []*internal.Rule {
+	if rules == nil {
+		return nil
+	}
+	internalRules := make([]*internal.Rule, len(rules))
+	for i, rule := range rules {
+		internalRules[i] = rule.InternalRule()
+	}
+	return internalRules
 }

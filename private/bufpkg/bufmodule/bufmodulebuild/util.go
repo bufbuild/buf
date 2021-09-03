@@ -17,7 +17,6 @@ package bufmodulebuild
 import (
 	"errors"
 	"fmt"
-	"sort"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -88,70 +87,6 @@ func pathToTargetPath(roots []string, path string, pathType normalpath.PathType)
 		// this should never happen
 		return "", fmt.Errorf("%q is contained in multiple roots %s", path, stringutil.SliceToHumanStringQuoted(roots))
 	}
-}
-
-// normalizeAndCheckPaths verifies that:
-//
-//   - No paths are empty.
-//   - All paths are normalized and validated if pathType is Relative.
-//   - All paths are normalized if pathType is Absolute.
-//
-// If sortAndCheckDuplicates is true:
-
-//   - All paths are unique.
-//   - No path contains another path.
-//
-// Normalizes the paths.
-// Sorts the paths if sortAndCheckDuplicates is true.
-// Makes the paths absolute if pathType is Absolute.
-func normalizeAndCheckPaths(
-	paths []string,
-	name string,
-	pathType normalpath.PathType,
-	sortAndCheckDuplicates bool,
-) ([]string, error) {
-	if len(paths) == 0 {
-		return paths, nil
-	}
-	outputs := make([]string, len(paths))
-	for i, path := range paths {
-		if path == "" {
-			return nil, fmt.Errorf("%s contained an empty path", name)
-		}
-		output, err := normalpath.NormalizeAndTransformForPathType(path, pathType)
-		if err != nil {
-			// user error
-			return nil, err
-		}
-		outputs[i] = output
-	}
-	if sortAndCheckDuplicates {
-		return sortAndCheckDuplicatePaths(outputs, name, pathType)
-	}
-	return outputs, nil
-}
-
-// TODO: refactor this
-func sortAndCheckDuplicatePaths(outputs []string, name string, pathType normalpath.PathType) ([]string, error) {
-	sort.Strings(outputs)
-	for i := 0; i < len(outputs); i++ {
-		for j := i + 1; j < len(outputs); j++ {
-			output1 := outputs[i]
-			output2 := outputs[j]
-
-			if output1 == output2 {
-				return nil, fmt.Errorf("duplicate %s %q", name, output1)
-			}
-			if normalpath.EqualsOrContainsPath(output2, output1, pathType) {
-				return nil, fmt.Errorf("%s %q is within %s %q which is not allowed", name, output1, name, output2)
-			}
-			if normalpath.EqualsOrContainsPath(output1, output2, pathType) {
-				return nil, fmt.Errorf("%s %q is within %s %q which is not allowed", name, output2, name, output1)
-			}
-		}
-	}
-
-	return outputs, nil
 }
 
 type buildOptions struct {
