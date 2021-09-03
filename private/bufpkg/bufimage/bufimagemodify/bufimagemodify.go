@@ -160,13 +160,9 @@ func OptimizeFor(
 	value descriptorpb.FileOptions_OptimizeMode,
 	overrides map[string]string,
 ) (Modifier, error) {
-	validatedOverrides := map[string]descriptorpb.FileOptions_OptimizeMode{}
-	for fileImportPath, overrideString := range overrides {
-		overrideOptimizeMode, err := overrideStringToFileOptionOptimizeMode(overrideString)
-		if err != nil {
-			return nil, fmt.Errorf("invalid override for modifier %s and file %s: %w", OptimizeForID, fileImportPath, err)
-		}
-		validatedOverrides[fileImportPath] = overrideOptimizeMode
+	validatedOverrides, err := stringOverridesToOptimizeModeOverrides(overrides)
+	if err != nil {
+		return nil, fmt.Errorf("invalid override for %s: %w", OptimizeForID, err)
 	}
 	return optimizeFor(sweeper, value, validatedOverrides), nil
 }
@@ -249,7 +245,7 @@ func int32SliceIsEqual(x []int32, y []int32) bool {
 }
 
 func stringOverridesToBoolOverrides(stringOverrides map[string]string) (map[string]bool, error) {
-	validatedOverrides := map[string]bool{}
+	validatedOverrides := make(map[string]bool{}, len(stringOverrides))
 	for fileImportPath, overrideString := range stringOverrides {
 		overrideBool, err := strconv.ParseBool(overrideString)
 		if err != nil {
@@ -260,14 +256,14 @@ func stringOverridesToBoolOverrides(stringOverrides map[string]string) (map[stri
 	return validatedOverrides, nil
 }
 
-func overrideStringToFileOptionOptimizeMode(overrideString string) (descriptorpb.FileOptions_OptimizeMode, error) {
-	switch overrideString {
-	case "SPEED":
-		return descriptorpb.FileOptions_SPEED, nil
-	case "CODE_SIZE":
-		return descriptorpb.FileOptions_CODE_SIZE, nil
-	case "LITE_RUNTIME":
-		return descriptorpb.FileOptions_LITE_RUNTIME, nil
+func stringOverridesToOptimizeModeOverrides(stringOverrides map[string]string) (map[string]descriptorpb.FileOptions_OptimizeMode, error) {
+	validatedOverrides := make(map[string]bool{}, len(stringOverrides))
+	for fileImportPath, stringOverride := range stringOverrides {
+		optimizeMode, ok := descriptorpb.FileOptions_OptimizeMode_value[stringOverride]
+		if !ok {
+			return nil, fmt.Errorf("invalid optimize mode %s set for file %s", stringOverride, fileImportPath)
+		}
+		validatedOverride[fileImportPath] = descriptorpb.FileOptions_OptimizeMode(optimizeMode)
 	}
-	return descriptorpb.FileOptions_SPEED, fmt.Errorf("invalid optimize for value: %s", overrideString)
+	return validatedOverrides, nil
 }
