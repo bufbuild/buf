@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -29,8 +30,8 @@ import (
 )
 
 func TestBucketGetFileInfos1(t *testing.T) {
-	config, err := NewConfigV1(
-		ExternalConfigV1{
+	config, err := bufmoduleconfig.NewConfigV1(
+		bufmoduleconfig.ExternalConfigV1{
 			Excludes: []string{"proto/b"},
 		},
 	)
@@ -52,8 +53,8 @@ func TestBucketGetFileInfos1(t *testing.T) {
 }
 
 func TestBucketGetFileInfos2(t *testing.T) {
-	config, err := NewConfigV1(
-		ExternalConfigV1{
+	config, err := bufmoduleconfig.NewConfigV1(
+		bufmoduleconfig.ExternalConfigV1{
 			Excludes: []string{"proto/a"},
 		},
 	)
@@ -72,8 +73,8 @@ func TestBucketGetFileInfos2(t *testing.T) {
 }
 
 func TestBucketGetFileInfo3(t *testing.T) {
-	config, err := NewConfigV1(
-		ExternalConfigV1{
+	config, err := bufmoduleconfig.NewConfigV1(
+		bufmoduleconfig.ExternalConfigV1{
 			Excludes: []string{"proto/a/c"},
 		},
 	)
@@ -95,8 +96,8 @@ func TestBucketGetFileInfo3(t *testing.T) {
 }
 
 func TestBucketGetFileInfos4(t *testing.T) {
-	config, err := NewConfigV1(
-		ExternalConfigV1{
+	config, err := bufmoduleconfig.NewConfigV1(
+		bufmoduleconfig.ExternalConfigV1{
 			Excludes: []string{
 				"proto/a/c",
 				"proto/d",
@@ -118,8 +119,8 @@ func TestBucketGetFileInfos4(t *testing.T) {
 }
 
 func TestBucketGetAllFileInfos5(t *testing.T) {
-	config, err := NewConfigV1(
-		ExternalConfigV1{},
+	config, err := bufmoduleconfig.NewConfigV1(
+		bufmoduleconfig.ExternalConfigV1{},
 	)
 	require.NoError(t, err)
 	testBucketGetFileInfos(
@@ -130,8 +131,8 @@ func TestBucketGetAllFileInfos5(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetFileInfos1(t *testing.T) {
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
+	config, err := bufmoduleconfig.NewConfigV1Beta1(
+		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
 				"proto",
 			},
@@ -158,8 +159,8 @@ func TestConfigV1Beta1BucketGetFileInfos1(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetFileInfos2(t *testing.T) {
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
+	config, err := bufmoduleconfig.NewConfigV1Beta1(
+		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
 				"proto",
 			},
@@ -183,8 +184,8 @@ func TestConfigV1Beta1BucketGetFileInfos2(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetFileInfo3(t *testing.T) {
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
+	config, err := bufmoduleconfig.NewConfigV1Beta1(
+		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
 				"proto",
 			},
@@ -211,8 +212,8 @@ func TestConfigV1Beta1BucketGetFileInfo3(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetFileInfos4(t *testing.T) {
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
+	config, err := bufmoduleconfig.NewConfigV1Beta1(
+		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
 				"proto",
 			},
@@ -237,8 +238,8 @@ func TestConfigV1Beta1BucketGetFileInfos4(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetAllFileInfos5(t *testing.T) {
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
+	config, err := bufmoduleconfig.NewConfigV1Beta1(
+		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
 				".",
 			},
@@ -253,8 +254,8 @@ func TestConfigV1Beta1BucketGetAllFileInfos5(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetAllFileInfosError1(t *testing.T) {
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
+	config, err := bufmoduleconfig.NewConfigV1Beta1(
+		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
 				"a",
 				"b",
@@ -271,8 +272,8 @@ func TestConfigV1Beta1BucketGetAllFileInfosError1(t *testing.T) {
 }
 
 func TestConfigV1Beta1BucketGetFileInfosForExternalPathsError1(t *testing.T) {
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
+	config, err := bufmoduleconfig.NewConfigV1Beta1(
+		bufmoduleconfig.ExternalConfigV1Beta1{
 			Roots: []string{
 				"a",
 				"b",
@@ -306,7 +307,7 @@ func TestDocumentation(t *testing.T) {
 func testBucketGetFileInfos(
 	t *testing.T,
 	relDir string,
-	config *Config,
+	config *bufmoduleconfig.Config,
 	expectedFileInfos ...bufmodule.FileInfo,
 ) {
 	t.Parallel()
@@ -359,7 +360,7 @@ func testBucketGetFileInfos(
 func testBucketGetAllFileInfosError(
 	t *testing.T,
 	relDir string,
-	config *Config,
+	config *bufmoduleconfig.Config,
 	expectedSpecificError error,
 ) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
@@ -385,7 +386,7 @@ func testBucketGetAllFileInfosError(
 func testBucketGetFileInfosForExternalPathsError(
 	t *testing.T,
 	relDir string,
-	config *Config,
+	config *bufmoduleconfig.Config,
 	externalPaths []string,
 ) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
@@ -422,8 +423,8 @@ func testDocumentationBucket(
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	config, err := NewConfigV1(
-		ExternalConfigV1{},
+	config, err := bufmoduleconfig.NewConfigV1(
+		bufmoduleconfig.ExternalConfigV1{},
 	)
 	require.NoError(t, err)
 	module, err := NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(

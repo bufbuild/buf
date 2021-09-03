@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
@@ -277,7 +278,7 @@ func testGetModuleFileSet(t *testing.T, dirPath string) bufmodule.ModuleFileSet 
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	config, err := bufmodulebuild.NewConfigV1(bufmodulebuild.ExternalConfigV1{})
+	config, err := bufmoduleconfig.NewConfigV1(bufmoduleconfig.ExternalConfigV1{})
 	require.NoError(t, err)
 	module, err := bufmodulebuild.NewModuleBucketBuilder(zap.NewNop()).BuildForBucket(
 		context.Background(),
