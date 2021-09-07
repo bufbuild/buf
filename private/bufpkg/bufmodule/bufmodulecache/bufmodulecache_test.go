@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -60,20 +61,22 @@ func TestReaderBasic(t *testing.T) {
 	// the delegate uses the cache we just populated
 	delegateModuleReader := newModuleReader(
 		zap.NewNop(),
+		verbose.NopPrinter,
+		delegateFileLocker,
 		delegateDataReadWriteBucket,
 		delegateSumReadWriteBucket,
 		moduleCacher,
-		WithFileLocker(delegateFileLocker),
 	)
 
 	// the main does not, so there will be a cache miss
 	mainDataReadWriteBucket, mainSumReadWriteBucket, mainFileLocker := newTestDataSumBucketsAndLocker(t)
 	moduleReader := newModuleReader(
 		zap.NewNop(),
+		verbose.NopPrinter,
+		mainFileLocker,
 		mainDataReadWriteBucket,
 		mainSumReadWriteBucket,
 		delegateModuleReader,
-		WithFileLocker(mainFileLocker),
 	)
 	getModule, err := moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)

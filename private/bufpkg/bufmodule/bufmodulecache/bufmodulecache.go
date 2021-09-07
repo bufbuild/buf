@@ -15,11 +15,10 @@
 package bufmodulecache
 
 import (
-	"io"
-
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/verbose"
 	"go.uber.org/zap"
 )
 
@@ -27,38 +26,18 @@ import (
 // delegate as the source of truth.
 func NewModuleReader(
 	logger *zap.Logger,
+	verbosePrinter verbose.Printer,
+	fileLocker filelock.Locker,
 	dataReadWriteBucket storage.ReadWriteBucket,
 	sumReadWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
-	options ...ModuleReaderOption,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
 		logger,
+		verbosePrinter,
+		fileLocker,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
 		delegate,
-		options...,
 	)
-}
-
-// ModuleReaderOption is an option for a new ModuleReader.
-type ModuleReaderOption func(*moduleReader)
-
-// WithMessageWriter adds the given Writer to print messages.
-//
-// This is typically stderr.
-// The default is to not print messages.
-func WithMessageWriter(messageWriter io.Writer) ModuleReaderOption {
-	return func(moduleReader *moduleReader) {
-		moduleReader.messageWriter = messageWriter
-	}
-}
-
-// WithFileLocker adds the given Locker to synchronize between operations.
-//
-// The default is to not synchronize between operations.
-func WithFileLocker(fileLocker filelock.Locker) ModuleReaderOption {
-	return func(moduleReader *moduleReader) {
-		moduleReader.fileLocker = fileLocker
-	}
 }
