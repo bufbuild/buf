@@ -16,7 +16,6 @@ package bufmodulecache
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -24,20 +23,24 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 type moduleCacher struct {
+	logger              *zap.Logger
 	dataReadWriteBucket storage.ReadWriteBucket
 	sumReadWriteBucket  storage.ReadWriteBucket
 	fileLocker          filelock.Locker
 }
 
 func newModuleCacher(
+	logger *zap.Logger,
 	dataReadWriteBucket storage.ReadWriteBucket,
 	sumReadWriteBucket storage.ReadWriteBucket,
 	fileLocker filelock.Locker,
 ) *moduleCacher {
 	return &moduleCacher{
+		logger:              logger,
 		dataReadWriteBucket: dataReadWriteBucket,
 		sumReadWriteBucket:  sumReadWriteBucket,
 		fileLocker:          fileLocker,
@@ -55,20 +58,32 @@ func (m *moduleCacher) GetModule(
 	// This can happen if we couldn't find the sum file, which means
 	// we are in an invalid state
 	if storedDigest == "" {
-		return nil, multierr.Append(
-			m.deleteInvalidModule(ctx, modulePin),
-			fmt.Errorf("module %q has invalid cache state: no stored digest could be found", modulePin.String()),
+		m.logger.Sugar().Warnf(
+			"Module %q has invalid cache state: no stored digest could be found. The cache will attempt to self-correct.",
+			modulePin.String(),
 		)
+		if err := m.deleteInvalidModule(ctx, modulePin); err != nil {
+			return nil, err
+		}
+		// We want to return ErrNotExist so that the ModuleReader can re-download
+		return nil, storage.NewErrNotExist(newCacheKey(modulePin))
 	}
 	digest, err := bufmodule.ModuleDigestB2(ctx, module)
 	if err != nil {
 		return nil, err
 	}
 	if digest != storedDigest {
-		return nil, multierr.Append(
-			m.deleteInvalidModule(ctx, modulePin),
-			fmt.Errorf("module %q has invalid cache state: calculated digest %q does not match stored digest %q", modulePin.String(), digest, storedDigest),
+		m.logger.Sugar().Warnf(
+			"Module %q has invalid cache state: calculated digest %q does not match stored digest %q. The cache will attemp to self-correct.",
+			modulePin.String(),
+			digest,
+			storedDigest,
 		)
+		if err := m.deleteInvalidModule(ctx, modulePin); err != nil {
+			return nil, err
+		}
+		// We want to return ErrNotExist so that the ModuleReader can re-download
+		return nil, storage.NewErrNotExist(newCacheKey(modulePin))
 	}
 	return module, nil
 }
