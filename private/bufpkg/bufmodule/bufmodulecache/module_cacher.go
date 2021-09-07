@@ -79,7 +79,7 @@ func (m *moduleCacher) GetModule(
 				modulePin.String(),
 			)
 			// We want to return ErrNotExist so that the ModuleReader can re-download
-			return nil, storage.NewErrNotExist(newCacheKey(modulePin))
+			return nil, storage.NewErrNotExist(modulePath)
 		}
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (m *moduleCacher) GetModule(
 		)
 		// We want to return ErrNotExist so that the ModuleReader can re-download
 		// Note that we deal with invalid data in the cache at the ModuleReader level by overwriting via PutModule
-		return nil, storage.NewErrNotExist(newCacheKey(modulePin))
+		return nil, storage.NewErrNotExist(modulePath)
 	}
 	digest, err := bufmodule.ModuleDigestB2(ctx, module)
 	if err != nil {
@@ -108,7 +108,7 @@ func (m *moduleCacher) GetModule(
 		)
 		// We want to return ErrNotExist so that the ModuleReader can re-download
 		// Note that we deal with invalid data in the cache at the ModuleReader level by overwriting via PutModule
-		return nil, storage.NewErrNotExist(newCacheKey(modulePin))
+		return nil, storage.NewErrNotExist(modulePath)
 	}
 	return module, nil
 }
