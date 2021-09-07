@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
@@ -45,65 +46,100 @@ func newModuleReader(
 	options ...ModuleReaderOption,
 ) *moduleReader {
 	moduleReader := &moduleReader{
-		logger:     logger,
+		logger: logger,
+		cache: newModuleCacher(
+			logger,
+			dataReadWriteBucket,
+			sumReadWriteBucket,
+		),
 		delegate:   delegate,
 		fileLocker: filelock.NewNopLocker(),
 	}
 	for _, option := range options {
 		option(moduleReader)
 	}
-	moduleReader.cache = newModuleCacher(
-		logger,
-		dataReadWriteBucket,
-		sumReadWriteBucket,
-		moduleReader.fileLocker,
-	)
 	return moduleReader
 }
 
 func (m *moduleReader) GetModule(
 	ctx context.Context,
 	modulePin bufmodule.ModulePin,
-) (bufmodule.Module, error) {
-	module, err := m.cache.GetModule(ctx, modulePin)
+) (_ bufmodule.Module, retErr error) {
+	cacheKey := newCacheKey(modulePin)
+
+	// First, do a GetModule with a read lock to see if we have a valid module.
+	readUnlocker, err := m.fileLocker.RLock(ctx, cacheKey)
 	if err != nil {
-		// Note that IsNotExist will happen if there was a checksum mismatch as well, in which case
-		// we want to overwrite whatever is actually in the cache and self-correct the issue
-		if storage.IsNotExist(err) {
-			m.logger.Debug(
-				"cache_miss",
-				zap.String("module_pin", modulePin.String()),
-			)
-			if m.messageWriter != nil {
-				if _, err := m.messageWriter.Write([]byte("buf: downloading " + modulePin.String() + "\n")); err != nil {
-					return nil, err
-				}
-			}
-			module, err := m.delegate.GetModule(ctx, modulePin)
-			if err != nil {
-				return nil, err
-			}
-			if err := m.cache.PutModule(
-				ctx,
-				modulePin,
-				module,
-			); err != nil {
-				return nil, err
-			}
-			m.lock.Lock()
-			m.count++
-			m.lock.Unlock()
-			return module, nil
-		}
 		return nil, err
 	}
+	module, err := m.cache.GetModule(ctx, modulePin)
+	err = multierr.Append(err, readUnlocker.Unlock())
+	if err == nil {
+		m.logger.Debug(
+			"cache_hit",
+			zap.String("module_pin", modulePin.String()),
+		)
+		m.lock.Lock()
+		m.count++
+		m.cacheHits++
+		m.lock.Unlock()
+		return module, nil
+	}
+	if !storage.IsNotExist(err) {
+		return nil, err
+	}
+
+	// We now had a IsNotExist error, so we do a write lock and check again (double locking).
+	// If we still have an error, we do a GetModule from the delegate, and put the result.
+	//
+	// Note that IsNotExist will happen if there was a checksum mismatch as well, in which case
+	// we want to overwrite whatever is actually in the cache and self-correct the issue
+	unlocker, err := m.fileLocker.Lock(ctx, cacheKey)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		retErr = multierr.Append(retErr, unlocker.Unlock())
+	}()
+	module, err = m.cache.GetModule(ctx, modulePin)
+	if err == nil {
+		m.logger.Debug(
+			"cache_hit",
+			zap.String("module_pin", modulePin.String()),
+		)
+		m.lock.Lock()
+		m.count++
+		m.cacheHits++
+		m.lock.Unlock()
+		return module, nil
+	}
+	if !storage.IsNotExist(err) {
+		return nil, err
+	}
+
+	// We now had a IsNotExist error within a write lock, so go to the delegate and then put.
 	m.logger.Debug(
-		"cache_hit",
+		"cache_miss",
 		zap.String("module_pin", modulePin.String()),
 	)
+	if m.messageWriter != nil {
+		if _, err := m.messageWriter.Write([]byte("buf: downloading " + modulePin.String() + "\n")); err != nil {
+			return nil, err
+		}
+	}
+	module, err = m.delegate.GetModule(ctx, modulePin)
+	if err != nil {
+		return nil, err
+	}
+	if err := m.cache.PutModule(
+		ctx,
+		modulePin,
+		module,
+	); err != nil {
+		return nil, err
+	}
 	m.lock.Lock()
 	m.count++
-	m.cacheHits++
 	m.lock.Unlock()
 	return module, nil
 }
