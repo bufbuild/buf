@@ -53,6 +53,7 @@ func newModuleReader(
 		option(moduleReader)
 	}
 	moduleReader.cache = newModuleCacher(
+		logger,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
 		moduleReader.fileLocker,
@@ -66,6 +67,8 @@ func (m *moduleReader) GetModule(
 ) (bufmodule.Module, error) {
 	module, err := m.cache.GetModule(ctx, modulePin)
 	if err != nil {
+		// Note that IsNotExist will happen if there was a checksum mismatch as well, in which case
+		// we want to overwrite whatever is actually in the cache and self-correct the issue
 		if storage.IsNotExist(err) {
 			m.logger.Debug(
 				"cache_miss",
