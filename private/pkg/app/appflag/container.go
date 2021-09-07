@@ -18,24 +18,33 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/app/appname"
+	"github.com/bufbuild/buf/private/pkg/app/appverbose"
+	"github.com/bufbuild/buf/private/pkg/verbose"
 	"go.uber.org/zap"
 )
 
 type container struct {
 	app.Container
-	nameContainer appname.Container
-	logContainer  applog.Container
+	nameContainer    appname.Container
+	logContainer     applog.Container
+	verboseContainer appverbose.Container
 }
 
-func newContainer(baseContainer app.Container, appName string, logger *zap.Logger) (*container, error) {
+func newContainer(
+	baseContainer app.Container,
+	appName string,
+	logger *zap.Logger,
+	verbosePrinter verbose.Printer,
+) (*container, error) {
 	nameContainer, err := appname.NewContainer(baseContainer, appName)
 	if err != nil {
 		return nil, err
 	}
 	return &container{
-		Container:     baseContainer,
-		nameContainer: nameContainer,
-		logContainer:  applog.NewContainer(logger),
+		Container:        baseContainer,
+		nameContainer:    nameContainer,
+		logContainer:     applog.NewContainer(logger),
+		verboseContainer: appverbose.NewContainer(verbosePrinter),
 	}, nil
 }
 
@@ -61,4 +70,8 @@ func (c *container) Port() (uint16, error) {
 
 func (c *container) Logger() *zap.Logger {
 	return c.logContainer.Logger()
+}
+
+func (c *container) VerbosePrinter() verbose.Printer {
+	return c.verboseContainer.VerbosePrinter()
 }
