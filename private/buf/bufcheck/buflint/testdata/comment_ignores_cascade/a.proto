@@ -9,10 +9,10 @@ import "google/protobuf/empty.proto";
 
 // buf:lint:ignore ENUM_PASCAL_CASE
 // buf:lint:ignore ENUM_VALUE_UPPER_SNAKE_CASE
+// buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
 enum enumFoo {
   // buf:lint:ignore ENUM_NO_ALLOW_ALIAS
   option allow_alias = true;
-  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
   enumFooNone = 0;
   enumFooOne = 1;
   enumFooTwo = 1;

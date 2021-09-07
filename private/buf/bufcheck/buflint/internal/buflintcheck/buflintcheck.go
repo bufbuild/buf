@@ -220,7 +220,18 @@ func checkEnumZeroValueSuffix(add addFunc, enumValue protosource.EnumValue, suff
 	}
 	name := enumValue.Name()
 	if !strings.HasSuffix(name, suffix) {
-		add(enumValue, enumValue.NameLocation(), nil, "Enum zero value name %q should be suffixed with %q.", name, suffix)
+		add(
+			enumValue,
+			enumValue.NameLocation(),
+			// also check the enum for this comment ignore
+			// this allows users to set this "globally" for an enum
+			[]protosource.Location{
+				enumValue.Enum().Location(),
+			},
+			"Enum zero value name %q should be suffixed with %q.",
+			name,
+			suffix,
+		)
 	}
 	return nil
 }
