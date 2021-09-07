@@ -34,6 +34,8 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2021
 LICENSE_HEADER_IGNORES := \/testdata enterprise
+# Comment out to use released buf
+BUF_GO_INSTALL_PATH := ./cmd/buf
 
 BUF_LINT_INPUT := .
 BUF_BREAKING_INPUT := .
@@ -105,11 +107,11 @@ bufgenerateclean:: bufgeneratecleango
 
 .PHONY: bufgenerateprotogo
 bufgenerateprotogo:
-	buf generate proto --template data/template/buf.go.gen.yaml
+	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
-	buf generate proto --template data/template/buf.go-client.gen.yaml
+	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
 
 bufgeneratesteps:: \
 	bufgenerateprotogo \
