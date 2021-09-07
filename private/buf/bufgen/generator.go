@@ -242,6 +242,11 @@ func (g *generator) generateConcurrently(
 			if err != nil {
 				return nil, fmt.Errorf("invalid plugin path: %w", err)
 			}
+			var parameters []string
+			if len(pluginConfig.Opt) > 0 {
+				// Only include parameters if they're not empty
+				parameters = []string{pluginConfig.Opt}
+			}
 			// Group remote plugins by remote to execute together.
 			remoteToPlugins[remote] = append(
 				remoteToPlugins[remote],
@@ -250,7 +255,7 @@ func (g *generator) generateConcurrently(
 						Owner:      owner,
 						Name:       name,
 						Version:    version,
-						Parameters: []string{pluginConfig.Opt},
+						Parameters: parameters,
 					},
 					// So we know the order this plugins response should slot in
 					i,
