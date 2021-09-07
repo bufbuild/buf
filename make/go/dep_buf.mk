@@ -40,6 +40,3 @@ BUF_BIN := $(CACHE_BIN)/buf
 
 dockerdeps:: $(BUF)
 endif
-
-
-
