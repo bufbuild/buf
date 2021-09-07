@@ -16,7 +16,7 @@ package bufmodulecache
 
 import (
 	"context"
-	"io"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -55,20 +55,20 @@ func (m *moduleCacher) GetModule(
 	// This can happen if we couldn't find the sum file, which means
 	// we are in an invalid state
 	if storedDigest == "" {
-		if err := m.deleteInvalidModule(ctx, modulePin); err != nil {
-			return nil, err
-		}
-		return nil, storage.NewErrNotExist(newCacheKey(modulePin))
+		return nil, multierr.Append(
+			m.deleteInvalidModule(ctx, modulePin),
+			fmt.Errorf("module %q has invalid cache state: no stored digest could be found", modulePin.String()),
+		)
 	}
 	digest, err := bufmodule.ModuleDigestB2(ctx, module)
 	if err != nil {
 		return nil, err
 	}
 	if digest != storedDigest {
-		if err := m.deleteInvalidModule(ctx, modulePin); err != nil {
-			return nil, err
-		}
-		return nil, storage.NewErrNotExist(newCacheKey(modulePin))
+		return nil, multierr.Append(
+			m.deleteInvalidModule(ctx, modulePin),
+			fmt.Errorf("module %q has invalid cache state: calculated digest %q does not match stored digest %q", modulePin.String(), digest, storedDigest),
+		)
 	}
 	return module, nil
 }
@@ -159,8 +159,7 @@ func (m *moduleCacher) getModuleAndStoredDigest(
 	if err != nil {
 		return nil, "", err
 	}
-
-	digestReadObjectCloser, err := m.sumReadWriteBucket.Get(ctx, modulePath)
+	digestData, err := storage.ReadPath(ctx, m.sumReadWriteBucket, modulePath)
 	if err != nil {
 		if storage.IsNotExist(err) {
 			// This signals that we do not have a digest, which should signal to the
@@ -169,14 +168,6 @@ func (m *moduleCacher) getModuleAndStoredDigest(
 		}
 		return nil, "", err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, digestReadObjectCloser.Close())
-	}()
-	digestData, err := io.ReadAll(digestReadObjectCloser)
-	if err != nil {
-		return nil, "", err
-	}
-
 	return module, string(digestData), nil
 }
 
