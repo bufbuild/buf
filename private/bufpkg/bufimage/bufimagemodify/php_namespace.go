@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -179,11 +180,12 @@ func phpNamespaceValue(imageFile bufimage.ImageFile) string {
 	}
 	packageParts := strings.Split(pkg, ".")
 	for i, part := range packageParts {
-		// Append _ to the package part if it is a reserved keyword.
+		packagePart := stringutil.ToPascalCase(part)
 		if _, ok := phpReservedKeywords[strings.ToLower(part)]; ok {
-			part += "_"
+			// Append _ to the package part if it is a reserved keyword.
+			packagePart += "_"
 		}
-		packageParts[i] = strings.Title(part)
+		packageParts[i] = packagePart
 	}
 	return strings.Join(packageParts, `\`)
 }

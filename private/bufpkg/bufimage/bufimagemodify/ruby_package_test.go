@@ -196,6 +196,7 @@ func TestRubyPackageOptions(t *testing.T) {
 	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "single"), `Acme::V1`)
 	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "double"), `Acme::Weather::V1`)
 	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "triple"), `Acme::Weather::Data::V1`)
+	testRubyPackageOptions(t, filepath.Join("testdata", "rubyoptions", "underscore"), `Acme::Weather::FooBar::V1`)
 }
 
 func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
