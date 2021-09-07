@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufverbose
+package verbose
 
 import (
 	"fmt"
@@ -40,9 +40,11 @@ type Printer interface {
 
 // NewWritePrinter returns a new Printer using the given Writer.
 //
+// The trimmed prefix is printed with a : before each line.
+//
 // This generally aligns with the --verbose flag being set and writer being stderr.
-func NewWritePrinter(writer io.Writer) Printer {
-	return newWritePrinter(writer)
+func NewWritePrinter(writer io.Writer, prefix string) Printer {
+	return newWritePrinter(writer, prefix)
 }
 
 type nopPrinter struct{}
@@ -51,17 +53,23 @@ func (nopPrinter) Printf(string, ...interface{}) {}
 
 type writePrinter struct {
 	writer io.Writer
+	prefix string
 }
 
-func newWritePrinter(writer io.Writer) *writePrinter {
+func newWritePrinter(writer io.Writer, prefix string) *writePrinter {
+	prefix = strings.TrimSpace(prefix)
+	if prefix != "" {
+		prefix = prefix + ": "
+	}
 	return &writePrinter{
 		writer: writer,
+		prefix: prefix,
 	}
 }
 
 func (w *writePrinter) Printf(format string, args ...interface{}) {
 	if value := strings.TrimSpace(fmt.Sprintf(format, args...)); value != "" {
 		// Errors are ignored per the interface spec.
-		_, _ = w.writer.Write([]byte(value + "\n"))
+		_, _ = w.writer.Write([]byte(w.prefix + value + "\n"))
 	}
 }

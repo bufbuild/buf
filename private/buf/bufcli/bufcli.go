@@ -491,15 +491,13 @@ func NewModuleReaderAndCreateCacheDirs(
 	}
 	moduleReader := bufmodulecache.NewModuleReader(
 		container.Logger(),
+		container.VerbosePrinter(),
+		fileLocker,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
 		bufapimodule.NewModuleReader(
 			registryProvider,
 		),
-		bufmodulecache.WithMessageWriter(
-			container.Stderr(),
-		),
-		bufmodulecache.WithFileLocker(fileLocker),
 	)
 	return moduleReader, nil
 }

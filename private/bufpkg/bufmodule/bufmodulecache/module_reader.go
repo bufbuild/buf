@@ -16,22 +16,22 @@ package bufmodulecache
 
 import (
 	"context"
-	"io"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/verbose"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
 
 type moduleReader struct {
-	logger        *zap.Logger
-	cache         *moduleCacher
-	delegate      bufmodule.ModuleReader
-	messageWriter io.Writer
-	fileLocker    filelock.Locker
+	logger         *zap.Logger
+	verbosePrinter verbose.Printer
+	fileLocker     filelock.Locker
+	cache          *moduleCacher
+	delegate       bufmodule.ModuleReader
 
 	count     int
 	cacheHits int
@@ -40,25 +40,23 @@ type moduleReader struct {
 
 func newModuleReader(
 	logger *zap.Logger,
+	verbosePrinter verbose.Printer,
+	fileLocker filelock.Locker,
 	dataReadWriteBucket storage.ReadWriteBucket,
 	sumReadWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
-	options ...ModuleReaderOption,
 ) *moduleReader {
-	moduleReader := &moduleReader{
-		logger: logger,
+	return &moduleReader{
+		logger:         logger,
+		verbosePrinter: verbosePrinter,
+		fileLocker:     fileLocker,
 		cache: newModuleCacher(
 			logger,
 			dataReadWriteBucket,
 			sumReadWriteBucket,
 		),
-		delegate:   delegate,
-		fileLocker: filelock.NewNopLocker(),
+		delegate: delegate,
 	}
-	for _, option := range options {
-		option(moduleReader)
-	}
-	return moduleReader
 }
 
 func (m *moduleReader) GetModule(
@@ -122,11 +120,7 @@ func (m *moduleReader) GetModule(
 		"cache_miss",
 		zap.String("module_pin", modulePin.String()),
 	)
-	if m.messageWriter != nil {
-		if _, err := m.messageWriter.Write([]byte("buf: downloading " + modulePin.String() + "\n")); err != nil {
-			return nil, err
-		}
-	}
+	m.verbosePrinter.Printf("downloading " + modulePin.String())
 	module, err = m.delegate.GetModule(ctx, modulePin)
 	if err != nil {
 		return nil, err

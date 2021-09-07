@@ -16,13 +16,13 @@ package appflag
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
+	"github.com/bufbuild/buf/private/pkg/app/appverbose"
 	"github.com/bufbuild/buf/private/pkg/observability"
 	"github.com/bufbuild/buf/private/pkg/observability/observabilityzap"
 	"github.com/pkg/profile"
@@ -36,7 +36,8 @@ type builder struct {
 	appName string
 
 	verbose   bool
-	logLevel  string
+	debug     bool
+	noWarn    bool
 	logFormat string
 
 	profile           bool
@@ -63,13 +64,8 @@ func newBuilder(appName string, options ...BuilderOption) *builder {
 }
 
 func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
-	// True means debug, false means info.
-	flagSet.BoolVarP(&b.verbose, "verbose", "v", false, "Enable verbose logging.")
-	flagSet.StringVar(&b.logLevel, "log-level", "", "The log level [debug,info,warn,error].")
-	// Effectively deprecated - we only ever cared about debug vs info, which is now controlled
-	// by verbose, but we keep this around in case it is being used and handle it being set.
-	// Note that both verbose and log-level cannot be set together.
-	_ = flagSet.MarkHidden("log-level")
+	flagSet.BoolVarP(&b.verbose, "verbose", "v", false, "Turn on verbose mode.")
+	flagSet.BoolVar(&b.debug, "debug", false, "Turn on debug logging.")
 	flagSet.StringVar(&b.logFormat, "log-format", "color", "The log format [text,color,json].")
 	if b.defaultTimeout > 0 {
 		flagSet.DurationVar(&b.timeout, "timeout", b.defaultTimeout, `The duration until timing out.`)
@@ -85,6 +81,10 @@ func (b *builder) BindRoot(flagSet *pflag.FlagSet) {
 	_ = flagSet.MarkHidden("profile-type")
 	flagSet.BoolVar(&b.profileAllowError, "profile-allow-error", false, "Allow errors for profiled commands.")
 	_ = flagSet.MarkHidden("profile-allow-error")
+
+	// We do not officially support this flag, this is for testing, where we need warnings turned off.
+	flagSet.BoolVar(&b.noWarn, "no-warn", false, "Turn off warn logging.")
+	_ = flagSet.MarkHidden("no-warn")
 }
 
 func (b *builder) NewRunFunc(
@@ -105,7 +105,7 @@ func (b *builder) run(
 	appContainer app.Container,
 	f func(context.Context, Container) error,
 ) (retErr error) {
-	logLevel, err := getLogLevel(b.verbose, b.logLevel)
+	logLevel, err := getLogLevel(b.debug, b.noWarn)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,8 @@ func (b *builder) run(
 	if err != nil {
 		return err
 	}
-	container, err := newContainer(appContainer, b.appName, logger)
+	verbosePrinter := appverbose.NewVerbosePrinter(appContainer.Stderr(), b.appName, b.verbose)
+	container, err := newContainer(appContainer, b.appName, logger, verbosePrinter)
 	if err != nil {
 		return err
 	}
@@ -204,14 +205,14 @@ func runProfile(
 	return nil
 }
 
-func getLogLevel(verboseFlag bool, logLevelFlag string) (string, error) {
-	if verboseFlag && logLevelFlag != "" {
-		return "", errors.New("cannot set both --verbose and --log-level")
+func getLogLevel(debugFlag bool, noWarnFlag bool) (string, error) {
+	if debugFlag && noWarnFlag {
+		return "", fmt.Errorf("cannot set both --debug and --no-warn")
 	}
-	if logLevelFlag != "" {
-		return logLevelFlag, nil
+	if noWarnFlag {
+		return "error", nil
 	}
-	if verboseFlag {
+	if debugFlag {
 		return "debug", nil
 	}
 	return "info", nil
