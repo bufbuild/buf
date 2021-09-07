@@ -74,7 +74,7 @@ func (m *moduleCacher) GetModule(
 	}
 	if digest != storedDigest {
 		m.logger.Sugar().Warnf(
-			"Module %q has invalid cache state: calculated digest %q does not match stored digest %q. The cache will attemp to self-correct.",
+			"Module %q has invalid cache state: calculated digest %q does not match stored digest %q. The cache will attempt to self-correct.",
 			modulePin.String(),
 			digest,
 			storedDigest,
