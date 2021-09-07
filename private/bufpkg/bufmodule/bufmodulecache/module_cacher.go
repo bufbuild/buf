@@ -16,7 +16,6 @@ package bufmodulecache
 
 import (
 	"context"
-	"io"
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -24,20 +23,24 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
+	"go.uber.org/zap"
 )
 
 type moduleCacher struct {
+	logger              *zap.Logger
 	dataReadWriteBucket storage.ReadWriteBucket
 	sumReadWriteBucket  storage.ReadWriteBucket
 	fileLocker          filelock.Locker
 }
 
 func newModuleCacher(
+	logger *zap.Logger,
 	dataReadWriteBucket storage.ReadWriteBucket,
 	sumReadWriteBucket storage.ReadWriteBucket,
 	fileLocker filelock.Locker,
 ) *moduleCacher {
 	return &moduleCacher{
+		logger:              logger,
 		dataReadWriteBucket: dataReadWriteBucket,
 		sumReadWriteBucket:  sumReadWriteBucket,
 		fileLocker:          fileLocker,
@@ -55,9 +58,14 @@ func (m *moduleCacher) GetModule(
 	// This can happen if we couldn't find the sum file, which means
 	// we are in an invalid state
 	if storedDigest == "" {
+		m.logger.Sugar().Warnf(
+			"Module %q has invalid cache state: no stored digest could be found. The cache will attempt to self-correct.",
+			modulePin.String(),
+		)
 		if err := m.deleteInvalidModule(ctx, modulePin); err != nil {
 			return nil, err
 		}
+		// We want to return ErrNotExist so that the ModuleReader can re-download
 		return nil, storage.NewErrNotExist(newCacheKey(modulePin))
 	}
 	digest, err := bufmodule.ModuleDigestB2(ctx, module)
@@ -65,9 +73,16 @@ func (m *moduleCacher) GetModule(
 		return nil, err
 	}
 	if digest != storedDigest {
+		m.logger.Sugar().Warnf(
+			"Module %q has invalid cache state: calculated digest %q does not match stored digest %q. The cache will attempt to self-correct.",
+			modulePin.String(),
+			digest,
+			storedDigest,
+		)
 		if err := m.deleteInvalidModule(ctx, modulePin); err != nil {
 			return nil, err
 		}
+		// We want to return ErrNotExist so that the ModuleReader can re-download
 		return nil, storage.NewErrNotExist(newCacheKey(modulePin))
 	}
 	return module, nil
@@ -159,8 +174,7 @@ func (m *moduleCacher) getModuleAndStoredDigest(
 	if err != nil {
 		return nil, "", err
 	}
-
-	digestReadObjectCloser, err := m.sumReadWriteBucket.Get(ctx, modulePath)
+	digestData, err := storage.ReadPath(ctx, m.sumReadWriteBucket, modulePath)
 	if err != nil {
 		if storage.IsNotExist(err) {
 			// This signals that we do not have a digest, which should signal to the
@@ -169,14 +183,6 @@ func (m *moduleCacher) getModuleAndStoredDigest(
 		}
 		return nil, "", err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, digestReadObjectCloser.Close())
-	}()
-	digestData, err := io.ReadAll(digestReadObjectCloser)
-	if err != nil {
-		return nil, "", err
-	}
-
 	return module, string(digestData), nil
 }
 
