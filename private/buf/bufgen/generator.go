@@ -34,7 +34,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/bufbuild/buf/private/pkg/verbose"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -43,20 +42,17 @@ import (
 
 type generator struct {
 	logger            *zap.Logger
-	verbosePrinter    verbose.Printer
 	storageosProvider storageos.Provider
 	registryProvider  registryv1alpha1apiclient.Provider
 }
 
 func newGenerator(
 	logger *zap.Logger,
-	verbosePrinter verbose.Printer,
 	storageosProvider storageos.Provider,
 	registryProvider registryv1alpha1apiclient.Provider,
 ) *generator {
 	return &generator{
 		logger:            logger,
-		verbosePrinter:    verbosePrinter,
 		storageosProvider: storageosProvider,
 		registryProvider:  registryProvider,
 	}
@@ -91,7 +87,7 @@ func (g *generator) generate(
 	baseOutDirPath string,
 	includeImports bool,
 ) error {
-	if err := modifyImage(ctx, config, image, g.verbosePrinter); err != nil {
+	if err := modifyImage(ctx, g.logger, config, image); err != nil {
 		return err
 	}
 	pluginResponses, err := g.generateConcurrently(
@@ -398,9 +394,9 @@ func (g *generator) generateDirectory(
 // modifyImage modifies the image according to the given configuration (i.e. Managed Mode).
 func modifyImage(
 	ctx context.Context,
+	logger *zap.Logger,
 	config *Config,
 	image bufimage.Image,
-	verbosePrinter verbose.Printer,
 ) error {
 	if config.ManagedConfig == nil {
 		// If the config is nil, it implies that the
@@ -408,7 +404,7 @@ func modifyImage(
 		return nil
 	}
 	sweeper := bufimagemodify.NewFileOptionSweeper()
-	modifier, err := newModifier(config.ManagedConfig, sweeper, verbosePrinter)
+	modifier, err := newModifier(logger, config.ManagedConfig, sweeper)
 	if err != nil {
 		return err
 	}
@@ -417,9 +413,9 @@ func modifyImage(
 }
 
 func newModifier(
+	logger *zap.Logger,
 	managedConfig *ManagedConfig,
 	sweeper bufimagemodify.Sweeper,
-	verbosePrinter verbose.Printer,
 ) (bufimagemodify.Modifier, error) {
 	modifier := bufimagemodify.NewMultiModifier(
 		bufimagemodify.JavaOuterClassname(sweeper, managedConfig.Override[bufimagemodify.JavaOuterClassNameID]),
@@ -493,8 +489,8 @@ func newModifier(
 	}
 	if managedConfig.GoPackagePrefixConfig != nil {
 		goPackageModifier, err := bufimagemodify.GoPackage(
+			logger,
 			sweeper,
-			verbosePrinter,
 			managedConfig.GoPackagePrefixConfig.Default,
 			managedConfig.GoPackagePrefixConfig.Except,
 			managedConfig.GoPackagePrefixConfig.Override,

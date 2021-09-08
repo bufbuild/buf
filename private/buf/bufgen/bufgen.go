@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"github.com/bufbuild/buf/private/pkg/verbose"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -111,11 +110,10 @@ type Generator interface {
 // NewGenerator returns a new Generator.
 func NewGenerator(
 	logger *zap.Logger,
-	verbosePrinter verbose.Printer,
 	storageosProvider storageos.Provider,
 	registryProvider registryv1alpha1apiclient.Provider,
 ) Generator {
-	return newGenerator(logger, verbosePrinter, storageosProvider, registryProvider)
+	return newGenerator(logger, storageosProvider, registryProvider)
 }
 
 // GenerateOption is an option for Generate.

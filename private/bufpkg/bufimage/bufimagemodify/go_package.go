@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/pkg/verbose"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -33,8 +33,8 @@ const GoPackageID = "GO_PACKAGE"
 var goPackagePath = []int32{8, 11}
 
 func goPackage(
+	logger *zap.Logger,
 	sweeper Sweeper,
-	verbosePrinter verbose.Printer,
 	defaultImportPathPrefix string,
 	except []bufmodule.ModuleIdentity,
 	moduleOverrides map[bufmodule.ModuleIdentity]string,
@@ -81,7 +81,7 @@ func goPackage(
 			}
 			for moduleIdentityString := range overrideModuleIdentityStrings {
 				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
-					verbosePrinter.Printf(`go_package_prefix override for "%s" was unused`, moduleIdentityString)
+					logger.Sugar().Warnf(`go_package_prefix override for "%s" was unused`, moduleIdentityString)
 				}
 			}
 			return nil

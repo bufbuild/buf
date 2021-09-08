@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
-	"github.com/bufbuild/buf/private/pkg/verbose"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -105,16 +105,16 @@ func CcEnableArenas(sweeper Sweeper, value bool, overrides map[string]string) (M
 // according to the given defaultImportPathPrefix, exceptions, and
 // overrides.
 func GoPackage(
+	logger *zap.Logger,
 	sweeper Sweeper,
-	verbosePrinter verbose.Printer,
 	defaultImportPathPrefix string,
 	except []bufmodule.ModuleIdentity,
 	moduleOverrides map[bufmodule.ModuleIdentity]string,
 	overrides map[string]string,
 ) (Modifier, error) {
 	return goPackage(
+		logger,
 		sweeper,
-		verbosePrinter,
 		defaultImportPathPrefix,
 		except,
 		moduleOverrides,
