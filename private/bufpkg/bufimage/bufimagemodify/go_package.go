@@ -81,7 +81,7 @@ func goPackage(
 			}
 			for moduleIdentityString := range overrideModuleIdentityStrings {
 				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
-					logger.Sugar().Warnf(`go_package_prefix override for "%s" was unused`, moduleIdentityString)
+					logger.Sugar().Warnf("go_package_prefix override for %q was unused", moduleIdentityString)
 				}
 			}
 			return nil
