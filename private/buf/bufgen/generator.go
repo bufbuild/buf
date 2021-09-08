@@ -112,6 +112,9 @@ func (g *generator) generate(
 	}
 	for i, mergedPluginResult := range mergedPluginResults {
 		pluginOut := config.PluginConfigs[i].Out
+		if baseOutDirPath != "" && baseOutDirPath != "." {
+			pluginOut = filepath.Join(baseOutDirPath, pluginOut)
+		}
 		switch filepath.Ext(pluginOut) {
 		case ".jar":
 			if err := g.generateZip(
