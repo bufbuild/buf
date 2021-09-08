@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -32,6 +33,7 @@ const GoPackageID = "GO_PACKAGE"
 var goPackagePath = []int32{8, 11}
 
 func goPackage(
+	logger *zap.Logger,
 	sweeper Sweeper,
 	defaultImportPathPrefix string,
 	except []bufmodule.ModuleIdentity,
@@ -51,13 +53,16 @@ func goPackage(
 	for moduleIdentity, goPackagePrefix := range moduleOverrides {
 		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = goPackagePrefix
 	}
+	seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
 				importPathPrefix := defaultImportPathPrefix
 				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
-					if modulePrefixOverride, ok := overrideModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+					moduleIdentityString := moduleIdentity.IdentityString()
+					if modulePrefixOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
 						importPathPrefix = modulePrefixOverride
+						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
 					}
 				}
 				goPackageValue := GoPackageImportPathForFile(imageFile, importPathPrefix)
@@ -72,6 +77,11 @@ func goPackage(
 					exceptModuleIdentityStrings,
 				); err != nil {
 					return err
+				}
+			}
+			for moduleIdentityString := range overrideModuleIdentityStrings {
+				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
+					logger.Sugar().Warnf("go_package_prefix override for %q was unused", moduleIdentityString)
 				}
 			}
 			return nil

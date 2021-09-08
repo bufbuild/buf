@@ -87,7 +87,7 @@ func (g *generator) generate(
 	baseOutDirPath string,
 	includeImports bool,
 ) error {
-	if err := modifyImage(ctx, config, image); err != nil {
+	if err := modifyImage(ctx, g.logger, config, image); err != nil {
 		return err
 	}
 	pluginResponses, err := g.generateConcurrently(
@@ -394,6 +394,7 @@ func (g *generator) generateDirectory(
 // modifyImage modifies the image according to the given configuration (i.e. Managed Mode).
 func modifyImage(
 	ctx context.Context,
+	logger *zap.Logger,
 	config *Config,
 	image bufimage.Image,
 ) error {
@@ -403,7 +404,7 @@ func modifyImage(
 		return nil
 	}
 	sweeper := bufimagemodify.NewFileOptionSweeper()
-	modifier, err := newModifier(config.ManagedConfig, sweeper)
+	modifier, err := newModifier(logger, config.ManagedConfig, sweeper)
 	if err != nil {
 		return err
 	}
@@ -411,7 +412,11 @@ func modifyImage(
 	return modifier.Modify(ctx, image)
 }
 
-func newModifier(managedConfig *ManagedConfig, sweeper bufimagemodify.Sweeper) (bufimagemodify.Modifier, error) {
+func newModifier(
+	logger *zap.Logger,
+	managedConfig *ManagedConfig,
+	sweeper bufimagemodify.Sweeper,
+) (bufimagemodify.Modifier, error) {
 	modifier := bufimagemodify.NewMultiModifier(
 		bufimagemodify.JavaOuterClassname(sweeper, managedConfig.Override[bufimagemodify.JavaOuterClassNameID]),
 		bufimagemodify.ObjcClassPrefix(sweeper, managedConfig.Override[bufimagemodify.ObjcClassPrefixID]),
@@ -484,6 +489,7 @@ func newModifier(managedConfig *ManagedConfig, sweeper bufimagemodify.Sweeper) (
 	}
 	if managedConfig.GoPackagePrefixConfig != nil {
 		goPackageModifier, err := bufimagemodify.GoPackage(
+			logger,
 			sweeper,
 			managedConfig.GoPackagePrefixConfig.Default,
 			managedConfig.GoPackagePrefixConfig.Except,
