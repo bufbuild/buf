@@ -111,6 +111,33 @@ func TestCompareInsertionPointOutput(t *testing.T) {
 	)
 }
 
+func TestOutputFlag(t *testing.T) {
+	tempDirPath := t.TempDir()
+	appcmdtesting.RunCommandSuccess(
+		t,
+		func(name string) *appcmd.Command {
+			return NewCommand(
+				name,
+				appflag.NewBuilder(name),
+			)
+		},
+		func(string) map[string]string {
+			return map[string]string{
+				"PATH": os.Getenv("PATH"),
+			}
+		},
+		nil,
+		nil,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "simple", "buf.gen.yaml"),
+		filepath.Join("testdata", "simple"),
+	)
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.NoError(t, err)
+}
+
 func testCompareGeneratedStubs(
 	t *testing.T,
 	dirPath string,
