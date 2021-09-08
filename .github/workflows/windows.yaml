@@ -19,7 +19,7 @@ jobs:
         if: success()
         uses: actions/cache@v2
         with:
-          path: $HOME\go\pkg\mod
+          path: C:\Users\runneradmin\go\pkg\mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
