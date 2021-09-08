@@ -828,8 +828,8 @@ func TestCommentIgnoresCascadeOff(t *testing.T) {
 	testLint(
 		t,
 		"comment_ignores_cascade",
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 12, 6, 12, 13, "ENUM_PASCAL_CASE"),
-		bufanalysistesting.NewFileAnnotation(t, "a.proto", 14, 3, 14, 29, "ENUM_NO_ALLOW_ALIAS"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 13, 6, 13, 13, "ENUM_PASCAL_CASE"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 15, 3, 15, 29, "ENUM_NO_ALLOW_ALIAS"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 3, 16, 14, "ENUM_VALUE_UPPER_SNAKE_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 16, 3, 16, 14, "ENUM_ZERO_VALUE_SUFFIX"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 17, 3, 17, 13, "ENUM_VALUE_UPPER_SNAKE_CASE"),
