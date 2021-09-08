@@ -22,13 +22,14 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
+	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGoPackageError(t *testing.T) {
 	t.Parallel()
-	_, err := GoPackage(NewFileOptionSweeper(), "", nil, nil, nil)
+	_, err := GoPackage(NewFileOptionSweeper(), verbose.NopPrinter, "", nil, nil, nil)
 	require.Error(t, err)
 }
 
@@ -41,7 +42,7 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		goPackageModifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, nil)
+		goPackageModifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, nil)
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -68,7 +69,7 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, nil)
+		modifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, nil)
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
@@ -93,7 +94,7 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		goPackageModifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
+		goPackageModifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -117,7 +118,7 @@ func TestGoPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
+		modifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
@@ -143,7 +144,7 @@ func TestGoPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		goPackageModifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, map[string]string{})
+		goPackageModifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, map[string]string{})
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -169,7 +170,7 @@ func TestGoPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, nil)
+		modifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, nil)
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
@@ -193,7 +194,7 @@ func TestGoPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		goPackageModifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
+		goPackageModifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -216,7 +217,7 @@ func TestGoPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
+		modifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
@@ -242,7 +243,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		goPackageModifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, nil)
+		goPackageModifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, nil)
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -272,7 +273,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, nil)
+		modifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, nil)
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
@@ -300,7 +301,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, goPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		goPackageModifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
+		goPackageModifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -334,7 +335,7 @@ func TestGoPackagePackageVersion(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, goPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
+		modifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, map[string]string{"a.proto": "override"})
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
@@ -370,7 +371,7 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		goPackageModifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, nil)
+		goPackageModifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, nil)
 		require.NoError(t, err)
 
 		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
@@ -403,7 +404,7 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier, err := GoPackage(sweeper, testImportPathPrefix, nil, nil, nil)
+		modifier, err := GoPackage(sweeper, verbose.NopPrinter, testImportPathPrefix, nil, nil, nil)
 		require.NoError(t, err)
 		err = modifier.Modify(
 			context.Background(),
@@ -448,6 +449,7 @@ func TestGoPackageWithExcept(t *testing.T) {
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(
 			sweeper,
+			verbose.NopPrinter,
 			testImportPathPrefix,
 			[]bufmodule.ModuleIdentity{testModuleIdentity},
 			nil,
@@ -473,6 +475,7 @@ func TestGoPackageWithExcept(t *testing.T) {
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(
 			sweeper,
+			verbose.NopPrinter,
 			testImportPathPrefix,
 			[]bufmodule.ModuleIdentity{testModuleIdentity},
 			nil,
@@ -496,6 +499,7 @@ func TestGoPackageWithExcept(t *testing.T) {
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(
 			sweeper,
+			verbose.NopPrinter,
 			testImportPathPrefix,
 			[]bufmodule.ModuleIdentity{testModuleIdentity},
 			nil,
@@ -520,6 +524,7 @@ func TestGoPackageWithExcept(t *testing.T) {
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(
 			sweeper,
+			verbose.NopPrinter,
 			testImportPathPrefix,
 			[]bufmodule.ModuleIdentity{testModuleIdentity},
 			nil,
@@ -554,6 +559,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(
 			sweeper,
+			verbose.NopPrinter,
 			testImportPathPrefix,
 			nil,
 			map[bufmodule.ModuleIdentity]string{
@@ -589,6 +595,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(
 			sweeper,
+			verbose.NopPrinter,
 			testImportPathPrefix,
 			nil,
 			map[bufmodule.ModuleIdentity]string{
@@ -622,6 +629,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 		sweeper := NewFileOptionSweeper()
 		goPackageModifier, err := GoPackage(
 			sweeper,
+			verbose.NopPrinter,
 			testImportPathPrefix,
 			nil,
 			map[bufmodule.ModuleIdentity]string{
@@ -654,6 +662,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 		sweeper := NewFileOptionSweeper()
 		modifier, err := GoPackage(
 			sweeper,
+			verbose.NopPrinter,
 			testImportPathPrefix,
 			nil,
 			map[bufmodule.ModuleIdentity]string{

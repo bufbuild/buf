@@ -373,6 +373,7 @@ func run(
 	}
 	return bufgen.NewGenerator(
 		logger,
+		container.VerbosePrinter(),
 		storageosProvider,
 		registryProvider,
 	).Generate(
