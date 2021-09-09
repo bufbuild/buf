@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -31,16 +32,27 @@ const CsharpNamespaceID = "CSHARP_NAMESPACE"
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L428
 var csharpNamespacePath = []int32{8, 37}
 
-func csharpNamespace(sweeper Sweeper, overrides map[string]string) Modifier {
+func csharpNamespace(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	overrides map[string]string,
+) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				csharpNamespaceValue := csharpNamespaceValue(imageFile)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					csharpNamespaceValue = overrideValue
+					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
 				if err := csharpNamespaceForFile(ctx, sweeper, imageFile, csharpNamespaceValue); err != nil {
 					return err
+				}
+			}
+			for overrideFile := range overrides {
+				if _, ok := seenOverrideFiles[overrideFile]; !ok {
+					logger.Sugar().Warnf("%s override for %q was unused", CsharpNamespaceID, overrideFile)
 				}
 			}
 			return nil

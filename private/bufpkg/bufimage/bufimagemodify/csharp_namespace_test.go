@@ -21,6 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestCsharpNamespaceEmptyOptions(t *testing.T) {
@@ -32,7 +33,7 @@ func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, nil)
+		csharpNamespaceModifier := CsharpNamespace(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -49,7 +50,7 @@ func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, nil)
+		modifier := CsharpNamespace(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -64,7 +65,7 @@ func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, map[string]string{"a.proto": "foo"})
+		csharpNamespaceModifier := CsharpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "foo"})
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -85,7 +86,7 @@ func TestCsharpNamespaceEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, map[string]string{"a.proto": "foo"})
+		modifier := CsharpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "foo"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -107,7 +108,7 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, csharpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, nil)
+		csharpNamespaceModifier := CsharpNamespace(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -129,7 +130,7 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, nil)
+		modifier := CsharpNamespace(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -149,7 +150,7 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, csharpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, map[string]string{"a.proto": "bar"})
+		csharpNamespaceModifier := CsharpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "bar"})
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -172,7 +173,7 @@ func TestCsharpNamespaceAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, map[string]string{"a.proto": "bar"})
+		modifier := CsharpNamespace(zap.NewNop(), sweeper, map[string]string{"a.proto": "bar"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -203,7 +204,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, csharpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, nil)
+		csharpNamespaceModifier := CsharpNamespace(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -226,7 +227,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, nil)
+		modifier := CsharpNamespace(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -247,7 +248,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, csharpNamespacePath)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, map[string]string{"override.proto": "Acme.Override.V1"})
+		csharpNamespaceModifier := CsharpNamespace(zap.NewNop(), sweeper, map[string]string{"override.proto": "Acme.Override.V1"})
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -274,7 +275,7 @@ func testCsharpNamespaceOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoEmpty(t, image, csharpNamespacePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, map[string]string{"override.proto": "Acme.Override.V1"})
+		modifier := CsharpNamespace(zap.NewNop(), sweeper, map[string]string{"override.proto": "Acme.Override.V1"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -303,7 +304,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		csharpNamespaceModifier := CsharpNamespace(sweeper, nil)
+		csharpNamespaceModifier := CsharpNamespace(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(csharpNamespaceModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -331,7 +332,7 @@ func TestCsharpNamespaceWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := CsharpNamespace(sweeper, nil)
+		modifier := CsharpNamespace(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,

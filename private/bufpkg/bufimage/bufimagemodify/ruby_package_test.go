@@ -21,6 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestRubyPackageEmptyOptions(t *testing.T) {
@@ -32,7 +33,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, nil)
+		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -49,7 +50,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, nil)
+		modifier := RubyPackage(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -64,7 +65,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, map[string]string{"a.proto": "override"})
+		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -83,7 +84,7 @@ func TestRubyPackageEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, map[string]string{"a.proto": "override"})
+		modifier := RubyPackage(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -104,7 +105,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, nil)
+		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -126,7 +127,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, nil)
+		modifier := RubyPackage(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -146,7 +147,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, map[string]string{"a.proto": "override"})
+		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -172,7 +173,7 @@ func TestRubyPackageAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, map[string]string{"a.proto": "override"})
+		modifier := RubyPackage(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -206,7 +207,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, nil)
+		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -229,7 +230,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, nil)
+		modifier := RubyPackage(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -250,7 +251,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, rubyPackagePath)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, map[string]string{"override.proto": "override"})
+		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"})
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -276,7 +277,7 @@ func testRubyPackageOptions(t *testing.T, dirPath string, classPrefix string) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, rubyPackagePath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, map[string]string{"override.proto": "override"})
+		modifier := RubyPackage(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -304,7 +305,7 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		rubyPackageModifier := RubyPackage(sweeper, nil)
+		rubyPackageModifier := RubyPackage(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(rubyPackageModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -332,7 +333,7 @@ func TestRubyPackageWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := RubyPackage(sweeper, nil)
+		modifier := RubyPackage(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
