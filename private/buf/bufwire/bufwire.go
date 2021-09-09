@@ -19,6 +19,8 @@ package bufwire
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -29,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 )
@@ -84,6 +87,130 @@ type ModuleConfig interface {
 	Config() *bufconfig.Config
 	Workspace() bufmodule.Workspace
 	WorkspaceConfig() *bufwork.Config
+}
+
+// BuildModuleFileSetOptionForTargetPaths returns the bufmodulebuild.BuildModuleFileSetOption
+// required for the given ModuleConfigs. This is required to support the --path filter.
+func BuildModuleFileSetOptionForTargetPaths(
+	moduleConfigs []ModuleConfig,
+	sourceOrModuleRef buffetch.SourceOrModuleRef,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
+) (bufmodulebuild.BuildModuleFileSetOption, error) {
+	if len(moduleConfigs) == 0 {
+		// This should never happen, but it's included for additional safety.
+		return nil, errors.New("expected at least one module, but found none")
+	}
+	// All of the ModuleConfigs are expected to have the same *bufwork.Config,
+	// so we can arbitrarily select the first one.
+	workspaceConfig := moduleConfigs[0].WorkspaceConfig()
+	rootToExcludesForWorkspaceDirectory := make(map[string]map[string][]string, len(moduleConfigs))
+	if len(moduleConfigs) > 1 {
+		if len(workspaceConfig.Directories) != len(moduleConfigs) {
+			// This should be unreachable.
+			return nil, fmt.Errorf(
+				"received %d modules, but %d directories were listed in the workspace",
+				len(moduleConfigs),
+				len(workspaceConfig.Directories),
+			)
+		}
+		// We only need to collect the roots for each workspace directory if the
+		// user targeted a directory containing a buf.work.yaml.
+		for i, moduleConfig := range moduleConfigs {
+			// ModuleConfigs are constructed and returned in the same order they're
+			// listed as directories in the user's buf.work.yaml.
+			workspaceDirectory := workspaceConfig.Directories[i]
+			rootToExcludesForWorkspaceDirectory[workspaceDirectory] = moduleConfig.Config().Build.RootToExcludes
+		}
+	}
+	// Target paths belong to one of the following categories:
+	//
+	//  1. An import path, not actually on the local filesystem (e.g. an import like `buf build petapis --path acme/payment/v2/payment.proto`)
+	//  2. A path relative to the sourceOrModuleRef (e.g. `buf build petapis --path petapis/acme/pet/v1/pet.proto`)
+	//  3. A path contained in a workspace directory (e.g. `buf build --path petapis/acme/pet/v1/pet.proto` - this file should be interpreted as `acme/pet/v1/pet.proto` in the ModuleFileSet).
+	//  4. A path contained in a build root (e.g. `buf build --path root/foo.proto` - this file should be interpreted as `foo.proto` in the ModuleFileSet if the buf.yaml has build.roots set to ["root"]).
+	//  5. (2), (3), and (4) combined (i.e. a path contained in a workspace directory that defines multiple build.roots).
+	//
+	// In short, the user's intent is ambiguous, so we must provide multiple options to the ModuleFileSet. For each path,
+	// we include the possible cases in a single set, and the ModuleFileSet will consider the externalDirOrFilePath
+	// satisfied if at least one of its associated paths is matched.
+	//
+	// Note that only two files will ever be possible for any given externalDirOrFilePath:
+	// the file provided as-is (1), or any combination of (2), (3), and (4).
+	targetPaths := make([][]string, len(externalDirOrFilePaths))
+	for i, externalDirOrFilePath := range externalDirOrFilePaths {
+		targetPath, err := sourceOrModuleRef.PathForExternalPath(externalDirOrFilePath)
+		switch {
+		case normalpath.IsOutsideContextDirError(err):
+			// If the path is outside the context directory, then we provide it as
+			// it was specified by the user. This is the case for import paths, like
+			// the first case shown above.
+			targetPaths[i] = []string{externalDirOrFilePath}
+		case err != nil:
+			return nil, err
+		default:
+			// We need to determine if the given path is relative to the
+			// workspace directory and/or build.roots.
+			buildRootTargetPath := targetPath
+			var currentWorkspaceDirectory string
+			if workspaceConfig != nil {
+				for _, directory := range workspaceConfig.Directories {
+					if !normalpath.ContainsPath(directory, buildRootTargetPath, normalpath.Relative) {
+						continue
+					}
+					buildRootTargetPath, err = normalpath.Rel(directory, buildRootTargetPath)
+					if err != nil {
+						// Unreachable according to the check above.
+						return nil, fmt.Errorf(
+							`a relative path could not be resolved between "%s" and workspace directory "%s"`,
+							normalpath.Unnormalize(externalDirOrFilePaths[i]),
+							directory,
+						)
+					}
+					currentWorkspaceDirectory = directory
+					break
+				}
+			}
+			var rootToExcludes map[string][]string
+			if len(moduleConfigs) == 1 {
+				// There's only one set of roots we need to check.
+				rootToExcludes = moduleConfigs[0].Config().Build.RootToExcludes
+			} else if currentWorkspaceDirectory != "" {
+				// Use the roots configured for the ModuleConfig that matches
+				// the current workspace directory.
+				rootToExcludes = rootToExcludesForWorkspaceDirectory[currentWorkspaceDirectory]
+			}
+			for root := range rootToExcludes {
+				// We don't actually care about the excludes in this case; we
+				// just need the root (if it exists).
+				if !normalpath.ContainsPath(root, buildRootTargetPath, normalpath.Relative) {
+					continue
+				}
+				buildRootTargetPath, err = normalpath.Rel(root, buildRootTargetPath)
+				if err != nil {
+					// Unreachable according to the check above.
+					return nil, fmt.Errorf(
+						`a relative path could not be resolved between "%s" and root "%s"`,
+						normalpath.Unnormalize(externalDirOrFilePaths[i]),
+						root,
+					)
+				}
+				break
+			}
+			if buildRootTargetPath != targetPath {
+				// If the target path was in a workspace directory and/or
+				// a single build.roots, then we want to include the mapped
+				// path.
+				targetPaths[i] = []string{externalDirOrFilePath, buildRootTargetPath}
+				continue
+			}
+			targetPaths[i] = []string{externalDirOrFilePath, targetPath}
+		}
+	}
+	if externalDirOrFilePathsAllowNotExist {
+		return bufmodulebuild.WithTargetPathsAllowNotExist(targetPaths), nil
+	}
+	return bufmodulebuild.WithTargetPaths(targetPaths), nil
 }
 
 // ModuleConfigReader is a ModuleConfig reader.
