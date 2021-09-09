@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -44,7 +45,7 @@ func newModuleCacher(
 
 func (m *moduleCacher) GetModule(
 	ctx context.Context,
-	modulePin bufmodule.ModulePin,
+	modulePin bufmoduleref.ModulePin,
 ) (bufmodule.Module, error) {
 	modulePath := newCacheKey(modulePin)
 	// We do not want the external path of the cache to be propagated to the user.
@@ -115,7 +116,7 @@ func (m *moduleCacher) GetModule(
 
 func (m *moduleCacher) PutModule(
 	ctx context.Context,
-	modulePin bufmodule.ModulePin,
+	modulePin bufmoduleref.ModulePin,
 	module bufmodule.Module,
 ) error {
 	modulePath := newCacheKey(modulePin)

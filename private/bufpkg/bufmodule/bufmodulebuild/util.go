@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
@@ -90,7 +91,7 @@ func pathToTargetPath(roots []string, path string, pathType normalpath.PathType)
 }
 
 type buildOptions struct {
-	moduleIdentity bufmodule.ModuleIdentity
+	moduleIdentity bufmoduleref.ModuleIdentity
 	// If nil, all files are considered targets.
 	// If empty (but non-nil), the module will have no target paths.
 	paths              *[]string
