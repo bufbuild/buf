@@ -33,7 +33,6 @@ import (
 )
 
 const (
-	dirFlagName  = "dir"
 	onlyFlagName = "only"
 )
 
@@ -46,13 +45,13 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
+		Use:   name + " <directory>",
 		Short: "Update the modules dependencies. Updates the " + buflock.ExternalConfigFilePath + " file.",
 		Long: "Gets the latest digests for the specified references in the config file, " +
 			"and writes them and their transitive dependencies to the " +
 			buflock.ExternalConfigFilePath +
-			" file.",
-		Args:       cobra.NoArgs,
+			` file. The first argument is the directory of the local module to update. If no argument is specified, defaults to "."`,
+		Args:       cobra.MaximumNArgs(1),
 		Deprecated: deprecated,
 		Hidden:     hidden,
 		Run: builder.NewRunFunc(
@@ -66,9 +65,6 @@ func NewCommand(
 }
 
 type flags struct {
-	// for testing only
-	Dir string
-
 	Only []string
 }
 
@@ -83,13 +79,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The name of a dependency to update. When used, only this dependency (and possibly its dependencies) will be updated. May be passed multiple times.",
 	)
-	flagSet.StringVar(
-		&f.Dir,
-		dirFlagName,
-		".",
-		"The directory to operate in. For testing only.",
-	)
-	_ = flagSet.MarkHidden(dirFlagName)
 }
 
 // run update the buf.lock file for a specific module.
@@ -98,9 +87,13 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	directoryInput, err := bufcli.GetInputValue(container, "", "", "", ".")
+	if err != nil {
+		return err
+	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		flags.Dir,
+		directoryInput,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
