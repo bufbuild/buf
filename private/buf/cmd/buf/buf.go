@@ -19,10 +19,6 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencreate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
@@ -51,8 +47,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/login"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/logout"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
@@ -60,6 +54,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 )
@@ -176,8 +172,14 @@ func NewRootCommand(name string) *appcmd.Command {
 					configmigratev1beta1.NewCommand("migrate-v1beta1", builder),
 				},
 			},
-			login.NewCommand("login", builder, loginDeprecationMessage, true),
-			logout.NewCommand("logout", builder, logoutDeprecationMessage, true),
+			{
+				Use:   "registry",
+				Short: "Interact with the Buf Schema Registry.",
+				SubCommands: []*appcmd.Command{
+					registrylogin.NewCommand("login", builder, "", false),
+					registrylogout.NewCommand("logout", builder, "", false),
+				},
+			},
 			{
 				Use:   "beta",
 				Short: "Beta commands. Unstable and will likely change.",
@@ -200,7 +202,6 @@ func NewRootCommand(name string) *appcmd.Command {
 							appcmd.NewDeletedCommand("convert", "Command deleted."),
 						},
 					},
-					appcmd.NewDeletedCommand("push", betaPushDeprecationMessage),
 					{
 						Use:        "mod",
 						Short:      "Configure and update buf modules.",
@@ -217,9 +218,6 @@ func NewRootCommand(name string) *appcmd.Command {
 						Use:   "registry",
 						Short: "Interact with the Buf Schema Registry.",
 						SubCommands: []*appcmd.Command{
-							// TODO(alex): Move these packages into registry/{login,logout}.
-							login.NewCommand("login", builder, "", false),
-							logout.NewCommand("logout", builder, "", false),
 							{
 								Use:   "organization",
 								Short: "Organization commands.",
@@ -298,6 +296,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 						},
 					},
+					appcmd.NewDeletedCommand("push", betaPushDeprecationMessage),
 				},
 			},
 			{
@@ -317,32 +316,9 @@ func NewRootCommand(name string) *appcmd.Command {
 					},
 				},
 			},
-			// TODO(alex): Can we just get rid of these alpha commands for now? We can remove them in an isolated
-			// commit so that they're easy to restore if they're ever needed.
-			{
-				Use:    "alpha",
-				Short:  "Alpha commands. These are so early in development that they should not be used except in development.",
-				Hidden: true,
-				SubCommands: []*appcmd.Command{
-					{
-						Use:   "registry",
-						Short: "Interact with the Buf Schema Registry.",
-						SubCommands: []*appcmd.Command{
-							{
-								Use:   "token",
-								Short: "Token commands.",
-								SubCommands: []*appcmd.Command{
-									tokencreate.NewCommand("create", builder),
-									tokenget.NewCommand("get", builder),
-									tokenlist.NewCommand("list", builder),
-									tokendelete.NewCommand("delete", builder),
-								},
-							},
-						},
-					},
-				},
-			},
-			push.NewCommand("push", builder, pushDeprecationMessage, true),
+			appcmd.NewDeletedCommand("login", loginDeprecationMessage),
+			appcmd.NewDeletedCommand("logout", logoutDeprecationMessage),
+			appcmd.NewDeletedCommand("push", pushDeprecationMessage),
 		},
 		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		Version:             bufcli.Version,

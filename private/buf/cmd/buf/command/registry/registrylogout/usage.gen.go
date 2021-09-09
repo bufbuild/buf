@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package login
+package registrylogout
 
 import _ "github.com/bufbuild/buf/private/usage"
