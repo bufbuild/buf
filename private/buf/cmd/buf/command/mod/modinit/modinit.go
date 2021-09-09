@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -143,7 +143,7 @@ func run(
 		)
 	}
 	if flags.Name != "" {
-		moduleIdentity, err := bufmodule.ModuleIdentityForString(flags.Name)
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(flags.Name)
 		if err != nil {
 			return err
 		}
@@ -153,9 +153,9 @@ func run(
 		)
 	}
 	if len(flags.Deps) > 0 {
-		dependencyModuleReferences := make([]bufmodule.ModuleReference, len(flags.Deps))
+		dependencyModuleReferences := make([]bufmoduleref.ModuleReference, len(flags.Deps))
 		for i, dep := range flags.Deps {
-			dependencyModuleReference, err := bufmodule.ModuleReferenceForString(dep)
+			dependencyModuleReference, err := bufmoduleref.ModuleReferenceForString(dep)
 			if err != nil {
 				return err
 			}
