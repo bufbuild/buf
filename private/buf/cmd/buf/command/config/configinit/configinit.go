@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package modinit
+package configinit
 
 import (
 	"context"
@@ -90,6 +90,11 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		".",
 		`The directory to write the configuration file to.`,
 	)
+	// TODO(alex): Now that 'buf config init' is built to (eventually) be general to all buf
+	// configuration files, should we still support the module name and dependencies flags?
+	//
+	// We might be able to avoid these compatibility concerns if we pitch this command as one
+	// that is subject to change over time (as discussed).
 	flagSet.StringVar(
 		&f.Name,
 		nameFlagName,

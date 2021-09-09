@@ -41,6 +41,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configmigratev1beta1"
@@ -49,7 +50,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/protoc"
@@ -133,28 +133,18 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "mod",
 				Short: "Configure and update buf modules.",
 				SubCommands: []*appcmd.Command{
-					modinit.NewCommand("init", builder, modInitDeprecationMessage, true), // TODO(alex): Think about this one (see TODO below).
+					appcmd.NewDeletedCommand("init", modInitDeprecationMessage),
 					modprune.NewCommand("prune", builder),
 					push.NewCommand("push", builder, "", false), // TODO(alex): Move this command into the modpush package.
 					modupdate.NewCommand("update", builder, "", false),
 					modclearcache.NewCommand("clear-cache", builder, "", false, "cc"),
 				},
 			},
-			// TODO(alex): We might actually want to keep "buf mod init" in the "mod" sub-command since it's directly tied to
-			// the other "mod" commands. For example, I initialize a module with "buf mod init", then push it immediately after
-			// with "buf mod push". Otherwise, we would need to jump between multiple sub-commands (initialize with "config",
-			// then push with "mod").
-			//
-			// However, keeping it in mod is awkward for "config ls-{breaking,lint}-rules" - listing the content of the `buf.yaml`
-			// should exist alongside how it's initialized.
-			//
-			// How do we foresee future configuration commands for `buf.work.yaml` and `buf.gen.yaml` to look? Will these be new
-			// sub-commands under the "config" sub-command? What does that suggest about how we should structure this (i.e. "buf config mod-init")?
 			{
 				Use:   "config",
 				Short: "Interact with the configuration of Buf.",
 				SubCommands: []*appcmd.Command{
-					modinit.NewCommand("init", builder, "", false), // TODO(alex): Move this command into the configinit package.
+					configinit.NewCommand("init", builder, "", false),
 					configlslintrules.NewCommand("ls-lint-rules", builder, "", false),
 					configlsbreakingrules.NewCommand("ls-breaking-rules", builder, "", false),
 					configmigratev1beta1.NewCommand("migrate-v1beta1", builder),
