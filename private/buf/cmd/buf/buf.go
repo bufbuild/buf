@@ -19,6 +19,10 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
@@ -275,6 +279,29 @@ func NewRootCommand(name string) *appcmd.Command {
 						},
 					},
 					appcmd.NewDeletedCommand("push", betaPushDeprecationMessage),
+				},
+			},
+			{
+				Use:    "alpha",
+				Short:  "Alpha commands. These are so early in development that they should not be used except in development.",
+				Hidden: true,
+				SubCommands: []*appcmd.Command{
+					{
+						Use:   "registry",
+						Short: "Interact with the Buf Schema Registry.",
+						SubCommands: []*appcmd.Command{
+							{
+								Use:   "token",
+								Short: "Token commands.",
+								SubCommands: []*appcmd.Command{
+									tokencreate.NewCommand("create", builder),
+									tokenget.NewCommand("get", builder),
+									tokenlist.NewCommand("list", builder),
+									tokendelete.NewCommand("delete", builder),
+								},
+							},
+						},
+					},
 				},
 			},
 			{
