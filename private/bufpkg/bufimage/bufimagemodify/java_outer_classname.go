@@ -20,6 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -32,18 +33,26 @@ const JavaOuterClassNameID = "JAVA_OUTER_CLASSNAME"
 var javaOuterClassnamePath = []int32{8, 8}
 
 func javaOuterClassname(
+	logger *zap.Logger,
 	sweeper Sweeper,
 	overrides map[string]string,
 ) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				javaOuterClassnameValue := javaOuterClassnameValue(imageFile)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					javaOuterClassnameValue = overrideValue
+					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
 				if err := javaOuterClassnameForFile(ctx, sweeper, imageFile, javaOuterClassnameValue); err != nil {
 					return err
+				}
+			}
+			for overrideFile := range overrides {
+				if _, ok := seenOverrideFiles[overrideFile]; !ok {
+					logger.Sugar().Warnf("%s override for %q was unused", JavaOuterClassNameID, overrideFile)
 				}
 			}
 			return nil

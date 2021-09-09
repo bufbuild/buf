@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -36,6 +37,7 @@ const (
 var javaPackagePath = []int32{8, 1}
 
 func javaPackage(
+	logger *zap.Logger,
 	sweeper Sweeper,
 	packagePrefix string,
 	overrides map[string]string,
@@ -45,13 +47,20 @@ func javaPackage(
 	}
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				javaPackageValue := javaPackageValue(imageFile, packagePrefix)
 				if overridePackagePrefix, ok := overrides[imageFile.Path()]; ok {
 					javaPackageValue = overridePackagePrefix
+					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
 				if err := javaPackageForFile(ctx, sweeper, imageFile, javaPackageValue); err != nil {
 					return err
+				}
+			}
+			for overrideFile := range overrides {
+				if _, ok := seenOverrideFiles[overrideFile]; !ok {
+					logger.Sugar().Warnf("%s override for %q was unused", JavaPackageID, overrideFile)
 				}
 			}
 			return nil

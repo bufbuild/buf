@@ -54,6 +54,7 @@ func goPackage(
 		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = goPackagePrefix
 	}
 	seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
+	seenOverrideFiles := make(map[string]struct{}, len(overrides))
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
 			for _, imageFile := range image.Files() {
@@ -68,6 +69,7 @@ func goPackage(
 				goPackageValue := GoPackageImportPathForFile(imageFile, importPathPrefix)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					goPackageValue = overrideValue
+					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
 				if err := goPackageForFile(
 					ctx,
@@ -82,6 +84,11 @@ func goPackage(
 			for moduleIdentityString := range overrideModuleIdentityStrings {
 				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
 					logger.Sugar().Warnf("go_package_prefix override for %q was unused", moduleIdentityString)
+				}
+			}
+			for overrideFile := range overrides {
+				if _, ok := seenOverrideFiles[overrideFile]; !ok {
+					logger.Sugar().Warnf("%s override for %q was unused", GoPackageID, overrideFile)
 				}
 			}
 			return nil
