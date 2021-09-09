@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/stretchr/testify/require"
@@ -343,8 +343,8 @@ func TestReadConfigV1(t *testing.T) {
 		ManagedConfig: &ManagedConfig{
 			GoPackagePrefixConfig: &GoPackagePrefixConfig{
 				Default:  "github.com/foo/bar/gen/go",
-				Except:   make([]bufmodule.ModuleIdentity, 0),
-				Override: make(map[bufmodule.ModuleIdentity]string),
+				Except:   make([]bufmoduleref.ModuleIdentity, 0),
+				Override: make(map[bufmoduleref.ModuleIdentity]string),
 			},
 		},
 	}

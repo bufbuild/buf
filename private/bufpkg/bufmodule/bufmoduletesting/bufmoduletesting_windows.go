@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,10 +31,10 @@ func NewFileInfo(
 	path string,
 	externalPath string,
 	isImport bool,
-	moduleIdentity bufmodule.ModuleIdentity,
+	moduleIdentity bufmoduleref.ModuleIdentity,
 	commit string,
-) bufmodule.FileInfo {
-	fileInfo, err := bufmodule.NewFileInfo(
+) bufmoduleref.FileInfo {
+	fileInfo, err := bufmoduleref.NewFileInfo(
 		path,
 		filepath.Clean(filepath.FromSlash(externalPath)),
 		isImport,
