@@ -21,8 +21,8 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -149,9 +149,9 @@ func (p *provider) newConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Conf
 	if err != nil {
 		return nil, err
 	}
-	var moduleIdentity bufmodule.ModuleIdentity
+	var moduleIdentity bufmoduleref.ModuleIdentity
 	if externalConfig.Name != "" {
-		moduleIdentity, err = bufmodule.ModuleIdentityForString(externalConfig.Name)
+		moduleIdentity, err = bufmoduleref.ModuleIdentityForString(externalConfig.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -178,9 +178,9 @@ func (p *provider) newConfigV1(externalConfig ExternalConfigV1) (*Config, error)
 	if err != nil {
 		return nil, err
 	}
-	var moduleIdentity bufmodule.ModuleIdentity
+	var moduleIdentity bufmoduleref.ModuleIdentity
 	if externalConfig.Name != "" {
-		moduleIdentity, err = bufmodule.ModuleIdentityForString(externalConfig.Name)
+		moduleIdentity, err = bufmoduleref.ModuleIdentityForString(externalConfig.Name)
 		if err != nil {
 			return nil, err
 		}

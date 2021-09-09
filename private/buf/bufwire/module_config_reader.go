@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -431,13 +432,13 @@ func workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig *bufwork.Confi
 	return false
 }
 
-func detectMissingDependencies(references []bufmodule.ModuleReference, pins []bufmodule.ModulePin) []bufmodule.ModuleReference {
+func detectMissingDependencies(references []bufmoduleref.ModuleReference, pins []bufmoduleref.ModulePin) []bufmoduleref.ModuleReference {
 	pinSet := make(map[string]struct{})
 	for _, pin := range pins {
 		pinSet[pin.IdentityString()] = struct{}{}
 	}
 
-	var missingReferences []bufmodule.ModuleReference
+	var missingReferences []bufmoduleref.ModuleReference
 	for _, reference := range references {
 		if _, ok := pinSet[reference.IdentityString()]; !ok {
 			missingReferences = append(missingReferences, reference)
