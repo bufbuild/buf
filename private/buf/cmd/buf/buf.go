@@ -51,9 +51,9 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/protoc"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -135,7 +135,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					appcmd.NewDeletedCommand("init", modInitDeprecationMessage),
 					modprune.NewCommand("prune", builder),
-					push.NewCommand("push", builder, "", false), // TODO(alex): Move this command into the modpush package.
+					modpush.NewCommand("push", builder, "", false),
 					modupdate.NewCommand("update", builder, "", false),
 					modclearcache.NewCommand("clear-cache", builder, "", false, "cc"),
 				},
