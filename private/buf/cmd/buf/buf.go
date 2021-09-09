@@ -69,8 +69,8 @@ const (
 	imageDeprecationMessage                   = `"buf image" sub-commands are now all implemented under the top-level "buf build" command.`
 	imageBuildDeprecationMessage              = `"buf image build" has been moved to "buf build".`
 	experimentalDeprecationMessage            = `"buf experimental" sub-commands have moved to "buf beta".`
-	betaConfigDeprecationMessage              = `"buf beta config ..." has been moved to "buf mod ...".`
-	betaConfigInitDeprecationMessage          = `"buf beta config init" has been moved to "buf mod init".`
+	betaConfigDeprecationMessage              = `"buf beta config ..." has been moved to "buf config ...".`
+	betaConfigInitDeprecationMessage          = `"buf beta config init" has been moved to "buf config init".`
 	betaModDeprecationMessage                 = `"buf beta mod ..." has been moved to "buf mod ...".`
 	betaModInitDeprecationMessage             = `"buf beta mod init" has been moved to "buf config init".`
 	betaModExportDeprecationMessage           = `"buf beta mod export" has been moved to "buf export".`
