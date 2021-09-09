@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/jhump/protoreflect/desc/protoparse"
 )
@@ -37,7 +38,7 @@ type ParserAccessorHandler interface {
 	// IsImport returns true if the path is an import.
 	IsImport(path string) bool
 	// Returns nil if not available.
-	ModuleIdentity(path string) bufmodule.ModuleIdentity
+	ModuleIdentity(path string) bufmoduleref.ModuleIdentity
 	// Returns empty if not available.
 	Commit(path string) string
 }
@@ -79,7 +80,7 @@ func GetFileAnnotation(
 	parserAccessorHandler ParserAccessorHandler,
 	errorWithPos protoparse.ErrorWithPos,
 ) (bufanalysis.FileAnnotation, error) {
-	var fileInfo bufmodule.FileInfo
+	var fileInfo bufmoduleref.FileInfo
 	var startLine int
 	var startColumn int
 	var endLine int
@@ -102,7 +103,7 @@ func GetFileAnnotation(
 		if err != nil {
 			return nil, err
 		}
-		fileInfo, err = bufmodule.NewFileInfo(
+		fileInfo, err = bufmoduleref.NewFileInfo(
 			path,
 			parserAccessorHandler.ExternalPath(path),
 			parserAccessorHandler.IsImport(path),

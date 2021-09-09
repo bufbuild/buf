@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -429,7 +429,7 @@ func testNewConfigV1Equal(
 	assert.Equal(t, expectedConfig, config)
 }
 
-func testParseDependencyModuleReferences(t *testing.T, deps ...string) []bufmodule.ModuleReference {
+func testParseDependencyModuleReferences(t *testing.T, deps ...string) []bufmoduleref.ModuleReference {
 	moduleReferences, err := parseDependencyModuleReferences(deps...)
 	require.NoError(t, err)
 	return moduleReferences

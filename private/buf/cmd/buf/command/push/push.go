@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/rpc"
@@ -81,7 +82,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	//	&f.Branch,
 	//	branchFlagName,
 	//	branchFlagShortName,
-	//	bufmodule.MainBranch,
+	//	bufmoduleref.MainBranch,
 	//	`The branch to push to.`,
 	//)
 	flagSet.StringSliceVarP(
@@ -146,7 +147,7 @@ func run(
 		moduleIdentity.Owner(),
 		moduleIdentity.Repository(),
 		//flags.Branch,
-		bufmodule.MainBranch,
+		bufmoduleref.MainBranch,
 		protoModule,
 		flags.Tags,
 	)

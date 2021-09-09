@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/pkg/rpc"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -35,7 +36,7 @@ func newModuleReader(
 	}
 }
 
-func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmodule.ModulePin) (bufmodule.Module, error) {
+func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmoduleref.ModulePin) (bufmodule.Module, error) {
 	downloadService, err := m.downloadServiceProvider.NewDownloadService(ctx, modulePin.Remote())
 	if err != nil {
 		return nil, err
@@ -53,7 +54,7 @@ func (m *moduleReader) GetModule(ctx context.Context, modulePin bufmodule.Module
 		}
 		return nil, err
 	}
-	moduleIdentity, err := bufmodule.NewModuleIdentity(
+	moduleIdentity, err := bufmoduleref.NewModuleIdentity(
 		modulePin.Remote(),
 		modulePin.Owner(),
 		modulePin.Repository(),

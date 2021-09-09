@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -26,8 +27,8 @@ import (
 
 type module struct {
 	sourceReadBucket     storage.ReadBucket
-	dependencyModulePins []ModulePin
-	moduleIdentity       ModuleIdentity
+	dependencyModulePins []bufmoduleref.ModulePin
+	moduleIdentity       bufmoduleref.ModuleIdentity
 	commit               string
 	documentation        string
 }
@@ -54,7 +55,7 @@ func newModuleForProto(
 	if err != nil {
 		return nil, err
 	}
-	dependencyModulePins, err := NewModulePinsForProtos(protoModule.Dependencies...)
+	dependencyModulePins, err := bufmoduleref.NewModulePinsForProtos(protoModule.Dependencies...)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +73,7 @@ func newModuleForBucket(
 	sourceReadBucket storage.ReadBucket,
 	options ...ModuleOption,
 ) (*module, error) {
-	dependencyModulePins, err := DependencyModulePinsForBucket(ctx, sourceReadBucket)
+	dependencyModulePins, err := bufmoduleref.DependencyModulePinsForBucket(ctx, sourceReadBucket)
 	if err != nil {
 		return nil, err
 	}
@@ -94,15 +95,15 @@ func newModule(
 	ctx context.Context,
 	// must only contain .proto files
 	sourceReadBucket storage.ReadBucket,
-	dependencyModulePins []ModulePin,
+	dependencyModulePins []bufmoduleref.ModulePin,
 	documentation string,
 	options ...ModuleOption,
 ) (_ *module, retErr error) {
-	if err := ValidateModulePinsUniqueByIdentity(dependencyModulePins); err != nil {
+	if err := bufmoduleref.ValidateModulePinsUniqueByIdentity(dependencyModulePins); err != nil {
 		return nil, err
 	}
 	// we rely on this being sorted here
-	SortModulePins(dependencyModulePins)
+	bufmoduleref.SortModulePins(dependencyModulePins)
 	module := &module{
 		sourceReadBucket:     sourceReadBucket,
 		dependencyModulePins: dependencyModulePins,
@@ -114,18 +115,18 @@ func newModule(
 	return module, nil
 }
 
-func (m *module) TargetFileInfos(ctx context.Context) ([]FileInfo, error) {
+func (m *module) TargetFileInfos(ctx context.Context) ([]bufmoduleref.FileInfo, error) {
 	return m.SourceFileInfos(ctx)
 }
 
-func (m *module) SourceFileInfos(ctx context.Context) ([]FileInfo, error) {
-	var fileInfos []FileInfo
+func (m *module) SourceFileInfos(ctx context.Context) ([]bufmoduleref.FileInfo, error) {
+	var fileInfos []bufmoduleref.FileInfo
 	if walkErr := m.sourceReadBucket.Walk(ctx, "", func(objectInfo storage.ObjectInfo) error {
 		// super overkill but ok
-		if err := ValidateModuleFilePath(objectInfo.Path()); err != nil {
+		if err := bufmoduleref.ValidateModuleFilePath(objectInfo.Path()); err != nil {
 			return err
 		}
-		fileInfo, err := NewFileInfo(
+		fileInfo, err := bufmoduleref.NewFileInfo(
 			objectInfo.Path(),
 			objectInfo.ExternalPath(),
 			false,
@@ -140,20 +141,20 @@ func (m *module) SourceFileInfos(ctx context.Context) ([]FileInfo, error) {
 	}); walkErr != nil {
 		return nil, fmt.Errorf("failed to enumerate module files: %w", walkErr)
 	}
-	sortFileInfos(fileInfos)
+	bufmoduleref.SortFileInfos(fileInfos)
 	return fileInfos, nil
 }
 
 func (m *module) GetModuleFile(ctx context.Context, path string) (ModuleFile, error) {
 	// super overkill but ok
-	if err := ValidateModuleFilePath(path); err != nil {
+	if err := bufmoduleref.ValidateModuleFilePath(path); err != nil {
 		return nil, err
 	}
 	readObjectCloser, err := m.sourceReadBucket.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
-	fileInfo, err := NewFileInfo(
+	fileInfo, err := bufmoduleref.NewFileInfo(
 		readObjectCloser.Path(),
 		readObjectCloser.ExternalPath(),
 		false,
@@ -166,7 +167,7 @@ func (m *module) GetModuleFile(ctx context.Context, path string) (ModuleFile, er
 	return newModuleFile(fileInfo, readObjectCloser), nil
 }
 
-func (m *module) DependencyModulePins() []ModulePin {
+func (m *module) DependencyModulePins() []bufmoduleref.ModulePin {
 	// already sorted in constructor
 	return m.dependencyModulePins
 }
@@ -179,7 +180,7 @@ func (m *module) getSourceReadBucket() storage.ReadBucket {
 	return m.sourceReadBucket
 }
 
-func (m *module) getModuleIdentity() ModuleIdentity {
+func (m *module) getModuleIdentity() bufmoduleref.ModuleIdentity {
 	return m.moduleIdentity
 }
 

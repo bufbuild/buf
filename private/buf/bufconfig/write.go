@@ -20,7 +20,7 @@ import (
 	"errors"
 	"text/template"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -344,8 +344,8 @@ func newTmplParam(externalConfigV1 ExternalConfigV1, uncomment bool) *tmplParam 
 }
 
 type writeConfigOptions struct {
-	moduleIdentity             bufmodule.ModuleIdentity
-	dependencyModuleReferences []bufmodule.ModuleReference
+	moduleIdentity             bufmoduleref.ModuleIdentity
+	dependencyModuleReferences []bufmoduleref.ModuleReference
 	documentationComments      bool
 	uncomment                  bool
 }

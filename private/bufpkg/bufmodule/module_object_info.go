@@ -14,19 +14,22 @@
 
 package bufmodule
 
-import "github.com/bufbuild/buf/private/pkg/storage"
+import (
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/pkg/storage"
+)
 
 // moduleObjectInfo is used in moduleReadBucket.
 type moduleObjectInfo struct {
 	storage.ObjectInfo
 
-	moduleIdentity ModuleIdentity
+	moduleIdentity bufmoduleref.ModuleIdentity
 	commit         string
 }
 
 func newModuleObjectInfo(
 	storageObjectInfo storage.ObjectInfo,
-	moduleIdentity ModuleIdentity,
+	moduleIdentity bufmoduleref.ModuleIdentity,
 	commit string,
 ) *moduleObjectInfo {
 	return &moduleObjectInfo{
@@ -36,7 +39,7 @@ func newModuleObjectInfo(
 	}
 }
 
-func (o *moduleObjectInfo) ModuleIdentity() ModuleIdentity {
+func (o *moduleObjectInfo) ModuleIdentity() bufmoduleref.ModuleIdentity {
 	return o.moduleIdentity
 }
 

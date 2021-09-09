@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"go.uber.org/zap"
@@ -113,8 +113,8 @@ func GoPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	defaultImportPathPrefix string,
-	except []bufmodule.ModuleIdentity,
-	moduleOverrides map[bufmodule.ModuleIdentity]string,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) (Modifier, error) {
 	return goPackage(

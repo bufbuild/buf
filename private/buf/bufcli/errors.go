@@ -19,7 +19,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/rpc"
@@ -139,7 +139,7 @@ func NewRepositoryNotFoundError(name string) error {
 
 // NewModuleReferenceNotFoundError informs the user that a module
 // reference does not exist.
-func NewModuleReferenceNotFoundError(reference bufmodule.ModuleReference) error {
+func NewModuleReferenceNotFoundError(reference bufmoduleref.ModuleReference) error {
 	return fmt.Errorf("%q does not exist", reference)
 }
 

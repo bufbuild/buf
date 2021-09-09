@@ -19,8 +19,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -308,7 +308,7 @@ func testBucketGetFileInfos(
 	t *testing.T,
 	relDir string,
 	config *bufmoduleconfig.Config,
-	expectedFileInfos ...bufmodule.FileInfo,
+	expectedFileInfos ...bufmoduleref.FileInfo,
 ) {
 	t.Parallel()
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
@@ -415,7 +415,7 @@ func testBucketGetFileInfosForExternalPathsError(
 func testDocumentationBucket(
 	t *testing.T,
 	relDir string,
-	expectedFileInfos ...bufmodule.FileInfo,
+	expectedFileInfos ...bufmoduleref.FileInfo,
 ) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
