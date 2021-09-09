@@ -12,26 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufmodule
+package bufmoduleref
 
-import (
-	"io"
-
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-)
-
-var _ ModuleFile = &moduleFile{}
-
-type moduleFile struct {
-	bufmoduleref.FileInfo
-	io.ReadCloser
+type moduleOwner struct {
+	remote string
+	owner  string
 }
 
-func newModuleFile(fileInfo bufmoduleref.FileInfo, readCloser io.ReadCloser) moduleFile {
-	return moduleFile{
-		FileInfo:   fileInfo,
-		ReadCloser: readCloser,
+func newModuleOwner(
+	remote string,
+	owner string,
+) (*moduleOwner, error) {
+	moduleOwner := &moduleOwner{
+		remote: remote,
+		owner:  owner,
 	}
+	if err := validateModuleOwner(moduleOwner); err != nil {
+		return nil, err
+	}
+	return moduleOwner, nil
 }
 
-func (moduleFile) isModuleFile() {}
+func (m *moduleOwner) Remote() string {
+	return m.remote
+}
+
+func (m *moduleOwner) Owner() string {
+	return m.owner
+}
+
+func (*moduleOwner) isModuleOwner() {}

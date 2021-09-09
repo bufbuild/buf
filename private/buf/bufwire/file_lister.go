@@ -22,8 +22,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
@@ -67,7 +67,7 @@ func (e *fileLister) ListFiles(
 	container app.EnvStdinContainer,
 	ref buffetch.Ref,
 	configOverride string,
-) (_ []bufmodule.FileInfo, retErr error) {
+) (_ []bufmoduleref.FileInfo, retErr error) {
 	switch t := ref.(type) {
 	case buffetch.ImageRef:
 		// if we have an image, list the files in the image
@@ -83,7 +83,7 @@ func (e *fileLister) ListFiles(
 			return nil, err
 		}
 		files := image.Files()
-		fileInfos := make([]bufmodule.FileInfo, len(files))
+		fileInfos := make([]bufmoduleref.FileInfo, len(files))
 		for i, file := range files {
 			fileInfos[i] = file
 		}
@@ -107,7 +107,7 @@ func (e *fileLister) ListFiles(
 		if err != nil {
 			return nil, err
 		}
-		var allSourceFileInfos []bufmodule.FileInfo
+		var allSourceFileInfos []bufmoduleref.FileInfo
 		for _, directory := range workspaceConfig.Directories {
 			sourceFileInfos, err := e.sourceFileInfosForDirectory(ctx, readBucketCloser, directory, configOverride)
 			if err != nil {
@@ -134,7 +134,7 @@ func (e *fileLister) sourceFileInfosForDirectory(
 	readBucket storage.ReadBucket,
 	directory string,
 	configOverride string,
-) ([]bufmodule.FileInfo, error) {
+) ([]bufmoduleref.FileInfo, error) {
 	mappedReadBucket := storage.MapReadBucket(readBucket, storage.MapOnPrefix(directory))
 	config, err := bufconfig.ReadConfig(
 		ctx,

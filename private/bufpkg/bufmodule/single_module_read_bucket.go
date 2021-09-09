@@ -17,19 +17,20 @@ package bufmodule
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type singleModuleReadBucket struct {
 	storage.ReadBucket
 
-	moduleIdentity ModuleIdentity
+	moduleIdentity bufmoduleref.ModuleIdentity
 	commit         string
 }
 
 func newSingleModuleReadBucket(
 	sourceReadBucket storage.ReadBucket,
-	moduleIdentity ModuleIdentity,
+	moduleIdentity bufmoduleref.ModuleIdentity,
 	commit string,
 ) *singleModuleReadBucket {
 	return &singleModuleReadBucket{

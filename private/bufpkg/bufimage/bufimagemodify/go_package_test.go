@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -434,7 +434,7 @@ func TestGoPackageWellKnownTypes(t *testing.T) {
 func TestGoPackageWithExcept(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
-	testModuleIdentity, err := bufmodule.NewModuleIdentity(
+	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -451,7 +451,7 @@ func TestGoPackageWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			testImportPathPrefix,
-			[]bufmodule.ModuleIdentity{testModuleIdentity},
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
 			nil,
 			nil,
 		)
@@ -477,7 +477,7 @@ func TestGoPackageWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			testImportPathPrefix,
-			[]bufmodule.ModuleIdentity{testModuleIdentity},
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
 			nil,
 			nil,
 		)
@@ -501,7 +501,7 @@ func TestGoPackageWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			testImportPathPrefix,
-			[]bufmodule.ModuleIdentity{testModuleIdentity},
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
 			nil,
 			map[string]string{"a.proto": "override"},
 		)
@@ -526,7 +526,7 @@ func TestGoPackageWithExcept(t *testing.T) {
 			zap.NewNop(),
 			sweeper,
 			testImportPathPrefix,
-			[]bufmodule.ModuleIdentity{testModuleIdentity},
+			[]bufmoduleref.ModuleIdentity{testModuleIdentity},
 			nil,
 			map[string]string{"a.proto": "override"},
 		)
@@ -544,7 +544,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 	t.Parallel()
 	dirPath := filepath.Join("testdata", "emptyoptions")
 	overrideGoPackagePrefix := "github.com/foo/bar/private/private/gen/proto/go"
-	testModuleIdentity, err := bufmodule.NewModuleIdentity(
+	testModuleIdentity, err := bufmoduleref.NewModuleIdentity(
 		testRemote,
 		testRepositoryOwner,
 		testRepositoryName,
@@ -562,7 +562,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 			sweeper,
 			testImportPathPrefix,
 			nil,
-			map[bufmodule.ModuleIdentity]string{
+			map[bufmoduleref.ModuleIdentity]string{
 				testModuleIdentity: overrideGoPackagePrefix,
 			},
 			nil,
@@ -598,7 +598,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 			sweeper,
 			testImportPathPrefix,
 			nil,
-			map[bufmodule.ModuleIdentity]string{
+			map[bufmoduleref.ModuleIdentity]string{
 				testModuleIdentity: overrideGoPackagePrefix,
 			},
 			nil,
@@ -632,7 +632,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 			sweeper,
 			testImportPathPrefix,
 			nil,
-			map[bufmodule.ModuleIdentity]string{
+			map[bufmoduleref.ModuleIdentity]string{
 				testModuleIdentity: overrideGoPackagePrefix,
 			},
 			map[string]string{"a.proto": "override"},
@@ -665,7 +665,7 @@ func TestGoPackageWithOverride(t *testing.T) {
 			sweeper,
 			testImportPathPrefix,
 			nil,
-			map[bufmodule.ModuleIdentity]string{
+			map[bufmoduleref.ModuleIdentity]string{
 				testModuleIdentity: overrideGoPackagePrefix,
 			},
 			map[string]string{"a.proto": "override"},

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -44,10 +45,10 @@ func newTargetingModule(
 	}, nil
 }
 
-func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []FileInfo, retErr error) {
+func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufmoduleref.FileInfo, retErr error) {
 	defer func() {
 		if retErr == nil {
-			sortFileInfos(fileInfos)
+			bufmoduleref.SortFileInfos(fileInfos)
 		}
 	}()
 	sourceReadBucket := m.getSourceReadBucket()
@@ -76,7 +77,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []File
 				// add to the nonImportImageFiles if does not already exist
 				if _, ok := fileInfoPaths[targetPath]; !ok {
 					fileInfoPaths[targetPath] = struct{}{}
-					fileInfo, err := NewFileInfo(
+					fileInfo, err := bufmoduleref.NewFileInfo(
 						objectInfo.Path(),
 						objectInfo.ExternalPath(),
 						false,
@@ -126,7 +127,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []File
 				// then, add the file if it is not added
 				if _, ok := fileInfoPaths[path]; !ok {
 					fileInfoPaths[path] = struct{}{}
-					fileInfo, err := NewFileInfo(
+					fileInfo, err := bufmoduleref.NewFileInfo(
 						objectInfo.Path(),
 						objectInfo.ExternalPath(),
 						false,

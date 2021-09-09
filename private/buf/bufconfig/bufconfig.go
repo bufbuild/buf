@@ -20,8 +20,8 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/zap"
 )
@@ -66,7 +66,7 @@ var (
 // Config is the user config.
 type Config struct {
 	Version        string
-	ModuleIdentity bufmodule.ModuleIdentity
+	ModuleIdentity bufmoduleref.ModuleIdentity
 	Build          *bufmoduleconfig.Config
 	Breaking       *bufbreakingconfig.Config
 	Lint           *buflintconfig.Config
@@ -109,7 +109,7 @@ type WriteConfigOption func(*writeConfigOptions)
 // module to the given ModuleIdentity.
 //
 // The default is to not set the name.
-func WriteConfigWithModuleIdentity(moduleIdentity bufmodule.ModuleIdentity) WriteConfigOption {
+func WriteConfigWithModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) WriteConfigOption {
 	return func(writeConfigOptions *writeConfigOptions) {
 		writeConfigOptions.moduleIdentity = moduleIdentity
 	}
@@ -121,7 +121,7 @@ func WriteConfigWithModuleIdentity(moduleIdentity bufmodule.ModuleIdentity) Writ
 // The default is to not have any dependencies.
 //
 // If this option is used, WriteConfigWithModuleIdentity must also be used.
-func WriteConfigWithDependencyModuleReferences(dependencyModuleReferences ...bufmodule.ModuleReference) WriteConfigOption {
+func WriteConfigWithDependencyModuleReferences(dependencyModuleReferences ...bufmoduleref.ModuleReference) WriteConfigOption {
 	return func(writeConfigOptions *writeConfigOptions) {
 		writeConfigOptions.dependencyModuleReferences = dependencyModuleReferences
 	}

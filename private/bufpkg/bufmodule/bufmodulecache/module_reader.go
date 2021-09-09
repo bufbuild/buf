@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
@@ -61,7 +62,7 @@ func newModuleReader(
 
 func (m *moduleReader) GetModule(
 	ctx context.Context,
-	modulePin bufmodule.ModulePin,
+	modulePin bufmoduleref.ModulePin,
 ) (_ bufmodule.Module, retErr error) {
 	cacheKey := newCacheKey(modulePin)
 

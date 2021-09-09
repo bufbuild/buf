@@ -36,6 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
@@ -670,7 +671,7 @@ func ReadModuleWithWorkspacesDisabled(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
 	source string,
-) (bufmodule.Module, bufmodule.ModuleIdentity, error) {
+) (bufmodule.Module, bufmoduleref.ModuleIdentity, error) {
 	sourceRef, err := buffetch.NewSourceRefParser(
 		container.Logger(),
 	).GetSourceRef(

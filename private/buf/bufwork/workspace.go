@@ -23,12 +23,13 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
 type workspace struct {
-	// bufmodule.ModuleIdentity -> bufmodule.Module
+	// bufmoduleref.ModuleIdentity -> bufmodule.Module
 	namedModules map[string]bufmodule.Module
 	allModules   []bufmodule.Module
 }
@@ -125,7 +126,7 @@ func newWorkspace(
 	}, nil
 }
 
-func (w *workspace) GetModule(moduleIdentity bufmodule.ModuleIdentity) (bufmodule.Module, bool) {
+func (w *workspace) GetModule(moduleIdentity bufmoduleref.ModuleIdentity) (bufmodule.Module, bool) {
 	module, ok := w.namedModules[moduleIdentity.IdentityString()]
 	return module, ok
 }

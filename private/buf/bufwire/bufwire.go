@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -130,7 +131,7 @@ type FileLister interface {
 		container app.EnvStdinContainer,
 		ref buffetch.Ref,
 		configOverride string,
-	) ([]bufmodule.FileInfo, error)
+	) ([]bufmoduleref.FileInfo, error)
 }
 
 // NewFileLister returns a new FileLister.
