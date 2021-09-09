@@ -45,7 +45,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
+		Use:   name + " <directory>",
 		Short: "Update the modules dependencies. Updates the " + buflock.ExternalConfigFilePath + " file.",
 		Long: "Gets the latest digests for the specified references in the config file, " +
 			"and writes them and their transitive dependencies to the " +
