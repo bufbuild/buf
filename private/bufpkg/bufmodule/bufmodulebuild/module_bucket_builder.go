@@ -20,6 +20,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -62,7 +63,7 @@ func (b *moduleBucketBuilder) buildForBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	config *bufmoduleconfig.Config,
-	moduleIdentity bufmodule.ModuleIdentity,
+	moduleIdentity bufmoduleref.ModuleIdentity,
 	bucketRelPaths *[]string,
 	bucketRelPathsAllowNotExist bool,
 ) (bufmodule.Module, error) {

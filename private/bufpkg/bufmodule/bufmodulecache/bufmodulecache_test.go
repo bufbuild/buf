@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -35,7 +36,7 @@ import (
 func TestReaderBasic(t *testing.T) {
 	ctx := context.Background()
 
-	modulePin, err := bufmodule.NewModulePin(
+	modulePin, err := bufmoduleref.NewModulePin(
 		"buf.build",
 		"foob",
 		"bar",
@@ -168,7 +169,7 @@ func TestReaderBasic(t *testing.T) {
 func TestCacherBasic(t *testing.T) {
 	ctx := context.Background()
 
-	modulePin, err := bufmodule.NewModulePin(
+	modulePin, err := bufmoduleref.NewModulePin(
 		"buf.build",
 		"foob",
 		"bar",
@@ -210,7 +211,7 @@ func TestCacherBasic(t *testing.T) {
 func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 	ctx := context.Background()
 
-	modulePin, err := bufmodule.NewModulePin(
+	modulePin, err := bufmoduleref.NewModulePin(
 		"buf.build",
 		"foob",
 		"bar",

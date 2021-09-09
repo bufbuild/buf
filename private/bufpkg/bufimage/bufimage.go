@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
@@ -28,7 +28,7 @@ import (
 
 // ImageFile is a Protobuf file within an image.
 type ImageFile interface {
-	bufmodule.FileInfo
+	bufmoduleref.FileInfo
 	// Proto is the backing *descriptorpb.FileDescriptorProto for this File.
 	//
 	// FileDescriptor should be preferred to Proto. We keep this method around
@@ -62,7 +62,7 @@ type ImageFile interface {
 // TODO: moduleIdentity and commit should be options since they are optional.
 func NewImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleIdentity bufmodule.ModuleIdentity,
+	moduleIdentity bufmoduleref.ModuleIdentity,
 	commit string,
 	externalPath string,
 	isImport bool,
@@ -177,7 +177,7 @@ func NewImageForProto(protoImage *imagev1.Image) (Image, error) {
 		var isImport bool
 		var isSyntaxUnspecified bool
 		var unusedDependencyIndexes []int32
-		var moduleIdentity bufmodule.ModuleIdentity
+		var moduleIdentity bufmoduleref.ModuleIdentity
 		var commit string
 		var err error
 		if protoImageFileExtension := protoImageFile.GetBufExtension(); protoImageFileExtension != nil {
@@ -186,7 +186,7 @@ func NewImageForProto(protoImage *imagev1.Image) (Image, error) {
 			unusedDependencyIndexes = protoImageFileExtension.GetUnusedDependency()
 			if protoModuleInfo := protoImageFileExtension.GetModuleInfo(); protoModuleInfo != nil {
 				if protoModuleName := protoModuleInfo.GetName(); protoModuleName != nil {
-					moduleIdentity, err = bufmodule.NewModuleIdentity(
+					moduleIdentity, err = bufmoduleref.NewModuleIdentity(
 						protoModuleName.GetRemote(),
 						protoModuleName.GetOwner(),
 						protoModuleName.GetRepository(),

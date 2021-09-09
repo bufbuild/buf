@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/internal"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -141,20 +141,20 @@ func newConfigV1(externalConfig ExternalConfigV1, deps ...string) (*Config, erro
 	}, nil
 }
 
-func parseDependencyModuleReferences(deps ...string) ([]bufmodule.ModuleReference, error) {
+func parseDependencyModuleReferences(deps ...string) ([]bufmoduleref.ModuleReference, error) {
 	if len(deps) == 0 {
 		return nil, nil
 	}
-	moduleReferences := make([]bufmodule.ModuleReference, 0, len(deps))
+	moduleReferences := make([]bufmoduleref.ModuleReference, 0, len(deps))
 	for _, dep := range deps {
 		dep := strings.TrimSpace(dep)
-		moduleReference, err := bufmodule.ModuleReferenceForString(dep)
+		moduleReference, err := bufmoduleref.ModuleReferenceForString(dep)
 		if err != nil {
 			return nil, err
 		}
 		moduleReferences = append(moduleReferences, moduleReference)
 	}
-	if err := bufmodule.ValidateModuleReferencesUniqueByIdentity(moduleReferences); err != nil {
+	if err := bufmoduleref.ValidateModuleReferencesUniqueByIdentity(moduleReferences); err != nil {
 		return nil, err
 	}
 	return moduleReferences, nil

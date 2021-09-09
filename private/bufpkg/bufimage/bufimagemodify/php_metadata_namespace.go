@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -31,16 +32,27 @@ var (
 	phpMetadataNamespacePath = []int32{8, 41}
 )
 
-func phpMetadataNamespace(sweeper Sweeper, overrides map[string]string) Modifier {
+func phpMetadataNamespace(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	overrides map[string]string,
+) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				phpMetadataNamespaceValue := phpMetadataNamespaceValue(imageFile)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					phpMetadataNamespaceValue = overrideValue
+					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
 				if err := phpMetadataNamespaceForFile(ctx, sweeper, imageFile, phpMetadataNamespaceValue); err != nil {
 					return err
+				}
+			}
+			for overrideFile := range overrides {
+				if _, ok := seenOverrideFiles[overrideFile]; !ok {
+					logger.Sugar().Warnf("%s override for %q was unused", PhpMetadataNamespaceID, overrideFile)
 				}
 			}
 			return nil

@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
 	"go.uber.org/zap"
@@ -93,12 +93,17 @@ func Merge(left Modifier, right Modifier) Modifier {
 // CcEnableArenas returns a Modifier that sets the cc_enable_arenas
 // file option to the given value in all of the files contained in
 // the Image.
-func CcEnableArenas(sweeper Sweeper, value bool, overrides map[string]string) (Modifier, error) {
+func CcEnableArenas(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	value bool,
+	overrides map[string]string,
+) (Modifier, error) {
 	validatedOverrides, err := stringOverridesToBoolOverrides(overrides)
 	if err != nil {
 		return nil, fmt.Errorf("invalid override for %s: %w", CcEnableArenasID, err)
 	}
-	return ccEnableArenas(sweeper, value, validatedOverrides), nil
+	return ccEnableArenas(logger, sweeper, value, validatedOverrides), nil
 }
 
 // GoPackage returns a Modifier that sets the go_package file option
@@ -108,8 +113,8 @@ func GoPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
 	defaultImportPathPrefix string,
-	except []bufmodule.ModuleIdentity,
-	moduleOverrides map[bufmodule.ModuleIdentity]string,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) (Modifier, error) {
 	return goPackage(
@@ -125,40 +130,60 @@ func GoPackage(
 // JavaMultipleFiles returns a Modifier that sets the java_multiple_files
 // file option to the given value in all of the files contained in
 // the Image.
-func JavaMultipleFiles(sweeper Sweeper, value bool, overrides map[string]string) (Modifier, error) {
+func JavaMultipleFiles(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	value bool,
+	overrides map[string]string,
+) (Modifier, error) {
 	validatedOverrides, err := stringOverridesToBoolOverrides(overrides)
 	if err != nil {
 		return nil, fmt.Errorf("invalid override for %s: %w", JavaMultipleFilesID, err)
 	}
-	return javaMultipleFiles(sweeper, value, validatedOverrides), nil
+	return javaMultipleFiles(logger, sweeper, value, validatedOverrides), nil
 }
 
 // JavaOuterClassname returns a Modifier that sets the java_outer_classname file option
 // in all of the files contained in the Image based on the PascalCase of their filename.
-func JavaOuterClassname(sweeper Sweeper, overrides map[string]string) Modifier {
-	return javaOuterClassname(sweeper, overrides)
+func JavaOuterClassname(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	overrides map[string]string,
+) Modifier {
+	return javaOuterClassname(logger, sweeper, overrides)
 }
 
 // JavaPackage returns a Modifier that sets the java_package file option
 // according to the given packagePrefix.
-func JavaPackage(sweeper Sweeper, packagePrefix string, overrides map[string]string) (Modifier, error) {
-	return javaPackage(sweeper, packagePrefix, overrides)
+func JavaPackage(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	packagePrefix string,
+	overrides map[string]string,
+) (Modifier, error) {
+	return javaPackage(logger, sweeper, packagePrefix, overrides)
 }
 
 // JavaStringCheckUtf8 returns a Modifier that sets the java_string_check_utf8 file option according
 // to the given value.
-func JavaStringCheckUtf8(sweeper Sweeper, value bool, overrides map[string]string) (Modifier, error) {
+func JavaStringCheckUtf8(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	value bool,
+	overrides map[string]string,
+) (Modifier, error) {
 	validatedOverrides, err := stringOverridesToBoolOverrides(overrides)
 	if err != nil {
 		return nil, fmt.Errorf("invalid override for %s: %w", JavaStringCheckUtf8ID, err)
 	}
-	return javaStringCheckUtf8(sweeper, value, validatedOverrides), nil
+	return javaStringCheckUtf8(logger, sweeper, value, validatedOverrides), nil
 }
 
 // OptimizeFor returns a Modifier that sets the optimize_for file
 // option to the given value in all of the files contained in
 // the Image.
 func OptimizeFor(
+	logger *zap.Logger,
 	sweeper Sweeper,
 	value descriptorpb.FileOptions_OptimizeMode,
 	overrides map[string]string,
@@ -167,7 +192,7 @@ func OptimizeFor(
 	if err != nil {
 		return nil, fmt.Errorf("invalid override for %s: %w", OptimizeForID, err)
 	}
-	return optimizeFor(sweeper, value, validatedOverrides), nil
+	return optimizeFor(logger, sweeper, value, validatedOverrides), nil
 }
 
 // GoPackageImportPathForFile returns the go_package import path for the given
@@ -196,34 +221,54 @@ func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix s
 //  * If the resulting abbreviation is 1 character, add "XX".
 //  * If the resulting abbreviation is "GPB", change it to "GPX".
 //    "GPB" is reserved by Google for the Protocol Buffers implementation.
-func ObjcClassPrefix(sweeper Sweeper, overrides map[string]string) Modifier {
-	return objcClassPrefix(sweeper, overrides)
+func ObjcClassPrefix(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	overrides map[string]string,
+) Modifier {
+	return objcClassPrefix(logger, sweeper, overrides)
 }
 
 // CsharpNamespace returns a Modifier that sets the csharp_namespace file option
 // according to the package name. It is set to the package name with each package sub-name capitalized.
-func CsharpNamespace(sweeper Sweeper, overrides map[string]string) Modifier {
-	return csharpNamespace(sweeper, overrides)
+func CsharpNamespace(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	overrides map[string]string,
+) Modifier {
+	return csharpNamespace(logger, sweeper, overrides)
 }
 
 // PhpNamespace returns a Modifier that sets the php_namespace file option
 // according to the package name. It is set to the package name with each package sub-name capitalized
 // and each "." replaced with "\\".
-func PhpNamespace(sweeper Sweeper, overrides map[string]string) Modifier {
-	return phpNamespace(sweeper, overrides)
+func PhpNamespace(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	overrides map[string]string,
+) Modifier {
+	return phpNamespace(logger, sweeper, overrides)
 }
 
 // PhpMetadataNamespace returns a Modifier that sets the php_metadata_namespace file option
 // according to the package name. It appends "\\GPBMetadata" to the heuristic used by PhpNamespace.
-func PhpMetadataNamespace(sweeper Sweeper, overrides map[string]string) Modifier {
-	return phpMetadataNamespace(sweeper, overrides)
+func PhpMetadataNamespace(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	overrides map[string]string,
+) Modifier {
+	return phpMetadataNamespace(logger, sweeper, overrides)
 }
 
 // RubyPackage returns a Modifier that sets the ruby_package file option
 // according to the given packagePrefix. It is set to the package name with each package sub-name capitalized
 // and each "." replaced with "::".
-func RubyPackage(sweeper Sweeper, overrides map[string]string) Modifier {
-	return rubyPackage(sweeper, overrides)
+func RubyPackage(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	overrides map[string]string,
+) Modifier {
+	return rubyPackage(logger, sweeper, overrides)
 }
 
 // isWellKnownType returns true if the given path is one of the well-known types.

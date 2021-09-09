@@ -23,7 +23,7 @@ import (
 	"strconv"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -175,9 +175,9 @@ type ManagedConfig struct {
 // GoPackagePrefixConfig is the go_package prefix configuration.
 type GoPackagePrefixConfig struct {
 	Default string
-	Except  []bufmodule.ModuleIdentity
-	// bufmodule.ModuleIdentity -> go_package prefix.
-	Override map[bufmodule.ModuleIdentity]string
+	Except  []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> go_package prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
 }
 
 // ReadConfig reads the configuration from the OS or an override, if any.
