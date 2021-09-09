@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
@@ -144,6 +145,19 @@ func run(
 	if err != nil {
 		return err
 	}
+	var buildModuleFileSetOptions []bufmodulebuild.BuildModuleFileSetOption
+	if len(flags.Paths) > 0 {
+		targetPathOption, err := bufwire.BuildModuleFileSetOptionForTargetPaths(
+			moduleConfigs,
+			sourceOrModuleRef,
+			flags.Paths,
+			false,
+		)
+		if err != nil {
+			return err
+		}
+		buildModuleFileSetOptions = append(buildModuleFileSetOptions, targetPathOption)
+	}
 	moduleFileSetBuilder := bufmodulebuild.NewModuleFileSetBuilder(
 		container.Logger(),
 		moduleReader,
@@ -153,7 +167,7 @@ func run(
 		moduleFileSet, err := moduleFileSetBuilder.Build(
 			ctx,
 			moduleConfig.Module(),
-			bufmodulebuild.WithWorkspace(moduleConfig.Workspace()),
+			append(buildModuleFileSetOptions, bufmodulebuild.WithWorkspace(moduleConfig.Workspace()))...,
 		)
 		if err != nil {
 			return err
