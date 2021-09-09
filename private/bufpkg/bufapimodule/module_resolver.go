@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/rpc"
@@ -38,7 +38,7 @@ func newModuleResolver(logger *zap.Logger, resolveServiceProvider registryv1alph
 	}
 }
 
-func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmodule.ModuleReference) (bufmodule.ModulePin, error) {
+func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmoduleref.ModuleReference) (bufmoduleref.ModulePin, error) {
 	resolveService, err := m.resolveServiceProvider.NewResolveService(ctx, moduleReference.Remote())
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 	protoModulePins, err := resolveService.GetModulePins(
 		ctx,
 		[]*modulev1alpha1.ModuleReference{
-			bufmodule.NewProtoModuleReferenceForModuleReference(moduleReference),
+			bufmoduleref.NewProtoModuleReferenceForModuleReference(moduleReference),
 		},
 		nil,
 	)
@@ -57,10 +57,10 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 		}
 		return nil, err
 	}
-	var targetModulePin bufmodule.ModulePin
+	var targetModulePin bufmoduleref.ModulePin
 	moduleIdentity := getModuleIdentity(moduleReference)
 	for _, protoModulePin := range protoModulePins {
-		modulePin, err := bufmodule.NewModulePinForProto(protoModulePin)
+		modulePin, err := bufmoduleref.NewModulePinForProto(protoModulePin)
 		if err != nil {
 			return nil, err
 		}
@@ -77,6 +77,6 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 	return targetModulePin, nil
 }
 
-func getModuleIdentity(moduleIdentity bufmodule.ModuleIdentity) string {
+func getModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) string {
 	return moduleIdentity.Remote() + "/" + moduleIdentity.Owner() + "/" + moduleIdentity.Repository()
 }

@@ -15,7 +15,7 @@
 package bufimage
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -23,7 +23,7 @@ import (
 var _ ImageFile = &imageFile{}
 
 type imageFile struct {
-	bufmodule.FileInfo
+	bufmoduleref.FileInfo
 
 	fileDescriptorProto *descriptorpb.FileDescriptorProto
 
@@ -33,7 +33,7 @@ type imageFile struct {
 
 func newImageFile(
 	fileDescriptor protodescriptor.FileDescriptor,
-	moduleIdentity bufmodule.ModuleIdentity,
+	moduleIdentity bufmoduleref.ModuleIdentity,
 	commit string,
 	externalPath string,
 	isImport bool,
@@ -43,7 +43,7 @@ func newImageFile(
 	if err := protodescriptor.ValidateFileDescriptor(fileDescriptor); err != nil {
 		return nil, err
 	}
-	fileInfo, err := bufmodule.NewFileInfo(
+	fileInfo, err := bufmoduleref.NewFileInfo(
 		fileDescriptor.GetName(),
 		externalPath,
 		isImport,
