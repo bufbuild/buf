@@ -36,8 +36,9 @@ func NewCommand(
 	builder appflag.Builder,
 ) *appcmd.Command {
 	return &appcmd.Command{
-		Use:   name,
+		Use:   name + " <input>",
 		Short: "Prunes unused dependencies from the " + buflock.ExternalConfigFilePath + " file.",
+		Long:  `The first argument is the directory of the local module to prune. If no argument is specified, defaults to "."`,
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

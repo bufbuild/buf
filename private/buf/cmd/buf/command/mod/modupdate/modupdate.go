@@ -50,7 +50,7 @@ func NewCommand(
 		Long: "Gets the latest digests for the specified references in the config file, " +
 			"and writes them and their transitive dependencies to the " +
 			buflock.ExternalConfigFilePath +
-			" file.",
+			` file. The first argument is the directory of the local module to update. If no argument is specified, defaults to "."`,
 		Args:       cobra.MaximumNArgs(1),
 		Deprecated: deprecated,
 		Hidden:     hidden,
