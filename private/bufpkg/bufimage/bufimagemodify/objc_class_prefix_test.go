@@ -21,6 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func TestObjcClassPrefixEmptyOptions(t *testing.T) {
@@ -32,7 +33,7 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		objcClassPrefixModifier := ObjcClassPrefix(sweeper, nil)
+		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -49,7 +50,7 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := ObjcClassPrefix(sweeper, nil)
+		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -64,7 +65,7 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		objcClassPrefixModifier := ObjcClassPrefix(sweeper, map[string]string{"a.proto": "override"})
+		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
 
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -83,7 +84,7 @@ func TestObjcClassPrefixEmptyOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := ObjcClassPrefix(sweeper, map[string]string{"a.proto": "override"})
+		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -104,7 +105,7 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
-		objcClassPrefixModifier := ObjcClassPrefix(sweeper, nil)
+		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -126,7 +127,7 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := ObjcClassPrefix(sweeper, nil)
+		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -146,7 +147,7 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
-		objcClassPrefixModifier := ObjcClassPrefix(sweeper, map[string]string{"a.proto": "override"})
+		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
 
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -172,7 +173,7 @@ func TestObjcClassPrefixAllOptions(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := ObjcClassPrefix(sweeper, map[string]string{"a.proto": "override"})
+		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, map[string]string{"a.proto": "override"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -207,7 +208,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
-		objcClassPrefixModifier := ObjcClassPrefix(sweeper, nil)
+		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -230,7 +231,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := ObjcClassPrefix(sweeper, nil)
+		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -251,7 +252,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoNotEmpty(t, image, objcClassPrefixPath)
 
 		sweeper := NewFileOptionSweeper()
-		objcClassPrefixModifier := ObjcClassPrefix(sweeper, map[string]string{"override.proto": "override"})
+		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"})
 
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -278,7 +279,7 @@ func testObjcClassPrefixOptions(t *testing.T, dirPath string, classPrefix string
 		assertFileOptionSourceCodeInfoEmpty(t, image, objcClassPrefixPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := ObjcClassPrefix(sweeper, map[string]string{"override.proto": "override"})
+		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, map[string]string{"override.proto": "override"})
 		err := modifier.Modify(
 			context.Background(),
 			image,
@@ -307,7 +308,7 @@ func TestObjcClassPrefixWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, true)
 
 		sweeper := NewFileOptionSweeper()
-		objcClassPrefixModifier := ObjcClassPrefix(sweeper, nil)
+		objcClassPrefixModifier := ObjcClassPrefix(zap.NewNop(), sweeper, nil)
 
 		modifier := NewMultiModifier(objcClassPrefixModifier, ModifierFunc(sweeper.Sweep))
 		err := modifier.Modify(
@@ -335,7 +336,7 @@ func TestObjcClassPrefixWellKnownTypes(t *testing.T) {
 		image := testGetImage(t, dirPath, false)
 
 		sweeper := NewFileOptionSweeper()
-		modifier := ObjcClassPrefix(sweeper, nil)
+		modifier := ObjcClassPrefix(zap.NewNop(), sweeper, nil)
 		err := modifier.Modify(
 			context.Background(),
 			image,

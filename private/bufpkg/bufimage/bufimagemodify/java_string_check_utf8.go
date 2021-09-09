@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -29,16 +30,28 @@ const JavaStringCheckUtf8ID = "JAVA_STRING_CHECK_UTF8"
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L375
 var javaStringCheckUtf8Path = []int32{8, 27}
 
-func javaStringCheckUtf8(sweeper Sweeper, value bool, overrides map[string]bool) Modifier {
+func javaStringCheckUtf8(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	value bool,
+	overrides map[string]bool,
+) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				modifierValue := value
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					modifierValue = overrideValue
+					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
 				if err := javaStringCheckUtf8ForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
 					return err
+				}
+			}
+			for overrideFile := range overrides {
+				if _, ok := seenOverrideFiles[overrideFile]; !ok {
+					logger.Sugar().Warnf("%s override for %q was unused", JavaStringCheckUtf8ID, overrideFile)
 				}
 			}
 			return nil

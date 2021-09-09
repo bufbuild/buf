@@ -421,18 +421,19 @@ func newModifier(
 	sweeper bufimagemodify.Sweeper,
 ) (bufimagemodify.Modifier, error) {
 	modifier := bufimagemodify.NewMultiModifier(
-		bufimagemodify.JavaOuterClassname(sweeper, managedConfig.Override[bufimagemodify.JavaOuterClassNameID]),
-		bufimagemodify.ObjcClassPrefix(sweeper, managedConfig.Override[bufimagemodify.ObjcClassPrefixID]),
-		bufimagemodify.CsharpNamespace(sweeper, managedConfig.Override[bufimagemodify.CsharpNamespaceID]),
-		bufimagemodify.PhpNamespace(sweeper, managedConfig.Override[bufimagemodify.PhpNamespaceID]),
-		bufimagemodify.PhpMetadataNamespace(sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
-		bufimagemodify.RubyPackage(sweeper, managedConfig.Override[bufimagemodify.RubyPackageID]),
+		bufimagemodify.JavaOuterClassname(logger, sweeper, managedConfig.Override[bufimagemodify.JavaOuterClassNameID]),
+		bufimagemodify.ObjcClassPrefix(logger, sweeper, managedConfig.Override[bufimagemodify.ObjcClassPrefixID]),
+		bufimagemodify.CsharpNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.CsharpNamespaceID]),
+		bufimagemodify.PhpNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpNamespaceID]),
+		bufimagemodify.PhpMetadataNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
+		bufimagemodify.RubyPackage(logger, sweeper, managedConfig.Override[bufimagemodify.RubyPackageID]),
 	)
 	javaPackagePrefix := bufimagemodify.DefaultJavaPackagePrefix
 	if managedConfig.JavaPackagePrefix != "" {
 		javaPackagePrefix = managedConfig.JavaPackagePrefix
 	}
 	javaPackageModifier, err := bufimagemodify.JavaPackage(
+		logger,
 		sweeper,
 		javaPackagePrefix,
 		managedConfig.Override[bufimagemodify.JavaPackageID],
@@ -446,6 +447,7 @@ func newModifier(
 		javaMultipleFilesValue = *managedConfig.JavaMultipleFiles
 	}
 	javaMultipleFilesModifier, err := bufimagemodify.JavaMultipleFiles(
+		logger,
 		sweeper,
 		javaMultipleFilesValue,
 		managedConfig.Override[bufimagemodify.JavaMultipleFilesID],
@@ -456,6 +458,7 @@ func newModifier(
 	modifier = bufimagemodify.Merge(modifier, javaMultipleFilesModifier)
 	if managedConfig.CcEnableArenas != nil {
 		ccEnableArenasModifier, err := bufimagemodify.CcEnableArenas(
+			logger,
 			sweeper,
 			*managedConfig.CcEnableArenas,
 			managedConfig.Override[bufimagemodify.CcEnableArenasID],
@@ -467,6 +470,7 @@ func newModifier(
 	}
 	if managedConfig.JavaStringCheckUtf8 != nil {
 		javaStringCheckUtf8, err := bufimagemodify.JavaStringCheckUtf8(
+			logger,
 			sweeper,
 			*managedConfig.JavaStringCheckUtf8,
 			managedConfig.Override[bufimagemodify.JavaStringCheckUtf8ID],
@@ -478,6 +482,7 @@ func newModifier(
 	}
 	if managedConfig.OptimizeFor != nil {
 		optimizeFor, err := bufimagemodify.OptimizeFor(
+			logger,
 			sweeper,
 			*managedConfig.OptimizeFor,
 			managedConfig.Override[bufimagemodify.OptimizeForID],
