@@ -162,16 +162,31 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	//
 	// Note that only two files will ever be possible for any given externalDirOrFilePath:
 	// the file provided as-is (1), or any combination of (2), (3), and (4).
-	var workspaceConfig *bufwork.Config
-	if len(moduleConfigs) > 0 {
-		// All of the ModuleConfigs returned by the ModuleConfigReader will have
-		// the same *bufwork.Config, so we can arbitrarily select the first one.
-		workspaceConfig = moduleConfigs[0].WorkspaceConfig()
+	if len(moduleConfigs) == 0 {
+		// This should never happen, but it's included for additional safety.
+		return nil, nil, errors.New("expected at least one module, but found none")
 	}
-	allRootsToExcludes := make([]map[string][]string, 0, len(moduleConfigs))
-	for _, moduleConfig := range moduleConfigs {
-		// TODO(alex): This isn't actually right as-is; see comment below.
-		allRootsToExcludes = append(allRootsToExcludes, moduleConfig.Config().Build.RootToExcludes)
+	// All of the ModuleConfigs returned by the ModuleConfigReader will have
+	// the same *bufwork.Config, so we can arbitrarily select the first one.
+	workspaceConfig := moduleConfigs[0].WorkspaceConfig()
+	rootToExcludesForWorkspaceDirectory := make(map[string]map[string][]string, len(moduleConfigs))
+	if len(moduleConfigs) > 1 {
+		if len(workspaceConfig.Directories) != len(moduleConfigs) {
+			// This should be unreachable.
+			return nil, nil, fmt.Errorf(
+				"received %d modules, but %d directories were listed in the workspace",
+				len(moduleConfigs),
+				len(workspaceConfig.Directories),
+			)
+		}
+		// We only need to collect the roots for each workspace directory if the
+		// user targeted a directory containing a buf.work.yaml.
+		for i, moduleConfig := range moduleConfigs {
+			// ModuleConfigs are constructed and returned in the same order they're
+			// listed as directories in the user's buf.work.yaml.
+			workspaceDirectory := workspaceConfig.Directories[i]
+			rootToExcludesForWorkspaceDirectory[workspaceDirectory] = moduleConfig.Config().Build.RootToExcludes
+		}
 	}
 	targetPaths := make([][]string, len(externalDirOrFilePaths))
 	for i, externalDirOrFilePath := range externalDirOrFilePaths {
@@ -188,6 +203,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 			// We need to determine if the given path is relative to the
 			// workspace directory and/or build.roots.
 			buildRootTargetPath := targetPath
+			var currentWorkspaceDirectory string
 			if workspaceConfig != nil {
 				for _, directory := range workspaceConfig.Directories {
 					if !normalpath.ContainsPath(directory, buildRootTargetPath, normalpath.Relative) {
@@ -202,50 +218,34 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 							directory,
 						)
 					}
+					currentWorkspaceDirectory = directory
+					break
 				}
 			}
-			// TODO(alex): This won't work as-is, but it's close to what we need. We actually need to know
-			// whether or not the sourceOrModuleRef represents the given root configuration in question.
-			//
-			// Counterexample:
-			//
-			//  $ buf build petapis --path petapis/foo/bar.proto
-			//
-			//  # buf.work.yaml
-			//  version: v1
-			//  directories:
-			//    - petapis
-			//    - paymentapis
-			//
-			// If the paymentapis module has a 'foo' root with a single 'foo/bar.proto' file,
-			// then we would reformat the path as 'bar.proto' so that the ModuleFileSet
-			// could match it.
-			//
-			// However, the user actually meant to match the foo/bar.proto file in the petapis
-			// module.
-			//
-			// We need to add more metadata to the ModuleConfig type so that we could
-			// determine the ModuleConfig reprsented by the given sourceOrModuleRef. That
-			// way, we only apply the roots for the correct ModuleConfig.
-			//
-			// We could add a 'WorkspaceDirectory() string' method and adopt the same
-			// logic used in bufwork.BuildOptionsForWorkspaceDirectory.
-			for _, rootToExcludes := range allRootsToExcludes {
-				for root := range rootToExcludes {
-					// We don't actually care about the excludes in this case; we
-					// just need the root (if it exists).
-					if !normalpath.ContainsPath(root, buildRootTargetPath, normalpath.Relative) {
-						continue
-					}
-					buildRootTargetPath, err = normalpath.Rel(root, buildRootTargetPath)
-					if err != nil {
-						// Unreachable according to the check above.
-						return nil, nil, fmt.Errorf(
-							`a relative path could not be resolved between "%s" and root "%s"`,
-							normalpath.Unnormalize(externalDirOrFilePaths[i]),
-							root,
-						)
-					}
+			var rootToExcludes map[string][]string
+			if len(moduleConfigs) == 1 {
+				// There's only one set of roots we need to check, so we
+				// include them all.
+				rootToExcludes = moduleConfigs[0].Config().Build.RootToExcludes
+			} else if currentWorkspaceDirectory != "" {
+				// Use the roots configured for the ModuleConfig that matches
+				// the current workspace directory.
+				rootToExcludes = rootToExcludesForWorkspaceDirectory[currentWorkspaceDirectory]
+			}
+			for root := range rootToExcludes {
+				// We don't actually care about the excludes in this case; we
+				// just need the root (if it exists).
+				if !normalpath.ContainsPath(root, buildRootTargetPath, normalpath.Relative) {
+					continue
+				}
+				buildRootTargetPath, err = normalpath.Rel(root, buildRootTargetPath)
+				if err != nil {
+					// Unreachable according to the check above.
+					return nil, nil, fmt.Errorf(
+						`a relative path could not be resolved between "%s" and root "%s"`,
+						normalpath.Unnormalize(externalDirOrFilePaths[i]),
+						root,
+					)
 				}
 			}
 			if buildRootTargetPath != targetPath {
