@@ -28,11 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/rpc"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-)
-
-const (
-	dirFlagName = "dir"
 )
 
 // NewCommand returns a new prune Command.
@@ -40,49 +35,31 @@ func NewCommand(
 	name string,
 	builder appflag.Builder,
 ) *appcmd.Command {
-	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
 		Short: "Prunes unused dependencies from the " + buflock.ExternalConfigFilePath + " file.",
-		Args:  cobra.NoArgs,
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
-				return run(ctx, container, flags)
+				return run(ctx, container)
 			},
 			bufcli.NewErrorInterceptor(),
 		),
-		BindFlags: flags.Bind,
 	}
-}
-
-type flags struct {
-	// for testing only
-	Dir string
-}
-
-func newFlags() *flags {
-	return &flags{}
-}
-
-func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.Dir,
-		dirFlagName,
-		".",
-		"The directory to operate in. For testing only.",
-	)
-	_ = flagSet.MarkHidden(dirFlagName)
 }
 
 // run tidy to trim the buf.lock file for a specific module.
 func run(
 	ctx context.Context,
 	container appflag.Container,
-	flags *flags,
 ) error {
+	directoryInput, err := bufcli.GetInputValue(container, "", "", "", ".")
+	if err != nil {
+		return err
+	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		flags.Dir,
+		directoryInput,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
