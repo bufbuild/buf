@@ -72,26 +72,15 @@ const (
 	betaConfigDeprecationMessage              = `"buf beta config ..." has been moved to "buf mod ...".`
 	betaConfigInitDeprecationMessage          = `"buf beta config init" has been moved to "buf mod init".`
 	betaModDeprecationMessage                 = `"buf beta mod ..." has been moved to "buf mod ...".`
-	betaModInitDeprecationMessage             = `"buf beta mod init" has been moved to "buf mod init".`
-	betaModExportDeprecationMessage           = `"buf beta mod export" has been moved to "buf mod export".`
+	betaModInitDeprecationMessage             = `"buf beta mod init" has been moved to "buf config init".`
+	betaModExportDeprecationMessage           = `"buf beta mod export" has been moved to "buf export".`
 	betaModUpdateDeprecationMessage           = `"buf beta mod update" has been moved to "buf mod update".`
 	betaModClearCacheDeprecationMessage       = `"buf beta mod clear-cache" has been moved to "buf mod clear-cache".`
 	betaPushDeprecationMessage                = `"buf beta push" has been moved to "buf mod push".`
-	exportDeprecationMessage                  = `"buf export" has been moved to "buf mod export".
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
-	loginDeprecationMessage = `"buf login" has been moved to "buf registry login".
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
-	logoutDeprecationMessage = `"buf logout" has been moved to "buf registry logout".
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
-	pushDeprecationMessage = `"buf push" has been moved to "buf mod push".
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
-	modInitDeprecationMessage = `"buf mod init" has been moved to "buf config init".
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
+	pushDeprecationMessage                    = `"buf push" has been moved to "buf mod push".`
+	loginDeprecationMessage                   = `"buf login" has been moved to "buf registry login".`
+	logoutDeprecationMessage                  = `"buf logout" has been moved to "buf registry logout".`
+	modInitDeprecationMessage                 = `"buf mod init" has been moved to "buf config init".`
 )
 
 // Main is the entrypoint to the buf CLI.
@@ -113,7 +102,7 @@ func NewRootCommand(name string) *appcmd.Command {
 		Use: name,
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder, "", false),
-			export.NewCommand("export", builder, exportDeprecationMessage, false),
+			export.NewCommand("export", builder, "", false),
 			{
 				Use:        "image",
 				Short:      "Work with Images and FileDescriptorSets.",
@@ -145,7 +134,6 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short: "Configure and update buf modules.",
 				SubCommands: []*appcmd.Command{
 					modinit.NewCommand("init", builder, modInitDeprecationMessage, true), // TODO(alex): Think about this one (see TODO below).
-					export.NewCommand("export", builder, "", false),                      // TODO(alex): Move this command into the modexport package.
 					modprune.NewCommand("prune", builder),
 					push.NewCommand("push", builder, "", false), // TODO(alex): Move this command into the modpush package.
 					modupdate.NewCommand("update", builder, "", false),
