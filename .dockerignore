@@ -6,8 +6,6 @@
 .vscode/
 cmd/buf/buf
 cmd/protoc-gen-buf-breaking/protoc-gen-buf-breaking
-cmd/protoc-gen-buf-check-breaking/protoc-gen-buf-check-breaking
-cmd/protoc-gen-buf-check-lint/protoc-gen-buf-check-lint
 cmd/protoc-gen-buf-lint/protoc-gen-buf-lint
 private/buf/cmd/buf/cache/
 private/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
