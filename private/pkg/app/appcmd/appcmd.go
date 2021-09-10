@@ -68,15 +68,21 @@ type Command struct {
 }
 
 // NewInvalidArgumentError creates a new invalidArgumentError, indicating that
-// the error was caused by argument validation. This causes us to print the usage
-// help text for the command that it is returned from.
+// the error was caused by argument validation.
+//
+// Formerly, this caused usage to be printed, however we removed this, so there
+// is no more special casing. We keep this around in case we end up reverting
+// back.
 func NewInvalidArgumentError(message string) error {
 	return newInvalidArgumentError(message)
 }
 
 // NewInvalidArgumentErrorf creates a new InvalidArgumentError, indicating that
-// the error was caused by argument validation. This causes us to print the usage
-// help text for the command that it is returned from.
+// the error was caused by argument validation.
+//
+// Formerly, this caused usage to be printed, however we removed this, so there
+// is no more special casing. We keep this around in case we end up reverting
+// back.
 func NewInvalidArgumentErrorf(format string, args ...interface{}) error {
 	return NewInvalidArgumentError(fmt.Sprintf(format, args...))
 }
@@ -242,20 +248,12 @@ func commandToCobra(
 	}
 	if command.Run != nil {
 		cobraCommand.Run = func(_ *cobra.Command, args []string) {
-			runErr := command.Run(ctx, app.NewContainerForArgs(container, args...))
-			if errors.Is(runErr, &invalidArgumentError{}) {
-				// Print usage for failing command if an args error is returned.
-				// This has to be done at this level since the usage must relate
-				// to the command executed.
-				printUsage(container, cobraCommand.UsageString())
-			}
-			*runErrAddr = runErr
+			*runErrAddr = command.Run(ctx, app.NewContainerForArgs(container, args...))
 		}
 	}
 	if len(command.SubCommands) > 0 {
 		// command.Run will not be set per validation
 		cobraCommand.Run = func(cmd *cobra.Command, args []string) {
-			printUsage(container, cobraCommand.UsageString())
 			if len(args) == 0 {
 				*runErrAddr = errors.New("Sub-command required.")
 			} else {
@@ -304,8 +302,4 @@ func normalizeFunc(f func(*pflag.FlagSet, string) string) func(*pflag.FlagSet, s
 	return func(flagSet *pflag.FlagSet, name string) pflag.NormalizedName {
 		return pflag.NormalizedName(f(flagSet, name))
 	}
-}
-
-func printUsage(container app.StderrContainer, usage string) {
-	_, _ = container.Stderr().Write([]byte(usage + "\n"))
 }
