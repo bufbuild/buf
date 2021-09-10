@@ -112,18 +112,15 @@ func run(
 	command *Command,
 ) error {
 	var runErr error
-
 	cobraCommand, err := commandToCobra(ctx, container, command, &runErr)
 	if err != nil {
 		return err
 	}
-
 	// Cobra 1.2.0 introduced default completion commands under
 	// "<binary> completion <bash/zsh/fish/powershell>"". Since we have
 	// our own completion commands, disable the generation of the default
 	// commands.
 	cobraCommand.CompletionOptions.DisableDefaultCmd = true
-
 	// If the root command is not the only command, add hidden bash-completion,
 	// fish-completion, and zsh-completion commands.
 	if len(command.SubCommands) > 0 {
@@ -152,8 +149,11 @@ func run(
 			},
 		})
 	}
-
-	args := app.Args(container)[1:]
+	// Stdout is required at the minimum for strings.HasPrefix(args[0], "__complete").
+	// Formerly, we had SetOut(container.Stderr()), but had to special case for "__complete" to be
+	// container.Stdout(). In case we later decide to revert to SetOut(container.Stderr()), see below
+	// comment and special case for "__complete":
+	//
 	// cobra will implicitly create __complete and __completeNoDesc subcommands
 	// https://github.com/spf13/cobra/blob/4590150168e93f4b017c6e33469e26590ba839df/completions.go#L14-L17
 	// at the very last possible point, to enable them to be overridden. Unfortunately
@@ -175,16 +175,15 @@ func run(
 	// Instead of all that, we can peek at the positionals and if the sub command starts with __complete
 	// we sets its output to stdout. This would mean that we cannot add a "real" sub-command that starts with
 	// __complete _and_ has its output set to stderr. This shouldn't ever be a problem.
-	if len(args) > 0 && strings.HasPrefix(args[0], "__complete") {
-		cobraCommand.SetOut(container.Stdout())
-	} else {
-		// SetOut sets the output location for usage, help, and version messages.
-		// We want these to go to stderr instead of stdout.
-		cobraCommand.SetOut(container.Stderr())
-	}
-	cobraCommand.SetArgs(args)
+	//
+	// SetOut sets the output location for usage, help, and version messages by default, however
+	// we override to stderr for usage in commandToCobra, so this only results in help and version messages
+	// going to stdout.
+	cobraCommand.SetOut(container.Stdout())
 	// SetErr sets the output location for error messages.
 	cobraCommand.SetErr(container.Stderr())
+	cobraCommand.SetIn(container.Stdin())
+	cobraCommand.SetArgs(app.Args(container)[1:])
 
 	if err := cobraCommand.Execute(); err != nil {
 		return err
@@ -209,6 +208,23 @@ func commandToCobra(
 		Hidden:     command.Hidden,
 		Short:      strings.TrimSpace(command.Short),
 	}
+	// We need to override the usage func because cobra writes the usage to OutOrStderr
+	// by default. This means that this will go to stdout, as we do SetOut(container.Stdout()).
+	// We want help and version information to go to stdout, so we need to do SetOut(container.Stdout()),
+	// but then want usage, which is only printed on error, to go to stderr.
+	//
+	// The easiest way is below - this is just a copy of what cobra does, but replaces OutOrStderr
+	// with ErrOrStderr. The tmpl function, including the templateFuncs that are required for
+	// the default UsageTemplate, are in cobra.go.
+	//
+	// To make sure this continues to work, we have a test in appcmd_test.go which calls the
+	// help function, which itself calls UsageString, which calls Usage, which calls
+	// UsageTemplate below. This ensures that all required templateFuncs exist.
+	cobraCommand.SetUsageFunc(
+		func(c *cobra.Command) error {
+			return tmpl(c.ErrOrStderr(), c.UsageTemplate(), c)
+		},
+	)
 	if command.Long != "" {
 		cobraCommand.Long = cobraCommand.Short + "\n\n" + strings.TrimSpace(command.Long)
 	}
@@ -260,6 +276,11 @@ func commandToCobra(
 	}
 	// appcommand prints errors, disable to prevent duplicates.
 	cobraCommand.SilenceErrors = true
+	// On error, cobra prints usage to out via c.Println within Execute, and there is
+	// no way to override this. Therefore, the only way we can make usage not print
+	// to stdout (assuming SetOut(container.Stdout()) was called) is via silencing usage.
+	cobraCommand.SilenceUsage = true
+
 	return cobraCommand, nil
 }
 
