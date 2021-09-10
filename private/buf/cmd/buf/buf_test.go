@@ -1111,24 +1111,6 @@ breaking:
 	)
 }
 
-func TestModInitName(t *testing.T) {
-	t.Parallel()
-	testModInit(
-		t,
-		`version: v1
-name: buf.build/foob/bar
-lint:
-  use:
-    - DEFAULT
-breaking:
-  use:
-    - FILE
-`,
-		false,
-		"buf.build/foob/bar",
-	)
-}
-
 func TestExportProto(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
