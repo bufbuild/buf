@@ -153,7 +153,6 @@ func run(
 		})
 	}
 
-	cobraCommand.SetOut(container.Stderr())
 	args := app.Args(container)[1:]
 	// cobra will implicitly create __complete and __completeNoDesc subcommands
 	// https://github.com/spf13/cobra/blob/4590150168e93f4b017c6e33469e26590ba839df/completions.go#L14-L17
@@ -178,8 +177,13 @@ func run(
 	// __complete _and_ has its output set to stderr. This shouldn't ever be a problem.
 	if len(args) > 0 && strings.HasPrefix(args[0], "__complete") {
 		cobraCommand.SetOut(container.Stdout())
+	} else {
+		// SetOut sets the output location for usage, help, and version messages.
+		// We want these to go to stderr instead of stdout.
+		cobraCommand.SetOut(container.Stderr())
 	}
 	cobraCommand.SetArgs(args)
+	// SetErr sets the output location for error messages.
 	cobraCommand.SetErr(container.Stderr())
 
 	if err := cobraCommand.Execute(); err != nil {
