@@ -181,16 +181,18 @@ func TestIncorrectFlagEmptyStdout(t *testing.T) {
 			return nil
 		},
 	}
-	buffer := bytes.NewBuffer(nil)
+	stderr := bytes.NewBuffer(nil)
+	stdout := bytes.NewBuffer(nil)
 	container := app.NewContainer(
 		nil,
 		nil,
-		buffer,
-		nil,
+		stdout,
+		stderr,
 		"test",
 		"--foo",
 		"1",
 	)
 	require.Error(t, Run(context.Background(), container, rootCommand))
-	require.Empty(t, buffer.String())
+	require.Empty(t, stdout.String())
+	require.NotEmpty(t, stderr.String())
 }
