@@ -60,6 +60,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/version"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 )
@@ -324,8 +325,8 @@ func NewRootCommand(name string) *appcmd.Command {
 			appcmd.NewDeletedCommand("login", loginDeprecationMessage),
 			appcmd.NewDeletedCommand("logout", logoutDeprecationMessage),
 			appcmd.NewDeletedCommand("push", pushDeprecationMessage),
+			version.NewCommand("version", builder),
 		},
 		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
-		Version:             bufcli.Version,
 	}
 }

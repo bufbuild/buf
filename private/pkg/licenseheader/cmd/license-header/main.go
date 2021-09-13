@@ -28,8 +28,7 @@ import (
 )
 
 const (
-	use     = "license-header"
-	version = "0.0.1-dev"
+	use = "license-header"
 
 	copyrightHolderFlagName = "copyright-holder"
 	licenseTypeFlagName     = "license-type"
@@ -49,7 +48,6 @@ func newCommand() *appcmd.Command {
 			return run(ctx, container, flags)
 		},
 		BindFlags: flags.Bind,
-		Version:   version,
 	}
 }
 

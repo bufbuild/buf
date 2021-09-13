@@ -1166,6 +1166,11 @@ func TestExportPaths(t *testing.T) {
 	)
 }
 
+func TestVersion(t *testing.T) {
+	t.Parallel()
+	testRunStdout(t, nil, 0, bufcli.Version, "version")
+}
+
 func TestMigrateV1Beta1(t *testing.T) {
 	t.Parallel()
 	storageosProvider := storageos.NewProvider()
