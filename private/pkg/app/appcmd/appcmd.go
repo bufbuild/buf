@@ -60,8 +60,6 @@ type Command struct {
 	// Required if there are no sub-commands.
 	// Must be unset if there are sub-commands.
 	Run func(context.Context, app.Container) error
-	// Version is the version.
-	Version string
 	// SubCommands are the sub-commands. Optional.
 	// Must be unset if there is a run function.
 	SubCommands []*Command
@@ -260,10 +258,6 @@ func commandToCobra(
 			}
 			cobraCommand.AddCommand(subCobraCommand)
 		}
-	}
-	if command.Version != "" {
-		cobraCommand.SetVersionTemplate("{{.Version}}\n")
-		cobraCommand.Version = command.Version
 	}
 	// appcommand prints errors, disable to prevent duplicates.
 	cobraCommand.SilenceErrors = true
