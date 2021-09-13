@@ -154,7 +154,7 @@ func run(
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
 			if _, err := container.Stderr().Write(
-				[]byte("The latest commit has the same content, not creating a new commit."),
+				[]byte("The latest commit has the same content, not creating a new commit.\n"),
 			); err != nil {
 				return err
 			}
