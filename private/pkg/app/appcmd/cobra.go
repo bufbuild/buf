@@ -50,6 +50,9 @@ func rpad(s string, padding int) string {
 func tmpl(w io.Writer, text string, data interface{}) error {
 	t := template.New("top")
 	t.Funcs(templateFuncs)
-	template.Must(t.Parse(text))
+	t, err := t.Parse(text)
+	if err != nil {
+		return err
+	}
 	return t.Execute(w, data)
 }
