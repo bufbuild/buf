@@ -66,7 +66,6 @@ Additional flags:
 		),
 		BindFlags:     flagsBuilder.Bind,
 		NormalizeFlag: flagsBuilder.Normalize,
-		Version:       "3.13.0-buf",
 	}
 }
 

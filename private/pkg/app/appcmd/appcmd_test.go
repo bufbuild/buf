@@ -15,6 +15,7 @@
 package appcmd
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"strings"
@@ -105,4 +106,72 @@ func TestError(t *testing.T) {
 		"sub",
 	)
 	require.Equal(t, app.NewError(5, "bar"), Run(context.Background(), container, rootCommand))
+}
+
+func TestHelpToStdout(t *testing.T) {
+	rootCommand := &Command{
+		Use: "test",
+		// need a sub-command for "help" to work
+		// otherwise can do -h
+		SubCommands: []*Command{
+			{
+				Use: "foo",
+				Run: func(context.Context, app.Container) error {
+					return nil
+				},
+			},
+		},
+	}
+	buffer := bytes.NewBuffer(nil)
+	container := app.NewContainer(
+		nil,
+		nil,
+		buffer,
+		nil,
+		"test",
+		"help",
+	)
+	require.NoError(t, Run(context.Background(), container, rootCommand))
+	require.NotEmpty(t, buffer.String())
+
+	rootCommand = &Command{
+		Use: "test",
+		Run: func(context.Context, app.Container) error {
+			return nil
+		},
+	}
+	buffer = bytes.NewBuffer(nil)
+	container = app.NewContainer(
+		nil,
+		nil,
+		buffer,
+		nil,
+		"test",
+		"-h",
+	)
+	require.NoError(t, Run(context.Background(), container, rootCommand))
+	require.NotEmpty(t, buffer.String())
+}
+
+func TestIncorrectFlagEmptyStdout(t *testing.T) {
+	rootCommand := &Command{
+		Use: "test",
+		Run: func(context.Context, app.Container) error {
+			return nil
+		},
+	}
+	stderr := bytes.NewBuffer(nil)
+	stdout := bytes.NewBuffer(nil)
+	container := app.NewContainer(
+		nil,
+		nil,
+		stdout,
+		stderr,
+		"test",
+		"--foo",
+		"1",
+	)
+	require.Error(t, Run(context.Background(), container, rootCommand))
+	require.Empty(t, stdout.String())
+	require.NotEmpty(t, stderr.String())
 }

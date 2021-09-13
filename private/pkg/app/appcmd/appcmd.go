@@ -60,8 +60,6 @@ type Command struct {
 	// Required if there are no sub-commands.
 	// Must be unset if there are sub-commands.
 	Run func(context.Context, app.Container) error
-	// Version is the version.
-	Version string
 	// SubCommands are the sub-commands. Optional.
 	// Must be unset if there is a run function.
 	SubCommands []*Command
@@ -176,11 +174,15 @@ func run(
 	// Instead of all that, we can peek at the positionals and if the sub command starts with __complete
 	// we sets its output to stdout. This would mean that we cannot add a "real" sub-command that starts with
 	// __complete _and_ has its output set to stderr. This shouldn't ever be a problem.
+	//
+	// SetOut sets the output location for usage, help, and version messages by default.
 	if len(args) > 0 && strings.HasPrefix(args[0], "__complete") {
 		cobraCommand.SetOut(container.Stdout())
 	}
 	cobraCommand.SetArgs(args)
+	// SetErr sets the output location for error messages.
 	cobraCommand.SetErr(container.Stderr())
+	cobraCommand.SetIn(container.Stdin())
 
 	if err := cobraCommand.Execute(); err != nil {
 		return err
@@ -205,6 +207,13 @@ func commandToCobra(
 		Hidden:     command.Hidden,
 		Short:      strings.TrimSpace(command.Short),
 	}
+	cobraCommand.SetHelpFunc(
+		func(c *cobra.Command, _ []string) {
+			if err := tmpl(container.Stdout(), c.HelpTemplate(), c); err != nil {
+				c.PrintErrln(err)
+			}
+		},
+	)
 	if command.Long != "" {
 		cobraCommand.Long = cobraCommand.Short + "\n\n" + strings.TrimSpace(command.Long)
 	}
@@ -249,10 +258,6 @@ func commandToCobra(
 			}
 			cobraCommand.AddCommand(subCobraCommand)
 		}
-	}
-	if command.Version != "" {
-		cobraCommand.SetVersionTemplate("{{.Version}}\n")
-		cobraCommand.Version = command.Version
 	}
 	// appcommand prints errors, disable to prevent duplicates.
 	cobraCommand.SilenceErrors = true
