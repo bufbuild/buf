@@ -94,31 +94,31 @@ var (
 	}
 )
 
-// NewWorkspace returns a new workspace.
-func NewWorkspace(
-	ctx context.Context,
-	config *Config,
-	readBucket storage.ReadBucket,
+// WorkspaceBuilder builds workspaces.
+type WorkspaceBuilder interface {
+	// BuildWorkspace builds a bufmodule.Workspace for the given targetSubDirPath.
+	BuildWorkspace(
+		ctx context.Context,
+		workspaceConfig *Config,
+		readBucket storage.ReadBucket,
+		relativeRootPath string,
+		targetSubDirPath string,
+		configOverride string,
+		externalDirOrFilePaths []string,
+		externalDirOrFilePathsAllowNotExist bool,
+	) (bufmodule.Workspace, error)
+
+	// GetModuleConfig returns the bufmodule.Module and *bufconfig.Config, associated with the given
+	// targetSubDirPath, if it exists.
+	GetModuleConfig(targetSubDirPath string) (bufmodule.Module, *bufconfig.Config, bool)
+}
+
+// NewWorkspaceBuilder returns a new WorkspaceBuilder.
+func NewWorkspaceBuilder(
 	configProvider bufconfig.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-	relativeRootPath string,
-	targetSubDirPath string,
-	configOverride string,
-	externalDirOrFilePaths []string,
-	externalDirOrFilePathsAllowNotExist bool,
-) (bufmodule.Workspace, error) {
-	return newWorkspace(
-		ctx,
-		config,
-		readBucket,
-		configProvider,
-		moduleBucketBuilder,
-		relativeRootPath,
-		targetSubDirPath,
-		configOverride,
-		externalDirOrFilePaths,
-		externalDirOrFilePathsAllowNotExist,
-	)
+) WorkspaceBuilder {
+	return newWorkspaceBuilder(configProvider, moduleBucketBuilder)
 }
 
 // BuildOptionsForWorkspaceDirectory returns the bufmodulebuild.BuildOptions required for

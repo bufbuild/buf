@@ -351,13 +351,16 @@ func NewWireImageConfigReader(
 	if err != nil {
 		return nil, err
 	}
+	configProvider := bufconfig.NewProvider(logger)
+	moduleBucketBuilder := bufmodulebuild.NewModuleBucketBuilder(logger)
 	return bufwire.NewImageConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		bufconfig.NewProvider(logger),
+		configProvider,
 		bufwork.NewProvider(logger),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		moduleBucketBuilder,
+		bufwork.NewWorkspaceBuilder(configProvider, moduleBucketBuilder),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
 	), nil
@@ -375,13 +378,16 @@ func NewWireModuleConfigReader(
 	if err != nil {
 		return nil, err
 	}
+	configProvider := bufconfig.NewProvider(logger)
+	moduleBucketBuilder := bufmodulebuild.NewModuleBucketBuilder(logger)
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		bufconfig.NewProvider(logger),
+		configProvider,
 		bufwork.NewProvider(logger),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		moduleBucketBuilder,
+		bufwork.NewWorkspaceBuilder(configProvider, moduleBucketBuilder),
 	), nil
 }
 
@@ -395,13 +401,16 @@ func NewWireModuleConfigReaderForModuleReader(
 ) (bufwire.ModuleConfigReader, error) {
 	logger := container.Logger()
 	moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
+	configProvider := bufconfig.NewProvider(logger)
+	moduleBucketBuilder := bufmodulebuild.NewModuleBucketBuilder(logger)
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		bufconfig.NewProvider(logger),
+		configProvider,
 		bufwork.NewProvider(logger),
-		bufmodulebuild.NewModuleBucketBuilder(logger),
+		moduleBucketBuilder,
+		bufwork.NewWorkspaceBuilder(configProvider, moduleBucketBuilder),
 	), nil
 }
 

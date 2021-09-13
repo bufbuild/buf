@@ -64,6 +64,7 @@ func NewImageConfigReader(
 	configProvider bufconfig.Provider,
 	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
+	workspaceBuilder bufwork.WorkspaceBuilder,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
 ) ImageConfigReader {
@@ -74,6 +75,7 @@ func NewImageConfigReader(
 		configProvider,
 		workspaceConfigProvider,
 		moduleBucketBuilder,
+		workspaceBuilder,
 		moduleFileSetBuilder,
 		imageBuilder,
 	)
@@ -112,6 +114,7 @@ func NewModuleConfigReader(
 	configProvider bufconfig.Provider,
 	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
+	workspaceBuilder bufwork.WorkspaceBuilder,
 ) ModuleConfigReader {
 	return newModuleConfigReader(
 		logger,
@@ -120,6 +123,7 @@ func NewModuleConfigReader(
 		configProvider,
 		workspaceConfigProvider,
 		moduleBucketBuilder,
+		workspaceBuilder,
 	)
 }
 
