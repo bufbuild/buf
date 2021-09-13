@@ -2,7 +2,18 @@
 
 ## [Unreleased]
 
-Complete deletion `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`, which have been moved to `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
+- Removed the `--name` and `--dep` flags in `buf mod init`.
+- Removed the `--version` flag in favor of the `buf version` command.
+- Removed the `buf check` commands.
+- Removed the `buf [beta] image` commands.
+- Removed the `buf beta mod` commands in favor of `buf mod`.
+- Removed the `buf experimental` commands in favor of `buf beta`.
+- `buf login` was moved to `buf registry login`.
+- `buf logout` was moved to `buf registry logout`.
+- `buf push` was moved to `buf mod push`.
+- `buf mod init` was moved to `buf config init`.
+- Complete deletion `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`, which
+  have been moved to `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
 
 In January 2021, `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint` were deprecated and scheduled for removal for v1.0. In August 2021, we began returning error for every invocation of `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`. As v1.0 is imminent, this release completes the deletion process.
 
@@ -14,8 +25,6 @@ go get github.com/bufbuild/buf/cmd/protoc-gen-buf-breaking
 # instead of curl -sSL https://github.com/bufbuild/buf/releases/download/v0.57.0/protoc-gen-buf-check-breaking-Linux-x86_64
 curl -sSL https://github.com/bufbuild/buf/releases/download/v0.57.0/protoc-gen-buf-breaking-Linux-x86_64
 ```
-
-There is no change in functionality.
 
 ## [v0.56.0] - 2021-09-08
 
