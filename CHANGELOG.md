@@ -2,16 +2,28 @@
 
 ## [Unreleased]
 
+- The version key in all configuration files (`buf.yaml`, `buf.gen.yaml`, `buf.work.yaml`) is now required.
+- The `--help` flag now writes to stdout instead of stderr.
 - Removed the `--name` and `--dep` flags in `buf mod init`.
-- Removed the `--version` flag in favor of the `buf version` command.
-- Removed the `buf check` commands.
-- Removed the `buf [beta] image` commands.
-- Removed the `buf beta mod` commands in favor of `buf mod`.
-- Removed the `buf experimental` commands in favor of `buf beta`.
-- `buf login` was moved to `buf registry login`.
-- `buf logout` was moved to `buf registry logout`.
-- `buf push` was moved to `buf mod push`.
-- `buf mod init` was moved to `buf config init`.
+- Removed the `--version` flag in favor of the `buf version` command, which writes to stdout.
+- Removed the `buf image build` command in favor of `buf build`.
+- Removed the `buf check breaking` command in favor of `buf breaking`.
+- Removed the `buf check lint` command in favor of `buf lint`.
+- Removed the `buf check ls-lint-checkers` command in favor of `buf config ls-lint-rules`.
+- Removed the `buf check ls-breaking-checkers` command in favor of `buf config ls-breaking-rules`.
+- Removed the `buf beta config init` command in favor of `buf config init`.
+- Removed the `buf beta mod export` command in favor of `buf export`.
+- Removed the `buf beta mod init` command in favor of `buf config init`.
+- Removed the `buf beta mod update` command in favor of `buf mod update`.
+- Removed the `buf beta mod clear-cache` command in favor of `buf mod clear-cache`.
+- Removed the `buf beta push` command in favor of `buf mod push`.
+- Removed the `buf login` command in favor of `buf registry login`.
+- Removed the `buf logout` command in favor of `buf registry logout`.
+- Removed the `buf push` command in favor of `buf mod push`.
+- Removed the `buf mod init` command in favor of `buf config init`.
+- Removed the `buf image convert` command.
+- Removed the `buf beta image convert` command.
+- Removed the `buf experimental image convert` command.
 - Complete deletion `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`, which
   have been moved to `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
 
