@@ -30,8 +30,7 @@ import (
 )
 
 const (
-	name    = "bandeps"
-	version = "0.0.1-dev"
+	name = "bandeps"
 
 	configFileFlagName      = "config-file"
 	configFileFlagShortName = "f"
@@ -59,7 +58,6 @@ func newCommand() *appcmd.Command {
 		),
 		BindPersistentFlags: builder.BindRoot,
 		BindFlags:           flags.Bind,
-		Version:             version,
 	}
 }
 
