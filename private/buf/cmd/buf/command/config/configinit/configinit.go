@@ -20,7 +20,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -32,8 +31,6 @@ const (
 	documentationCommentsFlagName = "doc"
 	outDirPathFlagName            = "output"
 	outDirPathFlagShortName       = "o"
-	nameFlagName                  = "name"
-	depFlagName                   = "dep"
 	uncommentFlagName             = "uncomment"
 )
 
@@ -64,8 +61,6 @@ func NewCommand(
 type flags struct {
 	DocumentationComments bool
 	OutDirPath            string
-	Name                  string
-	Deps                  []string
 
 	// Hidden.
 	// Just used for generating docs.buf.build.
@@ -90,19 +85,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		".",
 		`The directory to write the configuration file to.`,
 	)
-	flagSet.StringVar(
-		&f.Name,
-		nameFlagName,
-		"",
-		"The module name.",
-	)
-	flagSet.StringSliceVar(
-		&f.Deps,
-		depFlagName,
-		nil,
-		"The module dependencies.",
-	)
-	_ = flagSet.MarkHidden(depFlagName)
 	flagSet.BoolVar(
 		&f.Uncomment,
 		uncommentFlagName,
@@ -140,30 +122,6 @@ func run(
 		writeConfigOptions = append(
 			writeConfigOptions,
 			bufconfig.WriteConfigWithDocumentationComments(),
-		)
-	}
-	if flags.Name != "" {
-		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(flags.Name)
-		if err != nil {
-			return err
-		}
-		writeConfigOptions = append(
-			writeConfigOptions,
-			bufconfig.WriteConfigWithModuleIdentity(moduleIdentity),
-		)
-	}
-	if len(flags.Deps) > 0 {
-		dependencyModuleReferences := make([]bufmoduleref.ModuleReference, len(flags.Deps))
-		for i, dep := range flags.Deps {
-			dependencyModuleReference, err := bufmoduleref.ModuleReferenceForString(dep)
-			if err != nil {
-				return err
-			}
-			dependencyModuleReferences[i] = dependencyModuleReference
-		}
-		writeConfigOptions = append(
-			writeConfigOptions,
-			bufconfig.WriteConfigWithDependencyModuleReferences(dependencyModuleReferences...),
 		)
 	}
 	if flags.Uncomment {
