@@ -61,6 +61,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/version"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 )
@@ -339,8 +340,8 @@ See https://docs.buf.build/faq for more details.`,
 				},
 			},
 			push.NewCommand("push", builder, "", false),
+			version.NewCommand("version", builder),
 		},
 		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
-		Version:             bufcli.Version,
 	}
 }

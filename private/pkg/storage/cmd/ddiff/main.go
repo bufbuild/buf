@@ -28,8 +28,7 @@ import (
 )
 
 const (
-	use     = "ddiff"
-	version = "0.0.1-dev"
+	use = "ddiff"
 )
 
 func main() {
@@ -38,10 +37,9 @@ func main() {
 
 func newCommand() *appcmd.Command {
 	return &appcmd.Command{
-		Use:     use + " dir1 dir2",
-		Args:    cobra.ExactArgs(2),
-		Run:     run,
-		Version: version,
+		Use:  use + " dir1 dir2",
+		Args: cobra.ExactArgs(2),
+		Run:  run,
 	}
 }
 
