@@ -94,7 +94,8 @@ var (
 	}
 )
 
-// WorkspaceBuilder builds workspaces.
+// WorkspaceBuilder builds workspaces. A single WorkspaceBuilder should NOT be persisted
+// acorss calls because the WorkspaceBuilder caches the modules used in each workspace.
 type WorkspaceBuilder interface {
 	// BuildWorkspace builds a bufmodule.Workspace for the given targetSubDirPath.
 	BuildWorkspace(
