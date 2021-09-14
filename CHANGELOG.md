@@ -2,47 +2,58 @@
 
 ## [Unreleased]
 
-- The version key in all configuration files (`buf.yaml`, `buf.gen.yaml`, `buf.work.yaml`) is now required.
-- The `--help` flag now writes to stdout instead of stderr.
-- Removed the `--source` flag on `buf build` in favor of the first positional parameter.
-- Removed the `--source-config` flag on `buf build` in favor of the `--config` flag.
-- Removed the `--file` flag on `buf build` in favor of the `--path` flag.
-- Removed the `--input` flag on `buf lint` in favor of the first positional parameter.
-- Removed the `--input-config` flag on `buf lint` in favor of the `--config` flag.
-- Removed the `--file` flag on `buf lint` in favor of the `--path` flag.
-- Removed the `--input` flag on `buf breaking` in favor of the first positional parameter.
-- Removed the `--input-config` flag on `buf breaking` in favor of the `--config` flag.
-- Removed the `--against-input` flag on `buf breaking` in favor of the `--against` flag.
-- Removed the `--against-input-config` flag on `buf breaking` in favor of the `--against-config` flag.
-- Removed the `--file` flag on `buf breaking` in favor of the `--path` flag.
-- Removed the `--input` flag on `buf generate` in favor of the first positional parameter.
-- Removed the `--input-config` flag on `buf generate` in favor of the `--config` flag.
-- Removed the `--file` flag on `buf generate` in favor of the `--path` flag.
-- Removed the `--input` flag on `buf ls-files` in favor of the first positional parameter.
-- Removed the `--input-config` flag on `buf ls-files` in favor of the `--config` flag.
-- Removed the `--file` flag on `buf export` in favor of the `--path` flag.
-- Removed the `--name` and `--dep` flags in `buf mod init`.
-- Removed the `--version` flag in favor of the `buf version` command, which writes to stdout.
-- Removed the `buf image build` command in favor of `buf build`.
-- Removed the `buf check breaking` command in favor of `buf breaking`.
-- Removed the `buf check lint` command in favor of `buf lint`.
-- Removed the `buf check ls-lint-checkers` command in favor of `buf config ls-lint-rules`.
-- Removed the `buf check ls-breaking-checkers` command in favor of `buf config ls-breaking-rules`.
-- Removed the `buf beta config init` command in favor of `buf config init`.
-- Removed the `buf beta mod export` command in favor of `buf export`.
-- Removed the `buf beta mod init` command in favor of `buf config init`.
-- Removed the `buf beta mod update` command in favor of `buf mod update`.
-- Removed the `buf beta mod clear-cache` command in favor of `buf mod clear-cache`.
-- Removed the `buf beta push` command in favor of `buf mod push`.
+This is our first v1.0 release candidate. This release largely concentrates on erroring for
+already-deprecated commands and flags.
+
+At Buf, we take compatibility very seriously. When we say v1.0, we mean it - we hope `buf` will be
+stable on v1 for the next decade, and if there is something we want to change, it is our responsibility to
+make sure that we don't break you, not your responsibility to change because of us. We have learned
+a lot about `buf` usage in the last two years, and have deprecated flags and commands as we go, but
+for v1.0, we are removing the deprecated items to make sure we have a clean setup going forward.
+
+All commands and flags have been printing warnings for a long time, and have an easy migration path.
+Simply update the command or flag, and you'll be good to go
+
 - Removed the `buf login` command in favor of `buf registry login`.
 - Removed the `buf logout` command in favor of `buf registry logout`.
 - Removed the `buf push` command in favor of `buf mod push`.
 - Removed the `buf mod init` command in favor of `buf config init`.
-- Removed the `buf image convert` command.
-- Removed the `buf beta image convert` command.
-- Removed the `buf experimental image convert` command.
-- Complete deletion `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`, which
-  have been moved to `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
+- Removed the `--name` and `--dep` flags in `buf mod init`.
+- Removed the `--version` flag in favor of the `buf version` command, which writes to stdout.
+- Moved the output of `--help` and `help` from stderr to stdout.
+- [From v0.55.0](#v0.55.0): The version key in all configuration files (`buf.yaml`, `buf.gen.yaml`, `buf.work.yaml`) is now required.
+- [From v0.45.0](#v0.45.0): Removed the `buf beta config init` command in favor of `buf config init`.
+- [From v0.45.0](#v0.45.0): Removed the `buf beta mod export` command in favor of `buf export`.
+- [From v0.45.0](#v0.45.0): Removed the `buf beta mod init` command in favor of `buf config init`.
+- [From v0.45.0](#v0.45.0): Removed the `buf beta mod update` command in favor of `buf mod update`.
+- [From v0.45.0](#v0.45.0): Removed the `buf beta mod clear-cache` command in favor of `buf mod clear-cache`.
+- [From v0.45.0](#v0.45.0): Removed the `buf beta push` command in favor of `buf mod push`.
+- [From v0.34.0](#v0.34.0): Removed the `buf check breaking` command in favor of `buf breaking`.
+- [From v0.34.0](#v0.34.0): Removed the `buf check lint` command in favor of `buf lint`.
+- [From v0.34.0](#v0.34.0): Removed the `buf check ls-lint-checkers` command in favor of `buf config ls-lint-rules`.
+- [From v0.34.0](#v0.34.0): Removed the `buf check ls-breaking-checkers` command in favor of `buf config ls-breaking-rules`.
+- [From v0.31.0](#v0.31.0): Removed the `--file` flag on `buf build` in favor of the `--path` flag.
+- [From v0.31.0](#v0.31.0): Removed the `--file` flag on `buf lint` in favor of the `--path` flag.
+- [From v0.31.0](#v0.31.0): Removed the `--file` flag on `buf breaking` in favor of the `--path` flag.
+- [From v0.31.0](#v0.31.0): Removed the `--file` flag on `buf generate` in favor of the `--path` flag.
+- [From v0.31.0](#v0.31.0): Removed the `--file` flag on `buf export` in favor of the `--path` flag.
+- [From v0.29.0](#v0.29.0): Removed the `--source` flag on `buf build` in favor of the first positional parameter.
+- [From v0.29.0](#v0.29.0): Removed the `--source-config` flag on `buf build` in favor of the `--config` flag.
+- [From v0.29.0](#v0.29.0): Removed the `--input` flag on `buf lint` in favor of the first positional parameter.
+- [From v0.29.0](#v0.29.0): Removed the `--input-config` flag on `buf lint` in favor of the `--config` flag.
+- [From v0.29.0](#v0.29.0): Removed the `--input` flag on `buf breaking` in favor of the first positional parameter.
+- [From v0.29.0](#v0.29.0): Removed the `--input-config` flag on `buf breaking` in favor of the `--config` flag.
+- [From v0.29.0](#v0.29.0): Removed the `--against-input` flag on `buf breaking` in favor of the `--against` flag.
+- [From v0.29.0](#v0.29.0): Removed the `--against-input-config` flag on `buf breaking` in favor of the `--against-config` flag.
+- [From v0.29.0](#v0.29.0): Removed the `--input` flag on `buf generate` in favor of the first positional parameter.
+- [From v0.29.0](#v0.29.0): Removed the `--input-config` flag on `buf generate` in favor of the `--config` flag.
+- [From v0.29.0](#v0.29.0): Removed the `--input` flag on `buf ls-files` in favor of the first positional parameter.
+- [From v0.29.0](#v0.29.0): Removed the `--input-config` flag on `buf ls-files` in favor of the `--config` flag.
+- [From v0.29.0](#v0.29.0): Removed the `buf image build` command in favor of `buf build`.
+- [From v0.29.0](#v0.29.0): Removed the `buf image convert` command.
+- [From v0.29.0](#v0.29.0): Removed the `buf beta image convert` command.
+- [From v0.23.0](#v0.23.0): Removed the `buf experimental image convert` command.
+- [From v0.52.0](#v0.52.0) [and v0.34.0](#v0.34.0): Complete deletion `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`, which have been moved to `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
 
 In January 2021, `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint` were deprecated and scheduled for removal for v1.0. In August 2021, we began returning error for every invocation of `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`. As v1.0 is imminent, this release completes the deletion process.
 
