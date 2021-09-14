@@ -179,9 +179,9 @@ func wrapError(err error) error {
 	case rpcCode == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
 		return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
 	case rpcCode == rpc.ErrorCodeUnavailable:
-		return fmt.Errorf(`Failure: the server hosted at that remote is unavailable: %w.`, err)
+		return fmt.Errorf(`Failure: the server hosted at that remote is unavailable: %w`, err)
 	}
-	return fmt.Errorf("Failure: %w.", err)
+	return fmt.Errorf("Failure: %w", err)
 }
 
 // isEmptyUnknownError returns true if the given
