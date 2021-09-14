@@ -29,7 +29,7 @@ func TestWorkspaceAbsoluteFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: directory "C:\buf" listed in testdata\workspace\fail\absolute\windows\buf.work.yaml is invalid: C:\buf: expected to be relative.`,
+		`Failure: directory "C:\buf" listed in testdata\workspace\fail\absolute\windows\buf.work.yaml is invalid: C:\buf: expected to be relative`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "absolute", "windows"),
 	)
