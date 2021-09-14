@@ -32,18 +32,14 @@ import (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	deprecated string,
-	hidden bool,
 	aliases ...string,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:        name,
-		Aliases:    aliases,
-		Short:      "Clear the module cache.",
-		Args:       cobra.NoArgs,
-		Deprecated: deprecated,
-		Hidden:     hidden,
+		Use:     name,
+		Aliases: aliases,
+		Short:   "Clear the module cache.",
+		Args:    cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
