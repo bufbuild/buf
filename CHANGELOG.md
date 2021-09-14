@@ -4,6 +4,23 @@
 
 - The version key in all configuration files (`buf.yaml`, `buf.gen.yaml`, `buf.work.yaml`) is now required.
 - The `--help` flag now writes to stdout instead of stderr.
+- Removed the `--source` flag on `buf build` in favor of the first positional parameter.
+- Removed the `--source-config` flag on `buf build` in favor of the `--config` flag.
+- Removed the `--file` flag on `buf build` in favor of the `--path` flag.
+- Removed the `--input` flag on `buf lint` in favor of the first positional parameter.
+- Removed the `--input-config` flag on `buf lint` in favor of the `--config` flag.
+- Removed the `--file` flag on `buf lint` in favor of the `--path` flag.
+- Removed the `--input` flag on `buf breaking` in favor of the first positional parameter.
+- Removed the `--input-config` flag on `buf breaking` in favor of the `--config` flag.
+- Removed the `--against-input` flag on `buf breaking` in favor of the `--against` flag.
+- Removed the `--against-input-config` flag on `buf breaking` in favor of the `--against-config` flag.
+- Removed the `--file` flag on `buf breaking` in favor of the `--path` flag.
+- Removed the `--input` flag on `buf generate` in favor of the first positional parameter.
+- Removed the `--input-config` flag on `buf generate` in favor of the `--config` flag.
+- Removed the `--file` flag on `buf generate` in favor of the `--path` flag.
+- Removed the `--input` flag on `buf ls-files` in favor of the first positional parameter.
+- Removed the `--input-config` flag on `buf ls-files` in favor of the `--config` flag.
+- Removed the `--file` flag on `buf export` in favor of the `--path` flag.
 - Removed the `--name` and `--dep` flags in `buf mod init`.
 - Removed the `--version` flag in favor of the `buf version` command, which writes to stdout.
 - Removed the `buf image build` command in favor of `buf build`.
