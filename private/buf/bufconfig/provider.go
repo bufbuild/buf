@@ -113,7 +113,7 @@ func (p *provider) getConfigForData(
 	}
 	switch externalConfigVersion.Version {
 	case "":
-		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s". See https://docs.buf.build/faq for more details.`, id, V1Version)
+		return nil, fmt.Errorf(`%s has no version set. Please add "version: %s". See https://docs.buf.build/faq for more details`, id, V1Version)
 	case V1Beta1Version:
 		var externalConfigV1Beta1 ExternalConfigV1Beta1
 		if err := unmarshalStrict(data, &externalConfigV1Beta1); err != nil {
