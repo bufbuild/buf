@@ -41,7 +41,6 @@ type moduleConfigReader struct {
 	configProvider          bufconfig.Provider
 	workspaceConfigProvider bufwork.Provider
 	moduleBucketBuilder     bufmodulebuild.ModuleBucketBuilder
-	workspaceBuilder        bufwork.WorkspaceBuilder
 }
 
 func newModuleConfigReader(
@@ -51,7 +50,6 @@ func newModuleConfigReader(
 	configProvider bufconfig.Provider,
 	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
-	workspaceBuilder bufwork.WorkspaceBuilder,
 ) *moduleConfigReader {
 	return &moduleConfigReader{
 		logger:                  logger,
@@ -60,7 +58,6 @@ func newModuleConfigReader(
 		configProvider:          configProvider,
 		workspaceConfigProvider: workspaceConfigProvider,
 		moduleBucketBuilder:     moduleBucketBuilder,
-		workspaceBuilder:        workspaceBuilder,
 	}
 }
 
@@ -74,12 +71,15 @@ func (m *moduleConfigReader) GetModuleConfigs(
 ) ([]ModuleConfig, error) {
 	ctx, span := trace.StartSpan(ctx, "get_module_config")
 	defer span.End()
+	// We construct a new WorkspaceBuilder here so that the cache is only used for a single call.
+	workspaceBuilder := bufwork.NewWorkspaceBuilder(m.configProvider, m.moduleBucketBuilder)
 	switch t := sourceOrModuleRef.(type) {
 	case buffetch.SourceRef:
 		return m.getSourceModuleConfigs(
 			ctx,
 			container,
 			t,
+			workspaceBuilder,
 			configOverride,
 			externalDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
@@ -108,6 +108,7 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceRef buffetch.SourceRef,
+	workspaceBuilder bufwork.WorkspaceBuilder,
 	configOverride string,
 	externalDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
@@ -127,6 +128,7 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 		return m.getWorkspaceModuleConfigs(
 			ctx,
 			sourceRef,
+			workspaceBuilder,
 			readBucketCloser,
 			readBucketCloser.RelativeRootPath(),
 			readBucketCloser.SubDirPath(),
@@ -142,6 +144,7 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 		readBucketCloser.RelativeRootPath(),
 		readBucketCloser.SubDirPath(),
 		configOverride,
+		workspaceBuilder,
 		nil,
 		nil,
 		externalDirOrFilePaths,
@@ -212,6 +215,7 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	ctx context.Context,
 	sourceRef buffetch.SourceRef,
+	workspaceBuilder bufwork.WorkspaceBuilder,
 	readBucket storage.ReadBucket,
 	relativeRootPath string,
 	subDirPath string,
@@ -226,7 +230,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	if subDirPath != "." {
 		// There's only a single ModuleConfig based on the subDirPath,
 		// so we only need to create a single workspace.
-		workspace, err := m.workspaceBuilder.BuildWorkspace(
+		workspace, err := workspaceBuilder.BuildWorkspace(
 			ctx,
 			workspaceConfig,
 			readBucket,
@@ -246,6 +250,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 			relativeRootPath,
 			subDirPath,
 			configOverride,
+			workspaceBuilder,
 			workspaceConfig,
 			workspace,
 			externalDirOrFilePaths,
@@ -263,7 +268,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	// directories.
 	var moduleConfigs []ModuleConfig
 	for _, directory := range workspaceConfig.Directories {
-		workspace, err := m.workspaceBuilder.BuildWorkspace(
+		workspace, err := workspaceBuilder.BuildWorkspace(
 			ctx,
 			workspaceConfig,
 			readBucket,
@@ -283,6 +288,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 			relativeRootPath,
 			directory,
 			configOverride,
+			workspaceBuilder,
 			workspaceConfig,
 			workspace,
 			externalDirOrFilePaths,
@@ -303,6 +309,7 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	relativeRootPath string,
 	subDirPath string,
 	configOverride string,
+	workspaceBuilder bufwork.WorkspaceBuilder,
 	workspaceConfig *bufwork.Config,
 	workspace bufmodule.Workspace,
 	externalDirOrFilePaths []string,
@@ -315,6 +322,7 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 		relativeRootPath,
 		subDirPath,
 		configOverride,
+		workspaceBuilder,
 		workspaceConfig,
 		workspace,
 		externalDirOrFilePaths,
@@ -344,12 +352,13 @@ func (m *moduleConfigReader) getModuleConfig(
 	relativeRootPath string,
 	subDirPath string,
 	configOverride string,
+	workspaceBuilder bufwork.WorkspaceBuilder,
 	workspaceConfig *bufwork.Config,
 	workspace bufmodule.Workspace,
 	externalDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (ModuleConfig, error) {
-	if module, moduleConfig, ok := m.workspaceBuilder.GetModuleConfig(subDirPath); ok {
+	if module, moduleConfig, ok := workspaceBuilder.GetModuleConfig(subDirPath); ok {
 		// The module was already built while we were constructing the workspace.
 		// However, we still need to perform some additional validation based on
 		// the sourceRef.

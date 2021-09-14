@@ -360,7 +360,6 @@ func NewWireImageConfigReader(
 		configProvider,
 		bufwork.NewProvider(logger),
 		moduleBucketBuilder,
-		bufwork.NewWorkspaceBuilder(configProvider, moduleBucketBuilder),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
 	), nil
@@ -387,7 +386,6 @@ func NewWireModuleConfigReader(
 		configProvider,
 		bufwork.NewProvider(logger),
 		moduleBucketBuilder,
-		bufwork.NewWorkspaceBuilder(configProvider, moduleBucketBuilder),
 	), nil
 }
 
@@ -410,7 +408,6 @@ func NewWireModuleConfigReaderForModuleReader(
 		configProvider,
 		bufwork.NewProvider(logger),
 		moduleBucketBuilder,
-		bufwork.NewWorkspaceBuilder(configProvider, moduleBucketBuilder),
 	), nil
 }
 
