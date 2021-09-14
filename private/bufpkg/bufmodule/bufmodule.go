@@ -217,7 +217,7 @@ type ModuleFileSet interface {
 func NewModuleFileSet(
 	module Module,
 	dependencies []Module,
-) ModuleFileSet {
+) (ModuleFileSet, error) {
 	return newModuleFileSet(module, dependencies)
 }
 

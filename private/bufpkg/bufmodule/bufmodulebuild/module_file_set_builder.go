@@ -85,5 +85,5 @@ func (m *moduleFileSetBuilder) build(
 		}
 		dependencyModules = append(dependencyModules, dependencyModule)
 	}
-	return bufmodule.NewModuleFileSet(module, dependencyModules), nil
+	return bufmodule.NewModuleFileSet(module, dependencyModules)
 }

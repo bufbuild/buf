@@ -32,7 +32,7 @@ type moduleFileSet struct {
 func newModuleFileSet(
 	module Module,
 	dependencies []Module,
-) *moduleFileSet {
+) (*moduleFileSet, error) {
 	// TODO: We can remove the getModuleRef method on the
 	// Module type if we fetch FileInfos from the Module
 	// and plumb in the ModuleRef here.
@@ -57,10 +57,27 @@ func newModuleFileSet(
 			),
 		)
 	}
+	multiReadBucket := newMultiModuleReadBucket(moduleReadBuckets...)
+	seenPaths := map[string][]string{}
+	if err := multiReadBucket.WalkModuleFiles(context.Background(), "", func(moduleObjectInfo *moduleObjectInfo) error {
+		modulePrefixedPaths, ok := seenPaths[moduleObjectInfo.Path()]
+		modulePrefixedPath := moduleObjectInfo.ExternalPath()
+		if moduleObjectInfo.ModuleIdentity() != nil {
+			modulePrefixedPath = moduleObjectInfo.ModuleIdentity().IdentityString() + "#" + modulePrefixedPath
+		}
+		modulePrefixedPaths = append(modulePrefixedPaths, modulePrefixedPath)
+		if ok {
+			return storage.NewErrExistsMultipleLocations(moduleObjectInfo.Path(), modulePrefixedPaths...)
+		}
+		seenPaths[moduleObjectInfo.Path()] = modulePrefixedPaths
+		return nil
+	}); err != nil {
+		return nil, err
+	}
 	return &moduleFileSet{
 		Module:              module,
-		allModuleReadBucket: newMultiModuleReadBucket(moduleReadBuckets...),
-	}
+		allModuleReadBucket: multiReadBucket,
+	}, nil
 }
 
 func (m *moduleFileSet) AllFileInfos(ctx context.Context) ([]bufmoduleref.FileInfo, error) {
