@@ -37,43 +37,42 @@ import (
 
 func TestSuccess1(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "build", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "build", "--source", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess2(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "build", "--exclude-imports", "--source", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess3(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "build", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "build", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "build", "--exclude-source-info", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess4(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "build", "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess5(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "build", "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess6(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "lint", "--input", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "lint", "--input", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "lint", filepath.Join("testdata", "success"))
 }
 
 func TestSuccessProfile1(t *testing.T) {
 	t.Parallel()
-	testRunStdoutProfile(t, nil, 0, ``, "build", "--source", filepath.Join("testdata", "success"))
 	testRunStdoutProfile(t, nil, 0, ``, "build", filepath.Join("testdata", "success"))
 }
 
@@ -82,7 +81,7 @@ func TestFail1(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
+		1,
 		``,
 		"build",
 		"--source",
@@ -103,7 +102,7 @@ func TestFail2(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
+		1,
 		``,
 		"build",
 		"--exclude-imports",
@@ -126,7 +125,7 @@ func TestFail3(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
+		1,
 		``,
 		"build",
 		"--exclude-source-info",
@@ -149,7 +148,7 @@ func TestFail4(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
+		1,
 		``,
 		"build",
 		"--exclude-imports",
@@ -174,9 +173,8 @@ func TestFail5(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		``,
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
@@ -197,9 +195,8 @@ func TestFail6(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		``,
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
@@ -225,9 +222,8 @@ func TestFail7(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		``,
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -252,9 +248,8 @@ func TestFail7(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		``,
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -283,9 +278,8 @@ func TestFail8(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
-		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
+		1,
+		``,
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail2"),
@@ -306,8 +300,8 @@ func TestFail9(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		``,
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail2"),
@@ -331,7 +325,7 @@ func TestFail10(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
+		1,
 		``,
 		"lint",
 		"--input",
@@ -356,8 +350,8 @@ func TestFail11(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		fmt.Sprintf("%v:5:8:buf/buf.proto: does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
+		1,
+		``,
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
@@ -381,14 +375,8 @@ func TestFail12(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		`version: v1
-lint:
-  ignore_only:
-    FIELD_LOWER_SNAKE_CASE:
-	  - buf/buf.proto
-	PACKAGE_DIRECTORY_MATCH:
-	  - buf/buf.proto`,
+		1,
+		``,
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
@@ -506,14 +494,8 @@ func TestFailCheckBreaking1(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
-		`),
+		1,
+		``,
 		"breaking",
 		"--input",
 		// can't bother right now to filepath.Join this
@@ -863,8 +845,8 @@ func TestLsFiles(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
-		filepath.FromSlash(`testdata/success/buf/buf.proto`),
+		1,
+		``,
 		"ls-files",
 		"--input",
 		filepath.Join("testdata", "success"),

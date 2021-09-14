@@ -125,7 +125,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		`The config file or data to use.`,
 	)
 
-	// deprecated
+	// deprecated, but not marked as deprecated as we return error if this is used
 	flagSet.StringVar(
 		&f.Source,
 		sourceFlagName,
@@ -135,21 +135,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			buffetch.AllFormatsString,
 		),
 	)
-	_ = flagSet.MarkDeprecated(
-		sourceFlagName,
-		`input as the first argument instead.`+bufcli.FlagDeprecationMessageSuffix,
-	)
 	_ = flagSet.MarkHidden(sourceFlagName)
-	// deprecated
+	// deprecated, but not marked as deprecated as we return error if this is used
 	flagSet.StringVar(
 		&f.SourceConfig,
 		sourceConfigFlagName,
 		"",
 		`The config file or data to use.`,
-	)
-	_ = flagSet.MarkDeprecated(
-		sourceConfigFlagName,
-		fmt.Sprintf("use --%s instead.%s", configFlagName, bufcli.FlagDeprecationMessageSuffix),
 	)
 	_ = flagSet.MarkHidden(sourceConfigFlagName)
 }
