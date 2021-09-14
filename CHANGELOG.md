@@ -21,39 +21,39 @@ Simply update the command or flag, and you'll be good to go
 - Removed the `--name` and `--dep` flags in `buf mod init`.
 - Removed the `--version` flag in favor of the `buf version` command, which writes to stdout.
 - Moved the output of `--help` and `help` from stderr to stdout.
-- [From v0.55.0](#v0.55.0): The version key in all configuration files (`buf.yaml`, `buf.gen.yaml`, `buf.work.yaml`) is now required.
-- [From v0.45.0](#v0.45.0): Removed the `buf beta config init` command in favor of `buf config init`.
-- [From v0.45.0](#v0.45.0): Removed the `buf beta mod export` command in favor of `buf export`.
-- [From v0.45.0](#v0.45.0): Removed the `buf beta mod init` command in favor of `buf config init`.
-- [From v0.45.0](#v0.45.0): Removed the `buf beta mod update` command in favor of `buf mod update`.
-- [From v0.45.0](#v0.45.0): Removed the `buf beta mod clear-cache` command in favor of `buf mod clear-cache`.
-- [From v0.45.0](#v0.45.0): Removed the `buf beta push` command in favor of `buf mod push`.
-- [From v0.34.0](#v0.34.0): Removed the `buf check breaking` command in favor of `buf breaking`.
-- [From v0.34.0](#v0.34.0): Removed the `buf check lint` command in favor of `buf lint`.
-- [From v0.34.0](#v0.34.0): Removed the `buf check ls-lint-checkers` command in favor of `buf config ls-lint-rules`.
-- [From v0.34.0](#v0.34.0): Removed the `buf check ls-breaking-checkers` command in favor of `buf config ls-breaking-rules`.
-- [From v0.31.0](#v0.31.0): Removed the `--file` flag on `buf build` in favor of the `--path` flag.
-- [From v0.31.0](#v0.31.0): Removed the `--file` flag on `buf lint` in favor of the `--path` flag.
-- [From v0.31.0](#v0.31.0): Removed the `--file` flag on `buf breaking` in favor of the `--path` flag.
-- [From v0.31.0](#v0.31.0): Removed the `--file` flag on `buf generate` in favor of the `--path` flag.
-- [From v0.31.0](#v0.31.0): Removed the `--file` flag on `buf export` in favor of the `--path` flag.
-- [From v0.29.0](#v0.29.0): Removed the `--source` flag on `buf build` in favor of the first positional parameter.
-- [From v0.29.0](#v0.29.0): Removed the `--source-config` flag on `buf build` in favor of the `--config` flag.
-- [From v0.29.0](#v0.29.0): Removed the `--input` flag on `buf lint` in favor of the first positional parameter.
-- [From v0.29.0](#v0.29.0): Removed the `--input-config` flag on `buf lint` in favor of the `--config` flag.
-- [From v0.29.0](#v0.29.0): Removed the `--input` flag on `buf breaking` in favor of the first positional parameter.
-- [From v0.29.0](#v0.29.0): Removed the `--input-config` flag on `buf breaking` in favor of the `--config` flag.
-- [From v0.29.0](#v0.29.0): Removed the `--against-input` flag on `buf breaking` in favor of the `--against` flag.
-- [From v0.29.0](#v0.29.0): Removed the `--against-input-config` flag on `buf breaking` in favor of the `--against-config` flag.
-- [From v0.29.0](#v0.29.0): Removed the `--input` flag on `buf generate` in favor of the first positional parameter.
-- [From v0.29.0](#v0.29.0): Removed the `--input-config` flag on `buf generate` in favor of the `--config` flag.
-- [From v0.29.0](#v0.29.0): Removed the `--input` flag on `buf ls-files` in favor of the first positional parameter.
-- [From v0.29.0](#v0.29.0): Removed the `--input-config` flag on `buf ls-files` in favor of the `--config` flag.
-- [From v0.29.0](#v0.29.0): Removed the `buf image build` command in favor of `buf build`.
-- [From v0.29.0](#v0.29.0): Removed the `buf image convert` command.
-- [From v0.29.0](#v0.29.0): Removed the `buf beta image convert` command.
-- [From v0.23.0](#v0.23.0): Removed the `buf experimental image convert` command.
-- [From v0.52.0](#v0.52.0) [and v0.34.0](#v0.34.0): Complete deletion `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`, which have been moved to `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
+- [From v0.55.0](https://github.com/bufbuild/buf/releases/tag/v0.55.0): The version key in all configuration files (`buf.yaml`, `buf.gen.yaml`, `buf.work.yaml`) is now required.
+- [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta config init` command in favor of `buf config init`.
+- [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta mod export` command in favor of `buf export`.
+- [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta mod init` command in favor of `buf config init`.
+- [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta mod update` command in favor of `buf mod update`.
+- [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta mod clear-cache` command in favor of `buf mod clear-cache`.
+- [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta push` command in favor of `buf mod push`.
+- [From v0.34.0](https://github.com/bufbuild/buf/releases/tag/v0.34.0): Removed the `buf check breaking` command in favor of `buf breaking`.
+- [From v0.34.0](https://github.com/bufbuild/buf/releases/tag/v0.34.0): Removed the `buf check lint` command in favor of `buf lint`.
+- [From v0.34.0](https://github.com/bufbuild/buf/releases/tag/v0.34.0): Removed the `buf check ls-lint-checkers` command in favor of `buf config ls-lint-rules`.
+- [From v0.34.0](https://github.com/bufbuild/buf/releases/tag/v0.34.0): Removed the `buf check ls-breaking-checkers` command in favor of `buf config ls-breaking-rules`.
+- [From v0.31.0](https://github.com/bufbuild/buf/releases/tag/v0.31.0): Removed the `--file` flag on `buf build` in favor of the `--path` flag.
+- [From v0.31.0](https://github.com/bufbuild/buf/releases/tag/v0.31.0): Removed the `--file` flag on `buf lint` in favor of the `--path` flag.
+- [From v0.31.0](https://github.com/bufbuild/buf/releases/tag/v0.31.0): Removed the `--file` flag on `buf breaking` in favor of the `--path` flag.
+- [From v0.31.0](https://github.com/bufbuild/buf/releases/tag/v0.31.0): Removed the `--file` flag on `buf generate` in favor of the `--path` flag.
+- [From v0.31.0](https://github.com/bufbuild/buf/releases/tag/v0.31.0): Removed the `--file` flag on `buf export` in favor of the `--path` flag.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--source` flag on `buf build` in favor of the first positional parameter.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--source-config` flag on `buf build` in favor of the `--config` flag.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--input` flag on `buf lint` in favor of the first positional parameter.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--input-config` flag on `buf lint` in favor of the `--config` flag.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--input` flag on `buf breaking` in favor of the first positional parameter.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--input-config` flag on `buf breaking` in favor of the `--config` flag.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--against-input` flag on `buf breaking` in favor of the `--against` flag.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--against-input-config` flag on `buf breaking` in favor of the `--against-config` flag.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--input` flag on `buf generate` in favor of the first positional parameter.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--input-config` flag on `buf generate` in favor of the `--config` flag.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--input` flag on `buf ls-files` in favor of the first positional parameter.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `--input-config` flag on `buf ls-files` in favor of the `--config` flag.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `buf image build` command in favor of `buf build`.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `buf image convert` command.
+- [From v0.29.0](https://github.com/bufbuild/buf/releases/tag/v0.29.0): Removed the `buf beta image convert` command.
+- [From v0.23.0](https://github.com/bufbuild/buf/releases/tag/v0.23.0): Removed the `buf experimental image convert` command.
+- [From v0.52.0](https://github.com/bufbuild/buf/releases/tag/v0.52.0) [and v0.34.0](https://github.com/bufbuild/buf/releases/tag/v0.34.0): Complete deletion `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`, which have been moved to `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
 
 In January 2021, `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint` were deprecated and scheduled for removal for v1.0. In August 2021, we began returning error for every invocation of `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`. As v1.0 is imminent, this release completes the deletion process.
 
