@@ -84,7 +84,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		),
 	)
 	flagSet.StringVar(
-		&f.InputConfig,
+		&f.Config,
 		configFlagName,
 		"",
 		`The config file or data to use.`,

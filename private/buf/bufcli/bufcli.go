@@ -60,9 +60,9 @@ const (
 	// Version is the CLI version of buf.
 	Version = "0.57.0-dev"
 
-	// FlagDeprecationMessageSuffix is the suffix for flag deprecation messages.
+	// FlagDeprecationMessageSuffix is the suffix for deprecated flag messages.
 	FlagDeprecationMessageSuffix = `
-We recommend migrating, however this flag continues to work.
+This flag was removed for buf's v1 release.
 See https://docs.buf.build/faq for more details.`
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
@@ -205,7 +205,7 @@ If specified multiple times, the union will be taken.`,
 	)
 }
 
-// BindPathAndDeprecatedFiles binds the paths flag and the deprecated files flag.
+// BindPathsAndDeprecatedFiles binds the paths flag and the deprecated files flag.
 func BindPathsAndDeprecatedFiles(
 	flagSet *pflag.FlagSet,
 	pathsAddr *[]string,
@@ -296,13 +296,13 @@ func GetInputValue(
 		return "", fmt.Errorf("only 1 argument allowed but %d arguments specified", numArgs)
 	}
 	if arg != "" && deprecatedFlag != "" {
-		return "", fmt.Errorf("cannot specify both first argument and deprecated flag --%s", deprecatedFlagName)
+		return "", fmt.Errorf("cannot specify both first argument and deprecated flag --%s - use the first argument instead", deprecatedFlagName)
 	}
 	if arg != "" {
 		return arg, nil
 	}
 	if deprecatedFlag != "" {
-		return deprecatedFlag, nil
+		return "", fmt.Errorf("flag --%s is no longer supported - use the first argument instead", deprecatedFlagName)
 	}
 	return defaultValue, nil
 }
@@ -315,12 +315,15 @@ func GetStringFlagOrDeprecatedFlag(
 	deprecatedFlagName string,
 ) (string, error) {
 	if flag != "" && deprecatedFlag != "" {
-		return "", fmt.Errorf("cannot specify both --%s and --%s", flagName, deprecatedFlagName)
+		return "", fmt.Errorf("cannot specify both --%s and --%s - use --%s instead", flagName, deprecatedFlagName, flagName)
 	}
 	if flag != "" {
 		return flag, nil
 	}
-	return deprecatedFlag, nil
+	if deprecatedFlag != "" {
+		return "", fmt.Errorf("flag --%s is no longer supported - use --%s instead", deprecatedFlagName, flagName)
+	}
+	return "", nil
 }
 
 // GetStringSliceFlagOrDeprecatedFlag gets the flag, or the deprecated flag.
@@ -331,12 +334,15 @@ func GetStringSliceFlagOrDeprecatedFlag(
 	deprecatedFlagName string,
 ) ([]string, error) {
 	if len(flag) > 0 && len(deprecatedFlag) > 0 {
-		return nil, fmt.Errorf("cannot specify both --%s and --%s", flagName, deprecatedFlagName)
+		return nil, fmt.Errorf("cannot specify both --%s and --%s - use --%s instead", flagName, deprecatedFlagName, flagName)
 	}
 	if len(flag) > 0 {
 		return flag, nil
 	}
-	return deprecatedFlag, nil
+	if len(deprecatedFlag) > 0 {
+		return nil, fmt.Errorf("flag --%s is no longer supported - use --%s instead", deprecatedFlagName, flagName)
+	}
+	return nil, nil
 }
 
 // NewWireImageConfigReader returns a new ImageConfigReader.
