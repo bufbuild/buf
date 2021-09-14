@@ -60,11 +60,6 @@ const (
 	// Version is the CLI version of buf.
 	Version = "0.57.0-dev"
 
-	// FlagDeprecationMessageSuffix is the suffix for deprecated flag messages.
-	FlagDeprecationMessageSuffix = `
-This flag was removed for buf's v1 release.
-See https://docs.buf.build/faq for more details.`
-
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
@@ -206,6 +201,9 @@ If specified multiple times, the union will be taken.`,
 }
 
 // BindPathsAndDeprecatedFiles binds the paths flag and the deprecated files flag.
+//
+// We do not mark the files flag as deprecated as we now error when we hit it, and
+// print out an error message via the returned error.
 func BindPathsAndDeprecatedFiles(
 	flagSet *pflag.FlagSet,
 	pathsAddr *[]string,
@@ -222,10 +220,6 @@ func BindPathsAndDeprecatedFiles(
 If specified multiple times, the union will be taken.`,
 	)
 	_ = flagSet.MarkHidden(filesFlagName)
-	_ = flagSet.MarkDeprecated(
-		filesFlagName,
-		fmt.Sprintf("use --%s instead.%s", pathsFlagName, FlagDeprecationMessageSuffix),
-	)
 }
 
 // BindInputHashtag binds the input hashtag flag.
@@ -266,7 +260,7 @@ If no argument is specified, defaults to ".".`,
 	)
 }
 
-// GetInputValue gets either the first arg or the deprecated flag, but not both.
+// GetInputValue gets the first arg and errors if the deprecated flag is used.
 //
 // Also parses the special input hashtag flag that deals with the situation "buf build -#format=json".
 // The existence of 0 or 1 args should be handled by the Args field on Command.
@@ -296,18 +290,20 @@ func GetInputValue(
 		return "", fmt.Errorf("only 1 argument allowed but %d arguments specified", numArgs)
 	}
 	if arg != "" && deprecatedFlag != "" {
-		return "", fmt.Errorf("cannot specify both first argument and deprecated flag --%s - use the first argument instead", deprecatedFlagName)
+		return "", fmt.Errorf("cannot specify both first argument and deprecated flag --%s, use the first argument instead", deprecatedFlagName)
 	}
 	if arg != "" {
 		return arg, nil
 	}
 	if deprecatedFlag != "" {
-		return "", fmt.Errorf("flag --%s is no longer supported - use the first argument instead", deprecatedFlagName)
+		return "", fmt.Errorf("flag --%s is no longer supported, use the first argument instead", deprecatedFlagName)
 	}
 	return defaultValue, nil
 }
 
 // GetStringFlagOrDeprecatedFlag gets the flag, or the deprecated flag.
+//
+// An error is returned if the deprecated flag is used.
 func GetStringFlagOrDeprecatedFlag(
 	flag string,
 	flagName string,
@@ -315,18 +311,20 @@ func GetStringFlagOrDeprecatedFlag(
 	deprecatedFlagName string,
 ) (string, error) {
 	if flag != "" && deprecatedFlag != "" {
-		return "", fmt.Errorf("cannot specify both --%s and --%s - use --%s instead", flagName, deprecatedFlagName, flagName)
+		return "", fmt.Errorf("cannot specify both --%s and --%s, use --%s instead", flagName, deprecatedFlagName, flagName)
 	}
 	if flag != "" {
 		return flag, nil
 	}
 	if deprecatedFlag != "" {
-		return "", fmt.Errorf("flag --%s is no longer supported - use --%s instead", deprecatedFlagName, flagName)
+		return "", fmt.Errorf("flag --%s is no longer supported, use --%s instead", deprecatedFlagName, flagName)
 	}
 	return "", nil
 }
 
 // GetStringSliceFlagOrDeprecatedFlag gets the flag, or the deprecated flag.
+//
+// An error is returned if the deprecated flag is used.
 func GetStringSliceFlagOrDeprecatedFlag(
 	flag []string,
 	flagName string,
@@ -334,13 +332,13 @@ func GetStringSliceFlagOrDeprecatedFlag(
 	deprecatedFlagName string,
 ) ([]string, error) {
 	if len(flag) > 0 && len(deprecatedFlag) > 0 {
-		return nil, fmt.Errorf("cannot specify both --%s and --%s - use --%s instead", flagName, deprecatedFlagName, flagName)
+		return nil, fmt.Errorf("cannot specify both --%s and --%s, use --%s instead", flagName, deprecatedFlagName, flagName)
 	}
 	if len(flag) > 0 {
 		return flag, nil
 	}
 	if len(deprecatedFlag) > 0 {
-		return nil, fmt.Errorf("flag --%s is no longer supported - use --%s instead", deprecatedFlagName, flagName)
+		return nil, fmt.Errorf("flag --%s is no longer supported, use --%s instead", deprecatedFlagName, flagName)
 	}
 	return nil, nil
 }

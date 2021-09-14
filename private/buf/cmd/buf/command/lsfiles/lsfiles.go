@@ -90,16 +90,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		`The config file or data to use.`,
 	)
 
-	// deprecated
+	// deprecated, but not marked as deprecated as we return error if this is used
 	flagSet.StringVar(
 		&f.InputConfig,
 		inputConfigFlagName,
 		"",
 		`The config file or data to use.`,
-	)
-	_ = flagSet.MarkDeprecated(
-		inputConfigFlagName,
-		fmt.Sprintf("use --%s instead.%s", configFlagName, bufcli.FlagDeprecationMessageSuffix),
 	)
 	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
