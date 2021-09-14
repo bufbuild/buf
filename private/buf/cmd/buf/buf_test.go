@@ -67,8 +67,6 @@ func TestSuccess5(t *testing.T) {
 
 func TestSuccess6(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "check", "lint", "--input", filepath.Join("testdata", "success"))
-	testRunStdout(t, nil, 0, ``, "check", "lint", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "lint", "--input", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "lint", filepath.Join("testdata", "success"))
 }
@@ -516,43 +514,6 @@ func TestFailCheckBreaking1(t *testing.T) {
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
 		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
 		`),
-		"check",
-		"breaking",
-		"--input",
-		// can't bother right now to filepath.Join this
-		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
-		"--against-input",
-		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
-	)
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
-		`),
-		"check",
-		"breaking",
-		// can't bother right now to filepath.Join this
-		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
-		"--against",
-		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
-	)
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
-		`),
 		"breaking",
 		"--input",
 		// can't bother right now to filepath.Join this
@@ -627,16 +588,6 @@ COMMENT_SERVICE                   COMMENTS                 Checks that services 
 RPC_NO_CLIENT_STREAMING           UNARY_RPC                Checks that RPCs are not client streaming.
 RPC_NO_SERVER_STREAMING           UNARY_RPC                Checks that RPCs are not server streaming.
 		`
-	testRunStdout(
-		t,
-		nil,
-		0,
-		expectedStdout,
-		"check",
-		"ls-lint-checkers",
-		"--version",
-		"v1",
-	)
 	testRunStdout(
 		t,
 		nil,
@@ -791,16 +742,6 @@ FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            
 		nil,
 		0,
 		expectedStdout,
-		"check",
-		"ls-breaking-checkers",
-		"--version",
-		"v1",
-	)
-	testRunStdout(
-		t,
-		nil,
-		0,
-		expectedStdout,
 		"config",
 		"ls-breaking-rules",
 		"--version",
@@ -905,16 +846,6 @@ FIELD_NO_DELETE_UNLESS_NAME_RESERVED            WIRE_JSON                       
 ENUM_VALUE_NO_DELETE_UNLESS_NUMBER_RESERVED     WIRE_JSON, WIRE                 Checks that enum values are not deleted from a given enum unless the number is reserved.
 FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 Checks that fields are not deleted from a given message unless the number is reserved.
 		`
-	testRunStdout(
-		t,
-		nil,
-		0,
-		expectedStdout,
-		"check",
-		"ls-breaking-checkers",
-		"--version",
-		"v1beta1",
-	)
 	testRunStdout(
 		t,
 		nil,
@@ -1094,9 +1025,9 @@ func TestImageConvertRoundtripJSONBinaryJSON(t *testing.T) {
 	require.Equal(t, json1, stdout.Bytes())
 }
 
-func TestModInitBasic(t *testing.T) {
+func TestConfigInitBasic(t *testing.T) {
 	t.Parallel()
-	testModInit(
+	testConfigInit(
 		t,
 		`version: v1
 lint:
@@ -1479,26 +1410,20 @@ func testCopyReadBucketToTempDir(
 	return tempDir, readWriteBucket
 }
 
-func testModInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {
-	for _, baseArgs := range [][]string{
-		// deprecated commands as well
-		{"mod", "init"},
-		{"beta", "mod", "init"},
-		{"beta", "config", "init"},
-	} {
-		tempDir := t.TempDir()
-		args := append(baseArgs, "-o", tempDir)
-		if document {
-			args = append(args, "--doc")
-		}
-		if name != "" {
-			args = append(args, "--name", name)
-		}
-		testRun(t, 0, nil, nil, args...)
-		data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1FilePath))
-		require.NoError(t, err)
-		require.Equal(t, expectedData, string(data))
+func testConfigInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {
+	tempDir := t.TempDir()
+	baseArgs := []string{"config", "init"}
+	args := append(baseArgs, "-o", tempDir)
+	if document {
+		args = append(args, "--doc")
 	}
+	if name != "" {
+		args = append(args, "--name", name)
+	}
+	testRun(t, 0, nil, nil, args...)
+	data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1FilePath))
+	require.NoError(t, err)
+	require.Equal(t, expectedData, string(data))
 }
 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {

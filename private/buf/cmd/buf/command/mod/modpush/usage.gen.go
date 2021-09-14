@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package convert
+package modpush
 
 import _ "github.com/bufbuild/buf/private/usage"

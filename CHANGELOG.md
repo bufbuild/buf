@@ -2,7 +2,30 @@
 
 ## [Unreleased]
 
-Complete deletion `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`, which have been moved to `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
+- The version key in all configuration files (`buf.yaml`, `buf.gen.yaml`, `buf.work.yaml`) is now required.
+- The `--help` flag now writes to stdout instead of stderr.
+- Removed the `--name` and `--dep` flags in `buf mod init`.
+- Removed the `--version` flag in favor of the `buf version` command, which writes to stdout.
+- Removed the `buf image build` command in favor of `buf build`.
+- Removed the `buf check breaking` command in favor of `buf breaking`.
+- Removed the `buf check lint` command in favor of `buf lint`.
+- Removed the `buf check ls-lint-checkers` command in favor of `buf config ls-lint-rules`.
+- Removed the `buf check ls-breaking-checkers` command in favor of `buf config ls-breaking-rules`.
+- Removed the `buf beta config init` command in favor of `buf config init`.
+- Removed the `buf beta mod export` command in favor of `buf export`.
+- Removed the `buf beta mod init` command in favor of `buf config init`.
+- Removed the `buf beta mod update` command in favor of `buf mod update`.
+- Removed the `buf beta mod clear-cache` command in favor of `buf mod clear-cache`.
+- Removed the `buf beta push` command in favor of `buf mod push`.
+- Removed the `buf login` command in favor of `buf registry login`.
+- Removed the `buf logout` command in favor of `buf registry logout`.
+- Removed the `buf push` command in favor of `buf mod push`.
+- Removed the `buf mod init` command in favor of `buf config init`.
+- Removed the `buf image convert` command.
+- Removed the `buf beta image convert` command.
+- Removed the `buf experimental image convert` command.
+- Complete deletion `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`, which
+  have been moved to `protoc-gen-buf-breaking` and `protoc-gen-buf-lint`.
 
 In January 2021, `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint` were deprecated and scheduled for removal for v1.0. In August 2021, we began returning error for every invocation of `protoc-gen-buf-check-breaking` and `protoc-gen-buf-check-lint`. As v1.0 is imminent, this release completes the deletion process.
 
@@ -14,8 +37,6 @@ go get github.com/bufbuild/buf/cmd/protoc-gen-buf-breaking
 # instead of curl -sSL https://github.com/bufbuild/buf/releases/download/v0.57.0/protoc-gen-buf-check-breaking-Linux-x86_64
 curl -sSL https://github.com/bufbuild/buf/releases/download/v0.57.0/protoc-gen-buf-breaking-Linux-x86_64
 ```
-
-There is no change in functionality.
 
 ## [v0.56.0] - 2021-09-08
 
