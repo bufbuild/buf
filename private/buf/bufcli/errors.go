@@ -181,7 +181,7 @@ func wrapError(err error) error {
 	case rpcCode == rpc.ErrorCodeUnavailable:
 		return fmt.Errorf(`Failure: the server hosted at that remote is unavailable: %w.`, err)
 	}
-	return fmt.Errorf("Failure: %w.", err)
+	return fmt.Errorf("Failure: %w", err)
 }
 
 // isEmptyUnknownError returns true if the given

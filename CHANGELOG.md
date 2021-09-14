@@ -8,8 +8,8 @@ already-deprecated commands and flags.
 At Buf, we take compatibility very seriously. When we say v1.0, we mean it - we hope `buf` will be
 stable on v1 for the next decade, and if there is something we want to change, it is our responsibility to
 make sure that we don't break you, not your responsibility to change because of us. We have learned
-a lot about `buf` usage in the last two years, and have deprecated flags and commands as we go, but
-for v1.0, we are removing the deprecated items to make sure we have a clean setup going forward.
+a lot about `buf` usage in the last two years of our beta, and have deprecated flags and commands as
+we go, but for v1.0, we are removing the deprecated items to make sure we have a clean setup going forward.
 
 All commands and flags have been printing warnings for a long time, and have an easy migration path.
 Simply update the command or flag, and you'll be good to go:
