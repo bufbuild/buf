@@ -23,29 +23,38 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
-type workspace struct {
-	// bufmoduleref.ModuleIdentity -> bufmodule.Module
-	namedModules map[string]bufmodule.Module
-	allModules   []bufmodule.Module
+type workspaceBuilder struct {
+	configProvider      bufconfig.Provider
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
+	moduleCache         map[string]*cachedModule
 }
 
-func newWorkspace(
+func newWorkspaceBuilder(
+	configProvider bufconfig.Provider,
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
+) *workspaceBuilder {
+	return &workspaceBuilder{
+		configProvider:      configProvider,
+		moduleBucketBuilder: moduleBucketBuilder,
+		moduleCache:         make(map[string]*cachedModule),
+	}
+}
+
+// BuildWorkspace builds a bufmodule.Workspace for the given targetSubDirPath.
+func (w *workspaceBuilder) BuildWorkspace(
 	ctx context.Context,
 	workspaceConfig *Config,
 	readBucket storage.ReadBucket,
-	configProvider bufconfig.Provider,
-	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	relativeRootPath string,
 	targetSubDirPath string,
 	configOverride string,
 	externalDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
-) (*workspace, error) {
+) (bufmodule.Workspace, error) {
 	if workspaceConfig == nil {
 		return nil, errors.New("received a nil workspace config")
 	}
@@ -59,9 +68,22 @@ func newWorkspace(
 		if err := validateWorkspaceDirectoryNonEmpty(ctx, readBucket, directory, workspaceID); err != nil {
 			return nil, err
 		}
-		if directory == targetSubDirPath {
-			// We don't want to include the module found at the targetSubDirPath
-			// since it would otherwise be included twice.
+		if cachedModule, ok := w.moduleCache[directory]; ok {
+			if directory == targetSubDirPath {
+				continue
+			}
+			// We've already built this module, so we can use the cached-equivalent.
+			if moduleIdentity := cachedModule.moduleConfig.ModuleIdentity; moduleIdentity != nil {
+				if _, ok := namedModules[moduleIdentity.IdentityString()]; ok {
+					return nil, fmt.Errorf(
+						"module %q is provided by multiple workspace directories listed in %s",
+						moduleIdentity.IdentityString(),
+						workspaceID,
+					)
+				}
+				namedModules[moduleIdentity.IdentityString()] = cachedModule.module
+			}
+			allModules = append(allModules, cachedModule.module)
 			continue
 		}
 		if err := validateInputOverlap(directory, targetSubDirPath, workspaceID); err != nil {
@@ -70,7 +92,7 @@ func newWorkspace(
 		readBucketForDirectory := storage.MapReadBucket(readBucket, storage.MapOnPrefix(directory))
 		moduleConfig, err := bufconfig.ReadConfig(
 			ctx,
-			configProvider,
+			w.configProvider,
 			readBucketForDirectory,
 			bufconfig.ReadConfigWithOverride(configOverride),
 		)
@@ -94,7 +116,7 @@ func newWorkspace(
 		if err != nil {
 			return nil, err
 		}
-		module, err := moduleBucketBuilder.BuildForBucket(
+		module, err := w.moduleBucketBuilder.BuildForBucket(
 			ctx,
 			readBucketForDirectory,
 			moduleConfig.Build,
@@ -108,6 +130,16 @@ func newWorkspace(
 				err,
 			)
 		}
+		w.moduleCache[directory] = newCachedModule(
+			module,
+			moduleConfig,
+		)
+		if directory == targetSubDirPath {
+			// We don't want to include the module found at the targetSubDirPath
+			// since it would otherwise be included twice. Note that we include
+			// this check here so that the module is still built and cached upfront.
+			continue
+		}
 		if moduleIdentity := moduleConfig.ModuleIdentity; moduleIdentity != nil {
 			if _, ok := namedModules[moduleIdentity.IdentityString()]; ok {
 				return nil, fmt.Errorf(
@@ -120,19 +152,20 @@ func newWorkspace(
 		}
 		allModules = append(allModules, module)
 	}
-	return &workspace{
-		namedModules: namedModules,
-		allModules:   allModules,
-	}, nil
+	return bufmodule.NewWorkspace(
+		namedModules,
+		allModules,
+	), nil
 }
 
-func (w *workspace) GetModule(moduleIdentity bufmoduleref.ModuleIdentity) (bufmodule.Module, bool) {
-	module, ok := w.namedModules[moduleIdentity.IdentityString()]
-	return module, ok
-}
-
-func (w *workspace) GetModules() []bufmodule.Module {
-	return w.allModules
+// GetModuleConfig returns the bufmodule.Module and *bufconfig.Config, associated with the given
+// targetSubDirPath, if it exists.
+func (w *workspaceBuilder) GetModuleConfig(targetSubDirPath string) (bufmodule.Module, *bufconfig.Config, bool) {
+	cachedModule, ok := w.moduleCache[targetSubDirPath]
+	if !ok {
+		return nil, nil, false
+	}
+	return cachedModule.module, cachedModule.moduleConfig, true
 }
 
 func validateWorkspaceDirectoryNonEmpty(
@@ -189,4 +222,20 @@ func validateInputOverlap(
 		)
 	}
 	return nil
+}
+
+// cachedModule encapsulates a module and its configuration.
+type cachedModule struct {
+	module       bufmodule.Module
+	moduleConfig *bufconfig.Config
+}
+
+func newCachedModule(
+	module bufmodule.Module,
+	moduleConfig *bufconfig.Config,
+) *cachedModule {
+	return &cachedModule{
+		module:       module,
+		moduleConfig: moduleConfig,
+	}
 }
