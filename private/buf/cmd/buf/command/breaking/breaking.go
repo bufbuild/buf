@@ -316,17 +316,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	// We need to re-initialize the ImageConfigReader so that the workspace module
-	// cache isn't reused for the against input. Otherwise, verifying compatibility
-	// between workspaces will yield false positives.
-	imageConfigReader, err = bufcli.NewWireImageConfigReader(
-		container,
-		storageosProvider,
-		registryProvider,
-	)
-	if err != nil {
-		return err
-	}
 	againstImageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
 		ctx,
 		container,
