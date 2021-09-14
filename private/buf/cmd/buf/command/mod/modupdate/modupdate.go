@@ -40,8 +40,6 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	deprecated string,
-	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
@@ -51,9 +49,7 @@ func NewCommand(
 			"and writes them and their transitive dependencies to the " +
 			buflock.ExternalConfigFilePath +
 			` file. The first argument is the directory of the local module to update. If no argument is specified, defaults to "."`,
-		Args:       cobra.MaximumNArgs(1),
-		Deprecated: deprecated,
-		Hidden:     hidden,
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)

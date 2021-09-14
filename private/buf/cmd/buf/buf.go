@@ -106,8 +106,8 @@ func NewRootCommand(name string) *appcmd.Command {
 	return &appcmd.Command{
 		Use: name,
 		SubCommands: []*appcmd.Command{
-			build.NewCommand("build", builder, "", false),
-			export.NewCommand("export", builder, "", false),
+			build.NewCommand("build", builder),
+			export.NewCommand("export", builder),
 			{
 				Use:        "image",
 				Short:      "Work with Images and FileDescriptorSets.",
@@ -129,8 +129,8 @@ func NewRootCommand(name string) *appcmd.Command {
 					appcmd.NewDeletedCommand("ls-breaking-checkers", checkLsBreakingCheckersDeprecationMessage),
 				},
 			},
-			lint.NewCommand("lint", builder, "", false),
-			breaking.NewCommand("breaking", builder, "", false),
+			lint.NewCommand("lint", builder),
+			breaking.NewCommand("breaking", builder),
 			generate.NewCommand("generate", builder),
 			protoc.NewCommand("protoc", builder),
 			lsfiles.NewCommand("ls-files", builder),
@@ -140,18 +140,18 @@ func NewRootCommand(name string) *appcmd.Command {
 				SubCommands: []*appcmd.Command{
 					appcmd.NewDeletedCommand("init", modInitDeprecationMessage),
 					modprune.NewCommand("prune", builder),
-					modpush.NewCommand("push", builder, "", false),
-					modupdate.NewCommand("update", builder, "", false),
-					modclearcache.NewCommand("clear-cache", builder, "", false, "cc"),
+					modpush.NewCommand("push", builder),
+					modupdate.NewCommand("update", builder),
+					modclearcache.NewCommand("clear-cache", builder, "cc"),
 				},
 			},
 			{
 				Use:   "config",
 				Short: "Interact with the configuration of Buf.",
 				SubCommands: []*appcmd.Command{
-					configinit.NewCommand("init", builder, "", false),
-					configlslintrules.NewCommand("ls-lint-rules", builder, "", false),
-					configlsbreakingrules.NewCommand("ls-breaking-rules", builder, "", false),
+					configinit.NewCommand("init", builder),
+					configlslintrules.NewCommand("ls-lint-rules", builder),
+					configlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 					configmigratev1beta1.NewCommand("migrate-v1beta1", builder),
 				},
 			},
@@ -159,8 +159,8 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "registry",
 				Short: "Interact with the Buf Schema Registry.",
 				SubCommands: []*appcmd.Command{
-					registrylogin.NewCommand("login", builder, "", false),
-					registrylogout.NewCommand("logout", builder, "", false),
+					registrylogin.NewCommand("login", builder),
+					registrylogout.NewCommand("logout", builder),
 				},
 			},
 			{
