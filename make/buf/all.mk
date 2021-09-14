@@ -131,7 +131,7 @@ updateversion:
 ifndef VERSION
 	$(error "VERSION must be set")
 endif
-	$(SED_I) "s/Version.*=.*\"0\.[0-9][0-9]*\.[0-9][0-9]*.*\"/Version = \"$(VERSION)\"/g" private/buf/bufcli/bufcli.go
+	$(SED_I) "s/Version.*=.*\"[0-9]\.[0-9][0-9]*\.[0-9][0-9]*.*\"/Version = \"$(VERSION)\"/g" private/buf/bufcli/bufcli.go
 	gofmt -s -w private/buf/bufcli/bufcli.go
 
 .PHONY: updategoversion
