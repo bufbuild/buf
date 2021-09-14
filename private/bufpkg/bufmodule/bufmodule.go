@@ -229,6 +229,17 @@ type Workspace interface {
 	GetModules() []Module
 }
 
+// NewWorkspace returns a new module workspace.
+func NewWorkspace(
+	namedModules map[string]Module,
+	allModules []Module,
+) Workspace {
+	return newWorkspace(
+		namedModules,
+		allModules,
+	)
+}
+
 // ModuleToProtoModule converts the Module to a proto Module.
 //
 // This takes all Sources and puts them in the Module, not just Targets.
