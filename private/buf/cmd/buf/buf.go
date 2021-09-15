@@ -60,7 +60,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/version"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 )
@@ -106,7 +105,9 @@ func NewRootCommand(name string) *appcmd.Command {
 	)
 	globalFlags := bufcli.NewGlobalFlags()
 	return &appcmd.Command{
-		Use: name,
+		Use:                 name,
+		Version:             bufcli.Version,
+		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder),
 			export.NewCommand("export", builder),
@@ -115,7 +116,6 @@ func NewRootCommand(name string) *appcmd.Command {
 			generate.NewCommand("generate", builder),
 			protoc.NewCommand("protoc", builder),
 			lsfiles.NewCommand("ls-files", builder),
-			version.NewCommand("version", builder),
 			{
 				Use:   "mod",
 				Short: "Configure and update buf modules.",
@@ -329,6 +329,5 @@ func NewRootCommand(name string) *appcmd.Command {
 				},
 			},
 		},
-		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 	}
 }
