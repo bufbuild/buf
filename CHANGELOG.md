@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.0.0-rc1] - 2021-09-15
 
 This is our first v1.0 release candidate. This release largely concentrates on erroring for
@@ -539,6 +543,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc1...HEAD
 [v1.0.0-rc1]: https://github.com/bufbuild/buf/compare/v0.56.0...v1.0.0-rc1
 [v0.56.0]: https://github.com/bufbuild/buf/compare/v0.55.0...v0.56.0
 [v0.55.0]: https://github.com/bufbuild/buf/compare/v0.54.1...v0.55.0
