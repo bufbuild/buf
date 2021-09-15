@@ -108,6 +108,52 @@ func TestError(t *testing.T) {
 	require.Equal(t, app.NewError(5, "bar"), Run(context.Background(), container, rootCommand))
 }
 
+func TestVersionToStdout(t *testing.T) {
+	version := "0.0.1-dev"
+	rootCommand := &Command{
+		Use:     "test",
+		Version: version,
+		SubCommands: []*Command{
+			{
+				Use: "foo",
+				Run: func(context.Context, app.Container) error {
+					return nil
+				},
+			},
+		},
+	}
+	buffer := bytes.NewBuffer(nil)
+	container := app.NewContainer(
+		nil,
+		nil,
+		buffer,
+		nil,
+		"test",
+		"--version",
+	)
+	require.NoError(t, Run(context.Background(), container, rootCommand))
+	require.Equal(t, version+"\n", buffer.String())
+
+	rootCommand = &Command{
+		Use:     "test",
+		Version: version,
+		Run: func(context.Context, app.Container) error {
+			return nil
+		},
+	}
+	buffer = bytes.NewBuffer(nil)
+	container = app.NewContainer(
+		nil,
+		nil,
+		buffer,
+		nil,
+		"test",
+		"--version",
+	)
+	require.NoError(t, Run(context.Background(), container, rootCommand))
+	require.Equal(t, version+"\n", buffer.String())
+}
+
 func TestHelpToStdout(t *testing.T) {
 	rootCommand := &Command{
 		Use: "test",

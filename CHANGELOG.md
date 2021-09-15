@@ -16,10 +16,9 @@ Simply update the command or flag, and you'll be good to go:
 
 - Removed the `buf login` command in favor of `buf registry login`.
 - Removed the `buf logout` command in favor of `buf registry logout`.
-- Removed the `buf push` command in favor of `buf mod push`.
 - Removed the `buf mod init` command in favor of `buf config init`.
-- Removed the `--name` and `--dep` flags in `buf mod init`.
-- Removed the `--version` flag in favor of the `buf version` command, which writes to stdout.
+- Removed the `--name` and `--dep` flags in `buf config init`.
+- Moved the output of `--version` from stderr to stdout.
 - Moved the output of `--help` and `help` from stderr to stdout.
 - [From v0.55.0](https://github.com/bufbuild/buf/releases/tag/v0.55.0): The version key in all configuration files (`buf.yaml`, `buf.gen.yaml`, `buf.work.yaml`) is now required.
 - [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta config init` command in favor of `buf config init`.
@@ -27,7 +26,7 @@ Simply update the command or flag, and you'll be good to go:
 - [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta mod init` command in favor of `buf config init`.
 - [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta mod update` command in favor of `buf mod update`.
 - [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta mod clear-cache` command in favor of `buf mod clear-cache`.
-- [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta push` command in favor of `buf mod push`.
+- [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta push` command in favor of `buf push`.
 - [From v0.34.0](https://github.com/bufbuild/buf/releases/tag/v0.34.0): Removed the `buf check breaking` command in favor of `buf breaking`.
 - [From v0.34.0](https://github.com/bufbuild/buf/releases/tag/v0.34.0): Removed the `buf check lint` command in favor of `buf lint`.
 - [From v0.34.0](https://github.com/bufbuild/buf/releases/tag/v0.34.0): Removed the `buf check ls-lint-checkers` command in favor of `buf config ls-lint-rules`.

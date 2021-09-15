@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package version
+package push
 
 import _ "github.com/bufbuild/buf/private/usage"
