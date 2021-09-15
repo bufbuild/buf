@@ -67,6 +67,12 @@ type Command struct {
 	// SubCommands are the sub-commands. Optional.
 	// Must be unset if there is a run function.
 	SubCommands []*Command
+	// Version the version of the command.
+	//
+	// If this is specified, a flag --version will be added to the command
+	// that precedes all other functionality, and which prints the version
+	// to stdout.
+	Version string
 }
 
 // NewInvalidArgumentError creates a new invalidArgumentError, indicating that
@@ -295,6 +301,24 @@ func commandToCobra(
 				return nil, err
 			}
 			cobraCommand.AddCommand(subCobraCommand)
+		}
+	}
+	if command.Version != "" {
+		doVersion := false
+		oldRun := cobraCommand.Run
+		cobraCommand.Flags().BoolVar(
+			&doVersion,
+			"version",
+			false,
+			"Print the version.",
+		)
+		cobraCommand.Run = func(cmd *cobra.Command, args []string) {
+			if doVersion {
+				_, err := container.Stdout().Write([]byte(command.Version + "\n"))
+				*runErrAddr = err
+				return
+			}
+			oldRun(cmd, args)
 		}
 	}
 	// appcommand prints errors, disable to prevent duplicates.
