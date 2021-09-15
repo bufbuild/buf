@@ -94,6 +94,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) (retErr error) {
+	bufcli.WarnBetaCommand(ctx, container)
 	templatePath := container.Arg(0)
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
