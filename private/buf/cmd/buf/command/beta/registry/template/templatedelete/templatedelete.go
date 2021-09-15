@@ -72,6 +72,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	bufcli.WarnBetaCommand(ctx, container)
 	templatePath := container.Arg(0)
 	if templatePath == "" {
 		return appcmd.NewInvalidArgumentError("a template path must be specified")

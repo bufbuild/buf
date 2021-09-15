@@ -92,6 +92,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	bufcli.WarnBetaCommand(ctx, container)
 	pluginPath := container.Arg(0)
 	visibility, err := visibilityFlagToVisibility(flags.Visibility)
 	if err != nil {
