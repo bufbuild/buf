@@ -93,6 +93,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) (retErr error) {
+	bufcli.WarnBetaCommand(ctx, container)
 	remote := container.Arg(0)
 	if remote == "" {
 		return appcmd.NewInvalidArgumentError("a remote must be specified")
