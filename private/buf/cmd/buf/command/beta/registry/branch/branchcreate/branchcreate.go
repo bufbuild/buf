@@ -84,6 +84,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	bufcli.WarnBetaCommand(ctx, container)
 	if flags.Parent == "" {
 		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", parentFlagName)
 	}

@@ -80,6 +80,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	bufcli.WarnAlphaCommand(ctx, container)
 	remote := container.Arg(0)
 	if remote == "" {
 		return appcmd.NewInvalidArgumentError("a module remote must be specified")

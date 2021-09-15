@@ -95,6 +95,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	bufcli.WarnBetaCommand(ctx, container)
 	if container.Arg(0) == "" {
 		return appcmd.NewInvalidArgumentError("repository is required")
 	}
