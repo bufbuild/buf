@@ -19,7 +19,7 @@ Simply update the command or flag, and you'll be good to go:
 - Removed the `buf push` command in favor of `buf mod push`.
 - Removed the `buf mod init` command in favor of `buf config init`.
 - Removed the `--name` and `--dep` flags in `buf mod init`.
-- Removed the `--version` flag in favor of the `buf version` command, which writes to stdout.
+- Moved the output of `--version` from stderr to stdout.
 - Moved the output of `--help` and `help` from stderr to stdout.
 - [From v0.55.0](https://github.com/bufbuild/buf/releases/tag/v0.55.0): The version key in all configuration files (`buf.yaml`, `buf.gen.yaml`, `buf.work.yaml`) is now required.
 - [From v0.45.0](https://github.com/bufbuild/buf/releases/tag/v0.45.0): Removed the `buf beta config init` command in favor of `buf config init`.
