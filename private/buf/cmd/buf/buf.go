@@ -55,9 +55,9 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/protoc"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -116,13 +116,13 @@ func NewRootCommand(name string) *appcmd.Command {
 			generate.NewCommand("generate", builder),
 			protoc.NewCommand("protoc", builder),
 			lsfiles.NewCommand("ls-files", builder),
+			push.NewCommand("push", builder),
 			{
 				Use:   "mod",
 				Short: "Configure and update buf modules.",
 				SubCommands: []*appcmd.Command{
 					appcmd.NewDeletedCommand("init", modInitDeprecationMessage),
 					modprune.NewCommand("prune", builder),
-					modpush.NewCommand("push", builder),
 					modupdate.NewCommand("update", builder),
 					modclearcache.NewCommand("clear-cache", builder, "cc"),
 				},
