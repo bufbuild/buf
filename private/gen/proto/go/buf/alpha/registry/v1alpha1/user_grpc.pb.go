@@ -50,6 +50,8 @@ type UserServiceClient interface {
 	UpdateUserUsername(ctx context.Context, in *UpdateUserUsernameRequest, opts ...grpc.CallOption) (*UpdateUserUsernameResponse, error)
 	// DeleteUser deletes a user.
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
+	// Deactivate user deactivates a user.
+	DeactivateUser(ctx context.Context, in *DeactivateUserRequest, opts ...grpc.CallOption) (*DeactivateUserResponse, error)
 	// AddUserOrganizationScope adds an organization scope for a specific organization to a user by ID.
 	AddUserOrganizationScope(ctx context.Context, in *AddUserOrganizationScopeRequest, opts ...grpc.CallOption) (*AddUserOrganizationScopeResponse, error)
 	// AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
@@ -133,6 +135,15 @@ func (c *userServiceClient) UpdateUserUsername(ctx context.Context, in *UpdateUs
 func (c *userServiceClient) DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error) {
 	out := new(DeleteUserResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/DeleteUser", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) DeactivateUser(ctx context.Context, in *DeactivateUserRequest, opts ...grpc.CallOption) (*DeactivateUserResponse, error) {
+	out := new(DeactivateUserResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/DeactivateUser", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -229,6 +240,8 @@ type UserServiceServer interface {
 	UpdateUserUsername(context.Context, *UpdateUserUsernameRequest) (*UpdateUserUsernameResponse, error)
 	// DeleteUser deletes a user.
 	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
+	// Deactivate user deactivates a user.
+	DeactivateUser(context.Context, *DeactivateUserRequest) (*DeactivateUserResponse, error)
 	// AddUserOrganizationScope adds an organization scope for a specific organization to a user by ID.
 	AddUserOrganizationScope(context.Context, *AddUserOrganizationScopeRequest) (*AddUserOrganizationScopeResponse, error)
 	// AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
@@ -271,6 +284,9 @@ func (UnimplementedUserServiceServer) UpdateUserUsername(context.Context, *Updat
 }
 func (UnimplementedUserServiceServer) DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
+}
+func (UnimplementedUserServiceServer) DeactivateUser(context.Context, *DeactivateUserRequest) (*DeactivateUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeactivateUser not implemented")
 }
 func (UnimplementedUserServiceServer) AddUserOrganizationScope(context.Context, *AddUserOrganizationScopeRequest) (*AddUserOrganizationScopeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddUserOrganizationScope not implemented")
@@ -430,6 +446,24 @@ func _UserService_DeleteUser_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UserServiceServer).DeleteUser(ctx, req.(*DeleteUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_DeactivateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeactivateUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).DeactivateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.UserService/DeactivateUser",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).DeactivateUser(ctx, req.(*DeactivateUserRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -612,6 +646,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteUser",
 			Handler:    _UserService_DeleteUser_Handler,
+		},
+		{
+			MethodName: "DeactivateUser",
+			Handler:    _UserService_DeactivateUser_Handler,
 		},
 		{
 			MethodName: "AddUserOrganizationScope",
