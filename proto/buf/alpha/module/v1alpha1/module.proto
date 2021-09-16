@@ -34,6 +34,10 @@ message Module {
   //
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
   string documentation = 3;
+  // license_id is the ID of the license.
+  //
+  // This is a SPDX license ID, but may be expanded to other IDs in the future.
+  string license_id = 4;
 }
 
 // ModuleFile is a file within a FileSet.

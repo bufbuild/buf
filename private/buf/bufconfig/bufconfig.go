@@ -67,6 +67,7 @@ var (
 type Config struct {
 	Version        string
 	ModuleIdentity bufmoduleref.ModuleIdentity
+	LicenseID      string
 	Build          *bufmoduleconfig.Config
 	Breaking       *bufbreakingconfig.Config
 	Lint           *buflintconfig.Config
@@ -211,6 +212,7 @@ type ExternalConfigV1 struct {
 	Version  string                             `json:"version,omitempty" yaml:"version,omitempty"`
 	Name     string                             `json:"name,omitempty" yaml:"name,omitempty"`
 	Deps     []string                           `json:"deps,omitempty" yaml:"deps,omitempty"`
+	License  string                             `json:"license,omitempty" yaml:"license,omitempty"`
 	Build    bufmoduleconfig.ExternalConfigV1   `json:"build,omitempty" yaml:"build,omitempty"`
 	Breaking bufbreakingconfig.ExternalConfigV1 `json:"breaking,omitempty" yaml:"breaking,omitempty"`
 	Lint     buflintconfig.ExternalConfigV1     `json:"lint,omitempty" yaml:"lint,omitempty"`
