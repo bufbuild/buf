@@ -311,7 +311,7 @@ func MergeInsertionPoints(responses []*pluginpb.CodeGeneratorResponse) ([]Merged
 				continue
 			}
 			if _, ok := allFiles[fileName]; ok {
-				return nil, fmt.Errorf("file %q defined multiple times", fileName)
+				return nil, fmt.Errorf("file %q was generated multiple times", fileName)
 			}
 			file := &File{
 				Name:    fileName,
