@@ -36,7 +36,7 @@ message Module {
   string documentation = 3;
   // license_id is the ID of the license.
   //
-  // This is a SPDX license ID, but may be expanded to other IDs in the future.
+  // This is currently a SPDX license ID, but may be expanded to other IDs in the future.
   string license_id = 4;
 }
 

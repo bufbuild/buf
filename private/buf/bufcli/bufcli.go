@@ -391,7 +391,6 @@ func NewWireImageConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		bufconfig.NewProvider(logger),
 		bufwork.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
@@ -415,7 +414,6 @@ func NewWireModuleConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		bufconfig.NewProvider(logger),
 		bufwork.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 	), nil
@@ -435,7 +433,6 @@ func NewWireModuleConfigReaderForModuleReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		bufconfig.NewProvider(logger),
 		bufwork.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 	), nil
@@ -456,7 +453,6 @@ func NewWireFileLister(
 	return bufwire.NewFileLister(
 		logger,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		bufconfig.NewProvider(logger),
 		bufwork.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufimagebuild.NewBuilder(logger),
@@ -737,9 +733,7 @@ func ReadModuleWithWorkspacesDisabled(
 		return nil, nil, ErrNoConfigFile
 	}
 	// TODO: This should just read a lock file
-	sourceConfig, err := bufconfig.NewProvider(
-		container.Logger(),
-	).GetConfig(
+	sourceConfig, err := bufconfig.GetConfigForBucket(
 		ctx,
 		sourceBucket,
 	)

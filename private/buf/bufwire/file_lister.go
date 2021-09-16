@@ -33,7 +33,6 @@ import (
 type fileLister struct {
 	logger                  *zap.Logger
 	fetchReader             buffetch.Reader
-	configProvider          bufconfig.Provider
 	workspaceConfigProvider bufwork.Provider
 	moduleBucketBuilder     bufmodulebuild.ModuleBucketBuilder
 	imageBuilder            bufimagebuild.Builder
@@ -43,7 +42,6 @@ type fileLister struct {
 func newFileLister(
 	logger *zap.Logger,
 	fetchReader buffetch.Reader,
-	configProvider bufconfig.Provider,
 	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	imageBuilder bufimagebuild.Builder,
@@ -51,7 +49,6 @@ func newFileLister(
 	return &fileLister{
 		logger:                  logger.Named("bufwire"),
 		fetchReader:             fetchReader,
-		configProvider:          configProvider,
 		workspaceConfigProvider: workspaceConfigProvider,
 		moduleBucketBuilder:     moduleBucketBuilder,
 		imageBuilder:            imageBuilder,
@@ -136,11 +133,10 @@ func (e *fileLister) sourceFileInfosForDirectory(
 	configOverride string,
 ) ([]bufmoduleref.FileInfo, error) {
 	mappedReadBucket := storage.MapReadBucket(readBucket, storage.MapOnPrefix(directory))
-	config, err := bufconfig.ReadConfig(
+	config, err := bufconfig.ReadConfigOS(
 		ctx,
-		e.configProvider,
 		mappedReadBucket,
-		bufconfig.ReadConfigWithOverride(configOverride),
+		bufconfig.ReadConfigOSWithOverride(configOverride),
 	)
 	if err != nil {
 		return nil, err

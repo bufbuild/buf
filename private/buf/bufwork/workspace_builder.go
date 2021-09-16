@@ -28,17 +28,14 @@ import (
 )
 
 type workspaceBuilder struct {
-	configProvider      bufconfig.Provider
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
 	moduleCache         map[string]*cachedModule
 }
 
 func newWorkspaceBuilder(
-	configProvider bufconfig.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 ) *workspaceBuilder {
 	return &workspaceBuilder{
-		configProvider:      configProvider,
 		moduleBucketBuilder: moduleBucketBuilder,
 		moduleCache:         make(map[string]*cachedModule),
 	}
@@ -90,11 +87,10 @@ func (w *workspaceBuilder) BuildWorkspace(
 			return nil, err
 		}
 		readBucketForDirectory := storage.MapReadBucket(readBucket, storage.MapOnPrefix(directory))
-		moduleConfig, err := bufconfig.ReadConfig(
+		moduleConfig, err := bufconfig.ReadConfigOS(
 			ctx,
-			w.configProvider,
 			readBucketForDirectory,
-			bufconfig.ReadConfigWithOverride(configOverride),
+			bufconfig.ReadConfigOSWithOverride(configOverride),
 		)
 		if err != nil {
 			return nil, fmt.Errorf(

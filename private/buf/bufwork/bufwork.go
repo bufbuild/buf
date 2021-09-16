@@ -55,6 +55,8 @@
 // file. For example, it's not possible to build input "paymentapis/acme" since the image
 // would otherwise include the content defined in paymentapis/acme/payment/v2/payment.proto as
 // acme/payment/v2/payment.proto and payment/v2/payment.proto.
+//
+// EVERYTHING IN THIS PACKAGE SHOULD ONLY BE CALLED BY THE CLI AND CANNOT BE USED IN SERVICES.
 package bufwork
 
 import (
@@ -116,10 +118,9 @@ type WorkspaceBuilder interface {
 
 // NewWorkspaceBuilder returns a new WorkspaceBuilder.
 func NewWorkspaceBuilder(
-	configProvider bufconfig.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 ) WorkspaceBuilder {
-	return newWorkspaceBuilder(configProvider, moduleBucketBuilder)
+	return newWorkspaceBuilder(moduleBucketBuilder)
 }
 
 // BuildOptionsForWorkspaceDirectory returns the bufmodulebuild.BuildOptions required for

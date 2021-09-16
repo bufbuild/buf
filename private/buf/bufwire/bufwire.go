@@ -61,7 +61,6 @@ func NewImageConfigReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
-	configProvider bufconfig.Provider,
 	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
@@ -71,7 +70,6 @@ func NewImageConfigReader(
 		logger,
 		storageosProvider,
 		fetchReader,
-		configProvider,
 		workspaceConfigProvider,
 		moduleBucketBuilder,
 		moduleFileSetBuilder,
@@ -109,7 +107,6 @@ func NewModuleConfigReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
-	configProvider bufconfig.Provider,
 	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 ) ModuleConfigReader {
@@ -117,7 +114,6 @@ func NewModuleConfigReader(
 		logger,
 		storageosProvider,
 		fetchReader,
-		configProvider,
 		workspaceConfigProvider,
 		moduleBucketBuilder,
 	)
@@ -138,7 +134,6 @@ type FileLister interface {
 func NewFileLister(
 	logger *zap.Logger,
 	fetchReader buffetch.Reader,
-	configProvider bufconfig.Provider,
 	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	imageBuilder bufimagebuild.Builder,
@@ -146,7 +141,6 @@ func NewFileLister(
 	return newFileLister(
 		logger,
 		fetchReader,
-		configProvider,
 		workspaceConfigProvider,
 		moduleBucketBuilder,
 		imageBuilder,

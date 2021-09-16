@@ -36,7 +36,6 @@ type imageConfigReader struct {
 	logger               *zap.Logger
 	storageosProvider    storageos.Provider
 	fetchReader          buffetch.Reader
-	configProvider       bufconfig.Provider
 	moduleBucketBuilder  bufmodulebuild.ModuleBucketBuilder
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder
 	imageBuilder         bufimagebuild.Builder
@@ -48,7 +47,6 @@ func newImageConfigReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
-	configProvider bufconfig.Provider,
 	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
@@ -58,7 +56,6 @@ func newImageConfigReader(
 		logger:               logger.Named("bufwire"),
 		storageosProvider:    storageosProvider,
 		fetchReader:          fetchReader,
-		configProvider:       configProvider,
 		moduleBucketBuilder:  moduleBucketBuilder,
 		moduleFileSetBuilder: moduleFileSetBuilder,
 		imageBuilder:         imageBuilder,
@@ -66,7 +63,6 @@ func newImageConfigReader(
 			logger,
 			storageosProvider,
 			fetchReader,
-			configProvider,
 			workspaceConfigProvider,
 			moduleBucketBuilder,
 		),
@@ -215,11 +211,10 @@ func (i *imageConfigReader) getImageImageConfig(
 	if err != nil {
 		return nil, err
 	}
-	config, err := bufconfig.ReadConfig(
+	config, err := bufconfig.ReadConfigOS(
 		ctx,
-		i.configProvider,
 		readWriteBucket,
-		bufconfig.ReadConfigWithOverride(configOverride),
+		bufconfig.ReadConfigOSWithOverride(configOverride),
 	)
 	if err != nil {
 		return nil, err

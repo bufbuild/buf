@@ -23,37 +23,36 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
-func readConfig(
+func readConfigOS(
 	ctx context.Context,
-	provider Provider,
 	readBucket storage.ReadBucket,
-	options ...ReadConfigOption,
+	options ...ReadConfigOSOption,
 ) (*Config, error) {
-	readConfigOptions := newReadConfigOptions()
+	readConfigOSOptions := newReadConfigOSOptions()
 	for _, option := range options {
-		option(readConfigOptions)
+		option(readConfigOSOptions)
 	}
-	if readConfigOptions.override != "" {
+	if readConfigOSOptions.override != "" {
 		var data []byte
 		var err error
-		switch filepath.Ext(readConfigOptions.override) {
+		switch filepath.Ext(readConfigOSOptions.override) {
 		case ".json", ".yaml", ".yml":
-			data, err = os.ReadFile(readConfigOptions.override)
+			data, err = os.ReadFile(readConfigOSOptions.override)
 			if err != nil {
 				return nil, fmt.Errorf("could not read file: %v", err)
 			}
 		default:
-			data = []byte(readConfigOptions.override)
+			data = []byte(readConfigOSOptions.override)
 		}
-		return provider.GetConfigForData(ctx, data)
+		return GetConfigForData(ctx, data)
 	}
-	return provider.GetConfig(ctx, readBucket)
+	return GetConfigForBucket(ctx, readBucket)
 }
 
-type readConfigOptions struct {
+type readConfigOSOptions struct {
 	override string
 }
 
-func newReadConfigOptions() *readConfigOptions {
-	return &readConfigOptions{}
+func newReadConfigOSOptions() *readConfigOSOptions {
+	return &readConfigOSOptions{}
 }

@@ -19,6 +19,7 @@ import (
 	"io"
 	"sort"
 
+	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -70,6 +71,17 @@ func getDocumentationForBucket(
 		return "", err
 	}
 	return string(documentationData), nil
+}
+
+func getLicenseIDForBucket(
+	ctx context.Context,
+	readBucket storage.ReadBucket,
+) (string, error) {
+	config, err := bufconfig.GetConfigForBucket(ctx, readBucket)
+	if err != nil {
+		return "", err
+	}
+	return config.LicenseID, nil
 }
 
 func copyModulePinsSortedByOnlyCommit(modulePins []bufmoduleref.ModulePin) []bufmoduleref.ModulePin {

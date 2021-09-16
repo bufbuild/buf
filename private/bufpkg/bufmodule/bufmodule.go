@@ -93,6 +93,10 @@ type Module interface {
 	// Documentation gets the contents of the module documentation file, buf.md and returns the string representation.
 	// This may return an empty string if the documentation file does not exist.
 	Documentation() string
+	// LicenseID is the license ID.
+	//
+	// This is currently a SPDX license ID, but may be expanded to other IDs in the future.
+	LicenseID() string
 
 	getSourceReadBucket() storage.ReadBucket
 	// Note this *can* be nil if we did not build from a named module.
