@@ -70,12 +70,15 @@ func newConfigV1(externalConfig ExternalConfigV1) (*Config, error) {
 			return nil, err
 		}
 	}
+	if err := bufmoduleref.ValidateLicenseID(externalConfig.License); err != nil {
+		return nil, err
+	}
 	return &Config{
 		Version:        V1Version,
 		ModuleIdentity: moduleIdentity,
-		// TODO: license
-		Build:    buildConfig,
-		Breaking: breakingConfig,
-		Lint:     lintConfig,
+		LicenseID:      externalConfig.License,
+		Build:          buildConfig,
+		Breaking:       breakingConfig,
+		Lint:           lintConfig,
 	}, nil
 }

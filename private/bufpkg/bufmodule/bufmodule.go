@@ -273,6 +273,7 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 		Files:         protoModuleFiles,
 		Dependencies:  protoModulePins,
 		Documentation: module.Documentation(),
+		LicenseId:     module.LicenseID(),
 	}
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
@@ -421,6 +422,7 @@ func ModuleToBucket(
 			return err
 		}
 	}
+	// TODO: license ID
 	return bufmoduleref.PutDependencyModulePinsToBucket(ctx, writeBucket, module.DependencyModulePins())
 }
 

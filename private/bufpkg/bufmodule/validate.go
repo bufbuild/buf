@@ -61,5 +61,8 @@ func ValidateProtoModule(protoModule *modulev1alpha1.Module) error {
 			return fmt.Errorf("module had invalid dependency: %v", err)
 		}
 	}
+	if err := bufmoduleref.ValidateLicenseID(protoModule.GetLicenseId()); err != nil {
+		return err
+	}
 	return nil
 }

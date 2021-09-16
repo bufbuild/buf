@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bufbuild/buf/private/gen/data/dataspdx"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/netextended"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -157,6 +158,17 @@ func ValidateTag(tag string) error {
 func ValidateModuleFilePath(path string) error {
 	if path == "" {
 		return errors.New("empty path")
+	}
+	return nil
+}
+
+// ValidateLicenseID validates the license ID.
+func ValidateLicenseID(licenseID string) error {
+	if licenseID != "" {
+		_, ok := dataspdx.GetLicenseInfo(licenseID)
+		if !ok {
+			return fmt.Errorf("module had invalid license ID: %s", licenseID)
+		}
 	}
 	return nil
 }
