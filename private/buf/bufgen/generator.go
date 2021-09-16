@@ -37,7 +37,6 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
@@ -156,7 +155,7 @@ func (g *generator) generateConcurrently(
 	config *Config,
 	image bufimage.Image,
 	includeImports bool,
-) ([]*pluginpb.CodeGeneratorResponse, error) {
+) ([]*bufplugin.PluginResponse, error) {
 	// Cache imagesByDir up-front if at least one plugin requires it
 	var imagesByDir []bufimage.Image
 	for _, pluginConfig := range config.PluginConfigs {
@@ -185,7 +184,7 @@ func (g *generator) generateConcurrently(
 	// pluginResponses contains the response for each plugin, in the same order
 	// as they are specified in the plugin configs. We need to store each response
 	// for processing insertion points after all plugins have finished.
-	pluginResponses := make([]*pluginpb.CodeGeneratorResponse, len(config.PluginConfigs))
+	pluginResponses := make([]*bufplugin.PluginResponse, len(config.PluginConfigs))
 	for i, pluginConfig := range config.PluginConfigs {
 		switch {
 		case pluginConfig.Name != "": // Local plugin
@@ -238,7 +237,7 @@ func (g *generator) generateConcurrently(
 			// Responses are not valid until parallelized jobs have finished
 			localPluginResponses = append(
 				localPluginResponses,
-				newLocalPluginResponse(responseWriter, i),
+				newLocalPluginResponse(responseWriter, pluginConfig.Name, i),
 			)
 		case pluginConfig.Remote != "": // Remote plugin
 			remote, owner, name, version, err := bufplugin.ParsePluginVersionPath(pluginConfig.Remote)
@@ -260,8 +259,8 @@ func (g *generator) generateConcurrently(
 						Version:    version,
 						Parameters: parameters,
 					},
-					// So we know the order this plugins response should slot in
-					i,
+					pluginConfig.Remote,
+					i, // So we know the order this plugins response should slot in.
 				),
 			)
 		default:
@@ -303,7 +302,10 @@ func (g *generator) generateConcurrently(
 				// Map each plugin response back to the right place.
 				// Note: does not require a lock, since each response is
 				// assigned to its own index in the slice.
-				pluginResponses[plugins[i].index] = response
+				pluginResponses[plugins[i].index] = bufplugin.NewPluginResponse(
+					response,
+					plugins[i].pluginRemote,
+				)
 			}
 			return nil
 		})
@@ -312,7 +314,10 @@ func (g *generator) generateConcurrently(
 		return nil, err
 	}
 	for _, localResponse := range localPluginResponses {
-		pluginResponses[localResponse.index] = localResponse.responseWriter.ToResponse()
+		pluginResponses[localResponse.index] = bufplugin.NewPluginResponse(
+			localResponse.responseWriter.ToResponse(),
+			localResponse.pluginName,
+		)
 	}
 	for i, response := range pluginResponses {
 		if response == nil {
@@ -539,25 +544,33 @@ func newGenerateOptions() *generateOptions {
 
 type localPluginResponse struct {
 	responseWriter appproto.ResponseWriter
+	pluginName     string
 	index          int
 }
 
-func newLocalPluginResponse(responseWriter appproto.ResponseWriter, index int) *localPluginResponse {
+func newLocalPluginResponse(
+	responseWriter appproto.ResponseWriter,
+	pluginName string,
+	index int,
+) *localPluginResponse {
 	return &localPluginResponse{
 		responseWriter: responseWriter,
+		pluginName:     pluginName,
 		index:          index,
 	}
 }
 
 type remotePlugin struct {
-	reference *registryv1alpha1.PluginReference
-	index     int
+	reference    *registryv1alpha1.PluginReference
+	pluginRemote string
+	index        int
 }
 
-func newRemotePlugin(reference *registryv1alpha1.PluginReference, index int) *remotePlugin {
+func newRemotePlugin(reference *registryv1alpha1.PluginReference, pluginRemote string, index int) *remotePlugin {
 	return &remotePlugin{
-		reference: reference,
-		index:     index,
+		reference:    reference,
+		pluginRemote: pluginRemote,
+		index:        index,
 	}
 }
 
