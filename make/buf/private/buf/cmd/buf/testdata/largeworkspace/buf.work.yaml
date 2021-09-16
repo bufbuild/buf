@@ -1,0 +1,22 @@
+version: v1
+directories:
+  - proto1
+  - proto2
+  - proto3
+  - proto4
+  - proto5
+  - proto6
+  - proto7
+  - proto8
+  - proto9
+  - proto10
+  - proto11
+  - proto12
+  - proto13
+  - proto14
+  - proto15
+  - proto16
+  - proto17
+  - proto18
+  - proto19
+  - proto20

@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package pkg9.v1;
+
+message FooPkg9File1 {
+  int64 one = 1;
+}

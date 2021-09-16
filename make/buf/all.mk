@@ -115,6 +115,12 @@ bufgeneratesteps:: \
 	bufgenerateprotogo \
 	bufgenerateprotogoclient
 
+.PHONY: regeneratelargeworkspacetest
+regeneratelargeworkspacetest:
+	bash make/buf/scripts/regeneratelargeworkspacetest.bash
+
+pregenerate:: regeneratelargeworkspacetest
+
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
 	DOCKER_IMAGE=golang:1.17.1-buster bash make/buf/scripts/release.bash
