@@ -1152,7 +1152,7 @@ func TestWorkspaceWithInvalidArchivePathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: path "proto/notexist" has no matching file in the module`,
+		filepath.FromSlash(`Failure: path "proto/notexist" has no matching file in the module`),
 		"lint",
 		filepath.Join(zipDir, "archive.zip#subdir=proto"),
 		"--path",
