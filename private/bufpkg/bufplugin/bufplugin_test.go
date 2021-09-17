@@ -414,21 +414,27 @@ plugin_versions:
 }
 
 func TestMergeInsertionPoints(t *testing.T) {
-	results := []*pluginpb.CodeGeneratorResponse{
+	results := []*PluginResponse{
 		{
-			File: []*pluginpb.CodeGeneratorResponse_File{
-				{
-					Name:    testStringPointer("file1.java"),
-					Content: testStringPointer("// @@protoc_insertion_point(insertionPoint1)"),
+			PluginName: "protoc-gen-java",
+			Response: &pluginpb.CodeGeneratorResponse{
+				File: []*pluginpb.CodeGeneratorResponse_File{
+					{
+						Name:    testStringPointer("file1.java"),
+						Content: testStringPointer("// @@protoc_insertion_point(insertionPoint1)"),
+					},
 				},
 			},
 		},
 		{
-			File: []*pluginpb.CodeGeneratorResponse_File{
-				{
-					Name:           testStringPointer("file1.java"),
-					Content:        testStringPointer("!! this was inserted !!"),
-					InsertionPoint: testStringPointer("insertionPoint1"),
+			PluginName: "protoc-gen-java-insertion",
+			Response: &pluginpb.CodeGeneratorResponse{
+				File: []*pluginpb.CodeGeneratorResponse_File{
+					{
+						Name:           testStringPointer("file1.java"),
+						Content:        testStringPointer("!! this was inserted !!"),
+						InsertionPoint: testStringPointer("insertionPoint1"),
+					},
 				},
 			},
 		},
@@ -438,6 +444,7 @@ func TestMergeInsertionPoints(t *testing.T) {
 	require.Len(t, mergedResults, 2)
 	require.Len(t, mergedResults[0].Files, 1)
 	require.EqualValues(t, "file1.java", mergedResults[0].Files[0].Name)
+	require.EqualValues(t, "protoc-gen-java", mergedResults[0].Files[0].PluginName)
 	require.EqualValues(t, "!! this was inserted !!\n// @@protoc_insertion_point(insertionPoint1)", string(mergedResults[0].Files[0].Content))
 }
 
