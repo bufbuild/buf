@@ -171,7 +171,7 @@ func (m *moduleFileSet) TargetFileInfos(ctx context.Context) ([]bufmoduleref.Fil
 		for path := range pathTracker.paths {
 			if _, ok := pathTracker.seen[path]; !ok {
 				// No match, this is an error given that allowNotExist is false.
-				return nil, fmt.Errorf("path %q has no matching file in the module", pathTracker.format(path))
+				return nil, fmt.Errorf(`path "%s" has no matching file in the module`, pathTracker.format(path))
 			}
 		}
 	}
