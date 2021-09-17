@@ -76,8 +76,10 @@ func TestMergeImagesWithDuplicateFile(t *testing.T) {
 	firstProtoImage := &imagev1.Image{
 		File: []*imagev1.ImageFile{
 			{
-				Syntax: proto.String("proto3"),
-				Name:   proto.String("a.proto"),
+				Name: proto.String("a.proto"),
+				BufExtension: &imagev1.ImageFileExtension{
+					IsSyntaxUnspecified: proto.Bool(true),
+				},
 			},
 		},
 	}
@@ -94,6 +96,11 @@ func TestMergeImagesWithDuplicateFile(t *testing.T) {
 	require.NoError(t, err)
 	secondImage, err := NewImageForProto(secondProtoImage)
 	require.NoError(t, err)
-	_, err = MergeImages(firstImage, secondImage)
-	require.Error(t, err)
+	mergedImage, err := MergeImages(firstImage, secondImage)
+	require.NoError(t, err)
+
+	imageFiles := mergedImage.Files()
+	require.Len(t, imageFiles, 1)
+	assert.False(t, mergedImage.GetFile("a.proto").IsImport())
+	assert.True(t, mergedImage.GetFile("a.proto").IsSyntaxUnspecified())
 }

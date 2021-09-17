@@ -129,6 +129,12 @@ func NewMultiImage(images ...Image) (Image, error) {
 // be treated as non-imports in the returned Image. The first non-import
 // version of a file will be used in the result.
 //
+// Note that the files within each image are expected to be de-duplicated
+// before being passed into this function. In the case that two images
+// consider the same file as a non-import, the first will be used. We purposefully
+// do not validate this condition here as a result of the --path filter, and
+// instead validate it as part of the ModuleFileSet.
+//
 // Reorders the ImageFiles to be in DAG order.
 // Duplicates can exist across the Images, but only if duplicates are non-imports.
 func MergeImages(images ...Image) (Image, error) {
@@ -145,27 +151,6 @@ func MergeImages(images ...Image) (Image, error) {
 				if !ok {
 					imageFileSet[currentImageFile.Path()] = currentImageFile
 					continue
-				}
-				if !storedImageFile.IsImport() && !currentImageFile.IsImport() {
-					// TODO(alex): Now that we've modified the definition of bufmodule.ModuleFileSet.TargetFileInfos
-					// to account for import paths, this check will always fail if we target a buf.work.yaml and
-					// specify a --path to a file contained within the workspace.
-					//
-					//  $ buf build --path petapis/pet/v1/pet.proto
-					//  Failure: pet/v1/pet.proto is a non-import in multiple images.
-					//
-					// This is because the other ModuleFileSets will consider the import a target, and the
-					// Image will see it as a non-import as a result.
-					//
-					// In order for this to work, this validation would need to be handled by checking each
-					// of the bufmodule.Module.TargetFileInfos results (since those are scoped to the actual
-					// module contents). We can always make sure that happens, but this means that MergeImages
-					// isn't protected on its own, and it'd have to assume that the imageFile identified by
-					// imageFile.Path() has the same content across all the given Images.
-					//
-					// We can toggle this behavior on/off with an option, but we still need to have a separate
-					// function that validates this beforehand (as discussed above).
-					return nil, fmt.Errorf("%s is a non-import in multiple images", currentImageFile.Path())
 				}
 				if storedImageFile.IsImport() && !currentImageFile.IsImport() {
 					imageFileSet[currentImageFile.Path()] = currentImageFile
