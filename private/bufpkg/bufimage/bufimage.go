@@ -133,7 +133,8 @@ func NewMultiImage(images ...Image) (Image, error) {
 // before being passed into this function. In the case that two images
 // consider the same file as a non-import, the first will be used. We purposefully
 // do not validate this condition here as a result of the --path filter, and
-// instead validate it as part of the ModuleFileSet.
+// instead validate it as part of the ParserAccessorHandler when each Image
+// is constructed.
 //
 // Reorders the ImageFiles to be in DAG order.
 // Duplicates can exist across the Images, but only if duplicates are non-imports.
