@@ -21,12 +21,14 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -34,7 +36,7 @@ import (
 func TestReaderBasic(t *testing.T) {
 	ctx := context.Background()
 
-	modulePin, err := bufmodule.NewModulePin(
+	modulePin, err := bufmoduleref.NewModulePin(
 		"buf.build",
 		"foob",
 		"bar",
@@ -60,20 +62,22 @@ func TestReaderBasic(t *testing.T) {
 	// the delegate uses the cache we just populated
 	delegateModuleReader := newModuleReader(
 		zap.NewNop(),
+		verbose.NopPrinter,
+		delegateFileLocker,
 		delegateDataReadWriteBucket,
 		delegateSumReadWriteBucket,
 		moduleCacher,
-		WithFileLocker(delegateFileLocker),
 	)
 
 	// the main does not, so there will be a cache miss
 	mainDataReadWriteBucket, mainSumReadWriteBucket, mainFileLocker := newTestDataSumBucketsAndLocker(t)
 	moduleReader := newModuleReader(
 		zap.NewNop(),
+		verbose.NopPrinter,
+		mainFileLocker,
 		mainDataReadWriteBucket,
 		mainSumReadWriteBucket,
 		delegateModuleReader,
-		WithFileLocker(mainFileLocker),
 	)
 	getModule, err := moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
@@ -165,7 +169,7 @@ func TestReaderBasic(t *testing.T) {
 func TestCacherBasic(t *testing.T) {
 	ctx := context.Background()
 
-	modulePin, err := bufmodule.NewModulePin(
+	modulePin, err := bufmoduleref.NewModulePin(
 		"buf.build",
 		"foob",
 		"bar",
@@ -207,7 +211,7 @@ func TestCacherBasic(t *testing.T) {
 func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 	ctx := context.Background()
 
-	modulePin, err := bufmodule.NewModulePin(
+	modulePin, err := bufmoduleref.NewModulePin(
 		"buf.build",
 		"foob",
 		"bar",

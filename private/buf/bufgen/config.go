@@ -21,7 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -258,9 +258,9 @@ func newGoPackagePrefixConfigV1(externalGoPackagePrefixConfig ExternalGoPackageP
 		return nil, fmt.Errorf("invalid go_package_prefix default: %w", err)
 	}
 	seenModuleIdentities := make(map[string]struct{}, len(externalGoPackagePrefixConfig.Except))
-	except := make([]bufmodule.ModuleIdentity, 0, len(externalGoPackagePrefixConfig.Except))
+	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalGoPackagePrefixConfig.Except))
 	for _, moduleName := range externalGoPackagePrefixConfig.Except {
-		moduleIdentity, err := bufmodule.ModuleIdentityForString(moduleName)
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid go_package_prefix except: %w", err)
 		}
@@ -270,9 +270,9 @@ func newGoPackagePrefixConfigV1(externalGoPackagePrefixConfig ExternalGoPackageP
 		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
 		except = append(except, moduleIdentity)
 	}
-	override := make(map[bufmodule.ModuleIdentity]string, len(externalGoPackagePrefixConfig.Override))
+	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalGoPackagePrefixConfig.Override))
 	for moduleName, goPackagePrefix := range externalGoPackagePrefixConfig.Override {
-		moduleIdentity, err := bufmodule.ModuleIdentityForString(moduleName)
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
 		if err != nil {
 			return nil, fmt.Errorf("invalid go_package_prefix override key: %w", err)
 		}

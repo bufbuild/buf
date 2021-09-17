@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/rpc"
@@ -42,17 +43,13 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	deprecated string,
-	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:        name + " <input>",
-		Short:      "Push a module to a registry.",
-		Long:       bufcli.GetInputLong(`the source or module to push`),
-		Args:       cobra.MaximumNArgs(1),
-		Deprecated: deprecated,
-		Hidden:     hidden,
+		Use:   name + " <input>",
+		Short: "Push a module to a registry.",
+		Long:  bufcli.GetInputLong(`the source or module to push`),
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -81,7 +78,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	//	&f.Branch,
 	//	branchFlagName,
 	//	branchFlagShortName,
-	//	bufmodule.MainBranch,
+	//	bufmoduleref.MainBranch,
 	//	`The branch to push to.`,
 	//)
 	flagSet.StringSliceVarP(
@@ -146,14 +143,14 @@ func run(
 		moduleIdentity.Owner(),
 		moduleIdentity.Repository(),
 		//flags.Branch,
-		bufmodule.MainBranch,
+		bufmoduleref.MainBranch,
 		protoModule,
 		flags.Tags,
 	)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
 			if _, err := container.Stderr().Write(
-				[]byte("The latest commit has the same content, not creating a new commit."),
+				[]byte("The latest commit has the same content, not creating a new commit.\n"),
 			); err != nil {
 				return err
 			}

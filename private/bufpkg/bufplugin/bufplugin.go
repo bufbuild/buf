@@ -259,10 +259,28 @@ func ParseTemplateVersionConfig(config string) (*TemplateVersionConfig, error) {
 	return templateVersionConfig, nil
 }
 
-// File represents a generated file
+// File represents a generated file, and tracks the plugin
+// that originally generated it (i.e. if insertion points
+// are applied to this File, the PluginName will be unchanged).
 type File struct {
-	Name    string
-	Content []byte
+	Name       string
+	Content    []byte
+	PluginName string
+}
+
+// PluginResponse encapsulates a CodeGeneratorResponse,
+// along with the name of the plugin that created it.
+type PluginResponse struct {
+	Response   *pluginpb.CodeGeneratorResponse
+	PluginName string
+}
+
+// NewPluginResponse retruns a new *PluginResponse.
+func NewPluginResponse(response *pluginpb.CodeGeneratorResponse, pluginName string) *PluginResponse {
+	return &PluginResponse{
+		Response:   response,
+		PluginName: pluginName,
+	}
 }
 
 // MergedPluginResult holds the files for a plugin result.
@@ -273,10 +291,12 @@ type MergedPluginResult struct {
 // MergeInsertionPoints traverses the plugin results and merges any insertion points present in any responses.
 // The order of inserts depends on the order of the input plugins. The returned results are in the same order
 // as the input plugin results.
-func MergeInsertionPoints(responses []*pluginpb.CodeGeneratorResponse) ([]MergedPluginResult, error) {
+func MergeInsertionPoints(pluginResponses []*PluginResponse) ([]*MergedPluginResult, error) {
 	allFiles := make(map[string]*File)
-	results := make([]MergedPluginResult, len(responses))
-	for i, response := range responses {
+	results := make([]*MergedPluginResult, len(pluginResponses))
+	for i, pluginResponse := range pluginResponses {
+		response := pluginResponse.Response
+		pluginName := pluginResponse.PluginName
 		if response.Error != nil {
 			return nil, fmt.Errorf("unexpected response error: %s", *response.Error)
 		}
@@ -288,8 +308,8 @@ func MergeInsertionPoints(responses []*pluginpb.CodeGeneratorResponse) ([]Merged
 				parentFile, ok := allFiles[fileName]
 				if !ok {
 					return nil, fmt.Errorf(
-						"response %d requested insertion point in file %q which does not exist",
-						i,
+						"plugin %q requested insertion point in file %q which does not exist",
+						pluginName,
 						fileName,
 					)
 				}
@@ -300,31 +320,36 @@ func MergeInsertionPoints(responses []*pluginpb.CodeGeneratorResponse) ([]Merged
 				)
 				if err != nil {
 					return nil, fmt.Errorf(
-						"failed to apply insertion point %q in file %q for response %d: %w",
+						"failed to apply insertion point %q in file %q for plugin %q: %w",
 						insertionPoint,
 						fileName,
-						i,
+						pluginName,
 						err,
 					)
 				}
 				allFiles[fileName].Content = newFileContents
 				continue
 			}
-			if _, ok := allFiles[fileName]; ok {
-				return nil, fmt.Errorf("file %q defined multiple times", fileName)
+			if previousFile, ok := allFiles[fileName]; ok {
+				return nil, fmt.Errorf(
+					"file %q was generated multiple times: once by plugin %q and again by plugin %q",
+					fileName,
+					previousFile.PluginName,
+					pluginName,
+				)
 			}
 			file := &File{
-				Name:    fileName,
-				Content: []byte(generatedFile.GetContent()),
+				Name:       fileName,
+				Content:    []byte(generatedFile.GetContent()),
+				PluginName: pluginName,
 			}
 			files = append(files, file)
 			allFiles[fileName] = file
 		}
-		results[i] = MergedPluginResult{
+		results[i] = &MergedPluginResult{
 			Files: files,
 		}
 	}
-
 	return results, nil
 }
 

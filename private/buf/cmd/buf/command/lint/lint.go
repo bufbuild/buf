@@ -49,17 +49,13 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	deprecated string,
-	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:        name + " <input>",
-		Short:      "Check that the input location passes lint checks.",
-		Long:       bufcli.GetInputLong(`the source, module, or image to lint`),
-		Args:       cobra.MaximumNArgs(1),
-		Deprecated: deprecated,
-		Hidden:     hidden,
+		Use:   name + " <input>",
+		Short: "Check that the input location passes lint checks.",
+		Long:  bufcli.GetInputLong(`the source, module, or image to lint`),
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -108,7 +104,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		`The config file or data to use.`,
 	)
 
-	// deprecated
+	// deprecated, but not marked as deprecated as we return error if this is used
 	flagSet.StringVar(
 		&f.Input,
 		inputFlagName,
@@ -118,21 +114,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			buffetch.AllFormatsString,
 		),
 	)
-	_ = flagSet.MarkDeprecated(
-		inputFlagName,
-		`input as the first argument instead.`+bufcli.FlagDeprecationMessageSuffix,
-	)
 	_ = flagSet.MarkHidden(inputFlagName)
-	// deprecated
+	// deprecated, but not marked as deprecated as we return error if this is used
 	flagSet.StringVar(
 		&f.InputConfig,
 		inputConfigFlagName,
 		"",
 		`The config file or data to use.`,
-	)
-	_ = flagSet.MarkDeprecated(
-		inputConfigFlagName,
-		fmt.Sprintf("use --%s instead.%s", configFlagName, bufcli.FlagDeprecationMessageSuffix),
 	)
 	_ = flagSet.MarkHidden(inputConfigFlagName)
 }

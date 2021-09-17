@@ -21,7 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -33,7 +33,6 @@ import (
 )
 
 const (
-	dirFlagName  = "dir"
 	onlyFlagName = "only"
 )
 
@@ -41,20 +40,16 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	deprecated string,
-	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
+		Use:   name + " <directory>",
 		Short: "Update the modules dependencies. Updates the " + buflock.ExternalConfigFilePath + " file.",
 		Long: "Gets the latest digests for the specified references in the config file, " +
 			"and writes them and their transitive dependencies to the " +
 			buflock.ExternalConfigFilePath +
-			" file.",
-		Args:       cobra.NoArgs,
-		Deprecated: deprecated,
-		Hidden:     hidden,
+			` file. The first argument is the directory of the local module to update. If no argument is specified, defaults to "."`,
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -66,9 +61,6 @@ func NewCommand(
 }
 
 type flags struct {
-	// for testing only
-	Dir string
-
 	Only []string
 }
 
@@ -83,13 +75,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"The name of a dependency to update. When used, only this dependency (and possibly its dependencies) will be updated. May be passed multiple times.",
 	)
-	flagSet.StringVar(
-		&f.Dir,
-		dirFlagName,
-		".",
-		"The directory to operate in. For testing only.",
-	)
-	_ = flagSet.MarkHidden(dirFlagName)
 }
 
 // run update the buf.lock file for a specific module.
@@ -98,9 +83,13 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	directoryInput, err := bufcli.GetInputValue(container, "", "", "", ".")
+	if err != nil {
+		return err
+	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		flags.Dir,
+		directoryInput,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
@@ -122,7 +111,7 @@ func run(
 	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
 		remote = moduleConfig.ModuleIdentity.Remote()
 	}
-	var dependencyModulePins []bufmodule.ModulePin
+	var dependencyModulePins []bufmoduleref.ModulePin
 	if len(moduleConfig.Build.DependencyModuleReferences) != 0 {
 		apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 		if err != nil {
@@ -135,7 +124,7 @@ func run(
 		var protoDependencyModuleReferences []*modulev1alpha1.ModuleReference
 		var currentProtoModulePins []*modulev1alpha1.ModulePin
 		if len(flags.Only) > 0 {
-			referencesByIdentity := map[string]bufmodule.ModuleReference{}
+			referencesByIdentity := map[string]bufmoduleref.ModuleReference{}
 			for _, reference := range moduleConfig.Build.DependencyModuleReferences {
 				referencesByIdentity[reference.IdentityString()] = reference
 			}
@@ -144,15 +133,15 @@ func run(
 				if !ok {
 					return fmt.Errorf("%q is not a valid --only input: no such dependency in current module deps", only)
 				}
-				protoDependencyModuleReferences = append(protoDependencyModuleReferences, bufmodule.NewProtoModuleReferenceForModuleReference(moduleReference))
+				protoDependencyModuleReferences = append(protoDependencyModuleReferences, bufmoduleref.NewProtoModuleReferenceForModuleReference(moduleReference))
 			}
-			currentModulePins, err := bufmodule.DependencyModulePinsForBucket(ctx, readWriteBucket)
+			currentModulePins, err := bufmoduleref.DependencyModulePinsForBucket(ctx, readWriteBucket)
 			if err != nil {
 				return fmt.Errorf("couldn't read current dependencies: %w", err)
 			}
-			currentProtoModulePins = bufmodule.NewProtoModulePinsForModulePins(currentModulePins...)
+			currentProtoModulePins = bufmoduleref.NewProtoModulePinsForModulePins(currentModulePins...)
 		} else {
-			protoDependencyModuleReferences = bufmodule.NewProtoModuleReferencesForModuleReferences(
+			protoDependencyModuleReferences = bufmoduleref.NewProtoModuleReferencesForModuleReferences(
 				moduleConfig.Build.DependencyModuleReferences...,
 			)
 		}
@@ -167,12 +156,12 @@ func run(
 			}
 			return err
 		}
-		dependencyModulePins, err = bufmodule.NewModulePinsForProtos(protoDependencyModulePins...)
+		dependencyModulePins, err = bufmoduleref.NewModulePinsForProtos(protoDependencyModulePins...)
 		if err != nil {
 			return bufcli.NewInternalError(err)
 		}
 	}
-	if err := bufmodule.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
+	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
 		return bufcli.NewInternalError(err)
 	}
 	return nil

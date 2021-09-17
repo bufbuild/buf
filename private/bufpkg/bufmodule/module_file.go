@@ -16,16 +16,18 @@ package bufmodule
 
 import (
 	"io"
+
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 )
 
 var _ ModuleFile = &moduleFile{}
 
 type moduleFile struct {
-	FileInfo
+	bufmoduleref.FileInfo
 	io.ReadCloser
 }
 
-func newModuleFile(fileInfo FileInfo, readCloser io.ReadCloser) moduleFile {
+func newModuleFile(fileInfo bufmoduleref.FileInfo, readCloser io.ReadCloser) moduleFile {
 	return moduleFile{
 		FileInfo:   fileInfo,
 		ReadCloser: readCloser,

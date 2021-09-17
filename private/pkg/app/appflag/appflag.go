@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/app/appname"
+	"github.com/bufbuild/buf/private/pkg/app/appverbose"
 	"github.com/spf13/pflag"
 )
 
@@ -30,6 +31,7 @@ type Container interface {
 	app.Container
 	appname.Container
 	applog.Container
+	appverbose.Container
 }
 
 // Interceptor intercepts and adapts the request or response of run functions.

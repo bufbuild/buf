@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/rpc"
@@ -71,7 +71,8 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	moduleOwner, err := bufmodule.ModuleOwnerForString(container.Arg(0))
+	bufcli.WarnBetaCommand(ctx, container)
+	moduleOwner, err := bufmoduleref.ModuleOwnerForString(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}

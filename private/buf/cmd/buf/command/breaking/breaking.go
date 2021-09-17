@@ -58,17 +58,13 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	deprecated string,
-	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:        name + " --against against-input <input>",
-		Short:      "Check that the input location has no breaking changes compared to the against location.",
-		Long:       bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
-		Args:       cobra.MaximumNArgs(1),
-		Deprecated: deprecated,
-		Hidden:     hidden,
+		Use:   name + " --against against-input <input>",
+		Short: "Check that the input location has no breaking changes compared to the against location.",
+		Long:  bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -157,7 +153,7 @@ Overrides --%s.`,
 		`The config file or data to use for the against source, module, or image.`,
 	)
 
-	// deprecated
+	// deprecated, but not marked as deprecated as we return error if this is used
 	flagSet.StringVar(
 		&f.Input,
 		inputFlagName,
@@ -167,24 +163,16 @@ Overrides --%s.`,
 			buffetch.AllFormatsString,
 		),
 	)
-	_ = flagSet.MarkDeprecated(
-		inputFlagName,
-		`input as the first argument instead.`+bufcli.FlagDeprecationMessageSuffix,
-	)
 	_ = flagSet.MarkHidden(inputFlagName)
-	// deprecated
+	// deprecated, but not marked as deprecated as we return error if this is used
 	flagSet.StringVar(
 		&f.InputConfig,
 		inputConfigFlagName,
 		"",
 		`The config file or data to use.`,
 	)
-	_ = flagSet.MarkDeprecated(
-		inputConfigFlagName,
-		fmt.Sprintf("use --%s instead.%s", configFlagName, bufcli.FlagDeprecationMessageSuffix),
-	)
 	_ = flagSet.MarkHidden(inputConfigFlagName)
-	// deprecated
+	// deprecated, but not marked as deprecated as we return error if this is used
 	flagSet.StringVar(
 		&f.AgainstInput,
 		againstInputFlagName,
@@ -194,21 +182,13 @@ Overrides --%s.`,
 			buffetch.AllFormatsString,
 		),
 	)
-	_ = flagSet.MarkDeprecated(
-		againstInputFlagName,
-		fmt.Sprintf("use --%s instead.%s", againstFlagName, bufcli.FlagDeprecationMessageSuffix),
-	)
 	_ = flagSet.MarkHidden(againstInputFlagName)
-	// deprecated
+	// deprecated, but not marked as deprecated as we return error if this is used
 	flagSet.StringVar(
 		&f.AgainstInputConfig,
 		againstInputConfigFlagName,
 		"",
 		`The config file or data to use for the against source or image.`,
-	)
-	_ = flagSet.MarkDeprecated(
-		againstInputConfigFlagName,
-		fmt.Sprintf("use --%s instead.%s", againstConfigFlagName, bufcli.FlagDeprecationMessageSuffix),
 	)
 	_ = flagSet.MarkHidden(againstInputConfigFlagName)
 }

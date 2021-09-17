@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/rpc"
@@ -96,7 +96,8 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	moduleReference, err := bufmodule.ModuleReferenceForString(container.Arg(0))
+	bufcli.WarnBetaCommand(ctx, container)
+	moduleReference, err := bufmoduleref.ModuleReferenceForString(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -119,7 +120,7 @@ func run(
 		moduleReference.Owner(),
 		moduleReference.Repository(),
 		//moduleReference.Reference(),
-		bufmodule.MainBranch,
+		bufmoduleref.MainBranch,
 		flags.PageSize,
 		flags.PageToken,
 		flags.Reverse,

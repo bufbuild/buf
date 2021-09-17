@@ -41,7 +41,7 @@ func newProvider(logger *zap.Logger) *provider {
 }
 
 func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (_ *Config, retErr error) {
-	ctx, span := trace.StartSpan(ctx, "get_config")
+	ctx, span := trace.StartSpan(ctx, "get_workspace_config")
 	defer span.End()
 
 	// This will be in the order of precedence.
@@ -89,7 +89,7 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket,
 }
 
 func (p *provider) GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
-	_, span := trace.StartSpan(ctx, "get_config_for_data")
+	_, span := trace.StartSpan(ctx, "get_workspace_config_for_data")
 	defer span.End()
 	return p.getConfigForData(
 		ctx,

@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -70,12 +71,15 @@ func (m *moduleConfigReader) GetModuleConfigs(
 ) ([]ModuleConfig, error) {
 	ctx, span := trace.StartSpan(ctx, "get_module_config")
 	defer span.End()
+	// We construct a new WorkspaceBuilder here so that the cache is only used for a single call.
+	workspaceBuilder := bufwork.NewWorkspaceBuilder(m.configProvider, m.moduleBucketBuilder)
 	switch t := sourceOrModuleRef.(type) {
 	case buffetch.SourceRef:
 		return m.getSourceModuleConfigs(
 			ctx,
 			container,
 			t,
+			workspaceBuilder,
 			configOverride,
 			externalDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
@@ -104,6 +108,7 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	sourceRef buffetch.SourceRef,
+	workspaceBuilder bufwork.WorkspaceBuilder,
 	configOverride string,
 	externalDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
@@ -123,6 +128,7 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 		return m.getWorkspaceModuleConfigs(
 			ctx,
 			sourceRef,
+			workspaceBuilder,
 			readBucketCloser,
 			readBucketCloser.RelativeRootPath(),
 			readBucketCloser.SubDirPath(),
@@ -138,6 +144,7 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 		readBucketCloser.RelativeRootPath(),
 		readBucketCloser.SubDirPath(),
 		configOverride,
+		workspaceBuilder,
 		nil,
 		nil,
 		externalDirOrFilePaths,
@@ -208,6 +215,7 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	ctx context.Context,
 	sourceRef buffetch.SourceRef,
+	workspaceBuilder bufwork.WorkspaceBuilder,
 	readBucket storage.ReadBucket,
 	relativeRootPath string,
 	subDirPath string,
@@ -222,12 +230,10 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	if subDirPath != "." {
 		// There's only a single ModuleConfig based on the subDirPath,
 		// so we only need to create a single workspace.
-		workspace, err := bufwork.NewWorkspace(
+		workspace, err := workspaceBuilder.BuildWorkspace(
 			ctx,
 			workspaceConfig,
 			readBucket,
-			m.configProvider,
-			m.moduleBucketBuilder,
 			relativeRootPath,
 			subDirPath,
 			configOverride,
@@ -244,6 +250,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 			relativeRootPath,
 			subDirPath,
 			configOverride,
+			workspaceBuilder,
 			workspaceConfig,
 			workspace,
 			externalDirOrFilePaths,
@@ -261,18 +268,10 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	// directories.
 	var moduleConfigs []ModuleConfig
 	for _, directory := range workspaceConfig.Directories {
-		// TODO: We need to construct a separate workspace for each module,
-		// but this is fairly duplicative in its current state. Specifically,
-		// we build the same module multiple times.
-		//
-		// We can refactor this with a bufworkbuild.WorkspaceBuilder that
-		// caches modules so that workspace modules are only ever built once.
-		workspace, err := bufwork.NewWorkspace(
+		workspace, err := workspaceBuilder.BuildWorkspace(
 			ctx,
 			workspaceConfig,
 			readBucket,
-			m.configProvider,
-			m.moduleBucketBuilder,
 			relativeRootPath,
 			directory,
 			configOverride,
@@ -289,6 +288,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 			relativeRootPath,
 			directory,
 			configOverride,
+			workspaceBuilder,
 			workspaceConfig,
 			workspace,
 			externalDirOrFilePaths,
@@ -309,11 +309,58 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	relativeRootPath string,
 	subDirPath string,
 	configOverride string,
+	workspaceBuilder bufwork.WorkspaceBuilder,
 	workspaceConfig *bufwork.Config,
 	workspace bufmodule.Workspace,
 	externalDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (ModuleConfig, error) {
+	moduleConfig, err := m.getModuleConfig(
+		ctx,
+		sourceRef,
+		readBucket,
+		relativeRootPath,
+		subDirPath,
+		configOverride,
+		workspaceBuilder,
+		workspaceConfig,
+		workspace,
+		externalDirOrFilePaths,
+		externalDirOrFilePathsAllowNotExist,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if missingReferences := detectMissingDependencies(
+		moduleConfig.Config().Build.DependencyModuleReferences,
+		moduleConfig.Module().DependencyModulePins(),
+	); len(missingReferences) > 0 {
+		var builder strings.Builder
+		_, _ = builder.WriteString(`Specified deps are not covered in your buf.lock, run "buf mod update":`)
+		for _, moduleReference := range missingReferences {
+			_, _ = builder.WriteString("\n\t- " + moduleReference.IdentityString())
+		}
+		m.logger.Warn(builder.String())
+	}
+	return moduleConfig, nil
+}
+
+func (m *moduleConfigReader) getModuleConfig(
+	ctx context.Context,
+	sourceRef buffetch.SourceRef,
+	readBucket storage.ReadBucket,
+	relativeRootPath string,
+	subDirPath string,
+	configOverride string,
+	workspaceBuilder bufwork.WorkspaceBuilder,
+	workspaceConfig *bufwork.Config,
+	workspace bufmodule.Workspace,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
+) (ModuleConfig, error) {
+	if module, moduleConfig, ok := workspaceBuilder.GetModuleConfig(subDirPath); ok {
+		return newModuleConfig(module, moduleConfig, workspace, workspaceConfig), nil
+	}
 	mappedReadBucket := readBucket
 	if subDirPath != "." {
 		mappedReadBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
@@ -329,8 +376,6 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	}
 	var buildOptions []bufmodulebuild.BuildOption
 	if len(externalDirOrFilePaths) > 0 {
-		// We have at least one --path filter, so we need to determine if the subDirPath is
-		// contained within a workspace directory.
 		if workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig, subDirPath) {
 			// We have to do this ahead of time as we are not using PathForExternalPath
 			// in this if branch. This is really bad.
@@ -415,17 +460,6 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	if err != nil {
 		return nil, err
 	}
-	if missingReferences := detectMissingDependencies(
-		moduleConfig.Build.DependencyModuleReferences,
-		module.DependencyModulePins(),
-	); len(missingReferences) > 0 {
-		var builder strings.Builder
-		_, _ = builder.WriteString(`Specified deps are not covered in your buf.lock, run "buf mod update":`)
-		for _, moduleReference := range missingReferences {
-			_, _ = builder.WriteString("\n\t- " + moduleReference.IdentityString())
-		}
-		m.logger.Warn(builder.String())
-	}
 	return newModuleConfig(module, moduleConfig, workspace, workspaceConfig), nil
 }
 
@@ -441,13 +475,13 @@ func workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig *bufwork.Confi
 	return false
 }
 
-func detectMissingDependencies(references []bufmodule.ModuleReference, pins []bufmodule.ModulePin) []bufmodule.ModuleReference {
+func detectMissingDependencies(references []bufmoduleref.ModuleReference, pins []bufmoduleref.ModulePin) []bufmoduleref.ModuleReference {
 	pinSet := make(map[string]struct{})
 	for _, pin := range pins {
 		pinSet[pin.IdentityString()] = struct{}{}
 	}
 
-	var missingReferences []bufmodule.ModuleReference
+	var missingReferences []bufmoduleref.ModuleReference
 	for _, reference := range references {
 		if _, ok := pinSet[reference.IdentityString()]; !ok {
 			missingReferences = append(missingReferences, reference)

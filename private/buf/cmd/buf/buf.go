@@ -45,57 +45,51 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlsbreakingrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configmigratev1beta1"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/login"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/logout"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 )
 
 const (
-	checkDeprecationMessage = `"buf check" sub-commands are now all implemented with the top-level "buf lint" and "buf breaking" commands.
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
-	checkBreakingDeprecationMessage = `"buf check breaking" has been moved to "buf breaking", use "buf breaking" instead.
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
-	checkLintDeprecationMessage = `"buf check lint" has been moved to "buf lint", use "buf lint" instead.
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
-	checkLSBreakingCheckersDeprecationMessage = `"buf check ls-breaking-checkers" has been moved to "buf config ls-breaking-rules", use "buf config ls-breaking-rules" instead.
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
-	checkLSLintCheckersDeprecationMessage = `"buf check ls-lint-checkers" has been moved to "buf config ls-lint-rules", use "buf config ls-lint-rules" instead.
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
-	imageDeprecationMessage = `"buf image" sub-commands are now all implemented under the top-level "buf build" command, use "buf build" instead.
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`
-	betaConfigDeprecationMessage = `"buf beta config" has been moved to "buf beta mod".
-We recommend migrating, however this command continues to work.`
-	betaConfigInitDeprecationMessage = `"buf beta config init" has been moved to "buf mod init".
-We recommend migrating, however this command continues to work.`
-	betaPushDeprecationMessage = `"buf beta push" has been moved to "buf push".
-We recommend migrating, however this command continues to work.`
-	betaModDeprecationMessage = `"buf beta mod ..." has been moved to "buf mod ...".
-We recommend migrating, however this command continues to work.`
-	betaModExportDeprecationMessage = `"buf beta mod export" has been moved to "buf export".
-We recommend migrating, however this command continues to work.`
+	betaConfigDeprecationMessage               = `"buf beta config ..." has been moved to "buf config ...".` + bufcli.DeprecationMessageSuffix
+	betaConfigInitDeprecationMessage           = `"buf beta config init" has been moved to "buf config init".` + bufcli.DeprecationMessageSuffix
+	betaImageConvertDeprecationMessage         = `"buf beta image convert" has been moved to "buf build".` + bufcli.DeprecationMessageSuffix
+	betaModClearCacheDeprecationMessage        = `"buf beta mod clear-cache" has been moved to "buf mod clear-cache".` + bufcli.DeprecationMessageSuffix
+	betaModDeprecationMessage                  = `"buf beta mod ..." has been moved to "buf mod ...".` + bufcli.DeprecationMessageSuffix
+	betaModExportDeprecationMessage            = `"buf beta mod export" has been moved to "buf export".` + bufcli.DeprecationMessageSuffix
+	betaModInitDeprecationMessage              = `"buf beta mod init" has been moved to "buf config init".` + bufcli.DeprecationMessageSuffix
+	betaModUpdateDeprecationMessage            = `"buf beta mod update" has been moved to "buf mod update".` + bufcli.DeprecationMessageSuffix
+	betaPushDeprecationMessage                 = `"buf beta push" has been moved to "buf mod push".` + bufcli.DeprecationMessageSuffix
+	checkBreakingDeprecationMessage            = `"buf check breaking" has been moved to "buf breaking".` + bufcli.DeprecationMessageSuffix
+	checkDeprecationMessage                    = `"buf check" sub-commands are now all implemented with the top-level "buf lint" and "buf breaking" commands.` + bufcli.DeprecationMessageSuffix
+	checkLintDeprecationMessage                = `"buf check lint" has been moved to "buf lint".` + bufcli.DeprecationMessageSuffix
+	checkLsBreakingCheckersDeprecationMessage  = `"buf check ls-breaking-checkers" has been moved to "buf config ls-breaking-rules".` + bufcli.DeprecationMessageSuffix
+	checkLsLintCheckersDeprecationMessage      = `"buf check ls-lint-checkers" has been moved to "buf config ls-lint-rules".` + bufcli.DeprecationMessageSuffix
+	experimentalDeprecationMessage             = `"buf experimental" sub-commands have moved to "buf beta".` + bufcli.DeprecationMessageSuffix
+	experimentalImageConvertDeprecationMessage = `"buf experimental image convert" has been moved to "buf build".` + bufcli.DeprecationMessageSuffix
+	imageBuildDeprecationMessage               = `"buf image build" has been moved to "buf build".` + bufcli.DeprecationMessageSuffix
+	imageDeprecationMessage                    = `"buf image" sub-commands are now all implemented under the top-level "buf build" command.` + bufcli.DeprecationMessageSuffix
+	loginDeprecationMessage                    = `"buf login" has been moved to "buf registry login".` + bufcli.DeprecationMessageSuffix
+	logoutDeprecationMessage                   = `"buf logout" has been moved to "buf registry logout".` + bufcli.DeprecationMessageSuffix
+	modInitDeprecationMessage                  = `"buf mod init" has been moved to "buf config init".` + bufcli.DeprecationMessageSuffix
+	pushDeprecationMessage                     = `"buf push" has been moved to "buf mod push".` + bufcli.DeprecationMessageSuffix
 )
 
+// Main is the entrypoint to the buf CLI.
 func Main(name string) {
 	appcmd.Main(context.Background(), NewRootCommand(name))
 }
@@ -111,102 +105,50 @@ func NewRootCommand(name string) *appcmd.Command {
 	)
 	globalFlags := bufcli.NewGlobalFlags()
 	return &appcmd.Command{
-		Use: name,
+		Use:                 name,
+		Version:             bufcli.Version,
+		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		SubCommands: []*appcmd.Command{
-			build.NewCommand("build", builder, "", false),
-			export.NewCommand("export", builder, "", false),
-			{
-				Use:        "image",
-				Short:      "Work with Images and FileDescriptorSets.",
-				Deprecated: imageDeprecationMessage,
-				Hidden:     true,
-				SubCommands: []*appcmd.Command{
-					build.NewCommand(
-						"build",
-						builder,
-						imageDeprecationMessage,
-						true,
-					),
-				},
-			},
-			{
-				Use:        "check",
-				Short:      "Run linting or breaking change detection.",
-				Deprecated: checkDeprecationMessage,
-				Hidden:     true,
-				SubCommands: []*appcmd.Command{
-					lint.NewCommand("lint", builder, checkLintDeprecationMessage, true),
-					breaking.NewCommand("breaking", builder, checkBreakingDeprecationMessage, true),
-					configlslintrules.NewCommand("ls-lint-checkers", builder, checkLSLintCheckersDeprecationMessage, true),
-					configlsbreakingrules.NewCommand("ls-breaking-checkers", builder, checkLSBreakingCheckersDeprecationMessage, true),
-				},
-			},
-			lint.NewCommand("lint", builder, "", false),
-			breaking.NewCommand("breaking", builder, "", false),
+			build.NewCommand("build", builder),
+			export.NewCommand("export", builder),
+			lint.NewCommand("lint", builder),
+			breaking.NewCommand("breaking", builder),
 			generate.NewCommand("generate", builder),
 			protoc.NewCommand("protoc", builder),
 			lsfiles.NewCommand("ls-files", builder),
+			push.NewCommand("push", builder),
 			{
 				Use:   "mod",
 				Short: "Configure and update buf modules.",
 				SubCommands: []*appcmd.Command{
-					modinit.NewCommand("init", builder, "", false),
+					appcmd.NewDeletedCommand("init", modInitDeprecationMessage),
 					modprune.NewCommand("prune", builder),
-					modupdate.NewCommand("update", builder, "", false),
-					modclearcache.NewCommand("clear-cache", builder, "", false, "cc"),
+					modupdate.NewCommand("update", builder),
+					modclearcache.NewCommand("clear-cache", builder, "cc"),
 				},
 			},
 			{
 				Use:   "config",
 				Short: "Interact with the configuration of Buf.",
 				SubCommands: []*appcmd.Command{
-					configlslintrules.NewCommand("ls-lint-rules", builder, "", false),
-					configlsbreakingrules.NewCommand("ls-breaking-rules", builder, "", false),
+					configinit.NewCommand("init", builder),
+					configlslintrules.NewCommand("ls-lint-rules", builder),
+					configlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 					configmigratev1beta1.NewCommand("migrate-v1beta1", builder),
 				},
 			},
-			login.NewCommand("login", builder),
-			logout.NewCommand("logout", builder),
+			{
+				Use:   "registry",
+				Short: "Interact with the Buf Schema Registry.",
+				SubCommands: []*appcmd.Command{
+					registrylogin.NewCommand("login", builder),
+					registrylogout.NewCommand("logout", builder),
+				},
+			},
 			{
 				Use:   "beta",
 				Short: "Beta commands. Unstable and will likely change.",
 				SubCommands: []*appcmd.Command{
-					{
-						Use:        "config",
-						Short:      "Interact with the configuration of Buf.",
-						Deprecated: betaConfigDeprecationMessage,
-						Hidden:     true,
-						SubCommands: []*appcmd.Command{
-							modinit.NewCommand("init", builder, betaConfigInitDeprecationMessage, true),
-						},
-					},
-					{
-						Use:        "image",
-						Short:      "Work with Images and FileDescriptorSets.",
-						Deprecated: imageDeprecationMessage,
-						Hidden:     true,
-						SubCommands: []*appcmd.Command{
-							convert.NewCommand(
-								"convert",
-								builder,
-								imageDeprecationMessage,
-								true,
-							),
-						},
-					},
-					push.NewCommand("push", builder, betaPushDeprecationMessage, true),
-					{
-						Use:        "mod",
-						Short:      "Configure and update buf modules.",
-						Deprecated: betaModDeprecationMessage,
-						Hidden:     true,
-						SubCommands: []*appcmd.Command{
-							modinit.NewCommand("init", builder, betaModDeprecationMessage, true),
-							modupdate.NewCommand("update", builder, betaModDeprecationMessage, true),
-							export.NewCommand("export", builder, betaModExportDeprecationMessage, true),
-							modclearcache.NewCommand("clear-cache", builder, betaModDeprecationMessage, true, "cc"),
-						},
-					},
 					{
 						Use:   "registry",
 						Short: "Interact with the Buf Schema Registry.",
@@ -289,30 +231,37 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 						},
 					},
-				},
-			},
-			{
-				Use:   "experimental",
-				Short: "Experimental commands. Unstable and will likely change.",
-				Deprecated: `use "beta" instead.
-We recommend migrating, however this command continues to work.
-See https://docs.buf.build/faq for more details.`,
-				Hidden: true,
-				SubCommands: []*appcmd.Command{
+					{
+						Use:        "config",
+						Short:      "Interact with the configuration of Buf.",
+						Deprecated: betaConfigDeprecationMessage,
+						Hidden:     true,
+						SubCommands: []*appcmd.Command{
+							appcmd.NewDeletedCommand("init", betaConfigInitDeprecationMessage),
+						},
+					},
 					{
 						Use:        "image",
 						Short:      "Work with Images and FileDescriptorSets.",
 						Deprecated: imageDeprecationMessage,
 						Hidden:     true,
 						SubCommands: []*appcmd.Command{
-							convert.NewCommand(
-								"convert",
-								builder,
-								imageDeprecationMessage,
-								true,
-							),
+							appcmd.NewDeletedCommand("convert", betaImageConvertDeprecationMessage),
 						},
 					},
+					{
+						Use:        "mod",
+						Short:      "Configure and update buf modules.",
+						Deprecated: betaModDeprecationMessage,
+						Hidden:     true,
+						SubCommands: []*appcmd.Command{
+							appcmd.NewDeletedCommand("init", betaModInitDeprecationMessage),
+							appcmd.NewDeletedCommand("update", betaModUpdateDeprecationMessage),
+							appcmd.NewDeletedCommand("export", betaModExportDeprecationMessage),
+							appcmd.NewDeletedCommand("clear-cache", betaModClearCacheDeprecationMessage, "cc"),
+						},
+					},
+					appcmd.NewDeletedCommand("push", betaPushDeprecationMessage),
 				},
 			},
 			{
@@ -338,9 +287,47 @@ See https://docs.buf.build/faq for more details.`,
 					},
 				},
 			},
-			push.NewCommand("push", builder, "", false),
+			appcmd.NewDeletedCommand("login", loginDeprecationMessage),
+			appcmd.NewDeletedCommand("logout", logoutDeprecationMessage),
+			appcmd.NewDeletedCommand("push", pushDeprecationMessage),
+			{
+				Use:        "image",
+				Short:      "Work with Images and FileDescriptorSets.",
+				Deprecated: imageDeprecationMessage,
+				Hidden:     true,
+				SubCommands: []*appcmd.Command{
+					appcmd.NewDeletedCommand("build", imageBuildDeprecationMessage),
+				},
+			},
+			{
+				Use:        "check",
+				Short:      "Run linting or breaking change detection.",
+				Deprecated: checkDeprecationMessage,
+				Hidden:     true,
+				SubCommands: []*appcmd.Command{
+					appcmd.NewDeletedCommand("lint", checkLintDeprecationMessage),
+					appcmd.NewDeletedCommand("breaking", checkBreakingDeprecationMessage),
+					appcmd.NewDeletedCommand("ls-lint-checkers", checkLsLintCheckersDeprecationMessage),
+					appcmd.NewDeletedCommand("ls-breaking-checkers", checkLsBreakingCheckersDeprecationMessage),
+				},
+			},
+			{
+				Use:        "experimental",
+				Short:      "Experimental commands. Unstable and will likely change.",
+				Deprecated: experimentalDeprecationMessage,
+				Hidden:     true,
+				SubCommands: []*appcmd.Command{
+					{
+						Use:        "image",
+						Short:      "Work with Images and FileDescriptorSets.",
+						Deprecated: imageDeprecationMessage,
+						Hidden:     true,
+						SubCommands: []*appcmd.Command{
+							appcmd.NewDeletedCommand("convert", experimentalImageConvertDeprecationMessage),
+						},
+					},
+				},
+			},
 		},
-		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
-		Version:             bufcli.Version,
 	}
 }

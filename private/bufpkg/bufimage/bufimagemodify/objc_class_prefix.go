@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/protoversion"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -32,16 +33,27 @@ const ObjcClassPrefixID = "OBJC_CLASS_PREFIX"
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L425
 var objcClassPrefixPath = []int32{8, 36}
 
-func objcClassPrefix(sweeper Sweeper, overrides map[string]string) Modifier {
+func objcClassPrefix(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	overrides map[string]string,
+) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				objcClassPrefixValue := objcClassPrefixValue(imageFile)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					objcClassPrefixValue = overrideValue
+					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
 				if err := objcClassPrefixForFile(ctx, sweeper, imageFile, objcClassPrefixValue); err != nil {
 					return err
+				}
+			}
+			for overrideFile := range overrides {
+				if _, ok := seenOverrideFiles[overrideFile]; !ok {
+					logger.Sugar().Warnf("%s override for %q was unused", ObjcClassPrefixID, overrideFile)
 				}
 			}
 			return nil

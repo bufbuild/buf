@@ -72,6 +72,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	bufcli.WarnBetaCommand(ctx, container)
 	pluginPath := container.Arg(0)
 	if pluginPath == "" {
 		return appcmd.NewInvalidArgumentError("a plugin path must be specified")

@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
@@ -152,7 +153,7 @@ func WithPathsAllowNotExist(paths []string) BuildOption {
 // TODO: we also have ModuleWithModuleIdentityAndCommit in bufmodule
 // We need to disambiguate module building between bufmodule and bufmodulebuild
 // bufimage and bufimagebuild work, but bufmodule and bufmodulebuild are a mess
-func WithModuleIdentity(moduleIdentity bufmodule.ModuleIdentity) BuildOption {
+func WithModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.moduleIdentity = moduleIdentity
 	}

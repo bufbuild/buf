@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -48,17 +49,13 @@ const (
 func NewCommand(
 	name string,
 	builder appflag.Builder,
-	deprecated string,
-	hidden bool,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:        name + " <input>",
-		Short:      "Export the files from the input location.",
-		Long:       bufcli.GetInputLong(`the source or module to export`),
-		Args:       cobra.MaximumNArgs(1),
-		Deprecated: deprecated,
-		Hidden:     hidden,
+		Use:   name + " <input>",
+		Short: "Export the files from the input location.",
+		Long:  bufcli.GetInputLong(`the source or module to export`),
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -240,7 +237,7 @@ func run(
 		fileInfosFunc = func(
 			moduleFileSet bufmodule.ModuleFileSet,
 			ctx context.Context,
-		) ([]bufmodule.FileInfo, error) {
+		) ([]bufmoduleref.FileInfo, error) {
 			return moduleFileSet.TargetFileInfos(ctx)
 		}
 	}

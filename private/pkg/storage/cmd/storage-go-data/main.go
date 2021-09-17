@@ -34,7 +34,6 @@ import (
 
 const (
 	programName = "storage-go-data"
-	version     = "0.0.1-dev"
 
 	pkgFlagName = "package"
 
@@ -54,7 +53,6 @@ func newCommand() *appcmd.Command {
 			return run(ctx, container, flags)
 		},
 		BindFlags: flags.Bind,
-		Version:   version,
 	}
 }
 

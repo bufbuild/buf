@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -83,7 +83,7 @@ func testIncludeGetFileInfos(
 	t *testing.T,
 	relDir string,
 	relRoots []string,
-	expectedFileInfos ...bufmodule.FileInfo,
+	expectedFileInfos ...bufmoduleref.FileInfo,
 ) {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	for _, isAbs := range []bool{true, false} {
@@ -174,11 +174,11 @@ func testIncludeDirPaths(
 }
 
 // fileInfosToAbs converts the external paths to absolute.
-func fileInfosToAbs(t *testing.T, fileInfos []bufmodule.FileInfo) []bufmodule.FileInfo {
+func fileInfosToAbs(t *testing.T, fileInfos []bufmoduleref.FileInfo) []bufmoduleref.FileInfo {
 	if fileInfos == nil {
 		return nil
 	}
-	newFileInfos := make([]bufmodule.FileInfo, len(fileInfos))
+	newFileInfos := make([]bufmoduleref.FileInfo, len(fileInfos))
 	for i, fileInfo := range fileInfos {
 		absExternalPath, err := normalpath.NormalizeAndAbsolute(fileInfo.ExternalPath())
 		require.NoError(t, err)

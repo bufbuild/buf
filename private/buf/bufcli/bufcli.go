@@ -36,6 +36,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
@@ -57,12 +58,20 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "0.55.0-dev"
+	Version = "1.0.0-dev"
 
-	// FlagDeprecationMessageSuffix is the suffix for flag deprecation messages.
-	FlagDeprecationMessageSuffix = `
-We recommend migrating, however this flag continues to work.
-See https://docs.buf.build/faq for more details.`
+	// DeprecationMessageSuffix is the suffix that should be added to any command or flag
+	// that was deprecated and removed for v1.0.
+	DeprecationMessageSuffix = `
+
+At Buf, we take compatibility very seriously. When we say v1.0, we mean it - we hope "buf" will be
+stable on v1 for the next decade, and if there is something we want to change, it is our responsibility
+to make sure that we don't break you, not your responsibility to change because of us. We have learned
+a lot about "buf" usage in the last two years of our beta, and have deprecated flags and commands
+(including this one) as we go, but for v1.0, we have removed the deprecated items to make sure we
+have a clean setup going forward.
+
+Update your invocation for v1.0 and you'll be good to go. We apologize for any inconvenience.`
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -70,6 +79,9 @@ See https://docs.buf.build/faq for more details.`
 	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
 
 	tokenEnvKey = "BUF_TOKEN"
+
+	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
+	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
 
 	inputHashtagFlagName      = "__hashtag__"
 	inputHashtagFlagShortName = "#"
@@ -204,7 +216,10 @@ If specified multiple times, the union will be taken.`,
 	)
 }
 
-// BindPathAndDeprecatedFiles binds the paths flag and the deprecated files flag.
+// BindPathsAndDeprecatedFiles binds the paths flag and the deprecated files flag.
+//
+// We do not mark the files flag as deprecated as we now error when we hit it, and
+// print out an error message via the returned error.
 func BindPathsAndDeprecatedFiles(
 	flagSet *pflag.FlagSet,
 	pathsAddr *[]string,
@@ -221,10 +236,6 @@ func BindPathsAndDeprecatedFiles(
 If specified multiple times, the union will be taken.`,
 	)
 	_ = flagSet.MarkHidden(filesFlagName)
-	_ = flagSet.MarkDeprecated(
-		filesFlagName,
-		fmt.Sprintf("use --%s instead.%s", pathsFlagName, FlagDeprecationMessageSuffix),
-	)
 }
 
 // BindInputHashtag binds the input hashtag flag.
@@ -265,7 +276,7 @@ If no argument is specified, defaults to ".".`,
 	)
 }
 
-// GetInputValue gets either the first arg or the deprecated flag, but not both.
+// GetInputValue gets the first arg and errors if the deprecated flag is used.
 //
 // Also parses the special input hashtag flag that deals with the situation "buf build -#format=json".
 // The existence of 0 or 1 args should be handled by the Args field on Command.
@@ -295,18 +306,20 @@ func GetInputValue(
 		return "", fmt.Errorf("only 1 argument allowed but %d arguments specified", numArgs)
 	}
 	if arg != "" && deprecatedFlag != "" {
-		return "", fmt.Errorf("cannot specify both first argument and deprecated flag --%s", deprecatedFlagName)
+		return "", fmt.Errorf("cannot specify both first argument and deprecated flag --%s, use the first argument instead%s", deprecatedFlagName, DeprecationMessageSuffix)
 	}
 	if arg != "" {
 		return arg, nil
 	}
 	if deprecatedFlag != "" {
-		return deprecatedFlag, nil
+		return "", fmt.Errorf("flag --%s is no longer supported, use the first argument instead%s", deprecatedFlagName, DeprecationMessageSuffix)
 	}
 	return defaultValue, nil
 }
 
 // GetStringFlagOrDeprecatedFlag gets the flag, or the deprecated flag.
+//
+// An error is returned if the deprecated flag is used.
 func GetStringFlagOrDeprecatedFlag(
 	flag string,
 	flagName string,
@@ -314,15 +327,20 @@ func GetStringFlagOrDeprecatedFlag(
 	deprecatedFlagName string,
 ) (string, error) {
 	if flag != "" && deprecatedFlag != "" {
-		return "", fmt.Errorf("cannot specify both --%s and --%s", flagName, deprecatedFlagName)
+		return "", fmt.Errorf("cannot specify both --%s and --%s, use --%s instead%s", flagName, deprecatedFlagName, flagName, DeprecationMessageSuffix)
 	}
 	if flag != "" {
 		return flag, nil
 	}
-	return deprecatedFlag, nil
+	if deprecatedFlag != "" {
+		return "", fmt.Errorf("flag --%s is no longer supported, use --%s instead%s", deprecatedFlagName, flagName, DeprecationMessageSuffix)
+	}
+	return "", nil
 }
 
 // GetStringSliceFlagOrDeprecatedFlag gets the flag, or the deprecated flag.
+//
+// An error is returned if the deprecated flag is used.
 func GetStringSliceFlagOrDeprecatedFlag(
 	flag []string,
 	flagName string,
@@ -330,12 +348,31 @@ func GetStringSliceFlagOrDeprecatedFlag(
 	deprecatedFlagName string,
 ) ([]string, error) {
 	if len(flag) > 0 && len(deprecatedFlag) > 0 {
-		return nil, fmt.Errorf("cannot specify both --%s and --%s", flagName, deprecatedFlagName)
+		return nil, fmt.Errorf("cannot specify both --%s and --%s, use --%s instead%s", flagName, deprecatedFlagName, flagName, DeprecationMessageSuffix)
 	}
 	if len(flag) > 0 {
 		return flag, nil
 	}
-	return deprecatedFlag, nil
+	if len(deprecatedFlag) > 0 {
+		return nil, fmt.Errorf("flag --%s is no longer supported, use --%s instead%s", deprecatedFlagName, flagName, DeprecationMessageSuffix)
+	}
+	return nil, nil
+}
+
+// WarnAlphaCommand prints a warning for a alpha command unless the alphaSuppressWarningsEnvKey
+// environment variable is set.
+func WarnAlphaCommand(ctx context.Context, container appflag.Container) {
+	if container.Env(alphaSuppressWarningsEnvKey) == "" {
+		container.Logger().Warn("This command is in alpha. It is hidden for a reason. This command is purely for development purposes, and may never even be promoted to beta, do not rely on this command's functionality. To suppress this warning, set " + alphaSuppressWarningsEnvKey + "=1")
+	}
+}
+
+// WarnBetaCommand prints a warning for a beta command unless the betaSuppressWarningsEnvKey
+// environment variable is set.
+func WarnBetaCommand(ctx context.Context, container appflag.Container) {
+	if container.Env(betaSuppressWarningsEnvKey) == "" {
+		container.Logger().Warn("This command is in beta. It is unstable and likely to change. To suppress this warning, set " + betaSuppressWarningsEnvKey + "=1")
+	}
 }
 
 // NewWireImageConfigReader returns a new ImageConfigReader.
@@ -491,15 +528,13 @@ func NewModuleReaderAndCreateCacheDirs(
 	}
 	moduleReader := bufmodulecache.NewModuleReader(
 		container.Logger(),
+		container.VerbosePrinter(),
+		fileLocker,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
 		bufapimodule.NewModuleReader(
 			registryProvider,
 		),
-		bufmodulecache.WithMessageWriter(
-			container.Stderr(),
-		),
-		bufmodulecache.WithFileLocker(fileLocker),
 	)
 	return moduleReader, nil
 }
@@ -672,7 +707,7 @@ func ReadModuleWithWorkspacesDisabled(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
 	source string,
-) (bufmodule.Module, bufmodule.ModuleIdentity, error) {
+) (bufmodule.Module, bufmoduleref.ModuleIdentity, error) {
 	sourceRef, err := buffetch.NewSourceRefParser(
 		container.Logger(),
 	).GetSourceRef(

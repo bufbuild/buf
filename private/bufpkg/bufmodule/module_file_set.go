@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -74,17 +75,17 @@ func newModuleFileSet(
 	return moduleFileSet
 }
 
-func (m *moduleFileSet) AllFileInfos(ctx context.Context) ([]FileInfo, error) {
-	var fileInfos []FileInfo
+func (m *moduleFileSet) AllFileInfos(ctx context.Context) ([]bufmoduleref.FileInfo, error) {
+	var fileInfos []bufmoduleref.FileInfo
 	if walkErr := m.allModuleReadBucket.WalkModuleFiles(ctx, "", func(moduleObjectInfo *moduleObjectInfo) error {
-		if err := ValidateModuleFilePath(moduleObjectInfo.Path()); err != nil {
+		if err := bufmoduleref.ValidateModuleFilePath(moduleObjectInfo.Path()); err != nil {
 			return err
 		}
 		isNotImport, err := storage.Exists(ctx, m.Module.getSourceReadBucket(), moduleObjectInfo.Path())
 		if err != nil {
 			return err
 		}
-		fileInfo, err := NewFileInfo(
+		fileInfo, err := bufmoduleref.NewFileInfo(
 			moduleObjectInfo.Path(),
 			moduleObjectInfo.ExternalPath(),
 			!isNotImport,
@@ -99,12 +100,12 @@ func (m *moduleFileSet) AllFileInfos(ctx context.Context) ([]FileInfo, error) {
 	}); walkErr != nil {
 		return nil, walkErr
 	}
-	sortFileInfos(fileInfos)
+	bufmoduleref.SortFileInfos(fileInfos)
 	return fileInfos, nil
 }
 
 func (m *moduleFileSet) GetModuleFile(ctx context.Context, path string) (ModuleFile, error) {
-	if err := ValidateModuleFilePath(path); err != nil {
+	if err := bufmoduleref.ValidateModuleFilePath(path); err != nil {
 		return nil, err
 	}
 	readObjectCloser, err := m.allModuleReadBucket.Get(ctx, path)
@@ -119,7 +120,7 @@ func (m *moduleFileSet) GetModuleFile(ctx context.Context, path string) (ModuleF
 	if err != nil {
 		return nil, err
 	}
-	fileInfo, err := NewFileInfo(
+	fileInfo, err := bufmoduleref.NewFileInfo(
 		readObjectCloser.Path(),
 		readObjectCloser.ExternalPath(),
 		!isNotImport,
@@ -132,7 +133,7 @@ func (m *moduleFileSet) GetModuleFile(ctx context.Context, path string) (ModuleF
 	return newModuleFile(fileInfo, readObjectCloser), nil
 }
 
-func (m *moduleFileSet) TargetFileInfos(ctx context.Context) ([]FileInfo, error) {
+func (m *moduleFileSet) TargetFileInfos(ctx context.Context) ([]bufmoduleref.FileInfo, error) {
 	if len(m.targetPaths) == 0 {
 		// If we haven't configured any target targetPaths on the MpduleFileSet,
 		// we can defer to the target module's implementation.
@@ -159,7 +160,7 @@ func (m *moduleFileSet) TargetFileInfos(ctx context.Context) ([]FileInfo, error)
 	// If we encounter "bar/baz.proto", then we will have satisfied
 	// the second set (because that path satisfies the "bar" directory).
 	pathTracker := newPathTracker(m.targetPaths)
-	targetFileInfos := make([]FileInfo, 0, len(m.targetPaths))
+	targetFileInfos := make([]bufmoduleref.FileInfo, 0, len(m.targetPaths))
 	for _, fileInfo := range allFileInfos {
 		if pathTracker.contains(fileInfo.Path()) {
 			targetFileInfos = append(targetFileInfos, fileInfo)

@@ -6,8 +6,6 @@ GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
-	cmd/protoc-gen-buf-check-breaking \
-	cmd/protoc-gen-buf-check-lint \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc \
@@ -34,6 +32,8 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2021
 LICENSE_HEADER_IGNORES := \/testdata enterprise
+# Comment out to use released buf
+BUF_GO_INSTALL_PATH := ./cmd/buf
 
 BUF_LINT_INPUT := .
 BUF_BREAKING_INPUT := .
@@ -105,11 +105,11 @@ bufgenerateclean:: bufgeneratecleango
 
 .PHONY: bufgenerateprotogo
 bufgenerateprotogo:
-	buf generate proto --template data/template/buf.go.gen.yaml
+	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
-	buf generate proto --template data/template/buf.go-client.gen.yaml
+	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
 
 bufgeneratesteps:: \
 	bufgenerateprotogo \
@@ -117,7 +117,7 @@ bufgeneratesteps:: \
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
-	DOCKER_IMAGE=golang:1.17.0-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.17.1-buster bash make/buf/scripts/release.bash
 
 # We have to manually set the Homebrew version on the Homebrew badge as there
 # is no badge on shields.io for Homebrew packages outside of homebrew-core
@@ -131,7 +131,7 @@ updateversion:
 ifndef VERSION
 	$(error "VERSION must be set")
 endif
-	$(SED_I) "s/Version.*=.*\"0\.[0-9][0-9]*\.[0-9][0-9]*.*\"/Version = \"$(VERSION)\"/g" private/buf/bufcli/bufcli.go
+	$(SED_I) "s/Version.*=.*\"[0-9]\.[0-9][0-9]*\.[0-9][0-9]*.*\"/Version = \"$(VERSION)\"/g" private/buf/bufcli/bufcli.go
 	gofmt -s -w private/buf/bufcli/bufcli.go
 
 .PHONY: updategoversion

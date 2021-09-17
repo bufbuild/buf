@@ -80,7 +80,7 @@ func TestWorkspaceAbsoluteFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: directory "/home/buf" listed in testdata/workspace/fail/absolute/buf.work.yaml is invalid: /home/buf: expected to be relative.`,
+		`Failure: directory "/home/buf" listed in testdata/workspace/fail/absolute/buf.work.yaml is invalid: /home/buf: expected to be relative`,
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "absolute"),
 	)

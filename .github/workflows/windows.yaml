@@ -19,7 +19,7 @@ jobs:
         if: success()
         uses: actions/cache@v2
         with:
-          path: C:\Users\runneradmin\AppData\Local\go-build
+          path: C:\Users\runneradmin\go\pkg\mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
@@ -27,7 +27,7 @@ jobs:
         if: success()
         uses: actions/setup-go@v2.1.4 # this contains a fix for Windows file extraction
         with:
-          go-version: 1.17.0
+          go-version: 1.17.1
       - name: install-protoc
         if: success()
         run: choco install --confirm protoc

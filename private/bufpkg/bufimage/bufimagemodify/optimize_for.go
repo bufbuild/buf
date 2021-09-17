@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
 
@@ -29,19 +30,27 @@ const OptimizeForID = "OPTIMIZE_FOR"
 var optimizeForPath = []int32{8, 9}
 
 func optimizeFor(
+	logger *zap.Logger,
 	sweeper Sweeper,
 	value descriptorpb.FileOptions_OptimizeMode,
 	overrides map[string]descriptorpb.FileOptions_OptimizeMode,
 ) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				modifierValue := value
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					modifierValue = overrideValue
+					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
 				if err := optimizeForForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
 					return err
+				}
+			}
+			for overrideFile := range overrides {
+				if _, ok := seenOverrideFiles[overrideFile]; !ok {
+					logger.Sugar().Warnf("%s override for %q was unused", OptimizeForID, overrideFile)
 				}
 			}
 			return nil

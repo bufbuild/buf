@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -1124,8 +1124,8 @@ func testNewModuleReference(
 	owner string,
 	repository string,
 	reference string,
-) bufmodule.ModuleReference {
-	moduleReference, err := bufmodule.NewModuleReference(remote, owner, repository, reference)
+) bufmoduleref.ModuleReference {
+	moduleReference, err := bufmoduleref.NewModuleReference(remote, owner, repository, reference)
 	require.NoError(t, err)
 	return moduleReference
 }

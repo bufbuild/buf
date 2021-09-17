@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -35,19 +36,27 @@ const (
 var javaMultipleFilesPath = []int32{8, 10}
 
 func javaMultipleFiles(
+	logger *zap.Logger,
 	sweeper Sweeper,
 	value bool,
 	overrides map[string]bool,
 ) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				modifierValue := value
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					modifierValue = overrideValue
+					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
 				if err := javaMultipleFilesForFile(ctx, sweeper, imageFile, modifierValue); err != nil {
 					return err
+				}
+			}
+			for overrideFile := range overrides {
+				if _, ok := seenOverrideFiles[overrideFile]; !ok {
+					logger.Sugar().Warnf("%s override for %q was unused", JavaMultipleFilesID, overrideFile)
 				}
 			}
 			return nil

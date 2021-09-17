@@ -19,7 +19,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/rpc"
@@ -139,7 +139,7 @@ func NewRepositoryNotFoundError(name string) error {
 
 // NewModuleReferenceNotFoundError informs the user that a module
 // reference does not exist.
-func NewModuleReferenceNotFoundError(reference bufmodule.ModuleReference) error {
+func NewModuleReferenceNotFoundError(reference bufmoduleref.ModuleReference) error {
 	return fmt.Errorf("%q does not exist", reference)
 }
 
@@ -179,9 +179,9 @@ func wrapError(err error) error {
 	case rpcCode == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
 		return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
 	case rpcCode == rpc.ErrorCodeUnavailable:
-		return fmt.Errorf(`Failure: the server hosted at that remote is unavailable: %w.`, err)
+		return fmt.Errorf(`Failure: the server hosted at that remote is unavailable: %w`, err)
 	}
-	return fmt.Errorf("Failure: %w.", err)
+	return fmt.Errorf("Failure: %w", err)
 }
 
 // isEmptyUnknownError returns true if the given

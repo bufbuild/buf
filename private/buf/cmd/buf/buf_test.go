@@ -37,45 +37,42 @@ import (
 
 func TestSuccess1(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "build", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "build", "--source", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess2(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "build", "--exclude-imports", "--source", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess3(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "build", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "build", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "build", "--exclude-source-info", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess4(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "build", "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess5(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "build", "--exclude-imports", "--exclude-source-info", "--source", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "build", "--exclude-imports", "--exclude-source-info", filepath.Join("testdata", "success"))
 }
 
 func TestSuccess6(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 0, ``, "check", "lint", "--input", filepath.Join("testdata", "success"))
-	testRunStdout(t, nil, 0, ``, "check", "lint", filepath.Join("testdata", "success"))
-	testRunStdout(t, nil, 0, ``, "lint", "--input", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "lint", "--input", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "lint", filepath.Join("testdata", "success"))
 }
 
 func TestSuccessProfile1(t *testing.T) {
 	t.Parallel()
-	testRunStdoutProfile(t, nil, 0, ``, "build", "--source", filepath.Join("testdata", "success"))
 	testRunStdoutProfile(t, nil, 0, ``, "build", filepath.Join("testdata", "success"))
 }
 
@@ -84,7 +81,7 @@ func TestFail1(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
+		1,
 		``,
 		"build",
 		"--source",
@@ -105,7 +102,7 @@ func TestFail2(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
+		1,
 		``,
 		"build",
 		"--exclude-imports",
@@ -128,7 +125,7 @@ func TestFail3(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
+		1,
 		``,
 		"build",
 		"--exclude-source-info",
@@ -151,7 +148,7 @@ func TestFail4(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
+		1,
 		``,
 		"build",
 		"--exclude-imports",
@@ -176,9 +173,8 @@ func TestFail5(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		``,
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
@@ -199,9 +195,8 @@ func TestFail6(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		``,
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
@@ -227,9 +222,8 @@ func TestFail7(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		``,
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -254,9 +248,8 @@ func TestFail7(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		``,
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -285,9 +278,8 @@ func TestFail8(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
-		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
+		1,
+		``,
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail2"),
@@ -308,8 +300,8 @@ func TestFail9(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		``,
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail2"),
@@ -333,7 +325,7 @@ func TestFail10(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
+		1,
 		``,
 		"lint",
 		"--input",
@@ -358,8 +350,8 @@ func TestFail11(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		fmt.Sprintf("%v:5:8:buf/buf.proto: does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
+		1,
+		``,
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
@@ -383,14 +375,8 @@ func TestFail12(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		`version: v1
-lint:
-  ignore_only:
-    FIELD_LOWER_SNAKE_CASE:
-	  - buf/buf.proto
-	PACKAGE_DIRECTORY_MATCH:
-	  - buf/buf.proto`,
+		1,
+		``,
 		"lint",
 		"--input",
 		filepath.Join("testdata", "fail"),
@@ -508,51 +494,8 @@ func TestFailCheckBreaking1(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
-		`),
-		"check",
-		"breaking",
-		"--input",
-		// can't bother right now to filepath.Join this
-		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
-		"--against-input",
-		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
-	)
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
-		`),
-		"check",
-		"breaking",
-		// can't bother right now to filepath.Join this
-		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
-		"--against",
-		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
-	)
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
-		`),
+		1,
+		``,
 		"breaking",
 		"--input",
 		// can't bother right now to filepath.Join this
@@ -627,16 +570,6 @@ COMMENT_SERVICE                   COMMENTS                 Checks that services 
 RPC_NO_CLIENT_STREAMING           UNARY_RPC                Checks that RPCs are not client streaming.
 RPC_NO_SERVER_STREAMING           UNARY_RPC                Checks that RPCs are not server streaming.
 		`
-	testRunStdout(
-		t,
-		nil,
-		0,
-		expectedStdout,
-		"check",
-		"ls-lint-checkers",
-		"--version",
-		"v1",
-	)
 	testRunStdout(
 		t,
 		nil,
@@ -791,16 +724,6 @@ FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            
 		nil,
 		0,
 		expectedStdout,
-		"check",
-		"ls-breaking-checkers",
-		"--version",
-		"v1",
-	)
-	testRunStdout(
-		t,
-		nil,
-		0,
-		expectedStdout,
 		"config",
 		"ls-breaking-rules",
 		"--version",
@@ -910,16 +833,6 @@ FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 
 		nil,
 		0,
 		expectedStdout,
-		"check",
-		"ls-breaking-checkers",
-		"--version",
-		"v1beta1",
-	)
-	testRunStdout(
-		t,
-		nil,
-		0,
-		expectedStdout,
 		"config",
 		"ls-breaking-rules",
 		"--version",
@@ -932,8 +845,8 @@ func TestLsFiles(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		0,
-		filepath.FromSlash(`testdata/success/buf/buf.proto`),
+		1,
+		``,
 		"ls-files",
 		"--input",
 		filepath.Join("testdata", "success"),
@@ -1094,9 +1007,9 @@ func TestImageConvertRoundtripJSONBinaryJSON(t *testing.T) {
 	require.Equal(t, json1, stdout.Bytes())
 }
 
-func TestModInitBasic(t *testing.T) {
+func TestConfigInitBasic(t *testing.T) {
 	t.Parallel()
-	testModInit(
+	testConfigInit(
 		t,
 		`version: v1
 lint:
@@ -1108,24 +1021,6 @@ breaking:
 `,
 		false,
 		"",
-	)
-}
-
-func TestModInitName(t *testing.T) {
-	t.Parallel()
-	testModInit(
-		t,
-		`version: v1
-name: buf.build/foob/bar
-lint:
-  use:
-    - DEFAULT
-breaking:
-  use:
-    - FILE
-`,
-		false,
-		"buf.build/foob/bar",
 	)
 }
 
@@ -1251,6 +1146,11 @@ func TestExportPaths(t *testing.T) {
 		"",
 		"request.proto",
 	)
+}
+
+func TestVersion(t *testing.T) {
+	t.Parallel()
+	testRunStdout(t, nil, 0, bufcli.Version, "--version")
 }
 
 func TestMigrateV1Beta1(t *testing.T) {
@@ -1492,26 +1392,20 @@ func testCopyReadBucketToTempDir(
 	return tempDir, readWriteBucket
 }
 
-func testModInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {
-	for _, baseArgs := range [][]string{
-		// deprecated commands as well
-		{"mod", "init"},
-		{"beta", "mod", "init"},
-		{"beta", "config", "init"},
-	} {
-		tempDir := t.TempDir()
-		args := append(baseArgs, "-o", tempDir)
-		if document {
-			args = append(args, "--doc")
-		}
-		if name != "" {
-			args = append(args, "--name", name)
-		}
-		testRun(t, 0, nil, nil, args...)
-		data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1FilePath))
-		require.NoError(t, err)
-		require.Equal(t, expectedData, string(data))
+func testConfigInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {
+	tempDir := t.TempDir()
+	baseArgs := []string{"config", "init"}
+	args := append(baseArgs, "-o", tempDir)
+	if document {
+		args = append(args, "--doc")
 	}
+	if name != "" {
+		args = append(args, "--name", name)
+	}
+	testRun(t, 0, nil, nil, args...)
+	data, err := os.ReadFile(filepath.Join(tempDir, bufconfig.ExternalConfigV1FilePath))
+	require.NoError(t, err)
+	require.Equal(t, expectedData, string(data))
 }
 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
@@ -1548,8 +1442,7 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 		// we do not want warnings to be part of our stderr test calculation
 		append(
 			args,
-			"--log-level",
-			"error",
+			"--no-warn",
 		)...,
 	)
 }

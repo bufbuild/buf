@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/rpc"
@@ -74,7 +74,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Parent,
 		parentFlagName,
 		parentFlagShortName,
-		bufmodule.MainBranch,
+		bufmoduleref.MainBranch,
 		`The parent branch.`,
 	)
 }
@@ -84,16 +84,17 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	bufcli.WarnBetaCommand(ctx, container)
 	if flags.Parent == "" {
 		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", parentFlagName)
 	}
-	moduleReference, err := bufmodule.ModuleReferenceForString(
+	moduleReference, err := bufmoduleref.ModuleReferenceForString(
 		container.Arg(0),
 	)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	if bufmodule.IsCommitModuleReference(moduleReference) {
+	if bufmoduleref.IsCommitModuleReference(moduleReference) {
 		return fmt.Errorf("branch is required but commit was given: %q", container.Arg(0))
 	}
 	format, err := bufprint.ParseFormat(flags.Format)

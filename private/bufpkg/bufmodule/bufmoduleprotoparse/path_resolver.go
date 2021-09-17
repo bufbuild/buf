@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/data/datawkt"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
@@ -31,7 +32,7 @@ type parserAccessorHandler struct {
 	module               bufmodule.Module
 	pathToExternalPath   map[string]string
 	nonImportPaths       map[string]struct{}
-	pathToModuleIdentity map[string]bufmodule.ModuleIdentity
+	pathToModuleIdentity map[string]bufmoduleref.ModuleIdentity
 	pathToCommit         map[string]string
 	lock                 sync.RWMutex
 }
@@ -45,7 +46,7 @@ func newParserAccessorHandler(
 		module:               module,
 		pathToExternalPath:   make(map[string]string),
 		nonImportPaths:       make(map[string]struct{}),
-		pathToModuleIdentity: make(map[string]bufmodule.ModuleIdentity),
+		pathToModuleIdentity: make(map[string]bufmoduleref.ModuleIdentity),
 		pathToCommit:         make(map[string]string),
 	}
 }
@@ -105,7 +106,7 @@ func (p *parserAccessorHandler) IsImport(path string) bool {
 	return !isNotImport
 }
 
-func (p *parserAccessorHandler) ModuleIdentity(path string) bufmodule.ModuleIdentity {
+func (p *parserAccessorHandler) ModuleIdentity(path string) bufmoduleref.ModuleIdentity {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 	return p.pathToModuleIdentity[path] // nil is a valid value.
@@ -121,7 +122,7 @@ func (p *parserAccessorHandler) addPath(
 	path string,
 	externalPath string,
 	isImport bool,
-	moduleIdentity bufmodule.ModuleIdentity,
+	moduleIdentity bufmoduleref.ModuleIdentity,
 	commit string,
 ) error {
 	p.lock.Lock()

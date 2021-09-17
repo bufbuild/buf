@@ -22,17 +22,13 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/rpc"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-)
-
-const (
-	dirFlagName = "dir"
 )
 
 // NewCommand returns a new prune Command.
@@ -40,49 +36,32 @@ func NewCommand(
 	name string,
 	builder appflag.Builder,
 ) *appcmd.Command {
-	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
+		Use:   name + " <directory>",
 		Short: "Prunes unused dependencies from the " + buflock.ExternalConfigFilePath + " file.",
-		Args:  cobra.NoArgs,
+		Long:  `The first argument is the directory of the local module to prune. If no argument is specified, defaults to "."`,
+		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
-				return run(ctx, container, flags)
+				return run(ctx, container)
 			},
 			bufcli.NewErrorInterceptor(),
 		),
-		BindFlags: flags.Bind,
 	}
-}
-
-type flags struct {
-	// for testing only
-	Dir string
-}
-
-func newFlags() *flags {
-	return &flags{}
-}
-
-func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.StringVar(
-		&f.Dir,
-		dirFlagName,
-		".",
-		"The directory to operate in. For testing only.",
-	)
-	_ = flagSet.MarkHidden(dirFlagName)
 }
 
 // run tidy to trim the buf.lock file for a specific module.
 func run(
 	ctx context.Context,
 	container appflag.Container,
-	flags *flags,
 ) error {
+	directoryInput, err := bufcli.GetInputValue(container, "", "", "", ".")
+	if err != nil {
+		return err
+	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
-		flags.Dir,
+		directoryInput,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
@@ -121,21 +100,21 @@ func run(
 	if err != nil {
 		return err
 	}
-	var dependencyModulePins []bufmodule.ModulePin
+	var dependencyModulePins []bufmoduleref.ModulePin
 	if len(requestReferences) > 0 {
-		protoDependencyModulePins, err := service.GetModulePins(ctx, bufmodule.NewProtoModuleReferencesForModuleReferences(requestReferences...), nil)
+		protoDependencyModulePins, err := service.GetModulePins(ctx, bufmoduleref.NewProtoModuleReferencesForModuleReferences(requestReferences...), nil)
 		if err != nil {
 			if rpc.GetErrorCode(err) == rpc.ErrorCodeUnimplemented && remote != bufrpc.DefaultRemote {
 				return bufcli.NewUnimplementedRemoteError(err, remote, config.ModuleIdentity.IdentityString())
 			}
 			return err
 		}
-		dependencyModulePins, err = bufmodule.NewModulePinsForProtos(protoDependencyModulePins...)
+		dependencyModulePins, err = bufmoduleref.NewModulePinsForProtos(protoDependencyModulePins...)
 		if err != nil {
 			return bufcli.NewInternalError(err)
 		}
 	}
-	if err := bufmodule.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
+	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, readWriteBucket, dependencyModulePins); err != nil {
 		return err
 	}
 	return nil
@@ -144,19 +123,19 @@ func run(
 // referencesPinnedByLock takes moduleReferences and a list of pins, then
 // returns a new list of moduleReferences with the same identity, but their
 // reference set to the commit of the pin with the corresponding identity.
-func referencesPinnedByLock(moduleReferences []bufmodule.ModuleReference, modulePins []bufmodule.ModulePin) ([]bufmodule.ModuleReference, error) {
-	pinsByIdentity := make(map[string]bufmodule.ModulePin, len(modulePins))
+func referencesPinnedByLock(moduleReferences []bufmoduleref.ModuleReference, modulePins []bufmoduleref.ModulePin) ([]bufmoduleref.ModuleReference, error) {
+	pinsByIdentity := make(map[string]bufmoduleref.ModulePin, len(modulePins))
 	for _, modulePin := range modulePins {
 		pinsByIdentity[modulePin.IdentityString()] = modulePin
 	}
 
-	var pinnedModuleReferences []bufmodule.ModuleReference
+	var pinnedModuleReferences []bufmoduleref.ModuleReference
 	for _, moduleReference := range moduleReferences {
 		pin, ok := pinsByIdentity[moduleReference.IdentityString()]
 		if !ok {
 			return nil, fmt.Errorf("cannot tidy with dependency %q: no corresponding entry found in buf.lock; use `mod update` first if this is a new dependency", moduleReference.IdentityString())
 		}
-		newModuleReference, err := bufmodule.NewModuleReference(
+		newModuleReference, err := bufmoduleref.NewModuleReference(
 			moduleReference.Remote(),
 			moduleReference.Owner(),
 			moduleReference.Repository(),

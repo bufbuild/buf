@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
 )
@@ -31,16 +32,27 @@ const RubyPackageID = "RUBY_PACKAGE"
 // https://github.com/protocolbuffers/protobuf/blob/61689226c0e3ec88287eaed66164614d9c4f2bf7/src/google/protobuf/descriptor.proto#L453
 var rubyPackagePath = []int32{8, 45}
 
-func rubyPackage(sweeper Sweeper, overrides map[string]string) Modifier {
+func rubyPackage(
+	logger *zap.Logger,
+	sweeper Sweeper,
+	overrides map[string]string,
+) Modifier {
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
+			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
 				rubyPackageValue := rubyPackageValue(imageFile)
 				if overrideValue, ok := overrides[imageFile.Path()]; ok {
 					rubyPackageValue = overrideValue
+					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
 				if err := rubyPackageForFile(ctx, sweeper, imageFile, rubyPackageValue); err != nil {
 					return err
+				}
+			}
+			for overrideFile := range overrides {
+				if _, ok := seenOverrideFiles[overrideFile]; !ok {
+					logger.Sugar().Warnf("%s override for %q was unused", RubyPackageID, overrideFile)
 				}
 			}
 			return nil

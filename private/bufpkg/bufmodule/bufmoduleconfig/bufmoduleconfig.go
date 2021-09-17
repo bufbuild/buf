@@ -14,7 +14,7 @@
 
 package bufmoduleconfig
 
-import "github.com/bufbuild/buf/private/bufpkg/bufmodule"
+import "github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 
 // Config is a configuration for build.
 type Config struct {
@@ -38,7 +38,7 @@ type Config struct {
 	//
 	// If RootToExcludes is empty, the default is "." with no excludes.
 	RootToExcludes             map[string][]string
-	DependencyModuleReferences []bufmodule.ModuleReference
+	DependencyModuleReferences []bufmoduleref.ModuleReference
 }
 
 // NewConfigV1Beta1 returns a new, validated Config for the ExternalConfig.

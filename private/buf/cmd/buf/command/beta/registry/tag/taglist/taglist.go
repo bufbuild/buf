@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/rpc"
@@ -95,10 +95,11 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	bufcli.WarnBetaCommand(ctx, container)
 	if container.Arg(0) == "" {
 		return appcmd.NewInvalidArgumentError("repository is required")
 	}
-	moduleIdentity, err := bufmodule.ModuleIdentityForString(container.Arg(0))
+	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
