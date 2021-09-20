@@ -37,7 +37,6 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type generator struct {
@@ -98,14 +97,14 @@ func (g *generator) generate(
 		includeImports,
 	)
 	if err != nil {
-		return fmt.Errorf("failed to generate plugins concurrently: %w", err)
+		return err
 	}
 	if len(pluginResponses) != len(config.PluginConfigs) {
 		return fmt.Errorf("unexpected number of responses, got %d, wanted %d", len(pluginResponses), len(config.PluginConfigs))
 	}
 	mergedPluginResults, err := bufplugin.MergeInsertionPoints(pluginResponses)
 	if err != nil {
-		return fmt.Errorf("failed to map insertion points: %w", err)
+		return err
 	}
 	if len(mergedPluginResults) != len(config.PluginConfigs) {
 		return fmt.Errorf("unexpected number of merged results, got %d, wanted %d", len(mergedPluginResults), len(config.PluginConfigs))
@@ -123,7 +122,7 @@ func (g *generator) generate(
 				mergedPluginResult.Files,
 				true,
 			); err != nil {
-				return fmt.Errorf("failed to generate jar: %w", err)
+				return err
 			}
 		case ".zip":
 			if err := g.generateZip(
@@ -132,7 +131,7 @@ func (g *generator) generate(
 				mergedPluginResult.Files,
 				false,
 			); err != nil {
-				return fmt.Errorf("failed to generate zip: %w", err)
+				return err
 			}
 		default:
 			if err := g.generateDirectory(
@@ -140,7 +139,7 @@ func (g *generator) generate(
 				pluginOut,
 				mergedPluginResult.Files,
 			); err != nil {
-				return fmt.Errorf("failed to generate directory: %w", err)
+				return err
 			}
 		}
 	}
@@ -156,7 +155,7 @@ func (g *generator) generateConcurrently(
 	config *Config,
 	image bufimage.Image,
 	includeImports bool,
-) ([]*pluginpb.CodeGeneratorResponse, error) {
+) ([]*bufplugin.PluginResponse, error) {
 	// Cache imagesByDir up-front if at least one plugin requires it
 	var imagesByDir []bufimage.Image
 	for _, pluginConfig := range config.PluginConfigs {
@@ -185,7 +184,7 @@ func (g *generator) generateConcurrently(
 	// pluginResponses contains the response for each plugin, in the same order
 	// as they are specified in the plugin configs. We need to store each response
 	// for processing insertion points after all plugins have finished.
-	pluginResponses := make([]*pluginpb.CodeGeneratorResponse, len(config.PluginConfigs))
+	pluginResponses := make([]*bufplugin.PluginResponse, len(config.PluginConfigs))
 	for i, pluginConfig := range config.PluginConfigs {
 		switch {
 		case pluginConfig.Name != "": // Local plugin
@@ -209,7 +208,7 @@ func (g *generator) generateConcurrently(
 				handlerOptions...,
 			)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create handler: %w", err)
+				return nil, err
 			}
 			requests := bufimage.ImagesToCodeGeneratorRequests(
 				pluginImages,
@@ -230,7 +229,7 @@ func (g *generator) generateConcurrently(
 					}
 					defer localSemaphore.Release(ctx)
 					if err := handler.Handle(ctx, container, responseWriter, request); err != nil {
-						return fmt.Errorf("failed to generate: %w", err)
+						return err
 					}
 					return nil
 				})
@@ -238,7 +237,7 @@ func (g *generator) generateConcurrently(
 			// Responses are not valid until parallelized jobs have finished
 			localPluginResponses = append(
 				localPluginResponses,
-				newLocalPluginResponse(responseWriter, i),
+				newLocalPluginResponse(responseWriter, pluginConfig.Name, i),
 			)
 		case pluginConfig.Remote != "": // Remote plugin
 			remote, owner, name, version, err := bufplugin.ParsePluginVersionPath(pluginConfig.Remote)
@@ -260,8 +259,8 @@ func (g *generator) generateConcurrently(
 						Version:    version,
 						Parameters: parameters,
 					},
-					// So we know the order this plugins response should slot in
-					i,
+					pluginConfig.Remote,
+					i, // So we know the order this plugins response should slot in.
 				),
 			)
 		default:
@@ -294,7 +293,7 @@ func (g *generator) generateConcurrently(
 			}
 			responses, _, err := generateService.GeneratePlugins(ctx, bufimage.ImageToProtoImage(image), references)
 			if err != nil {
-				return fmt.Errorf("failed to generate files for remote %q: %w", remote, err)
+				return err
 			}
 			if len(responses) != len(references) {
 				return fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), len(references))
@@ -303,20 +302,39 @@ func (g *generator) generateConcurrently(
 				// Map each plugin response back to the right place.
 				// Note: does not require a lock, since each response is
 				// assigned to its own index in the slice.
-				pluginResponses[plugins[i].index] = response
+				pluginResponses[plugins[i].index] = bufplugin.NewPluginResponse(
+					response,
+					plugins[i].pluginRemote,
+				)
 			}
 			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
-		return nil, fmt.Errorf("failed to execute plugins concurrently: %w", err)
+		return nil, err
 	}
 	for _, localResponse := range localPluginResponses {
-		pluginResponses[localResponse.index] = localResponse.responseWriter.ToResponse()
+		pluginResponses[localResponse.index] = bufplugin.NewPluginResponse(
+			localResponse.responseWriter.ToResponse(),
+			localResponse.pluginName,
+		)
 	}
 	for i, response := range pluginResponses {
 		if response == nil {
-			return nil, fmt.Errorf("concurrent execution failed to populate response %d", i)
+			// The size of pluginResponses and config.PluginConfigs are guaranteed
+			// to be the same, so it's safe to access the config.PluginConfigs with
+			// this index. However, we check the length again and return a separate
+			// error just in case the initialization changes above.
+			if len(pluginResponses) != len(config.PluginConfigs) {
+				return nil, fmt.Errorf("failed for response %d", i)
+			}
+			var pluginName string
+			if pluginConfig := config.PluginConfigs[i]; pluginConfig.Name != "" {
+				pluginName = pluginConfig.Name
+			} else {
+				pluginName = pluginConfig.Remote
+			}
+			return nil, fmt.Errorf("failed for plugin %s", pluginName)
 		}
 	}
 	return pluginResponses, nil
@@ -344,7 +362,7 @@ func (g *generator) generateZip(
 	readBucketBuilder := storagemem.NewReadBucketBuilder()
 	for _, file := range files {
 		if err := storage.PutPath(ctx, readBucketBuilder, file.Name, file.Content); err != nil {
-			return fmt.Errorf("failed to write generated file: %w", err)
+			return fmt.Errorf("failed to write generated file %s: %w", file.Name, err)
 		}
 	}
 	if includeManifest {
@@ -354,14 +372,14 @@ func (g *generator) generateZip(
 	}
 	file, err := os.Create(outFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to create output file: %w", err)
+		return fmt.Errorf("failed to create output file %s: %w", outFilePath, err)
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
 	readBucket, err := readBucketBuilder.ToReadBucket()
 	if err != nil {
-		return fmt.Errorf("failed to convert in-memory bucket to read bucket: %w", err)
+		return err
 	}
 	// protoc does not compress
 	if err := storagearchive.Zip(ctx, readBucket, file, false); err != nil {
@@ -388,7 +406,7 @@ func (g *generator) generateDirectory(
 	}
 	for _, file := range files {
 		if err := storage.PutPath(ctx, readWriteBucket, file.Name, file.Content); err != nil {
-			return fmt.Errorf("failed to write generated file: %w", err)
+			return fmt.Errorf("failed to write generated file %s: %w", file.Name, err)
 		}
 	}
 	return nil
@@ -526,25 +544,33 @@ func newGenerateOptions() *generateOptions {
 
 type localPluginResponse struct {
 	responseWriter appproto.ResponseWriter
+	pluginName     string
 	index          int
 }
 
-func newLocalPluginResponse(responseWriter appproto.ResponseWriter, index int) *localPluginResponse {
+func newLocalPluginResponse(
+	responseWriter appproto.ResponseWriter,
+	pluginName string,
+	index int,
+) *localPluginResponse {
 	return &localPluginResponse{
 		responseWriter: responseWriter,
+		pluginName:     pluginName,
 		index:          index,
 	}
 }
 
 type remotePlugin struct {
-	reference *registryv1alpha1.PluginReference
-	index     int
+	reference    *registryv1alpha1.PluginReference
+	pluginRemote string
+	index        int
 }
 
-func newRemotePlugin(reference *registryv1alpha1.PluginReference, index int) *remotePlugin {
+func newRemotePlugin(reference *registryv1alpha1.PluginReference, pluginRemote string, index int) *remotePlugin {
 	return &remotePlugin{
-		reference: reference,
-		index:     index,
+		reference:    reference,
+		pluginRemote: pluginRemote,
+		index:        index,
 	}
 }
 

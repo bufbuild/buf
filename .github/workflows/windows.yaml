@@ -1,5 +1,7 @@
 name: windows
 on: push
+# Prevent writing to the repository using the CI token.
+# Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
 permissions: read-all
 jobs:
   test:
@@ -7,39 +9,21 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v2
-      - name: cache-chocolatey-deps
-        if: success()
-        uses: actions/cache@v2
-        with:
-          path: C:\Users\runneradmin\AppData\Local\Temp\chocolatey
-          key: ${{ runner.os }}-chocolatey-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-chocolatey-
-      - name: cache-go-installs
-        if: success()
-        uses: actions/cache@v2
-        with:
-          path: C:\Users\runneradmin\go\pkg\mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - name: setup-go
         if: success()
         uses: actions/setup-go@v2.1.4 # this contains a fix for Windows file extraction
         with:
           go-version: 1.17.1
-      - name: install-protoc
+      - name: cache
         if: success()
-        run: choco install --confirm protoc
-      - name: setup-external-plugins
+        uses: actions/cache@v2
+        with:
+          path: |
+            C:\Users\runneradmin\AppData\Local\Temp\chocolatey
+            C:\Users\runneradmin\go\pkg\mod
+          key: ${{ runner.os }}-buf-windows-${{ hashFiles('**/go.sum', '/windows/**') }}
+          restore-keys: |
+            ${{ runner.os }}-buf-windows-
+      - name: test
         if: success()
-        run: ./windows/setupExternalPlugins.ps1
-      - name: setup-internal-plugins
-        if: success()
-        run: ./windows/setupInternalPlugins.ps1
-      - name: install-buf
-        if: success()
-        run: go install ./cmd/buf
-      - name: go test
-        if: success()
-        run: go test ./...
+        run: ./windows/test.ps1
