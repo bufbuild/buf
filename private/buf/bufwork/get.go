@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
-	"sort"
 
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -27,20 +26,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
-type provider struct {
-	logger *zap.Logger
-}
-
-func newProvider(logger *zap.Logger) *provider {
-	return &provider{
-		logger: logger,
-	}
-}
-
-func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (_ *Config, retErr error) {
+func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (_ *Config, retErr error) {
 	ctx, span := trace.StartSpan(ctx, "get_workspace_config")
 	defer span.End()
 
@@ -61,7 +49,7 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket,
 	switch len(foundConfigFilePaths) {
 	case 0:
 		// Did not find anything, return the default.
-		return p.newConfigV1(ExternalConfigV1{}, "default configuration")
+		return newConfigV1(ExternalConfigV1{}, "default configuration")
 	case 1:
 		workspaceID := filepath.Join(normalpath.Unnormalize(relativeRootPath), foundConfigFilePaths[0])
 		readObjectCloser, err := readBucket.Get(ctx, foundConfigFilePaths[0])
@@ -75,7 +63,7 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket,
 		if err != nil {
 			return nil, err
 		}
-		return p.getConfigForData(
+		return getConfigForDataInternal(
 			ctx,
 			encoding.UnmarshalYAMLNonStrict,
 			encoding.UnmarshalYAMLStrict,
@@ -88,10 +76,10 @@ func (p *provider) GetConfig(ctx context.Context, readBucket storage.ReadBucket,
 	}
 }
 
-func (p *provider) GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
+func getConfigForData(ctx context.Context, data []byte) (*Config, error) {
 	_, span := trace.StartSpan(ctx, "get_workspace_config_for_data")
 	defer span.End()
-	return p.getConfigForData(
+	return getConfigForDataInternal(
 		ctx,
 		encoding.UnmarshalJSONOrYAMLNonStrict,
 		encoding.UnmarshalJSONOrYAMLStrict,
@@ -101,7 +89,7 @@ func (p *provider) GetConfigForData(ctx context.Context, data []byte) (*Config, 
 	)
 }
 
-func (p *provider) getConfigForData(
+func getConfigForDataInternal(
 	ctx context.Context,
 	unmarshalNonStrict func([]byte, interface{}) error,
 	unmarshalStrict func([]byte, interface{}) error,
@@ -113,81 +101,17 @@ func (p *provider) getConfigForData(
 	if err := unmarshalNonStrict(data, &externalConfigVersion); err != nil {
 		return nil, err
 	}
-	if err := p.validateExternalConfigVersion(externalConfigVersion, id); err != nil {
+	if err := validateExternalConfigVersion(externalConfigVersion, id); err != nil {
 		return nil, err
 	}
 	var externalConfigV1 ExternalConfigV1
 	if err := unmarshalStrict(data, &externalConfigV1); err != nil {
 		return nil, err
 	}
-	return p.newConfigV1(externalConfigV1, workspaceID)
+	return newConfigV1(externalConfigV1, workspaceID)
 }
 
-func (p *provider) newConfigV1(externalConfig ExternalConfigV1, workspaceID string) (*Config, error) {
-	if len(externalConfig.Directories) == 0 {
-		return nil, fmt.Errorf(
-			`%s has no directories set. Please add "directories: [...]"`,
-			workspaceID,
-		)
-	}
-	directorySet := make(map[string]struct{}, len(externalConfig.Directories))
-	for _, directory := range externalConfig.Directories {
-		normalizedDirectory, err := normalpath.NormalizeAndValidate(directory)
-		if err != nil {
-			return nil, fmt.Errorf(`directory "%s" listed in %s is invalid: %w`, normalpath.Unnormalize(directory), workspaceID, err)
-		}
-		if _, ok := directorySet[normalizedDirectory]; ok {
-			return nil, fmt.Errorf(
-				`directory "%s" is listed more than once in %s`,
-				normalpath.Unnormalize(normalizedDirectory),
-				workspaceID,
-			)
-		}
-		directorySet[normalizedDirectory] = struct{}{}
-	}
-	// It's very important that we sort the directories here so that the
-	// constructed modules and/or images are in a deterministic order.
-	directories := stringutil.MapToSlice(directorySet)
-	sort.Slice(directories, func(i int, j int) bool {
-		return directories[i] < directories[j]
-	})
-	if err := validateConfigurationOverlap(directories, workspaceID); err != nil {
-		return nil, err
-	}
-	return &Config{
-		Directories: directories,
-	}, nil
-}
-
-// validateOverlap returns a non-nil error if any of the directories overlap
-// with each other. The given directories are expected to be sorted.
-func validateConfigurationOverlap(directories []string, workspaceID string) error {
-	for i := 0; i < len(directories); i++ {
-		for j := i + 1; j < len(directories); j++ {
-			left := directories[i]
-			right := directories[j]
-			if normalpath.ContainsPath(left, right, normalpath.Relative) {
-				return fmt.Errorf(
-					`directory "%s" contains directory "%s" in %s`,
-					normalpath.Unnormalize(left),
-					normalpath.Unnormalize(right),
-					workspaceID,
-				)
-			}
-			if normalpath.ContainsPath(right, left, normalpath.Relative) {
-				return fmt.Errorf(
-					`directory "%s" contains directory "%s" in %s`,
-					normalpath.Unnormalize(right),
-					normalpath.Unnormalize(left),
-					workspaceID,
-				)
-			}
-		}
-	}
-	return nil
-}
-
-func (p *provider) validateExternalConfigVersion(externalConfigVersion externalConfigVersion, id string) error {
+func validateExternalConfigVersion(externalConfigVersion externalConfigVersion, id string) error {
 	switch externalConfigVersion.Version {
 	case "":
 		return fmt.Errorf(

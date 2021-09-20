@@ -120,11 +120,10 @@ func handle(
 	if err != nil {
 		return err
 	}
-	config, err := bufconfig.ReadConfig(
+	config, err := bufconfig.ReadConfigOS(
 		ctx,
-		bufconfig.NewProvider(logger),
 		readWriteBucket,
-		bufconfig.ReadConfigWithOverride(
+		bufconfig.ReadConfigOSWithOverride(
 			encoding.GetJSONStringOrStringValue(externalConfig.InputConfig),
 		),
 	)

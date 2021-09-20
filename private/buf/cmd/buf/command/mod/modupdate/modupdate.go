@@ -102,7 +102,7 @@ func run(
 	if existingConfigFilePath == "" {
 		return bufcli.ErrNoConfigFile
 	}
-	moduleConfig, err := bufconfig.NewProvider(container.Logger()).GetConfig(ctx, readWriteBucket)
+	moduleConfig, err := bufconfig.GetConfigForBucket(ctx, readWriteBucket)
 	if err != nil {
 		return err
 	}

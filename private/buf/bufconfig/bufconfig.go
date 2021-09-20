@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/zap"
 )
 
 const (
@@ -72,21 +71,18 @@ type Config struct {
 	Lint           *buflintconfig.Config
 }
 
-// Provider is a provider.
-type Provider interface {
-	// GetConfig gets the Config for the YAML data at ConfigFilePath.
-	//
-	// If the data is of length 0, returns the default config.
-	GetConfig(ctx context.Context, readBucket storage.ReadBucket) (*Config, error)
-	// GetConfig gets the Config for the given JSON or YAML data.
-	//
-	// If the data is of length 0, returns the default config.
-	GetConfigForData(ctx context.Context, data []byte) (*Config, error)
+// GetConfigForBucket gets the Config for the YAML data at ConfigFilePath.
+//
+// If the data is of length 0, returns the default config.
+func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket) (*Config, error) {
+	return getConfigForBucket(ctx, readBucket)
 }
 
-// NewProvider returns a new Provider.
-func NewProvider(logger *zap.Logger) Provider {
-	return newProvider(logger)
+// GetConfig gets the Config for the given JSON or YAML data.
+//
+// If the data is of length 0, returns the default config.
+func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
+	return getConfigForData(ctx, data)
 }
 
 // WriteConfig writes an initial configuration file into the bucket.
@@ -105,28 +101,6 @@ func WriteConfig(
 // WriteConfigOption is an option for WriteConfig.
 type WriteConfigOption func(*writeConfigOptions)
 
-// WriteConfigWithModuleIdentity returns a new WriteConfigOption that sets the name of the
-// module to the given ModuleIdentity.
-//
-// The default is to not set the name.
-func WriteConfigWithModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) WriteConfigOption {
-	return func(writeConfigOptions *writeConfigOptions) {
-		writeConfigOptions.moduleIdentity = moduleIdentity
-	}
-}
-
-// WriteConfigWithDependencyModuleReferences returns a new WriteConfigOption that sets the
-// dependencies of the module.
-//
-// The default is to not have any dependencies.
-//
-// If this option is used, WriteConfigWithModuleIdentity must also be used.
-func WriteConfigWithDependencyModuleReferences(dependencyModuleReferences ...bufmoduleref.ModuleReference) WriteConfigOption {
-	return func(writeConfigOptions *writeConfigOptions) {
-		writeConfigOptions.dependencyModuleReferences = dependencyModuleReferences
-	}
-}
-
 // WriteConfigWithDocumentationComments returns a new WriteConfigOption that documents the resulting configuration file.
 func WriteConfigWithDocumentationComments() WriteConfigOption {
 	return func(writeConfigOptions *writeConfigOptions) {
@@ -144,36 +118,34 @@ func WriteConfigWithUncomment() WriteConfigOption {
 	}
 }
 
-// ReadConfig reads the configuration from the OS or an override, if any.
+// ReadConfigOS reads the configuration from the OS or an override, if any.
 //
-// Only use in CLI tools.
-func ReadConfig(
+// ONLY USE IN CLI TOOLS.
+func ReadConfigOS(
 	ctx context.Context,
-	provider Provider,
 	readBucket storage.ReadBucket,
-	options ...ReadConfigOption,
+	options ...ReadConfigOSOption,
 ) (*Config, error) {
-	return readConfig(
+	return readConfigOS(
 		ctx,
-		provider,
 		readBucket,
 		options...,
 	)
 }
 
-// ReadConfigOption is an option for ReadConfig.
-type ReadConfigOption func(*readConfigOptions)
+// ReadConfigOSOption is an option for ReadConfig.
+type ReadConfigOSOption func(*readConfigOSOptions)
 
-// ReadConfigWithOverride sets the override.
+// ReadConfigOSWithOverride sets the override.
 //
 // If override is set, this will first check if the override ends in .json or .yaml, if so,
 // this reads the file at this path and uses it. Otherwise, this assumes this is configuration
 // data in either JSON or YAML format, and unmarshals it.
 //
 // If no override is set, this reads ExternalConfigFilePath in the bucket.
-func ReadConfigWithOverride(override string) ReadConfigOption {
-	return func(readConfigOptions *readConfigOptions) {
-		readConfigOptions.override = override
+func ReadConfigOSWithOverride(override string) ReadConfigOSOption {
+	return func(readConfigOSOptions *readConfigOSOptions) {
+		readConfigOSOptions.override = override
 	}
 }
 
