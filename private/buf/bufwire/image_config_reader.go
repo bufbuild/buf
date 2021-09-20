@@ -21,7 +21,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -47,7 +46,6 @@ func newImageConfigReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
-	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
@@ -63,7 +61,6 @@ func newImageConfigReader(
 			logger,
 			storageosProvider,
 			fetchReader,
-			workspaceConfigProvider,
 			moduleBucketBuilder,
 		),
 		imageReader: newImageReader(

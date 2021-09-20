@@ -31,27 +31,24 @@ import (
 )
 
 type fileLister struct {
-	logger                  *zap.Logger
-	fetchReader             buffetch.Reader
-	workspaceConfigProvider bufwork.Provider
-	moduleBucketBuilder     bufmodulebuild.ModuleBucketBuilder
-	imageBuilder            bufimagebuild.Builder
-	imageReader             *imageReader
+	logger              *zap.Logger
+	fetchReader         buffetch.Reader
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
+	imageBuilder        bufimagebuild.Builder
+	imageReader         *imageReader
 }
 
 func newFileLister(
 	logger *zap.Logger,
 	fetchReader buffetch.Reader,
-	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	imageBuilder bufimagebuild.Builder,
 ) *fileLister {
 	return &fileLister{
-		logger:                  logger.Named("bufwire"),
-		fetchReader:             fetchReader,
-		workspaceConfigProvider: workspaceConfigProvider,
-		moduleBucketBuilder:     moduleBucketBuilder,
-		imageBuilder:            imageBuilder,
+		logger:              logger.Named("bufwire"),
+		fetchReader:         fetchReader,
+		moduleBucketBuilder: moduleBucketBuilder,
+		imageBuilder:        imageBuilder,
 		imageReader: newImageReader(
 			logger,
 			fetchReader,
@@ -100,7 +97,7 @@ func (e *fileLister) ListFiles(
 		if subDirPath := readBucketCloser.SubDirPath(); existingConfigFilePath == "" || subDirPath != "." {
 			return e.sourceFileInfosForDirectory(ctx, readBucketCloser, subDirPath, configOverride)
 		}
-		workspaceConfig, err := e.workspaceConfigProvider.GetConfig(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
+		workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
 		if err != nil {
 			return nil, err
 		}

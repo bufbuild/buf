@@ -69,7 +69,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/zap"
 )
 
 const (
@@ -293,21 +292,18 @@ type Config struct {
 	Directories []string
 }
 
-// Provider provides workspace configurations.
-type Provider interface {
-	// GetConfig gets the Config for the YAML data at ConfigFilePath.
-	//
-	// If the data is of length 0, returns the default config.
-	GetConfig(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (*Config, error)
-	// GetConfig gets the Config for the given JSON or YAML data.
-	//
-	// If the data is of length 0, returns the default config.
-	GetConfigForData(ctx context.Context, data []byte) (*Config, error)
+// GetConfigForBucket gets the Config for the YAML data at ConfigFilePath.
+//
+// If the data is of length 0, returns the default config.
+func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (*Config, error) {
+	return getConfigForBucket(ctx, readBucket, relativeRootPath)
 }
 
-// NewProvider returns a new Provider.
-func NewProvider(logger *zap.Logger) Provider {
-	return newProvider(logger)
+// GetConfig gets the Config for the given JSON or YAML data.
+//
+// If the data is of length 0, returns the default config.
+func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
+	return getConfigForData(ctx, data)
 }
 
 // ExistingConfigFilePath checks if a configuration file exists, and if so, returns the path

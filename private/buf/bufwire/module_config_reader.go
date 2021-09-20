@@ -35,26 +35,23 @@ import (
 )
 
 type moduleConfigReader struct {
-	logger                  *zap.Logger
-	storageosProvider       storageos.Provider
-	fetchReader             buffetch.Reader
-	workspaceConfigProvider bufwork.Provider
-	moduleBucketBuilder     bufmodulebuild.ModuleBucketBuilder
+	logger              *zap.Logger
+	storageosProvider   storageos.Provider
+	fetchReader         buffetch.Reader
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
 }
 
 func newModuleConfigReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
-	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 ) *moduleConfigReader {
 	return &moduleConfigReader{
-		logger:                  logger,
-		storageosProvider:       storageosProvider,
-		fetchReader:             fetchReader,
-		workspaceConfigProvider: workspaceConfigProvider,
-		moduleBucketBuilder:     moduleBucketBuilder,
+		logger:              logger,
+		storageosProvider:   storageosProvider,
+		fetchReader:         fetchReader,
+		moduleBucketBuilder: moduleBucketBuilder,
 	}
 }
 
@@ -219,7 +216,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	externalDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) ([]ModuleConfig, error) {
-	workspaceConfig, err := m.workspaceConfigProvider.GetConfig(ctx, readBucket, relativeRootPath)
+	workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucket, relativeRootPath)
 	if err != nil {
 		return nil, err
 	}

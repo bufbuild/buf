@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwire"
-	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufapiclient"
 	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
@@ -391,7 +390,6 @@ func NewWireImageConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		bufwork.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
@@ -414,7 +412,6 @@ func NewWireModuleConfigReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		bufwork.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 	), nil
 }
@@ -433,7 +430,6 @@ func NewWireModuleConfigReaderForModuleReader(
 		logger,
 		storageosProvider,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		bufwork.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 	), nil
 }
@@ -453,7 +449,6 @@ func NewWireFileLister(
 	return bufwire.NewFileLister(
 		logger,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
-		bufwork.NewProvider(logger),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufimagebuild.NewBuilder(logger),
 	), nil
