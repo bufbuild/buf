@@ -14,4 +14,4 @@ go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@$protocGenGoGRPCVersion
 go install .\private\buf\cmd\buf\command\protoc\internal\protoc-gen-insertion-point-writer
 go install .\private\buf\cmd\buf\command\protoc\internal\protoc-gen-insertion-point-receiver
 go install .\cmd\buf
-go test ./..
+go test ./...
