@@ -26,8 +26,6 @@ func getProtocIncludePath(protocBinPath string) (string, error) {
 		filepath.Join(filepath.Dir(protocBinPath),
 			"..",
 			"lib",
-			"protoc",
-			"tools",
 			"include",
 		))
 	if err != nil {
