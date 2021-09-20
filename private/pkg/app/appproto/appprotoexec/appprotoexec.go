@@ -31,9 +31,9 @@ const (
 	// DefaultMajorVersion is the default major version.
 	defaultMajorVersion = 3
 	// DefaultMinorVersion is the default minor version.
-	defaultMinorVersion = 17
+	defaultMinorVersion = 18
 	// DefaultPatchVersion is the default patch version.
-	defaultPatchVersion = 3
+	defaultPatchVersion = 0
 	// DefaultSuffixVersion is the default suffix version.
 	defaultSuffixVersion = ""
 )
