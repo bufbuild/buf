@@ -7,6 +7,8 @@ curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v$protoc
 unzip protoc.zip
 New-Item -ItemType Directory -Path C:\Users\runneradmin\protoc\bin -Force
 Move-Item -Path bin\protoc.exe -Destination C:\Users\runneradmin\protoc\bin;
+New-Item -ItemType Directory -Path C:\Users\runneradmin\protoc\lib\include\google\protobuf -Force
+Move-Item -Path include\google\protobuf\* -Destination C:\Users\runneradmin\protoc\lib\include\google\protobuf;
 $env:Path += ";C:\Users\runneradmin\protoc\bin"
 Get-Command protoc.exe
 go install google.golang.org/protobuf/cmd/protoc-gen-go@$protocGenGoVersion
