@@ -359,6 +359,22 @@ func (m *moduleConfigReader) getModuleConfig(
 	externalDirOrFilePathsAllowNotExist bool,
 ) (ModuleConfig, error) {
 	if module, moduleConfig, ok := workspaceBuilder.GetModuleConfig(subDirPath); ok {
+		if len(externalDirOrFilePaths) > 0 {
+			if workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig, subDirPath) {
+				// We have to do this ahead of time as we are not using PathForExternalPath
+				// in this if branch. This is really bad.
+				for _, externalDirOrFilePath := range externalDirOrFilePaths {
+					_, err := sourceRef.PathForExternalPath(externalDirOrFilePath)
+					switch {
+					case normalpath.IsOutsideContextDirError(err):
+						// This can happen if the path is specified as an import,
+						// which is expected.
+					case err != nil:
+						return nil, err
+					}
+				}
+			}
+		}
 		return newModuleConfig(module, moduleConfig, workspace, workspaceConfig), nil
 	}
 	mappedReadBucket := readBucket
