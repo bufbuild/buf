@@ -17,7 +17,6 @@ package appcmdtesting
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"testing"
 
@@ -99,7 +98,6 @@ func RunCommandSuccess(
 	args ...string,
 ) {
 	stderr := bytes.NewBuffer(nil)
-	fmt.Println(newEnv(""))
 	RunCommandExitCode(t, newCommand, 0, newEnv, stdin, stdout, stderr, args...)
 }
 
