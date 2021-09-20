@@ -138,6 +138,13 @@ func (r *reader) GetBucket(
 			t,
 			getBucketOptions.terminateFileNames,
 		)
+	case SingleFileRef:
+		return r.getSingleFileBucket(
+			ctx,
+			container,
+			t,
+			getBucketOptions.terminateFileNames,
+		)
 	default:
 		return nil, fmt.Errorf("unknown BucketRef type: %T", bucketRef)
 	}
@@ -336,6 +343,72 @@ func (r *reader) getDirBucket(
 	}
 	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
 		dirRef.Path(),
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return newReadWriteBucketCloser(
+		storage.NopReadWriteBucketCloser(readWriteBucket),
+		"",
+		"",
+	)
+}
+
+func (r *reader) getSingleFileBucket(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	singleFileRef SingleFileRef,
+	terminateFileNames []string,
+) (ReadBucketCloser, error) {
+	if !r.localEnabled {
+		return nil, NewReadLocalDisabledError()
+	}
+	dirPath := filepath.Dir(singleFileRef.Path())
+	terminateFileDirectoryAbsPath, err := findTerminateFileDirectoryPathFromOS(dirPath, terminateFileNames)
+	if err != nil {
+		return nil, err
+	}
+	if terminateFileDirectoryAbsPath != "" {
+		// If the terminate file exists, we need to determine the relative path from the
+		// terminateFileDirectoryAbsPath to the target DirRef.Path.
+		wd, err := osextended.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		terminateFileRelativePath, err := normalpath.Rel(wd, terminateFileDirectoryAbsPath)
+		if err != nil {
+			return nil, err
+		}
+		rootPath := terminateFileRelativePath
+		if filepath.IsAbs(singleFileRef.Path()) {
+			// If the input was provided as an absolute path,
+			// we preserve it by initializing the workspace
+			// bucket with an absolute path.
+			rootPath = terminateFileDirectoryAbsPath
+		}
+		readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
+			rootPath,
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		if err != nil {
+			return nil, err
+		}
+		// Verify that the subDirPath exists too.
+		if _, err := r.storageosProvider.NewReadWriteBucket(
+			normalpath.Join(rootPath, dirPath),
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		); err != nil {
+			return nil, err
+		}
+		return newReadWriteBucketCloser(
+			storage.NopReadWriteBucketCloser(readWriteBucket),
+			rootPath,
+			rootPath,
+		)
+	}
+	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
+		dirPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {

@@ -161,6 +161,14 @@ func NewDirRef(path string) (DirRef, error) {
 	return newDirRef("", path)
 }
 
+// SingleFileRef is a file reference that incorporates a BucketRef ..
+type SingleFileRef interface {
+	BucketRef
+	// Path is the normalized path to the file reference.
+	Path() string
+	singleFileRef()
+}
+
 // GitRef is a git reference.
 type GitRef interface {
 	// Path is the path to the reference.
@@ -291,6 +299,11 @@ type ParsedDirRef interface {
 // This should only be used for testing.
 func NewDirectParsedDirRef(format string, path string) ParsedDirRef {
 	return newDirectDirRef(format, path)
+}
+
+type ParsedSingleFileRef interface {
+	SingleFileRef
+	HasFormat
 }
 
 // ParsedGitRef is a parsed GitRef.
@@ -583,6 +596,23 @@ func WithModuleFormat(format string, options ...ModuleFormatOption) RefParserOpt
 	}
 }
 
+// WithSingleFileFormat attaches the given format as a single file format.
+//
+// It is up to the user to not incorrectly attach a format twice.
+func WithSingleFileFormat(format string, options ...SingleFileFormatOption) RefParserOption {
+	return func(refParser *refParser) {
+		format = normalizeFormat(format)
+		if format == "" {
+			return
+		}
+		singleFileFormatInfo := newSingleFileFormatInfo()
+		for _, option := range options {
+			option(singleFileFormatInfo)
+		}
+		refParser.singleFileFormatToInfo[format] = singleFileFormatInfo
+	}
+}
+
 // SingleFormatOption is a single format option.
 type SingleFormatOption func(*singleFormatInfo)
 
@@ -614,8 +644,11 @@ type GitFormatOption func(*gitFormatInfo)
 // ModuleFormatOption is a module format option.
 type ModuleFormatOption func(*moduleFormatInfo)
 
-// ReaderOption is an Reader option.
+// ReaderOption is a Reader option.
 type ReaderOption func(*reader)
+
+// SingleFileFormatOption is a single file format option.
+type SingleFileFormatOption func(*singleFileFormatInfo)
 
 // WithReaderHTTP enables HTTP.
 func WithReaderHTTP(httpClient *http.Client, httpAuthenticator httpauth.Authenticator) ReaderOption {

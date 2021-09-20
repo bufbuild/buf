@@ -72,6 +72,7 @@ func newRefParser(logger *zap.Logger) *refParser {
 			internal.WithGitFormat(formatGit),
 			internal.WithDirFormat(formatDir),
 			internal.WithModuleFormat(formatMod),
+			internal.WithSingleFileFormat(formatSingleFile),
 		),
 	}
 }
@@ -191,6 +192,8 @@ func (a *refParser) GetRef(
 		return newSourceRef(t), nil
 	case internal.ParsedModuleRef:
 		return newModuleRef(t), nil
+	case internal.SingleFileRef:
+		return newSourceRef(t), nil
 	default:
 		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
 	}
@@ -354,6 +357,8 @@ func processRawRef(rawRef *internal.RawRef) error {
 			compressionType = internal.CompressionTypeGzip
 		case ".git":
 			format = formatGit
+		case ".proto":
+			format = formatSingleFile
 		default:
 			var err error
 			format, err = assumeModuleOrDir(rawRef.Path)
