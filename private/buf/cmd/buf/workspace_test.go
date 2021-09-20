@@ -165,6 +165,18 @@ func TestWorkspaceDir(t *testing.T) {
 			t,
 			nil,
 			bufcli.ExitCodeFileAnnotation,
+			filepath.FromSlash(`testdata/workspace/success/breaking/other/proto/request.proto:5:1:Previously present field "1" with name "name" on message "Request" was deleted.`),
+			"breaking",
+			filepath.Join("testdata", "workspace", "success", "breaking"),
+			"--against",
+			filepath.Join("testdata", "workspace", "success", baseDirPath),
+			"--path",
+			"request.proto", // The --path filter only outputs the breaking changes for the request.proto import.
+		)
+		testRunStdout(
+			t,
+			nil,
+			bufcli.ExitCodeFileAnnotation,
 			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".
         testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".`),
 			"lint",
@@ -713,6 +725,20 @@ func TestWorkspaceWithDiamondDependency(t *testing.T) {
 		t,
 		nil,
 		0,
+		``,
+		"build",
+		filepath.Join("testdata", "workspace", "success", "diamond", "other", "proto"),
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "diamond", "other", "proto", "a.proto"),
+		"--path",
+		"b.proto", // The --path is an import.
+		"--path",
+		"c.proto", // The --path is an import.
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
 		filepath.FromSlash(`testdata/workspace/success/diamond/proto/a.proto`),
 		"ls-files",
 		filepath.Join("testdata", "workspace", "success", "diamond", "proto"),
@@ -738,6 +764,20 @@ func TestWorkspaceWithDiamondDependency(t *testing.T) {
 		t,
 		nil,
 		0,
+		``,
+		"build",
+		filepath.Join("testdata", "workspace", "success", "diamond", "private", "proto"),
+		"--path",
+		"a.proto", // The --path is an import.
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "diamond", "private", "proto", "b.proto"),
+		"--path",
+		"c.proto", // The --path is an import.
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
 		filepath.FromSlash(`testdata/workspace/success/diamond/private/proto/b.proto`),
 		"ls-files",
 		filepath.Join("testdata", "workspace", "success", "diamond", "private", "proto"),
@@ -758,6 +798,20 @@ func TestWorkspaceWithDiamondDependency(t *testing.T) {
 		``,
 		"build",
 		filepath.Join("testdata", "workspace", "success", "diamond", "other", "proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "workspace", "success", "diamond", "other", "proto"),
+		"--path",
+		"a.proto", // The --path is an import.
+		"--path",
+		"b.proto", // The --path is an import.
+		"--path",
+		filepath.Join("testdata", "workspace", "success", "diamond", "other", "proto", "c.proto"),
 	)
 	testRunStdout(
 		t,
@@ -901,6 +955,16 @@ func TestWorkspaceRoots(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/workspace/success/roots/module1/a/a.proto:3:1:Package name "a" should be suffixed with a correctly formed version, such as "a.v1".`),
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "roots"),
+		"--path",
+		"a/a.proto", // The --path is an import.
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/workspace/success/roots/module2/root1/b/b.proto:3:1:Package name "b" should be suffixed with a correctly formed version, such as "b.v1".`),
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "roots"),
@@ -911,11 +975,31 @@ func TestWorkspaceRoots(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/workspace/success/roots/module2/root1/b/b.proto:3:1:Package name "b" should be suffixed with a correctly formed version, such as "b.v1".`),
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "roots"),
+		"--path",
+		"b/b.proto", // The --path correctly handles v1beta1 roots.
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/workspace/success/roots/module2/root2/c/c.proto:3:1:Package name "c" should be suffixed with a correctly formed version, such as "c.v1".`),
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "roots"),
 		"--path",
 		filepath.Join("testdata", "workspace", "success", "roots", "module2", "root2", "c"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/workspace/success/roots/module2/root2/c/c.proto:3:1:Package name "c" should be suffixed with a correctly formed version, such as "c.v1".`),
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "roots"),
+		"--path",
+		"c/c.proto", // The --path correctly handles v1beta1 roots.
 	)
 }
 

@@ -78,11 +78,34 @@ func TestWorkspaceSubDirectory(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`../one/a.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".
+        ../one/b.proto:17:1:Files with package "one.v1" must be within a directory "one/v1" relative to root but were in directory "one".`),
+		"lint",
+		filepath.Join("..", "..", ".."),
+		"--path",
+		"one/a.proto", // The --path filter is an import.
+		"--path",
+		filepath.Join("..", "..", "..", "one", "b.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`../two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`),
 		"lint",
 		filepath.Join("..", "..", ".."),
 		"--path",
 		filepath.Join("..", "two"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`../two/c.proto:17:1:Files with package "two.v1" must be within a directory "two/v1" relative to root but were in directory "two".`),
+		"lint",
+		filepath.Join("..", "..", ".."),
+		"--path",
+		"two/c.proto", // The --path filter is an import.
 	)
 	testRunStdout(
 		t,
