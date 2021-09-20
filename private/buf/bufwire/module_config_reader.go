@@ -35,29 +35,23 @@ import (
 )
 
 type moduleConfigReader struct {
-	logger                  *zap.Logger
-	storageosProvider       storageos.Provider
-	fetchReader             buffetch.Reader
-	configProvider          bufconfig.Provider
-	workspaceConfigProvider bufwork.Provider
-	moduleBucketBuilder     bufmodulebuild.ModuleBucketBuilder
+	logger              *zap.Logger
+	storageosProvider   storageos.Provider
+	fetchReader         buffetch.Reader
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
 }
 
 func newModuleConfigReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
-	configProvider bufconfig.Provider,
-	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 ) *moduleConfigReader {
 	return &moduleConfigReader{
-		logger:                  logger,
-		storageosProvider:       storageosProvider,
-		fetchReader:             fetchReader,
-		configProvider:          configProvider,
-		workspaceConfigProvider: workspaceConfigProvider,
-		moduleBucketBuilder:     moduleBucketBuilder,
+		logger:              logger,
+		storageosProvider:   storageosProvider,
+		fetchReader:         fetchReader,
+		moduleBucketBuilder: moduleBucketBuilder,
 	}
 }
 
@@ -72,7 +66,7 @@ func (m *moduleConfigReader) GetModuleConfigs(
 	ctx, span := trace.StartSpan(ctx, "get_module_config")
 	defer span.End()
 	// We construct a new WorkspaceBuilder here so that the cache is only used for a single call.
-	workspaceBuilder := bufwork.NewWorkspaceBuilder(m.configProvider, m.moduleBucketBuilder)
+	workspaceBuilder := bufwork.NewWorkspaceBuilder(m.moduleBucketBuilder)
 	switch t := sourceOrModuleRef.(type) {
 	case buffetch.SourceRef:
 		return m.getSourceModuleConfigs(
@@ -200,11 +194,10 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 	if err != nil {
 		return nil, err
 	}
-	config, err := bufconfig.ReadConfig(
+	config, err := bufconfig.ReadConfigOS(
 		ctx,
-		m.configProvider,
 		readWriteBucket,
-		bufconfig.ReadConfigWithOverride(configOverride),
+		bufconfig.ReadConfigOSWithOverride(configOverride),
 	)
 	if err != nil {
 		return nil, err
@@ -223,7 +216,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	externalDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) ([]ModuleConfig, error) {
-	workspaceConfig, err := m.workspaceConfigProvider.GetConfig(ctx, readBucket, relativeRootPath)
+	workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucket, relativeRootPath)
 	if err != nil {
 		return nil, err
 	}
@@ -379,11 +372,10 @@ func (m *moduleConfigReader) getModuleConfig(
 	if subDirPath != "." {
 		mappedReadBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
 	}
-	moduleConfig, err := bufconfig.ReadConfig(
+	moduleConfig, err := bufconfig.ReadConfigOS(
 		ctx,
-		m.configProvider,
 		mappedReadBucket,
-		bufconfig.ReadConfigWithOverride(configOverride),
+		bufconfig.ReadConfigOSWithOverride(configOverride),
 	)
 	if err != nil {
 		return nil, err

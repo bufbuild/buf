@@ -31,30 +31,24 @@ import (
 )
 
 type fileLister struct {
-	logger                  *zap.Logger
-	fetchReader             buffetch.Reader
-	configProvider          bufconfig.Provider
-	workspaceConfigProvider bufwork.Provider
-	moduleBucketBuilder     bufmodulebuild.ModuleBucketBuilder
-	imageBuilder            bufimagebuild.Builder
-	imageReader             *imageReader
+	logger              *zap.Logger
+	fetchReader         buffetch.Reader
+	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
+	imageBuilder        bufimagebuild.Builder
+	imageReader         *imageReader
 }
 
 func newFileLister(
 	logger *zap.Logger,
 	fetchReader buffetch.Reader,
-	configProvider bufconfig.Provider,
-	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	imageBuilder bufimagebuild.Builder,
 ) *fileLister {
 	return &fileLister{
-		logger:                  logger.Named("bufwire"),
-		fetchReader:             fetchReader,
-		configProvider:          configProvider,
-		workspaceConfigProvider: workspaceConfigProvider,
-		moduleBucketBuilder:     moduleBucketBuilder,
-		imageBuilder:            imageBuilder,
+		logger:              logger.Named("bufwire"),
+		fetchReader:         fetchReader,
+		moduleBucketBuilder: moduleBucketBuilder,
+		imageBuilder:        imageBuilder,
 		imageReader: newImageReader(
 			logger,
 			fetchReader,
@@ -103,7 +97,7 @@ func (e *fileLister) ListFiles(
 		if subDirPath := readBucketCloser.SubDirPath(); existingConfigFilePath == "" || subDirPath != "." {
 			return e.sourceFileInfosForDirectory(ctx, readBucketCloser, subDirPath, configOverride)
 		}
-		workspaceConfig, err := e.workspaceConfigProvider.GetConfig(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
+		workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
 		if err != nil {
 			return nil, err
 		}
@@ -136,11 +130,10 @@ func (e *fileLister) sourceFileInfosForDirectory(
 	configOverride string,
 ) ([]bufmoduleref.FileInfo, error) {
 	mappedReadBucket := storage.MapReadBucket(readBucket, storage.MapOnPrefix(directory))
-	config, err := bufconfig.ReadConfig(
+	config, err := bufconfig.ReadConfigOS(
 		ctx,
-		e.configProvider,
 		mappedReadBucket,
-		bufconfig.ReadConfigWithOverride(configOverride),
+		bufconfig.ReadConfigOSWithOverride(configOverride),
 	)
 	if err != nil {
 		return nil, err

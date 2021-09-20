@@ -98,11 +98,10 @@ func run(
 	if err != nil {
 		return err
 	}
-	config, err := bufconfig.ReadConfig(
+	config, err := bufconfig.ReadConfigOS(
 		ctx,
-		bufconfig.NewProvider(container.Logger()),
 		readWriteBucket,
-		bufconfig.ReadConfigWithOverride(flags.Config),
+		bufconfig.ReadConfigOSWithOverride(flags.Config),
 	)
 	if err != nil {
 		return err

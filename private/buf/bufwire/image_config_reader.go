@@ -21,7 +21,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -36,7 +35,6 @@ type imageConfigReader struct {
 	logger               *zap.Logger
 	storageosProvider    storageos.Provider
 	fetchReader          buffetch.Reader
-	configProvider       bufconfig.Provider
 	moduleBucketBuilder  bufmodulebuild.ModuleBucketBuilder
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder
 	imageBuilder         bufimagebuild.Builder
@@ -48,8 +46,6 @@ func newImageConfigReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
-	configProvider bufconfig.Provider,
-	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
@@ -58,7 +54,6 @@ func newImageConfigReader(
 		logger:               logger.Named("bufwire"),
 		storageosProvider:    storageosProvider,
 		fetchReader:          fetchReader,
-		configProvider:       configProvider,
 		moduleBucketBuilder:  moduleBucketBuilder,
 		moduleFileSetBuilder: moduleFileSetBuilder,
 		imageBuilder:         imageBuilder,
@@ -66,8 +61,6 @@ func newImageConfigReader(
 			logger,
 			storageosProvider,
 			fetchReader,
-			configProvider,
-			workspaceConfigProvider,
 			moduleBucketBuilder,
 		),
 		imageReader: newImageReader(
@@ -215,11 +208,10 @@ func (i *imageConfigReader) getImageImageConfig(
 	if err != nil {
 		return nil, err
 	}
-	config, err := bufconfig.ReadConfig(
+	config, err := bufconfig.ReadConfigOS(
 		ctx,
-		i.configProvider,
 		readWriteBucket,
-		bufconfig.ReadConfigWithOverride(configOverride),
+		bufconfig.ReadConfigOSWithOverride(configOverride),
 	)
 	if err != nil {
 		return nil, err
