@@ -137,7 +137,6 @@ func NewMultiImage(images ...Image) (Image, error) {
 // is constructed.
 //
 // Reorders the ImageFiles to be in DAG order.
-// Duplicates can exist across the Images, but only if duplicates are non-imports.
 func MergeImages(images ...Image) (Image, error) {
 	switch len(images) {
 	case 0:
