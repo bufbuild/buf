@@ -24,9 +24,6 @@ jobs:
           key: ${{ runner.os }}-buf-windows-${{ hashFiles('**/go.sum', '/windows/**') }}
           restore-keys: |
             ${{ runner.os }}-buf-windows-
-      - name: setup-deps
+      - name: test
         if: success()
-        run: ./windows/setupDeps.ps1
-      - name: go test
-        if: success()
-        run: go test ./...
+        run: ./windows/test.ps1
