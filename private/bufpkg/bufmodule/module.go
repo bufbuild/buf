@@ -31,7 +31,6 @@ type module struct {
 	moduleIdentity       bufmoduleref.ModuleIdentity
 	commit               string
 	documentation        string
-	licenseID            string
 }
 
 func newModuleForProto(
@@ -65,7 +64,6 @@ func newModuleForProto(
 		sourceReadBucket,
 		dependencyModulePins,
 		protoModule.GetDocumentation(),
-		protoModule.GetLicenseId(),
 		options...,
 	)
 }
@@ -83,16 +81,11 @@ func newModuleForBucket(
 	if err != nil {
 		return nil, err
 	}
-	licenseID, err := getLicenseIDForBucket(ctx, sourceReadBucket)
-	if err != nil {
-		return nil, err
-	}
 	return newModule(
 		ctx,
 		storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
 		dependencyModulePins,
 		documentation,
-		licenseID,
 		options...,
 	)
 }
@@ -104,7 +97,6 @@ func newModule(
 	sourceReadBucket storage.ReadBucket,
 	dependencyModulePins []bufmoduleref.ModulePin,
 	documentation string,
-	licenseID string,
 	options ...ModuleOption,
 ) (_ *module, retErr error) {
 	if err := bufmoduleref.ValidateModulePinsUniqueByIdentity(dependencyModulePins); err != nil {
@@ -116,7 +108,6 @@ func newModule(
 		sourceReadBucket:     sourceReadBucket,
 		dependencyModulePins: dependencyModulePins,
 		documentation:        documentation,
-		licenseID:            licenseID,
 	}
 	for _, option := range options {
 		option(module)
@@ -183,10 +174,6 @@ func (m *module) DependencyModulePins() []bufmoduleref.ModulePin {
 
 func (m *module) Documentation() string {
 	return m.documentation
-}
-
-func (m *module) LicenseID() string {
-	return m.licenseID
 }
 
 func (m *module) getSourceReadBucket() storage.ReadBucket {
