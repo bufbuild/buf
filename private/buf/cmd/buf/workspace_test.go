@@ -290,6 +290,18 @@ func TestWorkspaceArchiveDir(t *testing.T) {
 		t,
 		nil,
 		0,
+		``,
+		"build",
+		filepath.Join(zipDir, "archive.zip#subdir=proto"),
+		"--path",
+		filepath.Join("proto", "rpc.proto"),
+		"--path",
+		"request.proto", // Target the file as an import path rather than a real filesystem path.
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
 		filepath.FromSlash(`proto/rpc.proto`),
 		"ls-files",
 		filepath.Join(zipDir, "archive.zip#subdir=proto"),
