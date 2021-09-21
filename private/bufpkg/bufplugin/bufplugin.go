@@ -86,20 +86,6 @@ func ParseTemplatePath(templatePath string) (remote string, owner string, name s
 	return components[0], components[1], components[3], nil
 }
 
-// ParseTemplateVersionPath parses a string in the format <buf.build/owner/templates/name:version>
-// into remote, owner, name and version.
-func ParseTemplateVersionPath(templateVersionPath string) (remote string, owner string, name string, version string, _ error) {
-	remote, owner, name, err := ParseTemplatePath(templateVersionPath)
-	if err != nil {
-		return "", "", "", "", err
-	}
-	components := strings.Split(name, ":")
-	if len(components) != 2 {
-		return "", "", "", "", fmt.Errorf("invalid version: %q", name)
-	}
-	return remote, owner, components[0], components[1], nil
-}
-
 // ValidateTemplateName validates the format of the template name.
 // This is only used for client side validation and attempts to avoid
 // validation constraints that we may want to change.
