@@ -12,27 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build windows
-// +build windows
-
-package prototesting
+package rpc
 
 import (
-	"path/filepath"
+	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
-func getProtocIncludePath(protocBinPath string) (string, error) {
-	protocIncludePath, err := filepath.Abs(
-		filepath.Join(filepath.Dir(protocBinPath),
-			"..",
-			"lib",
-			"include",
-		))
-	if err != nil {
-		return "", err
-	}
-	if err := checkWKT(protocIncludePath); err != nil {
-		return "", err
-	}
-	return protocIncludePath, nil
+func TestGetErrorMessage(t *testing.T) {
+	require.Equal(t, "test", GetErrorMessage(fmt.Errorf("some error: %w", NewInvalidArgumentError("test"))))
 }

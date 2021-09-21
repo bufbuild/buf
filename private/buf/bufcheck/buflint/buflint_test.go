@@ -906,8 +906,7 @@ func testLintConfigModifier(
 	)
 	require.NoError(t, err)
 
-	configProvider := bufconfig.NewProvider(logger)
-	config := testGetConfig(t, configProvider, readWriteBucket)
+	config := testGetConfig(t, readWriteBucket)
 	if configModifier != nil {
 		configModifier(config)
 	}
@@ -950,12 +949,11 @@ func testLintConfigModifier(
 
 func testGetConfig(
 	t *testing.T,
-	configProvider bufconfig.Provider,
 	readBucket storage.ReadBucket,
 ) *bufconfig.Config {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	config, err := configProvider.GetConfig(ctx, readBucket)
+	config, err := bufconfig.GetConfigForBucket(ctx, readBucket)
 	require.NoError(t, err)
 	return config
 }

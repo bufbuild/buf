@@ -55,6 +55,8 @@
 // file. For example, it's not possible to build input "paymentapis/acme" since the image
 // would otherwise include the content defined in paymentapis/acme/payment/v2/payment.proto as
 // acme/payment/v2/payment.proto and payment/v2/payment.proto.
+//
+// EVERYTHING IN THIS PACKAGE SHOULD ONLY BE CALLED BY THE CLI AND CANNOT BE USED IN SERVICES.
 package bufwork
 
 import (
@@ -67,7 +69,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"go.uber.org/zap"
 )
 
 const (
@@ -116,10 +117,9 @@ type WorkspaceBuilder interface {
 
 // NewWorkspaceBuilder returns a new WorkspaceBuilder.
 func NewWorkspaceBuilder(
-	configProvider bufconfig.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 ) WorkspaceBuilder {
-	return newWorkspaceBuilder(configProvider, moduleBucketBuilder)
+	return newWorkspaceBuilder(moduleBucketBuilder)
 }
 
 // BuildOptionsForWorkspaceDirectory returns the bufmodulebuild.BuildOptions required for
@@ -292,21 +292,18 @@ type Config struct {
 	Directories []string
 }
 
-// Provider provides workspace configurations.
-type Provider interface {
-	// GetConfig gets the Config for the YAML data at ConfigFilePath.
-	//
-	// If the data is of length 0, returns the default config.
-	GetConfig(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (*Config, error)
-	// GetConfig gets the Config for the given JSON or YAML data.
-	//
-	// If the data is of length 0, returns the default config.
-	GetConfigForData(ctx context.Context, data []byte) (*Config, error)
+// GetConfigForBucket gets the Config for the YAML data at ConfigFilePath.
+//
+// If the data is of length 0, returns the default config.
+func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (*Config, error) {
+	return getConfigForBucket(ctx, readBucket, relativeRootPath)
 }
 
-// NewProvider returns a new Provider.
-func NewProvider(logger *zap.Logger) Provider {
-	return newProvider(logger)
+// GetConfig gets the Config for the given JSON or YAML data.
+//
+// If the data is of length 0, returns the default config.
+func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
+	return getConfigForData(ctx, data)
 }
 
 // ExistingConfigFilePath checks if a configuration file exists, and if so, returns the path

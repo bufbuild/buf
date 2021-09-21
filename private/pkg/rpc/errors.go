@@ -369,6 +369,18 @@ func GetErrorCode(err error) ErrorCode {
 	return ErrorCodeInternal
 }
 
+// GetErrorMessage gets the rpc error message, if there is an RPC
+// error in the error chain. If not, it returns an empty string.
+func GetErrorMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+	if rpcErr := new(rpcError); errors.As(err, &rpcErr) {
+		return rpcErr.message
+	}
+	return ""
+}
+
 // IsError returns true if err is an error created by this package.
 //
 // If the error is nil, this returns false.

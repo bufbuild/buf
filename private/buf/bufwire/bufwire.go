@@ -24,7 +24,6 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch"
-	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
@@ -64,8 +63,6 @@ func NewImageConfigReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
-	configProvider bufconfig.Provider,
-	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
@@ -74,8 +71,6 @@ func NewImageConfigReader(
 		logger,
 		storageosProvider,
 		fetchReader,
-		configProvider,
-		workspaceConfigProvider,
 		moduleBucketBuilder,
 		moduleFileSetBuilder,
 		imageBuilder,
@@ -237,16 +232,12 @@ func NewModuleConfigReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
-	configProvider bufconfig.Provider,
-	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 ) ModuleConfigReader {
 	return newModuleConfigReader(
 		logger,
 		storageosProvider,
 		fetchReader,
-		configProvider,
-		workspaceConfigProvider,
 		moduleBucketBuilder,
 	)
 }
@@ -266,16 +257,12 @@ type FileLister interface {
 func NewFileLister(
 	logger *zap.Logger,
 	fetchReader buffetch.Reader,
-	configProvider bufconfig.Provider,
-	workspaceConfigProvider bufwork.Provider,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
 	imageBuilder bufimagebuild.Builder,
 ) FileLister {
 	return newFileLister(
 		logger,
 		fetchReader,
-		configProvider,
-		workspaceConfigProvider,
 		moduleBucketBuilder,
 		imageBuilder,
 	)
