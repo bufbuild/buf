@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufapiclient switches between grpc and twirp on the client-side.
+// Package bufapiclient provides client-side gRPC constructs.
 package bufapiclient
 
 import (
@@ -21,13 +21,12 @@ import (
 
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientgrpc/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientgrpc"
-	"github.com/bufbuild/buf/private/gen/proto/apiclienttwirp/buf/alpha/registry/v1alpha1/registryv1alpha1apiclienttwirp"
 	"github.com/bufbuild/buf/private/pkg/transport/grpc/grpcclient"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"go.uber.org/zap"
 )
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider for either grpc or twirp.
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider gRPC.
 //
 // If tlsConfig is nil, no TLS is used.
 func NewRegistryProvider(
@@ -40,23 +39,15 @@ func NewRegistryProvider(
 	for _, option := range options {
 		option(registryProviderOptions)
 	}
-	if registryProviderOptions.useGRPC {
-		clientConnProvider, err := NewGRPCClientConnProvider(ctx, logger, tlsConfig)
-		if err != nil {
-			return nil, err
-		}
-		return registryv1alpha1apiclientgrpc.NewProvider(
-			logger,
-			clientConnProvider,
-			registryv1alpha1apiclientgrpc.WithAddressMapper(registryProviderOptions.addressMapper),
-			registryv1alpha1apiclientgrpc.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
-		), nil
+	clientConnProvider, err := NewGRPCClientConnProvider(ctx, logger, tlsConfig)
+	if err != nil {
+		return nil, err
 	}
-	return registryv1alpha1apiclienttwirp.NewProvider(
+	return registryv1alpha1apiclientgrpc.NewProvider(
 		logger,
-		NewHTTPClient(tlsConfig),
-		registryv1alpha1apiclienttwirp.WithAddressMapper(registryProviderOptions.addressMapper),
-		registryv1alpha1apiclienttwirp.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
+		clientConnProvider,
+		registryv1alpha1apiclientgrpc.WithAddressMapper(registryProviderOptions.addressMapper),
+		registryv1alpha1apiclientgrpc.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
 	), nil
 }
 
@@ -64,16 +55,8 @@ func NewRegistryProvider(
 type RegistryProviderOption func(*registryProviderOptions)
 
 type registryProviderOptions struct {
-	useGRPC                 bool
 	addressMapper           func(string) string
 	contextModifierProvider func(string) (func(context.Context) context.Context, error)
-}
-
-// RegistryProviderWithGRPC returns a new RegistryProviderOption that turns on gRPC.
-func RegistryProviderWithGRPC() RegistryProviderOption {
-	return func(options *registryProviderOptions) {
-		options.useGRPC = true
-	}
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps

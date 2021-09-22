@@ -547,18 +547,11 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 	if err != nil {
 		return nil, err
 	}
-	useGRPC, err := buftransport.UseGRPC(container)
-	if err != nil {
-		return nil, err
-	}
 	options := []bufapiclient.RegistryProviderOption{
 		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
 	}
 	if buftransport.IsAPISubdomainEnabled(container) {
 		options = append(options, bufapiclient.RegistryProviderWithAddressMapper(buftransport.PrependAPISubdomain))
-	}
-	if useGRPC {
-		options = append(options, bufapiclient.RegistryProviderWithGRPC())
 	}
 	return bufapiclient.NewRegistryProvider(
 		ctx,
