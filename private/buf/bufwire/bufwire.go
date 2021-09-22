@@ -117,25 +117,33 @@ func NewModuleConfigReader(
 // FileLister lists files.
 type FileLister interface {
 	// ListFiles lists the files.
+	//
+	// If includeImports is set, the ref is built, which can result
+	// in FileAnnotations.
 	ListFiles(
 		ctx context.Context,
 		container app.EnvStdinContainer,
 		ref buffetch.Ref,
 		configOverride string,
-	) ([]bufmoduleref.FileInfo, error)
+		includeImports bool,
+	) ([]bufmoduleref.FileInfo, []bufanalysis.FileAnnotation, error)
 }
 
 // NewFileLister returns a new FileLister.
 func NewFileLister(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
+	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
 ) FileLister {
 	return newFileLister(
 		logger,
+		storageosProvider,
 		fetchReader,
 		moduleBucketBuilder,
+		moduleFileSetBuilder,
 		imageBuilder,
 	)
 }

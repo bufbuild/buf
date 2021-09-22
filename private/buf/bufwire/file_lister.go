@@ -21,11 +21,14 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwork"
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 )
@@ -35,13 +38,18 @@ type fileLister struct {
 	fetchReader         buffetch.Reader
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder
 	imageBuilder        bufimagebuild.Builder
-	imageReader         *imageReader
+	// imageReaders require ImageRefs, we only use this in the withoutImports flow
+	// the imageConfigReader is used when we need to build an image
+	imageReader       *imageReader
+	imageConfigReader *imageConfigReader
 }
 
 func newFileLister(
 	logger *zap.Logger,
+	storageosProvider storageos.Provider,
 	fetchReader buffetch.Reader,
 	moduleBucketBuilder bufmodulebuild.ModuleBucketBuilder,
+	moduleFileSetBuilder bufmodulebuild.ModuleFileSetBuilder,
 	imageBuilder bufimagebuild.Builder,
 ) *fileLister {
 	return &fileLister{
@@ -53,10 +61,86 @@ func newFileLister(
 			logger,
 			fetchReader,
 		),
+		imageConfigReader: newImageConfigReader(
+			logger,
+			storageosProvider,
+			fetchReader,
+			moduleBucketBuilder,
+			moduleFileSetBuilder,
+			imageBuilder,
+		),
 	}
 }
 
 func (e *fileLister) ListFiles(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	ref buffetch.Ref,
+	configOverride string,
+	includeImports bool,
+) ([]bufmoduleref.FileInfo, []bufanalysis.FileAnnotation, error) {
+	if includeImports {
+		// To get imports, we need to build an image so we keep this flow separate and
+		// re-use the logic in imageConfigReader.
+		return e.listFilesWithImports(
+			ctx,
+			container,
+			ref,
+			configOverride,
+		)
+	}
+	// We don't need to build in the withoutImports flow, so we just completely separate the logic
+	// to make sure the common case is as quick as it can be.
+	fileInfos, err := e.listFilesWithoutImports(
+		ctx,
+		container,
+		ref,
+		configOverride,
+	)
+	return fileInfos, nil, err
+}
+
+func (e *fileLister) listFilesWithImports(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	ref buffetch.Ref,
+	configOverride string,
+) ([]bufmoduleref.FileInfo, []bufanalysis.FileAnnotation, error) {
+	imageConfigs, fileAnnotations, err := e.imageConfigReader.GetImageConfigs(
+		ctx,
+		container,
+		ref,
+		configOverride,
+		nil,
+		false,
+		true,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(fileAnnotations) > 0 {
+		return nil, fileAnnotations, nil
+	}
+	images := make([]bufimage.Image, len(imageConfigs))
+	for i, imageConfig := range imageConfigs {
+		images[i] = imageConfig.Image()
+	}
+	image, err := bufimage.MergeImages(images...)
+	if err != nil {
+		return nil, nil, err
+	}
+	imageFiles := image.Files()
+	fileInfos := make([]bufmoduleref.FileInfo, len(imageFiles))
+	for i, imageFile := range imageFiles {
+		fileInfos[i] = imageFile
+	}
+	// The image is ordered in DAG order, which isn't consistent with what we do
+	// in the withoutImports flow and is a little annoying for a user.
+	bufmoduleref.SortFileInfos(fileInfos)
+	return fileInfos, nil, nil
+}
+
+func (e *fileLister) listFilesWithoutImports(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	ref buffetch.Ref,
