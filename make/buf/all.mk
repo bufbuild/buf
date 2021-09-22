@@ -9,7 +9,6 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc \
-	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclienttwirp \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
@@ -45,7 +44,6 @@ include make/go/dep_minisign.mk
 include make/go/dep_protoc.mk
 include make/go/dep_protoc_gen_go.mk
 include make/go/dep_protoc_gen_go_grpc.mk
-include make/go/dep_protoc_gen_twirp.mk
 include make/go/dep_go_fuzz.mk
 include make/go/go.mk
 include make/go/docker.mk
@@ -94,8 +92,7 @@ bufgeneratedeps:: \
 	installprotoc-gen-go-api \
 	installprotoc-gen-go-apiclient \
 	installprotoc-gen-go-apiclientgrpc \
-	installprotoc-gen-go-apiclienttwirp \
-	$(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) $(PROTOC_GEN_TWIRP)
+	$(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC)
 
 .PHONY: bufgeneratecleango
 bufgeneratecleango:

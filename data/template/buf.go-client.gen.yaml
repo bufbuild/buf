@@ -1,4 +1,4 @@
-# This template generates grpc-go, twirp, and helper client-side packages.
+# This template generates grpc-go and helper client-side packages.
 # This is for situations where the client-side is OSS.
 version: v1
 managed:
@@ -11,9 +11,6 @@ plugins:
     opt:
       - paths=source_relative
       - require_unimplemented_servers=false
-  - name: twirp
-    out: private/gen/proto/go
-    opt: paths=source_relative
   - name: go-api
     out: private/gen/proto/api
     opt:
@@ -33,12 +30,4 @@ plugins:
       - named_go_package=api=github.com/bufbuild/buf/private/gen/proto/api
       - named_go_package=apiclient=github.com/bufbuild/buf/private/gen/proto/apiclient
       - named_go_package=apiclientgrpc=github.com/bufbuild/buf/private/gen/proto/apiclientgrpc
-    strategy: all
-  - name: go-apiclienttwirp
-    out: private/gen/proto/apiclienttwirp
-    opt:
-      - paths=source_relative
-      - named_go_package=api=github.com/bufbuild/buf/private/gen/proto/api
-      - named_go_package=apiclient=github.com/bufbuild/buf/private/gen/proto/apiclient
-      - named_go_package=apiclienttwirp=github.com/bufbuild/buf/private/gen/proto/apiclienttwirp
     strategy: all
