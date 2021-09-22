@@ -118,6 +118,31 @@ func WriteConfigWithUncomment() WriteConfigOption {
 	}
 }
 
+// WriteConfigWithModuleIdentity returns a new WriteConfigOption that sets the name of the
+// module to the given ModuleIdentity.
+//
+// The default is to not set the name.
+//
+// Only use in tests.
+func WriteConfigWithModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) WriteConfigOption {
+	return func(writeConfigOptions *writeConfigOptions) {
+		writeConfigOptions.moduleIdentity = moduleIdentity
+	}
+}
+
+// WriteConfigWithDependencyModuleReferences returns a new WriteConfigOption that sets the
+// dependencies of the module.
+//
+// The default is to not have any dependencies.
+// If this option is used, WriteConfigWithModuleIdentity must also be used.
+//
+// Only use in tests.
+func WriteConfigWithDependencyModuleReferences(dependencyModuleReferences ...bufmoduleref.ModuleReference) WriteConfigOption {
+	return func(writeConfigOptions *writeConfigOptions) {
+		writeConfigOptions.dependencyModuleReferences = dependencyModuleReferences
+	}
+}
+
 // ReadConfigOS reads the configuration from the OS or an override, if any.
 //
 // ONLY USE IN CLI TOOLS.
