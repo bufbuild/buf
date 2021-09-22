@@ -448,8 +448,10 @@ func NewWireFileLister(
 	}
 	return bufwire.NewFileLister(
 		logger,
+		storageosProvider,
 		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
+		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
 	), nil
 }

@@ -20,15 +20,19 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 const (
-	configFlagName = "config"
+	configFlagName         = "config"
+	errorFormatFlagName    = "error-format"
+	includeImportsFlagName = "include-imports"
 
 	// deprecated
 	inputFlagName = "input"
@@ -58,7 +62,9 @@ func NewCommand(
 }
 
 type flags struct {
-	Config string
+	Config         string
+	ErrorFormat    string
+	IncludeImports bool
 
 	// deprecated
 	Input string
@@ -88,6 +94,21 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		configFlagName,
 		"",
 		`The config file or data to use.`,
+	)
+	flagSet.StringVar(
+		&f.ErrorFormat,
+		errorFormatFlagName,
+		"text",
+		fmt.Sprintf(
+			"The format for build errors, printed to stderr. Must be one of %s.",
+			stringutil.SliceToString(bufanalysis.AllFormatStrings),
+		),
+	)
+	flagSet.BoolVar(
+		&f.IncludeImports,
+		includeImportsFlagName,
+		false,
+		"Include imports.",
 	)
 
 	// deprecated, but not marked as deprecated as we return error if this is used
@@ -135,14 +156,26 @@ func run(
 	if err != nil {
 		return err
 	}
-	fileRefs, err := fileLister.ListFiles(
+	fileRefs, fileAnnotations, err := fileLister.ListFiles(
 		ctx,
 		container,
 		ref,
 		inputConfig,
+		flags.IncludeImports,
 	)
 	if err != nil {
 		return err
+	}
+	if len(fileAnnotations) > 0 {
+		// stderr since we do output to stdout potentially
+		if err := bufanalysis.PrintFileAnnotations(
+			container.Stderr(),
+			fileAnnotations,
+			flags.ErrorFormat,
+		); err != nil {
+			return err
+		}
+		return bufcli.ErrFileAnnotation
 	}
 	for _, fileRef := range fileRefs {
 		if _, err := fmt.Fprintln(container.Stdout(), fileRef.ExternalPath()); err != nil {
