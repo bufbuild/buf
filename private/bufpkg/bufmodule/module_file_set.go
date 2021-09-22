@@ -32,7 +32,7 @@ type moduleFileSet struct {
 
 	// Optional; configured when there is at least one
 	// target path (i.e. --path) specified by the user.
-	targetPaths              [][]string
+	targetPaths              [][2]string
 	targetPathsAllowNotExist bool
 }
 
@@ -135,10 +135,12 @@ func (m *moduleFileSet) GetModuleFile(ctx context.Context, path string) (ModuleF
 
 func (m *moduleFileSet) TargetFileInfos(ctx context.Context) ([]bufmoduleref.FileInfo, error) {
 	if len(m.targetPaths) == 0 {
-		// If we haven't configured any target targetPaths on the MpduleFileSet,
+		// If we haven't configured any target targetPaths on the ModuleFileSet,
 		// we can defer to the target module's implementation.
 		return m.Module.TargetFileInfos(ctx)
 	}
+	// TODO: Don't use AllFileInfos here - we should be able to iterate over the targetPaths
+	// and use the underlying ReadBucket directly.
 	allFileInfos, err := m.AllFileInfos(ctx)
 	if err != nil {
 		return nil, err
@@ -152,7 +154,7 @@ func (m *moduleFileSet) TargetFileInfos(ctx context.Context) ([]bufmoduleref.Fil
 	//
 	// For example,
 	//
-	//  [][]string{
+	//  [][2]string{
 	//    {"foo/bar.proto", "acme/foo/bar.proto"}
 	//    {"bar", "acme/bar"}
 	//  }
@@ -186,7 +188,7 @@ type pathTracker struct {
 	paths map[string]struct{}
 
 	// Associates all of the paths in the same set.
-	links map[string][]string
+	links map[string]string
 
 	// Tracks which paths have been seen.
 	seen map[string]struct{}
@@ -198,20 +200,26 @@ type pathTracker struct {
 
 // newPathTracker returns a new pathTracker suitable for determining
 // if the target paths configured for a ModuleFileSet are matched.
-func newPathTracker(targetPaths [][]string) *pathTracker {
+func newPathTracker(targetPaths [][2]string) *pathTracker {
 	paths := make(map[string]struct{})
-	links := make(map[string][]string)
+	links := make(map[string]string)
 	original := make(map[string]string)
-	for _, set := range targetPaths {
-		for i := 0; i < len(set); i++ {
-			for j := 0; j < len(set); j++ {
-				if i != j {
-					links[set[i]] = append(links[set[i]], set[j])
-				}
-				original[set[j]] = set[0]
-			}
-			paths[set[i]] = struct{}{}
-		}
+	for _, tuple := range targetPaths {
+		left := tuple[0]
+		right := tuple[1]
+
+		// Each path should link to each other.
+		links[left] = right
+		links[right] = left
+
+		// The first item in the tuple
+		// is the original value for both.
+		original[left] = left
+		original[right] = left
+
+		// Include both paths in the total set.
+		paths[left] = struct{}{}
+		paths[right] = struct{}{}
 	}
 	return &pathTracker{
 		paths:    paths,
@@ -246,7 +254,7 @@ func (d *pathTracker) mark(path string) {
 	matchingPaths := normalpath.MapAllEqualOrContainingPathMap(d.paths, path, normalpath.Relative)
 	for matchingPath := range matchingPaths {
 		d.seen[matchingPath] = struct{}{}
-		for _, matchingLink := range d.links[matchingPath] {
+		if matchingLink, ok := d.links[matchingPath]; ok {
 			d.seen[matchingLink] = struct{}{}
 		}
 	}

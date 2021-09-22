@@ -54,7 +54,7 @@ func WithWorkspace(workspace bufmodule.Workspace) BuildModuleFileSetOption {
 
 // WithTargetPaths configures the ModuleFileSet with the given target paths.
 // Note that these paths can be imports.
-func WithTargetPaths(targetPaths [][]string) BuildModuleFileSetOption {
+func WithTargetPaths(targetPaths [][2]string) BuildModuleFileSetOption {
 	return func(buildModuleFileSetOptions *buildModuleFileSetOptions) {
 		buildModuleFileSetOptions.targetPaths = targetPaths
 	}
@@ -63,7 +63,7 @@ func WithTargetPaths(targetPaths [][]string) BuildModuleFileSetOption {
 // WithTargetPathsAllowNotExist configures the ModuleFileSet with the given target paths,
 // but allows the specified paths to not exist.
 // Note that these paths can be imports.
-func WithTargetPathsAllowNotExist(targetPaths [][]string) BuildModuleFileSetOption {
+func WithTargetPathsAllowNotExist(targetPaths [][2]string) BuildModuleFileSetOption {
 	return func(buildModuleFileSetOptions *buildModuleFileSetOptions) {
 		buildModuleFileSetOptions.targetPaths = targetPaths
 		buildModuleFileSetOptions.targetPathsAllowNotExist = true

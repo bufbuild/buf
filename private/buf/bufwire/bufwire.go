@@ -134,7 +134,7 @@ func BuildModuleFileSetOptionForTargetPaths(
 	//
 	// Note that only two files will ever be possible for any given externalDirOrFilePath:
 	// the file provided as-is (1), or any combination of (2), (3), and (4).
-	targetPaths := make([][]string, len(externalDirOrFilePaths))
+	targetPaths := make([][2]string, len(externalDirOrFilePaths))
 	for i, externalDirOrFilePath := range externalDirOrFilePaths {
 		targetPath, err := sourceOrModuleRef.PathForExternalPath(externalDirOrFilePath)
 		switch {
@@ -142,7 +142,7 @@ func BuildModuleFileSetOptionForTargetPaths(
 			// If the path is outside the context directory, then we provide it as
 			// it was specified by the user. This is the case for import paths, like
 			// the first case shown above.
-			targetPaths[i] = []string{externalDirOrFilePath}
+			targetPaths[i] = [2]string{externalDirOrFilePath}
 		case err != nil:
 			return nil, err
 		default:
@@ -198,10 +198,10 @@ func BuildModuleFileSetOptionForTargetPaths(
 				// If the target path was in a workspace directory and/or
 				// a single build.roots, then we want to include the mapped
 				// path.
-				targetPaths[i] = []string{externalDirOrFilePath, buildRootTargetPath}
+				targetPaths[i] = [2]string{externalDirOrFilePath, buildRootTargetPath}
 				continue
 			}
-			targetPaths[i] = []string{externalDirOrFilePath, targetPath}
+			targetPaths[i] = [2]string{externalDirOrFilePath, targetPath}
 		}
 	}
 	if externalDirOrFilePathsAllowNotExist {

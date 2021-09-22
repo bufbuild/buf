@@ -218,7 +218,7 @@ type ModuleFileSetOption func(*moduleFileSet)
 
 // ModuleFileSetWithTargetPaths configures the ModuleFileSet with specific file or directory paths to build.
 // Unlike ModuleWithTargetPaths, this option can include imports.
-func ModuleFileSetWithTargetPaths(targetPaths [][]string) ModuleFileSetOption {
+func ModuleFileSetWithTargetPaths(targetPaths [][2]string) ModuleFileSetOption {
 	return func(m *moduleFileSet) {
 		m.targetPaths = targetPaths
 	}
@@ -226,7 +226,7 @@ func ModuleFileSetWithTargetPaths(targetPaths [][]string) ModuleFileSetOption {
 
 // ModuleFileSetWithTargetPathsAllowNotExist configures the ModuleFileSet with specific file or directory paths to build,
 // but allows the specified paths to not exist.
-func ModuleFileSetWithTargetPathsAllowNotExist(targetPaths [][]string) ModuleFileSetOption {
+func ModuleFileSetWithTargetPathsAllowNotExist(targetPaths [][2]string) ModuleFileSetOption {
 	return func(m *moduleFileSet) {
 		m.targetPaths = targetPaths
 		m.targetPathsAllowNotExist = true

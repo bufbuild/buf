@@ -57,7 +57,7 @@ func (m *moduleFileSetBuilder) build(
 	ctx context.Context,
 	module bufmodule.Module,
 	workspace bufmodule.Workspace,
-	targetPaths [][]string,
+	targetPaths [][2]string,
 	targetPathsAllowNotExist bool,
 ) (bufmodule.ModuleFileSet, error) {
 	var dependencyModules []bufmodule.Module

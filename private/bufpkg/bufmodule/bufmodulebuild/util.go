@@ -100,6 +100,6 @@ type buildOptions struct {
 
 type buildModuleFileSetOptions struct {
 	workspace                bufmodule.Workspace
-	targetPaths              [][]string
+	targetPaths              [][2]string
 	targetPathsAllowNotExist bool
 }
