@@ -20,6 +20,7 @@ import (
 	"errors"
 	"text/template"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
 
@@ -275,11 +276,23 @@ func writeConfig(
 	if !writeConfigOptions.documentationComments && writeConfigOptions.uncomment {
 		return errors.New("cannot set uncomment without documentationComments for WriteConfig")
 	}
+	if writeConfigOptions.moduleIdentity == nil && len(writeConfigOptions.dependencyModuleReferences) > 0 {
+		return errors.New("cannot set deps without a name for WriteConfig")
+	}
 	externalConfigV1 := ExternalConfigV1{
 		Version: V1Version,
 	}
 	externalConfigV1.Lint.Use = defaultLintIDs
 	externalConfigV1.Breaking.Use = defaultBreakingIDs
+	if writeConfigOptions.moduleIdentity != nil {
+		externalConfigV1.Name = writeConfigOptions.moduleIdentity.IdentityString()
+	}
+	for _, dependencyModuleReference := range writeConfigOptions.dependencyModuleReferences {
+		externalConfigV1.Deps = append(
+			externalConfigV1.Deps,
+			dependencyModuleReference.String(),
+		)
+	}
 	tmplData := tmplUndocumentedData
 	if writeConfigOptions.documentationComments {
 		tmplData = tmplDocumentationCommentsData
@@ -302,10 +315,8 @@ func writeConfig(
 }
 
 type tmplParam struct {
-	// Keeping around in case we want to re-add in the future
-	Name      string
-	NameUnset bool
-	// Keeping around in case we want to re-add in the future
+	Name        string
+	NameUnset   bool
 	Deps        []string
 	DepsUnset   bool
 	LintIDs     []string
@@ -333,8 +344,10 @@ func newTmplParam(externalConfigV1 ExternalConfigV1, uncomment bool) *tmplParam 
 }
 
 type writeConfigOptions struct {
-	documentationComments bool
-	uncomment             bool
+	documentationComments      bool
+	uncomment                  bool
+	moduleIdentity             bufmoduleref.ModuleIdentity
+	dependencyModuleReferences []bufmoduleref.ModuleReference
 }
 
 func newWriteConfigOptions() *writeConfigOptions {
