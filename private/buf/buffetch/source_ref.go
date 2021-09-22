@@ -33,6 +33,9 @@ func newSourceRef(bucketRef internal.BucketRef) *sourceRef {
 	if dirRef, ok := bucketRef.(internal.DirRef); ok {
 		dirPath = dirRef.Path()
 	}
+	if singleFileRef, ok := bucketRef.(internal.SingleFileRef); ok {
+		dirPath = singleFileRef.Path()
+	}
 	return &sourceRef{
 		bucketRef: bucketRef,
 		dirPath:   dirPath,

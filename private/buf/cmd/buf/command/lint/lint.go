@@ -206,10 +206,21 @@ func run(
 		}
 		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
 	}
-	if len(allFileAnnotations) > 0 {
+
+	// TODO(doria): test the file annotations filtering here
+	var filteredFileAnnotations []bufanalysis.FileAnnotation
+	for _, fileAnnotation := range allFileAnnotations {
+		if fileAnnotation.FileInfo() != nil {
+			if _, err := ref.PathForExternalPath(fileAnnotation.FileInfo().ExternalPath()); err == nil {
+				filteredFileAnnotations = append(filteredFileAnnotations, fileAnnotation)
+			}
+		}
+	}
+
+	if len(filteredFileAnnotations) > 0 {
 		if err := buflintconfig.PrintFileAnnotations(
 			container.Stdout(),
-			bufanalysis.DeduplicateAndSortFileAnnotations(allFileAnnotations),
+			bufanalysis.DeduplicateAndSortFileAnnotations(filteredFileAnnotations),
 			flags.ErrorFormat,
 		); err != nil {
 			return err
