@@ -315,7 +315,10 @@ func getSSHKnownHostsFilePaths(sshKnownHostsFiles string) []string {
 	return filePaths
 }
 
-func getRefspecsForName(gitName Name) (string, string, string) {
+// getRefspecsForName decides the refspecs to use in the subsequent git fetch,
+// git worktree add and git checkout. When checkoutRefspec is empty, Name
+// explicitly refer to a named ref and the checkout isn't a necessary step.
+func getRefspecsForName(gitName Name) (fetchRefSpec string, worktreeRefSpec string, checkoutRefspec string) {
 	if gitName == nil {
 		return "HEAD", "FETCH_HEAD", ""
 	}
