@@ -34,7 +34,6 @@ import (
 
 func TestGitCloner(t *testing.T) {
 	t.Parallel()
-
 	originDir, workDir := createGitDirs(t)
 
 	t.Run("default", func(t *testing.T) {
