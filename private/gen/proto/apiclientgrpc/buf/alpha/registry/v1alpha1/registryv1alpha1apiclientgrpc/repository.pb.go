@@ -308,19 +308,21 @@ func (s *repositoryService) DeleteRepositoryByFullName(ctx context.Context, full
 	return nil
 }
 
-// DeprecateRepository deprecates the repository
-func (s *repositoryService) DeprecateRepository(
+// DeprecateRepositoryByName deprecates the repository.
+func (s *repositoryService) DeprecateRepositoryByName(
 	ctx context.Context,
-	id string,
+	owner string,
+	repositoryName string,
 	deprecationMessage string,
 ) (repository *v1alpha1.Repository, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.DeprecateRepository(
+	response, err := s.client.DeprecateRepositoryByName(
 		ctx,
-		&v1alpha1.DeprecateRepositoryRequest{
-			Id:                 id,
+		&v1alpha1.DeprecateRepositoryByNameRequest{
+			Owner:              owner,
+			RepositoryName:     repositoryName,
 			DeprecationMessage: deprecationMessage,
 		},
 	)
@@ -330,19 +332,41 @@ func (s *repositoryService) DeprecateRepository(
 	return response.Repository, nil
 }
 
-// UndeprecateRepository makes the repository not deprecated and removes any deprecation_message
-func (s *repositoryService) UndeprecateRepository(ctx context.Context, id string) (repository *v1alpha1.Repository, _ error) {
+// UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
+func (s *repositoryService) UndeprecateRepositoryByName(
+	ctx context.Context,
+	owner string,
+	repositoryName string,
+) (repository *v1alpha1.Repository, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.UndeprecateRepository(
+	response, err := s.client.UndeprecateRepositoryByName(
 		ctx,
-		&v1alpha1.UndeprecateRepositoryRequest{
-			Id: id,
+		&v1alpha1.UndeprecateRepositoryByNameRequest{
+			Owner:          owner,
+			RepositoryName: repositoryName,
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
 	return response.Repository, nil
+}
+
+// GetRepositoriesByFullName gets repositories by full name.
+func (s *repositoryService) GetRepositoriesByFullName(ctx context.Context, fullNames []string) (repositories []*v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetRepositoriesByFullName(
+		ctx,
+		&v1alpha1.GetRepositoriesByFullNameRequest{
+			FullNames: fullNames,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Repositories, nil
 }

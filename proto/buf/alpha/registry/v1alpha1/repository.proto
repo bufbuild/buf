@@ -74,10 +74,20 @@ service RepositoryService {
   rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse);
   // DeleteRepositoryByFullName deletes a repository by full name.
   rpc DeleteRepositoryByFullName(DeleteRepositoryByFullNameRequest) returns (DeleteRepositoryByFullNameResponse);
-  // DeprecateRepository deprecates the repository
-  rpc DeprecateRepository(DeprecateRepositoryRequest) returns(DeprecateRepositoryResponse);
-  // UndeprecateRepository makes the repository not deprecated and removes any deprecation_message
-  rpc UndeprecateRepository(UndeprecateRepositoryRequest) returns(UndeprecateRepositoryResponse);
+  // DeprecateRepositoryByName deprecates the repository.
+  rpc DeprecateRepositoryByName(DeprecateRepositoryByNameRequest) returns(DeprecateRepositoryByNameResponse);
+  // UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
+  rpc UndeprecateRepositoryByName(UndeprecateRepositoryByNameRequest) returns(UndeprecateRepositoryByNameResponse);
+  // GetRepositoriesByFullName gets repositories by full name.
+  rpc GetRepositoriesByFullName(GetRepositoriesByFullNameRequest) returns (GetRepositoriesByFullNameResponse);
+}
+
+message GetRepositoriesByFullNameRequest{
+  repeated string full_names = 1;
+}
+
+message GetRepositoriesByFullNameResponse{
+  repeated Repository repositories = 1;
 }
 
 message GetRepositoryRequest {
@@ -211,19 +221,21 @@ message DeleteRepositoryByFullNameRequest {
 
 message DeleteRepositoryByFullNameResponse {}
 
-message DeprecateRepositoryRequest{
-  string id = 1;
-  string deprecation_message = 2;
+message DeprecateRepositoryByNameRequest{
+  string owner = 1;
+  string repository_name = 2;
+  string deprecation_message = 3;
 }
 
-message DeprecateRepositoryResponse{
+message DeprecateRepositoryByNameResponse{
   Repository repository = 1;
 }
 
-message UndeprecateRepositoryRequest{
-  string id = 1;
+message UndeprecateRepositoryByNameRequest{
+  string owner = 1;
+  string repository_name = 2;
 }
 
-message UndeprecateRepositoryResponse{
+message UndeprecateRepositoryByNameResponse{
   Repository repository = 1;
 }
