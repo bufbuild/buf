@@ -31,10 +31,10 @@ import (
 )
 
 const (
+	asImportPathsFlagName  = "as-import-paths"
 	configFlagName         = "config"
 	errorFormatFlagName    = "error-format"
 	includeImportsFlagName = "include-imports"
-	stripFlagName          = "strip"
 
 	// deprecated
 	inputFlagName = "input"
@@ -64,10 +64,10 @@ func NewCommand(
 }
 
 type flags struct {
+	AsImportPaths  bool
 	Config         string
 	ErrorFormat    string
 	IncludeImports bool
-	Strip          bool
 
 	// deprecated
 	Input string
@@ -83,6 +83,12 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	flagSet.BoolVar(
+		&f.AsImportPaths,
+		asImportPathsFlagName,
+		false,
+		"Strip local directory paths and print file paths as they are imported.",
+	)
 	flagSet.StringVar(
 		&f.Input,
 		inputFlagName,
@@ -112,12 +118,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		includeImportsFlagName,
 		false,
 		"Include imports.",
-	)
-	flagSet.BoolVar(
-		&f.Strip,
-		stripFlagName,
-		false,
-		"Strip local directory paths and print file paths as they are imported.",
 	)
 
 	// deprecated, but not marked as deprecated as we return error if this is used
@@ -186,7 +186,7 @@ func run(
 		}
 		return bufcli.ErrFileAnnotation
 	}
-	if flags.Strip {
+	if flags.AsImportPaths {
 		bufmoduleref.SortFileInfos(fileRefs)
 		for _, fileRef := range fileRefs {
 			if _, err := fmt.Fprintln(container.Stdout(), fileRef.Path()); err != nil {

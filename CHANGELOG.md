@@ -2,8 +2,8 @@
 
 ## [Unreleased]
 
-- Add `--strip` flag to `ls-files` that strips local directory paths and prints file paths as they
-  are imported.
+- Add `--as-import-paths` flag to `ls-files` that strips local directory paths and prints file
+  paths as they are imported.
 
 ## [v1.0.0-rc2] - 2021-09-23
 
