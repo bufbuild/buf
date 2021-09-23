@@ -134,7 +134,7 @@ func (c *cloner) CloneToBucket(
 		}
 		gitConfigAuthArgs = append(gitConfigAuthArgs, extraArgs...)
 	}
-	fetchRef, checkoutRefs := getRefspecsForName(options.Name)
+	fetchRef, worktreeRef, checkoutRef := getRefspecsForName(options.Name)
 	fetchArgs := append(
 		gitConfigAuthArgs,
 		"--git-dir="+bareDir.AbsPath(),
@@ -165,7 +165,7 @@ func (c *cloner) CloneToBucket(
 		"worktree",
 		"add",
 		worktreeDir.AbsPath(),
-		checkoutRefs[0],
+		worktreeRef,
 	)
 	cmd = exec.CommandContext(ctx, "git", args...)
 	cmd.Env = app.Environ(envContainer)
@@ -174,7 +174,7 @@ func (c *cloner) CloneToBucket(
 		return newGitCommandError(err, buffer, worktreeDir)
 	}
 
-	for _, checkoutRef := range checkoutRefs[1:] {
+	if checkoutRef != "" {
 		buffer.Reset()
 		args := append(
 			gitConfigAuthArgs,
@@ -315,9 +315,9 @@ func getSSHKnownHostsFilePaths(sshKnownHostsFiles string) []string {
 	return filePaths
 }
 
-func getRefspecsForName(gitName Name) (string, []string) {
+func getRefspecsForName(gitName Name) (string, string, string) {
 	if gitName == nil {
-		return "HEAD", []string{"FETCH_HEAD"}
+		return "HEAD", "FETCH_HEAD", ""
 	}
 	if gitName.cloneBranch() != "" && gitName.checkout() != "" {
 		// When doing branch/tag clones, make sure we use a
@@ -326,9 +326,9 @@ func getRefspecsForName(gitName Name) (string, []string) {
 		// for example:
 		//   branch=origin/main,ref=origin/main~1
 		fetchRefSpec := gitName.cloneBranch() + ":" + gitName.cloneBranch()
-		return fetchRefSpec, []string{"FETCH_HEAD", gitName.checkout()}
+		return fetchRefSpec, "FETCH_HEAD", gitName.checkout()
 	} else if gitName.cloneBranch() != "" {
-		return gitName.cloneBranch(), []string{"FETCH_HEAD"}
+		return gitName.cloneBranch(), "FETCH_HEAD", ""
 	} else if gitName.checkout() != "" {
 		// After fetch we won't have checked out any refs. This
 		// will cause `refs=` containing "HEAD" to fail, as HEAD
@@ -336,9 +336,9 @@ func getRefspecsForName(gitName Name) (string, []string) {
 		// instead refers to the current commit checked out. By
 		// checking out "FETCH_HEAD" before checking out the
 		// user supplied ref, we behave similarly to git clone.
-		return "HEAD", []string{"FETCH_HEAD", gitName.checkout()}
+		return "HEAD", "FETCH_HEAD", gitName.checkout()
 	} else {
-		return "HEAD", []string{"FETCH_HEAD"}
+		return "HEAD", "FETCH_HEAD", ""
 	}
 }
 
