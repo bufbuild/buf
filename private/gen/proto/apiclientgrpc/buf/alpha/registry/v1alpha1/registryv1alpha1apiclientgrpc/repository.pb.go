@@ -307,3 +307,27 @@ func (s *repositoryService) DeleteRepositoryByFullName(ctx context.Context, full
 	}
 	return nil
 }
+
+// UpdateRepositoryDeprecation sets deprecation data for a repository.
+func (s *repositoryService) UpdateRepositoryDeprecation(
+	ctx context.Context,
+	id string,
+	deprecated bool,
+	deprecationMessage string,
+) (repository *v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UpdateRepositoryDeprecation(
+		ctx,
+		&v1alpha1.UpdateRepositoryDeprecationRequest{
+			Id:                 id,
+			Deprecated:         deprecated,
+			DeprecationMessage: deprecationMessage,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Repository, nil
+}

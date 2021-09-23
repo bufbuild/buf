@@ -40,6 +40,10 @@ message Repository {
     string organization_id = 6;
   }
   Visibility visibility = 7;
+  // deprecated means this repository is deprecated.
+  bool deprecated = 8;
+  // deprecation_message is the message shown if the repository is deprecated.
+  bool deprecation_message = 9;
 }
 
 // RepositoryService is the Repository service.
@@ -70,6 +74,8 @@ service RepositoryService {
   rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse);
   // DeleteRepositoryByFullName deletes a repository by full name.
   rpc DeleteRepositoryByFullName(DeleteRepositoryByFullNameRequest) returns (DeleteRepositoryByFullNameResponse);
+  // UpdateRepositoryDeprecation sets deprecation data for a repository.
+  rpc UpdateRepositoryDeprecation(UpdateRepositoryDeprecationRequest) returns(UpdateRepositoryDeprecationResponse);
 }
 
 message GetRepositoryRequest {
@@ -202,3 +208,13 @@ message DeleteRepositoryByFullNameRequest {
 }
 
 message DeleteRepositoryByFullNameResponse {}
+
+message UpdateRepositoryDeprecationRequest{
+  string id = 1;
+  bool deprecated = 2;
+  string deprecation_message = 3;
+}
+
+message UpdateRepositoryDeprecationResponse{
+  Repository repository = 1;
+}
