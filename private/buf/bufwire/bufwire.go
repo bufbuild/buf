@@ -119,7 +119,7 @@ type FileLister interface {
 	// ListFiles lists the files.
 	//
 	// If includeImports is set, the ref is built, which can result in FileAnnotations.
-	// There is no defined returned sorting order. If yoyu need the FileInfos to
+	// There is no defined returned sorting order. If you need the FileInfos to
 	// be sorted, do so with bufmoduleref.SortFileInfos or bufmoduleref.SortFileInfosByExternalPath.
 	ListFiles(
 		ctx context.Context,
