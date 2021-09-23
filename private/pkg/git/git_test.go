@@ -220,7 +220,7 @@ func createGitDirs(t *testing.T) (string, string) {
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 0"), 0600))
 	runCommand(t, "git", "-C", originPath, "add", "test.proto")
 	runCommand(t, "git", "-C", originPath, "commit", "-m", "commit 0")
-	runCommand(t, "git", "-C", originPath, "submodule", "add", submodulePath)
+	runCommand(t, "git", "-C", originPath, "submodule", "add", submodulePath, "submodule")
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 1"), 0600))
 	runCommand(t, "git", "-C", originPath, "add", "test.proto")
 	runCommand(t, "git", "-C", originPath, "commit", "-m", "commit 1")
