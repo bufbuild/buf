@@ -92,11 +92,12 @@ type RepositoryService interface {
 	DeleteRepository(ctx context.Context, id string) (err error)
 	// DeleteRepositoryByFullName deletes a repository by full name.
 	DeleteRepositoryByFullName(ctx context.Context, fullName string) (err error)
-	// UpdateRepositoryDeprecation sets deprecation data for a repository.
-	UpdateRepositoryDeprecation(
+	// DeprecateRepository deprecates the repository
+	DeprecateRepository(
 		ctx context.Context,
 		id string,
-		deprecated bool,
 		deprecationMessage string,
 	) (repository *v1alpha1.Repository, err error)
+	// UndeprecateRepository makes the repository not deprecated and removes any deprecation_message
+	UndeprecateRepository(ctx context.Context, id string) (repository *v1alpha1.Repository, err error)
 }

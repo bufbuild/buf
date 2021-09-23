@@ -74,8 +74,10 @@ service RepositoryService {
   rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse);
   // DeleteRepositoryByFullName deletes a repository by full name.
   rpc DeleteRepositoryByFullName(DeleteRepositoryByFullNameRequest) returns (DeleteRepositoryByFullNameResponse);
-  // UpdateRepositoryDeprecation sets deprecation data for a repository.
-  rpc UpdateRepositoryDeprecation(UpdateRepositoryDeprecationRequest) returns(UpdateRepositoryDeprecationResponse);
+  // DeprecateRepository deprecates the repository
+  rpc DeprecateRepository(DeprecateRepositoryRequest) returns(DeprecateRepositoryResponse);
+  // UndeprecateRepository makes the repository not deprecated and removes any deprecation_message
+  rpc UndeprecateRepository(UndeprecateRepositoryRequest) returns(UndeprecateRepositoryResponse);
 }
 
 message GetRepositoryRequest {
@@ -209,12 +211,19 @@ message DeleteRepositoryByFullNameRequest {
 
 message DeleteRepositoryByFullNameResponse {}
 
-message UpdateRepositoryDeprecationRequest{
+message DeprecateRepositoryRequest{
   string id = 1;
-  bool deprecated = 2;
-  string deprecation_message = 3;
+  string deprecation_message = 2;
 }
 
-message UpdateRepositoryDeprecationResponse{
+message DeprecateRepositoryResponse{
+  Repository repository = 1;
+}
+
+message UndeprecateRepositoryRequest{
+  string id = 1;
+}
+
+message UndeprecateRepositoryResponse{
   Repository repository = 1;
 }
