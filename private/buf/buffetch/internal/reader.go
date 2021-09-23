@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -364,59 +365,77 @@ func (r *reader) getSingleFileBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
+	terminateFileNames = append(terminateFileNames, bufconfig.ExternalConfigV1FilePath)
 	dirPath := filepath.Dir(singleFileRef.Path())
+
 	terminateFileDirectoryAbsPath, err := findTerminateFileDirectoryPathFromOS(dirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
-	if terminateFileDirectoryAbsPath != "" {
-		// If the terminate file exists, we need to determine the relative path from the
-		// terminateFileDirectoryAbsPath to the target DirRef.Path.
-		wd, err := osextended.Getwd()
-		if err != nil {
-			return nil, err
+	if filepath.Base(terminateFileDirectoryAbsPath) == bufconfig.ExternalConfigV1FilePath {
+		// walk again to check if there is a workspace
+		// if workspaces are not enabled here, this is a noop
+		// we always add `buf.yaml` at the end, so we just trim it
+		if len(terminateFileNames) > 1 {
+			terminateFileNames = terminateFileNames[:len(terminateFileNames)-1]
+			workspaceFileDirectoryAbsPath, err := findTerminateFileDirectoryPathFromOS(dirPath, terminateFileNames)
+			if err != nil {
+				return nil, err
+			}
+			if workspaceFileDirectoryAbsPath != "" {
+				// if we find a workspace, then we use the workspace over the module
+				// this avoids the edge case where the working directory is outside of the file referenced
+				// and share a workspace but not a module
+				terminateFileDirectoryAbsPath = workspaceFileDirectoryAbsPath
+			}
 		}
-		terminateFileRelativePath, err := normalpath.Rel(wd, terminateFileDirectoryAbsPath)
-		if err != nil {
-			return nil, err
-		}
-		rootPath := terminateFileRelativePath
-		if filepath.IsAbs(singleFileRef.Path()) {
-			// If the input was provided as an absolute path,
-			// we preserve it by initializing the workspace
-			// bucket with an absolute path.
-			rootPath = terminateFileDirectoryAbsPath
-		}
-		readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
-			rootPath,
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		)
-		if err != nil {
-			return nil, err
-		}
-		// Verify that the subDirPath exists too.
-		if _, err := r.storageosProvider.NewReadWriteBucket(
-			normalpath.Join(rootPath, dirPath),
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		); err != nil {
-			return nil, err
-		}
-		return newReadWriteBucketCloser(
-			storage.NopReadWriteBucketCloser(readWriteBucket),
-			rootPath,
-			rootPath,
-		)
+	}
+	if terminateFileDirectoryAbsPath == "" {
+		// TODO(doria): determine the correct error to return here
+		return nil, fmt.Errorf("cannot resolve valid workspace for file reference: %s", singleFileRef.Path())
+	}
+	// If the terminate file exists, we need to determine the relative path from the
+	// terminateFileDirectoryAbsPath to the target singleFileRef.Path().
+	wd, err := osextended.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	terminateFileRelativePath, err := normalpath.Rel(wd, terminateFileDirectoryAbsPath)
+	if err != nil {
+		return nil, err
+	}
+	singleFileRefAbsPath, err := normalpath.NormalizeAndAbsolute(dirPath)
+	if err != nil {
+		return nil, err
+	}
+	singleFileRefRelativePath, err := normalpath.Rel(terminateFileDirectoryAbsPath, singleFileRefAbsPath)
+	if err != nil {
+		return nil, err
+	}
+	rootPath := terminateFileRelativePath
+	if filepath.IsAbs(singleFileRef.Path()) {
+		// If the input was provided as an absolute path,
+		// we preserve it by initializing the workspace
+		// bucket with an absolute path.
+		rootPath = terminateFileDirectoryAbsPath
 	}
 	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
-		dirPath,
+		rootPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
 		return nil, err
 	}
+	// Verify that the file ref path is a sub path of the terminate file root path
+	if _, err := r.storageosProvider.NewReadWriteBucket(
+		normalpath.Join(rootPath, singleFileRefRelativePath),
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	); err != nil {
+		return nil, err
+	}
 	return newReadWriteBucketCloser(
 		storage.NopReadWriteBucketCloser(readWriteBucket),
-		"",
+		rootPath,
 		"",
 	)
 }
@@ -707,7 +726,7 @@ func anyExistsBucket(
 
 // findTerminateFileDirectoryPathFromOS returns the directory that contains
 // the terminateFileName, starting with the subDirPath and ascending until
-// the root of the local filesysem.
+// the root of the local filesystem.
 func findTerminateFileDirectoryPathFromOS(subDirPath string, terminateFileNames []string) (string, error) {
 	if len(terminateFileNames) == 0 {
 		return "", nil
