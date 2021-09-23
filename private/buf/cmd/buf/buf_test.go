@@ -666,6 +666,35 @@ func TestLsFiles(t *testing.T) {
 	)
 }
 
+func TestLsFilesIncludeImports(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`google/protobuf/descriptor.proto
+`+filepath.FromSlash(`testdata/success/buf/buf.proto`),
+		"ls-files",
+		"--include-imports",
+		filepath.Join("testdata", "success"),
+	)
+}
+
+func TestLsFilesIncludeImportsAsImportPaths(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`buf/buf.proto
+google/protobuf/descriptor.proto`,
+		"ls-files",
+		"--include-imports",
+		"--as-import-paths",
+		filepath.Join("testdata", "success"),
+	)
+}
+
 func TestLsFilesImage1(t *testing.T) {
 	t.Parallel()
 	stdout := bytes.NewBuffer(nil)
