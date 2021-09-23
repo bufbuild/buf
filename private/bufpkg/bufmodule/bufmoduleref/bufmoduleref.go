@@ -460,7 +460,9 @@ func PutDependencyModulePinsToBucket(
 	return buflock.WriteConfig(ctx, writeBucket, lockFile)
 }
 
-// SortFileInfos sorts the FileInfos.
+// SortFileInfos sorts the FileInfos by Path.
+//
+// This should be treated as the default sorting mechanism.
 func SortFileInfos(fileInfos []FileInfo) {
 	if len(fileInfos) == 0 {
 		return
@@ -469,6 +471,19 @@ func SortFileInfos(fileInfos []FileInfo) {
 		fileInfos,
 		func(i int, j int) bool {
 			return fileInfos[i].Path() < fileInfos[j].Path()
+		},
+	)
+}
+
+// SortFileInfosByExternalPath sorts the FileInfos by ExternalPath.
+func SortFileInfosByExternalPath(fileInfos []FileInfo) {
+	if len(fileInfos) == 0 {
+		return
+	}
+	sort.Slice(
+		fileInfos,
+		func(i int, j int) bool {
+			return fileInfos[i].ExternalPath() < fileInfos[j].ExternalPath()
 		},
 	)
 }

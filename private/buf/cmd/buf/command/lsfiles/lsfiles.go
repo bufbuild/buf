@@ -21,6 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -33,6 +34,7 @@ const (
 	configFlagName         = "config"
 	errorFormatFlagName    = "error-format"
 	includeImportsFlagName = "include-imports"
+	stripFlagName          = "strip"
 
 	// deprecated
 	inputFlagName = "input"
@@ -65,6 +67,7 @@ type flags struct {
 	Config         string
 	ErrorFormat    string
 	IncludeImports bool
+	Strip          bool
 
 	// deprecated
 	Input string
@@ -109,6 +112,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		includeImportsFlagName,
 		false,
 		"Include imports.",
+	)
+	flagSet.BoolVar(
+		&f.Strip,
+		stripFlagName,
+		false,
+		"Strip local directory paths and print file paths as they are imported.",
 	)
 
 	// deprecated, but not marked as deprecated as we return error if this is used
@@ -177,9 +186,19 @@ func run(
 		}
 		return bufcli.ErrFileAnnotation
 	}
-	for _, fileRef := range fileRefs {
-		if _, err := fmt.Fprintln(container.Stdout(), fileRef.ExternalPath()); err != nil {
-			return err
+	if flags.Strip {
+		bufmoduleref.SortFileInfos(fileRefs)
+		for _, fileRef := range fileRefs {
+			if _, err := fmt.Fprintln(container.Stdout(), fileRef.Path()); err != nil {
+				return err
+			}
+		}
+	} else {
+		bufmoduleref.SortFileInfosByExternalPath(fileRefs)
+		for _, fileRef := range fileRefs {
+			if _, err := fmt.Fprintln(container.Stdout(), fileRef.ExternalPath()); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
