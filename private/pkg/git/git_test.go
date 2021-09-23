@@ -34,6 +34,12 @@ import (
 
 func TestGitCloner(t *testing.T) {
 	t.Parallel()
+
+	// Add git version to log for easier context of ci failures.
+	gitVersion, err := exec.Command("git", "--version").CombinedOutput()
+	require.NoError(t, err)
+	t.Log(string(gitVersion))
+
 	originDir, workDir := createGitDirs(t)
 
 	t.Run("default", func(t *testing.T) {
