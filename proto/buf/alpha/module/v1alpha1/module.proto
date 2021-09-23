@@ -63,6 +63,4 @@ message ModulePin {
   string commit = 5;
   string digest = 6;
   google.protobuf.Timestamp create_time = 7;
-  bool deprecated = 8;
-  string deprecation_message = 9;
 }
