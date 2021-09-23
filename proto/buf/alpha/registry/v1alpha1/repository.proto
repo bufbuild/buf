@@ -43,7 +43,7 @@ message Repository {
   // deprecated means this repository is deprecated.
   bool deprecated = 8;
   // deprecation_message is the message shown if the repository is deprecated.
-  bool deprecation_message = 9;
+  string deprecation_message = 9;
 }
 
 // RepositoryService is the Repository service.
