@@ -150,7 +150,6 @@ func (c *cloner) CloneToBucket(
 			return err
 		}
 	}
-
 	buffer.Reset()
 	cmd = exec.CommandContext(ctx, "git", fetchArgs...)
 	cmd.Env = app.Environ(envContainer)
@@ -159,16 +158,31 @@ func (c *cloner) CloneToBucket(
 		return newGitCommandError(err, buffer, bareDir)
 	}
 
-	for _, checkoutRef := range checkoutRefs {
+	buffer.Reset()
+	args := append(
+		gitConfigAuthArgs,
+		"--git-dir="+bareDir.AbsPath(),
+		"worktree",
+		"add",
+		worktreeDir.AbsPath(),
+		checkoutRefs[0],
+	)
+	cmd = exec.CommandContext(ctx, "git", args...)
+	cmd.Env = app.Environ(envContainer)
+	cmd.Stderr = buffer
+	if err := cmd.Run(); err != nil {
+		return newGitCommandError(err, buffer, worktreeDir)
+	}
+
+	for _, checkoutRef := range checkoutRefs[1:] {
 		buffer.Reset()
 		args := append(
 			gitConfigAuthArgs,
-			"--git-dir="+bareDir.AbsPath(),
-			"--work-tree="+worktreeDir.AbsPath(),
 			"checkout",
 			checkoutRef,
 		)
 		cmd = exec.CommandContext(ctx, "git", args...)
+		cmd.Dir = worktreeDir.AbsPath()
 		cmd.Env = app.Environ(envContainer)
 		cmd.Stderr = buffer
 		if err := cmd.Run(); err != nil {
@@ -179,8 +193,6 @@ func (c *cloner) CloneToBucket(
 	if options.RecurseSubmodules {
 		submoduleArgs := append(
 			gitConfigAuthArgs,
-			"--git-dir="+bareDir.AbsPath(),
-			"--work-tree="+worktreeDir.AbsPath(),
 			"submodule",
 			"update",
 			"--init",
@@ -190,6 +202,7 @@ func (c *cloner) CloneToBucket(
 		)
 		buffer.Reset()
 		cmd = exec.CommandContext(ctx, "git", submoduleArgs...)
+		cmd.Dir = worktreeDir.AbsPath()
 		cmd.Env = app.Environ(envContainer)
 		cmd.Stderr = buffer
 		if err := cmd.Run(); err != nil {
