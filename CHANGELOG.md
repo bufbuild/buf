@@ -4,6 +4,7 @@
 
 - Add `--include-imports` flag to `ls-files`.
 - Upgrade to `protoc` 3.18.0 support.
+- Fix regression with git inputs using `recurse_submodules=true`.
 
 ## [v1.0.0-rc1] - 2021-09-15
 
