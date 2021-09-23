@@ -67,7 +67,6 @@ func TestSuccess5(t *testing.T) {
 
 func TestSuccess6(t *testing.T) {
 	t.Parallel()
-	testRunStdout(t, nil, 1, ``, "lint", "--input", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "lint", filepath.Join("testdata", "success"))
 }
 
@@ -173,15 +172,6 @@ func TestFail5(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
-		``,
-		"lint",
-		"--input",
-		filepath.Join("testdata", "fail"),
-	)
-	testRunStdout(
-		t,
-		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
@@ -192,17 +182,6 @@ func TestFail5(t *testing.T) {
 
 func TestFail6(t *testing.T) {
 	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"lint",
-		"--input",
-		filepath.Join("testdata", "fail"),
-		"--path",
-		filepath.Join("testdata", "fail", "buf", "buf.proto"),
-	)
 	testRunStdoutStderr(
 		t,
 		nil,
@@ -222,19 +201,6 @@ func TestFail7(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
-		``,
-		"lint",
-		"--path",
-		filepath.Join("testdata", "fail", "buf", "buf.proto"),
-		"--input",
-		filepath.Join("testdata"),
-		"--input-config",
-		`{"version":"v1beta1","lint":{"use":["BASIC"]}}`,
-	)
-	testRunStdout(
-		t,
-		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
         testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
@@ -244,19 +210,6 @@ func TestFail7(t *testing.T) {
 		filepath.Join("testdata"),
 		"--config",
 		`{"version":"v1beta1","lint":{"use":["BASIC"]}}`,
-	)
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"lint",
-		"--path",
-		filepath.Join("testdata", "fail", "buf", "buf.proto"),
-		"--input",
-		filepath.Join("testdata"),
-		"--input-config",
-		`{"version":"v1","lint":{"use":["BASIC"]}}`,
 	)
 	testRunStdout(
 		t,
@@ -278,15 +231,6 @@ func TestFail8(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
-		``,
-		"lint",
-		"--input",
-		filepath.Join("testdata", "fail2"),
-	)
-	testRunStdout(
-		t,
-		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`testdata/fail2/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".
 		testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
@@ -297,17 +241,6 @@ func TestFail8(t *testing.T) {
 
 func TestFail9(t *testing.T) {
 	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"lint",
-		"--input",
-		filepath.Join("testdata", "fail2"),
-		"--path",
-		filepath.Join("testdata", "fail2", "buf", "buf.proto"),
-	)
 	testRunStdout(
 		t,
 		nil,
@@ -325,17 +258,6 @@ func TestFail10(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
-		``,
-		"lint",
-		"--input",
-		filepath.Join("testdata", "fail2"),
-		"--path",
-		filepath.Join("testdata", "fail2", "buf", "buf3.proto"),
-	)
-	testRunStdout(
-		t,
-		nil,
 		0,
 		``,
 		"lint",
@@ -350,17 +272,6 @@ func TestFail11(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		1,
-		``,
-		"lint",
-		"--path",
-		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
-		"--input",
-		filepath.Join("testdata"),
-	)
-	testRunStdout(
-		t,
-		nil,
 		bufcli.ExitCodeFileAnnotation,
 		fmt.Sprintf("%v:5:8:buf/buf.proto: does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
 		"lint",
@@ -372,17 +283,6 @@ func TestFail11(t *testing.T) {
 
 func TestFail12(t *testing.T) {
 	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"lint",
-		"--input",
-		filepath.Join("testdata", "fail"),
-		"--error-format",
-		"config-ignore-yaml",
-	)
 	testRunStdout(
 		t,
 		nil,
@@ -415,94 +315,8 @@ func TestFail13(t *testing.T) {
 	)
 }
 
-func TestFailArgAndDeprecatedFlag1(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"build",
-		"--source",
-		filepath.Join("testdata", "success"),
-		filepath.Join("testdata", "success"),
-	)
-}
-
-func TestFailArgAndDeprecatedFlag2(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"lint",
-		"--input",
-		filepath.Join("testdata", "success"),
-		filepath.Join("testdata", "success"),
-	)
-}
-
-func TestFailArgAndDeprecatedFlag3(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"breaking",
-		"--against-input",
-		filepath.Join("testdata", "success"),
-		"--input",
-		filepath.Join("testdata", "success"),
-		filepath.Join("testdata", "success"),
-	)
-}
-
-func TestFailArgAndDeprecatedFlag4(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"breaking",
-		"--against-input",
-		filepath.Join("testdata", "success"),
-		"--against",
-		filepath.Join("testdata", "success"),
-		filepath.Join("testdata", "success"),
-	)
-}
-
-func TestFailArgAndDeprecatedFlag5(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"ls-files",
-		"--input",
-		filepath.Join("testdata", "success"),
-		filepath.Join("testdata", "success"),
-	)
-}
-
 func TestFailCheckBreaking1(t *testing.T) {
 	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"breaking",
-		"--input",
-		// can't bother right now to filepath.Join this
-		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
-		"--against-input",
-		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
-	)
 	testRunStdoutStderr(
 		t,
 		nil,
@@ -842,15 +656,6 @@ FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 
 
 func TestLsFiles(t *testing.T) {
 	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"ls-files",
-		"--input",
-		filepath.Join("testdata", "success"),
-	)
 	testRunStdout(
 		t,
 		nil,
