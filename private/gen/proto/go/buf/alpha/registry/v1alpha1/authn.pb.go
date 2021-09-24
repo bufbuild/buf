@@ -162,7 +162,7 @@ type GetCurrentUserSubjectResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The user's subject, for mapping to user in identity provider.
+	// The user's subject for mapping to user in identity provider.
 	// Note: we do not want to make it part of the User response as
 	// it contains potentially sensitive information and the User
 	// response is shared with other users.
