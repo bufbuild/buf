@@ -15,13 +15,15 @@ GO_BINS ?=
 # Settable
 GO_TEST_BINS ?=
 # Settable
-GO_GET_PKGS ?= ./cmd/... ./internal/...
+GO_GET_PKGS ?=
 # Settable
 # This should always be one version back!
 GO_MOD_VERSION ?= 1.16
+# Settable
+GO_ALL_REPO_PKGS ?= ./cmd/... ./internal/...
 
 # Runtime
-GOPKGS ?= ./...
+GOPKGS ?= $(GO_ALL_REPO_PKGS)
 # Runtime
 GOLANGCILINTTIMEOUT ?= 3m0s
 # Runtime GONOTESTCACHE
@@ -60,11 +62,11 @@ upgradegodeps:
 	rm -f go.mod go.sum
 	go mod init $(GO_MODULE)
 	go mod edit -go=$(GO_MOD_VERSION)
-	go mod tidy -v
-	go get -u -t $(GO_GET_PKGS)
 ifneq ($(GO_GET_PKGS),)
-	go get $(sort $(GO_GET_PKGS))
+	go get $(GO_GET_PKGS)
 endif
+	go get -u -t $(GO_ALL_REPO_PKGS) $(GO_GET_PKGS)
+	go mod tidy -v
 
 preupgrade:: upgradegodeps
 
