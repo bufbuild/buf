@@ -9,9 +9,6 @@
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)](https://join.slack.com/t/bufbuild/shared_invite/zt-f5k547ki-VDs_iC4TblNCu7ubhRD17w)
 [![Twitter](https://img.shields.io/twitter/follow/bufbuild?style=social)](https://twitter.com/intent/follow?screen_name=bufbuild)
 
-**All documentation is hosted at [https://buf.build](https://buf.build). Please head over there for
-more details.**
-
 ## Goal
 
 Buf’s long-term goal is to enable schema-driven development: a future where APIs are defined consistently, in a way that service owners and clients can depend on.
