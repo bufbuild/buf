@@ -40,6 +40,10 @@ message Repository {
     string organization_id = 6;
   }
   Visibility visibility = 7;
+  // deprecated means this repository is deprecated.
+  bool deprecated = 8;
+  // deprecation_message is the message shown if the repository is deprecated.
+  string deprecation_message = 9;
 }
 
 // RepositoryService is the Repository service.
@@ -70,6 +74,21 @@ service RepositoryService {
   rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse);
   // DeleteRepositoryByFullName deletes a repository by full name.
   rpc DeleteRepositoryByFullName(DeleteRepositoryByFullNameRequest) returns (DeleteRepositoryByFullNameResponse);
+  // DeprecateRepositoryByName deprecates the repository.
+  rpc DeprecateRepositoryByName(DeprecateRepositoryByNameRequest) returns(DeprecateRepositoryByNameResponse);
+  // UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
+  rpc UndeprecateRepositoryByName(UndeprecateRepositoryByNameRequest) returns(UndeprecateRepositoryByNameResponse);
+  // GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
+  // Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
+  rpc GetRepositoriesByFullName(GetRepositoriesByFullNameRequest) returns (GetRepositoriesByFullNameResponse);
+}
+
+message GetRepositoriesByFullNameRequest{
+  repeated string full_names = 1;
+}
+
+message GetRepositoriesByFullNameResponse{
+  repeated Repository repositories = 1;
 }
 
 message GetRepositoryRequest {
@@ -202,3 +221,24 @@ message DeleteRepositoryByFullNameRequest {
 }
 
 message DeleteRepositoryByFullNameResponse {}
+
+message DeprecateRepositoryByNameRequest{
+  string owner_name = 1;
+  string repository_name = 2;
+  // A message shown along with the deprecation warning for this repository.
+  // It must be a utf8 encoded string containing 256 or fewer characters.
+  string deprecation_message = 3;
+}
+
+message DeprecateRepositoryByNameResponse{
+  Repository repository = 1;
+}
+
+message UndeprecateRepositoryByNameRequest{
+  string owner_name = 1;
+  string repository_name = 2;
+}
+
+message UndeprecateRepositoryByNameResponse{
+  Repository repository = 1;
+}

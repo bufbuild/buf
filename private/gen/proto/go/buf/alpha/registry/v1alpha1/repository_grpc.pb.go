@@ -62,6 +62,13 @@ type RepositoryServiceClient interface {
 	DeleteRepository(ctx context.Context, in *DeleteRepositoryRequest, opts ...grpc.CallOption) (*DeleteRepositoryResponse, error)
 	// DeleteRepositoryByFullName deletes a repository by full name.
 	DeleteRepositoryByFullName(ctx context.Context, in *DeleteRepositoryByFullNameRequest, opts ...grpc.CallOption) (*DeleteRepositoryByFullNameResponse, error)
+	// DeprecateRepositoryByName deprecates the repository.
+	DeprecateRepositoryByName(ctx context.Context, in *DeprecateRepositoryByNameRequest, opts ...grpc.CallOption) (*DeprecateRepositoryByNameResponse, error)
+	// UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
+	UndeprecateRepositoryByName(ctx context.Context, in *UndeprecateRepositoryByNameRequest, opts ...grpc.CallOption) (*UndeprecateRepositoryByNameResponse, error)
+	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
+	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
+	GetRepositoriesByFullName(ctx context.Context, in *GetRepositoriesByFullNameRequest, opts ...grpc.CallOption) (*GetRepositoriesByFullNameResponse, error)
 }
 
 type repositoryServiceClient struct {
@@ -189,6 +196,33 @@ func (c *repositoryServiceClient) DeleteRepositoryByFullName(ctx context.Context
 	return out, nil
 }
 
+func (c *repositoryServiceClient) DeprecateRepositoryByName(ctx context.Context, in *DeprecateRepositoryByNameRequest, opts ...grpc.CallOption) (*DeprecateRepositoryByNameResponse, error) {
+	out := new(DeprecateRepositoryByNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/DeprecateRepositoryByName", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryServiceClient) UndeprecateRepositoryByName(ctx context.Context, in *UndeprecateRepositoryByNameRequest, opts ...grpc.CallOption) (*UndeprecateRepositoryByNameResponse, error) {
+	out := new(UndeprecateRepositoryByNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/UndeprecateRepositoryByName", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryServiceClient) GetRepositoriesByFullName(ctx context.Context, in *GetRepositoriesByFullNameRequest, opts ...grpc.CallOption) (*GetRepositoriesByFullNameResponse, error) {
+	out := new(GetRepositoriesByFullNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesByFullName", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RepositoryServiceServer is the server API for RepositoryService service.
 // All implementations should embed UnimplementedRepositoryServiceServer
 // for forward compatibility
@@ -219,6 +253,13 @@ type RepositoryServiceServer interface {
 	DeleteRepository(context.Context, *DeleteRepositoryRequest) (*DeleteRepositoryResponse, error)
 	// DeleteRepositoryByFullName deletes a repository by full name.
 	DeleteRepositoryByFullName(context.Context, *DeleteRepositoryByFullNameRequest) (*DeleteRepositoryByFullNameResponse, error)
+	// DeprecateRepositoryByName deprecates the repository.
+	DeprecateRepositoryByName(context.Context, *DeprecateRepositoryByNameRequest) (*DeprecateRepositoryByNameResponse, error)
+	// UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
+	UndeprecateRepositoryByName(context.Context, *UndeprecateRepositoryByNameRequest) (*UndeprecateRepositoryByNameResponse, error)
+	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
+	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
+	GetRepositoriesByFullName(context.Context, *GetRepositoriesByFullNameRequest) (*GetRepositoriesByFullNameResponse, error)
 }
 
 // UnimplementedRepositoryServiceServer should be embedded to have forward compatible implementations.
@@ -263,6 +304,15 @@ func (UnimplementedRepositoryServiceServer) DeleteRepository(context.Context, *D
 }
 func (UnimplementedRepositoryServiceServer) DeleteRepositoryByFullName(context.Context, *DeleteRepositoryByFullNameRequest) (*DeleteRepositoryByFullNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteRepositoryByFullName not implemented")
+}
+func (UnimplementedRepositoryServiceServer) DeprecateRepositoryByName(context.Context, *DeprecateRepositoryByNameRequest) (*DeprecateRepositoryByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeprecateRepositoryByName not implemented")
+}
+func (UnimplementedRepositoryServiceServer) UndeprecateRepositoryByName(context.Context, *UndeprecateRepositoryByNameRequest) (*UndeprecateRepositoryByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UndeprecateRepositoryByName not implemented")
+}
+func (UnimplementedRepositoryServiceServer) GetRepositoriesByFullName(context.Context, *GetRepositoriesByFullNameRequest) (*GetRepositoriesByFullNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRepositoriesByFullName not implemented")
 }
 
 // UnsafeRepositoryServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -510,6 +560,60 @@ func _RepositoryService_DeleteRepositoryByFullName_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryService_DeprecateRepositoryByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeprecateRepositoryByNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).DeprecateRepositoryByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/DeprecateRepositoryByName",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).DeprecateRepositoryByName(ctx, req.(*DeprecateRepositoryByNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryService_UndeprecateRepositoryByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UndeprecateRepositoryByNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).UndeprecateRepositoryByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/UndeprecateRepositoryByName",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).UndeprecateRepositoryByName(ctx, req.(*UndeprecateRepositoryByNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryService_GetRepositoriesByFullName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRepositoriesByFullNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).GetRepositoriesByFullName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoriesByFullName",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).GetRepositoriesByFullName(ctx, req.(*GetRepositoriesByFullNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RepositoryService_ServiceDesc is the grpc.ServiceDesc for RepositoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -568,6 +672,18 @@ var RepositoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteRepositoryByFullName",
 			Handler:    _RepositoryService_DeleteRepositoryByFullName_Handler,
+		},
+		{
+			MethodName: "DeprecateRepositoryByName",
+			Handler:    _RepositoryService_DeprecateRepositoryByName_Handler,
+		},
+		{
+			MethodName: "UndeprecateRepositoryByName",
+			Handler:    _RepositoryService_UndeprecateRepositoryByName_Handler,
+		},
+		{
+			MethodName: "GetRepositoriesByFullName",
+			Handler:    _RepositoryService_GetRepositoriesByFullName_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

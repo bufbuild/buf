@@ -93,7 +93,7 @@ type GetModulePinsRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	ModuleReferences []*v1alpha1.ModuleReference `protobuf:"bytes,1,rep,name=module_references,json=moduleReferences,proto3" json:"module_references,omitempty"`
-	// current_module_pins allows for partial depenency updates by letting clients
+	// current_module_pins allows for partial dependency updates by letting clients
 	// send a request with the pins for their current module and only the
 	// identities of the dependencies they want to update in module_references.
 	//
