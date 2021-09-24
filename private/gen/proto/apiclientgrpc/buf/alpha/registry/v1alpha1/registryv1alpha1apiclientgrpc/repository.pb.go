@@ -311,7 +311,7 @@ func (s *repositoryService) DeleteRepositoryByFullName(ctx context.Context, full
 // DeprecateRepositoryByName deprecates the repository.
 func (s *repositoryService) DeprecateRepositoryByName(
 	ctx context.Context,
-	owner string,
+	ownerName string,
 	repositoryName string,
 	deprecationMessage string,
 ) (repository *v1alpha1.Repository, _ error) {
@@ -321,7 +321,7 @@ func (s *repositoryService) DeprecateRepositoryByName(
 	response, err := s.client.DeprecateRepositoryByName(
 		ctx,
 		&v1alpha1.DeprecateRepositoryByNameRequest{
-			Owner:              owner,
+			OwnerName:          ownerName,
 			RepositoryName:     repositoryName,
 			DeprecationMessage: deprecationMessage,
 		},
@@ -354,7 +354,8 @@ func (s *repositoryService) UndeprecateRepositoryByName(
 	return response.Repository, nil
 }
 
-// GetRepositoriesByFullName gets repositories by full name.
+// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
+// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
 func (s *repositoryService) GetRepositoriesByFullName(ctx context.Context, fullNames []string) (repositories []*v1alpha1.Repository, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)

@@ -78,7 +78,8 @@ service RepositoryService {
   rpc DeprecateRepositoryByName(DeprecateRepositoryByNameRequest) returns(DeprecateRepositoryByNameResponse);
   // UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
   rpc UndeprecateRepositoryByName(UndeprecateRepositoryByNameRequest) returns(UndeprecateRepositoryByNameResponse);
-  // GetRepositoriesByFullName gets repositories by full name.
+  // GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
+  // Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
   rpc GetRepositoriesByFullName(GetRepositoriesByFullNameRequest) returns (GetRepositoriesByFullNameResponse);
 }
 
@@ -222,8 +223,10 @@ message DeleteRepositoryByFullNameRequest {
 message DeleteRepositoryByFullNameResponse {}
 
 message DeprecateRepositoryByNameRequest{
-  string owner = 1;
+  string owner_name = 1;
   string repository_name = 2;
+  // A message shown along with the deprecation warning for this repository.
+  // It must be a utf8 encoded string containing 280 or fewer characters.
   string deprecation_message = 3;
 }
 

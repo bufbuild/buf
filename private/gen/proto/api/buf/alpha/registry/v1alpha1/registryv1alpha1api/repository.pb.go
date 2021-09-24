@@ -95,7 +95,7 @@ type RepositoryService interface {
 	// DeprecateRepositoryByName deprecates the repository.
 	DeprecateRepositoryByName(
 		ctx context.Context,
-		owner string,
+		ownerName string,
 		repositoryName string,
 		deprecationMessage string,
 	) (repository *v1alpha1.Repository, err error)
@@ -105,6 +105,7 @@ type RepositoryService interface {
 		owner string,
 		repositoryName string,
 	) (repository *v1alpha1.Repository, err error)
-	// GetRepositoriesByFullName gets repositories by full name.
+	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
+	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
 	GetRepositoriesByFullName(ctx context.Context, fullNames []string) (repositories []*v1alpha1.Repository, err error)
 }

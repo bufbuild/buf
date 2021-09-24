@@ -66,7 +66,8 @@ type RepositoryServiceClient interface {
 	DeprecateRepositoryByName(ctx context.Context, in *DeprecateRepositoryByNameRequest, opts ...grpc.CallOption) (*DeprecateRepositoryByNameResponse, error)
 	// UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
 	UndeprecateRepositoryByName(ctx context.Context, in *UndeprecateRepositoryByNameRequest, opts ...grpc.CallOption) (*UndeprecateRepositoryByNameResponse, error)
-	// GetRepositoriesByFullName gets repositories by full name.
+	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
+	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
 	GetRepositoriesByFullName(ctx context.Context, in *GetRepositoriesByFullNameRequest, opts ...grpc.CallOption) (*GetRepositoriesByFullNameResponse, error)
 }
 
@@ -256,7 +257,8 @@ type RepositoryServiceServer interface {
 	DeprecateRepositoryByName(context.Context, *DeprecateRepositoryByNameRequest) (*DeprecateRepositoryByNameResponse, error)
 	// UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
 	UndeprecateRepositoryByName(context.Context, *UndeprecateRepositoryByNameRequest) (*UndeprecateRepositoryByNameResponse, error)
-	// GetRepositoriesByFullName gets repositories by full name.
+	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
+	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
 	GetRepositoriesByFullName(context.Context, *GetRepositoriesByFullNameRequest) (*GetRepositoriesByFullNameResponse, error)
 }
 
