@@ -235,7 +235,7 @@ message DeprecateRepositoryByNameResponse{
 }
 
 message UndeprecateRepositoryByNameRequest{
-  string owner = 1;
+  string owner_name = 1;
   string repository_name = 2;
 }
 

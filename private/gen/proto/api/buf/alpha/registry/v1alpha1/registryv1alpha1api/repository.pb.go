@@ -102,7 +102,7 @@ type RepositoryService interface {
 	// UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
 	UndeprecateRepositoryByName(
 		ctx context.Context,
-		owner string,
+		ownerName string,
 		repositoryName string,
 	) (repository *v1alpha1.Repository, err error)
 	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.

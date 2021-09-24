@@ -335,7 +335,7 @@ func (s *repositoryService) DeprecateRepositoryByName(
 // UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
 func (s *repositoryService) UndeprecateRepositoryByName(
 	ctx context.Context,
-	owner string,
+	ownerName string,
 	repositoryName string,
 ) (repository *v1alpha1.Repository, _ error) {
 	if s.contextModifier != nil {
@@ -344,7 +344,7 @@ func (s *repositoryService) UndeprecateRepositoryByName(
 	response, err := s.client.UndeprecateRepositoryByName(
 		ctx,
 		&v1alpha1.UndeprecateRepositoryByNameRequest{
-			Owner:          owner,
+			OwnerName:      ownerName,
 			RepositoryName: repositoryName,
 		},
 	)
