@@ -597,6 +597,7 @@ func WithModuleFormat(format string, options ...ModuleFormatOption) RefParserOpt
 }
 
 // WithSingleFileFormat attaches the given format as a single file format.
+// The single file ref format is only allowed if the option for the parser is given. Otherwise this is a nop.
 //
 // It is up to the user to not incorrectly attach a format twice.
 func WithSingleFileFormat(format string, options ...SingleFileFormatOption) RefParserOption {

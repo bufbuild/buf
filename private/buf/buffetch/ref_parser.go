@@ -34,50 +34,65 @@ type refParser struct {
 	fetchRefParser internal.RefParser
 }
 
-func newRefParser(logger *zap.Logger) *refParser {
+func newRefParser(logger *zap.Logger, options ...NewRefParserOption) *refParser {
+	newRefParserOptions := &newRefParserOption{}
+	for _, option := range options {
+		option(newRefParserOptions)
+	}
+	fetchRefParserOptions := []internal.RefParserOption{
+		internal.WithRawRefProcessor(newRawRefProcessor(&rawRefProcessorConfig{
+			allowSingleFileRef: newRefParserOptions.allowSingleFileRef,
+		})),
+		internal.WithSingleFormat(formatBin),
+		internal.WithSingleFormat(formatJSON),
+		internal.WithSingleFormat(
+			formatBingz,
+			internal.WithSingleDefaultCompressionType(
+				internal.CompressionTypeGzip,
+			),
+		),
+		internal.WithSingleFormat(
+			formatJSONGZ,
+			internal.WithSingleDefaultCompressionType(
+				internal.CompressionTypeGzip,
+			),
+		),
+		internal.WithArchiveFormat(
+			formatTar,
+			internal.ArchiveTypeTar,
+		),
+		internal.WithArchiveFormat(
+			formatTargz,
+			internal.ArchiveTypeTar,
+			internal.WithArchiveDefaultCompressionType(
+				internal.CompressionTypeGzip,
+			),
+		),
+		internal.WithArchiveFormat(
+			formatZip,
+			internal.ArchiveTypeZip,
+		),
+		internal.WithGitFormat(formatGit),
+		internal.WithDirFormat(formatDir),
+		internal.WithModuleFormat(formatMod),
+	}
+	if newRefParserOptions.allowSingleFileRef {
+		fetchRefParserOptions = append(fetchRefParserOptions, internal.WithSingleFileFormat(formatSingleFile))
+	}
 	return &refParser{
 		logger: logger.Named("buffetch"),
 		fetchRefParser: internal.NewRefParser(
 			logger,
-			internal.WithRawRefProcessor(processRawRef),
-			internal.WithSingleFormat(formatBin),
-			internal.WithSingleFormat(formatJSON),
-			internal.WithSingleFormat(
-				formatBingz,
-				internal.WithSingleDefaultCompressionType(
-					internal.CompressionTypeGzip,
-				),
-			),
-			internal.WithSingleFormat(
-				formatJSONGZ,
-				internal.WithSingleDefaultCompressionType(
-					internal.CompressionTypeGzip,
-				),
-			),
-			internal.WithArchiveFormat(
-				formatTar,
-				internal.ArchiveTypeTar,
-			),
-			internal.WithArchiveFormat(
-				formatTargz,
-				internal.ArchiveTypeTar,
-				internal.WithArchiveDefaultCompressionType(
-					internal.CompressionTypeGzip,
-				),
-			),
-			internal.WithArchiveFormat(
-				formatZip,
-				internal.ArchiveTypeZip,
-			),
-			internal.WithGitFormat(formatGit),
-			internal.WithDirFormat(formatDir),
-			internal.WithModuleFormat(formatMod),
-			internal.WithSingleFileFormat(formatSingleFile),
+			fetchRefParserOptions...,
 		),
 	}
 }
 
-func newImageRefParser(logger *zap.Logger) *refParser {
+func newImageRefParser(logger *zap.Logger, options ...NewRefParserOption) *refParser {
+	newRefParserOptions := &newRefParserOption{}
+	for _, option := range options {
+		option(newRefParserOptions)
+	}
 	return &refParser{
 		logger: logger.Named("buffetch"),
 		fetchRefParser: internal.NewRefParser(
@@ -101,7 +116,11 @@ func newImageRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newSourceRefParser(logger *zap.Logger) *refParser {
+func newSourceRefParser(logger *zap.Logger, options ...NewRefParserOption) *refParser {
+	newRefParserOptions := &newRefParserOption{}
+	for _, option := range options {
+		option(newRefParserOptions)
+	}
 	return &refParser{
 		logger: logger.Named("buffetch"),
 		fetchRefParser: internal.NewRefParser(
@@ -128,7 +147,11 @@ func newSourceRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newModuleRefParser(logger *zap.Logger) *refParser {
+func newModuleRefParser(logger *zap.Logger, options ...NewRefParserOption) *refParser {
+	newRefParserOptions := &newRefParserOption{}
+	for _, option := range options {
+		option(newRefParserOptions)
+	}
 	return &refParser{
 		logger: logger.Named("buffetch"),
 		fetchRefParser: internal.NewRefParser(
@@ -139,7 +162,11 @@ func newModuleRefParser(logger *zap.Logger) *refParser {
 	}
 }
 
-func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
+func newSourceOrModuleRefParser(logger *zap.Logger, options ...NewRefParserOption) *refParser {
+	newRefParserOptions := &newRefParserOption{}
+	for _, option := range options {
+		option(newRefParserOptions)
+	}
 	return &refParser{
 		logger: logger.Named("buffetch"),
 		fetchRefParser: internal.NewRefParser(
@@ -312,64 +339,75 @@ func (a *refParser) checkDeprecated(parsedRef internal.ParsedRef) {
 	}
 }
 
-func processRawRef(rawRef *internal.RawRef) error {
-	// if format option is not set and path is "-", default to bin
-	var format string
-	var compressionType internal.CompressionType
-	if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
-		format = formatBin
-	} else {
-		switch filepath.Ext(rawRef.Path) {
-		case ".bin":
+type rawRefProcessorConfig struct {
+	allowSingleFileRef bool
+}
+
+func newRawRefProcessor(config *rawRefProcessorConfig) func(*internal.RawRef) error {
+	return func(rawRef *internal.RawRef) error {
+		// if format option is not set and path is "-", default to bin
+		var format string
+		var compressionType internal.CompressionType
+		if rawRef.Path == "-" || app.IsDevNull(rawRef.Path) || app.IsDevStdin(rawRef.Path) || app.IsDevStdout(rawRef.Path) {
 			format = formatBin
-		case ".json":
-			format = formatJSON
-		case ".tar":
-			format = formatTar
-		case ".zip":
-			format = formatZip
-		case ".gz":
-			compressionType = internal.CompressionTypeGzip
-			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+		} else {
+			switch filepath.Ext(rawRef.Path) {
 			case ".bin":
 				format = formatBin
 			case ".json":
 				format = formatJSON
 			case ".tar":
 				format = formatTar
-			default:
-				return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
-			}
-		case ".zst":
-			compressionType = internal.CompressionTypeZstd
-			switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
-			case ".bin":
-				format = formatBin
-			case ".json":
-				format = formatJSON
-			case ".tar":
+			case ".zip":
+				format = formatZip
+			case ".gz":
+				compressionType = internal.CompressionTypeGzip
+				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+				case ".bin":
+					format = formatBin
+				case ".json":
+					format = formatJSON
+				case ".tar":
+					format = formatTar
+				default:
+					return fmt.Errorf("path %q had .gz extension with unknown format", rawRef.Path)
+				}
+			case ".zst":
+				compressionType = internal.CompressionTypeZstd
+				switch filepath.Ext(strings.TrimSuffix(rawRef.Path, filepath.Ext(rawRef.Path))) {
+				case ".bin":
+					format = formatBin
+				case ".json":
+					format = formatJSON
+				case ".tar":
+					format = formatTar
+				default:
+					return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
+				}
+			case ".tgz":
 				format = formatTar
+				compressionType = internal.CompressionTypeGzip
+			case ".git":
+				format = formatGit
+				// TODO(doria): only if the option is turned on...
+			case ".proto":
+				if config.allowSingleFileRef {
+					format = formatSingleFile
+					break
+				}
+				fallthrough
 			default:
-				return fmt.Errorf("path %q had .zst extension with unknown format", rawRef.Path)
-			}
-		case ".tgz":
-			format = formatTar
-			compressionType = internal.CompressionTypeGzip
-		case ".git":
-			format = formatGit
-		case ".proto":
-			format = formatSingleFile
-		default:
-			var err error
-			format, err = assumeModuleOrDir(rawRef.Path)
-			if err != nil {
-				return err
+				var err error
+				format, err = assumeModuleOrDir(rawRef.Path)
+				if err != nil {
+					return err
+				}
 			}
 		}
+		rawRef.Format = format
+		rawRef.CompressionType = compressionType
+		return nil
 	}
-	rawRef.Format = format
-	rawRef.CompressionType = compressionType
-	return nil
 }
 
 func processRawRefSource(rawRef *internal.RawRef) error {
