@@ -92,4 +92,20 @@ type RepositoryService interface {
 	DeleteRepository(ctx context.Context, id string) (err error)
 	// DeleteRepositoryByFullName deletes a repository by full name.
 	DeleteRepositoryByFullName(ctx context.Context, fullName string) (err error)
+	// DeprecateRepositoryByName deprecates the repository.
+	DeprecateRepositoryByName(
+		ctx context.Context,
+		ownerName string,
+		repositoryName string,
+		deprecationMessage string,
+	) (repository *v1alpha1.Repository, err error)
+	// UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
+	UndeprecateRepositoryByName(
+		ctx context.Context,
+		ownerName string,
+		repositoryName string,
+	) (repository *v1alpha1.Repository, err error)
+	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
+	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
+	GetRepositoriesByFullName(ctx context.Context, fullNames []string) (repositories []*v1alpha1.Repository, err error)
 }
