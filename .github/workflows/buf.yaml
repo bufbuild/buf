@@ -24,7 +24,7 @@ jobs:
         if: success()
         with:
           version: 0.56.0
-      - uses: bufbuild/buf-breaking-action@v0.4.0
+      - uses: bufbuild/buf-breaking-action@v1.0.0
         if: success()
         with:
           against: buf.build/bufbuild/buf
