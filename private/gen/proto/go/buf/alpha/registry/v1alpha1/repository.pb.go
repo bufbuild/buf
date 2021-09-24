@@ -1705,7 +1705,7 @@ type DeprecateRepositoryByNameRequest struct {
 	OwnerName      string `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
 	RepositoryName string `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
 	// A message shown along with the deprecation warning for this repository.
-	// It must be a utf8 encoded string containing 280 or fewer characters.
+	// It must be a utf8 encoded string containing 256 or fewer characters.
 	DeprecationMessage string `protobuf:"bytes,3,opt,name=deprecation_message,json=deprecationMessage,proto3" json:"deprecation_message,omitempty"`
 }
 
