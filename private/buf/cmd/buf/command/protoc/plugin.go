@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type pluginInfo struct {
@@ -48,12 +49,14 @@ func executePlugin(
 	images []bufimage.Image,
 	pluginName string,
 	pluginInfo *pluginInfo,
-) error {
-	if err := appprotoos.NewGenerator(logger, storageosProvider).Generate(
+) (*pluginpb.CodeGeneratorResponse, error) {
+	response, err := appprotoos.NewGenerator(
+		logger,
+		storageosProvider,
+	).Generate(
 		ctx,
 		container,
 		pluginName,
-		pluginInfo.Out,
 		bufimage.ImagesToCodeGeneratorRequests(
 			images,
 			strings.Join(pluginInfo.Opt, ","),
@@ -61,8 +64,9 @@ func executePlugin(
 			false,
 		),
 		appprotoos.GenerateWithPluginPath(pluginInfo.Path),
-	); err != nil {
-		return fmt.Errorf("--%s_out: %v", pluginName, err)
+	)
+	if err != nil {
+		return nil, fmt.Errorf("--%s_out: %v", pluginName, err)
 	}
-	return nil
+	return response, nil
 }

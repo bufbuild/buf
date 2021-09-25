@@ -101,9 +101,9 @@ func (r *responseWriter) SetFeatureProto3Optional() {
 	r.featureProto3Optional = true
 }
 
-// ToResponse turns the response writer into a Protobuf CodeGeneratorResponse.
+// toResponse turns the response writer into a Protobuf CodeGeneratorResponse.
 // It should be run after all writing to the response has finished.
-func (r *responseWriter) ToResponse() *pluginpb.CodeGeneratorResponse {
+func (r *responseWriter) toResponse() *pluginpb.CodeGeneratorResponse {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	response := &pluginpb.CodeGeneratorResponse{

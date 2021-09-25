@@ -16,19 +16,12 @@ package appprotoos
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
-	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
-	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -61,10 +54,9 @@ func (g *generator) Generate(
 	ctx context.Context,
 	container app.EnvStderrContainer,
 	pluginName string,
-	pluginOut string,
 	requests []*pluginpb.CodeGeneratorRequest,
 	options ...GenerateOption,
-) (retErr error) {
+) (_ *pluginpb.CodeGeneratorResponse, retErr error) {
 	generateOptions := newGenerateOptions()
 	for _, option := range options {
 		option(generateOptions)
@@ -76,121 +68,20 @@ func (g *generator) Generate(
 		appprotoexec.HandlerWithPluginPath(generateOptions.pluginPath),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	appprotoGenerator := appproto.NewGenerator(g.logger, handler)
-	switch filepath.Ext(pluginOut) {
-	case ".jar":
-		return g.generateZip(
-			ctx,
-			container,
-			appprotoGenerator,
-			pluginOut,
-			requests,
-			true,
-			generateOptions.createOutDirIfNotExists,
-		)
-	case ".zip":
-		return g.generateZip(
-			ctx,
-			container,
-			appprotoGenerator,
-			pluginOut,
-			requests,
-			false,
-			generateOptions.createOutDirIfNotExists,
-		)
-	default:
-		return g.generateDirectory(
-			ctx,
-			container,
-			appprotoGenerator,
-			pluginOut,
-			requests,
-			generateOptions.createOutDirIfNotExists,
-		)
-	}
-}
-
-func (g *generator) generateZip(
-	ctx context.Context,
-	container app.EnvStderrContainer,
-	appprotoGenerator appproto.Generator,
-	outFilePath string,
-	requests []*pluginpb.CodeGeneratorRequest,
-	includeManifest bool,
-	createOutDirIfNotExists bool,
-) (retErr error) {
-	outDirPath := filepath.Dir(outFilePath)
-	// OK to use os.Stat instead of os.Lstat here
-	fileInfo, err := os.Stat(outDirPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			if createOutDirIfNotExists {
-				if err := os.MkdirAll(outDirPath, 0755); err != nil {
-					return err
-				}
-			} else {
-				return err
-			}
-		}
-		return err
-	} else if !fileInfo.IsDir() {
-		return fmt.Errorf("not a directory: %s", outDirPath)
-	}
-	readWriteBucket := storagemem.NewReadWriteBucket()
-	if err := appprotoGenerator.Generate(ctx, container, readWriteBucket, requests); err != nil {
-		return err
-	}
-	if includeManifest {
-		if err := storage.PutPath(ctx, readWriteBucket, ManifestPath, ManifestContent); err != nil {
-			return err
-		}
-	}
-	file, err := os.Create(outFilePath)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
-	}()
-	// protoc does not compress
-	return storagearchive.Zip(ctx, readWriteBucket, file, false)
-}
-
-func (g *generator) generateDirectory(
-	ctx context.Context,
-	container app.EnvStderrContainer,
-	appprotoGenerator appproto.Generator,
-	outDirPath string,
-	requests []*pluginpb.CodeGeneratorRequest,
-	createOutDirIfNotExists bool,
-) error {
-	if createOutDirIfNotExists {
-		if err := os.MkdirAll(outDirPath, 0755); err != nil {
-			return err
-		}
-	}
-	// this checks that the directory exists
-	readWriteBucket, err := g.storageosProvider.NewReadWriteBucket(
-		outDirPath,
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return err
-	}
-	return appprotoGenerator.Generate(
+	return appproto.NewGenerator(
+		g.logger,
+		handler,
+	).Generate(
 		ctx,
 		container,
-		readWriteBucket,
 		requests,
-		appproto.GenerateWithInsertionPointReadBucket(readWriteBucket),
 	)
 }
 
 type generateOptions struct {
-	pluginPath              string
-	createOutDirIfNotExists bool
+	pluginPath string
 }
 
 func newGenerateOptions() *generateOptions {

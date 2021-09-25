@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
 	"github.com/stretchr/testify/assert"
@@ -1167,6 +1168,89 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 	})
 }
 
+func TestGenerate(t *testing.T) {
+	successTemplate := `
+version: v1
+plugins:
+  - name: insertion-point-receiver
+    out: .
+  - name: insertion-point-writer
+    out: .
+`
+	storageosProvider := storageos.NewProvider()
+	tempDir, readWriteBucket := testCopyReadBucketToTempDir(
+		context.Background(),
+		t,
+		storageosProvider,
+		storagemem.NewReadWriteBucket(),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"generate",
+		filepath.Join("testdata", "success"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		tempDir,
+	)
+	expectedOutput, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "generate", "insertion_point"))
+	require.NoError(t, err)
+	diff, err := storage.DiffBytes(context.Background(), expectedOutput, readWriteBucket)
+	require.NoError(t, err)
+	require.Empty(t, string(diff))
+}
+
+func TestGenerateInsertionPointFail(t *testing.T) {
+	successTemplate := `
+version: v1
+plugins:
+  - name: insertion-point-receiver
+    out: gen/proto/insertion
+  - name: insertion-point-writer
+    out: .
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: plugin insertion-point-writer: test.txt: does not exist`,
+		"generate",
+		filepath.Join("testdata", "success"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
+}
+
+func TestGenerateDuplicateFileFail(t *testing.T) {
+	successTemplate := `
+version: v1
+plugins:
+  - name: insertion-point-receiver
+    out: .
+  - name: insertion-point-receiver
+    out: .
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: file "test.txt" was generated multiple times: once by plugin "insertion-point-receiver" and again by plugin "insertion-point-receiver"`,
+		"generate",
+		filepath.Join("testdata", "success"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
+}
+
 func testMigrateV1Beta1Diff(t *testing.T, storageosProvider storageos.Provider, scenario string, expectedStderr string) {
 	// Copy test setup to temporary directory to avoid writing to filesystem
 	inputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "success", scenario, "input"))
@@ -1316,6 +1400,7 @@ func testRun(
 			return map[string]string{
 				useEnvVar(use, "CONFIG_DIR"): "testdata/config",
 				useEnvVar(use, "CACHE_DIR"):  "cache",
+				useEnvVar(use, "PATH"):       os.Getenv("PATH"),
 			}
 		},
 		stdin,

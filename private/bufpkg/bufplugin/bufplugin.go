@@ -15,8 +15,6 @@
 package bufplugin
 
 import (
-	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -25,9 +23,7 @@ import (
 
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
-	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/encoding"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const (
@@ -243,100 +239,6 @@ func ParseTemplateVersionConfig(config string) (*TemplateVersionConfig, error) {
 		templateVersionConfig.PluginVersions = append(templateVersionConfig.PluginVersions, PluginVersion(pluginVersion))
 	}
 	return templateVersionConfig, nil
-}
-
-// File represents a generated file, and tracks the plugin
-// that originally generated it (i.e. if insertion points
-// are applied to this File, the PluginName will be unchanged).
-type File struct {
-	Name       string
-	Content    []byte
-	PluginName string
-}
-
-// PluginResponse encapsulates a CodeGeneratorResponse,
-// along with the name of the plugin that created it.
-type PluginResponse struct {
-	Response   *pluginpb.CodeGeneratorResponse
-	PluginName string
-}
-
-// NewPluginResponse retruns a new *PluginResponse.
-func NewPluginResponse(response *pluginpb.CodeGeneratorResponse, pluginName string) *PluginResponse {
-	return &PluginResponse{
-		Response:   response,
-		PluginName: pluginName,
-	}
-}
-
-// MergedPluginResult holds the files for a plugin result.
-type MergedPluginResult struct {
-	Files []*File
-}
-
-// MergeInsertionPoints traverses the plugin results and merges any insertion points present in any responses.
-// The order of inserts depends on the order of the input plugins. The returned results are in the same order
-// as the input plugin results.
-func MergeInsertionPoints(pluginResponses []*PluginResponse) ([]*MergedPluginResult, error) {
-	allFiles := make(map[string]*File)
-	results := make([]*MergedPluginResult, len(pluginResponses))
-	for i, pluginResponse := range pluginResponses {
-		response := pluginResponse.Response
-		pluginName := pluginResponse.PluginName
-		if response.Error != nil {
-			return nil, fmt.Errorf("unexpected response error: %s", *response.Error)
-		}
-		var files []*File
-		for _, generatedFile := range response.File {
-			fileName := generatedFile.GetName()
-			insertionPoint := generatedFile.GetInsertionPoint()
-			if insertionPoint != "" {
-				parentFile, ok := allFiles[fileName]
-				if !ok {
-					return nil, fmt.Errorf(
-						"plugin %q requested insertion point in file %q which does not exist",
-						pluginName,
-						fileName,
-					)
-				}
-				newFileContents, err := appproto.ApplyInsertionPoint(
-					context.Background(),
-					generatedFile,
-					bytes.NewBuffer(parentFile.Content),
-				)
-				if err != nil {
-					return nil, fmt.Errorf(
-						"failed to apply insertion point %q in file %q for plugin %q: %w",
-						insertionPoint,
-						fileName,
-						pluginName,
-						err,
-					)
-				}
-				allFiles[fileName].Content = newFileContents
-				continue
-			}
-			if previousFile, ok := allFiles[fileName]; ok {
-				return nil, fmt.Errorf(
-					"file %q was generated multiple times: once by plugin %q and again by plugin %q",
-					fileName,
-					previousFile.PluginName,
-					pluginName,
-				)
-			}
-			file := &File{
-				Name:       fileName,
-				Content:    []byte(generatedFile.GetContent()),
-				PluginName: pluginName,
-			}
-			files = append(files, file)
-			allFiles[fileName] = file
-		}
-		results[i] = &MergedPluginResult{
-			Files: files,
-		}
-	}
-	return results, nil
 }
 
 type externalTemplateConfig struct {

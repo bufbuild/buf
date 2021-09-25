@@ -17,6 +17,7 @@ package appprotoos
 
 import (
 	"context"
+	"io"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -24,19 +25,19 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
+// Generator is used to generate code to the OS filesystem.
 type Generator interface {
 	// Generate generates to the os filesystem, switching on the file extension.
 	// If there is a .jar extension, this generates a jar. If there is a .zip
 	// extension, this generates a zip. If there is no extension, this outputs
-	// to the directory.
+	// to the directory. The corresponding CodeGeneratorResponse written is returned.
 	Generate(
 		ctx context.Context,
 		container app.EnvStderrContainer,
 		pluginName string,
-		pluginOut string,
 		requests []*pluginpb.CodeGeneratorRequest,
 		options ...GenerateOption,
-	) error
+	) (*pluginpb.CodeGeneratorResponse, error)
 }
 
 // NewGenerator returns a new Generator.
@@ -58,10 +59,43 @@ func GenerateWithPluginPath(pluginPath string) GenerateOption {
 	}
 }
 
-// GenerateWithCreateOutDirIfNotExists returns a new GenerateOption that creates
+// BucketResponseWriter writes CodeGeneratorResponses to the OS filesystem.
+type BucketResponseWriter interface {
+	// Close writes all of the responses to disk. No further calls can be
+	// made to the BucketResponseWriter after this call.
+	io.Closer
+
+	// AddResponse adds the response to the writer, switching on the file extension.
+	// If there is a .jar extension, this generates a jar. If there is a .zip
+	// extension, this generates a zip. If there is no extension, this outputs
+	// to the directory.
+	AddResponse(
+		ctx context.Context,
+		response *pluginpb.CodeGeneratorResponse,
+		pluginOut string,
+	) error
+}
+
+// NewBucketResponseWriter returns a new BucketResponseWriter.
+func NewBucketResponseWriter(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	options ...BucketResponseWriterOption,
+) BucketResponseWriter {
+	return newBucketResponseWriter(
+		logger,
+		storageosProvider,
+		options...,
+	)
+}
+
+// BucketResponseWriterOption is an option for the BucketResponseWriter.
+type BucketResponseWriterOption func(*bucketResponseWriterOptions)
+
+// BucketResponseWriterWithCreateOutDirIfNotExists returns a new BucketResponseWriterOption that creates
 // the directory if it does not exist.
-func GenerateWithCreateOutDirIfNotExists() GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.createOutDirIfNotExists = true
+func BucketResponseWriterWithCreateOutDirIfNotExists() BucketResponseWriterOption {
+	return func(bucketResponseWriterOptions *bucketResponseWriterOptions) {
+		bucketResponseWriterOptions.createOutDirIfNotExists = true
 	}
 }
