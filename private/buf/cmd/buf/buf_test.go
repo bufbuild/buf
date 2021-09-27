@@ -69,6 +69,8 @@ func TestSuccess6(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 1, ``, "lint", "--input", filepath.Join("testdata", "success"))
 	testRunStdout(t, nil, 0, ``, "lint", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "lint", "--input", filepath.Join("testdata", "success", "buf", "buf.proto"))
+	testRunStdout(t, nil, 0, ``, "lint", filepath.Join("testdata", "success", "buf", "buf.proto"))
 }
 
 func TestSuccessProfile1(t *testing.T) {
@@ -188,6 +190,24 @@ func TestFail5(t *testing.T) {
 		"lint",
 		filepath.Join("testdata", "fail"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"lint",
+		"--input",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		"lint",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+	)
 }
 
 func TestFail6(t *testing.T) {
@@ -212,6 +232,28 @@ func TestFail6(t *testing.T) {
 		"", // stderr should be empty
 		"lint",
 		filepath.Join("testdata", "fail"),
+		"--path",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"lint",
+		"--input",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+		"--path",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"", // stdout should be empty
+		filepath.FromSlash(`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`),
+		"lint",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 	)
@@ -268,6 +310,27 @@ func TestFail7(t *testing.T) {
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		filepath.Join("testdata"),
+		"--config",
+		`{"version":"v1","lint":{"use":["BASIC"]}}`,
+	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"lint",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+		"--input-config",
+		`{"version":"v1","lint":{"use":["BASIC"]}}`,
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		"lint",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		"--config",
 		`{"version":"v1","lint":{"use":["BASIC"]}}`,
 	)
@@ -343,6 +406,14 @@ func TestFail10(t *testing.T) {
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf3.proto"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"",
+		"lint",
+		filepath.Join("testdata", "fail2", "buf", "buf3.proto"),
+	)
 }
 
 func TestFail11(t *testing.T) {
@@ -367,6 +438,14 @@ func TestFail11(t *testing.T) {
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
 		filepath.Join("testdata"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
+		"lint",
+		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
 	)
 }
 
