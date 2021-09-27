@@ -161,12 +161,12 @@ func NewDirRef(path string) (DirRef, error) {
 	return newDirRef("", path)
 }
 
-// SingleFileRef is a file reference that incorporates a BucketRef ..
-type SingleFileRef interface {
+// ProtoFileRef is a file reference that incorporates a BucketRef ..
+type ProtoFileRef interface {
 	BucketRef
 	// Path is the normalized path to the file reference.
 	Path() string
-	singleFileRef()
+	protoFileRef()
 }
 
 // GitRef is a git reference.
@@ -301,8 +301,9 @@ func NewDirectParsedDirRef(format string, path string) ParsedDirRef {
 	return newDirectDirRef(format, path)
 }
 
-type ParsedSingleFileRef interface {
-	SingleFileRef
+// ParsedProtoFileRef is a parsed ProtoFileRef.
+type ParsedProtoFileRef interface {
+	ProtoFileRef
 	HasFormat
 }
 
@@ -596,21 +597,21 @@ func WithModuleFormat(format string, options ...ModuleFormatOption) RefParserOpt
 	}
 }
 
-// WithSingleFileFormat attaches the given format as a single file format.
+// WithProtoFileFormat attaches the given format as a single file format.
 // The single file ref format is only allowed if the option for the parser is given. Otherwise this is a nop.
 //
 // It is up to the user to not incorrectly attach a format twice.
-func WithSingleFileFormat(format string, options ...SingleFileFormatOption) RefParserOption {
+func WithProtoFileFormat(format string, options ...ProtoFileFormatOption) RefParserOption {
 	return func(refParser *refParser) {
 		format = normalizeFormat(format)
 		if format == "" {
 			return
 		}
-		singleFileFormatInfo := newSingleFileFormatInfo()
+		protoFileFormatInfo := newProtoFileFormatInfo()
 		for _, option := range options {
-			option(singleFileFormatInfo)
+			option(protoFileFormatInfo)
 		}
-		refParser.singleFileFormatToInfo[format] = singleFileFormatInfo
+		refParser.protoFileFormatToInfo[format] = protoFileFormatInfo
 	}
 }
 
@@ -648,8 +649,8 @@ type ModuleFormatOption func(*moduleFormatInfo)
 // ReaderOption is a Reader option.
 type ReaderOption func(*reader)
 
-// SingleFileFormatOption is a single file format option.
-type SingleFileFormatOption func(*singleFileFormatInfo)
+// ProtoFileFormatOption is a single file format option.
+type ProtoFileFormatOption func(*protoFileFormatInfo)
 
 // WithReaderHTTP enables HTTP.
 func WithReaderHTTP(httpClient *http.Client, httpAuthenticator httpauth.Authenticator) ReaderOption {

@@ -15,29 +15,29 @@
 package internal
 
 var (
-	_ ParsedSingleFileRef = &singleFileRef{}
+	_ ParsedProtoFileRef = &protoFileRef{}
 )
 
-type singleFileRef struct {
+type protoFileRef struct {
 	format string
 	path   string
 }
 
-func newSingleFileRef(format string, path string) *singleFileRef {
-	return &singleFileRef{
+func newProtoFileRef(format string, path string) *protoFileRef {
+	return &protoFileRef{
 		format: format,
 		path:   path,
 	}
 }
 
-func (s *singleFileRef) Format() string {
+func (s *protoFileRef) Format() string {
 	return s.format
 }
 
-func (s *singleFileRef) Path() string {
+func (s *protoFileRef) Path() string {
 	return s.path
 }
 
-func (*singleFileRef) ref()           {}
-func (*singleFileRef) bucketRef()     {}
-func (*singleFileRef) singleFileRef() {}
+func (*protoFileRef) ref()          {}
+func (*protoFileRef) bucketRef()    {}
+func (*protoFileRef) protoFileRef() {}

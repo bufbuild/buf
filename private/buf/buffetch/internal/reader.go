@@ -139,7 +139,7 @@ func (r *reader) GetBucket(
 			t,
 			getBucketOptions.terminateFileNames,
 		)
-	case SingleFileRef:
+	case ProtoFileRef:
 		return r.getSingleFileBucket(
 			ctx,
 			container,
@@ -359,14 +359,14 @@ func (r *reader) getDirBucket(
 func (r *reader) getSingleFileBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	singleFileRef SingleFileRef,
+	protoFileRef ProtoFileRef,
 	terminateFileNames []string,
 ) (ReadBucketCloser, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
 	terminateFileNames = append(terminateFileNames, bufconfig.ExternalConfigV1FilePath)
-	dirPath := filepath.Dir(singleFileRef.Path())
+	dirPath := filepath.Dir(protoFileRef.Path())
 
 	terminateFileDirectoryAbsPath, err := findTerminateFileDirectoryPathFromOS(dirPath, terminateFileNames)
 	if err != nil {
@@ -391,10 +391,10 @@ func (r *reader) getSingleFileBucket(
 		}
 	}
 	if terminateFileDirectoryAbsPath == "" {
-		return nil, fmt.Errorf(`cannot resolve valid module or workspace for reference: "%s"`, singleFileRef.Path())
+		return nil, fmt.Errorf(`cannot resolve valid module or workspace for reference: "%s"`, protoFileRef.Path())
 	}
 	// If the terminate file exists, we need to determine the relative path from the
-	// terminateFileDirectoryAbsPath to the target singleFileRef.Path().
+	// terminateFileDirectoryAbsPath to the target protoFileRef.Path().
 	wd, err := osextended.Getwd()
 	if err != nil {
 		return nil, err
@@ -403,16 +403,16 @@ func (r *reader) getSingleFileBucket(
 	if err != nil {
 		return nil, err
 	}
-	singleFileRefAbsPath, err := normalpath.NormalizeAndAbsolute(dirPath)
+	protoFileRefAbsPath, err := normalpath.NormalizeAndAbsolute(dirPath)
 	if err != nil {
 		return nil, err
 	}
-	singleFileRefRelativePath, err := normalpath.Rel(terminateFileDirectoryAbsPath, singleFileRefAbsPath)
+	protoFileRefRelativePath, err := normalpath.Rel(terminateFileDirectoryAbsPath, protoFileRefAbsPath)
 	if err != nil {
 		return nil, err
 	}
 	rootPath := terminateFileRelativePath
-	if filepath.IsAbs(singleFileRef.Path()) {
+	if filepath.IsAbs(protoFileRef.Path()) {
 		// If the input was provided as an absolute path,
 		// we preserve it by initializing the workspace
 		// bucket with an absolute path.
@@ -427,7 +427,7 @@ func (r *reader) getSingleFileBucket(
 	}
 	// Verify that the file ref path is a sub path of the terminate file root path
 	if _, err := r.storageosProvider.NewReadWriteBucket(
-		normalpath.Join(rootPath, singleFileRefRelativePath),
+		normalpath.Join(rootPath, protoFileRefRelativePath),
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	); err != nil {
 		return nil, err

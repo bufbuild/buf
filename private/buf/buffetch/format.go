@@ -35,8 +35,8 @@ const (
 	formatTargz = "targz"
 	// formatZip is the zip format.
 	formatZip = "zip"
-	// formatSingleFile is the single file format
-	formatSingleFile = "file"
+	// formatProtoFile is the proto file format
+	formatProtoFile = "protofile"
 )
 
 var (
@@ -56,7 +56,7 @@ var (
 	sourceFormats = []string{
 		formatDir,
 		formatGit,
-		formatSingleFile,
+		formatProtoFile,
 		formatTar,
 		formatTargz,
 		formatZip,
@@ -65,7 +65,7 @@ var (
 	sourceFormatsNotDeprecated = []string{
 		formatDir,
 		formatGit,
-		formatSingleFile,
+		formatProtoFile,
 		formatTar,
 		formatZip,
 	}
@@ -82,7 +82,7 @@ var (
 		formatDir,
 		formatGit,
 		formatMod,
-		formatSingleFile,
+		formatProtoFile,
 		formatTar,
 		formatTargz,
 		formatZip,
@@ -92,7 +92,7 @@ var (
 		formatDir,
 		formatGit,
 		formatMod,
-		formatSingleFile,
+		formatProtoFile,
 		formatTar,
 		formatZip,
 	}
@@ -105,7 +105,7 @@ var (
 		formatJSON,
 		formatJSONGZ,
 		formatMod,
-		formatSingleFile,
+		formatProtoFile,
 		formatTar,
 		formatTargz,
 		formatZip,
@@ -117,7 +117,7 @@ var (
 		formatGit,
 		formatJSON,
 		formatMod,
-		formatSingleFile,
+		formatProtoFile,
 		formatTar,
 		formatZip,
 	}

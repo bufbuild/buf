@@ -30,18 +30,19 @@ import (
 )
 
 type refParser struct {
-	logger         *zap.Logger
-	fetchRefParser internal.RefParser
+	allowProtoFileRef bool
+	logger            *zap.Logger
+	fetchRefParser    internal.RefParser
 }
 
-func newRefParser(logger *zap.Logger, options ...NewRefParserOption) *refParser {
-	newRefParserOptions := &newRefParserOption{}
+func newRefParser(logger *zap.Logger, options ...RefParserOption) *refParser {
+	refParser := &refParser{}
 	for _, option := range options {
-		option(newRefParserOptions)
+		option(refParser)
 	}
 	fetchRefParserOptions := []internal.RefParserOption{
 		internal.WithRawRefProcessor(newRawRefProcessor(&rawRefProcessorConfig{
-			allowSingleFileRef: newRefParserOptions.allowSingleFileRef,
+			allowProtoFileRef: refParser.allowProtoFileRef,
 		})),
 		internal.WithSingleFormat(formatBin),
 		internal.WithSingleFormat(formatJSON),
@@ -76,23 +77,18 @@ func newRefParser(logger *zap.Logger, options ...NewRefParserOption) *refParser 
 		internal.WithDirFormat(formatDir),
 		internal.WithModuleFormat(formatMod),
 	}
-	if newRefParserOptions.allowSingleFileRef {
-		fetchRefParserOptions = append(fetchRefParserOptions, internal.WithSingleFileFormat(formatSingleFile))
+	if refParser.allowProtoFileRef {
+		fetchRefParserOptions = append(fetchRefParserOptions, internal.WithProtoFileFormat(formatProtoFile))
 	}
-	return &refParser{
-		logger: logger.Named("buffetch"),
-		fetchRefParser: internal.NewRefParser(
-			logger,
-			fetchRefParserOptions...,
-		),
-	}
+	refParser.logger = logger.Named("buffetch")
+	refParser.fetchRefParser = internal.NewRefParser(
+		logger,
+		fetchRefParserOptions...,
+	)
+	return refParser
 }
 
-func newImageRefParser(logger *zap.Logger, options ...NewRefParserOption) *refParser {
-	newRefParserOptions := &newRefParserOption{}
-	for _, option := range options {
-		option(newRefParserOptions)
-	}
+func newImageRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
 		logger: logger.Named("buffetch"),
 		fetchRefParser: internal.NewRefParser(
@@ -116,11 +112,7 @@ func newImageRefParser(logger *zap.Logger, options ...NewRefParserOption) *refPa
 	}
 }
 
-func newSourceRefParser(logger *zap.Logger, options ...NewRefParserOption) *refParser {
-	newRefParserOptions := &newRefParserOption{}
-	for _, option := range options {
-		option(newRefParserOptions)
-	}
+func newSourceRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
 		logger: logger.Named("buffetch"),
 		fetchRefParser: internal.NewRefParser(
@@ -147,11 +139,7 @@ func newSourceRefParser(logger *zap.Logger, options ...NewRefParserOption) *refP
 	}
 }
 
-func newModuleRefParser(logger *zap.Logger, options ...NewRefParserOption) *refParser {
-	newRefParserOptions := &newRefParserOption{}
-	for _, option := range options {
-		option(newRefParserOptions)
-	}
+func newModuleRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
 		logger: logger.Named("buffetch"),
 		fetchRefParser: internal.NewRefParser(
@@ -162,11 +150,7 @@ func newModuleRefParser(logger *zap.Logger, options ...NewRefParserOption) *refP
 	}
 }
 
-func newSourceOrModuleRefParser(logger *zap.Logger, options ...NewRefParserOption) *refParser {
-	newRefParserOptions := &newRefParserOption{}
-	for _, option := range options {
-		option(newRefParserOptions)
-	}
+func newSourceOrModuleRefParser(logger *zap.Logger) *refParser {
 	return &refParser{
 		logger: logger.Named("buffetch"),
 		fetchRefParser: internal.NewRefParser(
@@ -219,7 +203,7 @@ func (a *refParser) GetRef(
 		return newSourceRef(t), nil
 	case internal.ParsedModuleRef:
 		return newModuleRef(t), nil
-	case internal.SingleFileRef:
+	case internal.ProtoFileRef:
 		return newSourceRef(t), nil
 	default:
 		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
@@ -340,7 +324,7 @@ func (a *refParser) checkDeprecated(parsedRef internal.ParsedRef) {
 }
 
 type rawRefProcessorConfig struct {
-	allowSingleFileRef bool
+	allowProtoFileRef bool
 }
 
 func newRawRefProcessor(config *rawRefProcessorConfig) func(*internal.RawRef) error {
@@ -389,11 +373,11 @@ func newRawRefProcessor(config *rawRefProcessorConfig) func(*internal.RawRef) er
 				compressionType = internal.CompressionTypeGzip
 			case ".git":
 				format = formatGit
-				// This only applies if the option accept `SingleFileRef` is passed in, otherwise
+				// This only applies if the option accept `ProtoFileRef` is passed in, otherwise
 				// it falls through to the `default` case.
 			case ".proto":
-				if config.allowSingleFileRef {
-					format = formatSingleFile
+				if config.allowProtoFileRef {
+					format = formatProtoFile
 					break
 				}
 				fallthrough
