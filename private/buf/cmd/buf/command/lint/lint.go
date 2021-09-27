@@ -207,7 +207,8 @@ func run(
 		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
 	}
 
-	// TODO(doria): test the file annotations filtering here
+	// Since we are passing in the option to support `SingleFileRef`, we need to filter the annotions
+	// based on the input as well as the `--path` flags.
 	var filteredFileAnnotations []bufanalysis.FileAnnotation
 	for _, fileAnnotation := range allFileAnnotations {
 		if fileAnnotation.FileInfo() != nil {

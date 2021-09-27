@@ -389,7 +389,8 @@ func newRawRefProcessor(config *rawRefProcessorConfig) func(*internal.RawRef) er
 				compressionType = internal.CompressionTypeGzip
 			case ".git":
 				format = formatGit
-				// TODO(doria): only if the option is turned on...
+				// This only applies if the option accept `SingleFileRef` is passed in, otherwise
+				// it falls through to the `default` case.
 			case ".proto":
 				if config.allowSingleFileRef {
 					format = formatSingleFile

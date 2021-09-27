@@ -391,8 +391,7 @@ func (r *reader) getSingleFileBucket(
 		}
 	}
 	if terminateFileDirectoryAbsPath == "" {
-		// TODO(doria): determine the correct error to return here
-		return nil, fmt.Errorf("cannot resolve valid workspace for file reference: %s", singleFileRef.Path())
+		return nil, fmt.Errorf(`cannot resolve valid module or workspace for reference: "%s"`, singleFileRef.Path())
 	}
 	// If the terminate file exists, we need to determine the relative path from the
 	// terminateFileDirectoryAbsPath to the target singleFileRef.Path().
