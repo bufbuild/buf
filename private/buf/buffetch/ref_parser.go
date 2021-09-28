@@ -377,6 +377,10 @@ func newRawRefProcessor(config *rawRefProcessorConfig) func(*internal.RawRef) er
 				// it falls through to the `default` case.
 			case ".proto":
 				if config.allowProtoFileRef {
+					fileInfo, err := os.Stat(rawRef.Path)
+					if err != nil || fileInfo.IsDir() {
+						return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)
+					}
 					format = formatProtoFile
 					break
 				}
