@@ -739,18 +739,23 @@ type GetBucketOption func(*getBucketOptions)
 
 // WithGetBucketTerminateFileNames only applies if subdir is specified.
 //
+// The terminate files are organised as a slice of slices of file names.
+// Priority will be given to the first slice of terminate file names, and then
+// the next, etc. This allows the `internal` layer to process the terminate file
+// hierarchies without dependencies on the origin of the termiante files.
+//
 // This says that if given a subdir, ascend directories until you reach
 // a file one of these names, and if you do, the returned bucket will be
 // for the directory with this filename, while SubDirPath on the
 // returned bucket will be set to the original subdir relative
 // to the terminate file.
 //
-// This is used for workspaces. So if you have i.e. "proto/foo"
+// This is used for workspaces and modules. So if you have i.e. "proto/foo"
 // subdir, and terminate file "proto/buf.work.yaml", the returned bucket will
 // be for "proto", and the SubDirPath will be "foo".
 //
 // The terminateFileNames are expected to be valid and have no slashes.
-func WithGetBucketTerminateFileNames(terminateFileNames ...string) GetBucketOption {
+func WithGetBucketTerminateFileNames(terminateFileNames [][]string) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
 		getBucketOptions.terminateFileNames = terminateFileNames
 	}

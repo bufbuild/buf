@@ -19,6 +19,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
 	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -148,7 +149,7 @@ func (a *reader) GetSourceBucket(
 	if !getSourceBucketOptions.workspacesDisabled {
 		getBucketOptions = append(
 			getBucketOptions,
-			internal.WithGetBucketTerminateFileNames(bufwork.AllConfigFilePaths...),
+			internal.WithGetBucketTerminateFileNames([][]string{bufwork.AllConfigFilePaths, bufconfig.AllConfigFilePaths}),
 		)
 	}
 	return a.internalReader.GetBucket(
