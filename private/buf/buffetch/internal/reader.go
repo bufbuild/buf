@@ -682,9 +682,9 @@ func findTerminateFileDirectoryPathFromBucket(
 	if len(terminateFileNames) == 0 || terminateFileDepth > len(terminateFileNames) {
 		return "", nil
 	}
-	terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
-	for {
-		for i := 0; i < terminateFileDepth; i++ {
+	for i := 0; i < terminateFileDepth; i++ {
+		terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
+		for {
 			fullTerminateFileNames := make([]string, len(terminateFileNames))
 			for j, terminateFileName := range terminateFileNames[i] {
 				fullTerminateFileNames[j] = normalpath.Join(terminateFileDirectoryPath, terminateFileName)
@@ -698,11 +698,12 @@ func findTerminateFileDirectoryPathFromBucket(
 			}
 			parent := normalpath.Dir(terminateFileDirectoryPath)
 			if parent == terminateFileDirectoryPath {
-				return "", nil
+				break
 			}
 			terminateFileDirectoryPath = parent
 		}
 	}
+	return "", nil
 }
 
 func anyExistsBucket(
@@ -748,12 +749,12 @@ func findTerminateFileDirectoryPathFromOS(
 	if !fileInfo.IsDir() {
 		return "", normalpath.NewError(normalpath.Unnormalize(subDirPath), errors.New("not a directory"))
 	}
-	terminateFileDirectoryPath, err := normalpath.NormalizeAndAbsolute(subDirPath)
-	if err != nil {
-		return "", err
-	}
-	for {
-		for i := 0; i < terminateFileDepth; i++ {
+	for i := 0; i < terminateFileDepth; i++ {
+		terminateFileDirectoryPath, err := normalpath.NormalizeAndAbsolute(subDirPath)
+		if err != nil {
+			return "", err
+		}
+		for {
 			fullTerminateFileNames := make([]string, len(terminateFileNames))
 			for j, terminateFileName := range terminateFileNames[i] {
 				fullTerminateFileNames[j] = normalpath.Unnormalize(normalpath.Join(terminateFileDirectoryPath, terminateFileName))
@@ -767,11 +768,12 @@ func findTerminateFileDirectoryPathFromOS(
 			}
 			parent := normalpath.Dir(terminateFileDirectoryPath)
 			if parent == terminateFileDirectoryPath {
-				return "", nil
+				break
 			}
 			terminateFileDirectoryPath = parent
 		}
 	}
+	return "", nil
 }
 
 func anyExistsOS(paths []string) (bool, error) {

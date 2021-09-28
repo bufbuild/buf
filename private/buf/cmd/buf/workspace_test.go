@@ -1218,3 +1218,50 @@ func createZipFromDir(t *testing.T, rootPath string, archiveName string) string 
 	require.NoError(t, err)
 	return zipDir
 }
+
+func TestWorkspaceProtoFile(t *testing.T) {
+	t.Skip("WIP")
+	t.Parallel()
+	// The ProtoFileRef is only accepted for lint commands, currently
+	// dir_buf_work contains a buf.work instead of a buf.work.yaml
+	// we want to make sure this still works
+	for _, baseDirPath := range []string{
+		"dir",
+		"dir_buf_work",
+	} {
+		wd, err := osextended.Getwd()
+		require.NoError(t, err)
+		testRunStdout(
+			t,
+			nil,
+			bufcli.ExitCodeFileAnnotation,
+			filepath.FromSlash(
+				`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".
+        testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:3:1:Package name "example" should be suffixed with a correctly formed version, such as "example.v1".`,
+			),
+			"lint",
+			filepath.Join("testdata", "workspace", "success", baseDirPath, "proto", "rpc.proto"),
+		)
+		testRunStdout(
+			t,
+			nil,
+			bufcli.ExitCodeFileAnnotation,
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".
+        testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`,
+			),
+			"lint",
+			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto"),
+		)
+		testRunStdout(
+			t,
+			nil,
+			bufcli.ExitCodeFileAnnotation,
+			filepath.FromSlash(
+				fmt.Sprintf(`%s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".
+        %s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`, wd, wd),
+			),
+			"lint",
+			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto"),
+		)
+	}
+}
