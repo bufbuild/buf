@@ -19,8 +19,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bgentry/go-netrc/netrc"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/netrc/internal"
 	"go.uber.org/multierr"
 )
 
@@ -100,7 +100,7 @@ func getMachineForNameAndFilePath(name string, filePath string) (_ Machine, retE
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
-	netrc, err := netrc.Parse(file)
+	netrc, err := internal.Parse(file)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func putMachinesForFilePath(machines []Machine, filePath string) (retErr error) 
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
-	netrc, err := netrc.Parse(file)
+	netrc, err := internal.Parse(file)
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func deleteMachineForFilePath(name string, filePath string) (_ bool, retErr erro
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
-	netrc, err := netrc.Parse(file)
+	netrc, err := internal.Parse(file)
 	if err != nil {
 		return false, err
 	}

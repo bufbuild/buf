@@ -3,7 +3,6 @@ module github.com/bufbuild/buf
 go 1.16
 
 require (
-	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -30,5 +29,3 @@ require (
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
-
-replace github.com/bgentry/go-netrc => ../../go-netrc

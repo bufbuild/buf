@@ -146,7 +146,6 @@ func TestPutMachines(t *testing.T) {
 // https://github.com/bufbuild/buf/issues/611
 func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 	t.Parallel()
-	// TODO: at size 10, this test passes, at size 100, it fails
 	size := 100
 	password := strings.Repeat("abcdefghijklmnopqrstuvwxyz", size)
 	machines := make([]Machine, size)
