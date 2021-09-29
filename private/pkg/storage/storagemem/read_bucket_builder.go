@@ -15,27 +15,24 @@
 package storagemem
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem/internal"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
 
 type readBucketBuilder struct {
-	pathToData         map[string][]byte
-	pathToExternalPath map[string]string
-	lock               sync.Mutex
+	pathToImmutableObject map[string]*internal.ImmutableObject
+	lock                  sync.Mutex
 }
 
 func newReadBucketBuilder() *readBucketBuilder {
 	return &readBucketBuilder{
-		pathToData:         make(map[string][]byte),
-		pathToExternalPath: make(map[string]string),
+		pathToImmutableObject: make(map[string]*internal.ImmutableObject),
 	}
 }
 
@@ -57,11 +54,10 @@ func (b *readBucketBuilder) Delete(ctx context.Context, path string) error {
 	}
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	if _, ok := b.pathToData[path]; !ok {
+	if _, ok := b.pathToImmutableObject[path]; !ok {
 		return storage.NewErrNotExist(path)
 	}
-	delete(b.pathToData, path)
-	delete(b.pathToExternalPath, path)
+	delete(b.pathToImmutableObject, path)
 	return nil
 }
 
@@ -72,10 +68,9 @@ func (b *readBucketBuilder) DeleteAll(ctx context.Context, prefix string) error 
 	}
 	b.lock.Lock()
 	defer b.lock.Unlock()
-	for path := range b.pathToData {
+	for path := range b.pathToImmutableObject {
 		if normalpath.EqualsOrContainsPath(prefix, path, normalpath.Relative) {
-			delete(b.pathToData, path)
-			delete(b.pathToExternalPath, path)
+			delete(b.pathToImmutableObject, path)
 		}
 	}
 	return nil
@@ -86,58 +81,5 @@ func (*readBucketBuilder) SetExternalPathSupported() bool {
 }
 
 func (b *readBucketBuilder) ToReadBucket() (storage.ReadBucket, error) {
-	return newReadBucket(b.pathToData, b.pathToExternalPath)
-}
-
-type writeObjectCloser struct {
-	readBucketBuilder    *readBucketBuilder
-	path                 string
-	buffer               *bytes.Buffer
-	explicitExternalPath string
-	closed               bool
-}
-
-func newWriteObjectCloser(
-	readBucketBuilder *readBucketBuilder,
-	path string,
-) *writeObjectCloser {
-	return &writeObjectCloser{
-		readBucketBuilder: readBucketBuilder,
-		path:              path,
-		buffer:            bytes.NewBuffer(nil),
-	}
-}
-
-func (w *writeObjectCloser) Write(p []byte) (int, error) {
-	if w.closed {
-		return 0, storage.ErrClosed
-	}
-	return w.buffer.Write(p)
-}
-
-func (w *writeObjectCloser) SetExternalPath(externalPath string) error {
-	if w.explicitExternalPath != "" {
-		// just to make sure
-		return fmt.Errorf("external path already set: %q", w.explicitExternalPath)
-	}
-	w.explicitExternalPath = externalPath
-	return nil
-}
-
-func (w *writeObjectCloser) Close() error {
-	if w.closed {
-		return storage.ErrClosed
-	}
-	w.closed = true
-	// overwrites anything existing
-	// this is the same behavior as storageos
-	w.readBucketBuilder.lock.Lock()
-	defer w.readBucketBuilder.lock.Unlock()
-	w.readBucketBuilder.pathToData[w.path] = w.buffer.Bytes()
-	if w.explicitExternalPath != "" {
-		w.readBucketBuilder.pathToExternalPath[w.path] = w.explicitExternalPath
-	} else {
-		delete(w.readBucketBuilder.pathToExternalPath, w.path)
-	}
-	return nil
+	return newReadBucket(b.pathToImmutableObject)
 }
