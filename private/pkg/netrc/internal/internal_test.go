@@ -23,7 +23,6 @@ package internal
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -220,8 +219,7 @@ func TestMarshalText(t *testing.T) {
 		t.Fatal(err)
 	}
 	if strings.Contains(string(result), "\tpassword \n") {
-		fmt.Println(string(result))
-		t.Errorf("expected zero-value password token to not be serialzed")
+		t.Errorf("expected zero-value password token to not be serialzed: %q", string(result))
 	}
 }
 

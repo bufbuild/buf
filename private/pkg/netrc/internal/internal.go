@@ -180,7 +180,6 @@ func (n *Netrc) insertMachineTokensBeforeDefault(m *Machine) {
 	}
 	// didn't find a default, just add the newtokens to the end
 	n.tokens = append(n.tokens, newtokens...)
-	return
 }
 
 func (n *Netrc) RemoveMachine(name string) {

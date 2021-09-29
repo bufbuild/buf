@@ -148,20 +148,23 @@ func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 	t.Parallel()
 	size := 100
 	password := strings.Repeat("abcdefghijklmnopqrstuvwxyz", size)
-	machines := make([]Machine, size)
+	machines := make([]Machine, 0, size)
 	buffer := bytes.NewBuffer(nil)
 	for i := 0; i < size; i++ {
 		// Write the file manually in single-line format as this is where the failure happens.
 		_, _ = buffer.WriteString(fmt.Sprintf("machine foo%d login bar%d password %s\n", i, i, password))
-		machines[i] = NewMachine(
-			fmt.Sprintf("foo%d", i),
-			fmt.Sprintf("bar%d", i),
-			password,
-			"",
+		machines = append(
+			machines,
+			NewMachine(
+				fmt.Sprintf("foo%d", i),
+				fmt.Sprintf("bar%d", i),
+				password,
+				"",
+			),
 		)
 	}
 	filePath := filepath.Join(t.TempDir(), netrcFilename)
-	err := os.WriteFile(filePath, buffer.Bytes(), 0644)
+	err := os.WriteFile(filePath, buffer.Bytes(), 0600)
 	require.NoError(t, err)
 
 	envContainer := app.NewEnvContainer(map[string]string{"NETRC": filePath})
