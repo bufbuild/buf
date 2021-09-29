@@ -198,7 +198,7 @@ func (r *reader) getArchiveBucket(
 	defer func() {
 		retErr = multierr.Append(retErr, readCloser.Close())
 	}()
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	readWriteBucket := storagemem.NewReadWriteBucket()
 	ctx, span := trace.StartSpan(ctx, "unarchive")
 	defer span.End()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
@@ -206,7 +206,7 @@ func (r *reader) getArchiveBucket(
 		if err := storagearchive.Untar(
 			ctx,
 			readCloser,
-			readBucketBuilder,
+			readWriteBucket,
 			nil,
 			archiveRef.StripComponents(),
 		); err != nil {
@@ -231,7 +231,7 @@ func (r *reader) getArchiveBucket(
 			ctx,
 			readerAt,
 			size,
-			readBucketBuilder,
+			readWriteBucket,
 			nil,
 			archiveRef.StripComponents(),
 		); err != nil {
@@ -240,11 +240,7 @@ func (r *reader) getArchiveBucket(
 	default:
 		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	if err != nil {
-		return nil, err
-	}
-	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readBucket, subDirPath, terminateFileNames)
+	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -254,13 +250,14 @@ func (r *reader) getArchiveBucket(
 			return nil, err
 		}
 		return newReadBucketCloser(
-			storage.NopReadBucketCloser(storage.MapReadBucket(readBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
+			storage.NopReadBucketCloser(storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
 			terminateFileDirectoryPath,
 			relativeSubDirPath,
 		)
 	}
+	var readBucket storage.ReadBucket = readWriteBucket
 	if subDirPath != "." {
-		readBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
+		readBucket = storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(subDirPath))
 	}
 	return newReadBucketCloser(
 		storage.NopReadBucketCloser(readBucket),
@@ -368,13 +365,13 @@ func (r *reader) getGitBucket(
 	if err != nil {
 		return nil, err
 	}
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	readWriteBucket := storagemem.NewReadWriteBucket()
 	if err := r.gitCloner.CloneToBucket(
 		ctx,
 		container,
 		gitURL,
 		gitRef.Depth(),
-		readBucketBuilder,
+		readWriteBucket,
 		git.CloneToBucketOptions{
 			Name:              gitRef.GitName(),
 			RecurseSubmodules: gitRef.RecurseSubmodules(),
@@ -382,11 +379,7 @@ func (r *reader) getGitBucket(
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	if err != nil {
-		return nil, err
-	}
-	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readBucket, subDirPath, terminateFileNames)
+	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -396,11 +389,12 @@ func (r *reader) getGitBucket(
 			return nil, err
 		}
 		return newReadBucketCloser(
-			storage.NopReadBucketCloser(storage.MapReadBucket(readBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
+			storage.NopReadBucketCloser(storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
 			terminateFileDirectoryPath,
 			relativeSubDirPath,
 		)
 	}
+	var readBucket storage.ReadBucket = readWriteBucket
 	if subDirPath != "." {
 		readBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
 	}

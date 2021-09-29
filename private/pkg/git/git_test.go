@@ -173,13 +173,13 @@ func readBucketForName(t *testing.T, path string, depth uint32, name Name, recur
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
 
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	readWriteBucket := storagemem.NewReadWriteBucket()
 	err = cloner.CloneToBucket(
 		context.Background(),
 		envContainer,
 		"file://"+filepath.Join(path, ".git"),
 		depth,
-		readBucketBuilder,
+		readWriteBucket,
 		CloneToBucketOptions{
 			Mapper:            storage.MatchPathExt(".proto"),
 			Name:              name,
@@ -187,9 +187,7 @@ func readBucketForName(t *testing.T, path string, depth uint32, name Name, recur
 		},
 	)
 	require.NoError(t, err)
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	require.NoError(t, err)
-	return readBucket
+	return readWriteBucket
 }
 
 func createGitDirs(t *testing.T) (string, string) {

@@ -138,12 +138,12 @@ func (g *generator) generateZip(
 	} else if !fileInfo.IsDir() {
 		return fmt.Errorf("not a directory: %s", outDirPath)
 	}
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
-	if err := appprotoGenerator.Generate(ctx, container, readBucketBuilder, requests); err != nil {
+	readWriteBucket := storagemem.NewReadWriteBucket()
+	if err := appprotoGenerator.Generate(ctx, container, readWriteBucket, requests); err != nil {
 		return err
 	}
 	if includeManifest {
-		if err := storage.PutPath(ctx, readBucketBuilder, ManifestPath, ManifestContent); err != nil {
+		if err := storage.PutPath(ctx, readWriteBucket, ManifestPath, ManifestContent); err != nil {
 			return err
 		}
 	}
@@ -154,12 +154,8 @@ func (g *generator) generateZip(
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	if err != nil {
-		return err
-	}
 	// protoc does not compress
-	return storagearchive.Zip(ctx, readBucket, file, false)
+	return storagearchive.Zip(ctx, readWriteBucket, file, false)
 }
 
 func (g *generator) generateDirectory(

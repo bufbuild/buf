@@ -359,14 +359,14 @@ func (g *generator) generateZip(
 	} else if !fileInfo.IsDir() {
 		return fmt.Errorf("not a directory: %s", outDirPath)
 	}
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	readWriteBucket := storagemem.NewReadWriteBucket()
 	for _, file := range files {
-		if err := storage.PutPath(ctx, readBucketBuilder, file.Name, file.Content); err != nil {
+		if err := storage.PutPath(ctx, readWriteBucket, file.Name, file.Content); err != nil {
 			return fmt.Errorf("failed to write generated file %s: %w", file.Name, err)
 		}
 	}
 	if includeManifest {
-		if err := storage.PutPath(ctx, readBucketBuilder, appprotoos.ManifestPath, appprotoos.ManifestContent); err != nil {
+		if err := storage.PutPath(ctx, readWriteBucket, appprotoos.ManifestPath, appprotoos.ManifestContent); err != nil {
 			return fmt.Errorf("failed to write manifest file: %w", err)
 		}
 	}
@@ -377,12 +377,8 @@ func (g *generator) generateZip(
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	if err != nil {
-		return err
-	}
 	// protoc does not compress
-	if err := storagearchive.Zip(ctx, readBucket, file, false); err != nil {
+	if err := storagearchive.Zip(ctx, readWriteBucket, file, false); err != nil {
 		return fmt.Errorf("failed to zip results: %w", err)
 	}
 	return nil
