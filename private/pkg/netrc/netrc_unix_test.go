@@ -20,8 +20,11 @@
 package netrc
 
 import (
+	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -138,6 +141,54 @@ func TestPutMachines(t *testing.T) {
 		"test@foo.com",
 		"password",
 	)
+}
+
+// https://github.com/bufbuild/buf/issues/611
+func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
+	t.Parallel()
+	// TODO: at size 10, this test passes, at size 100, it fails
+	size := 100
+	password := strings.Repeat("abcdefghijklmnopqrstuvwxyz", size)
+	machines := make([]Machine, size)
+	buffer := bytes.NewBuffer(nil)
+	for i := 0; i < size; i++ {
+		// Write the file manually in single-line format as this is where the failure happens.
+		_, _ = buffer.WriteString(fmt.Sprintf("machine foo%d login bar%d password %s\n", i, i, password))
+		machines[i] = NewMachine(
+			fmt.Sprintf("foo%d", i),
+			fmt.Sprintf("bar%d", i),
+			password,
+			"",
+		)
+	}
+	filePath := filepath.Join(t.TempDir(), netrcFilename)
+	err := os.WriteFile(filePath, buffer.Bytes(), 0644)
+	require.NoError(t, err)
+
+	envContainer := app.NewEnvContainer(map[string]string{"NETRC": filePath})
+	for _, machine := range machines {
+		// Make sure the existing file can be parsed.
+		actualMachine, err := GetMachineForName(envContainer, machine.Name())
+		require.NoError(t, err)
+		require.Equal(t, machine, actualMachine)
+	}
+
+	// Now, modify the file with an extra machine. This is when the file got corrupted.
+	extraMachine := NewMachine(
+		"baz.com",
+		"test@baz.com",
+		"password",
+		"",
+	)
+	err = PutMachines(envContainer, extraMachine)
+	require.NoError(t, err)
+	machines = append(machines, extraMachine)
+	for _, machine := range machines {
+		// Verify all the machines work. This failed previously.
+		actualMachine, err := GetMachineForName(envContainer, machine.Name())
+		require.NoError(t, err)
+		require.Equal(t, machine, actualMachine)
+	}
 }
 
 func TestDeleteMachineForName(t *testing.T) {
