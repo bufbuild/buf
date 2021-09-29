@@ -137,16 +137,19 @@ func putMachinesForFilePath(machines []Machine, filePath string) (retErr error) 
 	}
 	for _, machine := range machines {
 		if foundMachine := netrc.FindMachine(machine.Name()); foundMachine != nil {
-			// If the machine already exists, remove it so that its entry is overwritten.
-			netrc.RemoveMachine(machine.Name())
+			// If the machine already exists, update it.
+			foundMachine.UpdateLogin(machine.Login())
+			foundMachine.UpdatePassword(machine.Password())
+			foundMachine.UpdateAccount(machine.Account())
+		} else {
+			// Put the machine into the user's netrc.
+			netrc.NewMachine(
+				machine.Name(),
+				machine.Login(),
+				machine.Password(),
+				machine.Account(),
+			)
 		}
-		// Put the machine into the user's netrc.
-		_ = netrc.NewMachine(
-			machine.Name(),
-			machine.Login(),
-			machine.Password(),
-			machine.Account(),
-		)
 	}
 	bytes, err := netrc.MarshalText()
 	if err != nil {
