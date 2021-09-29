@@ -407,16 +407,14 @@ func parse(r io.Reader, pos int) (*Netrc, error) {
 	// *** BUGFIX ***
 	// https://github.com/bufbuild/buf/issues/611
 	// Without this, parsing fails for files larger than 4096 bytes
-	lenBuffer := 4096
 	if len(b) > 4096 {
-		lenBuffer = len(b)
+		buffer := make([]byte, len(b))
+		maxTokenSize := 1 << 20
+		if len(b) > maxTokenSize {
+			maxTokenSize = len(b) * 8
+		}
+		scanner.Buffer(buffer, maxTokenSize)
 	}
-	buffer := make([]byte, lenBuffer)
-	maxTokenSize := 1 << 20
-	if lenBuffer > maxTokenSize {
-		maxTokenSize = lenBuffer * 8
-	}
-	scanner.Buffer(buffer, maxTokenSize)
 	// *** BUGFIX END ***
 	scanner.Split(scanTokensKeepPrefix)
 
