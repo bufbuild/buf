@@ -163,8 +163,7 @@ func TestParseV1Beta1Config(t *testing.T) {
 
 func TestParseNoConfig(t *testing.T) {
 	t.Parallel()
-	emptyReadBucket, err := storagemem.NewReadBucketBuilder().ToReadBucket()
-	require.NoError(t, err)
+	emptyReadBucket := storagemem.NewReadWriteBucket()
 	readConfig, err := buflock.ReadConfig(context.Background(), emptyReadBucket)
 	require.NoError(t, err)
 	require.Empty(t, readConfig)

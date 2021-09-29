@@ -25,18 +25,8 @@ import (
 
 var errDuplicatePath = errors.New("duplicate path")
 
-// ReadBucketBuilder builds ReadBuckets.
-type ReadBucketBuilder interface {
-	storage.WriteBucket
-	// ToReadBucket returns a ReadBucket for the current data in the WriteBucket.
-	//
-	// No further calls can be made to the ReadBucketBuilder after this call.
-	// This is functionally equivalent to a Close in other contexts.
-	ToReadBucket() (storage.ReadBucket, error)
-}
-
-// NewReadBucketBuilder returns a new in-memory ReadBucketBuilder.
-func NewReadBucketBuilder() ReadBucketBuilder {
+// NewReadWriteBucket returns a new in-memory ReadWriteBucket.
+func NewReadWriteBucket() storage.ReadWriteBucket {
 	return newBucket(nil)
 }
 

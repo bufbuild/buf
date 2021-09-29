@@ -41,19 +41,16 @@ func newModuleForProto(
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
 	}
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	// We store this as a ReadBucket as this should never be modified outside of this function.
+	readWriteBucket := storagemem.NewReadWriteBucket()
 	for _, moduleFile := range protoModule.Files {
 		if normalpath.Ext(moduleFile.Path) != ".proto" {
 			return nil, fmt.Errorf("expected .proto file but got %q", moduleFile)
 		}
 		// we already know that paths are unique from validation
-		if err := storage.PutPath(ctx, readBucketBuilder, moduleFile.Path, moduleFile.Content); err != nil {
+		if err := storage.PutPath(ctx, readWriteBucket, moduleFile.Path, moduleFile.Content); err != nil {
 			return nil, err
 		}
-	}
-	sourceReadBucket, err := readBucketBuilder.ToReadBucket()
-	if err != nil {
-		return nil, err
 	}
 	dependencyModulePins, err := bufmoduleref.NewModulePinsForProtos(protoModule.Dependencies...)
 	if err != nil {
@@ -61,7 +58,7 @@ func newModuleForProto(
 	}
 	return newModule(
 		ctx,
-		sourceReadBucket,
+		readWriteBucket,
 		dependencyModulePins,
 		protoModule.GetDocumentation(),
 		options...,
