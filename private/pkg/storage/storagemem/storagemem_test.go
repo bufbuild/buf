@@ -46,31 +46,27 @@ func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	readWriteBucket := storagemem.NewReadWriteBucket()
 	_, err = storage.Copy(
 		context.Background(),
 		osBucket,
-		readBucketBuilder,
+		readWriteBucket,
 		storage.CopyWithExternalPaths(),
 	)
 	require.NoError(t, err)
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	require.NoError(t, err)
-	return readBucket, func(t *testing.T, rootPath string, path string) string {
+	return readWriteBucket, func(t *testing.T, rootPath string, path string) string {
 		// Join calls Clean
 		return normalpath.Unnormalize(normalpath.Join(rootPath, path))
 	}
 }
 
 func testNewWriteBucket(*testing.T, storageos.Provider) storage.WriteBucket {
-	return storagemem.NewReadBucketBuilder()
+	return storagemem.NewReadWriteBucket()
 }
 
 func testWriteBucketToReadBucket(t *testing.T, writeBucket storage.WriteBucket) storage.ReadBucket {
 	// hacky
-	readBucketBuilder, ok := writeBucket.(storagemem.ReadBucketBuilder)
+	readWriteBucket, ok := writeBucket.(storage.ReadWriteBucket)
 	require.True(t, ok)
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	require.NoError(t, err)
-	return readBucket
+	return readWriteBucket
 }
