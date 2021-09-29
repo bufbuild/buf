@@ -23,21 +23,21 @@ import (
 )
 
 type writeObjectCloser struct {
-	readBucketBuilder *readBucketBuilder
-	path              string
-	externalPath      string
-	buffer            *bytes.Buffer
-	closed            bool
+	bucket       *bucket
+	path         string
+	externalPath string
+	buffer       *bytes.Buffer
+	closed       bool
 }
 
 func newWriteObjectCloser(
-	readBucketBuilder *readBucketBuilder,
+	bucket *bucket,
 	path string,
 ) *writeObjectCloser {
 	return &writeObjectCloser{
-		readBucketBuilder: readBucketBuilder,
-		path:              path,
-		buffer:            bytes.NewBuffer(nil),
+		bucket: bucket,
+		path:   path,
+		buffer: bytes.NewBuffer(nil),
 	}
 }
 
@@ -63,9 +63,12 @@ func (w *writeObjectCloser) Close() error {
 	w.closed = true
 	// overwrites anything existing
 	// this is the same behavior as storageos
-	w.readBucketBuilder.lock.Lock()
-	defer w.readBucketBuilder.lock.Unlock()
-	w.readBucketBuilder.pathToImmutableObject[w.path] = internal.NewImmutableObject(
+	w.bucket.lock.Lock()
+	defer w.bucket.lock.Unlock()
+	// Note that if there is an existing reader for an object of the same path,
+	// that reader will continue to read the original file, but we accept this
+	// as no less consistent than os mechanics.
+	w.bucket.pathToImmutableObject[w.path] = internal.NewImmutableObject(
 		w.path,
 		w.externalPath,
 		w.buffer.Bytes(),

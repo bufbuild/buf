@@ -29,6 +29,9 @@ import (
 type ReadBucket interface {
 	// Get gets the path.
 	//
+	// The behavior of concurrently Getting and Putting an object is undefined.
+	// The returned ReadObjectCloser is not thread-safe.
+	//
 	// Returns ErrNotExist if the path does not exist, other error
 	// if there is a system error.
 	Get(ctx context.Context, path string) (ReadObjectCloser, error)
@@ -54,6 +57,8 @@ type WriteBucket interface {
 	// Put returns a WriteObjectCloser to write to the path.
 	//
 	// The path is truncated on close.
+	// The behavior of concurrently Getting and Putting an object is undefined.
+	// The returned WriteObjectCloser is not thread-safe.
 	//
 	// Returns error on system error.
 	Put(ctx context.Context, path string) (WriteObjectCloser, error)
