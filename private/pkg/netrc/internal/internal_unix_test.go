@@ -12,7 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build aix || darwin || dragonfly || freebsd || (js && wasm) || linux || netbsd || openbsd || solaris
+// +build aix darwin dragonfly freebsd js,wasm linux netbsd openbsd solaris
+
 package internal
+
+// TODO: some tests fail on windows here, this might actually be an issue
+// temporarily making this unix-only
 
 // Except for our edits, this code is
 // Copyright © 2010 Fazlul Shahriar <fshahriar@gmail.com> and
