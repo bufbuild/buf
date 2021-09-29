@@ -36,5 +36,5 @@ func NewReadBucketBuilder() ReadBucketBuilder {
 
 // NewReadBucket returns a new ReadBucket.
 func NewReadBucket(pathToData map[string][]byte) (storage.ReadBucket, error) {
-	return newReadBucket(pathToData, nil)
+	return newReadBucketForPathToData(pathToData)
 }

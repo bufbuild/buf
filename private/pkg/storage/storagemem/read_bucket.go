@@ -15,7 +15,6 @@
 package storagemem
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -29,54 +28,46 @@ import (
 var errDuplicatePath = errors.New("duplicate path")
 
 type readBucket struct {
-	pathToObject map[string]*object
-	paths        []string
+	pathToImmutableObject map[string]*immutableObject
+	paths                 []string
+}
+
+func newReadBucketForPathToData(pathToData map[string][]byte) (*readBucket, error) {
+	pathToImmutableObject := make(map[string]*immutableObject, len(pathToData))
+	for path, data := range pathToData {
+		pathToImmutableObject[path] = newImmutableObject(path, "", data)
+	}
+	return newReadBucket(pathToImmutableObject)
 }
 
 func newReadBucket(
-	pathToData map[string][]byte,
-	pathToExternalPath map[string]string,
+	pathToImmutableObject map[string]*immutableObject,
 ) (*readBucket, error) {
-	pathToObject := make(map[string]*object, len(pathToData))
-	paths := make([]string, 0, len(pathToData))
-	for path, data := range pathToData {
+	paths := make([]string, 0, len(pathToImmutableObject))
+	for path := range pathToImmutableObject {
 		path, err := storageutil.ValidatePath(path)
 		if err != nil {
 			return nil, err
 		}
-		if _, ok := pathToObject[path]; ok {
-			return nil, normalpath.NewError(path, errDuplicatePath)
-		}
-		externalPath := normalpath.Unnormalize(path)
-		if len(pathToExternalPath) > 0 {
-			if mapExternalPath := pathToExternalPath[path]; mapExternalPath != "" {
-				externalPath = mapExternalPath
-			}
-		}
-		pathToObject[path] = newObject(
-			path,
-			externalPath,
-			data,
-		)
 		paths = append(paths, path)
 	}
 	sort.Strings(paths)
 	return &readBucket{
-		pathToObject: pathToObject,
-		paths:        paths,
+		pathToImmutableObject: pathToImmutableObject,
+		paths:                 paths,
 	}, nil
 }
 
 func (b *readBucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {
-	object, err := b.getObject(ctx, path)
+	immutableObject, err := b.getImmutableObject(ctx, path)
 	if err != nil {
 		return nil, err
 	}
-	return newReadObjectCloser(path, object), nil
+	return newReadObjectCloser(immutableObject), nil
 }
 
 func (b *readBucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
-	return b.getObject(ctx, path)
+	return b.getImmutableObject(ctx, path)
 }
 
 func (b *readBucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectInfo) error) error {
@@ -86,7 +77,7 @@ func (b *readBucket) Walk(ctx context.Context, prefix string, f func(storage.Obj
 	}
 	walkChecker := storageutil.NewWalkChecker()
 	for _, path := range b.paths {
-		object, ok := b.pathToObject[path]
+		immutableObject, ok := b.pathToImmutableObject[path]
 		if !ok {
 			// this is a system error
 			return fmt.Errorf("path %q not in pathToObject", path)
@@ -97,19 +88,19 @@ func (b *readBucket) Walk(ctx context.Context, prefix string, f func(storage.Obj
 		if !normalpath.EqualsOrContainsPath(prefix, path, normalpath.Relative) {
 			continue
 		}
-		if err := f(object); err != nil {
+		if err := f(immutableObject); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (b *readBucket) getObject(ctx context.Context, path string) (*object, error) {
+func (b *readBucket) getImmutableObject(ctx context.Context, path string) (*immutableObject, error) {
 	path, err := storageutil.ValidatePath(path)
 	if err != nil {
 		return nil, err
 	}
-	object, ok := b.pathToObject[path]
+	immutableObject, ok := b.pathToImmutableObject[path]
 	if !ok {
 		// it would be nice if this was external path for every bucket
 		// the issue is here: we don't know the external path for memory buckets
@@ -117,54 +108,5 @@ func (b *readBucket) getObject(ctx context.Context, path string) (*object, error
 		// an object, we do not have an external path
 		return nil, storage.NewErrNotExist(path)
 	}
-	return object, nil
-}
-
-type readObjectCloser struct {
-	storageutil.ObjectInfo
-
-	reader *bytes.Reader
-	closed bool
-}
-
-func newReadObjectCloser(path string, object *object) *readObjectCloser {
-	return &readObjectCloser{
-		ObjectInfo: object.ObjectInfo,
-		reader:     bytes.NewReader(object.data),
-	}
-}
-
-func (r *readObjectCloser) Read(p []byte) (int, error) {
-	if r.closed {
-		return 0, storage.ErrClosed
-	}
-	return r.reader.Read(p)
-}
-
-func (r *readObjectCloser) Close() error {
-	if r.closed {
-		return storage.ErrClosed
-	}
-	r.closed = true
-	return nil
-}
-
-type object struct {
-	storageutil.ObjectInfo
-
-	data []byte
-}
-
-func newObject(
-	path string,
-	externalPath string,
-	data []byte,
-) *object {
-	return &object{
-		ObjectInfo: storageutil.NewObjectInfo(
-			path,
-			externalPath,
-		),
-		data: data,
-	}
+	return immutableObject, nil
 }
