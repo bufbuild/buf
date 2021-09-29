@@ -19,8 +19,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/bgentry/go-netrc/netrc"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/netrc/internal"
 	"go.uber.org/multierr"
 )
 
@@ -100,7 +100,7 @@ func getMachineForNameAndFilePath(name string, filePath string) (_ Machine, retE
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
-	netrc, err := netrc.Parse(file)
+	netrc, err := internal.Parse(file)
 	if err != nil {
 		return nil, err
 	}
@@ -131,22 +131,25 @@ func putMachinesForFilePath(machines []Machine, filePath string) (retErr error) 
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
-	netrc, err := netrc.Parse(file)
+	netrc, err := internal.Parse(file)
 	if err != nil {
 		return err
 	}
 	for _, machine := range machines {
 		if foundMachine := netrc.FindMachine(machine.Name()); foundMachine != nil {
-			// If the machine already exists, remove it so that its entry is overwritten.
-			netrc.RemoveMachine(machine.Name())
+			// If the machine already exists, update it.
+			foundMachine.UpdateLogin(machine.Login())
+			foundMachine.UpdatePassword(machine.Password())
+			foundMachine.UpdateAccount(machine.Account())
+		} else {
+			// Put the machine into the user's netrc.
+			netrc.NewMachine(
+				machine.Name(),
+				machine.Login(),
+				machine.Password(),
+				machine.Account(),
+			)
 		}
-		// Put the machine into the user's netrc.
-		_ = netrc.NewMachine(
-			machine.Name(),
-			machine.Login(),
-			machine.Password(),
-			machine.Account(),
-		)
 	}
 	bytes, err := netrc.MarshalText()
 	if err != nil {
@@ -171,7 +174,7 @@ func deleteMachineForFilePath(name string, filePath string) (_ bool, retErr erro
 	defer func() {
 		retErr = multierr.Append(retErr, file.Close())
 	}()
-	netrc, err := netrc.Parse(file)
+	netrc, err := internal.Parse(file)
 	if err != nil {
 		return false, err
 	}

@@ -85,6 +85,11 @@ issues:
       # We call exec.Command for protoc and plugin proxying, and control the arguments completely.
       path: private/pkg/app/appproto/appprotoexec/protoc_proxy_handler.go
       text: "G204:"
+    - linters:
+        - wastedassign
+      # netrc/internal is a library largely copied in from an external repository with attribution.
+      # We try to make minimal edits.
+      path: private/pkg/netrc/internal/internal.go
       # we actually want to use this init in testing
     - linters:
         - gochecknoinits
