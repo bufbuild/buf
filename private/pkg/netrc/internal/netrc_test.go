@@ -1,12 +1,25 @@
-// Package internal is a direct copy of github.com/bgentry/go-netrc with a bug fix.
+// Copyright 2020-2021 Buf Technologies, Inc.
 //
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package internal
+
 // Except for our edits, this code is
 // Copyright © 2010 Fazlul Shahriar <fshahriar@gmail.com> and
 // Copyright © 2014 Blake Gentry <blakesgentry@gmail.com>.
 //
 // See https://github.com/bgentry/go-netrc/blob/9fd32a8b3d3d3f9d43c341bfe098430e07609480/LICENSE
 // for the original license.
-package internal
 
 import (
 	"bytes"
@@ -19,10 +32,10 @@ import (
 )
 
 var expectedMachines = []*Machine{
-	&Machine{Name: "mail.google.com", Login: "joe@gmail.com", Password: "somethingSecret", Account: "justagmail"},
-	&Machine{Name: "ray", Login: "demo", Password: "mypassword", Account: ""},
-	&Machine{Name: "weirdlogin", Login: "uname", Password: "pass#pass", Account: ""},
-	&Machine{Name: "", Login: "anonymous", Password: "joe@example.com", Account: ""},
+	{Name: "mail.google.com", Login: "joe@gmail.com", Password: "somethingSecret", Account: "justagmail"},
+	{Name: "ray", Login: "demo", Password: "mypassword", Account: ""},
+	{Name: "weirdlogin", Login: "uname", Password: "pass#pass", Account: ""},
+	{Name: "", Login: "anonymous", Password: "joe@example.com", Account: ""},
 }
 var expectedMacros = Macros{
 	"allput":  "put src/*",
