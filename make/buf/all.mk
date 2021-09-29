@@ -1,5 +1,5 @@
 # https://github.com/jhump/protoreflect/commits/master 20210817 checked 20210817
-PROTOREFLECT_VERSION := db1a327a393ec12e4a565f4813c154abd843376a
+PROTOREFLECT_VERSION := v1.10.0
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
