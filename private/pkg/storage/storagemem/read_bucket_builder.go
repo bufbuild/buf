@@ -21,17 +21,18 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem/internal"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
 
 type readBucketBuilder struct {
-	pathToImmutableObject map[string]*immutableObject
+	pathToImmutableObject map[string]*internal.ImmutableObject
 	lock                  sync.Mutex
 }
 
 func newReadBucketBuilder() *readBucketBuilder {
 	return &readBucketBuilder{
-		pathToImmutableObject: make(map[string]*immutableObject),
+		pathToImmutableObject: make(map[string]*internal.ImmutableObject),
 	}
 }
 

@@ -22,26 +22,27 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem/internal"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
 
 var errDuplicatePath = errors.New("duplicate path")
 
 type readBucket struct {
-	pathToImmutableObject map[string]*immutableObject
+	pathToImmutableObject map[string]*internal.ImmutableObject
 	paths                 []string
 }
 
 func newReadBucketForPathToData(pathToData map[string][]byte) (*readBucket, error) {
-	pathToImmutableObject := make(map[string]*immutableObject, len(pathToData))
+	pathToImmutableObject := make(map[string]*internal.ImmutableObject, len(pathToData))
 	for path, data := range pathToData {
-		pathToImmutableObject[path] = newImmutableObject(path, "", data)
+		pathToImmutableObject[path] = internal.NewImmutableObject(path, "", data)
 	}
 	return newReadBucket(pathToImmutableObject)
 }
 
 func newReadBucket(
-	pathToImmutableObject map[string]*immutableObject,
+	pathToImmutableObject map[string]*internal.ImmutableObject,
 ) (*readBucket, error) {
 	paths := make([]string, 0, len(pathToImmutableObject))
 	for path := range pathToImmutableObject {
@@ -95,7 +96,7 @@ func (b *readBucket) Walk(ctx context.Context, prefix string, f func(storage.Obj
 	return nil
 }
 
-func (b *readBucket) getImmutableObject(ctx context.Context, path string) (*immutableObject, error) {
+func (b *readBucket) getImmutableObject(ctx context.Context, path string) (*internal.ImmutableObject, error) {
 	path, err := storageutil.ValidatePath(path)
 	if err != nil {
 		return nil, err

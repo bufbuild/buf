@@ -4,6 +4,7 @@ import (
 	"bytes"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem/internal"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
 
@@ -14,10 +15,10 @@ type readObjectCloser struct {
 	closed bool
 }
 
-func newReadObjectCloser(immutableObject *immutableObject) *readObjectCloser {
+func newReadObjectCloser(immutableObject *internal.ImmutableObject) *readObjectCloser {
 	return &readObjectCloser{
 		ObjectInfo: immutableObject.ObjectInfo,
-		reader:     bytes.NewReader(immutableObject.data),
+		reader:     bytes.NewReader(immutableObject.Data()),
 	}
 }
 

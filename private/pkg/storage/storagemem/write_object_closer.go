@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem/internal"
 )
 
 type writeObjectCloser struct {
@@ -50,7 +51,7 @@ func (w *writeObjectCloser) Close() error {
 	// this is the same behavior as storageos
 	w.readBucketBuilder.lock.Lock()
 	defer w.readBucketBuilder.lock.Unlock()
-	w.readBucketBuilder.pathToImmutableObject[w.path] = newImmutableObject(
+	w.readBucketBuilder.pathToImmutableObject[w.path] = internal.NewImmutableObject(
 		w.path,
 		w.externalPath,
 		w.buffer.Bytes(),
