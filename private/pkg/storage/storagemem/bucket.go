@@ -16,7 +16,6 @@ package storagemem
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 	"sync"
@@ -26,8 +25,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem/internal"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
-
-var errDuplicatePath = errors.New("duplicate path")
 
 type bucket struct {
 	pathToImmutableObject map[string]*internal.ImmutableObject
