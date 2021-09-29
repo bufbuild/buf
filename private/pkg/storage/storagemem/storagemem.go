@@ -16,8 +16,14 @@
 package storagemem
 
 import (
+	"errors"
+
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem/internal"
+	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
+
+var errDuplicatePath = errors.New("duplicate path")
 
 // ReadBucketBuilder builds ReadBuckets.
 type ReadBucketBuilder interface {
@@ -31,10 +37,22 @@ type ReadBucketBuilder interface {
 
 // NewReadBucketBuilder returns a new in-memory ReadBucketBuilder.
 func NewReadBucketBuilder() ReadBucketBuilder {
-	return newReadBucketBuilder()
+	return newBucket(nil)
 }
 
 // NewReadBucket returns a new ReadBucket.
 func NewReadBucket(pathToData map[string][]byte) (storage.ReadBucket, error) {
-	return newReadBucketForPathToData(pathToData)
+	pathToImmutableObject := make(map[string]*internal.ImmutableObject, len(pathToData))
+	for path, data := range pathToData {
+		path, err := storageutil.ValidatePath(path)
+		if err != nil {
+			return nil, err
+		}
+		// This could happen if two paths normalize to the same path.
+		if _, ok := pathToImmutableObject[path]; ok {
+			return nil, errDuplicatePath
+		}
+		pathToImmutableObject[path] = internal.NewImmutableObject(path, "", data)
+	}
+	return newBucket(pathToImmutableObject), nil
 }
