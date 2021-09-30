@@ -24,6 +24,9 @@ import (
 )
 
 // ObjectInfo is an embeddable ObjectInfo.
+//
+// This is intentially static and should not be modifiable.
+// If constructing an object, do not use an ObjectInfo to build it.
 type ObjectInfo struct {
 	path         string
 	externalPath string

@@ -278,36 +278,32 @@ func testCompareGeneratedStubsArchive(
 	)
 	actualData, err := os.ReadFile(actualProtocFile)
 	require.NoError(t, err)
-	actualReadBucketBuilder := storagemem.NewReadBucketBuilder()
+	actualReadWriteBucket := storagemem.NewReadWriteBucket()
 	err = storagearchive.Unzip(
 		context.Background(),
 		bytes.NewReader(actualData),
 		int64(len(actualData)),
-		actualReadBucketBuilder,
+		actualReadWriteBucket,
 		nil,
 		0,
 	)
 	require.NoError(t, err)
-	actualReadBucket, err := actualReadBucketBuilder.ToReadBucket()
-	require.NoError(t, err)
 	bufData, err := os.ReadFile(bufGenFile)
 	require.NoError(t, err)
-	bufReadBucketBuilder := storagemem.NewReadBucketBuilder()
+	bufReadWriteBucket := storagemem.NewReadWriteBucket()
 	err = storagearchive.Unzip(
 		context.Background(),
 		bytes.NewReader(bufData),
 		int64(len(bufData)),
-		bufReadBucketBuilder,
+		bufReadWriteBucket,
 		nil,
 		0,
 	)
 	require.NoError(t, err)
-	bufReadBucket, err := bufReadBucketBuilder.ToReadBucket()
-	require.NoError(t, err)
 	diff, err := storage.DiffBytes(
 		context.Background(),
-		actualReadBucket,
-		bufReadBucket,
+		actualReadWriteBucket,
+		bufReadWriteBucket,
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))

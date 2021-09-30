@@ -16,25 +16,33 @@
 package storagemem
 
 import (
+	"errors"
+
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/buf/private/pkg/storage/storagemem/internal"
+	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
 
-// ReadBucketBuilder builds ReadBuckets.
-type ReadBucketBuilder interface {
-	storage.WriteBucket
-	// ToReadBucket returns a ReadBucket for the current data in the WriteBucket.
-	//
-	// No further calls can be made to the ReadBucketBuilder after this call.
-	// This is functionally equivalent to a Close in other contexts.
-	ToReadBucket() (storage.ReadBucket, error)
-}
+var errDuplicatePath = errors.New("duplicate path")
 
-// NewReadBucketBuilder returns a new in-memory ReadBucketBuilder.
-func NewReadBucketBuilder() ReadBucketBuilder {
-	return newReadBucketBuilder()
+// NewReadWriteBucket returns a new in-memory ReadWriteBucket.
+func NewReadWriteBucket() storage.ReadWriteBucket {
+	return newBucket(nil)
 }
 
 // NewReadBucket returns a new ReadBucket.
 func NewReadBucket(pathToData map[string][]byte) (storage.ReadBucket, error) {
-	return newReadBucket(pathToData, nil)
+	pathToImmutableObject := make(map[string]*internal.ImmutableObject, len(pathToData))
+	for path, data := range pathToData {
+		path, err := storageutil.ValidatePath(path)
+		if err != nil {
+			return nil, err
+		}
+		// This could happen if two paths normalize to the same path.
+		if _, ok := pathToImmutableObject[path]; ok {
+			return nil, errDuplicatePath
+		}
+		pathToImmutableObject[path] = internal.NewImmutableObject(path, "", data)
+	}
+	return newBucket(pathToImmutableObject), nil
 }

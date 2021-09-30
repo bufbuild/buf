@@ -307,3 +307,67 @@ func (s *repositoryService) DeleteRepositoryByFullName(ctx context.Context, full
 	}
 	return nil
 }
+
+// DeprecateRepositoryByName deprecates the repository.
+func (s *repositoryService) DeprecateRepositoryByName(
+	ctx context.Context,
+	ownerName string,
+	repositoryName string,
+	deprecationMessage string,
+) (repository *v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.DeprecateRepositoryByName(
+		ctx,
+		&v1alpha1.DeprecateRepositoryByNameRequest{
+			OwnerName:          ownerName,
+			RepositoryName:     repositoryName,
+			DeprecationMessage: deprecationMessage,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Repository, nil
+}
+
+// UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
+func (s *repositoryService) UndeprecateRepositoryByName(
+	ctx context.Context,
+	ownerName string,
+	repositoryName string,
+) (repository *v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UndeprecateRepositoryByName(
+		ctx,
+		&v1alpha1.UndeprecateRepositoryByNameRequest{
+			OwnerName:      ownerName,
+			RepositoryName: repositoryName,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Repository, nil
+}
+
+// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
+// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
+func (s *repositoryService) GetRepositoriesByFullName(ctx context.Context, fullNames []string) (repositories []*v1alpha1.Repository, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetRepositoriesByFullName(
+		ctx,
+		&v1alpha1.GetRepositoriesByFullNameRequest{
+			FullNames: fullNames,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Repositories, nil
+}

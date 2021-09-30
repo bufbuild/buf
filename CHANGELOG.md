@@ -2,8 +2,14 @@
 
 ## [Unreleased]
 
+- Add `--as-import-paths` flag to `ls-files` that strips local directory paths and prints file
+  paths as they are imported.
+
+## [v1.0.0-rc2] - 2021-09-23
+
 - Add `--include-imports` flag to `ls-files`.
 - Upgrade to `protoc` 3.18.0 support.
+- Fix regression with git inputs using `recurse_submodules=true`.
 
 ## [v1.0.0-rc1] - 2021-09-15
 
@@ -23,6 +29,7 @@ Simply update the command or flag, and you'll be good to go:
 - Removed the `buf logout` command in favor of `buf registry logout`.
 - Removed the `buf mod init` command in favor of `buf config init`.
 - Removed the `--name` and `--dep` flags in `buf config init`.
+- Removed the `--log-level` global flag.
 - Moved the output of `--version` from stderr to stdout.
 - Moved the output of `--help` and `help` from stderr to stdout.
 - [From v0.55.0](https://github.com/bufbuild/buf/releases/tag/v0.55.0): The version key in all configuration files (`buf.yaml`, `buf.gen.yaml`, `buf.work.yaml`) is now required.
@@ -544,7 +551,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc2...HEAD
+[v1.0.0-rc2]: https://github.com/bufbuild/buf/compare/v1.0.0-rc1...v1.0.0-rc2
 [v1.0.0-rc1]: https://github.com/bufbuild/buf/compare/v0.56.0...v1.0.0-rc1
 [v0.56.0]: https://github.com/bufbuild/buf/compare/v0.55.0...v0.56.0
 [v0.55.0]: https://github.com/bufbuild/buf/compare/v0.54.1...v0.55.0

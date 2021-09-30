@@ -134,9 +134,6 @@ func (e *fileLister) listFilesWithImports(
 	for i, imageFile := range imageFiles {
 		fileInfos[i] = imageFile
 	}
-	// The image is ordered in DAG order, which isn't consistent with what we do
-	// in the withoutImports flow and is a little annoying for a user.
-	bufmoduleref.SortFileInfos(fileInfos)
 	return fileInfos, nil, nil
 }
 

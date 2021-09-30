@@ -62,9 +62,6 @@ func (w *workspaceBuilder) BuildWorkspace(
 	namedModules := make(map[string]bufmodule.Module, len(workspaceConfig.Directories))
 	allModules := make([]bufmodule.Module, 0, len(workspaceConfig.Directories))
 	for _, directory := range workspaceConfig.Directories {
-		if err := validateWorkspaceDirectoryNonEmpty(ctx, readBucket, directory, workspaceID); err != nil {
-			return nil, err
-		}
 		if cachedModule, ok := w.moduleCache[directory]; ok {
 			if directory == targetSubDirPath {
 				continue
@@ -83,10 +80,13 @@ func (w *workspaceBuilder) BuildWorkspace(
 			allModules = append(allModules, cachedModule.module)
 			continue
 		}
+		readBucketForDirectory := storage.MapReadBucket(readBucket, storage.MapOnPrefix(directory))
+		if err := validateWorkspaceDirectoryNonEmpty(ctx, readBucketForDirectory, directory, workspaceID); err != nil {
+			return nil, err
+		}
 		if err := validateInputOverlap(directory, targetSubDirPath, workspaceID); err != nil {
 			return nil, err
 		}
-		readBucketForDirectory := storage.MapReadBucket(readBucket, storage.MapOnPrefix(directory))
 		moduleConfig, err := bufconfig.ReadConfigOS(
 			ctx,
 			readBucketForDirectory,

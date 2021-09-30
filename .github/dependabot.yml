@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # We manually update this from master and lock the commit in make/buf/all.mk
+      - dependency-name: "github.com/jhump/protoreflect"
+      # This needs to be locked to the same version we generate with, which is
+      # controlled via make/go/dep_protoc_gen_go_grpc.mk
+      - dependency-name: "google.golang.org/grpc"
+      # This needs to be locked to the same version we generate with, which is
+      # controlled via make/go/dep_protoc_gen_go.mk
+      - dependency-name: "google.golang.org/protobuf"

@@ -38,18 +38,34 @@ func TestGitCloner(t *testing.T) {
 
 	t.Run("default", func(t *testing.T) {
 		t.Parallel()
-		readBucket := readBucketForName(t, workDir, 1, nil)
+		readBucket := readBucketForName(t, workDir, 1, nil, false)
 
 		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
 		require.NoError(t, err)
 		assert.Equal(t, "// commit 2", string(content), "expected the commit on local-branch to be checked out")
 		_, err = readBucket.Stat(context.Background(), "nonexistent")
 		assert.True(t, storage.IsNotExist(err))
+		_, err = storage.ReadPath(context.Background(), readBucket, "submodule/test.proto")
+		assert.True(t, storage.IsNotExist(err))
+	})
+
+	t.Run("default_submodule", func(t *testing.T) {
+		t.Parallel()
+		readBucket := readBucketForName(t, workDir, 1, nil, true)
+
+		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// commit 2", string(content), "expected the commit on local-branch to be checked out")
+		_, err = readBucket.Stat(context.Background(), "nonexistent")
+		assert.True(t, storage.IsNotExist(err))
+		content, err = storage.ReadPath(context.Background(), readBucket, "submodule/test.proto")
+		require.NoError(t, err)
+		assert.Equal(t, "// submodule", string(content))
 	})
 
 	t.Run("main", func(t *testing.T) {
 		t.Parallel()
-		readBucket := readBucketForName(t, workDir, 1, NewBranchName("main"))
+		readBucket := readBucketForName(t, workDir, 1, NewBranchName("main"), false)
 
 		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
 		require.NoError(t, err)
@@ -60,7 +76,7 @@ func TestGitCloner(t *testing.T) {
 
 	t.Run("origin/main", func(t *testing.T) {
 		t.Parallel()
-		readBucket := readBucketForName(t, workDir, 1, NewBranchName("origin/main"))
+		readBucket := readBucketForName(t, workDir, 1, NewBranchName("origin/main"), false)
 
 		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
 		require.NoError(t, err)
@@ -71,7 +87,7 @@ func TestGitCloner(t *testing.T) {
 
 	t.Run("origin/remote-branch", func(t *testing.T) {
 		t.Parallel()
-		readBucket := readBucketForName(t, workDir, 1, NewBranchName("origin/remote-branch"))
+		readBucket := readBucketForName(t, workDir, 1, NewBranchName("origin/remote-branch"), false)
 
 		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
 		require.NoError(t, err)
@@ -82,7 +98,7 @@ func TestGitCloner(t *testing.T) {
 
 	t.Run("remote-tag", func(t *testing.T) {
 		t.Parallel()
-		readBucket := readBucketForName(t, workDir, 1, NewTagName("remote-tag"))
+		readBucket := readBucketForName(t, workDir, 1, NewTagName("remote-tag"), false)
 
 		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
 		require.NoError(t, err)
@@ -93,7 +109,7 @@ func TestGitCloner(t *testing.T) {
 
 	t.Run("branch_and_main_ref", func(t *testing.T) {
 		t.Parallel()
-		readBucket := readBucketForName(t, workDir, 2, NewRefNameWithBranch("HEAD~", "main"))
+		readBucket := readBucketForName(t, workDir, 2, NewRefNameWithBranch("HEAD~", "main"), false)
 
 		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
 		require.NoError(t, err)
@@ -104,7 +120,7 @@ func TestGitCloner(t *testing.T) {
 
 	t.Run("branch_and_ref", func(t *testing.T) {
 		t.Parallel()
-		readBucket := readBucketForName(t, workDir, 2, NewRefNameWithBranch("local-branch~", "local-branch"))
+		readBucket := readBucketForName(t, workDir, 2, NewRefNameWithBranch("local-branch~", "local-branch"), false)
 
 		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
 		require.NoError(t, err)
@@ -115,7 +131,7 @@ func TestGitCloner(t *testing.T) {
 
 	t.Run("HEAD", func(t *testing.T) {
 		t.Parallel()
-		readBucket := readBucketForName(t, workDir, 1, NewRefName("HEAD"))
+		readBucket := readBucketForName(t, workDir, 1, NewRefName("HEAD"), false)
 
 		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
 		require.NoError(t, err)
@@ -128,7 +144,7 @@ func TestGitCloner(t *testing.T) {
 		t.Parallel()
 		revParseBytes, err := exec.Command("git", "-C", workDir, "rev-parse", "HEAD~").Output()
 		require.NoError(t, err)
-		readBucket := readBucketForName(t, workDir, 2, NewRefName(strings.TrimSpace(string(revParseBytes))))
+		readBucket := readBucketForName(t, workDir, 2, NewRefName(strings.TrimSpace(string(revParseBytes))), false)
 
 		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
 		require.NoError(t, err)
@@ -141,7 +157,7 @@ func TestGitCloner(t *testing.T) {
 		t.Parallel()
 		revParseBytes, err := exec.Command("git", "-C", originDir, "rev-parse", "remote-branch~").Output()
 		require.NoError(t, err)
-		readBucket := readBucketForName(t, workDir, 2, NewRefNameWithBranch(strings.TrimSpace(string(revParseBytes)), "origin/remote-branch"))
+		readBucket := readBucketForName(t, workDir, 2, NewRefNameWithBranch(strings.TrimSpace(string(revParseBytes)), "origin/remote-branch"), false)
 
 		content, err := storage.ReadPath(context.Background(), readBucket, "test.proto")
 		require.NoError(t, err)
@@ -151,34 +167,43 @@ func TestGitCloner(t *testing.T) {
 	})
 }
 
-func readBucketForName(t *testing.T, path string, depth uint32, name Name) storage.ReadBucket {
+func readBucketForName(t *testing.T, path string, depth uint32, name Name, recurseSubmodules bool) storage.ReadBucket {
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
 	cloner := NewCloner(zap.NewNop(), storageosProvider, ClonerOptions{})
 	envContainer, err := app.NewEnvContainerForOS()
 	require.NoError(t, err)
 
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	readWriteBucket := storagemem.NewReadWriteBucket()
 	err = cloner.CloneToBucket(
 		context.Background(),
 		envContainer,
 		"file://"+filepath.Join(path, ".git"),
 		depth,
-		readBucketBuilder,
+		readWriteBucket,
 		CloneToBucketOptions{
-			Mapper: storage.MatchPathExt(".proto"),
-			Name:   name,
+			Mapper:            storage.MatchPathExt(".proto"),
+			Name:              name,
+			RecurseSubmodules: recurseSubmodules,
 		},
 	)
 	require.NoError(t, err)
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	require.NoError(t, err)
-	return readBucket
+	return readWriteBucket
 }
 
 func createGitDirs(t *testing.T) (string, string) {
 	tmpDir := t.TempDir()
-	originPath := filepath.Join(tmpDir, "origin")
 
+	submodulePath := filepath.Join(tmpDir, "submodule")
+	require.NoError(t, os.MkdirAll(submodulePath, os.ModePerm))
+	runCommand(t, "git", "-C", submodulePath, "init")
+	runCommand(t, "git", "-C", submodulePath, "config", "user.email", "tests@buf.build")
+	runCommand(t, "git", "-C", submodulePath, "config", "user.name", "Buf go tests")
+	runCommand(t, "git", "-C", submodulePath, "checkout", "-b", "main")
+	require.NoError(t, os.WriteFile(filepath.Join(submodulePath, "test.proto"), []byte("// submodule"), 0600))
+	runCommand(t, "git", "-C", submodulePath, "add", "test.proto")
+	runCommand(t, "git", "-C", submodulePath, "commit", "-m", "commit 0")
+
+	originPath := filepath.Join(tmpDir, "origin")
 	require.NoError(t, os.MkdirAll(originPath, 0777))
 	runCommand(t, "git", "-C", originPath, "init")
 	runCommand(t, "git", "-C", originPath, "config", "user.email", "tests@buf.build")
@@ -187,6 +212,7 @@ func createGitDirs(t *testing.T) (string, string) {
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 0"), 0600))
 	runCommand(t, "git", "-C", originPath, "add", "test.proto")
 	runCommand(t, "git", "-C", originPath, "commit", "-m", "commit 0")
+	runCommand(t, "git", "-C", originPath, "submodule", "add", submodulePath, "submodule")
 	require.NoError(t, os.WriteFile(filepath.Join(originPath, "test.proto"), []byte("// commit 1"), 0600))
 	runCommand(t, "git", "-C", originPath, "add", "test.proto")
 	runCommand(t, "git", "-C", originPath, "commit", "-m", "commit 1")

@@ -205,7 +205,7 @@ func (r *reader) getArchiveBucket(
 	defer func() {
 		retErr = multierr.Append(retErr, readCloser.Close())
 	}()
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	readWriteBucket := storagemem.NewReadWriteBucket()
 	ctx, span := trace.StartSpan(ctx, "unarchive")
 	defer span.End()
 	switch archiveType := archiveRef.ArchiveType(); archiveType {
@@ -213,7 +213,7 @@ func (r *reader) getArchiveBucket(
 		if err := storagearchive.Untar(
 			ctx,
 			readCloser,
-			readBucketBuilder,
+			readWriteBucket,
 			nil,
 			archiveRef.StripComponents(),
 		); err != nil {
@@ -238,7 +238,7 @@ func (r *reader) getArchiveBucket(
 			ctx,
 			readerAt,
 			size,
-			readBucketBuilder,
+			readWriteBucket,
 			nil,
 			archiveRef.StripComponents(),
 		); err != nil {
@@ -283,8 +283,9 @@ func (r *reader) getArchiveBucket(
 			nil,
 		), nil
 	}
+	var readBucket storage.ReadBucket = readWriteBucket
 	if subDirPath != "." {
-		readBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
+		readBucket = storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(subDirPath))
 	}
 	readBucketCloser, err := newReadBucketCloser(
 		storage.NopReadBucketCloser(readBucket),
@@ -524,13 +525,13 @@ func (r *reader) getGitBucket(
 	if err != nil {
 		return nil, err
 	}
-	readBucketBuilder := storagemem.NewReadBucketBuilder()
+	readWriteBucket := storagemem.NewReadWriteBucket()
 	if err := r.gitCloner.CloneToBucket(
 		ctx,
 		container,
 		gitURL,
 		gitRef.Depth(),
-		readBucketBuilder,
+		readWriteBucket,
 		git.CloneToBucketOptions{
 			Name:              gitRef.GitName(),
 			RecurseSubmodules: gitRef.RecurseSubmodules(),
@@ -577,6 +578,7 @@ func (r *reader) getGitBucket(
 			nil,
 		), nil
 	}
+	var readBucket storage.ReadBucket = readWriteBucket
 	if subDirPath != "." {
 		readBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
 	}
