@@ -140,23 +140,7 @@ func (g *generator) execPlugins(
 	image bufimage.Image,
 	includeImports bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
-	// Cache imagesByDir up-front if at least one plugin requires it
-	var imagesByDir []bufimage.Image
-	for _, pluginConfig := range config.PluginConfigs {
-		if pluginConfig.Strategy != StrategyDirectory {
-			continue
-		}
-		// Already guaranteed by config validation, but best to be safe.
-		if pluginConfig.Remote != "" {
-			return nil, fmt.Errorf("remote plugin %q cannot set strategy directory", pluginConfig.Remote)
-		}
-		var err error
-		imagesByDir, err = bufimage.ImageByDir(image)
-		if err != nil {
-			return nil, err
-		}
-		break
-	}
+	imageProvider := newImageProvider(image)
 	// Collect all of the plugin jobs so that they can be executed in parallel.
 	jobs := make([]func(context.Context) error, 0, len(config.PluginConfigs))
 	responses := make([]*pluginpb.CodeGeneratorResponse, len(config.PluginConfigs))
@@ -185,8 +169,7 @@ func (g *generator) execPlugins(
 					ctx,
 					container,
 					g.appprotoosGenerator,
-					image,
-					imagesByDir,
+					imageProvider,
 					currentPluginConfig,
 					includeImports,
 				)
@@ -230,19 +213,13 @@ func (g *generator) execLocalPlugin(
 	ctx context.Context,
 	container app.EnvStdioContainer,
 	appprotoosGenerator appprotoos.Generator,
-	image bufimage.Image,
-	imagesByDir []bufimage.Image,
+	imageProvider *imageProvider,
 	pluginConfig *PluginConfig,
 	includeImports bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	var pluginImages []bufimage.Image
-	switch pluginConfig.Strategy {
-	case StrategyAll:
-		pluginImages = []bufimage.Image{image}
-	case StrategyDirectory:
-		pluginImages = imagesByDir
-	default:
-		return nil, fmt.Errorf("unknown strategy: %v", pluginConfig.Strategy)
+	pluginImages, err := imageProvider.GetImages(pluginConfig.Strategy)
+	if err != nil {
+		return nil, err
 	}
 	response, err := appprotoosGenerator.Generate(
 		ctx,

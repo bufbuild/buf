@@ -32,23 +32,20 @@ import (
 )
 
 type bucketResponseWriter struct {
-	lock              sync.RWMutex
 	logger            *zap.Logger
 	storageosProvider storageos.Provider
 	responseHandler   appproto.ResponseHandler
-
 	// If set, create directories if they don't already exist.
 	createOutDirIfNotExists bool
-
 	// Cache the readWriteBuckets by their respective output paths.
 	// These builders are transformed to storage.ReadBuckets and written
 	// to disk once the bucketResponseWriter is flushed.
 	readWriteBuckets map[string]storage.ReadWriteBucket
-
 	// Cache the functions used to flush all of the responses to disk.
 	// This holds all of the buckets in-memory so that we only write
 	// the results to disk if all of the responses are successful.
 	closers []func() error
+	lock    sync.RWMutex
 }
 
 func newBucketResponseWriter(
