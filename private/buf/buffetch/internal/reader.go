@@ -1,4 +1,4 @@
-// Copyright 2020-2021 Buf mechnologies, Inc.
+// Copyright 2020-2021 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -247,11 +247,7 @@ func (r *reader) getArchiveBucket(
 	default:
 		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	if err != nil {
-		return nil, err
-	}
-	terminateFilesPriority, err := findTerminateFileDirectoryPathFromBucket(ctx, readBucket, subDirPath, terminateFileNames)
+	terminateFilesPriority, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +267,7 @@ func (r *reader) getArchiveBucket(
 			return nil, err
 		}
 		readBucketCloser, err := newReadBucketCloser(
-			storage.NopReadBucketCloser(storage.MapReadBucket(readBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
+			storage.NopReadBucketCloser(storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
 			terminateFileDirectoryPath,
 			relativeSubDirPath,
 		)
@@ -539,11 +535,7 @@ func (r *reader) getGitBucket(
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	readBucket, err := readBucketBuilder.ToReadBucket()
-	if err != nil {
-		return nil, err
-	}
-	terminateFilesPriority, err := findTerminateFileDirectoryPathFromBucket(ctx, readBucket, subDirPath, terminateFileNames)
+	terminateFilesPriority, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -566,7 +558,7 @@ func (r *reader) getGitBucket(
 			return nil, err
 		}
 		readBucketCloser, err := newReadBucketCloser(
-			storage.NopReadBucketCloser(storage.MapReadBucket(readBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
+			storage.NopReadBucketCloser(storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
 			terminateFileDirectoryPath,
 			relativeSubDirPath,
 		)
