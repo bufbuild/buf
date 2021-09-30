@@ -21,18 +21,16 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconfig"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/storage"
-	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -1168,94 +1166,11 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 	})
 }
 
-func TestGenerate(t *testing.T) {
-	successTemplate := `
-version: v1
-plugins:
-  - name: insertion-point-receiver
-    out: .
-  - name: insertion-point-writer
-    out: .
-`
-	storageosProvider := storageos.NewProvider()
-	tempDir, readWriteBucket := testCopyReadBucketToTempDir(
-		context.Background(),
-		t,
-		storageosProvider,
-		storagemem.NewReadWriteBucket(),
-	)
-	testRunStdout(
-		t,
-		nil,
-		0,
-		``,
-		"generate",
-		filepath.Join("testdata", "success"), // The input directory is irrelevant for these insertion points.
-		"--template",
-		successTemplate,
-		"-o",
-		tempDir,
-	)
-	expectedOutput, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "generate", "insertion_point"))
-	require.NoError(t, err)
-	diff, err := storage.DiffBytes(context.Background(), expectedOutput, readWriteBucket)
-	require.NoError(t, err)
-	require.Empty(t, string(diff))
-}
-
-func TestGenerateInsertionPointFail(t *testing.T) {
-	successTemplate := `
-version: v1
-plugins:
-  - name: insertion-point-receiver
-    out: gen/proto/insertion
-  - name: insertion-point-writer
-    out: .
-`
-	testRunStdoutStderr(
-		t,
-		nil,
-		1,
-		``,
-		`Failure: plugin insertion-point-writer: test.txt: does not exist`,
-		"generate",
-		filepath.Join("testdata", "success"), // The input directory is irrelevant for these insertion points.
-		"--template",
-		successTemplate,
-		"-o",
-		t.TempDir(),
-	)
-}
-
-func TestGenerateDuplicateFileFail(t *testing.T) {
-	successTemplate := `
-version: v1
-plugins:
-  - name: insertion-point-receiver
-    out: .
-  - name: insertion-point-receiver
-    out: .
-`
-	testRunStdoutStderr(
-		t,
-		nil,
-		1,
-		``,
-		`Failure: file "test.txt" was generated multiple times: once by plugin "insertion-point-receiver" and again by plugin "insertion-point-receiver"`,
-		"generate",
-		filepath.Join("testdata", "success"), // The input directory is irrelevant for these insertion points.
-		"--template",
-		successTemplate,
-		"-o",
-		t.TempDir(),
-	)
-}
-
 func testMigrateV1Beta1Diff(t *testing.T, storageosProvider storageos.Provider, scenario string, expectedStderr string) {
 	// Copy test setup to temporary directory to avoid writing to filesystem
 	inputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "success", scenario, "input"))
 	require.NoError(t, err)
-	tempDir, readWriteBucket := testCopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
+	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
 
 	testRunStdoutStderr(
 		t,
@@ -1280,7 +1195,7 @@ func testMigrateV1Beta1Failure(t *testing.T, storageosProvider storageos.Provide
 	// Copy test setup to temporary directory to avoid writing to filesystem
 	inputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "failure", scenario))
 	require.NoError(t, err)
-	tempDir, _ := testCopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
+	tempDir, _ := internaltesting.CopyReadBucketToTempDir(context.Background(), t, storageosProvider, inputBucket)
 
 	testRunStdoutStderr(
 		t,
@@ -1292,22 +1207,6 @@ func testMigrateV1Beta1Failure(t *testing.T, storageosProvider storageos.Provide
 		"migrate-v1beta1",
 		tempDir,
 	)
-}
-
-func testCopyReadBucketToTempDir(
-	ctx context.Context,
-	tb testing.TB,
-	storageosProvider storageos.Provider,
-	readBucket storage.ReadBucket,
-) (string, storage.ReadWriteBucket) {
-	tb.Helper()
-	// Copy to temporary directory to avoid writing to filesystem
-	tempDir := tb.TempDir()
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(tempDir)
-	require.NoError(tb, err)
-	_, err = storage.Copy(ctx, readBucket, readWriteBucket)
-	require.NoError(tb, err)
-	return tempDir, readWriteBucket
 }
 
 func testConfigInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {
@@ -1332,12 +1231,7 @@ func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expected
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		expectedExitCode,
 		expectedStdout,
-		func(use string) map[string]string {
-			return map[string]string{
-				useEnvVar(use, "CONFIG_DIR"): "testdata/config",
-				useEnvVar(use, "CACHE_DIR"):  "cache",
-			}
-		},
+		internaltesting.NewEnvFunc(t),
 		stdin,
 		args...,
 	)
@@ -1350,12 +1244,7 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 		expectedExitCode,
 		expectedStdout,
 		expectedStderr,
-		func(use string) map[string]string {
-			return map[string]string{
-				useEnvVar(use, "CONFIG_DIR"): "testdata/config",
-				useEnvVar(use, "CACHE_DIR"):  "cache",
-			}
-		},
+		internaltesting.NewEnvFunc(t),
 		stdin,
 		// we do not want warnings to be part of our stderr test calculation
 		append(
@@ -1366,9 +1255,7 @@ func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, ex
 }
 
 func testRunStdoutProfile(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
-	profileDirPath, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer func() { assert.NoError(t, os.RemoveAll(profileDirPath)) }()
+	tempDirPath := t.TempDir()
 	testRunStdout(
 		t,
 		stdin,
@@ -1377,7 +1264,7 @@ func testRunStdoutProfile(t *testing.T, stdin io.Reader, expectedExitCode int, e
 		append(
 			args,
 			"--profile",
-			fmt.Sprintf("--profile-path=%s", profileDirPath),
+			fmt.Sprintf("--profile-path=%s", tempDirPath),
 			"--profile-loops=1",
 			"--profile-type=cpu",
 		)...,
@@ -1396,20 +1283,10 @@ func testRun(
 		t,
 		func(use string) *appcmd.Command { return NewRootCommand(use) },
 		expectedExitCode,
-		func(use string) map[string]string {
-			return map[string]string{
-				useEnvVar(use, "CONFIG_DIR"): "testdata/config",
-				useEnvVar(use, "CACHE_DIR"):  "cache",
-				useEnvVar(use, "PATH"):       os.Getenv("PATH"),
-			}
-		},
+		internaltesting.NewEnvFunc(t),
 		stdin,
 		stdout,
 		stderr,
 		args...,
 	)
-}
-
-func useEnvVar(use string, suffix string) string {
-	return strings.ToUpper(use) + "_" + suffix
 }

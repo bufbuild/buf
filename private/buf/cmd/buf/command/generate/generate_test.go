@@ -19,11 +19,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufgen"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
@@ -56,7 +58,7 @@ func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(t,
 		googleapisDirPath,
-		[]testPluginInfo{
+		[]*testPluginInfo{
 			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
 		},
 	)
@@ -68,7 +70,7 @@ func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubsArchive(t,
 		googleapisDirPath,
-		[]testPluginInfo{
+		[]*testPluginInfo{
 			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
 		},
 		false,
@@ -81,7 +83,7 @@ func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubsArchive(t,
 		googleapisDirPath,
-		[]testPluginInfo{
+		[]*testPluginInfo{
 			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
 		},
 		true,
@@ -94,7 +96,7 @@ func TestCompareGeneratedStubsGoogleapisObjc(t *testing.T) {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	testCompareGeneratedStubs(t,
 		googleapisDirPath,
-		[]testPluginInfo{{name: "objc"}},
+		[]*testPluginInfo{{name: "objc"}},
 	)
 }
 
@@ -104,7 +106,7 @@ func TestCompareInsertionPointOutput(t *testing.T) {
 	insertionTestdataDirPath := filepath.Join("testdata", "insertion")
 	testCompareGeneratedStubs(t,
 		insertionTestdataDirPath,
-		[]testPluginInfo{
+		[]*testPluginInfo{
 			{name: "insertion-point-receiver"},
 			{name: "insertion-point-writer"},
 		},
@@ -113,21 +115,8 @@ func TestCompareInsertionPointOutput(t *testing.T) {
 
 func TestOutputFlag(t *testing.T) {
 	tempDirPath := t.TempDir()
-	appcmdtesting.RunCommandSuccess(
+	testRunSuccess(
 		t,
-		func(name string) *appcmd.Command {
-			return NewCommand(
-				name,
-				appflag.NewBuilder(name),
-			)
-		},
-		func(string) map[string]string {
-			return map[string]string{
-				"PATH": os.Getenv("PATH"),
-			}
-		},
-		nil,
-		nil,
 		"--output",
 		tempDirPath,
 		"--template",
@@ -138,19 +127,96 @@ func TestOutputFlag(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestGenerateInsertionPoints(t *testing.T) {
+	successTemplate := `
+version: v1
+plugins:
+  - name: insertion-point-receiver
+    out: .
+  - name: insertion-point-writer
+    out: .
+`
+	storageosProvider := storageos.NewProvider()
+	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(
+		context.Background(),
+		t,
+		storageosProvider,
+		storagemem.NewReadWriteBucket(),
+	)
+	testRunSuccess(
+		t,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		tempDir,
+	)
+	expectedOutput, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "insertion_point"))
+	require.NoError(t, err)
+	diff, err := storage.DiffBytes(context.Background(), expectedOutput, readWriteBucket)
+	require.NoError(t, err)
+	require.Empty(t, string(diff))
+}
+
+func TestGenerateInsertionPointFail(t *testing.T) {
+	successTemplate := `
+version: v1
+plugins:
+  - name: insertion-point-receiver
+    out: gen/proto/insertion
+  - name: insertion-point-writer
+    out: .
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: plugin insertion-point-writer: test.txt: does not exist`,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
+}
+
+func TestGenerateDuplicateFileFail(t *testing.T) {
+	successTemplate := `
+version: v1
+plugins:
+  - name: insertion-point-receiver
+    out: .
+  - name: insertion-point-receiver
+    out: .
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: file "test.txt" was generated multiple times: once by plugin "insertion-point-receiver" and again by plugin "insertion-point-receiver"`,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		successTemplate,
+		"-o",
+		t.TempDir(),
+	)
+}
+
 func testCompareGeneratedStubs(
 	t *testing.T,
 	dirPath string,
-	plugins []testPluginInfo,
+	testPluginInfos []*testPluginInfo,
 ) {
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 100)
 	actualProtocDir := t.TempDir()
 	bufGenDir := t.TempDir()
 	var actualProtocPluginFlags []string
-	for _, plugin := range plugins {
-		actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_out=%s", plugin.name, actualProtocDir))
-		if plugin.opt != "" {
-			actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_opt=%s", plugin.name, plugin.opt))
+	for _, testPluginInfo := range testPluginInfos {
+		actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_out=%s", testPluginInfo.name, actualProtocDir))
+		if testPluginInfo.opt != "" {
+			actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_opt=%s", testPluginInfo.name, testPluginInfo.opt))
 		}
 	}
 	buftesting.RunActualProtoc(
@@ -168,7 +234,7 @@ func testCompareGeneratedStubs(
 	genFlags := []string{
 		dirPath,
 		"--template",
-		newExternalConfigV1String(t, plugins, bufGenDir),
+		newExternalConfigV1String(t, testPluginInfos, bufGenDir),
 	}
 	for _, filePath := range filePaths {
 		genFlags = append(
@@ -185,11 +251,7 @@ func testCompareGeneratedStubs(
 				appflag.NewBuilder(name),
 			)
 		},
-		func(string) map[string]string {
-			return map[string]string{
-				"PATH": os.Getenv("PATH"),
-			}
-		},
+		internaltesting.NewEnvFunc(t),
 		nil,
 		nil,
 		genFlags...,
@@ -217,7 +279,7 @@ func testCompareGeneratedStubs(
 func testCompareGeneratedStubsArchive(
 	t *testing.T,
 	dirPath string,
-	plugins []testPluginInfo,
+	testPluginInfos []*testPluginInfo,
 	useJar bool,
 ) {
 	fileExt := ".zip"
@@ -229,10 +291,10 @@ func testCompareGeneratedStubsArchive(
 	actualProtocFile := filepath.Join(tempDir, "actual-protoc"+fileExt)
 	bufGenFile := filepath.Join(tempDir, "buf-generate"+fileExt)
 	var actualProtocPluginFlags []string
-	for _, plugin := range plugins {
-		actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_out=%s", plugin.name, actualProtocFile))
-		if plugin.opt != "" {
-			actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_opt=%s", plugin.name, plugin.opt))
+	for _, testPluginInfo := range testPluginInfos {
+		actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_out=%s", testPluginInfo.name, actualProtocFile))
+		if testPluginInfo.opt != "" {
+			actualProtocPluginFlags = append(actualProtocPluginFlags, fmt.Sprintf("--%s_opt=%s", testPluginInfo.name, testPluginInfo.opt))
 		}
 	}
 	buftesting.RunActualProtoc(
@@ -250,7 +312,7 @@ func testCompareGeneratedStubsArchive(
 	genFlags := []string{
 		dirPath,
 		"--template",
-		newExternalConfigV1String(t, plugins, bufGenFile),
+		newExternalConfigV1String(t, testPluginInfos, bufGenFile),
 	}
 	for _, filePath := range filePaths {
 		genFlags = append(
@@ -259,21 +321,8 @@ func testCompareGeneratedStubsArchive(
 			filePath,
 		)
 	}
-	appcmdtesting.RunCommandSuccess(
+	testRunSuccess(
 		t,
-		func(name string) *appcmd.Command {
-			return NewCommand(
-				name,
-				appflag.NewBuilder(name),
-			)
-		},
-		func(string) map[string]string {
-			return map[string]string{
-				"PATH": os.Getenv("PATH"),
-			}
-		},
-		nil,
-		nil,
 		genFlags...,
 	)
 	actualData, err := os.ReadFile(actualProtocFile)
@@ -309,12 +358,41 @@ func testCompareGeneratedStubsArchive(
 	assert.Empty(t, string(diff))
 }
 
-type testPluginInfo struct {
-	name string
-	opt  string
+func testRunSuccess(t *testing.T, args ...string) {
+	appcmdtesting.RunCommandSuccess(
+		t,
+		func(name string) *appcmd.Command {
+			return NewCommand(
+				name,
+				appflag.NewBuilder(name),
+			)
+		},
+		internaltesting.NewEnvFunc(t),
+		nil,
+		nil,
+		args...,
+	)
 }
 
-func newExternalConfigV1String(t *testing.T, plugins []testPluginInfo, out string) string {
+func testRunStdoutStderr(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, expectedStderr string, args ...string) {
+	appcmdtesting.RunCommandExitCodeStdoutStderr(
+		t,
+		func(name string) *appcmd.Command {
+			return NewCommand(
+				name,
+				appflag.NewBuilder(name),
+			)
+		},
+		expectedExitCode,
+		expectedStdout,
+		expectedStderr,
+		internaltesting.NewEnvFunc(t),
+		stdin,
+		args...,
+	)
+}
+
+func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out string) string {
 	externalConfig := bufgen.ExternalConfigV1{
 		Version: "v1",
 	}
@@ -331,4 +409,9 @@ func newExternalConfigV1String(t *testing.T, plugins []testPluginInfo, out strin
 	data, err := json.Marshal(externalConfig)
 	require.NoError(t, err)
 	return string(data)
+}
+
+type testPluginInfo struct {
+	name string
+	opt  string
 }
