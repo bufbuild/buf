@@ -370,6 +370,23 @@ func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
+type TerminateFilesPriority struct {
+	terminateFilesToPathPriority []map[string]string
+}
+
+func (t *TerminateFilesPriority) TerminateFilesToPathPriority() []map[string]string {
+	return t.terminateFilesToPathPriority
+}
+
+type ReadBucketCloserWithTerminateFiles interface {
+	ReadBucketCloser
+
+	// TerminateFilesPriority returns a TerminateFilesPriority, which is a slice of maps, where
+	// each map is the terminate file base and the full path where it is found, and the slice
+	// is in order of priority for the terminate files found.
+	TerminateFilesPriority() *TerminateFilesPriority
+}
+
 // ReadBucketCloser is a bucket returned from GetBucket.
 type ReadBucketCloser interface {
 	storage.ReadBucketCloser
@@ -386,6 +403,8 @@ type ReadBucketCloser interface {
 	// this terminate file, and the subdir will be the subdir of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
+	// SetSubDirPath allows the caller to reset the sub dir path
+	SetSubDirPath(string)
 }
 
 // ReadWriteBucketCloser is a bucket potentially returned from GetBucket.
@@ -414,7 +433,7 @@ type Reader interface {
 		container app.EnvStdinContainer,
 		bucketRef BucketRef,
 		options ...GetBucketOption,
-	) (ReadBucketCloser, error)
+	) (ReadBucketCloserWithTerminateFiles, error)
 	// GetModule gets the module.
 	GetModule(
 		ctx context.Context,

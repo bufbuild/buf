@@ -418,27 +418,27 @@ func TestFail10(t *testing.T) {
 
 func TestFail11(t *testing.T) {
 	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		1,
-		``,
-		"lint",
-		"--path",
-		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
-		"--input",
-		filepath.Join("testdata"),
-	)
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		fmt.Sprintf("%v:5:8:buf/buf.proto: does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
-		"lint",
-		"--path",
-		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
-		filepath.Join("testdata"),
-	)
+	//testRunStdout(
+	//	t,
+	//	nil,
+	//	1,
+	//	``,
+	//	"lint",
+	//	"--path",
+	//	filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
+	//	"--input",
+	//	filepath.Join("testdata"),
+	//)
+	//testRunStdout(
+	//	t,
+	//	nil,
+	//	bufcli.ExitCodeFileAnnotation,
+	//	fmt.Sprintf("%v:5:8:buf/buf.proto: does not exist", filepath.FromSlash("testdata/fail2/buf/buf2.proto")),
+	//	"lint",
+	//	"--path",
+	//	filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
+	//	filepath.Join("testdata"),
+	//)
 	testRunStdout(
 		t,
 		nil,

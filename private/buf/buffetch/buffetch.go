@@ -116,6 +116,12 @@ type ModuleRef interface {
 	internalModuleRef() internal.ModuleRef
 }
 
+// ProtoFileRef is a proto file reference.
+type ProtoFileRef interface {
+	SourceRef
+	internalProtoFileRef() internal.ProtoFileRef
+}
+
 // ImageRefParser is an image ref parser for Buf.
 type ImageRefParser interface {
 	// GetImageRef gets the reference for the image file.
@@ -210,6 +216,8 @@ type ReadBucketCloser internal.ReadBucketCloser
 // declaration to do so.
 type ReadWriteBucketCloser internal.ReadWriteBucketCloser
 
+type ReadBucketCloserWithTerminateFiles internal.ReadBucketCloserWithTerminateFiles
+
 // ImageReader is an image reader.
 type ImageReader interface {
 	// GetImageFile gets the image file.
@@ -233,7 +241,7 @@ type SourceReader interface {
 		container app.EnvStdinContainer,
 		sourceRef SourceRef,
 		options ...GetSourceBucketOption,
-	) (ReadBucketCloser, error)
+	) (ReadBucketCloserWithTerminateFiles, error)
 }
 
 // GetSourceBucketOption is an option for GetSourceBucket.

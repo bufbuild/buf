@@ -17,6 +17,7 @@ package bufwire
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufconfig"
@@ -68,6 +69,16 @@ func (m *moduleConfigReader) GetModuleConfigs(
 	// We construct a new WorkspaceBuilder here so that the cache is only used for a single call.
 	workspaceBuilder := bufwork.NewWorkspaceBuilder(m.moduleBucketBuilder)
 	switch t := sourceOrModuleRef.(type) {
+	case buffetch.ProtoFileRef:
+		return m.getProtoFileModuleSourceConfigs(
+			ctx,
+			container,
+			t,
+			workspaceBuilder,
+			configOverride,
+			externalDirOrFilePaths,
+			externalDirOrFilePathsAllowNotExist,
+		)
 	case buffetch.SourceRef:
 		return m.getSourceModuleConfigs(
 			ctx,
@@ -203,6 +214,91 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 		return nil, err
 	}
 	return newModuleConfig(module, config, nil /* Workspaces aren't supported for ModuleRefs */), nil
+}
+
+func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	sourceRef buffetch.SourceRef,
+	workspaceBuilder bufwork.WorkspaceBuilder,
+	configOverride string,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
+) (_ []ModuleConfig, retErr error) {
+	readBucketCloser, err := m.fetchReader.GetSourceBucket(ctx, container, sourceRef)
+	if err != nil {
+		return nil, err
+	}
+	workspaceConfigs := map[string]struct{}{}
+	for _, workspaceConfigFile := range bufwork.AllConfigFilePaths {
+		workspaceConfigs[workspaceConfigFile] = struct{}{}
+	}
+	moduleConfigs := map[string]struct{}{}
+	for _, moduleConfigFile := range bufconfig.AllConfigFilePaths {
+		moduleConfigs[moduleConfigFile] = struct{}{}
+	}
+	terminateFilesPriority := readBucketCloser.TerminateFilesPriority()
+	var workspaceConfigDirectoriesAbsolutePaths []string
+	workspaceConfigDir := ""
+	// tracks if a found `buf.yaml` or `buf.mod` is in the workspace
+	moduleInWorkspace := false
+	moduleConfigDir := ""
+	// check if the workspace directory found actually contains the module file found
+	for _, terminateFiles := range terminateFilesPriority.TerminateFilesToPathPriority() {
+		for configFile, configFilePath := range terminateFiles {
+			if _, ok := workspaceConfigs[configFile]; ok && configFilePath != "" {
+				// var err error
+				workspaceConfigDir = configFilePath
+				workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
+				if err != nil {
+					return nil, err
+				}
+				for _, dir := range workspaceConfig.Directories {
+					workspaceConfigDirectoriesAbsolutePaths = append(
+						workspaceConfigDirectoriesAbsolutePaths,
+						filepath.Join(filepath.Dir(configFilePath), dir),
+					)
+				}
+			}
+			if _, ok := moduleConfigs[configFile]; ok && configFilePath != "" {
+				// If there is a workspace config, it should already be found since workspaces are higher up on the hierarchy
+				for _, dir := range workspaceConfigDirectoriesAbsolutePaths {
+					rel, err := filepath.Rel(dir, configFilePath)
+					if err != nil && filepath.IsAbs(rel) {
+						moduleInWorkspace = true
+					}
+				}
+				moduleConfigDir = configFilePath
+			}
+		}
+	}
+	// if the module is not in the workspace, we need to remap the bucket
+	if !moduleInWorkspace {
+		rel, err := filepath.Rel(workspaceConfigDir, moduleConfigDir)
+		if err != nil {
+			return nil, err
+		}
+		readBucketCloser.SetSubDirPath(rel)
+	}
+	moduleConfig, err := m.getSourceModuleConfig(
+		ctx,
+		sourceRef,
+		readBucketCloser,
+		readBucketCloser.RelativeRootPath(),
+		readBucketCloser.SubDirPath(),
+		configOverride,
+		workspaceBuilder,
+		nil,
+		nil,
+		externalDirOrFilePaths,
+		externalDirOrFilePathsAllowNotExist,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return []ModuleConfig{
+		moduleConfig,
+	}, nil
 }
 
 func (m *moduleConfigReader) getWorkspaceModuleConfigs(
