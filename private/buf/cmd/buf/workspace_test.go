@@ -183,67 +183,67 @@ func TestWorkspaceDir(t *testing.T) {
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "proto", "rpc.proto"),
 		)
-		//testRunStdout(
-		//	t,
-		//	nil,
-		//	bufcli.ExitCodeFileAnnotation,
-		//	filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".
-		//    testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`),
-		//	"lint",
-		//	filepath.Join("testdata", "workspace", "success", baseDirPath),
-		//	"--path",
-		//	filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
-		//)
-		//testRunStdout(
-		//	t,
-		//	nil,
-		//	bufcli.ExitCodeFileAnnotation,
-		//	filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".`),
-		//	"lint",
-		//	filepath.Join("testdata", "workspace", "success", baseDirPath),
-		//	"--config",
-		//	`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
-		//	"--path",
-		//	filepath.Join("testdata", "workspace", "success", baseDirPath, "proto", "rpc.proto"),
-		//)
-		//testRunStdout(
-		//	t,
-		//	nil,
-		//	bufcli.ExitCodeFileAnnotation,
-		//	filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`),
-		//	"lint",
-		//	filepath.Join("testdata", "workspace", "success", baseDirPath),
-		//	"--config",
-		//	`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
-		//	"--path",
-		//	filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
-		//)
-		//testRunStdout(
-		//	t,
-		//	nil,
-		//	bufcli.ExitCodeFileAnnotation,
-		//	filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`),
-		//	"lint",
-		//	filepath.Join("testdata", "workspace", "success", baseDirPath),
-		//	"--config",
-		//	`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
-		//	"--path",
-		//	filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
-		//)
-		//testRunStdout(
-		//	t,
-		//	nil,
-		//	bufcli.ExitCodeFileAnnotation,
-		//	filepath.FromSlash(fmt.Sprintf(`%s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`,
-		//		wd,
-		//	)),
-		//	"lint",
-		//	filepath.Join(wd, "testdata", "workspace", "success", baseDirPath),
-		//	"--config",
-		//	`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
-		//	"--path",
-		//	filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
-		//)
+		testRunStdout(
+			t,
+			nil,
+			bufcli.ExitCodeFileAnnotation,
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".
+		    testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`),
+			"lint",
+			filepath.Join("testdata", "workspace", "success", baseDirPath),
+			"--path",
+			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
+		)
+		testRunStdout(
+			t,
+			nil,
+			bufcli.ExitCodeFileAnnotation,
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".`),
+			"lint",
+			filepath.Join("testdata", "workspace", "success", baseDirPath),
+			"--config",
+			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+			"--path",
+			filepath.Join("testdata", "workspace", "success", baseDirPath, "proto", "rpc.proto"),
+		)
+		testRunStdout(
+			t,
+			nil,
+			bufcli.ExitCodeFileAnnotation,
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`),
+			"lint",
+			filepath.Join("testdata", "workspace", "success", baseDirPath),
+			"--config",
+			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+			"--path",
+			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
+		)
+		testRunStdout(
+			t,
+			nil,
+			bufcli.ExitCodeFileAnnotation,
+			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`),
+			"lint",
+			filepath.Join("testdata", "workspace", "success", baseDirPath),
+			"--config",
+			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+			"--path",
+			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
+		)
+		testRunStdout(
+			t,
+			nil,
+			bufcli.ExitCodeFileAnnotation,
+			filepath.FromSlash(fmt.Sprintf(`%s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`,
+				wd,
+			)),
+			"lint",
+			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath),
+			"--config",
+			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
+			"--path",
+			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
+		)
 	}
 }
 
