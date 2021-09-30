@@ -12,27 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package appprotoos
+package appprotoexec
 
 import (
 	"context"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
-	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
-)
-
-// Constants used to create .jar files
-var (
-	ManifestPath    = normalpath.Join("META-INF", "MANIFEST.MF")
-	ManifestContent = []byte(`Manifest-Version: 1.0
-Created-By: 1.6.0 (protoc)
-
-`)
 )
 
 type generator struct {
@@ -61,11 +50,11 @@ func (g *generator) Generate(
 	for _, option := range options {
 		option(generateOptions)
 	}
-	handler, err := appprotoexec.NewHandler(
+	handler, err := newHandler(
 		g.logger,
 		g.storageosProvider,
 		pluginName,
-		appprotoexec.HandlerWithPluginPath(generateOptions.pluginPath),
+		generateOptions.pluginPath,
 	)
 	if err != nil {
 		return nil, err

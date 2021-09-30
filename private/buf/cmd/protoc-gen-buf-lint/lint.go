@@ -43,7 +43,7 @@ func Main() {
 			func(
 				ctx context.Context,
 				container app.EnvStderrContainer,
-				responseWriter appproto.ResponseWriter,
+				responseWriter appproto.ResponseBuilder,
 				request *pluginpb.CodeGeneratorRequest,
 			) error {
 				return handle(
@@ -60,7 +60,7 @@ func Main() {
 func handle(
 	ctx context.Context,
 	container app.EnvStderrContainer,
-	responseWriter appproto.ResponseWriter,
+	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
 	responseWriter.SetFeatureProto3Optional()

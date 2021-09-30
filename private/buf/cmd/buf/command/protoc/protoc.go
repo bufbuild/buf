@@ -201,7 +201,7 @@ func run(
 		if err := appproto.ValidatePluginResponses(pluginResponses); err != nil {
 			return err
 		}
-		bucketResponseWriter := appprotoos.NewBucketResponseWriter(
+		responseWriter := appprotoos.NewResponseWriter(
 			container.Logger(),
 			storageosProvider,
 		)
@@ -210,7 +210,7 @@ func run(
 			if !ok {
 				return fmt.Errorf("no value in PluginNamesToPluginInfo for %q", pluginResponse.PluginName)
 			}
-			if err := bucketResponseWriter.AddResponse(
+			if err := responseWriter.AddResponse(
 				ctx,
 				pluginResponse.Response,
 				pluginInfo.Out,
@@ -218,7 +218,7 @@ func run(
 				return err
 			}
 		}
-		if err := bucketResponseWriter.Close(); err != nil {
+		if err := responseWriter.Close(); err != nil {
 			return err
 		}
 		return nil

@@ -46,7 +46,7 @@ func newBinaryHandler(
 func (h *binaryHandler) Handle(
 	ctx context.Context,
 	container app.EnvStderrContainer,
-	responseWriter appproto.ResponseWriter,
+	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
 	ctx, span := trace.StartSpan(ctx, "plugin_proxy")

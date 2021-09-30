@@ -15,7 +15,8 @@
 // Package appproto contains helper functionality for protoc plugins.
 //
 // Note this is currently implicitly tested through buf's protoc command.
-// If this were split out into a separate package, testing would need to be moved to this package.
+// If this were split out into a separate package, testing would need to be
+// moved to this package.
 package appproto
 
 import (
@@ -45,8 +46,8 @@ const (
 	averageInsertionPointSize = 1024
 )
 
-// ResponseWriter handles CodeGeneratorResponses.
-type ResponseWriter interface {
+// ResponseBuilder builds CodeGeneratorResponses.
+type ResponseBuilder interface {
 	// Add adds the file to the response.
 	//
 	// Returns error if nil or the name is empty.
@@ -64,7 +65,7 @@ type ResponseWriter interface {
 	toResponse() *pluginpb.CodeGeneratorResponse
 }
 
-// Handler is a protoc plugin handler
+// Handler is a protoc plugin handler.
 type Handler interface {
 	// Handle handles the plugin.
 	//
@@ -75,7 +76,7 @@ type Handler interface {
 	Handle(
 		ctx context.Context,
 		container app.EnvStderrContainer,
-		responseWriter ResponseWriter,
+		responseWriter ResponseBuilder,
 		request *pluginpb.CodeGeneratorRequest,
 	) error
 }
@@ -84,7 +85,7 @@ type Handler interface {
 type HandlerFunc func(
 	context.Context,
 	app.EnvStderrContainer,
-	ResponseWriter,
+	ResponseBuilder,
 	*pluginpb.CodeGeneratorRequest,
 ) error
 
@@ -92,7 +93,7 @@ type HandlerFunc func(
 func (h HandlerFunc) Handle(
 	ctx context.Context,
 	container app.EnvStderrContainer,
-	responseWriter ResponseWriter,
+	responseWriter ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
 	return h(ctx, container, responseWriter, request)
@@ -116,6 +117,10 @@ func Run(ctx context.Context, container app.Container, handler Handler) error {
 // result is combined into one response that is written.
 type Generator interface {
 	// Generate generates a CodeGeneratorResponse for the given CodeGeneratorRequests.
+	//
+	// A new ResponseBuilder is constructed for every invocation of Generate and is
+	// used to consolidate all of the CodeGeneratorResponse_Files returned from a single
+	// plugin into a single CodeGeneratorResponse.
 	Generate(
 		ctx context.Context,
 		container app.EnvStderrContainer,
@@ -131,35 +136,40 @@ func NewGenerator(
 	return newGenerator(logger, handler)
 }
 
-// ResponseHandler handles the response and writes it to the given storage.WriteBucket
+// ResponseWriter handles the response and writes it to the given storage.WriteBucket
 // without executing any plugins and handles insertion points as needed.
-type ResponseHandler interface {
-	// HandleResponse writes to the bucket with the given response.
-	HandleResponse(
+type ResponseWriter interface {
+	// WriteResponse writes to the bucket with the given response. In practice, the
+	// WriteBucket is most often an in-memory bucket.
+	//
+	// CodeGeneratorResponses are consolidated into the bucket, and insertion points
+	// are applied in-place so that they can only access the files created in a single
+	// generation invocation (just like protoc).
+	WriteResponse(
 		ctx context.Context,
 		writeBucket storage.WriteBucket,
 		response *pluginpb.CodeGeneratorResponse,
-		options ...HandleResponseOption,
+		options ...WriteResponseOption,
 	) error
 }
 
-// NewResponseHandler returns a new ResponseHandler.
-func NewResponseHandler(logger *zap.Logger) ResponseHandler {
-	return newResponseHandler(logger)
+// NewResponseWriter returns a new ResponseWriter.
+func NewResponseWriter(logger *zap.Logger) ResponseWriter {
+	return newResponseWriter(logger)
 }
 
-// HandleResponseOption is an option for HandleResponse.
-type HandleResponseOption func(*handleResponseOptions)
+// WriteResponseOption is an option for WriteResponse.
+type WriteResponseOption func(*writeResponseOptions)
 
-// HandleResponseWithInsertionPointReadBucket returns a new HandleResponseOption that uses the given
+// WriteResponseWithInsertionPointReadBucket returns a new WriteResponseOption that uses the given
 // ReadBucket to read from for insertion points.
 //
 // If this is not specified, insertion points are not supported.
-func HandleResponseWithInsertionPointReadBucket(
+func WriteResponseWithInsertionPointReadBucket(
 	insertionPointReadBucket storage.ReadBucket,
-) HandleResponseOption {
-	return func(handleResponseOptions *handleResponseOptions) {
-		handleResponseOptions.insertionPointReadBucket = insertionPointReadBucket
+) WriteResponseOption {
+	return func(writeResponseOptions *writeResponseOptions) {
+		writeResponseOptions.insertionPointReadBucket = insertionPointReadBucket
 	}
 }
 
@@ -218,7 +228,7 @@ func newRunFunc(handler Handler) func(context.Context, app.Container) error {
 		if err := protodescriptor.ValidateCodeGeneratorRequest(request); err != nil {
 			return err
 		}
-		responseWriter := newResponseWriter(container)
+		responseWriter := newResponseBuilder(container)
 		if err := handler.Handle(ctx, container, responseWriter, request); err != nil {
 			return err
 		}
@@ -235,9 +245,9 @@ func newRunFunc(handler Handler) func(context.Context, app.Container) error {
 	}
 }
 
-// NewResponseWriter returns a new ResponseWriter.
-func NewResponseWriter(container app.StderrContainer) ResponseWriter {
-	return newResponseWriter(container)
+// NewResponseBuilder returns a new ResponseBuilder.
+func NewResponseBuilder(container app.StderrContainer) ResponseBuilder {
+	return newResponseBuilder(container)
 }
 
 // leadingWhitespace iterates through the given string,

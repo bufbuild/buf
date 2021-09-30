@@ -204,6 +204,39 @@ plugins:
 	)
 }
 
+func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	testGenerateInsertionPointMixedPathsFail(t, ".", wd)
+	testGenerateInsertionPointMixedPathsFail(t, wd, ".")
+}
+
+// testGenerateInsertionPointMixedPathsFail demonstrates that insertion points are only
+// able to generate to the same output directory, even if the absolute path points to the
+// same place. This is equivalent to protoc's behavior.
+func testGenerateInsertionPointMixedPathsFail(t *testing.T, receiverOut string, writerOut string) {
+	successTemplate := `
+version: v1
+plugins:
+  - name: insertion-point-receiver
+    out: %s
+  - name: insertion-point-writer
+    out: %s
+`
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		`Failure: plugin insertion-point-writer: test.txt: does not exist`,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		fmt.Sprintf(successTemplate, receiverOut, writerOut),
+		"-o",
+		t.TempDir(),
+	)
+}
+
 func testCompareGeneratedStubs(
 	t *testing.T,
 	dirPath string,

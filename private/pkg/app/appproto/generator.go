@@ -45,7 +45,7 @@ func (g *generator) Generate(
 	container app.EnvStderrContainer,
 	requests []*pluginpb.CodeGeneratorRequest,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	responseWriter := newResponseWriter(container)
+	responseBuilder := newResponseBuilder(container)
 	jobs := make([]func(context.Context) error, len(requests))
 	for i, request := range requests {
 		request := request
@@ -53,7 +53,7 @@ func (g *generator) Generate(
 			if err := protodescriptor.ValidateCodeGeneratorRequest(request); err != nil {
 				return err
 			}
-			return g.handler.Handle(ctx, container, responseWriter, request)
+			return g.handler.Handle(ctx, container, responseBuilder, request)
 		}
 	}
 	ctx, cancel := context.WithCancel(ctx)
@@ -61,7 +61,7 @@ func (g *generator) Generate(
 	if err := thread.Parallelize(ctx, jobs, thread.ParallelizeWithCancel(cancel)); err != nil {
 		return nil, err
 	}
-	response := responseWriter.toResponse()
+	response := responseBuilder.toResponse()
 	if err := protodescriptor.ValidateCodeGeneratorResponse(response); err != nil {
 		return nil, err
 	}

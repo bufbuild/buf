@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -31,15 +32,24 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-type bucketResponseWriter struct {
+// Constants used to create .jar files.
+var (
+	manifestPath    = normalpath.Join("META-INF", "MANIFEST.MF")
+	manifestContent = []byte(`Manifest-Version: 1.0
+Created-By: 1.6.0 (protoc)
+
+`)
+)
+
+type responseWriter struct {
 	logger            *zap.Logger
 	storageosProvider storageos.Provider
-	responseHandler   appproto.ResponseHandler
+	responseWriter    appproto.ResponseWriter
 	// If set, create directories if they don't already exist.
 	createOutDirIfNotExists bool
 	// Cache the readWriteBuckets by their respective output paths.
 	// These builders are transformed to storage.ReadBuckets and written
-	// to disk once the bucketResponseWriter is flushed.
+	// to disk once the responseWriter is flushed.
 	readWriteBuckets map[string]storage.ReadWriteBucket
 	// Cache the functions used to flush all of the responses to disk.
 	// This holds all of the buckets in-memory so that we only write
@@ -48,25 +58,25 @@ type bucketResponseWriter struct {
 	lock    sync.RWMutex
 }
 
-func newBucketResponseWriter(
+func newResponseWriter(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
-	options ...BucketResponseWriterOption,
-) *bucketResponseWriter {
-	bucketResponseWriterOptions := newBucketResponseWriterOptions()
+	options ...ResponseWriterOption,
+) *responseWriter {
+	responseWriterOptions := newResponseWriterOptions()
 	for _, option := range options {
-		option(bucketResponseWriterOptions)
+		option(responseWriterOptions)
 	}
-	return &bucketResponseWriter{
+	return &responseWriter{
 		logger:                  logger,
 		storageosProvider:       storageosProvider,
-		responseHandler:         appproto.NewResponseHandler(logger),
-		createOutDirIfNotExists: bucketResponseWriterOptions.createOutDirIfNotExists,
+		responseWriter:          appproto.NewResponseWriter(logger),
+		createOutDirIfNotExists: responseWriterOptions.createOutDirIfNotExists,
 		readWriteBuckets:        make(map[string]storage.ReadWriteBucket),
 	}
 }
 
-func (w *bucketResponseWriter) AddResponse(
+func (w *responseWriter) AddResponse(
 	ctx context.Context,
 	response *pluginpb.CodeGeneratorResponse,
 	pluginOut string,
@@ -81,7 +91,7 @@ func (w *bucketResponseWriter) AddResponse(
 	)
 }
 
-func (w *bucketResponseWriter) Close() error {
+func (w *responseWriter) Close() error {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 	for _, closeFunc := range w.closers {
@@ -101,7 +111,7 @@ func (w *bucketResponseWriter) Close() error {
 	return nil
 }
 
-func (w *bucketResponseWriter) addResponse(
+func (w *responseWriter) addResponse(
 	ctx context.Context,
 	response *pluginpb.CodeGeneratorResponse,
 	pluginOut string,
@@ -134,7 +144,7 @@ func (w *bucketResponseWriter) addResponse(
 	}
 }
 
-func (w *bucketResponseWriter) writeZip(
+func (w *responseWriter) writeZip(
 	ctx context.Context,
 	response *pluginpb.CodeGeneratorResponse,
 	outFilePath string,
@@ -145,11 +155,11 @@ func (w *bucketResponseWriter) writeZip(
 	if readWriteBucket, ok := w.readWriteBuckets[outFilePath]; ok {
 		// We already have a readWriteBucket for this outFilePath, so
 		// we can write to the same bucket.
-		if err := w.responseHandler.HandleResponse(
+		if err := w.responseWriter.WriteResponse(
 			ctx,
 			readWriteBucket,
 			response,
-			appproto.HandleResponseWithInsertionPointReadBucket(readWriteBucket),
+			appproto.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
 		); err != nil {
 			return err
 		}
@@ -173,15 +183,15 @@ func (w *bucketResponseWriter) writeZip(
 	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
 	if includeManifest {
-		if err := storage.PutPath(ctx, readWriteBucket, ManifestPath, ManifestContent); err != nil {
+		if err := storage.PutPath(ctx, readWriteBucket, manifestPath, manifestContent); err != nil {
 			return err
 		}
 	}
-	if err := w.responseHandler.HandleResponse(
+	if err := w.responseWriter.WriteResponse(
 		ctx,
 		readWriteBucket,
 		response,
-		appproto.HandleResponseWithInsertionPointReadBucket(readWriteBucket),
+		appproto.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
 	); err != nil {
 		return err
 	}
@@ -204,7 +214,7 @@ func (w *bucketResponseWriter) writeZip(
 	return nil
 }
 
-func (w *bucketResponseWriter) writeDirectory(
+func (w *responseWriter) writeDirectory(
 	ctx context.Context,
 	response *pluginpb.CodeGeneratorResponse,
 	outDirPath string,
@@ -213,22 +223,22 @@ func (w *bucketResponseWriter) writeDirectory(
 	if readWriteBucket, ok := w.readWriteBuckets[outDirPath]; ok {
 		// We already have a readWriteBucket for this outDirPath, so
 		// we can write to the same bucket.
-		if err := w.responseHandler.HandleResponse(
+		if err := w.responseWriter.WriteResponse(
 			ctx,
 			readWriteBucket,
 			response,
-			appproto.HandleResponseWithInsertionPointReadBucket(readWriteBucket),
+			appproto.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
 		); err != nil {
 			return err
 		}
 		return nil
 	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
-	if err := w.responseHandler.HandleResponse(
+	if err := w.responseWriter.WriteResponse(
 		ctx,
 		readWriteBucket,
 		response,
-		appproto.HandleResponseWithInsertionPointReadBucket(readWriteBucket),
+		appproto.WriteResponseWithInsertionPointReadBucket(readWriteBucket),
 	); err != nil {
 		return err
 	}
@@ -257,10 +267,10 @@ func (w *bucketResponseWriter) writeDirectory(
 	return nil
 }
 
-type bucketResponseWriterOptions struct {
+type responseWriterOptions struct {
 	createOutDirIfNotExists bool
 }
 
-func newBucketResponseWriterOptions() *bucketResponseWriterOptions {
-	return &bucketResponseWriterOptions{}
+func newResponseWriterOptions() *responseWriterOptions {
+	return &responseWriterOptions{}
 }

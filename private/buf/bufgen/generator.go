@@ -35,11 +35,10 @@ import (
 )
 
 type generator struct {
-	logger              *zap.Logger
-	storageosProvider   storageos.Provider
-	appprotoosGenerator appprotoos.Generator
-	responseHandler     appproto.ResponseHandler
-	registryProvider    registryv1alpha1apiclient.Provider
+	logger                *zap.Logger
+	storageosProvider     storageos.Provider
+	appprotoexecGenerator appprotoexec.Generator
+	registryProvider      registryv1alpha1apiclient.Provider
 }
 
 func newGenerator(
@@ -48,14 +47,30 @@ func newGenerator(
 	registryProvider registryv1alpha1apiclient.Provider,
 ) *generator {
 	return &generator{
-		logger:              logger,
-		storageosProvider:   storageosProvider,
-		appprotoosGenerator: appprotoos.NewGenerator(logger, storageosProvider),
-		responseHandler:     appproto.NewResponseHandler(logger),
-		registryProvider:    registryProvider,
+		logger:                logger,
+		storageosProvider:     storageosProvider,
+		appprotoexecGenerator: appprotoexec.NewGenerator(logger, storageosProvider),
+		registryProvider:      registryProvider,
 	}
 }
 
+// Generate executes all of the plugins specified by the given Config, and
+// consolidates the results in the same order that the plugins are listed.
+// Order is particularly important for insertion points, which are used to
+// modify the generted output from other plugins executed earlier in the chain.
+//
+// Note that insertion points will only have access to files that are written
+// in the same protoc invocation; plugins will not be able to insert code into
+// other files that already exist on disk (just like protoc).
+//
+// All of the plugins, both local and remote, are called concurrently. Each
+// plugin returns a single CodeGeneratorResponse, which are cached in-memory in
+// the appprotoos.ResponseWriter. Once all of the CodeGeneratorResponses
+// are written in-memory, we flush them to the OS filesystem by closing the
+// appprotoos.ResponseWriter.
+//
+// This behavior is equivalent to protoc, which only writes out the content
+// for each of the plugins if all of the plugins are successful.
 func (g *generator) Generate(
 	ctx context.Context,
 	container app.EnvStdioContainer,
@@ -77,10 +92,6 @@ func (g *generator) Generate(
 	)
 }
 
-// generate executes all of the plugins specified by the given Config, and
-// consolidates the results in the same order that the plugins are listed.
-// Order is particularly important for insertion points, which are used to
-// modify the generted output from other plugins executed earlier in the chain.
 func (g *generator) generate(
 	ctx context.Context,
 	container app.EnvStdioContainer,
@@ -95,7 +106,7 @@ func (g *generator) generate(
 	responses, err := g.execPlugins(
 		ctx,
 		container,
-		g.appprotoosGenerator,
+		g.appprotoexecGenerator,
 		config,
 		image,
 		includeImports,
@@ -104,10 +115,10 @@ func (g *generator) generate(
 		return err
 	}
 	// Apply the CodeGeneratorResponses in the order they were specified.
-	bucketResponseWriter := appprotoos.NewBucketResponseWriter(
+	responseWriter := appprotoos.NewResponseWriter(
 		g.logger,
 		g.storageosProvider,
-		appprotoos.BucketResponseWriterWithCreateOutDirIfNotExists(),
+		appprotoos.ResponseWriterWithCreateOutDirIfNotExists(),
 	)
 	for i, pluginConfig := range config.PluginConfigs {
 		out := pluginConfig.Out
@@ -118,7 +129,7 @@ func (g *generator) generate(
 		if response == nil {
 			return fmt.Errorf("failed to get plugin response for %s", pluginConfig.PluginName())
 		}
-		if err := bucketResponseWriter.AddResponse(
+		if err := responseWriter.AddResponse(
 			ctx,
 			response,
 			out,
@@ -126,7 +137,7 @@ func (g *generator) generate(
 			return fmt.Errorf("plugin %s: %v", pluginConfig.PluginName(), err)
 		}
 	}
-	if err := bucketResponseWriter.Close(); err != nil {
+	if err := responseWriter.Close(); err != nil {
 		return err
 	}
 	return nil
@@ -135,7 +146,7 @@ func (g *generator) generate(
 func (g *generator) execPlugins(
 	ctx context.Context,
 	container app.EnvStdioContainer,
-	appprotoosGenerator appprotoos.Generator,
+	appprotoexecGenerator appprotoexec.Generator,
 	config *Config,
 	image bufimage.Image,
 	includeImports bool,
@@ -168,7 +179,7 @@ func (g *generator) execPlugins(
 				response, err := g.execLocalPlugin(
 					ctx,
 					container,
-					g.appprotoosGenerator,
+					g.appprotoexecGenerator,
 					imageProvider,
 					currentPluginConfig,
 					includeImports,
@@ -212,7 +223,7 @@ func (g *generator) execPlugins(
 func (g *generator) execLocalPlugin(
 	ctx context.Context,
 	container app.EnvStdioContainer,
-	appprotoosGenerator appprotoos.Generator,
+	appprotoexecGenerator appprotoexec.Generator,
 	imageProvider *imageProvider,
 	pluginConfig *PluginConfig,
 	includeImports bool,
@@ -221,7 +232,7 @@ func (g *generator) execLocalPlugin(
 	if err != nil {
 		return nil, err
 	}
-	response, err := appprotoosGenerator.Generate(
+	response, err := appprotoexecGenerator.Generate(
 		ctx,
 		container,
 		pluginConfig.Name,
@@ -231,7 +242,7 @@ func (g *generator) execLocalPlugin(
 			appprotoexec.DefaultVersion,
 			includeImports,
 		),
-		appprotoos.GenerateWithPluginPath(pluginConfig.Path),
+		appprotoexec.GenerateWithPluginPath(pluginConfig.Path),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("plugin %s: %v", pluginConfig.PluginName(), err)

@@ -19,50 +19,15 @@ import (
 	"context"
 	"io"
 
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-// Generator is used to generate code to the OS filesystem.
-type Generator interface {
-	// Generate generates to the os filesystem, switching on the file extension.
-	// If there is a .jar extension, this generates a jar. If there is a .zip
-	// extension, this generates a zip. If there is no extension, this outputs
-	// to the directory. The corresponding CodeGeneratorResponse written is returned.
-	Generate(
-		ctx context.Context,
-		container app.EnvStderrContainer,
-		pluginName string,
-		requests []*pluginpb.CodeGeneratorRequest,
-		options ...GenerateOption,
-	) (*pluginpb.CodeGeneratorResponse, error)
-}
-
-// NewGenerator returns a new Generator.
-func NewGenerator(
-	logger *zap.Logger,
-	storageosProvider storageos.Provider,
-) Generator {
-	return newGenerator(logger, storageosProvider)
-}
-
-// GenerateOption is an option for Generate.
-type GenerateOption func(*generateOptions)
-
-// GenerateWithPluginPath returns a new GenerateOption that uses the given
-// path to the plugin.
-func GenerateWithPluginPath(pluginPath string) GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.pluginPath = pluginPath
-	}
-}
-
-// BucketResponseWriter writes CodeGeneratorResponses to the OS filesystem.
-type BucketResponseWriter interface {
+// ResponseWriter writes CodeGeneratorResponses to the OS filesystem.
+type ResponseWriter interface {
 	// Close writes all of the responses to disk. No further calls can be
-	// made to the BucketResponseWriter after this call.
+	// made to the ResponseWriter after this call.
 	io.Closer
 
 	// AddResponse adds the response to the writer, switching on the file extension.
@@ -76,26 +41,26 @@ type BucketResponseWriter interface {
 	) error
 }
 
-// NewBucketResponseWriter returns a new BucketResponseWriter.
-func NewBucketResponseWriter(
+// NewResponseWriter returns a new ResponseWriter.
+func NewResponseWriter(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
-	options ...BucketResponseWriterOption,
-) BucketResponseWriter {
-	return newBucketResponseWriter(
+	options ...ResponseWriterOption,
+) ResponseWriter {
+	return newResponseWriter(
 		logger,
 		storageosProvider,
 		options...,
 	)
 }
 
-// BucketResponseWriterOption is an option for the BucketResponseWriter.
-type BucketResponseWriterOption func(*bucketResponseWriterOptions)
+// ResponseWriterOption is an option for the ResponseWriter.
+type ResponseWriterOption func(*responseWriterOptions)
 
-// BucketResponseWriterWithCreateOutDirIfNotExists returns a new BucketResponseWriterOption that creates
+// ResponseWriterWithCreateOutDirIfNotExists returns a new ResponseWriterOption that creates
 // the directory if it does not exist.
-func BucketResponseWriterWithCreateOutDirIfNotExists() BucketResponseWriterOption {
-	return func(bucketResponseWriterOptions *bucketResponseWriterOptions) {
-		bucketResponseWriterOptions.createOutDirIfNotExists = true
+func ResponseWriterWithCreateOutDirIfNotExists() ResponseWriterOption {
+	return func(responseWriterOptions *responseWriterOptions) {
+		responseWriterOptions.createOutDirIfNotExists = true
 	}
 }

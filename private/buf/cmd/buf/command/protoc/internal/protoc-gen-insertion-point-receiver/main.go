@@ -30,7 +30,7 @@ func main() {
 func handle(
 	ctx context.Context,
 	container app.EnvStderrContainer,
-	responseWriter appproto.ResponseWriter,
+	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
 	return responseWriter.AddFile(
