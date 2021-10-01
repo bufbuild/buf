@@ -83,6 +83,31 @@ func (s *docService) GetSourceFile(
 	return response.Content, nil
 }
 
+// GetModulePackages retrieves the list of packages for module based on the given
+// owner, repository, and reference.
+func (s *docService) GetModulePackages(
+	ctx context.Context,
+	owner string,
+	repository string,
+	reference string,
+) (modulePackages *v1alpha1.ModulePackages, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetModulePackages(
+		ctx,
+		&v1alpha1.GetModulePackagesRequest{
+			Owner:      owner,
+			Repository: repository,
+			Reference:  reference,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.ModulePackages, nil
+}
+
 // GetModuleDocumentation retrieves the documentation for module based on the given
 // owner, repository, and reference.
 func (s *docService) GetModuleDocumentation(

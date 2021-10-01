@@ -44,6 +44,14 @@ type DocService interface {
 		reference string,
 		path string,
 	) (content []byte, err error)
+	// GetModulePackages retrieves the list of packages for module based on the given
+	// owner, repository, and reference.
+	GetModulePackages(
+		ctx context.Context,
+		owner string,
+		repository string,
+		reference string,
+	) (modulePackages *v1alpha1.ModulePackages, err error)
 	// GetModuleDocumentation retrieves the documentation for module based on the given
 	// owner, repository, and reference.
 	GetModuleDocumentation(
