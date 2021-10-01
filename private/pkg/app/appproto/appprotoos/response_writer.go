@@ -50,6 +50,18 @@ type responseWriter struct {
 	// Cache the readWriteBuckets by their respective output paths.
 	// These builders are transformed to storage.ReadBuckets and written
 	// to disk once the responseWriter is flushed.
+	//
+	// Note that output paths are used as-is with respect to the
+	// caller's configuration. It's possible that a single invocation
+	// will specify the same filepath in multiple ways, e.g. "." and
+	// "$(pwd)". However, we intentionally treat these as distinct paths
+	// to mirror protoc's insertion point behavior.
+	//
+	// For example, the following command will fail because protoc treats
+	// "." and "$(pwd)" as distinct paths:
+	//
+	// $ protoc example.proto --insertion-point-receiver_out=. --insertion-point-writer_out=$(pwd)
+	//
 	readWriteBuckets map[string]storage.ReadWriteBucket
 	// Cache the functions used to flush all of the responses to disk.
 	// This holds all of the buckets in-memory so that we only write
