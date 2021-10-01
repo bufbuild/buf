@@ -32,13 +32,20 @@ type bucket struct {
 	lock                  sync.RWMutex
 }
 
-func newBucket(pathToImmutableObject map[string]*internal.ImmutableObject) *bucket {
+func newBucket(
+	pathToImmutableObject map[string]*internal.ImmutableObject,
+	options ...ReadWriteBucketOption,
+) *bucket {
 	if pathToImmutableObject == nil {
 		pathToImmutableObject = make(map[string]*internal.ImmutableObject)
 	}
-	return &bucket{
+	bucket := &bucket{
 		pathToImmutableObject: pathToImmutableObject,
 	}
+	for _, option := range options {
+		option(bucket)
+	}
+	return bucket
 }
 
 func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser, error) {

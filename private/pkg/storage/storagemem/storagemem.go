@@ -39,7 +39,7 @@ type ReadWriteBucketOption func(*bucket)
 // The data is automatically decompressed on read.
 //
 // The default is to use no compression.
-func ReadWriteBucketWithCompression() BucketOption {
+func ReadWriteBucketWithCompression() ReadWriteBucketOption {
 	return func(bucket *bucket) {
 		bucket.compression = true
 	}

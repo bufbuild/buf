@@ -29,24 +29,49 @@ import (
 
 var storagetestingDirPath = filepath.Join("..", "storagetesting")
 
-func TestMem(t *testing.T) {
+func TestMemNoCompression(t *testing.T) {
 	t.Parallel()
+	testMem(t, false)
+}
+
+func TestMemCompression(t *testing.T) {
+	t.Parallel()
+	testMem(t, true)
+}
+
+func testMem(t *testing.T, compression bool) {
 	storagetesting.RunTestSuite(
 		t,
 		storagetestingDirPath,
-		testNewReadBucket,
-		testNewWriteBucket,
+		func(
+			t *testing.T,
+			dirPath string,
+			storageosProvider storageos.Provider,
+		) (storage.ReadBucket, storagetesting.GetExternalPathFunc) {
+			return testNewReadBucket(t, dirPath, storageosProvider, compression)
+		},
+		func(
+			t *testing.T,
+			storageosProvider storageos.Provider,
+		) storage.WriteBucket {
+			return testNewWriteBucket(t, storageosProvider, compression)
+		},
 		testWriteBucketToReadBucket,
 	)
 }
 
-func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos.Provider) (storage.ReadBucket, storagetesting.GetExternalPathFunc) {
+func testNewReadBucket(
+	t *testing.T,
+	dirPath string,
+	storageosProvider storageos.Provider,
+	compression bool,
+) (storage.ReadBucket, storagetesting.GetExternalPathFunc) {
 	osBucket, err := storageosProvider.NewReadWriteBucket(
 		dirPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	require.NoError(t, err)
-	readWriteBucket := storagemem.NewReadWriteBucket()
+	readWriteBucket := storagemem.NewReadWriteBucket(testGetReadWriteBucketOptions(compression)...)
 	_, err = storage.Copy(
 		context.Background(),
 		osBucket,
@@ -60,8 +85,12 @@ func testNewReadBucket(t *testing.T, dirPath string, storageosProvider storageos
 	}
 }
 
-func testNewWriteBucket(*testing.T, storageos.Provider) storage.WriteBucket {
-	return storagemem.NewReadWriteBucket()
+func testNewWriteBucket(
+	t *testing.T,
+	storageosProvider storageos.Provider,
+	compression bool,
+) storage.WriteBucket {
+	return storagemem.NewReadWriteBucket(testGetReadWriteBucketOptions(compression)...)
 }
 
 func testWriteBucketToReadBucket(t *testing.T, writeBucket storage.WriteBucket) storage.ReadBucket {
@@ -69,4 +98,13 @@ func testWriteBucketToReadBucket(t *testing.T, writeBucket storage.WriteBucket) 
 	readWriteBucket, ok := writeBucket.(storage.ReadWriteBucket)
 	require.True(t, ok)
 	return readWriteBucket
+}
+
+func testGetReadWriteBucketOptions(compression bool) []storagemem.ReadWriteBucketOption {
+	if compression {
+		return []storagemem.ReadWriteBucketOption{
+			storagemem.ReadWriteBucketWithCompression(),
+		}
+	}
+	return nil
 }
