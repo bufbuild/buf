@@ -108,11 +108,11 @@ message GetModuleDocumentationResponse {
 // ModuleDocumentation provides the name of the module and associated documentation.
 message ModuleDocumentation {
   string name = 1;
+  repeated string packages = 2;
   // This is the string representation of the contents of the buf.md file for module-level documentation.
   //
   // The buf.md file is a part of the module.
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
-  repeated string packages = 2;
   string documentation = 3;
 }
 

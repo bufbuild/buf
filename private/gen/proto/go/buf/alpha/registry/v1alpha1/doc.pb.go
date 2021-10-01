@@ -620,13 +620,13 @@ type ModuleDocumentation struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Name     string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Packages []string `protobuf:"bytes,2,rep,name=packages,proto3" json:"packages,omitempty"`
 	// This is the string representation of the contents of the buf.md file for module-level documentation.
 	//
 	// The buf.md file is a part of the module.
 	// string is used to enforce UTF-8 encoding or 7-bit ASCII text.
-	Packages      []string `protobuf:"bytes,2,rep,name=packages,proto3" json:"packages,omitempty"`
-	Documentation string   `protobuf:"bytes,3,opt,name=documentation,proto3" json:"documentation,omitempty"`
+	Documentation string `protobuf:"bytes,3,opt,name=documentation,proto3" json:"documentation,omitempty"`
 }
 
 func (x *ModuleDocumentation) Reset() {
