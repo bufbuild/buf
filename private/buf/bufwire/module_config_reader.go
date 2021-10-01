@@ -242,12 +242,12 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	moduleConfigDirectory := ""
 	for _, terminateFile := range terminateFilePriority.TerminateFiles() {
 		if terminateFile != nil {
-			if _, ok := workspaceConfigs[terminateFile.ConfigFile]; ok {
-				workspaceConfigDirectory = normalpath.Unnormalize(terminateFile.Path)
+			if _, ok := workspaceConfigs[terminateFile.ConfigFile()]; ok {
+				workspaceConfigDirectory = normalpath.Unnormalize(terminateFile.Path())
 				continue
 			}
-			if _, ok := moduleConfigs[terminateFile.ConfigFile]; ok {
-				moduleConfigDirectory = normalpath.Unnormalize(terminateFile.Path)
+			if _, ok := moduleConfigs[terminateFile.ConfigFile()]; ok {
+				moduleConfigDirectory = normalpath.Unnormalize(terminateFile.Path())
 			}
 		}
 	}

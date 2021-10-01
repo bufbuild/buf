@@ -14,17 +14,21 @@
 
 package internal
 
-var _ ReadBucketCloserWithTerminateFiles = &readBucketCloserWithTerminateFiles{}
+var (
+	_ ReadBucketCloserWithTerminateFiles = &readBucketCloserWithTerminateFiles{}
+	_ TerminateFilePriority              = &terminateFilePriority{}
+	_ TerminateFile                      = &terminateFile{}
+)
 
 type readBucketCloserWithTerminateFiles struct {
 	ReadBucketCloser
 
-	terminateFilePriority *TerminateFilePriority
+	terminateFilePriority TerminateFilePriority
 }
 
 func newReadBucketCloserWithTerminateFiles(
 	readBucketCloser ReadBucketCloser,
-	terminateFilePriority *TerminateFilePriority,
+	terminateFilePriority TerminateFilePriority,
 ) *readBucketCloserWithTerminateFiles {
 	return &readBucketCloserWithTerminateFiles{
 		ReadBucketCloser:      readBucketCloser,
@@ -32,6 +36,43 @@ func newReadBucketCloserWithTerminateFiles(
 	}
 }
 
-func (r *readBucketCloserWithTerminateFiles) TerminateFilePriority() *TerminateFilePriority {
+func (r *readBucketCloserWithTerminateFiles) TerminateFilePriority() TerminateFilePriority {
 	return r.terminateFilePriority
+}
+
+type terminateFilePriority struct {
+	terminateFiles []TerminateFile
+}
+
+func newTerminateFilePriority(terminateFiles []TerminateFile) TerminateFilePriority {
+	return &terminateFilePriority{
+		terminateFiles: terminateFiles,
+	}
+}
+
+// TerminateFiles returns the terminate files found.
+func (t *terminateFilePriority) TerminateFiles() []TerminateFile {
+	return t.terminateFiles
+}
+
+type terminateFile struct {
+	configFile string
+	path       string
+}
+
+func newTerminateFile(configFile string, path string) TerminateFile {
+	return &terminateFile{
+		configFile: configFile,
+		path:       path,
+	}
+}
+
+// ConfigFile returns the config file type of the terminate file.
+func (t *terminateFile) ConfigFile() string {
+	return t.configFile
+}
+
+// Path returns the path where the terminate file is located.
+func (t *terminateFile) Path() string {
+	return t.path
 }

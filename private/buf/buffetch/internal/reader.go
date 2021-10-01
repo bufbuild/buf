@@ -255,7 +255,7 @@ func (r *reader) getArchiveBucket(
 	// Get the highest priority file found and use it as the terminate file directory path.
 	terminateFiles := terminateFilePriority.TerminateFiles()
 	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
-		terminateFileDirectoryPath = terminateFiles[0].Path
+		terminateFileDirectoryPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryPath != "" {
 		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
@@ -312,7 +312,7 @@ func (r *reader) getDirBucket(
 	// Get the highest priority file found and use it as the terminate file directory path.
 	terminateFiles := terminateFilePriority.TerminateFiles()
 	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
-		terminateFileDirectoryAbsPath = terminateFiles[0].Path
+		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryAbsPath != "" {
 		// If the terminate file exists, we need to determine the relative path from the
@@ -414,7 +414,7 @@ func (r *reader) getProtoFileBucket(
 	// Get the highest priority file found and use it as the terminate file directory path.
 	terminateFiles := terminateFilePriority.TerminateFiles()
 	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
-		terminateFileDirectoryAbsPath = terminateFiles[0].Path
+		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryAbsPath == "" {
 		readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
@@ -532,7 +532,7 @@ func (r *reader) getGitBucket(
 	// Get the highest priority file found and use it as the terminate file directory path.
 	terminateFiles := terminateFilePriority.TerminateFiles()
 	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
-		terminateFileDirectoryPath = terminateFiles[0].Path
+		terminateFileDirectoryPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryPath != "" {
 		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
@@ -749,11 +749,11 @@ func findTerminateFileDirectoryPathFromBucket(
 	readBucket storage.ReadBucket,
 	subDirPath string,
 	terminateFileNames [][]string,
-) (*TerminateFilePriority, error) {
+) (TerminateFilePriority, error) {
 	if len(terminateFileNames) == 0 {
 		return nil, nil
 	}
-	terminateFiles := make([]*TerminateFile, len(terminateFileNames))
+	terminateFiles := make([]TerminateFile, len(terminateFileNames))
 	terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
 	foundFiles := 0
 	for {
@@ -797,8 +797,8 @@ func terminateFilesInBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	paths [][]string,
-) ([]*TerminateFile, error) {
-	foundPaths := make([]*TerminateFile, len(paths))
+) ([]TerminateFile, error) {
+	foundPaths := make([]TerminateFile, len(paths))
 	for i := range paths {
 		for _, path := range paths[i] {
 			exists, err := storage.Exists(ctx, readBucket, path)
@@ -821,7 +821,7 @@ func terminateFilesInBucket(
 func findTerminateFileDirectoryPathFromOS(
 	subDirPath string,
 	terminateFileNames [][]string,
-) (*TerminateFilePriority, error) {
+) (TerminateFilePriority, error) {
 	if len(terminateFileNames) == 0 {
 		return nil, nil
 	}
@@ -835,7 +835,7 @@ func findTerminateFileDirectoryPathFromOS(
 	if !fileInfo.IsDir() {
 		return nil, normalpath.NewError(normalpath.Unnormalize(subDirPath), errors.New("not a directory"))
 	}
-	terminateFiles := make([]*TerminateFile, len(terminateFileNames))
+	terminateFiles := make([]TerminateFile, len(terminateFileNames))
 	terminateFileDirectoryPath, err := normalpath.NormalizeAndAbsolute(subDirPath)
 	if err != nil {
 		return nil, err
@@ -882,8 +882,8 @@ func findTerminateFileDirectoryPathFromOS(
 	return newTerminateFilePriority(terminateFiles), nil
 }
 
-func terminateFilesOnOS(paths [][]string) ([]*TerminateFile, error) {
-	foundPaths := make([]*TerminateFile, len(paths))
+func terminateFilesOnOS(paths [][]string) ([]TerminateFile, error) {
+	foundPaths := make([]TerminateFile, len(paths))
 	for i := range paths {
 		for _, path := range paths[i] {
 			fileInfo, err := os.Stat(path)
