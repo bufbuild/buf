@@ -806,7 +806,7 @@ func terminateFilesInBucket(
 				return nil, err
 			}
 			if exists {
-				foundPaths[i] = newTerminateFile(filepath.Base(path), filepath.Dir(path))
+				foundPaths[i] = newTerminateFile(filepath.Base(path), normalpath.Normalize(filepath.Dir(path)))
 				// We want the first file found for each layer of hierarchy.
 				break
 			}
@@ -891,7 +891,7 @@ func terminateFilesOnOS(paths [][]string) ([]*TerminateFile, error) {
 				return nil, err
 			}
 			if fileInfo != nil && !fileInfo.IsDir() {
-				foundPaths[i] = newTerminateFile(filepath.Base(path), filepath.Dir(path))
+				foundPaths[i] = newTerminateFile(filepath.Base(path), normalpath.Normalize(filepath.Dir(path)))
 				// We want the first file found for each layer of hierarchy.
 				break
 			}

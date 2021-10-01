@@ -388,6 +388,8 @@ func newTerminateFilePriority(terminateFiles []*TerminateFile) *TerminateFilePri
 }
 
 // TerminateFile has the config file name and the path found.
+// The Path is always expressed as a normalpath and it is the caller's responsibility to unnormalise
+// it as needed.
 type TerminateFile struct {
 	ConfigFile string
 	Path       string
