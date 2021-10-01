@@ -370,21 +370,42 @@ func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
-type TerminateFilesPriority struct {
-	terminateFilesToPathPriority []map[string]string
+// TerminateFilePriority holds the terminate files found based on priority found. The first
+// file found based on priority is used.
+type TerminateFilePriority struct {
+	terminateFiles []*TerminateFile
 }
 
-func (t *TerminateFilesPriority) TerminateFilesToPathPriority() []map[string]string {
-	return t.terminateFilesToPathPriority
+// TerminateFiles returns the terminate files found.
+func (t *TerminateFilePriority) TerminateFiles() []*TerminateFile {
+	return t.terminateFiles
+}
+
+func newTerminateFilePriority(terminateFiles []*TerminateFile) *TerminateFilePriority {
+	return &TerminateFilePriority{
+		terminateFiles: terminateFiles,
+	}
+}
+
+// TerminateFile has the config file name and the path found.
+type TerminateFile struct {
+	ConfigFile string
+	Path       string
+}
+
+func newTerminateFile(configFile string, path string) *TerminateFile {
+	return &TerminateFile{
+		ConfigFile: configFile,
+		Path:       path,
+	}
 }
 
 type ReadBucketCloserWithTerminateFiles interface {
 	ReadBucketCloser
 
-	// TerminateFilesPriority returns a TerminateFilesPriority, which is a slice of maps, where
-	// each map is the terminate file base and the full path where it is found, and the slice
-	// is in order of priority for the terminate files found.
-	TerminateFilesPriority() *TerminateFilesPriority
+	// TerminateFilePriority returns a TerminateFilePriority, which is a slice, in order
+	// of priority, of the terminate files found.
+	TerminateFilePriority() *TerminateFilePriority
 }
 
 // ReadBucketCloser is a bucket returned from GetBucket.

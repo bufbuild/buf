@@ -237,44 +237,39 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	for _, moduleConfigFile := range bufconfig.AllConfigFilePaths {
 		moduleConfigs[moduleConfigFile] = struct{}{}
 	}
-	terminateFilesPriority := readBucketCloser.TerminateFilesPriority()
-	var workspaceConfigDirectoriesAbsolutePaths []string
-	workspaceConfigDir := ""
-	// tracks if a found `buf.yaml` or `buf.mod` is in the workspace
-	moduleInWorkspace := false
-	moduleConfigDir := ""
-	// check if the workspace directory found actually contains the module file found
-	for _, terminateFiles := range terminateFilesPriority.TerminateFilesToPathPriority() {
-		for configFile, configFilePath := range terminateFiles {
-			if _, ok := workspaceConfigs[configFile]; ok && configFilePath != "" {
-				// var err error
-				workspaceConfigDir = configFilePath
-				workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
-				if err != nil {
-					return nil, err
-				}
-				for _, dir := range workspaceConfig.Directories {
-					workspaceConfigDirectoriesAbsolutePaths = append(
-						workspaceConfigDirectoriesAbsolutePaths,
-						filepath.Join(filepath.Dir(configFilePath), dir),
-					)
-				}
+	terminateFilePriority := readBucketCloser.TerminateFilePriority()
+	workspaceConfigDirectory := ""
+	moduleConfigDirectory := ""
+	for _, terminateFile := range terminateFilePriority.TerminateFiles() {
+		if terminateFile != nil {
+			if _, ok := workspaceConfigs[terminateFile.ConfigFile]; ok {
+				workspaceConfigDirectory = terminateFile.Path
+				continue
 			}
-			if _, ok := moduleConfigs[configFile]; ok && configFilePath != "" {
-				// If there is a workspace config, it should already be found since workspaces are higher up on the hierarchy
-				for _, dir := range workspaceConfigDirectoriesAbsolutePaths {
-					rel, err := filepath.Rel(dir, configFilePath)
-					if err != nil && filepath.IsAbs(rel) {
-						moduleInWorkspace = true
-					}
-				}
-				moduleConfigDir = configFilePath
+			if _, ok := moduleConfigs[terminateFile.ConfigFile]; ok {
+				moduleConfigDirectory = terminateFile.Path
+			}
+		}
+	}
+	// If a workspace and module are both found, then we need to check of the module is within
+	// the workspace. If it is, we use the workspace. Otherwise, we use the module.
+	moduleInWorkspace := false
+	if workspaceConfigDirectory != "" && moduleConfigDirectory != "" {
+		workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
+		if err != nil {
+			return nil, err
+		}
+		for _, dir := range workspaceConfig.Directories {
+			workspaceDirectory := filepath.Join(workspaceConfigDirectory, dir)
+			relativePath, err := filepath.Rel(workspaceDirectory, moduleConfigDirectory)
+			if err != nil && filepath.IsAbs(relativePath) {
+				moduleInWorkspace = true
 			}
 		}
 	}
 	// if the module is not in the workspace, we need to remap the bucket
 	if !moduleInWorkspace {
-		rel, err := filepath.Rel(workspaceConfigDir, moduleConfigDir)
+		rel, err := filepath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
 		if err != nil {
 			return nil, err
 		}

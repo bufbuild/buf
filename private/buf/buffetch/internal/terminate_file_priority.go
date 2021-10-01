@@ -19,19 +19,19 @@ var _ ReadBucketCloserWithTerminateFiles = &readBucketCloserWithTerminateFiles{}
 type readBucketCloserWithTerminateFiles struct {
 	ReadBucketCloser
 
-	terminateFilesPriority *TerminateFilesPriority
+	terminateFilePriority *TerminateFilePriority
 }
 
 func newReadBucketCloserWithTerminateFiles(
 	readBucketCloser ReadBucketCloser,
-	terminateFilesPriority *TerminateFilesPriority,
+	terminateFilePriority *TerminateFilePriority,
 ) *readBucketCloserWithTerminateFiles {
 	return &readBucketCloserWithTerminateFiles{
-		ReadBucketCloser:       readBucketCloser,
-		terminateFilesPriority: terminateFilesPriority,
+		ReadBucketCloser:      readBucketCloser,
+		terminateFilePriority: terminateFilePriority,
 	}
 }
 
-func (r *readBucketCloserWithTerminateFiles) TerminateFilesPriority() *TerminateFilesPriority {
-	return r.terminateFilesPriority
+func (r *readBucketCloserWithTerminateFiles) TerminateFilePriority() *TerminateFilePriority {
+	return r.terminateFilePriority
 }

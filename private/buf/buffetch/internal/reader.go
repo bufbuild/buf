@@ -247,19 +247,15 @@ func (r *reader) getArchiveBucket(
 	default:
 		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	terminateFilesPriority, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
+	terminateFilePriority, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
-	// set the terminateFile to the first terminateFilesPriorities result, since that's the highest
-	// priority file.
 	terminateFileDirectoryPath := ""
-	if len(terminateFilesPriority.terminateFilesToPathPriority) != 0 {
-		// we want to take whichever comes first in the first "layer" of priority for the terminate files
-		for _, terminateFilePath := range terminateFilesPriority.terminateFilesToPathPriority[0] {
-			terminateFileDirectoryPath = terminateFilePath
-			break
-		}
+	// Get the highest priority file found and use it as the terminate file directory path.
+	terminateFiles := terminateFilePriority.TerminateFiles()
+	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
+		terminateFileDirectoryPath = terminateFiles[0].Path
 	}
 	if terminateFileDirectoryPath != "" {
 		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
@@ -306,19 +302,17 @@ func (r *reader) getDirBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	terminateFilesPriority, err := findTerminateFileDirectoryPathFromOS(dirRef.Path(), terminateFileNames)
+	terminateFilePriority, err := findTerminateFileDirectoryPathFromOS(dirRef.Path(), terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
 	// set the terminateFile to the first terminateFilesPriorities result, since that's the highest
 	// priority file.
 	terminateFileDirectoryAbsPath := ""
-	if len(terminateFilesPriority.terminateFilesToPathPriority) != 0 {
-		// we want to take whichever comes first in the first "layer" of priority for the terminate files
-		for _, terminateFilePath := range terminateFilesPriority.terminateFilesToPathPriority[0] {
-			terminateFileDirectoryAbsPath = terminateFilePath
-			break
-		}
+	// Get the highest priority file found and use it as the terminate file directory path.
+	terminateFiles := terminateFilePriority.TerminateFiles()
+	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
+		terminateFileDirectoryAbsPath = terminateFiles[0].Path
 	}
 	if terminateFileDirectoryAbsPath != "" {
 		// If the terminate file exists, we need to determine the relative path from the
@@ -396,7 +390,7 @@ func (r *reader) getDirBucket(
 	}
 	return newReadBucketCloserWithTerminateFiles(
 		readBucketCloser,
-		terminateFilesPriority,
+		terminateFilePriority,
 	), nil
 }
 
@@ -410,22 +404,17 @@ func (r *reader) getProtoFileBucket(
 		return nil, NewReadLocalDisabledError()
 	}
 	dirPath := filepath.Dir(protoFileRef.Path())
-	terminateFilesPriority, err := findTerminateFileDirectoryPathFromOS(dirPath, terminateFileNames)
+	terminateFilePriority, err := findTerminateFileDirectoryPathFromOS(dirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
 	// set the terminateFile to the first terminateFilesPriorities result, since that's the highest
 	// priority file.
 	terminateFileDirectoryAbsPath := ""
-	if len(terminateFilesPriority.terminateFilesToPathPriority) != 0 {
-		// we want to take whichever comes first in the first "layer" of priority for the terminate files
-		for _, terminateFilePath := range terminateFilesPriority.terminateFilesToPathPriority[0] {
-			terminateFileDirectoryAbsPath = terminateFilePath
-			break
-		}
-	}
-	if err != nil {
-		return nil, err
+	// Get the highest priority file found and use it as the terminate file directory path.
+	terminateFiles := terminateFilePriority.TerminateFiles()
+	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
+		terminateFileDirectoryAbsPath = terminateFiles[0].Path
 	}
 	if terminateFileDirectoryAbsPath == "" {
 		readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
@@ -497,7 +486,7 @@ func (r *reader) getProtoFileBucket(
 	}
 	return newReadBucketCloserWithTerminateFiles(
 		readWriteBucketCloser,
-		terminateFilesPriority,
+		terminateFilePriority,
 	), nil
 }
 
@@ -535,22 +524,15 @@ func (r *reader) getGitBucket(
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	terminateFilesPriority, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
+	terminateFilePriority, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
-	// set the terminateFile to the first terminateFilesPriorities result, since that's the highest
-	// priority file.
 	terminateFileDirectoryPath := ""
-	if len(terminateFilesPriority.terminateFilesToPathPriority) != 0 {
-		// we want to take whichever comes first in the first "layer" of priority for the terminate files
-		for _, terminateFilePath := range terminateFilesPriority.terminateFilesToPathPriority[0] {
-			terminateFileDirectoryPath = terminateFilePath
-			break
-		}
-	}
-	if err != nil {
-		return nil, err
+	// Get the highest priority file found and use it as the terminate file directory path.
+	terminateFiles := terminateFilePriority.TerminateFiles()
+	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
+		terminateFileDirectoryPath = terminateFiles[0].Path
 	}
 	if terminateFileDirectoryPath != "" {
 		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
@@ -767,16 +749,13 @@ func findTerminateFileDirectoryPathFromBucket(
 	readBucket storage.ReadBucket,
 	subDirPath string,
 	terminateFileNames [][]string,
-) (*TerminateFilesPriority, error) {
+) (*TerminateFilePriority, error) {
 	if len(terminateFileNames) == 0 {
 		return nil, nil
 	}
-	terminateFilesToPathPriority := make([]map[string]string, len(terminateFileNames))
-	// instantiate a new map for each layer of terminate files
-	for i := range terminateFileNames {
-		terminateFilesToPathPriority[i] = map[string]string{}
-	}
+	terminateFiles := make([]*TerminateFile, len(terminateFileNames))
 	terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
+	foundFiles := 0
 	for {
 		fullTerminateFileNames := make([][]string, len(terminateFileNames))
 		for i := range terminateFileNames {
@@ -789,12 +768,21 @@ func findTerminateFileDirectoryPathFromBucket(
 		if err != nil {
 			return nil, err
 		}
-		for i, foundPaths := range foundTerminateFiles {
-			for terminateFile, path := range foundPaths {
-				if _, ok := terminateFilesToPathPriority[i][terminateFile]; !ok {
-					terminateFilesToPathPriority[i][terminateFile] = filepath.Dir(path)
+		for i, terminateFile := range foundTerminateFiles {
+			// We only want to return the first file for a hiearchy, so if a file already exists
+			// for a layer of hierarchy, we do not check again.
+			if terminateFiles[i] == nil {
+				// If a file is found for a specific layer of hierarchy, we return the first file found
+				// for that hierarchy.
+				if terminateFile != nil {
+					terminateFiles[i] = terminateFile
+					foundFiles++
 				}
 			}
+		}
+		// If we have found a terminate file for each layer, we can return now.
+		if foundFiles == len(terminateFileNames) {
+			return newTerminateFilePriority(terminateFiles), nil
 		}
 		parent := normalpath.Dir(terminateFileDirectoryPath)
 		if parent == terminateFileDirectoryPath {
@@ -802,20 +790,15 @@ func findTerminateFileDirectoryPathFromBucket(
 		}
 		terminateFileDirectoryPath = parent
 	}
-	return &TerminateFilesPriority{
-		terminateFilesToPathPriority: terminateFilesToPathPriority,
-	}, nil
+	return newTerminateFilePriority(terminateFiles), nil
 }
 
 func terminateFilesInBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	paths [][]string,
-) ([]map[string]string, error) {
-	foundPaths := make([]map[string]string, len(paths))
-	for i := range foundPaths {
-		foundPaths[i] = map[string]string{}
-	}
+) ([]*TerminateFile, error) {
+	foundPaths := make([]*TerminateFile, len(paths))
 	for i := range paths {
 		for _, path := range paths[i] {
 			exists, err := storage.Exists(ctx, readBucket, path)
@@ -823,7 +806,9 @@ func terminateFilesInBucket(
 				return nil, err
 			}
 			if exists {
-				foundPaths[i][filepath.Base(path)] = path
+				foundPaths[i] = newTerminateFile(filepath.Base(path), filepath.Dir(path))
+				// We want the first file found for each layer of hierarchy.
+				break
 			}
 		}
 	}
@@ -836,7 +821,7 @@ func terminateFilesInBucket(
 func findTerminateFileDirectoryPathFromOS(
 	subDirPath string,
 	terminateFileNames [][]string,
-) (*TerminateFilesPriority, error) {
+) (*TerminateFilePriority, error) {
 	if len(terminateFileNames) == 0 {
 		return nil, nil
 	}
@@ -850,15 +835,12 @@ func findTerminateFileDirectoryPathFromOS(
 	if !fileInfo.IsDir() {
 		return nil, normalpath.NewError(normalpath.Unnormalize(subDirPath), errors.New("not a directory"))
 	}
-	terminateFilesToPathPriority := make([]map[string]string, len(terminateFileNames))
-	// instantiate a new map for each layer of terminate files
-	for i := range terminateFilesToPathPriority {
-		terminateFilesToPathPriority[i] = map[string]string{}
-	}
+	terminateFiles := make([]*TerminateFile, len(terminateFileNames))
 	terminateFileDirectoryPath, err := normalpath.NormalizeAndAbsolute(subDirPath)
 	if err != nil {
 		return nil, err
 	}
+	foundFiles := 0
 	for {
 		fullTerminateFileNames := make([][]string, len(terminateFileNames))
 		for i := range terminateFileNames {
@@ -871,12 +853,25 @@ func findTerminateFileDirectoryPathFromOS(
 		if err != nil {
 			return nil, err
 		}
-		for i, foundPaths := range foundTerminateFiles {
-			for terminateFile, path := range foundPaths {
-				if _, ok := terminateFilesToPathPriority[i][terminateFile]; !ok {
-					terminateFilesToPathPriority[i][terminateFile] = filepath.Dir(path)
+		// More terminate files were found than layers of hierarchy, return an error.
+		if len(foundTerminateFiles) > len(terminateFileNames) {
+			return nil, fmt.Errorf("more than one terminate file found per level of prioritisation: %v", foundTerminateFiles)
+		}
+		for i, terminateFile := range foundTerminateFiles {
+			// We only want to return the first file for a hiearchy, so if a file already exists
+			// for a layer of hierarchy, we do not check again.
+			if terminateFiles[i] == nil {
+				// If a file is found for a specific layer of hierarchy, we return the first file found
+				// for that hierarchy.
+				if terminateFile != nil {
+					terminateFiles[i] = terminateFile
+					foundFiles++
 				}
 			}
+		}
+		// If we have found a terminate file for each layer, we can return now.
+		if foundFiles == len(terminateFileNames) {
+			return newTerminateFilePriority(terminateFiles), nil
 		}
 		parent := normalpath.Dir(terminateFileDirectoryPath)
 		if parent == terminateFileDirectoryPath {
@@ -884,17 +879,11 @@ func findTerminateFileDirectoryPathFromOS(
 		}
 		terminateFileDirectoryPath = parent
 	}
-	return &TerminateFilesPriority{
-		terminateFilesToPathPriority: terminateFilesToPathPriority,
-	}, nil
+	return newTerminateFilePriority(terminateFiles), nil
 }
 
-func terminateFilesOnOS(paths [][]string) ([]map[string]string, error) {
-	foundPaths := make([]map[string]string, len(paths))
-	for i := range foundPaths {
-		foundPaths[i] = map[string]string{}
-	}
-
+func terminateFilesOnOS(paths [][]string) ([]*TerminateFile, error) {
+	foundPaths := make([]*TerminateFile, len(paths))
 	for i := range paths {
 		for _, path := range paths[i] {
 			fileInfo, err := os.Stat(path)
@@ -902,7 +891,9 @@ func terminateFilesOnOS(paths [][]string) ([]map[string]string, error) {
 				return nil, err
 			}
 			if fileInfo != nil && !fileInfo.IsDir() {
-				foundPaths[i][filepath.Base(path)] = path
+				foundPaths[i] = newTerminateFile(filepath.Base(path), filepath.Dir(path))
+				// We want the first file found for each layer of hierarchy.
+				break
 			}
 		}
 	}
