@@ -98,7 +98,14 @@ func (w *responseWriter) AddResponse(
 	return w.addResponse(
 		ctx,
 		response,
-		pluginOut,
+		// It's important that we clean the plugin output path
+		// so that we use the same in-memory bucket for paths
+		// set to the same directory.
+		//
+		// For example,
+		//
+		// --insertion-point-receiver_out=insertion --insertion-point-writer_out=./insertion/
+		filepath.Clean(pluginOut),
 		w.createOutDirIfNotExists,
 	)
 }
