@@ -59,5 +59,11 @@ func NewReadBucket(pathToData map[string][]byte) (storage.ReadBucket, error) {
 		}
 		pathToImmutableObject[path] = internal.NewImmutableObject(path, "", data)
 	}
-	return newBucket(pathToImmutableObject), nil
+	return newBucket(
+		pathToImmutableObject,
+		// TODO: remove this when we revert compression default to false
+		func(bucket *bucket) {
+			bucket.compression = false
+		},
+	), nil
 }

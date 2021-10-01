@@ -41,6 +41,8 @@ func newBucket(
 	}
 	bucket := &bucket{
 		pathToImmutableObject: pathToImmutableObject,
+		// TODO: reverse this
+		compression: true,
 	}
 	for _, option := range options {
 		option(bucket)
