@@ -57,7 +57,7 @@ func newGenerator(
 // Generate executes all of the plugins specified by the given Config, and
 // consolidates the results in the same order that the plugins are listed.
 // Order is particularly important for insertion points, which are used to
-// modify the generted output from other plugins executed earlier in the chain.
+// modify the generated output from other plugins executed earlier in the chain.
 //
 // Note that insertion points will only have access to files that are written
 // in the same protoc invocation; plugins will not be able to insert code into
