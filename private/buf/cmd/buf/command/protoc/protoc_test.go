@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -192,6 +193,67 @@ func TestCompareInsertionPointOutput(t *testing.T) {
 			{name: "insertion-point-receiver"},
 			{name: "insertion-point-writer"},
 		},
+	)
+}
+
+func TestInsertionPointMixedPathsFail(t *testing.T) {
+	testingextended.SkipIfShort(t)
+	t.Parallel()
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	testInsertionPointMixedPathsFail(t, ".", wd)
+	testInsertionPointMixedPathsFail(t, wd, ".")
+}
+
+// testInsertionPointMixedPathsFail demonstrates that insertion points are only
+// able to generate to the same output directory, even if the absolute path points
+// to the same place.
+func testInsertionPointMixedPathsFail(t *testing.T, receiverOut string, writerOut string) {
+	dirPath := filepath.Join("testdata", "insertion")
+	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 100)
+	protocFlags := []string{
+		fmt.Sprintf("--%s_out=%s", "insertion-point-receiver", receiverOut),
+		fmt.Sprintf("--%s_out=%s", "insertion-point-writer", writerOut),
+	}
+	err := prototesting.RunProtoc(
+		context.Background(),
+		[]string{dirPath},
+		filePaths,
+		false,
+		false,
+		map[string]string{
+			"PATH": os.Getenv("PATH"),
+		},
+		nil,
+		protocFlags...,
+	)
+	require.Error(t, err)
+	appcmdtesting.RunCommandExitCode(
+		t,
+		func(name string) *appcmd.Command {
+			return NewCommand(
+				name,
+				appflag.NewBuilder(name),
+			)
+		},
+		1,
+		func(string) map[string]string {
+			return map[string]string{
+				"PATH": os.Getenv("PATH"),
+			}
+		},
+		nil,
+		nil,
+		io.Discard,
+		append(
+			append(
+				protocFlags,
+				"-I",
+				dirPath,
+				"--by-dir",
+			),
+			filePaths...,
+		)...,
 	)
 }
 

@@ -15,13 +15,15 @@
 // Package appproto contains helper functionality for protoc plugins.
 //
 // Note this is currently implicitly tested through buf's protoc command.
-// If this were split out into a separate package, testing would need to be moved to this package.
+// If this were split out into a separate package, testing would need to be
+// moved to this package.
 package appproto
 
 import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"unicode"
 	"unicode/utf8"
@@ -44,8 +46,8 @@ const (
 	averageInsertionPointSize = 1024
 )
 
-// ResponseWriter handles CodeGeneratorResponses.
-type ResponseWriter interface {
+// ResponseBuilder builds CodeGeneratorResponses.
+type ResponseBuilder interface {
 	// Add adds the file to the response.
 	//
 	// Returns error if nil or the name is empty.
@@ -58,12 +60,12 @@ type ResponseWriter interface {
 	AddError(message string)
 	// SetFeatureProto3Optional sets the proto3 optional feature.
 	SetFeatureProto3Optional()
-	// ToResponse returns the resulting CodeGeneratorResponse. This must
+	// toResponse returns the resulting CodeGeneratorResponse. This must
 	// only be called after all writing has been completed.
-	ToResponse() *pluginpb.CodeGeneratorResponse
+	toResponse() *pluginpb.CodeGeneratorResponse
 }
 
-// Handler is a protoc plugin handler
+// Handler is a protoc plugin handler.
 type Handler interface {
 	// Handle handles the plugin.
 	//
@@ -74,7 +76,7 @@ type Handler interface {
 	Handle(
 		ctx context.Context,
 		container app.EnvStderrContainer,
-		responseWriter ResponseWriter,
+		responseWriter ResponseBuilder,
 		request *pluginpb.CodeGeneratorRequest,
 	) error
 }
@@ -83,7 +85,7 @@ type Handler interface {
 type HandlerFunc func(
 	context.Context,
 	app.EnvStderrContainer,
-	ResponseWriter,
+	ResponseBuilder,
 	*pluginpb.CodeGeneratorRequest,
 ) error
 
@@ -91,7 +93,7 @@ type HandlerFunc func(
 func (h HandlerFunc) Handle(
 	ctx context.Context,
 	container app.EnvStderrContainer,
-	responseWriter ResponseWriter,
+	responseWriter ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
 	return h(ctx, container, responseWriter, request)
@@ -111,35 +113,19 @@ func Run(ctx context.Context, container app.Container, handler Handler) error {
 
 // Generator executes the Handler using protoc's plugin execution logic.
 //
-// This invokes a Handler and writes out the response to the output location,
-// additionally accounting for insertion point logic.
-//
 // If multiple requests are specified, these are executed in parallel and the
 // result is combined into one response that is written.
 type Generator interface {
-	// Generate generates to the bucket.
+	// Generate generates a CodeGeneratorResponse for the given CodeGeneratorRequests.
+	//
+	// A new ResponseBuilder is constructed for every invocation of Generate and is
+	// used to consolidate all of the CodeGeneratorResponse_Files returned from a single
+	// plugin into a single CodeGeneratorResponse.
 	Generate(
 		ctx context.Context,
 		container app.EnvStderrContainer,
-		writeBucket storage.WriteBucket,
 		requests []*pluginpb.CodeGeneratorRequest,
-		options ...GenerateOption,
-	) error
-}
-
-// GenerateOption is an option for Generate.
-type GenerateOption func(*generateOptions)
-
-// GenerateWithInsertionPointReadBucket returns a new GenerateOption that uses the given
-// ReadBucket to read from for insertion points.
-//
-// If this is not specified, insertion points are not supported.
-func GenerateWithInsertionPointReadBucket(
-	insertionPointReadBucket storage.ReadBucket,
-) GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.insertionPointReadBucket = insertionPointReadBucket
-	}
+	) (*pluginpb.CodeGeneratorResponse, error)
 }
 
 // NewGenerator returns a new Generator.
@@ -148,6 +134,83 @@ func NewGenerator(
 	handler Handler,
 ) Generator {
 	return newGenerator(logger, handler)
+}
+
+// ResponseWriter handles the response and writes it to the given storage.WriteBucket
+// without executing any plugins and handles insertion points as needed.
+type ResponseWriter interface {
+	// WriteResponse writes to the bucket with the given response. In practice, the
+	// WriteBucket is most often an in-memory bucket.
+	//
+	// CodeGeneratorResponses are consolidated into the bucket, and insertion points
+	// are applied in-place so that they can only access the files created in a single
+	// generation invocation (just like protoc).
+	WriteResponse(
+		ctx context.Context,
+		writeBucket storage.WriteBucket,
+		response *pluginpb.CodeGeneratorResponse,
+		options ...WriteResponseOption,
+	) error
+}
+
+// NewResponseWriter returns a new ResponseWriter.
+func NewResponseWriter(logger *zap.Logger) ResponseWriter {
+	return newResponseWriter(logger)
+}
+
+// WriteResponseOption is an option for WriteResponse.
+type WriteResponseOption func(*writeResponseOptions)
+
+// WriteResponseWithInsertionPointReadBucket returns a new WriteResponseOption that uses the given
+// ReadBucket to read from for insertion points.
+//
+// If this is not specified, insertion points are not supported.
+func WriteResponseWithInsertionPointReadBucket(
+	insertionPointReadBucket storage.ReadBucket,
+) WriteResponseOption {
+	return func(writeResponseOptions *writeResponseOptions) {
+		writeResponseOptions.insertionPointReadBucket = insertionPointReadBucket
+	}
+}
+
+// PluginResponse encapsulates a CodeGeneratorResponse,
+// along with the name of the plugin that created it.
+type PluginResponse struct {
+	Response   *pluginpb.CodeGeneratorResponse
+	PluginName string
+}
+
+// NewPluginResponse retruns a new *PluginResponse.
+func NewPluginResponse(response *pluginpb.CodeGeneratorResponse, pluginName string) *PluginResponse {
+	return &PluginResponse{
+		Response:   response,
+		PluginName: pluginName,
+	}
+}
+
+// ValidatePluginResponses validates that each file is only defined by a single *PluginResponse.
+func ValidatePluginResponses(pluginResponses []*PluginResponse) error {
+	seen := make(map[string]string)
+	for _, pluginResponse := range pluginResponses {
+		for _, file := range pluginResponse.Response.File {
+			if file.GetInsertionPoint() != "" {
+				// We expect insertion points to write
+				// to files that already exist.
+				continue
+			}
+			fileName := file.GetName()
+			if pluginName, ok := seen[fileName]; ok {
+				return fmt.Errorf(
+					"file %q was generated multiple times: once by plugin %q and again by plugin %q",
+					fileName,
+					pluginName,
+					pluginResponse.PluginName,
+				)
+			}
+			seen[fileName] = pluginResponse.PluginName
+		}
+	}
+	return nil
 }
 
 // newRunFunc returns a new RunFunc for app.Main and app.Run.
@@ -165,11 +228,11 @@ func newRunFunc(handler Handler) func(context.Context, app.Container) error {
 		if err := protodescriptor.ValidateCodeGeneratorRequest(request); err != nil {
 			return err
 		}
-		responseWriter := newResponseWriter(container)
+		responseWriter := newResponseBuilder(container)
 		if err := handler.Handle(ctx, container, responseWriter, request); err != nil {
 			return err
 		}
-		response := responseWriter.ToResponse()
+		response := responseWriter.toResponse()
 		if err := protodescriptor.ValidateCodeGeneratorResponse(response); err != nil {
 			return err
 		}
@@ -182,66 +245,9 @@ func newRunFunc(handler Handler) func(context.Context, app.Container) error {
 	}
 }
 
-// NewReponseWriter returns a new ResponseWriter.
-func NewResponseWriter(container app.StderrContainer) ResponseWriter {
-	return newResponseWriter(container)
-}
-
-// ApplyInsertionPoint applies the insertion point defined in insertionPointFile
-// to the targetFile and returns the result as []byte. The caller must ensure the
-// provided targetFile matches the file requested in insertionPointFile.Name.
-func ApplyInsertionPoint(
-	ctx context.Context,
-	insertionPointFile *pluginpb.CodeGeneratorResponse_File,
-	targetFile io.Reader,
-) (_ []byte, retErr error) {
-	targetScanner := bufio.NewScanner(targetFile)
-	match := []byte("@@protoc_insertion_point(" + insertionPointFile.GetInsertionPoint() + ")")
-	postInsertionContent := bytes.NewBuffer(nil)
-	postInsertionContent.Grow(averageGeneratedFileSize)
-	// TODO: We should respect the line endings in the generated file. This would
-	// require either targetFile being an io.ReadSeeker and in the worst case
-	// doing 2 full scans of the file (if it is a single line), or implementing
-	// bufio.Scanner.Scan() inline
-	newline := []byte{'\n'}
-	for targetScanner.Scan() {
-		targetLine := targetScanner.Bytes()
-		if !bytes.Contains(targetLine, match) {
-			// these writes cannot fail, they will panic if they cannot
-			// allocate
-			_, _ = postInsertionContent.Write(targetLine)
-			_, _ = postInsertionContent.Write(newline)
-			continue
-		}
-		// For each line in then new content, apply the
-		// same amount of whitespace. This is important
-		// for specific languages, e.g. Python.
-		whitespace := leadingWhitespace(targetLine)
-
-		// Create another scanner so that we can seamlessly handle
-		// newlines in a platform-agnostic manner.
-		insertedContentScanner := bufio.NewScanner(bytes.NewBufferString(insertionPointFile.GetContent()))
-		insertedContent := scanWithPrefixAndLineEnding(insertedContentScanner, whitespace, newline)
-		// This write cannot fail, it will panic if it cannot
-		// allocate
-		_, _ = postInsertionContent.Write(insertedContent)
-
-		// Code inserted at this point is placed immediately
-		// above the line containing the insertion point, so
-		// we include it last.
-		// These writes cannot fail, they will panic if they cannot
-		// allocate
-		_, _ = postInsertionContent.Write(targetLine)
-		_, _ = postInsertionContent.Write(newline)
-	}
-
-	if err := targetScanner.Err(); err != nil {
-		return nil, err
-	}
-
-	// trim the trailing newline
-	postInsertionBytes := postInsertionContent.Bytes()
-	return postInsertionBytes[:len(postInsertionBytes)-1], nil
+// NewResponseBuilder returns a new ResponseBuilder.
+func NewResponseBuilder(container app.StderrContainer) ResponseBuilder {
+	return newResponseBuilder(container)
 }
 
 // leadingWhitespace iterates through the given string,

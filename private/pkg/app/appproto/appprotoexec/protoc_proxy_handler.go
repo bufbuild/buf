@@ -62,7 +62,7 @@ func newProtocProxyHandler(
 func (h *protocProxyHandler) Handle(
 	ctx context.Context,
 	container app.EnvStderrContainer,
-	responseWriter appproto.ResponseWriter,
+	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) (retErr error) {
 	ctx, span := trace.StartSpan(ctx, "protoc_proxy")

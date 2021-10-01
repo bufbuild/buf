@@ -5,6 +5,7 @@
 - Add `--as-import-paths` flag to `ls-files` that strips local directory paths and prints file
   paths as they are imported.
 - Fix issue where groups used in custom options did not result in the same behavior as `protoc`.
+- Fix issue where insertion points were not applied with respect to the configured output directory.
 
 ## [v1.0.0-rc2] - 2021-09-23
 

@@ -24,7 +24,7 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-func TestApplyInsertionPoint(t *testing.T) {
+func TestWriteInsertionPoint(t *testing.T) {
 	// \u205F is "Medium Mathematical Space"
 	whitespacePrefix := "\u205F\t\t\t"
 	targetFileContent := `This is a test file
@@ -46,7 +46,7 @@ at varied indentation levels
 			Content:        &insertionPointContent,
 		}
 
-		postInsertionContent, err := ApplyInsertionPoint(
+		postInsertionContent, err := writeInsertionPoint(
 			context.Background(),
 			insertionPointConsumer,
 			strings.NewReader(targetFileContent),
@@ -72,7 +72,7 @@ at varied indentation levels
 			Content:        &insertionPointContent,
 		}
 
-		postInsertionContent, err := ApplyInsertionPoint(
+		postInsertionContent, err := writeInsertionPoint(
 			context.Background(),
 			insertionPointConsumer,
 			strings.NewReader(targetFileContent),
@@ -98,7 +98,7 @@ at varied indentation levels
 			Content:        &insertionPointContent,
 		}
 
-		postInsertionContent, err := ApplyInsertionPoint(
+		postInsertionContent, err := writeInsertionPoint(
 			context.Background(),
 			insertionPointConsumer,
 			strings.NewReader(targetFileContent),
@@ -121,7 +121,7 @@ at varied indentation levels
 	})
 }
 
-func BenchmarkApplyInsertionPoint(b *testing.B) {
+func BenchmarkWriteInsertionPoint(b *testing.B) {
 	// \u205F is "Medium Mathematical Space"
 	whitespacePrefix := "\u205F\t\t\t"
 	targetFileContent := `This is a test file
@@ -163,7 +163,7 @@ at varied indentation levels` + whitespacePrefix + "// @@protoc_insertion_point(
 		for i := 0; i < b.N; i++ {
 			b.ReportAllocs()
 
-			postInsertionContent, _ = ApplyInsertionPoint(
+			postInsertionContent, _ = writeInsertionPoint(
 				context.Background(),
 				insertionPointConsumer,
 				strings.NewReader(targetFileContent),
@@ -197,7 +197,7 @@ at varied indentation levels` + whitespacePrefix + "// @@protoc_insertion_point(
 		for i := 0; i < b.N; i++ {
 			b.ReportAllocs()
 
-			postInsertionContent, _ = ApplyInsertionPoint(
+			postInsertionContent, _ = writeInsertionPoint(
 				context.Background(),
 				insertionPointConsumer,
 				strings.NewReader(inflatedTargetFileContent),

@@ -1,0 +1,15 @@
+
+		// The following line represents an insertion point named 'example'.
+		// We include a few indentation to verify the whitespace is preserved
+		// in the inserted content.
+		//
+		
+					// Include this comment on the 'example' insertion point.
+					  // This is another example where whitespaces are preserved.
+					  // And this demonstrates a newline literal (\n).
+					// And don't forget the windows newline literal (\r\n).
+				
+		//     @@protoc_insertion_point(example)
+		//
+		// Note that all text should be added above the insertion point.
+		
