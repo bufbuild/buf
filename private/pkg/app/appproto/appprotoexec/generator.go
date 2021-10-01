@@ -50,11 +50,11 @@ func (g *generator) Generate(
 	for _, option := range options {
 		option(generateOptions)
 	}
-	handler, err := newHandler(
+	handler, err := NewHandler(
 		g.logger,
 		g.storageosProvider,
 		pluginName,
-		generateOptions.pluginPath,
+		HandlerWithPluginPath(generateOptions.pluginPath),
 	)
 	if err != nil {
 		return nil, err

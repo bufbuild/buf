@@ -20,8 +20,11 @@ package appprotoexec
 
 import (
 	"context"
+	"fmt"
+	"os/exec"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -94,4 +97,78 @@ func GenerateWithPluginPath(pluginPath string) GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.pluginPath = pluginPath
 	}
+}
+
+// NewHandler returns a new Handler based on the plugin name and optional path.
+//
+// protocPath and pluginPath are optional.
+//
+// - If the plugin path is set, this returns a new binary handler for that path.
+// - If the plugin path is unset, this does exec.LookPath for a binary named protoc-gen-pluginName,
+//   and if one is found, a new binary handler is returned for this.
+// - Else, if the name is in ProtocProxyPluginNames, this returns a new protoc proxy handler.
+// - Else, this returns error.
+func NewHandler(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+	pluginName string,
+	options ...HandlerOption,
+) (appproto.Handler, error) {
+	handlerOptions := newHandlerOptions()
+	for _, option := range options {
+		option(handlerOptions)
+	}
+	if handlerOptions.pluginPath != "" {
+		pluginPath, err := exec.LookPath(handlerOptions.pluginPath)
+		if err != nil {
+			return nil, err
+		}
+		return newBinaryHandler(logger, pluginPath), nil
+	}
+	pluginPath, err := exec.LookPath("protoc-gen-" + pluginName)
+	if err == nil {
+		return newBinaryHandler(logger, pluginPath), nil
+	}
+	// we always look for protoc-gen-X first, but if not, check the builtins
+	if _, ok := ProtocProxyPluginNames[pluginName]; ok {
+		if handlerOptions.protocPath == "" {
+			handlerOptions.protocPath = "protoc"
+		}
+		protocPath, err := exec.LookPath(handlerOptions.protocPath)
+		if err != nil {
+			return nil, err
+		}
+		return newProtocProxyHandler(logger, storageosProvider, protocPath, pluginName), nil
+	}
+	return nil, fmt.Errorf("could not find protoc plugin for name %s", pluginName)
+}
+
+// HandlerOption is an option for a new Handler.
+type HandlerOption func(*handlerOptions)
+
+// HandlerWithProtocPath returns a new HandlerOption that sets the path to the protoc binary.
+//
+// The default is to do exec.LookPath on "protoc".
+func HandlerWithProtocPath(protocPath string) HandlerOption {
+	return func(handlerOptions *handlerOptions) {
+		handlerOptions.protocPath = protocPath
+	}
+}
+
+// HandlerWithPluginPath returns a new HandlerOption that sets the path to the plugin binary.
+//
+// The default is to do exec.LookPath on "protoc-gen-" + pluginName.
+func HandlerWithPluginPath(pluginPath string) HandlerOption {
+	return func(handlerOptions *handlerOptions) {
+		handlerOptions.pluginPath = pluginPath
+	}
+}
+
+type handlerOptions struct {
+	protocPath string
+	pluginPath string
+}
+
+func newHandlerOptions() *handlerOptions {
+	return &handlerOptions{}
 }
