@@ -1220,7 +1220,6 @@ func createZipFromDir(t *testing.T, rootPath string, archiveName string) string 
 }
 
 func TestWorkspaceProtoFile(t *testing.T) {
-	t.Skip("WIP")
 	t.Parallel()
 	// The ProtoFileRef is only accepted for lint commands, currently
 	// dir_buf_work contains a buf.work instead of a buf.work.yaml
@@ -1247,7 +1246,7 @@ func TestWorkspaceProtoFile(t *testing.T) {
 			nil,
 			bufcli.ExitCodeFileAnnotation,
 			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".
-        testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`,
+		    testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`,
 			),
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto"),
@@ -1258,7 +1257,7 @@ func TestWorkspaceProtoFile(t *testing.T) {
 			bufcli.ExitCodeFileAnnotation,
 			filepath.FromSlash(
 				fmt.Sprintf(`%s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".
-        %s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`, wd, wd),
+		    %s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`, wd, wd),
 			),
 			"lint",
 			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto"),

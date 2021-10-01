@@ -262,7 +262,7 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 		for _, dir := range workspaceConfig.Directories {
 			workspaceDirectory := filepath.Join(workspaceConfigDirectory, dir)
 			relativePath, err := filepath.Rel(workspaceDirectory, moduleConfigDirectory)
-			if err != nil && filepath.IsAbs(relativePath) {
+			if err != nil || relativePath == "." || filepath.IsAbs(relativePath) {
 				moduleInWorkspace = true
 			}
 		}
@@ -274,6 +274,19 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 			return nil, err
 		}
 		readBucketCloser.SetSubDirPath(rel)
+	}
+	if workspaceConfigDirectory != "" {
+		return m.getWorkspaceModuleConfigs(
+			ctx,
+			sourceRef,
+			workspaceBuilder,
+			readBucketCloser,
+			readBucketCloser.RelativeRootPath(),
+			readBucketCloser.SubDirPath(),
+			configOverride,
+			externalDirOrFilePaths,
+			externalDirOrFilePathsAllowNotExist,
+		)
 	}
 	moduleConfig, err := m.getSourceModuleConfig(
 		ctx,
