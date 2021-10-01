@@ -45,7 +45,7 @@ type DocServiceClient interface {
 	// GetSourceFile retrieves the source contents for the given owner, repository,
 	// reference, and path.
 	GetSourceFile(ctx context.Context, in *GetSourceFileRequest, opts ...grpc.CallOption) (*GetSourceFileResponse, error)
-	// GetModulePackages retrieves the list of packages for module based on the given
+	// GetModulePackages retrieves the list of packages for the module based on the given
 	// owner, repository, and reference.
 	GetModulePackages(ctx context.Context, in *GetModulePackagesRequest, opts ...grpc.CallOption) (*GetModulePackagesResponse, error)
 	// GetModuleDocumentation retrieves the documentation for module based on the given
@@ -122,7 +122,7 @@ type DocServiceServer interface {
 	// GetSourceFile retrieves the source contents for the given owner, repository,
 	// reference, and path.
 	GetSourceFile(context.Context, *GetSourceFileRequest) (*GetSourceFileResponse, error)
-	// GetModulePackages retrieves the list of packages for module based on the given
+	// GetModulePackages retrieves the list of packages for the module based on the given
 	// owner, repository, and reference.
 	GetModulePackages(context.Context, *GetModulePackagesRequest) (*GetModulePackagesResponse, error)
 	// GetModuleDocumentation retrieves the documentation for module based on the given

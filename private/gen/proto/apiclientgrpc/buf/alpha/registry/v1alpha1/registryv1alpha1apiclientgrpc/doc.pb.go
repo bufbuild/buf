@@ -83,7 +83,7 @@ func (s *docService) GetSourceFile(
 	return response.Content, nil
 }
 
-// GetModulePackages retrieves the list of packages for module based on the given
+// GetModulePackages retrieves the list of packages for the module based on the given
 // owner, repository, and reference.
 func (s *docService) GetModulePackages(
 	ctx context.Context,

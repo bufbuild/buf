@@ -28,7 +28,7 @@ service DocService {
   // GetSourceFile retrieves the source contents for the given owner, repository,
   // reference, and path.
   rpc GetSourceFile(GetSourceFileRequest) returns (GetSourceFileResponse);
-  // GetModulePackages retrieves the list of packages for module based on the given
+  // GetModulePackages retrieves the list of packages for the module based on the given
   // owner, repository, and reference.
   rpc GetModulePackages(GetModulePackagesRequest) returns (GetModulePackagesResponse);
   // GetModuleDocumentation retrieves the documentation for module based on the given
@@ -112,7 +112,8 @@ message ModuleDocumentation {
   //
   // The buf.md file is a part of the module.
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
-  string documentation = 2;
+  repeated string packages = 2;
+  string documentation = 3;
 }
 
 // GetPackageDocumentationRequest takes an owner, repository, reference, and package name.
