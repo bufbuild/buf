@@ -334,178 +334,6 @@ func (x *GetSourceFileResponse) GetContent() []byte {
 	return nil
 }
 
-// GetModuleDocumentationRequest takes an owner, repository, and reference.
-type GetModuleDocumentationRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
-	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
-	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-}
-
-func (x *GetModuleDocumentationRequest) Reset() {
-	*x = GetModuleDocumentationRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *GetModuleDocumentationRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetModuleDocumentationRequest) ProtoMessage() {}
-
-func (x *GetModuleDocumentationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetModuleDocumentationRequest.ProtoReflect.Descriptor instead.
-func (*GetModuleDocumentationRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *GetModuleDocumentationRequest) GetOwner() string {
-	if x != nil {
-		return x.Owner
-	}
-	return ""
-}
-
-func (x *GetModuleDocumentationRequest) GetRepository() string {
-	if x != nil {
-		return x.Repository
-	}
-	return ""
-}
-
-func (x *GetModuleDocumentationRequest) GetReference() string {
-	if x != nil {
-		return x.Reference
-	}
-	return ""
-}
-
-// GetModuleDocumentationResponse returns the ModuleDocumentation for the requested module.
-type GetModuleDocumentationResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	ModuleDocumentation *ModuleDocumentation `protobuf:"bytes,1,opt,name=module_documentation,json=moduleDocumentation,proto3" json:"module_documentation,omitempty"`
-}
-
-func (x *GetModuleDocumentationResponse) Reset() {
-	*x = GetModuleDocumentationResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *GetModuleDocumentationResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetModuleDocumentationResponse) ProtoMessage() {}
-
-func (x *GetModuleDocumentationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetModuleDocumentationResponse.ProtoReflect.Descriptor instead.
-func (*GetModuleDocumentationResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *GetModuleDocumentationResponse) GetModuleDocumentation() *ModuleDocumentation {
-	if x != nil {
-		return x.ModuleDocumentation
-	}
-	return nil
-}
-
-// ModuleDocumentation provides the name of the module and associated documentation.
-type ModuleDocumentation struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// This is the string representation of the contents of the buf.md file for module-level documentation.
-	//
-	// The buf.md file is a part of the module.
-	// string is used to enforce UTF-8 encoding or 7-bit ASCII text.
-	Documentation string `protobuf:"bytes,2,opt,name=documentation,proto3" json:"documentation,omitempty"`
-}
-
-func (x *ModuleDocumentation) Reset() {
-	*x = ModuleDocumentation{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ModuleDocumentation) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ModuleDocumentation) ProtoMessage() {}
-
-func (x *ModuleDocumentation) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ModuleDocumentation.ProtoReflect.Descriptor instead.
-func (*ModuleDocumentation) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *ModuleDocumentation) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *ModuleDocumentation) GetDocumentation() string {
-	if x != nil {
-		return x.Documentation
-	}
-	return ""
-}
-
 // GetModulePackagesRequest takes an owner, repository, and reference.
 type GetModulePackagesRequest struct {
 	state         protoimpl.MessageState
@@ -520,7 +348,7 @@ type GetModulePackagesRequest struct {
 func (x *GetModulePackagesRequest) Reset() {
 	*x = GetModulePackagesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[8]
+		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[5]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -533,7 +361,7 @@ func (x *GetModulePackagesRequest) String() string {
 func (*GetModulePackagesRequest) ProtoMessage() {}
 
 func (x *GetModulePackagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[8]
+	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[5]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -546,7 +374,7 @@ func (x *GetModulePackagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetModulePackagesRequest.ProtoReflect.Descriptor instead.
 func (*GetModulePackagesRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{8}
+	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetModulePackagesRequest) GetOwner() string {
@@ -582,7 +410,7 @@ type GetModulePackagesResponse struct {
 func (x *GetModulePackagesResponse) Reset() {
 	*x = GetModulePackagesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[9]
+		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[6]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -595,7 +423,7 @@ func (x *GetModulePackagesResponse) String() string {
 func (*GetModulePackagesResponse) ProtoMessage() {}
 
 func (x *GetModulePackagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[9]
+	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[6]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -608,7 +436,7 @@ func (x *GetModulePackagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetModulePackagesResponse.ProtoReflect.Descriptor instead.
 func (*GetModulePackagesResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{9}
+	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetModulePackagesResponse) GetModulePackages() *ModulePackages {
@@ -631,7 +459,7 @@ type ModulePackages struct {
 func (x *ModulePackages) Reset() {
 	*x = ModulePackages{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[10]
+		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -644,7 +472,7 @@ func (x *ModulePackages) String() string {
 func (*ModulePackages) ProtoMessage() {}
 
 func (x *ModulePackages) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[10]
+	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -657,7 +485,7 @@ func (x *ModulePackages) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModulePackages.ProtoReflect.Descriptor instead.
 func (*ModulePackages) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{10}
+	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ModulePackages) GetName() string {
@@ -672,6 +500,178 @@ func (x *ModulePackages) GetPackages() []string {
 		return x.Packages
 	}
 	return nil
+}
+
+// GetModuleDocumentationRequest takes an owner, repository, and reference.
+type GetModuleDocumentationRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
+	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
+	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
+}
+
+func (x *GetModuleDocumentationRequest) Reset() {
+	*x = GetModuleDocumentationRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetModuleDocumentationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetModuleDocumentationRequest) ProtoMessage() {}
+
+func (x *GetModuleDocumentationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetModuleDocumentationRequest.ProtoReflect.Descriptor instead.
+func (*GetModuleDocumentationRequest) Descriptor() ([]byte, []int) {
+	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetModuleDocumentationRequest) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+func (x *GetModuleDocumentationRequest) GetRepository() string {
+	if x != nil {
+		return x.Repository
+	}
+	return ""
+}
+
+func (x *GetModuleDocumentationRequest) GetReference() string {
+	if x != nil {
+		return x.Reference
+	}
+	return ""
+}
+
+// GetModuleDocumentationResponse returns the ModuleDocumentation for the requested module.
+type GetModuleDocumentationResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ModuleDocumentation *ModuleDocumentation `protobuf:"bytes,1,opt,name=module_documentation,json=moduleDocumentation,proto3" json:"module_documentation,omitempty"`
+}
+
+func (x *GetModuleDocumentationResponse) Reset() {
+	*x = GetModuleDocumentationResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetModuleDocumentationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetModuleDocumentationResponse) ProtoMessage() {}
+
+func (x *GetModuleDocumentationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetModuleDocumentationResponse.ProtoReflect.Descriptor instead.
+func (*GetModuleDocumentationResponse) Descriptor() ([]byte, []int) {
+	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GetModuleDocumentationResponse) GetModuleDocumentation() *ModuleDocumentation {
+	if x != nil {
+		return x.ModuleDocumentation
+	}
+	return nil
+}
+
+// ModuleDocumentation provides the name of the module and associated documentation.
+type ModuleDocumentation struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// This is the string representation of the contents of the buf.md file for module-level documentation.
+	//
+	// The buf.md file is a part of the module.
+	// string is used to enforce UTF-8 encoding or 7-bit ASCII text.
+	Documentation string `protobuf:"bytes,2,opt,name=documentation,proto3" json:"documentation,omitempty"`
+}
+
+func (x *ModuleDocumentation) Reset() {
+	*x = ModuleDocumentation{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ModuleDocumentation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ModuleDocumentation) ProtoMessage() {}
+
+func (x *ModuleDocumentation) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ModuleDocumentation.ProtoReflect.Descriptor instead.
+func (*ModuleDocumentation) Descriptor() ([]byte, []int) {
+	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ModuleDocumentation) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ModuleDocumentation) GetDocumentation() string {
+	if x != nil {
+		return x.Documentation
+	}
+	return ""
 }
 
 // GetPackageDocumentationRequest takes an owner, repository, reference, and package name.
@@ -1932,46 +1932,46 @@ var file_buf_alpha_registry_v1alpha1_doc_proto_rawDesc = []byte{
 	0x22, 0x31, 0x0a, 0x15, 0x47, 0x65, 0x74, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x46, 0x69, 0x6c,
 	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x63, 0x6f, 0x6e,
 	0x74, 0x65, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x63, 0x6f, 0x6e, 0x74,
-	0x65, 0x6e, 0x74, 0x22, 0x73, 0x0a, 0x1d, 0x47, 0x65, 0x74, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65,
-	0x44, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x12, 0x1e, 0x0a, 0x0a, 0x72, 0x65,
-	0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a,
-	0x72, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72, 0x79, 0x12, 0x1c, 0x0a, 0x09, 0x72, 0x65,
-	0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72,
-	0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x22, 0x85, 0x01, 0x0a, 0x1e, 0x47, 0x65, 0x74,
-	0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x44, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x63, 0x0a, 0x14, 0x6d,
-	0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5f, 0x64, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x30, 0x2e, 0x62, 0x75, 0x66, 0x2e,
+	0x65, 0x6e, 0x74, 0x22, 0x6e, 0x0a, 0x18, 0x47, 0x65, 0x74, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65,
+	0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x14, 0x0a, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05,
+	0x6f, 0x77, 0x6e, 0x65, 0x72, 0x12, 0x1e, 0x0a, 0x0a, 0x72, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74,
+	0x6f, 0x72, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x72, 0x65, 0x70, 0x6f, 0x73,
+	0x69, 0x74, 0x6f, 0x72, 0x79, 0x12, 0x1c, 0x0a, 0x09, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e,
+	0x63, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65,
+	0x6e, 0x63, 0x65, 0x22, 0x71, 0x0a, 0x19, 0x47, 0x65, 0x74, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65,
+	0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x54, 0x0a, 0x0f, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5f, 0x70, 0x61, 0x63, 0x6b, 0x61,
+	0x67, 0x65, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2b, 0x2e, 0x62, 0x75, 0x66, 0x2e,
 	0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76,
-	0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x44, 0x6f,
-	0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x13, 0x6d, 0x6f, 0x64,
+	0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x50, 0x61,
+	0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x52, 0x0e, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x50, 0x61,
+	0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x22, 0x40, 0x0a, 0x0e, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65,
+	0x50, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08,
+	0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x08,
+	0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x22, 0x73, 0x0a, 0x1d, 0x47, 0x65, 0x74, 0x4d,
+	0x6f, 0x64, 0x75, 0x6c, 0x65, 0x44, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x6f, 0x77, 0x6e,
+	0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x12,
+	0x1e, 0x0a, 0x0a, 0x72, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72, 0x79, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x0a, 0x72, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72, 0x79, 0x12,
+	0x1c, 0x0a, 0x09, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x09, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x22, 0x85, 0x01,
+	0x0a, 0x1e, 0x47, 0x65, 0x74, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x44, 0x6f, 0x63, 0x75, 0x6d,
+	0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x12, 0x63, 0x0a, 0x14, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5f, 0x64, 0x6f, 0x63, 0x75, 0x6d,
+	0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x30,
+	0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73,
+	0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x4d, 0x6f, 0x64,
 	0x75, 0x6c, 0x65, 0x44, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x22, 0x4f, 0x0a, 0x13, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x44, 0x6f, 0x63, 0x75, 0x6d, 0x65,
-	0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x24, 0x0a, 0x0d, 0x64,
-	0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x0d, 0x64, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x22, 0x6e, 0x0a, 0x18, 0x47, 0x65, 0x74, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x50, 0x61,
-	0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a,
-	0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6f, 0x77,
-	0x6e, 0x65, 0x72, 0x12, 0x1e, 0x0a, 0x0a, 0x72, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72,
-	0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x72, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74,
-	0x6f, 0x72, 0x79, 0x12, 0x1c, 0x0a, 0x09, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65,
-	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x72, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63,
-	0x65, 0x22, 0x71, 0x0a, 0x19, 0x47, 0x65, 0x74, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x50, 0x61,
-	0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x54,
-	0x0a, 0x0f, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x5f, 0x70, 0x61, 0x63, 0x6b, 0x61, 0x67, 0x65,
-	0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2b, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x50, 0x61, 0x63, 0x6b,
-	0x61, 0x67, 0x65, 0x73, 0x52, 0x0e, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x50, 0x61, 0x63, 0x6b,
-	0x61, 0x67, 0x65, 0x73, 0x22, 0x40, 0x0a, 0x0e, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x50, 0x61,
-	0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x61,
-	0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x08, 0x70, 0x61,
-	0x63, 0x6b, 0x61, 0x67, 0x65, 0x73, 0x22, 0x97, 0x01, 0x0a, 0x1e, 0x47, 0x65, 0x74, 0x50, 0x61,
+	0x52, 0x13, 0x6d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x44, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x4f, 0x0a, 0x13, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x44,
+	0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x12, 0x0a, 0x04,
+	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65,
+	0x12, 0x24, 0x0a, 0x0d, 0x64, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x64, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e,
+	0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22, 0x97, 0x01, 0x0a, 0x1e, 0x47, 0x65, 0x74, 0x50, 0x61,
 	0x63, 0x6b, 0x61, 0x67, 0x65, 0x44, 0x6f, 0x63, 0x75, 0x6d, 0x65, 0x6e, 0x74, 0x61, 0x74, 0x69,
 	0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x6f, 0x77, 0x6e,
 	0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x12,
@@ -2264,12 +2264,12 @@ var file_buf_alpha_registry_v1alpha1_doc_proto_goTypes = []interface{}{
 	(*FileInfo)(nil),                        // 2: buf.alpha.registry.v1alpha1.FileInfo
 	(*GetSourceFileRequest)(nil),            // 3: buf.alpha.registry.v1alpha1.GetSourceFileRequest
 	(*GetSourceFileResponse)(nil),           // 4: buf.alpha.registry.v1alpha1.GetSourceFileResponse
-	(*GetModuleDocumentationRequest)(nil),   // 5: buf.alpha.registry.v1alpha1.GetModuleDocumentationRequest
-	(*GetModuleDocumentationResponse)(nil),  // 6: buf.alpha.registry.v1alpha1.GetModuleDocumentationResponse
-	(*ModuleDocumentation)(nil),             // 7: buf.alpha.registry.v1alpha1.ModuleDocumentation
-	(*GetModulePackagesRequest)(nil),        // 8: buf.alpha.registry.v1alpha1.GetModulePackagesRequest
-	(*GetModulePackagesResponse)(nil),       // 9: buf.alpha.registry.v1alpha1.GetModulePackagesResponse
-	(*ModulePackages)(nil),                  // 10: buf.alpha.registry.v1alpha1.ModulePackages
+	(*GetModulePackagesRequest)(nil),        // 5: buf.alpha.registry.v1alpha1.GetModulePackagesRequest
+	(*GetModulePackagesResponse)(nil),       // 6: buf.alpha.registry.v1alpha1.GetModulePackagesResponse
+	(*ModulePackages)(nil),                  // 7: buf.alpha.registry.v1alpha1.ModulePackages
+	(*GetModuleDocumentationRequest)(nil),   // 8: buf.alpha.registry.v1alpha1.GetModuleDocumentationRequest
+	(*GetModuleDocumentationResponse)(nil),  // 9: buf.alpha.registry.v1alpha1.GetModuleDocumentationResponse
+	(*ModuleDocumentation)(nil),             // 10: buf.alpha.registry.v1alpha1.ModuleDocumentation
 	(*GetPackageDocumentationRequest)(nil),  // 11: buf.alpha.registry.v1alpha1.GetPackageDocumentationRequest
 	(*GetPackageDocumentationResponse)(nil), // 12: buf.alpha.registry.v1alpha1.GetPackageDocumentationResponse
 	(*PackageDocumentation)(nil),            // 13: buf.alpha.registry.v1alpha1.PackageDocumentation
@@ -2288,8 +2288,8 @@ var file_buf_alpha_registry_v1alpha1_doc_proto_goTypes = []interface{}{
 var file_buf_alpha_registry_v1alpha1_doc_proto_depIdxs = []int32{
 	2,  // 0: buf.alpha.registry.v1alpha1.GetSourceDirectoryInfoResponse.root:type_name -> buf.alpha.registry.v1alpha1.FileInfo
 	2,  // 1: buf.alpha.registry.v1alpha1.FileInfo.children:type_name -> buf.alpha.registry.v1alpha1.FileInfo
-	7,  // 2: buf.alpha.registry.v1alpha1.GetModuleDocumentationResponse.module_documentation:type_name -> buf.alpha.registry.v1alpha1.ModuleDocumentation
-	10, // 3: buf.alpha.registry.v1alpha1.GetModulePackagesResponse.module_packages:type_name -> buf.alpha.registry.v1alpha1.ModulePackages
+	7,  // 2: buf.alpha.registry.v1alpha1.GetModulePackagesResponse.module_packages:type_name -> buf.alpha.registry.v1alpha1.ModulePackages
+	10, // 3: buf.alpha.registry.v1alpha1.GetModuleDocumentationResponse.module_documentation:type_name -> buf.alpha.registry.v1alpha1.ModuleDocumentation
 	13, // 4: buf.alpha.registry.v1alpha1.GetPackageDocumentationResponse.package_documentation:type_name -> buf.alpha.registry.v1alpha1.PackageDocumentation
 	15, // 5: buf.alpha.registry.v1alpha1.PackageDocumentation.services:type_name -> buf.alpha.registry.v1alpha1.Service
 	18, // 6: buf.alpha.registry.v1alpha1.PackageDocumentation.enums:type_name -> buf.alpha.registry.v1alpha1.Enum
@@ -2313,13 +2313,13 @@ var file_buf_alpha_registry_v1alpha1_doc_proto_depIdxs = []int32{
 	22, // 24: buf.alpha.registry.v1alpha1.FileExtension.fields:type_name -> buf.alpha.registry.v1alpha1.Field
 	0,  // 25: buf.alpha.registry.v1alpha1.DocService.GetSourceDirectoryInfo:input_type -> buf.alpha.registry.v1alpha1.GetSourceDirectoryInfoRequest
 	3,  // 26: buf.alpha.registry.v1alpha1.DocService.GetSourceFile:input_type -> buf.alpha.registry.v1alpha1.GetSourceFileRequest
-	8,  // 27: buf.alpha.registry.v1alpha1.DocService.GetModulePackages:input_type -> buf.alpha.registry.v1alpha1.GetModulePackagesRequest
-	5,  // 28: buf.alpha.registry.v1alpha1.DocService.GetModuleDocumentation:input_type -> buf.alpha.registry.v1alpha1.GetModuleDocumentationRequest
+	5,  // 27: buf.alpha.registry.v1alpha1.DocService.GetModulePackages:input_type -> buf.alpha.registry.v1alpha1.GetModulePackagesRequest
+	8,  // 28: buf.alpha.registry.v1alpha1.DocService.GetModuleDocumentation:input_type -> buf.alpha.registry.v1alpha1.GetModuleDocumentationRequest
 	11, // 29: buf.alpha.registry.v1alpha1.DocService.GetPackageDocumentation:input_type -> buf.alpha.registry.v1alpha1.GetPackageDocumentationRequest
 	1,  // 30: buf.alpha.registry.v1alpha1.DocService.GetSourceDirectoryInfo:output_type -> buf.alpha.registry.v1alpha1.GetSourceDirectoryInfoResponse
 	4,  // 31: buf.alpha.registry.v1alpha1.DocService.GetSourceFile:output_type -> buf.alpha.registry.v1alpha1.GetSourceFileResponse
-	9,  // 32: buf.alpha.registry.v1alpha1.DocService.GetModulePackages:output_type -> buf.alpha.registry.v1alpha1.GetModulePackagesResponse
-	6,  // 33: buf.alpha.registry.v1alpha1.DocService.GetModuleDocumentation:output_type -> buf.alpha.registry.v1alpha1.GetModuleDocumentationResponse
+	6,  // 32: buf.alpha.registry.v1alpha1.DocService.GetModulePackages:output_type -> buf.alpha.registry.v1alpha1.GetModulePackagesResponse
+	9,  // 33: buf.alpha.registry.v1alpha1.DocService.GetModuleDocumentation:output_type -> buf.alpha.registry.v1alpha1.GetModuleDocumentationResponse
 	12, // 34: buf.alpha.registry.v1alpha1.DocService.GetPackageDocumentation:output_type -> buf.alpha.registry.v1alpha1.GetPackageDocumentationResponse
 	30, // [30:35] is the sub-list for method output_type
 	25, // [25:30] is the sub-list for method input_type
@@ -2395,42 +2395,6 @@ func file_buf_alpha_registry_v1alpha1_doc_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetModuleDocumentationRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetModuleDocumentationResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ModuleDocumentation); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GetModulePackagesRequest); i {
 			case 0:
 				return &v.state
@@ -2442,7 +2406,7 @@ func file_buf_alpha_registry_v1alpha1_doc_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*GetModulePackagesResponse); i {
 			case 0:
 				return &v.state
@@ -2454,8 +2418,44 @@ func file_buf_alpha_registry_v1alpha1_doc_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ModulePackages); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetModuleDocumentationRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetModuleDocumentationResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ModuleDocumentation); i {
 			case 0:
 				return &v.state
 			case 1:

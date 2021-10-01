@@ -75,6 +75,24 @@ message GetSourceFileResponse {
   bytes content = 1;
 }
 
+// GetModulePackagesRequest takes an owner, repository, and reference.
+message GetModulePackagesRequest {
+  string owner = 1;
+  string repository = 2;
+  string reference = 3;
+}
+
+// GetModulePackagesResponse returns the ModulePackages for the requested module.
+message GetModulePackagesResponse {
+  ModulePackages module_packages = 1;
+}
+
+// ModulePackages provides the name of the module and associated packages.
+message ModulePackages {
+  string name = 1;
+  repeated string packages = 2;
+}
+
 // GetModuleDocumentationRequest takes an owner, repository, and reference.
 message GetModuleDocumentationRequest {
   string owner = 1;
@@ -95,24 +113,6 @@ message ModuleDocumentation {
   // The buf.md file is a part of the module.
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
   string documentation = 2;
-}
-
-// GetModulePackagesRequest takes an owner, repository, and reference.
-message GetModulePackagesRequest {
-  string owner = 1;
-  string repository = 2;
-  string reference = 3;
-}
-
-// GetModulePackagesResponse returns the ModulePackages for the requested module.
-message GetModulePackagesResponse {
-  ModulePackages module_packages = 1;
-}
-
-// ModulePackages provides the name of the module and associated packages.
-message ModulePackages {
-  string name = 1;
-  repeated string packages = 2;
 }
 
 // GetPackageDocumentationRequest takes an owner, repository, reference, and package name.
