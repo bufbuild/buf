@@ -29,6 +29,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
@@ -176,13 +178,13 @@ func run(
 			}
 			span.End()
 		}
-		// we need to run these in the order they appear for insertion points to work
+		pluginResponses := make([]*appproto.PluginResponse, 0, len(env.PluginNamesSortedByOutIndex))
 		for _, pluginName := range env.PluginNamesSortedByOutIndex {
 			pluginInfo, ok := env.PluginNameToPluginInfo[pluginName]
 			if !ok {
 				return fmt.Errorf("no value in PluginNamesToPluginInfo for %q", pluginName)
 			}
-			if err := executePlugin(
+			response, err := executePlugin(
 				ctx,
 				container.Logger(),
 				storageosProvider,
@@ -190,9 +192,34 @@ func run(
 				images,
 				pluginName,
 				pluginInfo,
+			)
+			if err != nil {
+				return err
+			}
+			pluginResponses = append(pluginResponses, appproto.NewPluginResponse(response, pluginName))
+		}
+		if err := appproto.ValidatePluginResponses(pluginResponses); err != nil {
+			return err
+		}
+		responseWriter := appprotoos.NewResponseWriter(
+			container.Logger(),
+			storageosProvider,
+		)
+		for _, pluginResponse := range pluginResponses {
+			pluginInfo, ok := env.PluginNameToPluginInfo[pluginResponse.PluginName]
+			if !ok {
+				return fmt.Errorf("no value in PluginNamesToPluginInfo for %q", pluginResponse.PluginName)
+			}
+			if err := responseWriter.AddResponse(
+				ctx,
+				pluginResponse.Response,
+				pluginInfo.Out,
 			); err != nil {
 				return err
 			}
+		}
+		if err := responseWriter.Close(); err != nil {
+			return err
 		}
 		return nil
 	}
