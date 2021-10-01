@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
+	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
@@ -212,6 +213,9 @@ func (g *generator) execPlugins(
 		thread.ParallelizeWithCancel(cancel),
 		thread.ParallelizeWithFastFail(), // We want error messages to be concise here.
 	); err != nil {
+		if errs := multierr.Errors(err); len(errs) > 0 {
+			return nil, errs[0]
+		}
 		return nil, err
 	}
 	if err := validateResponses(responses, config.PluginConfigs); err != nil {

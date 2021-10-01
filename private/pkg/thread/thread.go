@@ -102,13 +102,7 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 				go func() {
 					if err := job(ctx); err != nil {
 						lock.Lock()
-						if parallelizeOptions.fastFail {
-							if retErr == nil {
-								retErr = err
-							}
-						} else {
-							retErr = multierr.Append(retErr, err)
-						}
+						retErr = multierr.Append(retErr, err)
 						lock.Unlock()
 						if parallelizeOptions.cancel != nil {
 							parallelizeOptions.cancel()
@@ -147,18 +141,9 @@ func ParallelizeWithCancel(cancel context.CancelFunc) ParallelizeOption {
 	}
 }
 
-// ParallelizeWithFastFail returns a new ParallelizeOption that will return
-// the first error encountered from any job that fails.
-func ParallelizeWithFastFail() ParallelizeOption {
-	return func(parallelizeOptions *parallelizeOptions) {
-		parallelizeOptions.fastFail = true
-	}
-}
-
 type parallelizeOptions struct {
 	multiplier int
 	cancel     context.CancelFunc
-	fastFail   bool
 }
 
 func newParallelizeOptions() *parallelizeOptions {
