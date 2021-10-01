@@ -846,7 +846,7 @@ func findTerminateFileDirectoryPathFromOS(
 		for i := range terminateFileNames {
 			fullTerminateFileNames[i] = make([]string, len(terminateFileNames[i]))
 			for j, terminateFileName := range terminateFileNames[i] {
-				fullTerminateFileNames[i][j] = normalpath.Join(terminateFileDirectoryPath, terminateFileName)
+				fullTerminateFileNames[i][j] = normalpath.Unnormalize(normalpath.Join(terminateFileDirectoryPath, terminateFileName))
 			}
 		}
 		foundTerminateFiles, err := terminateFilesOnOS(fullTerminateFileNames)
