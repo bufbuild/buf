@@ -276,7 +276,7 @@ func (g *generator) execRemotePlugin(
 		ctx,
 		bufimage.ImageToProtoImage(image),
 		[]*registryv1alpha1.PluginReference{
-			&registryv1alpha1.PluginReference{
+			{
 				Owner:      owner,
 				Name:       name,
 				Version:    version,
