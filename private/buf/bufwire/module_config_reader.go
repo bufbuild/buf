@@ -269,11 +269,11 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	}
 	// if the module is not in the workspace, we need to remap the bucket
 	if !moduleInWorkspace {
-		rel, err := filepath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
+		relativePath, err := filepath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
 		if err != nil {
 			return nil, err
 		}
-		readBucketCloser.SetSubDirPath(rel)
+		readBucketCloser.SetSubDirPath(normalpath.Normalize(relativePath))
 	}
 	if workspaceConfigDirectory != "" {
 		return m.getWorkspaceModuleConfigs(
