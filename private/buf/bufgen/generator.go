@@ -211,7 +211,6 @@ func (g *generator) execPlugins(
 		ctx,
 		jobs,
 		thread.ParallelizeWithCancel(cancel),
-		thread.ParallelizeWithFastFail(), // We want error messages to be concise here.
 	); err != nil {
 		if errs := multierr.Errors(err); len(errs) > 0 {
 			return nil, errs[0]
@@ -273,16 +272,17 @@ func (g *generator) execRemotePlugin(
 		// Only include parameters if they're not empty.
 		parameters = []string{pluginConfig.Opt}
 	}
-	pluginReference := &registryv1alpha1.PluginReference{
-		Owner:      owner,
-		Name:       name,
-		Version:    version,
-		Parameters: parameters,
-	}
 	responses, _, err := generateService.GeneratePlugins(
 		ctx,
 		bufimage.ImageToProtoImage(image),
-		[]*registryv1alpha1.PluginReference{pluginReference},
+		[]*registryv1alpha1.PluginReference{
+			&registryv1alpha1.PluginReference{
+				Owner:      owner,
+				Name:       name,
+				Version:    version,
+				Parameters: parameters,
+			},
+		},
 	)
 	if err != nil {
 		return nil, err
