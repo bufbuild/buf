@@ -17,51 +17,50 @@ package appprotoos
 
 import (
 	"context"
+	"io"
 
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-type Generator interface {
-	// Generate generates to the os filesystem, switching on the file extension.
+// ResponseWriter writes CodeGeneratorResponses to the OS filesystem.
+type ResponseWriter interface {
+	// Close writes all of the responses to disk. No further calls can be
+	// made to the ResponseWriter after this call.
+	io.Closer
+
+	// AddResponse adds the response to the writer, switching on the file extension.
 	// If there is a .jar extension, this generates a jar. If there is a .zip
 	// extension, this generates a zip. If there is no extension, this outputs
 	// to the directory.
-	Generate(
+	AddResponse(
 		ctx context.Context,
-		container app.EnvStderrContainer,
-		pluginName string,
+		response *pluginpb.CodeGeneratorResponse,
 		pluginOut string,
-		requests []*pluginpb.CodeGeneratorRequest,
-		options ...GenerateOption,
 	) error
 }
 
-// NewGenerator returns a new Generator.
-func NewGenerator(
+// NewResponseWriter returns a new ResponseWriter.
+func NewResponseWriter(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
-) Generator {
-	return newGenerator(logger, storageosProvider)
+	options ...ResponseWriterOption,
+) ResponseWriter {
+	return newResponseWriter(
+		logger,
+		storageosProvider,
+		options...,
+	)
 }
 
-// GenerateOption is an option for Generate.
-type GenerateOption func(*generateOptions)
+// ResponseWriterOption is an option for the ResponseWriter.
+type ResponseWriterOption func(*responseWriterOptions)
 
-// GenerateWithPluginPath returns a new GenerateOption that uses the given
-// path to the plugin.
-func GenerateWithPluginPath(pluginPath string) GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.pluginPath = pluginPath
-	}
-}
-
-// GenerateWithCreateOutDirIfNotExists returns a new GenerateOption that creates
+// ResponseWriterWithCreateOutDirIfNotExists returns a new ResponseWriterOption that creates
 // the directory if it does not exist.
-func GenerateWithCreateOutDirIfNotExists() GenerateOption {
-	return func(generateOptions *generateOptions) {
-		generateOptions.createOutDirIfNotExists = true
+func ResponseWriterWithCreateOutDirIfNotExists() ResponseWriterOption {
+	return func(responseWriterOptions *responseWriterOptions) {
+		responseWriterOptions.createOutDirIfNotExists = true
 	}
 }

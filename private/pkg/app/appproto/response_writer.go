@@ -15,131 +15,140 @@
 package appproto
 
 import (
-	"errors"
-	"fmt"
-	"strings"
-	"sync"
+	"bufio"
+	"bytes"
+	"context"
+	"io"
 
-	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"google.golang.org/protobuf/proto"
+	"github.com/bufbuild/buf/private/pkg/storage"
+	"go.uber.org/multierr"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
 type responseWriter struct {
-	container             app.StderrContainer
-	fileNames             map[string]struct{}
-	files                 []*pluginpb.CodeGeneratorResponse_File
-	errorMessages         []string
-	featureProto3Optional bool
-	lock                  sync.RWMutex
+	logger *zap.Logger
 }
 
-func newResponseWriter(container app.StderrContainer) *responseWriter {
+func newResponseWriter(
+	logger *zap.Logger,
+) *responseWriter {
 	return &responseWriter{
-		container: container,
-		fileNames: make(map[string]struct{}),
+		logger: logger,
 	}
 }
 
-func (r *responseWriter) AddFile(file *pluginpb.CodeGeneratorResponse_File) error {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-	if file == nil {
-		return errors.New("add CodeGeneratorResponse.File is nil")
+func (h *responseWriter) WriteResponse(
+	ctx context.Context,
+	writeBucket storage.WriteBucket,
+	response *pluginpb.CodeGeneratorResponse,
+	options ...WriteResponseOption,
+) error {
+	writeResponseOptions := newWriteResponseOptions()
+	for _, option := range options {
+		option(writeResponseOptions)
 	}
-	name := file.GetName()
-	if name == "" {
-		return errors.New("add CodeGeneratorResponse.File.Name is empty")
-	}
-	// name must be relative, to-slashed, and not contain "." or ".." per the documentation
-	// this is what normalize does
-	normalizedName, err := normalpath.NormalizeAndValidate(name)
-	if err != nil {
-		// we need names to be normalized for the appproto.Generator to properly put them in buckets
-		// so we have to error here if it is not validated
-		return newUnvalidatedNameError(name)
-	}
-	if normalizedName != name {
-		if err := r.warnUnnormalizedName(name); err != nil {
+	for _, file := range response.File {
+		if file.GetInsertionPoint() != "" {
+			if writeResponseOptions.insertionPointReadBucket == nil {
+				return storage.NewErrNotExist(file.GetName())
+			}
+			if err := applyInsertionPoint(ctx, file, writeResponseOptions.insertionPointReadBucket, writeBucket); err != nil {
+				return err
+			}
+		} else if err := storage.PutPath(ctx, writeBucket, file.GetName(), []byte(file.GetContent())); err != nil {
 			return err
 		}
-		// we need names to be normalized for the appproto.Generator to properly put
-		// them in buckets, so we will coerce this into a normalized name if it is
-		// validated, ie if it does not container ".." and is absolute, we can still
-		// continue, assuming we validate here
-		name = normalizedName
-		file.Name = proto.String(name)
-	}
-	if _, ok := r.fileNames[name]; ok {
-		if err := r.warnDuplicateName(name); err != nil {
-			return err
-		}
-	} else {
-		// we drop the file if it is duplicated, and only put in the map and files slice
-		// if it does not exist
-		r.fileNames[name] = struct{}{}
-		r.files = append(r.files, file)
 	}
 	return nil
 }
 
-func (r *responseWriter) AddError(message string) {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-	if message == "" {
-		// default to an error message to make sure we pass an error
-		// if this function was called
-		message = "error"
+// applyInsertionPoint inserts the content of the given file at the insertion point that it specfiies.
+// For more details on insertion points, see the following:
+//
+// https://github.com/protocolbuffers/protobuf/blob/f5bdd7cd56aa86612e166706ed8ef139db06edf2/src/google/protobuf/compiler/plugin.proto#L135-L171
+func applyInsertionPoint(
+	ctx context.Context,
+	file *pluginpb.CodeGeneratorResponse_File,
+	readBucket storage.ReadBucket,
+	writeBucket storage.WriteBucket,
+) (retErr error) {
+	targetReadObjectCloser, err := readBucket.Get(ctx, file.GetName())
+	if err != nil {
+		return err
 	}
-	r.errorMessages = append(r.errorMessages, message)
-}
-
-func (r *responseWriter) SetFeatureProto3Optional() {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-	r.featureProto3Optional = true
-}
-
-// ToResponse turns the response writer into a Protobuf CodeGeneratorResponse.
-// It should be run after all writing to the response has finished.
-func (r *responseWriter) ToResponse() *pluginpb.CodeGeneratorResponse {
-	r.lock.RLock()
-	defer r.lock.RUnlock()
-	response := &pluginpb.CodeGeneratorResponse{
-		File: r.files,
+	defer func() {
+		retErr = multierr.Append(retErr, targetReadObjectCloser.Close())
+	}()
+	resultData, err := writeInsertionPoint(ctx, file, targetReadObjectCloser)
+	if err != nil {
+		return err
 	}
-	if len(r.errorMessages) > 0 {
-		response.Error = proto.String(strings.Join(r.errorMessages, "\n"))
+	// This relies on storageos buckets maintaining existing file permissions
+	return storage.PutPath(ctx, writeBucket, file.GetName(), resultData)
+}
+
+// writeInsertionPoint writes the insertion point defined in insertionPointFile
+// to the targetFile and returns the result as []byte. The caller must ensure the
+// provided targetFile matches the file requested in insertionPointFile.Name.
+func writeInsertionPoint(
+	ctx context.Context,
+	insertionPointFile *pluginpb.CodeGeneratorResponse_File,
+	targetFile io.Reader,
+) (_ []byte, retErr error) {
+	targetScanner := bufio.NewScanner(targetFile)
+	match := []byte("@@protoc_insertion_point(" + insertionPointFile.GetInsertionPoint() + ")")
+	postInsertionContent := bytes.NewBuffer(nil)
+	postInsertionContent.Grow(averageGeneratedFileSize)
+	// TODO: We should respect the line endings in the generated file. This would
+	// require either targetFile being an io.ReadSeeker and in the worst case
+	// doing 2 full scans of the file (if it is a single line), or implementing
+	// bufio.Scanner.Scan() inline
+	newline := []byte{'\n'}
+	for targetScanner.Scan() {
+		targetLine := targetScanner.Bytes()
+		if !bytes.Contains(targetLine, match) {
+			// these writes cannot fail, they will panic if they cannot
+			// allocate
+			_, _ = postInsertionContent.Write(targetLine)
+			_, _ = postInsertionContent.Write(newline)
+			continue
+		}
+		// For each line in then new content, apply the
+		// same amount of whitespace. This is important
+		// for specific languages, e.g. Python.
+		whitespace := leadingWhitespace(targetLine)
+
+		// Create another scanner so that we can seamlessly handle
+		// newlines in a platform-agnostic manner.
+		insertedContentScanner := bufio.NewScanner(bytes.NewBufferString(insertionPointFile.GetContent()))
+		insertedContent := scanWithPrefixAndLineEnding(insertedContentScanner, whitespace, newline)
+		// This write cannot fail, it will panic if it cannot
+		// allocate
+		_, _ = postInsertionContent.Write(insertedContent)
+
+		// Code inserted at this point is placed immediately
+		// above the line containing the insertion point, so
+		// we include it last.
+		// These writes cannot fail, they will panic if they cannot
+		// allocate
+		_, _ = postInsertionContent.Write(targetLine)
+		_, _ = postInsertionContent.Write(newline)
 	}
-	if r.featureProto3Optional {
-		response.SupportedFeatures = proto.Uint64(uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL))
+
+	if err := targetScanner.Err(); err != nil {
+		return nil, err
 	}
-	return response
+
+	// trim the trailing newline
+	postInsertionBytes := postInsertionContent.Bytes()
+	return postInsertionBytes[:len(postInsertionBytes)-1], nil
 }
 
-func (r *responseWriter) warnUnnormalizedName(name string) error {
-	_, err := r.container.Stderr().Write([]byte(fmt.Sprintf(
-		`Warning: Generated file name %q does not conform to the Protobuf generation specification. Note that the file name must be relative, use "/" instead of "\", and not use "." or ".." as part of the file name. Buf will continue without error here, but please raise an issue with the maintainer of the plugin and reference https://github.com/protocolbuffers/protobuf/blob/95e6c5b4746dd7474d540ce4fb375e3f79a086f8/src/google/protobuf/compiler/plugin.proto#L122
-`,
-		name,
-	)))
-	return err
+type writeResponseOptions struct {
+	insertionPointReadBucket storage.ReadBucket
 }
 
-func (r *responseWriter) warnDuplicateName(name string) error {
-	_, err := r.container.Stderr().Write([]byte(fmt.Sprintf(
-		`Warning: Duplicate generated file name %q. Buf will continue without error here and drop the second occurrence of this file, but please raise an issue with the maintainer of the plugin.
-`,
-		name,
-	)))
-	return err
-}
-
-func newUnvalidatedNameError(name string) error {
-	return fmt.Errorf(
-		`Generated file name %q does not conform to the Protobuf generation specification. Note that the file name must be relative, and not use "..". Please raise an issue with the maintainer of the plugin and reference https://github.com/protocolbuffers/protobuf/blob/95e6c5b4746dd7474d540ce4fb375e3f79a086f8/src/google/protobuf/compiler/plugin.proto#L122
-`,
-		name,
-	)
+func newWriteResponseOptions() *writeResponseOptions {
+	return &writeResponseOptions{}
 }

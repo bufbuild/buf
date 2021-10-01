@@ -23,7 +23,6 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
 	.ctrlp \
 	.vscode/ \
-	private/buf/cmd/buf/cache/ \
 	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
 	private/bufpkg/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/

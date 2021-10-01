@@ -40,7 +40,7 @@ func NewHandler(f func(*protogen.Plugin) error, options ...HandlerOption) apppro
 		func(
 			ctx context.Context,
 			container app.EnvStderrContainer,
-			responseWriter appproto.ResponseWriter,
+			responseWriter appproto.ResponseBuilder,
 			request *pluginpb.CodeGeneratorRequest,
 		) error {
 			plugin, err := protogen.Options{
