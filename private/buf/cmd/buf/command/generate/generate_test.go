@@ -127,35 +127,10 @@ func TestOutputFlag(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestGenerateInsertionPoints(t *testing.T) {
-	successTemplate := `
-version: v1
-plugins:
-  - name: insertion-point-receiver
-    out: .
-  - name: insertion-point-writer
-    out: .
-`
-	storageosProvider := storageos.NewProvider()
-	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(
-		context.Background(),
-		t,
-		storageosProvider,
-		storagemem.NewReadWriteBucket(),
-	)
-	testRunSuccess(
-		t,
-		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
-		"--template",
-		successTemplate,
-		"-o",
-		tempDir,
-	)
-	expectedOutput, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "insertion_point"))
-	require.NoError(t, err)
-	diff, err := storage.DiffBytes(context.Background(), expectedOutput, readWriteBucket)
-	require.NoError(t, err)
-	require.Empty(t, string(diff))
+func TestGenerateInsertionPoint(t *testing.T) {
+	testGenerateInsertionPoint(t, ".", ".", filepath.Join("testdata", "insertion_point"))
+	testGenerateInsertionPoint(t, "gen/proto/insertion", "gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
+	testGenerateInsertionPoint(t, "gen/proto/insertion/", "./gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
 }
 
 func TestGenerateInsertionPointFail(t *testing.T) {
@@ -209,6 +184,37 @@ func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
 	require.NoError(t, err)
 	testGenerateInsertionPointMixedPathsFail(t, ".", wd)
 	testGenerateInsertionPointMixedPathsFail(t, wd, ".")
+}
+
+func testGenerateInsertionPoint(t *testing.T, receiverOut string, writerOut string, expectedOutputPath string) {
+	successTemplate := `
+version: v1
+plugins:
+  - name: insertion-point-receiver
+    out: %s
+  - name: insertion-point-writer
+    out: %s
+`
+	storageosProvider := storageos.NewProvider()
+	tempDir, readWriteBucket := internaltesting.CopyReadBucketToTempDir(
+		context.Background(),
+		t,
+		storageosProvider,
+		storagemem.NewReadWriteBucket(),
+	)
+	testRunSuccess(
+		t,
+		filepath.Join("testdata", "simple"), // The input directory is irrelevant for these insertion points.
+		"--template",
+		fmt.Sprintf(successTemplate, receiverOut, writerOut),
+		"-o",
+		tempDir,
+	)
+	expectedOutput, err := storageosProvider.NewReadWriteBucket(expectedOutputPath)
+	require.NoError(t, err)
+	diff, err := storage.DiffBytes(context.Background(), expectedOutput, readWriteBucket)
+	require.NoError(t, err)
+	require.Empty(t, string(diff))
 }
 
 // testGenerateInsertionPointMixedPathsFail demonstrates that insertion points are only
