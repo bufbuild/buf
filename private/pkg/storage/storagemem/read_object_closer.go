@@ -16,24 +16,38 @@ package storagemem
 
 import (
 	"bytes"
+	"io"
 
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem/internal"
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
+	"github.com/klauspost/compress/zstd"
 )
 
 type readObjectCloser struct {
 	storageutil.ObjectInfo
 
-	reader *bytes.Reader
+	reader io.Reader
+	closer func()
 	closed bool
 }
 
-func newReadObjectCloser(immutableObject *internal.ImmutableObject) *readObjectCloser {
+func newReadObjectCloser(bucket *bucket, immutableObject *internal.ImmutableObject) (*readObjectCloser, error) {
+	var reader io.Reader = bytes.NewReader(immutableObject.Data())
+	var closer func()
+	if bucket.compression {
+		decoder, err := zstd.NewReader(reader)
+		if err != nil {
+			return nil, err
+		}
+		reader = decoder
+		closer = decoder.Close
+	}
 	return &readObjectCloser{
 		ObjectInfo: immutableObject.ObjectInfo,
-		reader:     bytes.NewReader(immutableObject.Data()),
-	}
+		reader:     reader,
+		closer:     closer,
+	}, nil
 }
 
 func (r *readObjectCloser) Read(p []byte) (int, error) {
@@ -48,5 +62,8 @@ func (r *readObjectCloser) Close() error {
 		return storage.ErrClosed
 	}
 	r.closed = true
+	if r.closer != nil {
+		r.closer()
+	}
 	return nil
 }

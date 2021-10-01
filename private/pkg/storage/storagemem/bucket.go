@@ -28,6 +28,7 @@ import (
 
 type bucket struct {
 	pathToImmutableObject map[string]*internal.ImmutableObject
+	compression           bool
 	lock                  sync.RWMutex
 }
 
@@ -45,10 +46,12 @@ func (b *bucket) Get(ctx context.Context, path string) (storage.ReadObjectCloser
 	if err != nil {
 		return nil, err
 	}
-	return newReadObjectCloser(immutableObject), nil
+	// Compression is handled inside ReadObjectCloser
+	return newReadObjectCloser(b, immutableObject)
 }
 
 func (b *bucket) Stat(ctx context.Context, path string) (storage.ObjectInfo, error) {
+	// No need to handle compression as we do not expose Data()
 	return b.readLockAndGetImmutableObject(ctx, path)
 }
 
@@ -80,6 +83,7 @@ func (b *bucket) Walk(ctx context.Context, prefix string, f func(storage.ObjectI
 		if !normalpath.EqualsOrContainsPath(prefix, path, normalpath.Relative) {
 			continue
 		}
+		// No need to handle compression as we do not expose Data()
 		if err := f(immutableObject); err != nil {
 			return err
 		}
@@ -93,7 +97,8 @@ func (b *bucket) Put(ctx context.Context, path string) (storage.WriteObjectClose
 	if err != nil {
 		return nil, err
 	}
-	return newWriteObjectCloser(b, path), nil
+	// Compression is handled inside WriteObjectCloser
+	return newWriteObjectCloser(b, path)
 }
 
 func (b *bucket) Delete(ctx context.Context, path string) error {
@@ -133,10 +138,6 @@ func (b *bucket) DeleteAll(ctx context.Context, prefix string) error {
 
 func (*bucket) SetExternalPathSupported() bool {
 	return true
-}
-
-func (b *bucket) ToReadBucket() (storage.ReadBucket, error) {
-	return b, nil
 }
 
 func (b *bucket) readLockAndGetImmutableObject(ctx context.Context, path string) (*internal.ImmutableObject, error) {

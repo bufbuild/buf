@@ -51,6 +51,8 @@ func NewImmutableObject(
 
 // Data returns the data.
 //
+// Depending on the bucket, this data may be compressed.
+//
 // DO NOT MODIFY.
 func (i *ImmutableObject) Data() []byte {
 	return i.data

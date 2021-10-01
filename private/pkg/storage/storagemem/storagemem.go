@@ -26,8 +26,23 @@ import (
 var errDuplicatePath = errors.New("duplicate path")
 
 // NewReadWriteBucket returns a new in-memory ReadWriteBucket.
-func NewReadWriteBucket() storage.ReadWriteBucket {
-	return newBucket(nil)
+func NewReadWriteBucket(options ...ReadWriteBucketOption) storage.ReadWriteBucket {
+	return newBucket(nil, options...)
+}
+
+// ReadWriteBucketOption is an option for any bucket returned from storagemem.
+type ReadWriteBucketOption func(*bucket)
+
+// ReadWriteBucketWithCompression returns a new ReadWriteBucketOption that enables compression.
+//
+// This will result in the stored data in buckets being compressed at rest.
+// The data is automatically decompressed on read.
+//
+// The default is to use no compression.
+func ReadWriteBucketWithCompression() BucketOption {
+	return func(bucket *bucket) {
+		bucket.compression = true
+	}
 }
 
 // NewReadBucket returns a new ReadBucket.
