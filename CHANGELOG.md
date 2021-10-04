@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.0.0-rc3] - 2021-10-04
 
 - Add `--as-import-paths` flag to `ls-files` that strips local directory paths and prints file
   paths as they are imported.
@@ -553,7 +553,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc2...HEAD
+[v1.0.0-rc3]: https://github.com/bufbuild/buf/compare/v1.0.0-rc2...v1.0.0-rc3
 [v1.0.0-rc2]: https://github.com/bufbuild/buf/compare/v1.0.0-rc1...v1.0.0-rc2
 [v1.0.0-rc1]: https://github.com/bufbuild/buf/compare/v0.56.0...v1.0.0-rc1
 [v0.56.0]: https://github.com/bufbuild/buf/compare/v0.55.0...v0.56.0
