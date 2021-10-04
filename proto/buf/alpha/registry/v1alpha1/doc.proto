@@ -28,6 +28,9 @@ service DocService {
   // GetSourceFile retrieves the source contents for the given owner, repository,
   // reference, and path.
   rpc GetSourceFile(GetSourceFileRequest) returns (GetSourceFileResponse);
+  // GetModulePackages retrieves the list of packages for the module based on the given
+  // owner, repository, and reference.
+  rpc GetModulePackages(GetModulePackagesRequest) returns (GetModulePackagesResponse);
   // GetModuleDocumentation retrieves the documentation for module based on the given
   // owner, repository, and reference.
   rpc GetModuleDocumentation(GetModuleDocumentationRequest) returns (GetModuleDocumentationResponse);
@@ -70,6 +73,24 @@ message GetSourceFileRequest {
 message GetSourceFileResponse {
   // content is the content of the file.
   bytes content = 1;
+}
+
+// GetModulePackagesRequest takes an owner, repository, and reference.
+message GetModulePackagesRequest {
+  string owner = 1;
+  string repository = 2;
+  string reference = 3;
+}
+
+// GetModulePackagesResponse returns the ModulePackages for the requested module.
+message GetModulePackagesResponse {
+  ModulePackages module_packages = 1;
+}
+
+// ModulePackages provides the name of the module and associated packages.
+message ModulePackages {
+  string name = 1;
+  repeated string packages = 2;
 }
 
 // GetModuleDocumentationRequest takes an owner, repository, and reference.
