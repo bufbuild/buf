@@ -113,7 +113,11 @@ func NewGenerator(
 	storageosProvider storageos.Provider,
 	registryProvider registryv1alpha1apiclient.Provider,
 ) Generator {
-	return newGenerator(logger, storageosProvider, registryProvider)
+	return newGenerator(
+		logger,
+		storageosProvider,
+		registryProvider,
+	)
 }
 
 // GenerateOption is an option for Generate.
@@ -159,6 +163,21 @@ type PluginConfig struct {
 	Path string
 	// Required
 	Strategy Strategy
+}
+
+// PluginName returns this PluginConfig's plugin name.
+// Only one of Name or Remote will be set.
+func (p *PluginConfig) PluginName() string {
+	if p == nil {
+		return ""
+	}
+	if p.Name != "" {
+		return p.Name
+	}
+	if p.Remote != "" {
+		return p.Remote
+	}
+	return ""
 }
 
 // ManagedConfig is the Managed Mode configuration.

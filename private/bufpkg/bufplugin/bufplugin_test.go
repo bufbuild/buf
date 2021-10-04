@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/types/pluginpb"
 )
 
 func TestParseTemplateConfigJSONFile(t *testing.T) {
@@ -411,43 +410,4 @@ plugin_versions:
     version: v2.1.0
 `)
 	require.Error(t, err)
-}
-
-func TestMergeInsertionPoints(t *testing.T) {
-	results := []*PluginResponse{
-		{
-			PluginName: "protoc-gen-java",
-			Response: &pluginpb.CodeGeneratorResponse{
-				File: []*pluginpb.CodeGeneratorResponse_File{
-					{
-						Name:    testStringPointer("file1.java"),
-						Content: testStringPointer("// @@protoc_insertion_point(insertionPoint1)"),
-					},
-				},
-			},
-		},
-		{
-			PluginName: "protoc-gen-java-insertion",
-			Response: &pluginpb.CodeGeneratorResponse{
-				File: []*pluginpb.CodeGeneratorResponse_File{
-					{
-						Name:           testStringPointer("file1.java"),
-						Content:        testStringPointer("!! this was inserted !!"),
-						InsertionPoint: testStringPointer("insertionPoint1"),
-					},
-				},
-			},
-		},
-	}
-	mergedResults, err := MergeInsertionPoints(results)
-	require.NoError(t, err)
-	require.Len(t, mergedResults, 2)
-	require.Len(t, mergedResults[0].Files, 1)
-	require.EqualValues(t, "file1.java", mergedResults[0].Files[0].Name)
-	require.EqualValues(t, "protoc-gen-java", mergedResults[0].Files[0].PluginName)
-	require.EqualValues(t, "!! this was inserted !!\n// @@protoc_insertion_point(insertionPoint1)", string(mergedResults[0].Files[0].Content))
-}
-
-func testStringPointer(s string) *string {
-	return &s
 }

@@ -19,12 +19,15 @@
 package appprotoexec
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/pluginpb"
 )
 
 const (
@@ -61,6 +64,40 @@ var (
 		defaultSuffixVersion,
 	)
 )
+
+// Generator is used to generate code with plugins found on the local filesystem.
+type Generator interface {
+	// Generate generates a CodeGeneratorResponse for the given pluginName. The
+	// pluginName must be available on the system's PATH or one of the plugins
+	// built-in to protoc. The plugin path can be overridden via the
+	// GenerateWithPluginPath option.
+	Generate(
+		ctx context.Context,
+		container app.EnvStderrContainer,
+		pluginName string,
+		requests []*pluginpb.CodeGeneratorRequest,
+		options ...GenerateOption,
+	) (*pluginpb.CodeGeneratorResponse, error)
+}
+
+// NewGenerator returns a new Generator.
+func NewGenerator(
+	logger *zap.Logger,
+	storageosProvider storageos.Provider,
+) Generator {
+	return newGenerator(logger, storageosProvider)
+}
+
+// GenerateOption is an option for Generate.
+type GenerateOption func(*generateOptions)
+
+// GenerateWithPluginPath returns a new GenerateOption that uses the given
+// path to the plugin.
+func GenerateWithPluginPath(pluginPath string) GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.pluginPath = pluginPath
+	}
+}
 
 // NewHandler returns a new Handler based on the plugin name and optional path.
 //

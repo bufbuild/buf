@@ -1,7 +1,6 @@
-# https://github.com/jhump/protoreflect/commits/master 20210817 checked 20210817
-PROTOREFLECT_VERSION := v1.10.0
+# https://github.com/jhump/protoreflect/commits/master 20210930 checked 20211001
 GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/jhump/protoreflect@$(PROTOREFLECT_VERSION)
+	github.com/jhump/protoreflect@69e5c3b704619ed9dd5432d2be7571a0d772c502
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
@@ -24,7 +23,6 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.build/ \
 	.ctrlp \
 	.vscode/ \
-	private/buf/cmd/buf/cache/ \
 	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
 	private/bufpkg/buftesting/cache/ \
 	private/pkg/storage/storageos/tmp/
