@@ -306,56 +306,21 @@ func (r *reader) getDirBucket(
 	if err != nil {
 		return nil, err
 	}
-	// set the terminateFile to the first terminateFilesPriorities result, since that's the highest
-	// priority file.
-	terminateFileDirectoryAbsPath := ""
-	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFileProvider.GetTerminateFiles()
-	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
-		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
+	rootPath, dirRelativePath, err := r.getBucketRootPathAndRelativePath(ctx, container, dirRef.Path(), terminateFileProvider)
+	if err != nil {
+		return nil, err
 	}
-	if terminateFileDirectoryAbsPath != "" {
-		// If the terminate file exists, we need to determine the relative path from the
-		// terminateFileDirectoryAbsPath to the target DirRef.Path.
-		wd, err := osextended.Getwd()
-		if err != nil {
-			return nil, err
-		}
-		terminateFileRelativePath, err := normalpath.Rel(wd, terminateFileDirectoryAbsPath)
-		if err != nil {
-			return nil, err
-		}
-		dirRefAbsPath, err := normalpath.NormalizeAndAbsolute(dirRef.Path())
-		if err != nil {
-			return nil, err
-		}
-		dirRefRelativePath, err := normalpath.Rel(terminateFileDirectoryAbsPath, dirRefAbsPath)
-		if err != nil {
-			return nil, err
-		}
-		// It should be impossible for the dirRefRelativePath to be outside of the context
-		// diretory, but we validate just to make sure.
-		dirRefRelativePath, err = normalpath.NormalizeAndValidate(dirRefRelativePath)
-		if err != nil {
-			return nil, err
-		}
-		rootPath := terminateFileRelativePath
-		if filepath.IsAbs(dirRef.Path()) {
-			// If the input was provided as an absolute path,
-			// we preserve it by initializing the workspace
-			// bucket with an absolute path.
-			rootPath = terminateFileDirectoryAbsPath
-		}
-		readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
-			rootPath,
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		)
-		if err != nil {
-			return nil, err
-		}
+	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
+		rootPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if dirRelativePath != "" {
 		// Verify that the subDirPath exists too.
 		if _, err := r.storageosProvider.NewReadWriteBucket(
-			normalpath.Join(rootPath, dirRefRelativePath),
+			normalpath.Join(rootPath, dirRelativePath),
 			storageos.ReadWriteBucketWithSymlinksIfSupported(),
 		); err != nil {
 			return nil, err
@@ -363,7 +328,7 @@ func (r *reader) getDirBucket(
 		readWriteBucketCloser, err := newReadWriteBucketCloser(
 			storage.NopReadWriteBucketCloser(readWriteBucket),
 			rootPath,
-			dirRefRelativePath,
+			dirRelativePath,
 		)
 		if err != nil {
 			return nil, err
@@ -372,13 +337,6 @@ func (r *reader) getDirBucket(
 			readWriteBucketCloser,
 			nil,
 		), nil
-	}
-	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
-		dirRef.Path(),
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return nil, err
 	}
 	readBucketCloser, err := newReadWriteBucketCloser(
 		storage.NopReadWriteBucketCloser(readWriteBucket),
@@ -390,7 +348,7 @@ func (r *reader) getDirBucket(
 	}
 	return newReadBucketCloserWithTerminateFiles(
 		readBucketCloser,
-		terminateFileProvider,
+		nil,
 	), nil
 }
 
@@ -403,77 +361,19 @@ func (r *reader) getProtoFileBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	dirPath := filepath.Dir(protoFileRef.Path())
-	terminateFileProvider, err := findTerminateFileDirectoryPathFromOS(dirPath, terminateFileNames)
+	terminateFileProvider, err := findTerminateFileDirectoryPathFromOS(filepath.Dir(protoFileRef.Path()), terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
-	// set the terminateFile to the first terminateFilesPriorities result, since that's the highest
-	// priority file.
-	terminateFileDirectoryAbsPath := ""
-	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFileProvider.GetTerminateFiles()
-	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
-		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
-	}
-	if terminateFileDirectoryAbsPath == "" {
-		readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
-			dirPath,
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		)
-		if err != nil {
-			return nil, err
-		}
-		readWriteBucketCloser, err := newReadWriteBucketCloser(
-			storage.NopReadWriteBucketCloser(readWriteBucket),
-			"",
-			"",
-		)
-		if err != nil {
-			return nil, err
-		}
-		return newReadBucketCloserWithTerminateFiles(
-			readWriteBucketCloser,
-			nil,
-		), nil
-	}
-	// If the terminate file exists, we need to determine the relative path from the
-	// terminateFileDirectoryAbsPath to the target protoFileRef.Path().
-	wd, err := osextended.Getwd()
+	rootPath, _, err := r.getBucketRootPathAndRelativePath(ctx, container, filepath.Dir(protoFileRef.Path()), terminateFileProvider)
 	if err != nil {
 		return nil, err
-	}
-	terminateFileRelativePath, err := normalpath.Rel(wd, terminateFileDirectoryAbsPath)
-	if err != nil {
-		return nil, err
-	}
-	protoFileRefAbsPath, err := normalpath.NormalizeAndAbsolute(dirPath)
-	if err != nil {
-		return nil, err
-	}
-	protoFileRefRelativePath, err := normalpath.Rel(terminateFileDirectoryAbsPath, protoFileRefAbsPath)
-	if err != nil {
-		return nil, err
-	}
-	rootPath := terminateFileRelativePath
-	if filepath.IsAbs(protoFileRef.Path()) {
-		// If the input was provided as an absolute path,
-		// we preserve it by initializing the workspace
-		// bucket with an absolute path.
-		rootPath = terminateFileDirectoryAbsPath
 	}
 	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
 		rootPath,
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
 	)
 	if err != nil {
-		return nil, err
-	}
-	// Verify that the file ref path is a sub path of the terminate file root path
-	if _, err := r.storageosProvider.NewReadWriteBucket(
-		normalpath.Join(rootPath, protoFileRefRelativePath),
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	); err != nil {
 		return nil, err
 	}
 	readWriteBucketCloser, err := newReadWriteBucketCloser(
@@ -488,6 +388,59 @@ func (r *reader) getProtoFileBucket(
 		readWriteBucketCloser,
 		terminateFileProvider,
 	), nil
+}
+
+// getBucketRootPathAndRelativePath is a helper function that returns the rootPath and relative
+// path if available for the readWriteBucket based on the dirRef and protoFileRef.
+func (r *reader) getBucketRootPathAndRelativePath(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	dirPath string,
+	terminateFileProvider TerminateFileProvider,
+) (string, string, error) {
+	// Set the terminateFile to the first terminateFilesPriorities result, since that's the highest
+	// priority file.
+	terminateFileDirectoryAbsPath := ""
+	// Get the highest priority file found and use it as the terminate file directory path.
+	terminateFiles := terminateFileProvider.GetTerminateFiles()
+	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
+		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
+	}
+	if terminateFileDirectoryAbsPath != "" {
+		// If the terminate file exists, we need to determine the relative path from the
+		// terminateFileDirectoryAbsPath to the target DirRef.Path.
+		wd, err := osextended.Getwd()
+		if err != nil {
+			return "", "", err
+		}
+		terminateFileRelativePath, err := normalpath.Rel(wd, terminateFileDirectoryAbsPath)
+		if err != nil {
+			return "", "", err
+		}
+		dirAbsPath, err := normalpath.NormalizeAndAbsolute(dirPath)
+		if err != nil {
+			return "", "", err
+		}
+		dirRelativePath, err := normalpath.Rel(terminateFileDirectoryAbsPath, dirAbsPath)
+		if err != nil {
+			return "", "", err
+		}
+		// It should be impossible for the dirRefRelativePath to be outside of the context
+		// diretory, but we validate just to make sure.
+		dirRelativePath, err = normalpath.NormalizeAndValidate(dirRelativePath)
+		if err != nil {
+			return "", "", err
+		}
+		rootPath := terminateFileRelativePath
+		if filepath.IsAbs(dirPath) {
+			// If the input was provided as an absolute path,
+			// we preserve it by initializing the workspace
+			// bucket with an absolute path.
+			rootPath = terminateFileDirectoryAbsPath
+		}
+		return rootPath, dirRelativePath, nil
+	}
+	return dirPath, "", nil
 }
 
 func (r *reader) getGitBucket(
@@ -806,7 +759,7 @@ func terminateFilesInBucket(
 				return nil, err
 			}
 			if exists {
-				foundPaths[i] = newTerminateFile(filepath.Base(path), normalpath.Normalize(filepath.Dir(path)))
+				foundPaths[i] = newTerminateFile(normalpath.Base(path), normalpath.Dir(path))
 				// We want the first file found for each layer of hierarchy.
 				break
 			}
@@ -891,7 +844,7 @@ func terminateFilesOnOS(paths [][]string) ([]TerminateFile, error) {
 				return nil, err
 			}
 			if fileInfo != nil && !fileInfo.IsDir() {
-				foundPaths[i] = newTerminateFile(filepath.Base(path), normalpath.Normalize(filepath.Dir(path)))
+				foundPaths[i] = newTerminateFile(normalpath.Base(path), normalpath.Dir(path))
 				// We want the first file found for each layer of hierarchy.
 				break
 			}
