@@ -237,16 +237,16 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	for _, moduleConfigFile := range bufconfig.AllConfigFilePaths {
 		moduleConfigs[moduleConfigFile] = struct{}{}
 	}
-	terminateFilePriority := readBucketCloser.TerminateFilePriority()
+	terminateFileProvider := readBucketCloser.TerminateFileProvider()
 	workspaceConfigDirectory := ""
 	moduleConfigDirectory := ""
-	for _, terminateFile := range terminateFilePriority.TerminateFiles() {
+	for _, terminateFile := range terminateFileProvider.GetTerminateFiles() {
 		if terminateFile != nil {
-			if _, ok := workspaceConfigs[terminateFile.ConfigFile()]; ok {
+			if _, ok := workspaceConfigs[terminateFile.Name()]; ok {
 				workspaceConfigDirectory = normalpath.Unnormalize(terminateFile.Path())
 				continue
 			}
-			if _, ok := moduleConfigs[terminateFile.ConfigFile()]; ok {
+			if _, ok := moduleConfigs[terminateFile.Name()]; ok {
 				moduleConfigDirectory = normalpath.Unnormalize(terminateFile.Path())
 			}
 		}

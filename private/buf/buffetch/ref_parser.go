@@ -41,9 +41,7 @@ func newRefParser(logger *zap.Logger, options ...RefParserOption) *refParser {
 		option(refParser)
 	}
 	fetchRefParserOptions := []internal.RefParserOption{
-		internal.WithRawRefProcessor(newRawRefProcessor(&rawRefProcessorConfig{
-			allowProtoFileRef: refParser.allowProtoFileRef,
-		})),
+		internal.WithRawRefProcessor(newRawRefProcessor(refParser.allowProtoFileRef)),
 		internal.WithSingleFormat(formatBin),
 		internal.WithSingleFormat(formatJSON),
 		internal.WithSingleFormat(
@@ -323,11 +321,7 @@ func (a *refParser) checkDeprecated(parsedRef internal.ParsedRef) {
 	}
 }
 
-type rawRefProcessorConfig struct {
-	allowProtoFileRef bool
-}
-
-func newRawRefProcessor(config *rawRefProcessorConfig) func(*internal.RawRef) error {
+func newRawRefProcessor(allowProtoFileRef bool) func(*internal.RawRef) error {
 	return func(rawRef *internal.RawRef) error {
 		// if format option is not set and path is "-", default to bin
 		var format string
@@ -376,7 +370,7 @@ func newRawRefProcessor(config *rawRefProcessorConfig) func(*internal.RawRef) er
 				// This only applies if the option accept `ProtoFileRef` is passed in, otherwise
 				// it falls through to the `default` case.
 			case ".proto":
-				if config.allowProtoFileRef {
+				if allowProtoFileRef {
 					fileInfo, err := os.Stat(rawRef.Path)
 					if err != nil || fileInfo.IsDir() {
 						return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)

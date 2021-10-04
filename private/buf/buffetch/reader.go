@@ -140,7 +140,7 @@ func (a *reader) GetSourceBucket(
 	container app.EnvStdinContainer,
 	sourceRef SourceRef,
 	options ...GetSourceBucketOption,
-) (ReadBucketCloserWithTerminateFiles, error) {
+) (ReadBucketCloserWithTerminateFileProvider, error) {
 	getSourceBucketOptions := &getSourceBucketOptions{}
 	for _, option := range options {
 		option(getSourceBucketOptions)

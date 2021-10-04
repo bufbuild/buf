@@ -161,7 +161,7 @@ func NewDirRef(path string) (DirRef, error) {
 	return newDirRef("", path)
 }
 
-// ProtoFileRef is a file reference that incorporates a BucketRef ..
+// ProtoFileRef is a file reference that incorporates a BucketRef.
 type ProtoFileRef interface {
 	BucketRef
 	// Path is the normalized path to the file reference.
@@ -370,29 +370,26 @@ func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
-// TerminateFilePriority holds the terminate files found based on priority found. The first
-// file found based on priority is used.
-type TerminateFilePriority interface {
-	// TerminateFiles returns the list of terminate files in order of the hierarchy they should be handled.
-	TerminateFiles() []TerminateFile
+// TerminateFileProvider provides TerminateFiles.
+type TerminateFileProvider interface {
+	// GetTerminateFiles returns the list of terminate files in priority order.
+	GetTerminateFiles() []TerminateFile
 }
 
-// TerminateFile has the config file name and the path found.
-// The Path is always expressed as a normalpath and it is the caller's responsibility to unnormalise
-// it as needed.
+// TerminateFile is a terminate file.
 type TerminateFile interface {
-	// ConfigFile returns the string of the config file type of the terminate file (e.g. "buf.work.yaml")
-	ConfigFile() string
-	// Path returns the normalised directory path where the terminate file is found.
+	// Name returns the name of the TerminateFile (i.e. the base of the fully-qualified file paths).
+	Name() string
+	// Path returns the normalized directory path where the TemrinateFile is located.
 	Path() string
 }
 
-type ReadBucketCloserWithTerminateFiles interface {
+// ReadBucketCloserWithTerminateFileProvider is a ReadBucketCloser with a TerminateFileProvider.
+type ReadBucketCloserWithTerminateFileProvider interface {
 	ReadBucketCloser
 
-	// TerminateFilePriority returns a TerminateFilePriority, which is a slice, in order
-	// of priority, of the terminate files found.
-	TerminateFilePriority() TerminateFilePriority
+	// TerminateFileProvider returns a TerminateFileProvider.
+	TerminateFileProvider() TerminateFileProvider
 }
 
 // ReadBucketCloser is a bucket returned from GetBucket.
@@ -411,7 +408,10 @@ type ReadBucketCloser interface {
 	// this terminate file, and the subdir will be the subdir of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
-	// SetSubDirPath allows the caller to reset the sub dir path
+	// SetSubDirPath sets the value of `SubDirPath`.
+	//
+	// This should only be called if a terminate file name was specified and found outside of
+	// a workspace where the bucket is originally closed.
 	SetSubDirPath(string)
 }
 
@@ -441,7 +441,7 @@ type Reader interface {
 		container app.EnvStdinContainer,
 		bucketRef BucketRef,
 		options ...GetBucketOption,
-	) (ReadBucketCloserWithTerminateFiles, error)
+	) (ReadBucketCloserWithTerminateFileProvider, error)
 	// GetModule gets the module.
 	GetModule(
 		ctx context.Context,
@@ -625,7 +625,7 @@ func WithModuleFormat(format string, options ...ModuleFormatOption) RefParserOpt
 }
 
 // WithProtoFileFormat attaches the given format as a single file format.
-// The single file ref format is only allowed if the option for the parser is given. Otherwise this is a nop.
+// The ProtoFileRef format is only allowed if the option for the parser is given. Otherwise this is a no-op.
 //
 // It is up to the user to not incorrectly attach a format twice.
 func WithProtoFileFormat(format string, options ...ProtoFileFormatOption) RefParserOption {
@@ -766,12 +766,11 @@ type GetBucketOption func(*getBucketOptions)
 
 // WithGetBucketTerminateFileNames only applies if subdir is specified.
 //
-// The terminate files are organised as a slice of slices of file names.
-// Priority will be given to the first slice of terminate file names, and then
-// the next, etc. This allows the `internal` layer to process the terminate file
-// hierarchies without dependencies on the origin of the termiante files.
+// The terminate files are organized as a slice of slices of file names.
+// Priority will be given to the first slice of terminate file names, which will be workspace
+// configuration files. The second layer of priority will be given to modules.
 //
-// This says that if given a subdir, ascend directories until you reach
+// This says that for a given subdir, ascend directories until you reach
 // a file one of these names, and if you do, the returned bucket will be
 // for the directory with this filename, while SubDirPath on the
 // returned bucket will be set to the original subdir relative
@@ -782,6 +781,11 @@ type GetBucketOption func(*getBucketOptions)
 // be for "proto", and the SubDirPath will be "foo".
 //
 // The terminateFileNames are expected to be valid and have no slashes.
+// Example of terminateFileNames:
+// 	[][]string{
+// 		[]string{"buf.work.yaml", "buf.work"},
+// 		[]string{"buf.yaml", "buf.mod"},
+// 	}.
 func WithGetBucketTerminateFileNames(terminateFileNames [][]string) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
 		getBucketOptions.terminateFileNames = terminateFileNames

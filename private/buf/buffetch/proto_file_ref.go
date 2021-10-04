@@ -25,21 +25,19 @@ var _ ProtoFileRef = &protoFileRef{}
 
 type protoFileRef struct {
 	protoFileRef internal.ProtoFileRef
-	dirPath      string
 }
 
 func newProtoFileRef(internalProtoFileRef internal.ProtoFileRef) *protoFileRef {
 	return &protoFileRef{
 		protoFileRef: internalProtoFileRef,
-		dirPath:      internalProtoFileRef.Path(),
 	}
 }
 
 func (r *protoFileRef) PathForExternalPath(externalPath string) (string, error) {
-	if r.dirPath == "" {
+	if r.protoFileRef.Path() == "" {
 		return normalpath.NormalizeAndValidate(externalPath)
 	}
-	absDirPath, err := filepath.Abs(normalpath.Unnormalize(r.dirPath))
+	absDirPath, err := filepath.Abs(normalpath.Unnormalize(r.protoFileRef.Path()))
 	if err != nil {
 		return "", err
 	}

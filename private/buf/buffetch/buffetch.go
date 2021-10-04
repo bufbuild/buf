@@ -216,7 +216,8 @@ type ReadBucketCloser internal.ReadBucketCloser
 // declaration to do so.
 type ReadWriteBucketCloser internal.ReadWriteBucketCloser
 
-type ReadBucketCloserWithTerminateFiles internal.ReadBucketCloserWithTerminateFiles
+// ReadWriteBucketCloserWithTerminateFileProvider is a ReadWriteBucketCloser with a TerminateFileProvider.
+type ReadBucketCloserWithTerminateFileProvider internal.ReadBucketCloserWithTerminateFileProvider
 
 // ImageReader is an image reader.
 type ImageReader interface {
@@ -241,7 +242,7 @@ type SourceReader interface {
 		container app.EnvStdinContainer,
 		sourceRef SourceRef,
 		options ...GetSourceBucketOption,
-	) (ReadBucketCloserWithTerminateFiles, error)
+	) (ReadBucketCloserWithTerminateFileProvider, error)
 }
 
 // GetSourceBucketOption is an option for GetSourceBucket.

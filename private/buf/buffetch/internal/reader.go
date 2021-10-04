@@ -111,7 +111,7 @@ func (r *reader) GetBucket(
 	container app.EnvStdinContainer,
 	bucketRef BucketRef,
 	options ...GetBucketOption,
-) (ReadBucketCloserWithTerminateFiles, error) {
+) (ReadBucketCloserWithTerminateFileProvider, error) {
 	getBucketOptions := newGetBucketOptions()
 	for _, option := range options {
 		option(getBucketOptions)
@@ -193,7 +193,7 @@ func (r *reader) getArchiveBucket(
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
 	terminateFileNames [][]string,
-) (_ ReadBucketCloserWithTerminateFiles, retErr error) {
+) (_ ReadBucketCloserWithTerminateFileProvider, retErr error) {
 	subDirPath, err := normalpath.NormalizeAndValidate(archiveRef.SubDirPath())
 	if err != nil {
 		return nil, err
@@ -247,13 +247,13 @@ func (r *reader) getArchiveBucket(
 	default:
 		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	terminateFilePriority, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
+	terminateFileProvider, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
 	terminateFileDirectoryPath := ""
 	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFilePriority.TerminateFiles()
+	terminateFiles := terminateFileProvider.GetTerminateFiles()
 	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
 		terminateFileDirectoryPath = terminateFiles[0].Path()
 	}
@@ -298,11 +298,11 @@ func (r *reader) getDirBucket(
 	container app.EnvStdinContainer,
 	dirRef DirRef,
 	terminateFileNames [][]string,
-) (ReadBucketCloserWithTerminateFiles, error) {
+) (ReadBucketCloserWithTerminateFileProvider, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	terminateFilePriority, err := findTerminateFileDirectoryPathFromOS(dirRef.Path(), terminateFileNames)
+	terminateFileProvider, err := findTerminateFileDirectoryPathFromOS(dirRef.Path(), terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +310,7 @@ func (r *reader) getDirBucket(
 	// priority file.
 	terminateFileDirectoryAbsPath := ""
 	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFilePriority.TerminateFiles()
+	terminateFiles := terminateFileProvider.GetTerminateFiles()
 	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
 		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
 	}
@@ -390,7 +390,7 @@ func (r *reader) getDirBucket(
 	}
 	return newReadBucketCloserWithTerminateFiles(
 		readBucketCloser,
-		terminateFilePriority,
+		terminateFileProvider,
 	), nil
 }
 
@@ -399,12 +399,12 @@ func (r *reader) getProtoFileBucket(
 	container app.EnvStdinContainer,
 	protoFileRef ProtoFileRef,
 	terminateFileNames [][]string,
-) (ReadBucketCloserWithTerminateFiles, error) {
+) (ReadBucketCloserWithTerminateFileProvider, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
 	dirPath := filepath.Dir(protoFileRef.Path())
-	terminateFilePriority, err := findTerminateFileDirectoryPathFromOS(dirPath, terminateFileNames)
+	terminateFileProvider, err := findTerminateFileDirectoryPathFromOS(dirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +412,7 @@ func (r *reader) getProtoFileBucket(
 	// priority file.
 	terminateFileDirectoryAbsPath := ""
 	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFilePriority.TerminateFiles()
+	terminateFiles := terminateFileProvider.GetTerminateFiles()
 	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
 		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
 	}
@@ -486,7 +486,7 @@ func (r *reader) getProtoFileBucket(
 	}
 	return newReadBucketCloserWithTerminateFiles(
 		readWriteBucketCloser,
-		terminateFilePriority,
+		terminateFileProvider,
 	), nil
 }
 
@@ -495,7 +495,7 @@ func (r *reader) getGitBucket(
 	container app.EnvStdinContainer,
 	gitRef GitRef,
 	terminateFileNames [][]string,
-) (_ ReadBucketCloserWithTerminateFiles, retErr error) {
+) (_ ReadBucketCloserWithTerminateFileProvider, retErr error) {
 	if !r.gitEnabled {
 		return nil, NewReadGitDisabledError()
 	}
@@ -524,13 +524,13 @@ func (r *reader) getGitBucket(
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	terminateFilePriority, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
+	terminateFileProvider, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
 	terminateFileDirectoryPath := ""
 	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFilePriority.TerminateFiles()
+	terminateFiles := terminateFileProvider.GetTerminateFiles()
 	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
 		terminateFileDirectoryPath = terminateFiles[0].Path()
 	}
@@ -749,7 +749,7 @@ func findTerminateFileDirectoryPathFromBucket(
 	readBucket storage.ReadBucket,
 	subDirPath string,
 	terminateFileNames [][]string,
-) (TerminateFilePriority, error) {
+) (TerminateFileProvider, error) {
 	if len(terminateFileNames) == 0 {
 		return nil, nil
 	}
@@ -782,7 +782,7 @@ func findTerminateFileDirectoryPathFromBucket(
 		}
 		// If we have found a terminate file for each layer, we can return now.
 		if foundFiles == len(terminateFileNames) {
-			return newTerminateFilePriority(terminateFiles), nil
+			return newTerminateFileProvider(terminateFiles), nil
 		}
 		parent := normalpath.Dir(terminateFileDirectoryPath)
 		if parent == terminateFileDirectoryPath {
@@ -790,7 +790,7 @@ func findTerminateFileDirectoryPathFromBucket(
 		}
 		terminateFileDirectoryPath = parent
 	}
-	return newTerminateFilePriority(terminateFiles), nil
+	return newTerminateFileProvider(terminateFiles), nil
 }
 
 func terminateFilesInBucket(
@@ -821,7 +821,7 @@ func terminateFilesInBucket(
 func findTerminateFileDirectoryPathFromOS(
 	subDirPath string,
 	terminateFileNames [][]string,
-) (TerminateFilePriority, error) {
+) (TerminateFileProvider, error) {
 	if len(terminateFileNames) == 0 {
 		return nil, nil
 	}
@@ -871,7 +871,7 @@ func findTerminateFileDirectoryPathFromOS(
 		}
 		// If we have found a terminate file for each layer, we can return now.
 		if foundFiles == len(terminateFileNames) {
-			return newTerminateFilePriority(terminateFiles), nil
+			return newTerminateFileProvider(terminateFiles), nil
 		}
 		parent := normalpath.Dir(terminateFileDirectoryPath)
 		if parent == terminateFileDirectoryPath {
@@ -879,7 +879,7 @@ func findTerminateFileDirectoryPathFromOS(
 		}
 		terminateFileDirectoryPath = parent
 	}
-	return newTerminateFilePriority(terminateFiles), nil
+	return newTerminateFileProvider(terminateFiles), nil
 }
 
 func terminateFilesOnOS(paths [][]string) ([]TerminateFile, error) {
