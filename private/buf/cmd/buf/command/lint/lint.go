@@ -207,15 +207,24 @@ func run(
 		allFileAnnotations = append(allFileAnnotations, fileAnnotations...)
 	}
 
-	// Since we are passing in the option to support `SingleFileRef`, we need to filter the annotions
-	// based on the input as well as the `--path` flags.
 	var filteredFileAnnotations []bufanalysis.FileAnnotation
-	for _, fileAnnotation := range allFileAnnotations {
-		if fileAnnotation.FileInfo() != nil {
-			if _, err := ref.PathForExternalPath(fileAnnotation.FileInfo().ExternalPath()); err == nil {
+	if _, ok := ref.(buffetch.ProtoFileRef); ok {
+		// Since we are passing in the option to support `SingleFileRef`, we need to filter the annotations
+		// based on the input as well as the `--path` flags.
+		for _, fileAnnotation := range allFileAnnotations {
+			fileInfo := fileAnnotation.FileInfo()
+			if fileInfo != nil && fileInfo.ExternalPath() == input {
+				// Given that we have a ProtoFileRef, we can do an exact comparison
+				// on the input to determine which files we should include.
+				//
+				// If the user provided an absolute path, the FileAnnotation's external
+				// path will also be formatted as an absolute path. The same holds true
+				// for relative paths.
 				filteredFileAnnotations = append(filteredFileAnnotations, fileAnnotation)
 			}
 		}
+	} else {
+		filteredFileAnnotations = allFileAnnotations
 	}
 
 	if len(filteredFileAnnotations) > 0 {
