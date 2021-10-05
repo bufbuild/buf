@@ -710,6 +710,20 @@ func findTerminateFileDirectoryPathFromBucket(
 	terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
 	foundFiles := 0
 	for {
+		// We need to check for the existence of all the terminate files, so we ascend and prepend
+		// the current directory to determine the fully-qualified filepaths.
+		//
+		// For example:
+		//   [][]string{
+		//     ["buf.work.yaml", "buf.work"],
+		//     ["buf.yaml", "buf.mod"],
+		//   }
+		// ==>
+		//
+		//   [][]string{
+		//     ["/current/path/buf.work.yaml", "/current/path/buf.work"],
+		//     ["/current/path/buf.yaml", "/current/path/buf.mod"],
+		//   }
 		fullTerminateFileNames := make([][]string, len(terminateFileNames))
 		for i := range terminateFileNames {
 			fullTerminateFileNames[i] = make([]string, len(terminateFileNames[i]))
@@ -795,6 +809,21 @@ func findTerminateFileDirectoryPathFromOS(
 	}
 	foundFiles := 0
 	for {
+		// We need to check for the existence of all the terminate files, so we ascend and prepend
+		// the current directory to determine the fully-qualified filepaths.
+		//
+		// For example:
+		//   [][]string{
+		//     ["buf.work.yaml", "buf.work"],
+		//     ["buf.yaml", "buf.mod"],
+		//   }
+		// ==>
+		//
+		//   [][]string{
+		//     ["/current/path/buf.work.yaml", "/current/path/buf.work"],
+		//     ["/current/path/buf.yaml", "/current/path/buf.mod"],
+		//   }
+		fullTerminateFileNames := make([][]string, len(terminateFileNames))
 		fullTerminateFileNames := make([][]string, len(terminateFileNames))
 		for i := range terminateFileNames {
 			fullTerminateFileNames[i] = make([]string, len(terminateFileNames[i]))
@@ -806,9 +835,10 @@ func findTerminateFileDirectoryPathFromOS(
 		if err != nil {
 			return nil, err
 		}
-		// More terminate files were found than layers of hierarchy, return an error.
+		// More terminate files were found than layers of hierarchy, return an error. This path
+		// should be unreachable.
 		if len(foundTerminateFiles) > len(terminateFileNames) {
-			return nil, fmt.Errorf("more than one terminate file found per level of prioritisation: %v", foundTerminateFiles)
+			return nil, fmt.Errorf("more than one terminate file found per level of prioritization: %v", foundTerminateFiles)
 		}
 		for i, terminateFile := range foundTerminateFiles {
 			// We only want to return the first file for a hiearchy, so if a file already exists

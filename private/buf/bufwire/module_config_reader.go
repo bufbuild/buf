@@ -253,27 +253,18 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	}
 	// If a workspace and module are both found, then we need to check of the module is within
 	// the workspace. If it is, we use the workspace. Otherwise, we use the module.
-	moduleInWorkspace := false
 	if workspaceConfigDirectory != "" && moduleConfigDirectory != "" {
 		workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
 		if err != nil {
 			return nil, err
 		}
-		for _, dir := range workspaceConfig.Directories {
-			workspaceDirectory := filepath.Join(workspaceConfigDirectory, dir)
-			relativePath, err := filepath.Rel(workspaceDirectory, moduleConfigDirectory)
-			if err != nil || relativePath == "." || filepath.IsAbs(relativePath) {
-				moduleInWorkspace = true
+		if workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig, moduleConfigDirectory) {
+			relativePath, err := filepath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
+			if err != nil {
+				return nil, err
 			}
+			readBucketCloser.SetSubDirPath(normalpath.Normalize(relativePath))
 		}
-	}
-	// if the module is not in the workspace, we need to remap the bucket
-	if !moduleInWorkspace {
-		relativePath, err := filepath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
-		if err != nil {
-			return nil, err
-		}
-		readBucketCloser.SetSubDirPath(normalpath.Normalize(relativePath))
 	}
 	if workspaceConfigDirectory != "" {
 		return m.getWorkspaceModuleConfigs(
