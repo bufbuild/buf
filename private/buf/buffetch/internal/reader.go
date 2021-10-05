@@ -824,7 +824,6 @@ func findTerminateFileDirectoryPathFromOS(
 		//     ["/current/path/buf.yaml", "/current/path/buf.mod"],
 		//   }
 		fullTerminateFileNames := make([][]string, len(terminateFileNames))
-		fullTerminateFileNames := make([][]string, len(terminateFileNames))
 		for i := range terminateFileNames {
 			fullTerminateFileNames[i] = make([]string, len(terminateFileNames[i]))
 			for j, terminateFileName := range terminateFileNames[i] {
