@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.opencensus.io/trace"
@@ -68,6 +69,12 @@ Additional flags:
 		),
 		BindFlags:     flagsBuilder.Bind,
 		NormalizeFlag: flagsBuilder.Normalize,
+		Version: fmt.Sprintf(
+			"%v.%v.%v-buf",
+			appprotoexec.DefaultVersion.GetMajor(),
+			appprotoexec.DefaultVersion.GetMinor(),
+			appprotoexec.DefaultVersion.GetPatch(),
+		),
 	}
 }
 
