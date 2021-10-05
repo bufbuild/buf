@@ -710,28 +710,7 @@ func findTerminateFileDirectoryPathFromBucket(
 	terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
 	foundFiles := 0
 	for {
-		// We need to check for the existence of all the terminate files, so we ascend and prepend
-		// the current directory to determine the fully-qualified filepaths.
-		//
-		// For example:
-		//   [][]string{
-		//     ["buf.work.yaml", "buf.work"],
-		//     ["buf.yaml", "buf.mod"],
-		//   }
-		// ==>
-		//
-		//   [][]string{
-		//     ["/current/path/buf.work.yaml", "/current/path/buf.work"],
-		//     ["/current/path/buf.yaml", "/current/path/buf.mod"],
-		//   }
-		fullTerminateFileNames := make([][]string, len(terminateFileNames))
-		for i := range terminateFileNames {
-			fullTerminateFileNames[i] = make([]string, len(terminateFileNames[i]))
-			for j, terminateFileName := range terminateFileNames[i] {
-				fullTerminateFileNames[i][j] = normalpath.Join(terminateFileDirectoryPath, terminateFileName)
-			}
-		}
-		foundTerminateFiles, err := terminateFilesInBucket(ctx, readBucket, fullTerminateFileNames)
+		foundTerminateFiles, err := terminateFilesInBucket(ctx, readBucket, terminateFileDirectoryPath, terminateFileNames)
 		if err != nil {
 			return nil, err
 		}
@@ -757,17 +736,41 @@ func findTerminateFileDirectoryPathFromBucket(
 		}
 		terminateFileDirectoryPath = parent
 	}
-	return newTerminateFileProvider(terminateFiles), nil
+	// The number of terminate files found is less than the number of layers of terminate files
+	// we are accepting, so we must prune the nil values from the initial instantiation of the slice.
+	prunedTerminateFilesList := []TerminateFile{}
+	for _, terminateFile := range terminateFiles {
+		if terminateFile != nil {
+			prunedTerminateFilesList = append(prunedTerminateFilesList, terminateFile)
+		}
+	}
+	return newTerminateFileProvider(prunedTerminateFilesList), nil
 }
 
 func terminateFilesInBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
+	directoryPath string,
 	paths [][]string,
 ) ([]TerminateFile, error) {
 	foundPaths := make([]TerminateFile, len(paths))
 	for i := range paths {
+		// We need to check for the existence of all the terminate files, so we ascend and prepend
+		// the current directory to determine the fully-qualified filepaths.
+		//
+		// For example:
+		//   [][]string{
+		//     ["buf.work.yaml", "buf.work"],
+		//     ["buf.yaml", "buf.mod"],
+		//   }
+		// ==>
+		//
+		//   [][]string{
+		//     ["/current/path/buf.work.yaml", "/current/path/buf.work"],
+		//     ["/current/path/buf.yaml", "/current/path/buf.mod"],
+		//   }
 		for _, path := range paths[i] {
+			path = normalpath.Join(directoryPath, path)
 			exists, err := storage.Exists(ctx, readBucket, path)
 			if err != nil {
 				return nil, err
@@ -809,28 +812,7 @@ func findTerminateFileDirectoryPathFromOS(
 	}
 	foundFiles := 0
 	for {
-		// We need to check for the existence of all the terminate files, so we ascend and prepend
-		// the current directory to determine the fully-qualified filepaths.
-		//
-		// For example:
-		//   [][]string{
-		//     ["buf.work.yaml", "buf.work"],
-		//     ["buf.yaml", "buf.mod"],
-		//   }
-		// ==>
-		//
-		//   [][]string{
-		//     ["/current/path/buf.work.yaml", "/current/path/buf.work"],
-		//     ["/current/path/buf.yaml", "/current/path/buf.mod"],
-		//   }
-		fullTerminateFileNames := make([][]string, len(terminateFileNames))
-		for i := range terminateFileNames {
-			fullTerminateFileNames[i] = make([]string, len(terminateFileNames[i]))
-			for j, terminateFileName := range terminateFileNames[i] {
-				fullTerminateFileNames[i][j] = normalpath.Unnormalize(normalpath.Join(terminateFileDirectoryPath, terminateFileName))
-			}
-		}
-		foundTerminateFiles, err := terminateFilesOnOS(fullTerminateFileNames)
+		foundTerminateFiles, err := terminateFilesOnOS(terminateFileDirectoryPath, terminateFileNames)
 		if err != nil {
 			return nil, err
 		}
@@ -861,13 +843,36 @@ func findTerminateFileDirectoryPathFromOS(
 		}
 		terminateFileDirectoryPath = parent
 	}
-	return newTerminateFileProvider(terminateFiles), nil
+	// The number of terminate files found is less than the number of layers of terminate files
+	// we are accepting, so we must prune the nil values from the initial instantiation of the slice.
+	prunedTerminateFilesList := []TerminateFile{}
+	for _, terminateFile := range terminateFiles {
+		if terminateFile != nil {
+			prunedTerminateFilesList = append(prunedTerminateFilesList, terminateFile)
+		}
+	}
+	return newTerminateFileProvider(prunedTerminateFilesList), nil
 }
 
-func terminateFilesOnOS(paths [][]string) ([]TerminateFile, error) {
+func terminateFilesOnOS(directoryPath string, paths [][]string) ([]TerminateFile, error) {
 	foundPaths := make([]TerminateFile, len(paths))
 	for i := range paths {
+		// We need to check for the existence of all the terminate files, so we ascend and prepend
+		// the current directory to determine the fully-qualified filepaths.
+		//
+		// For example:
+		//   [][]string{
+		//     ["buf.work.yaml", "buf.work"],
+		//     ["buf.yaml", "buf.mod"],
+		//   }
+		// ==>
+		//
+		//   [][]string{
+		//     ["/current/path/buf.work.yaml", "/current/path/buf.work"],
+		//     ["/current/path/buf.yaml", "/current/path/buf.mod"],
+		//   }
 		for _, path := range paths[i] {
+			path = normalpath.Unnormalize(normalpath.Join(directoryPath, path))
 			fileInfo, err := os.Stat(path)
 			if err != nil && !os.IsNotExist(err) {
 				return nil, err

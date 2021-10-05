@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -229,26 +230,18 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	if err != nil {
 		return nil, err
 	}
-	workspaceConfigs := map[string]struct{}{}
-	for _, workspaceConfigFile := range bufwork.AllConfigFilePaths {
-		workspaceConfigs[workspaceConfigFile] = struct{}{}
-	}
-	moduleConfigs := map[string]struct{}{}
-	for _, moduleConfigFile := range bufconfig.AllConfigFilePaths {
-		moduleConfigs[moduleConfigFile] = struct{}{}
-	}
+	workspaceConfigs := stringutil.SliceToMap(bufwork.AllConfigFilePaths)
+	moduleConfigs := stringutil.SliceToMap(bufconfig.AllConfigFilePaths)
 	terminateFileProvider := readBucketCloser.TerminateFileProvider()
 	workspaceConfigDirectory := ""
 	moduleConfigDirectory := ""
 	for _, terminateFile := range terminateFileProvider.GetTerminateFiles() {
-		if terminateFile != nil {
-			if _, ok := workspaceConfigs[terminateFile.Name()]; ok {
-				workspaceConfigDirectory = normalpath.Unnormalize(terminateFile.Path())
-				continue
-			}
-			if _, ok := moduleConfigs[terminateFile.Name()]; ok {
-				moduleConfigDirectory = normalpath.Unnormalize(terminateFile.Path())
-			}
+		if _, ok := workspaceConfigs[terminateFile.Name()]; ok {
+			workspaceConfigDirectory = normalpath.Unnormalize(terminateFile.Path())
+			continue
+		}
+		if _, ok := moduleConfigs[terminateFile.Name()]; ok {
+			moduleConfigDirectory = normalpath.Unnormalize(terminateFile.Path())
 		}
 	}
 	// If a workspace and module are both found, then we need to check of the module is within
