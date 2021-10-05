@@ -258,13 +258,13 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 				break
 			}
 		}
-	}
-	if moduleOutsideWorkspace {
-		relativePath, err := filepath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
-		if err != nil {
-			return nil, err
+		if moduleOutsideWorkspace {
+			relativePath, err := filepath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
+			if err != nil {
+				return nil, err
+			}
+			readBucketCloser.SetSubDirPath(normalpath.Normalize(relativePath))
 		}
-		readBucketCloser.SetSubDirPath(normalpath.Normalize(relativePath))
 	}
 	if workspaceConfigDirectory != "" {
 		return m.getWorkspaceModuleConfigs(
