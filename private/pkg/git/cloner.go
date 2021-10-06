@@ -55,6 +55,7 @@ func newCloner(
 	return &cloner{
 		logger:            logger,
 		storageosProvider: storageosProvider,
+		runner:            runner,
 		options:           options,
 	}
 }
