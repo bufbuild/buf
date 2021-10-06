@@ -17,4 +17,4 @@
 
 package appprotoexec
 
-const tooManyFilesHelpMessage = `This is commonly caused by the maximum file limut being too low. On Mac, the default is 256, which is very low. Run "ulimit -n" to check your file limit. If this happened on generation, setting "strategy: all" for each configured plugin in your buf.gen.yaml can mitigate the issue if you are unable to change your file limit.`
+const tooManyFilesHelpMessage = `This is commonly caused by the maximum file limit being too low. On Mac, the default is 256, which is very low. Run "ulimit -n" to check your file limit. If this happened on generation, setting "strategy: all" for each configured plugin in your buf.gen.yaml can mitigate the issue if you are unable to change your file limit.`
