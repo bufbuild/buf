@@ -35,7 +35,7 @@ func handlePotentialTooManyFilesError(err error) error {
 func isTooManyFilesError(err error) bool {
 	var syscallError *os.SyscallError
 	if errors.As(err, &syscallError) {
-		// This may not actually be correct on other platforms, however the worst cast
+		// This may not actually be correct on other platforms, however the worst case
 		// is that we just don't provide the additional help message.
 		//
 		// Note that syscallError.Syscall has both equalled "pipe" and "fork/exec" in testing, but
