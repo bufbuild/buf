@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufapiclient"
 	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufapirepository"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
@@ -527,7 +526,7 @@ func NewModuleReaderAndCreateCacheDirs(
 		dataReadWriteBucket,
 		sumReadWriteBucket,
 		bufapimodule.NewModuleReader(registryProvider),
-		bufapirepository.NewRepositoryReader(registryProvider),
+		registryProvider,
 	)
 	return moduleReader, nil
 }

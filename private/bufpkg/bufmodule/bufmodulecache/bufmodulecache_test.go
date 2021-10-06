@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -65,10 +66,13 @@ func TestReaderBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	deprecationMessage := "this is the deprecation message"
-	repositoryReader := &dummyRepositoryReader{
-		repository: &registryv1alpha1.Repository{
-			Deprecated:         true,
-			DeprecationMessage: deprecationMessage,
+
+	repositoryServiceProvider := &fakeRepositoryServiceProvider{
+		repositoryService: &fakeRepositoryService{
+			repository: &registryv1alpha1.Repository{
+				Deprecated:         true,
+				DeprecationMessage: deprecationMessage,
+			},
 		},
 	}
 
@@ -80,7 +84,7 @@ func TestReaderBasic(t *testing.T) {
 		delegateDataReadWriteBucket,
 		delegateSumReadWriteBucket,
 		moduleCacher,
-		repositoryReader,
+		repositoryServiceProvider,
 	)
 
 	core, observedLogs := observer.New(zapcore.WarnLevel)
@@ -93,7 +97,7 @@ func TestReaderBasic(t *testing.T) {
 		mainDataReadWriteBucket,
 		mainSumReadWriteBucket,
 		delegateModuleReader,
-		repositoryReader,
+		repositoryServiceProvider,
 	)
 	getModule, err := moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
@@ -275,10 +279,19 @@ func testFile1HasNoExternalPath(t *testing.T, ctx context.Context, module bufmod
 	require.NoError(t, file1ModuleFile.Close())
 }
 
-type dummyRepositoryReader struct {
+type fakeRepositoryServiceProvider struct {
+	repositoryService registryv1alpha1api.RepositoryService
+}
+
+func (f *fakeRepositoryServiceProvider) NewRepositoryService(context.Context, string) (registryv1alpha1api.RepositoryService, error) {
+	return f.repositoryService, nil
+}
+
+type fakeRepositoryService struct {
+	registryv1alpha1api.RepositoryService
 	repository *registryv1alpha1.Repository
 }
 
-func (d *dummyRepositoryReader) GetRepository(_ context.Context, _ bufmoduleref.ModulePin) (*registryv1alpha1.Repository, error) {
-	return d.repository, nil
+func (f *fakeRepositoryService) GetRepositoryByFullName(context.Context, string) (*registryv1alpha1.Repository, error) {
+	return f.repository, nil
 }
