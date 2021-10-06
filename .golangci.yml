@@ -5,7 +5,7 @@ linters-settings:
     check-type-assertions: true
   forbidigo:
     forbid:
-      # Use private/pkg/thread
+      # Use private/pkg/thread.Parallelize
       - '^errgroup\.'
       # Use private/pkg/command.Runner
       - '^exec\.Cmd$'
