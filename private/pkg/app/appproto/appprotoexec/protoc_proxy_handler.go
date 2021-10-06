@@ -19,7 +19,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -177,16 +176,15 @@ func (h *protocProxyHandler) getProtocVersion(
 	container app.EnvContainer,
 ) (*pluginpb.Version, error) {
 	stdoutBuffer := bytes.NewBuffer(nil)
-	stderrBuffer := bytes.NewBuffer(nil)
-	cmd := exec.CommandContext(ctx, h.protocPath, "--version")
-	cmd.Env = app.Environ(container)
-	cmd.Stdin = ioextended.DiscardReader
-	// do we want to do this?
-	cmd.Stdout = stdoutBuffer
-	cmd.Stderr = stderrBuffer
-	if err := cmd.Run(); err != nil {
+	if err := h.runner.Run(
+		ctx,
+		h.protocPath,
+		command.RunWithArgs("--version"),
+		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithStdout(stdoutBuffer),
+	); err != nil {
 		// TODO: strip binary path as well?
-		return nil, fmt.Errorf("%v\n%v", err, stderrBuffer.String())
+		return nil, err
 	}
 	return parseVersionForCLIVersion(strings.TrimSpace(stdoutBuffer.String()))
 }
