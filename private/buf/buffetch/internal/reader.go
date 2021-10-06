@@ -254,7 +254,7 @@ func (r *reader) getArchiveBucket(
 	terminateFileDirectoryPath := ""
 	// Get the highest priority file found and use it as the terminate file directory path.
 	terminateFiles := terminateFileProvider.GetTerminateFiles()
-	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
+	if len(terminateFiles) != 0 {
 		terminateFileDirectoryPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryPath != "" {
@@ -403,7 +403,7 @@ func (r *reader) getBucketRootPathAndRelativePath(
 	terminateFileDirectoryAbsPath := ""
 	// Get the highest priority file found and use it as the terminate file directory path.
 	terminateFiles := terminateFileProvider.GetTerminateFiles()
-	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
+	if len(terminateFiles) != 0 {
 		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryAbsPath != "" {
@@ -484,7 +484,7 @@ func (r *reader) getGitBucket(
 	terminateFileDirectoryPath := ""
 	// Get the highest priority file found and use it as the terminate file directory path.
 	terminateFiles := terminateFileProvider.GetTerminateFiles()
-	if len(terminateFiles) != 0 && terminateFiles[0] != nil {
+	if len(terminateFiles) != 0 {
 		terminateFileDirectoryPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryPath != "" {
