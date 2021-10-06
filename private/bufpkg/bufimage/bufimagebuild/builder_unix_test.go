@@ -36,19 +36,20 @@ func TestCompareGoogleapis(t *testing.T) {
 	// code infos that protoc does not
 	image := testBuildGoogleapis(t, false)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
-	actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, false)
+	runner := command.NewRunner()
+	actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, runner, false)
 	prototesting.AssertFileDescriptorSetsEqual(
 		t,
-		command.NewRunner(),
+		runner,
 		fileDescriptorSet,
 		actualProtocFileDescriptorSet,
 	)
 }
 
-func testBuildActualProtocGoogleapis(t *testing.T, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
+func testBuildActualProtocGoogleapis(t *testing.T, runner command.Runner, includeSourceInfo bool) *descriptorpb.FileDescriptorSet {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 0)
-	fileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, true, includeSourceInfo, googleapisDirPath, filePaths)
+	fileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, runner, true, includeSourceInfo, googleapisDirPath, filePaths)
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(fileDescriptorSet.GetFile()))
 
 	return fileDescriptorSet
