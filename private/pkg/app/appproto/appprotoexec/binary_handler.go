@@ -70,9 +70,10 @@ func (h *binaryHandler) Handle(
 	cmd.Stdin = bytes.NewReader(requestData)
 	cmd.Stdout = responseBuffer
 	cmd.Stderr = container.Stderr()
+
 	if err := cmd.Run(); err != nil {
 		// TODO: strip binary path as well?
-		return err
+		return handlePotentialTooManyFilesError(err)
 	}
 	response := &pluginpb.CodeGeneratorResponse{}
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(responseBuffer.Bytes(), response); err != nil {
