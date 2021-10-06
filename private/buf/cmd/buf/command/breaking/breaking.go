@@ -326,17 +326,48 @@ func run(
 		}
 		return bufcli.ErrFileAnnotation
 	}
-	if len(imageConfigs) != len(againstImageConfigs) {
-		// If workspaces are being used as input, the number
-		// of images MUST match. Otherwise the results will
-		// be meaningless and yield false positives.
+	if len(imageConfigs) > len(againstImageConfigs) {
+		// We know that at least one module was removed in the target input,
+		// so that module is guaranteed to fail compatibility. For example,
+		// anyone depending on that module will no longer compile since it
+		// was removed.
 		//
-		// And similar to the note above, if the roots change,
-		// we're torched.
-		return fmt.Errorf("input contained %d images, whereas against contained %d images", len(imageConfigs), len(againstImageConfigs))
+		// Even if all of the types declared in the removed module were moved
+		// to another module in the workspace, we still need to treat each
+		// module individually with respect to backwards-compatibility.
+		//
+		// Given that the module was removed altogether, the best we can do is
+		// compare it against an empty image and rely on the default breaking
+		// configuration.
+		//
+		// For example,
+		//
+		//  Against:
+		//   # buf.work.yaml
+		//   version: v1
+		//   directories:
+		//     - foo
+		//     - bar
+		//
+		//  Current:
+		//   # buf.work.yaml
+		//   version: v1
+		//   directories:
+		//     - foo
+		//     - bar
+		//     - baz
+		//
+		index := len(againstImageConfigs) - 1
+		for i := index; i < len(imageConfigs); i++ {
+			// TODO: This will always be a no-op though, right? If we're only adding new files, we shouldn't care.
+			// I think we only care about the opposite.
+			againstImageConfigs = append(againstImageConfigs, nil /* TODO: Provide an empty image here */)
+		}
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageConfig := range imageConfigs {
+		// If we're targeting a workspace, then we can only compare the images
+		// in the target input against those in
 		fileAnnotations, err := breakingForImage(
 			ctx,
 			container,
