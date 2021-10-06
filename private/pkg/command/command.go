@@ -35,14 +35,13 @@ func RunWithArgs(args ...string) RunOption {
 	}
 }
 
-// RunWithEnvContainer returns a new RunOption that sets the environment variables
-// container.
+// RunWithEnv returns a new RunOption that sets the environment variables.
 //
-// The default is to use an EnvContainer with the single environment variable
-// __EMPTY_ENV__=1 as we cannot explicitly set an empty environment with the exec package.
-func RunWithEnvContainer(envContainer app.EnvContainer) RunOption {
+// The default is to use the single environment variable __EMPTY_ENV__=1 as we
+// cannot explicitly set an empty environment with the exec package.
+func RunWithEnv(env map[string]string) RunOption {
 	return func(runOptions *runOptions) {
-		runOptions.envContainer = envContainer
+		runOptions.env = env
 	}
 }
 
@@ -117,7 +116,7 @@ func RunStdout(
 		ctx,
 		name,
 		RunWithArgs(args...),
-		RunWithEnvContainer(container),
+		RunWithEnv(app.EnvironMap(container)),
 		RunWithStdin(container.Stdin()),
 		RunWithStdout(buffer),
 		RunWithStderr(container.Stderr()),

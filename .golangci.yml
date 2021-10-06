@@ -6,9 +6,9 @@ linters-settings:
   forbidigo:
     forbid:
       - 'fmt\.Print.*'
-      #- 'exec.Cmd'
-      #- 'exec.Command'
-      #- 'exec.CommandContext'
+      - 'exec.Cmd'
+      - 'exec.Command'
+      - 'exec.CommandContext'
   importas:
     alias:
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1
@@ -60,6 +60,10 @@ linters:
   disable-all: true
 issues:
   exclude-rules:
+    - linters:
+        - forbidigo
+      # this is the one file we want to allow exec.Cmd functions in
+      path: private/pkg/command/runner.go
     - linters:
         - stylecheck
       text: "ST1005:"

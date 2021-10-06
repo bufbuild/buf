@@ -72,6 +72,7 @@ func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResul
 
 	actualProtocFileDescriptorSet, protocErr := prototesting.GetProtocFileDescriptorSet(
 		ctx,
+		runner,
 		[]string{dir.AbsPath()},
 		filePaths,
 		false,

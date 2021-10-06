@@ -36,8 +36,6 @@ type EnvContainer interface {
 	//
 	// The value will never be empty.
 	ForEachEnv(func(string, string))
-	// Size returns the number of environment variables.
-	Size() int
 }
 
 // NewEnvContainer returns a new EnvContainer.

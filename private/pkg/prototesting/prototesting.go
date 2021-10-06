@@ -41,6 +41,7 @@ import (
 // Only use for testing.
 func GetProtocFileDescriptorSet(
 	ctx context.Context,
+	runner command.Runner,
 	roots []string,
 	realFilePaths []string,
 	includeImports bool,
@@ -62,6 +63,7 @@ func GetProtocFileDescriptorSet(
 
 	if err := RunProtoc(
 		ctx,
+		runner,
 		roots,
 		realFilePaths,
 		includeImports,
@@ -95,6 +97,7 @@ func GetProtocFileDescriptorSet(
 // RunProtoc runs protoc.
 func RunProtoc(
 	ctx context.Context,
+	runner command.Runner,
 	roots []string,
 	realFilePaths []string,
 	includeImports bool,

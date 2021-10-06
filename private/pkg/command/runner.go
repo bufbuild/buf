@@ -4,17 +4,15 @@ import (
 	"context"
 	"io"
 	"os/exec"
+	"sort"
 
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/thread"
 )
 
-var emptyEnvContainer = app.NewEnvContainer(
-	map[string]string{
-		"__EMPTY_ENV": "1",
-	},
-)
+var emptyEnv = map[string]string{
+	"__EMPTY_ENV": "1",
+}
 
 type runner struct {
 	parallelism int
@@ -35,8 +33,8 @@ func (r *runner) Run(ctx context.Context, name string, options ...RunOption) err
 	for _, option := range options {
 		option(runOptions)
 	}
-	if runOptions.envContainer == nil || runOptions.envContainer.Size() == 0 {
-		runOptions.envContainer = emptyEnvContainer
+	if len(runOptions.env) == 0 {
+		runOptions.env = emptyEnv
 	}
 	if runOptions.stdin == nil {
 		runOptions.stdin = ioextended.DiscardReader
@@ -48,7 +46,7 @@ func (r *runner) Run(ctx context.Context, name string, options ...RunOption) err
 		runOptions.stderr = io.Discard
 	}
 	cmd := exec.CommandContext(ctx, name, runOptions.args...)
-	cmd.Env = app.Environ(runOptions.envContainer)
+	cmd.Env = envSlice(runOptions.env)
 	cmd.Stdin = runOptions.stdin
 	cmd.Stdout = runOptions.stdout
 	cmd.Stderr = runOptions.stderr
@@ -60,12 +58,12 @@ func (r *runner) Run(ctx context.Context, name string, options ...RunOption) err
 }
 
 type runOptions struct {
-	args         []string
-	envContainer app.EnvContainer
-	stdin        io.Reader
-	stdout       io.Writer
-	stderr       io.Writer
-	dir          string
+	args   []string
+	env    map[string]string
+	stdin  io.Reader
+	stdout io.Writer
+	stderr io.Writer
+	dir    string
 }
 
 // We set the defaults after calling any RunOptions on a runOptions struct
@@ -73,4 +71,13 @@ type runOptions struct {
 // default stdin, stdout, stderr, and environment being used.
 func newRunOptions() *runOptions {
 	return &runOptions{}
+}
+
+func envSlice(env map[string]string) []string {
+	var environ []string
+	for key, value := range env {
+		environ = append(environ, key+"="+value)
+	}
+	sort.Strings(environ)
+	return environ
 }
