@@ -283,6 +283,7 @@ func testCompareGeneratedStubs(
 	}
 	buftesting.RunActualProtoc(
 		t,
+		runner,
 		false,
 		false,
 		dirPath,
@@ -363,6 +364,7 @@ func testCompareGeneratedStubsArchive(
 	}
 	buftesting.RunActualProtoc(
 		t,
+		runner,
 		false,
 		false,
 		dirPath,

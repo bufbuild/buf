@@ -88,8 +88,10 @@ func TestComparePrintFreeFieldNumbersGoogleapis(t *testing.T) {
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 100)
 	actualProtocStdout := bytes.NewBuffer(nil)
+	runner := command.NewRunner()
 	buftesting.RunActualProtoc(
 		t,
+		runner,
 		false,
 		false,
 		googleapisDirPath,
@@ -125,8 +127,10 @@ func TestCompareOutputGoogleapis(t *testing.T) {
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
 	filePaths := buftesting.GetProtocFilePaths(t, googleapisDirPath, 100)
+	runner := command.NewRunner()
 	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(
 		t,
+		runner,
 		false,
 		false,
 		googleapisDirPath,
@@ -212,14 +216,15 @@ func TestInsertionPointMixedPathsFail(t *testing.T) {
 	t.Parallel()
 	wd, err := os.Getwd()
 	require.NoError(t, err)
-	testInsertionPointMixedPathsFail(t, ".", wd)
-	testInsertionPointMixedPathsFail(t, wd, ".")
+	runner := command.NewRunner()
+	testInsertionPointMixedPathsFail(t, runner, ".", wd)
+	testInsertionPointMixedPathsFail(t, runner, wd, ".")
 }
 
 // testInsertionPointMixedPathsFail demonstrates that insertion points are only
 // able to generate to the same output directory, even if the absolute path points
 // to the same place.
-func testInsertionPointMixedPathsFail(t *testing.T, receiverOut string, writerOut string) {
+func testInsertionPointMixedPathsFail(t *testing.T, runner command.Runner, receiverOut string, writerOut string) {
 	dirPath := filepath.Join("testdata", "insertion")
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 100)
 	protocFlags := []string{
@@ -228,6 +233,7 @@ func testInsertionPointMixedPathsFail(t *testing.T, receiverOut string, writerOu
 	}
 	err := prototesting.RunProtoc(
 		context.Background(),
+		runner,
 		[]string{dirPath},
 		filePaths,
 		false,
@@ -286,6 +292,7 @@ func testCompareGeneratedStubs(
 	}
 	buftesting.RunActualProtoc(
 		t,
+		runner,
 		false,
 		false,
 		dirPath,
@@ -373,6 +380,7 @@ func testCompareGeneratedStubsArchive(
 	}
 	buftesting.RunActualProtoc(
 		t,
+		runner,
 		false,
 		false,
 		dirPath,
