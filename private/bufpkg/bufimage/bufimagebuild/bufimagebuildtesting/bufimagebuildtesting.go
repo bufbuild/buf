@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
@@ -43,7 +44,8 @@ import (
 // in their README for help with running the fuzz targets.
 func Fuzz(data []byte) int {
 	ctx := context.Background()
-	result, err := fuzz(ctx, data)
+	runner := command.NewRunner()
+	result, err := fuzz(ctx, runner, data)
 	if err != nil {
 		// data was invalid in some way
 		return -1
@@ -51,7 +53,7 @@ func Fuzz(data []byte) int {
 	return result.panicOrN(ctx)
 }
 
-func fuzz(ctx context.Context, data []byte) (_ *fuzzResult, retErr error) {
+func fuzz(ctx context.Context, runner command.Runner, data []byte) (_ *fuzzResult, retErr error) {
 	dir, err := tmp.NewDir()
 	if err != nil {
 		return nil, err
@@ -78,6 +80,7 @@ func fuzz(ctx context.Context, data []byte) (_ *fuzzResult, retErr error) {
 
 	image, bufAnnotations, bufErr := fuzzBuild(ctx, dir.AbsPath())
 	return newFuzzResult(
+		runner,
 		bufAnnotations,
 		bufErr,
 		protocErr,
@@ -169,6 +172,7 @@ func untxtar(data []byte, destDirPath string) error {
 }
 
 type fuzzResult struct {
+	runner                        command.Runner
 	bufAnnotations                []bufanalysis.FileAnnotation
 	bufErr                        error
 	protocErr                     error
@@ -177,6 +181,7 @@ type fuzzResult struct {
 }
 
 func newFuzzResult(
+	runner command.Runner,
 	bufAnnotations []bufanalysis.FileAnnotation,
 	bufErr error,
 	protocErr error,
@@ -184,6 +189,7 @@ func newFuzzResult(
 	image bufimage.Image,
 ) *fuzzResult {
 	return &fuzzResult{
+		runner:                        runner,
 		bufAnnotations:                bufAnnotations,
 		bufErr:                        bufErr,
 		protocErr:                     protocErr,
@@ -224,6 +230,7 @@ func (f *fuzzResult) error(ctx context.Context) error {
 
 	diff, err := prototesting.DiffFileDescriptorSetsJSON(
 		ctx,
+		f.runner,
 		fileDescriptorSet,
 		f.actualProtocFileDescriptorSet,
 		"buf",

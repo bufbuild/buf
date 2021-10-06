@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/stretchr/testify/require"
 )
 
@@ -31,6 +32,7 @@ func TestCorpus(t *testing.T) {
 	// To focus on just one test in the corpus, put its file name here. Don't forget to revert before committing.
 	focus := ""
 	ctx := context.Background()
+	runner := command.NewRunner()
 	require.NoError(t, filepath.Walk("corpus", func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -44,7 +46,7 @@ func TestCorpus(t *testing.T) {
 		t.Run(info.Name(), func(t *testing.T) {
 			data, err := os.ReadFile(filepath.Join("corpus", info.Name()))
 			require.NoError(t, err)
-			result, err := fuzz(ctx, data)
+			result, err := fuzz(ctx, runner, data)
 			require.NoError(t, err)
 			require.NoError(t, result.error(ctx))
 		})

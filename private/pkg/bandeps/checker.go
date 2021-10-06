@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
@@ -26,20 +27,22 @@ import (
 
 type checker struct {
 	logger *zap.Logger
+	runner command.Runner
 }
 
-func newChecker(logger *zap.Logger) *checker {
+func newChecker(logger *zap.Logger, runner command.Runner) *checker {
 	return &checker{
 		logger: logger,
+		runner: runner,
 	}
 }
 
 func (c *checker) Check(
 	ctx context.Context,
-	envContainer app.EnvContainer,
+	envStdioContainer app.EnvStdioContainer,
 	externalConfig ExternalConfig,
 ) ([]Violation, error) {
-	state := newState(c.logger, envContainer)
+	state := newState(c.logger, envStdioContainer, c.runner)
 	if err := c.populateState(ctx, state, externalConfig); err != nil {
 		return nil, err
 	}

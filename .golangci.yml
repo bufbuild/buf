@@ -6,6 +6,9 @@ linters-settings:
   forbidigo:
     forbid:
       - 'fmt\.Print.*'
+      #- 'exec.Cmd'
+      #- 'exec.Command'
+      #- 'exec.CommandContext'
   importas:
     alias:
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1

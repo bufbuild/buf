@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/testingextended"
 	"github.com/stretchr/testify/assert"
@@ -38,6 +39,7 @@ func TestCompareGoogleapis(t *testing.T) {
 	actualProtocFileDescriptorSet := testBuildActualProtocGoogleapis(t, false)
 	prototesting.AssertFileDescriptorSetsEqual(
 		t,
+		command.NewRunner(),
 		fileDescriptorSet,
 		actualProtocFileDescriptorSet,
 	)

@@ -15,15 +15,8 @@
 package bandeps
 
 import (
-	"bytes"
-	"context"
-	"fmt"
-	"io"
-	"os/exec"
 	"sort"
 	"strings"
-
-	"github.com/bufbuild/buf/private/pkg/app"
 )
 
 func sortViolations(violations []Violation) {
@@ -47,26 +40,6 @@ func sortViolations(violations []Violation) {
 			return one.Note() < two.Note()
 		},
 	)
-}
-
-func runStdout(
-	ctx context.Context,
-	envContainer app.EnvContainer,
-	stdin io.Reader,
-	name string,
-	args ...string,
-) (io.Reader, error) {
-	stdout := bytes.NewBuffer(nil)
-	stderr := bytes.NewBuffer(nil)
-	cmd := exec.CommandContext(ctx, name, args...)
-	cmd.Env = app.Environ(envContainer)
-	cmd.Stdin = stdin
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
-	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("%s\n%s", err.Error(), stderr.String())
-	}
-	return stdout, nil
 }
 
 func getNonEmptyLines(s string) []string {

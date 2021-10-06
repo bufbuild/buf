@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/diff"
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
@@ -146,6 +147,7 @@ func RunProtoc(
 // DiffFileDescriptorSetsWire diffs the two FileDescriptorSets using proto.MarshalWire.
 func DiffFileDescriptorSetsWire(
 	ctx context.Context,
+	runner command.Runner,
 	one *descriptorpb.FileDescriptorSet,
 	two *descriptorpb.FileDescriptorSet,
 	oneName string,
@@ -159,7 +161,7 @@ func DiffFileDescriptorSetsWire(
 	if err != nil {
 		return "", err
 	}
-	output, err := diff.Diff(ctx, oneData, twoData, oneName, twoName)
+	output, err := diff.Diff(ctx, runner, oneData, twoData, oneName, twoName)
 	if err != nil {
 		return "", err
 	}
@@ -169,6 +171,7 @@ func DiffFileDescriptorSetsWire(
 // DiffFileDescriptorSetsJSON diffs the two FileDescriptorSets using JSON.
 func DiffFileDescriptorSetsJSON(
 	ctx context.Context,
+	runner command.Runner,
 	one *descriptorpb.FileDescriptorSet,
 	two *descriptorpb.FileDescriptorSet,
 	oneName string,
@@ -190,7 +193,7 @@ func DiffFileDescriptorSetsJSON(
 	if err != nil {
 		return "", err
 	}
-	output, err := diff.Diff(ctx, oneData, twoData, oneName, twoName)
+	output, err := diff.Diff(ctx, runner, oneData, twoData, oneName, twoName)
 	if err != nil {
 		return "", err
 	}
@@ -207,8 +210,13 @@ func DiffFileDescriptorSetsCompare(
 
 // AssertFileDescriptorSetsEqual asserts that the FileDescriptorSet are equal for
 // JSON and compare.
-func AssertFileDescriptorSetsEqual(t *testing.T, one *descriptorpb.FileDescriptorSet, two *descriptorpb.FileDescriptorSet) {
-	diff, err := DiffFileDescriptorSetsJSON(context.Background(), one, two, "buf", "protoc")
+func AssertFileDescriptorSetsEqual(
+	t *testing.T,
+	runner command.Runner,
+	one *descriptorpb.FileDescriptorSet,
+	two *descriptorpb.FileDescriptorSet,
+) {
+	diff, err := DiffFileDescriptorSetsJSON(context.Background(), runner, one, two, "buf", "protoc")
 	assert.NoError(t, err)
 	assert.Empty(t, diff)
 	diff = DiffFileDescriptorSetsCompare(one, two)

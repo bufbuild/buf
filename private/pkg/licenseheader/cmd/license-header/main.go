@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/diff"
 	"github.com/bufbuild/buf/private/pkg/licenseheader"
 	"github.com/spf13/cobra"
@@ -103,6 +104,7 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 			return newRequiredFlagError(yearRangeFlagName)
 		}
 	}
+	runner := command.NewRunner()
 	for i := 0; i < container.NumArgs(); i++ {
 		filename := container.Arg(i)
 		data, err := os.ReadFile(filename)
@@ -123,6 +125,7 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 			if flags.Diff {
 				diffData, err := diff.Diff(
 					ctx,
+					runner,
 					data,
 					modifiedData,
 					filename,
