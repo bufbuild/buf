@@ -30,6 +30,8 @@ var emptyEnv = map[string]string{
 
 type runner struct {
 	parallelism int
+
+	semaphoreC chan struct{}
 }
 
 func newRunner(options ...RunnerOption) *runner {
@@ -39,6 +41,7 @@ func newRunner(options ...RunnerOption) *runner {
 	for _, option := range options {
 		option(runner)
 	}
+	runner.semaphoreC = make(chan struct{}, runner.parallelism)
 	return runner
 }
 
@@ -67,7 +70,9 @@ func (r *runner) Run(ctx context.Context, name string, options ...RunOption) err
 	// The default behavior for dir is what we want already, i.e. the current
 	// working directory.
 	cmd.Dir = runOptions.dir
+	r.semaphoreC <- struct{}{}
 	err := cmd.Run()
+	<-r.semaphoreC
 	return err
 }
 
