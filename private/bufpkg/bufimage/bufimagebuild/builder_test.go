@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -176,12 +177,14 @@ func TestGoogleapis(t *testing.T) {
 
 func TestCompareCustomOptions1(t *testing.T) {
 	t.Parallel()
-	testCompare(t, "customoptions1")
+	runner := command.NewRunner()
+	testCompare(t, runner, "customoptions1")
 }
 
 func TestCompareProto3Optional1(t *testing.T) {
 	t.Parallel()
-	testCompare(t, "proto3optional1")
+	runner := command.NewRunner()
+	testCompare(t, runner, "proto3optional1")
 }
 
 func TestCustomOptionsError1(t *testing.T) {
@@ -235,18 +238,19 @@ func TestOptionPanic(t *testing.T) {
 
 func TestCompareSemicolons(t *testing.T) {
 	t.Parallel()
-	testCompare(t, "semicolons")
+	runner := command.NewRunner()
+	testCompare(t, runner, "semicolons")
 }
 
-func testCompare(t *testing.T, relDirPath string) {
+func testCompare(t *testing.T, runner command.Runner, relDirPath string) {
 	dirPath := filepath.Join("testdata", relDirPath)
 	image, fileAnnotations := testBuild(t, false, dirPath)
 	require.Equal(t, 0, len(fileAnnotations), fileAnnotations)
 	image = bufimage.ImageWithoutImports(image)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 0)
-	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, false, false, dirPath, filePaths)
-	prototesting.AssertFileDescriptorSetsEqual(t, fileDescriptorSet, actualProtocFileDescriptorSet)
+	actualProtocFileDescriptorSet := buftesting.GetActualProtocFileDescriptorSet(t, runner, false, false, dirPath, filePaths)
+	prototesting.AssertFileDescriptorSetsEqual(t, runner, fileDescriptorSet, actualProtocFileDescriptorSet)
 }
 
 func testBuildGoogleapis(t *testing.T, includeSourceInfo bool) bufimage.Image {

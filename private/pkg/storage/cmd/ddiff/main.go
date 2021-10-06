@@ -22,6 +22,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/spf13/cobra"
@@ -64,6 +65,7 @@ func run(ctx context.Context, container app.Container) error {
 	}
 	return storage.Diff(
 		ctx,
+		command.NewRunner(),
 		container.Stdout(),
 		oneReadWriteBucket,
 		twoReadWriteBucket,

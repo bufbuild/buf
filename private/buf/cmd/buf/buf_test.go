@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
@@ -989,6 +990,7 @@ func TestVersion(t *testing.T) {
 func TestMigrateV1Beta1(t *testing.T) {
 	t.Parallel()
 	storageosProvider := storageos.NewProvider()
+	runner := command.NewRunner()
 
 	// These test cases are ordered alphabetically to align with the folders in testadata.
 	t.Run("buf-gen-yaml-without-version", func(t *testing.T) {
@@ -996,6 +998,7 @@ func TestMigrateV1Beta1(t *testing.T) {
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"buf-gen-yaml-without-version",
 			"Successfully migrated your buf.gen.yaml to v1.",
 		)
@@ -1005,6 +1008,7 @@ func TestMigrateV1Beta1(t *testing.T) {
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"buf-yaml-without-version",
 			"Successfully migrated your buf.yaml to v1.",
 		)
@@ -1014,6 +1018,7 @@ func TestMigrateV1Beta1(t *testing.T) {
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"complex",
 			`The ignored file "file3.proto" was not found in any roots and has been removed.
 Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
@@ -1024,6 +1029,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"deps-without-name",
 			"Successfully migrated your buf.yaml to v1.",
 		)
@@ -1033,6 +1039,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"flat-deps-without-name",
 			"Successfully migrated your buf.yaml and buf.lock to v1.",
 		)
@@ -1042,6 +1049,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"lock-file-without-deps",
 			`Successfully migrated your buf.yaml and buf.lock to v1.`,
 		)
@@ -1051,6 +1059,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"nested-folder",
 			"Successfully migrated your buf.yaml to v1.",
 		)
@@ -1060,6 +1069,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"nested-root",
 			"Successfully migrated your buf.yaml and buf.gen.yaml to v1.",
 		)
@@ -1069,6 +1079,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"no-deps",
 			"Successfully migrated your buf.yaml and buf.gen.yaml to v1.",
 		)
@@ -1078,6 +1089,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"noop",
 			"",
 		)
@@ -1087,6 +1099,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"only-buf-gen-yaml",
 			"Successfully migrated your buf.gen.yaml to v1.",
 		)
@@ -1096,6 +1109,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"only-buf-lock",
 			"Successfully migrated your buf.lock to v1.",
 		)
@@ -1105,6 +1119,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"only-buf-yaml",
 			"Successfully migrated your buf.yaml to v1.",
 		)
@@ -1114,6 +1129,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"only-old-buf-gen-yaml",
 			"Successfully migrated your buf.gen.yaml to v1.",
 		)
@@ -1123,6 +1139,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"only-old-buf-lock",
 			`Successfully migrated your buf.lock to v1.`,
 		)
@@ -1132,6 +1149,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"only-old-buf-yaml",
 			"Successfully migrated your buf.yaml to v1.",
 		)
@@ -1141,6 +1159,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"simple",
 			"Successfully migrated your buf.yaml, buf.gen.yaml, and buf.lock to v1.",
 		)
@@ -1150,6 +1169,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 		testMigrateV1Beta1Diff(
 			t,
 			storageosProvider,
+			runner,
 			"v1beta1-lock-file",
 			`Successfully migrated your buf.yaml and buf.lock to v1.`,
 		)
@@ -1166,7 +1186,13 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 	})
 }
 
-func testMigrateV1Beta1Diff(t *testing.T, storageosProvider storageos.Provider, scenario string, expectedStderr string) {
+func testMigrateV1Beta1Diff(
+	t *testing.T,
+	storageosProvider storageos.Provider,
+	runner command.Runner,
+	scenario string,
+	expectedStderr string,
+) {
 	// Copy test setup to temporary directory to avoid writing to filesystem
 	inputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "success", scenario, "input"))
 	require.NoError(t, err)
@@ -1186,7 +1212,7 @@ func testMigrateV1Beta1Diff(t *testing.T, storageosProvider storageos.Provider, 
 	expectedOutputBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "migrate-v1beta1", "success", scenario, "output"))
 	require.NoError(t, err)
 
-	diff, err := storage.DiffBytes(context.Background(), expectedOutputBucket, readWriteBucket)
+	diff, err := storage.DiffBytes(context.Background(), runner, expectedOutputBucket, readWriteBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
 }
