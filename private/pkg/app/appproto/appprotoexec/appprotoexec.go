@@ -85,8 +85,9 @@ type Generator interface {
 func NewGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 ) Generator {
-	return newGenerator(logger, storageosProvider)
+	return newGenerator(logger, storageosProvider, runner)
 }
 
 // GenerateOption is an option for Generate.

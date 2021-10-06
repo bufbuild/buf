@@ -28,6 +28,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"go.uber.org/multierr"
@@ -45,12 +46,13 @@ type generator struct {
 func newGenerator(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 	registryProvider registryv1alpha1apiclient.Provider,
 ) *generator {
 	return &generator{
 		logger:                logger,
 		storageosProvider:     storageosProvider,
-		appprotoexecGenerator: appprotoexec.NewGenerator(logger, storageosProvider),
+		appprotoexecGenerator: appprotoexec.NewGenerator(logger, storageosProvider, runner),
 		registryProvider:      registryProvider,
 	}
 }
