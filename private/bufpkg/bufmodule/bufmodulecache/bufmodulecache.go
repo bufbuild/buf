@@ -16,6 +16,7 @@ package bufmodulecache
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
+	"github.com/bufbuild/buf/private/bufpkg/bufrepository"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
@@ -31,6 +32,7 @@ func NewModuleReader(
 	dataReadWriteBucket storage.ReadWriteBucket,
 	sumReadWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
+	repositoryReader bufrepository.RepositoryReader,
 ) bufmodule.ModuleReader {
 	return newModuleReader(
 		logger,
@@ -39,5 +41,6 @@ func NewModuleReader(
 		dataReadWriteBucket,
 		sumReadWriteBucket,
 		delegate,
+		repositoryReader,
 	)
 }

@@ -16,6 +16,7 @@ package bufmodulecache
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -31,6 +33,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/verbose"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func TestReaderBasic(t *testing.T) {
@@ -59,6 +63,15 @@ func TestReaderBasic(t *testing.T) {
 		module,
 	)
 	require.NoError(t, err)
+
+	deprecationMessage := "this is the deprecation message"
+	repositoryReader := &dummyRepositoryReader{
+		repository: &registryv1alpha1.Repository{
+			Deprecated:         true,
+			DeprecationMessage: deprecationMessage,
+		},
+	}
+
 	// the delegate uses the cache we just populated
 	delegateModuleReader := newModuleReader(
 		zap.NewNop(),
@@ -67,17 +80,20 @@ func TestReaderBasic(t *testing.T) {
 		delegateDataReadWriteBucket,
 		delegateSumReadWriteBucket,
 		moduleCacher,
+		repositoryReader,
 	)
 
+	core, observedLogs := observer.New(zapcore.WarnLevel)
 	// the main does not, so there will be a cache miss
 	mainDataReadWriteBucket, mainSumReadWriteBucket, mainFileLocker := newTestDataSumBucketsAndLocker(t)
 	moduleReader := newModuleReader(
-		zap.NewNop(),
+		zap.New(core),
 		verbose.NopPrinter,
 		mainFileLocker,
 		mainDataReadWriteBucket,
 		mainSumReadWriteBucket,
 		delegateModuleReader,
+		repositoryReader,
 	)
 	getModule, err := moduleReader.GetModule(ctx, modulePin)
 	require.NoError(t, err)
@@ -156,6 +172,9 @@ func TestReaderBasic(t *testing.T) {
 	require.Empty(t, string(diff))
 	require.Equal(t, 7, moduleReader.getCount())
 	require.Equal(t, 3, moduleReader.getCacheHits())
+	require.Equal(t, 4, observedLogs.Filter(func(entry observer.LoggedEntry) bool {
+		return strings.Contains(entry.Message, deprecationMessage)
+	}).Len())
 }
 
 func TestCacherBasic(t *testing.T) {
@@ -254,4 +273,12 @@ func testFile1HasNoExternalPath(t *testing.T, ctx context.Context, module bufmod
 	require.Equal(t, bufmoduletesting.TestFile1Path, file1ModuleFile.Path())
 	require.Equal(t, bufmoduletesting.TestFile1Path, file1ModuleFile.ExternalPath())
 	require.NoError(t, file1ModuleFile.Close())
+}
+
+type dummyRepositoryReader struct {
+	repository *registryv1alpha1.Repository
+}
+
+func (d *dummyRepositoryReader) GetRepository(_ context.Context, _ bufmoduleref.ModulePin) (*registryv1alpha1.Repository, error) {
+	return d.repository, nil
 }

@@ -84,6 +84,8 @@ service RepositoryService {
 }
 
 message GetRepositoriesByFullNameRequest{
+  // minimum length is 1
+  // maximum length is 250
   repeated string full_names = 1;
 }
 

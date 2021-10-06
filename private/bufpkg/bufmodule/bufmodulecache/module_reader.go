@@ -16,10 +16,12 @@ package bufmodulecache
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufrepository"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/verbose"
@@ -28,11 +30,12 @@ import (
 )
 
 type moduleReader struct {
-	logger         *zap.Logger
-	verbosePrinter verbose.Printer
-	fileLocker     filelock.Locker
-	cache          *moduleCacher
-	delegate       bufmodule.ModuleReader
+	logger           *zap.Logger
+	verbosePrinter   verbose.Printer
+	fileLocker       filelock.Locker
+	cache            *moduleCacher
+	delegate         bufmodule.ModuleReader
+	repositoryReader bufrepository.RepositoryReader
 
 	count     int
 	cacheHits int
@@ -46,6 +49,7 @@ func newModuleReader(
 	dataReadWriteBucket storage.ReadWriteBucket,
 	sumReadWriteBucket storage.ReadWriteBucket,
 	delegate bufmodule.ModuleReader,
+	repositoryReader bufrepository.RepositoryReader,
 ) *moduleReader {
 	return &moduleReader{
 		logger:         logger,
@@ -56,7 +60,8 @@ func newModuleReader(
 			dataReadWriteBucket,
 			sumReadWriteBucket,
 		),
-		delegate: delegate,
+		delegate:         delegate,
+		repositoryReader: repositoryReader,
 	}
 }
 
@@ -133,6 +138,22 @@ func (m *moduleReader) GetModule(
 	); err != nil {
 		return nil, err
 	}
+
+	repository, err := m.repositoryReader.GetRepository(ctx, modulePin)
+	if err != nil {
+		return nil, err
+	}
+
+	if repository.Deprecated {
+		warnMsg := fmt.Sprintf("Module %q is deprecated", modulePin.String())
+		if repository.DeprecationMessage != "" {
+			warnMsg = fmt.Sprintf("%s: %s", warnMsg, repository.DeprecationMessage)
+		} else {
+			warnMsg += "."
+		}
+		m.logger.Sugar().Warn(warnMsg)
+	}
+
 	m.lock.Lock()
 	m.count++
 	m.lock.Unlock()
