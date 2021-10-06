@@ -19,11 +19,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os/exec"
 	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/tmp"
@@ -42,12 +42,14 @@ const bufCloneOrigin = "bufCloneOrigin"
 type cloner struct {
 	logger            *zap.Logger
 	storageosProvider storageos.Provider
+	runner            command.Runner
 	options           ClonerOptions
 }
 
 func newCloner(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 	options ClonerOptions,
 ) *cloner {
 	return &cloner{
@@ -101,11 +103,14 @@ func (c *cloner) CloneToBucket(
 	}()
 
 	buffer := bytes.NewBuffer(nil)
-	cmd := exec.CommandContext(ctx, "git", "init", "--bare")
-	cmd.Dir = bareDir.AbsPath()
-	cmd.Env = app.Environ(envContainer)
-	cmd.Stderr = buffer
-	if err := cmd.Run(); err != nil {
+	if err := c.runner.Run(
+		ctx,
+		"git",
+		command.RunWithArgs("init", "--bare"),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
+		command.RunWithStderr(buffer),
+		command.RunWithDir(bareDir.AbsPath()),
+	); err != nil {
 		return newGitCommandError(err, buffer, bareDir)
 	}
 
@@ -117,10 +122,13 @@ func (c *cloner) CloneToBucket(
 		bufCloneOrigin,
 		url,
 	}
-	cmd = exec.CommandContext(ctx, "git", remoteArgs...)
-	cmd.Env = app.Environ(envContainer)
-	cmd.Stderr = buffer
-	if err := cmd.Run(); err != nil {
+	if err := c.runner.Run(
+		ctx,
+		"git",
+		command.RunWithArgs(remoteArgs...),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
+		command.RunWithStderr(buffer),
+	); err != nil {
 		return newGitCommandError(err, buffer, bareDir)
 	}
 
@@ -151,10 +159,13 @@ func (c *cloner) CloneToBucket(
 		}
 	}
 	buffer.Reset()
-	cmd = exec.CommandContext(ctx, "git", fetchArgs...)
-	cmd.Env = app.Environ(envContainer)
-	cmd.Stderr = buffer
-	if err := cmd.Run(); err != nil {
+	if err := c.runner.Run(
+		ctx,
+		"git",
+		command.RunWithArgs(fetchArgs...),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
+		command.RunWithStderr(buffer),
+	); err != nil {
 		return newGitCommandError(err, buffer, bareDir)
 	}
 
@@ -167,10 +178,13 @@ func (c *cloner) CloneToBucket(
 		worktreeDir.AbsPath(),
 		worktreeRef,
 	)
-	cmd = exec.CommandContext(ctx, "git", args...)
-	cmd.Env = app.Environ(envContainer)
-	cmd.Stderr = buffer
-	if err := cmd.Run(); err != nil {
+	if err := c.runner.Run(
+		ctx,
+		"git",
+		command.RunWithArgs(args...),
+		command.RunWithEnv(app.EnvironMap(envContainer)),
+		command.RunWithStderr(buffer),
+	); err != nil {
 		return newGitCommandError(err, buffer, worktreeDir)
 	}
 
@@ -181,11 +195,14 @@ func (c *cloner) CloneToBucket(
 			"checkout",
 			checkoutRef,
 		)
-		cmd = exec.CommandContext(ctx, "git", args...)
-		cmd.Dir = worktreeDir.AbsPath()
-		cmd.Env = app.Environ(envContainer)
-		cmd.Stderr = buffer
-		if err := cmd.Run(); err != nil {
+		if err := c.runner.Run(
+			ctx,
+			"git",
+			command.RunWithArgs(args...),
+			command.RunWithEnv(app.EnvironMap(envContainer)),
+			command.RunWithStderr(buffer),
+			command.RunWithDir(worktreeDir.AbsPath()),
+		); err != nil {
 			return newGitCommandError(err, buffer, worktreeDir)
 		}
 	}
@@ -201,11 +218,14 @@ func (c *cloner) CloneToBucket(
 			depthArg,
 		)
 		buffer.Reset()
-		cmd = exec.CommandContext(ctx, "git", submoduleArgs...)
-		cmd.Dir = worktreeDir.AbsPath()
-		cmd.Env = app.Environ(envContainer)
-		cmd.Stderr = buffer
-		if err := cmd.Run(); err != nil {
+		if err := c.runner.Run(
+			ctx,
+			"git",
+			command.RunWithArgs(submoduleArgs...),
+			command.RunWithEnv(app.EnvironMap(envContainer)),
+			command.RunWithStderr(buffer),
+			command.RunWithDir(worktreeDir.AbsPath()),
+		); err != nil {
 			// Suppress printing of temp path
 			return fmt.Errorf("%v\n%v", err, strings.Replace(buffer.String(), worktreeDir.AbsPath(), "", -1))
 		}

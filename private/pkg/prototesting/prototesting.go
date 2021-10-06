@@ -128,20 +128,17 @@ func RunProtoc(
 	args = append(args, realFilePaths...)
 
 	stderr := bytes.NewBuffer(nil)
-	cmd := exec.CommandContext(ctx, protocBinPath, args...)
-	var environ []string
-	for key, value := range env {
-		environ = append(environ, fmt.Sprintf("%s=%s", key, value))
-	}
-	cmd.Env = environ
 	if stdout == nil {
-		cmd.Stdout = stderr
-	} else {
-		cmd.Stdout = stdout
+		stdout = stderr
 	}
-	cmd.Stderr = stderr
-
-	if err := cmd.Run(); err != nil {
+	if err := runner.Run(
+		ctx,
+		protocBinPath,
+		command.RunWithArgs(args...),
+		command.RunWithEnv(env),
+		command.RunWithStdout(stdout),
+		command.RunWithStderr(stderr),
+	); err != nil {
 		return fmt.Errorf("%s returned error: %v %v", protocBinPath, err, stderr.String())
 	}
 	return nil
