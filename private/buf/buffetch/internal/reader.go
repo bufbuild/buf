@@ -738,7 +738,7 @@ func findTerminateFileDirectoryPathFromBucket(
 	}
 	// The number of terminate files found is less than the number of layers of terminate files
 	// we are accepting, so we must prune the nil values from the initial instantiation of the slice.
-	prunedTerminateFiles := []TerminateFile{}
+	var prunedTerminateFiles []TerminateFile
 	for _, terminateFile := range terminateFiles {
 		if terminateFile != nil {
 			prunedTerminateFiles = append(prunedTerminateFiles, terminateFile)
@@ -845,7 +845,7 @@ func findTerminateFileDirectoryPathFromOS(
 	}
 	// The number of terminate files found is less than the number of layers of terminate files
 	// we are accepting, so we must prune the nil values from the initial instantiation of the slice.
-	prunedTerminateFiles := []TerminateFile{}
+	var prunedTerminateFiles []TerminateFile
 	for _, terminateFile := range terminateFiles {
 		if terminateFile != nil {
 			prunedTerminateFiles = append(prunedTerminateFiles, terminateFile)
