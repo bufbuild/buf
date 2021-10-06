@@ -25,6 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -111,6 +112,7 @@ func GenerateWithPluginPath(pluginPath string) GenerateOption {
 func NewHandler(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 	pluginName string,
 	options ...HandlerOption,
 ) (appproto.Handler, error) {
@@ -123,11 +125,11 @@ func NewHandler(
 		if err != nil {
 			return nil, err
 		}
-		return newBinaryHandler(logger, pluginPath), nil
+		return newBinaryHandler(logger, runner, pluginPath), nil
 	}
 	pluginPath, err := exec.LookPath("protoc-gen-" + pluginName)
 	if err == nil {
-		return newBinaryHandler(logger, pluginPath), nil
+		return newBinaryHandler(logger, runner, pluginPath), nil
 	}
 	// we always look for protoc-gen-X first, but if not, check the builtins
 	if _, ok := ProtocProxyPluginNames[pluginName]; ok {
@@ -138,7 +140,7 @@ func NewHandler(
 		if err != nil {
 			return nil, err
 		}
-		return newProtocProxyHandler(logger, storageosProvider, protocPath, pluginName), nil
+		return newProtocProxyHandler(logger, storageosProvider, runner, protocPath, pluginName), nil
 	}
 	return nil, fmt.Errorf("could not find protoc plugin for name %s", pluginName)
 }

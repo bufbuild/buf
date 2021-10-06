@@ -25,6 +25,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -41,6 +42,7 @@ import (
 type protocProxyHandler struct {
 	logger            *zap.Logger
 	storageosProvider storageos.Provider
+	runner            command.Runner
 	protocPath        string
 	pluginName        string
 }
@@ -48,12 +50,14 @@ type protocProxyHandler struct {
 func newProtocProxyHandler(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 	protocPath string,
 	pluginName string,
 ) *protocProxyHandler {
 	return &protocProxyHandler{
 		logger:            logger.Named("appprotoexec"),
 		storageosProvider: storageosProvider,
+		runner:            runner,
 		protocPath:        protocPath,
 		pluginName:        pluginName,
 	}
@@ -125,14 +129,18 @@ func (h *protocProxyHandler) Handle(
 		args,
 		request.FileToGenerate...,
 	)
-	cmd := exec.CommandContext(ctx, h.protocPath, args...)
-	cmd.Env = app.Environ(container)
+	stdin := ioextended.DiscardReader
 	if descriptorFilePath != "" && descriptorFilePath == app.DevStdinFilePath {
-		cmd.Stdin = bytes.NewReader(fileDescriptorSetData)
+		stdin = bytes.NewReader(fileDescriptorSetData)
 	}
-	cmd.Stdout = io.Discard
-	cmd.Stderr = container.Stderr()
-	if err := cmd.Run(); err != nil {
+	if err := h.runner.Run(
+		ctx,
+		h.protocPath,
+		command.RunWithArgs(args...),
+		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithStdin(stdin),
+		command.RunWithStderr(container.Stderr()),
+	); err != nil {
 		// TODO: strip binary path as well?
 		// We don't know if this is a system error or plugin error, so we assume system error
 		return err
