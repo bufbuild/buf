@@ -5,10 +5,17 @@ linters-settings:
     check-type-assertions: true
   forbidigo:
     forbid:
-      - 'fmt\.Print.*'
-      - 'exec.Cmd'
-      - 'exec.Command'
-      - 'exec.CommandContext'
+      # Use private/pkg/thread
+      - '^errgroup\.'
+      # Use private/pkg/command.Runner
+      - '^exec\.Cmd$'
+      - '^exec\.Command$'
+      - '^exec\.CommandContext$'
+      # Ban debug statements
+      - '^fmt\.Print'
+      - '^log\.'
+      - '^print$'
+      - '^println$'
   importas:
     alias:
       - pkg: github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1
