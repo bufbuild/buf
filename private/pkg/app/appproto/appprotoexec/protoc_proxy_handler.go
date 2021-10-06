@@ -135,7 +135,7 @@ func (h *protocProxyHandler) Handle(
 	if err := cmd.Run(); err != nil {
 		// TODO: strip binary path as well?
 		// We don't know if this is a system error or plugin error, so we assume system error
-		return err
+		return handlePotentialTooManyFilesError(err)
 	}
 	if featureProto3Optional {
 		responseWriter.SetFeatureProto3Optional()
