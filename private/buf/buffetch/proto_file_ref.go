@@ -15,6 +15,7 @@
 package buffetch
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/buffetch/internal"
@@ -33,24 +34,23 @@ func newProtoFileRef(internalProtoFileRef internal.ProtoFileRef) *protoFileRef {
 	}
 }
 
+// PathForExternalPath for a proto file ref will only ever have one successful case, which
+// is `".", <nil>` and will error on all other paths. The `Path()` of the internal.ProtoFileRef
+// will always point to a specific proto file, e.g. `foo/bar/baz.proto`, thus the function
+// errors against inputs that are not matching to the proto file ref input.
 func (r *protoFileRef) PathForExternalPath(externalPath string) (string, error) {
-	if r.protoFileRef.Path() == "" {
-		return normalpath.NormalizeAndValidate(externalPath)
-	}
-	absDirPath, err := filepath.Abs(normalpath.Unnormalize(r.protoFileRef.Path()))
+	externalPathAbs, err := filepath.Abs(normalpath.Unnormalize(externalPath))
 	if err != nil {
 		return "", err
 	}
-	// we don't actually need to unnormalize externalPath but we do anyways
-	absExternalPath, err := filepath.Abs(normalpath.Unnormalize(externalPath))
+	internalRefPathAbs, err := filepath.Abs(normalpath.Unnormalize(r.protoFileRef.Path()))
 	if err != nil {
 		return "", err
 	}
-	path, err := filepath.Rel(absDirPath, absExternalPath)
-	if err != nil {
-		return "", err
+	if externalPathAbs != internalRefPathAbs {
+		return "", fmt.Errorf(`path provided "%s" does not match ref path "%s"`, externalPath, r.protoFileRef.Path())
 	}
-	return normalpath.NormalizeAndValidate(path)
+	return ".", nil
 }
 
 func (r *protoFileRef) internalRef() internal.Ref {

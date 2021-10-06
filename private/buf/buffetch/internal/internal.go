@@ -771,7 +771,7 @@ type GetBucketOption func(*getBucketOptions)
 // configuration files. The second layer of priority will be given to modules.
 //
 // This says that for a given subdir, ascend directories until you reach
-// a file one of these names, and if you do, the returned bucket will be
+// a file with one of these names, and if you do, the returned bucket will be
 // for the directory with this filename, while SubDirPath on the
 // returned bucket will be set to the original subdir relative
 // to the terminate file.
