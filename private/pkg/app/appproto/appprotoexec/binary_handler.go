@@ -77,7 +77,7 @@ func (h *binaryHandler) Handle(
 		command.RunWithStderr(container.Stderr()),
 	); err != nil {
 		// TODO: strip binary path as well?
-		return err
+		return handlePotentialTooManyFilesError(err)
 	}
 	response := &pluginpb.CodeGeneratorResponse{}
 	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(responseBuffer.Bytes(), response); err != nil {
