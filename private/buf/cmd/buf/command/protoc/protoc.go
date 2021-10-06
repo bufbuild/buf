@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
@@ -105,6 +106,7 @@ func run(
 		buildOption = bufmodulebuild.WithPaths(env.FilePaths)
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	runner := command.NewRunner()
 	module, err := bufmodulebuild.NewModuleIncludeBuilder(container.Logger(), storageosProvider).BuildForIncludes(
 		ctx,
 		env.IncludeDirPaths,
@@ -195,6 +197,7 @@ func run(
 				ctx,
 				container.Logger(),
 				storageosProvider,
+				runner,
 				container,
 				images,
 				pluginName,

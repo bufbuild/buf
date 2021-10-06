@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -98,7 +99,8 @@ func handle(
 		return fmt.Errorf("against_input: %v", err)
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-	imageReader := bufcli.NewWireImageReader(logger, storageosProvider)
+	runner := command.NewRunner()
+	imageReader := bufcli.NewWireImageReader(logger, storageosProvider, runner)
 	againstImage, err := imageReader.GetImage(
 		ctx,
 		newContainer(container),

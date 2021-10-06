@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -44,6 +45,7 @@ func executePlugin(
 	ctx context.Context,
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 	container app.EnvStderrContainer,
 	images []bufimage.Image,
 	pluginName string,
@@ -52,6 +54,7 @@ func executePlugin(
 	response, err := appprotoexec.NewGenerator(
 		logger,
 		storageosProvider,
+		runner,
 	).Generate(
 		ctx,
 		container,

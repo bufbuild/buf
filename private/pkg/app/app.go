@@ -32,7 +32,6 @@ type EnvContainer interface {
 	//
 	// Returns empty string if the key is not set or the value is empty.
 	Env(key string) string
-
 	// ForEachEnv iterates over all non-empty environment variables and calls the function.
 	//
 	// The value will never be empty.

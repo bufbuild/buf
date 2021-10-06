@@ -17,11 +17,11 @@ package appprotoexec
 import (
 	"bytes"
 	"context"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
@@ -30,15 +30,18 @@ import (
 
 type binaryHandler struct {
 	logger     *zap.Logger
+	runner     command.Runner
 	pluginPath string
 }
 
 func newBinaryHandler(
 	logger *zap.Logger,
+	runner command.Runner,
 	pluginPath string,
 ) *binaryHandler {
 	return &binaryHandler{
 		logger:     logger.Named("appprotoexec"),
+		runner:     runner,
 		pluginPath: pluginPath,
 	}
 }
@@ -65,13 +68,14 @@ func (h *binaryHandler) Handle(
 		return err
 	}
 	responseBuffer := bytes.NewBuffer(nil)
-	cmd := exec.CommandContext(ctx, h.pluginPath)
-	cmd.Env = app.Environ(container)
-	cmd.Stdin = bytes.NewReader(requestData)
-	cmd.Stdout = responseBuffer
-	cmd.Stderr = container.Stderr()
-
-	if err := cmd.Run(); err != nil {
+	if err := h.runner.Run(
+		ctx,
+		h.pluginPath,
+		command.RunWithEnv(app.EnvironMap(container)),
+		command.RunWithStdin(bytes.NewReader(requestData)),
+		command.RunWithStdout(responseBuffer),
+		command.RunWithStderr(container.Stderr()),
+	); err != nil {
 		// TODO: strip binary path as well?
 		return handlePotentialTooManyFilesError(err)
 	}

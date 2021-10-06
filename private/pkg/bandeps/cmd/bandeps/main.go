@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/bandeps"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -89,7 +90,10 @@ func run(ctx context.Context, container appflag.Container, flags *flags) error {
 	if err := encoding.UnmarshalJSONOrYAMLStrict(configData, &externalConfig); err != nil {
 		return err
 	}
-	violations, err := bandeps.NewChecker(container.Logger()).Check(
+	violations, err := bandeps.NewChecker(
+		container.Logger(),
+		command.NewRunner(),
+	).Check(
 		ctx,
 		container,
 		externalConfig,
