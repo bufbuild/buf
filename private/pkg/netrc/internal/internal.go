@@ -144,52 +144,68 @@ func (n *Netrc) newNameToken(value string) *token {
 	if len(n.tokens) == 0 {
 		prefix = ""
 	}
+	var rawvalue []byte
+	if value != "" {
+		rawvalue = []byte(" " + value)
+	}
 	return &token{
 		kind:     tkMachine,
 		rawkind:  []byte(prefix + "machine"),
 		value:    value,
-		rawvalue: []byte(" " + value),
+		rawvalue: rawvalue,
 	}
 }
 
 func newLoginToken(value string) *token {
+	var rawvalue []byte
+	if value != "" {
+		rawvalue = []byte(" " + value)
+	}
 	return &token{
 		kind:     tkLogin,
 		rawkind:  []byte("\n\tlogin"),
 		value:    value,
-		rawvalue: []byte(" " + value),
+		rawvalue: rawvalue,
 	}
 }
 
 func newPassToken(value string) *token {
+	var rawvalue []byte
+	if value != "" {
+		rawvalue = []byte(" " + value)
+	}
 	return &token{
 		kind:     tkPassword,
 		rawkind:  []byte("\n\tpassword"),
 		value:    value,
-		rawvalue: []byte(" " + value),
+		rawvalue: rawvalue,
 	}
 }
 
 func newAccountToken(value string) *token {
+	var rawvalue []byte
+	if value != "" {
+		rawvalue = []byte(" " + value)
+	}
 	return &token{
 		kind:     tkAccount,
 		rawkind:  []byte("\n\taccount"),
 		value:    value,
-		rawvalue: []byte(" " + value),
+		rawvalue: rawvalue,
 	}
 }
 
 func (n *Netrc) insertMachineTokensBeforeDefault(m *Machine) {
 	newtokens := []*token{m.nametoken}
-	if m.logintoken.value != "" {
-		newtokens = append(newtokens, m.logintoken)
-	}
-	if m.passtoken.value != "" {
-		newtokens = append(newtokens, m.passtoken)
-	}
-	if m.accounttoken.value != "" {
-		newtokens = append(newtokens, m.accounttoken)
-	}
+	//if m.logintoken.value != "" {
+	newtokens = append(newtokens, m.logintoken)
+	//}
+	//if m.passtoken.value != "" {
+	newtokens = append(newtokens, m.passtoken)
+	//}
+	//if m.accounttoken.value != "" {
+	newtokens = append(newtokens, m.accounttoken)
+	//}
 	for i := range n.tokens {
 		if n.tokens[i].kind == tkDefault {
 			// found the default, now insert tokens before it
