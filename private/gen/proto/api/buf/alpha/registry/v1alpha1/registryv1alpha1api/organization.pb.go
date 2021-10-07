@@ -66,12 +66,6 @@ type OrganizationService interface {
 		id string,
 		repositoryScope v1alpha1.RepositoryScope,
 	) (err error)
-	// AddOrganizationBaseRepositoryScopeByName adds a base repository scope to an organization by name.
-	AddOrganizationBaseRepositoryScopeByName(
-		ctx context.Context,
-		name string,
-		repositoryScope v1alpha1.RepositoryScope,
-	) (err error)
 	// RemoveOrganizationBaseRepositoryScope removes a base repository scope from an organization by ID.
 	RemoveOrganizationBaseRepositoryScope(
 		ctx context.Context,

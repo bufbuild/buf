@@ -56,8 +56,6 @@ type OrganizationServiceClient interface {
 	DeleteOrganizationByName(ctx context.Context, in *DeleteOrganizationByNameRequest, opts ...grpc.CallOption) (*DeleteOrganizationByNameResponse, error)
 	// AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
 	AddOrganizationBaseRepositoryScope(ctx context.Context, in *AddOrganizationBaseRepositoryScopeRequest, opts ...grpc.CallOption) (*AddOrganizationBaseRepositoryScopeResponse, error)
-	// AddOrganizationBaseRepositoryScopeByName adds a base repository scope to an organization by name.
-	AddOrganizationBaseRepositoryScopeByName(ctx context.Context, in *AddOrganizationBaseRepositoryScopeByNameRequest, opts ...grpc.CallOption) (*AddOrganizationBaseRepositoryScopeByNameResponse, error)
 	// RemoveOrganizationBaseRepositoryScope removes a base repository scope from an organization by ID.
 	RemoveOrganizationBaseRepositoryScope(ctx context.Context, in *RemoveOrganizationBaseRepositoryScopeRequest, opts ...grpc.CallOption) (*RemoveOrganizationBaseRepositoryScopeResponse, error)
 	// RemoveOrganizationBaseRepositoryScopeByName removes a base repository scope from an organization by name.
@@ -162,15 +160,6 @@ func (c *organizationServiceClient) AddOrganizationBaseRepositoryScope(ctx conte
 	return out, nil
 }
 
-func (c *organizationServiceClient) AddOrganizationBaseRepositoryScopeByName(ctx context.Context, in *AddOrganizationBaseRepositoryScopeByNameRequest, opts ...grpc.CallOption) (*AddOrganizationBaseRepositoryScopeByNameResponse, error) {
-	out := new(AddOrganizationBaseRepositoryScopeByNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationBaseRepositoryScopeByName", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *organizationServiceClient) RemoveOrganizationBaseRepositoryScope(ctx context.Context, in *RemoveOrganizationBaseRepositoryScopeRequest, opts ...grpc.CallOption) (*RemoveOrganizationBaseRepositoryScopeResponse, error) {
 	out := new(RemoveOrganizationBaseRepositoryScopeResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationBaseRepositoryScope", in, out, opts...)
@@ -213,8 +202,6 @@ type OrganizationServiceServer interface {
 	DeleteOrganizationByName(context.Context, *DeleteOrganizationByNameRequest) (*DeleteOrganizationByNameResponse, error)
 	// AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
 	AddOrganizationBaseRepositoryScope(context.Context, *AddOrganizationBaseRepositoryScopeRequest) (*AddOrganizationBaseRepositoryScopeResponse, error)
-	// AddOrganizationBaseRepositoryScopeByName adds a base repository scope to an organization by name.
-	AddOrganizationBaseRepositoryScopeByName(context.Context, *AddOrganizationBaseRepositoryScopeByNameRequest) (*AddOrganizationBaseRepositoryScopeByNameResponse, error)
 	// RemoveOrganizationBaseRepositoryScope removes a base repository scope from an organization by ID.
 	RemoveOrganizationBaseRepositoryScope(context.Context, *RemoveOrganizationBaseRepositoryScopeRequest) (*RemoveOrganizationBaseRepositoryScopeResponse, error)
 	// RemoveOrganizationBaseRepositoryScopeByName removes a base repository scope from an organization by name.
@@ -254,9 +241,6 @@ func (UnimplementedOrganizationServiceServer) DeleteOrganizationByName(context.C
 }
 func (UnimplementedOrganizationServiceServer) AddOrganizationBaseRepositoryScope(context.Context, *AddOrganizationBaseRepositoryScopeRequest) (*AddOrganizationBaseRepositoryScopeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddOrganizationBaseRepositoryScope not implemented")
-}
-func (UnimplementedOrganizationServiceServer) AddOrganizationBaseRepositoryScopeByName(context.Context, *AddOrganizationBaseRepositoryScopeByNameRequest) (*AddOrganizationBaseRepositoryScopeByNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddOrganizationBaseRepositoryScopeByName not implemented")
 }
 func (UnimplementedOrganizationServiceServer) RemoveOrganizationBaseRepositoryScope(context.Context, *RemoveOrganizationBaseRepositoryScopeRequest) (*RemoveOrganizationBaseRepositoryScopeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveOrganizationBaseRepositoryScope not implemented")
@@ -456,24 +440,6 @@ func _OrganizationService_AddOrganizationBaseRepositoryScope_Handler(srv interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _OrganizationService_AddOrganizationBaseRepositoryScopeByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddOrganizationBaseRepositoryScopeByNameRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(OrganizationServiceServer).AddOrganizationBaseRepositoryScopeByName(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationBaseRepositoryScopeByName",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrganizationServiceServer).AddOrganizationBaseRepositoryScopeByName(ctx, req.(*AddOrganizationBaseRepositoryScopeByNameRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _OrganizationService_RemoveOrganizationBaseRepositoryScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RemoveOrganizationBaseRepositoryScopeRequest)
 	if err := dec(in); err != nil {
@@ -556,10 +522,6 @@ var OrganizationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddOrganizationBaseRepositoryScope",
 			Handler:    _OrganizationService_AddOrganizationBaseRepositoryScope_Handler,
-		},
-		{
-			MethodName: "AddOrganizationBaseRepositoryScopeByName",
-			Handler:    _OrganizationService_AddOrganizationBaseRepositoryScopeByName_Handler,
 		},
 		{
 			MethodName: "RemoveOrganizationBaseRepositoryScope",

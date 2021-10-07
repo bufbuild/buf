@@ -229,28 +229,6 @@ func (s *organizationService) AddOrganizationBaseRepositoryScope(
 	return nil
 }
 
-// AddOrganizationBaseRepositoryScopeByName adds a base repository scope to an organization by name.
-func (s *organizationService) AddOrganizationBaseRepositoryScopeByName(
-	ctx context.Context,
-	name string,
-	repositoryScope v1alpha1.RepositoryScope,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.AddOrganizationBaseRepositoryScopeByName(
-		ctx,
-		&v1alpha1.AddOrganizationBaseRepositoryScopeByNameRequest{
-			Name:            name,
-			RepositoryScope: repositoryScope,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // RemoveOrganizationBaseRepositoryScope removes a base repository scope from an organization by ID.
 func (s *organizationService) RemoveOrganizationBaseRepositoryScope(
 	ctx context.Context,
