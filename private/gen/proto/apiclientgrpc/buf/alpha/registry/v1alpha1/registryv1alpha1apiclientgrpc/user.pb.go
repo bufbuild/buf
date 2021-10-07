@@ -226,50 +226,6 @@ func (s *userService) RemoveUserOrganizationScope(
 	return nil
 }
 
-// AddUserServerScope adds a server scope for a user by ID.
-func (s *userService) AddUserServerScope(
-	ctx context.Context,
-	id string,
-	serverScope v1alpha1.ServerScope,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.AddUserServerScope(
-		ctx,
-		&v1alpha1.AddUserServerScopeRequest{
-			Id:          id,
-			ServerScope: serverScope,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// AddUserServerScopeByName adds a server scope for a user by name.
-func (s *userService) AddUserServerScopeByName(
-	ctx context.Context,
-	name string,
-	serverScope v1alpha1.ServerScope,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.AddUserServerScopeByName(
-		ctx,
-		&v1alpha1.AddUserServerScopeByNameRequest{
-			Name:        name,
-			ServerScope: serverScope,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // RemoveUserServerScope removes a server scope for a user by ID.
 func (s *userService) RemoveUserServerScope(
 	ctx context.Context,

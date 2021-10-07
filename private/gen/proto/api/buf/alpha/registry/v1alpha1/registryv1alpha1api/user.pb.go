@@ -64,18 +64,6 @@ type UserService interface {
 		organizationId string,
 		organizationScope v1alpha1.OrganizationScope,
 	) (err error)
-	// AddUserServerScope adds a server scope for a user by ID.
-	AddUserServerScope(
-		ctx context.Context,
-		id string,
-		serverScope v1alpha1.ServerScope,
-	) (err error)
-	// AddUserServerScopeByName adds a server scope for a user by name.
-	AddUserServerScopeByName(
-		ctx context.Context,
-		name string,
-		serverScope v1alpha1.ServerScope,
-	) (err error)
 	// RemoveUserServerScope removes a server scope for a user by ID.
 	RemoveUserServerScope(
 		ctx context.Context,

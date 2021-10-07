@@ -56,10 +56,6 @@ type UserServiceClient interface {
 	AddUserOrganizationScopeByName(ctx context.Context, in *AddUserOrganizationScopeByNameRequest, opts ...grpc.CallOption) (*AddUserOrganizationScopeByNameResponse, error)
 	// RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
 	RemoveUserOrganizationScope(ctx context.Context, in *RemoveUserOrganizationScopeRequest, opts ...grpc.CallOption) (*RemoveUserOrganizationScopeResponse, error)
-	// AddUserServerScope adds a server scope for a user by ID.
-	AddUserServerScope(ctx context.Context, in *AddUserServerScopeRequest, opts ...grpc.CallOption) (*AddUserServerScopeResponse, error)
-	// AddUserServerScopeByName adds a server scope for a user by name.
-	AddUserServerScopeByName(ctx context.Context, in *AddUserServerScopeByNameRequest, opts ...grpc.CallOption) (*AddUserServerScopeByNameResponse, error)
 	// RemoveUserServerScope removes a server scope for a user by ID.
 	RemoveUserServerScope(ctx context.Context, in *RemoveUserServerScopeRequest, opts ...grpc.CallOption) (*RemoveUserServerScopeResponse, error)
 	// RemoveUserServerScopeByName removes a server scope for a user by name.
@@ -164,24 +160,6 @@ func (c *userServiceClient) RemoveUserOrganizationScope(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *userServiceClient) AddUserServerScope(ctx context.Context, in *AddUserServerScopeRequest, opts ...grpc.CallOption) (*AddUserServerScopeResponse, error) {
-	out := new(AddUserServerScopeResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/AddUserServerScope", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *userServiceClient) AddUserServerScopeByName(ctx context.Context, in *AddUserServerScopeByNameRequest, opts ...grpc.CallOption) (*AddUserServerScopeByNameResponse, error) {
-	out := new(AddUserServerScopeByNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/AddUserServerScopeByName", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *userServiceClient) RemoveUserServerScope(ctx context.Context, in *RemoveUserServerScopeRequest, opts ...grpc.CallOption) (*RemoveUserServerScopeResponse, error) {
 	out := new(RemoveUserServerScopeResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/RemoveUserServerScope", in, out, opts...)
@@ -224,10 +202,6 @@ type UserServiceServer interface {
 	AddUserOrganizationScopeByName(context.Context, *AddUserOrganizationScopeByNameRequest) (*AddUserOrganizationScopeByNameResponse, error)
 	// RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
 	RemoveUserOrganizationScope(context.Context, *RemoveUserOrganizationScopeRequest) (*RemoveUserOrganizationScopeResponse, error)
-	// AddUserServerScope adds a server scope for a user by ID.
-	AddUserServerScope(context.Context, *AddUserServerScopeRequest) (*AddUserServerScopeResponse, error)
-	// AddUserServerScopeByName adds a server scope for a user by name.
-	AddUserServerScopeByName(context.Context, *AddUserServerScopeByNameRequest) (*AddUserServerScopeByNameResponse, error)
 	// RemoveUserServerScope removes a server scope for a user by ID.
 	RemoveUserServerScope(context.Context, *RemoveUserServerScopeRequest) (*RemoveUserServerScopeResponse, error)
 	// RemoveUserServerScopeByName removes a server scope for a user by name.
@@ -267,12 +241,6 @@ func (UnimplementedUserServiceServer) AddUserOrganizationScopeByName(context.Con
 }
 func (UnimplementedUserServiceServer) RemoveUserOrganizationScope(context.Context, *RemoveUserOrganizationScopeRequest) (*RemoveUserOrganizationScopeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveUserOrganizationScope not implemented")
-}
-func (UnimplementedUserServiceServer) AddUserServerScope(context.Context, *AddUserServerScopeRequest) (*AddUserServerScopeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddUserServerScope not implemented")
-}
-func (UnimplementedUserServiceServer) AddUserServerScopeByName(context.Context, *AddUserServerScopeByNameRequest) (*AddUserServerScopeByNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddUserServerScopeByName not implemented")
 }
 func (UnimplementedUserServiceServer) RemoveUserServerScope(context.Context, *RemoveUserServerScopeRequest) (*RemoveUserServerScopeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveUserServerScope not implemented")
@@ -472,42 +440,6 @@ func _UserService_RemoveUserOrganizationScope_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_AddUserServerScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddUserServerScopeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UserServiceServer).AddUserServerScope(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.UserService/AddUserServerScope",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).AddUserServerScope(ctx, req.(*AddUserServerScopeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _UserService_AddUserServerScopeByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddUserServerScopeByNameRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UserServiceServer).AddUserServerScopeByName(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.UserService/AddUserServerScopeByName",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).AddUserServerScopeByName(ctx, req.(*AddUserServerScopeByNameRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _UserService_RemoveUserServerScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RemoveUserServerScopeRequest)
 	if err := dec(in); err != nil {
@@ -590,14 +522,6 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveUserOrganizationScope",
 			Handler:    _UserService_RemoveUserOrganizationScope_Handler,
-		},
-		{
-			MethodName: "AddUserServerScope",
-			Handler:    _UserService_AddUserServerScope_Handler,
-		},
-		{
-			MethodName: "AddUserServerScopeByName",
-			Handler:    _UserService_AddUserServerScopeByName_Handler,
 		},
 		{
 			MethodName: "RemoveUserServerScope",
