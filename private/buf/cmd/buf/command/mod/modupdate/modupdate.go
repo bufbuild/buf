@@ -114,7 +114,7 @@ func run(
 		remote = moduleConfig.ModuleIdentity.Remote()
 	}
 
-	dependencyModulePins, dependencyRepos, err := getDependencies(
+	pinnedRepositories, err := getDependencies(
 		ctx,
 		container,
 		flags,
@@ -126,9 +126,11 @@ func run(
 		return err
 	}
 
-	for i, repository := range dependencyRepos {
-		// dependencyRepos and dependencyModulePins are in the same order
-		modulePin := dependencyModulePins[i]
+	dependencyModulePins := make([]bufmoduleref.ModulePin, len(pinnedRepositories))
+	for i := range pinnedRepositories {
+		dependencyModulePins[i] = pinnedRepositories[i].modulePin
+		modulePin := pinnedRepositories[i].modulePin
+		repository := pinnedRepositories[i].repository
 		if !repository.Deprecated {
 			continue
 		}
@@ -157,17 +159,17 @@ func getDependencies(
 	remote string,
 	moduleConfig *bufconfig.Config,
 	readWriteBucket storage.ReadWriteBucket,
-) ([]bufmoduleref.ModulePin, []*registryv1alpha1.Repository, error) {
+) ([]pinnedRepository, error) {
 	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
-		return nil, nil, nil
+		return nil, nil
 	}
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	service, err := apiProvider.NewResolveService(ctx, remote)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	var protoDependencyModuleReferences []*modulev1alpha1.ModuleReference
 	var currentProtoModulePins []*modulev1alpha1.ModulePin
@@ -179,13 +181,13 @@ func getDependencies(
 		for _, only := range flags.Only {
 			moduleReference, ok := referencesByIdentity[only]
 			if !ok {
-				return nil, nil, fmt.Errorf("%q is not a valid --only input: no such dependency in current module deps", only)
+				return nil, fmt.Errorf("%q is not a valid --only input: no such dependency in current module deps", only)
 			}
 			protoDependencyModuleReferences = append(protoDependencyModuleReferences, bufmoduleref.NewProtoModuleReferenceForModuleReference(moduleReference))
 		}
 		currentModulePins, err := bufmoduleref.DependencyModulePinsForBucket(ctx, readWriteBucket)
 		if err != nil {
-			return nil, nil, fmt.Errorf("couldn't read current dependencies: %w", err)
+			return nil, fmt.Errorf("couldn't read current dependencies: %w", err)
 		}
 		currentProtoModulePins = bufmoduleref.NewProtoModulePinsForModulePins(currentModulePins...)
 	} else {
@@ -200,17 +202,17 @@ func getDependencies(
 	)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeUnimplemented && remote != bufrpc.DefaultRemote {
-			return nil, nil, bufcli.NewUnimplementedRemoteError(err, remote, moduleConfig.ModuleIdentity.IdentityString())
+			return nil, bufcli.NewUnimplementedRemoteError(err, remote, moduleConfig.ModuleIdentity.IdentityString())
 		}
-		return nil, nil, err
+		return nil, err
 	}
 	dependencyModulePins, err := bufmoduleref.NewModulePinsForProtos(protoDependencyModulePins...)
 	if err != nil {
-		return nil, nil, bufcli.NewInternalError(err)
+		return nil, bufcli.NewInternalError(err)
 	}
 	repositoryService, err := apiProvider.NewRepositoryService(ctx, remote)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	dependencyFullNames := make([]string, len(dependencyModulePins))
 	for i, pin := range dependencyModulePins {
@@ -218,7 +220,19 @@ func getDependencies(
 	}
 	dependencyRepos, err := repositoryService.GetRepositoriesByFullName(ctx, dependencyFullNames)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
-	return dependencyModulePins, dependencyRepos, nil
+	pinnedRepositories := make([]pinnedRepository, len(dependencyFullNames))
+	for i := range dependencyModulePins {
+		pinnedRepositories[i] = pinnedRepository{
+			modulePin:  dependencyModulePins[i],
+			repository: dependencyRepos[i],
+		}
+	}
+	return pinnedRepositories, nil
+}
+
+type pinnedRepository struct {
+	modulePin  bufmoduleref.ModulePin
+	repository *registryv1alpha1.Repository
 }
