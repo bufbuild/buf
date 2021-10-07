@@ -159,7 +159,7 @@ func getDependencies(
 	remote string,
 	moduleConfig *bufconfig.Config,
 	readWriteBucket storage.ReadWriteBucket,
-) ([]pinnedRepository, error) {
+) ([]*pinnedRepository, error) {
 	if len(moduleConfig.Build.DependencyModuleReferences) == 0 {
 		return nil, nil
 	}
@@ -222,9 +222,9 @@ func getDependencies(
 	if err != nil {
 		return nil, err
 	}
-	pinnedRepositories := make([]pinnedRepository, len(dependencyFullNames))
+	pinnedRepositories := make([]*pinnedRepository, len(dependencyFullNames))
 	for i := range dependencyModulePins {
-		pinnedRepositories[i] = pinnedRepository{
+		pinnedRepositories[i] = &pinnedRepository{
 			modulePin:  dependencyModulePins[i],
 			repository: dependencyRepos[i],
 		}
