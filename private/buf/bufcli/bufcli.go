@@ -531,9 +531,8 @@ func NewModuleReaderAndCreateCacheDirs(
 		fileLocker,
 		dataReadWriteBucket,
 		sumReadWriteBucket,
-		bufapimodule.NewModuleReader(
-			registryProvider,
-		),
+		bufapimodule.NewModuleReader(registryProvider),
+		registryProvider,
 	)
 	return moduleReader, nil
 }
