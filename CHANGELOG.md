@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.0.0-rc4] - 2021-10-07
 
 - Fix issue where `buf generate` could fail when used with large numbers of plugins and files on
   systems with low file limits.
@@ -560,7 +560,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc3...HEAD
+[v1.0.0-rc4]: https://github.com/bufbuild/buf/compare/v1.0.0-rc3...v1.0.0-rc4
 [v1.0.0-rc3]: https://github.com/bufbuild/buf/compare/v1.0.0-rc2...v1.0.0-rc3
 [v1.0.0-rc2]: https://github.com/bufbuild/buf/compare/v1.0.0-rc1...v1.0.0-rc2
 [v1.0.0-rc1]: https://github.com/bufbuild/buf/compare/v0.56.0...v1.0.0-rc1
