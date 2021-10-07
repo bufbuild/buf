@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Fix issue where `buf generate` could fail when used with large numbers of plugins and files on
+  systems with low file limits.
+- Add `buf protoc --version` flag back. This was accidentally removed.
 - Upgrade to `protoc` 3.18.1 support.
 
 ## [v1.0.0-rc3] - 2021-10-04
