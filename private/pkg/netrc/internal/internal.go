@@ -254,6 +254,10 @@ func (m *Machine) UpdatePassword(newpass string) {
 	m.Password = newpass
 	// *** BUGFIX ***
 	// https://github.com/bufbuild/buf/issues/642
+	if newpass == "" {
+		m.passtoken = nil
+		return
+	}
 	if m.passtoken == nil {
 		m.passtoken = newPassToken("")
 	}
@@ -266,6 +270,10 @@ func (m *Machine) UpdateLogin(newlogin string) {
 	m.Login = newlogin
 	// *** BUGFIX ***
 	// https://github.com/bufbuild/buf/issues/642
+	if newlogin == "" {
+		m.logintoken = nil
+		return
+	}
 	if m.logintoken == nil {
 		m.logintoken = newLoginToken("")
 	}
@@ -278,6 +286,10 @@ func (m *Machine) UpdateAccount(newaccount string) {
 	m.Account = newaccount
 	// *** BUGFIX ***
 	// https://github.com/bufbuild/buf/issues/642
+	if newaccount == "" {
+		m.accounttoken = nil
+		return
+	}
 	if m.accounttoken == nil {
 		m.accounttoken = newAccountToken("")
 	}
@@ -290,10 +302,17 @@ func updateTokenValue(t *token, value string) {
 	t.value = value
 	newraw := make([]byte, len(t.rawvalue))
 	copy(newraw, t.rawvalue)
+	base := newraw
+	// *** BUGFIX ***
+	// https://github.com/bufbuild/buf/issues/642
+	if len(oldvalue) > 0 {
+		base = bytes.TrimSuffix(newraw, []byte(oldvalue))
+	}
 	t.rawvalue = append(
-		bytes.TrimSuffix(newraw, []byte(oldvalue)),
+		base,
 		[]byte(value)...,
 	)
+	// *** BUGFIX END ***
 }
 
 // Macros contains all the macro definitions in a netrc file.

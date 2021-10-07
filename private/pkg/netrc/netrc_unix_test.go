@@ -191,6 +191,25 @@ func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, machine, actualMachine)
 	}
+
+	// Modify some of the existing machines.
+	for i := 0; i < size/10; i++ {
+		err = PutMachines(
+			envContainer,
+			NewMachine(
+				fmt.Sprintf("foo%d", i),
+				fmt.Sprintf("bar%d", i),
+				password+"Z",
+				"",
+			),
+		)
+		require.NoError(t, err)
+	}
+	for _, machine := range machines {
+		actualMachine, err := GetMachineForName(envContainer, machine.Name())
+		require.NoError(t, err)
+		require.Equal(t, machine, actualMachine)
+	}
 }
 
 func TestDeleteMachineForName(t *testing.T) {
