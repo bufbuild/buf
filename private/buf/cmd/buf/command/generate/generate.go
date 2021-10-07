@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
@@ -300,6 +301,7 @@ func run(
 		return err
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	runner := command.NewRunner()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		".",
 		storageos.ReadWriteBucketWithSymlinksIfSupported(),
@@ -323,6 +325,7 @@ func run(
 	imageConfigReader, err := bufcli.NewWireImageConfigReader(
 		container,
 		storageosProvider,
+		runner,
 		registryProvider,
 	)
 	if err != nil {
@@ -366,6 +369,7 @@ func run(
 	return bufgen.NewGenerator(
 		logger,
 		storageosProvider,
+		runner,
 		registryProvider,
 	).Generate(
 		ctx,

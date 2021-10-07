@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -56,7 +57,9 @@ func TestCompareGeneratedStubsGoogleapisGo(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	testCompareGeneratedStubs(t,
+	testCompareGeneratedStubs(
+		t,
+		command.NewRunner(),
 		googleapisDirPath,
 		[]*testPluginInfo{
 			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
@@ -68,7 +71,9 @@ func TestCompareGeneratedStubsGoogleapisGoZip(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	testCompareGeneratedStubsArchive(t,
+	testCompareGeneratedStubsArchive(
+		t,
+		command.NewRunner(),
 		googleapisDirPath,
 		[]*testPluginInfo{
 			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
@@ -81,7 +86,9 @@ func TestCompareGeneratedStubsGoogleapisGoJar(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	testCompareGeneratedStubsArchive(t,
+	testCompareGeneratedStubsArchive(
+		t,
+		command.NewRunner(),
 		googleapisDirPath,
 		[]*testPluginInfo{
 			{name: "go", opt: "Mgoogle/api/auth.proto=foo"},
@@ -94,7 +101,9 @@ func TestCompareGeneratedStubsGoogleapisObjc(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
 	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
-	testCompareGeneratedStubs(t,
+	testCompareGeneratedStubs(
+		t,
+		command.NewRunner(),
 		googleapisDirPath,
 		[]*testPluginInfo{{name: "objc"}},
 	)
@@ -104,7 +113,9 @@ func TestCompareInsertionPointOutput(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
 	insertionTestdataDirPath := filepath.Join("testdata", "insertion")
-	testCompareGeneratedStubs(t,
+	testCompareGeneratedStubs(
+		t,
+		command.NewRunner(),
 		insertionTestdataDirPath,
 		[]*testPluginInfo{
 			{name: "insertion-point-receiver"},
@@ -128,12 +139,15 @@ func TestOutputFlag(t *testing.T) {
 }
 
 func TestGenerateInsertionPoint(t *testing.T) {
-	testGenerateInsertionPoint(t, ".", ".", filepath.Join("testdata", "insertion_point"))
-	testGenerateInsertionPoint(t, "gen/proto/insertion", "gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
-	testGenerateInsertionPoint(t, "gen/proto/insertion/", "./gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
+	t.Parallel()
+	runner := command.NewRunner()
+	testGenerateInsertionPoint(t, runner, ".", ".", filepath.Join("testdata", "insertion_point"))
+	testGenerateInsertionPoint(t, runner, "gen/proto/insertion", "gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
+	testGenerateInsertionPoint(t, runner, "gen/proto/insertion/", "./gen/proto/insertion", filepath.Join("testdata", "nested_insertion_point"))
 }
 
 func TestGenerateInsertionPointFail(t *testing.T) {
+	t.Parallel()
 	successTemplate := `
 version: v1
 plugins:
@@ -157,6 +171,7 @@ plugins:
 }
 
 func TestGenerateDuplicateFileFail(t *testing.T) {
+	t.Parallel()
 	successTemplate := `
 version: v1
 plugins:
@@ -180,13 +195,20 @@ plugins:
 }
 
 func TestGenerateInsertionPointMixedPathsFail(t *testing.T) {
+	t.Parallel()
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	testGenerateInsertionPointMixedPathsFail(t, ".", wd)
 	testGenerateInsertionPointMixedPathsFail(t, wd, ".")
 }
 
-func testGenerateInsertionPoint(t *testing.T, receiverOut string, writerOut string, expectedOutputPath string) {
+func testGenerateInsertionPoint(
+	t *testing.T,
+	runner command.Runner,
+	receiverOut string,
+	writerOut string,
+	expectedOutputPath string,
+) {
 	successTemplate := `
 version: v1
 plugins:
@@ -212,7 +234,7 @@ plugins:
 	)
 	expectedOutput, err := storageosProvider.NewReadWriteBucket(expectedOutputPath)
 	require.NoError(t, err)
-	diff, err := storage.DiffBytes(context.Background(), expectedOutput, readWriteBucket)
+	diff, err := storage.DiffBytes(context.Background(), runner, expectedOutput, readWriteBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
 }
@@ -245,6 +267,7 @@ plugins:
 
 func testCompareGeneratedStubs(
 	t *testing.T,
+	runner command.Runner,
 	dirPath string,
 	testPluginInfos []*testPluginInfo,
 ) {
@@ -260,6 +283,7 @@ func testCompareGeneratedStubs(
 	}
 	buftesting.RunActualProtoc(
 		t,
+		runner,
 		false,
 		false,
 		dirPath,
@@ -308,6 +332,7 @@ func testCompareGeneratedStubs(
 	require.NoError(t, err)
 	diff, err := storage.DiffBytes(
 		context.Background(),
+		runner,
 		actualReadWriteBucket,
 		bufReadWriteBucket,
 	)
@@ -317,6 +342,7 @@ func testCompareGeneratedStubs(
 
 func testCompareGeneratedStubsArchive(
 	t *testing.T,
+	runner command.Runner,
 	dirPath string,
 	testPluginInfos []*testPluginInfo,
 	useJar bool,
@@ -338,6 +364,7 @@ func testCompareGeneratedStubsArchive(
 	}
 	buftesting.RunActualProtoc(
 		t,
+		runner,
 		false,
 		false,
 		dirPath,
@@ -390,6 +417,7 @@ func testCompareGeneratedStubsArchive(
 	require.NoError(t, err)
 	diff, err := storage.DiffBytes(
 		context.Background(),
+		runner,
 		actualReadWriteBucket,
 		bufReadWriteBucket,
 	)

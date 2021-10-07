@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"go.uber.org/zap"
 )
 
@@ -27,13 +28,13 @@ type Checker interface {
 	// Check runs bandeps in the current directory with the configuration.
 	Check(
 		ctx context.Context,
-		envContainer app.EnvContainer,
+		envStdioContainer app.EnvStdioContainer,
 		externalConfig ExternalConfig,
 	) ([]Violation, error)
 }
 
-func NewChecker(logger *zap.Logger) Checker {
-	return newChecker(logger)
+func NewChecker(logger *zap.Logger, runner command.Runner) Checker {
+	return newChecker(logger, runner)
 }
 
 // Violation is a violation.

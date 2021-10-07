@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
@@ -183,7 +184,7 @@ func testRunLint(
 	expectedErrorString string,
 ) {
 	t.Parallel()
-
+	runner := command.NewRunner()
 	testRunHandlerFunc(
 		t,
 		appproto.HandlerFunc(
@@ -203,6 +204,7 @@ func testRunLint(
 		),
 		testBuildCodeGeneratorRequest(
 			t,
+			runner,
 			root,
 			realFilePaths,
 			parameter,
@@ -251,6 +253,7 @@ func testRunHandlerFunc(
 
 func testBuildCodeGeneratorRequest(
 	t *testing.T,
+	runner command.Runner,
 	root string,
 	realFilePaths []string,
 	parameter string,
@@ -258,6 +261,7 @@ func testBuildCodeGeneratorRequest(
 ) *pluginpb.CodeGeneratorRequest {
 	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
+		runner,
 		[]string{root},
 		realFilePaths,
 		true,

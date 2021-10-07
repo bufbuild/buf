@@ -16,19 +16,20 @@ package bandeps
 
 import (
 	"context"
-	"io"
 	"sync"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
 )
 
 type state struct {
-	logger       *zap.Logger
-	envContainer app.EnvContainer
-	violationMap map[string]Violation
+	logger            *zap.Logger
+	envStdioContainer app.EnvStdioContainer
+	runner            command.Runner
+	violationMap      map[string]Violation
 	// map from ./foo/bar/... to actual packages
 	packageExpressionToPackages     map[string]*packagesResult
 	packageExpressionToPackagesLock *keyRWLock
@@ -40,10 +41,15 @@ type state struct {
 	cacheHits         int
 }
 
-func newState(logger *zap.Logger, envContainer app.EnvContainer) *state {
+func newState(
+	logger *zap.Logger,
+	envStdioContainer app.EnvStdioContainer,
+	runner command.Runner,
+) *state {
 	return &state{
 		logger:                          logger,
-		envContainer:                    envContainer,
+		envStdioContainer:               envStdioContainer,
+		runner:                          runner,
 		violationMap:                    make(map[string]Violation),
 		packageExpressionToPackages:     make(map[string]*packagesResult),
 		packageExpressionToPackagesLock: newKeyRWLock(),
@@ -154,11 +160,7 @@ func (s *state) packagesForPackageExpressionUncached(
 	defer span.End()
 	span.AddAttributes(trace.StringAttribute("packageExpression", packageExpression))
 
-	stdout, err := runStdout(ctx, s.envContainer, nil, `go`, `list`, packageExpression)
-	if err != nil {
-		return nil, err
-	}
-	data, err := io.ReadAll(stdout)
+	data, err := command.RunStdout(ctx, s.envStdioContainer, s.runner, `go`, `list`, packageExpression)
 	if err != nil {
 		return nil, err
 	}
@@ -217,11 +219,7 @@ func (s *state) depsForPackageUncached(
 	defer span.End()
 	span.AddAttributes(trace.StringAttribute("package", pkg))
 
-	stdout, err := runStdout(ctx, s.envContainer, nil, `go`, `list`, `-f`, `{{join .Deps "\n"}}`, pkg)
-	if err != nil {
-		return nil, err
-	}
-	data, err := io.ReadAll(stdout)
+	data, err := command.RunStdout(ctx, s.envStdioContainer, s.runner, `go`, `list`, `-f`, `{{join .Deps "\n"}}`, pkg)
 	if err != nil {
 		return nil, err
 	}
