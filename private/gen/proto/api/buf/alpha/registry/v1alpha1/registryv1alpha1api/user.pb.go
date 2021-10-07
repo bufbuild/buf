@@ -64,16 +64,4 @@ type UserService interface {
 		organizationId string,
 		organizationScope v1alpha1.OrganizationScope,
 	) (err error)
-	// RemoveUserServerScope removes a server scope for a user by ID.
-	RemoveUserServerScope(
-		ctx context.Context,
-		id string,
-		serverScope v1alpha1.ServerScope,
-	) (err error)
-	// RemoveUserServerScopeByName removes a server scope for a user by name.
-	RemoveUserServerScopeByName(
-		ctx context.Context,
-		name string,
-		serverScope v1alpha1.ServerScope,
-	) (err error)
 }

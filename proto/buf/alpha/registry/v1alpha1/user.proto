@@ -52,10 +52,6 @@ service UserService {
   rpc AddUserOrganizationScopeByName(AddUserOrganizationScopeByNameRequest) returns (AddUserOrganizationScopeByNameResponse);
   // RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
   rpc RemoveUserOrganizationScope(RemoveUserOrganizationScopeRequest) returns (RemoveUserOrganizationScopeResponse);
-  // RemoveUserServerScope removes a server scope for a user by ID.
-  rpc RemoveUserServerScope(RemoveUserServerScopeRequest) returns (RemoveUserServerScopeResponse);
-  // RemoveUserServerScopeByName removes a server scope for a user by name.
-  rpc RemoveUserServerScopeByName(RemoveUserServerScopeByNameRequest) returns (RemoveUserServerScopeByNameResponse);
 }
 
 message CreateUserRequest {
@@ -142,17 +138,3 @@ message RemoveUserOrganizationScopeRequest {
 }
 
 message RemoveUserOrganizationScopeResponse {}
-
-message RemoveUserServerScopeRequest {
-  string id = 1;
-  ServerScope server_scope = 2;
-}
-
-message RemoveUserServerScopeResponse {}
-
-message RemoveUserServerScopeByNameRequest {
-  string name = 1;
-  ServerScope server_scope = 2;
-}
-
-message RemoveUserServerScopeByNameResponse {}
