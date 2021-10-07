@@ -188,6 +188,11 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 			if subDirPath != "." {
 				rawRef.SubDirPath = subDirPath
 			}
+		case "include_package_files":
+			switch value {
+			case "true":
+				rawRef.IncludePackageFiles = true
+			}
 		default:
 			return nil, NewOptionsInvalidKeyError(key)
 		}
@@ -378,6 +383,7 @@ func getProtoFileRef(rawRef *RawRef) ParsedProtoFileRef {
 	return newProtoFileRef(
 		rawRef.Format,
 		rawRef.Path,
+		rawRef.IncludePackageFiles,
 	)
 }
 
