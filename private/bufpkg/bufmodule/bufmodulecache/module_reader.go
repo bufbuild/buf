@@ -152,16 +152,9 @@ func (m *moduleReader) GetModule(
 	}
 
 	if repository.Deprecated {
-		warnMsg := fmt.Sprintf(
-			`Repository "%s/%s/%s" is deprecated`,
-			modulePin.Remote(),
-			modulePin.Owner(),
-			modulePin.Repository(),
-		)
+		warnMsg := fmt.Sprintf(`Repository "%s" is deprecated`, modulePin.IdentityString())
 		if repository.DeprecationMessage != "" {
 			warnMsg = fmt.Sprintf("%s: %s", warnMsg, repository.DeprecationMessage)
-		} else {
-			warnMsg += "."
 		}
 		m.logger.Sugar().Warn(warnMsg)
 	}

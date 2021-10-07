@@ -140,8 +140,6 @@ func run(
 		)
 		if repository.DeprecationMessage != "" {
 			warnMsg = fmt.Sprintf("%s: %s", warnMsg, repository.DeprecationMessage)
-		} else {
-			warnMsg += "."
 		}
 		container.Logger().Warn(warnMsg)
 	}
