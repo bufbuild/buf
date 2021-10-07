@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -35,6 +36,7 @@ import (
 
 func TestReaderBasic(t *testing.T) {
 	ctx := context.Background()
+	runner := command.NewRunner()
 
 	modulePin, err := bufmoduleref.NewModulePin(
 		"buf.build",
@@ -92,7 +94,7 @@ func TestReaderBasic(t *testing.T) {
 
 	// Exclude non-proto files for the diff check
 	filteredReadBucket := storage.MapReadBucket(getReadWriteBucket, storage.MatchPathExt(".proto"))
-	diff, err := storage.DiffBytes(ctx, readBucket, filteredReadBucket)
+	diff, err := storage.DiffBytes(ctx, runner, readBucket, filteredReadBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
 
@@ -111,7 +113,7 @@ func TestReaderBasic(t *testing.T) {
 	require.NoError(t, err)
 	// Exclude non-proto files for the diff check
 	filteredReadBucket = storage.MapReadBucket(getReadWriteBucket, storage.MatchPathExt(".proto"))
-	diff, err = storage.DiffBytes(ctx, readBucket, filteredReadBucket)
+	diff, err = storage.DiffBytes(ctx, runner, readBucket, filteredReadBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
 	require.Equal(t, 3, moduleReader.getCount())
@@ -131,7 +133,7 @@ func TestReaderBasic(t *testing.T) {
 	require.NoError(t, err)
 	// Exclude non-proto files for the diff check
 	filteredReadBucket = storage.MapReadBucket(getReadWriteBucket, storage.MatchPathExt(".proto"))
-	diff, err = storage.DiffBytes(ctx, readBucket, filteredReadBucket)
+	diff, err = storage.DiffBytes(ctx, runner, readBucket, filteredReadBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
 	require.Equal(t, 5, moduleReader.getCount())
@@ -151,7 +153,7 @@ func TestReaderBasic(t *testing.T) {
 	require.NoError(t, err)
 	// Exclude non-proto files for the diff check
 	filteredReadBucket = storage.MapReadBucket(getReadWriteBucket, storage.MatchPathExt(".proto"))
-	diff, err = storage.DiffBytes(ctx, readBucket, filteredReadBucket)
+	diff, err = storage.DiffBytes(ctx, runner, readBucket, filteredReadBucket)
 	require.NoError(t, err)
 	require.Empty(t, string(diff))
 	require.Equal(t, 7, moduleReader.getCount())

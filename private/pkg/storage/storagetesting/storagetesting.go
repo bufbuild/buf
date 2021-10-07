@@ -26,6 +26,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -163,6 +164,7 @@ func RunTestSuite(
 	symlinkSuccessDirPath := filepath.Join(storagetestingDirPath, "testdata", "symlink_success")
 	symlinkLoopDirPath := filepath.Join(storagetestingDirPath, "testdata", "symlink_loop")
 	defaultProvider := storageos.NewProvider()
+	runner := command.NewRunner()
 
 	for _, prefix := range []string{
 		"",
@@ -1003,6 +1005,7 @@ func RunTestSuite(
 
 		diff, err := storage.DiffBytes(
 			context.Background(),
+			runner,
 			readBucketA,
 			readBucketB,
 			storage.DiffWithSuppressTimestamps(),

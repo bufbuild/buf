@@ -43,6 +43,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/app/appname"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
@@ -378,6 +379,7 @@ func WarnBetaCommand(ctx context.Context, container appflag.Container) {
 func NewWireImageConfigReader(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 	registryProvider registryv1alpha1apiclient.Provider,
 ) (bufwire.ImageConfigReader, error) {
 	logger := container.Logger()
@@ -389,7 +391,7 @@ func NewWireImageConfigReader(
 	return bufwire.NewImageConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
+		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
@@ -400,6 +402,7 @@ func NewWireImageConfigReader(
 func NewWireModuleConfigReader(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 	registryProvider registryv1alpha1apiclient.Provider,
 ) (bufwire.ModuleConfigReader, error) {
 	logger := container.Logger()
@@ -411,7 +414,7 @@ func NewWireModuleConfigReader(
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
+		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 	), nil
 }
@@ -421,6 +424,7 @@ func NewWireModuleConfigReader(
 func NewWireModuleConfigReaderForModuleReader(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 	registryProvider registryv1alpha1apiclient.Provider,
 	moduleReader bufmodule.ModuleReader,
 ) (bufwire.ModuleConfigReader, error) {
@@ -429,7 +433,7 @@ func NewWireModuleConfigReaderForModuleReader(
 	return bufwire.NewModuleConfigReader(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
+		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 	), nil
 }
@@ -438,6 +442,7 @@ func NewWireModuleConfigReaderForModuleReader(
 func NewWireFileLister(
 	container appflag.Container,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 	registryProvider registryv1alpha1apiclient.Provider,
 ) (bufwire.FileLister, error) {
 	logger := container.Logger()
@@ -449,7 +454,7 @@ func NewWireFileLister(
 	return bufwire.NewFileLister(
 		logger,
 		storageosProvider,
-		newFetchReader(logger, storageosProvider, moduleResolver, moduleReader),
+		newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader),
 		bufmodulebuild.NewModuleBucketBuilder(logger),
 		bufmodulebuild.NewModuleFileSetBuilder(logger, moduleReader),
 		bufimagebuild.NewBuilder(logger),
@@ -460,10 +465,11 @@ func NewWireFileLister(
 func NewWireImageReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 ) bufwire.ImageReader {
 	return bufwire.NewImageReader(
 		logger,
-		newFetchImageReader(logger, storageosProvider),
+		newFetchImageReader(logger, storageosProvider, runner),
 	)
 }
 
@@ -692,6 +698,7 @@ func ReadModuleWithWorkspacesDisabled(
 	ctx context.Context,
 	container appflag.Container,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 	source string,
 ) (bufmodule.Module, bufmoduleref.ModuleIdentity, error) {
 	sourceRef, err := buffetch.NewSourceRefParser(
@@ -706,6 +713,7 @@ func ReadModuleWithWorkspacesDisabled(
 	sourceBucket, err := newFetchSourceReader(
 		container.Logger(),
 		storageosProvider,
+		runner,
 	).GetSourceBucket(
 		ctx,
 		container,
@@ -769,6 +777,7 @@ func validateErrorFormatFlag(validFormatStrings []string, errorFormatString stri
 func newFetchReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 	moduleResolver bufmodule.ModuleResolver,
 	moduleReader bufmodule.ModuleReader,
 ) buffetch.Reader {
@@ -777,7 +786,7 @@ func newFetchReader(
 		storageosProvider,
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,
-		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
+		git.NewCloner(logger, storageosProvider, runner, defaultGitClonerOptions),
 		moduleResolver,
 		moduleReader,
 	)
@@ -788,13 +797,14 @@ func newFetchReader(
 func newFetchSourceReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 ) buffetch.SourceReader {
 	return buffetch.NewSourceReader(
 		logger,
 		storageosProvider,
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,
-		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
+		git.NewCloner(logger, storageosProvider, runner, defaultGitClonerOptions),
 	)
 }
 
@@ -803,13 +813,14 @@ func newFetchSourceReader(
 func newFetchImageReader(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,
+	runner command.Runner,
 ) buffetch.ImageReader {
 	return buffetch.NewImageReader(
 		logger,
 		storageosProvider,
 		defaultHTTPClient,
 		defaultHTTPAuthenticator,
-		git.NewCloner(logger, storageosProvider, defaultGitClonerOptions),
+		git.NewCloner(logger, storageosProvider, runner, defaultGitClonerOptions),
 	)
 }
 

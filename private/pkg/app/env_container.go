@@ -68,3 +68,7 @@ func (e *envContainer) ForEachEnv(f func(string, string)) {
 		}
 	}
 }
+
+func (e *envContainer) Size() int {
+	return len(e.variables)
+}

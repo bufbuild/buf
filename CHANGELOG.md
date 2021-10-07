@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.0.0-rc4] - 2021-10-07
+
+- Fix issue where `buf generate` could fail when used with large numbers of plugins and files on
+  systems with low file limits.
+- Add `buf protoc --version` flag back. This was accidentally removed.
+- Upgrade to `protoc` 3.18.1 support.
+
+## [v1.0.0-rc3] - 2021-10-04
+
 - Add `--as-import-paths` flag to `ls-files` that strips local directory paths and prints file
   paths as they are imported.
 - Fix issue where groups used in custom options did not result in the same behavior as `protoc`.
@@ -553,7 +564,9 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc2...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc4...HEAD
+[v1.0.0-rc4]: https://github.com/bufbuild/buf/compare/v1.0.0-rc3...v1.0.0-rc4
+[v1.0.0-rc3]: https://github.com/bufbuild/buf/compare/v1.0.0-rc2...v1.0.0-rc3
 [v1.0.0-rc2]: https://github.com/bufbuild/buf/compare/v1.0.0-rc1...v1.0.0-rc2
 [v1.0.0-rc1]: https://github.com/bufbuild/buf/compare/v0.56.0...v1.0.0-rc1
 [v0.56.0]: https://github.com/bufbuild/buf/compare/v0.55.0...v0.56.0

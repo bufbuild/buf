@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/rpc"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -115,12 +116,14 @@ func run(
 		return err
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	runner := command.NewRunner()
 	// We are pushing to the BSR, this module has to be independently buildable
 	// given the configuration it has without any enclosing workspace.
 	module, moduleIdentity, err := bufcli.ReadModuleWithWorkspacesDisabled(
 		ctx,
 		container,
 		storageosProvider,
+		runner,
 		source,
 	)
 	if err != nil {

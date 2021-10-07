@@ -19,6 +19,7 @@ package buflintcheck
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -110,9 +111,20 @@ func checkDirectorySamePackage(add addFunc, dirPath string, files []protosource.
 		pkgMap[file.Package()] = struct{}{}
 	}
 	if len(pkgMap) > 1 {
-		pkgs := stringutil.MapToSortedSlice(pkgMap)
+		var messagePrefix string
+		if _, ok := pkgMap[""]; ok {
+			delete(pkgMap, "")
+			if len(pkgMap) > 1 {
+				messagePrefix = fmt.Sprintf("Multiple packages %q and file with no package", strings.Join(stringutil.MapToSortedSlice(pkgMap), ","))
+			} else {
+				// Join works with only one element as well by adding no comma
+				messagePrefix = fmt.Sprintf("Package %q and file with no package", strings.Join(stringutil.MapToSortedSlice(pkgMap), ","))
+			}
+		} else {
+			messagePrefix = fmt.Sprintf("Multiple packages %q", strings.Join(stringutil.MapToSortedSlice(pkgMap), ","))
+		}
 		for _, file := range files {
-			add(file, file.PackageLocation(), nil, "Multiple packages %q detected within directory %q.", strings.Join(pkgs, ","), dirPath)
+			add(file, file.PackageLocation(), nil, "%s detected within directory %q.", messagePrefix, dirPath)
 		}
 	}
 	return nil

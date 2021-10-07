@@ -22,14 +22,12 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
@@ -38,9 +36,11 @@ func main() {
 }
 
 func run(ctx context.Context, container app.Container) error {
-	lsFilesOutput, err := execCommandStdout(
+	runner := command.NewRunner()
+	lsFilesOutput, err := command.RunStdout(
 		ctx,
 		container,
+		runner,
 		"git",
 		append(
 			[]string{
@@ -52,9 +52,10 @@ func run(ctx context.Context, container app.Container) error {
 	if err != nil {
 		return err
 	}
-	lsFilesOthersOutput, err := execCommandStdout(
+	lsFilesOthersOutput, err := command.RunStdout(
 		ctx,
 		container,
+		runner,
 		"git",
 		append(
 			[]string{
@@ -72,8 +73,8 @@ func run(ctx context.Context, container app.Container) error {
 	var results []string
 	for _, filePath := range stringutil.SliceToUniqueSortedSlice(
 		append(
-			strings.Split(lsFilesOutput, "\n"),
-			strings.Split(lsFilesOthersOutput, "\n")...,
+			strings.Split(string(lsFilesOutput), "\n"),
+			strings.Split(string(lsFilesOthersOutput), "\n")...,
 		),
 	) {
 		if filePath := strings.TrimSpace(filePath); filePath != "" {
@@ -88,32 +89,4 @@ func run(ctx context.Context, container app.Container) error {
 		}
 	}
 	return nil
-}
-
-func execCommandStdout(
-	ctx context.Context,
-	container app.EnvStdioContainer,
-	name string,
-	args ...string,
-) (string, error) {
-	buffer := bytes.NewBuffer(nil)
-	if err := execCommand(ctx, container, buffer, name, args...); err != nil {
-		return "", err
-	}
-	return buffer.String(), nil
-}
-
-func execCommand(
-	ctx context.Context,
-	container app.EnvStdioContainer,
-	stdout io.Writer,
-	name string,
-	args ...string,
-) error {
-	cmd := exec.CommandContext(ctx, name, args...)
-	cmd.Env = app.Environ(container)
-	cmd.Stdin = container.Stdin()
-	cmd.Stdout = stdout
-	cmd.Stderr = container.Stderr()
-	return cmd.Run()
 }

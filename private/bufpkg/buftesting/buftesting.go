@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/github/githubtesting"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
@@ -57,6 +58,7 @@ var (
 // GetActualProtocFileDescriptorSet gets the FileDescriptorSet for actual protoc.
 func GetActualProtocFileDescriptorSet(
 	t *testing.T,
+	runner command.Runner,
 	includeImports bool,
 	includeSourceInfo bool,
 	dirPath string,
@@ -64,6 +66,7 @@ func GetActualProtocFileDescriptorSet(
 ) *descriptorpb.FileDescriptorSet {
 	fileDescriptorSet, err := prototesting.GetProtocFileDescriptorSet(
 		context.Background(),
+		runner,
 		[]string{dirPath},
 		filePaths,
 		includeImports,
@@ -76,6 +79,7 @@ func GetActualProtocFileDescriptorSet(
 // RunActualProtoc runs actual protoc.
 func RunActualProtoc(
 	t *testing.T,
+	runner command.Runner,
 	includeImports bool,
 	includeSourceInfo bool,
 	dirPath string,
@@ -86,6 +90,7 @@ func RunActualProtoc(
 ) {
 	err := prototesting.RunProtoc(
 		context.Background(),
+		runner,
 		[]string{dirPath},
 		filePaths,
 		includeImports,

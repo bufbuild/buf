@@ -30,7 +30,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoexec"
 	"github.com/bufbuild/buf/private/pkg/app/appproto/appprotoos"
+	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
@@ -68,6 +70,12 @@ Additional flags:
 		),
 		BindFlags:     flagsBuilder.Bind,
 		NormalizeFlag: flagsBuilder.Normalize,
+		Version: fmt.Sprintf(
+			"%v.%v.%v-buf",
+			appprotoexec.DefaultVersion.GetMajor(),
+			appprotoexec.DefaultVersion.GetMinor(),
+			appprotoexec.DefaultVersion.GetPatch(),
+		),
 	}
 }
 
@@ -98,6 +106,7 @@ func run(
 		buildOption = bufmodulebuild.WithPaths(env.FilePaths)
 	}
 	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	runner := command.NewRunner()
 	module, err := bufmodulebuild.NewModuleIncludeBuilder(container.Logger(), storageosProvider).BuildForIncludes(
 		ctx,
 		env.IncludeDirPaths,
@@ -188,6 +197,7 @@ func run(
 				ctx,
 				container.Logger(),
 				storageosProvider,
+				runner,
 				container,
 				images,
 				pluginName,
