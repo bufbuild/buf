@@ -166,6 +166,8 @@ type ProtoFileRef interface {
 	BucketRef
 	// Path is the normalized path to the file reference.
 	Path() string
+	// IncludePackageFiles says to include the same package files TODO update comment
+	IncludePackageFiles() bool
 	protoFileRef()
 }
 

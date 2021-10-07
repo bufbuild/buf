@@ -19,14 +19,16 @@ var (
 )
 
 type protoFileRef struct {
-	format string
-	path   string
+	format              string
+	path                string
+	includePackageFiles bool
 }
 
-func newProtoFileRef(format string, path string) *protoFileRef {
+func newProtoFileRef(format string, path string, includePackageFiles bool) *protoFileRef {
 	return &protoFileRef{
-		format: format,
-		path:   path,
+		format:              format,
+		path:                path,
+		includePackageFiles: includePackageFiles,
 	}
 }
 
@@ -36,6 +38,10 @@ func (s *protoFileRef) Format() string {
 
 func (s *protoFileRef) Path() string {
 	return s.path
+}
+
+func (s *protoFileRef) IncludePackageFiles() bool {
+	return s.includePackageFiles
 }
 
 func (*protoFileRef) ref()          {}
