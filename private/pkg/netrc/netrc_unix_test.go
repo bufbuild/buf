@@ -193,18 +193,25 @@ func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 	}
 
 	// Modify some of the existing machines.
-	for i := 0; i < size/10; i++ {
-		err = PutMachines(
-			envContainer,
-			NewMachine(
-				fmt.Sprintf("foo%d", i),
-				fmt.Sprintf("bar%d", i),
-				password+"Z",
-				"",
-			),
+	machines = make([]Machine, 0, size)
+	for i := 0; i < size; i++ {
+		modifiedPassword := password
+		if i%2 == 0 {
+			modifiedPassword = modifiedPassword + "Z"
+		}
+		machine := NewMachine(
+			fmt.Sprintf("foo%d", i),
+			fmt.Sprintf("bar%d", i),
+			modifiedPassword,
+			"",
 		)
-		require.NoError(t, err)
+		machines = append(machines, machine)
+		if i%2 == 0 {
+			err = PutMachines(envContainer, machine)
+			require.NoError(t, err)
+		}
 	}
+	machines = append(machines, extraMachine)
 	for _, machine := range machines {
 		actualMachine, err := GetMachineForName(envContainer, machine.Name())
 		require.NoError(t, err)

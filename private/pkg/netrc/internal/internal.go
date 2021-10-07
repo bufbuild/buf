@@ -197,15 +197,15 @@ func newAccountToken(value string) *token {
 
 func (n *Netrc) insertMachineTokensBeforeDefault(m *Machine) {
 	newtokens := []*token{m.nametoken}
-	//if m.logintoken.value != "" {
-	newtokens = append(newtokens, m.logintoken)
-	//}
-	//if m.passtoken.value != "" {
-	newtokens = append(newtokens, m.passtoken)
-	//}
-	//if m.accounttoken.value != "" {
-	newtokens = append(newtokens, m.accounttoken)
-	//}
+	if m.logintoken.value != "" {
+		newtokens = append(newtokens, m.logintoken)
+	}
+	if m.passtoken.value != "" {
+		newtokens = append(newtokens, m.passtoken)
+	}
+	if m.accounttoken.value != "" {
+		newtokens = append(newtokens, m.accounttoken)
+	}
 	for i := range n.tokens {
 		if n.tokens[i].kind == tkDefault {
 			// found the default, now insert tokens before it
