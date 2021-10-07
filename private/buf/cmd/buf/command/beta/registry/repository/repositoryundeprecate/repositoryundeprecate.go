@@ -30,7 +30,7 @@ import (
 func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "Undeprecate a repository",
+		Short: "Undeprecate a repository.",
 		Args:  cobra.ExactArgs(1),
 		Run:   builder.NewRunFunc(run),
 	}
