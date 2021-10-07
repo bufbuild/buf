@@ -226,30 +226,6 @@ func (s *userService) RemoveUserOrganizationScope(
 	return nil
 }
 
-// RemoveUserOrganizationScopeByName removes an organization scope for a specific organization from a user by name.
-func (s *userService) RemoveUserOrganizationScopeByName(
-	ctx context.Context,
-	name string,
-	organizationName string,
-	organizationScope v1alpha1.OrganizationScope,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.RemoveUserOrganizationScopeByName(
-		ctx,
-		&v1alpha1.RemoveUserOrganizationScopeByNameRequest{
-			Name:              name,
-			OrganizationName:  organizationName,
-			OrganizationScope: organizationScope,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // AddUserServerScope adds a server scope for a user by ID.
 func (s *userService) AddUserServerScope(
 	ctx context.Context,
