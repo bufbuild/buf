@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package internal is a direct copy of github.com/bgentry/go-netrc with a bug fix.
+// Package internal is a direct copy of github.com/bgentry/go-netrc with bug fixes.
 package internal
 
-// Our bug fix is surrounded by *** BUGFIX *** below.
+// Our bug fixes are surrounded by *** BUGFIX *** below.
 //
 // Except for our edits, this code is
 // Copyright © 2010 Fazlul Shahriar <fshahriar@gmail.com> and
@@ -114,40 +114,19 @@ func (n *Netrc) NewMachine(name, login, password, account string) *Machine {
 	n.updateLock.Lock()
 	defer n.updateLock.Unlock()
 
-	prefix := "\n"
-	if len(n.tokens) == 0 {
-		prefix = ""
-	}
 	m := &Machine{
 		Name:     name,
 		Login:    login,
 		Password: password,
 		Account:  account,
 
-		nametoken: &token{
-			kind:     tkMachine,
-			rawkind:  []byte(prefix + "machine"),
-			value:    name,
-			rawvalue: []byte(" " + name),
-		},
-		logintoken: &token{
-			kind:     tkLogin,
-			rawkind:  []byte("\n\tlogin"),
-			value:    login,
-			rawvalue: []byte(" " + login),
-		},
-		passtoken: &token{
-			kind:     tkPassword,
-			rawkind:  []byte("\n\tpassword"),
-			value:    password,
-			rawvalue: []byte(" " + password),
-		},
-		accounttoken: &token{
-			kind:     tkAccount,
-			rawkind:  []byte("\n\taccount"),
-			value:    account,
-			rawvalue: []byte(" " + account),
-		},
+		// *** BUGFIX ***
+		// https://github.com/bufbuild/buf/issues/642
+		nametoken:    n.newNameToken(name),
+		logintoken:   newLoginToken(login),
+		passtoken:    newPassToken(password),
+		accounttoken: newAccountToken(account),
+		// *** BUGFIX END ***
 	}
 	n.insertMachineTokensBeforeDefault(m)
 	for i := range n.machines {
@@ -158,6 +137,46 @@ func (n *Netrc) NewMachine(name, login, password, account string) *Machine {
 	}
 	n.machines = append(n.machines, m)
 	return m
+}
+
+func (n *Netrc) newNameToken(value string) *token {
+	prefix := "\n"
+	if len(n.tokens) == 0 {
+		prefix = ""
+	}
+	return &token{
+		kind:     tkMachine,
+		rawkind:  []byte(prefix + "machine"),
+		value:    value,
+		rawvalue: []byte(" " + value),
+	}
+}
+
+func newLoginToken(value string) *token {
+	return &token{
+		kind:     tkLogin,
+		rawkind:  []byte("\n\tlogin"),
+		value:    value,
+		rawvalue: []byte(" " + value),
+	}
+}
+
+func newPassToken(value string) *token {
+	return &token{
+		kind:     tkPassword,
+		rawkind:  []byte("\n\tpassword"),
+		value:    value,
+		rawvalue: []byte(" " + value),
+	}
+}
+
+func newAccountToken(value string) *token {
+	return &token{
+		kind:     tkAccount,
+		rawkind:  []byte("\n\taccount"),
+		value:    value,
+		rawvalue: []byte(" " + value),
+	}
 }
 
 func (n *Netrc) insertMachineTokensBeforeDefault(m *Machine) {
@@ -233,18 +252,36 @@ func (m *Machine) IsDefault() bool {
 // UpdatePassword sets the password for the Machine m.
 func (m *Machine) UpdatePassword(newpass string) {
 	m.Password = newpass
+	// *** BUGFIX ***
+	// https://github.com/bufbuild/buf/issues/642
+	if m.passtoken == nil {
+		m.passtoken = newPassToken("")
+	}
+	// *** BUGFIX END ***
 	updateTokenValue(m.passtoken, newpass)
 }
 
 // UpdateLogin sets the login for the Machine m.
 func (m *Machine) UpdateLogin(newlogin string) {
 	m.Login = newlogin
+	// *** BUGFIX ***
+	// https://github.com/bufbuild/buf/issues/642
+	if m.logintoken == nil {
+		m.logintoken = newLoginToken("")
+	}
+	// *** BUGFIX END ***
 	updateTokenValue(m.logintoken, newlogin)
 }
 
 // UpdateAccount sets the login for the Machine m.
 func (m *Machine) UpdateAccount(newaccount string) {
 	m.Account = newaccount
+	// *** BUGFIX ***
+	// https://github.com/bufbuild/buf/issues/642
+	if m.accounttoken == nil {
+		m.accounttoken = newAccountToken("")
+	}
+	// *** BUGFIX END ***
 	updateTokenValue(m.accounttoken, newaccount)
 }
 
