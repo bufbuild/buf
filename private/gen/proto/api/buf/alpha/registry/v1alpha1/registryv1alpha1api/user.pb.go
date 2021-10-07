@@ -50,13 +50,6 @@ type UserService interface {
 	DeleteUser(ctx context.Context) (err error)
 	// Deactivate user deactivates a user.
 	DeactivateUser(ctx context.Context, id string) (err error)
-	// AddUserOrganizationScope adds an organization scope for a specific organization to a user by ID.
-	AddUserOrganizationScope(
-		ctx context.Context,
-		id string,
-		organizationId string,
-		organizationScope v1alpha1.OrganizationScope,
-	) (err error)
 	// AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
 	AddUserOrganizationScopeByName(
 		ctx context.Context,

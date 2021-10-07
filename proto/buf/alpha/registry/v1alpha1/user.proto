@@ -48,8 +48,6 @@ service UserService {
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   // Deactivate user deactivates a user.
   rpc DeactivateUser(DeactivateUserRequest) returns (DeactivateUserResponse);
-  // AddUserOrganizationScope adds an organization scope for a specific organization to a user by ID.
-  rpc AddUserOrganizationScope(AddUserOrganizationScopeRequest) returns (AddUserOrganizationScopeResponse);
   // AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
   rpc AddUserOrganizationScopeByName(AddUserOrganizationScopeByNameRequest) returns (AddUserOrganizationScopeByNameResponse);
   // RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
@@ -134,14 +132,6 @@ message DeactivateUserRequest {
 }
 
 message DeactivateUserResponse {}
-
-message AddUserOrganizationScopeRequest {
-  string id = 1;
-  string organization_id = 2;
-  OrganizationScope organization_scope = 3;
-}
-
-message AddUserOrganizationScopeResponse {}
 
 message AddUserOrganizationScopeByNameRequest {
   string name = 1;

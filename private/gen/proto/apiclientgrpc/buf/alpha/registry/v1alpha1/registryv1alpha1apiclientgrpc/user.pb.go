@@ -178,30 +178,6 @@ func (s *userService) DeactivateUser(ctx context.Context, id string) (_ error) {
 	return nil
 }
 
-// AddUserOrganizationScope adds an organization scope for a specific organization to a user by ID.
-func (s *userService) AddUserOrganizationScope(
-	ctx context.Context,
-	id string,
-	organizationId string,
-	organizationScope v1alpha1.OrganizationScope,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.AddUserOrganizationScope(
-		ctx,
-		&v1alpha1.AddUserOrganizationScopeRequest{
-			Id:                id,
-			OrganizationId:    organizationId,
-			OrganizationScope: organizationScope,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
 func (s *userService) AddUserOrganizationScopeByName(
 	ctx context.Context,

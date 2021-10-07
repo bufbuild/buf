@@ -895,107 +895,6 @@ func (*DeactivateUserResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{16}
 }
 
-type AddUserOrganizationScopeRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Id                string            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	OrganizationId    string            `protobuf:"bytes,2,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
-	OrganizationScope OrganizationScope `protobuf:"varint,3,opt,name=organization_scope,json=organizationScope,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationScope" json:"organization_scope,omitempty"`
-}
-
-func (x *AddUserOrganizationScopeRequest) Reset() {
-	*x = AddUserOrganizationScopeRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddUserOrganizationScopeRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddUserOrganizationScopeRequest) ProtoMessage() {}
-
-func (x *AddUserOrganizationScopeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddUserOrganizationScopeRequest.ProtoReflect.Descriptor instead.
-func (*AddUserOrganizationScopeRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *AddUserOrganizationScopeRequest) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *AddUserOrganizationScopeRequest) GetOrganizationId() string {
-	if x != nil {
-		return x.OrganizationId
-	}
-	return ""
-}
-
-func (x *AddUserOrganizationScopeRequest) GetOrganizationScope() OrganizationScope {
-	if x != nil {
-		return x.OrganizationScope
-	}
-	return OrganizationScope_ORGANIZATION_SCOPE_UNSPECIFIED
-}
-
-type AddUserOrganizationScopeResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *AddUserOrganizationScopeResponse) Reset() {
-	*x = AddUserOrganizationScopeResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AddUserOrganizationScopeResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AddUserOrganizationScopeResponse) ProtoMessage() {}
-
-func (x *AddUserOrganizationScopeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AddUserOrganizationScopeResponse.ProtoReflect.Descriptor instead.
-func (*AddUserOrganizationScopeResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{18}
-}
-
 type AddUserOrganizationScopeByNameRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1009,7 +908,7 @@ type AddUserOrganizationScopeByNameRequest struct {
 func (x *AddUserOrganizationScopeByNameRequest) Reset() {
 	*x = AddUserOrganizationScopeByNameRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1022,7 +921,7 @@ func (x *AddUserOrganizationScopeByNameRequest) String() string {
 func (*AddUserOrganizationScopeByNameRequest) ProtoMessage() {}
 
 func (x *AddUserOrganizationScopeByNameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1035,7 +934,7 @@ func (x *AddUserOrganizationScopeByNameRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use AddUserOrganizationScopeByNameRequest.ProtoReflect.Descriptor instead.
 func (*AddUserOrganizationScopeByNameRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{19}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *AddUserOrganizationScopeByNameRequest) GetName() string {
@@ -1068,7 +967,7 @@ type AddUserOrganizationScopeByNameResponse struct {
 func (x *AddUserOrganizationScopeByNameResponse) Reset() {
 	*x = AddUserOrganizationScopeByNameResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1081,7 +980,7 @@ func (x *AddUserOrganizationScopeByNameResponse) String() string {
 func (*AddUserOrganizationScopeByNameResponse) ProtoMessage() {}
 
 func (x *AddUserOrganizationScopeByNameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1094,7 +993,7 @@ func (x *AddUserOrganizationScopeByNameResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use AddUserOrganizationScopeByNameResponse.ProtoReflect.Descriptor instead.
 func (*AddUserOrganizationScopeByNameResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{20}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{18}
 }
 
 type RemoveUserOrganizationScopeRequest struct {
@@ -1110,7 +1009,7 @@ type RemoveUserOrganizationScopeRequest struct {
 func (x *RemoveUserOrganizationScopeRequest) Reset() {
 	*x = RemoveUserOrganizationScopeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1123,7 +1022,7 @@ func (x *RemoveUserOrganizationScopeRequest) String() string {
 func (*RemoveUserOrganizationScopeRequest) ProtoMessage() {}
 
 func (x *RemoveUserOrganizationScopeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1136,7 +1035,7 @@ func (x *RemoveUserOrganizationScopeRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use RemoveUserOrganizationScopeRequest.ProtoReflect.Descriptor instead.
 func (*RemoveUserOrganizationScopeRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{21}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RemoveUserOrganizationScopeRequest) GetId() string {
@@ -1169,7 +1068,7 @@ type RemoveUserOrganizationScopeResponse struct {
 func (x *RemoveUserOrganizationScopeResponse) Reset() {
 	*x = RemoveUserOrganizationScopeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1182,7 +1081,7 @@ func (x *RemoveUserOrganizationScopeResponse) String() string {
 func (*RemoveUserOrganizationScopeResponse) ProtoMessage() {}
 
 func (x *RemoveUserOrganizationScopeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1195,7 +1094,7 @@ func (x *RemoveUserOrganizationScopeResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use RemoveUserOrganizationScopeResponse.ProtoReflect.Descriptor instead.
 func (*RemoveUserOrganizationScopeResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{22}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{20}
 }
 
 type RemoveUserOrganizationScopeByNameRequest struct {
@@ -1211,7 +1110,7 @@ type RemoveUserOrganizationScopeByNameRequest struct {
 func (x *RemoveUserOrganizationScopeByNameRequest) Reset() {
 	*x = RemoveUserOrganizationScopeByNameRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[23]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1224,7 +1123,7 @@ func (x *RemoveUserOrganizationScopeByNameRequest) String() string {
 func (*RemoveUserOrganizationScopeByNameRequest) ProtoMessage() {}
 
 func (x *RemoveUserOrganizationScopeByNameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[23]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1237,7 +1136,7 @@ func (x *RemoveUserOrganizationScopeByNameRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use RemoveUserOrganizationScopeByNameRequest.ProtoReflect.Descriptor instead.
 func (*RemoveUserOrganizationScopeByNameRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{23}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *RemoveUserOrganizationScopeByNameRequest) GetName() string {
@@ -1270,7 +1169,7 @@ type RemoveUserOrganizationScopeByNameResponse struct {
 func (x *RemoveUserOrganizationScopeByNameResponse) Reset() {
 	*x = RemoveUserOrganizationScopeByNameResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[24]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1283,7 +1182,7 @@ func (x *RemoveUserOrganizationScopeByNameResponse) String() string {
 func (*RemoveUserOrganizationScopeByNameResponse) ProtoMessage() {}
 
 func (x *RemoveUserOrganizationScopeByNameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[24]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1296,7 +1195,7 @@ func (x *RemoveUserOrganizationScopeByNameResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use RemoveUserOrganizationScopeByNameResponse.ProtoReflect.Descriptor instead.
 func (*RemoveUserOrganizationScopeByNameResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{24}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{22}
 }
 
 type AddUserServerScopeRequest struct {
@@ -1311,7 +1210,7 @@ type AddUserServerScopeRequest struct {
 func (x *AddUserServerScopeRequest) Reset() {
 	*x = AddUserServerScopeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[25]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[23]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1324,7 +1223,7 @@ func (x *AddUserServerScopeRequest) String() string {
 func (*AddUserServerScopeRequest) ProtoMessage() {}
 
 func (x *AddUserServerScopeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[25]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[23]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1337,7 +1236,7 @@ func (x *AddUserServerScopeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddUserServerScopeRequest.ProtoReflect.Descriptor instead.
 func (*AddUserServerScopeRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{25}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *AddUserServerScopeRequest) GetId() string {
@@ -1363,7 +1262,7 @@ type AddUserServerScopeResponse struct {
 func (x *AddUserServerScopeResponse) Reset() {
 	*x = AddUserServerScopeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[26]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1376,7 +1275,7 @@ func (x *AddUserServerScopeResponse) String() string {
 func (*AddUserServerScopeResponse) ProtoMessage() {}
 
 func (x *AddUserServerScopeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[26]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1389,7 +1288,7 @@ func (x *AddUserServerScopeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddUserServerScopeResponse.ProtoReflect.Descriptor instead.
 func (*AddUserServerScopeResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{26}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{24}
 }
 
 type AddUserServerScopeByNameRequest struct {
@@ -1404,7 +1303,7 @@ type AddUserServerScopeByNameRequest struct {
 func (x *AddUserServerScopeByNameRequest) Reset() {
 	*x = AddUserServerScopeByNameRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[27]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1417,7 +1316,7 @@ func (x *AddUserServerScopeByNameRequest) String() string {
 func (*AddUserServerScopeByNameRequest) ProtoMessage() {}
 
 func (x *AddUserServerScopeByNameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[27]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1430,7 +1329,7 @@ func (x *AddUserServerScopeByNameRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddUserServerScopeByNameRequest.ProtoReflect.Descriptor instead.
 func (*AddUserServerScopeByNameRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{27}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *AddUserServerScopeByNameRequest) GetName() string {
@@ -1456,7 +1355,7 @@ type AddUserServerScopeByNameResponse struct {
 func (x *AddUserServerScopeByNameResponse) Reset() {
 	*x = AddUserServerScopeByNameResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[28]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1469,7 +1368,7 @@ func (x *AddUserServerScopeByNameResponse) String() string {
 func (*AddUserServerScopeByNameResponse) ProtoMessage() {}
 
 func (x *AddUserServerScopeByNameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[28]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1482,7 +1381,7 @@ func (x *AddUserServerScopeByNameResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AddUserServerScopeByNameResponse.ProtoReflect.Descriptor instead.
 func (*AddUserServerScopeByNameResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{28}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{26}
 }
 
 type RemoveUserServerScopeRequest struct {
@@ -1497,7 +1396,7 @@ type RemoveUserServerScopeRequest struct {
 func (x *RemoveUserServerScopeRequest) Reset() {
 	*x = RemoveUserServerScopeRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[29]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1510,7 +1409,7 @@ func (x *RemoveUserServerScopeRequest) String() string {
 func (*RemoveUserServerScopeRequest) ProtoMessage() {}
 
 func (x *RemoveUserServerScopeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[29]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1523,7 +1422,7 @@ func (x *RemoveUserServerScopeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveUserServerScopeRequest.ProtoReflect.Descriptor instead.
 func (*RemoveUserServerScopeRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{29}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *RemoveUserServerScopeRequest) GetId() string {
@@ -1549,7 +1448,7 @@ type RemoveUserServerScopeResponse struct {
 func (x *RemoveUserServerScopeResponse) Reset() {
 	*x = RemoveUserServerScopeResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[30]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1562,7 +1461,7 @@ func (x *RemoveUserServerScopeResponse) String() string {
 func (*RemoveUserServerScopeResponse) ProtoMessage() {}
 
 func (x *RemoveUserServerScopeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[30]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1575,7 +1474,7 @@ func (x *RemoveUserServerScopeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RemoveUserServerScopeResponse.ProtoReflect.Descriptor instead.
 func (*RemoveUserServerScopeResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{30}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{28}
 }
 
 type RemoveUserServerScopeByNameRequest struct {
@@ -1590,7 +1489,7 @@ type RemoveUserServerScopeByNameRequest struct {
 func (x *RemoveUserServerScopeByNameRequest) Reset() {
 	*x = RemoveUserServerScopeByNameRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[31]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1603,7 +1502,7 @@ func (x *RemoveUserServerScopeByNameRequest) String() string {
 func (*RemoveUserServerScopeByNameRequest) ProtoMessage() {}
 
 func (x *RemoveUserServerScopeByNameRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[31]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1616,7 +1515,7 @@ func (x *RemoveUserServerScopeByNameRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use RemoveUserServerScopeByNameRequest.ProtoReflect.Descriptor instead.
 func (*RemoveUserServerScopeByNameRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{31}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *RemoveUserServerScopeByNameRequest) GetName() string {
@@ -1642,7 +1541,7 @@ type RemoveUserServerScopeByNameResponse struct {
 func (x *RemoveUserServerScopeByNameResponse) Reset() {
 	*x = RemoveUserServerScopeByNameResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[32]
+		mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[30]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1655,7 +1554,7 @@ func (x *RemoveUserServerScopeByNameResponse) String() string {
 func (*RemoveUserServerScopeByNameResponse) ProtoMessage() {}
 
 func (x *RemoveUserServerScopeByNameResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[32]
+	mi := &file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[30]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1668,7 +1567,7 @@ func (x *RemoveUserServerScopeByNameResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use RemoveUserServerScopeByNameResponse.ProtoReflect.Descriptor instead.
 func (*RemoveUserServerScopeByNameResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{32}
+	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP(), []int{30}
 }
 
 var File_buf_alpha_registry_v1alpha1_user_proto protoreflect.FileDescriptor
@@ -1765,21 +1664,7 @@ var file_buf_alpha_registry_v1alpha1_user_proto_rawDesc = []byte{
 	0x69, 0x76, 0x61, 0x74, 0x65, 0x55, 0x73, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
 	0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64,
 	0x22, 0x18, 0x0a, 0x16, 0x44, 0x65, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x65, 0x55, 0x73,
-	0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xb9, 0x01, 0x0a, 0x1f, 0x41,
-	0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x0e,
-	0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x12, 0x27,
-	0x0a, 0x0f, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69,
-	0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x5d, 0x0a, 0x12, 0x6f, 0x72, 0x67, 0x61, 0x6e,
-	0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x73, 0x63, 0x6f, 0x70, 0x65, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x0e, 0x32, 0x2e, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e,
-	0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61,
-	0x31, 0x2e, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63,
-	0x6f, 0x70, 0x65, 0x52, 0x11, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x22, 0x22, 0x0a, 0x20, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65,
-	0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f,
-	0x70, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc7, 0x01, 0x0a, 0x25, 0x41,
+	0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0xc7, 0x01, 0x0a, 0x25, 0x41,
 	0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69,
 	0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71,
 	0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01,
@@ -1865,7 +1750,7 @@ var file_buf_alpha_registry_v1alpha1_user_proto_rawDesc = []byte{
 	0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x0b, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72,
 	0x53, 0x63, 0x6f, 0x70, 0x65, 0x22, 0x25, 0x0a, 0x23, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55,
 	0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79,
-	0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xca, 0x11, 0x0a,
+	0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xb0, 0x10, 0x0a,
 	0x0b, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x6d, 0x0a, 0x0a,
 	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x55, 0x73, 0x65, 0x72, 0x12, 0x2e, 0x2e, 0x62, 0x75, 0x66,
 	0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e,
@@ -1927,104 +1812,94 @@ var file_buf_alpha_registry_v1alpha1_user_proto_rawDesc = []byte{
 	0x1a, 0x33, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67,
 	0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x44,
 	0x65, 0x61, 0x63, 0x74, 0x69, 0x76, 0x61, 0x74, 0x65, 0x55, 0x73, 0x65, 0x72, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x97, 0x01, 0x0a, 0x18, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0xa9, 0x01, 0x0a, 0x1e, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65,
 	0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f,
-	0x70, 0x65, 0x12, 0x3c, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72,
-	0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
-	0x2e, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x3d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67,
-	0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x41,
-	0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69,
-	0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
-	0xa9, 0x01, 0x0a, 0x1e, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e,
-	0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61,
-	0x6d, 0x65, 0x12, 0x42, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72,
-	0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
-	0x2e, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x43, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70,
-	0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x31, 0x2e, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61,
-	0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e,
-	0x61, 0x6d, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0xa0, 0x01, 0x0a, 0x1b,
-	0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69,
-	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x12, 0x3f, 0x2e, 0x62, 0x75,
-	0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79,
-	0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65,
-	0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x40, 0x2e, 0x62,
-	0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
-	0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76,
-	0x65, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0xb2,
-	0x01, 0x0a, 0x21, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67,
-	0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79,
-	0x4e, 0x61, 0x6d, 0x65, 0x12, 0x45, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61,
-	0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68,
-	0x61, 0x31, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67,
-	0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79,
-	0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x46, 0x2e, 0x62, 0x75,
-	0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79,
-	0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65,
-	0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x12, 0x85, 0x01, 0x0a, 0x12, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x53,
-	0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x12, 0x36, 0x2e, 0x62, 0x75, 0x66,
-	0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72,
-	0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x37, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72,
-	0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
-	0x2e, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63,
-	0x6f, 0x70, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x97, 0x01, 0x0a, 0x18,
-	0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f,
-	0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x3c, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61,
+	0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x42, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61,
 	0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31,
-	0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65,
-	0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x3d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70,
-	0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x31, 0x2e, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76,
-	0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x8e, 0x01, 0x0a, 0x15, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65,
-	0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x12,
-	0x39, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69,
-	0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x52, 0x65,
-	0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63,
-	0x6f, 0x70, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x3a, 0x2e, 0x62, 0x75, 0x66,
+	0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72,
+	0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42,
+	0x79, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x43, 0x2e, 0x62,
+	0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
+	0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x41, 0x64, 0x64, 0x55, 0x73,
+	0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63,
+	0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0xa0, 0x01, 0x0a, 0x1b, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72,
+	0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70,
+	0x65, 0x12, 0x3f, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65,
+	0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e,
+	0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69,
+	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x40, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72,
+	0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
+	0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e,
+	0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0xb2, 0x01, 0x0a, 0x21, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55,
+	0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53,
+	0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x45, 0x2e, 0x62, 0x75, 0x66,
 	0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e,
 	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55,
-	0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0xa0, 0x01, 0x0a, 0x1b, 0x52, 0x65, 0x6d, 0x6f, 0x76,
+	0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53,
+	0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x46, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65,
+	0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e,
+	0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69,
+	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d,
+	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x85, 0x01, 0x0a, 0x12, 0x41, 0x64,
+	0x64, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65,
+	0x12, 0x36, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67,
+	0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x41,
+	0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70,
+	0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x37, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61,
+	0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31,
+	0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65,
+	0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x97, 0x01, 0x0a, 0x18, 0x41, 0x64, 0x64, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72,
+	0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x3c,
+	0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73,
+	0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x41, 0x64, 0x64,
+	0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42,
+	0x79, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x3d, 0x2e, 0x62,
+	0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
+	0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x41, 0x64, 0x64, 0x55, 0x73,
+	0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e,
+	0x61, 0x6d, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x8e, 0x01, 0x0a, 0x15,
+	0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72,
+	0x53, 0x63, 0x6f, 0x70, 0x65, 0x12, 0x39, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68,
+	0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70,
+	0x68, 0x61, 0x31, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65,
+	0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x3a, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67,
+	0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x52,
+	0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53,
+	0x63, 0x6f, 0x70, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0xa0, 0x01, 0x0a,
+	0x1b, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65,
+	0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x3f, 0x2e, 0x62,
+	0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
+	0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76,
 	0x65, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65,
-	0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x3f, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70,
-	0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x31, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x53,
-	0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x40, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x55, 0x73, 0x65, 0x72,
-	0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70, 0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d,
-	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x96, 0x02, 0x0a, 0x1f, 0x63, 0x6f,
-	0x6d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69,
-	0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x42, 0x09, 0x55,
-	0x73, 0x65, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x59, 0x67, 0x69, 0x74, 0x68,
-	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x62, 0x75, 0x66, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x2f,
-	0x62, 0x75, 0x66, 0x2f, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x2f, 0x67, 0x65, 0x6e, 0x2f,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x2f, 0x62, 0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70,
-	0x68, 0x61, 0x2f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x31, 0x3b, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x76, 0x31, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x31, 0xa2, 0x02, 0x03, 0x42, 0x41, 0x52, 0xaa, 0x02, 0x1b, 0x42, 0x75,
-	0x66, 0x2e, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79,
-	0x2e, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xca, 0x02, 0x1b, 0x42, 0x75, 0x66, 0x5c,
-	0x41, 0x6c, 0x70, 0x68, 0x61, 0x5c, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x5c, 0x56,
-	0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xe2, 0x02, 0x27, 0x42, 0x75, 0x66, 0x5c, 0x41, 0x6c,
-	0x70, 0x68, 0x61, 0x5c, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x5c, 0x56, 0x31, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
-	0x61, 0xea, 0x02, 0x1e, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a,
-	0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68,
-	0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x40, 0x2e,
+	0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74,
+	0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x52, 0x65, 0x6d, 0x6f,
+	0x76, 0x65, 0x55, 0x73, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x53, 0x63, 0x6f, 0x70,
+	0x65, 0x42, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42,
+	0x96, 0x02, 0x0a, 0x1f, 0x63, 0x6f, 0x6d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68,
+	0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70,
+	0x68, 0x61, 0x31, 0x42, 0x09, 0x55, 0x73, 0x65, 0x72, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01,
+	0x5a, 0x59, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x62, 0x75, 0x66,
+	0x62, 0x75, 0x69, 0x6c, 0x64, 0x2f, 0x62, 0x75, 0x66, 0x2f, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74,
+	0x65, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x2f, 0x62,
+	0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
+	0x79, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x3b, 0x72, 0x65, 0x67, 0x69, 0x73,
+	0x74, 0x72, 0x79, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xa2, 0x02, 0x03, 0x42, 0x41,
+	0x52, 0xaa, 0x02, 0x1b, 0x42, 0x75, 0x66, 0x2e, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x52, 0x65,
+	0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xca,
+	0x02, 0x1b, 0x42, 0x75, 0x66, 0x5c, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x5c, 0x52, 0x65, 0x67, 0x69,
+	0x73, 0x74, 0x72, 0x79, 0x5c, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xe2, 0x02, 0x27,
+	0x42, 0x75, 0x66, 0x5c, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x5c, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
+	0x72, 0x79, 0x5c, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d,
+	0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x1e, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41,
+	0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x3a, 0x3a,
+	0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2039,7 +1914,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_rawDescGZIP() []byte {
 	return file_buf_alpha_registry_v1alpha1_user_proto_rawDescData
 }
 
-var file_buf_alpha_registry_v1alpha1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
+var file_buf_alpha_registry_v1alpha1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_buf_alpha_registry_v1alpha1_user_proto_goTypes = []interface{}{
 	(*User)(nil),                                      // 0: buf.alpha.registry.v1alpha1.User
 	(*CreateUserRequest)(nil),                         // 1: buf.alpha.registry.v1alpha1.CreateUserRequest
@@ -2058,80 +1933,75 @@ var file_buf_alpha_registry_v1alpha1_user_proto_goTypes = []interface{}{
 	(*DeleteUserResponse)(nil),                        // 14: buf.alpha.registry.v1alpha1.DeleteUserResponse
 	(*DeactivateUserRequest)(nil),                     // 15: buf.alpha.registry.v1alpha1.DeactivateUserRequest
 	(*DeactivateUserResponse)(nil),                    // 16: buf.alpha.registry.v1alpha1.DeactivateUserResponse
-	(*AddUserOrganizationScopeRequest)(nil),           // 17: buf.alpha.registry.v1alpha1.AddUserOrganizationScopeRequest
-	(*AddUserOrganizationScopeResponse)(nil),          // 18: buf.alpha.registry.v1alpha1.AddUserOrganizationScopeResponse
-	(*AddUserOrganizationScopeByNameRequest)(nil),     // 19: buf.alpha.registry.v1alpha1.AddUserOrganizationScopeByNameRequest
-	(*AddUserOrganizationScopeByNameResponse)(nil),    // 20: buf.alpha.registry.v1alpha1.AddUserOrganizationScopeByNameResponse
-	(*RemoveUserOrganizationScopeRequest)(nil),        // 21: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeRequest
-	(*RemoveUserOrganizationScopeResponse)(nil),       // 22: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeResponse
-	(*RemoveUserOrganizationScopeByNameRequest)(nil),  // 23: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeByNameRequest
-	(*RemoveUserOrganizationScopeByNameResponse)(nil), // 24: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeByNameResponse
-	(*AddUserServerScopeRequest)(nil),                 // 25: buf.alpha.registry.v1alpha1.AddUserServerScopeRequest
-	(*AddUserServerScopeResponse)(nil),                // 26: buf.alpha.registry.v1alpha1.AddUserServerScopeResponse
-	(*AddUserServerScopeByNameRequest)(nil),           // 27: buf.alpha.registry.v1alpha1.AddUserServerScopeByNameRequest
-	(*AddUserServerScopeByNameResponse)(nil),          // 28: buf.alpha.registry.v1alpha1.AddUserServerScopeByNameResponse
-	(*RemoveUserServerScopeRequest)(nil),              // 29: buf.alpha.registry.v1alpha1.RemoveUserServerScopeRequest
-	(*RemoveUserServerScopeResponse)(nil),             // 30: buf.alpha.registry.v1alpha1.RemoveUserServerScopeResponse
-	(*RemoveUserServerScopeByNameRequest)(nil),        // 31: buf.alpha.registry.v1alpha1.RemoveUserServerScopeByNameRequest
-	(*RemoveUserServerScopeByNameResponse)(nil),       // 32: buf.alpha.registry.v1alpha1.RemoveUserServerScopeByNameResponse
-	(*timestamppb.Timestamp)(nil),                     // 33: google.protobuf.Timestamp
-	(OrganizationScope)(0),                            // 34: buf.alpha.registry.v1alpha1.OrganizationScope
-	(ServerScope)(0),                                  // 35: buf.alpha.registry.v1alpha1.ServerScope
+	(*AddUserOrganizationScopeByNameRequest)(nil),     // 17: buf.alpha.registry.v1alpha1.AddUserOrganizationScopeByNameRequest
+	(*AddUserOrganizationScopeByNameResponse)(nil),    // 18: buf.alpha.registry.v1alpha1.AddUserOrganizationScopeByNameResponse
+	(*RemoveUserOrganizationScopeRequest)(nil),        // 19: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeRequest
+	(*RemoveUserOrganizationScopeResponse)(nil),       // 20: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeResponse
+	(*RemoveUserOrganizationScopeByNameRequest)(nil),  // 21: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeByNameRequest
+	(*RemoveUserOrganizationScopeByNameResponse)(nil), // 22: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeByNameResponse
+	(*AddUserServerScopeRequest)(nil),                 // 23: buf.alpha.registry.v1alpha1.AddUserServerScopeRequest
+	(*AddUserServerScopeResponse)(nil),                // 24: buf.alpha.registry.v1alpha1.AddUserServerScopeResponse
+	(*AddUserServerScopeByNameRequest)(nil),           // 25: buf.alpha.registry.v1alpha1.AddUserServerScopeByNameRequest
+	(*AddUserServerScopeByNameResponse)(nil),          // 26: buf.alpha.registry.v1alpha1.AddUserServerScopeByNameResponse
+	(*RemoveUserServerScopeRequest)(nil),              // 27: buf.alpha.registry.v1alpha1.RemoveUserServerScopeRequest
+	(*RemoveUserServerScopeResponse)(nil),             // 28: buf.alpha.registry.v1alpha1.RemoveUserServerScopeResponse
+	(*RemoveUserServerScopeByNameRequest)(nil),        // 29: buf.alpha.registry.v1alpha1.RemoveUserServerScopeByNameRequest
+	(*RemoveUserServerScopeByNameResponse)(nil),       // 30: buf.alpha.registry.v1alpha1.RemoveUserServerScopeByNameResponse
+	(*timestamppb.Timestamp)(nil),                     // 31: google.protobuf.Timestamp
+	(OrganizationScope)(0),                            // 32: buf.alpha.registry.v1alpha1.OrganizationScope
+	(ServerScope)(0),                                  // 33: buf.alpha.registry.v1alpha1.ServerScope
 }
 var file_buf_alpha_registry_v1alpha1_user_proto_depIdxs = []int32{
-	33, // 0: buf.alpha.registry.v1alpha1.User.create_time:type_name -> google.protobuf.Timestamp
-	33, // 1: buf.alpha.registry.v1alpha1.User.update_time:type_name -> google.protobuf.Timestamp
+	31, // 0: buf.alpha.registry.v1alpha1.User.create_time:type_name -> google.protobuf.Timestamp
+	31, // 1: buf.alpha.registry.v1alpha1.User.update_time:type_name -> google.protobuf.Timestamp
 	0,  // 2: buf.alpha.registry.v1alpha1.CreateUserResponse.user:type_name -> buf.alpha.registry.v1alpha1.User
 	0,  // 3: buf.alpha.registry.v1alpha1.GetUserResponse.user:type_name -> buf.alpha.registry.v1alpha1.User
 	0,  // 4: buf.alpha.registry.v1alpha1.GetUserByUsernameResponse.user:type_name -> buf.alpha.registry.v1alpha1.User
 	0,  // 5: buf.alpha.registry.v1alpha1.ListUsersResponse.users:type_name -> buf.alpha.registry.v1alpha1.User
 	0,  // 6: buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse.users:type_name -> buf.alpha.registry.v1alpha1.User
 	0,  // 7: buf.alpha.registry.v1alpha1.UpdateUserUsernameResponse.user:type_name -> buf.alpha.registry.v1alpha1.User
-	34, // 8: buf.alpha.registry.v1alpha1.AddUserOrganizationScopeRequest.organization_scope:type_name -> buf.alpha.registry.v1alpha1.OrganizationScope
-	34, // 9: buf.alpha.registry.v1alpha1.AddUserOrganizationScopeByNameRequest.organization_scope:type_name -> buf.alpha.registry.v1alpha1.OrganizationScope
-	34, // 10: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeRequest.organization_scope:type_name -> buf.alpha.registry.v1alpha1.OrganizationScope
-	34, // 11: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeByNameRequest.organization_scope:type_name -> buf.alpha.registry.v1alpha1.OrganizationScope
-	35, // 12: buf.alpha.registry.v1alpha1.AddUserServerScopeRequest.server_scope:type_name -> buf.alpha.registry.v1alpha1.ServerScope
-	35, // 13: buf.alpha.registry.v1alpha1.AddUserServerScopeByNameRequest.server_scope:type_name -> buf.alpha.registry.v1alpha1.ServerScope
-	35, // 14: buf.alpha.registry.v1alpha1.RemoveUserServerScopeRequest.server_scope:type_name -> buf.alpha.registry.v1alpha1.ServerScope
-	35, // 15: buf.alpha.registry.v1alpha1.RemoveUserServerScopeByNameRequest.server_scope:type_name -> buf.alpha.registry.v1alpha1.ServerScope
-	1,  // 16: buf.alpha.registry.v1alpha1.UserService.CreateUser:input_type -> buf.alpha.registry.v1alpha1.CreateUserRequest
-	3,  // 17: buf.alpha.registry.v1alpha1.UserService.GetUser:input_type -> buf.alpha.registry.v1alpha1.GetUserRequest
-	5,  // 18: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:input_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameRequest
-	7,  // 19: buf.alpha.registry.v1alpha1.UserService.ListUsers:input_type -> buf.alpha.registry.v1alpha1.ListUsersRequest
-	9,  // 20: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersRequest
-	11, // 21: buf.alpha.registry.v1alpha1.UserService.UpdateUserUsername:input_type -> buf.alpha.registry.v1alpha1.UpdateUserUsernameRequest
-	13, // 22: buf.alpha.registry.v1alpha1.UserService.DeleteUser:input_type -> buf.alpha.registry.v1alpha1.DeleteUserRequest
-	15, // 23: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:input_type -> buf.alpha.registry.v1alpha1.DeactivateUserRequest
-	17, // 24: buf.alpha.registry.v1alpha1.UserService.AddUserOrganizationScope:input_type -> buf.alpha.registry.v1alpha1.AddUserOrganizationScopeRequest
-	19, // 25: buf.alpha.registry.v1alpha1.UserService.AddUserOrganizationScopeByName:input_type -> buf.alpha.registry.v1alpha1.AddUserOrganizationScopeByNameRequest
-	21, // 26: buf.alpha.registry.v1alpha1.UserService.RemoveUserOrganizationScope:input_type -> buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeRequest
-	23, // 27: buf.alpha.registry.v1alpha1.UserService.RemoveUserOrganizationScopeByName:input_type -> buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeByNameRequest
-	25, // 28: buf.alpha.registry.v1alpha1.UserService.AddUserServerScope:input_type -> buf.alpha.registry.v1alpha1.AddUserServerScopeRequest
-	27, // 29: buf.alpha.registry.v1alpha1.UserService.AddUserServerScopeByName:input_type -> buf.alpha.registry.v1alpha1.AddUserServerScopeByNameRequest
-	29, // 30: buf.alpha.registry.v1alpha1.UserService.RemoveUserServerScope:input_type -> buf.alpha.registry.v1alpha1.RemoveUserServerScopeRequest
-	31, // 31: buf.alpha.registry.v1alpha1.UserService.RemoveUserServerScopeByName:input_type -> buf.alpha.registry.v1alpha1.RemoveUserServerScopeByNameRequest
-	2,  // 32: buf.alpha.registry.v1alpha1.UserService.CreateUser:output_type -> buf.alpha.registry.v1alpha1.CreateUserResponse
-	4,  // 33: buf.alpha.registry.v1alpha1.UserService.GetUser:output_type -> buf.alpha.registry.v1alpha1.GetUserResponse
-	6,  // 34: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:output_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameResponse
-	8,  // 35: buf.alpha.registry.v1alpha1.UserService.ListUsers:output_type -> buf.alpha.registry.v1alpha1.ListUsersResponse
-	10, // 36: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse
-	12, // 37: buf.alpha.registry.v1alpha1.UserService.UpdateUserUsername:output_type -> buf.alpha.registry.v1alpha1.UpdateUserUsernameResponse
-	14, // 38: buf.alpha.registry.v1alpha1.UserService.DeleteUser:output_type -> buf.alpha.registry.v1alpha1.DeleteUserResponse
-	16, // 39: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:output_type -> buf.alpha.registry.v1alpha1.DeactivateUserResponse
-	18, // 40: buf.alpha.registry.v1alpha1.UserService.AddUserOrganizationScope:output_type -> buf.alpha.registry.v1alpha1.AddUserOrganizationScopeResponse
-	20, // 41: buf.alpha.registry.v1alpha1.UserService.AddUserOrganizationScopeByName:output_type -> buf.alpha.registry.v1alpha1.AddUserOrganizationScopeByNameResponse
-	22, // 42: buf.alpha.registry.v1alpha1.UserService.RemoveUserOrganizationScope:output_type -> buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeResponse
-	24, // 43: buf.alpha.registry.v1alpha1.UserService.RemoveUserOrganizationScopeByName:output_type -> buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeByNameResponse
-	26, // 44: buf.alpha.registry.v1alpha1.UserService.AddUserServerScope:output_type -> buf.alpha.registry.v1alpha1.AddUserServerScopeResponse
-	28, // 45: buf.alpha.registry.v1alpha1.UserService.AddUserServerScopeByName:output_type -> buf.alpha.registry.v1alpha1.AddUserServerScopeByNameResponse
-	30, // 46: buf.alpha.registry.v1alpha1.UserService.RemoveUserServerScope:output_type -> buf.alpha.registry.v1alpha1.RemoveUserServerScopeResponse
-	32, // 47: buf.alpha.registry.v1alpha1.UserService.RemoveUserServerScopeByName:output_type -> buf.alpha.registry.v1alpha1.RemoveUserServerScopeByNameResponse
-	32, // [32:48] is the sub-list for method output_type
-	16, // [16:32] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	32, // 8: buf.alpha.registry.v1alpha1.AddUserOrganizationScopeByNameRequest.organization_scope:type_name -> buf.alpha.registry.v1alpha1.OrganizationScope
+	32, // 9: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeRequest.organization_scope:type_name -> buf.alpha.registry.v1alpha1.OrganizationScope
+	32, // 10: buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeByNameRequest.organization_scope:type_name -> buf.alpha.registry.v1alpha1.OrganizationScope
+	33, // 11: buf.alpha.registry.v1alpha1.AddUserServerScopeRequest.server_scope:type_name -> buf.alpha.registry.v1alpha1.ServerScope
+	33, // 12: buf.alpha.registry.v1alpha1.AddUserServerScopeByNameRequest.server_scope:type_name -> buf.alpha.registry.v1alpha1.ServerScope
+	33, // 13: buf.alpha.registry.v1alpha1.RemoveUserServerScopeRequest.server_scope:type_name -> buf.alpha.registry.v1alpha1.ServerScope
+	33, // 14: buf.alpha.registry.v1alpha1.RemoveUserServerScopeByNameRequest.server_scope:type_name -> buf.alpha.registry.v1alpha1.ServerScope
+	1,  // 15: buf.alpha.registry.v1alpha1.UserService.CreateUser:input_type -> buf.alpha.registry.v1alpha1.CreateUserRequest
+	3,  // 16: buf.alpha.registry.v1alpha1.UserService.GetUser:input_type -> buf.alpha.registry.v1alpha1.GetUserRequest
+	5,  // 17: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:input_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameRequest
+	7,  // 18: buf.alpha.registry.v1alpha1.UserService.ListUsers:input_type -> buf.alpha.registry.v1alpha1.ListUsersRequest
+	9,  // 19: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersRequest
+	11, // 20: buf.alpha.registry.v1alpha1.UserService.UpdateUserUsername:input_type -> buf.alpha.registry.v1alpha1.UpdateUserUsernameRequest
+	13, // 21: buf.alpha.registry.v1alpha1.UserService.DeleteUser:input_type -> buf.alpha.registry.v1alpha1.DeleteUserRequest
+	15, // 22: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:input_type -> buf.alpha.registry.v1alpha1.DeactivateUserRequest
+	17, // 23: buf.alpha.registry.v1alpha1.UserService.AddUserOrganizationScopeByName:input_type -> buf.alpha.registry.v1alpha1.AddUserOrganizationScopeByNameRequest
+	19, // 24: buf.alpha.registry.v1alpha1.UserService.RemoveUserOrganizationScope:input_type -> buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeRequest
+	21, // 25: buf.alpha.registry.v1alpha1.UserService.RemoveUserOrganizationScopeByName:input_type -> buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeByNameRequest
+	23, // 26: buf.alpha.registry.v1alpha1.UserService.AddUserServerScope:input_type -> buf.alpha.registry.v1alpha1.AddUserServerScopeRequest
+	25, // 27: buf.alpha.registry.v1alpha1.UserService.AddUserServerScopeByName:input_type -> buf.alpha.registry.v1alpha1.AddUserServerScopeByNameRequest
+	27, // 28: buf.alpha.registry.v1alpha1.UserService.RemoveUserServerScope:input_type -> buf.alpha.registry.v1alpha1.RemoveUserServerScopeRequest
+	29, // 29: buf.alpha.registry.v1alpha1.UserService.RemoveUserServerScopeByName:input_type -> buf.alpha.registry.v1alpha1.RemoveUserServerScopeByNameRequest
+	2,  // 30: buf.alpha.registry.v1alpha1.UserService.CreateUser:output_type -> buf.alpha.registry.v1alpha1.CreateUserResponse
+	4,  // 31: buf.alpha.registry.v1alpha1.UserService.GetUser:output_type -> buf.alpha.registry.v1alpha1.GetUserResponse
+	6,  // 32: buf.alpha.registry.v1alpha1.UserService.GetUserByUsername:output_type -> buf.alpha.registry.v1alpha1.GetUserByUsernameResponse
+	8,  // 33: buf.alpha.registry.v1alpha1.UserService.ListUsers:output_type -> buf.alpha.registry.v1alpha1.ListUsersResponse
+	10, // 34: buf.alpha.registry.v1alpha1.UserService.ListOrganizationUsers:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationUsersResponse
+	12, // 35: buf.alpha.registry.v1alpha1.UserService.UpdateUserUsername:output_type -> buf.alpha.registry.v1alpha1.UpdateUserUsernameResponse
+	14, // 36: buf.alpha.registry.v1alpha1.UserService.DeleteUser:output_type -> buf.alpha.registry.v1alpha1.DeleteUserResponse
+	16, // 37: buf.alpha.registry.v1alpha1.UserService.DeactivateUser:output_type -> buf.alpha.registry.v1alpha1.DeactivateUserResponse
+	18, // 38: buf.alpha.registry.v1alpha1.UserService.AddUserOrganizationScopeByName:output_type -> buf.alpha.registry.v1alpha1.AddUserOrganizationScopeByNameResponse
+	20, // 39: buf.alpha.registry.v1alpha1.UserService.RemoveUserOrganizationScope:output_type -> buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeResponse
+	22, // 40: buf.alpha.registry.v1alpha1.UserService.RemoveUserOrganizationScopeByName:output_type -> buf.alpha.registry.v1alpha1.RemoveUserOrganizationScopeByNameResponse
+	24, // 41: buf.alpha.registry.v1alpha1.UserService.AddUserServerScope:output_type -> buf.alpha.registry.v1alpha1.AddUserServerScopeResponse
+	26, // 42: buf.alpha.registry.v1alpha1.UserService.AddUserServerScopeByName:output_type -> buf.alpha.registry.v1alpha1.AddUserServerScopeByNameResponse
+	28, // 43: buf.alpha.registry.v1alpha1.UserService.RemoveUserServerScope:output_type -> buf.alpha.registry.v1alpha1.RemoveUserServerScopeResponse
+	30, // 44: buf.alpha.registry.v1alpha1.UserService.RemoveUserServerScopeByName:output_type -> buf.alpha.registry.v1alpha1.RemoveUserServerScopeByNameResponse
+	30, // [30:45] is the sub-list for method output_type
+	15, // [15:30] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_registry_v1alpha1_user_proto_init() }
@@ -2346,30 +2216,6 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddUserOrganizationScopeRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AddUserOrganizationScopeResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AddUserOrganizationScopeByNameRequest); i {
 			case 0:
 				return &v.state
@@ -2381,7 +2227,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AddUserOrganizationScopeByNameResponse); i {
 			case 0:
 				return &v.state
@@ -2393,7 +2239,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RemoveUserOrganizationScopeRequest); i {
 			case 0:
 				return &v.state
@@ -2405,7 +2251,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RemoveUserOrganizationScopeResponse); i {
 			case 0:
 				return &v.state
@@ -2417,7 +2263,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RemoveUserOrganizationScopeByNameRequest); i {
 			case 0:
 				return &v.state
@@ -2429,7 +2275,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RemoveUserOrganizationScopeByNameResponse); i {
 			case 0:
 				return &v.state
@@ -2441,7 +2287,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AddUserServerScopeRequest); i {
 			case 0:
 				return &v.state
@@ -2453,7 +2299,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AddUserServerScopeResponse); i {
 			case 0:
 				return &v.state
@@ -2465,7 +2311,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AddUserServerScopeByNameRequest); i {
 			case 0:
 				return &v.state
@@ -2477,7 +2323,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AddUserServerScopeByNameResponse); i {
 			case 0:
 				return &v.state
@@ -2489,7 +2335,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RemoveUserServerScopeRequest); i {
 			case 0:
 				return &v.state
@@ -2501,7 +2347,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RemoveUserServerScopeResponse); i {
 			case 0:
 				return &v.state
@@ -2513,7 +2359,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RemoveUserServerScopeByNameRequest); i {
 			case 0:
 				return &v.state
@@ -2525,7 +2371,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 				return nil
 			}
 		}
-		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
+		file_buf_alpha_registry_v1alpha1_user_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RemoveUserServerScopeByNameResponse); i {
 			case 0:
 				return &v.state
@@ -2544,7 +2390,7 @@ func file_buf_alpha_registry_v1alpha1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_buf_alpha_registry_v1alpha1_user_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   33,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
