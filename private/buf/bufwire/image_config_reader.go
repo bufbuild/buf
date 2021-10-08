@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
@@ -178,6 +179,12 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	if len(imageConfigs) == 0 {
 		return nil, nil, errors.New("no .proto target files found")
 	}
+	if protoFileRef, ok := sourceOrModuleRef.(buffetch.ProtoFileRef); ok {
+		imageConfigs, err = filterImageConfigs(imageConfigs, protoFileRef)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
 	return imageConfigs, nil, nil
 }
 
@@ -243,4 +250,52 @@ func (i *imageConfigReader) buildModule(
 		return nil, fileAnnotations, nil
 	}
 	return newImageConfig(image, config), nil, nil
+}
+
+// filterImageConfigs takes in image configs and filters them based on the proto file ref.
+// First, we get the package, path, and config for the file ref. And then we merge the images
+// across the ImageConfigs, then filter them based on the paths for the package.
+//
+// The image merge is needed because if the `include_package_files=true` option is set, we
+// need to gather all the files for the package, includeing files spread out across workspace
+// directories, which would result in multiple image configs.
+func filterImageConfigs(imageConfigs []ImageConfig, protoFileRef buffetch.ProtoFileRef) ([]ImageConfig, error) {
+	var pkg string
+	var path string
+	var config *bufconfig.Config
+	var images []bufimage.Image
+	for _, imageConfig := range imageConfigs {
+		for _, imageFile := range imageConfig.Image().Files() {
+			// TODO: Ideally, we have the path returned from PathForExternalPath, however for a protoFileRef,
+			// PathForExternalPath returns only ".", <nil> when matched on the exact path of the proto file
+			// provided as the ref. This is expected since `PathForExternalPath` is meant to return the relative
+			// path based on the reference, which in this case will always be a specific file.
+			if _, err := protoFileRef.PathForExternalPath(imageFile.ExternalPath()); err == nil {
+				pkg = imageFile.Proto().GetPackage()
+				path = imageFile.Path()
+				config = imageConfig.Config()
+				break
+			}
+		}
+		images = append(images, imageConfig.Image())
+	}
+	image, err := bufimage.MergeImages(images...)
+	if err != nil {
+		return nil, err
+	}
+	var paths []string
+	if protoFileRef.IncludePackageFiles() {
+		for _, imageFile := range image.Files() {
+			if imageFile.Proto().GetPackage() == pkg {
+				paths = append(paths, imageFile.Path())
+			}
+		}
+	} else {
+		paths = []string{path}
+	}
+	prunedImage, err := bufimage.ImageWithOnlyPaths(image, paths)
+	if err != nil {
+		return nil, err
+	}
+	return []ImageConfig{newImageConfig(prunedImage, config)}, nil
 }
