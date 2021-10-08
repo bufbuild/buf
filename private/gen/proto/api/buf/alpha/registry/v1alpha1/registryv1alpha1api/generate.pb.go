@@ -42,5 +42,6 @@ type GenerateService interface {
 		templateOwner string,
 		templateName string,
 		templateVersion string,
+		includeImports bool,
 	) (files []*v1alpha1.File, runtimeLibraries []*v1alpha1.RuntimeLibrary, err error)
 }
