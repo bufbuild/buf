@@ -11,6 +11,9 @@ linters-settings:
       - '^exec\.Cmd$'
       - '^exec\.Command$'
       - '^exec\.CommandContext$'
+      # os.Rename does not work across filesystem boundaries
+      # See https://github.com/bufbuild/buf/issues/639
+      - '^os\.Rename$'
       # Ban debug statements
       - '^fmt\.Print'
       - '^log\.'
