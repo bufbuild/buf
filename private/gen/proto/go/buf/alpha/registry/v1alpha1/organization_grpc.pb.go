@@ -56,10 +56,6 @@ type OrganizationServiceClient interface {
 	DeleteOrganizationByName(ctx context.Context, in *DeleteOrganizationByNameRequest, opts ...grpc.CallOption) (*DeleteOrganizationByNameResponse, error)
 	// AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
 	AddOrganizationBaseRepositoryScope(ctx context.Context, in *AddOrganizationBaseRepositoryScopeRequest, opts ...grpc.CallOption) (*AddOrganizationBaseRepositoryScopeResponse, error)
-	// RemoveOrganizationBaseRepositoryScope removes a base repository scope from an organization by ID.
-	RemoveOrganizationBaseRepositoryScope(ctx context.Context, in *RemoveOrganizationBaseRepositoryScopeRequest, opts ...grpc.CallOption) (*RemoveOrganizationBaseRepositoryScopeResponse, error)
-	// RemoveOrganizationBaseRepositoryScopeByName removes a base repository scope from an organization by name.
-	RemoveOrganizationBaseRepositoryScopeByName(ctx context.Context, in *RemoveOrganizationBaseRepositoryScopeByNameRequest, opts ...grpc.CallOption) (*RemoveOrganizationBaseRepositoryScopeByNameResponse, error)
 }
 
 type organizationServiceClient struct {
@@ -160,24 +156,6 @@ func (c *organizationServiceClient) AddOrganizationBaseRepositoryScope(ctx conte
 	return out, nil
 }
 
-func (c *organizationServiceClient) RemoveOrganizationBaseRepositoryScope(ctx context.Context, in *RemoveOrganizationBaseRepositoryScopeRequest, opts ...grpc.CallOption) (*RemoveOrganizationBaseRepositoryScopeResponse, error) {
-	out := new(RemoveOrganizationBaseRepositoryScopeResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationBaseRepositoryScope", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *organizationServiceClient) RemoveOrganizationBaseRepositoryScopeByName(ctx context.Context, in *RemoveOrganizationBaseRepositoryScopeByNameRequest, opts ...grpc.CallOption) (*RemoveOrganizationBaseRepositoryScopeByNameResponse, error) {
-	out := new(RemoveOrganizationBaseRepositoryScopeByNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationBaseRepositoryScopeByName", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // OrganizationServiceServer is the server API for OrganizationService service.
 // All implementations should embed UnimplementedOrganizationServiceServer
 // for forward compatibility
@@ -202,10 +180,6 @@ type OrganizationServiceServer interface {
 	DeleteOrganizationByName(context.Context, *DeleteOrganizationByNameRequest) (*DeleteOrganizationByNameResponse, error)
 	// AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
 	AddOrganizationBaseRepositoryScope(context.Context, *AddOrganizationBaseRepositoryScopeRequest) (*AddOrganizationBaseRepositoryScopeResponse, error)
-	// RemoveOrganizationBaseRepositoryScope removes a base repository scope from an organization by ID.
-	RemoveOrganizationBaseRepositoryScope(context.Context, *RemoveOrganizationBaseRepositoryScopeRequest) (*RemoveOrganizationBaseRepositoryScopeResponse, error)
-	// RemoveOrganizationBaseRepositoryScopeByName removes a base repository scope from an organization by name.
-	RemoveOrganizationBaseRepositoryScopeByName(context.Context, *RemoveOrganizationBaseRepositoryScopeByNameRequest) (*RemoveOrganizationBaseRepositoryScopeByNameResponse, error)
 }
 
 // UnimplementedOrganizationServiceServer should be embedded to have forward compatible implementations.
@@ -241,12 +215,6 @@ func (UnimplementedOrganizationServiceServer) DeleteOrganizationByName(context.C
 }
 func (UnimplementedOrganizationServiceServer) AddOrganizationBaseRepositoryScope(context.Context, *AddOrganizationBaseRepositoryScopeRequest) (*AddOrganizationBaseRepositoryScopeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddOrganizationBaseRepositoryScope not implemented")
-}
-func (UnimplementedOrganizationServiceServer) RemoveOrganizationBaseRepositoryScope(context.Context, *RemoveOrganizationBaseRepositoryScopeRequest) (*RemoveOrganizationBaseRepositoryScopeResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveOrganizationBaseRepositoryScope not implemented")
-}
-func (UnimplementedOrganizationServiceServer) RemoveOrganizationBaseRepositoryScopeByName(context.Context, *RemoveOrganizationBaseRepositoryScopeByNameRequest) (*RemoveOrganizationBaseRepositoryScopeByNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveOrganizationBaseRepositoryScopeByName not implemented")
 }
 
 // UnsafeOrganizationServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -440,42 +408,6 @@ func _OrganizationService_AddOrganizationBaseRepositoryScope_Handler(srv interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _OrganizationService_RemoveOrganizationBaseRepositoryScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveOrganizationBaseRepositoryScopeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(OrganizationServiceServer).RemoveOrganizationBaseRepositoryScope(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationBaseRepositoryScope",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrganizationServiceServer).RemoveOrganizationBaseRepositoryScope(ctx, req.(*RemoveOrganizationBaseRepositoryScopeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _OrganizationService_RemoveOrganizationBaseRepositoryScopeByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveOrganizationBaseRepositoryScopeByNameRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(OrganizationServiceServer).RemoveOrganizationBaseRepositoryScopeByName(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationBaseRepositoryScopeByName",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrganizationServiceServer).RemoveOrganizationBaseRepositoryScopeByName(ctx, req.(*RemoveOrganizationBaseRepositoryScopeByNameRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // OrganizationService_ServiceDesc is the grpc.ServiceDesc for OrganizationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -522,14 +454,6 @@ var OrganizationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddOrganizationBaseRepositoryScope",
 			Handler:    _OrganizationService_AddOrganizationBaseRepositoryScope_Handler,
-		},
-		{
-			MethodName: "RemoveOrganizationBaseRepositoryScope",
-			Handler:    _OrganizationService_RemoveOrganizationBaseRepositoryScope_Handler,
-		},
-		{
-			MethodName: "RemoveOrganizationBaseRepositoryScopeByName",
-			Handler:    _OrganizationService_RemoveOrganizationBaseRepositoryScopeByName_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

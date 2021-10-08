@@ -52,10 +52,6 @@ service OrganizationService {
   rpc DeleteOrganizationByName(DeleteOrganizationByNameRequest) returns (DeleteOrganizationByNameResponse);
   // AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
   rpc AddOrganizationBaseRepositoryScope(AddOrganizationBaseRepositoryScopeRequest) returns (AddOrganizationBaseRepositoryScopeResponse);
-  // RemoveOrganizationBaseRepositoryScope removes a base repository scope from an organization by ID.
-  rpc RemoveOrganizationBaseRepositoryScope(RemoveOrganizationBaseRepositoryScopeRequest) returns (RemoveOrganizationBaseRepositoryScopeResponse);
-  // RemoveOrganizationBaseRepositoryScopeByName removes a base repository scope from an organization by name.
-  rpc RemoveOrganizationBaseRepositoryScopeByName(RemoveOrganizationBaseRepositoryScopeByNameRequest) returns (RemoveOrganizationBaseRepositoryScopeByNameResponse);
 }
 
 message GetOrganizationRequest {
@@ -148,17 +144,3 @@ message AddOrganizationBaseRepositoryScopeRequest {
 }
 
 message AddOrganizationBaseRepositoryScopeResponse {}
-
-message RemoveOrganizationBaseRepositoryScopeRequest {
-  string id = 1;
-  RepositoryScope repository_scope = 2;
-}
-
-message RemoveOrganizationBaseRepositoryScopeResponse {}
-
-message RemoveOrganizationBaseRepositoryScopeByNameRequest {
-  string name = 1;
-  RepositoryScope repository_scope = 2;
-}
-
-message RemoveOrganizationBaseRepositoryScopeByNameResponse {}

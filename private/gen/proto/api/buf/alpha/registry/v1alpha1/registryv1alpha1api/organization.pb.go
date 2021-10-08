@@ -66,16 +66,4 @@ type OrganizationService interface {
 		id string,
 		repositoryScope v1alpha1.RepositoryScope,
 	) (err error)
-	// RemoveOrganizationBaseRepositoryScope removes a base repository scope from an organization by ID.
-	RemoveOrganizationBaseRepositoryScope(
-		ctx context.Context,
-		id string,
-		repositoryScope v1alpha1.RepositoryScope,
-	) (err error)
-	// RemoveOrganizationBaseRepositoryScopeByName removes a base repository scope from an organization by name.
-	RemoveOrganizationBaseRepositoryScopeByName(
-		ctx context.Context,
-		name string,
-		repositoryScope v1alpha1.RepositoryScope,
-	) (err error)
 }
