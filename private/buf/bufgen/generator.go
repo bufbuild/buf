@@ -168,7 +168,7 @@ func (g *generator) execPlugins(
 					container,
 					image,
 					currentPluginConfig,
-					// TODO: We need to support the includeImports option here.
+					includeImports,
 				)
 				if err != nil {
 					return err
@@ -260,6 +260,7 @@ func (g *generator) execRemotePlugin(
 	container app.EnvStdioContainer,
 	image bufimage.Image,
 	pluginConfig *PluginConfig,
+	includeImports bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	remote, owner, name, version, err := bufplugin.ParsePluginVersionPath(pluginConfig.Remote)
 	if err != nil {
@@ -285,6 +286,7 @@ func (g *generator) execRemotePlugin(
 				Parameters: parameters,
 			},
 		},
+		includeImports,
 	)
 	if err != nil {
 		return nil, err
