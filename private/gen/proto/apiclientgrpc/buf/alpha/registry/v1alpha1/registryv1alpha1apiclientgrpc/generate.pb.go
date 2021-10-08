@@ -37,7 +37,7 @@ func (s *generateService) GeneratePlugins(
 	ctx context.Context,
 	image *v1.Image,
 	plugins []*v1alpha1.PluginReference,
-	imageFileNames []string,
+	includeImports bool,
 ) (responses []*pluginpb.CodeGeneratorResponse, runtimeLibraries []*v1alpha1.RuntimeLibrary, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -47,7 +47,7 @@ func (s *generateService) GeneratePlugins(
 		&v1alpha1.GeneratePluginsRequest{
 			Image:          image,
 			Plugins:        plugins,
-			ImageFileNames: imageFileNames,
+			IncludeImports: includeImports,
 		},
 	)
 	if err != nil {

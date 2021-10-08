@@ -69,15 +69,16 @@ service GenerateService {
 }
 
 message GeneratePluginsRequest {
-  // The image to run plugins against to generate the
-  // desired file outputs.
+  // The image to run plugins against to generate the desired file outputs.
+  //
+  // All image files that are not imports and not well-known types will be generated.
+  // If you want to filter what files are generated, modify the image.
+  // If you want to include imports, set include_imports.
   buf.alpha.image.v1.Image image = 1;
   // The array of plugins to use.
   repeated PluginReference plugins = 2;
-  // The specific image file names to generate.
-  //
-  // If not set, all non-imports in the image will be used.
-  repeated string image_file_names = 3;
+  // Include imports from the Image in generation.
+  bool include_imports = 3;
 }
 
 message GeneratePluginsResponse {
