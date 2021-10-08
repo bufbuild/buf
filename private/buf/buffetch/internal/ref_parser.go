@@ -192,6 +192,10 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 			switch value {
 			case "true":
 				rawRef.IncludePackageFiles = true
+			case "false", "":
+				rawRef.IncludePackageFiles = false
+			default:
+				return nil, NewOptionsInvalidKeyError(key)
 			}
 		default:
 			return nil, NewOptionsInvalidKeyError(key)
