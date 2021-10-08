@@ -257,7 +257,7 @@ func (i *imageConfigReader) buildModule(
 // across the ImageConfigs, then filter them based on the paths for the package.
 //
 // The image merge is needed because if the `include_package_files=true` option is set, we
-// need to gather all the files for the package, includeing files spread out across workspace
+// need to gather all the files for the package, including files spread out across workspace
 // directories, which would result in multiple image configs.
 func filterImageConfigs(imageConfigs []ImageConfig, protoFileRef buffetch.ProtoFileRef) ([]ImageConfig, error) {
 	var pkg string
