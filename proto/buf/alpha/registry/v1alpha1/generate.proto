@@ -74,6 +74,10 @@ message GeneratePluginsRequest {
   buf.alpha.image.v1.Image image = 1;
   // The array of plugins to use.
   repeated PluginReference plugins = 2;
+  // The specific image file names to generate.
+  //
+  // If not set, all non-imports in the image will be used.
+  repeated string image_file_names = 3;
 }
 
 message GeneratePluginsResponse {
