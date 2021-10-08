@@ -41,7 +41,6 @@ func TestGetMachineForName(t *testing.T) {
 		"foo.com",
 		"bar",
 		"baz",
-		"bat",
 	)
 	testGetMachineForNameNil(
 		t,
@@ -60,7 +59,6 @@ func TestGetMachineForName(t *testing.T) {
 		"",
 		"bar",
 		"baz",
-		"",
 	)
 	testGetMachineForNameSuccess(
 		t,
@@ -69,7 +67,6 @@ func TestGetMachineForName(t *testing.T) {
 		"",
 		"bar",
 		"baz",
-		"",
 	)
 	testGetMachineForNameSuccess(
 		t,
@@ -78,7 +75,6 @@ func TestGetMachineForName(t *testing.T) {
 		"",
 		"bar",
 		"baz",
-		"",
 	)
 	testGetMachineForNameNil(
 		t,
@@ -106,7 +102,6 @@ func TestPutMachines(t *testing.T) {
 			"foo.com",
 			"test@foo.com",
 			"password",
-			"",
 		),
 	)
 	testPutMachinesSuccess(
@@ -116,7 +111,6 @@ func TestPutMachines(t *testing.T) {
 			"foo.com",
 			"test@foo.com",
 			"password",
-			"",
 		),
 	)
 	testPutMachinesSuccess(
@@ -126,27 +120,19 @@ func TestPutMachines(t *testing.T) {
 			"bar.com",
 			"test@bar.com",
 			"password",
-			"",
 		),
 		NewMachine(
 			"baz.com",
 			"test@baz.com",
 			"password",
-			"",
 		),
-	)
-	testPutMachineError(
-		t,
-		"foo.com",
-		"test@foo.com",
-		"password",
 	)
 }
 
 // https://github.com/bufbuild/buf/issues/611
 func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 	t.Parallel()
-	size := 100
+	size := 10
 	password := strings.Repeat("abcdefghijklmnopqrstuvwxyz", size)
 	machines := make([]Machine, 0, size)
 	buffer := bytes.NewBuffer(nil)
@@ -159,7 +145,6 @@ func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 				fmt.Sprintf("foo%d", i),
 				fmt.Sprintf("bar%d", i),
 				password,
-				"",
 			),
 		)
 	}
@@ -180,13 +165,37 @@ func TestPutLotsOfBigMachinesSingleLineFiles(t *testing.T) {
 		"baz.com",
 		"test@baz.com",
 		"password",
-		"",
 	)
 	err = PutMachines(envContainer, extraMachine)
 	require.NoError(t, err)
 	machines = append(machines, extraMachine)
 	for _, machine := range machines {
 		// Verify all the machines work. This failed previously.
+		actualMachine, err := GetMachineForName(envContainer, machine.Name())
+		require.NoError(t, err)
+		require.Equal(t, machine, actualMachine)
+	}
+
+	// Modify some of the existing machines.
+	machines = make([]Machine, 0, size)
+	for i := 0; i < size; i++ {
+		modifiedPassword := password
+		if i%2 == 0 {
+			modifiedPassword = modifiedPassword + "Z"
+		}
+		machine := NewMachine(
+			fmt.Sprintf("foo%d", i),
+			fmt.Sprintf("bar%d", i),
+			modifiedPassword,
+		)
+		machines = append(machines, machine)
+		if i%2 == 0 {
+			err = PutMachines(envContainer, machine)
+			require.NoError(t, err)
+		}
+	}
+	machines = append(machines, extraMachine)
+	for _, machine := range machines {
 		actualMachine, err := GetMachineForName(envContainer, machine.Name())
 		require.NoError(t, err)
 		require.Equal(t, machine, actualMachine)
@@ -203,13 +212,11 @@ func TestDeleteMachineForName(t *testing.T) {
 			"bar.com",
 			"test@bar.com",
 			"password",
-			"",
 		),
 		NewMachine(
 			"baz.com",
 			"test@baz.com",
 			"password",
-			"",
 		),
 	)
 	require.NoError(t, err)
@@ -255,22 +262,6 @@ func testPutMachinesSuccess(
 	}
 }
 
-func testPutMachineError(
-	t *testing.T,
-	name string,
-	login string,
-	password string,
-) {
-	filePath := filepath.Join(t.TempDir(), netrcFilename)
-	envContainer := app.NewEnvContainer(map[string]string{"NETRC": filePath})
-	_, err := os.Create(filePath)
-	require.NoError(t, err)
-	err = os.WriteFile(filePath, []byte("invalid netrc"), 0600)
-	require.NoError(t, err)
-	err = PutMachines(envContainer, NewMachine(name, login, password, ""))
-	require.Error(t, err)
-}
-
 func testGetMachineForNameSuccess(
 	t *testing.T,
 	name string,
@@ -278,7 +269,6 @@ func testGetMachineForNameSuccess(
 	expectedName string,
 	expectedLogin string,
 	expectedPassword string,
-	expectedAccount string,
 ) {
 	machine, err := GetMachineForName(app.NewEnvContainer(map[string]string{"HOME": homeDirPath}), name)
 	require.NoError(t, err)
@@ -286,7 +276,6 @@ func testGetMachineForNameSuccess(
 	assert.Equal(t, expectedName, machine.Name())
 	assert.Equal(t, expectedLogin, machine.Login())
 	assert.Equal(t, expectedPassword, machine.Password())
-	assert.Equal(t, expectedAccount, machine.Account())
 }
 
 func testGetMachineForNameNil(

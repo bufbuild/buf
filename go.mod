@@ -7,6 +7,7 @@ require (
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-cmp v0.5.6
+	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a // indirect
 	github.com/jhump/protoreflect v1.10.1
 	github.com/klauspost/compress v1.13.6
 	github.com/klauspost/pgzip v1.2.5
