@@ -247,18 +247,15 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	// If a workspace and module are both found, then we need to check of the module is within
 	// the workspace. If it is, we use the workspace. Otherwise, we use the module.
 	if workspaceConfigDirectory != "" && moduleConfigDirectory != "" {
-		moduleOutsideWorkspace := true
 		workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
 		if err != nil {
 			return nil, err
 		}
 		for _, directory := range workspaceConfig.Directories {
-			if normalpath.EqualsOrContainsPath(normalpath.Join(workspaceConfigDirectory, directory), moduleConfigDirectory, normalpath.Absolute) {
+			if !normalpath.EqualsOrContainsPath(normalpath.Join(workspaceConfigDirectory, directory), moduleConfigDirectory, normalpath.Absolute) {
 				moduleOutsideWorkspace = false
-				break
+				continue
 			}
-		}
-		if moduleOutsideWorkspace {
 			relativePath, err := filepath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
 			if err != nil {
 				return nil, err
