@@ -233,8 +233,8 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	workspaceConfigs := stringutil.SliceToMap(bufwork.AllConfigFilePaths)
 	moduleConfigs := stringutil.SliceToMap(bufconfig.AllConfigFilePaths)
 	terminateFileProvider := readBucketCloser.TerminateFileProvider()
-	workspaceConfigDirectory := ""
-	moduleConfigDirectory := ""
+	var workspaceConfigDirectory string
+	var moduleConfigDirectory string
 	for _, terminateFile := range terminateFileProvider.GetTerminateFiles() {
 		if _, ok := workspaceConfigs[terminateFile.Name()]; ok {
 			workspaceConfigDirectory = normalpath.Unnormalize(terminateFile.Path())
@@ -251,11 +251,14 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 		if err != nil {
 			return nil, err
 		}
+		var moduleInWorkspace bool
 		for _, directory := range workspaceConfig.Directories {
-			if !normalpath.EqualsOrContainsPath(normalpath.Join(workspaceConfigDirectory, directory), moduleConfigDirectory, normalpath.Absolute) {
-				moduleOutsideWorkspace = false
-				continue
+			if normalpath.EqualsOrContainsPath(normalpath.Join(workspaceConfigDirectory, directory), moduleConfigDirectory, normalpath.Absolute) {
+				moduleInWorkspace = true
+				break
 			}
+		}
+		if !moduleInWorkspace {
 			relativePath, err := filepath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
 			if err != nil {
 				return nil, err
