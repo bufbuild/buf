@@ -29,7 +29,7 @@ Our second tool, the **Buf Schema Registry (“BSR”)**, will be the hub of our
 
 However, we recommend you read the below introduction first!
 
-- [Tour of existing functionality- takes about 10 minutes to complete](https://docs.buf.build/tour/introduction/)
+- [Tour of existing functionality - takes about 20 minutes to complete](https://docs.buf.build/tour/introduction/)
 - [Installation guide](https://docs.buf.build/installation)
 - [Overview of our 40 lint rules](https://docs.buf.build/lint/rules/)
 - [Overview of our 54 breaking change rules](https://docs.buf.build/breaking/rules/)
