@@ -55,7 +55,11 @@ OPEN_CMD := xdg-open
 endif
 
 ifeq ($(UNAME_OS),Darwin)
-SED_I := sed -i ''
+# Explicitly use the "BSD" sed shipped with Darwin. Otherwise if the user has a
+# different sed (such as gnu-sed) on their PATH this will fail in an opaque
+# manner. /usr/bin/sed can only be modified if SIP is disabled, so this should
+# be relatively safe.
+SED_I := /usr/bin/sed -i ''
 endif
 ifeq ($(UNAME_OS),Linux)
 SED_I := sed -i
@@ -83,6 +87,14 @@ EXTRAPATH := $(GOBIN):$(abspath $(CACHE_BIN))
 endif
 export PATH := $(EXTRAPATH):$(PATH)
 export DOCKER_BUILDKIT := 1
+
+# A bug when using BuildKit on Darwin/arm64 causes docker to misbehave and try
+# to pull remote images instead of using local tagged images. Current
+# workaround is to explicitly set the platform. See
+# https://github.com/docker/for-mac/issues/5873 for details.
+ifeq ($(UNAME_OS)/$(UNAME_ARCH),Darwin/arm64)
+export DOCKER_DEFAULT_PLATFORM=linux/arm64
+endif
 
 print-%:
 	@echo $($*)
@@ -114,6 +126,9 @@ direnv:
 	@echo 'export GOMODCACHE="$(GOPATH)/pkg/mod"' >> $(CACHE_ENV)/env.sh
 	@echo 'export PATH="$(EXTRAPATH):$${PATH}"' >> $(CACHE_ENV)/env.sh
 	@echo 'export DOCKER_BUILDKIT=1' >> $(CACHE_ENV)/env.sh
+ifneq ($(DOCKER_DEFAULT_PLATFORM),)
+	@echo 'export DOCKER_DEFAULT_PLATFORM="$(DOCKER_DEFAULT_PLATFORM)"' >> $(CACHE_ENV)/env.sh
+endif
 	@echo '[ -f "$(abspath $(ENV_SH))" ] && . "$(abspath $(ENV_SH))"' >> $(CACHE_ENV)/env.sh
 	@echo $(CACHE_ENV)/env.sh
 
