@@ -837,6 +837,58 @@ func TestLsFilesImage2(t *testing.T) {
 	)
 }
 
+func TestLsFilesImage3(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"build",
+		"-o",
+		"-",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		stdout,
+		0,
+		`
+		buf/buf.proto
+		google/protobuf/descriptor.proto
+		`,
+		"ls-files",
+		"-",
+	)
+}
+
+func TestLsFilesImage4(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"build",
+		"--exclude-imports",
+		"-o",
+		"-",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		stdout,
+		0,
+		`
+		buf/buf.proto
+		`,
+		"ls-files",
+		"-",
+	)
+}
+
 func TestImageConvertRoundtripBinaryJSONBinary(t *testing.T) {
 	t.Parallel()
 
