@@ -28,24 +28,6 @@ type authzService struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// UserCanAddUserOrganizationScopes returns whether the user is authorized
-// to remove user scopes from an organization.
-func (s *authzService) UserCanAddUserOrganizationScopes(ctx context.Context, organizationId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.UserCanAddUserOrganizationScopes(
-		ctx,
-		&v1alpha1.UserCanAddUserOrganizationScopesRequest{
-			OrganizationId: organizationId,
-		},
-	)
-	if err != nil {
-		return false, err
-	}
-	return response.Authorized, nil
-}
-
 // UserCanRemoveUserOrganizationScopes returns whether the user is authorized
 // to remove user scopes from an organization.
 func (s *authzService) UserCanRemoveUserOrganizationScopes(ctx context.Context, organizationId string) (authorized bool, _ error) {
