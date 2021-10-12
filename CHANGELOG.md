@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf beta registry repository deprecate` and `buf beta registry repository undeprecate`.
+- Support `--include-imports` for remote plugins.
+- Fix issue where `buf config migrate-v1beta1 fails` when files cannot be renamed.
+- Fix issue where `buf registry login` panics when an existing .netrc entry exists.
 
 ## [v1.0.0-rc4] - 2021-10-07
 
