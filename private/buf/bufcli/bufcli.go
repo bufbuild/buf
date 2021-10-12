@@ -58,7 +58,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.0.0-dev"
+	Version = "1.0.0-rc5"
 
 	// DeprecationMessageSuffix is the suffix that should be added to any command or flag
 	// that was deprecated and removed for v1.0.
