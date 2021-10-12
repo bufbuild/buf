@@ -29,12 +29,6 @@ type AuthzService interface {
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
 	// to create repositories in an organization.
 	UserCanCreateOrganizationRepository(ctx context.Context, organizationId string) (authorized bool, err error)
-	// UserCanCreateOrganizationTeam returns whether the user is authorized
-	// to create teams in an organization.
-	UserCanCreateOrganizationTeam(ctx context.Context, organizationId string) (authorized bool, err error)
-	// UserCanListOrganizationTeams returns whether the user is authorized
-	// to list teams in an organization.
-	UserCanListOrganizationTeams(ctx context.Context, organizationId string) (authorized bool, err error)
 	// UserCanSeeRepositorySettings returns whether the user is authorized
 	// to see repository settings.
 	UserCanSeeRepositorySettings(ctx context.Context, repositoryId string) (authorized bool, err error)
