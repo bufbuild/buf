@@ -1075,6 +1075,7 @@ func TestExportOtherProto(t *testing.T) {
 		"",
 		"request.proto",
 		"unimported.proto",
+		"another.proto",
 	)
 }
 
