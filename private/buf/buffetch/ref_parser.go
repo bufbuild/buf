@@ -230,6 +230,8 @@ func (a *refParser) GetSourceOrModuleRef(
 		return newSourceRef(t), nil
 	case internal.ParsedModuleRef:
 		return newModuleRef(t), nil
+	case internal.ProtoFileRef:
+		return newProtoFileRef(t), nil
 	default:
 		return nil, fmt.Errorf("unknown ParsedRef type: %T", parsedRef)
 	}

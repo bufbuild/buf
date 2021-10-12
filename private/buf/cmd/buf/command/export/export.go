@@ -109,7 +109,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger()).GetSourceOrModuleRef(ctx, input)
+	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetSourceOrModuleRef(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -159,6 +159,38 @@ func run(
 			return err
 		}
 		moduleFileSets[i] = moduleFileSet
+	}
+
+	var protoFileRefImageFiles []bufimage.ImageFile
+	// If the reference is a ProtoFileReference, we need to resolve the image for the reference,
+	// since the image config reader distills down the reference to the file and its dependencies,
+	// and also handles the #include_package_files option.
+	_, isProtoFileRef := sourceOrModuleRef.(buffetch.ProtoFileRef)
+	if isProtoFileRef {
+		imageConfigReader, err := bufcli.NewWireImageConfigReader(
+			container,
+			storageosProvider,
+			runner,
+			registryProvider,
+		)
+		if err != nil {
+			return err
+		}
+		imageConfigs, _, err := imageConfigReader.GetImageConfigs(
+			ctx,
+			container,
+			sourceOrModuleRef,
+			flags.Config,
+			flags.Paths,
+			false,
+			true, // SourceCodeInfo is not needed here for outputting the source code
+		)
+		if err != nil {
+			return err
+		}
+		for _, imageConfig := range imageConfigs {
+			protoFileRefImageFiles = append(protoFileRefImageFiles, imageConfig.Image().Files()...)
+		}
 	}
 
 	// Unless we are excluding imports, we only want to export those
@@ -232,6 +264,33 @@ func run(
 	}
 	writtenPaths := make(map[string]struct{})
 	for _, moduleFileSet := range moduleFileSets {
+		// If the reference was a proto file reference, we will use the image files as the basis
+		// for outputting source files.
+		if isProtoFileRef {
+			for _, protoFileRefImageFile := range protoFileRefImageFiles {
+				path := protoFileRefImageFile.Path()
+				if _, ok := writtenPaths[path]; ok {
+					continue
+				}
+				if flags.ExcludeImports && protoFileRefImageFile.IsImport() {
+					continue
+				}
+				moduleFile, err := moduleFileSet.GetModuleFile(ctx, path)
+				if err == nil {
+					if err := storage.CopyReadObject(ctx, readWriteBucket, moduleFile); err != nil {
+						return multierr.Append(err, moduleFile.Close())
+					}
+					if err := moduleFile.Close(); err != nil {
+						return err
+					}
+					writtenPaths[path] = struct{}{}
+				}
+			}
+			if len(writtenPaths) == 0 {
+				return errors.New("no .proto target files found")
+			}
+			return nil
+		}
 		fileInfos, err := fileInfosFunc(moduleFileSet, ctx)
 		if err != nil {
 			return err

@@ -1153,6 +1153,104 @@ func TestExportPaths(t *testing.T) {
 	)
 }
 
+func TestExportProtoFileRef(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "export", "proto", "rpc.proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"rpc.proto",
+	)
+}
+
+func TestExportProtoFileRefExcludeImports(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--exclude-imports",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "export", "proto", "rpc.proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"rpc.proto",
+	)
+}
+
+func TestExportProtoFileRefIncludePackageFiles(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"-o",
+		tempDir,
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "export", "other", "proto", "request.proto")),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"unimported.proto",
+		"another.proto",
+	)
+}
+
+func TestExportProtoFileRefIncludePackageFilesExcludeImports(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--exclude-imports",
+		"-o",
+		tempDir,
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "export", "other", "proto", "request.proto")),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"unimported.proto",
+	)
+}
+
 func TestVersion(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, bufcli.Version, "--version")
