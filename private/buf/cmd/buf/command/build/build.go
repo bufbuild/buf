@@ -180,7 +180,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger()).GetRef(ctx, input)
+	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, input)
 	if err != nil {
 		return err
 	}
