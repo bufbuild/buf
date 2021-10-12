@@ -754,6 +754,14 @@ func TestLsFiles(t *testing.T) {
 		"ls-files",
 		filepath.Join("testdata", "success"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`testdata/success/buf/buf.proto`),
+		"ls-files",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+	)
 }
 
 func TestLsFilesIncludeImports(t *testing.T) {
@@ -767,6 +775,16 @@ func TestLsFilesIncludeImports(t *testing.T) {
 		"ls-files",
 		"--include-imports",
 		filepath.Join("testdata", "success"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`google/protobuf/descriptor.proto
+`+filepath.FromSlash(`testdata/success/buf/buf.proto`),
+		"ls-files",
+		"--include-imports",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
 	)
 }
 
@@ -782,6 +800,17 @@ google/protobuf/descriptor.proto`,
 		"--include-imports",
 		"--as-import-paths",
 		filepath.Join("testdata", "success"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`buf/buf.proto
+google/protobuf/descriptor.proto`,
+		"ls-files",
+		"--include-imports",
+		"--as-import-paths",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
 	)
 }
 
