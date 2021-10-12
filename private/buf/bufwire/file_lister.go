@@ -144,6 +144,28 @@ func (e *fileLister) listFilesWithoutImports(
 	configOverride string,
 ) (_ []bufmoduleref.FileInfo, retErr error) {
 	switch t := ref.(type) {
+	case buffetch.ProtoFileRef:
+		imageConfigs, _, err := e.imageConfigReader.GetImageConfigs(
+			ctx,
+			container,
+			ref,
+			configOverride,
+			nil,
+			false,
+			false,
+		)
+		if err != nil {
+			return nil, err
+		}
+		var fileInfos []bufmoduleref.FileInfo
+		for _, imageConfig := range imageConfigs {
+			for _, imageFile := range imageConfig.Image().Files() {
+				if !imageFile.IsImport() {
+					fileInfos = append(fileInfos, imageFile)
+				}
+			}
+		}
+		return fileInfos, nil
 	case buffetch.ImageRef:
 		// if we have an image, list the files in the image
 		image, err := e.imageReader.GetImage(
