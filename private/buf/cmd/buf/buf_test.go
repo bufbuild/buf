@@ -892,7 +892,7 @@ func TestLsFilesImage3(t *testing.T) {
 	)
 }
 
-func TestLsFilesImage3(t *testing.T) {
+func TestLsFilesImage4(t *testing.T) {
 	t.Parallel()
 	stdout := bytes.NewBuffer(nil)
 	testRun(
@@ -918,7 +918,7 @@ func TestLsFilesImage3(t *testing.T) {
 	)
 }
 
-func TestLsFilesImage4(t *testing.T) {
+func TestLsFilesImage5(t *testing.T) {
 	t.Parallel()
 	stdout := bytes.NewBuffer(nil)
 	testRun(
