@@ -69,11 +69,16 @@ service GenerateService {
 }
 
 message GeneratePluginsRequest {
-  // The image to run plugins against to generate the
-  // desired file outputs.
+  // The image to run plugins against to generate the desired file outputs.
+  //
+  // All image files that are not imports and not well-known types will be generated.
+  // If you want to filter what files are generated, modify the image.
+  // If you want to include imports, set include_imports.
   buf.alpha.image.v1.Image image = 1;
   // The array of plugins to use.
   repeated PluginReference plugins = 2;
+  // Include imports from the Image in generation.
+  bool include_imports = 3;
 }
 
 message GeneratePluginsResponse {
@@ -90,8 +95,11 @@ message GeneratePluginsResponse {
 }
 
 message GenerateTemplateRequest {
-  // The image to run plugins against to generate the
-  // desired file outputs.
+  // The image to run plugins against to generate the desired file outputs.
+  //
+  // All image files that are not imports and not well-known types will be generated.
+  // If you want to filter what files are generated, modify the image.
+  // If you want to include imports, set include_imports.
   buf.alpha.image.v1.Image image = 1;
   // The owner of the template which identifies the
   // plugins to use with this generation.
@@ -102,6 +110,8 @@ message GenerateTemplateRequest {
   // The template version to use to determine the
   // plugin versions in the template.
   string template_version = 4;
+  // Include imports from the Image in generation.
+  bool include_imports = 5;
 }
 
 message GenerateTemplateResponse {

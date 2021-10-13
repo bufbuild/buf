@@ -37,6 +37,7 @@ func (s *generateService) GeneratePlugins(
 	ctx context.Context,
 	image *v1.Image,
 	plugins []*v1alpha1.PluginReference,
+	includeImports bool,
 ) (responses []*pluginpb.CodeGeneratorResponse, runtimeLibraries []*v1alpha1.RuntimeLibrary, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -44,8 +45,9 @@ func (s *generateService) GeneratePlugins(
 	response, err := s.client.GeneratePlugins(
 		ctx,
 		&v1alpha1.GeneratePluginsRequest{
-			Image:   image,
-			Plugins: plugins,
+			Image:          image,
+			Plugins:        plugins,
+			IncludeImports: includeImports,
 		},
 	)
 	if err != nil {
@@ -62,6 +64,7 @@ func (s *generateService) GenerateTemplate(
 	templateOwner string,
 	templateName string,
 	templateVersion string,
+	includeImports bool,
 ) (files []*v1alpha1.File, runtimeLibraries []*v1alpha1.RuntimeLibrary, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -73,6 +76,7 @@ func (s *generateService) GenerateTemplate(
 			TemplateOwner:   templateOwner,
 			TemplateName:    templateName,
 			TemplateVersion: templateVersion,
+			IncludeImports:  includeImports,
 		},
 	)
 	if err != nil {
