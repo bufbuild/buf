@@ -911,7 +911,6 @@ func TestLsFilesImage4(t *testing.T) {
 		0,
 		`
 		buf/buf.proto
-		google/protobuf/descriptor.proto
 		`,
 		"ls-files",
 		"-",
@@ -927,7 +926,6 @@ func TestLsFilesImage5(t *testing.T) {
 		nil,
 		stdout,
 		"build",
-		"--exclude-imports",
 		"-o",
 		"-",
 		filepath.Join("testdata", "success", "buf", "buf.proto"),
@@ -938,8 +936,10 @@ func TestLsFilesImage5(t *testing.T) {
 		0,
 		`
 		buf/buf.proto
+		google/protobuf/descriptor.proto
 		`,
 		"ls-files",
+		"--include-imports",
 		"-",
 	)
 }
