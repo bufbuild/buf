@@ -145,10 +145,26 @@ func TestProtoFileRef(t *testing.T) {
 		"--output",
 		tempDirPath,
 		"--template",
-		filepath.Join("testdata", "simple", "buf.gen.yaml"),
-		filepath.Join("testdata", "simple", "a", "v1", "a.proto"),
+		filepath.Join("testdata", "protofileref", "buf.gen.yaml"),
+		filepath.Join("testdata", "protofileref", "a", "v1", "a.proto"),
 	)
 	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.NoError(t, err)
+}
+
+func TestProtoFileRefIncludePackageFiles(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "protofileref", "buf.gen.yaml"),
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "a", "v1", "a.proto")),
+	)
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "B.java"))
 	require.NoError(t, err)
 }
 
