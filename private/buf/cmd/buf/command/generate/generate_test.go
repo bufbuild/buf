@@ -150,6 +150,8 @@ func TestProtoFileRef(t *testing.T) {
 	)
 	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
 	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "B.java"))
+	require.Contains(t, err.Error(), "no such file or directory")
 }
 
 func TestProtoFileRefIncludePackageFiles(t *testing.T) {
