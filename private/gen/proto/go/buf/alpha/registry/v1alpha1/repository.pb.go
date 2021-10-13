@@ -233,6 +233,8 @@ type GetRepositoriesByFullNameRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// minimum length is 1
+	// maximum length is 250
 	FullNames []string `protobuf:"bytes,1,rep,name=full_names,json=fullNames,proto3" json:"full_names,omitempty"`
 }
 

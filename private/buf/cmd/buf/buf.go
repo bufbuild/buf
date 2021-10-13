@@ -34,8 +34,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginversion/pluginversionlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorylist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatecreate"
@@ -170,6 +172,8 @@ func NewRootCommand(name string) *appcmd.Command {
 									repositoryget.NewCommand("get", builder),
 									repositorylist.NewCommand("list", builder),
 									repositorydelete.NewCommand("delete", builder),
+									repositorydeprecate.NewCommand("deprecate", builder),
+									repositoryundeprecate.NewCommand("undeprecate", builder),
 								},
 							},
 							//{

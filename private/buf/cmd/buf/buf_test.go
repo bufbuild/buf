@@ -833,7 +833,6 @@ func TestLsFilesImage1(t *testing.T) {
 		0,
 		`
 		buf/buf.proto
-		google/protobuf/descriptor.proto
 		`,
 		"ls-files",
 		"-",
@@ -841,6 +840,33 @@ func TestLsFilesImage1(t *testing.T) {
 }
 
 func TestLsFilesImage2(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"build",
+		"-o",
+		"-",
+		filepath.Join("testdata", "success"),
+	)
+	testRunStdout(
+		t,
+		stdout,
+		0,
+		`
+		buf/buf.proto
+		google/protobuf/descriptor.proto
+		`,
+		"ls-files",
+		"-",
+		"--include-imports",
+	)
+}
+
+func TestLsFilesImage3(t *testing.T) {
 	t.Parallel()
 	stdout := bytes.NewBuffer(nil)
 	testRun(

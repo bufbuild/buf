@@ -18,9 +18,6 @@ package buf.alpha.registry.v1alpha1;
 
 // AuthzService supplies authorization helpers.
 service AuthzService {
-  // UserCanAddUserOrganizationScopes returns whether the user is authorized
-  // to remove user scopes from an organization.
-  rpc UserCanAddUserOrganizationScopes(UserCanAddUserOrganizationScopesRequest) returns (UserCanAddUserOrganizationScopesResponse);
   // UserCanRemoveUserOrganizationScopes returns whether the user is authorized
   // to remove user scopes from an organization.
   rpc UserCanRemoveUserOrganizationScopes(UserCanRemoveUserOrganizationScopesRequest) returns (UserCanRemoveUserOrganizationScopesResponse);
@@ -59,16 +56,6 @@ service AuthzService {
   // UserCanSeeTemplateSettings returns whether the user is authorized
   // to see template settings.
   rpc UserCanSeeTemplateSettings(UserCanSeeTemplateSettingsRequest) returns (UserCanSeeTemplateSettingsResponse);
-}
-
-message UserCanAddUserOrganizationScopesRequest {
-  // The ID of the organization for which to check
-  // whether the user is authorized to add user scopes.
-  string organization_id = 1;
-}
-
-message UserCanAddUserOrganizationScopesResponse {
-  bool authorized = 1;
 }
 
 message UserCanRemoveUserOrganizationScopesRequest {

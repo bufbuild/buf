@@ -12,34 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package netrc
+// Generated. DO NOT EDIT.
 
-type machine struct {
-	name     string
-	login    string
-	password string
-}
+package repositoryundeprecate
 
-func newMachine(
-	name string,
-	login string,
-	password string,
-) *machine {
-	return &machine{
-		name:     name,
-		login:    login,
-		password: password,
-	}
-}
-
-func (m *machine) Name() string {
-	return m.name
-}
-
-func (m *machine) Login() string {
-	return m.login
-}
-
-func (m *machine) Password() string {
-	return m.password
-}
+import _ "github.com/bufbuild/buf/private/usage"
