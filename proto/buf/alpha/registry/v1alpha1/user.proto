@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/scope.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -28,6 +29,14 @@ message User {
   google.protobuf.Timestamp update_time = 3;
   // unique, mutable
   string username = 4;
+}
+
+message UserWithOrganizationRole {
+  User user = 1;
+  // The ID of the organization for which the role belongs to.
+  string organization_id = 2;
+  // The role that the user has in the organization above.
+  GroupRole organization_role = 3;
 }
 
 // UserService is the User service.
@@ -52,6 +61,8 @@ service UserService {
   rpc AddUserOrganizationScopeByName(AddUserOrganizationScopeByNameRequest) returns (AddUserOrganizationScopeByNameResponse);
   // RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
   rpc RemoveUserOrganizationScope(RemoveUserOrganizationScopeRequest) returns (RemoveUserOrganizationScopeResponse);
+  // ListOrganizationUsersWithRole lists all users of an organization with their respective role in the organization.
+  rpc ListOrganizationUsersWithRole(ListOrganizationUsersWithRoleRequest) returns (ListOrganizationUsersWithRoleResponse);
 }
 
 message CreateUserRequest {
@@ -138,3 +149,17 @@ message RemoveUserOrganizationScopeRequest {
 }
 
 message RemoveUserOrganizationScopeResponse {}
+
+message ListOrganizationUsersWithRoleRequest {
+  string organization_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  bool reverse = 4;
+}
+
+message ListOrganizationUsersWithRoleResponse {
+  repeated UserWithOrganizationRole users = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}

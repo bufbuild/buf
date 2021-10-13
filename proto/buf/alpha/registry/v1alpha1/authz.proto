@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/role.proto";
+
 // AuthzService supplies authorization helpers.
 service AuthzService {
   // UserCanRemoveUserOrganizationScopes returns whether the user is authorized
@@ -56,6 +58,27 @@ service AuthzService {
   // UserCanSeeTemplateSettings returns whether the user is authorized
   // to see template settings.
   rpc UserCanSeeTemplateSettings(UserCanSeeTemplateSettingsRequest) returns (UserCanSeeTemplateSettingsResponse);
+  // UserCanAddUserOrganizationRole returns whether the user is authorized
+  // to add any user organization roles and the highest role they can add.
+  rpc UserCanAddUserOrganizationRole(UserCanAddUserOrganizationRoleRequest) returns (UserCanAddUserOrganizationRoleResponse);
+  // UserCanUpdateUserOrganizationRole returns whether the user is authorized
+  // to update any user organization roles and the highest role they can update.
+  rpc UserCanUpdateUserOrganizationRole(UserCanUpdateUserOrganizationRoleRequest) returns (UserCanUpdateUserOrganizationRoleResponse);
+  // UserCanRemoveUserOrganizationRole returns whether the user is authorized
+  // to remove any user organization roles and the highest role they can remove.
+  rpc UserCanRemoveUserOrganizationRole(UserCanRemoveUserOrganizationRoleRequest) returns (UserCanRemoveUserOrganizationRoleResponse);
+  // UserCanDeleteOrganization returns whether the user is authorized
+  // to delete an organization.
+  rpc UserCanDeleteOrganization(UserCanDeleteOrganizationRequest) returns (UserCanDeleteOrganizationResponse);
+  // UserCanDeleteRepository returns whether the user is authorized
+  // to delete a repository.
+  rpc UserCanDeleteRepository(UserCanDeleteRepositoryRequest) returns (UserCanDeleteRepositoryResponse);
+  // UserCanDeleteTemplate returns whether the user is authorized
+  // to delete a template.
+  rpc UserCanDeleteTemplate(UserCanDeleteTemplateRequest) returns (UserCanDeleteTemplateResponse);
+  // UserCanDeletePlugin returns whether the user is authorized
+  // to delete a plugin.
+  rpc UserCanDeletePlugin(UserCanDeletePluginRequest) returns (UserCanDeletePluginResponse);
 }
 
 message UserCanRemoveUserOrganizationScopesRequest {
@@ -190,5 +213,84 @@ message UserCanSeeTemplateSettingsRequest {
 }
 
 message UserCanSeeTemplateSettingsResponse {
+  bool authorized = 1;
+}
+
+message UserCanAddUserOrganizationRoleRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized.
+  string organization_id = 1;
+}
+
+message UserCanAddUserOrganizationRoleResponse {
+  // Whether the user is authorized to add any user organization role to the organization requested.
+  bool authorized = 1;
+  // The user can add a user organization role that equal or less than the highest role.
+  GroupRole highest_role = 2;
+}
+
+message UserCanUpdateUserOrganizationRoleRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized.
+  string organization_id = 1;
+}
+
+message UserCanUpdateUserOrganizationRoleResponse {
+  // Whether the user is authorized to update any user organization role in the organization requested.
+  bool authorized = 1;
+  // The user can update a user organization role that equal or less than the highest role (from and to).
+  GroupRole highest_role = 2;
+}
+
+message UserCanRemoveUserOrganizationRoleRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized.
+  string organization_id = 1;
+}
+
+message UserCanRemoveUserOrganizationRoleResponse {
+  // Whether the user is authorized to remove any user organization role from the organization requested.
+  bool authorized = 1;
+  // The user can remove a user organization role that equal or less than the highest role.
+  GroupRole highest_role = 2;
+}
+
+message UserCanDeleteOrganizationRequest {
+  // The ID of the organization for which to check
+  // whether the user is authorized.
+  string organization_id = 1;
+}
+
+message UserCanDeleteOrganizationResponse {
+  bool authorized = 1;
+}
+
+message UserCanDeleteRepositoryRequest {
+  // The ID of the repository for which to check
+  // whether the user is authorized.
+  string repository_id = 1;
+}
+
+message UserCanDeleteRepositoryResponse {
+  bool authorized = 1;
+}
+
+message UserCanDeleteTemplateRequest {
+  // The ID of the template for which to check
+  // whether the user is authorized.
+  string template_id = 1;
+}
+
+message UserCanDeleteTemplateResponse {
+  bool authorized = 1;
+}
+
+message UserCanDeletePluginRequest {
+  // The ID of the plugin for which to check
+  // whether the user is authorized.
+  string plugin_id = 1;
+}
+
+message UserCanDeletePluginResponse {
   bool authorized = 1;
 }

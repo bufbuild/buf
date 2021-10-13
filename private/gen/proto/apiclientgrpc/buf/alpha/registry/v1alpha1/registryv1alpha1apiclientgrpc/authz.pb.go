@@ -285,3 +285,138 @@ func (s *authzService) UserCanSeeTemplateSettings(
 	}
 	return response.Authorized, nil
 }
+
+// UserCanAddUserOrganizationRole returns whether the user is authorized
+// to add any user organization roles and the highest role they can add.
+func (s *authzService) UserCanAddUserOrganizationRole(
+	ctx context.Context,
+	organizationId string,
+) (authorized bool, highestRole v1alpha1.GroupRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanAddUserOrganizationRole(
+		ctx,
+		&v1alpha1.UserCanAddUserOrganizationRoleRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return false, v1alpha1.GroupRole(0), err
+	}
+	return response.Authorized, response.HighestRole, nil
+}
+
+// UserCanUpdateUserOrganizationRole returns whether the user is authorized
+// to update any user organization roles and the highest role they can update.
+func (s *authzService) UserCanUpdateUserOrganizationRole(
+	ctx context.Context,
+	organizationId string,
+) (authorized bool, highestRole v1alpha1.GroupRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanUpdateUserOrganizationRole(
+		ctx,
+		&v1alpha1.UserCanUpdateUserOrganizationRoleRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return false, v1alpha1.GroupRole(0), err
+	}
+	return response.Authorized, response.HighestRole, nil
+}
+
+// UserCanRemoveUserOrganizationRole returns whether the user is authorized
+// to remove any user organization roles and the highest role they can remove.
+func (s *authzService) UserCanRemoveUserOrganizationRole(
+	ctx context.Context,
+	organizationId string,
+) (authorized bool, highestRole v1alpha1.GroupRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanRemoveUserOrganizationRole(
+		ctx,
+		&v1alpha1.UserCanRemoveUserOrganizationRoleRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return false, v1alpha1.GroupRole(0), err
+	}
+	return response.Authorized, response.HighestRole, nil
+}
+
+// UserCanDeleteOrganization returns whether the user is authorized
+// to delete an organization.
+func (s *authzService) UserCanDeleteOrganization(ctx context.Context, organizationId string) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanDeleteOrganization(
+		ctx,
+		&v1alpha1.UserCanDeleteOrganizationRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}
+
+// UserCanDeleteRepository returns whether the user is authorized
+// to delete a repository.
+func (s *authzService) UserCanDeleteRepository(ctx context.Context, repositoryId string) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanDeleteRepository(
+		ctx,
+		&v1alpha1.UserCanDeleteRepositoryRequest{
+			RepositoryId: repositoryId,
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}
+
+// UserCanDeleteTemplate returns whether the user is authorized
+// to delete a template.
+func (s *authzService) UserCanDeleteTemplate(ctx context.Context, templateId string) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanDeleteTemplate(
+		ctx,
+		&v1alpha1.UserCanDeleteTemplateRequest{
+			TemplateId: templateId,
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}
+
+// UserCanDeletePlugin returns whether the user is authorized
+// to delete a plugin.
+func (s *authzService) UserCanDeletePlugin(ctx context.Context, pluginId string) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanDeletePlugin(
+		ctx,
+		&v1alpha1.UserCanDeletePluginRequest{
+			PluginId: pluginId,
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}

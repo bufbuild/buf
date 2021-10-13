@@ -64,4 +64,12 @@ type UserService interface {
 		organizationId string,
 		organizationScope v1alpha1.OrganizationScope,
 	) (err error)
+	// ListOrganizationUsersWithRole lists all users of an organization with their respective role in the organization.
+	ListOrganizationUsersWithRole(
+		ctx context.Context,
+		organizationId string,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
+	) (users []*v1alpha1.UserWithOrganizationRole, nextPageToken string, err error)
 }

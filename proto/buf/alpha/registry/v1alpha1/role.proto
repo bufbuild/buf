@@ -1,0 +1,92 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+// The roles that users can have in a server.
+enum ServerRole {
+  SERVER_ROLE_UNSPECIFIED = 0;
+  SERVER_ROLE_MEMBER = 1;
+  SERVER_ROLE_ADMIN = 2;
+}
+
+// The roles that users can have in a group including Organization, Team.
+enum GroupRole {
+  GROUP_ROLE_UNSPECIFIED = 0;
+  GROUP_ROLE_MEMBER = 1;
+  GROUP_ROLE_ADMIN = 2;
+  GROUP_ROLE_OWNER = 3;
+}
+
+// The roles that users can have for a resource including Repository, Template, Plugin.
+enum ResourceRole {
+  RESOURCE_ROLE_UNSPECIFIED = 0;
+  RESOURCE_ROLE_READ = 1;
+  RESOURCE_ROLE_WRITE = 2;
+  RESOURCE_ROLE_ADMIN = 3;
+  RESOURCE_ROLE_OWNER = 4;
+}
+
+service RoleService {
+  // UpdateUserServerRole update the role of an user in the server.
+  rpc UpdateUserServerRole(UpdateUserServerRoleRequest) returns (UpdateUserServerRoleResponse);
+  // AddUserOrganizationRole add a role to an user in the organization.
+  rpc AddUserOrganizationRole(AddUserOrganizationRoleRequest) returns (AddUserOrganizationRoleResponse);
+  // UpdateUserOrganizationRole update the role of an user in the organization.
+  rpc UpdateUserOrganizationRole(UpdateUserOrganizationRoleRequest) returns (UpdateUserOrganizationRoleResponse);
+  // RemoveUserOrganizationRole remove the role of an user in the organization.
+  rpc RemoveUserOrganizationRole(RemoveUserOrganizationRoleRequest) returns (RemoveUserOrganizationRoleResponse);
+}
+
+message AddUserOrganizationRoleRequest {
+  // The ID of the user for which to be added a role.
+  string user_id = 1;
+  // The ID of the organization for which the role belongs to.
+  string organization_id = 2;
+  // The new role of the user in the organization.
+  GroupRole organization_role = 3;
+}
+
+message AddUserOrganizationRoleResponse {}
+
+message UpdateUserOrganizationRoleRequest {
+  // The ID of the user for which to be updated a role.
+  string user_id = 1;
+  // The ID of the organization for which the role belongs to.
+  string organization_id = 2;
+  // The new role of the user in the organization.
+  GroupRole organization_role = 3;
+}
+
+message UpdateUserOrganizationRoleResponse {}
+
+message RemoveUserOrganizationRoleRequest {
+  // The ID of the user for which to be removed a role.
+  string user_id = 1;
+  // The ID of the organization for which the role belongs to.
+  string organization_id = 2;
+}
+
+message RemoveUserOrganizationRoleResponse {}
+
+message UpdateUserServerRoleRequest {
+  // The ID of the user for which to be updated a role.
+  string user_id = 1;
+  // The new role of the user in the server.
+  ServerRole server_role = 2;
+}
+
+message UpdateUserServerRoleResponse {}

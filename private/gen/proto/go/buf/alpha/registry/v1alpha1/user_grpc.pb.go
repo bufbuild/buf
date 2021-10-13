@@ -56,6 +56,8 @@ type UserServiceClient interface {
 	AddUserOrganizationScopeByName(ctx context.Context, in *AddUserOrganizationScopeByNameRequest, opts ...grpc.CallOption) (*AddUserOrganizationScopeByNameResponse, error)
 	// RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
 	RemoveUserOrganizationScope(ctx context.Context, in *RemoveUserOrganizationScopeRequest, opts ...grpc.CallOption) (*RemoveUserOrganizationScopeResponse, error)
+	// ListOrganizationUsersWithRole lists all users of an organization with their respective role in the organization.
+	ListOrganizationUsersWithRole(ctx context.Context, in *ListOrganizationUsersWithRoleRequest, opts ...grpc.CallOption) (*ListOrganizationUsersWithRoleResponse, error)
 }
 
 type userServiceClient struct {
@@ -156,6 +158,15 @@ func (c *userServiceClient) RemoveUserOrganizationScope(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *userServiceClient) ListOrganizationUsersWithRole(ctx context.Context, in *ListOrganizationUsersWithRoleRequest, opts ...grpc.CallOption) (*ListOrganizationUsersWithRoleResponse, error) {
+	out := new(ListOrganizationUsersWithRoleResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/ListOrganizationUsersWithRole", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations should embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -180,6 +191,8 @@ type UserServiceServer interface {
 	AddUserOrganizationScopeByName(context.Context, *AddUserOrganizationScopeByNameRequest) (*AddUserOrganizationScopeByNameResponse, error)
 	// RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
 	RemoveUserOrganizationScope(context.Context, *RemoveUserOrganizationScopeRequest) (*RemoveUserOrganizationScopeResponse, error)
+	// ListOrganizationUsersWithRole lists all users of an organization with their respective role in the organization.
+	ListOrganizationUsersWithRole(context.Context, *ListOrganizationUsersWithRoleRequest) (*ListOrganizationUsersWithRoleResponse, error)
 }
 
 // UnimplementedUserServiceServer should be embedded to have forward compatible implementations.
@@ -215,6 +228,9 @@ func (UnimplementedUserServiceServer) AddUserOrganizationScopeByName(context.Con
 }
 func (UnimplementedUserServiceServer) RemoveUserOrganizationScope(context.Context, *RemoveUserOrganizationScopeRequest) (*RemoveUserOrganizationScopeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveUserOrganizationScope not implemented")
+}
+func (UnimplementedUserServiceServer) ListOrganizationUsersWithRole(context.Context, *ListOrganizationUsersWithRoleRequest) (*ListOrganizationUsersWithRoleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListOrganizationUsersWithRole not implemented")
 }
 
 // UnsafeUserServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -408,6 +424,24 @@ func _UserService_RemoveUserOrganizationScope_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ListOrganizationUsersWithRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListOrganizationUsersWithRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ListOrganizationUsersWithRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.UserService/ListOrganizationUsersWithRole",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ListOrganizationUsersWithRole(ctx, req.(*ListOrganizationUsersWithRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -454,6 +488,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveUserOrganizationScope",
 			Handler:    _UserService_RemoveUserOrganizationScope_Handler,
+		},
+		{
+			MethodName: "ListOrganizationUsersWithRole",
+			Handler:    _UserService_ListOrganizationUsersWithRole_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
