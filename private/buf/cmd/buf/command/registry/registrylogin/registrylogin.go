@@ -132,13 +132,11 @@ func run(
 			remote,
 			username,
 			token,
-			"",
 		),
 		netrc.NewMachine(
 			"go."+remote,
 			username,
 			token,
-			"",
 		),
 	); err != nil {
 		return err

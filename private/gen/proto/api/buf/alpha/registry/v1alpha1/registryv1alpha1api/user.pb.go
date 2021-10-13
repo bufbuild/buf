@@ -50,13 +50,6 @@ type UserService interface {
 	DeleteUser(ctx context.Context) (err error)
 	// Deactivate user deactivates a user.
 	DeactivateUser(ctx context.Context, id string) (err error)
-	// AddUserOrganizationScope adds an organization scope for a specific organization to a user by ID.
-	AddUserOrganizationScope(
-		ctx context.Context,
-		id string,
-		organizationId string,
-		organizationScope v1alpha1.OrganizationScope,
-	) (err error)
 	// AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
 	AddUserOrganizationScopeByName(
 		ctx context.Context,
@@ -70,36 +63,5 @@ type UserService interface {
 		id string,
 		organizationId string,
 		organizationScope v1alpha1.OrganizationScope,
-	) (err error)
-	// RemoveUserOrganizationScopeByName removes an organization scope for a specific organization from a user by name.
-	RemoveUserOrganizationScopeByName(
-		ctx context.Context,
-		name string,
-		organizationName string,
-		organizationScope v1alpha1.OrganizationScope,
-	) (err error)
-	// AddUserServerScope adds a server scope for a user by ID.
-	AddUserServerScope(
-		ctx context.Context,
-		id string,
-		serverScope v1alpha1.ServerScope,
-	) (err error)
-	// AddUserServerScopeByName adds a server scope for a user by name.
-	AddUserServerScopeByName(
-		ctx context.Context,
-		name string,
-		serverScope v1alpha1.ServerScope,
-	) (err error)
-	// RemoveUserServerScope removes a server scope for a user by ID.
-	RemoveUserServerScope(
-		ctx context.Context,
-		id string,
-		serverScope v1alpha1.ServerScope,
-	) (err error)
-	// RemoveUserServerScopeByName removes a server scope for a user by name.
-	RemoveUserServerScopeByName(
-		ctx context.Context,
-		name string,
-		serverScope v1alpha1.ServerScope,
 	) (err error)
 }
