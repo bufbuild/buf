@@ -228,3 +228,73 @@ func (s *organizationService) AddOrganizationBaseRepositoryScope(
 	}
 	return nil
 }
+
+// AddMember add a role to an user in the organization.
+func (s *organizationService) AddMember(
+	ctx context.Context,
+	organizationId string,
+	userId string,
+	organizationRole v1alpha1.OrganizationRole,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.AddMember(
+		ctx,
+		&v1alpha1.AddMemberRequest{
+			OrganizationId:   organizationId,
+			UserId:           userId,
+			OrganizationRole: organizationRole,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UpdateMemberRole update the role of an user in the organization.
+func (s *organizationService) UpdateMemberRole(
+	ctx context.Context,
+	organizationId string,
+	userId string,
+	organizationRole v1alpha1.OrganizationRole,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.UpdateMemberRole(
+		ctx,
+		&v1alpha1.UpdateMemberRoleRequest{
+			OrganizationId:   organizationId,
+			UserId:           userId,
+			OrganizationRole: organizationRole,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RemoveMember remove the role of an user in the organization.
+func (s *organizationService) RemoveMember(
+	ctx context.Context,
+	organizationId string,
+	userId string,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.RemoveMember(
+		ctx,
+		&v1alpha1.RemoveMemberRequest{
+			OrganizationId: organizationId,
+			UserId:         userId,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}

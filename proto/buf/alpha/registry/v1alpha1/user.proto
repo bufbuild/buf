@@ -36,7 +36,7 @@ message UserWithOrganizationRole {
   // The ID of the organization for which the role belongs to.
   string organization_id = 2;
   // The role that the user has in the organization above.
-  GroupRole organization_role = 3;
+  OrganizationRole organization_role = 3;
 }
 
 // UserService is the User service.
@@ -63,6 +63,8 @@ service UserService {
   rpc RemoveUserOrganizationScope(RemoveUserOrganizationScopeRequest) returns (RemoveUserOrganizationScopeResponse);
   // ListOrganizationUsersWithRole lists all users of an organization with their respective role in the organization.
   rpc ListOrganizationUsersWithRole(ListOrganizationUsersWithRoleRequest) returns (ListOrganizationUsersWithRoleResponse);
+  // UpdateUserServerRole update the role of an user in the server.
+  rpc UpdateUserServerRole(UpdateUserServerRoleRequest) returns (UpdateUserServerRoleResponse);
 }
 
 message CreateUserRequest {
@@ -163,3 +165,12 @@ message ListOrganizationUsersWithRoleResponse {
   // There are no more pages if this is empty.
   string next_page_token = 2;
 }
+
+message UpdateUserServerRoleRequest {
+  // The ID of the user for which to be updated a role.
+  string user_id = 1;
+  // The new role of the user in the server.
+  ServerRole server_role = 2;
+}
+
+message UpdateUserServerRoleResponse {}

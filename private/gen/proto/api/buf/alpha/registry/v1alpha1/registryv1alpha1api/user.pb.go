@@ -72,4 +72,10 @@ type UserService interface {
 		pageToken string,
 		reverse bool,
 	) (users []*v1alpha1.UserWithOrganizationRole, nextPageToken string, err error)
+	// UpdateUserServerRole update the role of an user in the server.
+	UpdateUserServerRole(
+		ctx context.Context,
+		userId string,
+		serverRole v1alpha1.ServerRole,
+	) (err error)
 }

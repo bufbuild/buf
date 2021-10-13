@@ -286,67 +286,67 @@ func (s *authzService) UserCanSeeTemplateSettings(
 	return response.Authorized, nil
 }
 
-// UserCanAddUserOrganizationRole returns whether the user is authorized
-// to add any user organization roles and the highest role they can add.
-func (s *authzService) UserCanAddUserOrganizationRole(
+// UserCanAddOrganizationMember returns whether the user is authorized to add
+// any members to the organization and the list of roles they can add.
+func (s *authzService) UserCanAddOrganizationMember(
 	ctx context.Context,
 	organizationId string,
-) (authorized bool, highestRole v1alpha1.GroupRole, _ error) {
+) (authorized bool, authorizedRoles []v1alpha1.OrganizationRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.UserCanAddUserOrganizationRole(
+	response, err := s.client.UserCanAddOrganizationMember(
 		ctx,
-		&v1alpha1.UserCanAddUserOrganizationRoleRequest{
+		&v1alpha1.UserCanAddOrganizationMemberRequest{
 			OrganizationId: organizationId,
 		},
 	)
 	if err != nil {
-		return false, v1alpha1.GroupRole(0), err
+		return false, nil, err
 	}
-	return response.Authorized, response.HighestRole, nil
+	return response.Authorized, response.AuthorizedRoles, nil
 }
 
-// UserCanUpdateUserOrganizationRole returns whether the user is authorized
-// to update any user organization roles and the highest role they can update.
-func (s *authzService) UserCanUpdateUserOrganizationRole(
+// UserCanUpdateOrganizationMemberRole returns whether the user is authorized to update
+// any members' role in the organization and the list of roles they can update.
+func (s *authzService) UserCanUpdateOrganizationMemberRole(
 	ctx context.Context,
 	organizationId string,
-) (authorized bool, highestRole v1alpha1.GroupRole, _ error) {
+) (authorized bool, authorizedRoles []v1alpha1.OrganizationRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.UserCanUpdateUserOrganizationRole(
+	response, err := s.client.UserCanUpdateOrganizationMemberRole(
 		ctx,
-		&v1alpha1.UserCanUpdateUserOrganizationRoleRequest{
+		&v1alpha1.UserCanUpdateOrganizationMemberRoleRequest{
 			OrganizationId: organizationId,
 		},
 	)
 	if err != nil {
-		return false, v1alpha1.GroupRole(0), err
+		return false, nil, err
 	}
-	return response.Authorized, response.HighestRole, nil
+	return response.Authorized, response.AuthorizedRoles, nil
 }
 
-// UserCanRemoveUserOrganizationRole returns whether the user is authorized
-// to remove any user organization roles and the highest role they can remove.
-func (s *authzService) UserCanRemoveUserOrganizationRole(
+// UserCanRemoveOrganizationMember returns whether the user is authorized to remove
+// any members from the organization and the list of roles they can remove.
+func (s *authzService) UserCanRemoveOrganizationMember(
 	ctx context.Context,
 	organizationId string,
-) (authorized bool, highestRole v1alpha1.GroupRole, _ error) {
+) (authorized bool, authorizedRoles []v1alpha1.OrganizationRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.UserCanRemoveUserOrganizationRole(
+	response, err := s.client.UserCanRemoveOrganizationMember(
 		ctx,
-		&v1alpha1.UserCanRemoveUserOrganizationRoleRequest{
+		&v1alpha1.UserCanRemoveOrganizationMemberRequest{
 			OrganizationId: organizationId,
 		},
 	)
 	if err != nil {
-		return false, v1alpha1.GroupRole(0), err
+		return false, nil, err
 	}
-	return response.Authorized, response.HighestRole, nil
+	return response.Authorized, response.AuthorizedRoles, nil
 }
 
 // UserCanDeleteOrganization returns whether the user is authorized

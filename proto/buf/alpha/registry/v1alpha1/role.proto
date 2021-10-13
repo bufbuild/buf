@@ -16,77 +16,44 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-// The roles that users can have in a server.
+// The roles that users can have in a Server.
 enum ServerRole {
   SERVER_ROLE_UNSPECIFIED = 0;
   SERVER_ROLE_MEMBER = 1;
   SERVER_ROLE_ADMIN = 2;
 }
 
-// The roles that users can have in a group including Organization, Team.
-enum GroupRole {
-  GROUP_ROLE_UNSPECIFIED = 0;
-  GROUP_ROLE_MEMBER = 1;
-  GROUP_ROLE_ADMIN = 2;
-  GROUP_ROLE_OWNER = 3;
+// The roles that users can have in a Organization.
+enum OrganizationRole {
+  ORGANIZATION_ROLE_UNSPECIFIED = 0;
+  ORGANIZATION_ROLE_MEMBER = 1;
+  ORGANIZATION_ROLE_ADMIN = 2;
+  ORGANIZATION_ROLE_OWNER = 3;
 }
 
-// The roles that users can have for a resource including Repository, Template, Plugin.
-enum ResourceRole {
-  RESOURCE_ROLE_UNSPECIFIED = 0;
-  RESOURCE_ROLE_READ = 1;
-  RESOURCE_ROLE_WRITE = 2;
-  RESOURCE_ROLE_ADMIN = 3;
-  RESOURCE_ROLE_OWNER = 4;
+// The roles that users can have for a Repository.
+enum RepositoryRole {
+  REPOSITORY_ROLE_UNSPECIFIED = 0;
+  REPOSITORY_ROLE_READ = 1;
+  REPOSITORY_ROLE_WRITE = 2;
+  REPOSITORY_ROLE_ADMIN = 3;
+  REPOSITORY_ROLE_OWNER = 4;
 }
 
-service RoleService {
-  // UpdateUserServerRole update the role of an user in the server.
-  rpc UpdateUserServerRole(UpdateUserServerRoleRequest) returns (UpdateUserServerRoleResponse);
-  // AddUserOrganizationRole add a role to an user in the organization.
-  rpc AddUserOrganizationRole(AddUserOrganizationRoleRequest) returns (AddUserOrganizationRoleResponse);
-  // UpdateUserOrganizationRole update the role of an user in the organization.
-  rpc UpdateUserOrganizationRole(UpdateUserOrganizationRoleRequest) returns (UpdateUserOrganizationRoleResponse);
-  // RemoveUserOrganizationRole remove the role of an user in the organization.
-  rpc RemoveUserOrganizationRole(RemoveUserOrganizationRoleRequest) returns (RemoveUserOrganizationRoleResponse);
+// The roles that users can have for a Template.
+enum TemplateRole {
+  TEMPLATE_ROLE_UNSPECIFIED = 0;
+  TEMPLATE_ROLE_READ = 1;
+  TEMPLATE_ROLE_WRITE = 2;
+  TEMPLATE_ROLE_ADMIN = 3;
+  TEMPLATE_ROLE_OWNER = 4;
 }
 
-message AddUserOrganizationRoleRequest {
-  // The ID of the user for which to be added a role.
-  string user_id = 1;
-  // The ID of the organization for which the role belongs to.
-  string organization_id = 2;
-  // The new role of the user in the organization.
-  GroupRole organization_role = 3;
+// The roles that users can have for a Plugin.
+enum PluginRole {
+  PLUGIN_ROLE_UNSPECIFIED = 0;
+  PLUGIN_ROLE_READ = 1;
+  PLUGIN_ROLE_WRITE = 2;
+  PLUGIN_ROLE_ADMIN = 3;
+  PLUGIN_ROLE_OWNER = 4;
 }
-
-message AddUserOrganizationRoleResponse {}
-
-message UpdateUserOrganizationRoleRequest {
-  // The ID of the user for which to be updated a role.
-  string user_id = 1;
-  // The ID of the organization for which the role belongs to.
-  string organization_id = 2;
-  // The new role of the user in the organization.
-  GroupRole organization_role = 3;
-}
-
-message UpdateUserOrganizationRoleResponse {}
-
-message RemoveUserOrganizationRoleRequest {
-  // The ID of the user for which to be removed a role.
-  string user_id = 1;
-  // The ID of the organization for which the role belongs to.
-  string organization_id = 2;
-}
-
-message RemoveUserOrganizationRoleResponse {}
-
-message UpdateUserServerRoleRequest {
-  // The ID of the user for which to be updated a role.
-  string user_id = 1;
-  // The new role of the user in the server.
-  ServerRole server_role = 2;
-}
-
-message UpdateUserServerRoleResponse {}

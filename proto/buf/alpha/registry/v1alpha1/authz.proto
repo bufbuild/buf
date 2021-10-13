@@ -58,15 +58,15 @@ service AuthzService {
   // UserCanSeeTemplateSettings returns whether the user is authorized
   // to see template settings.
   rpc UserCanSeeTemplateSettings(UserCanSeeTemplateSettingsRequest) returns (UserCanSeeTemplateSettingsResponse);
-  // UserCanAddUserOrganizationRole returns whether the user is authorized
-  // to add any user organization roles and the highest role they can add.
-  rpc UserCanAddUserOrganizationRole(UserCanAddUserOrganizationRoleRequest) returns (UserCanAddUserOrganizationRoleResponse);
-  // UserCanUpdateUserOrganizationRole returns whether the user is authorized
-  // to update any user organization roles and the highest role they can update.
-  rpc UserCanUpdateUserOrganizationRole(UserCanUpdateUserOrganizationRoleRequest) returns (UserCanUpdateUserOrganizationRoleResponse);
-  // UserCanRemoveUserOrganizationRole returns whether the user is authorized
-  // to remove any user organization roles and the highest role they can remove.
-  rpc UserCanRemoveUserOrganizationRole(UserCanRemoveUserOrganizationRoleRequest) returns (UserCanRemoveUserOrganizationRoleResponse);
+  // UserCanAddOrganizationMember returns whether the user is authorized to add
+  // any members to the organization and the list of roles they can add.
+  rpc UserCanAddOrganizationMember(UserCanAddOrganizationMemberRequest) returns (UserCanAddOrganizationMemberResponse);
+  // UserCanUpdateOrganizationMemberRole returns whether the user is authorized to update
+  // any members' role in the organization and the list of roles they can update.
+  rpc UserCanUpdateOrganizationMemberRole(UserCanUpdateOrganizationMemberRoleRequest) returns (UserCanUpdateOrganizationMemberRoleResponse);
+  // UserCanRemoveOrganizationMember returns whether the user is authorized to remove
+  // any members from the organization and the list of roles they can remove.
+  rpc UserCanRemoveOrganizationMember(UserCanRemoveOrganizationMemberRequest) returns (UserCanRemoveOrganizationMemberResponse);
   // UserCanDeleteOrganization returns whether the user is authorized
   // to delete an organization.
   rpc UserCanDeleteOrganization(UserCanDeleteOrganizationRequest) returns (UserCanDeleteOrganizationResponse);
@@ -216,43 +216,43 @@ message UserCanSeeTemplateSettingsResponse {
   bool authorized = 1;
 }
 
-message UserCanAddUserOrganizationRoleRequest {
+message UserCanAddOrganizationMemberRequest {
   // The ID of the organization for which to check
   // whether the user is authorized.
   string organization_id = 1;
 }
 
-message UserCanAddUserOrganizationRoleResponse {
-  // Whether the user is authorized to add any user organization role to the organization requested.
+message UserCanAddOrganizationMemberResponse {
+  // Whether the user is authorized to add any members to the organization requested.
   bool authorized = 1;
-  // The user can add a user organization role that equal or less than the highest role.
-  GroupRole highest_role = 2;
+  // The list of roles that the user is authorized to add.
+  repeated OrganizationRole authorized_roles = 2;
 }
 
-message UserCanUpdateUserOrganizationRoleRequest {
+message UserCanUpdateOrganizationMemberRoleRequest {
   // The ID of the organization for which to check
   // whether the user is authorized.
   string organization_id = 1;
 }
 
-message UserCanUpdateUserOrganizationRoleResponse {
-  // Whether the user is authorized to update any user organization role in the organization requested.
+message UserCanUpdateOrganizationMemberRoleResponse {
+  // Whether the user is authorized to update any members' role in the organization requested.
   bool authorized = 1;
-  // The user can update a user organization role that equal or less than the highest role (from and to).
-  GroupRole highest_role = 2;
+  // The list of roles that the user is authorized to update (from and to).
+  repeated OrganizationRole authorized_roles = 2;
 }
 
-message UserCanRemoveUserOrganizationRoleRequest {
+message UserCanRemoveOrganizationMemberRequest {
   // The ID of the organization for which to check
   // whether the user is authorized.
   string organization_id = 1;
 }
 
-message UserCanRemoveUserOrganizationRoleResponse {
-  // Whether the user is authorized to remove any user organization role from the organization requested.
+message UserCanRemoveOrganizationMemberResponse {
+  // Whether the user is authorized to remove any members from the organization requested.
   bool authorized = 1;
-  // The user can remove a user organization role that equal or less than the highest role.
-  GroupRole highest_role = 2;
+  // The list of roles that the user is authorized to remove.
+  repeated OrganizationRole authorized_roles = 2;
 }
 
 message UserCanDeleteOrganizationRequest {

@@ -251,3 +251,25 @@ func (s *userService) ListOrganizationUsersWithRole(
 	}
 	return response.Users, response.NextPageToken, nil
 }
+
+// UpdateUserServerRole update the role of an user in the server.
+func (s *userService) UpdateUserServerRole(
+	ctx context.Context,
+	userId string,
+	serverRole v1alpha1.ServerRole,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.UpdateUserServerRole(
+		ctx,
+		&v1alpha1.UpdateUserServerRoleRequest{
+			UserId:     userId,
+			ServerRole: serverRole,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}

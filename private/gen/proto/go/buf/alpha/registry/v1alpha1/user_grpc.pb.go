@@ -58,6 +58,8 @@ type UserServiceClient interface {
 	RemoveUserOrganizationScope(ctx context.Context, in *RemoveUserOrganizationScopeRequest, opts ...grpc.CallOption) (*RemoveUserOrganizationScopeResponse, error)
 	// ListOrganizationUsersWithRole lists all users of an organization with their respective role in the organization.
 	ListOrganizationUsersWithRole(ctx context.Context, in *ListOrganizationUsersWithRoleRequest, opts ...grpc.CallOption) (*ListOrganizationUsersWithRoleResponse, error)
+	// UpdateUserServerRole update the role of an user in the server.
+	UpdateUserServerRole(ctx context.Context, in *UpdateUserServerRoleRequest, opts ...grpc.CallOption) (*UpdateUserServerRoleResponse, error)
 }
 
 type userServiceClient struct {
@@ -167,6 +169,15 @@ func (c *userServiceClient) ListOrganizationUsersWithRole(ctx context.Context, i
 	return out, nil
 }
 
+func (c *userServiceClient) UpdateUserServerRole(ctx context.Context, in *UpdateUserServerRoleRequest, opts ...grpc.CallOption) (*UpdateUserServerRoleResponse, error) {
+	out := new(UpdateUserServerRoleResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/UpdateUserServerRole", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations should embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -193,6 +204,8 @@ type UserServiceServer interface {
 	RemoveUserOrganizationScope(context.Context, *RemoveUserOrganizationScopeRequest) (*RemoveUserOrganizationScopeResponse, error)
 	// ListOrganizationUsersWithRole lists all users of an organization with their respective role in the organization.
 	ListOrganizationUsersWithRole(context.Context, *ListOrganizationUsersWithRoleRequest) (*ListOrganizationUsersWithRoleResponse, error)
+	// UpdateUserServerRole update the role of an user in the server.
+	UpdateUserServerRole(context.Context, *UpdateUserServerRoleRequest) (*UpdateUserServerRoleResponse, error)
 }
 
 // UnimplementedUserServiceServer should be embedded to have forward compatible implementations.
@@ -231,6 +244,9 @@ func (UnimplementedUserServiceServer) RemoveUserOrganizationScope(context.Contex
 }
 func (UnimplementedUserServiceServer) ListOrganizationUsersWithRole(context.Context, *ListOrganizationUsersWithRoleRequest) (*ListOrganizationUsersWithRoleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListOrganizationUsersWithRole not implemented")
+}
+func (UnimplementedUserServiceServer) UpdateUserServerRole(context.Context, *UpdateUserServerRoleRequest) (*UpdateUserServerRoleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserServerRole not implemented")
 }
 
 // UnsafeUserServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -442,6 +458,24 @@ func _UserService_ListOrganizationUsersWithRole_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_UpdateUserServerRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserServerRoleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UpdateUserServerRole(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.UserService/UpdateUserServerRole",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UpdateUserServerRole(ctx, req.(*UpdateUserServerRoleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -492,6 +526,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListOrganizationUsersWithRole",
 			Handler:    _UserService_ListOrganizationUsersWithRole_Handler,
+		},
+		{
+			MethodName: "UpdateUserServerRole",
+			Handler:    _UserService_UpdateUserServerRole_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
