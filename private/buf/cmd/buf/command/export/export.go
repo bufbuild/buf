@@ -276,15 +276,16 @@ func run(
 					continue
 				}
 				moduleFile, err := moduleFileSet.GetModuleFile(ctx, path)
-				if err == nil {
-					if err := storage.CopyReadObject(ctx, readWriteBucket, moduleFile); err != nil {
-						return multierr.Append(err, moduleFile.Close())
-					}
-					if err := moduleFile.Close(); err != nil {
-						return err
-					}
-					writtenPaths[path] = struct{}{}
+				if err != nil {
+					return err
 				}
+				if err := storage.CopyReadObject(ctx, readWriteBucket, moduleFile); err != nil {
+					return multierr.Append(err, moduleFile.Close())
+				}
+				if err := moduleFile.Close(); err != nil {
+					return err
+				}
+				writtenPaths[path] = struct{}{}
 			}
 			if len(writtenPaths) == 0 {
 				return errors.New("no .proto target files found")
