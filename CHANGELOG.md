@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 - Fix issue with `buf ls-files` when given an image as an input, imports were being printed,
-  even without the `--include-imports` flag
+  even without the `--include-imports` flag.
 
 ## [v1.0.0-rc5] - 2021-10-12
 
