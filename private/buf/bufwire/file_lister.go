@@ -160,6 +160,9 @@ func (e *fileLister) listFilesWithoutImports(
 			return nil, fileAnnotations, nil
 		}
 		var fileInfos []bufmoduleref.FileInfo
+		// There should only be a single imageConfig compiled based on the proto file reference
+		// and the `include_package_files` option if set. These are handled by the iamgeConfigReader,
+		// we only need to collect the fileInfos here.
 		for _, imageConfig := range imageConfigs {
 			for _, imageFile := range imageConfig.Image().Files() {
 				if !imageFile.IsImport() {
