@@ -152,7 +152,7 @@ func (e *fileLister) listFilesWithoutImports(
 			configOverride,
 			nil,
 			false,
-			false,
+			true,
 		)
 		if err != nil {
 			return nil, err
