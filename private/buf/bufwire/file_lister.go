@@ -157,10 +157,11 @@ func (e *fileLister) listFilesWithoutImports(
 		if err != nil {
 			return nil, err
 		}
-		files := image.Files()
-		fileInfos := make([]bufmoduleref.FileInfo, len(files))
-		for i, file := range files {
-			fileInfos[i] = file
+		var fileInfos []bufmoduleref.FileInfo
+		for _, file := range image.Files() {
+			if !file.IsImport() {
+				fileInfos = append(fileInfos, file)
+			}
 		}
 		return fileInfos, nil
 	case buffetch.SourceRef:

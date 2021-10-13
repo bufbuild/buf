@@ -31,7 +31,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -298,41 +297,21 @@ func (m *v1beta1Migrator) writeV1Config(
 	originalRootName string,
 	originalModuleName string,
 ) (retErr error) {
-	v1ConfigBytes, err := encoding.MarshalYAML(&config)
+	v1ConfigData, err := encoding.MarshalYAML(&config)
 	if err != nil {
 		return fmt.Errorf("failed to marshal new config: %w", err)
-	}
-	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
-		// This happens if the user has a root specified that doesn't have a corresponding
-		// directory on the filesystem.
-		return fmt.Errorf("failed to create new directories for writing config: %w", err)
-	}
-	tmpFile, err := os.CreateTemp("", "")
-	if err != nil {
-		return fmt.Errorf("failed to create temporary file for writing new config: %w", err)
 	}
 	header := fmt.Sprintf(bufModHeaderWithName, m.commandName, originalRootName, originalModuleName)
 	if originalModuleName == "" {
 		header = fmt.Sprintf(bufModHeaderWithoutName, m.commandName, originalRootName)
 	}
-	v1ConfigBytes = append([]byte(header), v1ConfigBytes...)
-	if _, err := tmpFile.Write(v1ConfigBytes); err != nil {
-		return multierr.Combine(
-			fmt.Errorf("failed to write new config file: %w", err),
-			tmpFile.Close(),
-			os.Remove(tmpFile.Name()),
-		)
+	v1ConfigData = append([]byte(header), v1ConfigData...)
+	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+		// This happens if the user has a root specified that doesn't have a corresponding
+		// directory on the filesystem.
+		return fmt.Errorf("failed to create new directories for writing config: %w", err)
 	}
-	if err := tmpFile.Close(); err != nil {
-		return multierr.Combine(
-			fmt.Errorf("failed to close new config file: %w", err),
-			os.Remove(tmpFile.Name()),
-		)
-	}
-	if err := os.Rename(tmpFile.Name(), configPath); err != nil {
-		return fmt.Errorf("failed to overwrite old config: %w", err)
-	}
-	return nil
+	return os.WriteFile(configPath, v1ConfigData, 0600)
 }
 
 func (m *v1beta1Migrator) maybeMigrateGenTemplate(dirPath string) (bool, error) {
@@ -404,33 +383,13 @@ func (m *v1beta1Migrator) writeV1GenTemplate(
 	configPath string,
 	config bufgen.ExternalConfigV1,
 ) (retErr error) {
-	v1ConfigBytes, err := encoding.MarshalYAML(&config)
+	v1ConfigData, err := encoding.MarshalYAML(&config)
 	if err != nil {
 		return fmt.Errorf("failed to marshal new config: %w", err)
 	}
-	tmpFile, err := os.CreateTemp("", "")
-	if err != nil {
-		return fmt.Errorf("failed to create temporary file for writing new config: %w", err)
-	}
 	header := fmt.Sprintf(bufGenHeader, m.commandName)
-	v1ConfigBytes = append([]byte(header), v1ConfigBytes...)
-	if _, err := tmpFile.Write(v1ConfigBytes); err != nil {
-		return multierr.Combine(
-			fmt.Errorf("failed to write new config file: %w", err),
-			tmpFile.Close(),
-			os.Remove(tmpFile.Name()),
-		)
-	}
-	if err := tmpFile.Close(); err != nil {
-		return multierr.Combine(
-			fmt.Errorf("failed to close new config file: %w", err),
-			os.Remove(tmpFile.Name()),
-		)
-	}
-	if err := os.Rename(tmpFile.Name(), configPath); err != nil {
-		return fmt.Errorf("failed to overwrite old config: %w", err)
-	}
-	return nil
+	v1ConfigData = append([]byte(header), v1ConfigData...)
+	return os.WriteFile(configPath, v1ConfigData, 0600)
 }
 
 func (m *v1beta1Migrator) maybeMigrateLockFile(dirPath string) (bool, error) {
@@ -489,32 +448,12 @@ func (m *v1beta1Migrator) writeV1LockFile(
 	configPath string,
 	config buflock.ExternalConfigV1,
 ) (retErr error) {
-	v1ConfigBytes, err := encoding.MarshalYAML(&config)
+	v1ConfigData, err := encoding.MarshalYAML(&config)
 	if err != nil {
 		return fmt.Errorf("failed to marshal new lock file: %w", err)
 	}
-	tmpFile, err := os.CreateTemp("", "")
-	if err != nil {
-		return fmt.Errorf("failed to create temporary file for writing new lock file: %w", err)
-	}
-	v1ConfigBytes = append([]byte(buflock.Header), v1ConfigBytes...)
-	if _, err := tmpFile.Write(v1ConfigBytes); err != nil {
-		return multierr.Combine(
-			fmt.Errorf("failed to write new lock file: %w", err),
-			tmpFile.Close(),
-			os.Remove(tmpFile.Name()),
-		)
-	}
-	if err := tmpFile.Close(); err != nil {
-		return multierr.Combine(
-			fmt.Errorf("failed to close new lock file: %w", err),
-			os.Remove(tmpFile.Name()),
-		)
-	}
-	if err := os.Rename(tmpFile.Name(), configPath); err != nil {
-		return fmt.Errorf("failed to overwrite old lock file: %w", err)
-	}
-	return nil
+	v1ConfigData = append([]byte(buflock.Header), v1ConfigData...)
+	return os.WriteFile(configPath, v1ConfigData, 0600)
 }
 
 func maybeReadLockFile(oldLockFilePath string) (buflock.ExternalConfigV1, bool, error) {

@@ -16,12 +16,12 @@
 package netrc
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/netrc/internal"
-	"go.uber.org/multierr"
+	"github.com/jdxcode/netrc"
 )
 
 // Filename exposes the netrc filename based on the current operating system.
@@ -33,7 +33,6 @@ type Machine interface {
 	Name() string
 	Login() string
 	Password() string
-	Account() string
 }
 
 // NewMachine creates a new Machine.
@@ -41,9 +40,8 @@ func NewMachine(
 	name string,
 	login string,
 	password string,
-	account string,
 ) Machine {
-	return newMachine(name, login, password, account)
+	return newMachine(name, login, password)
 }
 
 // GetMachineForName returns the Machine for the given name.
@@ -90,108 +88,85 @@ func GetFilePath(envContainer app.EnvContainer) (string, error) {
 }
 
 func getMachineForNameAndFilePath(name string, filePath string) (_ Machine, retErr error) {
-	file, err := os.Open(filePath)
-	if err != nil {
+	if _, err := os.Stat(filePath); err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
-	}()
-	netrc, err := internal.Parse(file)
+	netrcStruct, err := netrc.Parse(filePath)
 	if err != nil {
 		return nil, err
 	}
-	netrcMachine := netrc.FindMachine(name)
+	netrcMachine := netrcStruct.Machine(name)
 	if netrcMachine == nil {
-		return nil, nil
+		netrcMachine = netrcStruct.Machine("default")
+		if netrcMachine == nil {
+			return nil, nil
+		}
+	}
+	// We take the name from the read Machine just in case there's some case-insensitivity weirdness
+	machineName := netrcMachine.Name
+	if machineName == "default" {
+		machineName = ""
 	}
 	return newMachine(
-		netrcMachine.Name,
-		netrcMachine.Login,
-		netrcMachine.Password,
-		netrcMachine.Account,
+		machineName,
+		netrcMachine.Get("login"),
+		netrcMachine.Get("password"),
 	), nil
 }
 
 func putMachinesForFilePath(machines []Machine, filePath string) (retErr error) {
-	file, err := os.Open(filePath)
+	var netrcStruct *netrc.Netrc
+	fileInfo, err := os.Stat(filePath)
+	var fileMode fs.FileMode
 	if err != nil {
-		if !os.IsNotExist(err) {
+		if os.IsNotExist(err) {
+			netrcStruct = &netrc.Netrc{}
+			fileMode = 0600
+		} else {
 			return err
 		}
-		// If a netrc file does not already exist, create one and continue.
-		file, err = os.Create(filePath)
+	} else {
+		netrcStruct, err = netrc.Parse(filePath)
 		if err != nil {
 			return err
 		}
-	}
-	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
-	}()
-	netrc, err := internal.Parse(file)
-	if err != nil {
-		return err
+		fileMode = fileInfo.Mode()
 	}
 	for _, machine := range machines {
-		if foundMachine := netrc.FindMachine(machine.Name()); foundMachine != nil {
-			// If the machine already exists, update it.
-			foundMachine.UpdateLogin(machine.Login())
-			foundMachine.UpdatePassword(machine.Password())
-			foundMachine.UpdateAccount(machine.Account())
-		} else {
-			// Put the machine into the user's netrc.
-			netrc.NewMachine(
-				machine.Name(),
-				machine.Login(),
-				machine.Password(),
-				machine.Account(),
-			)
+		if foundMachine := netrcStruct.Machine(machine.Name()); foundMachine != nil {
+			netrcStruct.RemoveMachine(machine.Name())
 		}
+		netrcStruct.AddMachine(
+			machine.Name(),
+			machine.Login(),
+			machine.Password(),
+		)
 	}
-	bytes, err := netrc.MarshalText()
-	if err != nil {
-		return err
-	}
-	info, err := file.Stat()
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(filePath, bytes, info.Mode())
+	return os.WriteFile(filePath, []byte(netrcStruct.Render()), fileMode)
 }
 
 func deleteMachineForFilePath(name string, filePath string) (_ bool, retErr error) {
-	file, err := os.Open(filePath)
+	fileInfo, err := os.Stat(filePath)
 	if err != nil {
-		if !os.IsNotExist(err) {
-			return false, err
+		if os.IsNotExist(err) {
+			// If a netrc file does not already exist, there's nothing to be done.
+			return false, nil
 		}
-		// If a netrc file does not already exist, there's nothing to be done.
-		return false, nil
+		return false, err
 	}
-	defer func() {
-		retErr = multierr.Append(retErr, file.Close())
-	}()
-	netrc, err := internal.Parse(file)
+	netrcStruct, err := netrc.Parse(filePath)
 	if err != nil {
 		return false, err
 	}
-	if netrc.FindMachine(name) == nil {
+	if netrcStruct.Machine(name) == nil {
 		// Machine is not set, there is nothing to be done.
 		return false, nil
 	}
-	netrc.RemoveMachine(name)
-	bytes, err := netrc.MarshalText()
-	if err != nil {
-		return false, err
-	}
-	info, err := file.Stat()
-	if err != nil {
-		return false, err
-	}
-	if err := os.WriteFile(filePath, bytes, info.Mode()); err != nil {
+	netrcStruct.RemoveMachine(name)
+	if err := os.WriteFile(filePath, []byte(netrcStruct.Render()), fileInfo.Mode()); err != nil {
 		return false, err
 	}
 	return true, nil

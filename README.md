@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/v/release/bufbuild/buf?include_prereleases)](https://github.com/bufbuild/buf/releases)
 [![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)](https://github.com/bufbuild/buf/actions?workflow=ci)
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)](https://hub.docker.com/r/bufbuild/buf)
-[![Homebrew](https://img.shields.io/badge/homebrew-v1.0.0--rc4-blue)](https://github.com/bufbuild/homebrew-buf)
+[![Homebrew](https://img.shields.io/badge/homebrew-v1.0.0--rc5-blue)](https://github.com/bufbuild/homebrew-buf)
 [![AUR](https://img.shields.io/aur/version/buf)](https://aur.archlinux.org/packages/buf)
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)](https://join.slack.com/t/bufbuild/shared_invite/zt-f5k547ki-VDs_iC4TblNCu7ubhRD17w)
 [![Twitter](https://img.shields.io/twitter/follow/bufbuild?style=social)](https://twitter.com/intent/follow?screen_name=bufbuild)
@@ -29,7 +29,7 @@ Our second tool, the **Buf Schema Registry (“BSR”)**, will be the hub of our
 
 However, we recommend you read the below introduction first!
 
-- [Tour of existing functionality- takes about 10 minutes to complete](https://docs.buf.build/tour/introduction/)
+- [Tour of existing functionality - takes about 20 minutes to complete](https://docs.buf.build/tour/introduction/)
 - [Installation guide](https://docs.buf.build/installation)
 - [Overview of our 40 lint rules](https://docs.buf.build/lint/rules/)
 - [Overview of our 54 breaking change rules](https://docs.buf.build/breaking/rules/)
