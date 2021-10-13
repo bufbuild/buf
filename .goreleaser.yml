@@ -1,0 +1,120 @@
+dist: .build/release/buf/workspace/dist
+
+env:
+  - CGO_ENABLED=0
+
+builds:
+
+  - id: buf
+    main: ./cmd/buf
+    binary: bin/buf
+    gobinary: &gobinary .build/release/buf/go
+    flags: &flags
+      - -trimpath
+    ldflags: &ldflags
+      - -s -w
+    goos: &goos
+      - darwin
+      - linux
+      - windows
+    goarch: &goarch
+      - amd64
+      - arm64
+
+  - id: protoc-gen-buf-breaking
+    main: ./cmd/protoc-gen-buf-breaking
+    binary: bin/protoc-gen-buf-breaking
+    gobinary: *gobinary
+    flags: *flags
+    ldflags: *ldflags
+    goos: *goos
+    goarch: *goarch
+
+  - id: protoc-gen-buf-lint
+    main: ./cmd/protoc-gen-buf-lint
+    binary: bin/protoc-gen-buf-lint
+    gobinary: *gobinary
+    flags: *flags
+    ldflags: *ldflags
+    goos: *goos
+    goarch: *goarch
+
+archives:
+
+  - id: buf.tar.gz
+    builds:
+      - buf
+      - protoc-gen-buf-breaking
+      - protoc-gen-buf-lint
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: buf-{{ .Os }}-{{ if and (eq .Os "Linux") (eq .Arch "arm64") }}aarch64{{ else }}{{ .Arch }}{{ end }}
+    replacements: &archives_replacements
+      amd64: x86_64
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+    files:
+      - LICENSE
+      - src: .build/release/buf/workspace/etc/bash_completion.d/buf
+        dst: etc/bash_completion.d/
+        strip_parent: true
+      - src: .build/release/buf/workspace/share/fish/vendor_completions.d/buf.fish
+        dst: share/fish/vendor_completions.d/
+        strip_parent: true
+      - src: .build/release/buf/workspace/share/zsh/site-functions/_buf
+        dst: share/zsh/site-functions/
+        strip_parent: true
+    wrap_in_directory: buf
+
+  - id: buf
+    builds:
+      - buf
+    format: binary
+    name_template: buf-{{ .Os }}-{{ if and (eq .Os "Linux") (eq .Arch "arm64") }}aarch64{{ else }}{{ .Arch }}{{ end }}
+    replacements: *archives_replacements
+
+  - id: protoc-gen-buf-breaking
+    builds:
+      - protoc-gen-buf-breaking
+    format: binary
+    name_template: protoc-gen-buf-breaking-{{ .Os }}-{{ if and (eq .Os "Linux") (eq .Arch "arm64") }}aarch64{{ else }}{{ .Arch }}{{ end }}
+    replacements: *archives_replacements
+
+  - id: protoc-gen-buf-lint
+    builds:
+      - protoc-gen-buf-lint
+    format: binary
+    name_template: protoc-gen-buf-lint-{{ .Os }}-{{ if and (eq .Os "Linux") (eq .Arch "arm64") }}aarch64{{ else }}{{ .Arch }}{{ end }}
+    replacements: *archives_replacements
+
+checksum:
+  name_template: sha256.txt
+  algorithm: sha256
+  ids:
+    - buf
+    - buf.tar.gz
+    - protoc-gen-buf-breaking
+    - protoc-gen-buf-lint
+
+signs:
+  - artifacts: checksum
+    stdin_file: .build/release/buf/workspace/minisignpass
+    signature: '${artifact}.minisig'
+    cmd: minisign
+    args: [ -x, '${signature}', -Sm, '${artifact}', -s, .build/release/buf/workspace/minisignsecret ]
+
+release:
+  disable: true
+
+publishers:
+  - ids:
+      - buf.tar.gz
+      - buf
+      - protoc-gen-buf-breaking
+      - protoc-gen-buf-lint
+    cmd: |
+      cp {{ abs .ArtifactPath }} .build/release/buf/assets/{{ .ArtifactName }}
+    checksum: true

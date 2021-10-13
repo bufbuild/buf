@@ -47,6 +47,7 @@ include make/go/dep_go_fuzz.mk
 include make/go/go.mk
 include make/go/docker.mk
 include make/go/buf.mk
+include make/buf/dep_goreleaser.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
@@ -111,9 +112,11 @@ bufgeneratesteps:: \
 	bufgenerateprotogo \
 	bufgenerateprotogoclient
 
+export RELEASE_GO_BINARY := go$(shell cat data/goversion)
+
 .PHONY: bufrelease
-bufrelease: $(MINISIGN)
-	DOCKER_IMAGE=golang:1.17.2-buster bash make/buf/scripts/release.bash
+bufrelease: $(MINISIGN) $(GORELEASER) $(BUF)
+	bash make/buf/scripts/release.bash
 
 # We have to manually set the Homebrew version on the Homebrew badge as there
 # is no badge on shields.io for Homebrew packages outside of homebrew-core
@@ -137,11 +140,11 @@ ifndef GOVERSION
 endif
 	# make sure both of these docker images exist
 	# the release of these images will lag the actual release
-	docker pull golang:$(GOVERSION)-buster
 	docker pull golang:$(GOVERSION)-alpine3.14
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: 1\.[0-9][0-9]*\.[0-9][0-9]*/go-version: $(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)
+	@echo $(GOVERSION) > data/goversion
 
 .PHONY: gofuzz
 gofuzz: $(GO_FUZZ)
