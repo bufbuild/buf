@@ -138,6 +138,20 @@ func TestOutputFlag(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestProtoFileRef(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "simple", "buf.gen.yaml"),
+		filepath.Join("testdata", "simple", "a", "v1", "a.proto"),
+	)
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.NoError(t, err)
+}
+
 func TestGenerateInsertionPoint(t *testing.T) {
 	t.Parallel()
 	runner := command.NewRunner()
