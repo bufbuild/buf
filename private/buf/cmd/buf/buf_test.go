@@ -714,7 +714,6 @@ func TestLsFilesImage1(t *testing.T) {
 		0,
 		`
 		buf/buf.proto
-		google/protobuf/descriptor.proto
 		`,
 		"ls-files",
 		"-",
