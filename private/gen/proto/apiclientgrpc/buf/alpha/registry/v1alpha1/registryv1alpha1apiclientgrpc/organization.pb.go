@@ -229,8 +229,8 @@ func (s *organizationService) AddOrganizationBaseRepositoryScope(
 	return nil
 }
 
-// AddMember add a role to an user in the organization.
-func (s *organizationService) AddMember(
+// AddOrganizationMember add a role to an user in the organization.
+func (s *organizationService) AddOrganizationMember(
 	ctx context.Context,
 	organizationId string,
 	userId string,
@@ -239,9 +239,9 @@ func (s *organizationService) AddMember(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.AddMember(
+	_, err := s.client.AddOrganizationMember(
 		ctx,
-		&v1alpha1.AddMemberRequest{
+		&v1alpha1.AddOrganizationMemberRequest{
 			OrganizationId:   organizationId,
 			UserId:           userId,
 			OrganizationRole: organizationRole,
@@ -253,8 +253,8 @@ func (s *organizationService) AddMember(
 	return nil
 }
 
-// UpdateMember update the user's membership information in the organization.
-func (s *organizationService) UpdateMember(
+// UpdateOrganizationMember update the user's membership information in the organization.
+func (s *organizationService) UpdateOrganizationMember(
 	ctx context.Context,
 	organizationId string,
 	userId string,
@@ -263,9 +263,9 @@ func (s *organizationService) UpdateMember(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.UpdateMember(
+	_, err := s.client.UpdateOrganizationMember(
 		ctx,
-		&v1alpha1.UpdateMemberRequest{
+		&v1alpha1.UpdateOrganizationMemberRequest{
 			OrganizationId:   organizationId,
 			UserId:           userId,
 			OrganizationRole: organizationRole,
@@ -277,8 +277,8 @@ func (s *organizationService) UpdateMember(
 	return nil
 }
 
-// RemoveMember remove the role of an user in the organization.
-func (s *organizationService) RemoveMember(
+// RemoveOrganizationMember remove the role of an user in the organization.
+func (s *organizationService) RemoveOrganizationMember(
 	ctx context.Context,
 	organizationId string,
 	userId string,
@@ -286,9 +286,9 @@ func (s *organizationService) RemoveMember(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.RemoveMember(
+	_, err := s.client.RemoveOrganizationMember(
 		ctx,
-		&v1alpha1.RemoveMemberRequest{
+		&v1alpha1.RemoveOrganizationMemberRequest{
 			OrganizationId: organizationId,
 			UserId:         userId,
 		},

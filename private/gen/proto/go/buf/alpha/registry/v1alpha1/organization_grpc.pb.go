@@ -56,12 +56,12 @@ type OrganizationServiceClient interface {
 	DeleteOrganizationByName(ctx context.Context, in *DeleteOrganizationByNameRequest, opts ...grpc.CallOption) (*DeleteOrganizationByNameResponse, error)
 	// AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
 	AddOrganizationBaseRepositoryScope(ctx context.Context, in *AddOrganizationBaseRepositoryScopeRequest, opts ...grpc.CallOption) (*AddOrganizationBaseRepositoryScopeResponse, error)
-	// AddMember add a role to an user in the organization.
-	AddMember(ctx context.Context, in *AddMemberRequest, opts ...grpc.CallOption) (*AddMemberResponse, error)
-	// UpdateMember update the user's membership information in the organization.
-	UpdateMember(ctx context.Context, in *UpdateMemberRequest, opts ...grpc.CallOption) (*UpdateMemberResponse, error)
-	// RemoveMember remove the role of an user in the organization.
-	RemoveMember(ctx context.Context, in *RemoveMemberRequest, opts ...grpc.CallOption) (*RemoveMemberResponse, error)
+	// AddOrganizationMember add a role to an user in the organization.
+	AddOrganizationMember(ctx context.Context, in *AddOrganizationMemberRequest, opts ...grpc.CallOption) (*AddOrganizationMemberResponse, error)
+	// UpdateOrganizationMember update the user's membership information in the organization.
+	UpdateOrganizationMember(ctx context.Context, in *UpdateOrganizationMemberRequest, opts ...grpc.CallOption) (*UpdateOrganizationMemberResponse, error)
+	// RemoveOrganizationMember remove the role of an user in the organization.
+	RemoveOrganizationMember(ctx context.Context, in *RemoveOrganizationMemberRequest, opts ...grpc.CallOption) (*RemoveOrganizationMemberResponse, error)
 }
 
 type organizationServiceClient struct {
@@ -162,27 +162,27 @@ func (c *organizationServiceClient) AddOrganizationBaseRepositoryScope(ctx conte
 	return out, nil
 }
 
-func (c *organizationServiceClient) AddMember(ctx context.Context, in *AddMemberRequest, opts ...grpc.CallOption) (*AddMemberResponse, error) {
-	out := new(AddMemberResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/AddMember", in, out, opts...)
+func (c *organizationServiceClient) AddOrganizationMember(ctx context.Context, in *AddOrganizationMemberRequest, opts ...grpc.CallOption) (*AddOrganizationMemberResponse, error) {
+	out := new(AddOrganizationMemberResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationMember", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *organizationServiceClient) UpdateMember(ctx context.Context, in *UpdateMemberRequest, opts ...grpc.CallOption) (*UpdateMemberResponse, error) {
-	out := new(UpdateMemberResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/UpdateMember", in, out, opts...)
+func (c *organizationServiceClient) UpdateOrganizationMember(ctx context.Context, in *UpdateOrganizationMemberRequest, opts ...grpc.CallOption) (*UpdateOrganizationMemberResponse, error) {
+	out := new(UpdateOrganizationMemberResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationMember", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *organizationServiceClient) RemoveMember(ctx context.Context, in *RemoveMemberRequest, opts ...grpc.CallOption) (*RemoveMemberResponse, error) {
-	out := new(RemoveMemberResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveMember", in, out, opts...)
+func (c *organizationServiceClient) RemoveOrganizationMember(ctx context.Context, in *RemoveOrganizationMemberRequest, opts ...grpc.CallOption) (*RemoveOrganizationMemberResponse, error) {
+	out := new(RemoveOrganizationMemberResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationMember", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -213,12 +213,12 @@ type OrganizationServiceServer interface {
 	DeleteOrganizationByName(context.Context, *DeleteOrganizationByNameRequest) (*DeleteOrganizationByNameResponse, error)
 	// AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
 	AddOrganizationBaseRepositoryScope(context.Context, *AddOrganizationBaseRepositoryScopeRequest) (*AddOrganizationBaseRepositoryScopeResponse, error)
-	// AddMember add a role to an user in the organization.
-	AddMember(context.Context, *AddMemberRequest) (*AddMemberResponse, error)
-	// UpdateMember update the user's membership information in the organization.
-	UpdateMember(context.Context, *UpdateMemberRequest) (*UpdateMemberResponse, error)
-	// RemoveMember remove the role of an user in the organization.
-	RemoveMember(context.Context, *RemoveMemberRequest) (*RemoveMemberResponse, error)
+	// AddOrganizationMember add a role to an user in the organization.
+	AddOrganizationMember(context.Context, *AddOrganizationMemberRequest) (*AddOrganizationMemberResponse, error)
+	// UpdateOrganizationMember update the user's membership information in the organization.
+	UpdateOrganizationMember(context.Context, *UpdateOrganizationMemberRequest) (*UpdateOrganizationMemberResponse, error)
+	// RemoveOrganizationMember remove the role of an user in the organization.
+	RemoveOrganizationMember(context.Context, *RemoveOrganizationMemberRequest) (*RemoveOrganizationMemberResponse, error)
 }
 
 // UnimplementedOrganizationServiceServer should be embedded to have forward compatible implementations.
@@ -255,14 +255,14 @@ func (UnimplementedOrganizationServiceServer) DeleteOrganizationByName(context.C
 func (UnimplementedOrganizationServiceServer) AddOrganizationBaseRepositoryScope(context.Context, *AddOrganizationBaseRepositoryScopeRequest) (*AddOrganizationBaseRepositoryScopeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddOrganizationBaseRepositoryScope not implemented")
 }
-func (UnimplementedOrganizationServiceServer) AddMember(context.Context, *AddMemberRequest) (*AddMemberResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddMember not implemented")
+func (UnimplementedOrganizationServiceServer) AddOrganizationMember(context.Context, *AddOrganizationMemberRequest) (*AddOrganizationMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddOrganizationMember not implemented")
 }
-func (UnimplementedOrganizationServiceServer) UpdateMember(context.Context, *UpdateMemberRequest) (*UpdateMemberResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateMember not implemented")
+func (UnimplementedOrganizationServiceServer) UpdateOrganizationMember(context.Context, *UpdateOrganizationMemberRequest) (*UpdateOrganizationMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateOrganizationMember not implemented")
 }
-func (UnimplementedOrganizationServiceServer) RemoveMember(context.Context, *RemoveMemberRequest) (*RemoveMemberResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveMember not implemented")
+func (UnimplementedOrganizationServiceServer) RemoveOrganizationMember(context.Context, *RemoveOrganizationMemberRequest) (*RemoveOrganizationMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveOrganizationMember not implemented")
 }
 
 // UnsafeOrganizationServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -456,56 +456,56 @@ func _OrganizationService_AddOrganizationBaseRepositoryScope_Handler(srv interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _OrganizationService_AddMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddMemberRequest)
+func _OrganizationService_AddOrganizationMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddOrganizationMemberRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OrganizationServiceServer).AddMember(ctx, in)
+		return srv.(OrganizationServiceServer).AddOrganizationMember(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.OrganizationService/AddMember",
+		FullMethod: "/buf.alpha.registry.v1alpha1.OrganizationService/AddOrganizationMember",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrganizationServiceServer).AddMember(ctx, req.(*AddMemberRequest))
+		return srv.(OrganizationServiceServer).AddOrganizationMember(ctx, req.(*AddOrganizationMemberRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _OrganizationService_UpdateMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateMemberRequest)
+func _OrganizationService_UpdateOrganizationMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateOrganizationMemberRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OrganizationServiceServer).UpdateMember(ctx, in)
+		return srv.(OrganizationServiceServer).UpdateOrganizationMember(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.OrganizationService/UpdateMember",
+		FullMethod: "/buf.alpha.registry.v1alpha1.OrganizationService/UpdateOrganizationMember",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrganizationServiceServer).UpdateMember(ctx, req.(*UpdateMemberRequest))
+		return srv.(OrganizationServiceServer).UpdateOrganizationMember(ctx, req.(*UpdateOrganizationMemberRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _OrganizationService_RemoveMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveMemberRequest)
+func _OrganizationService_RemoveOrganizationMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveOrganizationMemberRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(OrganizationServiceServer).RemoveMember(ctx, in)
+		return srv.(OrganizationServiceServer).RemoveOrganizationMember(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveMember",
+		FullMethod: "/buf.alpha.registry.v1alpha1.OrganizationService/RemoveOrganizationMember",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrganizationServiceServer).RemoveMember(ctx, req.(*RemoveMemberRequest))
+		return srv.(OrganizationServiceServer).RemoveOrganizationMember(ctx, req.(*RemoveOrganizationMemberRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -558,16 +558,16 @@ var OrganizationService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _OrganizationService_AddOrganizationBaseRepositoryScope_Handler,
 		},
 		{
-			MethodName: "AddMember",
-			Handler:    _OrganizationService_AddMember_Handler,
+			MethodName: "AddOrganizationMember",
+			Handler:    _OrganizationService_AddOrganizationMember_Handler,
 		},
 		{
-			MethodName: "UpdateMember",
-			Handler:    _OrganizationService_UpdateMember_Handler,
+			MethodName: "UpdateOrganizationMember",
+			Handler:    _OrganizationService_UpdateOrganizationMember_Handler,
 		},
 		{
-			MethodName: "RemoveMember",
-			Handler:    _OrganizationService_RemoveMember_Handler,
+			MethodName: "RemoveOrganizationMember",
+			Handler:    _OrganizationService_RemoveOrganizationMember_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

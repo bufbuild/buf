@@ -53,12 +53,12 @@ service OrganizationService {
   rpc DeleteOrganizationByName(DeleteOrganizationByNameRequest) returns (DeleteOrganizationByNameResponse);
   // AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
   rpc AddOrganizationBaseRepositoryScope(AddOrganizationBaseRepositoryScopeRequest) returns (AddOrganizationBaseRepositoryScopeResponse);
-  // AddMember add a role to an user in the organization.
-  rpc AddMember(AddMemberRequest) returns (AddMemberResponse);
-  // UpdateMember update the user's membership information in the organization.
-  rpc UpdateMember(UpdateMemberRequest) returns (UpdateMemberResponse);
-  // RemoveMember remove the role of an user in the organization.
-  rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
+  // AddOrganizationMember add a role to an user in the organization.
+  rpc AddOrganizationMember(AddOrganizationMemberRequest) returns (AddOrganizationMemberResponse);
+  // UpdateOrganizationMember update the user's membership information in the organization.
+  rpc UpdateOrganizationMember(UpdateOrganizationMemberRequest) returns (UpdateOrganizationMemberResponse);
+  // RemoveOrganizationMember remove the role of an user in the organization.
+  rpc RemoveOrganizationMember(RemoveOrganizationMemberRequest) returns (RemoveOrganizationMemberResponse);
 }
 
 message GetOrganizationRequest {
@@ -152,7 +152,7 @@ message AddOrganizationBaseRepositoryScopeRequest {
 
 message AddOrganizationBaseRepositoryScopeResponse {}
 
-message AddMemberRequest {
+message AddOrganizationMemberRequest {
   // The ID of the organization for which the user will be added to.
   string organization_id = 1;
   // The ID of the user for which to be added to the organization.
@@ -161,9 +161,9 @@ message AddMemberRequest {
   OrganizationRole organization_role = 3;
 }
 
-message AddMemberResponse {}
+message AddOrganizationMemberResponse {}
 
-message UpdateMemberRequest {
+message UpdateOrganizationMemberRequest {
   // The ID of the organization for which the member belongs to.
   string organization_id = 1;
   // The ID of the user for which to be updated the role.
@@ -172,13 +172,13 @@ message UpdateMemberRequest {
   OrganizationRole organization_role = 3;
 }
 
-message UpdateMemberResponse {}
+message UpdateOrganizationMemberResponse {}
 
-message RemoveMemberRequest {
+message RemoveOrganizationMemberRequest {
   // The ID of the organization for which the member belongs to.
   string organization_id = 1;
   // The ID of the user for which to be removed the role.
   string user_id = 2;
 }
 
-message RemoveMemberResponse {}
+message RemoveOrganizationMemberResponse {}
