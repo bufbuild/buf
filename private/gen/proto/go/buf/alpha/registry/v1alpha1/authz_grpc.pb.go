@@ -77,9 +77,9 @@ type AuthzServiceClient interface {
 	// UserCanAddOrganizationMember returns whether the user is authorized to add
 	// any members to the organization and the list of roles they can add.
 	UserCanAddOrganizationMember(ctx context.Context, in *UserCanAddOrganizationMemberRequest, opts ...grpc.CallOption) (*UserCanAddOrganizationMemberResponse, error)
-	// UserCanUpdateOrganizationMemberRole returns whether the user is authorized to update
-	// any members' role in the organization and the list of roles they can update.
-	UserCanUpdateOrganizationMemberRole(ctx context.Context, in *UserCanUpdateOrganizationMemberRoleRequest, opts ...grpc.CallOption) (*UserCanUpdateOrganizationMemberRoleResponse, error)
+	// UserCanUpdateOrganizationMember returns whether the user is authorized to update
+	// any members' membership information in the organization and the list of roles they can update.
+	UserCanUpdateOrganizationMember(ctx context.Context, in *UserCanUpdateOrganizationMemberRequest, opts ...grpc.CallOption) (*UserCanUpdateOrganizationMemberResponse, error)
 	// UserCanRemoveOrganizationMember returns whether the user is authorized to remove
 	// any members from the organization and the list of roles they can remove.
 	UserCanRemoveOrganizationMember(ctx context.Context, in *UserCanRemoveOrganizationMemberRequest, opts ...grpc.CallOption) (*UserCanRemoveOrganizationMemberResponse, error)
@@ -231,9 +231,9 @@ func (c *authzServiceClient) UserCanAddOrganizationMember(ctx context.Context, i
 	return out, nil
 }
 
-func (c *authzServiceClient) UserCanUpdateOrganizationMemberRole(ctx context.Context, in *UserCanUpdateOrganizationMemberRoleRequest, opts ...grpc.CallOption) (*UserCanUpdateOrganizationMemberRoleResponse, error) {
-	out := new(UserCanUpdateOrganizationMemberRoleResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanUpdateOrganizationMemberRole", in, out, opts...)
+func (c *authzServiceClient) UserCanUpdateOrganizationMember(ctx context.Context, in *UserCanUpdateOrganizationMemberRequest, opts ...grpc.CallOption) (*UserCanUpdateOrganizationMemberResponse, error) {
+	out := new(UserCanUpdateOrganizationMemberResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanUpdateOrganizationMember", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -330,9 +330,9 @@ type AuthzServiceServer interface {
 	// UserCanAddOrganizationMember returns whether the user is authorized to add
 	// any members to the organization and the list of roles they can add.
 	UserCanAddOrganizationMember(context.Context, *UserCanAddOrganizationMemberRequest) (*UserCanAddOrganizationMemberResponse, error)
-	// UserCanUpdateOrganizationMemberRole returns whether the user is authorized to update
-	// any members' role in the organization and the list of roles they can update.
-	UserCanUpdateOrganizationMemberRole(context.Context, *UserCanUpdateOrganizationMemberRoleRequest) (*UserCanUpdateOrganizationMemberRoleResponse, error)
+	// UserCanUpdateOrganizationMember returns whether the user is authorized to update
+	// any members' membership information in the organization and the list of roles they can update.
+	UserCanUpdateOrganizationMember(context.Context, *UserCanUpdateOrganizationMemberRequest) (*UserCanUpdateOrganizationMemberResponse, error)
 	// UserCanRemoveOrganizationMember returns whether the user is authorized to remove
 	// any members from the organization and the list of roles they can remove.
 	UserCanRemoveOrganizationMember(context.Context, *UserCanRemoveOrganizationMemberRequest) (*UserCanRemoveOrganizationMemberResponse, error)
@@ -396,8 +396,8 @@ func (UnimplementedAuthzServiceServer) UserCanSeeTemplateSettings(context.Contex
 func (UnimplementedAuthzServiceServer) UserCanAddOrganizationMember(context.Context, *UserCanAddOrganizationMemberRequest) (*UserCanAddOrganizationMemberResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserCanAddOrganizationMember not implemented")
 }
-func (UnimplementedAuthzServiceServer) UserCanUpdateOrganizationMemberRole(context.Context, *UserCanUpdateOrganizationMemberRoleRequest) (*UserCanUpdateOrganizationMemberRoleResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UserCanUpdateOrganizationMemberRole not implemented")
+func (UnimplementedAuthzServiceServer) UserCanUpdateOrganizationMember(context.Context, *UserCanUpdateOrganizationMemberRequest) (*UserCanUpdateOrganizationMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanUpdateOrganizationMember not implemented")
 }
 func (UnimplementedAuthzServiceServer) UserCanRemoveOrganizationMember(context.Context, *UserCanRemoveOrganizationMemberRequest) (*UserCanRemoveOrganizationMemberResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserCanRemoveOrganizationMember not implemented")
@@ -678,20 +678,20 @@ func _AuthzService_UserCanAddOrganizationMember_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthzService_UserCanUpdateOrganizationMemberRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserCanUpdateOrganizationMemberRoleRequest)
+func _AuthzService_UserCanUpdateOrganizationMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanUpdateOrganizationMemberRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthzServiceServer).UserCanUpdateOrganizationMemberRole(ctx, in)
+		return srv.(AuthzServiceServer).UserCanUpdateOrganizationMember(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanUpdateOrganizationMemberRole",
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanUpdateOrganizationMember",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).UserCanUpdateOrganizationMemberRole(ctx, req.(*UserCanUpdateOrganizationMemberRoleRequest))
+		return srv.(AuthzServiceServer).UserCanUpdateOrganizationMember(ctx, req.(*UserCanUpdateOrganizationMemberRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -850,8 +850,8 @@ var AuthzService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthzService_UserCanAddOrganizationMember_Handler,
 		},
 		{
-			MethodName: "UserCanUpdateOrganizationMemberRole",
-			Handler:    _AuthzService_UserCanUpdateOrganizationMemberRole_Handler,
+			MethodName: "UserCanUpdateOrganizationMember",
+			Handler:    _AuthzService_UserCanUpdateOrganizationMember_Handler,
 		},
 		{
 			MethodName: "UserCanRemoveOrganizationMember",

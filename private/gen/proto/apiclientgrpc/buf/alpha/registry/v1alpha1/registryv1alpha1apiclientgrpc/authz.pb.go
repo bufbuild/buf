@@ -304,15 +304,15 @@ func (s *authzService) UserCanAddOrganizationMember(ctx context.Context, organiz
 	return response.AuthorizedRoles, nil
 }
 
-// UserCanUpdateOrganizationMemberRole returns whether the user is authorized to update
-// any members' role in the organization and the list of roles they can update.
-func (s *authzService) UserCanUpdateOrganizationMemberRole(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, _ error) {
+// UserCanUpdateOrganizationMember returns whether the user is authorized to update
+// any members' membership information in the organization and the list of roles they can update.
+func (s *authzService) UserCanUpdateOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.UserCanUpdateOrganizationMemberRole(
+	response, err := s.client.UserCanUpdateOrganizationMember(
 		ctx,
-		&v1alpha1.UserCanUpdateOrganizationMemberRoleRequest{
+		&v1alpha1.UserCanUpdateOrganizationMemberRequest{
 			OrganizationId: organizationId,
 		},
 	)

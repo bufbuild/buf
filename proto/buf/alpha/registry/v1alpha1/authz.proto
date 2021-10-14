@@ -61,9 +61,9 @@ service AuthzService {
   // UserCanAddOrganizationMember returns whether the user is authorized to add
   // any members to the organization and the list of roles they can add.
   rpc UserCanAddOrganizationMember(UserCanAddOrganizationMemberRequest) returns (UserCanAddOrganizationMemberResponse);
-  // UserCanUpdateOrganizationMemberRole returns whether the user is authorized to update
-  // any members' role in the organization and the list of roles they can update.
-  rpc UserCanUpdateOrganizationMemberRole(UserCanUpdateOrganizationMemberRoleRequest) returns (UserCanUpdateOrganizationMemberRoleResponse);
+  // UserCanUpdateOrganizationMember returns whether the user is authorized to update
+  // any members' membership information in the organization and the list of roles they can update.
+  rpc UserCanUpdateOrganizationMember(UserCanUpdateOrganizationMemberRequest) returns (UserCanUpdateOrganizationMemberResponse);
   // UserCanRemoveOrganizationMember returns whether the user is authorized to remove
   // any members from the organization and the list of roles they can remove.
   rpc UserCanRemoveOrganizationMember(UserCanRemoveOrganizationMemberRequest) returns (UserCanRemoveOrganizationMemberResponse);
@@ -228,13 +228,13 @@ message UserCanAddOrganizationMemberResponse {
   repeated OrganizationRole authorized_roles = 1;
 }
 
-message UserCanUpdateOrganizationMemberRoleRequest {
+message UserCanUpdateOrganizationMemberRequest {
   // The ID of the organization for which to check
   // whether the user is authorized.
   string organization_id = 1;
 }
 
-message UserCanUpdateOrganizationMemberRoleResponse {
+message UserCanUpdateOrganizationMemberResponse {
   // The list of roles that the user is authorized to update (from and to), empty list means the user is
   // not authorized to update any members' role.
   repeated OrganizationRole authorized_roles = 1;
