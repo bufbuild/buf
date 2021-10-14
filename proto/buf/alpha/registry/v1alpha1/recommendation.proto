@@ -26,14 +26,30 @@ message RecommendedRepository {
   google.protobuf.Timestamp create_time = 3;
 }
 
+// RecommendedTemplate is the information needed to recommend a template and link
+// to its owner page.
+message RecommendedTemplate {
+  string owner = 1;
+  string name = 2;
+  string description = 3;
+}
+
 // RecommendationService is the recommendation service.
 service RecommendationService {
   // RecommendedRepositories returns a list of recommended repositories.
   rpc RecommendedRepositories(RecommendedRepositoriesRequest) returns (RecommendedRepositoriesResponse);
+  // RecommendedTemplates returns a list of recommended templates.
+  rpc RecommendedTemplates(RecommendedTemplatesRequest) returns (RecommendedTemplatesResponse);
 }
 
 message RecommendedRepositoriesRequest {}
 
 message RecommendedRepositoriesResponse {
   repeated RecommendedRepository repositories = 1;
+}
+
+message RecommendedTemplatesRequest {}
+
+message RecommendedTemplatesResponse {
+  repeated RecommendedTemplate templates = 1;
 }
