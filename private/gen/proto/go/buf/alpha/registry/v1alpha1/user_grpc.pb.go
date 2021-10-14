@@ -45,6 +45,7 @@ type UserServiceClient interface {
 	// ListUsers lists all users.
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
 	// ListOrganizationUsers lists all users for an organization.
+	// TODO: move this to organization service
 	ListOrganizationUsers(ctx context.Context, in *ListOrganizationUsersRequest, opts ...grpc.CallOption) (*ListOrganizationUsersResponse, error)
 	// UpdateUserUsername updates a user's username.
 	UpdateUserUsername(ctx context.Context, in *UpdateUserUsernameRequest, opts ...grpc.CallOption) (*UpdateUserUsernameResponse, error)
@@ -56,8 +57,6 @@ type UserServiceClient interface {
 	AddUserOrganizationScopeByName(ctx context.Context, in *AddUserOrganizationScopeByNameRequest, opts ...grpc.CallOption) (*AddUserOrganizationScopeByNameResponse, error)
 	// RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
 	RemoveUserOrganizationScope(ctx context.Context, in *RemoveUserOrganizationScopeRequest, opts ...grpc.CallOption) (*RemoveUserOrganizationScopeResponse, error)
-	// ListOrganizationUsersWithRole lists all users of an organization with their respective role in the organization.
-	ListOrganizationUsersWithRole(ctx context.Context, in *ListOrganizationUsersWithRoleRequest, opts ...grpc.CallOption) (*ListOrganizationUsersWithRoleResponse, error)
 	// UpdateUserServerRole update the role of an user in the server.
 	UpdateUserServerRole(ctx context.Context, in *UpdateUserServerRoleRequest, opts ...grpc.CallOption) (*UpdateUserServerRoleResponse, error)
 }
@@ -160,15 +159,6 @@ func (c *userServiceClient) RemoveUserOrganizationScope(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *userServiceClient) ListOrganizationUsersWithRole(ctx context.Context, in *ListOrganizationUsersWithRoleRequest, opts ...grpc.CallOption) (*ListOrganizationUsersWithRoleResponse, error) {
-	out := new(ListOrganizationUsersWithRoleResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/ListOrganizationUsersWithRole", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *userServiceClient) UpdateUserServerRole(ctx context.Context, in *UpdateUserServerRoleRequest, opts ...grpc.CallOption) (*UpdateUserServerRoleResponse, error) {
 	out := new(UpdateUserServerRoleResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/UpdateUserServerRole", in, out, opts...)
@@ -191,6 +181,7 @@ type UserServiceServer interface {
 	// ListUsers lists all users.
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
 	// ListOrganizationUsers lists all users for an organization.
+	// TODO: move this to organization service
 	ListOrganizationUsers(context.Context, *ListOrganizationUsersRequest) (*ListOrganizationUsersResponse, error)
 	// UpdateUserUsername updates a user's username.
 	UpdateUserUsername(context.Context, *UpdateUserUsernameRequest) (*UpdateUserUsernameResponse, error)
@@ -202,8 +193,6 @@ type UserServiceServer interface {
 	AddUserOrganizationScopeByName(context.Context, *AddUserOrganizationScopeByNameRequest) (*AddUserOrganizationScopeByNameResponse, error)
 	// RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
 	RemoveUserOrganizationScope(context.Context, *RemoveUserOrganizationScopeRequest) (*RemoveUserOrganizationScopeResponse, error)
-	// ListOrganizationUsersWithRole lists all users of an organization with their respective role in the organization.
-	ListOrganizationUsersWithRole(context.Context, *ListOrganizationUsersWithRoleRequest) (*ListOrganizationUsersWithRoleResponse, error)
 	// UpdateUserServerRole update the role of an user in the server.
 	UpdateUserServerRole(context.Context, *UpdateUserServerRoleRequest) (*UpdateUserServerRoleResponse, error)
 }
@@ -241,9 +230,6 @@ func (UnimplementedUserServiceServer) AddUserOrganizationScopeByName(context.Con
 }
 func (UnimplementedUserServiceServer) RemoveUserOrganizationScope(context.Context, *RemoveUserOrganizationScopeRequest) (*RemoveUserOrganizationScopeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveUserOrganizationScope not implemented")
-}
-func (UnimplementedUserServiceServer) ListOrganizationUsersWithRole(context.Context, *ListOrganizationUsersWithRoleRequest) (*ListOrganizationUsersWithRoleResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListOrganizationUsersWithRole not implemented")
 }
 func (UnimplementedUserServiceServer) UpdateUserServerRole(context.Context, *UpdateUserServerRoleRequest) (*UpdateUserServerRoleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserServerRole not implemented")
@@ -440,24 +426,6 @@ func _UserService_RemoveUserOrganizationScope_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_ListOrganizationUsersWithRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListOrganizationUsersWithRoleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UserServiceServer).ListOrganizationUsersWithRole(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.UserService/ListOrganizationUsersWithRole",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).ListOrganizationUsersWithRole(ctx, req.(*ListOrganizationUsersWithRoleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _UserService_UpdateUserServerRole_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateUserServerRoleRequest)
 	if err := dec(in); err != nil {
@@ -522,10 +490,6 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveUserOrganizationScope",
 			Handler:    _UserService_RemoveUserOrganizationScope_Handler,
-		},
-		{
-			MethodName: "ListOrganizationUsersWithRole",
-			Handler:    _UserService_ListOrganizationUsersWithRole_Handler,
 		},
 		{
 			MethodName: "UpdateUserServerRole",

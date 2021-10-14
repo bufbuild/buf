@@ -223,10 +223,9 @@ message UserCanAddOrganizationMemberRequest {
 }
 
 message UserCanAddOrganizationMemberResponse {
-  // Whether the user is authorized to add any members to the organization requested.
-  bool authorized = 1;
-  // The list of roles that the user is authorized to add.
-  repeated OrganizationRole authorized_roles = 2;
+  // The list of roles that the user is authorized to add, empty list means the user is
+  // not authorized to add any members.
+  repeated OrganizationRole authorized_roles = 1;
 }
 
 message UserCanUpdateOrganizationMemberRoleRequest {
@@ -236,10 +235,9 @@ message UserCanUpdateOrganizationMemberRoleRequest {
 }
 
 message UserCanUpdateOrganizationMemberRoleResponse {
-  // Whether the user is authorized to update any members' role in the organization requested.
-  bool authorized = 1;
-  // The list of roles that the user is authorized to update (from and to).
-  repeated OrganizationRole authorized_roles = 2;
+  // The list of roles that the user is authorized to update (from and to), empty list means the user is
+  // not authorized to update any members' role.
+  repeated OrganizationRole authorized_roles = 1;
 }
 
 message UserCanRemoveOrganizationMemberRequest {
@@ -249,10 +247,9 @@ message UserCanRemoveOrganizationMemberRequest {
 }
 
 message UserCanRemoveOrganizationMemberResponse {
-  // Whether the user is authorized to remove any members from the organization requested.
-  bool authorized = 1;
-  // The list of roles that the user is authorized to remove.
-  repeated OrganizationRole authorized_roles = 2;
+  // The list of roles that the user is authorized to remove, empty list means the user is
+  // not authorized to remove any members.
+  repeated OrganizationRole authorized_roles = 1;
 }
 
 message UserCanDeleteOrganizationRequest {

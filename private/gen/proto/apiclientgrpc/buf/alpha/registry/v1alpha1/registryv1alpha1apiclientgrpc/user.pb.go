@@ -104,13 +104,14 @@ func (s *userService) ListUsers(
 }
 
 // ListOrganizationUsers lists all users for an organization.
+// TODO: move this to organization service
 func (s *userService) ListOrganizationUsers(
 	ctx context.Context,
 	organizationId string,
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (users []*v1alpha1.User, nextPageToken string, _ error) {
+) (users []*v1alpha1.OrganizationUser, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -224,32 +225,6 @@ func (s *userService) RemoveUserOrganizationScope(
 		return err
 	}
 	return nil
-}
-
-// ListOrganizationUsersWithRole lists all users of an organization with their respective role in the organization.
-func (s *userService) ListOrganizationUsersWithRole(
-	ctx context.Context,
-	organizationId string,
-	pageSize uint32,
-	pageToken string,
-	reverse bool,
-) (users []*v1alpha1.UserWithOrganizationRole, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.ListOrganizationUsersWithRole(
-		ctx,
-		&v1alpha1.ListOrganizationUsersWithRoleRequest{
-			OrganizationId: organizationId,
-			PageSize:       pageSize,
-			PageToken:      pageToken,
-			Reverse:        reverse,
-		},
-	)
-	if err != nil {
-		return nil, "", err
-	}
-	return response.Users, response.NextPageToken, nil
 }
 
 // UpdateUserServerRole update the role of an user in the server.

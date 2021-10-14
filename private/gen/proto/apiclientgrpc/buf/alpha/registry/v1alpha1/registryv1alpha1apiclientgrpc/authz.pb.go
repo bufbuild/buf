@@ -288,10 +288,7 @@ func (s *authzService) UserCanSeeTemplateSettings(
 
 // UserCanAddOrganizationMember returns whether the user is authorized to add
 // any members to the organization and the list of roles they can add.
-func (s *authzService) UserCanAddOrganizationMember(
-	ctx context.Context,
-	organizationId string,
-) (authorized bool, authorizedRoles []v1alpha1.OrganizationRole, _ error) {
+func (s *authzService) UserCanAddOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -302,17 +299,14 @@ func (s *authzService) UserCanAddOrganizationMember(
 		},
 	)
 	if err != nil {
-		return false, nil, err
+		return nil, err
 	}
-	return response.Authorized, response.AuthorizedRoles, nil
+	return response.AuthorizedRoles, nil
 }
 
 // UserCanUpdateOrganizationMemberRole returns whether the user is authorized to update
 // any members' role in the organization and the list of roles they can update.
-func (s *authzService) UserCanUpdateOrganizationMemberRole(
-	ctx context.Context,
-	organizationId string,
-) (authorized bool, authorizedRoles []v1alpha1.OrganizationRole, _ error) {
+func (s *authzService) UserCanUpdateOrganizationMemberRole(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -323,17 +317,14 @@ func (s *authzService) UserCanUpdateOrganizationMemberRole(
 		},
 	)
 	if err != nil {
-		return false, nil, err
+		return nil, err
 	}
-	return response.Authorized, response.AuthorizedRoles, nil
+	return response.AuthorizedRoles, nil
 }
 
 // UserCanRemoveOrganizationMember returns whether the user is authorized to remove
 // any members from the organization and the list of roles they can remove.
-func (s *authzService) UserCanRemoveOrganizationMember(
-	ctx context.Context,
-	organizationId string,
-) (authorized bool, authorizedRoles []v1alpha1.OrganizationRole, _ error) {
+func (s *authzService) UserCanRemoveOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -344,9 +335,9 @@ func (s *authzService) UserCanRemoveOrganizationMember(
 		},
 	)
 	if err != nil {
-		return false, nil, err
+		return nil, err
 	}
-	return response.Authorized, response.AuthorizedRoles, nil
+	return response.AuthorizedRoles, nil
 }
 
 // UserCanDeleteOrganization returns whether the user is authorized

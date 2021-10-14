@@ -31,7 +31,8 @@ message User {
   string username = 4;
 }
 
-message UserWithOrganizationRole {
+// TODO: move this to organization service
+message OrganizationUser {
   User user = 1;
   // The ID of the organization for which the role belongs to.
   string organization_id = 2;
@@ -50,6 +51,7 @@ service UserService {
   // ListUsers lists all users.
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
   // ListOrganizationUsers lists all users for an organization.
+  // TODO: move this to organization service
   rpc ListOrganizationUsers(ListOrganizationUsersRequest) returns (ListOrganizationUsersResponse);
   // UpdateUserUsername updates a user's username.
   rpc UpdateUserUsername(UpdateUserUsernameRequest) returns (UpdateUserUsernameResponse);
@@ -61,8 +63,6 @@ service UserService {
   rpc AddUserOrganizationScopeByName(AddUserOrganizationScopeByNameRequest) returns (AddUserOrganizationScopeByNameResponse);
   // RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
   rpc RemoveUserOrganizationScope(RemoveUserOrganizationScopeRequest) returns (RemoveUserOrganizationScopeResponse);
-  // ListOrganizationUsersWithRole lists all users of an organization with their respective role in the organization.
-  rpc ListOrganizationUsersWithRole(ListOrganizationUsersWithRoleRequest) returns (ListOrganizationUsersWithRoleResponse);
   // UpdateUserServerRole update the role of an user in the server.
   rpc UpdateUserServerRole(UpdateUserServerRoleRequest) returns (UpdateUserServerRoleResponse);
 }
@@ -113,7 +113,7 @@ message ListOrganizationUsersRequest {
 }
 
 message ListOrganizationUsersResponse {
-  repeated User users = 1;
+  repeated OrganizationUser users = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
 }
@@ -151,20 +151,6 @@ message RemoveUserOrganizationScopeRequest {
 }
 
 message RemoveUserOrganizationScopeResponse {}
-
-message ListOrganizationUsersWithRoleRequest {
-  string organization_id = 1;
-  uint32 page_size = 2;
-  // The first page is returned if this is empty.
-  string page_token = 3;
-  bool reverse = 4;
-}
-
-message ListOrganizationUsersWithRoleResponse {
-  repeated UserWithOrganizationRole users = 1;
-  // There are no more pages if this is empty.
-  string next_page_token = 2;
-}
 
 message UpdateUserServerRoleRequest {
   // The ID of the user for which to be updated a role.

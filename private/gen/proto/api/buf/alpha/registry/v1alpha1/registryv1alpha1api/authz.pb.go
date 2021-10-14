@@ -83,22 +83,13 @@ type AuthzService interface {
 	) (authorized bool, err error)
 	// UserCanAddOrganizationMember returns whether the user is authorized to add
 	// any members to the organization and the list of roles they can add.
-	UserCanAddOrganizationMember(
-		ctx context.Context,
-		organizationId string,
-	) (authorized bool, authorizedRoles []v1alpha1.OrganizationRole, err error)
+	UserCanAddOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, err error)
 	// UserCanUpdateOrganizationMemberRole returns whether the user is authorized to update
 	// any members' role in the organization and the list of roles they can update.
-	UserCanUpdateOrganizationMemberRole(
-		ctx context.Context,
-		organizationId string,
-	) (authorized bool, authorizedRoles []v1alpha1.OrganizationRole, err error)
+	UserCanUpdateOrganizationMemberRole(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, err error)
 	// UserCanRemoveOrganizationMember returns whether the user is authorized to remove
 	// any members from the organization and the list of roles they can remove.
-	UserCanRemoveOrganizationMember(
-		ctx context.Context,
-		organizationId string,
-	) (authorized bool, authorizedRoles []v1alpha1.OrganizationRole, err error)
+	UserCanRemoveOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, err error)
 	// UserCanDeleteOrganization returns whether the user is authorized
 	// to delete an organization.
 	UserCanDeleteOrganization(ctx context.Context, organizationId string) (authorized bool, err error)
