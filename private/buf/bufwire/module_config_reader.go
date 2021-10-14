@@ -261,7 +261,7 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 				return nil, err
 			}
 			if !workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig, readBucketCloser.SubDirPath()) {
-				readBucketCloser.SetSubDirPath(normalpath.Normalize(protoFileRef.Path()))
+				readBucketCloser.SetSubDirPath(normalpath.Dir(protoFileRef.Path()))
 			}
 		}
 		return m.getWorkspaceModuleConfigs(
