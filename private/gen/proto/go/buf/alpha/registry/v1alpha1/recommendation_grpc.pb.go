@@ -38,6 +38,8 @@ const _ = grpc.SupportPackageIsVersion7
 type RecommendationServiceClient interface {
 	// RecommendedRepositories returns a list of recommended repositories.
 	RecommendedRepositories(ctx context.Context, in *RecommendedRepositoriesRequest, opts ...grpc.CallOption) (*RecommendedRepositoriesResponse, error)
+	// RecommendedTemplates returns a list of recommended templates.
+	RecommendedTemplates(ctx context.Context, in *RecommendedTemplatesRequest, opts ...grpc.CallOption) (*RecommendedTemplatesResponse, error)
 }
 
 type recommendationServiceClient struct {
@@ -57,12 +59,23 @@ func (c *recommendationServiceClient) RecommendedRepositories(ctx context.Contex
 	return out, nil
 }
 
+func (c *recommendationServiceClient) RecommendedTemplates(ctx context.Context, in *RecommendedTemplatesRequest, opts ...grpc.CallOption) (*RecommendedTemplatesResponse, error) {
+	out := new(RecommendedTemplatesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RecommendationService/RecommendedTemplates", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RecommendationServiceServer is the server API for RecommendationService service.
 // All implementations should embed UnimplementedRecommendationServiceServer
 // for forward compatibility
 type RecommendationServiceServer interface {
 	// RecommendedRepositories returns a list of recommended repositories.
 	RecommendedRepositories(context.Context, *RecommendedRepositoriesRequest) (*RecommendedRepositoriesResponse, error)
+	// RecommendedTemplates returns a list of recommended templates.
+	RecommendedTemplates(context.Context, *RecommendedTemplatesRequest) (*RecommendedTemplatesResponse, error)
 }
 
 // UnimplementedRecommendationServiceServer should be embedded to have forward compatible implementations.
@@ -71,6 +84,9 @@ type UnimplementedRecommendationServiceServer struct {
 
 func (UnimplementedRecommendationServiceServer) RecommendedRepositories(context.Context, *RecommendedRepositoriesRequest) (*RecommendedRepositoriesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RecommendedRepositories not implemented")
+}
+func (UnimplementedRecommendationServiceServer) RecommendedTemplates(context.Context, *RecommendedTemplatesRequest) (*RecommendedTemplatesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecommendedTemplates not implemented")
 }
 
 // UnsafeRecommendationServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -102,6 +118,24 @@ func _RecommendationService_RecommendedRepositories_Handler(srv interface{}, ctx
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RecommendationService_RecommendedTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecommendedTemplatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecommendationServiceServer).RecommendedTemplates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RecommendationService/RecommendedTemplates",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecommendationServiceServer).RecommendedTemplates(ctx, req.(*RecommendedTemplatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RecommendationService_ServiceDesc is the grpc.ServiceDesc for RecommendationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -112,6 +146,10 @@ var RecommendationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RecommendedRepositories",
 			Handler:    _RecommendationService_RecommendedRepositories_Handler,
+		},
+		{
+			MethodName: "RecommendedTemplates",
+			Handler:    _RecommendationService_RecommendedTemplates_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
