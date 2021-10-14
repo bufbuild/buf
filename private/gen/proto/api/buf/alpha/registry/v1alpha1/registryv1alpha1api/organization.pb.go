@@ -66,4 +66,24 @@ type OrganizationService interface {
 		id string,
 		repositoryScope v1alpha1.RepositoryScope,
 	) (err error)
+	// AddOrganizationMember add a role to an user in the organization.
+	AddOrganizationMember(
+		ctx context.Context,
+		organizationId string,
+		userId string,
+		organizationRole v1alpha1.OrganizationRole,
+	) (err error)
+	// UpdateOrganizationMember update the user's membership information in the organization.
+	UpdateOrganizationMember(
+		ctx context.Context,
+		organizationId string,
+		userId string,
+		organizationRole v1alpha1.OrganizationRole,
+	) (err error)
+	// RemoveOrganizationMember remove the role of an user in the organization.
+	RemoveOrganizationMember(
+		ctx context.Context,
+		organizationId string,
+		userId string,
+	) (err error)
 }

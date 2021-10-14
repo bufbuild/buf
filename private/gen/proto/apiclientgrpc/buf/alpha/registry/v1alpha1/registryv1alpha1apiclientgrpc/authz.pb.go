@@ -285,3 +285,129 @@ func (s *authzService) UserCanSeeTemplateSettings(
 	}
 	return response.Authorized, nil
 }
+
+// UserCanAddOrganizationMember returns whether the user is authorized to add
+// any members to the organization and the list of roles they can add.
+func (s *authzService) UserCanAddOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanAddOrganizationMember(
+		ctx,
+		&v1alpha1.UserCanAddOrganizationMemberRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.AuthorizedRoles, nil
+}
+
+// UserCanUpdateOrganizationMember returns whether the user is authorized to update
+// any members' membership information in the organization and the list of roles they can update.
+func (s *authzService) UserCanUpdateOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanUpdateOrganizationMember(
+		ctx,
+		&v1alpha1.UserCanUpdateOrganizationMemberRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.AuthorizedRoles, nil
+}
+
+// UserCanRemoveOrganizationMember returns whether the user is authorized to remove
+// any members from the organization and the list of roles they can remove.
+func (s *authzService) UserCanRemoveOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanRemoveOrganizationMember(
+		ctx,
+		&v1alpha1.UserCanRemoveOrganizationMemberRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.AuthorizedRoles, nil
+}
+
+// UserCanDeleteOrganization returns whether the user is authorized
+// to delete an organization.
+func (s *authzService) UserCanDeleteOrganization(ctx context.Context, organizationId string) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanDeleteOrganization(
+		ctx,
+		&v1alpha1.UserCanDeleteOrganizationRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}
+
+// UserCanDeleteRepository returns whether the user is authorized
+// to delete a repository.
+func (s *authzService) UserCanDeleteRepository(ctx context.Context, repositoryId string) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanDeleteRepository(
+		ctx,
+		&v1alpha1.UserCanDeleteRepositoryRequest{
+			RepositoryId: repositoryId,
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}
+
+// UserCanDeleteTemplate returns whether the user is authorized
+// to delete a template.
+func (s *authzService) UserCanDeleteTemplate(ctx context.Context, templateId string) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanDeleteTemplate(
+		ctx,
+		&v1alpha1.UserCanDeleteTemplateRequest{
+			TemplateId: templateId,
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}
+
+// UserCanDeletePlugin returns whether the user is authorized
+// to delete a plugin.
+func (s *authzService) UserCanDeletePlugin(ctx context.Context, pluginId string) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanDeletePlugin(
+		ctx,
+		&v1alpha1.UserCanDeletePluginRequest{
+			PluginId: pluginId,
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}

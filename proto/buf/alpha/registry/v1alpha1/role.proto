@@ -1,0 +1,59 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+// The roles that users can have in a Server.
+enum ServerRole {
+  SERVER_ROLE_UNSPECIFIED = 0;
+  SERVER_ROLE_ADMIN = 1;
+  SERVER_ROLE_MEMBER = 2;
+}
+
+// The roles that users can have in a Organization.
+enum OrganizationRole {
+  ORGANIZATION_ROLE_UNSPECIFIED = 0;
+  ORGANIZATION_ROLE_OWNER = 1;
+  ORGANIZATION_ROLE_ADMIN = 2;
+  ORGANIZATION_ROLE_MEMBER = 3;
+}
+
+// The roles that users can have for a Repository.
+enum RepositoryRole {
+  REPOSITORY_ROLE_UNSPECIFIED = 0;
+  REPOSITORY_ROLE_OWNER = 1;
+  REPOSITORY_ROLE_ADMIN = 2;
+  REPOSITORY_ROLE_WRITE = 3;
+  REPOSITORY_ROLE_READ = 4;
+}
+
+// The roles that users can have for a Template.
+enum TemplateRole {
+  TEMPLATE_ROLE_UNSPECIFIED = 0;
+  TEMPLATE_ROLE_OWNER = 1;
+  TEMPLATE_ROLE_ADMIN = 2;
+  TEMPLATE_ROLE_WRITE = 3;
+  TEMPLATE_ROLE_READ = 4;
+}
+
+// The roles that users can have for a Plugin.
+enum PluginRole {
+  PLUGIN_ROLE_UNSPECIFIED = 0;
+  PLUGIN_ROLE_OWNER = 1;
+  PLUGIN_ROLE_ADMIN = 2;
+  PLUGIN_ROLE_WRITE = 3;
+  PLUGIN_ROLE_READ = 4;
+}
