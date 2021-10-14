@@ -220,13 +220,13 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	sourceRef buffetch.SourceRef,
+	protoFileRef buffetch.ProtoFileRef,
 	workspaceBuilder bufwork.WorkspaceBuilder,
 	configOverride string,
 	externalDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (_ []ModuleConfig, retErr error) {
-	readBucketCloser, err := m.fetchReader.GetSourceBucket(ctx, container, sourceRef)
+	readBucketCloser, err := m.fetchReader.GetSourceBucket(ctx, container, protoFileRef)
 	if err != nil {
 		return nil, err
 	}
@@ -253,10 +253,20 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 				return nil, err
 			}
 			readBucketCloser.SetSubDirPath(normalpath.Normalize(relativePath))
+		} else {
+			// We need to check whether or not the current SubDirPath falls under the current workspace.
+			// If not, we need to reset it to the proto file path's dir as the fallback.
+			workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
+			if err != nil {
+				return nil, err
+			}
+			if !workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig, readBucketCloser.SubDirPath()) {
+				readBucketCloser.SetSubDirPath(normalpath.Normalize(protoFileRef.Path()))
+			}
 		}
 		return m.getWorkspaceModuleConfigs(
 			ctx,
-			sourceRef,
+			protoFileRef,
 			workspaceBuilder,
 			readBucketCloser,
 			readBucketCloser.RelativeRootPath(),
@@ -268,7 +278,7 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	}
 	moduleConfig, err := m.getSourceModuleConfig(
 		ctx,
-		sourceRef,
+		protoFileRef,
 		readBucketCloser,
 		readBucketCloser.RelativeRootPath(),
 		readBucketCloser.SubDirPath(),
