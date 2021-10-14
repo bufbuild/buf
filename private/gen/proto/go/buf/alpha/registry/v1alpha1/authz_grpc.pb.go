@@ -74,6 +74,27 @@ type AuthzServiceClient interface {
 	// UserCanSeeTemplateSettings returns whether the user is authorized
 	// to see template settings.
 	UserCanSeeTemplateSettings(ctx context.Context, in *UserCanSeeTemplateSettingsRequest, opts ...grpc.CallOption) (*UserCanSeeTemplateSettingsResponse, error)
+	// UserCanAddOrganizationMember returns whether the user is authorized to add
+	// any members to the organization and the list of roles they can add.
+	UserCanAddOrganizationMember(ctx context.Context, in *UserCanAddOrganizationMemberRequest, opts ...grpc.CallOption) (*UserCanAddOrganizationMemberResponse, error)
+	// UserCanUpdateOrganizationMember returns whether the user is authorized to update
+	// any members' membership information in the organization and the list of roles they can update.
+	UserCanUpdateOrganizationMember(ctx context.Context, in *UserCanUpdateOrganizationMemberRequest, opts ...grpc.CallOption) (*UserCanUpdateOrganizationMemberResponse, error)
+	// UserCanRemoveOrganizationMember returns whether the user is authorized to remove
+	// any members from the organization and the list of roles they can remove.
+	UserCanRemoveOrganizationMember(ctx context.Context, in *UserCanRemoveOrganizationMemberRequest, opts ...grpc.CallOption) (*UserCanRemoveOrganizationMemberResponse, error)
+	// UserCanDeleteOrganization returns whether the user is authorized
+	// to delete an organization.
+	UserCanDeleteOrganization(ctx context.Context, in *UserCanDeleteOrganizationRequest, opts ...grpc.CallOption) (*UserCanDeleteOrganizationResponse, error)
+	// UserCanDeleteRepository returns whether the user is authorized
+	// to delete a repository.
+	UserCanDeleteRepository(ctx context.Context, in *UserCanDeleteRepositoryRequest, opts ...grpc.CallOption) (*UserCanDeleteRepositoryResponse, error)
+	// UserCanDeleteTemplate returns whether the user is authorized
+	// to delete a template.
+	UserCanDeleteTemplate(ctx context.Context, in *UserCanDeleteTemplateRequest, opts ...grpc.CallOption) (*UserCanDeleteTemplateResponse, error)
+	// UserCanDeletePlugin returns whether the user is authorized
+	// to delete a plugin.
+	UserCanDeletePlugin(ctx context.Context, in *UserCanDeletePluginRequest, opts ...grpc.CallOption) (*UserCanDeletePluginResponse, error)
 }
 
 type authzServiceClient struct {
@@ -201,6 +222,69 @@ func (c *authzServiceClient) UserCanSeeTemplateSettings(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *authzServiceClient) UserCanAddOrganizationMember(ctx context.Context, in *UserCanAddOrganizationMemberRequest, opts ...grpc.CallOption) (*UserCanAddOrganizationMemberResponse, error) {
+	out := new(UserCanAddOrganizationMemberResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanAddOrganizationMember", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authzServiceClient) UserCanUpdateOrganizationMember(ctx context.Context, in *UserCanUpdateOrganizationMemberRequest, opts ...grpc.CallOption) (*UserCanUpdateOrganizationMemberResponse, error) {
+	out := new(UserCanUpdateOrganizationMemberResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanUpdateOrganizationMember", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authzServiceClient) UserCanRemoveOrganizationMember(ctx context.Context, in *UserCanRemoveOrganizationMemberRequest, opts ...grpc.CallOption) (*UserCanRemoveOrganizationMemberResponse, error) {
+	out := new(UserCanRemoveOrganizationMemberResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanRemoveOrganizationMember", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authzServiceClient) UserCanDeleteOrganization(ctx context.Context, in *UserCanDeleteOrganizationRequest, opts ...grpc.CallOption) (*UserCanDeleteOrganizationResponse, error) {
+	out := new(UserCanDeleteOrganizationResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteOrganization", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authzServiceClient) UserCanDeleteRepository(ctx context.Context, in *UserCanDeleteRepositoryRequest, opts ...grpc.CallOption) (*UserCanDeleteRepositoryResponse, error) {
+	out := new(UserCanDeleteRepositoryResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteRepository", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authzServiceClient) UserCanDeleteTemplate(ctx context.Context, in *UserCanDeleteTemplateRequest, opts ...grpc.CallOption) (*UserCanDeleteTemplateResponse, error) {
+	out := new(UserCanDeleteTemplateResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteTemplate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authzServiceClient) UserCanDeletePlugin(ctx context.Context, in *UserCanDeletePluginRequest, opts ...grpc.CallOption) (*UserCanDeletePluginResponse, error) {
+	out := new(UserCanDeletePluginResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeletePlugin", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthzServiceServer is the server API for AuthzService service.
 // All implementations should embed UnimplementedAuthzServiceServer
 // for forward compatibility
@@ -243,6 +327,27 @@ type AuthzServiceServer interface {
 	// UserCanSeeTemplateSettings returns whether the user is authorized
 	// to see template settings.
 	UserCanSeeTemplateSettings(context.Context, *UserCanSeeTemplateSettingsRequest) (*UserCanSeeTemplateSettingsResponse, error)
+	// UserCanAddOrganizationMember returns whether the user is authorized to add
+	// any members to the organization and the list of roles they can add.
+	UserCanAddOrganizationMember(context.Context, *UserCanAddOrganizationMemberRequest) (*UserCanAddOrganizationMemberResponse, error)
+	// UserCanUpdateOrganizationMember returns whether the user is authorized to update
+	// any members' membership information in the organization and the list of roles they can update.
+	UserCanUpdateOrganizationMember(context.Context, *UserCanUpdateOrganizationMemberRequest) (*UserCanUpdateOrganizationMemberResponse, error)
+	// UserCanRemoveOrganizationMember returns whether the user is authorized to remove
+	// any members from the organization and the list of roles they can remove.
+	UserCanRemoveOrganizationMember(context.Context, *UserCanRemoveOrganizationMemberRequest) (*UserCanRemoveOrganizationMemberResponse, error)
+	// UserCanDeleteOrganization returns whether the user is authorized
+	// to delete an organization.
+	UserCanDeleteOrganization(context.Context, *UserCanDeleteOrganizationRequest) (*UserCanDeleteOrganizationResponse, error)
+	// UserCanDeleteRepository returns whether the user is authorized
+	// to delete a repository.
+	UserCanDeleteRepository(context.Context, *UserCanDeleteRepositoryRequest) (*UserCanDeleteRepositoryResponse, error)
+	// UserCanDeleteTemplate returns whether the user is authorized
+	// to delete a template.
+	UserCanDeleteTemplate(context.Context, *UserCanDeleteTemplateRequest) (*UserCanDeleteTemplateResponse, error)
+	// UserCanDeletePlugin returns whether the user is authorized
+	// to delete a plugin.
+	UserCanDeletePlugin(context.Context, *UserCanDeletePluginRequest) (*UserCanDeletePluginResponse, error)
 }
 
 // UnimplementedAuthzServiceServer should be embedded to have forward compatible implementations.
@@ -287,6 +392,27 @@ func (UnimplementedAuthzServiceServer) UserCanSeePluginSettings(context.Context,
 }
 func (UnimplementedAuthzServiceServer) UserCanSeeTemplateSettings(context.Context, *UserCanSeeTemplateSettingsRequest) (*UserCanSeeTemplateSettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserCanSeeTemplateSettings not implemented")
+}
+func (UnimplementedAuthzServiceServer) UserCanAddOrganizationMember(context.Context, *UserCanAddOrganizationMemberRequest) (*UserCanAddOrganizationMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanAddOrganizationMember not implemented")
+}
+func (UnimplementedAuthzServiceServer) UserCanUpdateOrganizationMember(context.Context, *UserCanUpdateOrganizationMemberRequest) (*UserCanUpdateOrganizationMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanUpdateOrganizationMember not implemented")
+}
+func (UnimplementedAuthzServiceServer) UserCanRemoveOrganizationMember(context.Context, *UserCanRemoveOrganizationMemberRequest) (*UserCanRemoveOrganizationMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanRemoveOrganizationMember not implemented")
+}
+func (UnimplementedAuthzServiceServer) UserCanDeleteOrganization(context.Context, *UserCanDeleteOrganizationRequest) (*UserCanDeleteOrganizationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanDeleteOrganization not implemented")
+}
+func (UnimplementedAuthzServiceServer) UserCanDeleteRepository(context.Context, *UserCanDeleteRepositoryRequest) (*UserCanDeleteRepositoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanDeleteRepository not implemented")
+}
+func (UnimplementedAuthzServiceServer) UserCanDeleteTemplate(context.Context, *UserCanDeleteTemplateRequest) (*UserCanDeleteTemplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanDeleteTemplate not implemented")
+}
+func (UnimplementedAuthzServiceServer) UserCanDeletePlugin(context.Context, *UserCanDeletePluginRequest) (*UserCanDeletePluginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanDeletePlugin not implemented")
 }
 
 // UnsafeAuthzServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -534,6 +660,132 @@ func _AuthzService_UserCanSeeTemplateSettings_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthzService_UserCanAddOrganizationMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanAddOrganizationMemberRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).UserCanAddOrganizationMember(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanAddOrganizationMember",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).UserCanAddOrganizationMember(ctx, req.(*UserCanAddOrganizationMemberRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthzService_UserCanUpdateOrganizationMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanUpdateOrganizationMemberRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).UserCanUpdateOrganizationMember(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanUpdateOrganizationMember",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).UserCanUpdateOrganizationMember(ctx, req.(*UserCanUpdateOrganizationMemberRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthzService_UserCanRemoveOrganizationMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanRemoveOrganizationMemberRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).UserCanRemoveOrganizationMember(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanRemoveOrganizationMember",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).UserCanRemoveOrganizationMember(ctx, req.(*UserCanRemoveOrganizationMemberRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthzService_UserCanDeleteOrganization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanDeleteOrganizationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).UserCanDeleteOrganization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteOrganization",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).UserCanDeleteOrganization(ctx, req.(*UserCanDeleteOrganizationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthzService_UserCanDeleteRepository_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanDeleteRepositoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).UserCanDeleteRepository(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteRepository",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).UserCanDeleteRepository(ctx, req.(*UserCanDeleteRepositoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthzService_UserCanDeleteTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanDeleteTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).UserCanDeleteTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteTemplate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).UserCanDeleteTemplate(ctx, req.(*UserCanDeleteTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthzService_UserCanDeletePlugin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanDeletePluginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).UserCanDeletePlugin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeletePlugin",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).UserCanDeletePlugin(ctx, req.(*UserCanDeletePluginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthzService_ServiceDesc is the grpc.ServiceDesc for AuthzService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -592,6 +844,34 @@ var AuthzService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserCanSeeTemplateSettings",
 			Handler:    _AuthzService_UserCanSeeTemplateSettings_Handler,
+		},
+		{
+			MethodName: "UserCanAddOrganizationMember",
+			Handler:    _AuthzService_UserCanAddOrganizationMember_Handler,
+		},
+		{
+			MethodName: "UserCanUpdateOrganizationMember",
+			Handler:    _AuthzService_UserCanUpdateOrganizationMember_Handler,
+		},
+		{
+			MethodName: "UserCanRemoveOrganizationMember",
+			Handler:    _AuthzService_UserCanRemoveOrganizationMember_Handler,
+		},
+		{
+			MethodName: "UserCanDeleteOrganization",
+			Handler:    _AuthzService_UserCanDeleteOrganization_Handler,
+		},
+		{
+			MethodName: "UserCanDeleteRepository",
+			Handler:    _AuthzService_UserCanDeleteRepository_Handler,
+		},
+		{
+			MethodName: "UserCanDeleteTemplate",
+			Handler:    _AuthzService_UserCanDeleteTemplate_Handler,
+		},
+		{
+			MethodName: "UserCanDeletePlugin",
+			Handler:    _AuthzService_UserCanDeletePlugin_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

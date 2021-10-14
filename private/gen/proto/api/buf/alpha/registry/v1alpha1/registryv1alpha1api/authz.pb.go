@@ -18,6 +18,7 @@ package registryv1alpha1api
 
 import (
 	context "context"
+	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 // AuthzService supplies authorization helpers.
@@ -80,4 +81,25 @@ type AuthzService interface {
 		owner string,
 		name string,
 	) (authorized bool, err error)
+	// UserCanAddOrganizationMember returns whether the user is authorized to add
+	// any members to the organization and the list of roles they can add.
+	UserCanAddOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, err error)
+	// UserCanUpdateOrganizationMember returns whether the user is authorized to update
+	// any members' membership information in the organization and the list of roles they can update.
+	UserCanUpdateOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, err error)
+	// UserCanRemoveOrganizationMember returns whether the user is authorized to remove
+	// any members from the organization and the list of roles they can remove.
+	UserCanRemoveOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, err error)
+	// UserCanDeleteOrganization returns whether the user is authorized
+	// to delete an organization.
+	UserCanDeleteOrganization(ctx context.Context, organizationId string) (authorized bool, err error)
+	// UserCanDeleteRepository returns whether the user is authorized
+	// to delete a repository.
+	UserCanDeleteRepository(ctx context.Context, repositoryId string) (authorized bool, err error)
+	// UserCanDeleteTemplate returns whether the user is authorized
+	// to delete a template.
+	UserCanDeleteTemplate(ctx context.Context, templateId string) (authorized bool, err error)
+	// UserCanDeletePlugin returns whether the user is authorized
+	// to delete a plugin.
+	UserCanDeletePlugin(ctx context.Context, pluginId string) (authorized bool, err error)
 }

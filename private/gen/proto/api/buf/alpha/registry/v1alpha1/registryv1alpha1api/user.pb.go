@@ -37,13 +37,14 @@ type UserService interface {
 		reverse bool,
 	) (users []*v1alpha1.User, nextPageToken string, err error)
 	// ListOrganizationUsers lists all users for an organization.
+	// TODO: #663 move this to organization service
 	ListOrganizationUsers(
 		ctx context.Context,
 		organizationId string,
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (users []*v1alpha1.User, nextPageToken string, err error)
+	) (users []*v1alpha1.OrganizationUser, nextPageToken string, err error)
 	// UpdateUserUsername updates a user's username.
 	UpdateUserUsername(ctx context.Context, newUsername string) (user *v1alpha1.User, err error)
 	// DeleteUser deletes a user.
@@ -63,5 +64,11 @@ type UserService interface {
 		id string,
 		organizationId string,
 		organizationScope v1alpha1.OrganizationScope,
+	) (err error)
+	// UpdateUserServerRole update the role of an user in the server.
+	UpdateUserServerRole(
+		ctx context.Context,
+		userId string,
+		serverRole v1alpha1.ServerRole,
 	) (err error)
 }
