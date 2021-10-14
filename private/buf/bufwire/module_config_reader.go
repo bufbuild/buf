@@ -261,7 +261,18 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 				return nil, err
 			}
 			if !workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig, readBucketCloser.SubDirPath()) {
-				readBucketCloser.SetSubDirPath(normalpath.Dir(protoFileRef.Path()))
+				// If the workspace does not contain the subDirPath, we need a way to reset the subDirPath
+				// relative to the root of the bucket, which is where the workspace config file is located
+				// and the reference directory.
+				abs, err := normalpath.NormalizeAndAbsolute(protoFileRef.Path())
+				if err != nil {
+					return nil, err
+				}
+				rel, err := normalpath.Rel(workspaceConfigDirectory, abs)
+				if err != nil {
+					return nil, err
+				}
+				readBucketCloser.SetSubDirPath(normalpath.Dir(rel))
 			}
 		}
 		return m.getWorkspaceModuleConfigs(
