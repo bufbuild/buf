@@ -110,7 +110,7 @@ func (x *User) GetUsername() string {
 	return ""
 }
 
-// TODO: move this to organization service
+// TODO: #663 move this to organization service
 type OrganizationUser struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -45,7 +45,7 @@ type UserServiceClient interface {
 	// ListUsers lists all users.
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
 	// ListOrganizationUsers lists all users for an organization.
-	// TODO: move this to organization service
+	// TODO: #663 move this to organization service
 	ListOrganizationUsers(ctx context.Context, in *ListOrganizationUsersRequest, opts ...grpc.CallOption) (*ListOrganizationUsersResponse, error)
 	// UpdateUserUsername updates a user's username.
 	UpdateUserUsername(ctx context.Context, in *UpdateUserUsernameRequest, opts ...grpc.CallOption) (*UpdateUserUsernameResponse, error)
@@ -181,7 +181,7 @@ type UserServiceServer interface {
 	// ListUsers lists all users.
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
 	// ListOrganizationUsers lists all users for an organization.
-	// TODO: move this to organization service
+	// TODO: #663 move this to organization service
 	ListOrganizationUsers(context.Context, *ListOrganizationUsersRequest) (*ListOrganizationUsersResponse, error)
 	// UpdateUserUsername updates a user's username.
 	UpdateUserUsername(context.Context, *UpdateUserUsernameRequest) (*UpdateUserUsernameResponse, error)

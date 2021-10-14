@@ -104,7 +104,7 @@ func (s *userService) ListUsers(
 }
 
 // ListOrganizationUsers lists all users for an organization.
-// TODO: move this to organization service
+// TODO: #663 move this to organization service
 func (s *userService) ListOrganizationUsers(
 	ctx context.Context,
 	organizationId string,

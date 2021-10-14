@@ -37,7 +37,7 @@ type UserService interface {
 		reverse bool,
 	) (users []*v1alpha1.User, nextPageToken string, err error)
 	// ListOrganizationUsers lists all users for an organization.
-	// TODO: move this to organization service
+	// TODO: #663 move this to organization service
 	ListOrganizationUsers(
 		ctx context.Context,
 		organizationId string,

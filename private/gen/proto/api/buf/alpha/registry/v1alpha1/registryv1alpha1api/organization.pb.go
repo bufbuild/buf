@@ -73,8 +73,8 @@ type OrganizationService interface {
 		userId string,
 		organizationRole v1alpha1.OrganizationRole,
 	) (err error)
-	// UpdateMemberRole update the role of an user in the organization.
-	UpdateMemberRole(
+	// UpdateMember update the user's membership information in the organization.
+	UpdateMember(
 		ctx context.Context,
 		organizationId string,
 		userId string,

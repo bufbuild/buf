@@ -31,7 +31,7 @@ message User {
   string username = 4;
 }
 
-// TODO: move this to organization service
+// TODO: #663 move this to organization service
 message OrganizationUser {
   User user = 1;
   // The ID of the organization for which the role belongs to.
@@ -51,7 +51,7 @@ service UserService {
   // ListUsers lists all users.
   rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
   // ListOrganizationUsers lists all users for an organization.
-  // TODO: move this to organization service
+  // TODO: #663 move this to organization service
   rpc ListOrganizationUsers(ListOrganizationUsersRequest) returns (ListOrganizationUsersResponse);
   // UpdateUserUsername updates a user's username.
   rpc UpdateUserUsername(UpdateUserUsernameRequest) returns (UpdateUserUsernameResponse);

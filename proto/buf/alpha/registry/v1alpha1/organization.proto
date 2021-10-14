@@ -55,8 +55,8 @@ service OrganizationService {
   rpc AddOrganizationBaseRepositoryScope(AddOrganizationBaseRepositoryScopeRequest) returns (AddOrganizationBaseRepositoryScopeResponse);
   // AddMember add a role to an user in the organization.
   rpc AddMember(AddMemberRequest) returns (AddMemberResponse);
-  // UpdateMemberRole update the role of an user in the organization.
-  rpc UpdateMemberRole(UpdateMemberRoleRequest) returns (UpdateMemberRoleResponse);
+  // UpdateMember update the user's membership information in the organization.
+  rpc UpdateMember(UpdateMemberRequest) returns (UpdateMemberResponse);
   // RemoveMember remove the role of an user in the organization.
   rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
 }
@@ -163,7 +163,7 @@ message AddMemberRequest {
 
 message AddMemberResponse {}
 
-message UpdateMemberRoleRequest {
+message UpdateMemberRequest {
   // The ID of the organization for which the member belongs to.
   string organization_id = 1;
   // The ID of the user for which to be updated the role.
@@ -172,7 +172,7 @@ message UpdateMemberRoleRequest {
   OrganizationRole organization_role = 3;
 }
 
-message UpdateMemberRoleResponse {}
+message UpdateMemberResponse {}
 
 message RemoveMemberRequest {
   // The ID of the organization for which the member belongs to.

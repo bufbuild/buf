@@ -253,8 +253,8 @@ func (s *organizationService) AddMember(
 	return nil
 }
 
-// UpdateMemberRole update the role of an user in the organization.
-func (s *organizationService) UpdateMemberRole(
+// UpdateMember update the user's membership information in the organization.
+func (s *organizationService) UpdateMember(
 	ctx context.Context,
 	organizationId string,
 	userId string,
@@ -263,9 +263,9 @@ func (s *organizationService) UpdateMemberRole(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.UpdateMemberRole(
+	_, err := s.client.UpdateMember(
 		ctx,
-		&v1alpha1.UpdateMemberRoleRequest{
+		&v1alpha1.UpdateMemberRequest{
 			OrganizationId:   organizationId,
 			UserId:           userId,
 			OrganizationRole: organizationRole,
