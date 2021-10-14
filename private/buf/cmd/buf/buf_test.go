@@ -762,6 +762,27 @@ func TestLsFiles(t *testing.T) {
 		"ls-files",
 		filepath.Join("testdata", "success", "buf", "buf.proto"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`testdata/protofileref/buf.proto`),
+		"ls-files",
+		// test single file ref that is not part of the module or workspace
+		filepath.Join("testdata", "protofileref", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`
+			testdata/protofileref/buf.proto
+			testdata/protofileref/other.proto
+		`),
+		"ls-files",
+		// test single file ref that is not part of the module or workspace
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "buf.proto")),
+	)
 }
 
 func TestLsFilesIncludeImports(t *testing.T) {
