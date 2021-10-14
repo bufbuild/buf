@@ -42,3 +42,18 @@ func (s *recommendationService) RecommendedRepositories(ctx context.Context) (re
 	}
 	return response.Repositories, nil
 }
+
+// RecommendedTemplates returns a list of recommended templates.
+func (s *recommendationService) RecommendedTemplates(ctx context.Context) (templates []*v1alpha1.RecommendedTemplate, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.RecommendedTemplates(
+		ctx,
+		&v1alpha1.RecommendedTemplatesRequest{},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Templates, nil
+}
