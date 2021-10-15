@@ -183,6 +183,19 @@ func TestWorkspaceOverlapSubDirectory(t *testing.T) {
 	)
 }
 
+func TestWorkspaceWithProtoFileRef(t *testing.T) {
+	t.Parallel()
+	testRunStdoutStderr(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`../../../../testdata/protofileref/buf.proto`),
+		``,
+		"ls-files",
+		filepath.Join("..", "..", "..", "..", "testdata", "protofileref", "buf.proto"),
+	)
+}
+
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStdout(
 		t,

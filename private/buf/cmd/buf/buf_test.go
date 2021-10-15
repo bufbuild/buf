@@ -978,6 +978,23 @@ func TestLsFilesImage5(t *testing.T) {
 	)
 }
 
+func TestBuildFailProtoFileRefWithPathFlag(t *testing.T) {
+	t.Parallel()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"", // stdout should be empty
+		`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`,
+		"build",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+		"--path",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+		"-o",
+		"-",
+	)
+}
+
 func TestImageConvertRoundtripBinaryJSONBinary(t *testing.T) {
 	t.Parallel()
 
@@ -1309,6 +1326,24 @@ func TestExportProtoFileRefIncludePackageFilesExcludeImports(t *testing.T) {
 		"",
 		"request.proto",
 		"unimported.proto",
+	)
+}
+
+func TestExportProtoFileRefWithPathFlag(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"", // stdout should be empty
+		`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`,
+		"export",
+		filepath.Join("testdata", "protofileref", "buf.proto"),
+		"-o",
+		tempDir,
+		"--path",
+		filepath.Join("testdata", "protofileref", "buf.proto"),
 	)
 }
 
