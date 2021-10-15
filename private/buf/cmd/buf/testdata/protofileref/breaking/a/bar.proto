@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package example;
+
+message Bar {
+  string key = 1;
+}

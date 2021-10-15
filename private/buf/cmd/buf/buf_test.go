@@ -427,6 +427,71 @@ func TestFailCheckBreaking1(t *testing.T) {
 	)
 }
 
+func TestFailCheckBreaking2(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".`),
+		"breaking",
+		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
+		"--against",
+		filepath.Join("testdata", "protofileref", "breaking", "b", "foo.proto"),
+	)
+}
+
+func TestFailCheckBreaking3(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+		<input>:1:1:Previously present file "bar.proto" was deleted.
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		`),
+		"breaking",
+		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
+		"--against",
+		filepath.Join("testdata", "protofileref", "breaking", "b"),
+	)
+}
+
+func TestFailCheckBreaking4(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+		testdata/protofileref/breaking/a/bar.proto:5:1:Previously present field "2" with name "value" on message "Bar" was deleted.
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		`),
+		"breaking",
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto")),
+		"--against",
+		filepath.Join("testdata", "protofileref", "breaking", "b"),
+	)
+}
+
+func TestFailCheckBreaking5(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+    <input>:1:1:Previously present file "bar.proto" was deleted.
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		`),
+		"breaking",
+		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
+		"--against",
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "breaking", "b", "foo.proto")),
+	)
+}
+
 func TestCheckLsLintRules1(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
