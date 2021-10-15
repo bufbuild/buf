@@ -194,6 +194,17 @@ func TestWorkspaceWithProtoFileRef(t *testing.T) {
 		"ls-files",
 		filepath.Join("..", "..", "..", "..", "testdata", "protofileref", "buf.proto"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+		../../../../testdata/protofileref/buf.proto:3:1:Files with package "buf" must be within a directory "buf" relative to root but were in directory ".".
+		../../../../testdata/protofileref/buf.proto:3:1:Package name "buf" should be suffixed with a correctly formed version, such as "buf.v1".
+		`),
+		"lint",
+		filepath.Join("..", "..", "..", "..", "testdata", "protofileref", "buf.proto"),
+	)
 }
 
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
