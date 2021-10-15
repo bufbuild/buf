@@ -57,10 +57,6 @@ func (r *protoFileRef) IncludePackageFiles() bool {
 	return r.protoFileRef.IncludePackageFiles()
 }
 
-func (r *protoFileRef) Path() string {
-	return r.protoFileRef.Path()
-}
-
 func (r *protoFileRef) internalRef() internal.Ref {
 	return r.protoFileRef
 }

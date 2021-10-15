@@ -251,7 +251,7 @@ func (r *reader) getArchiveBucket(
 	if err != nil {
 		return nil, err
 	}
-	terminateFileDirectoryPath := ""
+	var terminateFileDirectoryPath string
 	// Get the highest priority file found and use it as the terminate file directory path.
 	terminateFiles := terminateFileProvider.GetTerminateFiles()
 	if len(terminateFiles) != 0 {
@@ -361,11 +361,11 @@ func (r *reader) getProtoFileBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	terminateFileProvider, err := findTerminateFileDirectoryPathFromOS(filepath.Dir(protoFileRef.Path()), terminateFileNames)
+	terminateFileProvider, err := findTerminateFileDirectoryPathFromOS(normalpath.Dir(protoFileRef.Path()), terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
-	rootPath, _, err := r.getBucketRootPathAndRelativePath(ctx, container, filepath.Dir(protoFileRef.Path()), terminateFileProvider)
+	rootPath, dirRelativePath, err := r.getBucketRootPathAndRelativePath(ctx, container, normalpath.Dir(protoFileRef.Path()), terminateFileProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +379,7 @@ func (r *reader) getProtoFileBucket(
 	readWriteBucketCloser, err := newReadWriteBucketCloser(
 		storage.NopReadWriteBucketCloser(readWriteBucket),
 		rootPath,
-		"",
+		dirRelativePath,
 	)
 	if err != nil {
 		return nil, err
@@ -400,7 +400,7 @@ func (r *reader) getBucketRootPathAndRelativePath(
 ) (string, string, error) {
 	// Set the terminateFile to the first terminateFilesPriorities result, since that's the highest
 	// priority file.
-	terminateFileDirectoryAbsPath := ""
+	var terminateFileDirectoryAbsPath string
 	// Get the highest priority file found and use it as the terminate file directory path.
 	terminateFiles := terminateFileProvider.GetTerminateFiles()
 	if len(terminateFiles) != 0 {
@@ -432,7 +432,7 @@ func (r *reader) getBucketRootPathAndRelativePath(
 			return "", "", err
 		}
 		rootPath := terminateFileRelativePath
-		if filepath.IsAbs(dirPath) {
+		if filepath.IsAbs(normalpath.Unnormalize(dirPath)) {
 			// If the input was provided as an absolute path,
 			// we preserve it by initializing the workspace
 			// bucket with an absolute path.
@@ -481,7 +481,7 @@ func (r *reader) getGitBucket(
 	if err != nil {
 		return nil, err
 	}
-	terminateFileDirectoryPath := ""
+	var terminateFileDirectoryPath string
 	// Get the highest priority file found and use it as the terminate file directory path.
 	terminateFiles := terminateFileProvider.GetTerminateFiles()
 	if len(terminateFiles) != 0 {
@@ -708,7 +708,7 @@ func findTerminateFileDirectoryPathFromBucket(
 	}
 	terminateFiles := make([]TerminateFile, len(terminateFileNames))
 	terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
-	foundFiles := 0
+	var foundFiles int
 	for {
 		foundTerminateFiles, err := terminateFilesInBucket(ctx, readBucket, terminateFileDirectoryPath, terminateFileNames)
 		if err != nil {
@@ -810,7 +810,7 @@ func findTerminateFileDirectoryPathFromOS(
 	if err != nil {
 		return nil, err
 	}
-	foundFiles := 0
+	var foundFiles int
 	for {
 		foundTerminateFiles, err := terminateFilesOnOS(terminateFileDirectoryPath, terminateFileNames)
 		if err != nil {

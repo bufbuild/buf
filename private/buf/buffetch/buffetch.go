@@ -120,7 +120,6 @@ type ModuleRef interface {
 type ProtoFileRef interface {
 	SourceRef
 	IncludePackageFiles() bool
-	Path() string
 	internalProtoFileRef() internal.ProtoFileRef
 }
 

@@ -17,7 +17,6 @@ package bufwire
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufconfig"
@@ -237,43 +236,22 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	var moduleConfigDirectory string
 	for _, terminateFile := range terminateFileProvider.GetTerminateFiles() {
 		if _, ok := workspaceConfigs[terminateFile.Name()]; ok {
-			workspaceConfigDirectory = normalpath.Unnormalize(terminateFile.Path())
+			workspaceConfigDirectory = terminateFile.Path()
 			continue
 		}
 		if _, ok := moduleConfigs[terminateFile.Name()]; ok {
-			moduleConfigDirectory = normalpath.Unnormalize(terminateFile.Path())
+			moduleConfigDirectory = terminateFile.Path()
 		}
 	}
 	// If a workspace and module are both found, then we need to check of the module is within
 	// the workspace. If it is, we use the workspace. Otherwise, we use the module.
 	if workspaceConfigDirectory != "" {
 		if moduleConfigDirectory != "" {
-			relativePath, err := filepath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
+			relativePath, err := normalpath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
 			if err != nil {
 				return nil, err
 			}
 			readBucketCloser.SetSubDirPath(normalpath.Normalize(relativePath))
-		} else {
-			// We need to check whether or not the current SubDirPath falls under the current workspace.
-			// If not, we need to reset it to the proto file path's dir as the fallback.
-			workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
-			if err != nil {
-				return nil, err
-			}
-			if !workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig, readBucketCloser.SubDirPath()) {
-				// If the workspace does not contain the subDirPath, we need a way to reset the subDirPath
-				// relative to the root of the bucket, which is where the workspace config file is located
-				// and the reference directory.
-				abs, err := normalpath.NormalizeAndAbsolute(protoFileRef.Path())
-				if err != nil {
-					return nil, err
-				}
-				rel, err := normalpath.Rel(workspaceConfigDirectory, abs)
-				if err != nil {
-					return nil, err
-				}
-				readBucketCloser.SetSubDirPath(normalpath.Dir(rel))
-			}
 		}
 		return m.getWorkspaceModuleConfigs(
 			ctx,
