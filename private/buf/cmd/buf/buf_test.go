@@ -811,8 +811,7 @@ func TestLsFilesIncludeImports(t *testing.T) {
 		t,
 		nil,
 		0,
-		`google/protobuf/descriptor.proto
-		`+filepath.FromSlash(`
+		`google/protobuf/descriptor.proto`+filepath.FromSlash(`
 		testdata/protofileref/buf.proto
 		testdata/protofileref/other.proto
 		`),
