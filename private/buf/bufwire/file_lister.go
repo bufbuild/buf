@@ -161,7 +161,7 @@ func (e *fileLister) listFilesWithoutImports(
 		}
 		var fileInfos []bufmoduleref.FileInfo
 		// There should only be a single imageConfig compiled based on the proto file reference
-		// and the `include_package_files` option if set. These are handled by the iamgeConfigReader,
+		// and the `include_package_files` option if set. These are handled by the imageConfigReader,
 		// we only need to collect the fileInfos here.
 		for _, imageConfig := range imageConfigs {
 			for _, imageFile := range imageConfig.Image().Files() {
@@ -208,7 +208,7 @@ func (e *fileLister) listFilesWithoutImports(
 			if err != nil {
 				return nil, nil, err
 			}
-			return fileInfos, nil, err
+			return fileInfos, nil, nil
 		}
 		workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
 		if err != nil {
@@ -232,7 +232,7 @@ func (e *fileLister) listFilesWithoutImports(
 		if err != nil {
 			return nil, nil, err
 		}
-		return fileInfos, nil, err
+		return fileInfos, nil, nil
 	default:
 		return nil, nil, fmt.Errorf("invalid ref: %T", ref)
 	}
