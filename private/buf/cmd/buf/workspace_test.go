@@ -1011,19 +1011,6 @@ func TestWorkspaceInputOverlapFail(t *testing.T) {
 	)
 }
 
-func TestWorkspaceRegularFileFail(t *testing.T) {
-	// Build directory inputs must be directories.
-	testRunStdoutStderr(
-		t,
-		nil,
-		1,
-		``,
-		filepath.FromSlash(`Failure: testdata/workspace/success/dir/proto/rpc.proto: not a directory`),
-		"build",
-		filepath.Join("testdata", "workspace", "success", "dir", "proto", "rpc.proto"),
-	)
-}
-
 func TestWorkspaceNoVersionFail(t *testing.T) {
 	// The buf.work.yaml must specify a version.
 	testRunStdoutStderr(

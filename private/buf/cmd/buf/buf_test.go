@@ -819,6 +819,35 @@ func TestLsFiles(t *testing.T) {
 		"ls-files",
 		filepath.Join("testdata", "success"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`testdata/success/buf/buf.proto`),
+		"ls-files",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`testdata/protofileref/buf.proto`),
+		"ls-files",
+		// test single file ref that is not part of the module or workspace
+		filepath.Join("testdata", "protofileref", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`
+			testdata/protofileref/buf.proto
+			testdata/protofileref/other.proto
+		`),
+		"ls-files",
+		// test single file ref that is not part of the module or workspace
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "buf.proto")),
+	)
 }
 
 func TestLsFilesIncludeImports(t *testing.T) {
@@ -832,6 +861,28 @@ func TestLsFilesIncludeImports(t *testing.T) {
 		"ls-files",
 		"--include-imports",
 		filepath.Join("testdata", "success"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`google/protobuf/descriptor.proto
+`+filepath.FromSlash(`testdata/success/buf/buf.proto`),
+		"ls-files",
+		"--include-imports",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`google/protobuf/descriptor.proto`+filepath.FromSlash(`
+		testdata/protofileref/buf.proto
+		testdata/protofileref/other.proto
+		`),
+		"ls-files",
+		"--include-imports",
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "buf.proto")),
 	)
 }
 
@@ -847,6 +898,17 @@ google/protobuf/descriptor.proto`,
 		"--include-imports",
 		"--as-import-paths",
 		filepath.Join("testdata", "success"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`buf/buf.proto
+google/protobuf/descriptor.proto`,
+		"ls-files",
+		"--include-imports",
+		"--as-import-paths",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
 	)
 }
 
@@ -924,6 +986,75 @@ func TestLsFilesImage3(t *testing.T) {
 		buf/buf.proto
 		`,
 		"ls-files",
+		"-",
+	)
+}
+
+func TestLsFilesImage4(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"build",
+		"-o",
+		"-",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		stdout,
+		0,
+		`
+		buf/buf.proto
+		`,
+		"ls-files",
+		"-",
+	)
+}
+
+func TestLsFilesImage5(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"build",
+		"-o",
+		"-",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		stdout,
+		0,
+		`
+		buf/buf.proto
+		google/protobuf/descriptor.proto
+		`,
+		"ls-files",
+		"--include-imports",
+		"-",
+	)
+}
+
+func TestBuildFailProtoFileRefWithPathFlag(t *testing.T) {
+	t.Parallel()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"", // stdout should be empty
+		`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`,
+		"build",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+		"--path",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+		"-o",
 		"-",
 	)
 }
@@ -1085,6 +1216,7 @@ func TestExportOtherProto(t *testing.T) {
 		"",
 		"request.proto",
 		"unimported.proto",
+		"another.proto",
 	)
 }
 
@@ -1160,6 +1292,122 @@ func TestExportPaths(t *testing.T) {
 		readWriteBucket,
 		"",
 		"request.proto",
+	)
+}
+
+func TestExportProtoFileRef(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "export", "proto", "rpc.proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"rpc.proto",
+	)
+}
+
+func TestExportProtoFileRefExcludeImports(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--exclude-imports",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "export", "proto", "rpc.proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"rpc.proto",
+	)
+}
+
+func TestExportProtoFileRefIncludePackageFiles(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"-o",
+		tempDir,
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "export", "other", "proto", "request.proto")),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"unimported.proto",
+		"another.proto",
+	)
+}
+
+func TestExportProtoFileRefIncludePackageFilesExcludeImports(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--exclude-imports",
+		"-o",
+		tempDir,
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "export", "other", "proto", "request.proto")),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"unimported.proto",
+	)
+}
+
+func TestExportProtoFileRefWithPathFlag(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"", // stdout should be empty
+		`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`,
+		"export",
+		filepath.Join("testdata", "protofileref", "buf.proto"),
+		"-o",
+		tempDir,
+		"--path",
+		filepath.Join("testdata", "protofileref", "buf.proto"),
 	)
 }
 

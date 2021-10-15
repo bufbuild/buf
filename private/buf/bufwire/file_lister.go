@@ -91,13 +91,12 @@ func (e *fileLister) ListFiles(
 	}
 	// We don't need to build in the withoutImports flow, so we just completely separate the logic
 	// to make sure the common case is as quick as it can be.
-	fileInfos, err := e.listFilesWithoutImports(
+	return e.listFilesWithoutImports(
 		ctx,
 		container,
 		ref,
 		configOverride,
 	)
-	return fileInfos, nil, err
 }
 
 func (e *fileLister) listFilesWithImports(
@@ -142,8 +141,36 @@ func (e *fileLister) listFilesWithoutImports(
 	container app.EnvStdinContainer,
 	ref buffetch.Ref,
 	configOverride string,
-) (_ []bufmoduleref.FileInfo, retErr error) {
+) (_ []bufmoduleref.FileInfo, _ []bufanalysis.FileAnnotation, retErr error) {
 	switch t := ref.(type) {
+	case buffetch.ProtoFileRef:
+		imageConfigs, fileAnnotations, err := e.imageConfigReader.GetImageConfigs(
+			ctx,
+			container,
+			ref,
+			configOverride,
+			nil,
+			false,
+			true,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(fileAnnotations) > 0 {
+			return nil, fileAnnotations, nil
+		}
+		var fileInfos []bufmoduleref.FileInfo
+		// There should only be a single imageConfig compiled based on the proto file reference
+		// and the `include_package_files` option if set. These are handled by the imageConfigReader,
+		// we only need to collect the fileInfos here.
+		for _, imageConfig := range imageConfigs {
+			for _, imageFile := range imageConfig.Image().Files() {
+				if !imageFile.IsImport() {
+					fileInfos = append(fileInfos, imageFile)
+				}
+			}
+		}
+		return fileInfos, nil, nil
 	case buffetch.ImageRef:
 		// if we have an image, list the files in the image
 		image, err := e.imageReader.GetImage(
@@ -155,7 +182,7 @@ func (e *fileLister) listFilesWithoutImports(
 			true,
 		)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		var fileInfos []bufmoduleref.FileInfo
 		for _, file := range image.Files() {
@@ -163,43 +190,51 @@ func (e *fileLister) listFilesWithoutImports(
 				fileInfos = append(fileInfos, file)
 			}
 		}
-		return fileInfos, nil
+		return fileInfos, nil, nil
 	case buffetch.SourceRef:
 		readBucketCloser, err := e.fetchReader.GetSourceBucket(ctx, container, t)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		defer func() {
 			retErr = multierr.Append(retErr, readBucketCloser.Close())
 		}()
 		existingConfigFilePath, err := bufwork.ExistingConfigFilePath(ctx, readBucketCloser)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if subDirPath := readBucketCloser.SubDirPath(); existingConfigFilePath == "" || subDirPath != "." {
-			return e.sourceFileInfosForDirectory(ctx, readBucketCloser, subDirPath, configOverride)
+			fileInfos, err := e.sourceFileInfosForDirectory(ctx, readBucketCloser, subDirPath, configOverride)
+			if err != nil {
+				return nil, nil, err
+			}
+			return fileInfos, nil, nil
 		}
 		workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		var allSourceFileInfos []bufmoduleref.FileInfo
 		for _, directory := range workspaceConfig.Directories {
 			sourceFileInfos, err := e.sourceFileInfosForDirectory(ctx, readBucketCloser, directory, configOverride)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			allSourceFileInfos = append(allSourceFileInfos, sourceFileInfos...)
 		}
-		return allSourceFileInfos, nil
+		return allSourceFileInfos, nil, nil
 	case buffetch.ModuleRef:
 		module, err := e.fetchReader.GetModule(ctx, container, t)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return module.SourceFileInfos(ctx)
+		fileInfos, err := module.SourceFileInfos(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		return fileInfos, nil, nil
 	default:
-		return nil, fmt.Errorf("invalid ref: %T", ref)
+		return nil, nil, fmt.Errorf("invalid ref: %T", ref)
 	}
 }
 
