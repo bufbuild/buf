@@ -807,6 +807,19 @@ func TestLsFilesIncludeImports(t *testing.T) {
 		"--include-imports",
 		filepath.Join("testdata", "success", "buf", "buf.proto"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`
+		google/protobuf/descriptor.proto
+		testdata/protofileref/buf.proto
+		testdata/protofileref/other.proto
+		`),
+		"ls-files",
+		"--include-imports",
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "buf.proto")),
+	)
 }
 
 func TestLsFilesIncludeImportsAsImportPaths(t *testing.T) {
