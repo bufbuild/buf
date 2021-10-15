@@ -209,7 +209,7 @@ func run(
 			images = append(images, image)
 		}
 	} else if isProtoFileRef {
-		// If the reference is a ProtoFileReference, we need to resolve the image for the reference,
+		// If the reference is a ProtoFileRef, we need to resolve the image for the reference,
 		// since the image config reader distills down the reference to the file and its dependencies,
 		// and also handles the #include_package_files option.
 		imageConfigReader, err := bufcli.NewWireImageConfigReader(
