@@ -831,22 +831,22 @@ func TestLsFiles(t *testing.T) {
 		t,
 		nil,
 		0,
-		filepath.FromSlash(`testdata/protofileref/buf.proto`),
+		filepath.FromSlash(`testdata/protofileref/success/buf.proto`),
 		"ls-files",
 		// test single file ref that is not part of the module or workspace
-		filepath.Join("testdata", "protofileref", "buf.proto"),
+		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
 	)
 	testRunStdout(
 		t,
 		nil,
 		0,
 		filepath.FromSlash(`
-			testdata/protofileref/buf.proto
-			testdata/protofileref/other.proto
+			testdata/protofileref/success/buf.proto
+			testdata/protofileref/success/other.proto
 		`),
 		"ls-files",
 		// test single file ref that is not part of the module or workspace
-		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "buf.proto")),
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "success", "buf.proto")),
 	)
 }
 
@@ -867,22 +867,22 @@ func TestLsFilesIncludeImports(t *testing.T) {
 		nil,
 		0,
 		`google/protobuf/descriptor.proto
-`+filepath.FromSlash(`testdata/success/buf/buf.proto`),
+`+filepath.FromSlash(`testdata/protofileref/success/buf.proto`),
 		"ls-files",
 		"--include-imports",
-		filepath.Join("testdata", "success", "buf", "buf.proto"),
+		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
 	)
 	testRunStdout(
 		t,
 		nil,
 		0,
 		`google/protobuf/descriptor.proto`+filepath.FromSlash(`
-		testdata/protofileref/buf.proto
-		testdata/protofileref/other.proto
+		testdata/protofileref/success/buf.proto
+		testdata/protofileref/success/other.proto
 		`),
 		"ls-files",
 		"--include-imports",
-		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "buf.proto")),
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "success", "buf.proto")),
 	)
 }
 
@@ -1403,11 +1403,11 @@ func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 		"", // stdout should be empty
 		`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`,
 		"export",
-		filepath.Join("testdata", "protofileref", "buf.proto"),
+		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
 		"-o",
 		tempDir,
 		"--path",
-		filepath.Join("testdata", "protofileref", "buf.proto"),
+		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
 	)
 }
 

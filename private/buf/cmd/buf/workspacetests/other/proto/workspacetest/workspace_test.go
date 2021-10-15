@@ -189,21 +189,21 @@ func TestWorkspaceWithProtoFileRef(t *testing.T) {
 		t,
 		nil,
 		0,
-		filepath.FromSlash(`../../../../testdata/protofileref/buf.proto`),
+		filepath.FromSlash(`../../../../testdata/protofileref/success/buf.proto`),
 		``,
 		"ls-files",
-		filepath.Join("..", "..", "..", "..", "testdata", "protofileref", "buf.proto"),
+		filepath.Join("..", "..", "..", "..", "testdata", "protofileref", "success", "buf.proto"),
 	)
 	testRunStdout(
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		../../../../testdata/protofileref/buf.proto:3:1:Files with package "buf" must be within a directory "buf" relative to root but were in directory ".".
-		../../../../testdata/protofileref/buf.proto:3:1:Package name "buf" should be suffixed with a correctly formed version, such as "buf.v1".
+		../../../../testdata/protofileref/success/buf.proto:3:1:Files with package "buf" must be within a directory "buf" relative to root but were in directory ".".
+		../../../../testdata/protofileref/success/buf.proto:3:1:Package name "buf" should be suffixed with a correctly formed version, such as "buf.v1".
 		`),
 		"lint",
-		filepath.Join("..", "..", "..", "..", "testdata", "protofileref", "buf.proto"),
+		filepath.Join("..", "..", "..", "..", "testdata", "protofileref", "success", "buf.proto"),
 	)
 }
 
