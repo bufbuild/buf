@@ -1258,4 +1258,12 @@ func TestWorkspaceProtoFile(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "workspace", "success", "protofileref", "another", "foo", "foo.proto"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/workspace/success/protofileref/another/foo/foo.proto:3:1:Package name "foo" should be suffixed with a correctly formed version, such as "foo.v1".`),
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "protofileref", "another", "foo", "foo.proto"),
+	)
 }
