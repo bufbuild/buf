@@ -252,6 +252,16 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 				return nil, err
 			}
 			readBucketCloser.SetSubDirPath(normalpath.Normalize(relativePath))
+		} else {
+			workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
+			if err != nil {
+				return nil, err
+			}
+			for _, directory := range workspaceConfig.Directories {
+				if normalpath.EqualsOrContainsPath(directory, readBucketCloser.SubDirPath(), normalpath.Relative) {
+					readBucketCloser.SetSubDirPath(normalpath.Normalize(directory))
+				}
+			}
 		}
 		return m.getWorkspaceModuleConfigs(
 			ctx,

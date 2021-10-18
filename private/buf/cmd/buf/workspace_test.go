@@ -1236,7 +1236,7 @@ func TestWorkspaceProtoFile(t *testing.T) {
 		    testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`,
 			),
 			"lint",
-			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto"),
+			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
 		testRunStdout(
 			t,
@@ -1247,7 +1247,15 @@ func TestWorkspaceProtoFile(t *testing.T) {
 		    %s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Package name "request" should be suffixed with a correctly formed version, such as "request.v1".`, wd, wd),
 			),
 			"lint",
-			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto"),
+			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
 	}
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"", // We are not expecting an output for stdout for a successful build
+		"build",
+		filepath.Join("testdata", "workspace", "success", "protofileref", "another", "foo", "foo.proto"),
+	)
 }
