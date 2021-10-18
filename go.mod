@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/gofrs/flock v0.8.1
-	github.com/gofrs/uuid v4.0.0+incompatible
+	github.com/gofrs/uuid v4.1.0+incompatible
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/go-cmp v0.5.6
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
