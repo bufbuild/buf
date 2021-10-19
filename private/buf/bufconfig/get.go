@@ -35,7 +35,7 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket) (_ *
 	// Go through all valid config file paths and see which ones are present.
 	// If none are present, return the default config.
 	// If multiple are present, error.
-	for _, configFilePath := range allConfigFilePaths {
+	for _, configFilePath := range AllConfigFilePaths {
 		exists, err := storage.Exists(ctx, readBucket, configFilePath)
 		if err != nil {
 			return nil, err

@@ -68,6 +68,8 @@ func TestSuccess5(t *testing.T) {
 func TestSuccess6(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, ``, "lint", filepath.Join("testdata", "success"))
+	testRunStdout(t, nil, 1, ``, "lint", "--input", filepath.Join("testdata", "success", "buf", "buf.proto"))
+	testRunStdout(t, nil, 0, ``, "lint", filepath.Join("testdata", "success", "buf", "buf.proto"))
 }
 
 func TestSuccessProfile1(t *testing.T) {
@@ -178,6 +180,24 @@ func TestFail5(t *testing.T) {
 		"lint",
 		filepath.Join("testdata", "fail"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"lint",
+		"--input",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		"lint",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+	)
 }
 
 func TestFail6(t *testing.T) {
@@ -191,6 +211,28 @@ func TestFail6(t *testing.T) {
 		"", // stderr should be empty
 		"lint",
 		filepath.Join("testdata", "fail"),
+		"--path",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"lint",
+		"--input",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+		"--path",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"", // stdout should be empty
+		filepath.FromSlash(`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`),
+		"lint",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 	)
@@ -221,6 +263,27 @@ func TestFail7(t *testing.T) {
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		filepath.Join("testdata"),
+		"--config",
+		`{"version":"v1","lint":{"use":["BASIC"]}}`,
+	)
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"lint",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+		"--input-config",
+		`{"version":"v1","lint":{"use":["BASIC"]}}`,
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		"lint",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		"--config",
 		`{"version":"v1","lint":{"use":["BASIC"]}}`,
 	)
@@ -265,10 +328,29 @@ func TestFail10(t *testing.T) {
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf3.proto"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		"",
+		"lint",
+		filepath.Join("testdata", "fail2", "buf", "buf3.proto"),
+	)
 }
 
 func TestFail11(t *testing.T) {
 	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		1,
+		``,
+		"lint",
+		"--path",
+		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
+		"--input",
+		filepath.Join("testdata"),
+	)
 	testRunStdout(
 		t,
 		nil,
@@ -278,6 +360,14 @@ func TestFail11(t *testing.T) {
 		"--path",
 		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
 		filepath.Join("testdata"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/fail2/buf/buf2.proto:9:9:Field name "oneThree" should be lower_snake_case, such as "one_three".`),
+		"lint",
+		filepath.Join("testdata", "fail2", "buf", "buf2.proto"),
 	)
 }
 
@@ -334,6 +424,71 @@ func TestFailCheckBreaking1(t *testing.T) {
 		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
 		"--against",
 		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
+	)
+}
+
+func TestFailCheckBreaking2(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".`),
+		"breaking",
+		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
+		"--against",
+		filepath.Join("testdata", "protofileref", "breaking", "b", "foo.proto"),
+	)
+}
+
+func TestFailCheckBreaking3(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+		<input>:1:1:Previously present file "bar.proto" was deleted.
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		`),
+		"breaking",
+		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
+		"--against",
+		filepath.Join("testdata", "protofileref", "breaking", "b"),
+	)
+}
+
+func TestFailCheckBreaking4(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+		testdata/protofileref/breaking/a/bar.proto:5:1:Previously present field "2" with name "value" on message "Bar" was deleted.
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		`),
+		"breaking",
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto")),
+		"--against",
+		filepath.Join("testdata", "protofileref", "breaking", "b"),
+	)
+}
+
+func TestFailCheckBreaking5(t *testing.T) {
+	t.Parallel()
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+    <input>:1:1:Previously present file "bar.proto" was deleted.
+		testdata/protofileref/breaking/a/foo.proto:7:3:Field "2" on message "Foo" changed type from "int32" to "string".
+		`),
+		"breaking",
+		filepath.Join("testdata", "protofileref", "breaking", "a", "foo.proto"),
+		"--against",
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "breaking", "b", "foo.proto")),
 	)
 }
 
@@ -664,6 +819,35 @@ func TestLsFiles(t *testing.T) {
 		"ls-files",
 		filepath.Join("testdata", "success"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`testdata/success/buf/buf.proto`),
+		"ls-files",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`testdata/protofileref/success/buf.proto`),
+		"ls-files",
+		// test single file ref that is not part of the module or workspace
+		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		filepath.FromSlash(`
+			testdata/protofileref/success/buf.proto
+			testdata/protofileref/success/other.proto
+		`),
+		"ls-files",
+		// test single file ref that is not part of the module or workspace
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "success", "buf.proto")),
+	)
 }
 
 func TestLsFilesIncludeImports(t *testing.T) {
@@ -677,6 +861,28 @@ func TestLsFilesIncludeImports(t *testing.T) {
 		"ls-files",
 		"--include-imports",
 		filepath.Join("testdata", "success"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`google/protobuf/descriptor.proto
+`+filepath.FromSlash(`testdata/protofileref/success/buf.proto`),
+		"ls-files",
+		"--include-imports",
+		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`google/protobuf/descriptor.proto`+filepath.FromSlash(`
+		testdata/protofileref/success/buf.proto
+		testdata/protofileref/success/other.proto
+		`),
+		"ls-files",
+		"--include-imports",
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "protofileref", "success", "buf.proto")),
 	)
 }
 
@@ -692,6 +898,17 @@ google/protobuf/descriptor.proto`,
 		"--include-imports",
 		"--as-import-paths",
 		filepath.Join("testdata", "success"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`buf/buf.proto
+google/protobuf/descriptor.proto`,
+		"ls-files",
+		"--include-imports",
+		"--as-import-paths",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
 	)
 }
 
@@ -769,6 +986,75 @@ func TestLsFilesImage3(t *testing.T) {
 		buf/buf.proto
 		`,
 		"ls-files",
+		"-",
+	)
+}
+
+func TestLsFilesImage4(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"build",
+		"-o",
+		"-",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		stdout,
+		0,
+		`
+		buf/buf.proto
+		`,
+		"ls-files",
+		"-",
+	)
+}
+
+func TestLsFilesImage5(t *testing.T) {
+	t.Parallel()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"build",
+		"-o",
+		"-",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+	)
+	testRunStdout(
+		t,
+		stdout,
+		0,
+		`
+		buf/buf.proto
+		google/protobuf/descriptor.proto
+		`,
+		"ls-files",
+		"--include-imports",
+		"-",
+	)
+}
+
+func TestBuildFailProtoFileRefWithPathFlag(t *testing.T) {
+	t.Parallel()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"", // stdout should be empty
+		`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`,
+		"build",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+		"--path",
+		filepath.Join("testdata", "success", "buf", "buf.proto"),
+		"-o",
 		"-",
 	)
 }
@@ -930,6 +1216,7 @@ func TestExportOtherProto(t *testing.T) {
 		"",
 		"request.proto",
 		"unimported.proto",
+		"another.proto",
 	)
 }
 
@@ -1005,6 +1292,122 @@ func TestExportPaths(t *testing.T) {
 		readWriteBucket,
 		"",
 		"request.proto",
+	)
+}
+
+func TestExportProtoFileRef(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "export", "proto", "rpc.proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"rpc.proto",
+	)
+}
+
+func TestExportProtoFileRefExcludeImports(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--exclude-imports",
+		"-o",
+		tempDir,
+		filepath.Join("testdata", "export", "proto", "rpc.proto"),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"rpc.proto",
+	)
+}
+
+func TestExportProtoFileRefIncludePackageFiles(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"-o",
+		tempDir,
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "export", "other", "proto", "request.proto")),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"unimported.proto",
+		"another.proto",
+	)
+}
+
+func TestExportProtoFileRefIncludePackageFilesExcludeImports(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		"--exclude-imports",
+		"-o",
+		tempDir,
+		fmt.Sprintf("%s#include_package_files=true", filepath.Join("testdata", "export", "other", "proto", "request.proto")),
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"request.proto",
+		"unimported.proto",
+	)
+}
+
+func TestExportProtoFileRefWithPathFlag(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"", // stdout should be empty
+		`Failure: path "." is not contained within any of roots "." - note that specified paths cannot be roots, but must be contained within roots`,
+		"export",
+		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
+		"-o",
+		tempDir,
+		"--path",
+		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
 	)
 }
 

@@ -183,6 +183,29 @@ func TestWorkspaceOverlapSubDirectory(t *testing.T) {
 	)
 }
 
+func TestWorkspaceWithProtoFileRef(t *testing.T) {
+	t.Parallel()
+	testRunStdoutStderr(
+		t,
+		nil,
+		0,
+		filepath.FromSlash("../../../../testdata/workspace/success/protofileref/another/foo/foo.proto"),
+		``,
+		"ls-files",
+		filepath.Join("..", "..", "..", "..", "testdata", "workspace", "success", "protofileref", "another", "foo", "foo.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`
+		../../../../testdata/workspace/success/protofileref/another/foo/foo.proto:3:1:Package name "foo" should be suffixed with a correctly formed version, such as "foo.v1".
+		`),
+		"lint",
+		filepath.Join("..", "..", "..", "..", "testdata", "workspace", "success", "protofileref", "another", "foo", "foo.proto"),
+	)
+}
+
 func testRunStdout(t *testing.T, stdin io.Reader, expectedExitCode int, expectedStdout string, args ...string) {
 	appcmdtesting.RunCommandExitCodeStdout(
 		t,

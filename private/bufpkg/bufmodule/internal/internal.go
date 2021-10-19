@@ -15,15 +15,11 @@
 package internal
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 )
-
-// ErrNoTargetFiles is the error returned if there are no target files found.
-var ErrNoTargetFiles = errors.New("no .proto target files found")
 
 // NormalizeAndCheckPaths verifies that:
 //
