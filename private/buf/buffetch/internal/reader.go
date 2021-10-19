@@ -365,7 +365,7 @@ func (r *reader) getProtoFileBucket(
 	if err != nil {
 		return nil, err
 	}
-	rootPath, dirRelativePath, err := r.getBucketRootPathAndRelativePath(ctx, container, normalpath.Dir(protoFileRef.Path()), terminateFileProvider)
+	rootPath, _, err := r.getBucketRootPathAndRelativePath(ctx, container, normalpath.Dir(protoFileRef.Path()), terminateFileProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +379,7 @@ func (r *reader) getProtoFileBucket(
 	readWriteBucketCloser, err := newReadWriteBucketCloser(
 		storage.NopReadWriteBucketCloser(readWriteBucket),
 		rootPath,
-		dirRelativePath,
+		"",
 	)
 	if err != nil {
 		return nil, err
