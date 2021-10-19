@@ -252,10 +252,12 @@ func (r *reader) getArchiveBucket(
 		return nil, err
 	}
 	var terminateFileDirectoryPath string
-	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFileProvider.GetTerminateFiles()
-	if len(terminateFiles) != 0 {
-		terminateFileDirectoryPath = terminateFiles[0].Path()
+	if terminateFileProvider != nil {
+		// Get the highest priority file found and use it as the terminate file directory path.
+		terminateFiles := terminateFileProvider.GetTerminateFiles()
+		if len(terminateFiles) != 0 {
+			terminateFileDirectoryPath = terminateFiles[0].Path()
+		}
 	}
 	if terminateFileDirectoryPath != "" {
 		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
@@ -402,9 +404,11 @@ func (r *reader) getBucketRootPathAndRelativePath(
 	// priority file.
 	var terminateFileDirectoryAbsPath string
 	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFileProvider.GetTerminateFiles()
-	if len(terminateFiles) != 0 {
-		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
+	if terminateFileProvider != nil {
+		terminateFiles := terminateFileProvider.GetTerminateFiles()
+		if len(terminateFiles) != 0 {
+			terminateFileDirectoryAbsPath = terminateFiles[0].Path()
+		}
 	}
 	if terminateFileDirectoryAbsPath != "" {
 		// If the terminate file exists, we need to determine the relative path from the
@@ -482,10 +486,12 @@ func (r *reader) getGitBucket(
 		return nil, err
 	}
 	var terminateFileDirectoryPath string
-	// Get the highest priority file found and use it as the terminate file directory path.
-	terminateFiles := terminateFileProvider.GetTerminateFiles()
-	if len(terminateFiles) != 0 {
-		terminateFileDirectoryPath = terminateFiles[0].Path()
+	if terminateFileProvider != nil {
+		// Get the highest priority file found and use it as the terminate file directory path.
+		terminateFiles := terminateFileProvider.GetTerminateFiles()
+		if len(terminateFiles) != 0 {
+			terminateFileDirectoryPath = terminateFiles[0].Path()
+		}
 	}
 	if terminateFileDirectoryPath != "" {
 		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
