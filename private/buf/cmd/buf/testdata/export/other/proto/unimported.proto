@@ -4,6 +4,9 @@ syntax = "proto3";
 
 package request;
 
+import "another.proto";
+
 message NotImported {
   string name = 1;
+  another.Request request = 2;
 }

@@ -26,23 +26,25 @@ import (
 )
 
 type refParser struct {
-	logger              *zap.Logger
-	rawRefProcessor     func(*RawRef) error
-	singleFormatToInfo  map[string]*singleFormatInfo
-	archiveFormatToInfo map[string]*archiveFormatInfo
-	dirFormatToInfo     map[string]*dirFormatInfo
-	gitFormatToInfo     map[string]*gitFormatInfo
-	moduleFormatToInfo  map[string]*moduleFormatInfo
+	logger                *zap.Logger
+	rawRefProcessor       func(*RawRef) error
+	singleFormatToInfo    map[string]*singleFormatInfo
+	archiveFormatToInfo   map[string]*archiveFormatInfo
+	dirFormatToInfo       map[string]*dirFormatInfo
+	gitFormatToInfo       map[string]*gitFormatInfo
+	moduleFormatToInfo    map[string]*moduleFormatInfo
+	protoFileFormatToInfo map[string]*protoFileFormatInfo
 }
 
 func newRefParser(logger *zap.Logger, options ...RefParserOption) *refParser {
 	refParser := &refParser{
-		logger:              logger,
-		singleFormatToInfo:  make(map[string]*singleFormatInfo),
-		archiveFormatToInfo: make(map[string]*archiveFormatInfo),
-		dirFormatToInfo:     make(map[string]*dirFormatInfo),
-		gitFormatToInfo:     make(map[string]*gitFormatInfo),
-		moduleFormatToInfo:  make(map[string]*moduleFormatInfo),
+		logger:                logger,
+		singleFormatToInfo:    make(map[string]*singleFormatInfo),
+		archiveFormatToInfo:   make(map[string]*archiveFormatInfo),
+		dirFormatToInfo:       make(map[string]*dirFormatInfo),
+		gitFormatToInfo:       make(map[string]*gitFormatInfo),
+		moduleFormatToInfo:    make(map[string]*moduleFormatInfo),
+		protoFileFormatToInfo: make(map[string]*protoFileFormatInfo),
 	}
 	for _, option := range options {
 		option(refParser)
@@ -76,7 +78,8 @@ func (a *refParser) getParsedRef(
 	_, dirOK := a.dirFormatToInfo[rawRef.Format]
 	_, gitOK := a.gitFormatToInfo[rawRef.Format]
 	_, moduleOK := a.moduleFormatToInfo[rawRef.Format]
-	if !(singleOK || archiveOK || dirOK || gitOK || moduleOK) {
+	_, protoFileOK := a.protoFileFormatToInfo[rawRef.Format]
+	if !(singleOK || archiveOK || dirOK || gitOK || moduleOK || protoFileOK) {
 		return nil, NewFormatUnknownError(rawRef.Format)
 	}
 	if len(allowedFormats) > 0 {
@@ -89,6 +92,9 @@ func (a *refParser) getParsedRef(
 	}
 	if archiveOK {
 		return getArchiveRef(rawRef, archiveFormatInfo.archiveType, archiveFormatInfo.defaultCompressionType)
+	}
+	if protoFileOK {
+		return getProtoFileRef(rawRef), nil
 	}
 	if dirOK {
 		return getDirRef(rawRef)
@@ -181,6 +187,15 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 			}
 			if subDirPath != "." {
 				rawRef.SubDirPath = subDirPath
+			}
+		case "include_package_files":
+			switch value {
+			case "true":
+				rawRef.IncludePackageFiles = true
+			case "false", "":
+				rawRef.IncludePackageFiles = false
+			default:
+				return nil, NewOptionsInvalidKeyError(key)
 			}
 		default:
 			return nil, NewOptionsInvalidKeyError(key)
@@ -368,6 +383,14 @@ func getGitRefName(path string, branch string, tag string, ref string) (git.Name
 	return git.NewTagName(tag), nil
 }
 
+func getProtoFileRef(rawRef *RawRef) ParsedProtoFileRef {
+	return newProtoFileRef(
+		rawRef.Format,
+		rawRef.Path,
+		rawRef.IncludePackageFiles,
+	)
+}
+
 // options
 
 type singleFormatInfo struct {
@@ -412,6 +435,12 @@ func newModuleFormatInfo() *moduleFormatInfo {
 
 type getParsedRefOptions struct {
 	allowedFormats map[string]struct{}
+}
+
+type protoFileFormatInfo struct{}
+
+func newProtoFileFormatInfo() *protoFileFormatInfo {
+	return &protoFileFormatInfo{}
 }
 
 func newGetParsedRefOptions() *getParsedRefOptions {

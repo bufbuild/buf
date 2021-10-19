@@ -53,10 +53,10 @@ var (
 		V1Version,
 	}
 
-	// allConfigFilePaths are all acceptable config file paths without overrides.
+	// AllConfigFilePaths are all acceptable config file paths without overrides.
 	//
 	// These are in the order we should check.
-	allConfigFilePaths = []string{
+	AllConfigFilePaths = []string{
 		ExternalConfigV1FilePath,
 		backupExternalConfigV1FilePath,
 	}
@@ -179,7 +179,7 @@ func ReadConfigOSWithOverride(override string) ReadConfigOSOption {
 //
 // Returns empty string and no error if no configuration file exists.
 func ExistingConfigFilePath(ctx context.Context, readBucket storage.ReadBucket) (string, error) {
-	for _, configFilePath := range allConfigFilePaths {
+	for _, configFilePath := range AllConfigFilePaths {
 		exists, err := storage.Exists(ctx, readBucket, configFilePath)
 		if err != nil {
 			return "", err

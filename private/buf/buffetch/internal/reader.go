@@ -111,7 +111,7 @@ func (r *reader) GetBucket(
 	container app.EnvStdinContainer,
 	bucketRef BucketRef,
 	options ...GetBucketOption,
-) (ReadBucketCloser, error) {
+) (ReadBucketCloserWithTerminateFileProvider, error) {
 	getBucketOptions := newGetBucketOptions()
 	for _, option := range options {
 		option(getBucketOptions)
@@ -133,6 +133,13 @@ func (r *reader) GetBucket(
 		)
 	case GitRef:
 		return r.getGitBucket(
+			ctx,
+			container,
+			t,
+			getBucketOptions.terminateFileNames,
+		)
+	case ProtoFileRef:
+		return r.getProtoFileBucket(
 			ctx,
 			container,
 			t,
@@ -185,8 +192,8 @@ func (r *reader) getArchiveBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	archiveRef ArchiveRef,
-	terminateFileNames []string,
-) (_ ReadBucketCloser, retErr error) {
+	terminateFileNames [][]string,
+) (_ ReadBucketCloserWithTerminateFileProvider, retErr error) {
 	subDirPath, err := normalpath.NormalizeAndValidate(archiveRef.SubDirPath())
 	if err != nil {
 		return nil, err
@@ -240,117 +247,208 @@ func (r *reader) getArchiveBucket(
 	default:
 		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
+	terminateFileProvider, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
+	}
+	var terminateFileDirectoryPath string
+	// Get the highest priority file found and use it as the terminate file directory path.
+	terminateFiles := terminateFileProvider.GetTerminateFiles()
+	if len(terminateFiles) != 0 {
+		terminateFileDirectoryPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryPath != "" {
 		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
 		if err != nil {
 			return nil, err
 		}
-		return newReadBucketCloser(
+		readBucketCloser, err := newReadBucketCloser(
 			storage.NopReadBucketCloser(storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
 			terminateFileDirectoryPath,
 			relativeSubDirPath,
 		)
+		if err != nil {
+			return nil, err
+		}
+		return newReadBucketCloserWithTerminateFiles(
+			readBucketCloser,
+			nil,
+		), nil
 	}
 	var readBucket storage.ReadBucket = readWriteBucket
 	if subDirPath != "." {
 		readBucket = storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(subDirPath))
 	}
-	return newReadBucketCloser(
+	readBucketCloser, err := newReadBucketCloser(
 		storage.NopReadBucketCloser(readBucket),
 		"",
 		"",
 	)
+	if err != nil {
+		return nil, err
+	}
+	return newReadBucketCloserWithTerminateFiles(
+		readBucketCloser,
+		nil,
+	), nil
 }
 
 func (r *reader) getDirBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	dirRef DirRef,
-	terminateFileNames []string,
-) (ReadBucketCloser, error) {
+	terminateFileNames [][]string,
+) (ReadBucketCloserWithTerminateFileProvider, error) {
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	terminateFileDirectoryAbsPath, err := findTerminateFileDirectoryPathFromOS(dirRef.Path(), terminateFileNames)
+	terminateFileProvider, err := findTerminateFileDirectoryPathFromOS(dirRef.Path(), terminateFileNames)
 	if err != nil {
 		return nil, err
+	}
+	rootPath, dirRelativePath, err := r.getBucketRootPathAndRelativePath(ctx, container, dirRef.Path(), terminateFileProvider)
+	if err != nil {
+		return nil, err
+	}
+	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
+		rootPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if dirRelativePath != "" {
+		// Verify that the subDirPath exists too.
+		if _, err := r.storageosProvider.NewReadWriteBucket(
+			normalpath.Join(rootPath, dirRelativePath),
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		); err != nil {
+			return nil, err
+		}
+		readWriteBucketCloser, err := newReadWriteBucketCloser(
+			storage.NopReadWriteBucketCloser(readWriteBucket),
+			rootPath,
+			dirRelativePath,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return newReadBucketCloserWithTerminateFiles(
+			readWriteBucketCloser,
+			nil,
+		), nil
+	}
+	readBucketCloser, err := newReadWriteBucketCloser(
+		storage.NopReadWriteBucketCloser(readWriteBucket),
+		"",
+		"",
+	)
+	if err != nil {
+		return nil, err
+	}
+	return newReadBucketCloserWithTerminateFiles(
+		readBucketCloser,
+		nil,
+	), nil
+}
+
+func (r *reader) getProtoFileBucket(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	protoFileRef ProtoFileRef,
+	terminateFileNames [][]string,
+) (ReadBucketCloserWithTerminateFileProvider, error) {
+	if !r.localEnabled {
+		return nil, NewReadLocalDisabledError()
+	}
+	terminateFileProvider, err := findTerminateFileDirectoryPathFromOS(normalpath.Dir(protoFileRef.Path()), terminateFileNames)
+	if err != nil {
+		return nil, err
+	}
+	rootPath, _, err := r.getBucketRootPathAndRelativePath(ctx, container, normalpath.Dir(protoFileRef.Path()), terminateFileProvider)
+	if err != nil {
+		return nil, err
+	}
+	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
+		rootPath,
+		storageos.ReadWriteBucketWithSymlinksIfSupported(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	readWriteBucketCloser, err := newReadWriteBucketCloser(
+		storage.NopReadWriteBucketCloser(readWriteBucket),
+		rootPath,
+		"", // For ProtoFileRef, we default to using the working directory
+	)
+	if err != nil {
+		return nil, err
+	}
+	return newReadBucketCloserWithTerminateFiles(
+		readWriteBucketCloser,
+		terminateFileProvider,
+	), nil
+}
+
+// getBucketRootPathAndRelativePath is a helper function that returns the rootPath and relative
+// path if available for the readWriteBucket based on the dirRef and protoFileRef.
+func (r *reader) getBucketRootPathAndRelativePath(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	dirPath string,
+	terminateFileProvider TerminateFileProvider,
+) (string, string, error) {
+	// Set the terminateFile to the first terminateFilesPriorities result, since that's the highest
+	// priority file.
+	var terminateFileDirectoryAbsPath string
+	// Get the highest priority file found and use it as the terminate file directory path.
+	terminateFiles := terminateFileProvider.GetTerminateFiles()
+	if len(terminateFiles) != 0 {
+		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryAbsPath != "" {
 		// If the terminate file exists, we need to determine the relative path from the
 		// terminateFileDirectoryAbsPath to the target DirRef.Path.
 		wd, err := osextended.Getwd()
 		if err != nil {
-			return nil, err
+			return "", "", err
 		}
 		terminateFileRelativePath, err := normalpath.Rel(wd, terminateFileDirectoryAbsPath)
 		if err != nil {
-			return nil, err
+			return "", "", err
 		}
-		dirRefAbsPath, err := normalpath.NormalizeAndAbsolute(dirRef.Path())
+		dirAbsPath, err := normalpath.NormalizeAndAbsolute(dirPath)
 		if err != nil {
-			return nil, err
+			return "", "", err
 		}
-		dirRefRelativePath, err := normalpath.Rel(terminateFileDirectoryAbsPath, dirRefAbsPath)
+		dirRelativePath, err := normalpath.Rel(terminateFileDirectoryAbsPath, dirAbsPath)
 		if err != nil {
-			return nil, err
+			return "", "", err
 		}
 		// It should be impossible for the dirRefRelativePath to be outside of the context
 		// diretory, but we validate just to make sure.
-		dirRefRelativePath, err = normalpath.NormalizeAndValidate(dirRefRelativePath)
+		dirRelativePath, err = normalpath.NormalizeAndValidate(dirRelativePath)
 		if err != nil {
-			return nil, err
+			return "", "", err
 		}
 		rootPath := terminateFileRelativePath
-		if filepath.IsAbs(dirRef.Path()) {
+		if filepath.IsAbs(normalpath.Unnormalize(dirPath)) {
 			// If the input was provided as an absolute path,
 			// we preserve it by initializing the workspace
 			// bucket with an absolute path.
 			rootPath = terminateFileDirectoryAbsPath
 		}
-		readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
-			rootPath,
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		)
-		if err != nil {
-			return nil, err
-		}
-		// Verify that the subDirPath exists too.
-		if _, err := r.storageosProvider.NewReadWriteBucket(
-			normalpath.Join(rootPath, dirRefRelativePath),
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		); err != nil {
-			return nil, err
-		}
-		return newReadWriteBucketCloser(
-			storage.NopReadWriteBucketCloser(readWriteBucket),
-			rootPath,
-			dirRefRelativePath,
-		)
+		return rootPath, dirRelativePath, nil
 	}
-	readWriteBucket, err := r.storageosProvider.NewReadWriteBucket(
-		dirRef.Path(),
-		storageos.ReadWriteBucketWithSymlinksIfSupported(),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return newReadWriteBucketCloser(
-		storage.NopReadWriteBucketCloser(readWriteBucket),
-		"",
-		"",
-	)
+	return dirPath, "", nil
 }
 
 func (r *reader) getGitBucket(
 	ctx context.Context,
 	container app.EnvStdinContainer,
 	gitRef GitRef,
-	terminateFileNames []string,
-) (_ ReadBucketCloser, retErr error) {
+	terminateFileNames [][]string,
+) (_ ReadBucketCloserWithTerminateFileProvider, retErr error) {
 	if !r.gitEnabled {
 		return nil, NewReadGitDisabledError()
 	}
@@ -379,30 +477,50 @@ func (r *reader) getGitBucket(
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	terminateFileDirectoryPath, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
+	terminateFileProvider, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
+	}
+	var terminateFileDirectoryPath string
+	// Get the highest priority file found and use it as the terminate file directory path.
+	terminateFiles := terminateFileProvider.GetTerminateFiles()
+	if len(terminateFiles) != 0 {
+		terminateFileDirectoryPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryPath != "" {
 		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
 		if err != nil {
 			return nil, err
 		}
-		return newReadBucketCloser(
+		readBucketCloser, err := newReadBucketCloser(
 			storage.NopReadBucketCloser(storage.MapReadBucket(readWriteBucket, storage.MapOnPrefix(terminateFileDirectoryPath))),
 			terminateFileDirectoryPath,
 			relativeSubDirPath,
 		)
+		if err != nil {
+			return nil, err
+		}
+		return newReadBucketCloserWithTerminateFiles(
+			readBucketCloser,
+			nil,
+		), nil
 	}
 	var readBucket storage.ReadBucket = readWriteBucket
 	if subDirPath != "." {
 		readBucket = storage.MapReadBucket(readBucket, storage.MapOnPrefix(subDirPath))
 	}
-	return newReadBucketCloser(
+	readBucketCloser, err := newReadBucketCloser(
 		storage.NopReadBucketCloser(readBucket),
 		"",
 		"",
 	)
+	if err != nil {
+		return nil, err
+	}
+	return newReadBucketCloserWithTerminateFiles(
+		readBucketCloser,
+		nil,
+	), nil
 }
 
 func (r *reader) getModule(
@@ -583,101 +701,190 @@ func findTerminateFileDirectoryPathFromBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	subDirPath string,
-	terminateFileNames []string,
-) (string, error) {
+	terminateFileNames [][]string,
+) (TerminateFileProvider, error) {
 	if len(terminateFileNames) == 0 {
-		return "", nil
+		return nil, nil
 	}
+	terminateFiles := make([]TerminateFile, len(terminateFileNames))
 	terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
+	var foundFiles int
 	for {
-		fullTerminateFileNames := make([]string, len(terminateFileNames))
-		for i, terminateFileName := range terminateFileNames {
-			fullTerminateFileNames[i] = normalpath.Join(terminateFileDirectoryPath, terminateFileName)
-		}
-		exists, err := anyExistsBucket(ctx, readBucket, fullTerminateFileNames)
+		foundTerminateFiles, err := terminateFilesInBucket(ctx, readBucket, terminateFileDirectoryPath, terminateFileNames)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		if exists {
-			return terminateFileDirectoryPath, nil
+		for i, terminateFile := range foundTerminateFiles {
+			// We only want to return the first file for a hiearchy, so if a file already exists
+			// for a layer of hierarchy, we do not check again.
+			if terminateFiles[i] == nil {
+				// If a file is found for a specific layer of hierarchy, we return the first file found
+				// for that hierarchy.
+				if terminateFile != nil {
+					terminateFiles[i] = terminateFile
+					foundFiles++
+				}
+			}
+		}
+		// If we have found a terminate file for each layer, we can return now.
+		if foundFiles == len(terminateFileNames) {
+			return newTerminateFileProvider(terminateFiles), nil
 		}
 		parent := normalpath.Dir(terminateFileDirectoryPath)
 		if parent == terminateFileDirectoryPath {
-			return "", nil
+			break
 		}
 		terminateFileDirectoryPath = parent
 	}
-}
-
-func anyExistsBucket(
-	ctx context.Context,
-	readBucket storage.ReadBucket,
-	paths []string,
-) (bool, error) {
-	for _, path := range paths {
-		exists, err := storage.Exists(ctx, readBucket, path)
-		if err != nil {
-			return false, err
-		}
-		if exists {
-			return true, nil
+	// The number of terminate files found is less than the number of layers of terminate files
+	// we are accepting, so we must prune the nil values from the initial instantiation of the slice.
+	var prunedTerminateFiles []TerminateFile
+	for _, terminateFile := range terminateFiles {
+		if terminateFile != nil {
+			prunedTerminateFiles = append(prunedTerminateFiles, terminateFile)
 		}
 	}
-	return false, nil
+	return newTerminateFileProvider(prunedTerminateFiles), nil
+}
+
+func terminateFilesInBucket(
+	ctx context.Context,
+	readBucket storage.ReadBucket,
+	directoryPath string,
+	paths [][]string,
+) ([]TerminateFile, error) {
+	foundPaths := make([]TerminateFile, len(paths))
+	for i := range paths {
+		// We need to check for the existence of all the terminate files, so we ascend and prepend
+		// the current directory to determine the fully-qualified filepaths.
+		//
+		// For example:
+		//   [][]string{
+		//     ["buf.work.yaml", "buf.work"],
+		//     ["buf.yaml", "buf.mod"],
+		//   }
+		// ==>
+		//
+		//   [][]string{
+		//     ["/current/path/buf.work.yaml", "/current/path/buf.work"],
+		//     ["/current/path/buf.yaml", "/current/path/buf.mod"],
+		//   }
+		for _, path := range paths[i] {
+			path = normalpath.Join(directoryPath, path)
+			exists, err := storage.Exists(ctx, readBucket, path)
+			if err != nil {
+				return nil, err
+			}
+			if exists {
+				foundPaths[i] = newTerminateFile(normalpath.Base(path), normalpath.Dir(path))
+				// We want the first file found for each layer of hierarchy.
+				break
+			}
+		}
+	}
+	return foundPaths, nil
 }
 
 // findTerminateFileDirectoryPathFromOS returns the directory that contains
 // the terminateFileName, starting with the subDirPath and ascending until
-// the root of the local filesysem.
-func findTerminateFileDirectoryPathFromOS(subDirPath string, terminateFileNames []string) (string, error) {
+// the root of the local filesystem.
+func findTerminateFileDirectoryPathFromOS(
+	subDirPath string,
+	terminateFileNames [][]string,
+) (TerminateFileProvider, error) {
 	if len(terminateFileNames) == 0 {
-		return "", nil
+		return nil, nil
 	}
 	fileInfo, err := os.Stat(normalpath.Unnormalize(subDirPath))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return "", storage.NewErrNotExist(subDirPath)
+			return nil, storage.NewErrNotExist(subDirPath)
 		}
-		return "", err
+		return nil, err
 	}
 	if !fileInfo.IsDir() {
-		return "", normalpath.NewError(normalpath.Unnormalize(subDirPath), errors.New("not a directory"))
+		return nil, normalpath.NewError(normalpath.Unnormalize(subDirPath), errors.New("not a directory"))
 	}
+	terminateFiles := make([]TerminateFile, len(terminateFileNames))
 	terminateFileDirectoryPath, err := normalpath.NormalizeAndAbsolute(subDirPath)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+	var foundFiles int
 	for {
-		fullTerminateFileNames := make([]string, len(terminateFileNames))
-		for i, terminateFileName := range terminateFileNames {
-			fullTerminateFileNames[i] = normalpath.Unnormalize(normalpath.Join(terminateFileDirectoryPath, terminateFileName))
-		}
-		exists, err := anyExistsOS(fullTerminateFileNames)
+		foundTerminateFiles, err := terminateFilesOnOS(terminateFileDirectoryPath, terminateFileNames)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		if exists {
-			return terminateFileDirectoryPath, nil
+		// More terminate files were found than layers of hierarchy, return an error. This path
+		// should be unreachable.
+		if len(foundTerminateFiles) > len(terminateFileNames) {
+			return nil, fmt.Errorf("more than one terminate file found per level of prioritization: %v", foundTerminateFiles)
+		}
+		for i, terminateFile := range foundTerminateFiles {
+			// We only want to return the first file for a hiearchy, so if a file already exists
+			// for a layer of hierarchy, we do not check again.
+			if terminateFiles[i] == nil {
+				// If a file is found for a specific layer of hierarchy, we return the first file found
+				// for that hierarchy.
+				if terminateFile != nil {
+					terminateFiles[i] = terminateFile
+					foundFiles++
+				}
+			}
+		}
+		// If we have found a terminate file for each layer, we can return now.
+		if foundFiles == len(terminateFileNames) {
+			return newTerminateFileProvider(terminateFiles), nil
 		}
 		parent := normalpath.Dir(terminateFileDirectoryPath)
 		if parent == terminateFileDirectoryPath {
-			return "", nil
+			break
 		}
 		terminateFileDirectoryPath = parent
 	}
-}
-
-func anyExistsOS(paths []string) (bool, error) {
-	for _, path := range paths {
-		fileInfo, err := os.Stat(path)
-		if err != nil && !os.IsNotExist(err) {
-			return false, err
-		}
-		if fileInfo != nil && !fileInfo.IsDir() {
-			return true, nil
+	// The number of terminate files found is less than the number of layers of terminate files
+	// we are accepting, so we must prune the nil values from the initial instantiation of the slice.
+	var prunedTerminateFiles []TerminateFile
+	for _, terminateFile := range terminateFiles {
+		if terminateFile != nil {
+			prunedTerminateFiles = append(prunedTerminateFiles, terminateFile)
 		}
 	}
-	return false, nil
+	return newTerminateFileProvider(prunedTerminateFiles), nil
+}
+
+func terminateFilesOnOS(directoryPath string, paths [][]string) ([]TerminateFile, error) {
+	foundPaths := make([]TerminateFile, len(paths))
+	for i := range paths {
+		// We need to check for the existence of all the terminate files, so we ascend and prepend
+		// the current directory to determine the fully-qualified filepaths.
+		//
+		// For example:
+		//   [][]string{
+		//     ["buf.work.yaml", "buf.work"],
+		//     ["buf.yaml", "buf.mod"],
+		//   }
+		// ==>
+		//
+		//   [][]string{
+		//     ["/current/path/buf.work.yaml", "/current/path/buf.work"],
+		//     ["/current/path/buf.yaml", "/current/path/buf.mod"],
+		//   }
+		for _, path := range paths[i] {
+			path = normalpath.Unnormalize(normalpath.Join(directoryPath, path))
+			fileInfo, err := os.Stat(path)
+			if err != nil && !os.IsNotExist(err) {
+				return nil, err
+			}
+			if fileInfo != nil && !fileInfo.IsDir() {
+				foundPaths[i] = newTerminateFile(normalpath.Base(path), normalpath.Dir(path))
+				// We want the first file found for each layer of hierarchy.
+				break
+			}
+		}
+	}
+	return foundPaths, nil
 }
 
 type getFileOptions struct {
@@ -689,7 +896,7 @@ func newGetFileOptions() *getFileOptions {
 }
 
 type getBucketOptions struct {
-	terminateFileNames []string
+	terminateFileNames [][]string
 }
 
 func newGetBucketOptions() *getBucketOptions {

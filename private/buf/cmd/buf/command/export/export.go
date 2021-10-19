@@ -109,7 +109,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger()).GetSourceOrModuleRef(ctx, input)
+	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetSourceOrModuleRef(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -160,16 +160,23 @@ func run(
 		}
 		moduleFileSets[i] = moduleFileSet
 	}
-
-	// Unless we are excluding imports, we only want to export those
-	// imports that are actually used. To figure this out, we build an image of images
+	// There are two cases where we need an image to filter the output:
+	//   1) the input is a proto file reference
+	//   2) ensuring that we are including the relevant imports
+	//
+	// In the first scenario, the imageConfigReader returns imageCongfigs that handle the filtering
+	// for the proto file ref.
+	//
+	// To handle imports for all other references, unless we are excluding imports, we only want
+	// to export those imports that are actually used. To figure this out, we build an image of images
 	// and use the fact that something is in an image to determine if it is actually used.
+	var images []bufimage.Image
 	var mergedImage bufimage.Image
-	// We gate on flags.ExcludeImports so that we don't waste time building if the
+	_, isProtoFileRef := sourceOrModuleRef.(buffetch.ProtoFileRef)
+	// We gate on flags.ExcludeImports/buffetch.ProtoFileRef so that we don't waste time building if the
 	// result of the build is not relevant.
 	if !flags.ExcludeImports {
 		imageBuilder := bufimagebuild.NewBuilder(container.Logger())
-		images := make([]bufimage.Image, 0, len(moduleFileSets))
 		for _, moduleFileSet := range moduleFileSets {
 			targetFileInfos, err := moduleFileSet.TargetFileInfos(ctx)
 			if err != nil {
@@ -201,12 +208,48 @@ func run(
 			}
 			images = append(images, image)
 		}
-		mergedImage, err = bufimage.MergeImages(images...)
+	} else if isProtoFileRef {
+		// If the reference is a ProtoFileRef, we need to resolve the image for the reference,
+		// since the image config reader distills down the reference to the file and its dependencies,
+		// and also handles the #include_package_files option.
+		imageConfigReader, err := bufcli.NewWireImageConfigReader(
+			container,
+			storageosProvider,
+			runner,
+			registryProvider,
+		)
 		if err != nil {
 			return err
 		}
+		imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
+			ctx,
+			container,
+			sourceOrModuleRef,
+			flags.Config,
+			flags.Paths,
+			false,
+			true, // SourceCodeInfo is not needed here for outputting the source code
+		)
+		if err != nil {
+			return err
+		}
+		if len(fileAnnotations) > 0 {
+			if err := bufanalysis.PrintFileAnnotations(
+				container.Stderr(),
+				fileAnnotations,
+				bufanalysis.FormatText.String(),
+			); err != nil {
+				return err
+			}
+		}
+		for _, imageConfig := range imageConfigs {
+			images = append(images, imageConfig.Image())
+		}
 	}
-
+	mergedImage, err = bufimage.MergeImages(images...)
+	if err != nil {
+		return err
+	}
 	if err := os.MkdirAll(flags.Output, 0755); err != nil {
 		return err
 	}
@@ -232,6 +275,34 @@ func run(
 	}
 	writtenPaths := make(map[string]struct{})
 	for _, moduleFileSet := range moduleFileSets {
+		// If the reference was a proto file reference, we will use the image files as the basis
+		// for outputting source files.
+		if isProtoFileRef {
+			for _, protoFileRefImageFile := range mergedImage.Files() {
+				path := protoFileRefImageFile.Path()
+				if _, ok := writtenPaths[path]; ok {
+					continue
+				}
+				if flags.ExcludeImports && protoFileRefImageFile.IsImport() {
+					continue
+				}
+				moduleFile, err := moduleFileSet.GetModuleFile(ctx, path)
+				if err != nil {
+					return err
+				}
+				if err := storage.CopyReadObject(ctx, readWriteBucket, moduleFile); err != nil {
+					return multierr.Append(err, moduleFile.Close())
+				}
+				if err := moduleFile.Close(); err != nil {
+					return err
+				}
+				writtenPaths[path] = struct{}{}
+			}
+			if len(writtenPaths) == 0 {
+				return errors.New("no .proto target files found")
+			}
+			return nil
+		}
 		fileInfos, err := fileInfosFunc(moduleFileSet, ctx)
 		if err != nil {
 			return err

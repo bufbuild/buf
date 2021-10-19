@@ -116,6 +116,13 @@ type ModuleRef interface {
 	internalModuleRef() internal.ModuleRef
 }
 
+// ProtoFileRef is a proto file reference.
+type ProtoFileRef interface {
+	SourceRef
+	IncludePackageFiles() bool
+	internalProtoFileRef() internal.ProtoFileRef
+}
+
 // ImageRefParser is an image ref parser for Buf.
 type ImageRefParser interface {
 	// GetImageRef gets the reference for the image file.
@@ -157,8 +164,19 @@ type RefParser interface {
 // NewRefParser returns a new RefParser.
 //
 // This defaults to dir or module.
-func NewRefParser(logger *zap.Logger) RefParser {
-	return newRefParser(logger)
+func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
+	return newRefParser(logger, options...)
+}
+
+// RefParserOption is an option for NewRefParser. Ref parser options are only accepted
+// for the default RefParser constructor.
+type RefParserOption func(*refParser)
+
+// RefParserWithProtoFileRefAllowed sets the option of allowing a proto file.
+func RefParserWithProtoFileRefAllowed() RefParserOption {
+	return func(r *refParser) {
+		r.allowProtoFileRef = true
+	}
 }
 
 // NewImageRefParser returns a new RefParser for images only.
@@ -199,6 +217,9 @@ type ReadBucketCloser internal.ReadBucketCloser
 // declaration to do so.
 type ReadWriteBucketCloser internal.ReadWriteBucketCloser
 
+// ReadWriteBucketCloserWithTerminateFileProvider is a ReadWriteBucketCloser with a TerminateFileProvider.
+type ReadBucketCloserWithTerminateFileProvider internal.ReadBucketCloserWithTerminateFileProvider
+
 // ImageReader is an image reader.
 type ImageReader interface {
 	// GetImageFile gets the image file.
@@ -222,7 +243,7 @@ type SourceReader interface {
 		container app.EnvStdinContainer,
 		sourceRef SourceRef,
 		options ...GetSourceBucketOption,
-	) (ReadBucketCloser, error)
+	) (ReadBucketCloserWithTerminateFileProvider, error)
 }
 
 // GetSourceBucketOption is an option for GetSourceBucket.

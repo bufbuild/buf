@@ -51,3 +51,7 @@ func (r *readWriteBucketCloser) RelativeRootPath() string {
 func (r *readWriteBucketCloser) SubDirPath() string {
 	return r.subDirPath
 }
+
+func (r *readWriteBucketCloser) SetSubDirPath(subDirPath string) {
+	r.subDirPath = subDirPath
+}

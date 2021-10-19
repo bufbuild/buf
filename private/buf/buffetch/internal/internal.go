@@ -161,6 +161,16 @@ func NewDirRef(path string) (DirRef, error) {
 	return newDirRef("", path)
 }
 
+// ProtoFileRef is a file reference that incorporates a BucketRef.
+type ProtoFileRef interface {
+	BucketRef
+	// Path is the normalized path to the file reference.
+	Path() string
+	// IncludePackageFiles says to include the same package files TODO update comment
+	IncludePackageFiles() bool
+	protoFileRef()
+}
+
 // GitRef is a git reference.
 type GitRef interface {
 	// Path is the path to the reference.
@@ -293,6 +303,12 @@ func NewDirectParsedDirRef(format string, path string) ParsedDirRef {
 	return newDirectDirRef(format, path)
 }
 
+// ParsedProtoFileRef is a parsed ProtoFileRef.
+type ParsedProtoFileRef interface {
+	ProtoFileRef
+	HasFormat
+}
+
 // ParsedGitRef is a parsed GitRef.
 type ParsedGitRef interface {
 	GitRef
@@ -356,6 +372,28 @@ func NewRefParser(logger *zap.Logger, options ...RefParserOption) RefParser {
 	return newRefParser(logger, options...)
 }
 
+// TerminateFileProvider provides TerminateFiles.
+type TerminateFileProvider interface {
+	// GetTerminateFiles returns the list of terminate files in priority order.
+	GetTerminateFiles() []TerminateFile
+}
+
+// TerminateFile is a terminate file.
+type TerminateFile interface {
+	// Name returns the name of the TerminateFile (i.e. the base of the fully-qualified file paths).
+	Name() string
+	// Path returns the normalized directory path where the TemrinateFile is located.
+	Path() string
+}
+
+// ReadBucketCloserWithTerminateFileProvider is a ReadBucketCloser with a TerminateFileProvider.
+type ReadBucketCloserWithTerminateFileProvider interface {
+	ReadBucketCloser
+
+	// TerminateFileProvider returns a TerminateFileProvider.
+	TerminateFileProvider() TerminateFileProvider
+}
+
 // ReadBucketCloser is a bucket returned from GetBucket.
 type ReadBucketCloser interface {
 	storage.ReadBucketCloser
@@ -372,6 +410,11 @@ type ReadBucketCloser interface {
 	// this terminate file, and the subdir will be the subdir of
 	// the actual asset relative to the terminate file.
 	SubDirPath() string
+	// SetSubDirPath sets the value of `SubDirPath`.
+	//
+	// This should only be called if a terminate file name was specified and found outside of
+	// a workspace where the bucket is originally closed.
+	SetSubDirPath(string)
 }
 
 // ReadWriteBucketCloser is a bucket potentially returned from GetBucket.
@@ -400,7 +443,7 @@ type Reader interface {
 		container app.EnvStdinContainer,
 		bucketRef BucketRef,
 		options ...GetBucketOption,
-	) (ReadBucketCloser, error)
+	) (ReadBucketCloserWithTerminateFileProvider, error)
 	// GetModule gets the module.
 	GetModule(
 		ctx context.Context,
@@ -483,6 +526,11 @@ type RawRef struct {
 	GitDepth uint32
 	// Only set for archive formats
 	ArchiveStripComponents uint32
+	// Only set for proto file ref format.
+	// Sets whether or not to include the files in the rest of the package
+	// in the image for the ProtoFileRef.
+	// This defaults to false.
+	IncludePackageFiles bool
 }
 
 // RefParserOption is an RefParser option.
@@ -583,6 +631,24 @@ func WithModuleFormat(format string, options ...ModuleFormatOption) RefParserOpt
 	}
 }
 
+// WithProtoFileFormat attaches the given format as a single file format.
+// The ProtoFileRef format is only allowed if the option for the parser is given. Otherwise this is a no-op.
+//
+// It is up to the user to not incorrectly attach a format twice.
+func WithProtoFileFormat(format string, options ...ProtoFileFormatOption) RefParserOption {
+	return func(refParser *refParser) {
+		format = normalizeFormat(format)
+		if format == "" {
+			return
+		}
+		protoFileFormatInfo := newProtoFileFormatInfo()
+		for _, option := range options {
+			option(protoFileFormatInfo)
+		}
+		refParser.protoFileFormatToInfo[format] = protoFileFormatInfo
+	}
+}
+
 // SingleFormatOption is a single format option.
 type SingleFormatOption func(*singleFormatInfo)
 
@@ -614,8 +680,11 @@ type GitFormatOption func(*gitFormatInfo)
 // ModuleFormatOption is a module format option.
 type ModuleFormatOption func(*moduleFormatInfo)
 
-// ReaderOption is an Reader option.
+// ReaderOption is a Reader option.
 type ReaderOption func(*reader)
+
+// ProtoFileFormatOption is a single file format option.
+type ProtoFileFormatOption func(*protoFileFormatInfo)
 
 // WithReaderHTTP enables HTTP.
 func WithReaderHTTP(httpClient *http.Client, httpAuthenticator httpauth.Authenticator) ReaderOption {
@@ -704,18 +773,27 @@ type GetBucketOption func(*getBucketOptions)
 
 // WithGetBucketTerminateFileNames only applies if subdir is specified.
 //
-// This says that if given a subdir, ascend directories until you reach
-// a file one of these names, and if you do, the returned bucket will be
+// The terminate files are organized as a slice of slices of file names.
+// Priority will be given to the first slice of terminate file names, which will be workspace
+// configuration files. The second layer of priority will be given to modules.
+//
+// This says that for a given subdir, ascend directories until you reach
+// a file with one of these names, and if you do, the returned bucket will be
 // for the directory with this filename, while SubDirPath on the
 // returned bucket will be set to the original subdir relative
 // to the terminate file.
 //
-// This is used for workspaces. So if you have i.e. "proto/foo"
+// This is used for workspaces and modules. So if you have i.e. "proto/foo"
 // subdir, and terminate file "proto/buf.work.yaml", the returned bucket will
 // be for "proto", and the SubDirPath will be "foo".
 //
 // The terminateFileNames are expected to be valid and have no slashes.
-func WithGetBucketTerminateFileNames(terminateFileNames ...string) GetBucketOption {
+// Example of terminateFileNames:
+// 	[][]string{
+// 		[]string{"buf.work.yaml", "buf.work"},
+// 		[]string{"buf.yaml", "buf.mod"},
+// 	}.
+func WithGetBucketTerminateFileNames(terminateFileNames [][]string) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
 		getBucketOptions.terminateFileNames = terminateFileNames
 	}

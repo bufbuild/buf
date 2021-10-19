@@ -29,6 +29,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
@@ -68,6 +69,16 @@ func (m *moduleConfigReader) GetModuleConfigs(
 	// We construct a new WorkspaceBuilder here so that the cache is only used for a single call.
 	workspaceBuilder := bufwork.NewWorkspaceBuilder(m.moduleBucketBuilder)
 	switch t := sourceOrModuleRef.(type) {
+	case buffetch.ProtoFileRef:
+		return m.getProtoFileModuleSourceConfigs(
+			ctx,
+			container,
+			t,
+			workspaceBuilder,
+			configOverride,
+			externalDirOrFilePaths,
+			externalDirOrFilePathsAllowNotExist,
+		)
 	case buffetch.SourceRef:
 		return m.getSourceModuleConfigs(
 			ctx,
@@ -203,6 +214,91 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 		return nil, err
 	}
 	return newModuleConfig(module, config, nil /* Workspaces aren't supported for ModuleRefs */), nil
+}
+
+func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
+	ctx context.Context,
+	container app.EnvStdinContainer,
+	protoFileRef buffetch.ProtoFileRef,
+	workspaceBuilder bufwork.WorkspaceBuilder,
+	configOverride string,
+	externalDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
+) (_ []ModuleConfig, retErr error) {
+	readBucketCloser, err := m.fetchReader.GetSourceBucket(ctx, container, protoFileRef)
+	if err != nil {
+		return nil, err
+	}
+	workspaceConfigs := stringutil.SliceToMap(bufwork.AllConfigFilePaths)
+	moduleConfigs := stringutil.SliceToMap(bufconfig.AllConfigFilePaths)
+	terminateFileProvider := readBucketCloser.TerminateFileProvider()
+	var workspaceConfigDirectory string
+	var moduleConfigDirectory string
+	for _, terminateFile := range terminateFileProvider.GetTerminateFiles() {
+		if _, ok := workspaceConfigs[terminateFile.Name()]; ok {
+			workspaceConfigDirectory = terminateFile.Path()
+			continue
+		}
+		if _, ok := moduleConfigs[terminateFile.Name()]; ok {
+			moduleConfigDirectory = terminateFile.Path()
+		}
+	}
+	// If a workspace and module are both found, then we need to check of the module is within
+	// the workspace. If it is, we use the workspace. Otherwise, we use the module.
+	if workspaceConfigDirectory != "" {
+		if moduleConfigDirectory != "" {
+			relativePath, err := normalpath.Rel(workspaceConfigDirectory, moduleConfigDirectory)
+			if err != nil {
+				return nil, err
+			}
+			readBucketCloser.SetSubDirPath(normalpath.Normalize(relativePath))
+		} else {
+			// If there are no module configs in the path to the workspace, we need to check whether or not
+			// proto file ref is contained within one of the workspace directories.
+			// If yes, we can set the `SubDirPath` for the bucket to the directory, to ensure we build all the
+			// dependencies for the directory. If not, then we will keep the `SubDirPath` as the working directory.
+			workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
+			if err != nil {
+				return nil, err
+			}
+			for _, directory := range workspaceConfig.Directories {
+				if normalpath.EqualsOrContainsPath(directory, readBucketCloser.SubDirPath(), normalpath.Relative) {
+					readBucketCloser.SetSubDirPath(normalpath.Normalize(directory))
+					break
+				}
+			}
+		}
+		return m.getWorkspaceModuleConfigs(
+			ctx,
+			protoFileRef,
+			workspaceBuilder,
+			readBucketCloser,
+			readBucketCloser.RelativeRootPath(),
+			readBucketCloser.SubDirPath(),
+			configOverride,
+			externalDirOrFilePaths,
+			externalDirOrFilePathsAllowNotExist,
+		)
+	}
+	moduleConfig, err := m.getSourceModuleConfig(
+		ctx,
+		protoFileRef,
+		readBucketCloser,
+		readBucketCloser.RelativeRootPath(),
+		readBucketCloser.SubDirPath(),
+		configOverride,
+		workspaceBuilder,
+		nil,
+		nil,
+		externalDirOrFilePaths,
+		externalDirOrFilePathsAllowNotExist,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return []ModuleConfig{
+		moduleConfig,
+	}, nil
 }
 
 func (m *moduleConfigReader) getWorkspaceModuleConfigs(
