@@ -256,8 +256,7 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 			// If there are no module configs in the path to the workspace, we need to check whether or not
 			// proto file ref is contained within one of the workspace directories.
 			// If yes, we can set the `SubDirPath` for the bucket to the directory, to ensure we build all the
-			// dependencies for the directory. If not, then we will keep the relative directory path of the proto file
-			// ref as the SubDirPath.
+			// dependencies for the directory. If not, then we will keep the `SubDirPath` as the working directory.
 			workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucketCloser, readBucketCloser.RelativeRootPath())
 			if err != nil {
 				return nil, err
