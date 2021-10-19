@@ -29,6 +29,8 @@ message User {
   google.protobuf.Timestamp update_time = 3;
   // unique, mutable
   string username = 4;
+  // mutable
+  bool deactivated = 5;
 }
 
 // TODO: #663 move this to organization service
