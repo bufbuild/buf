@@ -379,7 +379,7 @@ func (r *reader) getProtoFileBucket(
 	readWriteBucketCloser, err := newReadWriteBucketCloser(
 		storage.NopReadWriteBucketCloser(readWriteBucket),
 		rootPath,
-		"",
+		"", // For ProtoFileRef, we default to using the working directory
 	)
 	if err != nil {
 		return nil, err
