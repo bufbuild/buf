@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.0.0-rc6] - 2021-10-20
 
 - Fix issue with `buf ls-files` when given an image as an input, imports were being printed,
   even without the `--include-imports` flag.
