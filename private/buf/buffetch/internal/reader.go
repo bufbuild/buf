@@ -247,17 +247,15 @@ func (r *reader) getArchiveBucket(
 	default:
 		return nil, fmt.Errorf("unknown ArchiveType: %v", archiveType)
 	}
-	terminateFileProvider, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
+	terminateFileProvider, err := getTerminateFileProviderForBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
 	var terminateFileDirectoryPath string
-	if terminateFileProvider != nil {
-		// Get the highest priority file found and use it as the terminate file directory path.
-		terminateFiles := terminateFileProvider.GetTerminateFiles()
-		if len(terminateFiles) != 0 {
-			terminateFileDirectoryPath = terminateFiles[0].Path()
-		}
+	// Get the highest priority file found and use it as the terminate file directory path.
+	terminateFiles := terminateFileProvider.GetTerminateFiles()
+	if len(terminateFiles) != 0 {
+		terminateFileDirectoryPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryPath != "" {
 		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
@@ -304,7 +302,7 @@ func (r *reader) getDirBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	terminateFileProvider, err := findTerminateFileDirectoryPathFromOS(dirRef.Path(), terminateFileNames)
+	terminateFileProvider, err := getTerminateFileProviderForOS(dirRef.Path(), terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -363,7 +361,7 @@ func (r *reader) getProtoFileBucket(
 	if !r.localEnabled {
 		return nil, NewReadLocalDisabledError()
 	}
-	terminateFileProvider, err := findTerminateFileDirectoryPathFromOS(normalpath.Dir(protoFileRef.Path()), terminateFileNames)
+	terminateFileProvider, err := getTerminateFileProviderForOS(normalpath.Dir(protoFileRef.Path()), terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
@@ -481,17 +479,15 @@ func (r *reader) getGitBucket(
 	); err != nil {
 		return nil, fmt.Errorf("could not clone %s: %v", gitURL, err)
 	}
-	terminateFileProvider, err := findTerminateFileDirectoryPathFromBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
+	terminateFileProvider, err := getTerminateFileProviderForBucket(ctx, readWriteBucket, subDirPath, terminateFileNames)
 	if err != nil {
 		return nil, err
 	}
 	var terminateFileDirectoryPath string
-	if terminateFileProvider != nil {
-		// Get the highest priority file found and use it as the terminate file directory path.
-		terminateFiles := terminateFileProvider.GetTerminateFiles()
-		if len(terminateFiles) != 0 {
-			terminateFileDirectoryPath = terminateFiles[0].Path()
-		}
+	// Get the highest priority file found and use it as the terminate file directory path.
+	terminateFiles := terminateFileProvider.GetTerminateFiles()
+	if len(terminateFiles) != 0 {
+		terminateFileDirectoryPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryPath != "" {
 		relativeSubDirPath, err := normalpath.Rel(terminateFileDirectoryPath, subDirPath)
@@ -700,19 +696,19 @@ func getGitURL(gitRef GitRef) (string, error) {
 	}
 }
 
-// findTerminateFileDirectoryPathFromBucket returns the directory path that contains
+// getTerminateFileProviderForBucket returns the directory path that contains
 // one of the terminateFileNames, starting with the subDirPath and ascending until the root
 // of the bucket.
-func findTerminateFileDirectoryPathFromBucket(
+func getTerminateFileProviderForBucket(
 	ctx context.Context,
 	readBucket storage.ReadBucket,
 	subDirPath string,
 	terminateFileNames [][]string,
 ) (TerminateFileProvider, error) {
-	if len(terminateFileNames) == 0 {
-		return nil, nil
-	}
 	terminateFiles := make([]TerminateFile, len(terminateFileNames))
+	if len(terminateFileNames) == 0 {
+		return newTerminateFileProvider(terminateFiles), nil
+	}
 	terminateFileDirectoryPath := normalpath.Normalize(subDirPath)
 	var foundFiles int
 	for {
@@ -791,15 +787,16 @@ func terminateFilesInBucket(
 	return foundPaths, nil
 }
 
-// findTerminateFileDirectoryPathFromOS returns the directory that contains
+// getTerminateFileProviderForOS returns the directory that contains
 // the terminateFileName, starting with the subDirPath and ascending until
 // the root of the local filesystem.
-func findTerminateFileDirectoryPathFromOS(
+func getTerminateFileProviderForOS(
 	subDirPath string,
 	terminateFileNames [][]string,
 ) (TerminateFileProvider, error) {
+	terminateFiles := make([]TerminateFile, len(terminateFileNames))
 	if len(terminateFileNames) == 0 {
-		return nil, nil
+		return newTerminateFileProvider(terminateFiles), nil
 	}
 	fileInfo, err := os.Stat(normalpath.Unnormalize(subDirPath))
 	if err != nil {
@@ -811,7 +808,6 @@ func findTerminateFileDirectoryPathFromOS(
 	if !fileInfo.IsDir() {
 		return nil, normalpath.NewError(normalpath.Unnormalize(subDirPath), errors.New("not a directory"))
 	}
-	terminateFiles := make([]TerminateFile, len(terminateFileNames))
 	terminateFileDirectoryPath, err := normalpath.NormalizeAndAbsolute(subDirPath)
 	if err != nil {
 		return nil, err
