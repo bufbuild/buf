@@ -1,4 +1,4 @@
-$protocVersion = '3.18.1'
+$protocVersion = '3.19.0'
 $protocGenGoVersion = 'v1.27.1'
 $protocGenGoGRPCVersion = '30dfb4b933a50fd366d7ed36ed4f71dbba2d382e'
 
