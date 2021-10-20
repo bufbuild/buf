@@ -4,7 +4,7 @@
 
 - Fix issue with `buf ls-files` when given an image as an input, imports were being printed,
   even without the `--include-imports` flag.
-- Add `ProtoFileRef`, an input reference for a protobuf file on disk.
+- Add an input reference for individual protobuf files for the CLI.
 
 ## [v1.0.0-rc5] - 2021-10-12
 
