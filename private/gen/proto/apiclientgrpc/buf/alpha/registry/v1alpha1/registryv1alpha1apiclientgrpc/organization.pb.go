@@ -93,7 +93,7 @@ func (s *organizationService) ListUserOrganizations(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (organizations []*v1alpha1.Organization, nextPageToken string, _ error) {
+) (organizations []*v1alpha1.Organization, nextPageToken string, organizationMembership []*v1alpha1.OrganizationMembership, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -107,9 +107,9 @@ func (s *organizationService) ListUserOrganizations(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", nil, err
 	}
-	return response.Organizations, response.NextPageToken, nil
+	return response.Organizations, response.NextPageToken, response.OrganizationMembership, nil
 }
 
 // CreateOrganization creates a new organization.
