@@ -31,6 +31,13 @@ message Organization {
   string name = 4;
 }
 
+// OrganizationMembership is a nested structure that contains
+// the organization and user membership information on that organization.
+message OrganizationMembership {
+  Organization organization = 1;
+  OrganizationRole organization_role = 2; 
+}
+
 // OrganizationService is the Organization service.
 service OrganizationService {
   // GetOrganization gets a organization by ID.
@@ -100,7 +107,7 @@ message ListUserOrganizationsRequest {
 }
 
 message ListUserOrganizationsResponse {
-  repeated Organization organizations = 1;
+  repeated OrganizationMembership organizations = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
 }

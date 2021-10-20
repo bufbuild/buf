@@ -93,7 +93,7 @@ func (s *organizationService) ListUserOrganizations(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (organizations []*v1alpha1.Organization, nextPageToken string, _ error) {
+) (organizations []*v1alpha1.OrganizationMembership, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
