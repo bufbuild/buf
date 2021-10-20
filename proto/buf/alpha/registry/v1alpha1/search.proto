@@ -32,6 +32,7 @@ message OrganizationSearchResult {
 message UserSearchResult {
   string id = 1;
   string username = 2;
+  bool deactivated = 3;
 }
 
 message TeamSearchResult {
