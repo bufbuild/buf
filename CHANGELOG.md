@@ -4,7 +4,7 @@
 
 - Fix issue with `buf ls-files` when given an image as an input, imports were being printed,
   even without the `--include-imports` flag.
-- Add the ability for users to provide individual protobuf files as inputs to CLI commands.
+- Add the ability for users to provide individual protobuf files as inputs to CLI commands. This allows users to run `buf` commands against and file input based on their current working directory, for example, `buf lint foo/bar.proto`, where `foo/bar.proto` is a path to protobuf file on disk.
 
 ## [v1.0.0-rc5] - 2021-10-12
 
