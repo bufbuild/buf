@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.0.0-rc6] - 2021-10-20
 
 - Fix issue with `buf ls-files` when given an image as an input, imports were being printed,
