@@ -41,7 +41,7 @@ type OrganizationService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (organizations []*v1alpha1.Organization, nextPageToken string, err error)
+	) (organizations []*v1alpha1.OrganizationMembership, nextPageToken string, err error)
 	// CreateOrganization creates a new organization.
 	CreateOrganization(ctx context.Context, name string) (organization *v1alpha1.Organization, err error)
 	// UpdateOrganizationName updates a organization's name.
