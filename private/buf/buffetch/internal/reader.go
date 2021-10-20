@@ -402,11 +402,9 @@ func (r *reader) getBucketRootPathAndRelativePath(
 	// priority file.
 	var terminateFileDirectoryAbsPath string
 	// Get the highest priority file found and use it as the terminate file directory path.
-	if terminateFileProvider != nil {
-		terminateFiles := terminateFileProvider.GetTerminateFiles()
-		if len(terminateFiles) != 0 {
-			terminateFileDirectoryAbsPath = terminateFiles[0].Path()
-		}
+	terminateFiles := terminateFileProvider.GetTerminateFiles()
+	if len(terminateFiles) != 0 {
+		terminateFileDirectoryAbsPath = terminateFiles[0].Path()
 	}
 	if terminateFileDirectoryAbsPath != "" {
 		// If the terminate file exists, we need to determine the relative path from the
