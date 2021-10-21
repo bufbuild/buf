@@ -41,9 +41,6 @@ mkdir -p "${WORKSPACE_DIR}/etc/bash_completion.d" \
 "${GOBIN}/buf" fish-completion >"${WORKSPACE_DIR}/share/fish/vendor_completions.d/buf.fish"
 "${GOBIN}/buf" zsh-completion >"${WORKSPACE_DIR}/share/zsh/site-functions/_buf"
 
-"$CACHE/bin/goreleaser" release
-
-# goreleaser doesn't copy the signature file, so we do it here instead
-mv "${WORKSPACE_DIR}/dist/sha256.txt.minisig" "${ASSETS_DIR}/sha256.txt.minisig"
+env -i PATH="$PATH" HOME="$HOME" GOMODCACHE="$GOMODCACHE" GOCACHE="$GOCACHE" "$CACHE/bin/goreleaser" release
 
 echo Upload all the files in this directory to GitHub: open "${ASSETS_DIR}"
