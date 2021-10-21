@@ -64,42 +64,6 @@ func (s *authzService) UserCanCreateOrganizationRepository(ctx context.Context, 
 	return response.Authorized, nil
 }
 
-// UserCanCreateOrganizationTeam returns whether the user is authorized
-// to create teams in an organization.
-func (s *authzService) UserCanCreateOrganizationTeam(ctx context.Context, organizationId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.UserCanCreateOrganizationTeam(
-		ctx,
-		&v1alpha1.UserCanCreateOrganizationTeamRequest{
-			OrganizationId: organizationId,
-		},
-	)
-	if err != nil {
-		return false, err
-	}
-	return response.Authorized, nil
-}
-
-// UserCanListOrganizationTeams returns whether the user is authorized
-// to list teams in an organization.
-func (s *authzService) UserCanListOrganizationTeams(ctx context.Context, organizationId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.UserCanListOrganizationTeams(
-		ctx,
-		&v1alpha1.UserCanListOrganizationTeamsRequest{
-			OrganizationId: organizationId,
-		},
-	)
-	if err != nil {
-		return false, err
-	}
-	return response.Authorized, nil
-}
-
 // UserCanSeeRepositorySettings returns whether the user is authorized
 // to see repository settings.
 func (s *authzService) UserCanSeeRepositorySettings(ctx context.Context, repositoryId string) (authorized bool, _ error) {
