@@ -503,29 +503,6 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 	}, nil
 }
 
-func (p *provider) NewTeamService(ctx context.Context, address string) (registryv1alpha1api.TeamService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
-	if err != nil {
-		return nil, err
-	}
-	return &teamService{
-		logger:          p.logger,
-		client:          v1alpha1.NewTeamServiceClient(clientConn),
-		contextModifier: contextModifier,
-	}, nil
-}
-
 func (p *provider) NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
