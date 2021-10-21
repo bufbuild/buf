@@ -41,6 +41,7 @@ mkdir -p "${WORKSPACE_DIR}/etc/bash_completion.d" \
 "${GOBIN}/buf" fish-completion >"${WORKSPACE_DIR}/share/fish/vendor_completions.d/buf.fish"
 "${GOBIN}/buf" zsh-completion >"${WORKSPACE_DIR}/share/zsh/site-functions/_buf"
 
+"${RELEASE_DIR}/go" mod verify
 env -i PATH="$PATH" HOME="$HOME" GOMODCACHE="$GOMODCACHE" GOCACHE="$GOCACHE" "$CACHE/bin/goreleaser" release
 
 echo Upload all the files in this directory to GitHub: open "${ASSETS_DIR}"
