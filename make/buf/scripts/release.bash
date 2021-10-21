@@ -10,11 +10,15 @@ fail() {
   exit 1
 }
 
-if [ -z "${RELEASE_MINISIGN_PRIVATE_KEY}" -o \
-  -z "${RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}" -o \
-  -z "${RELEASE_GO_BINARY}" ]; then
-  fail "RELEASE_MINISIGN_PRIVATE_KEY, RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD and RELEASE_GO_BINARY must be set."
+[ -n "${RELEASE_GO_BINARY}" ] || fail "RELEASE_GO_BINARY must be set."
+
+if [ -n "${RELEASE_SKIP_SIGN}" ]; then
+  SKIP_SIGN="--skip-sign"
+elif [ -z "${RELEASE_MINISIGN_PRIVATE_KEY}" -o -z "${RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD}" ]; then
+  fail "RELEASE_MINISIGN_PRIVATE_KEY and RELEASE_MINISIGN_PRIVATE_KEY_PASSWORD must be set."
 fi
+
+[ -z "${RELEASE_SKIP_VALIDATE}" ] || SKIP_VALIDATE="--skip-validate"
 
 RELEASE_DIR=".build/release/buf"
 ASSETS_DIR="${RELEASE_DIR}/assets"
@@ -42,6 +46,6 @@ mkdir -p "${WORKSPACE_DIR}/etc/bash_completion.d" \
 "${GOBIN}/buf" zsh-completion >"${WORKSPACE_DIR}/share/zsh/site-functions/_buf"
 
 "${RELEASE_DIR}/go" mod verify
-env -i PATH="$PATH" HOME="$HOME" GOMODCACHE="$GOMODCACHE" GOCACHE="$GOCACHE" "$CACHE/bin/goreleaser" release
+env -i PATH="$PATH" HOME="$HOME" GOMODCACHE="$GOMODCACHE" GOCACHE="$GOCACHE" "$CACHE/bin/goreleaser" release ${SKIP_SIGN} ${SKIP_VALIDATE}
 
 echo Upload all the files in this directory to GitHub: open "${ASSETS_DIR}"
