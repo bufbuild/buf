@@ -47,7 +47,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <input>",
+		Use:   name + " <source>",
 		Short: "Push a module to a registry.",
 		Long:  bufcli.GetSourceLong(`the source to push`),
 		Args:  cobra.MaximumNArgs(1),
