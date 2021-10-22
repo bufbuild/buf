@@ -42,12 +42,6 @@ type AuthzServiceClient interface {
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
 	// to create repositories in an organization.
 	UserCanCreateOrganizationRepository(ctx context.Context, in *UserCanCreateOrganizationRepositoryRequest, opts ...grpc.CallOption) (*UserCanCreateOrganizationRepositoryResponse, error)
-	// UserCanCreateOrganizationTeam returns whether the user is authorized
-	// to create teams in an organization.
-	UserCanCreateOrganizationTeam(ctx context.Context, in *UserCanCreateOrganizationTeamRequest, opts ...grpc.CallOption) (*UserCanCreateOrganizationTeamResponse, error)
-	// UserCanListOrganizationTeams returns whether the user is authorized
-	// to list teams in an organization.
-	UserCanListOrganizationTeams(ctx context.Context, in *UserCanListOrganizationTeamsRequest, opts ...grpc.CallOption) (*UserCanListOrganizationTeamsResponse, error)
 	// UserCanSeeRepositorySettings returns whether the user is authorized
 	// to see repository settings.
 	UserCanSeeRepositorySettings(ctx context.Context, in *UserCanSeeRepositorySettingsRequest, opts ...grpc.CallOption) (*UserCanSeeRepositorySettingsResponse, error)
@@ -117,24 +111,6 @@ func (c *authzServiceClient) UserCanRemoveUserOrganizationScopes(ctx context.Con
 func (c *authzServiceClient) UserCanCreateOrganizationRepository(ctx context.Context, in *UserCanCreateOrganizationRepositoryRequest, opts ...grpc.CallOption) (*UserCanCreateOrganizationRepositoryResponse, error) {
 	out := new(UserCanCreateOrganizationRepositoryResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationRepository", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authzServiceClient) UserCanCreateOrganizationTeam(ctx context.Context, in *UserCanCreateOrganizationTeamRequest, opts ...grpc.CallOption) (*UserCanCreateOrganizationTeamResponse, error) {
-	out := new(UserCanCreateOrganizationTeamResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationTeam", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authzServiceClient) UserCanListOrganizationTeams(ctx context.Context, in *UserCanListOrganizationTeamsRequest, opts ...grpc.CallOption) (*UserCanListOrganizationTeamsResponse, error) {
-	out := new(UserCanListOrganizationTeamsResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanListOrganizationTeams", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -295,12 +271,6 @@ type AuthzServiceServer interface {
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
 	// to create repositories in an organization.
 	UserCanCreateOrganizationRepository(context.Context, *UserCanCreateOrganizationRepositoryRequest) (*UserCanCreateOrganizationRepositoryResponse, error)
-	// UserCanCreateOrganizationTeam returns whether the user is authorized
-	// to create teams in an organization.
-	UserCanCreateOrganizationTeam(context.Context, *UserCanCreateOrganizationTeamRequest) (*UserCanCreateOrganizationTeamResponse, error)
-	// UserCanListOrganizationTeams returns whether the user is authorized
-	// to list teams in an organization.
-	UserCanListOrganizationTeams(context.Context, *UserCanListOrganizationTeamsRequest) (*UserCanListOrganizationTeamsResponse, error)
 	// UserCanSeeRepositorySettings returns whether the user is authorized
 	// to see repository settings.
 	UserCanSeeRepositorySettings(context.Context, *UserCanSeeRepositorySettingsRequest) (*UserCanSeeRepositorySettingsResponse, error)
@@ -359,12 +329,6 @@ func (UnimplementedAuthzServiceServer) UserCanRemoveUserOrganizationScopes(conte
 }
 func (UnimplementedAuthzServiceServer) UserCanCreateOrganizationRepository(context.Context, *UserCanCreateOrganizationRepositoryRequest) (*UserCanCreateOrganizationRepositoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserCanCreateOrganizationRepository not implemented")
-}
-func (UnimplementedAuthzServiceServer) UserCanCreateOrganizationTeam(context.Context, *UserCanCreateOrganizationTeamRequest) (*UserCanCreateOrganizationTeamResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UserCanCreateOrganizationTeam not implemented")
-}
-func (UnimplementedAuthzServiceServer) UserCanListOrganizationTeams(context.Context, *UserCanListOrganizationTeamsRequest) (*UserCanListOrganizationTeamsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UserCanListOrganizationTeams not implemented")
 }
 func (UnimplementedAuthzServiceServer) UserCanSeeRepositorySettings(context.Context, *UserCanSeeRepositorySettingsRequest) (*UserCanSeeRepositorySettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserCanSeeRepositorySettings not implemented")
@@ -458,42 +422,6 @@ func _AuthzService_UserCanCreateOrganizationRepository_Handler(srv interface{}, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthzServiceServer).UserCanCreateOrganizationRepository(ctx, req.(*UserCanCreateOrganizationRepositoryRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthzService_UserCanCreateOrganizationTeam_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserCanCreateOrganizationTeamRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthzServiceServer).UserCanCreateOrganizationTeam(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanCreateOrganizationTeam",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).UserCanCreateOrganizationTeam(ctx, req.(*UserCanCreateOrganizationTeamRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthzService_UserCanListOrganizationTeams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserCanListOrganizationTeamsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthzServiceServer).UserCanListOrganizationTeams(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanListOrganizationTeams",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).UserCanListOrganizationTeams(ctx, req.(*UserCanListOrganizationTeamsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -800,14 +728,6 @@ var AuthzService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserCanCreateOrganizationRepository",
 			Handler:    _AuthzService_UserCanCreateOrganizationRepository_Handler,
-		},
-		{
-			MethodName: "UserCanCreateOrganizationTeam",
-			Handler:    _AuthzService_UserCanCreateOrganizationTeam_Handler,
-		},
-		{
-			MethodName: "UserCanListOrganizationTeams",
-			Handler:    _AuthzService_UserCanListOrganizationTeams_Handler,
 		},
 		{
 			MethodName: "UserCanSeeRepositorySettings",

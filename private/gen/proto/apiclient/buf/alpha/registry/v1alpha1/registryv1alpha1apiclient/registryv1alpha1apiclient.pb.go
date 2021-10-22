@@ -42,7 +42,6 @@ type Provider interface {
 	RepositoryTagServiceProvider
 	ResolveServiceProvider
 	SearchServiceProvider
-	TeamServiceProvider
 	TokenServiceProvider
 	UserServiceProvider
 }
@@ -140,11 +139,6 @@ type ResolveServiceProvider interface {
 // SearchServiceProvider provides a client-side SearchService for an address.
 type SearchServiceProvider interface {
 	NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error)
-}
-
-// TeamServiceProvider provides a client-side TeamService for an address.
-type TeamServiceProvider interface {
-	NewTeamService(ctx context.Context, address string) (registryv1alpha1api.TeamService, error)
 }
 
 // TokenServiceProvider provides a client-side TokenService for an address.

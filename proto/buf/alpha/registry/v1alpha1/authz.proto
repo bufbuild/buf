@@ -26,12 +26,6 @@ service AuthzService {
   // UserCanCreateOrganizationRepository returns whether the user is authorized
   // to create repositories in an organization.
   rpc UserCanCreateOrganizationRepository(UserCanCreateOrganizationRepositoryRequest) returns (UserCanCreateOrganizationRepositoryResponse);
-  // UserCanCreateOrganizationTeam returns whether the user is authorized
-  // to create teams in an organization.
-  rpc UserCanCreateOrganizationTeam(UserCanCreateOrganizationTeamRequest) returns (UserCanCreateOrganizationTeamResponse);
-  // UserCanListOrganizationTeams returns whether the user is authorized
-  // to list teams in an organization.
-  rpc UserCanListOrganizationTeams(UserCanListOrganizationTeamsRequest) returns (UserCanListOrganizationTeamsResponse);
   // UserCanSeeRepositorySettings returns whether the user is authorized
   // to see repository settings.
   rpc UserCanSeeRepositorySettings(UserCanSeeRepositorySettingsRequest) returns (UserCanSeeRepositorySettingsResponse);
@@ -98,26 +92,6 @@ message UserCanCreateOrganizationRepositoryRequest {
 }
 
 message UserCanCreateOrganizationRepositoryResponse {
-  bool authorized = 1;
-}
-
-message UserCanCreateOrganizationTeamRequest {
-  // The ID of the organization for which to check
-  // whether the user is authorized.
-  string organization_id = 1;
-}
-
-message UserCanCreateOrganizationTeamResponse {
-  bool authorized = 1;
-}
-
-message UserCanListOrganizationTeamsRequest {
-  // The ID of the organization for which to check
-  // whether the user is authorized.
-  string organization_id = 1;
-}
-
-message UserCanListOrganizationTeamsResponse {
   bool authorized = 1;
 }
 
