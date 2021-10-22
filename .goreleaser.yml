@@ -4,8 +4,7 @@ env:
   - CGO_ENABLED=0
 
 builds:
-  - &build
-    id: buf
+  - id: buf
     main: ./cmd/buf
     binary: bin/buf
     gobinary: .build/release/buf/go
@@ -20,35 +19,80 @@ builds:
       - amd64
       - arm64
 
-  - &build-windows
-    <<: *build
-    id: buf-windows
+  - id: buf-windows
+    main: ./cmd/buf
+    binary: bin/buf
+    gobinary: .build/release/buf/go
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
     goos:
       - windows
+    goarch:
+      - amd64
+      - arm64
 
-  - <<: *build
-    id: protoc-gen-buf-breaking
+  - id: protoc-gen-buf-breaking
     main: ./cmd/protoc-gen-buf-breaking
     binary: bin/protoc-gen-buf-breaking
+    gobinary: .build/release/buf/go
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
 
-  - <<: *build-windows
-    id: protoc-gen-buf-breaking-windows
+  - id: protoc-gen-buf-breaking-windows
     main: ./cmd/protoc-gen-buf-breaking
     binary: bin/protoc-gen-buf-breaking
+    gobinary: .build/release/buf/go
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
 
-  - <<: *build
-    id: protoc-gen-buf-lint
+  - id: protoc-gen-buf-lint
     main: ./cmd/protoc-gen-buf-lint
     binary: bin/protoc-gen-buf-lint
+    gobinary: .build/release/buf/go
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
 
-  - <<: *build-windows
-    id: protoc-gen-buf-lint-windows
+  - id: protoc-gen-buf-lint-windows
     main: ./cmd/protoc-gen-buf-lint
     binary: bin/protoc-gen-buf-lint
+    gobinary: .build/release/buf/go
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
 
 archives:
-  - &archive
-    id: bin
+  - id: bin
     builds:
       - buf
       - buf-windows
@@ -64,13 +108,17 @@ archives:
       linux: Linux
       windows: Windows
 
-  - <<: *archive
-    id: tarball
+  - id: tarball
     builds:
       - buf
       - protoc-gen-buf-breaking
       - protoc-gen-buf-lint
     format: tar.gz
+    name_template: '{{ .Binary }}-{{ .Os }}-{{ if and (eq .Os "Linux") (eq .Arch "arm64") }}aarch64{{ else }}{{ .Arch }}{{ end }}'
+    replacements:
+      amd64: x86_64
+      darwin: Darwin
+      linux: Linux
     files:
       - LICENSE
       - src: .build/release/buf/workspace/etc/bash_completion.d/buf
