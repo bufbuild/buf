@@ -49,7 +49,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input>",
 		Short: "Push a module to a registry.",
-		Long:  bufcli.GetInputLong(`the source or module to push`),
+		Long:  bufcli.GetSourceLong(`the source to push`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

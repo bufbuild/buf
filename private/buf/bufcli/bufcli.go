@@ -265,6 +265,17 @@ If no argument is specified, defaults to ".".`,
 	)
 }
 
+// GetSourceLong gets the long command description for an input-based command.
+func GetSourceLong(inputArgDescription string) string {
+	return fmt.Sprintf(
+		`The first argument is %s.
+The first argument must be one of format %s.
+If no argument is specified, defaults to ".".`,
+		inputArgDescription,
+		buffetch.SourceFormatsString,
+	)
+}
+
 // GetSourceOrModuleLong gets the long command description for an input-based command.
 func GetSourceOrModuleLong(inputArgDescription string) string {
 	return fmt.Sprintf(
