@@ -298,3 +298,20 @@ func (s *organizationService) RemoveOrganizationMember(
 	}
 	return nil
 }
+
+// LeaveOrganization remove the role of the current user in the organization.
+func (s *organizationService) LeaveOrganization(ctx context.Context, organizationId string) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.LeaveOrganization(
+		ctx,
+		&v1alpha1.LeaveOrganizationRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}

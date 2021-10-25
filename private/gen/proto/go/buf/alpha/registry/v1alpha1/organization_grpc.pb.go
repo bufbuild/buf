@@ -62,6 +62,8 @@ type OrganizationServiceClient interface {
 	UpdateOrganizationMember(ctx context.Context, in *UpdateOrganizationMemberRequest, opts ...grpc.CallOption) (*UpdateOrganizationMemberResponse, error)
 	// RemoveOrganizationMember remove the role of an user in the organization.
 	RemoveOrganizationMember(ctx context.Context, in *RemoveOrganizationMemberRequest, opts ...grpc.CallOption) (*RemoveOrganizationMemberResponse, error)
+	// LeaveOrganization remove the role of the current user in the organization.
+	LeaveOrganization(ctx context.Context, in *LeaveOrganizationRequest, opts ...grpc.CallOption) (*LeaveOrganizationResponse, error)
 }
 
 type organizationServiceClient struct {
@@ -189,6 +191,15 @@ func (c *organizationServiceClient) RemoveOrganizationMember(ctx context.Context
 	return out, nil
 }
 
+func (c *organizationServiceClient) LeaveOrganization(ctx context.Context, in *LeaveOrganizationRequest, opts ...grpc.CallOption) (*LeaveOrganizationResponse, error) {
+	out := new(LeaveOrganizationResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/LeaveOrganization", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrganizationServiceServer is the server API for OrganizationService service.
 // All implementations should embed UnimplementedOrganizationServiceServer
 // for forward compatibility
@@ -219,6 +230,8 @@ type OrganizationServiceServer interface {
 	UpdateOrganizationMember(context.Context, *UpdateOrganizationMemberRequest) (*UpdateOrganizationMemberResponse, error)
 	// RemoveOrganizationMember remove the role of an user in the organization.
 	RemoveOrganizationMember(context.Context, *RemoveOrganizationMemberRequest) (*RemoveOrganizationMemberResponse, error)
+	// LeaveOrganization remove the role of the current user in the organization.
+	LeaveOrganization(context.Context, *LeaveOrganizationRequest) (*LeaveOrganizationResponse, error)
 }
 
 // UnimplementedOrganizationServiceServer should be embedded to have forward compatible implementations.
@@ -263,6 +276,9 @@ func (UnimplementedOrganizationServiceServer) UpdateOrganizationMember(context.C
 }
 func (UnimplementedOrganizationServiceServer) RemoveOrganizationMember(context.Context, *RemoveOrganizationMemberRequest) (*RemoveOrganizationMemberResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveOrganizationMember not implemented")
+}
+func (UnimplementedOrganizationServiceServer) LeaveOrganization(context.Context, *LeaveOrganizationRequest) (*LeaveOrganizationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LeaveOrganization not implemented")
 }
 
 // UnsafeOrganizationServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -510,6 +526,24 @@ func _OrganizationService_RemoveOrganizationMember_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrganizationService_LeaveOrganization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LeaveOrganizationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrganizationServiceServer).LeaveOrganization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.OrganizationService/LeaveOrganization",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrganizationServiceServer).LeaveOrganization(ctx, req.(*LeaveOrganizationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrganizationService_ServiceDesc is the grpc.ServiceDesc for OrganizationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -568,6 +602,10 @@ var OrganizationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveOrganizationMember",
 			Handler:    _OrganizationService_RemoveOrganizationMember_Handler,
+		},
+		{
+			MethodName: "LeaveOrganization",
+			Handler:    _OrganizationService_LeaveOrganization_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

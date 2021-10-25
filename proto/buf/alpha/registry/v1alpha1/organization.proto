@@ -66,6 +66,8 @@ service OrganizationService {
   rpc UpdateOrganizationMember(UpdateOrganizationMemberRequest) returns (UpdateOrganizationMemberResponse);
   // RemoveOrganizationMember remove the role of an user in the organization.
   rpc RemoveOrganizationMember(RemoveOrganizationMemberRequest) returns (RemoveOrganizationMemberResponse);
+  // LeaveOrganization remove the role of the current user in the organization.
+  rpc LeaveOrganization(LeaveOrganizationRequest) returns (LeaveOrganizationResponse);
 }
 
 message GetOrganizationRequest {
@@ -189,3 +191,10 @@ message RemoveOrganizationMemberRequest {
 }
 
 message RemoveOrganizationMemberResponse {}
+
+message LeaveOrganizationRequest {
+  // The ID of the organization for which the user belongs to.
+  string organization_id = 1;
+}
+
+message LeaveOrganizationResponse {}

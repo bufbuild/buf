@@ -86,4 +86,6 @@ type OrganizationService interface {
 		organizationId string,
 		userId string,
 	) (err error)
+	// LeaveOrganization remove the role of the current user in the organization.
+	LeaveOrganization(ctx context.Context, organizationId string) (err error)
 }
