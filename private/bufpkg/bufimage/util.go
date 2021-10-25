@@ -32,7 +32,34 @@ import (
 // paths can be either files (ending in .proto) or directories
 // paths must be normalized and validated, and not duplicated
 // if a directory, all .proto files underneath will be included
-func imageWithOnlyPaths(image Image, fileOrDirPaths []string, allowNotExist bool) (Image, error) {
+func imageWithExcludes(image Image, excludePaths []string) (Image, error) {
+	if err := normalpath.ValidatePathsNormalizedValidatedUnique(excludePaths); err != nil {
+		return nil, err
+	}
+	// these are the non-import files that are not within the excluded paths.
+	var nonImportImageFiles []ImageFile
+	nonImportPaths := make(map[string]struct{})
+	excludePathsMap := stringutil.SliceToMap(excludePaths)
+	for _, imageFile := range image.Files() {
+		if normalpath.MapHasEqualOrContainingPath(excludePathsMap, imageFile.Path(), normalpath.Relative) {
+			continue
+		}
+		if !imageFile.IsImport() {
+			if _, ok := nonImportPaths[imageFile.Path()]; !ok {
+				nonImportPaths[imageFile.Path()] = struct{}{}
+				nonImportImageFiles = append(nonImportImageFiles, imageFile)
+			}
+		}
+	}
+	return getImageWithImports(image, nonImportPaths, nonImportImageFiles, nil)
+}
+
+// paths can be either files (ending in .proto) or directories
+// paths must be normalized and validated, and not duplicated
+// if a directory, all .proto files underneath will be included
+// excluded paths have already been pruned to be a subset of the included paths, so we are
+// only checking if found paths fall under the exclude paths.
+func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludePaths []string, allowNotExist bool) (Image, error) {
 	if err := normalpath.ValidatePathsNormalizedValidatedUnique(fileOrDirPaths); err != nil {
 		return nil, err
 	}
@@ -47,10 +74,14 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, allowNotExist bool
 	// is not an ImageFile, the path ending in .proto could be a directory
 	// that itself contains ImageFiles, i.e. a/b.proto/c.proto is valid if not dumb
 	var potentialDirPaths []string
+	excludePathMap := stringutil.SliceToMap(excludePaths)
 	for _, fileOrDirPath := range fileOrDirPaths {
 		// this is not allowed, this is the equivalent of a root
 		if fileOrDirPath == "." {
 			return nil, errors.New(`"." is not a valid path value`)
+		}
+		if normalpath.MapHasEqualOrContainingPath(excludePathMap, fileOrDirPath, normalpath.Relative) {
+			continue
 		}
 		if normalpath.Ext(fileOrDirPath) != ".proto" {
 			// not a .proto file, therefore must be a directory
@@ -75,7 +106,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, allowNotExist bool
 		// an ImageFile for all fileOrDirPaths, so we can return an Image now
 		// this means we do not have to do the expensive O(image.Files()) operation
 		// to check to see if each file is within a potential directory path
-		return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
+		return getImageWithImports(image, nonImportPaths, nonImportImageFiles, excludePathMap)
 	}
 	// we have potential directory paths, do the expensive operation
 	// make a map of the directory paths
@@ -120,17 +151,21 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, allowNotExist bool
 		}
 	}
 	// we finally have all files that match fileOrDirPath that we can find, make the image
-	return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
+	return getImageWithImports(image, nonImportPaths, nonImportImageFiles, excludePathMap)
 }
 
 func getImageWithImports(
 	image Image,
 	nonImportPaths map[string]struct{},
 	nonImportImageFiles []ImageFile,
+	excludePathMap map[string]struct{},
 ) (Image, error) {
 	var imageFiles []ImageFile
 	seenPaths := make(map[string]struct{})
 	for _, nonImportImageFile := range nonImportImageFiles {
+		if normalpath.MapHasEqualOrContainingPath(excludePathMap, nonImportImageFile.Path(), normalpath.Relative) {
+			continue
+		}
 		imageFiles = addFileWithImports(
 			imageFiles,
 			image,

@@ -82,6 +82,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 			"b/a.proto",
 			"b/b.proto",
 		},
+		nil,
+		false,
 	)
 	require.NoError(t, err)
 	targetFileInfos, err := targetModule.TargetFileInfos(ctx)
@@ -93,6 +95,7 @@ func TestTargetingModuleBasic(t *testing.T) {
 			bufmoduletesting.NewFileInfo(t, "b/b.proto", "b/b.proto", false, nil, ""),
 		},
 		targetFileInfos,
+		false,
 	)
 
 	targetModule, err = bufmodule.ModuleWithTargetPaths(
@@ -100,6 +103,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 		[]string{
 			"b",
 		},
+		nil,
+		false,
 	)
 	require.NoError(t, err)
 	targetFileInfos, err = targetModule.TargetFileInfos(ctx)
@@ -119,6 +124,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 			"b",
 			"b/a.proto",
 		},
+		nil,
+		false,
 	)
 	require.NoError(t, err)
 	targetFileInfos, err = targetModule.TargetFileInfos(ctx)
@@ -138,6 +145,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 			"b",
 			"a",
 		},
+		nil,
+		false,
 	)
 	require.NoError(t, err)
 	targetFileInfos, err = targetModule.TargetFileInfos(ctx)
@@ -160,6 +169,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 			// the directory is c/c.proto, not c.proto
 			"c.proto",
 		},
+		nil,
+		false,
 	)
 	require.NoError(t, err)
 	_, err = targetModule.TargetFileInfos(ctx)
@@ -172,6 +183,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 			// the directory is c/c.proto, not c.proto
 			"c.proto",
 		},
+		nil,
+		false,
 	)
 	require.NoError(t, err)
 	targetFileInfos, err = targetModule.TargetFileInfos(ctx)
@@ -191,6 +204,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 			"b",
 			"c/c.proto",
 		},
+		nil,
+		false,
 	)
 	require.NoError(t, err)
 	targetFileInfos, err = targetModule.TargetFileInfos(ctx)
@@ -211,6 +226,8 @@ func TestTargetingModuleBasic(t *testing.T) {
 		[]string{
 			"c/c.proto/a.proto",
 		},
+		nil,
+		false,
 	)
 	require.NoError(t, err)
 	targetFileInfos, err = targetModule.TargetFileInfos(ctx)

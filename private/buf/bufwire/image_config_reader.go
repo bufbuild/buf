@@ -77,6 +77,7 @@ func (i *imageConfigReader) GetImageConfigs(
 	ref buffetch.Ref,
 	configOverride string,
 	externalDirOrFilePaths []string,
+	excludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) ([]ImageConfig, []bufanalysis.FileAnnotation, error) {
@@ -88,6 +89,7 @@ func (i *imageConfigReader) GetImageConfigs(
 			t,
 			configOverride,
 			externalDirOrFilePaths,
+			excludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
 		)
@@ -99,6 +101,7 @@ func (i *imageConfigReader) GetImageConfigs(
 			t,
 			configOverride,
 			externalDirOrFilePaths,
+			excludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
 		)
@@ -109,6 +112,7 @@ func (i *imageConfigReader) GetImageConfigs(
 			t,
 			configOverride,
 			externalDirOrFilePaths,
+			excludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
 		)
@@ -123,6 +127,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	sourceOrModuleRef buffetch.SourceOrModuleRef,
 	configOverride string,
 	externalDirOrFilePaths []string,
+	excludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) ([]ImageConfig, []bufanalysis.FileAnnotation, error) {
@@ -132,6 +137,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 		sourceOrModuleRef,
 		configOverride,
 		externalDirOrFilePaths,
+		excludeDirOrFilePaths,
 		externalDirOrFilePathsAllowNotExist,
 	)
 	if err != nil {
@@ -194,6 +200,7 @@ func (i *imageConfigReader) getImageImageConfig(
 	imageRef buffetch.ImageRef,
 	configOverride string,
 	externalDirOrFilePaths []string,
+	excludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ ImageConfig, retErr error) {
@@ -202,6 +209,7 @@ func (i *imageConfigReader) getImageImageConfig(
 		container,
 		imageRef,
 		externalDirOrFilePaths,
+		excludeDirOrFilePaths,
 		externalDirOrFilePathsAllowNotExist,
 		excludeSourceCodeInfo,
 	)
@@ -293,7 +301,7 @@ func filterImageConfigs(imageConfigs []ImageConfig, protoFileRef buffetch.ProtoF
 	} else {
 		paths = []string{path}
 	}
-	prunedImage, err := bufimage.ImageWithOnlyPaths(image, paths)
+	prunedImage, err := bufimage.ImageWithOnlyPaths(image, paths, nil)
 	if err != nil {
 		return nil, err
 	}

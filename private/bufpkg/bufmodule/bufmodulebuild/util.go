@@ -29,19 +29,34 @@ func applyModulePaths(
 	roots []string,
 	fileOrDirPaths *[]string,
 	fileOrDirPathsAllowNotExist bool,
+	excludeFileOrDirPaths []string,
 	pathType normalpath.PathType,
 ) (bufmodule.Module, error) {
-	if fileOrDirPaths == nil {
+	if fileOrDirPaths == nil && len(excludeFileOrDirPaths) == 0 {
 		return module, nil
+	}
+	var excludePaths []string
+	if len(excludeFileOrDirPaths) != 0 {
+		var err error
+		excludePaths, err = pathsToTargetPaths(roots, excludeFileOrDirPaths, pathType)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// We need to send through some way of indicating that we are targeting all files with some
+	// paths that are excluded. We can send through an empty []string{} for target paths, since
+	// we are setting `allowAllTargetPaths = true`.
+	if fileOrDirPaths == nil {
+		return bufmodule.ModuleWithTargetPaths(module, []string{}, excludePaths, true)
 	}
 	targetPaths, err := pathsToTargetPaths(roots, *fileOrDirPaths, pathType)
 	if err != nil {
 		return nil, err
 	}
 	if fileOrDirPathsAllowNotExist {
-		return bufmodule.ModuleWithTargetPathsAllowNotExist(module, targetPaths)
+		return bufmodule.ModuleWithTargetPathsAllowNotExist(module, targetPaths, excludePaths, false)
 	}
-	return bufmodule.ModuleWithTargetPaths(module, targetPaths)
+	return bufmodule.ModuleWithTargetPaths(module, targetPaths, excludePaths, false)
 }
 
 func pathsToTargetPaths(roots []string, paths []string, pathType normalpath.PathType) ([]string, error) {
@@ -96,6 +111,9 @@ type buildOptions struct {
 	// If empty (but non-nil), the module will have no target paths.
 	paths              *[]string
 	pathsAllowNotExist bool
+	// Paths that will be excluded from the module build process. This is handled in conjunction
+	// with `paths`.
+	excludePaths []string
 }
 
 type buildModuleFileSetOptions struct {

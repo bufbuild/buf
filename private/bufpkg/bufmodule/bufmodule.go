@@ -158,8 +158,15 @@ func NewModuleForProto(
 //
 // Note that this will result in TargetFileInfos containing only these paths, and not
 // any imports. Imports, and non-targeted files, are still available via SourceFileInfos.
-func ModuleWithTargetPaths(module Module, targetPaths []string) (Module, error) {
-	return newTargetingModule(module, targetPaths, false)
+// If allowAllTargetPaths is set to true, then targetPaths will be ignored and it is assumed
+// that all paths are targetPaths unless specified by `excludePaths`.
+func ModuleWithTargetPaths(
+	module Module,
+	targetPaths []string,
+	excludePaths []string,
+	allowAllTargetPaths bool,
+) (Module, error) {
+	return newTargetingModule(module, targetPaths, false, excludePaths, allowAllTargetPaths)
 }
 
 // ModuleWithTargetPathsAllowNotExist returns a new Module specified specific file or directory paths to build,
@@ -167,8 +174,15 @@ func ModuleWithTargetPaths(module Module, targetPaths []string) (Module, error) 
 //
 // Note that this will result in TargetFileInfos containing only these paths, and not
 // any imports. Imports, and non-targeted files, are still available via SourceFileInfos.
-func ModuleWithTargetPathsAllowNotExist(module Module, targetPaths []string) (Module, error) {
-	return newTargetingModule(module, targetPaths, true)
+// If allowAllTargetPaths is set to true, then targetPaths will be ignored and it is assumed
+// that all paths are targetPaths unless specified by `excludePaths`.
+func ModuleWithTargetPathsAllowNotExist(
+	module Module,
+	targetPaths []string,
+	excludePaths []string,
+	allowAllTargetPaths bool,
+) (Module, error) {
+	return newTargetingModule(module, targetPaths, true, excludePaths, allowAllTargetPaths)
 }
 
 // ModuleResolver resolves modules.

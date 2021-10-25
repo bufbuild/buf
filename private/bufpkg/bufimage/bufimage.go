@@ -241,6 +241,7 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) (Im
 	return ImageWithOnlyPaths(
 		image,
 		request.GetFileToGenerate(),
+		nil,
 	)
 }
 
@@ -268,8 +269,9 @@ func ImageWithoutImports(image Image) Image {
 func ImageWithOnlyPaths(
 	image Image,
 	paths []string,
+	excludePaths []string,
 ) (Image, error) {
-	return imageWithOnlyPaths(image, paths, false)
+	return imageWithOnlyPaths(image, paths, excludePaths, false)
 }
 
 // ImageWithOnlyPathsAllowNotExist returns a copy of the Image that only includes the files
@@ -282,8 +284,18 @@ func ImageWithOnlyPaths(
 func ImageWithOnlyPathsAllowNotExist(
 	image Image,
 	paths []string,
+	excludePaths []string,
 ) (Image, error) {
-	return imageWithOnlyPaths(image, paths, true)
+	return imageWithOnlyPaths(image, paths, excludePaths, true)
+}
+
+// ImageWithExcludes returns a copy of the Image that excludes the files with the given root
+// relative file paths.
+//
+// Note that excluded paths can be either files or directories - whether or not a path is included
+// is a result of normalpath.EqualsOrContainsPath.
+func ImageWithExcludes(image Image, excludePaths []string) (Image, error) {
+	return imageWithExcludes(image, excludePaths)
 }
 
 // ImageByDir returns multiple images that have non-imports split
@@ -314,7 +326,7 @@ func ImageByDir(image Image) ([]Image, error) {
 			// this should never happen
 			return nil, fmt.Errorf("no dir for %q in dirToPaths", dir)
 		}
-		newImage, err := ImageWithOnlyPaths(image, paths)
+		newImage, err := ImageWithOnlyPaths(image, paths, nil)
 		if err != nil {
 			return nil, err
 		}

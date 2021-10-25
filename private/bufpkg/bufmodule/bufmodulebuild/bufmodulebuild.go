@@ -140,3 +140,10 @@ func WithModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) BuildOption 
 		buildOptions.moduleIdentity = moduleIdentity
 	}
 }
+
+// WithExcludePaths returns a new BuildOption that specifies files to be excluded from the build.
+func WithExcludePaths(excludePaths []string) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.excludePaths = excludePaths
+	}
+}

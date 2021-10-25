@@ -205,6 +205,7 @@ func run(
 		ref,
 		inputConfig,
 		paths,
+		nil,
 		false,
 		flags.ExcludeSourceInfo,
 	)

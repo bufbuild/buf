@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
@@ -49,6 +50,7 @@ func (i *imageReader) GetImage(
 	container app.EnvStdinContainer,
 	imageRef buffetch.ImageRef,
 	externalDirOrFilePaths []string,
+	excludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ bufimage.Image, retErr error) {
@@ -130,20 +132,56 @@ func (i *imageReader) GetImage(
 	if err != nil {
 		return nil, err
 	}
-	if len(externalDirOrFilePaths) == 0 {
+	if len(externalDirOrFilePaths) == 0 && len(excludeDirOrFilePaths) == 0 {
 		return image, nil
 	}
 	imagePaths := make([]string, len(externalDirOrFilePaths))
-	for i, externalDirOrFilePath := range externalDirOrFilePaths {
-		imagePath, err := imageRef.PathForExternalPath(externalDirOrFilePath)
-		if err != nil {
-			return nil, err
+	if len(externalDirOrFilePaths) > 0 {
+		for i, externalDirOrFilePath := range externalDirOrFilePaths {
+			imagePath, err := imageRef.PathForExternalPath(externalDirOrFilePath)
+			if err != nil {
+				return nil, err
+			}
+			imagePaths[i] = imagePath
 		}
-		imagePaths[i] = imagePath
 	}
+	excludePaths := make([]string, len(excludeDirOrFilePaths))
+	if len(excludeDirOrFilePaths) > 0 {
+		for i, excludeDirOrFilePath := range excludeDirOrFilePaths {
+			excludePath, err := imageRef.PathForExternalPath(excludeDirOrFilePath)
+			if err != nil {
+				return nil, err
+			}
+			excludePaths[i] = excludePath
+		}
+	}
+	// If we only have exclude paths, then we can create an image that simply excludes these paths.
+	if len(imagePaths) == 0 && len(excludePaths) > 0 {
+		return bufimage.ImageWithExcludes(image, excludePaths)
+	}
+	// If we have both target paths and exclude paths, we'll need to merge the two sets of paths
+	// and then create a single image that targets the union of these paths.
+	var prunedExcludePaths []string
+	if len(excludePaths) > 0 {
+		// If the two paths are equal, we error.
+		// if the target is more specific than the exclude, then we keep it as is.
+		// If the exclude is more specific than the target, then we need to exclude it.
+		for _, imagePath := range imagePaths {
+			for _, excludePath := range excludePaths {
+				if imagePath == excludePath {
+					return nil, fmt.Errorf("cannot set the same path for both --path and --exclude flags: %s", excludePath)
+				}
+				if normalpath.EqualsOrContainsPath(imagePath, excludePath, normalpath.Relative) {
+					prunedExcludePaths = append(prunedExcludePaths, excludePath)
+				}
+			}
+		}
+	}
+	// Now all the exclude paths that we have collected are all subsets of the include paths,
+	// we prune the images based on those paths.
 	if externalDirOrFilePathsAllowNotExist {
 		// externalDirOrFilePaths have to be targetPaths
-		return bufimage.ImageWithOnlyPathsAllowNotExist(image, imagePaths)
+		return bufimage.ImageWithOnlyPathsAllowNotExist(image, imagePaths, prunedExcludePaths)
 	}
-	return bufimage.ImageWithOnlyPaths(image, imagePaths)
+	return bufimage.ImageWithOnlyPaths(image, imagePaths, prunedExcludePaths)
 }

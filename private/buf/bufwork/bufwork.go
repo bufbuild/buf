@@ -107,6 +107,7 @@ type WorkspaceBuilder interface {
 		targetSubDirPath string,
 		configOverride string,
 		externalDirOrFilePaths []string,
+		excludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
 	) (bufmodule.Workspace, error)
 
@@ -131,6 +132,7 @@ func BuildOptionsForWorkspaceDirectory(
 	relativeRootPath string,
 	subDirPath string,
 	externalDirOrFilePaths []string,
+	excludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) ([]bufmodulebuild.BuildOption, error) {
 	buildOptions := []bufmodulebuild.BuildOption{
@@ -141,13 +143,99 @@ func BuildOptionsForWorkspaceDirectory(
 		// Managed Mode, which supports module-specific overrides.
 		bufmodulebuild.WithModuleIdentity(moduleConfig.ModuleIdentity),
 	}
-	if len(externalDirOrFilePaths) == 0 {
+	if len(externalDirOrFilePaths) == 0 && len(excludeDirOrFilePaths) == 0 {
 		return buildOptions, nil
 	}
 	// We know that if the file is actually buf.work for legacy reasons, this will be wrong,
 	// but we accept that as this shouldn't happen often anymore and this is just
 	// used for error messages.
 	workspaceID := filepath.Join(normalpath.Unnormalize(relativeRootPath), ExternalConfigV1FilePath)
+	// Note that subDirRelPaths can be empty. If so, this represents
+	// the case where externalDirOrFilePaths were provided, but none
+	// matched.
+	subDirRelPaths, err := externalPathsToSubDirRelPaths(
+		workspaceID,
+		relativeRootPath,
+		subDirPath,
+		externalDirOrFilePaths,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if externalDirOrFilePathsAllowNotExist {
+		buildOptions = append(buildOptions, bufmodulebuild.WithPathsAllowNotExist(subDirRelPaths))
+	} else {
+		buildOptions = append(buildOptions, bufmodulebuild.WithPaths(subDirRelPaths))
+	}
+	if len(excludeDirOrFilePaths) > 0 {
+		subDirRelExcludePaths, err := externalPathsToSubDirRelPaths(
+			workspaceID,
+			relativeRootPath,
+			subDirPath,
+			excludeDirOrFilePaths,
+		)
+		if err != nil {
+			return nil, err
+		}
+		buildOptions = append(buildOptions, bufmodulebuild.WithExcludePaths(subDirRelExcludePaths))
+	}
+	return buildOptions, nil
+}
+
+// Config is the workspace config.
+type Config struct {
+	// Directories are normalized and validated.
+	Directories []string
+}
+
+// GetConfigForBucket gets the Config for the YAML data at ConfigFilePath.
+//
+// If the data is of length 0, returns the default config.
+func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (*Config, error) {
+	return getConfigForBucket(ctx, readBucket, relativeRootPath)
+}
+
+// GetConfig gets the Config for the given JSON or YAML data.
+//
+// If the data is of length 0, returns the default config.
+func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
+	return getConfigForData(ctx, data)
+}
+
+// ExistingConfigFilePath checks if a configuration file exists, and if so, returns the path
+// within the ReadBucket of this configuration file.
+//
+// Returns empty string and no error if no configuration file exists.
+func ExistingConfigFilePath(ctx context.Context, readBucket storage.ReadBucket) (string, error) {
+	for _, configFilePath := range AllConfigFilePaths {
+		exists, err := storage.Exists(ctx, readBucket, configFilePath)
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return configFilePath, nil
+		}
+	}
+	return "", nil
+}
+
+// ExternalConfigV1 represents the on-disk representation
+// of the workspace configuration at version v1.
+type ExternalConfigV1 struct {
+	Version     string   `json:"version,omitempty" yaml:"version,omitempty"`
+	Directories []string `json:"directories,omitempty" yaml:"directories,omitempty"`
+}
+
+type externalConfigVersion struct {
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+}
+
+func externalPathsToSubDirRelPaths(
+	workspaceID string,
+	relativeRootPath string,
+	subDirPath string,
+	externalDirOrFilePaths []string,
+) ([]string, error) {
 	// We first need to reformat the externalDirOrFilePaths so that they accommodate
 	// for the relativeRootPath (the path to the directory containing the buf.work.yaml).
 	//
@@ -275,61 +363,5 @@ func BuildOptionsForWorkspaceDirectory(
 			subDirRelPaths = append(subDirRelPaths, subDirRelPath)
 		}
 	}
-	// Note that subDirRelPaths can be empty. If so, this represents
-	// the case where externalDirOrFilePaths were provided, but none
-	// matched.
-	if externalDirOrFilePathsAllowNotExist {
-		buildOptions = append(buildOptions, bufmodulebuild.WithPathsAllowNotExist(subDirRelPaths))
-	} else {
-		buildOptions = append(buildOptions, bufmodulebuild.WithPaths(subDirRelPaths))
-	}
-	return buildOptions, nil
-}
-
-// Config is the workspace config.
-type Config struct {
-	// Directories are normalized and validated.
-	Directories []string
-}
-
-// GetConfigForBucket gets the Config for the YAML data at ConfigFilePath.
-//
-// If the data is of length 0, returns the default config.
-func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (*Config, error) {
-	return getConfigForBucket(ctx, readBucket, relativeRootPath)
-}
-
-// GetConfig gets the Config for the given JSON or YAML data.
-//
-// If the data is of length 0, returns the default config.
-func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
-	return getConfigForData(ctx, data)
-}
-
-// ExistingConfigFilePath checks if a configuration file exists, and if so, returns the path
-// within the ReadBucket of this configuration file.
-//
-// Returns empty string and no error if no configuration file exists.
-func ExistingConfigFilePath(ctx context.Context, readBucket storage.ReadBucket) (string, error) {
-	for _, configFilePath := range AllConfigFilePaths {
-		exists, err := storage.Exists(ctx, readBucket, configFilePath)
-		if err != nil {
-			return "", err
-		}
-		if exists {
-			return configFilePath, nil
-		}
-	}
-	return "", nil
-}
-
-// ExternalConfigV1 represents the on-disk representation
-// of the workspace configuration at version v1.
-type ExternalConfigV1 struct {
-	Version     string   `json:"version,omitempty" yaml:"version,omitempty"`
-	Directories []string `json:"directories,omitempty" yaml:"directories,omitempty"`
-}
-
-type externalConfigVersion struct {
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+	return subDirRelPaths, nil
 }

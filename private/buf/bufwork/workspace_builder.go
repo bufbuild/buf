@@ -50,6 +50,7 @@ func (w *workspaceBuilder) BuildWorkspace(
 	targetSubDirPath string,
 	configOverride string,
 	externalDirOrFilePaths []string,
+	excludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (bufmodule.Workspace, error) {
 	if workspaceConfig == nil {
@@ -107,6 +108,7 @@ func (w *workspaceBuilder) BuildWorkspace(
 			relativeRootPath,
 			directory,
 			externalDirOrFilePaths,
+			excludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 		if err != nil {

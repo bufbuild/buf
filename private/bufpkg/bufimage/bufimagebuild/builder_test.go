@@ -81,6 +81,7 @@ func TestGoogleapis(t *testing.T) {
 			"google/type/date.proto",
 			"google/foo/nonsense.proto",
 		},
+		nil,
 	)
 	assert.NoError(t, err)
 	assert.Equal(
@@ -103,6 +104,7 @@ func TestGoogleapis(t *testing.T) {
 			"google/type",
 			"google/foo",
 		},
+		nil,
 	)
 	assert.NoError(t, err)
 	assert.Equal(
@@ -156,6 +158,7 @@ func TestGoogleapis(t *testing.T) {
 			"google/type/date.proto",
 			"google/foo/nonsense.proto",
 		},
+		nil,
 	)
 	assert.Equal(t, errors.New(`path "google/foo/nonsense.proto" has no matching file in the image`), err)
 	_, err = bufimage.ImageWithOnlyPaths(
@@ -166,6 +169,7 @@ func TestGoogleapis(t *testing.T) {
 			"google/type/date.proto",
 			"google/foo",
 		},
+		nil,
 	)
 	assert.Equal(t, errors.New(`path "google/foo" has no matching file in the image`), err)
 

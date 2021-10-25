@@ -112,6 +112,8 @@ func (b *moduleIncludeBuilder) buildForIncludes(
 		absIncludeDirPaths,
 		absFileOrDirPaths,
 		fileOrDirPathsAllowNotExist,
+		// TODO(doria): we need to fix this
+		nil,
 		normalpath.Absolute,
 	)
 }

@@ -40,6 +40,7 @@ const (
 	configFlagName              = "config"
 	pathsFlagName               = "path"
 	includeImportsFlagName      = "include-imports"
+	excludePathsFlagName        = "exclude"
 
 	// deprecated
 	inputFlagName = "input"
@@ -193,6 +194,7 @@ type flags struct {
 	Config         string
 	Paths          []string
 	IncludeImports bool
+	ExcludePaths   []string
 
 	// deprecated
 	Input string
@@ -242,6 +244,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		configFlagName,
 		"",
 		`The config file or data to use.`,
+	)
+	flagSet.StringSliceVar(
+		&f.ExcludePaths,
+		excludePathsFlagName,
+		nil,
+		`Exclude these paths from the generation process. This can be proto files or directories.
+If specified multiple times, the union will be taken.`,
 	)
 
 	// deprecated, but not marked as deprecated as we return error if this is used
@@ -336,9 +345,10 @@ func run(
 		container,
 		ref,
 		inputConfig,
-		paths, // we filter on files
-		false, // input files must exist
-		false, // we must include source info for generation
+		paths,              // we filter on files
+		flags.ExcludePaths, // we exclude these paths
+		false,              // input files must exist
+		false,              // we must include source info for generation
 	)
 	if err != nil {
 		return err
