@@ -89,6 +89,9 @@ type AuthzServiceClient interface {
 	// UserCanDeletePlugin returns whether the user is authorized
 	// to delete a plugin.
 	UserCanDeletePlugin(ctx context.Context, in *UserCanDeletePluginRequest, opts ...grpc.CallOption) (*UserCanDeletePluginResponse, error)
+	// UserCanDeleteUser returns whether the user is authorized
+	// to delete a user.
+	UserCanDeleteUser(ctx context.Context, in *UserCanDeleteUserRequest, opts ...grpc.CallOption) (*UserCanDeleteUserResponse, error)
 }
 
 type authzServiceClient struct {
@@ -261,6 +264,15 @@ func (c *authzServiceClient) UserCanDeletePlugin(ctx context.Context, in *UserCa
 	return out, nil
 }
 
+func (c *authzServiceClient) UserCanDeleteUser(ctx context.Context, in *UserCanDeleteUserRequest, opts ...grpc.CallOption) (*UserCanDeleteUserResponse, error) {
+	out := new(UserCanDeleteUserResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteUser", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthzServiceServer is the server API for AuthzService service.
 // All implementations should embed UnimplementedAuthzServiceServer
 // for forward compatibility
@@ -318,6 +330,9 @@ type AuthzServiceServer interface {
 	// UserCanDeletePlugin returns whether the user is authorized
 	// to delete a plugin.
 	UserCanDeletePlugin(context.Context, *UserCanDeletePluginRequest) (*UserCanDeletePluginResponse, error)
+	// UserCanDeleteUser returns whether the user is authorized
+	// to delete a user.
+	UserCanDeleteUser(context.Context, *UserCanDeleteUserRequest) (*UserCanDeleteUserResponse, error)
 }
 
 // UnimplementedAuthzServiceServer should be embedded to have forward compatible implementations.
@@ -377,6 +392,9 @@ func (UnimplementedAuthzServiceServer) UserCanDeleteTemplate(context.Context, *U
 }
 func (UnimplementedAuthzServiceServer) UserCanDeletePlugin(context.Context, *UserCanDeletePluginRequest) (*UserCanDeletePluginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserCanDeletePlugin not implemented")
+}
+func (UnimplementedAuthzServiceServer) UserCanDeleteUser(context.Context, *UserCanDeleteUserRequest) (*UserCanDeleteUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanDeleteUser not implemented")
 }
 
 // UnsafeAuthzServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -714,6 +732,24 @@ func _AuthzService_UserCanDeletePlugin_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthzService_UserCanDeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanDeleteUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).UserCanDeleteUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanDeleteUser",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).UserCanDeleteUser(ctx, req.(*UserCanDeleteUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthzService_ServiceDesc is the grpc.ServiceDesc for AuthzService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -792,6 +828,10 @@ var AuthzService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserCanDeletePlugin",
 			Handler:    _AuthzService_UserCanDeletePlugin_Handler,
+		},
+		{
+			MethodName: "UserCanDeleteUser",
+			Handler:    _AuthzService_UserCanDeleteUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
