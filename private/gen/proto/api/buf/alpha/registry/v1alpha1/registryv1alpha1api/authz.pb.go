@@ -96,4 +96,7 @@ type AuthzService interface {
 	// UserCanDeletePlugin returns whether the user is authorized
 	// to delete a plugin.
 	UserCanDeletePlugin(ctx context.Context, pluginId string) (authorized bool, err error)
+	// UserCanDeleteUser returns whether the user is authorized
+	// to delete a user.
+	UserCanDeleteUser(ctx context.Context) (authorized bool, err error)
 }

@@ -375,3 +375,19 @@ func (s *authzService) UserCanDeletePlugin(ctx context.Context, pluginId string)
 	}
 	return response.Authorized, nil
 }
+
+// UserCanDeleteUser returns whether the user is authorized
+// to delete a user.
+func (s *authzService) UserCanDeleteUser(ctx context.Context) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanDeleteUser(
+		ctx,
+		&v1alpha1.UserCanDeleteUserRequest{},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}
