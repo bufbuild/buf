@@ -59,7 +59,7 @@ func TestOutputWithExclude(t *testing.T) {
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "b", "v1", "B.java"))
 	require.NoError(t, err)
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
-	require.Contains(t, err.Error(), "The system cannot find the file specified.")
+	require.Contains(t, err.Error(), "The system cannot find the path specified.")
 }
 
 func TestOutputWithPathWithinExclude(t *testing.T) {
@@ -79,7 +79,7 @@ func TestOutputWithPathWithinExclude(t *testing.T) {
 	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
 	require.NoError(t, err)
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
-	require.Contains(t, err.Error(), "The system cannot find the file specified.")
+	require.Contains(t, err.Error(), "The system cannot find the path specified.")
 }
 
 func TestOutputWithExcludeWithinPath(t *testing.T) {
@@ -100,7 +100,7 @@ func TestOutputWithExcludeWithinPath(t *testing.T) {
 	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
 	require.NoError(t, err)
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "b", "v1", "B.java"))
-	require.Contains(t, err.Error(), "The system cannot find the file specified.")
+	require.Contains(t, err.Error(), "The system cannot find the path specified.")
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
-	require.Contains(t, err.Error(), "The system cannot find the file specified.")
+	require.Contains(t, err.Error(), "The system cannot find the path specified.")
 }

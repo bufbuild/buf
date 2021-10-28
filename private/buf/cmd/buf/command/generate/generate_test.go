@@ -161,7 +161,7 @@ func TestOutputWithPathEqualToExclude(t *testing.T) {
 		nil,
 		1,
 		``,
-		filepath.FromSlash(`Failure: cannot set the same path for both --path and --exclude flags: a/v1/a.proto`),
+		fmt.Sprintf("Failure: cannot set the same path for both --path and --exclude flags: %s", filepathFromSlash("a/v1/a.proto")),
 		"--output",
 		tempDirPath,
 		"--template",
