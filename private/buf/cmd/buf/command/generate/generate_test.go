@@ -154,6 +154,26 @@ func TestProtoFileRefIncludePackageFiles(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestOutputWithPathEqualToExclude(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		filepath.FromSlash(`Failure: cannot set the same path for both --path and --exclude flags: a/v1/a.proto`),
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "paths", "buf.gen.yaml"),
+		"--exclude",
+		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
+		filepath.Join("testdata", "paths"),
+	)
+}
+
 func TestGenerateInsertionPoint(t *testing.T) {
 	t.Parallel()
 	runner := command.NewRunner()

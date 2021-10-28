@@ -40,3 +40,67 @@ func TestProtoFileRef(t *testing.T) {
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "B.java"))
 	require.Contains(t, err.Error(), "The system cannot find the file specified.")
 }
+
+func TestOutputWithExclude(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "paths", "buf.gen.yaml"),
+		"--exclude",
+		filepath.Join("testdata", "paths", "a", "v1"),
+		filepath.Join("testdata", "paths"),
+	)
+
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "b", "v1", "B.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.Contains(t, err.Error(), "The system cannot find the file specified.")
+}
+
+func TestOutputWithPathWithinExclude(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "paths", "buf.gen.yaml"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
+		"--exclude",
+		filepath.Join("testdata", "paths", "a"),
+	)
+
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
+	require.Contains(t, err.Error(), "The system cannot find the file specified.")
+}
+
+func TestOutputWithExcludeWithinPath(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "paths", "buf.gen.yaml"),
+		"--exclude",
+		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
+		"--path",
+		filepath.Join("testdata", "paths", "a"),
+		filepath.Join("testdata", "paths"),
+	)
+
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "b", "v1", "B.java"))
+	require.Contains(t, err.Error(), "The system cannot find the file specified.")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.Contains(t, err.Error(), "The system cannot find the file specified.")
+}
