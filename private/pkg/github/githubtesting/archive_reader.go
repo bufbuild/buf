@@ -90,7 +90,7 @@ func (a *archiveReader) GetArchive(
 	}
 	request, err := http.NewRequestWithContext(
 		ctx,
-		"GET",
+		http.MethodGet,
 		fmt.Sprintf("https://github.com/%s/%s/archive/%s.tar.gz", owner, repository, ref),
 		nil,
 	)

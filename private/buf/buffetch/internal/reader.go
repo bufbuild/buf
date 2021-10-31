@@ -651,7 +651,7 @@ func (r *reader) getFileReadCloserAndSizePotentiallyCompressedHTTP(
 	if r.httpAuthenticator == nil {
 		return nil, 0, errors.New("http authenticator is nil")
 	}
-	request, err := http.NewRequestWithContext(ctx, "GET", httpPath, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, httpPath, nil)
 	if err != nil {
 		return nil, -1, err
 	}

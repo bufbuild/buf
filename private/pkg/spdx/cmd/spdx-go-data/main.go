@@ -99,7 +99,7 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 // sorted by lowercase of ID
 // bans "custom", "none"
 func getLicenseInfos(ctx context.Context) (_ []*licenseInfo, retErr error) {
-	request, err := http.NewRequestWithContext(ctx, "GET", licenseListURL, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, licenseListURL, nil)
 	if err != nil {
 		return nil, err
 	}
