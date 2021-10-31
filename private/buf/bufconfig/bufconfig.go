@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	// ExternalConfigFilePath is the default configuration file path.
+	// ExternalConfigV1FilePath is the default configuration file path.
 	ExternalConfigV1FilePath = "buf.yaml"
 
 	// ExternalConfigV1Beta1FilePath is the v1beta1 file path.
@@ -78,7 +78,7 @@ func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket) (*Co
 	return getConfigForBucket(ctx, readBucket)
 }
 
-// GetConfig gets the Config for the given JSON or YAML data.
+// GetConfigForData gets the Config for the given JSON or YAML data.
 //
 // If the data is of length 0, returns the default config.
 func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
