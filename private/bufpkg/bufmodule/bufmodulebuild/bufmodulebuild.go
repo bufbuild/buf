@@ -120,7 +120,7 @@ func WithPaths(paths []string) BuildOption {
 // These paths will be normalized.
 // Multiple calls to this option and WithPaths will override previous calls.
 //
-// This results in ModuleWithTargetPathsAllowNotExist being used on the resulting build module.
+// This results in ModuleWithPathsAllowNotExist being used on the resulting build module.
 // This is done within bufmodulebuild so we can resolve the paths relative to their roots.
 func WithPathsAllowNotExist(paths []string) BuildOption {
 	return func(buildOptions *buildOptions) {

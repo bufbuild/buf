@@ -182,54 +182,6 @@ func BuildOptionsForWorkspaceDirectory(
 	return buildOptions, nil
 }
 
-// Config is the workspace config.
-type Config struct {
-	// Directories are normalized and validated.
-	Directories []string
-}
-
-// GetConfigForBucket gets the Config for the YAML data at ConfigFilePath.
-//
-// If the data is of length 0, returns the default config.
-func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (*Config, error) {
-	return getConfigForBucket(ctx, readBucket, relativeRootPath)
-}
-
-// GetConfig gets the Config for the given JSON or YAML data.
-//
-// If the data is of length 0, returns the default config.
-func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
-	return getConfigForData(ctx, data)
-}
-
-// ExistingConfigFilePath checks if a configuration file exists, and if so, returns the path
-// within the ReadBucket of this configuration file.
-//
-// Returns empty string and no error if no configuration file exists.
-func ExistingConfigFilePath(ctx context.Context, readBucket storage.ReadBucket) (string, error) {
-	for _, configFilePath := range AllConfigFilePaths {
-		exists, err := storage.Exists(ctx, readBucket, configFilePath)
-		if err != nil {
-			return "", err
-		}
-		if exists {
-			return configFilePath, nil
-		}
-	}
-	return "", nil
-}
-
-// ExternalConfigV1 represents the on-disk representation
-// of the workspace configuration at version v1.
-type ExternalConfigV1 struct {
-	Version     string   `json:"version,omitempty" yaml:"version,omitempty"`
-	Directories []string `json:"directories,omitempty" yaml:"directories,omitempty"`
-}
-
-type externalConfigVersion struct {
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
-}
-
 func externalPathsToSubDirRelPaths(
 	workspaceID string,
 	relativeRootPath string,
@@ -364,4 +316,52 @@ func externalPathsToSubDirRelPaths(
 		}
 	}
 	return subDirRelPaths, nil
+}
+
+// Config is the workspace config.
+type Config struct {
+	// Directories are normalized and validated.
+	Directories []string
+}
+
+// GetConfigForBucket gets the Config for the YAML data at ConfigFilePath.
+//
+// If the data is of length 0, returns the default config.
+func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, relativeRootPath string) (*Config, error) {
+	return getConfigForBucket(ctx, readBucket, relativeRootPath)
+}
+
+// GetConfig gets the Config for the given JSON or YAML data.
+//
+// If the data is of length 0, returns the default config.
+func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {
+	return getConfigForData(ctx, data)
+}
+
+// ExistingConfigFilePath checks if a configuration file exists, and if so, returns the path
+// within the ReadBucket of this configuration file.
+//
+// Returns empty string and no error if no configuration file exists.
+func ExistingConfigFilePath(ctx context.Context, readBucket storage.ReadBucket) (string, error) {
+	for _, configFilePath := range AllConfigFilePaths {
+		exists, err := storage.Exists(ctx, readBucket, configFilePath)
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			return configFilePath, nil
+		}
+	}
+	return "", nil
+}
+
+// ExternalConfigV1 represents the on-disk representation
+// of the workspace configuration at version v1.
+type ExternalConfigV1 struct {
+	Version     string   `json:"version,omitempty" yaml:"version,omitempty"`
+	Directories []string `json:"directories,omitempty" yaml:"directories,omitempty"`
+}
+
+type externalConfigVersion struct {
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
 }

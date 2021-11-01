@@ -201,12 +201,12 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 			excludePaths[i] = excludePath
 		}
 		if externalDirOrFilePathsAllowNotExist {
-			module, err = bufmodule.ModuleWithTargetPathsAllowNotExist(module, targetPaths, excludePaths, false)
+			module, err = bufmodule.ModuleWithPathsAllowNotExist(module, targetPaths, excludePaths)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			module, err = bufmodule.ModuleWithTargetPaths(module, targetPaths, excludePaths, false)
+			module, err = bufmodule.ModuleWithTargetPaths(module, targetPaths, excludePaths)
 			if err != nil {
 				return nil, err
 			}
@@ -508,11 +508,9 @@ func (m *moduleConfigReader) getModuleConfig(
 		if workspaceDirectoryEqualsOrContainsSubDirPath(workspaceConfig, subDirPath) {
 			// We have to do this ahead of time as we are not using PathForExternalPath
 			// in this if branch. This is really bad.
-			if len(externalDirOrFilePaths) > 0 {
-				for _, externalDirOrFilePath := range externalDirOrFilePaths {
-					if _, err := sourceRef.PathForExternalPath(externalDirOrFilePath); err != nil {
-						return nil, err
-					}
+			for _, externalDirOrFilePath := range externalDirOrFilePaths {
+				if _, err := sourceRef.PathForExternalPath(externalDirOrFilePath); err != nil {
+					return nil, err
 				}
 			}
 			// The subDirPath is contained within one of the workspace directories, so

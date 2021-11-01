@@ -289,15 +289,6 @@ func ImageWithOnlyPathsAllowNotExist(
 	return imageWithOnlyPaths(image, paths, excludePaths, true)
 }
 
-// ImageWithExcludes returns a copy of the Image that excludes the files with the given root
-// relative file paths.
-//
-// Note that excluded paths can be either files or directories - whether or not a path is included
-// is a result of normalpath.EqualsOrContainsPath.
-func ImageWithExcludes(image Image, excludePaths []string) (Image, error) {
-	return imageWithExcludes(image, excludePaths)
-}
-
 // ImageByDir returns multiple images that have non-imports split
 // by directory.
 //

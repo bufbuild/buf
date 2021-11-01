@@ -32,7 +32,7 @@ func applyModulePaths(
 	excludeFileOrDirPaths []string,
 	pathType normalpath.PathType,
 ) (bufmodule.Module, error) {
-	if fileOrDirPaths == nil && len(excludeFileOrDirPaths) == 0 {
+	if fileOrDirPaths == nil && excludeFileOrDirPaths == nil {
 		return module, nil
 	}
 	var excludePaths []string
@@ -43,20 +43,17 @@ func applyModulePaths(
 			return nil, err
 		}
 	}
-	// We need to send through some way of indicating that we are targeting all files with some
-	// paths that are excluded. We can send through an empty []string{} for target paths, since
-	// we are setting `allowAllTargetPaths = true`.
 	if fileOrDirPaths == nil {
-		return bufmodule.ModuleWithTargetPaths(module, []string{}, excludePaths, true)
+		return bufmodule.ModuleWithOnlyExcludePaths(module, fileOrDirPathsAllowNotExist, excludePaths)
 	}
 	targetPaths, err := pathsToTargetPaths(roots, *fileOrDirPaths, pathType)
 	if err != nil {
 		return nil, err
 	}
 	if fileOrDirPathsAllowNotExist {
-		return bufmodule.ModuleWithTargetPathsAllowNotExist(module, targetPaths, excludePaths, false)
+		return bufmodule.ModuleWithPathsAllowNotExist(module, targetPaths, excludePaths)
 	}
-	return bufmodule.ModuleWithTargetPaths(module, targetPaths, excludePaths, false)
+	return bufmodule.ModuleWithTargetPaths(module, targetPaths, excludePaths)
 }
 
 func pathsToTargetPaths(roots []string, paths []string, pathType normalpath.PathType) ([]string, error) {

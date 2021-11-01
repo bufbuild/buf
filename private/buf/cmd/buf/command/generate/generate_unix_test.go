@@ -45,13 +45,13 @@ func TestOutputWithExclude(t *testing.T) {
 	tempDirPath := t.TempDir()
 	testRunSuccess(
 		t,
+		filepath.Join("testdata", "paths"),
 		"--output",
 		tempDirPath,
 		"--template",
 		filepath.Join("testdata", "paths", "buf.gen.yaml"),
 		"--exclude",
 		filepath.Join("testdata", "paths", "a", "v1"),
-		filepath.Join("testdata", "paths"),
 	)
 
 	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
@@ -59,6 +59,7 @@ func TestOutputWithExclude(t *testing.T) {
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "b", "v1", "B.java"))
 	require.NoError(t, err)
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.Error(t, err)
 	require.Contains(t, err.Error(), "no such file or directory")
 }
 

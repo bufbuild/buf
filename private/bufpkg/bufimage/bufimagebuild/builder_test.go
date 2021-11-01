@@ -177,50 +177,38 @@ func TestGoogleapis(t *testing.T) {
 	imageWithPathsAndExcludes, err := bufimage.ImageWithOnlyPaths(
 		image,
 		[]string{
-			"google/protobuf",
+			"google/type",
 		},
 		[]string{
-			"google/protobuf/descriptor.proto",
-			"google/protobuf/api.proto",
+			"google/type/calendar_period.proto",
 			"google/type/date.proto",
 		},
 	)
 	assert.NoError(t, err)
 	assert.Equal(t,
 		[]string{
-			"google/protobuf/any.proto",
-			"google/protobuf/duration.proto",
-			"google/protobuf/empty.proto",
-			"google/protobuf/field_mask.proto",
-			"google/protobuf/source_context.proto",
-			"google/protobuf/struct.proto",
-			"google/protobuf/timestamp.proto",
-			"google/protobuf/type.proto",
 			"google/protobuf/wrappers.proto",
+			"google/type/color.proto",
+			"google/type/dayofweek.proto",
+			"google/type/expr.proto",
+			"google/type/fraction.proto",
+			"google/type/latlng.proto",
+			"google/type/money.proto",
+			"google/type/postal_address.proto",
+			"google/type/quaternion.proto",
+			"google/type/timeofday.proto",
 		},
 		testGetImageFilePaths(imageWithPathsAndExcludes),
 	)
 
 	excludePaths := []string{
-		"google/protobuf/any.proto",
-		"google/protobuf/api.proto",
-		"google/protobuf/descriptor.proto",
-		"google/protobuf/source_context.proto",
-		"google/protobuf/type.proto",
-		"google/protobuf/wrappers.proto",
 		"google/type/calendar_period.proto",
+		"google/type/quaternion.proto",
+		"google/type/money.proto",
 		"google/type/color.proto",
 		"google/type/date.proto",
-		"google/type/dayofweek.proto",
-		"google/type/expr.proto",
-		"google/type/fraction.proto",
-		"google/type/latlng.proto",
-		"google/type/money.proto",
-		"google/type/postal_address.proto",
-		"google/type/quaternion.proto",
-		"google/type/timeofday.proto",
 	}
-	imageWithExcludes, err := bufimage.ImageWithExcludes(image, excludePaths)
+	imageWithExcludes, err := bufimage.ImageWithOnlyPaths(image, []string{}, excludePaths)
 	assert.NoError(t, err)
 	testImageWithExcludedFilePaths(t, imageWithExcludes, excludePaths)
 
@@ -389,7 +377,7 @@ func testImageWithExcludedFilePaths(t *testing.T, image bufimage.Image, excludeP
 	for _, imageFile := range image.Files() {
 		if !imageFile.IsImport() {
 			for _, excludePath := range excludePaths {
-				assert.False(t, normalpath.EqualsOrContainsPath(excludePath, imageFile.Path(), normalpath.Relative))
+				assert.False(t, normalpath.EqualsOrContainsPath(excludePath, imageFile.Path(), normalpath.Relative), "paths: %s, %s", imageFile.Path(), excludePath)
 			}
 		}
 	}

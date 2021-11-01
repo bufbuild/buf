@@ -26,16 +26,16 @@ import (
 
 type targetingModule struct {
 	Module
-	targetPaths                    []string
-	targetPathsAllowNotExistOnWalk bool
-	excludePaths                   []string
-	allowAllTargetPaths            bool
+	targetPaths              []string
+	pathsAllowNotExistOnWalk bool
+	excludePaths             []string
+	allowAllTargetPaths      bool
 }
 
 func newTargetingModule(
 	delegate Module,
 	targetPaths []string,
-	targetPathsAllowNotExistOnWalk bool,
+	pathsAllowNotExistOnWalk bool,
 	excludePaths []string,
 	allowAllTargetPaths bool,
 ) (*targetingModule, error) {
@@ -43,11 +43,11 @@ func newTargetingModule(
 		return nil, err
 	}
 	return &targetingModule{
-		Module:                         delegate,
-		targetPaths:                    targetPaths,
-		targetPathsAllowNotExistOnWalk: targetPathsAllowNotExistOnWalk,
-		excludePaths:                   excludePaths,
-		allowAllTargetPaths:            allowAllTargetPaths,
+		Module:                   delegate,
+		targetPaths:              targetPaths,
+		pathsAllowNotExistOnWalk: pathsAllowNotExistOnWalk,
+		excludePaths:             excludePaths,
+		allowAllTargetPaths:      allowAllTargetPaths,
 	}, nil
 }
 
@@ -71,13 +71,6 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 			// not a .proto file, therefore must be a directory
 			potentialDirPaths = append(potentialDirPaths, targetPath)
 		} else {
-			// Since all of these are specific files to include, we will only need to check that an
-			// equivalent exclude has not been set for this path.
-			for _, excludePath := range m.excludePaths {
-				if excludePath == targetPath {
-					return nil, fmt.Errorf("cannot set the same path for both --path and --exclude flags: %s", excludePath)
-				}
-			}
 			objectInfo, err := sourceReadBucket.Stat(ctx, targetPath)
 			if err != nil {
 				if !storage.IsNotExist(err) {
@@ -87,6 +80,13 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 				// in .proto,  this could be a directory - we need to check it
 				potentialDirPaths = append(potentialDirPaths, targetPath)
 			} else {
+				// Since all of these are specific files to include, we will only need to check that an
+				// equivalent exclude has not been set for this path.
+				for _, excludePath := range m.excludePaths {
+					if excludePath == targetPath {
+						return nil, fmt.Errorf("cannot set the same path for both --path and --exclude flags: %s", normalpath.Unnormalize(excludePath))
+					}
+				}
 				// we have a file, therefore the targetPath was a file path
 				// add to the nonImportImageFiles if does not already exist
 				if _, ok := fileInfoPaths[targetPath]; !ok {
@@ -126,6 +126,9 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 	// This needs to contain all paths in potentialDirPathMap at the end for us to
 	// have had matches for every targetPath input.
 	matchingPotentialDirPathMap := make(map[string]struct{})
+	// The map of exclude paths that have a match on the walk. This is used to check against
+	// pathsAllowNotExistOnWalk.
+	matchingExcludePaths := make(map[string]struct{})
 	if walkErr := sourceReadBucket.Walk(
 		ctx,
 		"",
@@ -136,6 +139,11 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 				path,
 				normalpath.Relative,
 			)
+			for excludeMatchingPath := range excludeMatchingPathMap {
+				if _, ok := matchingExcludePaths[excludeMatchingPath]; !ok {
+					matchingExcludePaths[excludeMatchingPath] = struct{}{}
+				}
+			}
 			var fileMatchingPathMap map[string]struct{}
 			if !m.allowAllTargetPaths {
 				// get the paths in potentialDirPathMap that match this path
@@ -150,7 +158,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 			// 2. If we find it only for exclude paths, then we exclude.
 			// 3. If we do not find it for our target path and allowAllTargetPaths=false, we exclude.
 			// 4. If allowAllTargetPaths=false but we find it in our target paths, we need to add
-			// the file to `matchingPotentialDirPathMap` to check against the `targetPathsAllowNotExistOnWalk`
+			// the file to `matchingPotentialDirPathMap` to check against the `pathsAllowNotExistOnWalk`
 			// condition.
 			// 5. In the remaining case, we add the file if `len(fileMatchingPathMap) > 0 || allowAllTargetPaths == true`.
 			if len(excludeMatchingPathMap) > 0 && len(fileMatchingPathMap) > 0 {
@@ -175,7 +183,15 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 					}
 				}
 			}
-			if (len(excludeMatchingPathMap) > 0) || (len(fileMatchingPathMap) == 0 && !m.allowAllTargetPaths) {
+			// We have ruled out case 2 + 3 above, so now we are checking for case 1. In the situation
+			// where we are accepting all targets, then we can just move on. Otherwise, if no file
+			// matching any of the target paths were found, we continue the walk.
+			if !m.allowAllTargetPaths && len(fileMatchingPathMap) == 0 {
+				return nil
+			}
+			// We have checked all conditions where a matching file was found, so we need to handle
+			// if an exclude was found and we are allowing all targets.
+			if m.allowAllTargetPaths && len(excludeMatchingPathMap) > 0 {
 				return nil
 			}
 			if !m.allowAllTargetPaths {
@@ -209,11 +225,19 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 	// if !allowNotExist, i.e. if all targetPaths must have a matching file,
 	// we check the matchingPotentialDirPathMap against the potentialDirPathMap
 	// to make sure that potentialDirPathMap is covered
-	if !m.targetPathsAllowNotExistOnWalk && !m.allowAllTargetPaths {
-		for potentialDirPath := range potentialDirPathMap {
-			if _, ok := matchingPotentialDirPathMap[potentialDirPath]; !ok {
+	if !m.pathsAllowNotExistOnWalk {
+		if !m.allowAllTargetPaths {
+			for potentialDirPath := range potentialDirPathMap {
+				if _, ok := matchingPotentialDirPathMap[potentialDirPath]; !ok {
+					// no match, this is an error given that allowNotExist is false
+					return nil, fmt.Errorf("path %q has no matching file in the module", potentialDirPath)
+				}
+			}
+		}
+		for excludePath := range excludePathMap {
+			if _, ok := matchingExcludePaths[excludePath]; !ok {
 				// no match, this is an error given that allowNotExist is false
-				return nil, fmt.Errorf("path %q has no matching file in the module", potentialDirPath)
+				return nil, fmt.Errorf("path %q has no matching file in the module", excludePath)
 			}
 		}
 	}

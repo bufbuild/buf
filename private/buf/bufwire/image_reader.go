@@ -23,7 +23,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
@@ -155,33 +154,9 @@ func (i *imageReader) GetImage(
 			excludePaths[i] = excludePath
 		}
 	}
-	// If we only have exclude paths, then we can create an image that simply excludes these paths.
-	if len(imagePaths) == 0 && len(excludePaths) > 0 {
-		return bufimage.ImageWithExcludes(image, excludePaths)
-	}
-	// If we have both target paths and exclude paths, we'll need to merge the two sets of paths
-	// and then create a single image that targets the union of these paths.
-	var prunedExcludePaths []string
-	if len(excludePaths) > 0 {
-		// If the two paths are equal, we error.
-		// if the target is more specific than the exclude, then we keep it as is.
-		// If the exclude is more specific than the target, then we need to exclude it.
-		for _, imagePath := range imagePaths {
-			for _, excludePath := range excludePaths {
-				if imagePath == excludePath {
-					return nil, fmt.Errorf("cannot set the same path for both --path and --exclude flags: %s", excludePath)
-				}
-				if normalpath.EqualsOrContainsPath(imagePath, excludePath, normalpath.Relative) {
-					prunedExcludePaths = append(prunedExcludePaths, excludePath)
-				}
-			}
-		}
-	}
-	// Now all the exclude paths that we have collected are all subsets of the include paths,
-	// we prune the images based on those paths.
 	if externalDirOrFilePathsAllowNotExist {
 		// externalDirOrFilePaths have to be targetPaths
-		return bufimage.ImageWithOnlyPathsAllowNotExist(image, imagePaths, prunedExcludePaths)
+		return bufimage.ImageWithOnlyPathsAllowNotExist(image, imagePaths, excludePaths)
 	}
-	return bufimage.ImageWithOnlyPaths(image, imagePaths, prunedExcludePaths)
+	return bufimage.ImageWithOnlyPaths(image, imagePaths, excludePaths)
 }
