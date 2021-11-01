@@ -41,7 +41,7 @@ type ImageConfig interface {
 
 // ImageConfigReader is an ImageConfig reader.
 type ImageConfigReader interface {
-	// GetImageConfig gets the ImageConfig for the fetch value.
+	// GetImageConfigs gets the ImageConfig for the fetch value.
 	//
 	// If externalDirOrFilePaths is empty, this builds all files under Buf control.
 	GetImageConfigs(
@@ -84,7 +84,7 @@ type ModuleConfig interface {
 
 // ModuleConfigReader is a ModuleConfig reader.
 type ModuleConfigReader interface {
-	// GetModuleConfig gets the ModuleConfig for the fetch value.
+	// GetModuleConfigs gets the ModuleConfig for the fetch value.
 	//
 	// If externalDirOrFilePaths is empty, this builds all files under Buf control.
 	//

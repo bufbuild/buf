@@ -331,7 +331,7 @@ func GetConfigForBucket(ctx context.Context, readBucket storage.ReadBucket, rela
 	return getConfigForBucket(ctx, readBucket, relativeRootPath)
 }
 
-// GetConfig gets the Config for the given JSON or YAML data.
+// GetConfigForData gets the Config for the given JSON or YAML data.
 //
 // If the data is of length 0, returns the default config.
 func GetConfigForData(ctx context.Context, data []byte) (*Config, error) {

@@ -217,7 +217,7 @@ type ReadBucketCloser internal.ReadBucketCloser
 // declaration to do so.
 type ReadWriteBucketCloser internal.ReadWriteBucketCloser
 
-// ReadWriteBucketCloserWithTerminateFileProvider is a ReadWriteBucketCloser with a TerminateFileProvider.
+// ReadBucketCloserWithTerminateFileProvider is a ReadWriteBucketCloser with a TerminateFileProvider.
 type ReadBucketCloserWithTerminateFileProvider internal.ReadBucketCloserWithTerminateFileProvider
 
 // ImageReader is an image reader.
@@ -234,7 +234,7 @@ type ImageReader interface {
 
 // SourceReader is a source reader.
 type SourceReader interface {
-	// GetSource gets the source bucket.
+	// GetSourceBucket gets the source bucket.
 	//
 	// The returned bucket will only have .proto and configuration files.
 	// The returned bucket may be upgradeable to a ReadWriteBucketCloser.
