@@ -135,14 +135,12 @@ func (i *imageReader) GetImage(
 		return image, nil
 	}
 	imagePaths := make([]string, len(externalDirOrFilePaths))
-	if len(externalDirOrFilePaths) > 0 {
-		for i, externalDirOrFilePath := range externalDirOrFilePaths {
-			imagePath, err := imageRef.PathForExternalPath(externalDirOrFilePath)
-			if err != nil {
-				return nil, err
-			}
-			imagePaths[i] = imagePath
+	for i, externalDirOrFilePath := range externalDirOrFilePaths {
+		imagePath, err := imageRef.PathForExternalPath(externalDirOrFilePath)
+		if err != nil {
+			return nil, err
 		}
+		imagePaths[i] = imagePath
 	}
 	excludePaths := make([]string, len(excludeDirOrFilePaths))
 	if len(excludeDirOrFilePaths) > 0 {

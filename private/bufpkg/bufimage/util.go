@@ -39,6 +39,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	if err := normalpath.ValidatePathsNormalizedValidatedUnique(excludeFileOrDirPaths); err != nil {
 		return nil, err
 	}
+	excludeFileOrDirPathMap := stringutil.SliceToMap(excludeFileOrDirPaths)
 	// These are the files that fileOrDirPaths actually reference and will
 	// result in the non-imports in our resulting Image. The Image will also include
 	// the ImageFiles that the nonImportImageFiles import
@@ -52,7 +53,6 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	allNonImportPaths := make(map[string]struct{})
 	// We have only exclude paths, and therefore all other paths are target paths.
 	if len(fileOrDirPaths) == 0 && len(excludeFileOrDirPaths) > 0 {
-		excludeFileOrDirPathMap := stringutil.SliceToMap(excludeFileOrDirPaths)
 		for _, imageFile := range image.Files() {
 			if !imageFile.IsImport() {
 				if _, ok := allNonImportPaths[imageFile.Path()]; !ok {
@@ -67,11 +67,6 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 		// Finally, before we construct the image, we need to validate that all exclude paths
 		// provided adhere to the allowNotExist flag.
 		if !allowNotExist {
-			var pathsWithNoMatchingFiles []string
-			// TODO: right now, in order to check that each exclude exists, we need to loop through
-			// all image files for each excludeFileOrDirPaths to return an error that provides
-			// a list of paths that are not found within the image. This seems like a pretty expensive
-			// operation, but seems important for surfacing a coherent error to the user.
 			for _, excludeFileOrDirPath := range excludeFileOrDirPaths {
 				var foundPath bool
 				for nonImportPath := range allNonImportPaths {
@@ -81,18 +76,14 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 					}
 				}
 				if !foundPath {
-					pathsWithNoMatchingFiles = append(pathsWithNoMatchingFiles, excludeFileOrDirPath)
+					// no match, thisd is an error given that allowNotExist is false
+					return nil, fmt.Errorf("path %q has no matching file in the image", excludeFileOrDirPath)
 				}
-			}
-			if len(pathsWithNoMatchingFiles) > 0 {
-				return nil, fmt.Errorf("paths with no matching files in the image: %v", pathsWithNoMatchingFiles)
 			}
 		}
 		return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
 	}
-	// Since we have both target paths and exclude paths, we should prune the exclude paths to
-	// only incorporate the ones that are subsets of the target paths
-	var prunedExcludeFileOrDirPaths []string
+	// We do a check here to ensure that no paths are duplicated as a target and an exclude.
 	for _, fileOrDirPath := range fileOrDirPaths {
 		for _, excludeFileOrDirPath := range excludeFileOrDirPaths {
 			if fileOrDirPath == excludeFileOrDirPath {
@@ -101,12 +92,8 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 					normalpath.Unnormalize(excludeFileOrDirPath),
 				)
 			}
-			if normalpath.EqualsOrContainsPath(fileOrDirPath, excludeFileOrDirPath, normalpath.Relative) {
-				prunedExcludeFileOrDirPaths = append(prunedExcludeFileOrDirPaths, excludeFileOrDirPath)
-			}
 		}
 	}
-	excludeFileOrDirPathMap := stringutil.SliceToMap(prunedExcludeFileOrDirPaths)
 	// potentialDirPaths are paths that we need to check if they are directories
 	// these are any files that do not end in .proto, as well as files that
 	// end in .proto but do not have a corresponding ImageFile - if there
@@ -123,9 +110,9 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 			potentialDirPaths = append(potentialDirPaths, fileOrDirPath)
 		} else {
 			if imageFile := image.GetFile(fileOrDirPath); imageFile != nil {
-				if normalpath.MapHasEqualOrContainingPath(excludeFileOrDirPathMap, imageFile.Path(), normalpath.Relative) {
-					continue
-				}
+				// We do not need to check excludes here, since we already checked for duplicated
+				// paths, and target files that resolve to a specific image file are always a leaf,
+				// thus, we would always include it if it's specified.
 				// we have an ImageFile, therefile the fileOrDirPath was a file path
 				// add to the nonImportImageFiles if does not already exist
 				if _, ok := nonImportPaths[fileOrDirPath]; !ok {
@@ -164,6 +151,8 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	// this needs to contain all paths in potentialDirPathMap at the end for us to
 	// have had matches for every inputted fileOrDirPath
 	matchingPotentialDirPathMap := make(map[string]struct{})
+	// the same thing is done for exclude paths
+	matchingPotentialExcludePathMap := make(map[string]struct{})
 	for _, imageFile := range image.Files() {
 		imageFilePath := imageFile.Path()
 		if !imageFile.IsImport() {
@@ -171,10 +160,15 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 				allNonImportPaths[imageFilePath] = struct{}{}
 			}
 		}
-		// since we have pruned all exclude files to subsets of the target, then we can check
-		// if a file has been excluded
-		if normalpath.MapHasEqualOrContainingPath(excludeFileOrDirPathMap, imageFilePath, normalpath.Relative) {
-			continue
+		fileMatchingExcludePathMap := normalpath.MapAllEqualOrContainingPathMap(
+			excludeFileOrDirPathMap,
+			imageFilePath,
+			normalpath.Relative,
+		)
+		if len(fileMatchingExcludePathMap) > 0 {
+			for key := range fileMatchingExcludePathMap {
+				matchingPotentialExcludePathMap[key] = struct{}{}
+			}
 		}
 		// get the paths in potentialDirPathMap that match this imageFilePath
 		fileMatchingPathMap := normalpath.MapAllEqualOrContainingPathMap(
@@ -182,6 +176,9 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 			imageFilePath,
 			normalpath.Relative,
 		)
+		if excludeFile(fileMatchingPathMap, fileMatchingExcludePathMap) {
+			continue
+		}
 		if len(fileMatchingPathMap) > 0 {
 			// we had a match, this means that some path in potentialDirPaths matched
 			// the imageFilePath, add all the paths in potentialDirPathMap that
@@ -206,29 +203,46 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 				return nil, fmt.Errorf("path %q has no matching file in the image", potentialDirPath)
 			}
 		}
-		// Since all exclude paths are subset of the provided target paths, we can use the same
-		// check against the pruned exclude paths.
-		// TODO: similar to the comment above, should we be checking against all provided paths?
-		// It would require an expensive operation based on image.Files().
-		var pathsWithNoMatchingFiles []string
 		for excludeFileOrDirPath := range excludeFileOrDirPathMap {
-			var foundPath bool
-			for nonImportPath := range allNonImportPaths {
-				if normalpath.EqualsOrContainsPath(excludeFileOrDirPath, nonImportPath, normalpath.Relative) {
-					foundPath = true
-					break
-				}
+			if _, ok := matchingPotentialExcludePathMap[excludeFileOrDirPath]; !ok {
+				// no match, this is an error given that allowNotExist is false
+				return nil, fmt.Errorf("path %q has no matching file in the image", excludeFileOrDirPath)
 			}
-			if !foundPath {
-				pathsWithNoMatchingFiles = append(pathsWithNoMatchingFiles, excludeFileOrDirPath)
-			}
-		}
-		if len(pathsWithNoMatchingFiles) > 0 {
-			return nil, fmt.Errorf("paths with no matching files in the image: %v", pathsWithNoMatchingFiles)
 		}
 	}
 	// we finally have all files that match fileOrDirPath that we can find, make the image
 	return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
+}
+
+func excludeFile(
+	fileMatchingPathMap map[string]struct{},
+	fileMatchingExcludePathMap map[string]struct{},
+) bool {
+	if len(fileMatchingPathMap) == 0 {
+		return true
+	}
+	if len(fileMatchingExcludePathMap) == 0 {
+		return false
+	}
+	seenExcludePaths := make(map[string]struct{})
+	for fileMatchingPath := range fileMatchingPathMap {
+		for fileMatchingExcludePath := range fileMatchingExcludePathMap {
+			if normalpath.EqualsOrContainsPath(fileMatchingPath, fileMatchingExcludePath, normalpath.Relative) {
+				delete(fileMatchingPathMap, fileMatchingPath)
+				seenExcludePaths[fileMatchingExcludePath] = struct{}{}
+				continue
+			}
+		}
+	}
+	// For paths that have never been seen for excludes, we should trim them, since they are
+	// outside of the target paths found.
+	for fileMatchingExcludePath := range fileMatchingExcludePathMap {
+		if _, ok := seenExcludePaths[fileMatchingExcludePath]; ok {
+			continue
+		}
+		delete(fileMatchingExcludePathMap, fileMatchingExcludePath)
+	}
+	return excludeFile(fileMatchingPathMap, fileMatchingExcludePathMap)
 }
 
 func getImageWithImports(

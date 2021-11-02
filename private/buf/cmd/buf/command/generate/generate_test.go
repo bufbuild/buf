@@ -166,7 +166,7 @@ func TestOutputWithPathEqualToExclude(t *testing.T) {
 		tempDirPath,
 		"--template",
 		filepath.Join("testdata", "paths", "buf.gen.yaml"),
-		"--exclude",
+		"--exclude_path",
 		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
 		"--path",
 		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),

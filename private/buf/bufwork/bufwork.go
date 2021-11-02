@@ -162,11 +162,13 @@ func BuildOptionsForWorkspaceDirectory(
 	if err != nil {
 		return nil, err
 	}
+	//if len(subDirRelPaths) > 0 {
 	if externalDirOrFilePathsAllowNotExist {
 		buildOptions = append(buildOptions, bufmodulebuild.WithPathsAllowNotExist(subDirRelPaths))
 	} else {
 		buildOptions = append(buildOptions, bufmodulebuild.WithPaths(subDirRelPaths))
 	}
+	//}
 	if len(excludeDirOrFilePaths) > 0 {
 		subDirRelExcludePaths, err := externalPathsToSubDirRelPaths(
 			workspaceID,

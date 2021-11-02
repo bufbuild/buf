@@ -40,7 +40,7 @@ const (
 	configFlagName              = "config"
 	pathsFlagName               = "path"
 	includeImportsFlagName      = "include-imports"
-	excludePathsFlagName        = "exclude"
+	excludePathsFlagName        = "exclude_path"
 
 	// deprecated
 	inputFlagName = "input"
@@ -249,7 +249,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.ExcludePaths,
 		excludePathsFlagName,
 		nil,
-		`Exclude these paths from the generation process. This can be proto files or directories.
+		`Exclude specific files or directories, for example "proto/a/a.proto" or "proto/a".
 If specified multiple times, the union will be taken.`,
 	)
 
