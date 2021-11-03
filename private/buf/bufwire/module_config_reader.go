@@ -201,7 +201,7 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 			excludePaths[i] = excludePath
 		}
 		if externalDirOrFilePathsAllowNotExist {
-			module, err = bufmodule.ModuleWithPathsAllowNotExist(module, targetPaths, excludePaths)
+			module, err = bufmodule.ModuleWithTargetPathsAllowNotExist(module, targetPaths, excludePaths)
 			if err != nil {
 				return nil, err
 			}

@@ -163,28 +163,44 @@ func ModuleWithTargetPaths(
 	targetPaths []string,
 	excludePaths []string,
 ) (Module, error) {
-	return newTargetingModule(module, targetPaths, false, excludePaths, false)
+	return newTargetingModule(module, targetPaths, excludePaths, false)
 }
 
-// ModuleWithPathsAllowNotExist returns a new Module specified specific file or directory paths to build,
+// ModuleWithTargetPathsAllowNotExist returns a new Module specifies specific file or directory paths to build,
 // but allows the specified paths to not exist.
 //
 // Note that this will result in TargetFileInfos containing only these paths, and not
 // any imports. Imports, and non-targeted files, are still available via SourceFileInfos.
-func ModuleWithPathsAllowNotExist(
+func ModuleWithTargetPathsAllowNotExist(
 	module Module,
 	targetPaths []string,
 	excludePaths []string,
 ) (Module, error) {
-	return newTargetingModule(module, targetPaths, true, excludePaths, false)
+	return newTargetingModule(module, targetPaths, excludePaths, true)
 }
 
+// ModuleWithOnlyExcludePaths returns a new Module that excludes specific file or directory
+// paths to build.
+//
+// Note that this will result in TargetFileInfos containing only the paths that have not been
+// excluded and any imports. Imports are still available via SourceFileInfos.
 func ModuleWithOnlyExcludePaths(
 	module Module,
-	fileOrDirPathsAllowNotExist bool,
 	excludePaths []string,
 ) (Module, error) {
-	return newTargetingModule(module, []string{}, fileOrDirPathsAllowNotExist, excludePaths, true)
+	return newTargetingModule(module, nil, excludePaths, false)
+}
+
+// ModuleWithOnlyExcludePathsAllowNotExist returns a new Module that excludes specific file or
+// directory paths to build, but allows the specified paths to not exist.
+//
+// Note that this will result in TargetFileInfos containing only these paths, and not
+// any imports. Imports, and non-targeted files, are still available via SourceFileInfos.
+func ModuleWithOnlyExcludePathsAllowNotExist(
+	module Module,
+	excludePaths []string,
+) (Module, error) {
+	return newTargetingModule(module, nil, excludePaths, true)
 }
 
 // ModuleResolver resolves modules.

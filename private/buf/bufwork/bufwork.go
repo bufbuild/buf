@@ -150,25 +150,25 @@ func BuildOptionsForWorkspaceDirectory(
 	// but we accept that as this shouldn't happen often anymore and this is just
 	// used for error messages.
 	workspaceID := filepath.Join(normalpath.Unnormalize(relativeRootPath), ExternalConfigV1FilePath)
-	// Note that subDirRelPaths can be empty. If so, this represents
-	// the case where externalDirOrFilePaths were provided, but none
-	// matched.
-	subDirRelPaths, err := externalPathsToSubDirRelPaths(
-		workspaceID,
-		relativeRootPath,
-		subDirPath,
-		externalDirOrFilePaths,
-	)
-	if err != nil {
-		return nil, err
+	if len(externalDirOrFilePaths) > 0 {
+		// Note that subDirRelPaths can be empty. If so, this represents
+		// the case where externalDirOrFilePaths were provided, but none
+		// matched.
+		subDirRelPaths, err := externalPathsToSubDirRelPaths(
+			workspaceID,
+			relativeRootPath,
+			subDirPath,
+			externalDirOrFilePaths,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if externalDirOrFilePathsAllowNotExist {
+			buildOptions = append(buildOptions, bufmodulebuild.WithPathsAllowNotExist(subDirRelPaths))
+		} else {
+			buildOptions = append(buildOptions, bufmodulebuild.WithPaths(subDirRelPaths))
+		}
 	}
-	//if len(subDirRelPaths) > 0 {
-	if externalDirOrFilePathsAllowNotExist {
-		buildOptions = append(buildOptions, bufmodulebuild.WithPathsAllowNotExist(subDirRelPaths))
-	} else {
-		buildOptions = append(buildOptions, bufmodulebuild.WithPaths(subDirRelPaths))
-	}
-	//}
 	if len(excludeDirOrFilePaths) > 0 {
 		subDirRelExcludePaths, err := externalPathsToSubDirRelPaths(
 			workspaceID,

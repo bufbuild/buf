@@ -171,7 +171,7 @@ func TestTargetingModuleBasic(t *testing.T) {
 	_, err = targetModule.TargetFileInfos(ctx)
 	require.Error(t, err)
 
-	targetModule, err = bufmodule.ModuleWithPathsAllowNotExist(
+	targetModule, err = bufmodule.ModuleWithTargetPathsAllowNotExist(
 		module,
 		[]string{
 			"b",

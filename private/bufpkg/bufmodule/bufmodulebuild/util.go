@@ -44,14 +44,17 @@ func applyModulePaths(
 		}
 	}
 	if fileOrDirPaths == nil {
-		return bufmodule.ModuleWithOnlyExcludePaths(module, fileOrDirPathsAllowNotExist, excludePaths)
+		if fileOrDirPathsAllowNotExist {
+			return bufmodule.ModuleWithOnlyExcludePathsAllowNotExist(module, excludePaths)
+		}
+		return bufmodule.ModuleWithOnlyExcludePaths(module, excludePaths)
 	}
 	targetPaths, err := pathsToTargetPaths(roots, *fileOrDirPaths, pathType)
 	if err != nil {
 		return nil, err
 	}
 	if fileOrDirPathsAllowNotExist {
-		return bufmodule.ModuleWithPathsAllowNotExist(module, targetPaths, excludePaths)
+		return bufmodule.ModuleWithTargetPathsAllowNotExist(module, targetPaths, excludePaths)
 	}
 	return bufmodule.ModuleWithTargetPaths(module, targetPaths, excludePaths)
 }
