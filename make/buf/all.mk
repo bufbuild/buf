@@ -37,6 +37,8 @@ BUF_LINT_INPUT := .
 BUF_BREAKING_INPUT := .
 BUF_BREAKING_AGAINST_INPUT ?= .git\#branch=main
 
+RELEASE_GO_VERSION := 1.17.2
+
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk
 include make/go/dep_minisign.mk
@@ -44,10 +46,10 @@ include make/go/dep_protoc.mk
 include make/go/dep_protoc_gen_go.mk
 include make/go/dep_protoc_gen_go_grpc.mk
 include make/go/dep_go_fuzz.mk
+include make/go/dep_goreleaser.mk
 include make/go/go.mk
 include make/go/docker.mk
 include make/go/buf.mk
-include make/buf/dep_goreleaser.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
@@ -116,7 +118,7 @@ export RELEASE_GO_BINARY := go$(shell cat data/goversion)
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN) $(GORELEASER) $(BUF)
-	bash make/buf/scripts/release.bash
+	RELEASE_GO_VERSION=$(RELEASE_GO_VERSION) bash make/buf/scripts/release.bash
 
 # We have to manually set the Homebrew version on the Homebrew badge as there
 # is no badge on shields.io for Homebrew packages outside of homebrew-core
@@ -138,11 +140,12 @@ updategoversion: installgit-ls-files-unstaged
 ifndef GOVERSION
 	$(error "GOVERSION must be set")
 endif
-	# make sure both of these docker images exist
-	# the release of these images will lag the actual release
+	# make sure this docker image exists
+	# the release of this image will lag the actual release
 	docker pull golang:$(GOVERSION)-alpine3.14
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
+	$(SED_I) "s/RELEASE_GO_VERSION := 1\.[0-9][0-9]*\.[0-9][0-9]*/RELEASE_GO_VERSION := $(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: 1\.[0-9][0-9]*\.[0-9][0-9]*/go-version: $(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)
 	@echo $(GOVERSION) > data/goversion
 

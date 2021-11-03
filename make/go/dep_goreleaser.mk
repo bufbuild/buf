@@ -15,3 +15,5 @@ $(GORELEASER):
 	@rm -rf $(dir $(GORELEASER))
 	@mkdir -p $(dir $(GORELEASER))
 	@touch $(GORELEASER)
+
+deps:: $(GORELEASER)
