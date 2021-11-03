@@ -73,6 +73,9 @@ service AuthzService {
   // UserCanDeletePlugin returns whether the user is authorized
   // to delete a plugin.
   rpc UserCanDeletePlugin(UserCanDeletePluginRequest) returns (UserCanDeletePluginResponse);
+  // UserCanDeleteUser returns whether the user is authorized
+  // to delete a user.
+  rpc UserCanDeleteUser(UserCanDeleteUserRequest) returns (UserCanDeleteUserResponse);
 }
 
 message UserCanRemoveUserOrganizationScopesRequest {
@@ -263,5 +266,12 @@ message UserCanDeletePluginRequest {
 }
 
 message UserCanDeletePluginResponse {
+  bool authorized = 1;
+}
+
+message UserCanDeleteUserRequest {
+}
+
+message UserCanDeleteUserResponse {
   bool authorized = 1;
 }

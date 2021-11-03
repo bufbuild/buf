@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Upgrade to `protoc` 3.19.0 support.
+- Upgrade to `protoc` 3.19.1 support.
 
 ## [v1.0.0-rc6] - 2021-10-20
 
