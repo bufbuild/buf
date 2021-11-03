@@ -134,10 +134,24 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 		//
 		// We do not need to check the excluded paths for the allowNotExist flag because all target
 		// paths were image files, therefore the exclude paths would not apply in this case.
-		// TODO: should we be checking exclude paths that would not apply in this case against
-		// the allowNotExist flag? If so, we would need to do an expensive operation across all
-		// image.Files(). We could have early breaks and returns, similar to the check above, but
-		// this may not be worth it for this case.
+		//
+		// Unfortunately, we need to do the expensive operation of checking to make sure the exclude
+		// paths exist in the case where `allowNotExist == false`.
+		if !allowNotExist {
+			for _, excludeFileOrDirPath := range excludeFileOrDirPaths {
+				var foundPath bool
+				for _, imageFile := range image.Files() {
+					if normalpath.EqualsOrContainsPath(excludeFileOrDirPath, imageFile.Path(), normalpath.Relative) {
+						foundPath = true
+						break
+					}
+				}
+				if !foundPath {
+					// no match, thisd is an error given that allowNotExist is false
+					return nil, fmt.Errorf("path %q has no matching file in the image", excludeFileOrDirPath)
+				}
+			}
+		}
 		return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
 	}
 	// we have potential directory paths, do the expensive operation

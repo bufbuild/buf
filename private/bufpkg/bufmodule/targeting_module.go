@@ -120,7 +120,28 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 			// an file for all targetPaths, so we can return the FileInfos now
 			// this means we do not have to do the expensive O(sourceReadBucketSize) operation
 			// to check to see if each file is within a potential directory path.
-			// TODO: we need to check for the exclude paths existing here...
+			if !m.pathsAllowNotExistOnWalk {
+				for _, excludePath := range m.excludePaths {
+					var foundPath bool
+					if walkErr := sourceReadBucket.Walk(
+						ctx,
+						"",
+						func(objectInfo storage.ObjectInfo) error {
+							if normalpath.EqualsOrContainsPath(excludePath, objectInfo.Path(), normalpath.Relative) {
+								foundPath = true
+								// TODO: should we return a custom error here and catch that error to "break"
+								// the walk early if a path is found.
+							}
+							return nil
+						},
+					); walkErr != nil {
+						return nil, walkErr
+					}
+					if !foundPath {
+						return nil, fmt.Errorf("path %q has no matching file in the image", excludePath)
+					}
+				}
+			}
 			return fileInfos, nil
 		}
 	}
