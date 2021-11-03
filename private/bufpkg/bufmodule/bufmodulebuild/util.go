@@ -28,8 +28,8 @@ func applyModulePaths(
 	module bufmodule.Module,
 	roots []string,
 	fileOrDirPaths *[]string,
-	fileOrDirPathsAllowNotExist bool,
 	excludeFileOrDirPaths []string,
+	fileOrDirPathsAllowNotExist bool,
 	pathType normalpath.PathType,
 ) (bufmodule.Module, error) {
 	if fileOrDirPaths == nil && excludeFileOrDirPaths == nil {

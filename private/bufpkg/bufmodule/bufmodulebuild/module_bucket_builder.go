@@ -130,8 +130,8 @@ func (b *moduleBucketBuilder) buildForBucket(
 		module,
 		roots,
 		bucketRelPaths,
-		bucketRelPathsAllowNotExist,
 		excludeRelPaths,
+		bucketRelPathsAllowNotExist,
 		normalpath.Relative,
 	)
 }
