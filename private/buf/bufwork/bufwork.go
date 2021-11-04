@@ -170,6 +170,8 @@ func BuildOptionsForWorkspaceDirectory(
 		}
 	}
 	if len(excludeDirOrFilePaths) > 0 {
+		// Same as above, subDirRelExcludepaths can be empty. If so, this represents the case
+		// where excludes were provided by were not matched.
 		subDirRelExcludePaths, err := externalPathsToSubDirRelPaths(
 			workspaceID,
 			relativeRootPath,
@@ -179,7 +181,11 @@ func BuildOptionsForWorkspaceDirectory(
 		if err != nil {
 			return nil, err
 		}
-		buildOptions = append(buildOptions, bufmodulebuild.WithExcludePaths(subDirRelExcludePaths))
+		if externalDirOrFilePathsAllowNotExist {
+			buildOptions = append(buildOptions, bufmodulebuild.WithExcludePathsAllowNotExist(subDirRelExcludePaths))
+		} else {
+			buildOptions = append(buildOptions, bufmodulebuild.WithExcludePaths(subDirRelExcludePaths))
+		}
 	}
 	return buildOptions, nil
 }

@@ -40,7 +40,7 @@ const (
 	configFlagName              = "config"
 	pathsFlagName               = "path"
 	includeImportsFlagName      = "include-imports"
-	excludePathsFlagName        = "exclude_path"
+	excludePathsFlagName        = "exclude-path"
 
 	// deprecated
 	inputFlagName = "input"

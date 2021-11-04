@@ -49,7 +49,7 @@ func TestOutputWithExclude(t *testing.T) {
 		tempDirPath,
 		"--template",
 		filepath.Join("testdata", "paths", "buf.gen.yaml"),
-		"--exclude_path",
+		"--exclude-path",
 		filepath.Join("testdata", "paths", "a", "v1"),
 		filepath.Join("testdata", "paths"),
 	)
@@ -72,7 +72,7 @@ func TestOutputWithPathWithinExclude(t *testing.T) {
 		filepath.Join("testdata", "paths", "buf.gen.yaml"),
 		"--path",
 		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
-		"--exclude_path",
+		"--exclude-path",
 		filepath.Join("testdata", "paths", "a"),
 	)
 
@@ -90,7 +90,7 @@ func TestOutputWithExcludeWithinPath(t *testing.T) {
 		tempDirPath,
 		"--template",
 		filepath.Join("testdata", "paths", "buf.gen.yaml"),
-		"--exclude_path",
+		"--exclude-path",
 		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
 		"--path",
 		filepath.Join("testdata", "paths", "a"),

@@ -48,8 +48,8 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	// We need to collect all the non-import paths in the image for a few reasons:
 	//   1. In the case where `len(fileOrDirPaths) == 0`, since all non-import paths
 	//      are now valid paths for the image, merged against the excluded paths.
-	//   2. To check against the provided paths for `allowNotExist == true` -- if this is set,
-	//      we expect all provided paths to exist to some extent.
+	//   2. To check against the provided paths for `allowNotExist == false` - if this is set,
+	//      all of the paths must exist.
 	allNonImportPaths := make(map[string]struct{})
 	// We have only exclude paths, and therefore all other paths are target paths.
 	if len(fileOrDirPaths) == 0 && len(excludeFileOrDirPaths) > 0 {
@@ -67,31 +67,19 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 		// Finally, before we construct the image, we need to validate that all exclude paths
 		// provided adhere to the allowNotExist flag.
 		if !allowNotExist {
-			for _, excludeFileOrDirPath := range excludeFileOrDirPaths {
-				var foundPath bool
-				for nonImportPath := range allNonImportPaths {
-					if normalpath.EqualsOrContainsPath(excludeFileOrDirPath, nonImportPath, normalpath.Relative) {
-						foundPath = true
-						break
-					}
-				}
-				if !foundPath {
-					// no match, thisd is an error given that allowNotExist is false
-					return nil, fmt.Errorf("path %q has no matching file in the image", excludeFileOrDirPath)
-				}
+			if err := checkExcludePathsExistsInImage(image, excludeFileOrDirPaths); err != nil {
+				return nil, err
 			}
 		}
 		return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
 	}
 	// We do a check here to ensure that no paths are duplicated as a target and an exclude.
 	for _, fileOrDirPath := range fileOrDirPaths {
-		for _, excludeFileOrDirPath := range excludeFileOrDirPaths {
-			if fileOrDirPath == excludeFileOrDirPath {
-				return nil, fmt.Errorf(
-					"cannot set the same path for both --path and --exclude flags: %s",
-					normalpath.Unnormalize(excludeFileOrDirPath),
-				)
-			}
+		if _, ok := excludeFileOrDirPathMap[fileOrDirPath]; ok {
+			return nil, fmt.Errorf(
+				"cannot set the same path for both --path and --exclude-path flags: %s",
+				normalpath.Unnormalize(fileOrDirPath),
+			)
 		}
 	}
 	// potentialDirPaths are paths that we need to check if they are directories
@@ -113,7 +101,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 				// We do not need to check excludes here, since we already checked for duplicated
 				// paths, and target files that resolve to a specific image file are always a leaf,
 				// thus, we would always include it if it's specified.
-				// we have an ImageFile, therefile the fileOrDirPath was a file path
+				// We have an ImageFile, therefore the fileOrDirPath was a file path
 				// add to the nonImportImageFiles if does not already exist
 				if _, ok := nonImportPaths[fileOrDirPath]; !ok {
 					nonImportPaths[fileOrDirPath] = struct{}{}
@@ -138,18 +126,8 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 		// Unfortunately, we need to do the expensive operation of checking to make sure the exclude
 		// paths exist in the case where `allowNotExist == false`.
 		if !allowNotExist {
-			for _, excludeFileOrDirPath := range excludeFileOrDirPaths {
-				var foundPath bool
-				for _, imageFile := range image.Files() {
-					if normalpath.EqualsOrContainsPath(excludeFileOrDirPath, imageFile.Path(), normalpath.Relative) {
-						foundPath = true
-						break
-					}
-				}
-				if !foundPath {
-					// no match, thisd is an error given that allowNotExist is false
-					return nil, fmt.Errorf("path %q has no matching file in the image", excludeFileOrDirPath)
-				}
+			if err := checkExcludePathsExistsInImage(image, excludeFileOrDirPaths); err != nil {
+				return nil, err
 			}
 		}
 		return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
@@ -228,6 +206,29 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
 }
 
+// excludeFile takes the map of all the matching target paths and the map of all the matching
+// exclude paths for an image file and takes the union of the two sets of matches to return
+// a bool on whether or not we should exclude the file from the image.
+//
+// The recursion handles nested target and exclude paths. For example:
+// .
+// ├── bar.proto
+// ├── baz
+// │   ├── baz.proto
+// │   └── foo
+// │       ├── foo
+// │       │   ├── foobar.proto
+// │       │   └── foobaz.proto
+// │       └── foo.proto
+// ├── buf.gen.yaml
+// ├── buf.yaml
+// └── foo.proto
+//
+// In this module, we have several layers of nested proto files. In the case where we have
+// the following flags: --path baz --path baz/foo/foo --exclude-path baz/foo, the file
+// baz/foo/foo/foobar.proto would match all of the given paths. Thus, we need to recursively
+// eliminate paths until we can get to the "most specific" matching path and based on that,
+// return true to exclude the path and false to target the path.
 func excludeFile(
 	fileMatchingPathMap map[string]struct{},
 	fileMatchingExcludePathMap map[string]struct{},
@@ -314,6 +315,23 @@ func addFileWithImports(
 		imageFile.withIsImport(!isNotImport),
 	)
 	return accumulator
+}
+
+func checkExcludePathsExistsInImage(image Image, excludeFileOrDirPaths []string) error {
+	for _, excludeFileOrDirPath := range excludeFileOrDirPaths {
+		var foundPath bool
+		for _, imageFile := range image.Files() {
+			if normalpath.EqualsOrContainsPath(excludeFileOrDirPath, imageFile.Path(), normalpath.Relative) {
+				foundPath = true
+				break
+			}
+		}
+		if !foundPath {
+			// no match, thisd is an error given that allowNotExist is false
+			return fmt.Errorf("path %q has no matching file in the image", excludeFileOrDirPath)
+		}
+	}
+	return nil
 }
 
 func protoImageFilesToFileDescriptors(protoImageFiles []*imagev1.ImageFile) []protodescriptor.FileDescriptor {

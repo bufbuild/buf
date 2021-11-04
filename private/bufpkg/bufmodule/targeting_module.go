@@ -54,15 +54,14 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 			bufmoduleref.SortFileInfos(fileInfos)
 		}
 	}()
+	excludePathMap := stringutil.SliceToMap(m.excludePaths)
 	// We start by ensuring that no paths have been duplicated between target and exclude pathes.
 	for _, targetPath := range m.targetPaths {
-		for _, excludePath := range m.excludePaths {
-			if excludePath == targetPath {
-				return nil, fmt.Errorf(
-					"cannot set the same path for both --path and --exclude flags: %s",
-					normalpath.Unnormalize(excludePath),
-				)
-			}
+		if _, ok := excludePathMap[targetPath]; ok {
+			return nil, fmt.Errorf(
+				"cannot set the same path for both --path and --exclude-path flags: %s",
+				normalpath.Unnormalize(targetPath),
+			)
 		}
 	}
 	sourceReadBucket := m.getSourceReadBucket()
@@ -148,7 +147,6 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 	// We have potential directory paths, do the expensive operation to
 	// make a map of the directory paths.
 	potentialDirPathMap := stringutil.SliceToMap(potentialDirPaths)
-	excludePathMap := stringutil.SliceToMap(m.excludePaths)
 	// The map of paths within potentialDirPath that matches a file.
 	// This needs to contain all paths in potentialDirPathMap at the end for us to
 	// have had matches for every targetPath input.

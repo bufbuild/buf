@@ -147,3 +147,12 @@ func WithExcludePaths(excludePaths []string) BuildOption {
 		buildOptions.excludePaths = excludePaths
 	}
 }
+
+// WithExcludePathsAllowNotExist returns a new BuildOption that specifies files to be excluded from the build,
+// but allows the specified paths to not exist.
+func WithExcludePathsAllowNotExist(excludePaths []string) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.excludePaths = excludePaths
+		buildOptions.pathsAllowNotExist = true
+	}
+}
