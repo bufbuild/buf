@@ -72,6 +72,12 @@ message SearchResult {
 service SearchService {
   // Search searches the BSR.
   rpc Search(SearchRequest) returns (SearchResponse);
+  // SearchUsers searches the users in the BSR.
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+  // SearchPlugins searches the plugins in the  BSR.
+  rpc SearchPlugins(SearchPluginsRequest) returns (SearchPluginsResponse);
+  // SearchTemplates searches the templates in the BSR.
+  rpc SearchTemplates(SearchTemplatesRequest) returns (SearchTemplatesResponse);
 }
 
 message SearchRequest {
