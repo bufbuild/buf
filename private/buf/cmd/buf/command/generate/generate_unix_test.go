@@ -153,3 +153,40 @@ func TestOutputWithNestedExcludeAndTargetPaths(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "no such file or directory")
 }
+
+func TestWorkspaceGenerateWithExcludeAndTargetPaths(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "workspace", "buf.gen.yaml"),
+		"--exclude-path",
+		filepath.Join("testdata", "workspace", "a", "v3", "foo", "bar.proto"),
+		"--exclude-path",
+		filepath.Join("testdata", "workspace", "a", "v3"),
+		"--path",
+		filepath.Join("testdata", "workspace", "a", "v3", "foo"),
+		"--exclude-path",
+		filepath.Join("testdata", "workspace", "b", "v1", "foo.proto"),
+		filepath.Join("testdata", "workspace"),
+	)
+	_, err := os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "foo", "FooOuterClass.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "b", "v1", "B.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "A.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v2", "A.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "A.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v3", "foo", "BarOuterClass.java"))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file or directory")
+}
