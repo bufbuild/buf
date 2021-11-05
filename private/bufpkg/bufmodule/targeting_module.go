@@ -175,9 +175,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 				path,
 				normalpath.Relative,
 			)
-			// if m.targetPaths == nil, then len(potentialDirPathMap) == 0 and fileMatchingPathMap == nil,
-			// so we'll exclude as long as len(fileMatchingExcludePathMap) > 0.
-			if excludeFile(fileMatchingPathMap, fileMatchingExcludePathMap) {
+			if shouldExcludeFile(fileMatchingPathMap, fileMatchingExcludePathMap) {
 				return nil
 			}
 			if m.targetPaths != nil {
@@ -228,36 +226,20 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 	return fileInfos, nil
 }
 
-func excludeFile(
+func shouldExcludeFile(
 	fileMatchingPathMap map[string]struct{},
 	fileMatchingExcludePathMap map[string]struct{},
 ) bool {
 	if fileMatchingPathMap == nil {
-		return !(len(fileMatchingExcludePathMap) == 0)
+		return len(fileMatchingExcludePathMap) > 0
 	}
-	if len(fileMatchingPathMap) == 0 {
-		return true
-	}
-	if len(fileMatchingExcludePathMap) == 0 {
-		return false
-	}
-	seenExcludePaths := make(map[string]struct{})
 	for fileMatchingPath := range fileMatchingPathMap {
 		for fileMatchingExcludePath := range fileMatchingExcludePathMap {
 			if normalpath.EqualsOrContainsPath(fileMatchingPath, fileMatchingExcludePath, normalpath.Relative) {
 				delete(fileMatchingPathMap, fileMatchingPath)
-				seenExcludePaths[fileMatchingExcludePath] = struct{}{}
 				continue
 			}
 		}
 	}
-	// For paths that have never been seen for excludes, we should trim them, since they are
-	// outside of the target paths found.
-	for fileMatchingExcludePath := range fileMatchingExcludePathMap {
-		if _, ok := seenExcludePaths[fileMatchingExcludePath]; ok {
-			continue
-		}
-		delete(fileMatchingExcludePathMap, fileMatchingExcludePath)
-	}
-	return excludeFile(fileMatchingPathMap, fileMatchingExcludePathMap)
+	return len(fileMatchingPathMap) == 0
 }

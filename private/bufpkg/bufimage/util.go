@@ -168,7 +168,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 			imageFilePath,
 			normalpath.Relative,
 		)
-		if excludeFile(fileMatchingPathMap, fileMatchingExcludePathMap) {
+		if shouldExcludeFile(fileMatchingPathMap, fileMatchingExcludePathMap) {
 			continue
 		}
 		if len(fileMatchingPathMap) > 0 {
@@ -206,58 +206,24 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 	return getImageWithImports(image, nonImportPaths, nonImportImageFiles)
 }
 
-// excludeFile takes the map of all the matching target paths and the map of all the matching
+// shouldExcludeFile takes the map of all the matching target paths and the map of all the matching
 // exclude paths for an image file and takes the union of the two sets of matches to return
 // a bool on whether or not we should exclude the file from the image.
-//
-// The recursion handles nested target and exclude paths. For example:
-// .
-// ├── bar.proto
-// ├── baz
-// │   ├── baz.proto
-// │   └── foo
-// │       ├── foo
-// │       │   ├── foobar.proto
-// │       │   └── foobaz.proto
-// │       └── foo.proto
-// ├── buf.gen.yaml
-// ├── buf.yaml
-// └── foo.proto
-//
-// In this module, we have several layers of nested proto files. In the case where we have
-// the following flags: --path baz --path baz/foo/foo --exclude-path baz/foo, the file
-// baz/foo/foo/foobar.proto would match all of the given paths. Thus, we need to recursively
-// eliminate paths until we can get to the "most specific" matching path and based on that,
-// return true to exclude the path and false to target the path.
-func excludeFile(
+func shouldExcludeFile(
 	fileMatchingPathMap map[string]struct{},
 	fileMatchingExcludePathMap map[string]struct{},
 ) bool {
-	if len(fileMatchingPathMap) == 0 {
-		return true
-	}
-	if len(fileMatchingExcludePathMap) == 0 {
-		return false
-	}
-	seenExcludePaths := make(map[string]struct{})
 	for fileMatchingPath := range fileMatchingPathMap {
 		for fileMatchingExcludePath := range fileMatchingExcludePathMap {
 			if normalpath.EqualsOrContainsPath(fileMatchingPath, fileMatchingExcludePath, normalpath.Relative) {
 				delete(fileMatchingPathMap, fileMatchingPath)
-				seenExcludePaths[fileMatchingExcludePath] = struct{}{}
 				continue
 			}
 		}
 	}
-	// For paths that have never been seen for excludes, we should trim them, since they are
-	// outside of the target paths found.
-	for fileMatchingExcludePath := range fileMatchingExcludePathMap {
-		if _, ok := seenExcludePaths[fileMatchingExcludePath]; ok {
-			continue
-		}
-		delete(fileMatchingExcludePathMap, fileMatchingExcludePath)
-	}
-	return excludeFile(fileMatchingPathMap, fileMatchingExcludePathMap)
+	// If there are no potential paths remaining,
+	// then the file should be excluded.
+	return len(fileMatchingPathMap) == 0
 }
 
 func getImageWithImports(
