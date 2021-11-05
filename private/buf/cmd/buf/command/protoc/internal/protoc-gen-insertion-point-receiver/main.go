@@ -43,7 +43,12 @@ func handle(
 		//
 		//     @@protoc_insertion_point(example)
 		//
-		// Note that all text should be added above the insertion point.
+		// The 'other' insertion point is also included so that we verify
+		// multiple insertion points can be written in a single invocation.
+		//
+		//   @@protoc_insertion_point(other)
+		//
+		// Note that all text should be added above the insertion points.
 		`),
 		},
 	)
