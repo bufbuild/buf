@@ -1,0 +1,4 @@
+# Prettier-friendly minimal markdownlint config (turns off rules which prettier handles)
+default: true
+MD013: false
+MD032: false

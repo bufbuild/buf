@@ -1,0 +1,3 @@
+# Following source doesn't work in most setups
+disable=SC1090
+disable=SC1091

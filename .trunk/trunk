@@ -1,0 +1,186 @@
+#!/bin/bash
+
+set -euo pipefail
+
+platform=$(uname | tr "[:upper:]" "[:lower:]")
+if [ "${platform}" == "darwin" ]; then
+  sha256sum() { shasum -a 256 "$@"; }
+fi
+
+TRUNK_LAUNCHER_VERSION=0.1.31-alpha
+
+check_mark="\033[0;32m✔\033[0m"
+x_mark="\033[0;31m✘\033[0m"
+
+download() {
+  url=${1}
+  sha256=${2}
+  downloaded=${3}
+  download_name=${4}
+
+  downloading_text="Downloading ${download_name}..."
+  echo "${downloading_text}"
+
+  download_success=false
+  # Download via wget or curl. wget does retries by default, but we configure them for curl.
+  if [ -x "$(which wget)" ]; then
+    if wget "${url}" -O "${downloaded}" --quiet --show-progress; then
+      echo -e "\033[1A\033[K\033[1A\r${check_mark} ${downloading_text} done"
+      download_success=true
+    fi
+  elif [ -x "$(which curl)" ]; then
+    if curl --connect-timeout 5 --max-time 10 --retry 3 --retry-delay 0 --retry-max-time 60 "${url}" --output "${downloaded}" --fail; then
+      echo -e "${check_mark} ${downloading_text} done"
+      download_success=true
+    fi
+  else
+    echo -e "\033[1A\r${x_mark} ${downloading_text} FAILED"
+    echo -e "${x_mark} Unable to download without curl or wget installed."
+    exit 1
+  fi
+
+  if ! $download_success; then
+    echo -e "${x_mark} Unable to download trunk. Please check your connection, try again, see https://status.trunk.io, or report this issue at https://slack.trunk.io"
+    exit 1
+  fi
+
+  verifying_text="Verifying ${download_name} sha256..."
+  echo -n "${verifying_text}"
+  actual_line=$(sha256sum "${downloaded}")
+  actual=${actual_line%% *}
+  if [[ ${actual} != "${sha256}" ]]; then
+    echo -e "\r${x_mark} ${verifying_text} FAILED"
+    echo "Expected sha256: '${sha256}'"
+    echo "Actual sha256:   '${actual}'"
+    exit 1
+  fi
+  echo -e "\r${check_mark} ${verifying_text} done"
+}
+
+add_to_bin() {
+  bin_script="/usr/local/bin/trunk"
+  bash_source=${BASH_SOURCE[0]}
+
+  if [[ -f ${bin_script} ]] && [[ ${bin_script} != "${bash_source}" ]]; then
+    read -rp "Trunk Launcher is already installed in /usr/local/bin. Would you like to override it? (Y/n) " yn
+  elif [[ ${bin_script} == "${bash_source}" ]]; then
+    echo -e "${check_mark} The requested Trunk Launcher is already installed in /usr/local/bin"
+    return 0
+  else
+    read -rp "Do you want to install Trunk Launcher to /usr/local/bin? (Y/n) " yn
+  fi
+
+  case "$yn" in
+  Yes | yes | Y | y | "")
+    if [ "${platform}" == "darwin" ]; then
+      user_group=$(stat -f "%u:%g" /usr/local/bin)
+    else
+      user_group=$(stat -c "%u:%g" /usr/local/bin)
+    fi
+    sudo -- bash -c 'rm -f '${bin_script}'; cp '"${bash_source}"' '${bin_script}';chown '"${user_group}"' '${bin_script}''
+    echo -e "${check_mark} Trunk is now installed to /usr/local/bin. Delete /usr/local/bin/trunk to uninstall."
+    return 0
+    ;;
+  *) ;;
+  esac
+}
+
+download_and_extract() {
+  url=${1}
+  sha256=${2}
+  install_dir=${3}
+
+  tmp_install_dir="$(mktemp -d -t trunk-XXXXX)"
+  downloaded="${tmp_install_dir}/downloaded"
+
+  cleanup() { rm -rf "${tmp_install_dir}"; }
+  trap 'cleanup' EXIT
+
+  download "${url}" "${sha256}" "${downloaded}" "Trunk"
+
+  unpacking_text="Unpacking Trunk..."
+  echo -n "${unpacking_text}"
+  tar --strip-components=1 -C "${tmp_install_dir}" -xf "${downloaded}"
+  rm -f "${downloaded}"
+  echo -e "\r${check_mark} ${unpacking_text} done\n"
+
+  # Move to final destination
+  mkdir -p "$(dirname "${install_dir}")"
+  mv -f "${tmp_install_dir}" "${install_dir}"
+}
+
+if [[ ${platform} != "darwin" ]] && [[ ${platform} != "linux" ]]; then
+  echo -e "${x_mark} Trunk is only supported on Linux and MacOS. See https://docs.trunk.io for more info."
+  exit 1
+fi
+
+if repo_head=$(git rev-parse --show-toplevel 2>/dev/null); then
+  config_path="${repo_head}/.trunk/trunk.yaml"
+else
+  config_path=""
+fi
+
+version="${TRUNK_CLI_VERSION:-}"
+if [ ! -f "${config_path}" ] && [ -z "$version" ]; then
+  if [ ! -x "$(which curl)" ]; then
+    echo -e "${x_mark} Trunk requires curl to be installed to fetch the latest version."
+    exit 1
+  fi
+  if ! latest=$(curl -fsSL "https://trunk.io/releases/latest" 2>/dev/null); then
+    echo -e "${x_mark} Unable to fetch latest trunk version. Please check your connection, try again, see https://status.trunk.io, or report this issue at https://slack.trunk.io"
+    exit 1
+  fi
+  version=$(echo "${latest}" | awk '$1=="version:" {print $2}')
+  sha256=$(echo "${latest}" | awk '$1=="'"${platform}"'_x86_64:" {print $2}')
+fi
+
+if [ -z "${version:-}" ]; then
+  version=$(awk '/[ \t]+version:/{print $2}' "${config_path}")
+  if [ -z "$version" ]; then
+    echo -e "${x_mark} Invalid .trunk/trunk.yaml, no version found. See https://docs.trunk.io for more info."
+    exit 1
+  fi
+fi
+
+install_dir="${HOME}/.cache/trunk/cli/${version}"
+
+if [[ ! -d ${install_dir} ]]; then
+  if [ -z "${sha256:-}" ]; then
+    sha256=$(awk '$1=="'"${platform}_x86_64:"'" {print $2}' "${config_path}")
+    if [ -z "$sha256" ]; then
+      echo -e "${x_mark} Invalid .trunk/trunk.yaml, no cli sha256 found. See https://docs.trunk.io for more info."
+      exit 1
+    fi
+  fi
+
+  quiet=${TRUNK_QUIET:-false}
+  if $quiet; then
+    # copy 1(stdout) to 3 and 2(stderr) to 4, where they'll be hidden
+    exec 3>&1 4>&2 &>/dev/null
+  elif [ -n "${latest:-}" ]; then
+    read -rp "Would you like to download and run the latest version of trunk? (Y/n) " yn
+    case "$yn" in
+    Yes | yes | Y | y | "") ;;
+    *) exit 1 ;;
+    esac
+  fi
+
+  url="https://trunk.io/releases/trunk-${version}.${platform}.tar.gz"
+  download_and_extract "${url}" "${sha256}" "${install_dir}"
+
+  if $quiet; then
+    # restore stdout and stderr from 3 and 4, close 3 and 4
+    exec 1>&3 3>&- 2>&4 4>&-
+  fi
+fi
+
+if [ -n "${latest:-}" ]; then
+  echo "${latest}" >"${install_dir}/version"
+fi
+
+if [[ $* == "--install-in-path" ]]; then
+  add_to_bin
+  exit
+fi
+
+exec env TRUNK_LAUNCHER_VERSION=${TRUNK_LAUNCHER_VERSION} env TRUNK_LAUNCHER_PATH="${BASH_SOURCE[0]}" "${install_dir}/trunk" "$@"

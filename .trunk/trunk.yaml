@@ -1,0 +1,16 @@
+version: 0.1
+cli:
+  version: 0.1.31-alpha
+  sha256:
+    darwin_x86_64: 15f297b0657b615609adfd1a30b99a6210a6ff7c52dc8bdfeb0053a8aff7a9bc
+    linux_x86_64: 5ed59e39cd2f0f72008834073cec429689c88e480abbe89cc36340b75c648a9f
+lint:
+  enabled:
+    - actionlint@1.6.4
+    - gitleaks@7.6.1
+    - gofmt@1.16.7
+    - golangci-lint@1.42.1
+    - markdownlint@0.29.0
+    - prettier@2.4.1
+    - shellcheck@0.7.2
+    - shfmt@3.4.0
