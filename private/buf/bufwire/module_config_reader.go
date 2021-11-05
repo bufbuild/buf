@@ -385,7 +385,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	excludeToRelPaths := map[string]string{}
 	for _, directory := range workspaceConfig.Directories {
 		// We are unfortunately doing this work twice, once at the top level here, and when we
-		// build each workspace for the build options. We need to do the work at this level becasue
+		// build each workspace for the build options. We need to do the work at this level because
 		// we need to check across all workspaces once.
 		// We need to do the work again for each workspace build because a module can span across
 		// several workspaces.
