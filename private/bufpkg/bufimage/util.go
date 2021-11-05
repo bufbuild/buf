@@ -67,7 +67,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 		// Finally, before we construct the image, we need to validate that all exclude paths
 		// provided adhere to the allowNotExist flag.
 		if !allowNotExist {
-			if err := checkExcludePathsExistsInImage(image, excludeFileOrDirPaths); err != nil {
+			if err := checkExcludePathsExistInImage(image, excludeFileOrDirPaths); err != nil {
 				return nil, err
 			}
 		}
@@ -126,7 +126,7 @@ func imageWithOnlyPaths(image Image, fileOrDirPaths []string, excludeFileOrDirPa
 		// Unfortunately, we need to do the expensive operation of checking to make sure the exclude
 		// paths exist in the case where `allowNotExist == false`.
 		if !allowNotExist {
-			if err := checkExcludePathsExistsInImage(image, excludeFileOrDirPaths); err != nil {
+			if err := checkExcludePathsExistInImage(image, excludeFileOrDirPaths); err != nil {
 				return nil, err
 			}
 		}
@@ -283,7 +283,7 @@ func addFileWithImports(
 	return accumulator
 }
 
-func checkExcludePathsExistsInImage(image Image, excludeFileOrDirPaths []string) error {
+func checkExcludePathsExistInImage(image Image, excludeFileOrDirPaths []string) error {
 	for _, excludeFileOrDirPath := range excludeFileOrDirPaths {
 		var foundPath bool
 		for _, imageFile := range image.Files() {
@@ -293,7 +293,7 @@ func checkExcludePathsExistsInImage(image Image, excludeFileOrDirPaths []string)
 			}
 		}
 		if !foundPath {
-			// no match, thisd is an error given that allowNotExist is false
+			// no match, this is an error given that allowNotExist is false
 			return fmt.Errorf("path %q has no matching file in the image", excludeFileOrDirPath)
 		}
 	}
