@@ -28,9 +28,18 @@ func TestGetErrorMessage(t *testing.T) {
 }
 
 func TestErrorsIs(t *testing.T) {
+	cancelError := NewCanceledError("cancel")
 	assert.True(
 		t,
-		errors.Is(NewCanceledError("cancel"), NewCanceledError("cancel")),
+		errors.Is(cancelError, cancelError),
+	)
+	assert.True(
+		t,
+		errors.Is(fmt.Errorf("wrap this: %w", cancelError), cancelError),
+	)
+	assert.False(
+		t,
+		errors.Is(NewCanceledError("cancel"), cancelError),
 	)
 	assert.False(
 		t,

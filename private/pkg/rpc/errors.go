@@ -417,10 +417,3 @@ func newRPCError(errorCode ErrorCode, message string) *rpcError {
 func (r *rpcError) Error() string {
 	return r.message
 }
-
-func (r *rpcError) Is(err error) bool {
-	if target := new(rpcError); errors.As(err, &target) {
-		return *r == *target
-	}
-	return false
-}
