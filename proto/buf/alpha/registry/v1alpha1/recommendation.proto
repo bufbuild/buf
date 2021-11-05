@@ -25,6 +25,7 @@ message RecommendedRepository {
   string name = 2;
   google.protobuf.Timestamp create_time = 3;
   string description = 4;
+  string repository_id = 5;
 }
 
 // RecommendedTemplate is the information needed to recommend a template and link
@@ -33,6 +34,7 @@ message RecommendedTemplate {
   string owner = 1;
   string name = 2;
   string description = 3;
+  string template_id = 4;
 }
 
 // RecommendingRepository is the information needed to configure a repository recommendation
