@@ -71,7 +71,7 @@ func (r *responseBuilder) AddFile(file *pluginpb.CodeGeneratorResponse_File) err
 		name = normalizedName
 		file.Name = proto.String(name)
 	}
-	if _, ok := r.fileNames[name]; ok {
+	if r.isDuplicate(file) {
 		if err := r.warnDuplicateName(name); err != nil {
 			return err
 		}
@@ -116,6 +116,20 @@ func (r *responseBuilder) toResponse() *pluginpb.CodeGeneratorResponse {
 		response.SupportedFeatures = proto.Uint64(uint64(pluginpb.CodeGeneratorResponse_FEATURE_PROTO3_OPTIONAL))
 	}
 	return response
+}
+
+// isDuplicate determines if the given file is a duplicate file.
+// Insertion points are intentionally ignored because they must
+// always reference duplicate files in order to take effect.
+//
+// Note that we do not acquire the lock here because this helper
+// is only called within the context of r.AddFile.
+func (r *responseBuilder) isDuplicate(file *pluginpb.CodeGeneratorResponse_File) bool {
+	if file.GetInsertionPoint() != "" {
+		return false
+	}
+	_, ok := r.fileNames[file.GetName()]
+	return ok
 }
 
 func (r *responseBuilder) warnUnnormalizedName(name string) error {

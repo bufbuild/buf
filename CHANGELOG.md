@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Upgrade to `protoc` 3.19.1 support.
+- Fix issue with `buf generate` where multiple insertion points are defined in the same file.
 
 ## [v1.0.0-rc6] - 2021-10-20
 

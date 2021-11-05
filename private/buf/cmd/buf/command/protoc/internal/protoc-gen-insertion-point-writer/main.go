@@ -33,7 +33,7 @@ func handle(
 	responseWriter appproto.ResponseBuilder,
 	request *pluginpb.CodeGeneratorRequest,
 ) error {
-	return responseWriter.AddFile(
+	if err := responseWriter.AddFile(
 		&pluginpb.CodeGeneratorResponse_File{
 			Name:           proto.String("test.txt"),
 			InsertionPoint: proto.String("example"),
@@ -44,5 +44,19 @@ func handle(
 			// And don't forget the windows newline literal (\r\n).
 		`),
 		},
-	)
+	); err != nil {
+		return err
+	}
+	if err := responseWriter.AddFile(
+		&pluginpb.CodeGeneratorResponse_File{
+			Name:           proto.String("test.txt"),
+			InsertionPoint: proto.String("other"),
+			Content: proto.String(`
+			// Include this comment on the 'other' insertion point.
+		`),
+		},
+	); err != nil {
+		return err
+	}
+	return nil
 }
