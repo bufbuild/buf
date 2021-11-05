@@ -378,7 +378,39 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	// so we construct a separate workspace for each of the configured
 	// directories.
 	var moduleConfigs []ModuleConfig
+	// We need to first get the map of externalDirOrFilePath to subDirRelPath and the map
+	// of excludeDirOrFilePath to subDirRelExcludePath so we can check that all paths that
+	// have been provided at the top level have been accounted for across the workspace.
+	externalToRelPaths := map[string]string{}
+	excludeToRelPaths := map[string]string{}
 	for _, directory := range workspaceConfig.Directories {
+		// We are unfortunately doing this work twice, once at the top level here, and when we
+		// build each workspace for the build options. We need to do the work at this level becasue
+		// we need to check across all workspaces once.
+		// We need to do the work again for each workspace build because a module can span across
+		// several workspaces.
+		externalToSubDirRelPaths, err := bufwork.ExternalPathsToSubDirRelPaths(
+			relativeRootPath,
+			directory,
+			externalDirOrFilePaths,
+		)
+		if err != nil {
+			return nil, err
+		}
+		excludeToSubDirRelExcludePaths, err := bufwork.ExternalPathsToSubDirRelPaths(
+			relativeRootPath,
+			directory,
+			excludeDirOrFilePaths,
+		)
+		if err != nil {
+			return nil, err
+		}
+		for externalFileOrDirPath, subDirRelPath := range externalToSubDirRelPaths {
+			externalToRelPaths[externalFileOrDirPath] = subDirRelPath
+		}
+		for excludeFileOrDirPath, subDirRelExcludePath := range excludeToSubDirRelExcludePaths {
+			excludeToRelPaths[excludeFileOrDirPath] = subDirRelExcludePath
+		}
 		workspace, err := workspaceBuilder.BuildWorkspace(
 			ctx,
 			workspaceConfig,
@@ -411,6 +443,19 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 			return nil, err
 		}
 		moduleConfigs = append(moduleConfigs, moduleConfig)
+	}
+	// This is only a requirement if we do not allow paths to not exist.
+	if !externalDirOrFilePathsAllowNotExist {
+		for _, externalDirOrFilePath := range externalDirOrFilePaths {
+			if _, ok := externalToRelPaths[externalDirOrFilePath]; !ok {
+				return nil, fmt.Errorf("path does not exist: %s", externalDirOrFilePath)
+			}
+		}
+		for _, excludeDirOrFilePath := range excludeDirOrFilePaths {
+			if _, ok := excludeToRelPaths[excludeDirOrFilePath]; !ok {
+				return nil, fmt.Errorf("path does not exist: %s", excludeDirOrFilePath)
+			}
+		}
 	}
 	return moduleConfigs, nil
 }
@@ -532,14 +577,38 @@ func (m *moduleConfigReader) getModuleConfig(
 			// if we determined the bucketRelPath from the sourceRef, the bucketRelPath would be equal
 			// to ./buf/... which is ambiguous to the workspace directories ('proto' and 'enterprise/proto'
 			// in this case).
+			externalToSubDirRelPaths, err := bufwork.ExternalPathsToSubDirRelPaths(
+				relativeRootPath,
+				subDirPath,
+				externalDirOrFilePaths,
+			)
+			if err != nil {
+				return nil, err
+			}
+			excludeToSubDirRelExcludePaths, err := bufwork.ExternalPathsToSubDirRelPaths(
+				relativeRootPath,
+				subDirPath,
+				excludeDirOrFilePaths,
+			)
+			if err != nil {
+				return nil, err
+			}
+			subDirRelPaths := make([]string, 0, len(externalToSubDirRelPaths))
+			for _, subDirRelPath := range externalToSubDirRelPaths {
+				subDirRelPaths = append(subDirRelPaths, subDirRelPath)
+			}
+			subDirRelExcludePaths := make([]string, 0, len(excludeToSubDirRelExcludePaths))
+			for _, subDirRelExcludePath := range excludeToSubDirRelExcludePaths {
+				subDirRelExcludePaths = append(subDirRelExcludePaths, subDirRelExcludePath)
+			}
 			buildOptions, err = bufwork.BuildOptionsForWorkspaceDirectory(
 				ctx,
 				workspaceConfig,
 				moduleConfig,
-				relativeRootPath,
-				subDirPath,
 				externalDirOrFilePaths,
 				excludeDirOrFilePaths,
+				subDirRelPaths,
+				subDirRelExcludePaths,
 				externalDirOrFilePathsAllowNotExist,
 			)
 			if err != nil {

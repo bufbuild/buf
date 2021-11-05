@@ -101,14 +101,38 @@ func (w *workspaceBuilder) BuildWorkspace(
 				err,
 			)
 		}
+		externalToSubDirRelPaths, err := ExternalPathsToSubDirRelPaths(
+			relativeRootPath,
+			directory,
+			externalDirOrFilePaths,
+		)
+		if err != nil {
+			return nil, err
+		}
+		excludeToSubDirRelExcludePaths, err := ExternalPathsToSubDirRelPaths(
+			relativeRootPath,
+			directory,
+			excludeDirOrFilePaths,
+		)
+		if err != nil {
+			return nil, err
+		}
+		subDirRelPaths := make([]string, 0, len(externalToSubDirRelPaths))
+		for _, subDirRelPath := range externalToSubDirRelPaths {
+			subDirRelPaths = append(subDirRelPaths, subDirRelPath)
+		}
+		subDirRelExcludePaths := make([]string, 0, len(excludeToSubDirRelExcludePaths))
+		for _, subDirRelExcludePath := range excludeToSubDirRelExcludePaths {
+			subDirRelExcludePaths = append(subDirRelExcludePaths, subDirRelExcludePath)
+		}
 		buildOptions, err := BuildOptionsForWorkspaceDirectory(
 			ctx,
 			workspaceConfig,
 			moduleConfig,
-			relativeRootPath,
-			directory,
 			externalDirOrFilePaths,
 			excludeDirOrFilePaths,
+			subDirRelPaths,
+			subDirRelExcludePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 		if err != nil {
