@@ -33,7 +33,7 @@ service AuthnService {
 message GetCurrentUserRequest {}
 
 message GetCurrentUserResponse {
-  buf.alpha.registry.v1alpha1.User user = 2;
+  buf.alpha.registry.v1alpha1.User user = 1;
 }
 
 message GetCurrentUserSubjectRequest {}
@@ -43,5 +43,5 @@ message GetCurrentUserSubjectResponse {
   // Note: we do not want to make it part of the User response as
   // it contains potentially sensitive information and the User
   // response is shared with other users.
-  string subject = 2;
+  string subject = 1;
 }

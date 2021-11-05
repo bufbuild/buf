@@ -33,7 +33,7 @@ message Module {
   // documentation is the string representation of the contents of the `buf.md` file.
   //
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
-  string documentation = 4;
+  string documentation = 3;
 }
 
 // ModuleFile is a file within a FileSet.
