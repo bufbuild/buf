@@ -28,50 +28,11 @@ type RecommendationService interface {
 	// RecommendedTemplates returns a list of recommended templates.
 	RecommendedTemplates(ctx context.Context) (templates []*v1alpha1.RecommendedTemplate, err error)
 	// ListRecommendedRepositories returns a list of recommended repositories that user have access to.
-	ListRecommendedRepositories(
-		ctx context.Context,
-		pageSize uint32,
-		pageToken string,
-		reverse bool,
-	) (repositories []*v1alpha1.RecommendedRepository, nextPageToken string, err error)
+	ListRecommendedRepositories(ctx context.Context) (repositories []*v1alpha1.RecommendedRepository, err error)
 	// ListRecommendedTemplates returns a list of recommended templates that user have access to.
-	ListRecommendedTemplates(
-		ctx context.Context,
-		pageSize uint32,
-		pageToken string,
-		reverse bool,
-	) (templates []*v1alpha1.RecommendedTemplate, nextPageToken string, err error)
-	// ListRecommendations returns a list of recommendations of a resource type.
-	ListRecommendations(
-		ctx context.Context,
-		resourceType v1alpha1.ResourceType,
-		pageSize uint32,
-		pageToken string,
-		reverse bool,
-	) (recommendations []*v1alpha1.Recommendation, nextPageToken string, err error)
-	// AddRecommendation add a recommendation to the server.
-	AddRecommendation(
-		ctx context.Context,
-		resource *v1alpha1.Resource,
-		description string,
-	) (recommendation *v1alpha1.Recommendation, err error)
-	// UpdateRecommendation update a recommendation in the server.
-	UpdateRecommendation(
-		ctx context.Context,
-		resourceType v1alpha1.ResourceType,
-		id string,
-		description string,
-	) (err error)
-	// UpdateRecommendationsRanks update the ranking of the recommendations of a resource type in the server.
-	UpdateRecommendationsRanks(
-		ctx context.Context,
-		resourceType v1alpha1.ResourceType,
-		recommendationIds []string,
-	) (err error)
-	// DeleteRecommendation delete a recommendation in the server.
-	DeleteRecommendation(
-		ctx context.Context,
-		resourceType v1alpha1.ResourceType,
-		id string,
-	) (err error)
+	ListRecommendedTemplates(ctx context.Context) (templates []*v1alpha1.RecommendedTemplate, err error)
+	// SetRecommendedRepositories set the list of repository recommendations in the server.
+	SetRecommendedRepositories(ctx context.Context, repositories []*v1alpha1.RecommendingRepository) (err error)
+	// SetRecommendedTemplates set the list of template recommendations in the server.
+	SetRecommendedTemplates(ctx context.Context, templates []*v1alpha1.RecommendingTemplate) (err error)
 }

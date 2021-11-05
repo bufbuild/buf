@@ -18,35 +18,6 @@ package buf.alpha.registry.v1alpha1;
 
 import "google/protobuf/timestamp.proto";
 
-// The resource types of the recommendation.
-enum ResourceType {
-  RESOURCE_TYPE_UNSPECIFIED = 0;
-  RESOURCE_TYPE_REPOSITORY = 1;
-  RESOURCE_TYPE_TEMPLATE = 2;
-}
-
-message Resource {
-  oneof resource {
-    // The resource is a `repository`.
-    string repository_id = 1;
-    // The resource is a `template`.
-    string template_id = 2;
-  }
-}
-
-message Recommendation {
-  // unique, immutable
-  string id = 1;
-  // unique, immutable
-  Resource resource = 2;
-  // immutable
-  string resource_owner = 3;
-  // immutable
-  string resource_name = 4;
-  // mutable
-  string description = 5;
-}
-
 // RecommendedRepository is the information about a repository needed to link to
 // its owner page.
 message RecommendedRepository {
@@ -64,6 +35,18 @@ message RecommendedTemplate {
   string description = 3;
 }
 
+// RecommendingRepository is the information needed to configure a repository recommendation
+message RecommendingRepository {
+  string repository_id = 1;
+  string description = 2;
+}
+
+// RecommendingTemplate is the information needed to configure a template recommendation
+message RecommendingTemplate {
+  string template_id = 1;
+  string description = 2;
+}
+
 // RecommendationService is the recommendation service.
 service RecommendationService {
   // RecommendedRepositories returns a list of recommended repositories.
@@ -74,16 +57,10 @@ service RecommendationService {
   rpc ListRecommendedRepositories(ListRecommendedRepositoriesRequest) returns (ListRecommendedRepositoriesResponse);
   // ListRecommendedTemplates returns a list of recommended templates that user have access to.
   rpc ListRecommendedTemplates(ListRecommendedTemplatesRequest) returns (ListRecommendedTemplatesResponse);
-  // ListRecommendations returns a list of recommendations of a resource type.
-  rpc ListRecommendations(ListRecommendationsRequest) returns (ListRecommendationsResponse);
-  // AddRecommendation add a recommendation to the server.
-  rpc AddRecommendation(AddRecommendationRequest) returns (AddRecommendationResponse);
-  // UpdateRecommendation update a recommendation in the server.
-  rpc UpdateRecommendation(UpdateRecommendationRequest) returns (UpdateRecommendationResponse);
-  // UpdateRecommendationsRanks update the ranking of the recommendations of a resource type in the server.
-  rpc UpdateRecommendationsRanks(UpdateRecommendationsRanksRequest) returns (UpdateRecommendationsRanksResponse);
-  // DeleteRecommendation delete a recommendation in the server.
-  rpc DeleteRecommendation(DeleteRecommendationRequest) returns (DeleteRecommendationResponse);
+  // SetRecommendedRepositories set the list of repository recommendations in the server.
+  rpc SetRecommendedRepositories(SetRecommendedRepositoriesRequest) returns (SetRecommendedRepositoriesResponse);
+  // SetRecommendedTemplates set the list of template recommendations in the server.
+  rpc SetRecommendedTemplates(SetRecommendedTemplatesRequest) returns (SetRecommendedTemplatesResponse);
 }
 
 message RecommendedRepositoriesRequest {}
@@ -98,73 +75,26 @@ message RecommendedTemplatesResponse {
   repeated RecommendedTemplate templates = 1;
 }
 
-message ListRecommendedRepositoriesRequest {
-  uint32 page_size = 1;
-  // The first page is returned if this is empty.
-  string page_token = 2;
-  bool reverse = 3;
-}
+message ListRecommendedRepositoriesRequest {}
 
 message ListRecommendedRepositoriesResponse {
   repeated RecommendedRepository repositories = 1;
-  // There are no more pages if this is empty.
-  string next_page_token = 2;
 }
 
-message ListRecommendedTemplatesRequest {
-  uint32 page_size = 1;
-  // The first page is returned if this is empty.
-  string page_token = 2;
-  bool reverse = 3;
-}
+message ListRecommendedTemplatesRequest {}
 
 message ListRecommendedTemplatesResponse {
   repeated RecommendedTemplate templates = 1;
-  // There are no more pages if this is empty.
-  string next_page_token = 2;
 }
 
-message ListRecommendationsRequest {
-  ResourceType resource_type = 1;
-  uint32 page_size = 2;
-  // The first page is returned if this is empty.
-  string page_token = 3;
-  bool reverse = 4;
+message SetRecommendedRepositoriesRequest {
+  repeated RecommendingRepository repositories = 1;
 }
 
-message ListRecommendationsResponse {
-  repeated Recommendation recommendations = 1;
-  // There are no more pages if this is empty.
-  string next_page_token = 2;
+message SetRecommendedRepositoriesResponse {}
+
+message SetRecommendedTemplatesRequest {
+  repeated RecommendingTemplate templates = 1;
 }
 
-message AddRecommendationRequest {
-  Resource resource = 1;
-  string description = 2;
-}
-
-message AddRecommendationResponse {
-  Recommendation recommendation = 1;
-}
-
-message UpdateRecommendationRequest {
-  ResourceType resource_type = 1;
-  string id = 2;
-  string description = 3;
-}
-
-message UpdateRecommendationResponse {}
-
-message UpdateRecommendationsRanksRequest {
-  ResourceType resource_type = 1;
-  repeated string recommendation_ids = 2;
-}
-
-message UpdateRecommendationsRanksResponse {}
-
-message DeleteRecommendationRequest {
-  ResourceType resource_type = 1;
-  string id = 2;
-}
-
-message DeleteRecommendationResponse {}
+message SetRecommendedTemplatesResponse {}

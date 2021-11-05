@@ -59,117 +59,44 @@ func (s *recommendationService) RecommendedTemplates(ctx context.Context) (templ
 }
 
 // ListRecommendedRepositories returns a list of recommended repositories that user have access to.
-func (s *recommendationService) ListRecommendedRepositories(
-	ctx context.Context,
-	pageSize uint32,
-	pageToken string,
-	reverse bool,
-) (repositories []*v1alpha1.RecommendedRepository, nextPageToken string, _ error) {
+func (s *recommendationService) ListRecommendedRepositories(ctx context.Context) (repositories []*v1alpha1.RecommendedRepository, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
 	response, err := s.client.ListRecommendedRepositories(
 		ctx,
-		&v1alpha1.ListRecommendedRepositoriesRequest{
-			PageSize:  pageSize,
-			PageToken: pageToken,
-			Reverse:   reverse,
-		},
+		&v1alpha1.ListRecommendedRepositoriesRequest{},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
-	return response.Repositories, response.NextPageToken, nil
+	return response.Repositories, nil
 }
 
 // ListRecommendedTemplates returns a list of recommended templates that user have access to.
-func (s *recommendationService) ListRecommendedTemplates(
-	ctx context.Context,
-	pageSize uint32,
-	pageToken string,
-	reverse bool,
-) (templates []*v1alpha1.RecommendedTemplate, nextPageToken string, _ error) {
+func (s *recommendationService) ListRecommendedTemplates(ctx context.Context) (templates []*v1alpha1.RecommendedTemplate, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
 	response, err := s.client.ListRecommendedTemplates(
 		ctx,
-		&v1alpha1.ListRecommendedTemplatesRequest{
-			PageSize:  pageSize,
-			PageToken: pageToken,
-			Reverse:   reverse,
-		},
-	)
-	if err != nil {
-		return nil, "", err
-	}
-	return response.Templates, response.NextPageToken, nil
-}
-
-// ListRecommendations returns a list of recommendations of a resource type.
-func (s *recommendationService) ListRecommendations(
-	ctx context.Context,
-	resourceType v1alpha1.ResourceType,
-	pageSize uint32,
-	pageToken string,
-	reverse bool,
-) (recommendations []*v1alpha1.Recommendation, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.ListRecommendations(
-		ctx,
-		&v1alpha1.ListRecommendationsRequest{
-			ResourceType: resourceType,
-			PageSize:     pageSize,
-			PageToken:    pageToken,
-			Reverse:      reverse,
-		},
-	)
-	if err != nil {
-		return nil, "", err
-	}
-	return response.Recommendations, response.NextPageToken, nil
-}
-
-// AddRecommendation add a recommendation to the server.
-func (s *recommendationService) AddRecommendation(
-	ctx context.Context,
-	resource *v1alpha1.Resource,
-	description string,
-) (recommendation *v1alpha1.Recommendation, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.AddRecommendation(
-		ctx,
-		&v1alpha1.AddRecommendationRequest{
-			Resource:    resource,
-			Description: description,
-		},
+		&v1alpha1.ListRecommendedTemplatesRequest{},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return response.Recommendation, nil
+	return response.Templates, nil
 }
 
-// UpdateRecommendation update a recommendation in the server.
-func (s *recommendationService) UpdateRecommendation(
-	ctx context.Context,
-	resourceType v1alpha1.ResourceType,
-	id string,
-	description string,
-) (_ error) {
+// SetRecommendedRepositories set the list of repository recommendations in the server.
+func (s *recommendationService) SetRecommendedRepositories(ctx context.Context, repositories []*v1alpha1.RecommendingRepository) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.UpdateRecommendation(
+	_, err := s.client.SetRecommendedRepositories(
 		ctx,
-		&v1alpha1.UpdateRecommendationRequest{
-			ResourceType: resourceType,
-			Id:           id,
-			Description:  description,
+		&v1alpha1.SetRecommendedRepositoriesRequest{
+			Repositories: repositories,
 		},
 	)
 	if err != nil {
@@ -178,42 +105,15 @@ func (s *recommendationService) UpdateRecommendation(
 	return nil
 }
 
-// UpdateRecommendationsRanks update the ranking of the recommendations of a resource type in the server.
-func (s *recommendationService) UpdateRecommendationsRanks(
-	ctx context.Context,
-	resourceType v1alpha1.ResourceType,
-	recommendationIds []string,
-) (_ error) {
+// SetRecommendedTemplates set the list of template recommendations in the server.
+func (s *recommendationService) SetRecommendedTemplates(ctx context.Context, templates []*v1alpha1.RecommendingTemplate) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.UpdateRecommendationsRanks(
+	_, err := s.client.SetRecommendedTemplates(
 		ctx,
-		&v1alpha1.UpdateRecommendationsRanksRequest{
-			ResourceType:      resourceType,
-			RecommendationIds: recommendationIds,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// DeleteRecommendation delete a recommendation in the server.
-func (s *recommendationService) DeleteRecommendation(
-	ctx context.Context,
-	resourceType v1alpha1.ResourceType,
-	id string,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.DeleteRecommendation(
-		ctx,
-		&v1alpha1.DeleteRecommendationRequest{
-			ResourceType: resourceType,
-			Id:           id,
+		&v1alpha1.SetRecommendedTemplatesRequest{
+			Templates: templates,
 		},
 	)
 	if err != nil {
