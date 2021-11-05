@@ -20,6 +20,18 @@ lint:
     - name: buf-breaking
       run_linter_from: root_file
       run_from_root_file: buf.work.yaml
+      command:
+        [
+          buf,
+          breaking,
+          --against,
+          ".git#branch=${upstream-ref}",
+          --error-format,
+          json,
+          --path,
+          "${target}",
+        ]
+      disable_upstream: false
     - name: buf-lint
       run_linter_from: root_file
       run_from_root_file: buf.yaml

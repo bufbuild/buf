@@ -43,5 +43,5 @@ message GetCurrentUserSubjectResponse {
   // Note: we do not want to make it part of the User response as
   // it contains potentially sensitive information and the User
   // response is shared with other users.
-  string subject = 1;
+  string subject = 2;
 }
