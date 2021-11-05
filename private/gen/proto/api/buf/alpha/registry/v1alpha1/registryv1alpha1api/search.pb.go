@@ -30,4 +30,25 @@ type SearchService interface {
 		pageSize uint32,
 		pageToken uint32,
 	) (searchResults []*v1alpha1.SearchResult, nextPageToken uint32, err error)
+	// SearchUsers searches the users in the BSR.
+	SearchUsers(
+		ctx context.Context,
+		query string,
+		pageSize uint32,
+		pageToken uint32,
+	) (searchResults []*v1alpha1.UserSearchResult, nextPageToken uint32, err error)
+	// SearchPlugins searches the plugins in the  BSR.
+	SearchPlugins(
+		ctx context.Context,
+		query string,
+		pageSize uint32,
+		pageToken uint32,
+	) (searchResults []*v1alpha1.PluginSearchResult, nextPageToken uint32, err error)
+	// SearchTemplates searches the templates in the BSR.
+	SearchTemplates(
+		ctx context.Context,
+		query string,
+		pageSize uint32,
+		pageToken uint32,
+	) (searchResults []*v1alpha1.TemplateSearchResult, nextPageToken uint32, err error)
 }
