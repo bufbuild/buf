@@ -363,7 +363,7 @@ func GetErrorCode(err error) ErrorCode {
 	if err == nil {
 		return 0
 	}
-	if rpcErr := (&rpcError{}); errors.As(err, &rpcErr) {
+	if rpcErr := new(rpcError); errors.As(err, &rpcErr) {
 		return rpcErr.errorCode
 	}
 	return ErrorCodeInternal
@@ -388,7 +388,10 @@ func IsError(err error) bool {
 	if err == nil {
 		return false
 	}
-	return errors.Is(err, &rpcError{})
+	if rpcErr := new(rpcError); errors.As(err, &rpcErr) {
+		return true
+	}
+	return false
 }
 
 type rpcError struct {
@@ -416,6 +419,8 @@ func (r *rpcError) Error() string {
 }
 
 func (r *rpcError) Is(err error) bool {
-	_, ok := err.(*rpcError)
-	return ok
+	if target := new(rpcError); errors.As(err, &target) {
+		return *r == *target
+	}
+	return false
 }

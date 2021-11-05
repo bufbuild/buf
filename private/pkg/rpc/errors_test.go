@@ -15,12 +15,35 @@
 package rpc
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGetErrorMessage(t *testing.T) {
 	require.Equal(t, "test", GetErrorMessage(fmt.Errorf("some error: %w", NewInvalidArgumentError("test"))))
+}
+
+func TestErrorsIs(t *testing.T) {
+	assert.True(
+		t,
+		errors.Is(NewCanceledError("cancel"), NewCanceledError("cancel")),
+	)
+	assert.False(
+		t,
+		errors.Is(NewCanceledError("cancel"), NewCanceledError("other message")),
+	)
+	assert.False(
+		t,
+		errors.Is(NewCanceledError("cancel"), NewAbortedError("cancel")),
+	)
+}
+
+func TestIsError(t *testing.T) {
+	assert.True(t, IsError(NewError(ErrorCodeOK, "something")))
+	assert.False(t, IsError(errors.New("something")))
+	assert.False(t, IsError(nil))
 }
