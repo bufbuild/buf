@@ -58,6 +58,7 @@ type RecommendationService interface {
 	// UpdateRecommendation update a recommendation in the server.
 	UpdateRecommendation(
 		ctx context.Context,
+		resourceType v1alpha1.ResourceType,
 		id string,
 		description string,
 	) (err error)
@@ -68,5 +69,9 @@ type RecommendationService interface {
 		recommendationIds []string,
 	) (err error)
 	// DeleteRecommendation delete a recommendation in the server.
-	DeleteRecommendation(ctx context.Context, id string) (err error)
+	DeleteRecommendation(
+		ctx context.Context,
+		resourceType v1alpha1.ResourceType,
+		id string,
+	) (err error)
 }

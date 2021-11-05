@@ -157,6 +157,7 @@ func (s *recommendationService) AddRecommendation(
 // UpdateRecommendation update a recommendation in the server.
 func (s *recommendationService) UpdateRecommendation(
 	ctx context.Context,
+	resourceType v1alpha1.ResourceType,
 	id string,
 	description string,
 ) (_ error) {
@@ -166,8 +167,9 @@ func (s *recommendationService) UpdateRecommendation(
 	_, err := s.client.UpdateRecommendation(
 		ctx,
 		&v1alpha1.UpdateRecommendationRequest{
-			Id:          id,
-			Description: description,
+			ResourceType: resourceType,
+			Id:           id,
+			Description:  description,
 		},
 	)
 	if err != nil {
@@ -199,14 +201,19 @@ func (s *recommendationService) UpdateRecommendationsRanks(
 }
 
 // DeleteRecommendation delete a recommendation in the server.
-func (s *recommendationService) DeleteRecommendation(ctx context.Context, id string) (_ error) {
+func (s *recommendationService) DeleteRecommendation(
+	ctx context.Context,
+	resourceType v1alpha1.ResourceType,
+	id string,
+) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
 	_, err := s.client.DeleteRecommendation(
 		ctx,
 		&v1alpha1.DeleteRecommendationRequest{
-			Id: id,
+			ResourceType: resourceType,
+			Id:           id,
 		},
 	)
 	if err != nil {

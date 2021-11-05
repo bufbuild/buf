@@ -148,8 +148,9 @@ message AddRecommendationResponse {
 }
 
 message UpdateRecommendationRequest {
-  string id = 1;
-  string description = 2;
+  ResourceType resource_type = 1;
+  string id = 2;
+  string description = 3;
 }
 
 message UpdateRecommendationResponse {}
@@ -162,7 +163,8 @@ message UpdateRecommendationsRanksRequest {
 message UpdateRecommendationsRanksResponse {}
 
 message DeleteRecommendationRequest {
-  string id = 1;
+  ResourceType resource_type = 1;
+  string id = 2;
 }
 
 message DeleteRecommendationResponse {}
