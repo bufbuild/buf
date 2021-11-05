@@ -7,6 +7,8 @@ cli:
 lint:
   enabled:
     - actionlint@1.6.4
+    - buf-breaking@1.0.0-rc6
+    - buf-lint@1.0.0-rc6
     - gitleaks@7.6.1
     - gofmt@1.16.7
     - golangci-lint@1.42.1
@@ -14,3 +16,15 @@ lint:
     - prettier@2.4.1
     - shellcheck@0.7.2
     - shfmt@3.4.0
+  linters:
+    - name: buf-breaking
+      run_linter_from: root_file
+      run_from_root_file: buf.work.yaml
+    - name: buf-lint
+      run_linter_from: root_file
+      run_from_root_file: buf.yaml
+  ignore:
+    - linters: [buf-breaking, buf-lint]
+      paths:
+        # Test data
+        - "**/testdata/**"

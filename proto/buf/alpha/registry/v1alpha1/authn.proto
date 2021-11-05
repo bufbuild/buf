@@ -33,7 +33,7 @@ service AuthnService {
 message GetCurrentUserRequest {}
 
 message GetCurrentUserResponse {
-  buf.alpha.registry.v1alpha1.User user = 1;
+  buf.alpha.registry.v1alpha1.User user = 2;
 }
 
 message GetCurrentUserSubjectRequest {}
