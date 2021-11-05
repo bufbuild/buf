@@ -57,3 +57,160 @@ func (s *recommendationService) RecommendedTemplates(ctx context.Context) (templ
 	}
 	return response.Templates, nil
 }
+
+// ListRecommendedRepositories returns a list of recommended repositories that user have access to.
+func (s *recommendationService) ListRecommendedRepositories(
+	ctx context.Context,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (repositories []*v1alpha1.RecommendedRepository, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListRecommendedRepositories(
+		ctx,
+		&v1alpha1.ListRecommendedRepositoriesRequest{
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Reverse:   reverse,
+		},
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.Repositories, response.NextPageToken, nil
+}
+
+// ListRecommendedTemplates returns a list of recommended templates that user have access to.
+func (s *recommendationService) ListRecommendedTemplates(
+	ctx context.Context,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (templates []*v1alpha1.RecommendedTemplate, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListRecommendedTemplates(
+		ctx,
+		&v1alpha1.ListRecommendedTemplatesRequest{
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Reverse:   reverse,
+		},
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.Templates, response.NextPageToken, nil
+}
+
+// ListRecommendations returns a list of recommendations of a resource type.
+func (s *recommendationService) ListRecommendations(
+	ctx context.Context,
+	resourceType v1alpha1.ResourceType,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (recommendations []*v1alpha1.Recommendation, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListRecommendations(
+		ctx,
+		&v1alpha1.ListRecommendationsRequest{
+			ResourceType: resourceType,
+			PageSize:     pageSize,
+			PageToken:    pageToken,
+			Reverse:      reverse,
+		},
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.Recommendations, response.NextPageToken, nil
+}
+
+// AddRecommendation add a recommendation to the server.
+func (s *recommendationService) AddRecommendation(
+	ctx context.Context,
+	resource *v1alpha1.Resource,
+	description string,
+) (recommendation *v1alpha1.Recommendation, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.AddRecommendation(
+		ctx,
+		&v1alpha1.AddRecommendationRequest{
+			Resource:    resource,
+			Description: description,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Recommendation, nil
+}
+
+// UpdateRecommendation update a recommendation in the server.
+func (s *recommendationService) UpdateRecommendation(
+	ctx context.Context,
+	id string,
+	description string,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.UpdateRecommendation(
+		ctx,
+		&v1alpha1.UpdateRecommendationRequest{
+			Id:          id,
+			Description: description,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UpdateRecommendationsRanks update the ranking of the recommendations of a resource type in the server.
+func (s *recommendationService) UpdateRecommendationsRanks(
+	ctx context.Context,
+	resourceType v1alpha1.ResourceType,
+	recommendationIds []string,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.UpdateRecommendationsRanks(
+		ctx,
+		&v1alpha1.UpdateRecommendationsRanksRequest{
+			ResourceType:      resourceType,
+			RecommendationIds: recommendationIds,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteRecommendation delete a recommendation in the server.
+func (s *recommendationService) DeleteRecommendation(ctx context.Context, id string) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.DeleteRecommendation(
+		ctx,
+		&v1alpha1.DeleteRecommendationRequest{
+			Id: id,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}

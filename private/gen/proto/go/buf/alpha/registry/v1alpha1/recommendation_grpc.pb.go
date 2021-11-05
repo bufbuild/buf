@@ -40,6 +40,20 @@ type RecommendationServiceClient interface {
 	RecommendedRepositories(ctx context.Context, in *RecommendedRepositoriesRequest, opts ...grpc.CallOption) (*RecommendedRepositoriesResponse, error)
 	// RecommendedTemplates returns a list of recommended templates.
 	RecommendedTemplates(ctx context.Context, in *RecommendedTemplatesRequest, opts ...grpc.CallOption) (*RecommendedTemplatesResponse, error)
+	// ListRecommendedRepositories returns a list of recommended repositories that user have access to.
+	ListRecommendedRepositories(ctx context.Context, in *ListRecommendedRepositoriesRequest, opts ...grpc.CallOption) (*ListRecommendedRepositoriesResponse, error)
+	// ListRecommendedTemplates returns a list of recommended templates that user have access to.
+	ListRecommendedTemplates(ctx context.Context, in *ListRecommendedTemplatesRequest, opts ...grpc.CallOption) (*ListRecommendedTemplatesResponse, error)
+	// ListRecommendations returns a list of recommendations of a resource type.
+	ListRecommendations(ctx context.Context, in *ListRecommendationsRequest, opts ...grpc.CallOption) (*ListRecommendationsResponse, error)
+	// AddRecommendation add a recommendation to the server.
+	AddRecommendation(ctx context.Context, in *AddRecommendationRequest, opts ...grpc.CallOption) (*AddRecommendationResponse, error)
+	// UpdateRecommendation update a recommendation in the server.
+	UpdateRecommendation(ctx context.Context, in *UpdateRecommendationRequest, opts ...grpc.CallOption) (*UpdateRecommendationResponse, error)
+	// UpdateRecommendationsRanks update the ranking of the recommendations of a resource type in the server.
+	UpdateRecommendationsRanks(ctx context.Context, in *UpdateRecommendationsRanksRequest, opts ...grpc.CallOption) (*UpdateRecommendationsRanksResponse, error)
+	// DeleteRecommendation delete a recommendation in the server.
+	DeleteRecommendation(ctx context.Context, in *DeleteRecommendationRequest, opts ...grpc.CallOption) (*DeleteRecommendationResponse, error)
 }
 
 type recommendationServiceClient struct {
@@ -68,6 +82,69 @@ func (c *recommendationServiceClient) RecommendedTemplates(ctx context.Context, 
 	return out, nil
 }
 
+func (c *recommendationServiceClient) ListRecommendedRepositories(ctx context.Context, in *ListRecommendedRepositoriesRequest, opts ...grpc.CallOption) (*ListRecommendedRepositoriesResponse, error) {
+	out := new(ListRecommendedRepositoriesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedRepositories", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recommendationServiceClient) ListRecommendedTemplates(ctx context.Context, in *ListRecommendedTemplatesRequest, opts ...grpc.CallOption) (*ListRecommendedTemplatesResponse, error) {
+	out := new(ListRecommendedTemplatesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedTemplates", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recommendationServiceClient) ListRecommendations(ctx context.Context, in *ListRecommendationsRequest, opts ...grpc.CallOption) (*ListRecommendationsResponse, error) {
+	out := new(ListRecommendationsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendations", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recommendationServiceClient) AddRecommendation(ctx context.Context, in *AddRecommendationRequest, opts ...grpc.CallOption) (*AddRecommendationResponse, error) {
+	out := new(AddRecommendationResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RecommendationService/AddRecommendation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recommendationServiceClient) UpdateRecommendation(ctx context.Context, in *UpdateRecommendationRequest, opts ...grpc.CallOption) (*UpdateRecommendationResponse, error) {
+	out := new(UpdateRecommendationResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RecommendationService/UpdateRecommendation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recommendationServiceClient) UpdateRecommendationsRanks(ctx context.Context, in *UpdateRecommendationsRanksRequest, opts ...grpc.CallOption) (*UpdateRecommendationsRanksResponse, error) {
+	out := new(UpdateRecommendationsRanksResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RecommendationService/UpdateRecommendationsRanks", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *recommendationServiceClient) DeleteRecommendation(ctx context.Context, in *DeleteRecommendationRequest, opts ...grpc.CallOption) (*DeleteRecommendationResponse, error) {
+	out := new(DeleteRecommendationResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RecommendationService/DeleteRecommendation", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RecommendationServiceServer is the server API for RecommendationService service.
 // All implementations should embed UnimplementedRecommendationServiceServer
 // for forward compatibility
@@ -76,6 +153,20 @@ type RecommendationServiceServer interface {
 	RecommendedRepositories(context.Context, *RecommendedRepositoriesRequest) (*RecommendedRepositoriesResponse, error)
 	// RecommendedTemplates returns a list of recommended templates.
 	RecommendedTemplates(context.Context, *RecommendedTemplatesRequest) (*RecommendedTemplatesResponse, error)
+	// ListRecommendedRepositories returns a list of recommended repositories that user have access to.
+	ListRecommendedRepositories(context.Context, *ListRecommendedRepositoriesRequest) (*ListRecommendedRepositoriesResponse, error)
+	// ListRecommendedTemplates returns a list of recommended templates that user have access to.
+	ListRecommendedTemplates(context.Context, *ListRecommendedTemplatesRequest) (*ListRecommendedTemplatesResponse, error)
+	// ListRecommendations returns a list of recommendations of a resource type.
+	ListRecommendations(context.Context, *ListRecommendationsRequest) (*ListRecommendationsResponse, error)
+	// AddRecommendation add a recommendation to the server.
+	AddRecommendation(context.Context, *AddRecommendationRequest) (*AddRecommendationResponse, error)
+	// UpdateRecommendation update a recommendation in the server.
+	UpdateRecommendation(context.Context, *UpdateRecommendationRequest) (*UpdateRecommendationResponse, error)
+	// UpdateRecommendationsRanks update the ranking of the recommendations of a resource type in the server.
+	UpdateRecommendationsRanks(context.Context, *UpdateRecommendationsRanksRequest) (*UpdateRecommendationsRanksResponse, error)
+	// DeleteRecommendation delete a recommendation in the server.
+	DeleteRecommendation(context.Context, *DeleteRecommendationRequest) (*DeleteRecommendationResponse, error)
 }
 
 // UnimplementedRecommendationServiceServer should be embedded to have forward compatible implementations.
@@ -87,6 +178,27 @@ func (UnimplementedRecommendationServiceServer) RecommendedRepositories(context.
 }
 func (UnimplementedRecommendationServiceServer) RecommendedTemplates(context.Context, *RecommendedTemplatesRequest) (*RecommendedTemplatesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RecommendedTemplates not implemented")
+}
+func (UnimplementedRecommendationServiceServer) ListRecommendedRepositories(context.Context, *ListRecommendedRepositoriesRequest) (*ListRecommendedRepositoriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRecommendedRepositories not implemented")
+}
+func (UnimplementedRecommendationServiceServer) ListRecommendedTemplates(context.Context, *ListRecommendedTemplatesRequest) (*ListRecommendedTemplatesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRecommendedTemplates not implemented")
+}
+func (UnimplementedRecommendationServiceServer) ListRecommendations(context.Context, *ListRecommendationsRequest) (*ListRecommendationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRecommendations not implemented")
+}
+func (UnimplementedRecommendationServiceServer) AddRecommendation(context.Context, *AddRecommendationRequest) (*AddRecommendationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddRecommendation not implemented")
+}
+func (UnimplementedRecommendationServiceServer) UpdateRecommendation(context.Context, *UpdateRecommendationRequest) (*UpdateRecommendationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateRecommendation not implemented")
+}
+func (UnimplementedRecommendationServiceServer) UpdateRecommendationsRanks(context.Context, *UpdateRecommendationsRanksRequest) (*UpdateRecommendationsRanksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateRecommendationsRanks not implemented")
+}
+func (UnimplementedRecommendationServiceServer) DeleteRecommendation(context.Context, *DeleteRecommendationRequest) (*DeleteRecommendationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRecommendation not implemented")
 }
 
 // UnsafeRecommendationServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -136,6 +248,132 @@ func _RecommendationService_RecommendedTemplates_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RecommendationService_ListRecommendedRepositories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRecommendedRepositoriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecommendationServiceServer).ListRecommendedRepositories(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedRepositories",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecommendationServiceServer).ListRecommendedRepositories(ctx, req.(*ListRecommendedRepositoriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RecommendationService_ListRecommendedTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRecommendedTemplatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecommendationServiceServer).ListRecommendedTemplates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendedTemplates",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecommendationServiceServer).ListRecommendedTemplates(ctx, req.(*ListRecommendedTemplatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RecommendationService_ListRecommendations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRecommendationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecommendationServiceServer).ListRecommendations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RecommendationService/ListRecommendations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecommendationServiceServer).ListRecommendations(ctx, req.(*ListRecommendationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RecommendationService_AddRecommendation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddRecommendationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecommendationServiceServer).AddRecommendation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RecommendationService/AddRecommendation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecommendationServiceServer).AddRecommendation(ctx, req.(*AddRecommendationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RecommendationService_UpdateRecommendation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRecommendationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecommendationServiceServer).UpdateRecommendation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RecommendationService/UpdateRecommendation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecommendationServiceServer).UpdateRecommendation(ctx, req.(*UpdateRecommendationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RecommendationService_UpdateRecommendationsRanks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRecommendationsRanksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecommendationServiceServer).UpdateRecommendationsRanks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RecommendationService/UpdateRecommendationsRanks",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecommendationServiceServer).UpdateRecommendationsRanks(ctx, req.(*UpdateRecommendationsRanksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RecommendationService_DeleteRecommendation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRecommendationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RecommendationServiceServer).DeleteRecommendation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RecommendationService/DeleteRecommendation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RecommendationServiceServer).DeleteRecommendation(ctx, req.(*DeleteRecommendationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RecommendationService_ServiceDesc is the grpc.ServiceDesc for RecommendationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -150,6 +388,34 @@ var RecommendationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RecommendedTemplates",
 			Handler:    _RecommendationService_RecommendedTemplates_Handler,
+		},
+		{
+			MethodName: "ListRecommendedRepositories",
+			Handler:    _RecommendationService_ListRecommendedRepositories_Handler,
+		},
+		{
+			MethodName: "ListRecommendedTemplates",
+			Handler:    _RecommendationService_ListRecommendedTemplates_Handler,
+		},
+		{
+			MethodName: "ListRecommendations",
+			Handler:    _RecommendationService_ListRecommendations_Handler,
+		},
+		{
+			MethodName: "AddRecommendation",
+			Handler:    _RecommendationService_AddRecommendation_Handler,
+		},
+		{
+			MethodName: "UpdateRecommendation",
+			Handler:    _RecommendationService_UpdateRecommendation_Handler,
+		},
+		{
+			MethodName: "UpdateRecommendationsRanks",
+			Handler:    _RecommendationService_UpdateRecommendationsRanks_Handler,
+		},
+		{
+			MethodName: "DeleteRecommendation",
+			Handler:    _RecommendationService_DeleteRecommendation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

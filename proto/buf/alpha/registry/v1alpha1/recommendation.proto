@@ -18,12 +18,42 @@ package buf.alpha.registry.v1alpha1;
 
 import "google/protobuf/timestamp.proto";
 
+// The resource types of the recommendation.
+enum ResourceType {
+  RESOURCE_TYPE_UNSPECIFIED = 0;
+  RESOURCE_TYPE_REPOSITORY = 1;
+  RESOURCE_TYPE_TEMPLATE = 2;
+}
+
+message Resource {
+  oneof resource {
+    // The resource is a `repository`.
+    string repository_id = 1;
+    // The resource is a `template`.
+    string template_id = 2;
+  }
+}
+
+message Recommendation {
+  // unique, immutable
+  string id = 1;
+  // unique, immutable
+  Resource resource = 2;
+  // immutable
+  string resource_owner = 3;
+  // immutable
+  string resource_name = 4;
+  // mutable
+  string description = 5;
+}
+
 // RecommendedRepository is the information about a repository needed to link to
 // its owner page.
 message RecommendedRepository {
   string owner = 1;
   string name = 2;
   google.protobuf.Timestamp create_time = 3;
+  string description = 4;
 }
 
 // RecommendedTemplate is the information needed to recommend a template and link
@@ -40,6 +70,20 @@ service RecommendationService {
   rpc RecommendedRepositories(RecommendedRepositoriesRequest) returns (RecommendedRepositoriesResponse);
   // RecommendedTemplates returns a list of recommended templates.
   rpc RecommendedTemplates(RecommendedTemplatesRequest) returns (RecommendedTemplatesResponse);
+  // ListRecommendedRepositories returns a list of recommended repositories that user have access to.
+  rpc ListRecommendedRepositories(ListRecommendedRepositoriesRequest) returns (ListRecommendedRepositoriesResponse);
+  // ListRecommendedTemplates returns a list of recommended templates that user have access to.
+  rpc ListRecommendedTemplates(ListRecommendedTemplatesRequest) returns (ListRecommendedTemplatesResponse);
+  // ListRecommendations returns a list of recommendations of a resource type.
+  rpc ListRecommendations(ListRecommendationsRequest) returns (ListRecommendationsResponse);
+  // AddRecommendation add a recommendation to the server.
+  rpc AddRecommendation(AddRecommendationRequest) returns (AddRecommendationResponse);
+  // UpdateRecommendation update a recommendation in the server.
+  rpc UpdateRecommendation(UpdateRecommendationRequest) returns (UpdateRecommendationResponse);
+  // UpdateRecommendationsRanks update the ranking of the recommendations of a resource type in the server.
+  rpc UpdateRecommendationsRanks(UpdateRecommendationsRanksRequest) returns (UpdateRecommendationsRanksResponse);
+  // DeleteRecommendation delete a recommendation in the server.
+  rpc DeleteRecommendation(DeleteRecommendationRequest) returns (DeleteRecommendationResponse);
 }
 
 message RecommendedRepositoriesRequest {}
@@ -53,3 +97,72 @@ message RecommendedTemplatesRequest {}
 message RecommendedTemplatesResponse {
   repeated RecommendedTemplate templates = 1;
 }
+
+message ListRecommendedRepositoriesRequest {
+  uint32 page_size = 1;
+  // The first page is returned if this is empty.
+  string page_token = 2;
+  bool reverse = 3;
+}
+
+message ListRecommendedRepositoriesResponse {
+  repeated RecommendedRepository repositories = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message ListRecommendedTemplatesRequest {
+  uint32 page_size = 1;
+  // The first page is returned if this is empty.
+  string page_token = 2;
+  bool reverse = 3;
+}
+
+message ListRecommendedTemplatesResponse {
+  repeated RecommendedTemplate templates = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message ListRecommendationsRequest {
+  ResourceType resource_type = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  bool reverse = 4;
+}
+
+message ListRecommendationsResponse {
+  repeated Recommendation recommendations = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message AddRecommendationRequest {
+  Resource resource = 1;
+  string description = 2;
+}
+
+message AddRecommendationResponse {
+  Recommendation recommendation = 1;
+}
+
+message UpdateRecommendationRequest {
+  string id = 1;
+  string description = 2;
+}
+
+message UpdateRecommendationResponse {}
+
+message UpdateRecommendationsRanksRequest {
+  ResourceType resource_type = 1;
+  repeated string recommendation_ids = 2;
+}
+
+message UpdateRecommendationsRanksResponse {}
+
+message DeleteRecommendationRequest {
+  string id = 1;
+}
+
+message DeleteRecommendationResponse {}
