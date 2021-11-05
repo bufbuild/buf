@@ -40,3 +40,4 @@ lint:
       paths:
         # Test data
         - "**/testdata/**"
+        - "**/workspacetests/**"
