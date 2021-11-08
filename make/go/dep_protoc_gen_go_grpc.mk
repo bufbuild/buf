@@ -7,8 +7,8 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/grpc/grpc-go/commits/master 20210907 checked 20210908
-PROTOC_GEN_GO_GRPC_VERSION ?= 2f3355d2244eb436564a93dfbe2b0ba907adeb98
+# https://github.com/grpc/grpc-go/commits/master 20211108 checked 20211108
+PROTOC_GEN_GO_GRPC_VERSION ?= 79e9c9571a1949d3abae203a127fa5d4f02fb071
 
 GO_GET_PKGS := $(GO_GET_PKGS) google.golang.org/grpc@$(PROTOC_GEN_GO_GRPC_VERSION)
 

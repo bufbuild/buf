@@ -41,14 +41,14 @@ endif
 .DEFAULT_GOAL := shortall
 
 .PHONY: all
-all:
+all: ## Run make lint and make test.
 	@$(MAKE) lint
 	@$(MAKE) test
 
 postupgrade:: all
 
 .PHONY: shortall
-shortall:
+shortall: ## Run make shortlint and make shorttest.
 	@$(MAKE) shortlint
 	@$(MAKE) shorttest
 
@@ -102,12 +102,12 @@ postlint::
 postlonglint::
 
 .PHONY: shortlint
-shortlint:
+shortlint: ## Run all linters but exclude long-running linters.
 	@$(MAKE) checknodiffgenerated
 	@$(MAKE) checknonolint golangcilint postlint
 
 .PHONY: lint
-lint:
+lint: ## Run all linters.
 	@$(MAKE) shortlint
 	@$(MAKE) postlonglint
 
@@ -115,14 +115,14 @@ lint:
 prebuild::
 
 .PHONY: build
-build: prebuild
+build: prebuild ## Run go build.
 	go build ./...
 
 .PHONY: pretest
 pretest::
 
 .PHONY: test
-test: pretest installtest
+test: pretest installtest ## Run all go tests.
 	go test $(GO_TEST_FLAGS) $(GOPKGS)
 
 .PHONY: testrace
@@ -130,7 +130,7 @@ testrace: pretest installtest
 	go test -race $(GO_TEST_FLAGS) $(GOPKGS)
 
 .PHONY: shorttest
-shorttest: pretest installtest
+shorttest: pretest installtest ## Run all go tests but exclude long-running tests.
 	go test -test.short $(GO_TEST_FLAGS) $(GOPKGS)
 
 .PHONY: deppkgs
@@ -157,7 +157,7 @@ else
 endif
 
 .PHONY: install
-install::
+install:: ## Install all go binaries.
 
 define gobinfunc
 .PHONY: install$(notdir $(1))
