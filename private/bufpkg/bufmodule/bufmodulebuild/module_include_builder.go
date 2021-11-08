@@ -111,6 +111,7 @@ func (b *moduleIncludeBuilder) buildForIncludes(
 		module,
 		absIncludeDirPaths,
 		absFileOrDirPaths,
+		nil, // Excluding files isn't supported for the ModuleIncludeBuilder.
 		fileOrDirPathsAllowNotExist,
 		normalpath.Absolute,
 	)

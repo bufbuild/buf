@@ -181,6 +181,7 @@ func run(
 		ref,
 		inputConfig,
 		paths, // we filter checks for files
+		nil,   // exclude is not yet supported for this commnad
 		false, // input files must exist
 		false, // we must include source info for linting
 	)

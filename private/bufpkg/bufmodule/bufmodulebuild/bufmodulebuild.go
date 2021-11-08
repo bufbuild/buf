@@ -120,7 +120,7 @@ func WithPaths(paths []string) BuildOption {
 // These paths will be normalized.
 // Multiple calls to this option and WithPaths will override previous calls.
 //
-// This results in ModuleWithTargetPathsAllowNotExist being used on the resulting build module.
+// This results in ModuleWithPathsAllowNotExist being used on the resulting build module.
 // This is done within bufmodulebuild so we can resolve the paths relative to their roots.
 func WithPathsAllowNotExist(paths []string) BuildOption {
 	return func(buildOptions *buildOptions) {
@@ -138,5 +138,21 @@ func WithPathsAllowNotExist(paths []string) BuildOption {
 func WithModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) BuildOption {
 	return func(buildOptions *buildOptions) {
 		buildOptions.moduleIdentity = moduleIdentity
+	}
+}
+
+// WithExcludePaths returns a new BuildOption that specifies files to be excluded from the build.
+func WithExcludePaths(excludePaths []string) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.excludePaths = excludePaths
+	}
+}
+
+// WithExcludePathsAllowNotExist returns a new BuildOption that specifies files to be excluded from the build,
+// but allows the specified paths to not exist.
+func WithExcludePathsAllowNotExist(excludePaths []string) BuildOption {
+	return func(buildOptions *buildOptions) {
+		buildOptions.excludePaths = excludePaths
+		buildOptions.pathsAllowNotExist = true
 	}
 }

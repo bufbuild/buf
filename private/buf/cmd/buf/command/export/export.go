@@ -139,6 +139,7 @@ func run(
 		sourceOrModuleRef,
 		flags.Config,
 		flags.Paths,
+		nil, // excludes are not supported for export
 		false,
 	)
 	if err != nil {
@@ -227,6 +228,7 @@ func run(
 			sourceOrModuleRef,
 			flags.Config,
 			flags.Paths,
+			nil, // excludes are not supported for export
 			false,
 			true, // SourceCodeInfo is not needed here for outputting the source code
 		)

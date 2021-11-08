@@ -270,6 +270,7 @@ func run(
 		ref,
 		inputConfig,
 		paths, // we filter checks for files
+		nil,   // exclude file paths are not supported in this command
 		false, // files specified must exist on the main input
 		false, // we must include source info for this side of the check
 	)
@@ -305,6 +306,7 @@ func run(
 		againstRef,
 		againstInputConfig,
 		externalPaths, // we filter checks for files
+		nil,           // exclude file paths are not supported in this command
 		true,          // files are allowed to not exist on the against input
 		true,          // no need to include source info for against
 	)

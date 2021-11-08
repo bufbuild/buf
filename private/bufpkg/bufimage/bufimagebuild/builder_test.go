@@ -30,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buftesting"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
@@ -81,6 +82,7 @@ func TestGoogleapis(t *testing.T) {
 			"google/type/date.proto",
 			"google/foo/nonsense.proto",
 		},
+		nil,
 	)
 	assert.NoError(t, err)
 	assert.Equal(
@@ -103,6 +105,7 @@ func TestGoogleapis(t *testing.T) {
 			"google/type",
 			"google/foo",
 		},
+		nil,
 	)
 	assert.NoError(t, err)
 	assert.Equal(
@@ -156,6 +159,7 @@ func TestGoogleapis(t *testing.T) {
 			"google/type/date.proto",
 			"google/foo/nonsense.proto",
 		},
+		nil,
 	)
 	assert.Equal(t, errors.New(`path "google/foo/nonsense.proto" has no matching file in the image`), err)
 	_, err = bufimage.ImageWithOnlyPaths(
@@ -166,8 +170,47 @@ func TestGoogleapis(t *testing.T) {
 			"google/type/date.proto",
 			"google/foo",
 		},
+		nil,
 	)
 	assert.Equal(t, errors.New(`path "google/foo" has no matching file in the image`), err)
+
+	imageWithPathsAndExcludes, err := bufimage.ImageWithOnlyPaths(
+		image,
+		[]string{
+			"google/type",
+		},
+		[]string{
+			"google/type/calendar_period.proto",
+			"google/type/date.proto",
+		},
+	)
+	assert.NoError(t, err)
+	assert.Equal(t,
+		[]string{
+			"google/protobuf/wrappers.proto",
+			"google/type/color.proto",
+			"google/type/dayofweek.proto",
+			"google/type/expr.proto",
+			"google/type/fraction.proto",
+			"google/type/latlng.proto",
+			"google/type/money.proto",
+			"google/type/postal_address.proto",
+			"google/type/quaternion.proto",
+			"google/type/timeofday.proto",
+		},
+		testGetImageFilePaths(imageWithPathsAndExcludes),
+	)
+
+	excludePaths := []string{
+		"google/type/calendar_period.proto",
+		"google/type/quaternion.proto",
+		"google/type/money.proto",
+		"google/type/color.proto",
+		"google/type/date.proto",
+	}
+	imageWithExcludes, err := bufimage.ImageWithOnlyPaths(image, []string{}, excludePaths)
+	assert.NoError(t, err)
+	testImageWithExcludedFilePaths(t, imageWithExcludes, excludePaths)
 
 	assert.Equal(t, buftesting.NumGoogleapisFilesWithImports, len(image.Files()))
 	// basic check to make sure there is no error at this scale
@@ -328,4 +371,14 @@ func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
 		got[i] = annotation.String()
 	}
 	require.Equal(t, want, got)
+}
+
+func testImageWithExcludedFilePaths(t *testing.T, image bufimage.Image, excludePaths []string) {
+	for _, imageFile := range image.Files() {
+		if !imageFile.IsImport() {
+			for _, excludePath := range excludePaths {
+				assert.False(t, normalpath.EqualsOrContainsPath(excludePath, imageFile.Path(), normalpath.Relative), "paths: %s, %s", imageFile.Path(), excludePath)
+			}
+		}
+	}
 }
