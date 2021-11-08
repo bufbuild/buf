@@ -236,7 +236,7 @@ func ExternalPathsToSubDirRelPaths(
 	//
 	// Alternatively, we could special-case this logic so that we only work with relative paths when we have an ArchiveRef
 	// or GitRef, but this would violate the abstraction boundary for buffetch.
-	externalToAbsExternalDirOrFilePaths := map[string]string{}
+	externalToAbsExternalDirOrFilePaths := make(map[string]string)
 	// We know that if the file is actually buf.work for legacy reasons, this will be wrong,
 	// but we accept that as this shouldn't happen often anymore and this is just
 	// used for error messages.
@@ -255,7 +255,7 @@ func ExternalPathsToSubDirRelPaths(
 	if err != nil {
 		return nil, err
 	}
-	externalToRelativeRootRelPaths := map[string]string{}
+	externalToRelativeRootRelPaths := make(map[string]string)
 	for externalDirOrFilePath, absExternalDirOrFilePath := range externalToAbsExternalDirOrFilePaths {
 		if absRelativeRootPath == absExternalDirOrFilePath {
 			return nil, fmt.Errorf(
@@ -291,7 +291,7 @@ func ExternalPathsToSubDirRelPaths(
 	//
 	// The 'proto' directory will receive the ./proto/buf/... files as ./buf/... whereas the
 	// 'enterprise/proto' directory will have no matching paths.
-	externalToSubDirRelPaths := map[string]string{}
+	externalToSubDirRelPaths := make(map[string]string)
 	for externalDirOrFilePath, relativeRootRelPath := range externalToRelativeRootRelPaths {
 		if subDirPath == relativeRootRelPath {
 			return nil, fmt.Errorf(
