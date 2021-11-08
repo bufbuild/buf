@@ -55,6 +55,7 @@ func (b *moduleBucketBuilder) BuildForBucket(
 		config,
 		buildOptions.moduleIdentity,
 		buildOptions.paths,
+		buildOptions.excludePaths,
 		buildOptions.pathsAllowNotExist,
 	)
 }
@@ -65,6 +66,7 @@ func (b *moduleBucketBuilder) buildForBucket(
 	config *bufmoduleconfig.Config,
 	moduleIdentity bufmoduleref.ModuleIdentity,
 	bucketRelPaths *[]string,
+	excludeRelPaths []string,
 	bucketRelPathsAllowNotExist bool,
 ) (bufmodule.Module, error) {
 	roots := make([]string, 0, len(config.RootToExcludes))
@@ -128,6 +130,7 @@ func (b *moduleBucketBuilder) buildForBucket(
 		module,
 		roots,
 		bucketRelPaths,
+		excludeRelPaths,
 		bucketRelPathsAllowNotExist,
 		normalpath.Relative,
 	)

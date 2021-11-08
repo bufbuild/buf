@@ -1092,7 +1092,7 @@ func TestWorkspaceWithInvalidWorkspaceDirectoryPathFail(t *testing.T) {
 		nil,
 		1,
 		``,
-		`Failure: no .proto target files found`,
+		filepath.FromSlash(`Failure: path does not exist: testdata/workspace/success/dir/notexist`),
 		"lint",
 		filepath.Join("testdata", "workspace", "success", "dir"),
 		"--path",

@@ -50,6 +50,7 @@ type ImageConfigReader interface {
 		ref buffetch.Ref,
 		configOverride string,
 		externalDirOrFilePaths []string,
+		externalExcludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
 	) ([]ImageConfig, []bufanalysis.FileAnnotation, error)
@@ -95,6 +96,7 @@ type ModuleConfigReader interface {
 		sourceOrModuleRef buffetch.SourceOrModuleRef,
 		configOverride string,
 		externalDirOrFilePaths []string,
+		externalExcludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
 	) ([]ModuleConfig, error)
 }
@@ -157,6 +159,7 @@ type ImageReader interface {
 		container app.EnvStdinContainer,
 		imageRef buffetch.ImageRef,
 		externalDirOrFilePaths []string,
+		externalExcludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
 	) (bufimage.Image, error)
