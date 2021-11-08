@@ -16,6 +16,7 @@ package bufmodule
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -120,6 +121,7 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 			// this means we do not have to do the expensive O(sourceReadBucketSize) operation
 			// to check to see if each file is within a potential directory path.
 			if !m.pathsAllowNotExistOnWalk {
+				foundPathSentinelError := errors.New("sentinel")
 				for _, excludePath := range m.excludePaths {
 					var foundPath bool
 					if walkErr := sourceReadBucket.Walk(
@@ -128,12 +130,13 @@ func (m *targetingModule) TargetFileInfos(ctx context.Context) (fileInfos []bufm
 						func(objectInfo storage.ObjectInfo) error {
 							if normalpath.EqualsOrContainsPath(excludePath, objectInfo.Path(), normalpath.Relative) {
 								foundPath = true
-								// TODO: should we return a custom error here and catch that error to "break"
-								// the walk early if a path is found.
+								// We return early using the sentinel error here, since we don't need to do
+								// the rest of the walk if the path is found.
+								return foundPathSentinelError
 							}
 							return nil
 						},
-					); walkErr != nil {
+					); walkErr != nil && !errors.Is(walkErr, foundPathSentinelError) {
 						return nil, walkErr
 					}
 					if !foundPath {
