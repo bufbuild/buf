@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- Add `--exclude-path` flag to `buf generate` command. This allows users to exclude specific paths when running `buf generate`.
+
 ## [v1.0.0-rc7] - 2021-11-08
 
 - Upgrade to `protoc` 3.19.1 support.
@@ -578,6 +582,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc7...HEAD
 [v1.0.0-rc7]: https://github.com/bufbuild/buf/compare/v1.0.0-rc6...v1.0.0-rc7
 [v1.0.0-rc6]: https://github.com/bufbuild/buf/compare/v1.0.0-rc5...v1.0.0-rc6
 [v1.0.0-rc5]: https://github.com/bufbuild/buf/compare/v1.0.0-rc4...v1.0.0-rc5
