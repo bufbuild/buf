@@ -260,8 +260,7 @@ message Message {
   // file_path is the normalized path of the file containing the message.
   string file_path = 5;
   bool is_map_entry = 6;
-  repeated Field fields = 7;
-  repeated OneOf oneofs = 10;
+  repeated MessageField fields = 7;
   Location location = 8;
   repeated Field message_extensions = 9;
 }
@@ -309,6 +308,13 @@ message OneOf {
   string name = 1;
   // the fields that are part of the oneof
   repeated Field fields = 2;
+}
+
+message MessageField {
+  oneof message_field {
+    Field field = 1;
+    OneOf oneof = 2;
+  }
 }
 
 // FileExtension provides the information for the documentation of a file extension.
