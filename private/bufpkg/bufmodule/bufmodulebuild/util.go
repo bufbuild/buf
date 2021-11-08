@@ -45,9 +45,9 @@ func applyModulePaths(
 	}
 	if fileOrDirPaths == nil {
 		if fileOrDirPathsAllowNotExist {
-			return bufmodule.ModuleWithOnlyExcludePathsAllowNotExist(module, excludePaths)
+			return bufmodule.ModuleWithExcludePathsAllowNotExist(module, excludePaths)
 		}
-		return bufmodule.ModuleWithOnlyExcludePaths(module, excludePaths)
+		return bufmodule.ModuleWithExcludePaths(module, excludePaths)
 	}
 	targetPaths, err := pathsToTargetPaths(roots, *fileOrDirPaths, pathType)
 	if err != nil {

@@ -62,7 +62,7 @@ func (m *moduleConfigReader) GetModuleConfigs(
 	sourceOrModuleRef buffetch.SourceOrModuleRef,
 	configOverride string,
 	externalDirOrFilePaths []string,
-	excludeDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) ([]ModuleConfig, error) {
 	ctx, span := trace.StartSpan(ctx, "get_module_config")
@@ -78,7 +78,7 @@ func (m *moduleConfigReader) GetModuleConfigs(
 			workspaceBuilder,
 			configOverride,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 	case buffetch.SourceRef:
@@ -89,7 +89,7 @@ func (m *moduleConfigReader) GetModuleConfigs(
 			workspaceBuilder,
 			configOverride,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 	case buffetch.ModuleRef:
@@ -99,7 +99,7 @@ func (m *moduleConfigReader) GetModuleConfigs(
 			t,
 			configOverride,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 		if err != nil {
@@ -120,7 +120,7 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 	workspaceBuilder bufwork.WorkspaceBuilder,
 	configOverride string,
 	externalDirOrFilePaths []string,
-	excludeDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (_ []ModuleConfig, retErr error) {
 	readBucketCloser, err := m.fetchReader.GetSourceBucket(ctx, container, sourceRef)
@@ -144,7 +144,7 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 			readBucketCloser.SubDirPath(),
 			configOverride,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 	}
@@ -159,7 +159,7 @@ func (m *moduleConfigReader) getSourceModuleConfigs(
 		nil,
 		nil,
 		externalDirOrFilePaths,
-		excludeDirOrFilePaths,
+		externalExcludeDirOrFilePaths,
 		externalDirOrFilePathsAllowNotExist,
 	)
 	if err != nil {
@@ -176,7 +176,7 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 	moduleRef buffetch.ModuleRef,
 	configOverride string,
 	externalDirOrFilePaths []string,
-	excludeDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (_ ModuleConfig, retErr error) {
 	module, err := m.fetchReader.GetModule(ctx, container, moduleRef)
@@ -192,8 +192,8 @@ func (m *moduleConfigReader) getModuleModuleConfig(
 			}
 			targetPaths[i] = targetPath
 		}
-		excludePaths := make([]string, len(excludeDirOrFilePaths))
-		for i, excludeDirOrFilePath := range excludeDirOrFilePaths {
+		excludePaths := make([]string, len(externalExcludeDirOrFilePaths))
+		for i, excludeDirOrFilePath := range externalExcludeDirOrFilePaths {
 			excludePath, err := moduleRef.PathForExternalPath(excludeDirOrFilePath)
 			if err != nil {
 				return nil, err
@@ -239,7 +239,7 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 	workspaceBuilder bufwork.WorkspaceBuilder,
 	configOverride string,
 	externalDirOrFilePaths []string,
-	excludeDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (_ []ModuleConfig, retErr error) {
 	readBucketCloser, err := m.fetchReader.GetSourceBucket(ctx, container, protoFileRef)
@@ -294,7 +294,7 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 			readBucketCloser.SubDirPath(),
 			configOverride,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 	}
@@ -309,7 +309,7 @@ func (m *moduleConfigReader) getProtoFileModuleSourceConfigs(
 		nil,
 		nil,
 		externalDirOrFilePaths,
-		excludeDirOrFilePaths,
+		externalExcludeDirOrFilePaths,
 		externalDirOrFilePathsAllowNotExist,
 	)
 	if err != nil {
@@ -329,7 +329,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	subDirPath string,
 	configOverride string,
 	externalDirOrFilePaths []string,
-	excludeDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) ([]ModuleConfig, error) {
 	workspaceConfig, err := bufwork.GetConfigForBucket(ctx, readBucket, relativeRootPath)
@@ -347,7 +347,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 			subDirPath,
 			configOverride,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 		if err != nil {
@@ -364,7 +364,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 			workspaceConfig,
 			workspace,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 		if err != nil {
@@ -381,15 +381,17 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	// We need to first get the map of externalDirOrFilePath to subDirRelPath and the map
 	// of excludeDirOrFilePath to subDirRelExcludePath so we can check that all paths that
 	// have been provided at the top level have been accounted for across the workspace.
-	externalToRelPaths := map[string]string{}
-	excludeToRelPaths := map[string]string{}
+	externalPathToRelPaths := make(map[string]string)
+	externalExcludePathToRelPaths := make(map[string]string)
 	for _, directory := range workspaceConfig.Directories {
-		// We are unfortunately doing this work twice, once at the top level here, and when we
-		// build each workspace for the build options. We need to do the work at this level because
-		// we need to check across all workspaces once.
-		// We need to do the work again for each workspace build because a module can span across
+		// We are unfortunately adding this logic in two difference places, once at the top level
+		// here, and when we build each workspace for the build options. We need to do the work
+		// at this level because we need to check across all workspaces once.
+		// We need the same logic again for each workspace build because a module can span across
 		// several workspaces.
-		externalToSubDirRelPaths, err := bufwork.ExternalPathsToSubDirRelPaths(
+		// That being said, the work will be done once, since the module build may be cached as
+		// as a dependency via bufwork.BuildWorkspace, so the module will always be built once.
+		externalPathToSubDirRelPaths, err := bufwork.ExternalPathsToSubDirRelPaths(
 			relativeRootPath,
 			directory,
 			externalDirOrFilePaths,
@@ -397,19 +399,19 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 		if err != nil {
 			return nil, err
 		}
-		excludeToSubDirRelExcludePaths, err := bufwork.ExternalPathsToSubDirRelPaths(
+		externalExcludeToSubDirRelExcludePaths, err := bufwork.ExternalPathsToSubDirRelPaths(
 			relativeRootPath,
 			directory,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 		)
 		if err != nil {
 			return nil, err
 		}
-		for externalFileOrDirPath, subDirRelPath := range externalToSubDirRelPaths {
-			externalToRelPaths[externalFileOrDirPath] = subDirRelPath
+		for externalFileOrDirPath, subDirRelPath := range externalPathToSubDirRelPaths {
+			externalPathToRelPaths[externalFileOrDirPath] = subDirRelPath
 		}
-		for excludeFileOrDirPath, subDirRelExcludePath := range excludeToSubDirRelExcludePaths {
-			excludeToRelPaths[excludeFileOrDirPath] = subDirRelExcludePath
+		for excludeFileOrDirPath, subDirRelExcludePath := range externalExcludeToSubDirRelExcludePaths {
+			externalExcludePathToRelPaths[excludeFileOrDirPath] = subDirRelExcludePath
 		}
 		workspace, err := workspaceBuilder.BuildWorkspace(
 			ctx,
@@ -419,7 +421,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 			directory,
 			configOverride,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 		if err != nil {
@@ -436,7 +438,7 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 			workspaceConfig,
 			workspace,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 		if err != nil {
@@ -447,12 +449,12 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 	// This is only a requirement if we do not allow paths to not exist.
 	if !externalDirOrFilePathsAllowNotExist {
 		for _, externalDirOrFilePath := range externalDirOrFilePaths {
-			if _, ok := externalToRelPaths[externalDirOrFilePath]; !ok {
+			if _, ok := externalPathToRelPaths[externalDirOrFilePath]; !ok {
 				return nil, fmt.Errorf("path does not exist: %s", externalDirOrFilePath)
 			}
 		}
-		for _, excludeDirOrFilePath := range excludeDirOrFilePaths {
-			if _, ok := excludeToRelPaths[excludeDirOrFilePath]; !ok {
+		for _, excludeDirOrFilePath := range externalExcludeDirOrFilePaths {
+			if _, ok := externalExcludePathToRelPaths[excludeDirOrFilePath]; !ok {
 				return nil, fmt.Errorf("path does not exist: %s", excludeDirOrFilePath)
 			}
 		}
@@ -471,7 +473,7 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 	workspaceConfig *bufwork.Config,
 	workspace bufmodule.Workspace,
 	externalDirOrFilePaths []string,
-	excludeDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (ModuleConfig, error) {
 	moduleConfig, err := m.getModuleConfig(
@@ -485,7 +487,7 @@ func (m *moduleConfigReader) getSourceModuleConfig(
 		workspaceConfig,
 		workspace,
 		externalDirOrFilePaths,
-		excludeDirOrFilePaths,
+		externalExcludeDirOrFilePaths,
 		externalDirOrFilePathsAllowNotExist,
 	)
 	if err != nil {
@@ -516,7 +518,7 @@ func (m *moduleConfigReader) getModuleConfig(
 	workspaceConfig *bufwork.Config,
 	workspace bufmodule.Workspace,
 	externalDirOrFilePaths []string,
-	excludeDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (ModuleConfig, error) {
 	if module, moduleConfig, ok := workspaceBuilder.GetModuleConfig(subDirPath); ok {
@@ -577,7 +579,7 @@ func (m *moduleConfigReader) getModuleConfig(
 			// if we determined the bucketRelPath from the sourceRef, the bucketRelPath would be equal
 			// to ./buf/... which is ambiguous to the workspace directories ('proto' and 'enterprise/proto'
 			// in this case).
-			externalToSubDirRelPaths, err := bufwork.ExternalPathsToSubDirRelPaths(
+			externalPathToSubDirRelPaths, err := bufwork.ExternalPathsToSubDirRelPaths(
 				relativeRootPath,
 				subDirPath,
 				externalDirOrFilePaths,
@@ -585,20 +587,20 @@ func (m *moduleConfigReader) getModuleConfig(
 			if err != nil {
 				return nil, err
 			}
-			excludeToSubDirRelExcludePaths, err := bufwork.ExternalPathsToSubDirRelPaths(
+			externalExcludeToSubDirRelExcludePaths, err := bufwork.ExternalPathsToSubDirRelPaths(
 				relativeRootPath,
 				subDirPath,
-				excludeDirOrFilePaths,
+				externalExcludeDirOrFilePaths,
 			)
 			if err != nil {
 				return nil, err
 			}
-			subDirRelPaths := make([]string, 0, len(externalToSubDirRelPaths))
-			for _, subDirRelPath := range externalToSubDirRelPaths {
+			subDirRelPaths := make([]string, 0, len(externalPathToSubDirRelPaths))
+			for _, subDirRelPath := range externalPathToSubDirRelPaths {
 				subDirRelPaths = append(subDirRelPaths, subDirRelPath)
 			}
-			subDirRelExcludePaths := make([]string, 0, len(excludeToSubDirRelExcludePaths))
-			for _, subDirRelExcludePath := range excludeToSubDirRelExcludePaths {
+			subDirRelExcludePaths := make([]string, 0, len(externalExcludeToSubDirRelExcludePaths))
+			for _, subDirRelExcludePath := range externalExcludeToSubDirRelExcludePaths {
 				subDirRelExcludePaths = append(subDirRelExcludePaths, subDirRelExcludePath)
 			}
 			buildOptions, err = bufwork.BuildOptionsForWorkspaceDirectory(
@@ -606,7 +608,7 @@ func (m *moduleConfigReader) getModuleConfig(
 				workspaceConfig,
 				moduleConfig,
 				externalDirOrFilePaths,
-				excludeDirOrFilePaths,
+				externalExcludeDirOrFilePaths,
 				subDirRelPaths,
 				subDirRelExcludePaths,
 				externalDirOrFilePathsAllowNotExist,
@@ -640,9 +642,9 @@ func (m *moduleConfigReader) getModuleConfig(
 			}
 		}
 	}
-	if len(excludeDirOrFilePaths) > 0 {
-		bucketRelPaths := make([]string, len(excludeDirOrFilePaths))
-		for i, excludeDirOrFilePath := range excludeDirOrFilePaths {
+	if len(externalExcludeDirOrFilePaths) > 0 {
+		bucketRelPaths := make([]string, len(externalExcludeDirOrFilePaths))
+		for i, excludeDirOrFilePath := range externalExcludeDirOrFilePaths {
 			bucketRelPath, err := sourceRef.PathForExternalPath(excludeDirOrFilePath)
 			if err != nil {
 				return nil, err

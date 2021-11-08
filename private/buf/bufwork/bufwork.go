@@ -107,7 +107,7 @@ type WorkspaceBuilder interface {
 		targetSubDirPath string,
 		configOverride string,
 		externalDirOrFilePaths []string,
-		excludeDirOrFilePaths []string,
+		externalExcludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
 	) (bufmodule.Workspace, error)
 
@@ -128,14 +128,14 @@ func NewWorkspaceBuilder(
 //
 // The subDirRelPaths are the relative paths of the externalDirOrFilePaths that map to the
 // provided subDirPath.
-// The subDirRelExcludePaths are the relative paths of the excludeDirOrFilePaths that map to the
+// The subDirRelExcludePaths are the relative paths of the externalExcludeDirOrFilePaths that map to the
 // provided subDirPath.
 func BuildOptionsForWorkspaceDirectory(
 	ctx context.Context,
 	workspaceConfig *Config,
 	moduleConfig *bufconfig.Config,
 	externalDirOrFilePaths []string,
-	excludeDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	subDirRelPaths []string,
 	subDirRelExcludePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
@@ -148,7 +148,7 @@ func BuildOptionsForWorkspaceDirectory(
 		// Managed Mode, which supports module-specific overrides.
 		bufmodulebuild.WithModuleIdentity(moduleConfig.ModuleIdentity),
 	}
-	if len(externalDirOrFilePaths) == 0 && len(excludeDirOrFilePaths) == 0 {
+	if len(externalDirOrFilePaths) == 0 && len(externalExcludeDirOrFilePaths) == 0 {
 		return buildOptions, nil
 	}
 	if len(externalDirOrFilePaths) > 0 {
@@ -161,7 +161,7 @@ func BuildOptionsForWorkspaceDirectory(
 			buildOptions = append(buildOptions, bufmodulebuild.WithPaths(subDirRelPaths))
 		}
 	}
-	if len(excludeDirOrFilePaths) > 0 {
+	if len(externalExcludeDirOrFilePaths) > 0 {
 		// Same as above, subDirRelExcludepaths can be empty. If so, this represents the case
 		// where excludes were provided by were not matched.
 		if externalDirOrFilePathsAllowNotExist {

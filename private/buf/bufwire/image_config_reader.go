@@ -77,7 +77,7 @@ func (i *imageConfigReader) GetImageConfigs(
 	ref buffetch.Ref,
 	configOverride string,
 	externalDirOrFilePaths []string,
-	excludeDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) ([]ImageConfig, []bufanalysis.FileAnnotation, error) {
@@ -89,7 +89,7 @@ func (i *imageConfigReader) GetImageConfigs(
 			t,
 			configOverride,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
 		)
@@ -101,7 +101,7 @@ func (i *imageConfigReader) GetImageConfigs(
 			t,
 			configOverride,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
 		)
@@ -112,7 +112,7 @@ func (i *imageConfigReader) GetImageConfigs(
 			t,
 			configOverride,
 			externalDirOrFilePaths,
-			excludeDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
 			externalDirOrFilePathsAllowNotExist,
 			excludeSourceCodeInfo,
 		)
@@ -127,7 +127,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 	sourceOrModuleRef buffetch.SourceOrModuleRef,
 	configOverride string,
 	externalDirOrFilePaths []string,
-	excludeDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) ([]ImageConfig, []bufanalysis.FileAnnotation, error) {
@@ -137,7 +137,7 @@ func (i *imageConfigReader) getSourceOrModuleImageConfigs(
 		sourceOrModuleRef,
 		configOverride,
 		externalDirOrFilePaths,
-		excludeDirOrFilePaths,
+		externalExcludeDirOrFilePaths,
 		externalDirOrFilePathsAllowNotExist,
 	)
 	if err != nil {
@@ -200,7 +200,7 @@ func (i *imageConfigReader) getImageImageConfig(
 	imageRef buffetch.ImageRef,
 	configOverride string,
 	externalDirOrFilePaths []string,
-	excludeDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 	excludeSourceCodeInfo bool,
 ) (_ ImageConfig, retErr error) {
@@ -209,7 +209,7 @@ func (i *imageConfigReader) getImageImageConfig(
 		container,
 		imageRef,
 		externalDirOrFilePaths,
-		excludeDirOrFilePaths,
+		externalExcludeDirOrFilePaths,
 		externalDirOrFilePathsAllowNotExist,
 		excludeSourceCodeInfo,
 	)

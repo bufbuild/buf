@@ -2,4 +2,3 @@ version: v1
 plugins:
   - name: java
     out: java
-

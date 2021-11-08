@@ -179,24 +179,24 @@ func ModuleWithTargetPathsAllowNotExist(
 	return newTargetingModule(module, targetPaths, excludePaths, true)
 }
 
-// ModuleWithOnlyExcludePaths returns a new Module that excludes specific file or directory
+// ModuleWithExcludePaths returns a new Module that excludes specific file or directory
 // paths to build.
 //
 // Note that this will result in TargetFileInfos containing only the paths that have not been
 // excluded and any imports. Imports are still available via SourceFileInfos.
-func ModuleWithOnlyExcludePaths(
+func ModuleWithExcludePaths(
 	module Module,
 	excludePaths []string,
 ) (Module, error) {
 	return newTargetingModule(module, nil, excludePaths, false)
 }
 
-// ModuleWithOnlyExcludePathsAllowNotExist returns a new Module that excludes specific file or
+// ModuleWithExcludePathsAllowNotExist returns a new Module that excludes specific file or
 // directory paths to build, but allows the specified paths to not exist.
 //
 // Note that this will result in TargetFileInfos containing only these paths, and not
 // any imports. Imports, and non-targeted files, are still available via SourceFileInfos.
-func ModuleWithOnlyExcludePathsAllowNotExist(
+func ModuleWithExcludePathsAllowNotExist(
 	module Module,
 	excludePaths []string,
 ) (Module, error) {
