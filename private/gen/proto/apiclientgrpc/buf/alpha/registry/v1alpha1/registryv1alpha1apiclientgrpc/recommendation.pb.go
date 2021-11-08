@@ -89,7 +89,7 @@ func (s *recommendationService) ListRecommendedTemplates(ctx context.Context) (t
 }
 
 // SetRecommendedRepositories set the list of repository recommendations in the server.
-func (s *recommendationService) SetRecommendedRepositories(ctx context.Context, repositories []*v1alpha1.RecommendingRepository) (_ error) {
+func (s *recommendationService) SetRecommendedRepositories(ctx context.Context, repositories []*v1alpha1.SetRecommendedRepository) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -106,7 +106,7 @@ func (s *recommendationService) SetRecommendedRepositories(ctx context.Context, 
 }
 
 // SetRecommendedTemplates set the list of template recommendations in the server.
-func (s *recommendationService) SetRecommendedTemplates(ctx context.Context, templates []*v1alpha1.RecommendingTemplate) (_ error) {
+func (s *recommendationService) SetRecommendedTemplates(ctx context.Context, templates []*v1alpha1.SetRecommendedTemplate) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}

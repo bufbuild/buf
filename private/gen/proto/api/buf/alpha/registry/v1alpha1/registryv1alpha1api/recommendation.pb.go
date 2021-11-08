@@ -32,7 +32,7 @@ type RecommendationService interface {
 	// ListRecommendedTemplates returns a list of recommended templates that user have access to.
 	ListRecommendedTemplates(ctx context.Context) (templates []*v1alpha1.RecommendedTemplate, err error)
 	// SetRecommendedRepositories set the list of repository recommendations in the server.
-	SetRecommendedRepositories(ctx context.Context, repositories []*v1alpha1.RecommendingRepository) (err error)
+	SetRecommendedRepositories(ctx context.Context, repositories []*v1alpha1.SetRecommendedRepository) (err error)
 	// SetRecommendedTemplates set the list of template recommendations in the server.
-	SetRecommendedTemplates(ctx context.Context, templates []*v1alpha1.RecommendingTemplate) (err error)
+	SetRecommendedTemplates(ctx context.Context, templates []*v1alpha1.SetRecommendedTemplate) (err error)
 }

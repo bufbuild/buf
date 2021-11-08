@@ -37,14 +37,14 @@ message RecommendedTemplate {
   string template_id = 4;
 }
 
-// RecommendingRepository is the information needed to configure a repository recommendation
-message RecommendingRepository {
+// SetRecommendedRepository is the information needed to configure a repository recommendation
+message SetRecommendedRepository {
   string repository_id = 1;
   string description = 2;
 }
 
-// RecommendingTemplate is the information needed to configure a template recommendation
-message RecommendingTemplate {
+// SetRecommendedTemplate is the information needed to configure a template recommendation
+message SetRecommendedTemplate {
   string template_id = 1;
   string description = 2;
 }
@@ -90,13 +90,13 @@ message ListRecommendedTemplatesResponse {
 }
 
 message SetRecommendedRepositoriesRequest {
-  repeated RecommendingRepository repositories = 1;
+  repeated SetRecommendedRepository repositories = 1;
 }
 
 message SetRecommendedRepositoriesResponse {}
 
 message SetRecommendedTemplatesRequest {
-  repeated RecommendingTemplate templates = 1;
+  repeated SetRecommendedTemplate templates = 1;
 }
 
 message SetRecommendedTemplatesResponse {}
