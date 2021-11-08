@@ -96,6 +96,14 @@ ifeq ($(UNAME_OS)/$(UNAME_ARCH),Darwin/arm64)
 export DOCKER_DEFAULT_PLATFORM=linux/arm64
 endif
 
+# https://gist.github.com/prwhite/8168133#gistcomment-3785627
+HELP_COLUMN_SIZE := 20
+
+.PHONY: help
+help: ## Show help message.
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n\n\033[36m\033[0m"} /^[$$()% 0-9a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-$(HELP_COLUMN_SIZE)s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+
 print-%:
 	@echo $($*)
 
@@ -133,7 +141,7 @@ endif
 	@echo $(CACHE_ENV)/env.sh
 
 .PHONY: clean
-clean:
+clean: ## Run git clean with proper ignores.
 	git clean -xdf -e /$(ENV_DIR)/
 
 .PHONY: cleancache
@@ -170,7 +178,7 @@ postgenerate::
 licensegenerate::
 
 .PHONY: generate
-generate:
+generate: ## Run all generation steps.
 	@$(MAKE) preinstallgenerate
 	@$(MAKE) pregenerate
 	@$(MAKE) prepostgenerate
@@ -193,7 +201,7 @@ preupgrade::
 postupgrade::
 
 .PHONY: upgrade
-upgrade:
+upgrade: ## Upgrade all dependencies.
 	@$(MAKE) preupgrade
 	@$(MAKE) generate
 	@$(MAKE) postupgrade
