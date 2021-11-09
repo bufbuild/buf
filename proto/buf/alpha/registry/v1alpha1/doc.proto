@@ -82,15 +82,16 @@ message GetModulePackagesRequest {
   string reference = 3;
 }
 
-// GetModulePackagesResponse returns the ModulePackages for the requested module.
+// GetModulePackagesResponse returns the list of ModulePackages for the requested module.
 message GetModulePackagesResponse {
-  ModulePackages module_packages = 1;
+  string name = 1;
+  repeated ModulePackage module_packages = 2;
 }
 
-// ModulePackages provides the name of the module and associated packages.
-message ModulePackages {
+// ModulePackage provides the details about a module's associated package.
+message ModulePackage {
   string name = 1;
-  repeated string packages = 2;
+  string description = 2;
 }
 
 // GetModuleDocumentationRequest takes an owner, repository, and reference.

@@ -90,7 +90,7 @@ func (s *docService) GetModulePackages(
 	owner string,
 	repository string,
 	reference string,
-) (modulePackages *v1alpha1.ModulePackages, _ error) {
+) (name string, modulePackages []*v1alpha1.ModulePackage, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -103,9 +103,9 @@ func (s *docService) GetModulePackages(
 		},
 	)
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
-	return response.ModulePackages, nil
+	return response.Name, response.ModulePackages, nil
 }
 
 // GetModuleDocumentation retrieves the documentation for module based on the given
