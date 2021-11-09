@@ -1516,7 +1516,7 @@ type Message struct {
 	Fields            []*Field  `protobuf:"bytes,7,rep,name=fields,proto3" json:"fields,omitempty"`
 	Location          *Location `protobuf:"bytes,8,opt,name=location,proto3" json:"location,omitempty"`
 	MessageExtensions []*Field  `protobuf:"bytes,9,rep,name=message_extensions,json=messageExtensions,proto3" json:"message_extensions,omitempty"`
-	Oneofs            []*OneOf  `protobuf:"bytes,10,rep,name=oneofs,proto3" json:"oneofs,omitempty"`
+	Oneofs            []*Oneof  `protobuf:"bytes,10,rep,name=oneofs,proto3" json:"oneofs,omitempty"`
 }
 
 func (x *Message) Reset() {
@@ -1614,7 +1614,7 @@ func (x *Message) GetMessageExtensions() []*Field {
 	return nil
 }
 
-func (x *Message) GetOneofs() []*OneOf {
+func (x *Message) GetOneofs() []*Oneof {
 	if x != nil {
 		return x.Oneofs
 	}
@@ -1822,8 +1822,8 @@ func (x *MapEntry) GetValueImportModuleRef() *ImportModuleRef {
 	return nil
 }
 
-// OneOf represents a oneof field in a message.
-type OneOf struct {
+// Oneof represents a oneof field in a message.
+type Oneof struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -1833,8 +1833,8 @@ type OneOf struct {
 	Fields []*Field `protobuf:"bytes,2,rep,name=fields,proto3" json:"fields,omitempty"`
 }
 
-func (x *OneOf) Reset() {
-	*x = OneOf{}
+func (x *Oneof) Reset() {
+	*x = Oneof{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1842,13 +1842,13 @@ func (x *OneOf) Reset() {
 	}
 }
 
-func (x *OneOf) String() string {
+func (x *Oneof) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*OneOf) ProtoMessage() {}
+func (*Oneof) ProtoMessage() {}
 
-func (x *OneOf) ProtoReflect() protoreflect.Message {
+func (x *Oneof) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1860,19 +1860,19 @@ func (x *OneOf) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OneOf.ProtoReflect.Descriptor instead.
-func (*OneOf) Descriptor() ([]byte, []int) {
+// Deprecated: Use Oneof.ProtoReflect.Descriptor instead.
+func (*Oneof) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_doc_proto_rawDescGZIP(), []int{24}
 }
 
-func (x *OneOf) GetName() string {
+func (x *Oneof) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *OneOf) GetFields() []*Field {
+func (x *Oneof) GetFields() []*Field {
 	if x != nil {
 		return x.Fields
 	}
@@ -2205,7 +2205,7 @@ var file_buf_alpha_registry_v1alpha1_doc_proto_rawDesc = []byte{
 	0x6f, 0x6e, 0x73, 0x12, 0x3a, 0x0a, 0x06, 0x6f, 0x6e, 0x65, 0x6f, 0x66, 0x73, 0x18, 0x0a, 0x20,
 	0x03, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e,
 	0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61,
-	0x31, 0x2e, 0x4f, 0x6e, 0x65, 0x4f, 0x66, 0x52, 0x06, 0x6f, 0x6e, 0x65, 0x6f, 0x66, 0x73, 0x22,
+	0x31, 0x2e, 0x4f, 0x6e, 0x65, 0x6f, 0x66, 0x52, 0x06, 0x6f, 0x6e, 0x65, 0x6f, 0x66, 0x73, 0x22,
 	0xdd, 0x02, 0x0a, 0x05, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d,
 	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a,
 	0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01,
@@ -2243,7 +2243,7 @@ var file_buf_alpha_registry_v1alpha1_doc_proto_rawDesc = []byte{
 	0x68, 0x61, 0x31, 0x2e, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65,
 	0x52, 0x65, 0x66, 0x52, 0x14, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x49, 0x6d, 0x70, 0x6f, 0x72, 0x74,
 	0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65, 0x52, 0x65, 0x66, 0x22, 0x57, 0x0a, 0x05, 0x4f, 0x6e, 0x65,
-	0x4f, 0x66, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x6f, 0x66, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x3a, 0x0a, 0x06, 0x66, 0x69, 0x65, 0x6c, 0x64, 0x73,
 	0x18, 0x02, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70,
 	0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c,
@@ -2367,7 +2367,7 @@ var file_buf_alpha_registry_v1alpha1_doc_proto_goTypes = []interface{}{
 	(*Message)(nil),                         // 21: buf.alpha.registry.v1alpha1.Message
 	(*Field)(nil),                           // 22: buf.alpha.registry.v1alpha1.Field
 	(*MapEntry)(nil),                        // 23: buf.alpha.registry.v1alpha1.MapEntry
-	(*OneOf)(nil),                           // 24: buf.alpha.registry.v1alpha1.OneOf
+	(*Oneof)(nil),                           // 24: buf.alpha.registry.v1alpha1.Oneof
 	(*FileExtension)(nil),                   // 25: buf.alpha.registry.v1alpha1.FileExtension
 }
 var file_buf_alpha_registry_v1alpha1_doc_proto_depIdxs = []int32{
@@ -2391,11 +2391,11 @@ var file_buf_alpha_registry_v1alpha1_doc_proto_depIdxs = []int32{
 	22, // 17: buf.alpha.registry.v1alpha1.Message.fields:type_name -> buf.alpha.registry.v1alpha1.Field
 	14, // 18: buf.alpha.registry.v1alpha1.Message.location:type_name -> buf.alpha.registry.v1alpha1.Location
 	22, // 19: buf.alpha.registry.v1alpha1.Message.message_extensions:type_name -> buf.alpha.registry.v1alpha1.Field
-	24, // 20: buf.alpha.registry.v1alpha1.Message.oneofs:type_name -> buf.alpha.registry.v1alpha1.OneOf
+	24, // 20: buf.alpha.registry.v1alpha1.Message.oneofs:type_name -> buf.alpha.registry.v1alpha1.Oneof
 	23, // 21: buf.alpha.registry.v1alpha1.Field.map_entry:type_name -> buf.alpha.registry.v1alpha1.MapEntry
 	20, // 22: buf.alpha.registry.v1alpha1.Field.import_module_ref:type_name -> buf.alpha.registry.v1alpha1.ImportModuleRef
 	20, // 23: buf.alpha.registry.v1alpha1.MapEntry.value_import_module_ref:type_name -> buf.alpha.registry.v1alpha1.ImportModuleRef
-	22, // 24: buf.alpha.registry.v1alpha1.OneOf.fields:type_name -> buf.alpha.registry.v1alpha1.Field
+	22, // 24: buf.alpha.registry.v1alpha1.Oneof.fields:type_name -> buf.alpha.registry.v1alpha1.Field
 	14, // 25: buf.alpha.registry.v1alpha1.FileExtension.location:type_name -> buf.alpha.registry.v1alpha1.Location
 	22, // 26: buf.alpha.registry.v1alpha1.FileExtension.fields:type_name -> buf.alpha.registry.v1alpha1.Field
 	0,  // 27: buf.alpha.registry.v1alpha1.DocService.GetSourceDirectoryInfo:input_type -> buf.alpha.registry.v1alpha1.GetSourceDirectoryInfoRequest
@@ -2710,7 +2710,7 @@ func file_buf_alpha_registry_v1alpha1_doc_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_doc_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*OneOf); i {
+			switch v := v.(*Oneof); i {
 			case 0:
 				return &v.state
 			case 1:
