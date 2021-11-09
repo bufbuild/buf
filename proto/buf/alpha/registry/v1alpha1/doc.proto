@@ -262,9 +262,9 @@ message Message {
   string file_path = 5;
   bool is_map_entry = 6;
   repeated Field fields = 7;
-  repeated OneOf oneofs = 10;
   Location location = 8;
   repeated Field message_extensions = 9;
+  repeated OneOf oneofs = 10;
 }
 
 // Field provides information for the documentation of a message field.
