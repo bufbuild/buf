@@ -372,7 +372,7 @@ func testCompareGeneratedStubs(
 		runner,
 		actualReadWriteBucket,
 		bufReadWriteBucket,
-		storage.DiffWithTransform(transformProtocVersionToUnknown(t)),
+		transformProtocVersionToUnknown(t),
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))
@@ -458,7 +458,7 @@ func testCompareGeneratedStubsArchive(
 		runner,
 		actualReadWriteBucket,
 		bufReadWriteBucket,
-		storage.DiffWithTransform(transformProtocVersionToUnknown(t)),
+		transformProtocVersionToUnknown(t),
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))
@@ -522,13 +522,13 @@ type testPluginInfo struct {
 	opt  string
 }
 
-func transformProtocVersionToUnknown(t *testing.T) func(string, string, []byte) []byte {
+func transformProtocVersionToUnknown(t *testing.T) storage.DiffOption {
 	protocVersion, err := prototesting.GetProtocVersion(context.Background())
 	require.NoError(t, err)
-	return func(side, _ string, content []byte) []byte {
+	return storage.DiffWithTransform(func(side, _ string, content []byte) []byte {
 		if side != "one" {
 			return content
 		}
 		return bytes.ReplaceAll(content, []byte("v"+protocVersion), []byte("(unknown)"))
-	}
+	})
 }
