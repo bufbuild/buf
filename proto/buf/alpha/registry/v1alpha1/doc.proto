@@ -264,7 +264,7 @@ message Message {
   repeated Field fields = 7;
   Location location = 8;
   repeated Field message_extensions = 9;
-  repeated OneOf oneofs = 10;
+  repeated Oneof oneofs = 10;
 }
 
 // Field provides information for the documentation of a message field.
@@ -305,8 +305,8 @@ message MapEntry {
   ImportModuleRef value_import_module_ref = 4;
 }
 
-// OneOf represents a oneof field in a message.
-message OneOf {
+// Oneof represents a oneof field in a message.
+message Oneof {
   string name = 1;
   // the fields that are part of the oneof
   repeated Field fields = 2;
