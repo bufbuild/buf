@@ -50,7 +50,7 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistFileOnly(b *testing.B) {
 	require.NoError(b, err)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		newImage, err := bufimage.ImageWithOnlyPathsAllowNotExist(image, []string{"a1.proto/a1.proto"})
+		newImage, err := bufimage.ImageWithOnlyPathsAllowNotExist(image, []string{"a1.proto/a1.proto"}, nil)
 		// this does increase the time but we're just looking for order of magnitude
 		// between this and the below benchmark function
 		require.NoError(b, err)
@@ -82,7 +82,7 @@ func BenchmarkNewImageWithOnlyPathsAllowNotExistDirOnly(b *testing.B) {
 	require.NoError(b, err)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		newImage, err := bufimage.ImageWithOnlyPathsAllowNotExist(image, []string{"a1.proto"})
+		newImage, err := bufimage.ImageWithOnlyPathsAllowNotExist(image, []string{"a1.proto"}, nil)
 		require.NoError(b, err)
 		require.Equal(b, 1, len(newImage.Files()))
 	}
@@ -227,6 +227,7 @@ func TestBasic(t *testing.T) {
 			"b/a.proto",
 			"a/b.proto",
 		},
+		nil,
 	)
 	require.NoError(t, err)
 	AssertImageFilesEqual(
@@ -247,6 +248,7 @@ func TestBasic(t *testing.T) {
 			"a/b.proto",
 			"foo.proto",
 		},
+		nil,
 	)
 	require.Error(t, err)
 
@@ -257,6 +259,7 @@ func TestBasic(t *testing.T) {
 			"a/b.proto",
 			"foo.proto",
 		},
+		nil,
 	)
 	require.NoError(t, err)
 	AssertImageFilesEqual(
@@ -274,6 +277,7 @@ func TestBasic(t *testing.T) {
 		[]string{
 			"a",
 		},
+		nil,
 	)
 	require.NoError(t, err)
 	AssertImageFilesEqual(
@@ -290,6 +294,7 @@ func TestBasic(t *testing.T) {
 		[]string{
 			"b",
 		},
+		nil,
 	)
 	require.NoError(t, err)
 	AssertImageFilesEqual(
@@ -309,6 +314,7 @@ func TestBasic(t *testing.T) {
 			"a",
 			"b/a.proto",
 		},
+		nil,
 	)
 	require.NoError(t, err)
 	AssertImageFilesEqual(
@@ -328,6 +334,7 @@ func TestBasic(t *testing.T) {
 			"b/a.proto",
 			"c",
 		},
+		nil,
 	)
 	require.Error(t, err)
 	newImage, err = bufimage.ImageWithOnlyPathsAllowNotExist(
@@ -337,6 +344,7 @@ func TestBasic(t *testing.T) {
 			"b/a.proto",
 			"c",
 		},
+		nil,
 	)
 	require.NoError(t, err)
 	AssertImageFilesEqual(
@@ -356,6 +364,7 @@ func TestBasic(t *testing.T) {
 			"b/a.proto",
 			"d/d.proto/d.proto",
 		},
+		nil,
 	)
 	require.NoError(t, err)
 	AssertImageFilesEqual(
@@ -376,6 +385,7 @@ func TestBasic(t *testing.T) {
 			"b/a.proto",
 			"d/d.proto",
 		},
+		nil,
 	)
 	require.NoError(t, err)
 	AssertImageFilesEqual(

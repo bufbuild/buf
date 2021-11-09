@@ -241,6 +241,7 @@ func NewImageForCodeGeneratorRequest(request *pluginpb.CodeGeneratorRequest) (Im
 	return ImageWithOnlyPaths(
 		image,
 		request.GetFileToGenerate(),
+		nil,
 	)
 }
 
@@ -268,8 +269,9 @@ func ImageWithoutImports(image Image) Image {
 func ImageWithOnlyPaths(
 	image Image,
 	paths []string,
+	excludePaths []string,
 ) (Image, error) {
-	return imageWithOnlyPaths(image, paths, false)
+	return imageWithOnlyPaths(image, paths, excludePaths, false)
 }
 
 // ImageWithOnlyPathsAllowNotExist returns a copy of the Image that only includes the files
@@ -282,8 +284,9 @@ func ImageWithOnlyPaths(
 func ImageWithOnlyPathsAllowNotExist(
 	image Image,
 	paths []string,
+	excludePaths []string,
 ) (Image, error) {
-	return imageWithOnlyPaths(image, paths, true)
+	return imageWithOnlyPaths(image, paths, excludePaths, true)
 }
 
 // ImageByDir returns multiple images that have non-imports split
@@ -314,7 +317,7 @@ func ImageByDir(image Image) ([]Image, error) {
 			// this should never happen
 			return nil, fmt.Errorf("no dir for %q in dirToPaths", dir)
 		}
-		newImage, err := ImageWithOnlyPaths(image, paths)
+		newImage, err := ImageWithOnlyPaths(image, paths, nil)
 		if err != nil {
 			return nil, err
 		}

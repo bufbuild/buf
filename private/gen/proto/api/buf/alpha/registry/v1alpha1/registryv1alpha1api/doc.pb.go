@@ -51,7 +51,7 @@ type DocService interface {
 		owner string,
 		repository string,
 		reference string,
-	) (modulePackages *v1alpha1.ModulePackages, err error)
+	) (name string, modulePackages []*v1alpha1.ModulePackage, err error)
 	// GetModuleDocumentation retrieves the documentation for module based on the given
 	// owner, repository, and reference.
 	GetModuleDocumentation(

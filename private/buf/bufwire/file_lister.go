@@ -111,6 +111,7 @@ func (e *fileLister) listFilesWithImports(
 		ref,
 		configOverride,
 		nil,
+		nil,
 		false,
 		true,
 	)
@@ -150,6 +151,7 @@ func (e *fileLister) listFilesWithoutImports(
 			ref,
 			configOverride,
 			nil,
+			nil,
 			false,
 			true,
 		)
@@ -177,6 +179,7 @@ func (e *fileLister) listFilesWithoutImports(
 			ctx,
 			container,
 			t,
+			nil,
 			nil,
 			false,
 			true,

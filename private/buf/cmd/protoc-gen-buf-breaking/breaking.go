@@ -106,6 +106,7 @@ func handle(
 		newContainer(container),
 		againstImageRef,
 		files, // limit to the input files if specified
+		nil,   // exclude paths are not supported on this plugin
 		true,  // allow files in the against input to not exist
 		false, // keep for now
 	)
