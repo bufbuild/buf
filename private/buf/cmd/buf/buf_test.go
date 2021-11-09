@@ -1295,6 +1295,43 @@ func TestExportPaths(t *testing.T) {
 	)
 }
 
+func TestExportPathsAndExcludes(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+		"-o",
+		tempDir,
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"a/v3/a.proto",
+	)
+	storagetesting.AssertNotExist(
+		t,
+		readWriteBucket,
+		"a/v3/foo/foo.proto",
+	)
+	storagetesting.AssertNotExist(
+		t,
+		readWriteBucket,
+		"a/v3/foo/bar.proto",
+	)
+}
+
 func TestExportProtoFileRef(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
@@ -1408,6 +1445,44 @@ func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 		tempDir,
 		"--path",
 		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
+	)
+}
+
+func TestBuildWithPaths(t *testing.T) {
+	t.Parallel()
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3", "foo"))
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3", "foo"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3"))
+}
+
+func TestLintWithPaths(t *testing.T) {
+	t.Parallel()
+	testRunStdoutStderr(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/paths/a/v3/a.proto:7:10:Field name "Value" should be lower_snake_case, such as "value".`),
+		"",
+		"lint",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(
+			`testdata/paths/a/v3/foo/bar.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".
+testdata/paths/a/v3/foo/foo.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".`),
+		"",
+		"lint",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v3"),
 	)
 }
 
