@@ -78,6 +78,20 @@ func DiffWithExternalPathPrefixes(
 	}
 }
 
+// DiffWithTransform returns a DiffOption that adds a transform function. The transform function will be run on each
+// file being compared before it is diffed. transform takes the arguments:
+//  side: one or two whether it is the first or second item in the diff
+//  filename: the filename including path
+//  content: the file content.
+// transform returns a string that is the transformed content of filename.
+func DiffWithTransform(
+	transform func(side, filename string, content []byte) []byte,
+) DiffOption {
+	return func(diffOptions *diffOptions) {
+		diffOptions.transforms = append(diffOptions.transforms, transform)
+	}
+}
+
 // DiffBytes does a diff of the ReadBuckets.
 func DiffBytes(
 	ctx context.Context,
@@ -162,6 +176,10 @@ func Diff(
 			if err != nil {
 				return err
 			}
+		}
+		for _, transform := range diffOptions.transforms {
+			oneData = transform("one", oneDiffPath, oneData)
+			twoData = transform("two", twoDiffPath, twoData)
 		}
 		diffData, err := diff.Diff(
 			ctx,
@@ -278,6 +296,7 @@ type diffOptions struct {
 	externalPaths         bool
 	oneExternalPathPrefix string
 	twoExternalPathPrefix string
+	transforms            []func(side, filename string, content []byte) []byte
 }
 
 func newDiffOptions() *diffOptions {
