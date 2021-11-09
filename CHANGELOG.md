@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add new endpoints to the recommendation service to make it configurable
 - Add `--exclude-path` flag to `buf generate` command. This allows users to exclude specific paths when running `buf generate`.
 
 ## [v1.0.0-rc7] - 2021-11-08
