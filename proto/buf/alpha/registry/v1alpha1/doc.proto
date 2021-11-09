@@ -264,6 +264,7 @@ message Message {
   repeated Field fields = 7;
   Location location = 8;
   repeated Field message_extensions = 9;
+  repeated OneOf oneofs = 10;
 }
 
 // Field provides information for the documentation of a message field.
@@ -294,7 +295,7 @@ message Field {
 // MapEntry provides the key and value types for the MapEntry type for a map field.
 message MapEntry {
   // string representation of the full name of the type for the map key. keys can only be
-	// scalar types: https://developers.google.com/protocol-buffers/docs/overview#maps
+  // scalar types: https://developers.google.com/protocol-buffers/docs/overview#maps
   string key_full_type = 1;
   // string representation of the nested name of the type for the map value.
   string value_nested_type = 2;
@@ -302,6 +303,13 @@ message MapEntry {
   string value_full_type = 3;
   // if the value is an imported type, this is the import module ref
   ImportModuleRef value_import_module_ref = 4;
+}
+
+// OneOf represents a oneof field in a message.
+message OneOf {
+  string name = 1;
+  // the fields that are part of the oneof
+  repeated Field fields = 2;
 }
 
 // FileExtension provides the information for the documentation of a file extension.
