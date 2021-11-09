@@ -1486,6 +1486,38 @@ testdata/paths/a/v3/foo/foo.proto:3:1:Package name "a.v3.foo" should be suffixed
 	)
 }
 
+func TestBreakingWithPaths(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("command", "generate", "testdata", "paths"), "-o", filepath.Join(tempDir, "previous.bin"))
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "-o", filepath.Join(tempDir, "current.bin"))
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"previous.bin",
+		"current.bin",
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`a/v3/a.proto:6:3:Field "1" on message "Foo" changed type from "string" to "int32".
+a/v3/a.proto:7:3:Field "2" with name "Value" on message "Foo" changed option "json_name" from "value" to "Value".
+a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value".`),
+		"",
+		"breaking",
+		filepath.Join(tempDir, "current.bin"),
+		"--against",
+		filepath.Join(tempDir, "previous.bin"),
+		"--path",
+		filepath.Join("a", "v3"),
+		"--exclude-path",
+		filepath.Join("a", "v3", "foo"),
+	)
+}
+
 func TestVersion(t *testing.T) {
 	t.Parallel()
 	testRunStdout(t, nil, 0, bufcli.Version, "--version")

@@ -3,4 +3,5 @@ syntax = "proto3";
 package a.v3.foo;
 
 message Foo {
+  int32 id = 1;
 }
