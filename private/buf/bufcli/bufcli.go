@@ -254,6 +254,21 @@ func BindInputHashtag(flagSet *pflag.FlagSet, addr *string) {
 	_ = flagSet.MarkHidden(inputHashtagFlagName)
 }
 
+// BindExcludePaths binds the exclude-path flag.
+func BindExcludePaths(
+	flagSet *pflag.FlagSet,
+	excludePathsAddr *[]string,
+	excludePathsFlagName string,
+) {
+	flagSet.StringSliceVar(
+		excludePathsAddr,
+		excludePathsFlagName,
+		nil,
+		`Exclude specific files or directories, for example "proto/a/a.proto" or "proto/a".
+If specified multiple times, the union will be taken.`,
+	)
+}
+
 // GetInputLong gets the long command description for an input-based command.
 func GetInputLong(inputArgDescription string) string {
 	return fmt.Sprintf(

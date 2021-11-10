@@ -34,9 +34,10 @@ import (
 )
 
 const (
-	errorFormatFlagName = "error-format"
-	configFlagName      = "config"
-	pathsFlagName       = "path"
+	errorFormatFlagName  = "error-format"
+	configFlagName       = "config"
+	pathsFlagName        = "path"
+	excludePathsFlagName = "exclude-path"
 
 	// deprecated
 	inputFlagName = "input"
@@ -68,9 +69,10 @@ func NewCommand(
 }
 
 type flags struct {
-	ErrorFormat string
-	Config      string
-	Paths       []string
+	ErrorFormat  string
+	Config       string
+	Paths        []string
+	ExcludePaths []string
 
 	// deprecated
 	Input string
@@ -89,6 +91,7 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
+	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -180,10 +183,10 @@ func run(
 		container,
 		ref,
 		inputConfig,
-		paths, // we filter checks for files
-		nil,   // exclude is not yet supported for this commnad
-		false, // input files must exist
-		false, // we must include source info for linting
+		paths,              // we filter checks for files
+		flags.ExcludePaths, // we exclude these paths
+		false,              // input files must exist
+		false,              // we must include source info for linting
 	)
 	if err != nil {
 		return err
