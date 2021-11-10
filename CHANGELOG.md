@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.0.0-rc8] - 2021-11-10
 
 - Add new endpoints to the recommendation service to make it configurable.
@@ -585,6 +589,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc8...HEAD
 [v1.0.0-rc8]: https://github.com/bufbuild/buf/compare/v1.0.0-rc7...v1.0.0-rc8
 [v1.0.0-rc7]: https://github.com/bufbuild/buf/compare/v1.0.0-rc6...v1.0.0-rc7
 [v1.0.0-rc6]: https://github.com/bufbuild/buf/compare/v1.0.0-rc5...v1.0.0-rc6
