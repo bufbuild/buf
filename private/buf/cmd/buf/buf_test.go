@@ -1503,9 +1503,9 @@ func TestBreakingWithPaths(t *testing.T) {
 		t,
 		nil,
 		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`a/v3/a.proto:6:3:Field "1" on message "Foo" changed type from "string" to "int32".
+		`a/v3/a.proto:6:3:Field "1" on message "Foo" changed type from "string" to "int32".
 a/v3/a.proto:7:3:Field "2" with name "Value" on message "Foo" changed option "json_name" from "value" to "Value".
-a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value".`),
+a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value".`,
 		"",
 		"breaking",
 		filepath.Join(tempDir, "current.bin"),
