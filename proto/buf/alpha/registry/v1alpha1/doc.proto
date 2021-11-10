@@ -261,10 +261,23 @@ message Message {
   // file_path is the normalized path of the file containing the message.
   string file_path = 5;
   bool is_map_entry = 6;
-  repeated Field fields = 7;
+  repeated MessageField fields = 7;
   Location location = 8;
   repeated Field message_extensions = 9;
-  repeated Oneof oneofs = 10;
+}
+
+// MessageField can be either a single field or a oneof set of fields.
+message MessageField {
+  oneof message_field {
+    Field field = 1;
+    Oneof oneof = 2;
+  }
+}
+
+// Oneof represents a oneof set of fields.
+message Oneof {
+  string name = 1;
+  repeated Field fields = 2;
 }
 
 // Field provides information for the documentation of a message field.
@@ -303,13 +316,6 @@ message MapEntry {
   string value_full_type = 3;
   // if the value is an imported type, this is the import module ref
   ImportModuleRef value_import_module_ref = 4;
-}
-
-// Oneof represents a oneof field in a message.
-message Oneof {
-  string name = 1;
-  // the fields that are part of the oneof
-  repeated Field fields = 2;
 }
 
 // FileExtension provides the information for the documentation of a file extension.
