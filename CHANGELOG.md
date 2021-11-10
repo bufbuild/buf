@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Change message documentation for fields to be either a single field or a oneof set of fields. This is a breaking API change.
 
 ## [v1.0.0-rc8] - 2021-11-10
 
