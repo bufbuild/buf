@@ -42,6 +42,7 @@ const (
 	configFlagName            = "config"
 	againstFlagName           = "against"
 	againstConfigFlagName     = "against-config"
+	excludePathsFlagName      = "exclude-path"
 
 	// deprecated
 	inputFlagName = "input"
@@ -84,6 +85,7 @@ type flags struct {
 	Config            string
 	Against           string
 	AgainstConfig     string
+	ExcludePaths      []string
 
 	// deprecated
 	Input string
@@ -106,6 +108,7 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -269,10 +272,10 @@ func run(
 		container,
 		ref,
 		inputConfig,
-		paths, // we filter checks for files
-		nil,   // exclude file paths are not supported in this command
-		false, // files specified must exist on the main input
-		false, // we must include source info for this side of the check
+		paths,              // we filter checks for files
+		flags.ExcludePaths, // we exclude these paths
+		false,              // files specified must exist on the main input
+		false,              // we must include source info for this side of the check
 	)
 	if err != nil {
 		return err
@@ -305,10 +308,10 @@ func run(
 		container,
 		againstRef,
 		againstInputConfig,
-		externalPaths, // we filter checks for files
-		nil,           // exclude file paths are not supported in this command
-		true,          // files are allowed to not exist on the against input
-		true,          // no need to include source info for against
+		externalPaths,      // we filter checks for files
+		flags.ExcludePaths, // we exclude these paths
+		true,               // files are allowed to not exist on the against input
+		true,               // no need to include source info for against
 	)
 	if err != nil {
 		return err

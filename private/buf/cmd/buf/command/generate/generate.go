@@ -211,6 +211,7 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
+	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	flagSet.BoolVar(
 		&f.IncludeImports,
 		includeImportsFlagName,
@@ -244,13 +245,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		configFlagName,
 		"",
 		`The config file or data to use.`,
-	)
-	flagSet.StringSliceVar(
-		&f.ExcludePaths,
-		excludePathsFlagName,
-		nil,
-		`Exclude specific files or directories, for example "proto/a/a.proto" or "proto/a".
-If specified multiple times, the union will be taken.`,
 	)
 
 	// deprecated, but not marked as deprecated as we return error if this is used

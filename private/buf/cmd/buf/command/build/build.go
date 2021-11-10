@@ -41,6 +41,7 @@ const (
 	outputFlagName              = "output"
 	outputFlagShortName         = "o"
 	configFlagName              = "config"
+	excludePathsFlagName        = "exclude-path"
 
 	// deprecated
 	sourceFlagName = "source"
@@ -79,6 +80,7 @@ type flags struct {
 	Paths               []string
 	Output              string
 	Config              string
+	ExcludePaths        []string
 
 	// deprecated
 	Source string
@@ -100,6 +102,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
 	bufcli.BindExcludeSourceInfo(flagSet, &f.ExcludeSourceInfo, excludeSourceInfoFlagName)
 	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
+	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -205,7 +208,7 @@ func run(
 		ref,
 		inputConfig,
 		paths,
-		nil,
+		flags.ExcludePaths, // we exclude these paths
 		false,
 		flags.ExcludeSourceInfo,
 	)
