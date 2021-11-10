@@ -1,9 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## [v1.0.0-rc8] - 2021-11-10
 
-- Add new endpoints to the recommendation service to make it configurable
+- Add new endpoints to the recommendation service to make it configurable.
 - Add `--exclude-path` flag to `buf breaking`, `buf build`, `buf export`, `buf generate`, and `buf lint` commands. This allows users to exclude specific paths when running commands.
+- Change `GetModulePackages` endpoint to return a repeated `ModulePackage` message that now inclues package description with the package name.
+- Add `Oneof` to the `Message` structure for documentation.
 
 ## [v1.0.0-rc7] - 2021-11-08
 
@@ -583,7 +585,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc7...HEAD
+[v1.0.0-rc8]: https://github.com/bufbuild/buf/compare/v1.0.0-rc7...v1.0.0-rc8
 [v1.0.0-rc7]: https://github.com/bufbuild/buf/compare/v1.0.0-rc6...v1.0.0-rc7
 [v1.0.0-rc6]: https://github.com/bufbuild/buf/compare/v1.0.0-rc5...v1.0.0-rc6
 [v1.0.0-rc5]: https://github.com/bufbuild/buf/compare/v1.0.0-rc4...v1.0.0-rc5
