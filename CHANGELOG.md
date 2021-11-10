@@ -2,8 +2,11 @@
 
 ## [Unreleased]
 
-- Add new endpoints to the recommendation service to make it configurable
+- Add new endpoints to the recommendation service to make it configurable.
 - Add `--exclude-path` flag to `buf breaking`, `buf build`, `buf export`, `buf generate`, and `buf lint` commands. This allows users to exclude specific paths when running commands.
+- Update the digest algorithm so that it only uses module content, not repository metadata. When this change is deployed, users will observe the following:
+  - Users on `v0.43.0` or before will notice mismatched digest errors similar to the one described in https://github.com/bufbuild/buf/issues/661.
+  - Users on `v0.44.0` or after will have their module cache invalidated, but it will repair itself automatically.
 
 ## [v1.0.0-rc7] - 2021-11-08
 

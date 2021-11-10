@@ -37,10 +37,10 @@ const (
 	// It is intended to be eventually removed.
 	b1DigestPrefix = "b1"
 
-	// b2DigestPrefix is the digest prefix for the second version of the digest function.
+	// b3DigestPrefix is the digest prefix for the third version of the digest function.
 	//
-	// It is used by the CLI cache and intended to eventually replace b2.
-	b2DigestPrefix = "b2"
+	// It is used by the CLI cache and intended to eventually replace b1 entirely.
+	b3DigestPrefix = "b3"
 )
 
 // ModuleFile is a module file.
@@ -366,35 +366,20 @@ func ModuleDigestB1(ctx context.Context, module Module) (string, error) {
 	return fmt.Sprintf("%s-%s", b1DigestPrefix, base64.URLEncoding.EncodeToString(hash.Sum(nil))), nil
 }
 
-// ModuleDigestB2 returns the b2 digest for the Module.
+// ModuleDigestB3 returns the b3 digest for the Module.
 //
 // To create the module digest (SHA256):
-// 	1. For every file in the module (sorted lexicographically by path):
-// 		a. Add the file path
-//		b. Add the file contents
-// 	2. Add the dependency commits (sorted lexicographically by remote/owner/repository/commit)
-//	3. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
-func ModuleDigestB2(ctx context.Context, module Module) (string, error) {
+//  1. For every file in the module (sorted lexicographically by path):
+//      a. Add the file path
+//      b. Add the file contents
+//  2. Add the dependency commits (sorted lexicographically by commit)
+//  3. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
+func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	hash := sha256.New()
 	// We do not want to change the sort order as the rest of the codebase relies on it,
 	// but we only want to use commit as part of the sort order, so we make a copy of
 	// the slice and sort it by commit
 	for _, dependencyModulePin := range copyModulePinsSortedByOnlyCommit(module.DependencyModulePins()) {
-		// We include each of these individually as opposed to using String
-		// so that if the String representation changes, we still get the same digest.
-		//
-		// Note that this does mean that changing a repository name or owner
-		// will result in a different digest, this is something we may
-		// want to revisit.
-		if _, err := hash.Write([]byte(dependencyModulePin.Remote())); err != nil {
-			return "", err
-		}
-		if _, err := hash.Write([]byte(dependencyModulePin.Owner())); err != nil {
-			return "", err
-		}
-		if _, err := hash.Write([]byte(dependencyModulePin.Repository())); err != nil {
-			return "", err
-		}
 		if _, err := hash.Write([]byte(dependencyModulePin.Commit())); err != nil {
 			return "", err
 		}
@@ -423,7 +408,7 @@ func ModuleDigestB2(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
-	return fmt.Sprintf("%s-%s", b2DigestPrefix, base64.URLEncoding.EncodeToString(hash.Sum(nil))), nil
+	return fmt.Sprintf("%s-%s", b3DigestPrefix, base64.URLEncoding.EncodeToString(hash.Sum(nil))), nil
 }
 
 // ModuleToBucket writes the given Module to the WriteBucket.
