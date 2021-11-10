@@ -4,7 +4,7 @@
 
 - Add new endpoints to the recommendation service to make it configurable.
 - Add `--exclude-path` flag to `buf breaking`, `buf build`, `buf export`, `buf generate`, and `buf lint` commands. This allows users to exclude specific paths when running commands.
-- Change `GetModulePackages` endpoint to return a repeated `ModulePackage` message that now inclues package description with the package name.
+- Change `GetModulePackages` endpoint to return a repeated `ModulePackage` message that now includes package description with the package name.
 - Add `Oneof` to the `Message` structure for documentation.
 
 ## [v1.0.0-rc7] - 2021-11-08
