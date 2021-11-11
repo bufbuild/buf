@@ -85,7 +85,7 @@ func DiffWithExternalPathPrefixes(
 //  content: the file content.
 // transform returns a string that is the transformed content of filename.
 func DiffWithTransform(
-	transform func(side, filename string, content []byte) []byte,
+	transform func(side string, filename string, content []byte) []byte,
 ) DiffOption {
 	return func(diffOptions *diffOptions) {
 		diffOptions.transforms = append(diffOptions.transforms, transform)
@@ -296,7 +296,7 @@ type diffOptions struct {
 	externalPaths         bool
 	oneExternalPathPrefix string
 	twoExternalPathPrefix string
-	transforms            []func(side, filename string, content []byte) []byte
+	transforms            []func(side string, filename string, content []byte) []byte
 }
 
 func newDiffOptions() *diffOptions {
