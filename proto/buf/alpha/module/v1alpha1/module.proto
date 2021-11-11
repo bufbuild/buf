@@ -34,6 +34,10 @@ message Module {
   //
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
   string documentation = 3;
+  // breaking_config is the breaking change detection configuration set for the module.
+  BreakingConfigV1 breaking_config = 5;
+  // lint_config is the lint configuration set for the module.
+  LintConfigV1 lint_config = 6;
 }
 
 // ModuleFile is a file within a FileSet.
@@ -45,15 +49,6 @@ message ModuleFile {
   bytes content = 2;
 }
 
-// ModuleReference is a module reference.
-message ModuleReference {
-  string remote = 1;
-  string owner = 2;
-  string repository = 3;
-  // either branch, tag, or commit
-  string reference = 4;
-}
-
 // ModulePin is a module pin.
 message ModulePin {
   string remote = 1;
@@ -63,4 +58,41 @@ message ModulePin {
   string commit = 5;
   string digest = 6;
   google.protobuf.Timestamp create_time = 7;
+}
+
+// BreakingConfigV1 represents the v1 breaking change detection configuration.
+message BreakingConfigV1 {
+  repeated string use = 1;
+  repeated string except = 2;
+  repeated string ignore = 3;
+  repeated IgnoreOnly ignore_only = 4;
+  bool ignore_unstable_packages = 5;
+}
+
+// LintConfigV1 represents the v1 lint configuration.
+message LintConfigV1 {
+  repeated string use = 1;
+  repeated string except = 2;
+  repeated string ignore = 3;
+  repeated IgnoreOnly ignore_only = 4;
+  string enum_zero_value_suffix = 5;
+  bool rpc_allow_google_protobuf_empty_requests = 6;
+  bool rpc_allow_google_protobuf_empty_responses = 7;
+  string service_suffix = 8;
+  bool allow_comment_ignores = 9;
+}
+
+// IgnoreOnly represents a check ID and the paths that are ignored for the check.
+message IgnoreOnly {
+  string id = 1;
+  repeated string paths = 2;
+}
+
+// ModuleReference is a module reference.
+message ModuleReference {
+  string remote = 1;
+  string owner = 2;
+  string repository = 3;
+  // either branch, tag, or commit
+  string reference = 4;
 }
