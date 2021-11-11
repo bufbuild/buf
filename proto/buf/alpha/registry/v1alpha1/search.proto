@@ -96,6 +96,10 @@ message SearchRequest {
   uint32 page_size = 2;
   // The first page is returned if this is 0.
   uint32 page_token = 3;
+  // Empty list means show all. Supplying one or more enums will 
+  // limit the search to the only the requested resources. 
+  // Supplying all possible enums is equivalent to empty list.
+  repeated SearchFilter filters = 4;
 }
 
 message SearchResponse {
