@@ -68,4 +68,17 @@ type OrganizationService interface {
 		organizationId string,
 		userId string,
 	) (err error)
+	// GetOrganizationSettings gets the setting of a organization, including organization base roles.
+	GetOrganizationSettings(
+		ctx context.Context,
+		organizationId string,
+	) (repositoryBaseRole v1alpha1.RepositoryRole, pluginBaseRole v1alpha1.PluginRole, templateBaseRole v1alpha1.TemplateRole, err error)
+	// UpdateOrganizationSettings update the organization settings including base roles.
+	UpdateOrganizationSettings(
+		ctx context.Context,
+		organizationId string,
+		repositoryBaseRole *v1alpha1.RepositoryRoleValue,
+		pluginBaseRole *v1alpha1.PluginRoleValue,
+		templateBaseRole *v1alpha1.TemplateRoleValue,
+	) (err error)
 }

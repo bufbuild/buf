@@ -232,3 +232,49 @@ func (s *organizationService) RemoveOrganizationMember(
 	}
 	return nil
 }
+
+// GetOrganizationSettings gets the setting of a organization, including organization base roles.
+func (s *organizationService) GetOrganizationSettings(
+	ctx context.Context,
+	organizationId string,
+) (repositoryBaseRole v1alpha1.RepositoryRole, pluginBaseRole v1alpha1.PluginRole, templateBaseRole v1alpha1.TemplateRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetOrganizationSettings(
+		ctx,
+		&v1alpha1.GetOrganizationSettingsRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return v1alpha1.RepositoryRole(0), v1alpha1.PluginRole(0), v1alpha1.TemplateRole(0), err
+	}
+	return response.RepositoryBaseRole, response.PluginBaseRole, response.TemplateBaseRole, nil
+}
+
+// UpdateOrganizationSettings update the organization settings including base roles.
+func (s *organizationService) UpdateOrganizationSettings(
+	ctx context.Context,
+	organizationId string,
+	repositoryBaseRole *v1alpha1.RepositoryRoleValue,
+	pluginBaseRole *v1alpha1.PluginRoleValue,
+	templateBaseRole *v1alpha1.TemplateRoleValue,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.UpdateOrganizationSettings(
+		ctx,
+		&v1alpha1.UpdateOrganizationSettingsRequest{
+			OrganizationId:     organizationId,
+			RepositoryBaseRole: repositoryBaseRole,
+			PluginBaseRole:     pluginBaseRole,
+			TemplateBaseRole:   templateBaseRole,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
