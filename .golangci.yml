@@ -31,7 +31,9 @@ linters:
   enable:
     - govet
     - asciicheck
+    - bidichk
     - bodyclose
+    - contextcheck
     - deadcode
     - depguard
     - dogsled
@@ -93,14 +95,7 @@ issues:
     - linters:
         - gosec
       # G204 checks that exec.Command is not called with non-constants.
-      # We call exec.Command for protoc and plugin proxying, and control the arguments completely.
-      path: private/pkg/app/appproto/appprotoexec/binary_handler.go
-      text: "G204:"
-    - linters:
-        - gosec
-      # G204 checks that exec.Command is not called with non-constants.
-      # We call exec.Command for protoc and plugin proxying, and control the arguments completely.
-      path: private/pkg/app/appproto/appprotoexec/protoc_proxy_handler.go
+      path: private/pkg/command/runner.go
       text: "G204:"
     - linters:
         - wastedassign
