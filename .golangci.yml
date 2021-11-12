@@ -31,11 +31,14 @@ linters:
   enable:
     - govet
     - asciicheck
+    - bidichk
     - bodyclose
+    - contextcheck
     - deadcode
     - depguard
     - dogsled
     - errcheck
+    - errname
     - exportloopref
     - forbidigo
     - forcetypeassert
@@ -61,6 +64,7 @@ linters:
     - staticcheck
     - structcheck
     - stylecheck
+    - tenv
     - typecheck
     - unconvert
     - unused

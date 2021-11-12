@@ -1,4 +1,4 @@
-# https://github.com/jhump/protoreflect/commits/master 20211108 checked 20211108
+# https://github.com/jhump/protoreflect/commits/master 20211108 checked 2021112
 GO_GET_PKGS := $(GO_GET_PKGS) \
 	github.com/jhump/protoreflect@d551e22cd340edf9f6e515a6d3670a1f9cf7e990
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
