@@ -619,7 +619,7 @@ type SearchRequest struct {
 	PageToken uint32 `protobuf:"varint,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	// Empty list means show all. Supplying one or more enums will
 	// limit the search to the only the requested resources.
-	// Supplying all possible enums is equivalent to empty list.
+	// Supplying all possible enums is equivalent to empty list of filters.
 	Filters []SearchFilter `protobuf:"varint,4,rep,packed,name=filters,proto3,enum=buf.alpha.registry.v1alpha1.SearchFilter" json:"filters,omitempty"`
 }
 
