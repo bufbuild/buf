@@ -85,6 +85,7 @@ func (s *userService) ListUsers(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
+	userState v1alpha1.UserState,
 ) (users []*v1alpha1.User, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -95,6 +96,7 @@ func (s *userService) ListUsers(
 			PageSize:  pageSize,
 			PageToken: pageToken,
 			Reverse:   reverse,
+			UserState: userState,
 		},
 	)
 	if err != nil {

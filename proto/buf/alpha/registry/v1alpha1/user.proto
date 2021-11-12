@@ -41,6 +41,12 @@ message OrganizationUser {
   OrganizationRole organization_role = 3;
 }
 
+enum UserState {
+  USER_STATE_UNSPECIFIED = 0;
+  USER_STATE_ACTIVE = 1;
+  USER_STATE_DEACTIVATED = 2;
+}
+
 // UserService is the User service.
 service UserService {
   // CreateUser creates a new user with the given username.
@@ -91,6 +97,8 @@ message ListUsersRequest {
   // The first page is returned if this is empty.
   string page_token = 2;
   bool reverse = 3;
+  // request with unspecified user state will return users with both user state
+  UserState user_state = 4;
 }
 
 message ListUsersResponse {
