@@ -244,7 +244,7 @@ func (g *generator) execLocalPlugin(
 		bufimage.ImagesToCodeGeneratorRequests(
 			pluginImages,
 			pluginConfig.Opt,
-			appprotoexec.DefaultVersion,
+			nil,
 			includeImports,
 		),
 		appprotoexec.GenerateWithPluginPath(pluginConfig.Path),
