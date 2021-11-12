@@ -99,4 +99,7 @@ type AuthzService interface {
 	// UserCanDeleteUser returns whether the user is authorized
 	// to delete a user.
 	UserCanDeleteUser(ctx context.Context) (authorized bool, err error)
+	// UserCanSeeServerAdminPanel returns whether the user is authorized
+	// to see server admin panel.
+	UserCanSeeServerAdminPanel(ctx context.Context) (authorized bool, err error)
 }

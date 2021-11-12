@@ -391,3 +391,19 @@ func (s *authzService) UserCanDeleteUser(ctx context.Context) (authorized bool, 
 	}
 	return response.Authorized, nil
 }
+
+// UserCanSeeServerAdminPanel returns whether the user is authorized
+// to see server admin panel.
+func (s *authzService) UserCanSeeServerAdminPanel(ctx context.Context) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanSeeServerAdminPanel(
+		ctx,
+		&v1alpha1.UserCanSeeServerAdminPanelRequest{},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}
