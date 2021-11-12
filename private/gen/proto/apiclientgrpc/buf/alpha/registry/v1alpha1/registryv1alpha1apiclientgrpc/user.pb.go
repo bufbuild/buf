@@ -130,23 +130,6 @@ func (s *userService) ListOrganizationUsers(
 	return response.Users, response.NextPageToken, nil
 }
 
-// UpdateUserUsername updates a user's username.
-func (s *userService) UpdateUserUsername(ctx context.Context, newUsername string) (user *v1alpha1.User, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.UpdateUserUsername(
-		ctx,
-		&v1alpha1.UpdateUserUsernameRequest{
-			NewUsername: newUsername,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return response.User, nil
-}
-
 // DeleteUser deletes a user.
 func (s *userService) DeleteUser(ctx context.Context) (_ error) {
 	if s.contextModifier != nil {
@@ -171,54 +154,6 @@ func (s *userService) DeactivateUser(ctx context.Context, id string) (_ error) {
 		ctx,
 		&v1alpha1.DeactivateUserRequest{
 			Id: id,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
-func (s *userService) AddUserOrganizationScopeByName(
-	ctx context.Context,
-	name string,
-	organizationName string,
-	organizationScope v1alpha1.OrganizationScope,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.AddUserOrganizationScopeByName(
-		ctx,
-		&v1alpha1.AddUserOrganizationScopeByNameRequest{
-			Name:              name,
-			OrganizationName:  organizationName,
-			OrganizationScope: organizationScope,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
-func (s *userService) RemoveUserOrganizationScope(
-	ctx context.Context,
-	id string,
-	organizationId string,
-	organizationScope v1alpha1.OrganizationScope,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.RemoveUserOrganizationScope(
-		ctx,
-		&v1alpha1.RemoveUserOrganizationScopeRequest{
-			Id:                id,
-			OrganizationId:    organizationId,
-			OrganizationScope: organizationScope,
 		},
 	)
 	if err != nil {
