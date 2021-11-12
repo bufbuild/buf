@@ -127,7 +127,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	repositoryTags, nextPageToken, err := repositoryTagService.ListRepositoryTags(
+	repositoryTags, nextPageToken, _, err := repositoryTagService.ListRepositoryTags(
 		ctx,
 		repository.Id,
 		flags.PageSize,

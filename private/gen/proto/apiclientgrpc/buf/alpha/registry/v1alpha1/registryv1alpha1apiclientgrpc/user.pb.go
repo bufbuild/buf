@@ -85,7 +85,7 @@ func (s *userService) ListUsers(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (users []*v1alpha1.User, nextPageToken string, _ error) {
+) (users []*v1alpha1.User, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -98,9 +98,9 @@ func (s *userService) ListUsers(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Users, response.NextPageToken, nil
+	return response.Users, response.NextPageToken, response.TotalSize, nil
 }
 
 // ListOrganizationUsers lists all users for an organization.
@@ -111,7 +111,7 @@ func (s *userService) ListOrganizationUsers(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (users []*v1alpha1.OrganizationUser, nextPageToken string, _ error) {
+) (users []*v1alpha1.OrganizationUser, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -125,9 +125,9 @@ func (s *userService) ListOrganizationUsers(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Users, response.NextPageToken, nil
+	return response.Users, response.NextPageToken, response.TotalSize, nil
 }
 
 // DeleteUser deletes a user.

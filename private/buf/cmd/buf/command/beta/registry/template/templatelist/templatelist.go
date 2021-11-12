@@ -110,7 +110,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	templates, nextPageToken, err := pluginService.ListTemplates(
+	templates, nextPageToken, _, err := pluginService.ListTemplates(
 		ctx,
 		flags.PageSize,
 		flags.PageToken,

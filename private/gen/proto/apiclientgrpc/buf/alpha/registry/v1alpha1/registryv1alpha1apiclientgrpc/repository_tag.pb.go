@@ -59,7 +59,7 @@ func (s *repositoryTagService) ListRepositoryTags(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken string, _ error) {
+) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -73,7 +73,7 @@ func (s *repositoryTagService) ListRepositoryTags(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.RepositoryTags, response.NextPageToken, nil
+	return response.RepositoryTags, response.NextPageToken, response.TotalSize, nil
 }

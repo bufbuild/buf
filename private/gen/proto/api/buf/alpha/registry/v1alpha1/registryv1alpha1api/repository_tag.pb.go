@@ -37,5 +37,5 @@ type RepositoryTagService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken string, err error)
+	) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken string, totalSize uint32, err error)
 }

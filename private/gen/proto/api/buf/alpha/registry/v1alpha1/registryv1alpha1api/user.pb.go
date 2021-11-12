@@ -35,7 +35,7 @@ type UserService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (users []*v1alpha1.User, nextPageToken string, err error)
+	) (users []*v1alpha1.User, nextPageToken string, totalSize uint32, err error)
 	// ListOrganizationUsers lists all users for an organization.
 	// TODO: #663 move this to organization service
 	ListOrganizationUsers(
@@ -44,7 +44,7 @@ type UserService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (users []*v1alpha1.OrganizationUser, nextPageToken string, err error)
+	) (users []*v1alpha1.OrganizationUser, nextPageToken string, totalSize uint32, err error)
 	// DeleteUser deletes a user.
 	DeleteUser(ctx context.Context) (err error)
 	// Deactivate user deactivates a user.

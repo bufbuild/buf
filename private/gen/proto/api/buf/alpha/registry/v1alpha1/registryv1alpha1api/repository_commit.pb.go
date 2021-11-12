@@ -33,7 +33,7 @@ type RepositoryCommitService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
+	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, totalSize uint32, err error)
 	// ListRepositoryCommitsByReference returns repository commits up-to and including
 	// the provided reference.
 	ListRepositoryCommitsByReference(
@@ -44,7 +44,7 @@ type RepositoryCommitService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
+	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, totalSize uint32, err error)
 	// GetRepositoryCommitByReference returns the repository commit matching
 	// the provided reference, if it exists.
 	GetRepositoryCommitByReference(

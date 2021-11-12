@@ -115,7 +115,7 @@ func run(
 		return err
 	}
 
-	repositoryCommits, nextPageToken, err := service.ListRepositoryCommitsByBranch(
+	repositoryCommits, nextPageToken, _, err := service.ListRepositoryCommitsByBranch(
 		ctx,
 		moduleReference.Owner(),
 		moduleReference.Repository(),

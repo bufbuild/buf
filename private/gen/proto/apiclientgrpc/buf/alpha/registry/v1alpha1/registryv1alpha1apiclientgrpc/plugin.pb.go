@@ -36,7 +36,7 @@ func (s *pluginService) ListPlugins(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (plugins []*v1alpha1.Plugin, nextPageToken string, _ error) {
+) (plugins []*v1alpha1.Plugin, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -49,9 +49,9 @@ func (s *pluginService) ListPlugins(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Plugins, response.NextPageToken, nil
+	return response.Plugins, response.NextPageToken, response.TotalSize, nil
 }
 
 // ListUserPlugins lists all plugins belonging to a user.
@@ -61,7 +61,7 @@ func (s *pluginService) ListUserPlugins(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (plugins []*v1alpha1.Plugin, nextPageToken string, _ error) {
+) (plugins []*v1alpha1.Plugin, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -75,9 +75,9 @@ func (s *pluginService) ListUserPlugins(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Plugins, response.NextPageToken, nil
+	return response.Plugins, response.NextPageToken, response.TotalSize, nil
 }
 
 // ListOrganizationPlugins lists all plugins for an organization.
@@ -87,7 +87,7 @@ func (s *pluginService) ListOrganizationPlugins(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (plugins []*v1alpha1.Plugin, nextPageToken string, _ error) {
+) (plugins []*v1alpha1.Plugin, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -101,9 +101,9 @@ func (s *pluginService) ListOrganizationPlugins(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Plugins, response.NextPageToken, nil
+	return response.Plugins, response.NextPageToken, response.TotalSize, nil
 }
 
 // ListPluginVersions lists all the versions available for the specified plugin.
@@ -114,7 +114,7 @@ func (s *pluginService) ListPluginVersions(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (pluginVersions []*v1alpha1.PluginVersion, nextPageToken string, _ error) {
+) (pluginVersions []*v1alpha1.PluginVersion, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -129,9 +129,9 @@ func (s *pluginService) ListPluginVersions(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.PluginVersions, response.NextPageToken, nil
+	return response.PluginVersions, response.NextPageToken, response.TotalSize, nil
 }
 
 // CreatePlugin creates a new plugin.
@@ -234,7 +234,7 @@ func (s *pluginService) ListTemplates(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (templates []*v1alpha1.Template, nextPageToken string, _ error) {
+) (templates []*v1alpha1.Template, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -247,9 +247,9 @@ func (s *pluginService) ListTemplates(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Templates, response.NextPageToken, nil
+	return response.Templates, response.NextPageToken, response.TotalSize, nil
 }
 
 // ListUserPlugins lists all templates belonging to a user.
@@ -259,7 +259,7 @@ func (s *pluginService) ListUserTemplates(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (templates []*v1alpha1.Template, nextPageToken string, _ error) {
+) (templates []*v1alpha1.Template, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -273,9 +273,9 @@ func (s *pluginService) ListUserTemplates(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Templates, response.NextPageToken, nil
+	return response.Templates, response.NextPageToken, response.TotalSize, nil
 }
 
 // ListOrganizationTemplates lists all templates for an organization.
@@ -285,7 +285,7 @@ func (s *pluginService) ListOrganizationTemplates(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (templates []*v1alpha1.Template, nextPageToken string, _ error) {
+) (templates []*v1alpha1.Template, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -299,9 +299,9 @@ func (s *pluginService) ListOrganizationTemplates(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Templates, response.NextPageToken, nil
+	return response.Templates, response.NextPageToken, response.TotalSize, nil
 }
 
 // GetTemplateVersion returns the template version, if found.
@@ -336,7 +336,7 @@ func (s *pluginService) ListTemplateVersions(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (templateVersions []*v1alpha1.TemplateVersion, nextPageToken string, _ error) {
+) (templateVersions []*v1alpha1.TemplateVersion, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -351,9 +351,9 @@ func (s *pluginService) ListTemplateVersions(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.TemplateVersions, response.NextPageToken, nil
+	return response.TemplateVersions, response.NextPageToken, response.TotalSize, nil
 }
 
 // CreateTemplate creates a new template.

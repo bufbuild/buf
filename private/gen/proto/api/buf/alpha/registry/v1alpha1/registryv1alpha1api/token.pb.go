@@ -42,7 +42,7 @@ type TokenService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (tokens []*v1alpha1.Token, nextPageToken string, err error)
+	) (tokens []*v1alpha1.Token, nextPageToken string, totalSize uint32, err error)
 	// DeleteToken deletes an existing token.
 	//
 	// This method requires authentication.

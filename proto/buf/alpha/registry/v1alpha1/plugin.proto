@@ -169,6 +169,7 @@ message ListPluginsResponse {
   repeated Plugin plugins = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message ListUserPluginsRequest {
@@ -184,6 +185,7 @@ message ListUserPluginsResponse {
   repeated Plugin plugins = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message ListOrganizationPluginsRequest {
@@ -199,6 +201,7 @@ message ListOrganizationPluginsResponse {
   repeated Plugin plugins = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message ListPluginVersionsRequest {
@@ -217,6 +220,7 @@ message ListPluginVersionsResponse {
   repeated PluginVersion plugin_versions = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message CreatePluginRequest {
@@ -280,6 +284,7 @@ message ListTemplatesResponse {
   repeated Template templates = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message ListUserTemplatesRequest {
@@ -295,6 +300,7 @@ message ListUserTemplatesResponse {
   repeated Template templates = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message GetTemplateVersionRequest {
@@ -319,6 +325,7 @@ message ListOrganizationTemplatesResponse {
   repeated Template templates = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message GetTemplateVersionResponse {
@@ -341,6 +348,7 @@ message ListTemplateVersionsResponse {
   repeated TemplateVersion template_versions = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message CreateTemplateRequest {

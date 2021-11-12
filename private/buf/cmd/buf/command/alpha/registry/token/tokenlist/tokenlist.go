@@ -110,7 +110,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	tokens, _, err := service.ListTokens(
+	tokens, _, _, err := service.ListTokens(
 		ctx,
 		flags.PageSize,
 		flags.PageToken,

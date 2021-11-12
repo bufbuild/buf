@@ -78,7 +78,7 @@ func (s *tokenService) ListTokens(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (tokens []*v1alpha1.Token, nextPageToken string, _ error) {
+) (tokens []*v1alpha1.Token, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -91,9 +91,9 @@ func (s *tokenService) ListTokens(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Tokens, response.NextPageToken, nil
+	return response.Tokens, response.NextPageToken, response.TotalSize, nil
 }
 
 // DeleteToken deletes an existing token.

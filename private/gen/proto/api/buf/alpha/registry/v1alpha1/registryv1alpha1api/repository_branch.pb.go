@@ -37,5 +37,5 @@ type RepositoryBranchService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (repositoryBranches []*v1alpha1.RepositoryBranch, nextPageToken string, err error)
+	) (repositoryBranches []*v1alpha1.RepositoryBranch, nextPageToken string, totalSize uint32, err error)
 }

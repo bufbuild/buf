@@ -38,7 +38,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsByBranch(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
+) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -54,9 +54,9 @@ func (s *repositoryCommitService) ListRepositoryCommitsByBranch(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.RepositoryCommits, response.NextPageToken, nil
+	return response.RepositoryCommits, response.NextPageToken, response.TotalSize, nil
 }
 
 // ListRepositoryCommitsByReference returns repository commits up-to and including
@@ -69,7 +69,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsByReference(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
+) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -85,9 +85,9 @@ func (s *repositoryCommitService) ListRepositoryCommitsByReference(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.RepositoryCommits, response.NextPageToken, nil
+	return response.RepositoryCommits, response.NextPageToken, response.TotalSize, nil
 }
 
 // GetRepositoryCommitByReference returns the repository commit matching

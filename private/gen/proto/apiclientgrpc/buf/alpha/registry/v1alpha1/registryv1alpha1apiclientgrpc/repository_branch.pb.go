@@ -59,7 +59,7 @@ func (s *repositoryBranchService) ListRepositoryBranches(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (repositoryBranches []*v1alpha1.RepositoryBranch, nextPageToken string, _ error) {
+) (repositoryBranches []*v1alpha1.RepositoryBranch, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -73,7 +73,7 @@ func (s *repositoryBranchService) ListRepositoryBranches(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.RepositoryBranches, response.NextPageToken, nil
+	return response.RepositoryBranches, response.NextPageToken, response.TotalSize, nil
 }

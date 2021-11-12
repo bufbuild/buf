@@ -127,7 +127,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	repositoryBranches, nextPageToken, err := repositoryBranchService.ListRepositoryBranches(
+	repositoryBranches, nextPageToken, _, err := repositoryBranchService.ListRepositoryBranches(
 		ctx,
 		repository.Id,
 		flags.PageSize,

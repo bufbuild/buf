@@ -73,6 +73,7 @@ message ListRepositoryCommitsByBranchRequest {
 message ListRepositoryCommitsByBranchResponse {
   repeated RepositoryCommit repository_commits = 1;
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message ListRepositoryCommitsByReferenceRequest {
@@ -90,6 +91,7 @@ message ListRepositoryCommitsByReferenceRequest {
 message ListRepositoryCommitsByReferenceResponse {
   repeated RepositoryCommit repository_commits = 1;
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message GetRepositoryCommitByReferenceRequest {

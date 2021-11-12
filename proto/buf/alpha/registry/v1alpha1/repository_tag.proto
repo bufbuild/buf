@@ -67,4 +67,5 @@ message ListRepositoryTagsResponse {
   repeated RepositoryTag repository_tags = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }

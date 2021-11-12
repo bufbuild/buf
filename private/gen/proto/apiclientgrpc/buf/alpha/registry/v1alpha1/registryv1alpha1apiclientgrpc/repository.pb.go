@@ -68,7 +68,7 @@ func (s *repositoryService) ListRepositories(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
+) (repositories []*v1alpha1.Repository, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -81,9 +81,9 @@ func (s *repositoryService) ListRepositories(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Repositories, response.NextPageToken, nil
+	return response.Repositories, response.NextPageToken, response.TotalSize, nil
 }
 
 // ListUserRepositories lists all repositories belonging to a user.
@@ -93,7 +93,7 @@ func (s *repositoryService) ListUserRepositories(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
+) (repositories []*v1alpha1.Repository, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -107,9 +107,9 @@ func (s *repositoryService) ListUserRepositories(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Repositories, response.NextPageToken, nil
+	return response.Repositories, response.NextPageToken, response.TotalSize, nil
 }
 
 // ListUserRepositories lists all repositories a user can access.
@@ -118,7 +118,7 @@ func (s *repositoryService) ListRepositoriesUserCanAccess(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
+) (repositories []*v1alpha1.Repository, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -131,9 +131,9 @@ func (s *repositoryService) ListRepositoriesUserCanAccess(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Repositories, response.NextPageToken, nil
+	return response.Repositories, response.NextPageToken, response.TotalSize, nil
 }
 
 // ListOrganizationRepositories lists all repositories for an organization.
@@ -143,7 +143,7 @@ func (s *repositoryService) ListOrganizationRepositories(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
+) (repositories []*v1alpha1.Repository, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -157,9 +157,9 @@ func (s *repositoryService) ListOrganizationRepositories(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Repositories, response.NextPageToken, nil
+	return response.Repositories, response.NextPageToken, response.TotalSize, nil
 }
 
 // CreateRepositoryByFullName creates a new repository by full name.

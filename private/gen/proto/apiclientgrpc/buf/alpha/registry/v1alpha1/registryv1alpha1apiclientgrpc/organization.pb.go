@@ -68,7 +68,7 @@ func (s *organizationService) ListOrganizations(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (organizations []*v1alpha1.Organization, nextPageToken string, _ error) {
+) (organizations []*v1alpha1.Organization, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -81,9 +81,9 @@ func (s *organizationService) ListOrganizations(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Organizations, response.NextPageToken, nil
+	return response.Organizations, response.NextPageToken, response.TotalSize, nil
 }
 
 // ListUserOrganizations lists all organizations a user is member of.
@@ -93,7 +93,7 @@ func (s *organizationService) ListUserOrganizations(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (organizations []*v1alpha1.OrganizationMembership, nextPageToken string, _ error) {
+) (organizations []*v1alpha1.OrganizationMembership, nextPageToken string, totalSize uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -107,9 +107,9 @@ func (s *organizationService) ListUserOrganizations(
 		},
 	)
 	if err != nil {
-		return nil, "", err
+		return nil, "", 0, err
 	}
-	return response.Organizations, response.NextPageToken, nil
+	return response.Organizations, response.NextPageToken, response.TotalSize, nil
 }
 
 // CreateOrganization creates a new organization.

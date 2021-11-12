@@ -112,7 +112,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	templateVersions, nextPageToken, err := pluginService.ListTemplateVersions(
+	templateVersions, nextPageToken, _, err := pluginService.ListTemplateVersions(
 		ctx,
 		owner,
 		name,

@@ -111,7 +111,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	repositories, nextPageToken, err := service.ListRepositories(
+	repositories, nextPageToken, _, err := service.ListRepositories(
 		ctx,
 		flags.PageSize,
 		flags.PageToken,

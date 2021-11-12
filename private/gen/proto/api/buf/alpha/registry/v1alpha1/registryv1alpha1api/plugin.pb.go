@@ -31,7 +31,7 @@ type PluginService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (plugins []*v1alpha1.Plugin, nextPageToken string, err error)
+	) (plugins []*v1alpha1.Plugin, nextPageToken string, totalSize uint32, err error)
 	// ListUserPlugins lists all plugins belonging to a user.
 	ListUserPlugins(
 		ctx context.Context,
@@ -39,7 +39,7 @@ type PluginService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (plugins []*v1alpha1.Plugin, nextPageToken string, err error)
+	) (plugins []*v1alpha1.Plugin, nextPageToken string, totalSize uint32, err error)
 	// ListOrganizationPlugins lists all plugins for an organization.
 	ListOrganizationPlugins(
 		ctx context.Context,
@@ -47,7 +47,7 @@ type PluginService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (plugins []*v1alpha1.Plugin, nextPageToken string, err error)
+	) (plugins []*v1alpha1.Plugin, nextPageToken string, totalSize uint32, err error)
 	// ListPluginVersions lists all the versions available for the specified plugin.
 	ListPluginVersions(
 		ctx context.Context,
@@ -56,7 +56,7 @@ type PluginService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (pluginVersions []*v1alpha1.PluginVersion, nextPageToken string, err error)
+	) (pluginVersions []*v1alpha1.PluginVersion, nextPageToken string, totalSize uint32, err error)
 	// CreatePlugin creates a new plugin.
 	CreatePlugin(
 		ctx context.Context,
@@ -92,7 +92,7 @@ type PluginService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (templates []*v1alpha1.Template, nextPageToken string, err error)
+	) (templates []*v1alpha1.Template, nextPageToken string, totalSize uint32, err error)
 	// ListUserPlugins lists all templates belonging to a user.
 	ListUserTemplates(
 		ctx context.Context,
@@ -100,7 +100,7 @@ type PluginService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (templates []*v1alpha1.Template, nextPageToken string, err error)
+	) (templates []*v1alpha1.Template, nextPageToken string, totalSize uint32, err error)
 	// ListOrganizationTemplates lists all templates for an organization.
 	ListOrganizationTemplates(
 		ctx context.Context,
@@ -108,7 +108,7 @@ type PluginService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (templates []*v1alpha1.Template, nextPageToken string, err error)
+	) (templates []*v1alpha1.Template, nextPageToken string, totalSize uint32, err error)
 	// GetTemplateVersion returns the template version, if found.
 	GetTemplateVersion(
 		ctx context.Context,
@@ -124,7 +124,7 @@ type PluginService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (templateVersions []*v1alpha1.TemplateVersion, nextPageToken string, err error)
+	) (templateVersions []*v1alpha1.TemplateVersion, nextPageToken string, totalSize uint32, err error)
 	// CreateTemplate creates a new template.
 	CreateTemplate(
 		ctx context.Context,

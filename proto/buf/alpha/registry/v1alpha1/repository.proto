@@ -112,6 +112,7 @@ message ListRepositoriesResponse {
   repeated Repository repositories = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message ListUserRepositoriesRequest {
@@ -127,6 +128,7 @@ message ListUserRepositoriesResponse {
   repeated Repository repositories = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message ListRepositoriesUserCanAccessRequest {
@@ -140,6 +142,7 @@ message ListRepositoriesUserCanAccessResponse {
   repeated Repository repositories = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message ListOrganizationRepositoriesRequest {
@@ -155,6 +158,7 @@ message ListOrganizationRepositoriesResponse {
   repeated Repository repositories = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+  uint32 total_size = 3;
 }
 
 message CreateRepositoryByFullNameRequest {
