@@ -92,6 +92,9 @@ type AuthzServiceClient interface {
 	// UserCanDeleteUser returns whether the user is authorized
 	// to delete a user.
 	UserCanDeleteUser(ctx context.Context, in *UserCanDeleteUserRequest, opts ...grpc.CallOption) (*UserCanDeleteUserResponse, error)
+	// UserCanSeeServerAdminPanel returns whether the user is authorized
+	// to see server admin panel.
+	UserCanSeeServerAdminPanel(ctx context.Context, in *UserCanSeeServerAdminPanelRequest, opts ...grpc.CallOption) (*UserCanSeeServerAdminPanelResponse, error)
 }
 
 type authzServiceClient struct {
@@ -273,6 +276,15 @@ func (c *authzServiceClient) UserCanDeleteUser(ctx context.Context, in *UserCanD
 	return out, nil
 }
 
+func (c *authzServiceClient) UserCanSeeServerAdminPanel(ctx context.Context, in *UserCanSeeServerAdminPanelRequest, opts ...grpc.CallOption) (*UserCanSeeServerAdminPanelResponse, error) {
+	out := new(UserCanSeeServerAdminPanelResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeServerAdminPanel", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthzServiceServer is the server API for AuthzService service.
 // All implementations should embed UnimplementedAuthzServiceServer
 // for forward compatibility
@@ -333,6 +345,9 @@ type AuthzServiceServer interface {
 	// UserCanDeleteUser returns whether the user is authorized
 	// to delete a user.
 	UserCanDeleteUser(context.Context, *UserCanDeleteUserRequest) (*UserCanDeleteUserResponse, error)
+	// UserCanSeeServerAdminPanel returns whether the user is authorized
+	// to see server admin panel.
+	UserCanSeeServerAdminPanel(context.Context, *UserCanSeeServerAdminPanelRequest) (*UserCanSeeServerAdminPanelResponse, error)
 }
 
 // UnimplementedAuthzServiceServer should be embedded to have forward compatible implementations.
@@ -395,6 +410,9 @@ func (UnimplementedAuthzServiceServer) UserCanDeletePlugin(context.Context, *Use
 }
 func (UnimplementedAuthzServiceServer) UserCanDeleteUser(context.Context, *UserCanDeleteUserRequest) (*UserCanDeleteUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserCanDeleteUser not implemented")
+}
+func (UnimplementedAuthzServiceServer) UserCanSeeServerAdminPanel(context.Context, *UserCanSeeServerAdminPanelRequest) (*UserCanSeeServerAdminPanelResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanSeeServerAdminPanel not implemented")
 }
 
 // UnsafeAuthzServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -750,6 +768,24 @@ func _AuthzService_UserCanDeleteUser_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthzService_UserCanSeeServerAdminPanel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanSeeServerAdminPanelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).UserCanSeeServerAdminPanel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanSeeServerAdminPanel",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).UserCanSeeServerAdminPanel(ctx, req.(*UserCanSeeServerAdminPanelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthzService_ServiceDesc is the grpc.ServiceDesc for AuthzService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -832,6 +868,10 @@ var AuthzService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserCanDeleteUser",
 			Handler:    _AuthzService_UserCanDeleteUser_Handler,
+		},
+		{
+			MethodName: "UserCanSeeServerAdminPanel",
+			Handler:    _AuthzService_UserCanSeeServerAdminPanel_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

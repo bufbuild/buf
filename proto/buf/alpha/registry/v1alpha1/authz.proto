@@ -76,6 +76,9 @@ service AuthzService {
   // UserCanDeleteUser returns whether the user is authorized
   // to delete a user.
   rpc UserCanDeleteUser(UserCanDeleteUserRequest) returns (UserCanDeleteUserResponse);
+  // UserCanSeeServerAdminPanel returns whether the user is authorized
+  // to see server admin panel.
+  rpc UserCanSeeServerAdminPanel(UserCanSeeServerAdminPanelRequest) returns (UserCanSeeServerAdminPanelResponse);
 }
 
 message UserCanRemoveUserOrganizationScopesRequest {
@@ -273,5 +276,11 @@ message UserCanDeleteUserRequest {
 }
 
 message UserCanDeleteUserResponse {
+  bool authorized = 1;
+}
+
+message UserCanSeeServerAdminPanelRequest {}
+
+message UserCanSeeServerAdminPanelResponse{
   bool authorized = 1;
 }
