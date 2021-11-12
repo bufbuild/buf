@@ -78,6 +78,13 @@ type PluginService interface {
 		owner string,
 		name string,
 	) (err error)
+	// SetPluginContributor set the role of an user in the plugin.
+	SetPluginContributor(
+		ctx context.Context,
+		pluginId string,
+		userId string,
+		pluginRole v1alpha1.PluginRole,
+	) (err error)
 	// GetTemplate returns the template, if found.
 	GetTemplate(
 		ctx context.Context,
@@ -147,4 +154,11 @@ type PluginService interface {
 		templateName string,
 		pluginVersions []*v1alpha1.PluginVersionMapping,
 	) (templateVersion *v1alpha1.TemplateVersion, err error)
+	// SetTemplateContributor set the role of an user in the repository.
+	SetTemplateContributor(
+		ctx context.Context,
+		templateId string,
+		userId string,
+		templateRole v1alpha1.TemplateRole,
+	) (err error)
 }

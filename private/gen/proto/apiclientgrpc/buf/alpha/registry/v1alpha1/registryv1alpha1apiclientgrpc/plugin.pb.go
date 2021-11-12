@@ -204,6 +204,30 @@ func (s *pluginService) DeletePlugin(
 	return nil
 }
 
+// SetPluginContributor set the role of an user in the plugin.
+func (s *pluginService) SetPluginContributor(
+	ctx context.Context,
+	pluginId string,
+	userId string,
+	pluginRole v1alpha1.PluginRole,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.SetPluginContributor(
+		ctx,
+		&v1alpha1.SetPluginContributorRequest{
+			PluginId:   pluginId,
+			UserId:     userId,
+			PluginRole: pluginRole,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetTemplate returns the template, if found.
 func (s *pluginService) GetTemplate(
 	ctx context.Context,
@@ -428,4 +452,28 @@ func (s *pluginService) CreateTemplateVersion(
 		return nil, err
 	}
 	return response.TemplateVersion, nil
+}
+
+// SetTemplateContributor set the role of an user in the repository.
+func (s *pluginService) SetTemplateContributor(
+	ctx context.Context,
+	templateId string,
+	userId string,
+	templateRole v1alpha1.TemplateRole,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.SetTemplateContributor(
+		ctx,
+		&v1alpha1.SetTemplateContributorRequest{
+			TemplateId:   templateId,
+			UserId:       userId,
+			TemplateRole: templateRole,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }

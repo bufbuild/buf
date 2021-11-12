@@ -76,6 +76,15 @@ service AuthzService {
   // UserCanSeeServerAdminPanel returns whether the user is authorized
   // to see server admin panel.
   rpc UserCanSeeServerAdminPanel(UserCanSeeServerAdminPanelRequest) returns (UserCanSeeServerAdminPanelResponse);
+  // UserCanManageRepositoryContributor returns whether the user is authorized to manage
+  // any contributors to the repository and the list of roles they can manage.
+  rpc UserCanManageRepositoryContributor(UserCanManageRepositoryContributorRequest) returns (UserCanManageRepositoryContributorResponse);
+  // UserCanManagePluginContributor returns whether the user is authorized to manage
+  // any contributors to the plugin and the list of roles they can manage.
+  rpc UserCanManagePluginContributor(UserCanManagePluginContributorRequest) returns (UserCanManagePluginContributorResponse);
+  // UserCanManageTemplateContributor returns whether the user is authorized to manage
+  // any contributors to the template and the list of roles they can manage.
+  rpc UserCanManageTemplateContributor(UserCanManageTemplateContributorRequest) returns (UserCanManageTemplateContributorResponse);
 }
 
 message UserCanCreateOrganizationRepositoryRequest {
@@ -270,4 +279,40 @@ message UserCanSeeServerAdminPanelRequest {}
 
 message UserCanSeeServerAdminPanelResponse{
   bool authorized = 1;
+}
+
+message UserCanManageRepositoryContributorRequest {
+  // The ID of the repository for which to check
+  // whether the user is authorized.
+  string repository_id = 1;
+}
+
+message UserCanManageRepositoryContributorResponse {
+  // The list of roles that the user is authorized to manage, empty list means the user is
+  // not authorized to manage any contributors.
+  repeated RepositoryRole authorized_roles = 1;
+}
+
+message UserCanManagePluginContributorRequest {
+  // The ID of the plugin for which to check
+  // whether the user is authorized.
+  string plugin_id = 1;
+}
+
+message UserCanManagePluginContributorResponse {
+  // The list of roles that the user is authorized to manage, empty list means the user is
+  // not authorized to manage any contributors.
+  repeated PluginRole authorized_roles = 1;
+}
+
+message UserCanManageTemplateContributorRequest {
+  // The ID of the template for which to check
+  // whether the user is authorized.
+  string template_id = 1;
+}
+
+message UserCanManageTemplateContributorResponse {
+  // The list of roles that the user is authorized to manage, empty list means the user is
+  // not authorized to manage any contributors.
+  repeated TemplateRole authorized_roles = 1;
 }

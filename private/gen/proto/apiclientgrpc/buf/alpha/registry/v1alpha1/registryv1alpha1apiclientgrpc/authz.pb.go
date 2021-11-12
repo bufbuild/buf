@@ -389,3 +389,57 @@ func (s *authzService) UserCanSeeServerAdminPanel(ctx context.Context) (authoriz
 	}
 	return response.Authorized, nil
 }
+
+// UserCanManageRepositoryContributor returns whether the user is authorized to manage
+// any contributors to the repository and the list of roles they can manage.
+func (s *authzService) UserCanManageRepositoryContributor(ctx context.Context, repositoryId string) (authorizedRoles []v1alpha1.RepositoryRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanManageRepositoryContributor(
+		ctx,
+		&v1alpha1.UserCanManageRepositoryContributorRequest{
+			RepositoryId: repositoryId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.AuthorizedRoles, nil
+}
+
+// UserCanManagePluginContributor returns whether the user is authorized to manage
+// any contributors to the plugin and the list of roles they can manage.
+func (s *authzService) UserCanManagePluginContributor(ctx context.Context, pluginId string) (authorizedRoles []v1alpha1.PluginRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanManagePluginContributor(
+		ctx,
+		&v1alpha1.UserCanManagePluginContributorRequest{
+			PluginId: pluginId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.AuthorizedRoles, nil
+}
+
+// UserCanManageTemplateContributor returns whether the user is authorized to manage
+// any contributors to the template and the list of roles they can manage.
+func (s *authzService) UserCanManageTemplateContributor(ctx context.Context, templateId string) (authorizedRoles []v1alpha1.TemplateRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanManageTemplateContributor(
+		ctx,
+		&v1alpha1.UserCanManageTemplateContributorRequest{
+			TemplateId: templateId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.AuthorizedRoles, nil
+}

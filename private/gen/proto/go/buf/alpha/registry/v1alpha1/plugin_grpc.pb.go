@@ -54,6 +54,8 @@ type PluginServiceClient interface {
 	// a plugin may cause breaking changes for templates using that plugin,
 	// and should be done with extreme care.
 	DeletePlugin(ctx context.Context, in *DeletePluginRequest, opts ...grpc.CallOption) (*DeletePluginResponse, error)
+	// SetPluginContributor set the role of an user in the plugin.
+	SetPluginContributor(ctx context.Context, in *SetPluginContributorRequest, opts ...grpc.CallOption) (*SetPluginContributorResponse, error)
 	// GetTemplate returns the template, if found.
 	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error)
 	// ListTemplates returns all the templates available to the user. This includes
@@ -74,6 +76,8 @@ type PluginServiceClient interface {
 	DeleteTemplate(ctx context.Context, in *DeleteTemplateRequest, opts ...grpc.CallOption) (*DeleteTemplateResponse, error)
 	// CreateTemplateVersion creates a new template version.
 	CreateTemplateVersion(ctx context.Context, in *CreateTemplateVersionRequest, opts ...grpc.CallOption) (*CreateTemplateVersionResponse, error)
+	// SetTemplateContributor set the role of an user in the repository.
+	SetTemplateContributor(ctx context.Context, in *SetTemplateContributorRequest, opts ...grpc.CallOption) (*SetTemplateContributorResponse, error)
 }
 
 type pluginServiceClient struct {
@@ -141,6 +145,15 @@ func (c *pluginServiceClient) GetPlugin(ctx context.Context, in *GetPluginReques
 func (c *pluginServiceClient) DeletePlugin(ctx context.Context, in *DeletePluginRequest, opts ...grpc.CallOption) (*DeletePluginResponse, error) {
 	out := new(DeletePluginResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/DeletePlugin", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pluginServiceClient) SetPluginContributor(ctx context.Context, in *SetPluginContributorRequest, opts ...grpc.CallOption) (*SetPluginContributorResponse, error) {
+	out := new(SetPluginContributorResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/SetPluginContributor", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -228,6 +241,15 @@ func (c *pluginServiceClient) CreateTemplateVersion(ctx context.Context, in *Cre
 	return out, nil
 }
 
+func (c *pluginServiceClient) SetTemplateContributor(ctx context.Context, in *SetTemplateContributorRequest, opts ...grpc.CallOption) (*SetTemplateContributorResponse, error) {
+	out := new(SetTemplateContributorResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/SetTemplateContributor", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PluginServiceServer is the server API for PluginService service.
 // All implementations should embed UnimplementedPluginServiceServer
 // for forward compatibility
@@ -250,6 +272,8 @@ type PluginServiceServer interface {
 	// a plugin may cause breaking changes for templates using that plugin,
 	// and should be done with extreme care.
 	DeletePlugin(context.Context, *DeletePluginRequest) (*DeletePluginResponse, error)
+	// SetPluginContributor set the role of an user in the plugin.
+	SetPluginContributor(context.Context, *SetPluginContributorRequest) (*SetPluginContributorResponse, error)
 	// GetTemplate returns the template, if found.
 	GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error)
 	// ListTemplates returns all the templates available to the user. This includes
@@ -270,6 +294,8 @@ type PluginServiceServer interface {
 	DeleteTemplate(context.Context, *DeleteTemplateRequest) (*DeleteTemplateResponse, error)
 	// CreateTemplateVersion creates a new template version.
 	CreateTemplateVersion(context.Context, *CreateTemplateVersionRequest) (*CreateTemplateVersionResponse, error)
+	// SetTemplateContributor set the role of an user in the repository.
+	SetTemplateContributor(context.Context, *SetTemplateContributorRequest) (*SetTemplateContributorResponse, error)
 }
 
 // UnimplementedPluginServiceServer should be embedded to have forward compatible implementations.
@@ -297,6 +323,9 @@ func (UnimplementedPluginServiceServer) GetPlugin(context.Context, *GetPluginReq
 func (UnimplementedPluginServiceServer) DeletePlugin(context.Context, *DeletePluginRequest) (*DeletePluginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeletePlugin not implemented")
 }
+func (UnimplementedPluginServiceServer) SetPluginContributor(context.Context, *SetPluginContributorRequest) (*SetPluginContributorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetPluginContributor not implemented")
+}
 func (UnimplementedPluginServiceServer) GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTemplate not implemented")
 }
@@ -323,6 +352,9 @@ func (UnimplementedPluginServiceServer) DeleteTemplate(context.Context, *DeleteT
 }
 func (UnimplementedPluginServiceServer) CreateTemplateVersion(context.Context, *CreateTemplateVersionRequest) (*CreateTemplateVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateTemplateVersion not implemented")
+}
+func (UnimplementedPluginServiceServer) SetTemplateContributor(context.Context, *SetTemplateContributorRequest) (*SetTemplateContributorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetTemplateContributor not implemented")
 }
 
 // UnsafePluginServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -458,6 +490,24 @@ func _PluginService_DeletePlugin_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PluginServiceServer).DeletePlugin(ctx, req.(*DeletePluginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PluginService_SetPluginContributor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetPluginContributorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServiceServer).SetPluginContributor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.PluginService/SetPluginContributor",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServiceServer).SetPluginContributor(ctx, req.(*SetPluginContributorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -624,6 +674,24 @@ func _PluginService_CreateTemplateVersion_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PluginService_SetTemplateContributor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetTemplateContributorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServiceServer).SetTemplateContributor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.PluginService/SetTemplateContributor",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServiceServer).SetTemplateContributor(ctx, req.(*SetTemplateContributorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PluginService_ServiceDesc is the grpc.ServiceDesc for PluginService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -660,6 +728,10 @@ var PluginService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PluginService_DeletePlugin_Handler,
 		},
 		{
+			MethodName: "SetPluginContributor",
+			Handler:    _PluginService_SetPluginContributor_Handler,
+		},
+		{
 			MethodName: "GetTemplate",
 			Handler:    _PluginService_GetTemplate_Handler,
 		},
@@ -694,6 +766,10 @@ var PluginService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateTemplateVersion",
 			Handler:    _PluginService_CreateTemplateVersion_Handler,
+		},
+		{
+			MethodName: "SetTemplateContributor",
+			Handler:    _PluginService_SetTemplateContributor_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

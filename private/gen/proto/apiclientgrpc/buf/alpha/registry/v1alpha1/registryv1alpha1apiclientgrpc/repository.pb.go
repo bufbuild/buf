@@ -281,3 +281,27 @@ func (s *repositoryService) GetRepositoriesByFullName(ctx context.Context, fullN
 	}
 	return response.Repositories, nil
 }
+
+// SetRepositoryContributor set the role of an user in the repository.
+func (s *repositoryService) SetRepositoryContributor(
+	ctx context.Context,
+	repositoryId string,
+	userId string,
+	repositoryRole v1alpha1.RepositoryRole,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.SetRepositoryContributor(
+		ctx,
+		&v1alpha1.SetRepositoryContributorRequest{
+			RepositoryId:   repositoryId,
+			UserId:         userId,
+			RepositoryRole: repositoryRole,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
