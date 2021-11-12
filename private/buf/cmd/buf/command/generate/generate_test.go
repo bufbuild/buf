@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -371,6 +372,7 @@ func testCompareGeneratedStubs(
 		runner,
 		actualReadWriteBucket,
 		bufReadWriteBucket,
+		transformProtocVersionToUnknown(t),
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))
@@ -456,6 +458,7 @@ func testCompareGeneratedStubsArchive(
 		runner,
 		actualReadWriteBucket,
 		bufReadWriteBucket,
+		transformProtocVersionToUnknown(t),
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))
@@ -517,4 +520,15 @@ func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out stri
 type testPluginInfo struct {
 	name string
 	opt  string
+}
+
+func transformProtocVersionToUnknown(t *testing.T) storage.DiffOption {
+	protocVersion, err := prototesting.GetProtocVersion(context.Background())
+	require.NoError(t, err)
+	return storage.DiffWithTransform(func(side, _ string, content []byte) []byte {
+		if side != "one" {
+			return content
+		}
+		return bytes.ReplaceAll(content, []byte("v"+protocVersion), []byte("(unknown)"))
+	})
 }
