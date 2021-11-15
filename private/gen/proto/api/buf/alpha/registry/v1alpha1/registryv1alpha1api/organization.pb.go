@@ -68,7 +68,7 @@ type OrganizationService interface {
 		organizationId string,
 		userId string,
 	) (err error)
-	// GetOrganizationSettings gets the setting of a organization, including organization base roles.
+	// GetOrganizationSettings gets the settings of a organization, including organization base roles.
 	GetOrganizationSettings(
 		ctx context.Context,
 		organizationId string,

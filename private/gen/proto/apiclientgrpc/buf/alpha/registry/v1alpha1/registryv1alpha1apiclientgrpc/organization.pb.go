@@ -233,7 +233,7 @@ func (s *organizationService) RemoveOrganizationMember(
 	return nil
 }
 
-// GetOrganizationSettings gets the setting of a organization, including organization base roles.
+// GetOrganizationSettings gets the settings of a organization, including organization base roles.
 func (s *organizationService) GetOrganizationSettings(
 	ctx context.Context,
 	organizationId string,
