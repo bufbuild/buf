@@ -36,9 +36,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthzServiceClient interface {
-	// UserCanRemoveUserOrganizationScopes returns whether the user is authorized
-	// to remove user scopes from an organization.
-	UserCanRemoveUserOrganizationScopes(ctx context.Context, in *UserCanRemoveUserOrganizationScopesRequest, opts ...grpc.CallOption) (*UserCanRemoveUserOrganizationScopesResponse, error)
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
 	// to create repositories in an organization.
 	UserCanCreateOrganizationRepository(ctx context.Context, in *UserCanCreateOrganizationRepositoryRequest, opts ...grpc.CallOption) (*UserCanCreateOrganizationRepositoryResponse, error)
@@ -103,15 +100,6 @@ type authzServiceClient struct {
 
 func NewAuthzServiceClient(cc grpc.ClientConnInterface) AuthzServiceClient {
 	return &authzServiceClient{cc}
-}
-
-func (c *authzServiceClient) UserCanRemoveUserOrganizationScopes(ctx context.Context, in *UserCanRemoveUserOrganizationScopesRequest, opts ...grpc.CallOption) (*UserCanRemoveUserOrganizationScopesResponse, error) {
-	out := new(UserCanRemoveUserOrganizationScopesResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanRemoveUserOrganizationScopes", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *authzServiceClient) UserCanCreateOrganizationRepository(ctx context.Context, in *UserCanCreateOrganizationRepositoryRequest, opts ...grpc.CallOption) (*UserCanCreateOrganizationRepositoryResponse, error) {
@@ -289,9 +277,6 @@ func (c *authzServiceClient) UserCanSeeServerAdminPanel(ctx context.Context, in 
 // All implementations should embed UnimplementedAuthzServiceServer
 // for forward compatibility
 type AuthzServiceServer interface {
-	// UserCanRemoveUserOrganizationScopes returns whether the user is authorized
-	// to remove user scopes from an organization.
-	UserCanRemoveUserOrganizationScopes(context.Context, *UserCanRemoveUserOrganizationScopesRequest) (*UserCanRemoveUserOrganizationScopesResponse, error)
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
 	// to create repositories in an organization.
 	UserCanCreateOrganizationRepository(context.Context, *UserCanCreateOrganizationRepositoryRequest) (*UserCanCreateOrganizationRepositoryResponse, error)
@@ -354,9 +339,6 @@ type AuthzServiceServer interface {
 type UnimplementedAuthzServiceServer struct {
 }
 
-func (UnimplementedAuthzServiceServer) UserCanRemoveUserOrganizationScopes(context.Context, *UserCanRemoveUserOrganizationScopesRequest) (*UserCanRemoveUserOrganizationScopesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UserCanRemoveUserOrganizationScopes not implemented")
-}
 func (UnimplementedAuthzServiceServer) UserCanCreateOrganizationRepository(context.Context, *UserCanCreateOrganizationRepositoryRequest) (*UserCanCreateOrganizationRepositoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserCanCreateOrganizationRepository not implemented")
 }
@@ -424,24 +406,6 @@ type UnsafeAuthzServiceServer interface {
 
 func RegisterAuthzServiceServer(s grpc.ServiceRegistrar, srv AuthzServiceServer) {
 	s.RegisterService(&AuthzService_ServiceDesc, srv)
-}
-
-func _AuthzService_UserCanRemoveUserOrganizationScopes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserCanRemoveUserOrganizationScopesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthzServiceServer).UserCanRemoveUserOrganizationScopes(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanRemoveUserOrganizationScopes",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).UserCanRemoveUserOrganizationScopes(ctx, req.(*UserCanRemoveUserOrganizationScopesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _AuthzService_UserCanCreateOrganizationRepository_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -793,10 +757,6 @@ var AuthzService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "buf.alpha.registry.v1alpha1.AuthzService",
 	HandlerType: (*AuthzServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "UserCanRemoveUserOrganizationScopes",
-			Handler:    _AuthzService_UserCanRemoveUserOrganizationScopes_Handler,
-		},
 		{
 			MethodName: "UserCanCreateOrganizationRepository",
 			Handler:    _AuthzService_UserCanCreateOrganizationRepository_Handler,
