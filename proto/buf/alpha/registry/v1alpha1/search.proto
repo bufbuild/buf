@@ -18,12 +18,12 @@ package buf.alpha.registry.v1alpha1;
 
 enum SearchFilter {
   SEARCH_FILTER_UNSPECIFIED = 0;
-  SEARCH_FILTER_REPOSITORY = 1;
+  SEARCH_FILTER_USER = 1;
   SEARCH_FILTER_ORGANIZATION = 2;
-  SEARCH_FILTER_USER = 3;
-  SEARCH_FILTER_TEAM = 4;
-  SEARCH_FILTER_PLUGIN = 5;
-  SEARCH_FILTER_TEMPLATE = 6;
+  SEARCH_FILTER_REPOSITORY = 3;
+  SEARCH_FILTER_PLUGIN = 4;
+  SEARCH_FILTER_TEMPLATE = 5;
+  SEARCH_FILTER_TEAM = 6;
 }
 
 message RepositorySearchResult {
@@ -97,7 +97,7 @@ message SearchRequest {
   // The first page is returned if this is 0.
   uint32 page_token = 3;
   // Empty list means show all. Supplying one or more enums will 
-  // limit the search to the only the requested resources. 
+  // limit the search to only the requested resources. 
   // Supplying all possible enums is equivalent to empty list of filters.
   repeated SearchFilter filters = 4;
 }
