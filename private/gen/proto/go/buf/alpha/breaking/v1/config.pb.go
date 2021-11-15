@@ -38,6 +38,9 @@ const (
 // by the rules_version and apply across the config. The rules_version is independent of the version of
 // the package. The package version refers to the config shape, the rules_version indicates which
 // rule IDs and catetgories should be used.
+//
+// The rule IDs and categories are not encoded as enums in this package because we may want to support custom rule
+// IDs and categories in the future. Callers will need to resolve the rule IDs and categories strings.
 type Config struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
