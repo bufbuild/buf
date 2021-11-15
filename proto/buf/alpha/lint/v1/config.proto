@@ -26,16 +26,16 @@ package buf.alpha.lint.v1;
 message Config {
   // rules_version represents the version of the lint rule IDs and categories that should be used with this config.
   string rules_version = 1;
-  // use lists the rule IDs and/or categories that are included in the lint check.
-  repeated string use = 2;
-  // except lists the rule IDs and/or categories that are excluded from the lint check.
-  repeated string except = 3;
-  // ignore lists the paths of directories and/or files that should be ignored by the lint check.
+  // use_rule_ids lists the rule IDs and/or categories that are included in the lint check.
+  repeated string use_rule_ids = 2;
+  // except_rule_ids lists the rule IDs and/or categories that are excluded from the lint check.
+  repeated string except_rule_ids = 3;
+  // ignore_paths lists the paths of directories and/or files that should be ignored by the lint check.
   // All paths are relative to the root of the module.
-  repeated string ignore = 4;
-  // ignore_only is a map of rule IDs and/or categories to directory and/or file paths to exclude from the
+  repeated string ignore_paths = 4;
+  // ignore_rule_ids_paths is a map of rule IDs and/or categories to directory and/or file paths to exclude from the
   // lint check.
-  repeated IgnoreOnly ignore_only = 5;
+  repeated RuleIDsPaths ignore_rule_ids_paths = 5;
   // enum_zero_value_suffix controls the behavior of the ENUM_ZERO_VALUE lint rule ID. By default, this rule
   // verifies that the zero value of all enums ends in _UNSPECIFIED. This config allows the user to override
   // this value with the given string.
@@ -51,8 +51,8 @@ message Config {
   bool allow_comment_ignores = 10;
 }
 
-// IgnoreOnly represents a rule ID or category and the file and/or directory paths that are ignored for the rule.
-message IgnoreOnly {
-  string id = 1;
+// RuleIDsPaths represents a rule ID or category and the file and/or directory paths that are ignored for the rule.
+message RuleIDsPaths {
+  string rule_id = 1;
   repeated string paths = 2;
 }
