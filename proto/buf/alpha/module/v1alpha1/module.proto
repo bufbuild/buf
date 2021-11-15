@@ -49,6 +49,15 @@ message ModuleFile {
   bytes content = 2;
 }
 
+// ModuleReference is a module reference.
+message ModuleReference {
+  string remote = 1;
+  string owner = 2;
+  string repository = 3;
+  // either branch, tag, or commit
+  string reference = 4;
+}
+
 // ModulePin is a module pin.
 message ModulePin {
   string remote = 1;
@@ -86,13 +95,4 @@ message LintConfigV1 {
 message IgnoreOnly {
   string id = 1;
   repeated string paths = 2;
-}
-
-// ModuleReference is a module reference.
-message ModuleReference {
-  string remote = 1;
-  string owner = 2;
-  string repository = 3;
-  // either branch, tag, or commit
-  string reference = 4;
 }
