@@ -82,9 +82,7 @@ func (s *userService) GetUserByUsername(ctx context.Context, username string) (u
 // ListUsers lists all users.
 func (s *userService) ListUsers(
 	ctx context.Context,
-	pageSize uint32,
-	pageToken string,
-	reverse bool,
+	listOptions *v1alpha1.ListOptions,
 ) (users []*v1alpha1.User, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -92,9 +90,7 @@ func (s *userService) ListUsers(
 	response, err := s.client.ListUsers(
 		ctx,
 		&v1alpha1.ListUsersRequest{
-			PageSize:  pageSize,
-			PageToken: pageToken,
-			Reverse:   reverse,
+			ListOptions: listOptions,
 		},
 	)
 	if err != nil {
@@ -108,9 +104,7 @@ func (s *userService) ListUsers(
 func (s *userService) ListOrganizationUsers(
 	ctx context.Context,
 	organizationId string,
-	pageSize uint32,
-	pageToken string,
-	reverse bool,
+	listOptions *v1alpha1.ListOptions,
 ) (users []*v1alpha1.OrganizationUser, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -119,9 +113,7 @@ func (s *userService) ListOrganizationUsers(
 		ctx,
 		&v1alpha1.ListOrganizationUsersRequest{
 			OrganizationId: organizationId,
-			PageSize:       pageSize,
-			PageToken:      pageToken,
-			Reverse:        reverse,
+			ListOptions:    listOptions,
 		},
 	)
 	if err != nil {

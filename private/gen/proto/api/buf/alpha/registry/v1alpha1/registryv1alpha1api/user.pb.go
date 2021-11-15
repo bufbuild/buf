@@ -32,18 +32,14 @@ type UserService interface {
 	// ListUsers lists all users.
 	ListUsers(
 		ctx context.Context,
-		pageSize uint32,
-		pageToken string,
-		reverse bool,
+		listOptions *v1alpha1.ListOptions,
 	) (users []*v1alpha1.User, nextPageToken string, err error)
 	// ListOrganizationUsers lists all users for an organization.
 	// TODO: #663 move this to organization service
 	ListOrganizationUsers(
 		ctx context.Context,
 		organizationId string,
-		pageSize uint32,
-		pageToken string,
-		reverse bool,
+		listOptions *v1alpha1.ListOptions,
 	) (users []*v1alpha1.OrganizationUser, nextPageToken string, err error)
 	// UpdateUserUsername updates a user's username.
 	UpdateUserUsername(ctx context.Context, newUsername string) (user *v1alpha1.User, err error)
