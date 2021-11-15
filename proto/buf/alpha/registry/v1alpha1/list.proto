@@ -16,11 +16,11 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-message ListOptions {
-  // The number of items to return.
-  uint32 page_size = 1;
-  // The first page is returned if this is empty.
-  string page_token = 2;
-  // string value following SQL syntax specifying order for list results.
-  string order_by = 3;
+// OrderedColumn defines the options available for specifying
+// the column by which the results should be ordered.
+enum OrderedColumn {
+  ORDERED_COLUMN_UNSPECIFIED = 0;
+  ORDERED_COLUMN_CREATE_TIME = 1;
+  ORDERED_COLUMN_NAME = 2;
+  ORDERED_COLUMN_OWNER = 3;
 }
