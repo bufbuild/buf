@@ -29,6 +29,7 @@ type SearchService interface {
 		query string,
 		pageSize uint32,
 		pageToken uint32,
+		filters []v1alpha1.SearchFilter,
 	) (searchResults []*v1alpha1.SearchResult, nextPageToken uint32, err error)
 	// SearchUsers searches the users in the BSR.
 	SearchUsers(
