@@ -50,14 +50,6 @@ type RepositoryServiceClient interface {
 	ListOrganizationRepositories(ctx context.Context, in *ListOrganizationRepositoriesRequest, opts ...grpc.CallOption) (*ListOrganizationRepositoriesResponse, error)
 	// CreateRepositoryByFullName creates a new repository by full name.
 	CreateRepositoryByFullName(ctx context.Context, in *CreateRepositoryByFullNameRequest, opts ...grpc.CallOption) (*CreateRepositoryByFullNameResponse, error)
-	// UpdateRepositoryName updates a repository's name.
-	UpdateRepositoryName(ctx context.Context, in *UpdateRepositoryNameRequest, opts ...grpc.CallOption) (*UpdateRepositoryNameResponse, error)
-	// UpdateRepositoryNameByFullName updates a repository's name by full name.
-	UpdateRepositoryNameByFullName(ctx context.Context, in *UpdateRepositoryNameByFullNameRequest, opts ...grpc.CallOption) (*UpdateRepositoryNameByFullNameResponse, error)
-	// UpdateRepositoryVisibility updates a repository's visibility.
-	UpdateRepositoryVisibility(ctx context.Context, in *UpdateRepositoryVisibilityRequest, opts ...grpc.CallOption) (*UpdateRepositoryVisibilityResponse, error)
-	// UpdateRepositoryVisibilityByName updates a repository's visibility by name.
-	UpdateRepositoryVisibilityByName(ctx context.Context, in *UpdateRepositoryVisibilityByNameRequest, opts ...grpc.CallOption) (*UpdateRepositoryVisibilityByNameResponse, error)
 	// DeleteRepository deletes a repository.
 	DeleteRepository(ctx context.Context, in *DeleteRepositoryRequest, opts ...grpc.CallOption) (*DeleteRepositoryResponse, error)
 	// DeleteRepositoryByFullName deletes a repository by full name.
@@ -142,42 +134,6 @@ func (c *repositoryServiceClient) CreateRepositoryByFullName(ctx context.Context
 	return out, nil
 }
 
-func (c *repositoryServiceClient) UpdateRepositoryName(ctx context.Context, in *UpdateRepositoryNameRequest, opts ...grpc.CallOption) (*UpdateRepositoryNameResponse, error) {
-	out := new(UpdateRepositoryNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositoryName", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *repositoryServiceClient) UpdateRepositoryNameByFullName(ctx context.Context, in *UpdateRepositoryNameByFullNameRequest, opts ...grpc.CallOption) (*UpdateRepositoryNameByFullNameResponse, error) {
-	out := new(UpdateRepositoryNameByFullNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositoryNameByFullName", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *repositoryServiceClient) UpdateRepositoryVisibility(ctx context.Context, in *UpdateRepositoryVisibilityRequest, opts ...grpc.CallOption) (*UpdateRepositoryVisibilityResponse, error) {
-	out := new(UpdateRepositoryVisibilityResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositoryVisibility", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *repositoryServiceClient) UpdateRepositoryVisibilityByName(ctx context.Context, in *UpdateRepositoryVisibilityByNameRequest, opts ...grpc.CallOption) (*UpdateRepositoryVisibilityByNameResponse, error) {
-	out := new(UpdateRepositoryVisibilityByNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositoryVisibilityByName", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *repositoryServiceClient) DeleteRepository(ctx context.Context, in *DeleteRepositoryRequest, opts ...grpc.CallOption) (*DeleteRepositoryResponse, error) {
 	out := new(DeleteRepositoryResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/DeleteRepository", in, out, opts...)
@@ -241,14 +197,6 @@ type RepositoryServiceServer interface {
 	ListOrganizationRepositories(context.Context, *ListOrganizationRepositoriesRequest) (*ListOrganizationRepositoriesResponse, error)
 	// CreateRepositoryByFullName creates a new repository by full name.
 	CreateRepositoryByFullName(context.Context, *CreateRepositoryByFullNameRequest) (*CreateRepositoryByFullNameResponse, error)
-	// UpdateRepositoryName updates a repository's name.
-	UpdateRepositoryName(context.Context, *UpdateRepositoryNameRequest) (*UpdateRepositoryNameResponse, error)
-	// UpdateRepositoryNameByFullName updates a repository's name by full name.
-	UpdateRepositoryNameByFullName(context.Context, *UpdateRepositoryNameByFullNameRequest) (*UpdateRepositoryNameByFullNameResponse, error)
-	// UpdateRepositoryVisibility updates a repository's visibility.
-	UpdateRepositoryVisibility(context.Context, *UpdateRepositoryVisibilityRequest) (*UpdateRepositoryVisibilityResponse, error)
-	// UpdateRepositoryVisibilityByName updates a repository's visibility by name.
-	UpdateRepositoryVisibilityByName(context.Context, *UpdateRepositoryVisibilityByNameRequest) (*UpdateRepositoryVisibilityByNameResponse, error)
 	// DeleteRepository deletes a repository.
 	DeleteRepository(context.Context, *DeleteRepositoryRequest) (*DeleteRepositoryResponse, error)
 	// DeleteRepositoryByFullName deletes a repository by full name.
@@ -286,18 +234,6 @@ func (UnimplementedRepositoryServiceServer) ListOrganizationRepositories(context
 }
 func (UnimplementedRepositoryServiceServer) CreateRepositoryByFullName(context.Context, *CreateRepositoryByFullNameRequest) (*CreateRepositoryByFullNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateRepositoryByFullName not implemented")
-}
-func (UnimplementedRepositoryServiceServer) UpdateRepositoryName(context.Context, *UpdateRepositoryNameRequest) (*UpdateRepositoryNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateRepositoryName not implemented")
-}
-func (UnimplementedRepositoryServiceServer) UpdateRepositoryNameByFullName(context.Context, *UpdateRepositoryNameByFullNameRequest) (*UpdateRepositoryNameByFullNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateRepositoryNameByFullName not implemented")
-}
-func (UnimplementedRepositoryServiceServer) UpdateRepositoryVisibility(context.Context, *UpdateRepositoryVisibilityRequest) (*UpdateRepositoryVisibilityResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateRepositoryVisibility not implemented")
-}
-func (UnimplementedRepositoryServiceServer) UpdateRepositoryVisibilityByName(context.Context, *UpdateRepositoryVisibilityByNameRequest) (*UpdateRepositoryVisibilityByNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateRepositoryVisibilityByName not implemented")
 }
 func (UnimplementedRepositoryServiceServer) DeleteRepository(context.Context, *DeleteRepositoryRequest) (*DeleteRepositoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteRepository not implemented")
@@ -452,78 +388,6 @@ func _RepositoryService_CreateRepositoryByFullName_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RepositoryService_UpdateRepositoryName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateRepositoryNameRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RepositoryServiceServer).UpdateRepositoryName(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositoryName",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepositoryServiceServer).UpdateRepositoryName(ctx, req.(*UpdateRepositoryNameRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RepositoryService_UpdateRepositoryNameByFullName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateRepositoryNameByFullNameRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RepositoryServiceServer).UpdateRepositoryNameByFullName(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositoryNameByFullName",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepositoryServiceServer).UpdateRepositoryNameByFullName(ctx, req.(*UpdateRepositoryNameByFullNameRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RepositoryService_UpdateRepositoryVisibility_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateRepositoryVisibilityRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RepositoryServiceServer).UpdateRepositoryVisibility(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositoryVisibility",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepositoryServiceServer).UpdateRepositoryVisibility(ctx, req.(*UpdateRepositoryVisibilityRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RepositoryService_UpdateRepositoryVisibilityByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateRepositoryVisibilityByNameRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RepositoryServiceServer).UpdateRepositoryVisibilityByName(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositoryVisibilityByName",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepositoryServiceServer).UpdateRepositoryVisibilityByName(ctx, req.(*UpdateRepositoryVisibilityByNameRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _RepositoryService_DeleteRepository_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteRepositoryRequest)
 	if err := dec(in); err != nil {
@@ -648,22 +512,6 @@ var RepositoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateRepositoryByFullName",
 			Handler:    _RepositoryService_CreateRepositoryByFullName_Handler,
-		},
-		{
-			MethodName: "UpdateRepositoryName",
-			Handler:    _RepositoryService_UpdateRepositoryName_Handler,
-		},
-		{
-			MethodName: "UpdateRepositoryNameByFullName",
-			Handler:    _RepositoryService_UpdateRepositoryNameByFullName_Handler,
-		},
-		{
-			MethodName: "UpdateRepositoryVisibility",
-			Handler:    _RepositoryService_UpdateRepositoryVisibility_Handler,
-		},
-		{
-			MethodName: "UpdateRepositoryVisibilityByName",
-			Handler:    _RepositoryService_UpdateRepositoryVisibilityByName_Handler,
 		},
 		{
 			MethodName: "DeleteRepository",

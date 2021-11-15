@@ -62,14 +62,6 @@ service RepositoryService {
   rpc ListOrganizationRepositories(ListOrganizationRepositoriesRequest) returns (ListOrganizationRepositoriesResponse);
   // CreateRepositoryByFullName creates a new repository by full name.
   rpc CreateRepositoryByFullName(CreateRepositoryByFullNameRequest) returns (CreateRepositoryByFullNameResponse);
-  // UpdateRepositoryName updates a repository's name.
-  rpc UpdateRepositoryName(UpdateRepositoryNameRequest) returns (UpdateRepositoryNameResponse);
-  // UpdateRepositoryNameByFullName updates a repository's name by full name.
-  rpc UpdateRepositoryNameByFullName(UpdateRepositoryNameByFullNameRequest) returns (UpdateRepositoryNameByFullNameResponse);
-  // UpdateRepositoryVisibility updates a repository's visibility.
-  rpc UpdateRepositoryVisibility(UpdateRepositoryVisibilityRequest) returns (UpdateRepositoryVisibilityResponse);
-  // UpdateRepositoryVisibilityByName updates a repository's visibility by name.
-  rpc UpdateRepositoryVisibilityByName(UpdateRepositoryVisibilityByNameRequest) returns (UpdateRepositoryVisibilityByNameResponse);
   // DeleteRepository deletes a repository.
   rpc DeleteRepository(DeleteRepositoryRequest) returns (DeleteRepositoryResponse);
   // DeleteRepositoryByFullName deletes a repository by full name.
@@ -172,43 +164,6 @@ message CreateRepositoryByFullNameRequest {
 }
 
 message CreateRepositoryByFullNameResponse {
-  Repository repository = 1;
-}
-
-message UpdateRepositoryNameRequest {
-  string id = 1;
-  string new_name = 2;
-}
-
-message UpdateRepositoryNameResponse {
-  Repository repository = 1;
-}
-
-message UpdateRepositoryNameByFullNameRequest {
-  string full_name = 1;
-  string new_name = 2;
-}
-
-message UpdateRepositoryNameByFullNameResponse {
-  Repository repository = 1;
-}
-
-message UpdateRepositoryVisibilityRequest {
-  string id = 1;
-  Visibility new_visibility = 2;
-}
-
-message UpdateRepositoryVisibilityResponse {
-  Repository repository = 1;
-}
-
-message UpdateRepositoryVisibilityByNameRequest {
-  string owner_name = 1;
-  string repository_name = 2;
-  Visibility new_visibility = 3;
-}
-
-message UpdateRepositoryVisibilityByNameResponse {
   Repository repository = 1;
 }
 

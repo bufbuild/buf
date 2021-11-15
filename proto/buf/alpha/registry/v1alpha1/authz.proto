@@ -20,9 +20,6 @@ import "buf/alpha/registry/v1alpha1/role.proto";
 
 // AuthzService supplies authorization helpers.
 service AuthzService {
-  // UserCanRemoveUserOrganizationScopes returns whether the user is authorized
-  // to remove user scopes from an organization.
-  rpc UserCanRemoveUserOrganizationScopes(UserCanRemoveUserOrganizationScopesRequest) returns (UserCanRemoveUserOrganizationScopesResponse);
   // UserCanCreateOrganizationRepository returns whether the user is authorized
   // to create repositories in an organization.
   rpc UserCanCreateOrganizationRepository(UserCanCreateOrganizationRepositoryRequest) returns (UserCanCreateOrganizationRepositoryResponse);
@@ -79,16 +76,6 @@ service AuthzService {
   // UserCanSeeServerAdminPanel returns whether the user is authorized
   // to see server admin panel.
   rpc UserCanSeeServerAdminPanel(UserCanSeeServerAdminPanelRequest) returns (UserCanSeeServerAdminPanelResponse);
-}
-
-message UserCanRemoveUserOrganizationScopesRequest {
-  // The ID of the organization for which to check
-  // whether the user is authorized to remove user scopes.
-  string organization_id = 1;
-}
-
-message UserCanRemoveUserOrganizationScopesResponse {
-  bool authorized = 1;
 }
 
 message UserCanCreateOrganizationRepositoryRequest {
