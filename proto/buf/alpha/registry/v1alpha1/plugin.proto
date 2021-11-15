@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/list.proto";
+
 // Plugin represents a protoc plugin, such as protoc-gen-go.
 message Plugin {
   // The ID of the plugin, which uniquely identifies the plugin.
@@ -163,6 +165,7 @@ message ListPluginsRequest {
   // The first page is returned if this is empty.
   string page_token = 2;
   bool reverse = 3;
+  OrderedColumn ordered_column = 4;
 }
 
 message ListPluginsResponse {
@@ -178,6 +181,7 @@ message ListUserPluginsRequest {
   // The first page is returned if this is empty.
   string page_token = 3;
   bool reverse = 4;
+  OrderedColumn ordered_column = 5;
 }
 
 message ListUserPluginsResponse {
@@ -193,6 +197,7 @@ message ListOrganizationPluginsRequest {
   // The first page is returned if this is empty.
   string page_token = 3;
   bool reverse = 4;
+  OrderedColumn ordered_column = 5;
 }
 
 message ListOrganizationPluginsResponse {
@@ -211,6 +216,7 @@ message ListPluginVersionsRequest {
   // The first page is returned if this is empty.
   string page_token = 4;
   bool reverse = 5;
+  OrderedColumn ordered_column = 6;
 }
 
 message ListPluginVersionsResponse {
@@ -274,6 +280,7 @@ message ListTemplatesRequest {
   // The first page is returned if this is empty.
   string page_token = 2;
   bool reverse = 3;
+  OrderedColumn ordered_column = 4;
 }
 
 message ListTemplatesResponse {
@@ -289,6 +296,7 @@ message ListUserTemplatesRequest {
   // The first page is returned if this is empty.
   string page_token = 3;
   bool reverse = 4;
+  OrderedColumn ordered_column = 5;
 }
 
 message ListUserTemplatesResponse {
@@ -313,6 +321,7 @@ message ListOrganizationTemplatesRequest {
   // The first page is returned if this is empty.
   string page_token = 3;
   bool reverse = 4;
+  OrderedColumn ordered_column = 5;
 }
 
 message ListOrganizationTemplatesResponse {
@@ -335,6 +344,7 @@ message ListTemplateVersionsRequest {
   // The first page is returned if this is empty.
   string page_token = 4;
   bool reverse = 5;
+  OrderedColumn ordered_column = 6;
 }
 
 message ListTemplateVersionsResponse {

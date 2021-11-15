@@ -35,6 +35,7 @@ type UserService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
+		orderedColumn v1alpha1.OrderedColumn,
 	) (users []*v1alpha1.User, nextPageToken string, err error)
 	// ListOrganizationUsers lists all users for an organization.
 	// TODO: #663 move this to organization service
@@ -44,6 +45,7 @@ type UserService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
+		orderedColumn v1alpha1.OrderedColumn,
 	) (users []*v1alpha1.OrganizationUser, nextPageToken string, err error)
 	// UpdateUserUsername updates a user's username.
 	UpdateUserUsername(ctx context.Context, newUsername string) (user *v1alpha1.User, err error)

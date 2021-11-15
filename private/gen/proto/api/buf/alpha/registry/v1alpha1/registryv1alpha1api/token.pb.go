@@ -42,6 +42,7 @@ type TokenService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
+		orderedColumn v1alpha1.OrderedColumn,
 	) (tokens []*v1alpha1.Token, nextPageToken string, err error)
 	// DeleteToken deletes an existing token.
 	//

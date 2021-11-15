@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/list.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/scope.proto";
 import "google/protobuf/timestamp.proto";
@@ -98,6 +99,7 @@ message ListUsersRequest {
   // The first page is returned if this is empty.
   string page_token = 2;
   bool reverse = 3;
+  OrderedColumn ordered_column = 4;
 }
 
 message ListUsersResponse {
@@ -112,6 +114,7 @@ message ListOrganizationUsersRequest {
   // The first page is returned if this is empty.
   string page_token = 3;
   bool reverse = 4;
+  OrderedColumn ordered_column = 5;
 }
 
 message ListOrganizationUsersResponse {

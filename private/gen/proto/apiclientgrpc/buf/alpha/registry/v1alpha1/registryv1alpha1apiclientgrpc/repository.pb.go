@@ -68,6 +68,7 @@ func (s *repositoryService) ListRepositories(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
+	orderedColumn v1alpha1.OrderedColumn,
 ) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -75,9 +76,10 @@ func (s *repositoryService) ListRepositories(
 	response, err := s.client.ListRepositories(
 		ctx,
 		&v1alpha1.ListRepositoriesRequest{
-			PageSize:  pageSize,
-			PageToken: pageToken,
-			Reverse:   reverse,
+			PageSize:      pageSize,
+			PageToken:     pageToken,
+			Reverse:       reverse,
+			OrderedColumn: orderedColumn,
 		},
 	)
 	if err != nil {
@@ -93,6 +95,7 @@ func (s *repositoryService) ListUserRepositories(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
+	orderedColumn v1alpha1.OrderedColumn,
 ) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -100,10 +103,11 @@ func (s *repositoryService) ListUserRepositories(
 	response, err := s.client.ListUserRepositories(
 		ctx,
 		&v1alpha1.ListUserRepositoriesRequest{
-			UserId:    userId,
-			PageSize:  pageSize,
-			PageToken: pageToken,
-			Reverse:   reverse,
+			UserId:        userId,
+			PageSize:      pageSize,
+			PageToken:     pageToken,
+			Reverse:       reverse,
+			OrderedColumn: orderedColumn,
 		},
 	)
 	if err != nil {
@@ -118,6 +122,7 @@ func (s *repositoryService) ListRepositoriesUserCanAccess(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
+	orderedColumn v1alpha1.OrderedColumn,
 ) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -125,9 +130,10 @@ func (s *repositoryService) ListRepositoriesUserCanAccess(
 	response, err := s.client.ListRepositoriesUserCanAccess(
 		ctx,
 		&v1alpha1.ListRepositoriesUserCanAccessRequest{
-			PageSize:  pageSize,
-			PageToken: pageToken,
-			Reverse:   reverse,
+			PageSize:      pageSize,
+			PageToken:     pageToken,
+			Reverse:       reverse,
+			OrderedColumn: orderedColumn,
 		},
 	)
 	if err != nil {
@@ -143,6 +149,7 @@ func (s *repositoryService) ListOrganizationRepositories(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
+	orderedColumn v1alpha1.OrderedColumn,
 ) (repositories []*v1alpha1.Repository, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -154,6 +161,7 @@ func (s *repositoryService) ListOrganizationRepositories(
 			PageSize:       pageSize,
 			PageToken:      pageToken,
 			Reverse:        reverse,
+			OrderedColumn:  orderedColumn,
 		},
 	)
 	if err != nil {
