@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -27,10 +29,11 @@ import (
 )
 
 const (
-	pageSizeFlagName  = "page-size"
-	pageTokenFlagName = "page-token"
-	reverseFlagName   = "reverse"
-	formatFlagName    = "format"
+	pageSizeFlagName      = "page-size"
+	pageTokenFlagName     = "page-token"
+	reverseFlagName       = "reverse"
+	formatFlagName        = "format"
+	orderedColumnFlagName = "ordered-column"
 )
 
 // NewCommand returns a new Command
@@ -54,10 +57,11 @@ func NewCommand(
 }
 
 type flags struct {
-	PageSize  uint32
-	PageToken string
-	Reverse   bool
-	Format    string
+	PageSize      uint32
+	PageToken     string
+	Reverse       bool
+	Format        string
+	OrderedColumn uint32
 }
 
 func newFlags() *flags {
@@ -85,6 +89,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		formatFlagName,
 		bufprint.FormatText.String(),
 		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+	)
+	flagSet.Uint32Var(
+		&f.OrderedColumn,
+		orderedColumnFlagName,
+		1,
+		`The column by which to sort results.`,
 	)
 }
 
@@ -115,6 +125,7 @@ func run(
 		flags.PageSize,
 		flags.PageToken,
 		flags.Reverse,
+		registryv1alpha1.OrderedColumn(flags.OrderedColumn),
 	)
 	if err != nil {
 		return err
