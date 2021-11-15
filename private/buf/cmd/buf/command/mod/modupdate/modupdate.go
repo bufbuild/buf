@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
+	"github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -210,26 +211,43 @@ func getDependencies(
 	if err != nil {
 		return nil, bufcli.NewInternalError(err)
 	}
-	repositoryService, err := apiProvider.NewRepositoryService(ctx, remote)
-	if err != nil {
-		return nil, err
-	}
-	dependencyFullNames := make([]string, len(dependencyModulePins))
-	for i, pin := range dependencyModulePins {
-		dependencyFullNames[i] = fmt.Sprintf("%s/%s", pin.Owner(), pin.Repository())
-	}
-	dependencyRepos, err := repositoryService.GetRepositoriesByFullName(ctx, dependencyFullNames)
-	if err != nil {
-		return nil, err
-	}
-	pinnedRepositories := make([]*pinnedRepository, len(dependencyFullNames))
-	for i := range dependencyModulePins {
-		pinnedRepositories[i] = &pinnedRepository{
-			modulePin:  dependencyModulePins[i],
-			repository: dependencyRepos[i],
+	// We want to create one repository service per relevant remote.
+	remoteToRepositoryService := make(map[string]registryv1alpha1api.RepositoryService)
+	remoteToDependencyModulePins := make(map[string][]bufmoduleref.ModulePin)
+	for _, pin := range dependencyModulePins {
+		if _, ok := remoteToRepositoryService[pin.Remote()]; !ok {
+			repositoryService, err := apiProvider.NewRepositoryService(ctx, pin.Remote())
+			if err != nil {
+				return nil, err
+			}
+			remoteToRepositoryService[pin.Remote()] = repositoryService
 		}
+		remoteToDependencyModulePins[pin.Remote()] = append(remoteToDependencyModulePins[pin.Remote()], pin)
 	}
-	return pinnedRepositories, nil
+	var allPinnedRepositories []*pinnedRepository
+	for dependencyRemote, dependencyModulePins := range remoteToDependencyModulePins {
+		repositoryService, ok := remoteToRepositoryService[dependencyRemote]
+		if !ok {
+			return nil, fmt.Errorf("a repository service is not available for %s", dependencyRemote)
+		}
+		dependencyFullNames := make([]string, len(dependencyModulePins))
+		for i, pin := range dependencyModulePins {
+			dependencyFullNames[i] = fmt.Sprintf("%s/%s", pin.Owner(), pin.Repository())
+		}
+		dependencyRepos, err := repositoryService.GetRepositoriesByFullName(ctx, dependencyFullNames)
+		if err != nil {
+			return nil, err
+		}
+		pinnedRepositories := make([]*pinnedRepository, len(dependencyModulePins))
+		for i, modulePin := range dependencyModulePins {
+			pinnedRepositories[i] = &pinnedRepository{
+				modulePin:  modulePin,
+				repository: dependencyRepos[i],
+			}
+		}
+		allPinnedRepositories = append(allPinnedRepositories, pinnedRepositories...)
+	}
+	return allPinnedRepositories, nil
 }
 
 type pinnedRepository struct {
