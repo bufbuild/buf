@@ -37,7 +37,7 @@ const (
 // Config represents the breaking change configuration for a module. The rule and category IDs are defined
 // by the version and apply across the config. The version is independent of the version of
 // the package. The package version refers to the config shape, the version encoded in the Config message
-// indicates which rule and catetgory IDs should be used.
+// indicates which rule and category IDs should be used.
 //
 // The rule and category IDs are not encoded as enums in this package because we may want to support custom rule
 // and category IDs in the future. Callers will need to resolve the rule and category ID strings.
