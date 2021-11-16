@@ -16,26 +16,26 @@ syntax = "proto3";
 
 package buf.alpha.breaking.v1;
 
-// Config represents the breaking change configuration for a module. The rule IDs and categories are defined
-// by the rules_version and apply across the config. The rules_version is independent of the version of
-// the package. The package version refers to the config shape, the rules_version indicates which
-// rule IDs and catetgories should be used.
+// Config represents the breaking change configuration for a module. The rule and category IDs are defined
+// by the version and apply across the config. The version is independent of the version of
+// the package. The package version refers to the config shape, the version encoded in the Config message
+// indicates which rule and catetgory IDs should be used.
 //
-// The rule IDs and categories are not encoded as enums in this package because we may want to support custom rule
-// IDs and categories in the future. Callers will need to resolve the rule IDs and categories strings.
+// The rule and category IDs are not encoded as enums in this package because we may want to support custom rule
+// and category IDs in the future. Callers will need to resolve the rule and category ID strings.
 message Config {
-  // rules_version represents the version of the breaking change rule IDs and categories that should be used with this config.
-  string rules_version = 1;
-  // use_rule_ids lists the rule IDs and/or categories that are included in the breaking change check.
-  repeated string use_rule_ids = 2;
-  // except_rule_ids lists the rule IDs and/or categories that are excluded from the breaking change check.
-  repeated string except_rule_ids = 3;
+  // version represents the version of the breaking change rule and category IDs that should be used with this config.
+  string version = 1;
+  // use_ids lists the rule and/or category IDs that are included in the breaking change check.
+  repeated string use_ids = 2;
+  // except_ids lists the rule and/or category IDs that are excluded from the breaking change check.
+  repeated string except_ids = 3;
   // ignore_paths lists the paths of directories and/or files that should be ignored by the breaking change check.
   // All paths are relative to the root of the module.
   repeated string ignore_paths = 4;
-  // ignore_rule_ids_paths is a map of rule IDs and/or categories to directory and/or file paths to exclude from the
-  // breaking change check.
-  repeated RuleIDsPaths ignore_rule_ids_paths = 5;
+  // ignore_id_paths is a map of rule and/or category IDs to directory and/or file paths to exclude from the
+  // breaking change check. This corresponds with the ignore_only configuration key.
+  repeated IDPaths ignore_id_paths = 5;
   // ignore_unstable_packages ignores packages with a last component that is one of the unstable forms recognised
   // by the PACKAGE_VERSION_SUFFIX:
   //   v\d+test.*
@@ -44,8 +44,8 @@ message Config {
   bool ignore_unstable_packages = 6;
 }
 
-// RuleIDsPaths represents a rule ID or category and the file and/or directory paths that are ignored for the rule.
-message RuleIDsPaths {
-  string rule_id = 1;
+// IDPaths represents a rule or category ID and the file and/or directory paths that are ignored for the rule.
+message IDPaths {
+  string id = 1;
   repeated string paths = 2;
 }

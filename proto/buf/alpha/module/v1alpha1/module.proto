@@ -37,9 +37,9 @@ message Module {
   // string is used to enforce UTF-8 encoding or 7-bit ASCII text.
   string documentation = 3;
   // breaking_config is the breaking change detection configuration set for the module.
-  buf.alpha.breaking.v1.Config breaking_config = 5;
+  buf.alpha.breaking.v1.Config breaking_config = 4;
   // lint_config is the lint configuration set for the module.
-  buf.alpha.lint.v1.Config lint_config = 6;
+  buf.alpha.lint.v1.Config lint_config = 5;
 }
 
 // ModuleFile is a file within a FileSet.
