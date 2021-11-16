@@ -67,8 +67,7 @@ func (s *organizationService) ListOrganizations(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.OrganizationSort,
 ) (organizations []*v1alpha1.Organization, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -76,10 +75,9 @@ func (s *organizationService) ListOrganizations(
 	response, err := s.client.ListOrganizations(
 		ctx,
 		&v1alpha1.ListOrganizationsRequest{
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Sort:      sort,
 		},
 	)
 	if err != nil {
@@ -94,8 +92,7 @@ func (s *organizationService) ListUserOrganizations(
 	userId string,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.OrganizationSort,
 ) (organizations []*v1alpha1.OrganizationMembership, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -103,11 +100,10 @@ func (s *organizationService) ListUserOrganizations(
 	response, err := s.client.ListUserOrganizations(
 		ctx,
 		&v1alpha1.ListUserOrganizationsRequest{
-			UserId:        userId,
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			UserId:    userId,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Sort:      sort,
 		},
 	)
 	if err != nil {

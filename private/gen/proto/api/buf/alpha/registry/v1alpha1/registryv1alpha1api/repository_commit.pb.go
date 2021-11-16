@@ -32,8 +32,7 @@ type RepositoryCommitService interface {
 		repositoryBranchName string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.RepositorySort,
 	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
 	// ListRepositoryCommitsByReference returns repository commits up-to and including
 	// the provided reference.
@@ -44,8 +43,7 @@ type RepositoryCommitService interface {
 		reference string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.RepositorySort,
 	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
 	// GetRepositoryCommitByReference returns the repository commit matching
 	// the provided reference, if it exists.

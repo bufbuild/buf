@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/list.proto";
+import "buf/alpha/registry/v1alpha1/repository.proto";
 import "google/protobuf/timestamp.proto";
 
 message RepositoryBranch {
@@ -60,8 +60,7 @@ message ListRepositoryBranchesRequest {
   uint32 page_size = 2;
   // The first page is returned if this is empty.
   string page_token = 3;
-  bool reverse = 4;
-  OrderedColumn ordered_column = 5;
+  RepositorySort sort = 4;
 }
 
 message ListRepositoryBranchesResponse {

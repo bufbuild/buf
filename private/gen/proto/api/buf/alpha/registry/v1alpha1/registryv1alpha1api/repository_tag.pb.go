@@ -36,7 +36,6 @@ type RepositoryTagService interface {
 		repositoryId string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.RepositorySort,
 	) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken string, err error)
 }

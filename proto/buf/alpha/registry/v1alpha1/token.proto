@@ -16,8 +16,14 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/list.proto";
 import "google/protobuf/timestamp.proto";
+
+// TokenSort defines the sort options available for tokens.
+enum TokenSort {
+  TOKEN_SORT_UNSPECIFIED = 0;
+  TOKEN_SORT_CREATE_TIME_ASC = 1;
+  TOKEN_SORT_CREATE_TIME_DESC = 2;
+}
 
 message Token {
   string id = 1;
@@ -68,8 +74,7 @@ message ListTokensRequest {
   uint32 page_size = 1;
   // The first page is returned if this is empty.
   string page_token = 2;
-  bool reverse = 3;
-  OrderedColumn ordered_column = 4;
+  TokenSort sort = 3;
 }
 
 message ListTokensResponse {

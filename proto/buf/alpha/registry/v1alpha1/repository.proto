@@ -16,8 +16,15 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/list.proto";
 import "google/protobuf/timestamp.proto";
+
+// RepositorySort defines the sort options available
+// for Repository entities.
+enum RepositorySort {
+  REPOSITORY_SORT_UNSPECIFIED = 0;
+  REPOSITORY_SORT_CREATE_TIME_ASC = 1;
+  REPOSITORY_SORT_CREATE_TIME_DESC = 2;
+}
 
 enum Visibility {
   VISIBILITY_UNSPECIFIED = 0;
@@ -114,8 +121,7 @@ message ListRepositoriesRequest {
   uint32 page_size = 1;
   // The first page is returned if this is empty.
   string page_token = 2;
-  bool reverse = 3;
-  OrderedColumn ordered_column = 4;
+  RepositorySort sort = 3;
 }
 
 message ListRepositoriesResponse {
@@ -130,8 +136,7 @@ message ListUserRepositoriesRequest {
   uint32 page_size = 2;
   // The first page is returned if this is empty.
   string page_token = 3;
-  bool reverse = 4;
-  OrderedColumn ordered_column = 5;
+  RepositorySort sort = 4;
 }
 
 message ListUserRepositoriesResponse {
@@ -144,8 +149,7 @@ message ListRepositoriesUserCanAccessRequest {
   uint32 page_size = 1;
   // The first page is returned if this is empty.
   string page_token = 2;
-  bool reverse = 3;
-  OrderedColumn ordered_column = 4;
+  RepositorySort sort = 3;
 }
 
 message ListRepositoriesUserCanAccessResponse {
@@ -160,8 +164,7 @@ message ListOrganizationRepositoriesRequest {
   uint32 page_size = 2;
   // The first page is returned if this is empty.
   string page_token = 3;
-  bool reverse = 4;
-  OrderedColumn ordered_column = 5;
+  RepositorySort sort = 4;
 }
 
 message ListOrganizationRepositoriesResponse {

@@ -16,10 +16,18 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/list.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/scope.proto";
 import "google/protobuf/timestamp.proto";
+
+// UserSort defines the sort options available for users.
+enum UserSort {
+  USER_SORT_UNSPECIFIED = 0;
+  USER_SORT_CREATE_TIME_ASC = 1;
+  USER_SORT_CREATE_TIME_DESC = 2;
+  USER_SORT_USERNAME_ASC = 3;
+  USER_SORT_USERNAME_DESC = 4;
+}
 
 message User {
   // primary key, unique, immutable
@@ -98,8 +106,7 @@ message ListUsersRequest {
   uint32 page_size = 1;
   // The first page is returned if this is empty.
   string page_token = 2;
-  bool reverse = 3;
-  OrderedColumn ordered_column = 4;
+  UserSort sort = 3;
 }
 
 message ListUsersResponse {
@@ -113,8 +120,7 @@ message ListOrganizationUsersRequest {
   uint32 page_size = 2;
   // The first page is returned if this is empty.
   string page_token = 3;
-  bool reverse = 4;
-  OrderedColumn ordered_column = 5;
+  UserSort sort = 4;
 }
 
 message ListOrganizationUsersResponse {

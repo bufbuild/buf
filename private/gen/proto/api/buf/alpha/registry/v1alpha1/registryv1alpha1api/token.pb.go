@@ -41,8 +41,7 @@ type TokenService interface {
 		ctx context.Context,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.TokenSort,
 	) (tokens []*v1alpha1.Token, nextPageToken string, err error)
 	// DeleteToken deletes an existing token.
 	//

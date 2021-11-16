@@ -32,8 +32,7 @@ type OrganizationService interface {
 		ctx context.Context,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.OrganizationSort,
 	) (organizations []*v1alpha1.Organization, nextPageToken string, err error)
 	// ListUserOrganizations lists all organizations a user is member of.
 	ListUserOrganizations(
@@ -41,8 +40,7 @@ type OrganizationService interface {
 		userId string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.OrganizationSort,
 	) (organizations []*v1alpha1.OrganizationMembership, nextPageToken string, err error)
 	// CreateOrganization creates a new organization.
 	CreateOrganization(ctx context.Context, name string) (organization *v1alpha1.Organization, err error)

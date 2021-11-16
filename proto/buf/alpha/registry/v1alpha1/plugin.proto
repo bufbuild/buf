@@ -16,7 +16,23 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/list.proto";
+// PluginVisibility defines the visibility options available
+// for Plugins and Templates.
+enum PluginVisibility {
+  PLUGIN_VISIBILITY_UNSPECIFIED = 0;
+  PLUGIN_VISIBILITY_PUBLIC = 1;
+  PLUGIN_VISIBILITY_PRIVATE = 2;
+}
+
+// PluginSort defines the sort options available
+// for Plugins and Templates.
+enum PluginSort {
+  PLUGIN_SORT_UNSPECIFIED = 0;
+  PLUGIN_SORT_CREATE_TIME_ASC = 1;
+  PLUGIN_SORT_CREATE_TIME_DESC = 2;
+  PLUGIN_SORT_NAME_ASC = 3;
+  PLUGIN_SORT_NAME_DESC = 4;
+}
 
 // Plugin represents a protoc plugin, such as protoc-gen-go.
 message Plugin {
@@ -43,14 +59,6 @@ message PluginVersion {
   string plugin_name = 3;
   // The owner of the plugin to which this version relates.
   string plugin_owner = 4;
-}
-
-// PluginVisibility defines the visibility options available
-// for Plugins and Templates.
-enum PluginVisibility {
-  PLUGIN_VISIBILITY_UNSPECIFIED = 0;
-  PLUGIN_VISIBILITY_PUBLIC = 1;
-  PLUGIN_VISIBILITY_PRIVATE = 2;
 }
 
 // Template defines a set of plugins that should be used together
@@ -164,8 +172,7 @@ message ListPluginsRequest {
   uint32 page_size = 1;
   // The first page is returned if this is empty.
   string page_token = 2;
-  bool reverse = 3;
-  OrderedColumn ordered_column = 4;
+  PluginSort sort = 3;
 }
 
 message ListPluginsResponse {
@@ -180,8 +187,7 @@ message ListUserPluginsRequest {
   uint32 page_size = 2;
   // The first page is returned if this is empty.
   string page_token = 3;
-  bool reverse = 4;
-  OrderedColumn ordered_column = 5;
+  PluginSort sort = 4;
 }
 
 message ListUserPluginsResponse {
@@ -196,8 +202,7 @@ message ListOrganizationPluginsRequest {
   uint32 page_size = 2;
   // The first page is returned if this is empty.
   string page_token = 3;
-  bool reverse = 4;
-  OrderedColumn ordered_column = 5;
+  PluginSort sort = 4;
 }
 
 message ListOrganizationPluginsResponse {
@@ -215,8 +220,7 @@ message ListPluginVersionsRequest {
   uint32 page_size = 3;
   // The first page is returned if this is empty.
   string page_token = 4;
-  bool reverse = 5;
-  OrderedColumn ordered_column = 6;
+  PluginSort sort = 5;
 }
 
 message ListPluginVersionsResponse {
@@ -279,8 +283,7 @@ message ListTemplatesRequest {
   uint32 page_size = 1;
   // The first page is returned if this is empty.
   string page_token = 2;
-  bool reverse = 3;
-  OrderedColumn ordered_column = 4;
+  PluginSort sort = 3;
 }
 
 message ListTemplatesResponse {
@@ -295,8 +298,7 @@ message ListUserTemplatesRequest {
   uint32 page_size = 2;
   // The first page is returned if this is empty.
   string page_token = 3;
-  bool reverse = 4;
-  OrderedColumn ordered_column = 5;
+  PluginSort sort = 4;
 }
 
 message ListUserTemplatesResponse {
@@ -320,8 +322,7 @@ message ListOrganizationTemplatesRequest {
   uint32 page_size = 2;
   // The first page is returned if this is empty.
   string page_token = 3;
-  bool reverse = 4;
-  OrderedColumn ordered_column = 5;
+  PluginSort sort = 4;
 }
 
 message ListOrganizationTemplatesResponse {
@@ -343,8 +344,7 @@ message ListTemplateVersionsRequest {
   uint32 page_size = 3;
   // The first page is returned if this is empty.
   string page_token = 4;
-  bool reverse = 5;
-  OrderedColumn ordered_column = 6;
+  PluginSort sort = 5;
 }
 
 message ListTemplateVersionsResponse {

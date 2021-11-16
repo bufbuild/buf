@@ -77,8 +77,7 @@ func (s *tokenService) ListTokens(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.TokenSort,
 ) (tokens []*v1alpha1.Token, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -86,10 +85,9 @@ func (s *tokenService) ListTokens(
 	response, err := s.client.ListTokens(
 		ctx,
 		&v1alpha1.ListTokensRequest{
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Sort:      sort,
 		},
 	)
 	if err != nil {

@@ -30,11 +30,9 @@ import (
 )
 
 const (
-	pageSizeFlagName      = "page-size"
-	pageTokenFlagName     = "page-token"
-	reverseFlagName       = "reverse"
-	formatFlagName        = "format"
-	orderedColumnFlagName = "ordered-column"
+	pageSizeFlagName  = "page-size"
+	pageTokenFlagName = "page-token"
+	formatFlagName    = "format"
 )
 
 // NewCommand returns a new Command
@@ -80,22 +78,11 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		`The page token. If more results are available, a "next_page" key will be present in the --format=json output.`,
 	)
-	flagSet.BoolVar(&f.Reverse,
-		reverseFlagName,
-		false,
-		`Reverse the results.`,
-	)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
 		bufprint.FormatText.String(),
 		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
-	)
-	flagSet.Uint32Var(
-		&f.OrderedColumn,
-		orderedColumnFlagName,
-		1,
-		`The column by which to sort results.`,
 	)
 }
 
@@ -141,8 +128,7 @@ func run(
 		repository.Id,
 		flags.PageSize,
 		flags.PageToken,
-		flags.Reverse,
-		registryv1alpha1.OrderedColumn(flags.OrderedColumn),
+		registryv1alpha1.RepositorySort_REPOSITORY_SORT_CREATE_TIME_DESC,
 	)
 	if err != nil {
 		return err

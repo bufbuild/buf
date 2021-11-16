@@ -30,8 +30,7 @@ type PluginService interface {
 		ctx context.Context,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.PluginSort,
 	) (plugins []*v1alpha1.Plugin, nextPageToken string, err error)
 	// ListUserPlugins lists all plugins belonging to a user.
 	ListUserPlugins(
@@ -39,8 +38,7 @@ type PluginService interface {
 		owner string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.PluginSort,
 	) (plugins []*v1alpha1.Plugin, nextPageToken string, err error)
 	// ListOrganizationPlugins lists all plugins for an organization.
 	ListOrganizationPlugins(
@@ -48,8 +46,7 @@ type PluginService interface {
 		organization string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.PluginSort,
 	) (plugins []*v1alpha1.Plugin, nextPageToken string, err error)
 	// ListPluginVersions lists all the versions available for the specified plugin.
 	ListPluginVersions(
@@ -58,8 +55,7 @@ type PluginService interface {
 		name string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.PluginSort,
 	) (pluginVersions []*v1alpha1.PluginVersion, nextPageToken string, err error)
 	// CreatePlugin creates a new plugin.
 	CreatePlugin(
@@ -95,8 +91,7 @@ type PluginService interface {
 		ctx context.Context,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.PluginSort,
 	) (templates []*v1alpha1.Template, nextPageToken string, err error)
 	// ListUserPlugins lists all templates belonging to a user.
 	ListUserTemplates(
@@ -104,8 +99,7 @@ type PluginService interface {
 		owner string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.PluginSort,
 	) (templates []*v1alpha1.Template, nextPageToken string, err error)
 	// ListOrganizationTemplates lists all templates for an organization.
 	ListOrganizationTemplates(
@@ -113,8 +107,7 @@ type PluginService interface {
 		organization string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.PluginSort,
 	) (templates []*v1alpha1.Template, nextPageToken string, err error)
 	// GetTemplateVersion returns the template version, if found.
 	GetTemplateVersion(
@@ -130,8 +123,7 @@ type PluginService interface {
 		name string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.PluginSort,
 	) (templateVersions []*v1alpha1.TemplateVersion, nextPageToken string, err error)
 	// CreateTemplate creates a new template.
 	CreateTemplate(

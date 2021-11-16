@@ -37,8 +37,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsByBranch(
 	repositoryBranchName string,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.RepositorySort,
 ) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -51,8 +50,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsByBranch(
 			RepositoryBranchName: repositoryBranchName,
 			PageSize:             pageSize,
 			PageToken:            pageToken,
-			Reverse:              reverse,
-			OrderedColumn:        orderedColumn,
+			Sort:                 sort,
 		},
 	)
 	if err != nil {
@@ -70,8 +68,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsByReference(
 	reference string,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.RepositorySort,
 ) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -84,8 +81,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsByReference(
 			Reference:       reference,
 			PageSize:        pageSize,
 			PageToken:       pageToken,
-			Reverse:         reverse,
-			OrderedColumn:   orderedColumn,
+			Sort:            sort,
 		},
 	)
 	if err != nil {

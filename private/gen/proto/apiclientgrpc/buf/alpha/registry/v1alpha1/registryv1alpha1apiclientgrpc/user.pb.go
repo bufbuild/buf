@@ -84,8 +84,7 @@ func (s *userService) ListUsers(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.UserSort,
 ) (users []*v1alpha1.User, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -93,10 +92,9 @@ func (s *userService) ListUsers(
 	response, err := s.client.ListUsers(
 		ctx,
 		&v1alpha1.ListUsersRequest{
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Sort:      sort,
 		},
 	)
 	if err != nil {
@@ -112,8 +110,7 @@ func (s *userService) ListOrganizationUsers(
 	organizationId string,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.UserSort,
 ) (users []*v1alpha1.OrganizationUser, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -124,8 +121,7 @@ func (s *userService) ListOrganizationUsers(
 			OrganizationId: organizationId,
 			PageSize:       pageSize,
 			PageToken:      pageToken,
-			Reverse:        reverse,
-			OrderedColumn:  orderedColumn,
+			Sort:           sort,
 		},
 	)
 	if err != nil {

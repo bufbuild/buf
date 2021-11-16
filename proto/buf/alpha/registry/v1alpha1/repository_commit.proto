@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/list.proto";
+import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -68,8 +68,7 @@ message ListRepositoryCommitsByBranchRequest {
   string repository_branch_name = 3;
   uint32 page_size = 4;
   string page_token = 5;
-  bool reverse = 6;
-  OrderedColumn ordered_column = 7;
+  RepositorySort sort = 6;
 }
 
 message ListRepositoryCommitsByBranchResponse {
@@ -86,8 +85,7 @@ message ListRepositoryCommitsByReferenceRequest {
   string reference = 3;
   uint32 page_size = 4;
   string page_token = 5;
-  bool reverse = 6;
-  OrderedColumn ordered_column = 7;
+  RepositorySort sort = 6;
 }
 
 message ListRepositoryCommitsByReferenceResponse {

@@ -36,7 +36,6 @@ type RepositoryBranchService interface {
 		repositoryId string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.RepositorySort,
 	) (repositoryBranches []*v1alpha1.RepositoryBranch, nextPageToken string, err error)
 }

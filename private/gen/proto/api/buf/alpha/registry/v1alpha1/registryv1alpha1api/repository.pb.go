@@ -32,8 +32,7 @@ type RepositoryService interface {
 		ctx context.Context,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.RepositorySort,
 	) (repositories []*v1alpha1.Repository, nextPageToken string, err error)
 	// ListUserRepositories lists all repositories belonging to a user.
 	ListUserRepositories(
@@ -41,16 +40,14 @@ type RepositoryService interface {
 		userId string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.RepositorySort,
 	) (repositories []*v1alpha1.Repository, nextPageToken string, err error)
 	// ListUserRepositories lists all repositories a user can access.
 	ListRepositoriesUserCanAccess(
 		ctx context.Context,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.RepositorySort,
 	) (repositories []*v1alpha1.Repository, nextPageToken string, err error)
 	// ListOrganizationRepositories lists all repositories for an organization.
 	ListOrganizationRepositories(
@@ -58,8 +55,7 @@ type RepositoryService interface {
 		organizationId string,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
-		orderedColumn v1alpha1.OrderedColumn,
+		sort v1alpha1.RepositorySort,
 	) (repositories []*v1alpha1.Repository, nextPageToken string, err error)
 	// CreateRepositoryByFullName creates a new repository by full name.
 	CreateRepositoryByFullName(

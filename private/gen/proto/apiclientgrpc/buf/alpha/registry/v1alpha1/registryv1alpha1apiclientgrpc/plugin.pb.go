@@ -35,8 +35,7 @@ func (s *pluginService) ListPlugins(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.PluginSort,
 ) (plugins []*v1alpha1.Plugin, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -44,10 +43,9 @@ func (s *pluginService) ListPlugins(
 	response, err := s.client.ListPlugins(
 		ctx,
 		&v1alpha1.ListPluginsRequest{
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Sort:      sort,
 		},
 	)
 	if err != nil {
@@ -62,8 +60,7 @@ func (s *pluginService) ListUserPlugins(
 	owner string,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.PluginSort,
 ) (plugins []*v1alpha1.Plugin, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -71,11 +68,10 @@ func (s *pluginService) ListUserPlugins(
 	response, err := s.client.ListUserPlugins(
 		ctx,
 		&v1alpha1.ListUserPluginsRequest{
-			Owner:         owner,
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			Owner:     owner,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Sort:      sort,
 		},
 	)
 	if err != nil {
@@ -90,8 +86,7 @@ func (s *pluginService) ListOrganizationPlugins(
 	organization string,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.PluginSort,
 ) (plugins []*v1alpha1.Plugin, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -99,11 +94,10 @@ func (s *pluginService) ListOrganizationPlugins(
 	response, err := s.client.ListOrganizationPlugins(
 		ctx,
 		&v1alpha1.ListOrganizationPluginsRequest{
-			Organization:  organization,
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			Organization: organization,
+			PageSize:     pageSize,
+			PageToken:    pageToken,
+			Sort:         sort,
 		},
 	)
 	if err != nil {
@@ -119,8 +113,7 @@ func (s *pluginService) ListPluginVersions(
 	name string,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.PluginSort,
 ) (pluginVersions []*v1alpha1.PluginVersion, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -128,12 +121,11 @@ func (s *pluginService) ListPluginVersions(
 	response, err := s.client.ListPluginVersions(
 		ctx,
 		&v1alpha1.ListPluginVersionsRequest{
-			Owner:         owner,
-			Name:          name,
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			Owner:     owner,
+			Name:      name,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Sort:      sort,
 		},
 	)
 	if err != nil {
@@ -241,8 +233,7 @@ func (s *pluginService) ListTemplates(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.PluginSort,
 ) (templates []*v1alpha1.Template, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -250,10 +241,9 @@ func (s *pluginService) ListTemplates(
 	response, err := s.client.ListTemplates(
 		ctx,
 		&v1alpha1.ListTemplatesRequest{
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Sort:      sort,
 		},
 	)
 	if err != nil {
@@ -268,8 +258,7 @@ func (s *pluginService) ListUserTemplates(
 	owner string,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.PluginSort,
 ) (templates []*v1alpha1.Template, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -277,11 +266,10 @@ func (s *pluginService) ListUserTemplates(
 	response, err := s.client.ListUserTemplates(
 		ctx,
 		&v1alpha1.ListUserTemplatesRequest{
-			Owner:         owner,
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			Owner:     owner,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Sort:      sort,
 		},
 	)
 	if err != nil {
@@ -296,8 +284,7 @@ func (s *pluginService) ListOrganizationTemplates(
 	organization string,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.PluginSort,
 ) (templates []*v1alpha1.Template, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -305,11 +292,10 @@ func (s *pluginService) ListOrganizationTemplates(
 	response, err := s.client.ListOrganizationTemplates(
 		ctx,
 		&v1alpha1.ListOrganizationTemplatesRequest{
-			Organization:  organization,
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			Organization: organization,
+			PageSize:     pageSize,
+			PageToken:    pageToken,
+			Sort:         sort,
 		},
 	)
 	if err != nil {
@@ -349,8 +335,7 @@ func (s *pluginService) ListTemplateVersions(
 	name string,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
-	orderedColumn v1alpha1.OrderedColumn,
+	sort v1alpha1.PluginSort,
 ) (templateVersions []*v1alpha1.TemplateVersion, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -358,12 +343,11 @@ func (s *pluginService) ListTemplateVersions(
 	response, err := s.client.ListTemplateVersions(
 		ctx,
 		&v1alpha1.ListTemplateVersionsRequest{
-			Owner:         owner,
-			Name:          name,
-			PageSize:      pageSize,
-			PageToken:     pageToken,
-			Reverse:       reverse,
-			OrderedColumn: orderedColumn,
+			Owner:     owner,
+			Name:      name,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Sort:      sort,
 		},
 	)
 	if err != nil {
