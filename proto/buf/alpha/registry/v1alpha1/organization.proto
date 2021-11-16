@@ -59,7 +59,7 @@ service OrganizationService {
   rpc UpdateOrganizationMember(UpdateOrganizationMemberRequest) returns (UpdateOrganizationMemberResponse);
   // RemoveOrganizationMember remove the role of an user in the organization.
   rpc RemoveOrganizationMember(RemoveOrganizationMemberRequest) returns (RemoveOrganizationMemberResponse);
-  // GetOrganizationSettings gets the settings of a organization, including organization base roles.
+  // GetOrganizationSettings gets the settings of an organization, including organization base roles.
   rpc GetOrganizationSettings(GetOrganizationSettingsRequest) returns (GetOrganizationSettingsResponse);
   // UpdateOrganizationSettings update the organization settings including base roles.
   rpc UpdateOrganizationSettings(UpdateOrganizationSettingsRequest) returns (UpdateOrganizationSettingsResponse);
