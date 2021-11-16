@@ -257,9 +257,9 @@ func (s *organizationService) GetOrganizationSettings(
 func (s *organizationService) UpdateOrganizationSettings(
 	ctx context.Context,
 	organizationId string,
-	repositoryBaseRole *v1alpha1.RepositoryRoleValue,
-	pluginBaseRole *v1alpha1.PluginRoleValue,
-	templateBaseRole *v1alpha1.TemplateRoleValue,
+	repositoryBaseRole v1alpha1.RepositoryRole,
+	pluginBaseRole v1alpha1.PluginRole,
+	templateBaseRole v1alpha1.TemplateRole,
 ) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)

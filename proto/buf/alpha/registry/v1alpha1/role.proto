@@ -57,15 +57,3 @@ enum PluginRole {
   PLUGIN_ROLE_WRITE = 3;
   PLUGIN_ROLE_READ = 4;
 }
-
-message RepositoryRoleValue {
-  RepositoryRole value = 1;
-}
-
-message PluginRoleValue {
-  PluginRole value = 1;
-}
-
-message TemplateRoleValue {
-  TemplateRole value = 1;
-}

@@ -175,12 +175,12 @@ message GetOrganizationSettingsResponse {
 message UpdateOrganizationSettingsRequest {
   // The ID of the organization for which to update the base roles.
   string organization_id = 1;
-  // optional, no update to this base role will be made if this is unset.
-  RepositoryRoleValue repository_base_role = 2;
-  // optional, no update to this base role will be made if this is unset.
-  PluginRoleValue plugin_base_role = 3;
-  // optional, no update to this base role will be made if this is unset.
-  TemplateRoleValue template_base_role = 4;
+  // optional, no update to this base role will be made if this is unspecified.
+  RepositoryRole repository_base_role = 2;
+  // optional, no update to this base role will be made if this is unspecified.
+  PluginRole plugin_base_role = 3;
+  // optional, no update to this base role will be made if this is unspecified.
+  TemplateRole template_base_role = 4;
 }
 
 message UpdateOrganizationSettingsResponse {}
