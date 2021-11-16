@@ -26,10 +26,10 @@ package buf.alpha.lint.v1;
 message Config {
   // version represents the version of the lint rule and category IDs that should be used with this config.
   string version = 1;
-  // use_rule_ids lists the rule and/or category IDs that are included in the lint check.
-  repeated string use_rule_ids = 2;
-  // except_rule_ids lists the rule and/or category IDs that are excluded from the lint check.
-  repeated string except_rule_ids = 3;
+  // use_ids lists the rule and/or category IDs that are included in the lint check.
+  repeated string use_ids = 2;
+  // except_ids lists the rule and/or category IDs that are excluded from the lint check.
+  repeated string except_ids = 3;
   // ignore_paths lists the paths of directories and/or files that should be ignored by the lint check.
   // All paths are relative to the root of the module.
   repeated string ignore_paths = 4;
