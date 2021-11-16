@@ -56,7 +56,7 @@ type OrganizationServiceClient interface {
 	UpdateOrganizationMember(ctx context.Context, in *UpdateOrganizationMemberRequest, opts ...grpc.CallOption) (*UpdateOrganizationMemberResponse, error)
 	// RemoveOrganizationMember remove the role of an user in the organization.
 	RemoveOrganizationMember(ctx context.Context, in *RemoveOrganizationMemberRequest, opts ...grpc.CallOption) (*RemoveOrganizationMemberResponse, error)
-	// GetOrganizationSettings gets the settings of a organization, including organization base roles.
+	// GetOrganizationSettings gets the settings of an organization, including organization base roles.
 	GetOrganizationSettings(ctx context.Context, in *GetOrganizationSettingsRequest, opts ...grpc.CallOption) (*GetOrganizationSettingsResponse, error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
 	UpdateOrganizationSettings(ctx context.Context, in *UpdateOrganizationSettingsRequest, opts ...grpc.CallOption) (*UpdateOrganizationSettingsResponse, error)
@@ -202,7 +202,7 @@ type OrganizationServiceServer interface {
 	UpdateOrganizationMember(context.Context, *UpdateOrganizationMemberRequest) (*UpdateOrganizationMemberResponse, error)
 	// RemoveOrganizationMember remove the role of an user in the organization.
 	RemoveOrganizationMember(context.Context, *RemoveOrganizationMemberRequest) (*RemoveOrganizationMemberResponse, error)
-	// GetOrganizationSettings gets the settings of a organization, including organization base roles.
+	// GetOrganizationSettings gets the settings of an organization, including organization base roles.
 	GetOrganizationSettings(context.Context, *GetOrganizationSettingsRequest) (*GetOrganizationSettingsResponse, error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
 	UpdateOrganizationSettings(context.Context, *UpdateOrganizationSettingsRequest) (*UpdateOrganizationSettingsResponse, error)
