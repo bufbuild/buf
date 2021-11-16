@@ -17,7 +17,6 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
-import "buf/alpha/registry/v1alpha1/scope.proto";
 import "google/protobuf/timestamp.proto";
 
 // OrganizationSort defines the sort options available
@@ -60,16 +59,10 @@ service OrganizationService {
   rpc ListUserOrganizations(ListUserOrganizationsRequest) returns (ListUserOrganizationsResponse);
   // CreateOrganization creates a new organization.
   rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
-  // UpdateOrganizationName updates a organization's name.
-  rpc UpdateOrganizationName(UpdateOrganizationNameRequest) returns (UpdateOrganizationNameResponse);
-  // UpdateOrganizationNameByName updates a organization's name by name.
-  rpc UpdateOrganizationNameByName(UpdateOrganizationNameByNameRequest) returns (UpdateOrganizationNameByNameResponse);
   // DeleteOrganization deletes a organization.
   rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse);
   // DeleteOrganizationByName deletes a organization by name.
   rpc DeleteOrganizationByName(DeleteOrganizationByNameRequest) returns (DeleteOrganizationByNameResponse);
-  // AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
-  rpc AddOrganizationBaseRepositoryScope(AddOrganizationBaseRepositoryScopeRequest) returns (AddOrganizationBaseRepositoryScopeResponse);
   // AddOrganizationMember add a role to an user in the organization.
   rpc AddOrganizationMember(AddOrganizationMemberRequest) returns (AddOrganizationMemberResponse);
   // UpdateOrganizationMember update the user's membership information in the organization.
@@ -131,25 +124,6 @@ message CreateOrganizationResponse {
   Organization organization = 1;
 }
 
-message UpdateOrganizationNameRequest {
-  string id = 1;
-  string new_name = 2;
-}
-
-message UpdateOrganizationNameResponse {
-  Organization organization = 1;
-}
-
-message UpdateOrganizationNameByNameRequest {
-  string name = 1;
-  string new_name = 2;
-}
-
-message UpdateOrganizationNameByNameResponse {
-  Organization organization = 1;
-}
-
-
 message DeleteOrganizationRequest {
   string id = 1;
 }
@@ -161,13 +135,6 @@ message DeleteOrganizationByNameRequest {
 }
 
 message DeleteOrganizationByNameResponse {}
-
-message AddOrganizationBaseRepositoryScopeRequest {
-  string id = 1;
-  RepositoryScope repository_scope = 2;
-}
-
-message AddOrganizationBaseRepositoryScopeResponse {}
 
 message AddOrganizationMemberRequest {
   // The ID of the organization for which the user will be added to.

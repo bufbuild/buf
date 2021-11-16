@@ -129,50 +129,6 @@ func (s *organizationService) CreateOrganization(ctx context.Context, name strin
 	return response.Organization, nil
 }
 
-// UpdateOrganizationName updates a organization's name.
-func (s *organizationService) UpdateOrganizationName(
-	ctx context.Context,
-	id string,
-	newName string,
-) (organization *v1alpha1.Organization, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.UpdateOrganizationName(
-		ctx,
-		&v1alpha1.UpdateOrganizationNameRequest{
-			Id:      id,
-			NewName: newName,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return response.Organization, nil
-}
-
-// UpdateOrganizationNameByName updates a organization's name by name.
-func (s *organizationService) UpdateOrganizationNameByName(
-	ctx context.Context,
-	name string,
-	newName string,
-) (organization *v1alpha1.Organization, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.UpdateOrganizationNameByName(
-		ctx,
-		&v1alpha1.UpdateOrganizationNameByNameRequest{
-			Name:    name,
-			NewName: newName,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return response.Organization, nil
-}
-
 // DeleteOrganization deletes a organization.
 func (s *organizationService) DeleteOrganization(ctx context.Context, id string) (_ error) {
 	if s.contextModifier != nil {
@@ -199,28 +155,6 @@ func (s *organizationService) DeleteOrganizationByName(ctx context.Context, name
 		ctx,
 		&v1alpha1.DeleteOrganizationByNameRequest{
 			Name: name,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
-func (s *organizationService) AddOrganizationBaseRepositoryScope(
-	ctx context.Context,
-	id string,
-	repositoryScope v1alpha1.RepositoryScope,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.AddOrganizationBaseRepositoryScope(
-		ctx,
-		&v1alpha1.AddOrganizationBaseRepositoryScopeRequest{
-			Id:              id,
-			RepositoryScope: repositoryScope,
 		},
 	)
 	if err != nil {

@@ -17,7 +17,6 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
-import "buf/alpha/registry/v1alpha1/scope.proto";
 import "google/protobuf/timestamp.proto";
 
 // UserSort defines the sort options available for users.
@@ -64,16 +63,10 @@ service UserService {
   // ListOrganizationUsers lists all users for an organization.
   // TODO: #663 move this to organization service
   rpc ListOrganizationUsers(ListOrganizationUsersRequest) returns (ListOrganizationUsersResponse);
-  // UpdateUserUsername updates a user's username.
-  rpc UpdateUserUsername(UpdateUserUsernameRequest) returns (UpdateUserUsernameResponse);
   // DeleteUser deletes a user.
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
   // Deactivate user deactivates a user.
   rpc DeactivateUser(DeactivateUserRequest) returns (DeactivateUserResponse);
-  // AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
-  rpc AddUserOrganizationScopeByName(AddUserOrganizationScopeByNameRequest) returns (AddUserOrganizationScopeByNameResponse);
-  // RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
-  rpc RemoveUserOrganizationScope(RemoveUserOrganizationScopeRequest) returns (RemoveUserOrganizationScopeResponse);
   // UpdateUserServerRole update the role of an user in the server.
   rpc UpdateUserServerRole(UpdateUserServerRoleRequest) returns (UpdateUserServerRoleResponse);
 }
@@ -129,14 +122,6 @@ message ListOrganizationUsersResponse {
   string next_page_token = 2;
 }
 
-message UpdateUserUsernameRequest {
-  string new_username = 1;
-}
-
-message UpdateUserUsernameResponse {
-  User user = 1;
-}
-
 message DeleteUserRequest {}
 
 message DeleteUserResponse {}
@@ -146,22 +131,6 @@ message DeactivateUserRequest {
 }
 
 message DeactivateUserResponse {}
-
-message AddUserOrganizationScopeByNameRequest {
-  string name = 1;
-  string organization_name = 2;
-  OrganizationScope organization_scope = 3;
-}
-
-message AddUserOrganizationScopeByNameResponse {}
-
-message RemoveUserOrganizationScopeRequest {
-  string id = 1;
-  string organization_id = 2;
-  OrganizationScope organization_scope = 3;
-}
-
-message RemoveUserOrganizationScopeResponse {}
 
 message UpdateUserServerRoleRequest {
   // The ID of the user for which to be updated a role.
