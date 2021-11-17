@@ -1,0 +1,108 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.audit.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+message EventEnvelope {
+    string event_id = 1;
+    // The actor represents the subject initiating execution
+    // of the event
+    Actor actor = 2;
+    google.protobuf.Timestamp event_time = 3;
+    RequestInfo request_info = 4;
+    // Represents object(s) per event, e.g. for remote generation,
+    // both repository, template and all the template's
+    // plugins are objects.
+    repeated Object objects = 5;
+    // Details of any error that occurred upon completion of 
+    // the event request.
+    Error error = 6;
+    // Free-form to guarantee stability of fields over time.
+    google.protobuf.Struct request = 7;
+    google.protobuf.Struct response = 8;
+  }
+  
+  message UserActor {
+    string id = 1;
+    string username = 2;
+    string source_ip = 3;
+    bool anonymous = 4;
+  }
+  
+  message Actor {
+    oneof type {
+      UserActor user = 1;
+    }
+  }
+  
+  message RequestInfo {
+    // The name of the service to which the request belongs.
+    string service = 1;
+    // The method name of the request.
+    string method = 2;
+    string trace_id = 3;
+    string span_id = 4;
+  }
+  
+  message UserObject {
+    string id = 1;
+    string username = 2;
+  }
+  
+  message OrganizationObject {
+    string id = 1;
+    string name = 2;
+  }
+  message RepositoryObject {
+    string id = 1;
+    string name = 2;
+    string owner_id = 3;
+    string owner_name = 4;
+    bool public = 5;
+  }
+  
+  message PluginObject {
+    string id = 1;
+    string name = 2;
+    string owner_id = 3;
+    string owner_name = 4;
+    bool public = 5;
+  }
+  
+  message TemplateObject {
+    string id = 1;
+    string name = 2;
+    string owner_id = 3;
+    string owner_name = 4;
+    bool public = 5;
+  }
+  
+  message Object {
+    oneof type {
+      UserObject user = 1;
+      OrganizationObject organization = 2;
+      RepositoryObject repository = 3;
+      PluginObject plugin = 4;
+      TemplateObject template = 5;
+    }
+  }
+  
+  message Error {
+    string message = 1;
+  }
