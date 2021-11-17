@@ -99,8 +99,8 @@ message ListUsersRequest {
   // The first page is returned if this is empty.
   string page_token = 2;
   bool reverse = 3;
-  // request with unspecified user state will return users with both user state.
-  UserState user_state = 4;
+  // If the user_state_filter is unspecified, all users are included.
+  UserState user_state_filter = 4;
 }
 
 message ListUsersResponse {
@@ -143,8 +143,8 @@ message UpdateUserServerRoleRequest {
 message UpdateUserServerRoleResponse {}
 
 message CountUsersRequest {
-  // request with unspecified user state will return the number of users with both user state.
-  UserState user_state = 4;
+  // If the user_state_filter is unspecified, all users are included.
+  UserState user_state_filter = 4;
 }
 
 message CountUsersResponse {
