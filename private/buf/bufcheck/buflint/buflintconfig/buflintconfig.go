@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/internal/buflintv1beta1"
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 )
 
 // Rule is a rule.
@@ -87,6 +88,50 @@ func NewConfigV1(externalConfig ExternalConfigV1) (*Config, error) {
 		RPCAllowGoogleProtobufEmptyRequests:  externalConfig.RPCAllowGoogleProtobufEmptyRequests,
 		RPCAllowGoogleProtobufEmptyResponses: externalConfig.RPCAllowGoogleProtobufEmptyResponses,
 		ServiceSuffix:                        externalConfig.ServiceSuffix,
+	}.NewConfig(
+		buflintv1.VersionSpec,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return internalConfigToConfig(internalConfig), nil
+}
+
+// NewConfigV1Beta1ForProto returns a new Config for the given proto.
+func NewConfigV1Beta1ForProto(protoConfig *lintv1.Config) (*Config, error) {
+	internalConfig, err := internal.ConfigBuilder{
+		Use:                                  protoConfig.GetUseIds(),
+		Except:                               protoConfig.GetExceptIds(),
+		IgnoreRootPaths:                      protoConfig.GetIgnorePaths(),
+		IgnoreIDOrCategoryToRootPaths:        ignoreOnlyMapForProto(protoConfig.GetIgnoreIdPaths()),
+		EnumZeroValueSuffix:                  protoConfig.GetEnumZeroValueSuffix(),
+		RPCAllowSameRequestResponse:          protoConfig.GetRpcAllowSameRequestResponse(),
+		RPCAllowGoogleProtobufEmptyRequests:  protoConfig.GetRpcAllowGoogleProtobufEmptyRequests(),
+		RPCAllowGoogleProtobufEmptyResponses: protoConfig.GetRpcAllowGoogleProtobufEmptyResponses(),
+		ServiceSuffix:                        protoConfig.GetServiceSuffix(),
+		AllowCommentIgnores:                  protoConfig.GetAllowCommentIgnores(),
+	}.NewConfig(
+		buflintv1beta1.VersionSpec,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return internalConfigToConfig(internalConfig), nil
+}
+
+// NewConfigV1ForProto returns a new Config for the given proto.
+func NewConfigV1ForProto(protoConfig *lintv1.Config) (*Config, error) {
+	internalConfig, err := internal.ConfigBuilder{
+		Use:                                  protoConfig.GetUseIds(),
+		Except:                               protoConfig.GetExceptIds(),
+		IgnoreRootPaths:                      protoConfig.GetIgnorePaths(),
+		IgnoreIDOrCategoryToRootPaths:        ignoreOnlyMapForProto(protoConfig.GetIgnoreIdPaths()),
+		EnumZeroValueSuffix:                  protoConfig.GetEnumZeroValueSuffix(),
+		RPCAllowSameRequestResponse:          protoConfig.GetRpcAllowSameRequestResponse(),
+		RPCAllowGoogleProtobufEmptyRequests:  protoConfig.GetRpcAllowGoogleProtobufEmptyRequests(),
+		RPCAllowGoogleProtobufEmptyResponses: protoConfig.GetRpcAllowGoogleProtobufEmptyResponses(),
+		ServiceSuffix:                        protoConfig.GetServiceSuffix(),
+		AllowCommentIgnores:                  protoConfig.GetAllowCommentIgnores(),
 	}.NewConfig(
 		buflintv1.VersionSpec,
 	)
@@ -259,4 +304,12 @@ func rulesToBufcheckRules(rules []Rule) []bufcheck.Rule {
 		s[i] = e
 	}
 	return s
+}
+
+func ignoreOnlyMapForProto(protoIDPaths []*lintv1.IDPaths) map[string][]string {
+	ignoreIDToRootPaths := make(map[string][]string)
+	for _, protoIDPath := range protoIDPaths {
+		ignoreIDToRootPaths[protoIDPath.GetId()] = protoIDPath.GetPaths()
+	}
+	return ignoreIDToRootPaths
 }

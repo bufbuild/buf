@@ -18,6 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
+	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -31,6 +34,8 @@ type module struct {
 	moduleIdentity       bufmoduleref.ModuleIdentity
 	commit               string
 	documentation        string
+	breakingConfig       *bufbreakingconfig.Config
+	lintConfig           *buflintconfig.Config
 }
 
 func newModuleForProto(
@@ -56,11 +61,45 @@ func newModuleForProto(
 	if err != nil {
 		return nil, err
 	}
+	protoBreakingConfig := protoModule.GetBreakingConfig()
+	var breakingConfig *bufbreakingconfig.Config
+	if protoBreakingConfig.GetVersion() == bufconfig.V1Version {
+		var err error
+		breakingConfig, err = bufbreakingconfig.NewConfigV1ForProto(protoBreakingConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if protoBreakingConfig.GetVersion() == bufconfig.V1Beta1Version {
+		var err error
+		breakingConfig, err = bufbreakingconfig.NewConfigV1Beta1ForProto(protoBreakingConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+	protoLintConfig := protoModule.GetLintConfig()
+	var lintConfig *buflintconfig.Config
+	if protoLintConfig.GetVersion() == bufconfig.V1Version {
+		var err error
+		lintConfig, err = buflintconfig.NewConfigV1ForProto(protoLintConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if protoLintConfig.GetVersion() == bufconfig.V1Beta1Version {
+		var err error
+		lintConfig, err = buflintconfig.NewConfigV1Beta1ForProto(protoLintConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return newModule(
 		ctx,
 		readWriteBucket,
 		dependencyModulePins,
 		protoModule.GetDocumentation(),
+		breakingConfig,
+		lintConfig,
 		options...,
 	)
 }
@@ -78,11 +117,17 @@ func newModuleForBucket(
 	if err != nil {
 		return nil, err
 	}
+	moduleConfig, err := bufconfig.GetConfigForBucket(ctx, sourceReadBucket)
+	if err != nil {
+		return nil, err
+	}
 	return newModule(
 		ctx,
 		storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
 		dependencyModulePins,
 		documentation,
+		moduleConfig.Breaking,
+		moduleConfig.Lint,
 		options...,
 	)
 }
@@ -94,6 +139,8 @@ func newModule(
 	sourceReadBucket storage.ReadBucket,
 	dependencyModulePins []bufmoduleref.ModulePin,
 	documentation string,
+	breakingConfig *bufbreakingconfig.Config,
+	lintConfig *buflintconfig.Config,
 	options ...ModuleOption,
 ) (_ *module, retErr error) {
 	if err := bufmoduleref.ValidateModulePinsUniqueByIdentity(dependencyModulePins); err != nil {
@@ -105,6 +152,8 @@ func newModule(
 		sourceReadBucket:     sourceReadBucket,
 		dependencyModulePins: dependencyModulePins,
 		documentation:        documentation,
+		breakingConfig:       breakingConfig,
+		lintConfig:           lintConfig,
 	}
 	for _, option := range options {
 		option(module)

@@ -19,6 +19,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/internal/bufbreakingv1"
 	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/internal/bufbreakingv1beta1"
 	"github.com/bufbuild/buf/private/buf/bufcheck/internal"
+	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
 )
 
 // Rule is a rule.
@@ -82,6 +83,41 @@ func NewConfigV1(externalConfig ExternalConfigV1) (*Config, error) {
 	return internalConfigToConfig(internalConfig), nil
 }
 
+// NewConfigV1Beta1ForProto returns a new Config for the given proto.
+func NewConfigV1Beta1ForProto(protoConfig *breakingv1.Config) (*Config, error) {
+	internalConfig, err := internal.ConfigBuilder{
+		Use:                           protoConfig.GetUseIds(),
+		Except:                        protoConfig.GetExceptIds(),
+		IgnoreRootPaths:               protoConfig.GetIgnorePaths(),
+		IgnoreIDOrCategoryToRootPaths: ignoreOnlyMapForProto(protoConfig.GetIgnoreIdPaths()),
+		IgnoreUnstablePackages:        protoConfig.GetIgnoreUnstablePackages(),
+	}.NewConfig(
+		bufbreakingv1beta1.VersionSpec,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return internalConfigToConfig(internalConfig), nil
+}
+
+// NewConfigV1ForProto returns a new Config for the given proto.
+func NewConfigV1ForProto(protoConfig *breakingv1.Config) (*Config, error) {
+	internalConfig, err := internal.ConfigBuilder{
+		Use:                           protoConfig.GetUseIds(),
+		Except:                        protoConfig.GetExceptIds(),
+		IgnoreRootPaths:               protoConfig.GetIgnorePaths(),
+		IgnoreIDOrCategoryToRootPaths: ignoreOnlyMapForProto(protoConfig.GetIgnoreIdPaths()),
+		IgnoreUnstablePackages:        protoConfig.GetIgnoreUnstablePackages(),
+	}.NewConfig(
+		bufbreakingv1.VersionSpec,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return internalConfigToConfig(internalConfig), nil
+}
+
+// GetAllRulesV1Beta1 gets all known rules.
 // GetAllRulesV1Beta1 gets all known rules.
 //
 // Should only be used for printing.
@@ -163,4 +199,12 @@ func rulesToBufcheckRules(rules []Rule) []bufcheck.Rule {
 		s[i] = e
 	}
 	return s
+}
+
+func ignoreOnlyMapForProto(protoIDPaths []*breakingv1.IDPaths) map[string][]string {
+	ignoreIDToRootPaths := make(map[string][]string)
+	for _, protoIDPath := range protoIDPaths {
+		ignoreIDToRootPaths[protoIDPath.GetId()] = protoIDPath.GetPaths()
+	}
+	return ignoreIDToRootPaths
 }

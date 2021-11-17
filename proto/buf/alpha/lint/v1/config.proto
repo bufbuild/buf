@@ -41,6 +41,8 @@ message Config {
   // this value with the given string.
   string enum_zero_value_suffix = 6;
   // rpc_allow_same_request_response allows the same message type for both the request and response of an RPC.
+  bool rpc_allow_same_request_response = 11;
+  // rpc_allow_google_protobuf_empty_responses allows the RPC requests to use the google.protobuf.Empty message.
   bool rpc_allow_google_protobuf_empty_requests = 7;
   // rpc_allow_google_protobuf_empty_responses allows the RPC responses to use the google.protobuf.Empty message.
   bool rpc_allow_google_protobuf_empty_responses = 8;
