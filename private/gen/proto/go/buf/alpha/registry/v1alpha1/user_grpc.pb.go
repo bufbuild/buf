@@ -53,6 +53,8 @@ type UserServiceClient interface {
 	DeactivateUser(ctx context.Context, in *DeactivateUserRequest, opts ...grpc.CallOption) (*DeactivateUserResponse, error)
 	// UpdateUserServerRole update the role of an user in the server.
 	UpdateUserServerRole(ctx context.Context, in *UpdateUserServerRoleRequest, opts ...grpc.CallOption) (*UpdateUserServerRoleResponse, error)
+	// CountUsers returns the number of users in the server by the user state provided.
+	CountUsers(ctx context.Context, in *CountUsersRequest, opts ...grpc.CallOption) (*CountUsersResponse, error)
 }
 
 type userServiceClient struct {
@@ -135,6 +137,15 @@ func (c *userServiceClient) UpdateUserServerRole(ctx context.Context, in *Update
 	return out, nil
 }
 
+func (c *userServiceClient) CountUsers(ctx context.Context, in *CountUsersRequest, opts ...grpc.CallOption) (*CountUsersResponse, error) {
+	out := new(CountUsersResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/CountUsers", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations should embed UnimplementedUserServiceServer
 // for forward compatibility
@@ -156,6 +167,8 @@ type UserServiceServer interface {
 	DeactivateUser(context.Context, *DeactivateUserRequest) (*DeactivateUserResponse, error)
 	// UpdateUserServerRole update the role of an user in the server.
 	UpdateUserServerRole(context.Context, *UpdateUserServerRoleRequest) (*UpdateUserServerRoleResponse, error)
+	// CountUsers returns the number of users in the server by the user state provided.
+	CountUsers(context.Context, *CountUsersRequest) (*CountUsersResponse, error)
 }
 
 // UnimplementedUserServiceServer should be embedded to have forward compatible implementations.
@@ -185,6 +198,9 @@ func (UnimplementedUserServiceServer) DeactivateUser(context.Context, *Deactivat
 }
 func (UnimplementedUserServiceServer) UpdateUserServerRole(context.Context, *UpdateUserServerRoleRequest) (*UpdateUserServerRoleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserServerRole not implemented")
+}
+func (UnimplementedUserServiceServer) CountUsers(context.Context, *CountUsersRequest) (*CountUsersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CountUsers not implemented")
 }
 
 // UnsafeUserServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -342,6 +358,24 @@ func _UserService_UpdateUserServerRole_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_CountUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CountUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).CountUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.UserService/CountUsers",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).CountUsers(ctx, req.(*CountUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -380,6 +414,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateUserServerRole",
 			Handler:    _UserService_UpdateUserServerRole_Handler,
+		},
+		{
+			MethodName: "CountUsers",
+			Handler:    _UserService_CountUsers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

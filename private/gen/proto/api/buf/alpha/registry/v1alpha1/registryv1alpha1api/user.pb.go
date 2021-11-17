@@ -56,4 +56,6 @@ type UserService interface {
 		userId string,
 		serverRole v1alpha1.ServerRole,
 	) (err error)
+	// CountUsers returns the number of users in the server by the user state provided.
+	CountUsers(ctx context.Context, userState v1alpha1.UserState) (totalCount uint32, err error)
 }

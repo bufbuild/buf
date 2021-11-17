@@ -66,6 +66,8 @@ service UserService {
   rpc DeactivateUser(DeactivateUserRequest) returns (DeactivateUserResponse);
   // UpdateUserServerRole update the role of an user in the server.
   rpc UpdateUserServerRole(UpdateUserServerRoleRequest) returns (UpdateUserServerRoleResponse);
+  // CountUsers returns the number of users in the server by the user state provided.
+  rpc CountUsers(CountUsersRequest) returns (CountUsersResponse);
 }
 
 message CreateUserRequest {
@@ -97,7 +99,7 @@ message ListUsersRequest {
   // The first page is returned if this is empty.
   string page_token = 2;
   bool reverse = 3;
-  // request with unspecified user state will return users with both user state
+  // request with unspecified user state will return users with both user state.
   UserState user_state = 4;
 }
 
@@ -139,3 +141,12 @@ message UpdateUserServerRoleRequest {
 }
 
 message UpdateUserServerRoleResponse {}
+
+message CountUsersRequest {
+  // request with unspecified user state will return the number of users with both user state.
+  UserState user_state = 4;
+}
+
+message CountUsersResponse {
+  uint32 total_count = 1;
+}
