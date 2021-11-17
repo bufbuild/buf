@@ -35,6 +35,7 @@ type UserService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
+		userStateFilter v1alpha1.UserState,
 	) (users []*v1alpha1.User, nextPageToken string, err error)
 	// ListOrganizationUsers lists all users for an organization.
 	// TODO: #663 move this to organization service
@@ -55,4 +56,6 @@ type UserService interface {
 		userId string,
 		serverRole v1alpha1.ServerRole,
 	) (err error)
+	// CountUsers returns the number of users in the server by the user state provided.
+	CountUsers(ctx context.Context, userStateFilter v1alpha1.UserState) (totalCount uint32, err error)
 }

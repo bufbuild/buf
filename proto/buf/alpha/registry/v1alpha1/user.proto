@@ -41,6 +41,12 @@ message OrganizationUser {
   OrganizationRole organization_role = 3;
 }
 
+enum UserState {
+  USER_STATE_UNSPECIFIED = 0;
+  USER_STATE_ACTIVE = 1;
+  USER_STATE_DEACTIVATED = 2;
+}
+
 // UserService is the User service.
 service UserService {
   // CreateUser creates a new user with the given username.
@@ -60,6 +66,8 @@ service UserService {
   rpc DeactivateUser(DeactivateUserRequest) returns (DeactivateUserResponse);
   // UpdateUserServerRole update the role of an user in the server.
   rpc UpdateUserServerRole(UpdateUserServerRoleRequest) returns (UpdateUserServerRoleResponse);
+  // CountUsers returns the number of users in the server by the user state provided.
+  rpc CountUsers(CountUsersRequest) returns (CountUsersResponse);
 }
 
 message CreateUserRequest {
@@ -91,6 +99,8 @@ message ListUsersRequest {
   // The first page is returned if this is empty.
   string page_token = 2;
   bool reverse = 3;
+  // If the user_state_filter is unspecified, all users are included.
+  UserState user_state_filter = 4;
 }
 
 message ListUsersResponse {
@@ -131,3 +141,12 @@ message UpdateUserServerRoleRequest {
 }
 
 message UpdateUserServerRoleResponse {}
+
+message CountUsersRequest {
+  // If the user_state_filter is unspecified, all users are included.
+  UserState user_state_filter = 1;
+}
+
+message CountUsersResponse {
+  uint32 total_count = 1;
+}
