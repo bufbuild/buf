@@ -144,7 +144,7 @@ message UpdateUserServerRoleResponse {}
 
 message CountUsersRequest {
   // If the user_state_filter is unspecified, all users are included.
-  UserState user_state_filter = 4;
+  UserState user_state_filter = 1;
 }
 
 message CountUsersResponse {
