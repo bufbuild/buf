@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/audit.proto";
 import "google/protobuf/timestamp.proto";
 
 enum Visibility {
@@ -116,7 +117,7 @@ message ListRepositoriesResponse {
 
 message ListUserRepositoriesRequest {
   // The ID of the user whose repositories should be listed.
-  string user_id = 1;
+  string user_id = 1 [(audited) = true];
   uint32 page_size = 2;
   // The first page is returned if this is empty.
   string page_token = 3;
@@ -144,7 +145,7 @@ message ListRepositoriesUserCanAccessResponse {
 
 message ListOrganizationRepositoriesRequest {
   // The ID of the organization whose repositories should be listed.
-  string organization_id = 1;
+  string organization_id = 1 [(audited) = true];
   uint32 page_size = 2;
   // The first page is returned if this is empty.
   string page_token = 3;
