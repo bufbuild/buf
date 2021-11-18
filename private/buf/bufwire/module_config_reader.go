@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwork"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"

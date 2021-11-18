@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/bufbreakingconfig"
-	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
-	"github.com/bufbuild/buf/private/buf/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
