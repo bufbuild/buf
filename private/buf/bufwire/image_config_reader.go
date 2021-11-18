@@ -19,9 +19,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"

@@ -24,8 +24,8 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -412,18 +412,18 @@ func TestFailCheckBreaking1(t *testing.T) {
 		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
 		`),
 		"", // stderr should be empty
 		"breaking",
 		// can't bother right now to filepath.Join this
-		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
+		"../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete",
 		"--against",
-		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
+		"../../../bufpkg/bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
 	)
 }
 
