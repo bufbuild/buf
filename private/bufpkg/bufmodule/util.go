@@ -143,7 +143,7 @@ func breakingConfigForProto(protoBreakingConfig *breakingv1.Config) (*bufbreakin
 	case bufconfig.V1Version:
 		return bufbreakingconfig.NewConfigV1ForProto(protoBreakingConfig)
 	default:
-		return nil, fmt.Errorf("invalide version %q found in proto breaking configuration", version)
+		return nil, fmt.Errorf("invalid version %q found in proto breaking configuration", version)
 	}
 }
 
@@ -159,6 +159,6 @@ func lintConfigForProto(protoLintConfig *lintv1.Config) (*buflintconfig.Config, 
 	case bufconfig.V1Version:
 		return buflintconfig.NewConfigV1ForProto(protoLintConfig)
 	default:
-		return nil, fmt.Errorf("invalide version %q found in proto lint configuration", version)
+		return nil, fmt.Errorf("invalid version %q found in proto lint configuration", version)
 	}
 }
