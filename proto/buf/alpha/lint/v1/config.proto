@@ -41,16 +41,16 @@ message Config {
   // this value with the given string.
   string enum_zero_value_suffix = 6;
   // rpc_allow_same_request_response allows the same message type for both the request and response of an RPC.
-  bool rpc_allow_same_request_response = 11;
+  bool rpc_allow_same_request_response = 7;
   // rpc_allow_google_protobuf_empty_responses allows the RPC requests to use the google.protobuf.Empty message.
-  bool rpc_allow_google_protobuf_empty_requests = 7;
+  bool rpc_allow_google_protobuf_empty_requests = 8;
   // rpc_allow_google_protobuf_empty_responses allows the RPC responses to use the google.protobuf.Empty message.
-  bool rpc_allow_google_protobuf_empty_responses = 8;
+  bool rpc_allow_google_protobuf_empty_responses = 9;
   // service_suffix applies to the SERVICE_SUFFIX rule ID. By default, the rule verifies that all service names
   // end with the suffix Service. This allows users to override the value with the given string.
-  string service_suffix = 9;
+  string service_suffix = 10;
   // allow_comment_ignores turns on comment-driven ignores.
-  bool allow_comment_ignores = 10;
+  bool allow_comment_ignores = 11;
 }
 
 // IDPaths represents a rule or category ID and the file and/or directory paths that are ignored for the rule.

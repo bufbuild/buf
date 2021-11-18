@@ -61,37 +61,13 @@ func newModuleForProto(
 	if err != nil {
 		return nil, err
 	}
-	protoBreakingConfig := protoModule.GetBreakingConfig()
-	var breakingConfig *bufbreakingconfig.Config
-	if protoBreakingConfig.GetVersion() == bufconfig.V1Version {
-		var err error
-		breakingConfig, err = bufbreakingconfig.NewConfigV1ForProto(protoBreakingConfig)
-		if err != nil {
-			return nil, err
-		}
+	breakingConfig, err := breakingConfigForProto(protoModule.GetBreakingConfig())
+	if err != nil {
+		return nil, err
 	}
-	if protoBreakingConfig.GetVersion() == bufconfig.V1Beta1Version {
-		var err error
-		breakingConfig, err = bufbreakingconfig.NewConfigV1Beta1ForProto(protoBreakingConfig)
-		if err != nil {
-			return nil, err
-		}
-	}
-	protoLintConfig := protoModule.GetLintConfig()
-	var lintConfig *buflintconfig.Config
-	if protoLintConfig.GetVersion() == bufconfig.V1Version {
-		var err error
-		lintConfig, err = buflintconfig.NewConfigV1ForProto(protoLintConfig)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if protoLintConfig.GetVersion() == bufconfig.V1Beta1Version {
-		var err error
-		lintConfig, err = buflintconfig.NewConfigV1Beta1ForProto(protoLintConfig)
-		if err != nil {
-			return nil, err
-		}
+	lintConfig, err := lintConfigForProto(protoModule.GetLintConfig())
+	if err != nil {
+		return nil, err
 	}
 	return newModule(
 		ctx,
