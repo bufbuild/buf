@@ -42,7 +42,7 @@ type UserServiceClient interface {
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
 	// GetUserByUsername gets a user by username.
 	GetUserByUsername(ctx context.Context, in *GetUserByUsernameRequest, opts ...grpc.CallOption) (*GetUserByUsernameResponse, error)
-	// ListUsers lists all users.
+	// ListUsers lists users by the user state provided.
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
 	// ListOrganizationUsers lists all users for an organization.
 	// TODO: #663 move this to organization service
@@ -156,7 +156,7 @@ type UserServiceServer interface {
 	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
 	// GetUserByUsername gets a user by username.
 	GetUserByUsername(context.Context, *GetUserByUsernameRequest) (*GetUserByUsernameResponse, error)
-	// ListUsers lists all users.
+	// ListUsers lists users by the user state provided.
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
 	// ListOrganizationUsers lists all users for an organization.
 	// TODO: #663 move this to organization service

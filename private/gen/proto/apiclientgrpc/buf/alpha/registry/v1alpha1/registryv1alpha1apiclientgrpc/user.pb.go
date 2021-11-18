@@ -79,7 +79,7 @@ func (s *userService) GetUserByUsername(ctx context.Context, username string) (u
 	return response.User, nil
 }
 
-// ListUsers lists all users.
+// ListUsers lists users by the user state provided.
 func (s *userService) ListUsers(
 	ctx context.Context,
 	pageSize uint32,

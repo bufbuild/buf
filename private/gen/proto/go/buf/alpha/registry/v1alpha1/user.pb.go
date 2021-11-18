@@ -525,7 +525,7 @@ type ListUsersRequest struct {
 	// The first page is returned if this is empty.
 	PageToken string `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
 	Reverse   bool   `protobuf:"varint,3,opt,name=reverse,proto3" json:"reverse,omitempty"`
-	// If the user_state_filter is unspecified, all users are included.
+	// The user_state_filter must be specified, otherwise an error will be returned.
 	UserStateFilter UserState `protobuf:"varint,4,opt,name=user_state_filter,json=userStateFilter,proto3,enum=buf.alpha.registry.v1alpha1.UserState" json:"user_state_filter,omitempty"`
 }
 
@@ -1034,7 +1034,7 @@ type CountUsersRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// If the user_state_filter is unspecified, all users are included.
+	// The user_state_filter must be specified, otherwise an error will be returned.
 	UserStateFilter UserState `protobuf:"varint,1,opt,name=user_state_filter,json=userStateFilter,proto3,enum=buf.alpha.registry.v1alpha1.UserState" json:"user_state_filter,omitempty"`
 }
 

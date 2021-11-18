@@ -29,7 +29,7 @@ type UserService interface {
 	GetUser(ctx context.Context, id string) (user *v1alpha1.User, err error)
 	// GetUserByUsername gets a user by username.
 	GetUserByUsername(ctx context.Context, username string) (user *v1alpha1.User, err error)
-	// ListUsers lists all users.
+	// ListUsers lists users by the user state provided.
 	ListUsers(
 		ctx context.Context,
 		pageSize uint32,
