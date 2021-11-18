@@ -16,10 +16,16 @@ package bufmodule
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"sort"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
+	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
@@ -123,4 +129,36 @@ func modulePinCompareToOnlyCommit(a bufmoduleref.ModulePin, b bufmoduleref.Modul
 		return 1
 	}
 	return 0
+}
+
+func breakingConfigForProto(protoBreakingConfig *breakingv1.Config) (*bufbreakingconfig.Config, error) {
+	if protoBreakingConfig == nil {
+		// Not all modules will have a *breakingv1.Config, so we
+		// don't validate against it if it doens't exist.
+		return nil, nil
+	}
+	switch version := protoBreakingConfig.GetVersion(); version {
+	case bufconfig.V1Beta1Version:
+		return bufbreakingconfig.NewConfigV1Beta1ForProto(protoBreakingConfig)
+	case bufconfig.V1Version:
+		return bufbreakingconfig.NewConfigV1ForProto(protoBreakingConfig)
+	default:
+		return nil, fmt.Errorf("invalid version %q found in proto breaking configuration", version)
+	}
+}
+
+func lintConfigForProto(protoLintConfig *lintv1.Config) (*buflintconfig.Config, error) {
+	if protoLintConfig == nil {
+		// Not all modules will have a *lintv1.Config, so we
+		// don't validate against it if it doens't exist.
+		return nil, nil
+	}
+	switch version := protoLintConfig.GetVersion(); version {
+	case bufconfig.V1Beta1Version:
+		return buflintconfig.NewConfigV1Beta1ForProto(protoLintConfig)
+	case bufconfig.V1Version:
+		return buflintconfig.NewConfigV1ForProto(protoLintConfig)
+	default:
+		return nil, fmt.Errorf("invalid version %q found in proto lint configuration", version)
+	}
 }
