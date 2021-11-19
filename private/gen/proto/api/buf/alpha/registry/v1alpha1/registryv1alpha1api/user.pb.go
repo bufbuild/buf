@@ -35,6 +35,7 @@ type UserService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
+		userStateFilter v1alpha1.UserState,
 	) (users []*v1alpha1.User, nextPageToken string, err error)
 	// ListOrganizationUsers lists all users for an organization.
 	// TODO: #663 move this to organization service
@@ -45,30 +46,16 @@ type UserService interface {
 		pageToken string,
 		reverse bool,
 	) (users []*v1alpha1.OrganizationUser, nextPageToken string, err error)
-	// UpdateUserUsername updates a user's username.
-	UpdateUserUsername(ctx context.Context, newUsername string) (user *v1alpha1.User, err error)
 	// DeleteUser deletes a user.
 	DeleteUser(ctx context.Context) (err error)
 	// Deactivate user deactivates a user.
 	DeactivateUser(ctx context.Context, id string) (err error)
-	// AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
-	AddUserOrganizationScopeByName(
-		ctx context.Context,
-		name string,
-		organizationName string,
-		organizationScope v1alpha1.OrganizationScope,
-	) (err error)
-	// RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
-	RemoveUserOrganizationScope(
-		ctx context.Context,
-		id string,
-		organizationId string,
-		organizationScope v1alpha1.OrganizationScope,
-	) (err error)
 	// UpdateUserServerRole update the role of an user in the server.
 	UpdateUserServerRole(
 		ctx context.Context,
 		userId string,
 		serverRole v1alpha1.ServerRole,
 	) (err error)
+	// CountUsers returns the number of users in the server by the user state provided.
+	CountUsers(ctx context.Context, userStateFilter v1alpha1.UserState) (totalCount uint32, err error)
 }

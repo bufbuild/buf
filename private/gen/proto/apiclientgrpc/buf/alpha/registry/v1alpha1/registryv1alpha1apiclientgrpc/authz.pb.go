@@ -28,24 +28,6 @@ type authzService struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// UserCanRemoveUserOrganizationScopes returns whether the user is authorized
-// to remove user scopes from an organization.
-func (s *authzService) UserCanRemoveUserOrganizationScopes(ctx context.Context, organizationId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.UserCanRemoveUserOrganizationScopes(
-		ctx,
-		&v1alpha1.UserCanRemoveUserOrganizationScopesRequest{
-			OrganizationId: organizationId,
-		},
-	)
-	if err != nil {
-		return false, err
-	}
-	return response.Authorized, nil
-}
-
 // UserCanCreateOrganizationRepository returns whether the user is authorized
 // to create repositories in an organization.
 func (s *authzService) UserCanCreateOrganizationRepository(ctx context.Context, organizationId string) (authorized bool, _ error) {
@@ -385,6 +367,22 @@ func (s *authzService) UserCanDeleteUser(ctx context.Context) (authorized bool, 
 	response, err := s.client.UserCanDeleteUser(
 		ctx,
 		&v1alpha1.UserCanDeleteUserRequest{},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}
+
+// UserCanSeeServerAdminPanel returns whether the user is authorized
+// to see server admin panel.
+func (s *authzService) UserCanSeeServerAdminPanel(ctx context.Context) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanSeeServerAdminPanel(
+		ctx,
+		&v1alpha1.UserCanSeeServerAdminPanelRequest{},
 	)
 	if err != nil {
 		return false, err

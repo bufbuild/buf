@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -92,6 +93,16 @@ func GetProtocFileDescriptorSet(
 		return nil, err
 	}
 	return fileDescriptorSet, nil
+}
+
+// GetProtocVersion runs protoc --version with RunProtoc and returns the output sans the "libprotoc" prefix
+func GetProtocVersion(ctx context.Context) (string, error) {
+	var stdout bytes.Buffer
+	runner := command.NewRunner()
+	if err := RunProtoc(ctx, runner, nil, nil, false, false, nil, &stdout, "--version"); err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(strings.TrimPrefix(stdout.String(), "libprotoc")), nil
 }
 
 // RunProtoc runs protoc.

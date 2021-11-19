@@ -55,15 +55,7 @@ func (h *binaryHandler) Handle(
 	ctx, span := trace.StartSpan(ctx, "plugin_proxy")
 	span.AddAttributes(trace.StringAttribute("plugin", filepath.Base(h.pluginPath)))
 	defer span.End()
-	unsetRequestVersion := false
-	if request.CompilerVersion == nil {
-		unsetRequestVersion = true
-		request.CompilerVersion = DefaultVersion
-	}
 	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
-	if unsetRequestVersion {
-		request.CompilerVersion = nil
-	}
 	if err != nil {
 		return err
 	}

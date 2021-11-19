@@ -8,7 +8,7 @@ $(call _assert_var,CACHE_BIN)
 
 # Settable
 # https://github.com/bufbuild/buf/releases
-GIT_LS_FILES_UNSTAGED_VERSION ?= v1.0.0-rc3
+GIT_LS_FILES_UNSTAGED_VERSION ?= v1.0.0-rc8
 
 GIT_LS_FILES_UNSTAGED := $(CACHE_VERSIONS)/git-ls-files-unstaged/$(GIT_LS_FILES_UNSTAGED_VERSION)
 $(GIT_LS_FILES_UNSTAGED):

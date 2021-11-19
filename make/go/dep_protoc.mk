@@ -10,7 +10,7 @@ $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf/releases 20211028 checked 20211028
+# https://github.com/protocolbuffers/protobuf/releases 20211028 checked 20211112
 PROTOC_VERSION ?= 3.19.1
 
 # There are no protobuf releases for Darwin ARM so for

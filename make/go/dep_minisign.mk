@@ -7,7 +7,7 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/aead/minisign/commit/4b0a1d5cec55046cced3e84526660c7820b8f58c 11082021 checked 11082021
+# https://github.com/aead/minisign/commit/4b0a1d5cec55046cced3e84526660c7820b8f58c 20211108 checked 20211112
 # Contains fix for https://github.com/aead/minisign/issues/11
 MINISIGN_VERSION ?= 4b0a1d5cec55046cced3e84526660c7820b8f58c
 
