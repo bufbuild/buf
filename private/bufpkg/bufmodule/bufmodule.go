@@ -421,12 +421,20 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 		}
 	}
 	if breakingConfig := module.BreakingConfig(); breakingConfig != nil {
-		if _, err := hash.Write(bufbreakingconfig.NewBreakingConfigToBytes(breakingConfig)); err != nil {
+		breakingConfigBytes, err := bufbreakingconfig.NewBreakingConfigToBytes(breakingConfig)
+		if err != nil {
+			return "", err
+		}
+		if _, err := hash.Write(breakingConfigBytes); err != nil {
 			return "", err
 		}
 	}
 	if lintConfig := module.LintConfig(); lintConfig != nil {
-		if _, err := hash.Write(buflintconfig.NewLintConfigToBytes(lintConfig)); err != nil {
+		lintConfigBytes, err := buflintconfig.NewLintConfigToBytes(lintConfig)
+		if err != nil {
+			return "", err
+		}
+		if _, err := hash.Write(lintConfigBytes); err != nil {
 			return "", err
 		}
 	}

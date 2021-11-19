@@ -15,10 +15,8 @@
 package bufbreakingconfig
 
 import (
-	"crypto/sha256"
+	"encoding/json"
 	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv1"
@@ -123,22 +121,27 @@ func NewConfigV1ForProto(protoConfig *breakingv1.Config) (*Config, error) {
 }
 
 // NewBreakingConfigToBytes takes a Config and returns the []byte representation.
-func NewBreakingConfigToBytes(config *Config) []byte {
+func NewBreakingConfigToBytes(config *Config) ([]byte, error) {
 	if config == nil {
-		return nil
+		return nil, nil
 	}
-	hash := sha256.New()
+	var rulesJSON []ruleJSON
 	sort.Slice(config.Rules, func(i, j int) bool { return config.Rules[i].ID() < config.Rules[j].ID() })
 	for _, rule := range config.Rules {
-		str := append([]string{}, rule.ID(), rule.Purpose())
-		str = append(str, rule.Categories()...)
-		hash.Write([]byte(strings.Join(str, "")))
+		categories := rule.Categories()
+		sort.Strings(categories)
+		rulesJSON = append(rulesJSON, ruleJSON{
+			ID:         rule.ID(),
+			Purpose:    rule.Purpose(),
+			Categories: categories,
+		})
 	}
 	var ignoreIDs []string
 	for ignoreID := range config.IgnoreIDToRootPaths {
 		ignoreIDs = append(ignoreIDs, ignoreID)
 	}
 	sort.Strings(ignoreIDs)
+	ignoreIDToRootPaths := make(map[string][]string)
 	for _, ignoreID := range ignoreIDs {
 		var rootPaths []string
 		rootPathsMap := config.IgnoreIDToRootPaths[ignoreID]
@@ -146,20 +149,19 @@ func NewBreakingConfigToBytes(config *Config) []byte {
 			rootPaths = append(rootPaths, rootPath)
 		}
 		sort.Strings(rootPaths)
-		str := append([]string{}, ignoreID)
-		str = append(str, rootPaths...)
-		hash.Write([]byte(strings.Join(str, "")))
+		ignoreIDToRootPaths[ignoreID] = rootPaths
 	}
-	// While this is a bit reptitive with the `IgnoreIDToRootPaths` values, we want to maintain
-	// the exact structure that is encapsulated by the Config for the digest.
-	var rootPaths []string
-	for rootPath := range config.IgnoreRootPaths {
-		rootPaths = append(rootPaths, rootPath)
+	var ignoreRootPaths []string
+	for ignoreRootPath := range config.IgnoreRootPaths {
+		ignoreRootPaths = append(ignoreRootPaths, ignoreRootPath)
 	}
-	sort.Strings(rootPaths)
-	hash.Write([]byte(strings.Join(rootPaths, "")))
-	hash.Write([]byte(strconv.FormatBool(config.IgnoreUnstablePackages)))
-	return hash.Sum(nil)
+	sort.Strings(ignoreRootPaths)
+	return json.Marshal(&breakingConfigJSON{
+		Rules:                  rulesJSON,
+		IgnoreIDToRootPaths:    ignoreIDToRootPaths,
+		IgnoreRootPaths:        ignoreRootPaths,
+		IgnoreUnstablePackages: config.IgnoreUnstablePackages,
+	})
 }
 
 // GetAllRulesV1Beta1 gets all known rules.
@@ -215,15 +217,6 @@ type ExternalConfigV1 struct {
 	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
 }
 
-func internalConfigToConfig(internalConfig *internal.Config) *Config {
-	return &Config{
-		Rules:                  internalRulesToRules(internalConfig.Rules),
-		IgnoreIDToRootPaths:    internalConfig.IgnoreIDToRootPaths,
-		IgnoreRootPaths:        internalConfig.IgnoreRootPaths,
-		IgnoreUnstablePackages: internalConfig.IgnoreUnstablePackages,
-	}
-}
-
 func internalRulesToRules(internalRules []*internal.Rule) []Rule {
 	if internalRules == nil {
 		return nil
@@ -252,4 +245,26 @@ func ignoreOnlyMapForProto(protoIDPaths []*breakingv1.IDPaths) map[string][]stri
 		ignoreIDToRootPaths[protoIDPath.GetId()] = protoIDPath.GetPaths()
 	}
 	return ignoreIDToRootPaths
+}
+
+type breakingConfigJSON struct {
+	Rules                  []ruleJSON          `json:"rules"`
+	IgnoreIDToRootPaths    map[string][]string `json:"ignore_id_to_root_paths"`
+	IgnoreRootPaths        []string            `json:"ignore_root_paths"`
+	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages"`
+}
+
+type ruleJSON struct {
+	ID         string   `json:"id"`
+	Purpose    string   `json:"purpose"`
+	Categories []string `json:"categories"`
+}
+
+func internalConfigToConfig(internalConfig *internal.Config) *Config {
+	return &Config{
+		Rules:                  internalRulesToRules(internalConfig.Rules),
+		IgnoreIDToRootPaths:    internalConfig.IgnoreIDToRootPaths,
+		IgnoreRootPaths:        internalConfig.IgnoreRootPaths,
+		IgnoreUnstablePackages: internalConfig.IgnoreUnstablePackages,
+	}
 }
