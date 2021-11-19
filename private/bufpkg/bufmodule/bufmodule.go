@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -93,6 +95,14 @@ type Module interface {
 	// Documentation gets the contents of the module documentation file, buf.md and returns the string representation.
 	// This may return an empty string if the documentation file does not exist.
 	Documentation() string
+	// BreakingConfig returns the breaking change check configuration set for the module.
+	//
+	// This may be nil, since older versions of the module would not have this stored.
+	BreakingConfig() *bufbreakingconfig.Config
+	// LintConfig returns the lint check configuration set for the module.
+	//
+	// This may be nil, since older versions of the module would not have this stored.
+	LintConfig() *buflintconfig.Config
 
 	getSourceReadBucket() storage.ReadBucket
 	// Note this *can* be nil if we did not build from a named module.
@@ -373,7 +383,9 @@ func ModuleDigestB1(ctx context.Context, module Module) (string, error) {
 //      a. Add the file path
 //      b. Add the file contents
 //  2. Add the dependency commits (sorted lexicographically by commit)
-//  3. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
+//  3. Add the module documentation if available.
+//  4. Add the breaking and lint configurations if available.
+//  5. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
 func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	hash := sha256.New()
 	// We do not want to change the sort order as the rest of the codebase relies on it,
@@ -405,6 +417,16 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	}
 	if docs := module.Documentation(); docs != "" {
 		if _, err := hash.Write([]byte(docs)); err != nil {
+			return "", err
+		}
+	}
+	if breakingConfig := module.BreakingConfig(); breakingConfig != nil {
+		if _, err := hash.Write(bufbreakingconfig.NewBreakingConfigToBytes(breakingConfig)); err != nil {
+			return "", err
+		}
+	}
+	if lintConfig := module.LintConfig(); lintConfig != nil {
+		if _, err := hash.Write(buflintconfig.NewLintConfigToBytes(lintConfig)); err != nil {
 			return "", err
 		}
 	}

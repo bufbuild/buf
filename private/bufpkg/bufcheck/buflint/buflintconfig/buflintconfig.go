@@ -16,8 +16,10 @@ package buflintconfig
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"io"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -139,6 +141,46 @@ func NewConfigV1ForProto(protoConfig *lintv1.Config) (*Config, error) {
 		return nil, err
 	}
 	return internalConfigToConfig(internalConfig), nil
+}
+
+// NewLintConfigToBytes takes a Config and returns the []byte representation.
+func NewLintConfigToBytes(config *Config) []byte {
+	if config == nil {
+		return nil
+	}
+	hash := sha256.New()
+	sort.Slice(config.Rules, func(i, j int) bool { return config.Rules[i].ID() < config.Rules[j].ID() })
+	for _, rule := range config.Rules {
+		str := append([]string{}, rule.ID(), rule.Purpose())
+		str = append(str, rule.Categories()...)
+		hash.Write([]byte(strings.Join(str, "")))
+	}
+	var ignoreIDs []string
+	for ignoreID := range config.IgnoreIDToRootPaths {
+		ignoreIDs = append(ignoreIDs, ignoreID)
+	}
+	sort.Strings(ignoreIDs)
+	for _, ignoreID := range ignoreIDs {
+		var rootPaths []string
+		rootPathsMap := config.IgnoreIDToRootPaths[ignoreID]
+		for rootPath := range rootPathsMap {
+			rootPaths = append(rootPaths, rootPath)
+		}
+		sort.Strings(rootPaths)
+		str := append([]string{}, ignoreID)
+		str = append(str, rootPaths...)
+		hash.Write([]byte(strings.Join(str, "")))
+	}
+	// While this is a bit reptitive with the `IgnoreIDToRootPaths` values, we want to maintain
+	// the exact structure that is encapsulated by the Config for the digest.
+	var rootPaths []string
+	for rootPath := range config.IgnoreRootPaths {
+		rootPaths = append(rootPaths, rootPath)
+	}
+	sort.Strings(rootPaths)
+	hash.Write([]byte(strings.Join(rootPaths, "")))
+	hash.Write([]byte(strconv.FormatBool(config.AllowCommentIgnores)))
+	return hash.Sum(nil)
 }
 
 // GetAllRulesV1Beta1 gets all known rules.
