@@ -247,6 +247,15 @@ func ignoreOnlyMapForProto(protoIDPaths []*breakingv1.IDPaths) map[string][]stri
 	return ignoreIDToRootPaths
 }
 
+func internalConfigToConfig(internalConfig *internal.Config) *Config {
+	return &Config{
+		Rules:                  internalRulesToRules(internalConfig.Rules),
+		IgnoreIDToRootPaths:    internalConfig.IgnoreIDToRootPaths,
+		IgnoreRootPaths:        internalConfig.IgnoreRootPaths,
+		IgnoreUnstablePackages: internalConfig.IgnoreUnstablePackages,
+	}
+}
+
 type breakingConfigJSON struct {
 	Rules                  []ruleJSON          `json:"rules"`
 	IgnoreIDToRootPaths    map[string][]string `json:"ignore_id_to_root_paths"`
@@ -258,13 +267,4 @@ type ruleJSON struct {
 	ID         string   `json:"id"`
 	Purpose    string   `json:"purpose"`
 	Categories []string `json:"categories"`
-}
-
-func internalConfigToConfig(internalConfig *internal.Config) *Config {
-	return &Config{
-		Rules:                  internalRulesToRules(internalConfig.Rules),
-		IgnoreIDToRootPaths:    internalConfig.IgnoreIDToRootPaths,
-		IgnoreRootPaths:        internalConfig.IgnoreRootPaths,
-		IgnoreUnstablePackages: internalConfig.IgnoreUnstablePackages,
-	}
 }
