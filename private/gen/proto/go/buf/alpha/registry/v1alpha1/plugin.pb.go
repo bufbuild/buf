@@ -1828,6 +1828,53 @@ func (x *GetTemplateVersionRequest) GetVersion() string {
 	return ""
 }
 
+type GetTemplateVersionResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TemplateVersion *TemplateVersion `protobuf:"bytes,1,opt,name=template_version,json=templateVersion,proto3" json:"template_version,omitempty"`
+}
+
+func (x *GetTemplateVersionResponse) Reset() {
+	*x = GetTemplateVersionResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[27]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GetTemplateVersionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTemplateVersionResponse) ProtoMessage() {}
+
+func (x *GetTemplateVersionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[27]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTemplateVersionResponse.ProtoReflect.Descriptor instead.
+func (*GetTemplateVersionResponse) Descriptor() ([]byte, []int) {
+	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *GetTemplateVersionResponse) GetTemplateVersion() *TemplateVersion {
+	if x != nil {
+		return x.TemplateVersion
+	}
+	return nil
+}
+
 type ListOrganizationTemplatesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1844,7 +1891,7 @@ type ListOrganizationTemplatesRequest struct {
 func (x *ListOrganizationTemplatesRequest) Reset() {
 	*x = ListOrganizationTemplatesRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[27]
+		mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[28]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1857,7 +1904,7 @@ func (x *ListOrganizationTemplatesRequest) String() string {
 func (*ListOrganizationTemplatesRequest) ProtoMessage() {}
 
 func (x *ListOrganizationTemplatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[27]
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[28]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1870,7 +1917,7 @@ func (x *ListOrganizationTemplatesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListOrganizationTemplatesRequest.ProtoReflect.Descriptor instead.
 func (*ListOrganizationTemplatesRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{27}
+	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ListOrganizationTemplatesRequest) GetOrganization() string {
@@ -1914,7 +1961,7 @@ type ListOrganizationTemplatesResponse struct {
 func (x *ListOrganizationTemplatesResponse) Reset() {
 	*x = ListOrganizationTemplatesResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[28]
+		mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[29]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1927,7 +1974,7 @@ func (x *ListOrganizationTemplatesResponse) String() string {
 func (*ListOrganizationTemplatesResponse) ProtoMessage() {}
 
 func (x *ListOrganizationTemplatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[28]
+	mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[29]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1940,7 +1987,7 @@ func (x *ListOrganizationTemplatesResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ListOrganizationTemplatesResponse.ProtoReflect.Descriptor instead.
 func (*ListOrganizationTemplatesResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{28}
+	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ListOrganizationTemplatesResponse) GetTemplates() []*Template {
@@ -1955,53 +2002,6 @@ func (x *ListOrganizationTemplatesResponse) GetNextPageToken() string {
 		return x.NextPageToken
 	}
 	return ""
-}
-
-type GetTemplateVersionResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	TemplateVersion *TemplateVersion `protobuf:"bytes,1,opt,name=template_version,json=templateVersion,proto3" json:"template_version,omitempty"`
-}
-
-func (x *GetTemplateVersionResponse) Reset() {
-	*x = GetTemplateVersionResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[29]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *GetTemplateVersionResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetTemplateVersionResponse) ProtoMessage() {}
-
-func (x *GetTemplateVersionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[29]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetTemplateVersionResponse.ProtoReflect.Descriptor instead.
-func (*GetTemplateVersionResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_plugin_proto_rawDescGZIP(), []int{29}
-}
-
-func (x *GetTemplateVersionResponse) GetTemplateVersion() *TemplateVersion {
-	if x != nil {
-		return x.TemplateVersion
-	}
-	return nil
 }
 
 type ListTemplateVersionsRequest struct {
@@ -2707,33 +2707,33 @@ var file_buf_alpha_registry_v1alpha1_plugin_proto_rawDesc = []byte{
 	0x52, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18,
 	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x18, 0x0a, 0x07, 0x76,
 	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x76, 0x65,
-	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0x9c, 0x01, 0x0a, 0x20, 0x4c, 0x69, 0x73, 0x74, 0x4f, 0x72,
-	0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61,
-	0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x22, 0x0a, 0x0c, 0x6f, 0x72,
-	0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x0c, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1b,
-	0x0a, 0x09, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0d, 0x52, 0x08, 0x70, 0x61, 0x67, 0x65, 0x53, 0x69, 0x7a, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x70,
-	0x61, 0x67, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x09, 0x70, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x18, 0x0a, 0x07, 0x72, 0x65,
-	0x76, 0x65, 0x72, 0x73, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x07, 0x72, 0x65, 0x76,
-	0x65, 0x72, 0x73, 0x65, 0x22, 0x90, 0x01, 0x0a, 0x21, 0x4c, 0x69, 0x73, 0x74, 0x4f, 0x72, 0x67,
-	0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74,
-	0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x43, 0x0a, 0x09, 0x74, 0x65,
-	0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x25, 0x2e,
+	0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0x75, 0x0a, 0x1a, 0x47, 0x65, 0x74, 0x54, 0x65, 0x6d, 0x70,
+	0x6c, 0x61, 0x74, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x12, 0x57, 0x0a, 0x10, 0x74, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x5f,
+	0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e,
 	0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74,
 	0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x54, 0x65, 0x6d, 0x70,
-	0x6c, 0x61, 0x74, 0x65, 0x52, 0x09, 0x74, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x12,
-	0x26, 0x0a, 0x0f, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x74, 0x6f, 0x6b,
-	0x65, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x6e, 0x65, 0x78, 0x74, 0x50, 0x61,
-	0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x75, 0x0a, 0x1a, 0x47, 0x65, 0x74, 0x54, 0x65,
-	0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x57, 0x0a, 0x10, 0x74, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74,
-	0x65, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x2c, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69,
-	0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x54, 0x65,
-	0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x0f, 0x74,
-	0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0x9d,
+	0x6c, 0x61, 0x74, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x0f, 0x74, 0x65, 0x6d,
+	0x70, 0x6c, 0x61, 0x74, 0x65, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x22, 0x9c, 0x01, 0x0a,
+	0x20, 0x4c, 0x69, 0x73, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x22, 0x0a, 0x0c, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
+	0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x1b, 0x0a, 0x09, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x73, 0x69,
+	0x7a, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x08, 0x70, 0x61, 0x67, 0x65, 0x53, 0x69,
+	0x7a, 0x65, 0x12, 0x1d, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x70, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65,
+	0x6e, 0x12, 0x18, 0x0a, 0x07, 0x72, 0x65, 0x76, 0x65, 0x72, 0x73, 0x65, 0x18, 0x04, 0x20, 0x01,
+	0x28, 0x08, 0x52, 0x07, 0x72, 0x65, 0x76, 0x65, 0x72, 0x73, 0x65, 0x22, 0x90, 0x01, 0x0a, 0x21,
+	0x4c, 0x69, 0x73, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e,
+	0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x43, 0x0a, 0x09, 0x74, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x18, 0x01,
+	0x20, 0x03, 0x28, 0x0b, 0x32, 0x25, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61,
+	0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68,
+	0x61, 0x31, 0x2e, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x52, 0x09, 0x74, 0x65, 0x6d,
+	0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x12, 0x26, 0x0a, 0x0f, 0x6e, 0x65, 0x78, 0x74, 0x5f, 0x70,
+	0x61, 0x67, 0x65, 0x5f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0d, 0x6e, 0x65, 0x78, 0x74, 0x50, 0x61, 0x67, 0x65, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x22, 0x9d,
 	0x01, 0x0a, 0x1b, 0x4c, 0x69, 0x73, 0x74, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x56,
 	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14,
 	0x0a, 0x05, 0x6f, 0x77, 0x6e, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x6f,
@@ -3002,9 +3002,9 @@ var file_buf_alpha_registry_v1alpha1_plugin_proto_goTypes = []interface{}{
 	(*ListUserTemplatesRequest)(nil),          // 25: buf.alpha.registry.v1alpha1.ListUserTemplatesRequest
 	(*ListUserTemplatesResponse)(nil),         // 26: buf.alpha.registry.v1alpha1.ListUserTemplatesResponse
 	(*GetTemplateVersionRequest)(nil),         // 27: buf.alpha.registry.v1alpha1.GetTemplateVersionRequest
-	(*ListOrganizationTemplatesRequest)(nil),  // 28: buf.alpha.registry.v1alpha1.ListOrganizationTemplatesRequest
-	(*ListOrganizationTemplatesResponse)(nil), // 29: buf.alpha.registry.v1alpha1.ListOrganizationTemplatesResponse
-	(*GetTemplateVersionResponse)(nil),        // 30: buf.alpha.registry.v1alpha1.GetTemplateVersionResponse
+	(*GetTemplateVersionResponse)(nil),        // 28: buf.alpha.registry.v1alpha1.GetTemplateVersionResponse
+	(*ListOrganizationTemplatesRequest)(nil),  // 29: buf.alpha.registry.v1alpha1.ListOrganizationTemplatesRequest
+	(*ListOrganizationTemplatesResponse)(nil), // 30: buf.alpha.registry.v1alpha1.ListOrganizationTemplatesResponse
 	(*ListTemplateVersionsRequest)(nil),       // 31: buf.alpha.registry.v1alpha1.ListTemplateVersionsRequest
 	(*ListTemplateVersionsResponse)(nil),      // 32: buf.alpha.registry.v1alpha1.ListTemplateVersionsResponse
 	(*CreateTemplateRequest)(nil),             // 33: buf.alpha.registry.v1alpha1.CreateTemplateRequest
@@ -3029,8 +3029,8 @@ var file_buf_alpha_registry_v1alpha1_plugin_proto_depIdxs = []int32{
 	3,  // 11: buf.alpha.registry.v1alpha1.GetTemplateResponse.template:type_name -> buf.alpha.registry.v1alpha1.Template
 	3,  // 12: buf.alpha.registry.v1alpha1.ListTemplatesResponse.templates:type_name -> buf.alpha.registry.v1alpha1.Template
 	3,  // 13: buf.alpha.registry.v1alpha1.ListUserTemplatesResponse.templates:type_name -> buf.alpha.registry.v1alpha1.Template
-	3,  // 14: buf.alpha.registry.v1alpha1.ListOrganizationTemplatesResponse.templates:type_name -> buf.alpha.registry.v1alpha1.Template
-	5,  // 15: buf.alpha.registry.v1alpha1.GetTemplateVersionResponse.template_version:type_name -> buf.alpha.registry.v1alpha1.TemplateVersion
+	5,  // 14: buf.alpha.registry.v1alpha1.GetTemplateVersionResponse.template_version:type_name -> buf.alpha.registry.v1alpha1.TemplateVersion
+	3,  // 15: buf.alpha.registry.v1alpha1.ListOrganizationTemplatesResponse.templates:type_name -> buf.alpha.registry.v1alpha1.Template
 	5,  // 16: buf.alpha.registry.v1alpha1.ListTemplateVersionsResponse.template_versions:type_name -> buf.alpha.registry.v1alpha1.TemplateVersion
 	0,  // 17: buf.alpha.registry.v1alpha1.CreateTemplateRequest.visibility:type_name -> buf.alpha.registry.v1alpha1.PluginVisibility
 	4,  // 18: buf.alpha.registry.v1alpha1.CreateTemplateRequest.plugin_configs:type_name -> buf.alpha.registry.v1alpha1.PluginConfig
@@ -3047,7 +3047,7 @@ var file_buf_alpha_registry_v1alpha1_plugin_proto_depIdxs = []int32{
 	21, // 29: buf.alpha.registry.v1alpha1.PluginService.GetTemplate:input_type -> buf.alpha.registry.v1alpha1.GetTemplateRequest
 	23, // 30: buf.alpha.registry.v1alpha1.PluginService.ListTemplates:input_type -> buf.alpha.registry.v1alpha1.ListTemplatesRequest
 	25, // 31: buf.alpha.registry.v1alpha1.PluginService.ListUserTemplates:input_type -> buf.alpha.registry.v1alpha1.ListUserTemplatesRequest
-	28, // 32: buf.alpha.registry.v1alpha1.PluginService.ListOrganizationTemplates:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationTemplatesRequest
+	29, // 32: buf.alpha.registry.v1alpha1.PluginService.ListOrganizationTemplates:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationTemplatesRequest
 	27, // 33: buf.alpha.registry.v1alpha1.PluginService.GetTemplateVersion:input_type -> buf.alpha.registry.v1alpha1.GetTemplateVersionRequest
 	31, // 34: buf.alpha.registry.v1alpha1.PluginService.ListTemplateVersions:input_type -> buf.alpha.registry.v1alpha1.ListTemplateVersionsRequest
 	33, // 35: buf.alpha.registry.v1alpha1.PluginService.CreateTemplate:input_type -> buf.alpha.registry.v1alpha1.CreateTemplateRequest
@@ -3063,8 +3063,8 @@ var file_buf_alpha_registry_v1alpha1_plugin_proto_depIdxs = []int32{
 	22, // 45: buf.alpha.registry.v1alpha1.PluginService.GetTemplate:output_type -> buf.alpha.registry.v1alpha1.GetTemplateResponse
 	24, // 46: buf.alpha.registry.v1alpha1.PluginService.ListTemplates:output_type -> buf.alpha.registry.v1alpha1.ListTemplatesResponse
 	26, // 47: buf.alpha.registry.v1alpha1.PluginService.ListUserTemplates:output_type -> buf.alpha.registry.v1alpha1.ListUserTemplatesResponse
-	29, // 48: buf.alpha.registry.v1alpha1.PluginService.ListOrganizationTemplates:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationTemplatesResponse
-	30, // 49: buf.alpha.registry.v1alpha1.PluginService.GetTemplateVersion:output_type -> buf.alpha.registry.v1alpha1.GetTemplateVersionResponse
+	30, // 48: buf.alpha.registry.v1alpha1.PluginService.ListOrganizationTemplates:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationTemplatesResponse
+	28, // 49: buf.alpha.registry.v1alpha1.PluginService.GetTemplateVersion:output_type -> buf.alpha.registry.v1alpha1.GetTemplateVersionResponse
 	32, // 50: buf.alpha.registry.v1alpha1.PluginService.ListTemplateVersions:output_type -> buf.alpha.registry.v1alpha1.ListTemplateVersionsResponse
 	34, // 51: buf.alpha.registry.v1alpha1.PluginService.CreateTemplate:output_type -> buf.alpha.registry.v1alpha1.CreateTemplateResponse
 	36, // 52: buf.alpha.registry.v1alpha1.PluginService.DeleteTemplate:output_type -> buf.alpha.registry.v1alpha1.DeleteTemplateResponse
@@ -3407,7 +3407,7 @@ func file_buf_alpha_registry_v1alpha1_plugin_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListOrganizationTemplatesRequest); i {
+			switch v := v.(*GetTemplateVersionResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3419,7 +3419,7 @@ func file_buf_alpha_registry_v1alpha1_plugin_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ListOrganizationTemplatesResponse); i {
+			switch v := v.(*ListOrganizationTemplatesRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3431,7 +3431,7 @@ func file_buf_alpha_registry_v1alpha1_plugin_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_plugin_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetTemplateVersionResponse); i {
+			switch v := v.(*ListOrganizationTemplatesResponse); i {
 			case 0:
 				return &v.state
 			case 1:
