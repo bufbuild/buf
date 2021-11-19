@@ -306,6 +306,10 @@ message GetTemplateVersionRequest {
   string version = 3;
 }
 
+message GetTemplateVersionResponse {
+  TemplateVersion template_version = 1;
+}
+
 message ListOrganizationTemplatesRequest {
   // The organization of the templates to list for.
   string organization = 1;
@@ -319,10 +323,6 @@ message ListOrganizationTemplatesResponse {
   repeated Template templates = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
-}
-
-message GetTemplateVersionResponse {
-  TemplateVersion template_version = 1;
 }
 
 message ListTemplateVersionsRequest {
