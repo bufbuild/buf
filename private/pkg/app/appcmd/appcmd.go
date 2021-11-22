@@ -276,7 +276,7 @@ func commandToCobra(
 	if command.Run != nil {
 		cobraCommand.Run = func(_ *cobra.Command, args []string) {
 			runErr := command.Run(ctx, app.NewContainerForArgs(container, args...))
-			if errors.Is(runErr, &invalidArgumentError{}) {
+			if asErr := new(invalidArgumentError); errors.As(runErr, &asErr) {
 				// Print usage for failing command if an args error is returned.
 				// This has to be done at this level since the usage must relate
 				// to the command executed.
