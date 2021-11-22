@@ -5,7 +5,6 @@
 - Change message documentation for fields to be either a single field or a oneof set of fields. This is a breaking API change.
 - Use a separate repository service to for each dependency remote to resolve dependencies for `buf mod update`. Previously, we used a single repository service based on the remote
   from the module, so it was unable to resolve dependencies from differente remotes.
-- Add breaking and lint configurations to our module build.
 
 ## [v1.0.0-rc8] - 2021-11-10
 
