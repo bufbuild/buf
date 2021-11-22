@@ -23,9 +23,6 @@ import (
 
 // AuthzService supplies authorization helpers.
 type AuthzService interface {
-	// UserCanRemoveUserOrganizationScopes returns whether the user is authorized
-	// to remove user scopes from an organization.
-	UserCanRemoveUserOrganizationScopes(ctx context.Context, organizationId string) (authorized bool, err error)
 	// UserCanCreateOrganizationRepository returns whether the user is authorized
 	// to create repositories in an organization.
 	UserCanCreateOrganizationRepository(ctx context.Context, organizationId string) (authorized bool, err error)
@@ -99,4 +96,7 @@ type AuthzService interface {
 	// UserCanDeleteUser returns whether the user is authorized
 	// to delete a user.
 	UserCanDeleteUser(ctx context.Context) (authorized bool, err error)
+	// UserCanSeeServerAdminPanel returns whether the user is authorized
+	// to see server admin panel.
+	UserCanSeeServerAdminPanel(ctx context.Context) (authorized bool, err error)
 }

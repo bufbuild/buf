@@ -85,6 +85,7 @@ func (s *userService) ListUsers(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
+	userStateFilter v1alpha1.UserState,
 ) (users []*v1alpha1.User, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -92,9 +93,10 @@ func (s *userService) ListUsers(
 	response, err := s.client.ListUsers(
 		ctx,
 		&v1alpha1.ListUsersRequest{
-			PageSize:  pageSize,
-			PageToken: pageToken,
-			Reverse:   reverse,
+			PageSize:        pageSize,
+			PageToken:       pageToken,
+			Reverse:         reverse,
+			UserStateFilter: userStateFilter,
 		},
 	)
 	if err != nil {
@@ -130,23 +132,6 @@ func (s *userService) ListOrganizationUsers(
 	return response.Users, response.NextPageToken, nil
 }
 
-// UpdateUserUsername updates a user's username.
-func (s *userService) UpdateUserUsername(ctx context.Context, newUsername string) (user *v1alpha1.User, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.UpdateUserUsername(
-		ctx,
-		&v1alpha1.UpdateUserUsernameRequest{
-			NewUsername: newUsername,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return response.User, nil
-}
-
 // DeleteUser deletes a user.
 func (s *userService) DeleteUser(ctx context.Context) (_ error) {
 	if s.contextModifier != nil {
@@ -179,54 +164,6 @@ func (s *userService) DeactivateUser(ctx context.Context, id string) (_ error) {
 	return nil
 }
 
-// AddUserOrganizationScopeByName adds an organization scope for a specific organization to a user by name.
-func (s *userService) AddUserOrganizationScopeByName(
-	ctx context.Context,
-	name string,
-	organizationName string,
-	organizationScope v1alpha1.OrganizationScope,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.AddUserOrganizationScopeByName(
-		ctx,
-		&v1alpha1.AddUserOrganizationScopeByNameRequest{
-			Name:              name,
-			OrganizationName:  organizationName,
-			OrganizationScope: organizationScope,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// RemoveUserOrganizationScope removes an organization scope for a specific organization from a user by ID.
-func (s *userService) RemoveUserOrganizationScope(
-	ctx context.Context,
-	id string,
-	organizationId string,
-	organizationScope v1alpha1.OrganizationScope,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.RemoveUserOrganizationScope(
-		ctx,
-		&v1alpha1.RemoveUserOrganizationScopeRequest{
-			Id:                id,
-			OrganizationId:    organizationId,
-			OrganizationScope: organizationScope,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // UpdateUserServerRole update the role of an user in the server.
 func (s *userService) UpdateUserServerRole(
 	ctx context.Context,
@@ -247,4 +184,21 @@ func (s *userService) UpdateUserServerRole(
 		return err
 	}
 	return nil
+}
+
+// CountUsers returns the number of users in the server by the user state provided.
+func (s *userService) CountUsers(ctx context.Context, userStateFilter v1alpha1.UserState) (totalCount uint32, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.CountUsers(
+		ctx,
+		&v1alpha1.CountUsersRequest{
+			UserStateFilter: userStateFilter,
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return response.TotalCount, nil
 }

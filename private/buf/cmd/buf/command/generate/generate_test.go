@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/prototesting"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagearchive"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
@@ -152,6 +153,26 @@ func TestProtoFileRefIncludePackageFiles(t *testing.T) {
 	require.NoError(t, err)
 	_, err = os.Stat(filepath.Join(tempDirPath, "java", "a", "v1", "B.java"))
 	require.NoError(t, err)
+}
+
+func TestOutputWithPathEqualToExclude(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		``,
+		filepath.FromSlash(`Failure: cannot set the same path for both --path and --exclude-path flags: a/v1/a.proto`),
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "paths", "buf.gen.yaml"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v1", "a.proto"),
+		filepath.Join("testdata", "paths"),
+	)
 }
 
 func TestGenerateInsertionPoint(t *testing.T) {
@@ -351,6 +372,7 @@ func testCompareGeneratedStubs(
 		runner,
 		actualReadWriteBucket,
 		bufReadWriteBucket,
+		transformProtocVersionToUnknown(t),
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))
@@ -436,6 +458,7 @@ func testCompareGeneratedStubsArchive(
 		runner,
 		actualReadWriteBucket,
 		bufReadWriteBucket,
+		transformProtocVersionToUnknown(t),
 	)
 	require.NoError(t, err)
 	assert.Empty(t, string(diff))
@@ -497,4 +520,15 @@ func newExternalConfigV1String(t *testing.T, plugins []*testPluginInfo, out stri
 type testPluginInfo struct {
 	name string
 	opt  string
+}
+
+func transformProtocVersionToUnknown(t *testing.T) storage.DiffOption {
+	protocVersion, err := prototesting.GetProtocVersion(context.Background())
+	require.NoError(t, err)
+	return storage.DiffWithTransform(func(side, _ string, content []byte) []byte {
+		if side != "one" {
+			return content
+		}
+		return bytes.ReplaceAll(content, []byte("v"+protocVersion), []byte("(unknown)"))
+	})
 }

@@ -17,7 +17,6 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
-import "buf/alpha/registry/v1alpha1/scope.proto";
 import "google/protobuf/timestamp.proto";
 
 message Organization {
@@ -35,7 +34,7 @@ message Organization {
 // the organization and user membership information on that organization.
 message OrganizationMembership {
   Organization organization = 1;
-  OrganizationRole organization_role = 2; 
+  OrganizationRole organization_role = 2;
 }
 
 // OrganizationService is the Organization service.
@@ -50,22 +49,20 @@ service OrganizationService {
   rpc ListUserOrganizations(ListUserOrganizationsRequest) returns (ListUserOrganizationsResponse);
   // CreateOrganization creates a new organization.
   rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
-  // UpdateOrganizationName updates a organization's name.
-  rpc UpdateOrganizationName(UpdateOrganizationNameRequest) returns (UpdateOrganizationNameResponse);
-  // UpdateOrganizationNameByName updates a organization's name by name.
-  rpc UpdateOrganizationNameByName(UpdateOrganizationNameByNameRequest) returns (UpdateOrganizationNameByNameResponse);
   // DeleteOrganization deletes a organization.
   rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse);
   // DeleteOrganizationByName deletes a organization by name.
   rpc DeleteOrganizationByName(DeleteOrganizationByNameRequest) returns (DeleteOrganizationByNameResponse);
-  // AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
-  rpc AddOrganizationBaseRepositoryScope(AddOrganizationBaseRepositoryScopeRequest) returns (AddOrganizationBaseRepositoryScopeResponse);
   // AddOrganizationMember add a role to an user in the organization.
   rpc AddOrganizationMember(AddOrganizationMemberRequest) returns (AddOrganizationMemberResponse);
   // UpdateOrganizationMember update the user's membership information in the organization.
   rpc UpdateOrganizationMember(UpdateOrganizationMemberRequest) returns (UpdateOrganizationMemberResponse);
   // RemoveOrganizationMember remove the role of an user in the organization.
   rpc RemoveOrganizationMember(RemoveOrganizationMemberRequest) returns (RemoveOrganizationMemberResponse);
+  // GetOrganizationSettings gets the settings of an organization, including organization base roles.
+  rpc GetOrganizationSettings(GetOrganizationSettingsRequest) returns (GetOrganizationSettingsResponse);
+  // UpdateOrganizationSettings update the organization settings including base roles.
+  rpc UpdateOrganizationSettings(UpdateOrganizationSettingsRequest) returns (UpdateOrganizationSettingsResponse);
 }
 
 message GetOrganizationRequest {
@@ -121,25 +118,6 @@ message CreateOrganizationResponse {
   Organization organization = 1;
 }
 
-message UpdateOrganizationNameRequest {
-  string id = 1;
-  string new_name = 2;
-}
-
-message UpdateOrganizationNameResponse {
-  Organization organization = 1;
-}
-
-message UpdateOrganizationNameByNameRequest {
-  string name = 1;
-  string new_name = 2;
-}
-
-message UpdateOrganizationNameByNameResponse {
-  Organization organization = 1;
-}
-
-
 message DeleteOrganizationRequest {
   string id = 1;
 }
@@ -151,13 +129,6 @@ message DeleteOrganizationByNameRequest {
 }
 
 message DeleteOrganizationByNameResponse {}
-
-message AddOrganizationBaseRepositoryScopeRequest {
-  string id = 1;
-  RepositoryScope repository_scope = 2;
-}
-
-message AddOrganizationBaseRepositoryScopeResponse {}
 
 message AddOrganizationMemberRequest {
   // The ID of the organization for which the user will be added to.
@@ -189,3 +160,27 @@ message RemoveOrganizationMemberRequest {
 }
 
 message RemoveOrganizationMemberResponse {}
+
+message GetOrganizationSettingsRequest{
+  // The ID of the organization for which to get the settings.
+  string organization_id = 1;
+}
+
+message GetOrganizationSettingsResponse {
+  RepositoryRole repository_base_role = 1;
+  PluginRole plugin_base_role = 2;
+  TemplateRole template_base_role = 3;
+}
+
+message UpdateOrganizationSettingsRequest {
+  // The ID of the organization for which to update the base roles.
+  string organization_id = 1;
+  // optional, no update to this base role will be made if this is unspecified.
+  RepositoryRole repository_base_role = 2;
+  // optional, no update to this base role will be made if this is unspecified.
+  PluginRole plugin_base_role = 3;
+  // optional, no update to this base role will be made if this is unspecified.
+  TemplateRole template_base_role = 4;
+}
+
+message UpdateOrganizationSettingsResponse {}

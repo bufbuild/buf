@@ -44,28 +44,10 @@ type OrganizationService interface {
 	) (organizations []*v1alpha1.OrganizationMembership, nextPageToken string, err error)
 	// CreateOrganization creates a new organization.
 	CreateOrganization(ctx context.Context, name string) (organization *v1alpha1.Organization, err error)
-	// UpdateOrganizationName updates a organization's name.
-	UpdateOrganizationName(
-		ctx context.Context,
-		id string,
-		newName string,
-	) (organization *v1alpha1.Organization, err error)
-	// UpdateOrganizationNameByName updates a organization's name by name.
-	UpdateOrganizationNameByName(
-		ctx context.Context,
-		name string,
-		newName string,
-	) (organization *v1alpha1.Organization, err error)
 	// DeleteOrganization deletes a organization.
 	DeleteOrganization(ctx context.Context, id string) (err error)
 	// DeleteOrganizationByName deletes a organization by name.
 	DeleteOrganizationByName(ctx context.Context, name string) (err error)
-	// AddOrganizationBaseRepositoryScope adds a base repository scope to an organization by ID.
-	AddOrganizationBaseRepositoryScope(
-		ctx context.Context,
-		id string,
-		repositoryScope v1alpha1.RepositoryScope,
-	) (err error)
 	// AddOrganizationMember add a role to an user in the organization.
 	AddOrganizationMember(
 		ctx context.Context,
@@ -85,5 +67,18 @@ type OrganizationService interface {
 		ctx context.Context,
 		organizationId string,
 		userId string,
+	) (err error)
+	// GetOrganizationSettings gets the settings of an organization, including organization base roles.
+	GetOrganizationSettings(
+		ctx context.Context,
+		organizationId string,
+	) (repositoryBaseRole v1alpha1.RepositoryRole, pluginBaseRole v1alpha1.PluginRole, templateBaseRole v1alpha1.TemplateRole, err error)
+	// UpdateOrganizationSettings update the organization settings including base roles.
+	UpdateOrganizationSettings(
+		ctx context.Context,
+		organizationId string,
+		repositoryBaseRole v1alpha1.RepositoryRole,
+		pluginBaseRole v1alpha1.PluginRole,
+		templateBaseRole v1alpha1.TemplateRole,
 	) (err error)
 }

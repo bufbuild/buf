@@ -23,11 +23,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking"
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/applog"
@@ -106,6 +106,7 @@ func handle(
 		newContainer(container),
 		againstImageRef,
 		files, // limit to the input files if specified
+		nil,   // exclude paths are not supported on this plugin
 		true,  // allow files in the against input to not exist
 		false, // keep for now
 	)

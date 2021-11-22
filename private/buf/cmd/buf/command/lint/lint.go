@@ -18,11 +18,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck/buflint"
-	"github.com/bufbuild/buf/private/buf/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -34,9 +34,10 @@ import (
 )
 
 const (
-	errorFormatFlagName = "error-format"
-	configFlagName      = "config"
-	pathsFlagName       = "path"
+	errorFormatFlagName  = "error-format"
+	configFlagName       = "config"
+	pathsFlagName        = "path"
+	excludePathsFlagName = "exclude-path"
 
 	// deprecated
 	inputFlagName = "input"
@@ -68,9 +69,10 @@ func NewCommand(
 }
 
 type flags struct {
-	ErrorFormat string
-	Config      string
-	Paths       []string
+	ErrorFormat  string
+	Config       string
+	Paths        []string
+	ExcludePaths []string
 
 	// deprecated
 	Input string
@@ -89,6 +91,7 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
+	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -180,9 +183,10 @@ func run(
 		container,
 		ref,
 		inputConfig,
-		paths, // we filter checks for files
-		false, // input files must exist
-		false, // we must include source info for linting
+		paths,              // we filter checks for files
+		flags.ExcludePaths, // we exclude these paths
+		false,              // input files must exist
+		false,              // we must include source info for linting
 	)
 	if err != nil {
 		return err

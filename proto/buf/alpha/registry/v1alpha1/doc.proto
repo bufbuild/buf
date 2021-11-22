@@ -82,15 +82,16 @@ message GetModulePackagesRequest {
   string reference = 3;
 }
 
-// GetModulePackagesResponse returns the ModulePackages for the requested module.
+// GetModulePackagesResponse returns the list of ModulePackages for the requested module.
 message GetModulePackagesResponse {
-  ModulePackages module_packages = 1;
+  string name = 1;
+  repeated ModulePackage module_packages = 2;
 }
 
-// ModulePackages provides the name of the module and associated packages.
-message ModulePackages {
+// ModulePackage provides the details about a module's associated package.
+message ModulePackage {
   string name = 1;
-  repeated string packages = 2;
+  string description = 2;
 }
 
 // GetModuleDocumentationRequest takes an owner, repository, and reference.
@@ -260,9 +261,23 @@ message Message {
   // file_path is the normalized path of the file containing the message.
   string file_path = 5;
   bool is_map_entry = 6;
-  repeated Field fields = 7;
+  repeated MessageField fields = 7;
   Location location = 8;
   repeated Field message_extensions = 9;
+}
+
+// MessageField can be either a single field or a oneof set of fields.
+message MessageField {
+  oneof message_field {
+    Field field = 1;
+    Oneof oneof = 2;
+  }
+}
+
+// Oneof represents a oneof set of fields.
+message Oneof {
+  string name = 1;
+  repeated Field fields = 2;
 }
 
 // Field provides information for the documentation of a message field.
@@ -293,7 +308,7 @@ message Field {
 // MapEntry provides the key and value types for the MapEntry type for a map field.
 message MapEntry {
   // string representation of the full name of the type for the map key. keys can only be
-	// scalar types: https://developers.google.com/protocol-buffers/docs/overview#maps
+  // scalar types: https://developers.google.com/protocol-buffers/docs/overview#maps
   string key_full_type = 1;
   // string representation of the nested name of the type for the map value.
   string value_nested_type = 2;

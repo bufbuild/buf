@@ -24,8 +24,8 @@ import (
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/internal/internaltesting"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd/appcmdtesting"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -412,18 +412,18 @@ func TestFailCheckBreaking1(t *testing.T) {
 		nil,
 		bufcli.ExitCodeFileAnnotation,
 		filepath.FromSlash(`
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
-		../../bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:5:1:Previously present field "3" with name "three" on message "Two" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:10:1:Previously present field "3" with name "three" on message "Three" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:12:5:Previously present field "3" with name "three" on message "Five" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/1.proto:22:3:Previously present field "3" with name "three" on message "Seven" was deleted.
+		../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete/2.proto:57:1:Previously present field "3" with name "three" on message "Nine" was deleted.
 		`),
 		"", // stderr should be empty
 		"breaking",
 		// can't bother right now to filepath.Join this
-		"../../bufcheck/bufbreaking/testdata/breaking_field_no_delete",
+		"../../../bufpkg/bufcheck/bufbreaking/testdata/breaking_field_no_delete",
 		"--against",
-		"../../bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
+		"../../../bufpkg/bufcheck/bufbreaking/testdata_previous/breaking_field_no_delete",
 	)
 }
 
@@ -1295,6 +1295,43 @@ func TestExportPaths(t *testing.T) {
 	)
 }
 
+func TestExportPathsAndExcludes(t *testing.T) {
+	t.Parallel()
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"export",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+		"-o",
+		tempDir,
+	)
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"a/v3/a.proto",
+	)
+	storagetesting.AssertNotExist(
+		t,
+		readWriteBucket,
+		"a/v3/foo/foo.proto",
+	)
+	storagetesting.AssertNotExist(
+		t,
+		readWriteBucket,
+		"a/v3/foo/bar.proto",
+	)
+}
+
 func TestExportProtoFileRef(t *testing.T) {
 	t.Parallel()
 	tempDir := t.TempDir()
@@ -1408,6 +1445,76 @@ func TestExportProtoFileRefWithPathFlag(t *testing.T) {
 		tempDir,
 		"--path",
 		filepath.Join("testdata", "protofileref", "success", "buf.proto"),
+	)
+}
+
+func TestBuildWithPaths(t *testing.T) {
+	t.Parallel()
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3", "foo"))
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "--path", filepath.Join("testdata", "paths", "a", "v3", "foo"), "--exclude-path", filepath.Join("testdata", "paths", "a", "v3"))
+}
+
+func TestLintWithPaths(t *testing.T) {
+	t.Parallel()
+	testRunStdoutStderr(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/paths/a/v3/a.proto:7:10:Field name "Value" should be lower_snake_case, such as "value".`),
+		"",
+		"lint",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(
+			`testdata/paths/a/v3/foo/bar.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".
+testdata/paths/a/v3/foo/foo.proto:3:1:Package name "a.v3.foo" should be suffixed with a correctly formed version, such as "a.v3.foo.v1".`),
+		"",
+		"lint",
+		filepath.Join("testdata", "paths"),
+		"--path",
+		filepath.Join("testdata", "paths", "a", "v3", "foo"),
+		"--exclude-path",
+		filepath.Join("testdata", "paths", "a", "v3"),
+	)
+}
+
+func TestBreakingWithPaths(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("command", "generate", "testdata", "paths"), "-o", filepath.Join(tempDir, "previous.bin"))
+	testRunStdout(t, nil, 0, ``, "build", filepath.Join("testdata", "paths"), "-o", filepath.Join(tempDir, "current.bin"))
+	readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(tempDir)
+	require.NoError(t, err)
+	storagetesting.AssertPaths(
+		t,
+		readWriteBucket,
+		"",
+		"previous.bin",
+		"current.bin",
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		`a/v3/a.proto:6:3:Field "1" on message "Foo" changed type from "string" to "int32".
+a/v3/a.proto:7:3:Field "2" with name "Value" on message "Foo" changed option "json_name" from "value" to "Value".
+a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value".`,
+		"",
+		"breaking",
+		filepath.Join(tempDir, "current.bin"),
+		"--against",
+		filepath.Join(tempDir, "previous.bin"),
+		"--path",
+		filepath.Join("a", "v3"),
+		"--exclude-path",
+		filepath.Join("a", "v3", "foo"),
 	)
 }
 

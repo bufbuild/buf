@@ -40,6 +40,7 @@ const (
 	configFlagName              = "config"
 	pathsFlagName               = "path"
 	includeImportsFlagName      = "include-imports"
+	excludePathsFlagName        = "exclude-path"
 
 	// deprecated
 	inputFlagName = "input"
@@ -193,6 +194,7 @@ type flags struct {
 	Config         string
 	Paths          []string
 	IncludeImports bool
+	ExcludePaths   []string
 
 	// deprecated
 	Input string
@@ -209,6 +211,7 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
+	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	flagSet.BoolVar(
 		&f.IncludeImports,
 		includeImportsFlagName,
@@ -336,9 +339,10 @@ func run(
 		container,
 		ref,
 		inputConfig,
-		paths, // we filter on files
-		false, // input files must exist
-		false, // we must include source info for generation
+		paths,              // we filter on files
+		flags.ExcludePaths, // we exclude these paths
+		false,              // input files must exist
+		false,              // we must include source info for generation
 	)
 	if err != nil {
 		return err

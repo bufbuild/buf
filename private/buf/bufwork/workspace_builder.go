@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/bufbuild/buf/private/buf/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -50,6 +50,7 @@ func (w *workspaceBuilder) BuildWorkspace(
 	targetSubDirPath string,
 	configOverride string,
 	externalDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
 	externalDirOrFilePathsAllowNotExist bool,
 ) (bufmodule.Workspace, error) {
 	if workspaceConfig == nil {
@@ -100,13 +101,38 @@ func (w *workspaceBuilder) BuildWorkspace(
 				err,
 			)
 		}
+		externalToSubDirRelPaths, err := ExternalPathsToSubDirRelPaths(
+			relativeRootPath,
+			directory,
+			externalDirOrFilePaths,
+		)
+		if err != nil {
+			return nil, err
+		}
+		excludeToSubDirRelExcludePaths, err := ExternalPathsToSubDirRelPaths(
+			relativeRootPath,
+			directory,
+			externalExcludeDirOrFilePaths,
+		)
+		if err != nil {
+			return nil, err
+		}
+		subDirRelPaths := make([]string, 0, len(externalToSubDirRelPaths))
+		for _, subDirRelPath := range externalToSubDirRelPaths {
+			subDirRelPaths = append(subDirRelPaths, subDirRelPath)
+		}
+		subDirRelExcludePaths := make([]string, 0, len(excludeToSubDirRelExcludePaths))
+		for _, subDirRelExcludePath := range excludeToSubDirRelExcludePaths {
+			subDirRelExcludePaths = append(subDirRelExcludePaths, subDirRelExcludePath)
+		}
 		buildOptions, err := BuildOptionsForWorkspaceDirectory(
 			ctx,
 			workspaceConfig,
 			moduleConfig,
-			relativeRootPath,
-			directory,
 			externalDirOrFilePaths,
+			externalExcludeDirOrFilePaths,
+			subDirRelPaths,
+			subDirRelExcludePaths,
 			externalDirOrFilePathsAllowNotExist,
 		)
 		if err != nil {

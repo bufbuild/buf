@@ -43,6 +43,7 @@ const (
 	outputFlagName         = "output"
 	outputFlagShortName    = "o"
 	configFlagName         = "config"
+	excludePathsFlagName   = "exclude-path"
 )
 
 // NewCommand returns a new Command.
@@ -71,6 +72,7 @@ type flags struct {
 	Paths          []string
 	Output         string
 	Config         string
+	ExcludePaths   []string
 
 	// special
 	InputHashtag string
@@ -84,6 +86,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
+	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	flagSet.StringVarP(
 		&f.Output,
 		outputFlagName,
@@ -139,6 +142,7 @@ func run(
 		sourceOrModuleRef,
 		flags.Config,
 		flags.Paths,
+		flags.ExcludePaths,
 		false,
 	)
 	if err != nil {
@@ -227,6 +231,7 @@ func run(
 			sourceOrModuleRef,
 			flags.Config,
 			flags.Paths,
+			flags.ExcludePaths,
 			false,
 			true, // SourceCodeInfo is not needed here for outputting the source code
 		)

@@ -63,31 +63,6 @@ type RepositoryService interface {
 		fullName string,
 		visibility v1alpha1.Visibility,
 	) (repository *v1alpha1.Repository, err error)
-	// UpdateRepositoryName updates a repository's name.
-	UpdateRepositoryName(
-		ctx context.Context,
-		id string,
-		newName string,
-	) (repository *v1alpha1.Repository, err error)
-	// UpdateRepositoryNameByFullName updates a repository's name by full name.
-	UpdateRepositoryNameByFullName(
-		ctx context.Context,
-		fullName string,
-		newName string,
-	) (repository *v1alpha1.Repository, err error)
-	// UpdateRepositoryVisibility updates a repository's visibility.
-	UpdateRepositoryVisibility(
-		ctx context.Context,
-		id string,
-		newVisibility v1alpha1.Visibility,
-	) (repository *v1alpha1.Repository, err error)
-	// UpdateRepositoryVisibilityByName updates a repository's visibility by name.
-	UpdateRepositoryVisibilityByName(
-		ctx context.Context,
-		ownerName string,
-		repositoryName string,
-		newVisibility v1alpha1.Visibility,
-	) (repository *v1alpha1.Repository, err error)
 	// DeleteRepository deletes a repository.
 	DeleteRepository(ctx context.Context, id string) (err error)
 	// DeleteRepositoryByFullName deletes a repository by full name.

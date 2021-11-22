@@ -20,9 +20,9 @@ package bufwire
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -50,6 +50,7 @@ type ImageConfigReader interface {
 		ref buffetch.Ref,
 		configOverride string,
 		externalDirOrFilePaths []string,
+		externalExcludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
 	) ([]ImageConfig, []bufanalysis.FileAnnotation, error)
@@ -95,6 +96,7 @@ type ModuleConfigReader interface {
 		sourceOrModuleRef buffetch.SourceOrModuleRef,
 		configOverride string,
 		externalDirOrFilePaths []string,
+		externalExcludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
 	) ([]ModuleConfig, error)
 }
@@ -157,6 +159,7 @@ type ImageReader interface {
 		container app.EnvStdinContainer,
 		imageRef buffetch.ImageRef,
 		externalDirOrFilePaths []string,
+		externalExcludeDirOrFilePaths []string,
 		externalDirOrFilePathsAllowNotExist bool,
 		excludeSourceCodeInfo bool,
 	) (bufimage.Image, error)

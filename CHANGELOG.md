@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+- Change message documentation for fields to be either a single field or a oneof set of fields. This is a breaking API change.
+- Use a separate repository service to for each dependency remote to resolve dependencies for `buf mod update`. Previously, we used a single repository service based on the remote
+  from the module, so it was unable to resolve dependencies from differente remotes.
+- Add breaking and lint configurations to our module build.
+
+## [v1.0.0-rc8] - 2021-11-10
+
+- Add new endpoints to the recommendation service to make it configurable.
+- Add `--exclude-path` flag to `buf breaking`, `buf build`, `buf export`, `buf generate`, and `buf lint` commands. This allows users to exclude specific paths when running commands.
+- Change `GetModulePackages` endpoint to return a repeated `ModulePackage` message that now includes package description with the package name.
+- Add `Oneof` to the `Message` structure for documentation.
+
+## [v1.0.0-rc7] - 2021-11-08
+
 - Upgrade to `protoc` 3.19.1 support.
 - Fix issue with `buf generate` where multiple insertion points are defined in the same file.
 
@@ -578,7 +592,9 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc6...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc8...HEAD
+[v1.0.0-rc8]: https://github.com/bufbuild/buf/compare/v1.0.0-rc7...v1.0.0-rc8
+[v1.0.0-rc7]: https://github.com/bufbuild/buf/compare/v1.0.0-rc6...v1.0.0-rc7
 [v1.0.0-rc6]: https://github.com/bufbuild/buf/compare/v1.0.0-rc5...v1.0.0-rc6
 [v1.0.0-rc5]: https://github.com/bufbuild/buf/compare/v1.0.0-rc4...v1.0.0-rc5
 [v1.0.0-rc4]: https://github.com/bufbuild/buf/compare/v1.0.0-rc3...v1.0.0-rc4
