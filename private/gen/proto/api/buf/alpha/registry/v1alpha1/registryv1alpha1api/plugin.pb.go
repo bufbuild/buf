@@ -154,7 +154,7 @@ type PluginService interface {
 		templateName string,
 		pluginVersions []*v1alpha1.PluginVersionMapping,
 	) (templateVersion *v1alpha1.TemplateVersion, err error)
-	// SetTemplateContributor set the role of an user in the repository.
+	// SetTemplateContributor set the role of an user in the template.
 	SetTemplateContributor(
 		ctx context.Context,
 		templateId string,

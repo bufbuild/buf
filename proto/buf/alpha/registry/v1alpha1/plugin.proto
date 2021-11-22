@@ -160,7 +160,7 @@ service PluginService {
   rpc DeleteTemplate(DeleteTemplateRequest) returns (DeleteTemplateResponse);
   // CreateTemplateVersion creates a new template version.
   rpc CreateTemplateVersion(CreateTemplateVersionRequest) returns (CreateTemplateVersionResponse);
-  // SetTemplateContributor set the role of an user in the repository.
+  // SetTemplateContributor set the role of an user in the template.
   rpc SetTemplateContributor(SetTemplateContributorRequest) returns (SetTemplateContributorResponse);
 }
 

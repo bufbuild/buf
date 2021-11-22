@@ -76,7 +76,7 @@ type PluginServiceClient interface {
 	DeleteTemplate(ctx context.Context, in *DeleteTemplateRequest, opts ...grpc.CallOption) (*DeleteTemplateResponse, error)
 	// CreateTemplateVersion creates a new template version.
 	CreateTemplateVersion(ctx context.Context, in *CreateTemplateVersionRequest, opts ...grpc.CallOption) (*CreateTemplateVersionResponse, error)
-	// SetTemplateContributor set the role of an user in the repository.
+	// SetTemplateContributor set the role of an user in the template.
 	SetTemplateContributor(ctx context.Context, in *SetTemplateContributorRequest, opts ...grpc.CallOption) (*SetTemplateContributorResponse, error)
 }
 
@@ -294,7 +294,7 @@ type PluginServiceServer interface {
 	DeleteTemplate(context.Context, *DeleteTemplateRequest) (*DeleteTemplateResponse, error)
 	// CreateTemplateVersion creates a new template version.
 	CreateTemplateVersion(context.Context, *CreateTemplateVersionRequest) (*CreateTemplateVersionResponse, error)
-	// SetTemplateContributor set the role of an user in the repository.
+	// SetTemplateContributor set the role of an user in the template.
 	SetTemplateContributor(context.Context, *SetTemplateContributorRequest) (*SetTemplateContributorResponse, error)
 }
 

@@ -454,7 +454,7 @@ func (s *pluginService) CreateTemplateVersion(
 	return response.TemplateVersion, nil
 }
 
-// SetTemplateContributor set the role of an user in the repository.
+// SetTemplateContributor set the role of an user in the template.
 func (s *pluginService) SetTemplateContributor(
 	ctx context.Context,
 	templateId string,
