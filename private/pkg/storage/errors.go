@@ -54,10 +54,8 @@ func IsExistsMultipleLocations(err error) bool {
 	if err == nil {
 		return false
 	}
-	if asErr := new(errorExistsMultipleLocations); errors.As(err, &asErr) {
-		return true
-	}
-	return false
+	asErr := &errorExistsMultipleLocations{}
+	return errors.As(err, &asErr)
 }
 
 // errorExistsMultipleLocations is the error returned if a path exists in multiple locations.

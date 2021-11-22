@@ -68,7 +68,7 @@ func NewInternalError(err error) error {
 // isInternalError returns whether the error provided, or
 // any error wrapped by that error, is an internal error.
 func isInternalError(err error) bool {
-	var asErr *errInternal
+	asErr := &errInternal{}
 	return errors.As(err, &asErr)
 }
 
