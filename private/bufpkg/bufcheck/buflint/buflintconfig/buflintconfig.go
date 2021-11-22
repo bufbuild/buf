@@ -27,6 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintv1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 // Rule is a rule.
@@ -142,48 +143,53 @@ func NewConfigV1ForProto(protoConfig *lintv1.Config) (*Config, error) {
 	return internalConfigToConfig(internalConfig), nil
 }
 
-// NewLintConfigToBytes takes a Config and returns the []byte representation.
-func NewLintConfigToBytes(config *Config) ([]byte, error) {
+// ConfigToBytes takes a Config and returns the []byte representation.
+// We use an intermediary JSON form to ensure that the bytes associated with the
+// *Config is deterministic.
+func ConfigToBytes(config *Config) ([]byte, error) {
 	if config == nil {
 		return nil, nil
 	}
-	var rulesJSON []ruleJSON
-	sort.Slice(config.Rules, func(i, j int) bool { return config.Rules[i].ID() < config.Rules[j].ID() })
+
+	rulesJSON := make([]ruleJSON, 0, len(config.Rules))
 	for _, rule := range config.Rules {
 		categories := rule.Categories()
 		sort.Strings(categories)
-		rulesJSON = append(rulesJSON, ruleJSON{
-			ID:         rule.ID(),
-			Purpose:    rule.Purpose(),
-			Categories: categories,
-		})
+		rulesJSON = append(rulesJSON,
+			ruleJSON{
+				ID:         rule.ID(),
+				Purpose:    rule.Purpose(),
+				Categories: categories,
+			},
+		)
 	}
-	var ignoreIDs []string
-	for ignoreID := range config.IgnoreIDToRootPaths {
-		ignoreIDs = append(ignoreIDs, ignoreID)
+	sort.Slice(rulesJSON, func(i, j int) bool { return rulesJSON[i].ID < rulesJSON[j].ID })
+
+	ignoreIDToRootPaths := make([]idPathsJSON, 0, len(config.IgnoreIDToRootPaths))
+	for ignoreID, rootPaths := range config.IgnoreIDToRootPaths {
+		paths := stringutil.MapToSlice(rootPaths)
+		sort.Strings(paths)
+		ignoreIDToRootPaths = append(
+			ignoreIDToRootPaths,
+			idPathsJSON{
+				ID:    ignoreID,
+				Paths: paths,
+			},
+		)
 	}
-	sort.Strings(ignoreIDs)
-	ignoreIDToRootPaths := make(map[string][]string)
-	for _, ignoreID := range ignoreIDs {
-		var rootPaths []string
-		rootPathsMap := config.IgnoreIDToRootPaths[ignoreID]
-		for rootPath := range rootPathsMap {
-			rootPaths = append(rootPaths, rootPath)
-		}
-		sort.Strings(rootPaths)
-		ignoreIDToRootPaths[ignoreID] = rootPaths
-	}
-	var ignoreRootPaths []string
-	for ignoreRootPath := range config.IgnoreRootPaths {
-		ignoreRootPaths = append(ignoreRootPaths, ignoreRootPath)
-	}
+	sort.Slice(ignoreIDToRootPaths, func(i, j int) bool { return ignoreIDToRootPaths[i].ID < ignoreIDToRootPaths[j].ID })
+
+	ignoreRootPaths := stringutil.MapToSlice(config.IgnoreRootPaths)
 	sort.Strings(ignoreRootPaths)
-	return json.Marshal(&lintConfigJSON{
-		Rules:               rulesJSON,
-		IgnoreIDToRootPaths: ignoreIDToRootPaths,
-		IgnoreRootPaths:     ignoreRootPaths,
-		AllowCommentIgnores: config.AllowCommentIgnores,
-	})
+
+	return json.Marshal(
+		&configJSON{
+			Rules:               rulesJSON,
+			IgnoreIDToRootPaths: ignoreIDToRootPaths,
+			IgnoreRootPaths:     ignoreRootPaths,
+			AllowCommentIgnores: config.AllowCommentIgnores,
+		},
+	)
 }
 
 // GetAllRulesV1Beta1 gets all known rules.
@@ -359,15 +365,20 @@ func ignoreOnlyMapForProto(protoIDPaths []*lintv1.IDPaths) map[string][]string {
 	return ignoreIDToRootPaths
 }
 
-type lintConfigJSON struct {
-	Rules               []ruleJSON          `json:"rules"`
-	IgnoreIDToRootPaths map[string][]string `json:"ignore_id_to_root_paths"`
-	IgnoreRootPaths     []string            `json:"ignore_root_paths"`
-	AllowCommentIgnores bool                `json:"allow_comment_ignores"`
+type configJSON struct {
+	Rules               []ruleJSON    `json:"rules,omitempty"`
+	IgnoreIDToRootPaths []idPathsJSON `json:"ignore_id_to_root_paths,omitempty"`
+	IgnoreRootPaths     []string      `json:"ignore_root_paths,omitempty"`
+	AllowCommentIgnores bool          `json:"allow_comment_ignores,omitempty"`
 }
 
 type ruleJSON struct {
-	ID         string   `json:"id"`
-	Purpose    string   `json:"purpose"`
-	Categories []string `json:"categories"`
+	ID         string   `json:"id,omitempty"`
+	Purpose    string   `json:"purpose,omitempty"`
+	Categories []string `json:"categories,omitempty"`
+}
+
+type idPathsJSON struct {
+	ID    string   `json:"id,omitempty"`
+	Paths []string `json:"paths,omitempty"`
 }

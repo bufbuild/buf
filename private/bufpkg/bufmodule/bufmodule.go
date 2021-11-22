@@ -382,16 +382,20 @@ func ModuleDigestB1(ctx context.Context, module Module) (string, error) {
 //  1. For every file in the module (sorted lexicographically by path):
 //      a. Add the file path
 //      b. Add the file contents
-//  2. Add the dependency commits (sorted lexicographically by commit)
-//  3. Add the module documentation if available.
-//  4. Add the breaking and lint configurations if available.
-//  5. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
+//  2. Add the dependency's module identity and commit ID (sorted lexicographically by commit ID)
+//  3. Add the module name if available.
+//  4. Add the module documentation if available.
+//  5. Add the breaking and lint configurations if available.
+//  6. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
 func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	hash := sha256.New()
 	// We do not want to change the sort order as the rest of the codebase relies on it,
 	// but we only want to use commit as part of the sort order, so we make a copy of
 	// the slice and sort it by commit
 	for _, dependencyModulePin := range copyModulePinsSortedByOnlyCommit(module.DependencyModulePins()) {
+		if _, err := hash.Write([]byte(dependencyModulePin.IdentityString())); err != nil {
+			return "", err
+		}
 		if _, err := hash.Write([]byte(dependencyModulePin.Commit())); err != nil {
 			return "", err
 		}
@@ -415,13 +419,18 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
+	if moduleIdentity := module.getModuleIdentity(); moduleIdentity != nil {
+		if _, err := hash.Write([]byte(moduleIdentity.IdentityString())); err != nil {
+			return "", err
+		}
+	}
 	if docs := module.Documentation(); docs != "" {
 		if _, err := hash.Write([]byte(docs)); err != nil {
 			return "", err
 		}
 	}
 	if breakingConfig := module.BreakingConfig(); breakingConfig != nil {
-		breakingConfigBytes, err := bufbreakingconfig.NewBreakingConfigToBytes(breakingConfig)
+		breakingConfigBytes, err := bufbreakingconfig.ConfigToBytes(breakingConfig)
 		if err != nil {
 			return "", err
 		}
@@ -430,7 +439,7 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 		}
 	}
 	if lintConfig := module.LintConfig(); lintConfig != nil {
-		lintConfigBytes, err := buflintconfig.NewLintConfigToBytes(lintConfig)
+		lintConfigBytes, err := buflintconfig.ConfigToBytes(lintConfig)
 		if err != nil {
 			return "", err
 		}

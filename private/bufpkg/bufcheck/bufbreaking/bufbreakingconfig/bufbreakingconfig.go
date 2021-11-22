@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv1beta1"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 )
 
 // Rule is a rule.
@@ -120,48 +121,53 @@ func NewConfigV1ForProto(protoConfig *breakingv1.Config) (*Config, error) {
 	return internalConfigToConfig(internalConfig), nil
 }
 
-// NewBreakingConfigToBytes takes a Config and returns the []byte representation.
-func NewBreakingConfigToBytes(config *Config) ([]byte, error) {
+// ConfigToBytes takes a Config and returns the []byte representation.
+// We use an intermediary JSON form to ensure that the bytes associated with the
+// *Config is deterministic.
+func ConfigToBytes(config *Config) ([]byte, error) {
 	if config == nil {
 		return nil, nil
 	}
-	var rulesJSON []ruleJSON
-	sort.Slice(config.Rules, func(i, j int) bool { return config.Rules[i].ID() < config.Rules[j].ID() })
+
+	rulesJSON := make([]ruleJSON, 0, len(config.Rules))
 	for _, rule := range config.Rules {
 		categories := rule.Categories()
 		sort.Strings(categories)
-		rulesJSON = append(rulesJSON, ruleJSON{
-			ID:         rule.ID(),
-			Purpose:    rule.Purpose(),
-			Categories: categories,
-		})
+		rulesJSON = append(rulesJSON,
+			ruleJSON{
+				ID:         rule.ID(),
+				Purpose:    rule.Purpose(),
+				Categories: categories,
+			},
+		)
 	}
-	var ignoreIDs []string
-	for ignoreID := range config.IgnoreIDToRootPaths {
-		ignoreIDs = append(ignoreIDs, ignoreID)
+	sort.Slice(rulesJSON, func(i, j int) bool { return rulesJSON[i].ID < rulesJSON[j].ID })
+
+	ignoreIDToRootPaths := make([]idPathsJSON, 0, len(config.IgnoreIDToRootPaths))
+	for ignoreID, rootPaths := range config.IgnoreIDToRootPaths {
+		paths := stringutil.MapToSlice(rootPaths)
+		sort.Strings(paths)
+		ignoreIDToRootPaths = append(
+			ignoreIDToRootPaths,
+			idPathsJSON{
+				ID:    ignoreID,
+				Paths: paths,
+			},
+		)
 	}
-	sort.Strings(ignoreIDs)
-	ignoreIDToRootPaths := make(map[string][]string)
-	for _, ignoreID := range ignoreIDs {
-		var rootPaths []string
-		rootPathsMap := config.IgnoreIDToRootPaths[ignoreID]
-		for rootPath := range rootPathsMap {
-			rootPaths = append(rootPaths, rootPath)
-		}
-		sort.Strings(rootPaths)
-		ignoreIDToRootPaths[ignoreID] = rootPaths
-	}
-	var ignoreRootPaths []string
-	for ignoreRootPath := range config.IgnoreRootPaths {
-		ignoreRootPaths = append(ignoreRootPaths, ignoreRootPath)
-	}
+	sort.Slice(ignoreIDToRootPaths, func(i, j int) bool { return ignoreIDToRootPaths[i].ID < ignoreIDToRootPaths[j].ID })
+
+	ignoreRootPaths := stringutil.MapToSlice(config.IgnoreRootPaths)
 	sort.Strings(ignoreRootPaths)
-	return json.Marshal(&breakingConfigJSON{
-		Rules:                  rulesJSON,
-		IgnoreIDToRootPaths:    ignoreIDToRootPaths,
-		IgnoreRootPaths:        ignoreRootPaths,
-		IgnoreUnstablePackages: config.IgnoreUnstablePackages,
-	})
+
+	return json.Marshal(
+		&configJSON{
+			Rules:                  rulesJSON,
+			IgnoreIDToRootPaths:    ignoreIDToRootPaths,
+			IgnoreRootPaths:        ignoreRootPaths,
+			IgnoreUnstablePackages: config.IgnoreUnstablePackages,
+		},
+	)
 }
 
 // GetAllRulesV1Beta1 gets all known rules.
@@ -256,15 +262,20 @@ func internalConfigToConfig(internalConfig *internal.Config) *Config {
 	}
 }
 
-type breakingConfigJSON struct {
-	Rules                  []ruleJSON          `json:"rules"`
-	IgnoreIDToRootPaths    map[string][]string `json:"ignore_id_to_root_paths"`
-	IgnoreRootPaths        []string            `json:"ignore_root_paths"`
-	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages"`
+type configJSON struct {
+	Rules                  []ruleJSON    `json:"rules,omitempty"`
+	IgnoreIDToRootPaths    []idPathsJSON `json:"ignore_id_to_root_paths,omitempty"`
+	IgnoreRootPaths        []string      `json:"ignore_root_paths,omitempty"`
+	IgnoreUnstablePackages bool          `json:"ignore_unstable_packages,omitempty"`
 }
 
 type ruleJSON struct {
-	ID         string   `json:"id"`
-	Purpose    string   `json:"purpose"`
-	Categories []string `json:"categories"`
+	ID         string   `json:"id,omitempty"`
+	Purpose    string   `json:"purpose,omitempty"`
+	Categories []string `json:"categories,omitempty"`
+}
+
+type idPathsJSON struct {
+	ID    string   `json:"id,omitempty"`
+	Paths []string `json:"paths,omitempty"`
 }

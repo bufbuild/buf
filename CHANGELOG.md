@@ -6,9 +6,11 @@
 - Use a separate repository service to for each dependency remote to resolve dependencies for `buf mod update`. Previously, we used a single repository service based on the remote
   from the module, so it was unable to resolve dependencies from differente remotes.
 - Add breaking and lint configurations to our module build.
-- Update the digest algorithm so that it only uses module content, not repository metadata. When this change is deployed, users will observe the following:
+- Update the digest algorithm so that it encodes the `name`, `lint`, and `breaking` configuration encoded in the `buf.yaml`.
+  When this change is deployed, users will observe the following:
   - Users on `v0.43.0` or before will notice mismatched digest errors similar to the one described in https://github.com/bufbuild/buf/issues/661.
   - Users on `v0.44.0` or after will have their module cache invalidated, but it will repair itself automatically.
+  - The `buf.lock` (across all versions) will reflect the new `b3-` digest values for new commits.
 
 ## [v1.0.0-rc8] - 2021-11-10
 
