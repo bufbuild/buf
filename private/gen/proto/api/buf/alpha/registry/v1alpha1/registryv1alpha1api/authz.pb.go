@@ -99,13 +99,13 @@ type AuthzService interface {
 	// UserCanSeeServerAdminPanel returns whether the user is authorized
 	// to see server admin panel.
 	UserCanSeeServerAdminPanel(ctx context.Context) (authorized bool, err error)
-	// UserCanManageRepositoryContributor returns whether the user is authorized to manage
+	// UserCanManageRepositoryContributors returns whether the user is authorized to manage
 	// any contributors to the repository and the list of roles they can manage.
-	UserCanManageRepositoryContributor(ctx context.Context, repositoryId string) (authorizedRoles []v1alpha1.RepositoryRole, err error)
-	// UserCanManagePluginContributor returns whether the user is authorized to manage
+	UserCanManageRepositoryContributors(ctx context.Context, repositoryId string) (authorizedRoles []v1alpha1.RepositoryRole, err error)
+	// UserCanManagePluginContributors returns whether the user is authorized to manage
 	// any contributors to the plugin and the list of roles they can manage.
-	UserCanManagePluginContributor(ctx context.Context, pluginId string) (authorizedRoles []v1alpha1.PluginRole, err error)
-	// UserCanManageTemplateContributor returns whether the user is authorized to manage
+	UserCanManagePluginContributors(ctx context.Context, pluginId string) (authorizedRoles []v1alpha1.PluginRole, err error)
+	// UserCanManageTemplateContributors returns whether the user is authorized to manage
 	// any contributors to the template and the list of roles they can manage.
-	UserCanManageTemplateContributor(ctx context.Context, templateId string) (authorizedRoles []v1alpha1.TemplateRole, err error)
+	UserCanManageTemplateContributors(ctx context.Context, templateId string) (authorizedRoles []v1alpha1.TemplateRole, err error)
 }

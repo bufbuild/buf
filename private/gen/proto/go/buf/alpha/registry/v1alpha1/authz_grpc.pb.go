@@ -92,15 +92,15 @@ type AuthzServiceClient interface {
 	// UserCanSeeServerAdminPanel returns whether the user is authorized
 	// to see server admin panel.
 	UserCanSeeServerAdminPanel(ctx context.Context, in *UserCanSeeServerAdminPanelRequest, opts ...grpc.CallOption) (*UserCanSeeServerAdminPanelResponse, error)
-	// UserCanManageRepositoryContributor returns whether the user is authorized to manage
+	// UserCanManageRepositoryContributors returns whether the user is authorized to manage
 	// any contributors to the repository and the list of roles they can manage.
-	UserCanManageRepositoryContributor(ctx context.Context, in *UserCanManageRepositoryContributorRequest, opts ...grpc.CallOption) (*UserCanManageRepositoryContributorResponse, error)
-	// UserCanManagePluginContributor returns whether the user is authorized to manage
+	UserCanManageRepositoryContributors(ctx context.Context, in *UserCanManageRepositoryContributorsRequest, opts ...grpc.CallOption) (*UserCanManageRepositoryContributorsResponse, error)
+	// UserCanManagePluginContributors returns whether the user is authorized to manage
 	// any contributors to the plugin and the list of roles they can manage.
-	UserCanManagePluginContributor(ctx context.Context, in *UserCanManagePluginContributorRequest, opts ...grpc.CallOption) (*UserCanManagePluginContributorResponse, error)
-	// UserCanManageTemplateContributor returns whether the user is authorized to manage
+	UserCanManagePluginContributors(ctx context.Context, in *UserCanManagePluginContributorsRequest, opts ...grpc.CallOption) (*UserCanManagePluginContributorsResponse, error)
+	// UserCanManageTemplateContributors returns whether the user is authorized to manage
 	// any contributors to the template and the list of roles they can manage.
-	UserCanManageTemplateContributor(ctx context.Context, in *UserCanManageTemplateContributorRequest, opts ...grpc.CallOption) (*UserCanManageTemplateContributorResponse, error)
+	UserCanManageTemplateContributors(ctx context.Context, in *UserCanManageTemplateContributorsRequest, opts ...grpc.CallOption) (*UserCanManageTemplateContributorsResponse, error)
 }
 
 type authzServiceClient struct {
@@ -282,27 +282,27 @@ func (c *authzServiceClient) UserCanSeeServerAdminPanel(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *authzServiceClient) UserCanManageRepositoryContributor(ctx context.Context, in *UserCanManageRepositoryContributorRequest, opts ...grpc.CallOption) (*UserCanManageRepositoryContributorResponse, error) {
-	out := new(UserCanManageRepositoryContributorResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageRepositoryContributor", in, out, opts...)
+func (c *authzServiceClient) UserCanManageRepositoryContributors(ctx context.Context, in *UserCanManageRepositoryContributorsRequest, opts ...grpc.CallOption) (*UserCanManageRepositoryContributorsResponse, error) {
+	out := new(UserCanManageRepositoryContributorsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageRepositoryContributors", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authzServiceClient) UserCanManagePluginContributor(ctx context.Context, in *UserCanManagePluginContributorRequest, opts ...grpc.CallOption) (*UserCanManagePluginContributorResponse, error) {
-	out := new(UserCanManagePluginContributorResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManagePluginContributor", in, out, opts...)
+func (c *authzServiceClient) UserCanManagePluginContributors(ctx context.Context, in *UserCanManagePluginContributorsRequest, opts ...grpc.CallOption) (*UserCanManagePluginContributorsResponse, error) {
+	out := new(UserCanManagePluginContributorsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManagePluginContributors", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authzServiceClient) UserCanManageTemplateContributor(ctx context.Context, in *UserCanManageTemplateContributorRequest, opts ...grpc.CallOption) (*UserCanManageTemplateContributorResponse, error) {
-	out := new(UserCanManageTemplateContributorResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageTemplateContributor", in, out, opts...)
+func (c *authzServiceClient) UserCanManageTemplateContributors(ctx context.Context, in *UserCanManageTemplateContributorsRequest, opts ...grpc.CallOption) (*UserCanManageTemplateContributorsResponse, error) {
+	out := new(UserCanManageTemplateContributorsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageTemplateContributors", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -369,15 +369,15 @@ type AuthzServiceServer interface {
 	// UserCanSeeServerAdminPanel returns whether the user is authorized
 	// to see server admin panel.
 	UserCanSeeServerAdminPanel(context.Context, *UserCanSeeServerAdminPanelRequest) (*UserCanSeeServerAdminPanelResponse, error)
-	// UserCanManageRepositoryContributor returns whether the user is authorized to manage
+	// UserCanManageRepositoryContributors returns whether the user is authorized to manage
 	// any contributors to the repository and the list of roles they can manage.
-	UserCanManageRepositoryContributor(context.Context, *UserCanManageRepositoryContributorRequest) (*UserCanManageRepositoryContributorResponse, error)
-	// UserCanManagePluginContributor returns whether the user is authorized to manage
+	UserCanManageRepositoryContributors(context.Context, *UserCanManageRepositoryContributorsRequest) (*UserCanManageRepositoryContributorsResponse, error)
+	// UserCanManagePluginContributors returns whether the user is authorized to manage
 	// any contributors to the plugin and the list of roles they can manage.
-	UserCanManagePluginContributor(context.Context, *UserCanManagePluginContributorRequest) (*UserCanManagePluginContributorResponse, error)
-	// UserCanManageTemplateContributor returns whether the user is authorized to manage
+	UserCanManagePluginContributors(context.Context, *UserCanManagePluginContributorsRequest) (*UserCanManagePluginContributorsResponse, error)
+	// UserCanManageTemplateContributors returns whether the user is authorized to manage
 	// any contributors to the template and the list of roles they can manage.
-	UserCanManageTemplateContributor(context.Context, *UserCanManageTemplateContributorRequest) (*UserCanManageTemplateContributorResponse, error)
+	UserCanManageTemplateContributors(context.Context, *UserCanManageTemplateContributorsRequest) (*UserCanManageTemplateContributorsResponse, error)
 }
 
 // UnimplementedAuthzServiceServer should be embedded to have forward compatible implementations.
@@ -441,14 +441,14 @@ func (UnimplementedAuthzServiceServer) UserCanDeleteUser(context.Context, *UserC
 func (UnimplementedAuthzServiceServer) UserCanSeeServerAdminPanel(context.Context, *UserCanSeeServerAdminPanelRequest) (*UserCanSeeServerAdminPanelResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserCanSeeServerAdminPanel not implemented")
 }
-func (UnimplementedAuthzServiceServer) UserCanManageRepositoryContributor(context.Context, *UserCanManageRepositoryContributorRequest) (*UserCanManageRepositoryContributorResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UserCanManageRepositoryContributor not implemented")
+func (UnimplementedAuthzServiceServer) UserCanManageRepositoryContributors(context.Context, *UserCanManageRepositoryContributorsRequest) (*UserCanManageRepositoryContributorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanManageRepositoryContributors not implemented")
 }
-func (UnimplementedAuthzServiceServer) UserCanManagePluginContributor(context.Context, *UserCanManagePluginContributorRequest) (*UserCanManagePluginContributorResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UserCanManagePluginContributor not implemented")
+func (UnimplementedAuthzServiceServer) UserCanManagePluginContributors(context.Context, *UserCanManagePluginContributorsRequest) (*UserCanManagePluginContributorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanManagePluginContributors not implemented")
 }
-func (UnimplementedAuthzServiceServer) UserCanManageTemplateContributor(context.Context, *UserCanManageTemplateContributorRequest) (*UserCanManageTemplateContributorResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UserCanManageTemplateContributor not implemented")
+func (UnimplementedAuthzServiceServer) UserCanManageTemplateContributors(context.Context, *UserCanManageTemplateContributorsRequest) (*UserCanManageTemplateContributorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserCanManageTemplateContributors not implemented")
 }
 
 // UnsafeAuthzServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -804,56 +804,56 @@ func _AuthzService_UserCanSeeServerAdminPanel_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthzService_UserCanManageRepositoryContributor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserCanManageRepositoryContributorRequest)
+func _AuthzService_UserCanManageRepositoryContributors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanManageRepositoryContributorsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthzServiceServer).UserCanManageRepositoryContributor(ctx, in)
+		return srv.(AuthzServiceServer).UserCanManageRepositoryContributors(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageRepositoryContributor",
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageRepositoryContributors",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).UserCanManageRepositoryContributor(ctx, req.(*UserCanManageRepositoryContributorRequest))
+		return srv.(AuthzServiceServer).UserCanManageRepositoryContributors(ctx, req.(*UserCanManageRepositoryContributorsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthzService_UserCanManagePluginContributor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserCanManagePluginContributorRequest)
+func _AuthzService_UserCanManagePluginContributors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanManagePluginContributorsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthzServiceServer).UserCanManagePluginContributor(ctx, in)
+		return srv.(AuthzServiceServer).UserCanManagePluginContributors(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManagePluginContributor",
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManagePluginContributors",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).UserCanManagePluginContributor(ctx, req.(*UserCanManagePluginContributorRequest))
+		return srv.(AuthzServiceServer).UserCanManagePluginContributors(ctx, req.(*UserCanManagePluginContributorsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthzService_UserCanManageTemplateContributor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UserCanManageTemplateContributorRequest)
+func _AuthzService_UserCanManageTemplateContributors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserCanManageTemplateContributorsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthzServiceServer).UserCanManageTemplateContributor(ctx, in)
+		return srv.(AuthzServiceServer).UserCanManageTemplateContributors(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageTemplateContributor",
+		FullMethod: "/buf.alpha.registry.v1alpha1.AuthzService/UserCanManageTemplateContributors",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).UserCanManageTemplateContributor(ctx, req.(*UserCanManageTemplateContributorRequest))
+		return srv.(AuthzServiceServer).UserCanManageTemplateContributors(ctx, req.(*UserCanManageTemplateContributorsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -942,16 +942,16 @@ var AuthzService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthzService_UserCanSeeServerAdminPanel_Handler,
 		},
 		{
-			MethodName: "UserCanManageRepositoryContributor",
-			Handler:    _AuthzService_UserCanManageRepositoryContributor_Handler,
+			MethodName: "UserCanManageRepositoryContributors",
+			Handler:    _AuthzService_UserCanManageRepositoryContributors_Handler,
 		},
 		{
-			MethodName: "UserCanManagePluginContributor",
-			Handler:    _AuthzService_UserCanManagePluginContributor_Handler,
+			MethodName: "UserCanManagePluginContributors",
+			Handler:    _AuthzService_UserCanManagePluginContributors_Handler,
 		},
 		{
-			MethodName: "UserCanManageTemplateContributor",
-			Handler:    _AuthzService_UserCanManageTemplateContributor_Handler,
+			MethodName: "UserCanManageTemplateContributors",
+			Handler:    _AuthzService_UserCanManageTemplateContributors_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

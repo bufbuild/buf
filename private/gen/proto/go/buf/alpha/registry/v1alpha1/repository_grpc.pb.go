@@ -61,7 +61,7 @@ type RepositoryServiceClient interface {
 	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
 	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
 	GetRepositoriesByFullName(ctx context.Context, in *GetRepositoriesByFullNameRequest, opts ...grpc.CallOption) (*GetRepositoriesByFullNameResponse, error)
-	// SetRepositoryContributor set the role of an user in the repository.
+	// SetRepositoryContributor sets the role of a user in the repository.
 	SetRepositoryContributor(ctx context.Context, in *SetRepositoryContributorRequest, opts ...grpc.CallOption) (*SetRepositoryContributorResponse, error)
 }
 
@@ -219,7 +219,7 @@ type RepositoryServiceServer interface {
 	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
 	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
 	GetRepositoriesByFullName(context.Context, *GetRepositoriesByFullNameRequest) (*GetRepositoriesByFullNameResponse, error)
-	// SetRepositoryContributor set the role of an user in the repository.
+	// SetRepositoryContributor sets the role of a user in the repository.
 	SetRepositoryContributor(context.Context, *SetRepositoryContributorRequest) (*SetRepositoryContributorResponse, error)
 }
 

@@ -138,7 +138,7 @@ service PluginService {
   // a plugin may cause breaking changes for templates using that plugin,
   // and should be done with extreme care.
   rpc DeletePlugin(DeletePluginRequest) returns (DeletePluginResponse);
-  // SetPluginContributor set the role of an user in the plugin.
+  // SetPluginContributor sets the role of a user in the plugin.
   rpc SetPluginContributor(SetPluginContributorRequest) returns (SetPluginContributorResponse);
   // GetTemplate returns the template, if found.
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
@@ -160,7 +160,7 @@ service PluginService {
   rpc DeleteTemplate(DeleteTemplateRequest) returns (DeleteTemplateResponse);
   // CreateTemplateVersion creates a new template version.
   rpc CreateTemplateVersion(CreateTemplateVersionRequest) returns (CreateTemplateVersionResponse);
-  // SetTemplateContributor set the role of an user in the template.
+  // SetTemplateContributor sets the role of a user in the template.
   rpc SetTemplateContributor(SetTemplateContributorRequest) returns (SetTemplateContributorResponse);
 }
 
@@ -264,12 +264,12 @@ message DeletePluginRequest {
 message DeletePluginResponse {}
 
 message SetPluginContributorRequest {
-  // The ID of the plugin for which the user will be set a role.
+  // The ID of the plugin for which the user's role will be set.
   string plugin_id = 1;
-  // The ID of the user for which to be set a role in the plugin.
+  // The ID of the user whose role will be set.
   string user_id = 2;
-  // The new role of the user in the plugin,
-  // unspecified role means to remove the user's role in the plugin.
+  // The role to assign to the user.
+  // Setting UNSPECIFIED means removing the user's role.
   PluginRole plugin_role = 3;
 }
 
@@ -408,12 +408,12 @@ message CreateTemplateVersionResponse {
 }
 
 message SetTemplateContributorRequest {
-  // The ID of the template for which the user will be set a role.
+  // The ID of the template for which the user's role will be set.
   string template_id = 1;
-  // The ID of the user for which to be set a role in the template.
+  // The ID of the user whose role will be set.
   string user_id = 2;
-  // The new role of the user in the template,
-  // unspecified role means to remove the user's role in the template.
+  // The role to assign to the user.
+  // Setting UNSPECIFIED means removing the user's role.
   TemplateRole template_role = 3;
 }
 

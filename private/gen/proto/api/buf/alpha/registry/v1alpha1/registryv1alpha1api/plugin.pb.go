@@ -78,7 +78,7 @@ type PluginService interface {
 		owner string,
 		name string,
 	) (err error)
-	// SetPluginContributor set the role of an user in the plugin.
+	// SetPluginContributor sets the role of a user in the plugin.
 	SetPluginContributor(
 		ctx context.Context,
 		pluginId string,
@@ -154,7 +154,7 @@ type PluginService interface {
 		templateName string,
 		pluginVersions []*v1alpha1.PluginVersionMapping,
 	) (templateVersion *v1alpha1.TemplateVersion, err error)
-	// SetTemplateContributor set the role of an user in the template.
+	// SetTemplateContributor sets the role of a user in the template.
 	SetTemplateContributor(
 		ctx context.Context,
 		templateId string,

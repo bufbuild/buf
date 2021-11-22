@@ -1414,12 +1414,12 @@ type SetPluginContributorRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the plugin for which the user will be set a role.
+	// The ID of the plugin for which the user's role will be set.
 	PluginId string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
-	// The ID of the user for which to be set a role in the plugin.
+	// The ID of the user whose role will be set.
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// The new role of the user in the plugin,
-	// unspecified role means to remove the user's role in the plugin.
+	// The role to assign to the user.
+	// Setting UNSPECIFIED means removing the user's role.
 	PluginRole PluginRole `protobuf:"varint,3,opt,name=plugin_role,json=pluginRole,proto3,enum=buf.alpha.registry.v1alpha1.PluginRole" json:"plugin_role,omitempty"`
 }
 
@@ -2600,12 +2600,12 @@ type SetTemplateContributorRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the template for which the user will be set a role.
+	// The ID of the template for which the user's role will be set.
 	TemplateId string `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`
-	// The ID of the user for which to be set a role in the template.
+	// The ID of the user whose role will be set.
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// The new role of the user in the template,
-	// unspecified role means to remove the user's role in the template.
+	// The role to assign to the user.
+	// Setting UNSPECIFIED means removing the user's role.
 	TemplateRole TemplateRole `protobuf:"varint,3,opt,name=template_role,json=templateRole,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"template_role,omitempty"`
 }
 

@@ -1502,12 +1502,12 @@ type SetRepositoryContributorRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The ID of the repository for which the user will be set a role.
+	// The ID of the repository for which the user's role will be set.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
-	// The ID of the user for which to be set a role in the repository.
+	// The ID of the user whose role will be set.
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	// The new role of the user in the repository,
-	// unspecified role means to remove the user's role in the repository.
+	// The role to assign to the user.
+	// Setting UNSPECIFIED means removing the user's role.
 	RepositoryRole RepositoryRole `protobuf:"varint,3,opt,name=repository_role,json=repositoryRole,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"repository_role,omitempty"`
 }
 

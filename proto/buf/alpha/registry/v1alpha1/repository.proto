@@ -74,7 +74,7 @@ service RepositoryService {
   // GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
   // Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
   rpc GetRepositoriesByFullName(GetRepositoriesByFullNameRequest) returns (GetRepositoriesByFullNameResponse);
-  // SetRepositoryContributor set the role of an user in the repository.
+  // SetRepositoryContributor sets the role of a user in the repository.
   rpc SetRepositoryContributor(SetRepositoryContributorRequest) returns (SetRepositoryContributorResponse);
 }
 
@@ -204,12 +204,12 @@ message UndeprecateRepositoryByNameResponse{
 }
 
 message SetRepositoryContributorRequest {
-  // The ID of the repository for which the user will be set a role.
+  // The ID of the repository for which the user's role will be set.
   string repository_id = 1;
-  // The ID of the user for which to be set a role in the repository.
+  // The ID of the user whose role will be set.
   string user_id = 2;
-  // The new role of the user in the repository,
-  // unspecified role means to remove the user's role in the repository.
+  // The role to assign to the user.
+  // Setting UNSPECIFIED means removing the user's role.
   RepositoryRole repository_role = 3;
 }
 

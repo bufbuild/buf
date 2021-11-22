@@ -54,7 +54,7 @@ type PluginServiceClient interface {
 	// a plugin may cause breaking changes for templates using that plugin,
 	// and should be done with extreme care.
 	DeletePlugin(ctx context.Context, in *DeletePluginRequest, opts ...grpc.CallOption) (*DeletePluginResponse, error)
-	// SetPluginContributor set the role of an user in the plugin.
+	// SetPluginContributor sets the role of a user in the plugin.
 	SetPluginContributor(ctx context.Context, in *SetPluginContributorRequest, opts ...grpc.CallOption) (*SetPluginContributorResponse, error)
 	// GetTemplate returns the template, if found.
 	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error)
@@ -76,7 +76,7 @@ type PluginServiceClient interface {
 	DeleteTemplate(ctx context.Context, in *DeleteTemplateRequest, opts ...grpc.CallOption) (*DeleteTemplateResponse, error)
 	// CreateTemplateVersion creates a new template version.
 	CreateTemplateVersion(ctx context.Context, in *CreateTemplateVersionRequest, opts ...grpc.CallOption) (*CreateTemplateVersionResponse, error)
-	// SetTemplateContributor set the role of an user in the template.
+	// SetTemplateContributor sets the role of a user in the template.
 	SetTemplateContributor(ctx context.Context, in *SetTemplateContributorRequest, opts ...grpc.CallOption) (*SetTemplateContributorResponse, error)
 }
 
@@ -272,7 +272,7 @@ type PluginServiceServer interface {
 	// a plugin may cause breaking changes for templates using that plugin,
 	// and should be done with extreme care.
 	DeletePlugin(context.Context, *DeletePluginRequest) (*DeletePluginResponse, error)
-	// SetPluginContributor set the role of an user in the plugin.
+	// SetPluginContributor sets the role of a user in the plugin.
 	SetPluginContributor(context.Context, *SetPluginContributorRequest) (*SetPluginContributorResponse, error)
 	// GetTemplate returns the template, if found.
 	GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error)
@@ -294,7 +294,7 @@ type PluginServiceServer interface {
 	DeleteTemplate(context.Context, *DeleteTemplateRequest) (*DeleteTemplateResponse, error)
 	// CreateTemplateVersion creates a new template version.
 	CreateTemplateVersion(context.Context, *CreateTemplateVersionRequest) (*CreateTemplateVersionResponse, error)
-	// SetTemplateContributor set the role of an user in the template.
+	// SetTemplateContributor sets the role of a user in the template.
 	SetTemplateContributor(context.Context, *SetTemplateContributorRequest) (*SetTemplateContributorResponse, error)
 }
 

@@ -204,7 +204,7 @@ func (s *pluginService) DeletePlugin(
 	return nil
 }
 
-// SetPluginContributor set the role of an user in the plugin.
+// SetPluginContributor sets the role of a user in the plugin.
 func (s *pluginService) SetPluginContributor(
 	ctx context.Context,
 	pluginId string,
@@ -454,7 +454,7 @@ func (s *pluginService) CreateTemplateVersion(
 	return response.TemplateVersion, nil
 }
 
-// SetTemplateContributor set the role of an user in the template.
+// SetTemplateContributor sets the role of a user in the template.
 func (s *pluginService) SetTemplateContributor(
 	ctx context.Context,
 	templateId string,
