@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/role.proto";
+
 // Plugin represents a protoc plugin, such as protoc-gen-go.
 message Plugin {
   // The ID of the plugin, which uniquely identifies the plugin.
@@ -136,6 +138,8 @@ service PluginService {
   // a plugin may cause breaking changes for templates using that plugin,
   // and should be done with extreme care.
   rpc DeletePlugin(DeletePluginRequest) returns (DeletePluginResponse);
+  // SetPluginContributor sets the role of a user in the plugin.
+  rpc SetPluginContributor(SetPluginContributorRequest) returns (SetPluginContributorResponse);
   // GetTemplate returns the template, if found.
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
   // ListTemplates returns all the templates available to the user. This includes
@@ -156,6 +160,8 @@ service PluginService {
   rpc DeleteTemplate(DeleteTemplateRequest) returns (DeleteTemplateResponse);
   // CreateTemplateVersion creates a new template version.
   rpc CreateTemplateVersion(CreateTemplateVersionRequest) returns (CreateTemplateVersionResponse);
+  // SetTemplateContributor sets the role of a user in the template.
+  rpc SetTemplateContributor(SetTemplateContributorRequest) returns (SetTemplateContributorResponse);
 }
 
 message ListPluginsRequest {
@@ -257,6 +263,17 @@ message DeletePluginRequest {
 
 message DeletePluginResponse {}
 
+message SetPluginContributorRequest {
+  // The ID of the plugin for which the user's role will be set.
+  string plugin_id = 1;
+  // The ID of the user whose role will be set.
+  string user_id = 2;
+  // The role to assign to the user.
+  // Setting UNSPECIFIED means removing the user's role.
+  PluginRole plugin_role = 3;
+}
+
+message SetPluginContributorResponse {}
 
 message GetTemplateRequest {
   // The owner of the template.
@@ -389,3 +406,15 @@ message CreateTemplateVersionResponse {
   // The created template version.
   TemplateVersion template_version = 1;
 }
+
+message SetTemplateContributorRequest {
+  // The ID of the template for which the user's role will be set.
+  string template_id = 1;
+  // The ID of the user whose role will be set.
+  string user_id = 2;
+  // The role to assign to the user.
+  // Setting UNSPECIFIED means removing the user's role.
+  TemplateRole template_role = 3;
+}
+
+message SetTemplateContributorResponse {}

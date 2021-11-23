@@ -83,4 +83,11 @@ type RepositoryService interface {
 	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
 	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
 	GetRepositoriesByFullName(ctx context.Context, fullNames []string) (repositories []*v1alpha1.Repository, err error)
+	// SetRepositoryContributor sets the role of a user in the repository.
+	SetRepositoryContributor(
+		ctx context.Context,
+		repositoryId string,
+		userId string,
+		repositoryRole v1alpha1.RepositoryRole,
+	) (err error)
 }

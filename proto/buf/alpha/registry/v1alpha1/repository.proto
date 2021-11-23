@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/role.proto";
 import "google/protobuf/timestamp.proto";
 
 enum Visibility {
@@ -73,6 +74,8 @@ service RepositoryService {
   // GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
   // Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
   rpc GetRepositoriesByFullName(GetRepositoriesByFullNameRequest) returns (GetRepositoriesByFullNameResponse);
+  // SetRepositoryContributor sets the role of a user in the repository.
+  rpc SetRepositoryContributor(SetRepositoryContributorRequest) returns (SetRepositoryContributorResponse);
 }
 
 message GetRepositoriesByFullNameRequest{
@@ -199,3 +202,15 @@ message UndeprecateRepositoryByNameRequest{
 message UndeprecateRepositoryByNameResponse{
   Repository repository = 1;
 }
+
+message SetRepositoryContributorRequest {
+  // The ID of the repository for which the user's role will be set.
+  string repository_id = 1;
+  // The ID of the user whose role will be set.
+  string user_id = 2;
+  // The role to assign to the user.
+  // Setting UNSPECIFIED means removing the user's role.
+  RepositoryRole repository_role = 3;
+}
+
+message SetRepositoryContributorResponse {}
