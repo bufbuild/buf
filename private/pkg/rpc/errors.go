@@ -363,8 +363,7 @@ func GetErrorCode(err error) ErrorCode {
 	if err == nil {
 		return 0
 	}
-	rpcErr := &rpcError{}
-	if errors.As(err, &rpcErr) {
+	if rpcErr := (&rpcError{}); errors.As(err, &rpcErr) {
 		return rpcErr.errorCode
 	}
 	return ErrorCodeInternal
@@ -376,8 +375,7 @@ func GetErrorMessage(err error) string {
 	if err == nil {
 		return ""
 	}
-	rpcErr := &rpcError{}
-	if errors.As(err, &rpcErr) {
+	if rpcErr := (&rpcError{}); errors.As(err, &rpcErr) {
 		return rpcErr.message
 	}
 	return ""
