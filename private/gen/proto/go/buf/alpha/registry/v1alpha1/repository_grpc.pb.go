@@ -61,6 +61,8 @@ type RepositoryServiceClient interface {
 	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
 	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
 	GetRepositoriesByFullName(ctx context.Context, in *GetRepositoriesByFullNameRequest, opts ...grpc.CallOption) (*GetRepositoriesByFullNameResponse, error)
+	// SetRepositoryContributor sets the role of a user in the repository.
+	SetRepositoryContributor(ctx context.Context, in *SetRepositoryContributorRequest, opts ...grpc.CallOption) (*SetRepositoryContributorResponse, error)
 }
 
 type repositoryServiceClient struct {
@@ -179,6 +181,15 @@ func (c *repositoryServiceClient) GetRepositoriesByFullName(ctx context.Context,
 	return out, nil
 }
 
+func (c *repositoryServiceClient) SetRepositoryContributor(ctx context.Context, in *SetRepositoryContributorRequest, opts ...grpc.CallOption) (*SetRepositoryContributorResponse, error) {
+	out := new(SetRepositoryContributorResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/SetRepositoryContributor", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RepositoryServiceServer is the server API for RepositoryService service.
 // All implementations should embed UnimplementedRepositoryServiceServer
 // for forward compatibility
@@ -208,6 +219,8 @@ type RepositoryServiceServer interface {
 	// GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
 	// Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
 	GetRepositoriesByFullName(context.Context, *GetRepositoriesByFullNameRequest) (*GetRepositoriesByFullNameResponse, error)
+	// SetRepositoryContributor sets the role of a user in the repository.
+	SetRepositoryContributor(context.Context, *SetRepositoryContributorRequest) (*SetRepositoryContributorResponse, error)
 }
 
 // UnimplementedRepositoryServiceServer should be embedded to have forward compatible implementations.
@@ -249,6 +262,9 @@ func (UnimplementedRepositoryServiceServer) UndeprecateRepositoryByName(context.
 }
 func (UnimplementedRepositoryServiceServer) GetRepositoriesByFullName(context.Context, *GetRepositoriesByFullNameRequest) (*GetRepositoriesByFullNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRepositoriesByFullName not implemented")
+}
+func (UnimplementedRepositoryServiceServer) SetRepositoryContributor(context.Context, *SetRepositoryContributorRequest) (*SetRepositoryContributorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetRepositoryContributor not implemented")
 }
 
 // UnsafeRepositoryServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -478,6 +494,24 @@ func _RepositoryService_GetRepositoriesByFullName_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryService_SetRepositoryContributor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetRepositoryContributorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).SetRepositoryContributor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/SetRepositoryContributor",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).SetRepositoryContributor(ctx, req.(*SetRepositoryContributorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RepositoryService_ServiceDesc is the grpc.ServiceDesc for RepositoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -532,6 +566,10 @@ var RepositoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRepositoriesByFullName",
 			Handler:    _RepositoryService_GetRepositoriesByFullName_Handler,
+		},
+		{
+			MethodName: "SetRepositoryContributor",
+			Handler:    _RepositoryService_SetRepositoryContributor_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
