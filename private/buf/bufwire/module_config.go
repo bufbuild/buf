@@ -15,7 +15,7 @@
 package bufwire
 
 import (
-	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/buf/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 )
 
