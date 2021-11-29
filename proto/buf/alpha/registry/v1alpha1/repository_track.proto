@@ -48,7 +48,7 @@ message CreateRepositoryTrackRequest {
 }
 
 message CreateRepositoryTrackResponse {
-  RepositoryTrack repository_branch = 1;
+  RepositoryTrack repository_track = 1;
 }
 
 message ListRepositoryTracksRequest {
@@ -61,7 +61,7 @@ message ListRepositoryTracksRequest {
 }
 
 message ListRepositoryTracksResponse {
-  repeated RepositoryTrack repository_branches = 1;
+  repeated RepositoryTrack repository_tracks = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
 }

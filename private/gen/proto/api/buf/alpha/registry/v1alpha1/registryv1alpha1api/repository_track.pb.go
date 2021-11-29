@@ -27,7 +27,7 @@ type RepositoryTrackService interface {
 		ctx context.Context,
 		repositoryId string,
 		name string,
-	) (repositoryBranch *v1alpha1.RepositoryTrack, err error)
+	) (repositoryTrack *v1alpha1.RepositoryTrack, err error)
 	// ListRepositoryTracks lists the repository tracks associated with a repository.
 	ListRepositoryTracks(
 		ctx context.Context,
@@ -35,7 +35,7 @@ type RepositoryTrackService interface {
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (repositoryBranches []*v1alpha1.RepositoryTrack, nextPageToken string, err error)
+	) (repositoryTracks []*v1alpha1.RepositoryTrack, nextPageToken string, err error)
 	// AppendRepositoryTrack appends commits to a repository track.
 	AppendRepositoryTrack(
 		ctx context.Context,

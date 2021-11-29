@@ -33,7 +33,7 @@ func (s *repositoryTrackService) CreateRepositoryTrack(
 	ctx context.Context,
 	repositoryId string,
 	name string,
-) (repositoryBranch *v1alpha1.RepositoryTrack, _ error) {
+) (repositoryTrack *v1alpha1.RepositoryTrack, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -47,7 +47,7 @@ func (s *repositoryTrackService) CreateRepositoryTrack(
 	if err != nil {
 		return nil, err
 	}
-	return response.RepositoryBranch, nil
+	return response.RepositoryTrack, nil
 }
 
 // ListRepositoryTracks lists the repository tracks associated with a repository.
@@ -57,7 +57,7 @@ func (s *repositoryTrackService) ListRepositoryTracks(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (repositoryBranches []*v1alpha1.RepositoryTrack, nextPageToken string, _ error) {
+) (repositoryTracks []*v1alpha1.RepositoryTrack, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -73,7 +73,7 @@ func (s *repositoryTrackService) ListRepositoryTracks(
 	if err != nil {
 		return nil, "", err
 	}
-	return response.RepositoryBranches, response.NextPageToken, nil
+	return response.RepositoryTracks, response.NextPageToken, nil
 }
 
 // AppendRepositoryTrack appends commits to a repository track.
