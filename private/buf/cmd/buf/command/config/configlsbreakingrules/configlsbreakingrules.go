@@ -121,7 +121,10 @@ func run(
 			}
 		}
 	} else {
-		rules = config.Breaking.GetRules()
+		rules, err = config.Breaking.GetRules()
+		if err != nil {
+			return err
+		}
 	}
 	return bufcheck.PrintRules(
 		container.Stdout(),

@@ -48,32 +48,16 @@ func newHandler(logger *zap.Logger) *handler {
 
 func (h *handler) Check(
 	ctx context.Context,
-	config *buflintconfig.Config,
+	bufLintConfig *buflintconfig.Config,
 	image bufimage.Image,
 ) ([]bufanalysis.FileAnnotation, error) {
 	files, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
 	if err != nil {
 		return nil, err
 	}
-	return h.runner.Check(ctx, configToInternalConfig(config), nil, files)
-}
-
-func configToInternalConfig(config *buflintconfig.Config) *internal.Config {
-	return &internal.Config{
-		Rules:               rulesToInternalRules(config.Rules),
-		IgnoreIDToRootPaths: config.IgnoreIDToRootPaths,
-		IgnoreRootPaths:     config.IgnoreRootPaths,
-		AllowCommentIgnores: config.AllowCommentIgnores,
+	config, err := buflintconfig.BuildBufcheckInternalConfig(bufLintConfig)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func rulesToInternalRules(rules []buflintconfig.Rule) []*internal.Rule {
-	if rules == nil {
-		return nil
-	}
-	internalRules := make([]*internal.Rule, len(rules))
-	for i, rule := range rules {
-		internalRules[i] = rule.InternalRule()
-	}
-	return internalRules
+	return h.runner.Check(ctx, config, nil, files)
 }

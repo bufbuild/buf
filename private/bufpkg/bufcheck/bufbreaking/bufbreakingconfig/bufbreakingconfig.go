@@ -21,95 +21,92 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 )
 
-// Rule is a rule.
-type Rule interface {
-	bufcheck.Rule
+const (
+	v1Beta1Version = "v1beta1"
+	v1Version      = "v1"
+)
 
-	// InternalRule returns the internal Rule.
-	InternalRule() *internal.Rule
-}
-
-// Config is the check config.
+// Config is the breaking check config.
 type Config struct {
-	// Rules are the rules to run.
-	//
-	// Rules will be sorted by first categories, then id when Configs are
-	// created from this package, i.e. created wth ConfigBuilder.NewConfig.
-	Rules                  []Rule
-	IgnoreIDToRootPaths    map[string]map[string]struct{}
-	IgnoreRootPaths        map[string]struct{}
+	Use    []string
+	Except []string
+	// IgnoreRootPaths
+	Ignore []string
+	// IgnoreIDOrCategoryToRootPaths
+	IgnoreOnly             map[string][]string
 	IgnoreUnstablePackages bool
+	Version                string
 }
 
 // GetRules returns the rules.
 //
 // Should only be used for printing.
-func (c *Config) GetRules() []bufcheck.Rule {
-	return rulesToBufcheckRules(c.Rules)
+func (c *Config) GetRules() ([]bufcheck.Rule, error) {
+	return buildRules(c)
 }
 
 // NewConfigV1Beta1 returns a new Config.
-func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
-	internalConfig, err := internal.ConfigBuilder{
-		Use:                           externalConfig.Use,
-		Except:                        externalConfig.Except,
-		IgnoreRootPaths:               externalConfig.Ignore,
-		IgnoreIDOrCategoryToRootPaths: externalConfig.IgnoreOnly,
-		IgnoreUnstablePackages:        externalConfig.IgnoreUnstablePackages,
-	}.NewConfig(
-		bufbreakingv1beta1.VersionSpec,
-	)
-	if err != nil {
-		return nil, err
+func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1) *Config {
+	return &Config{
+		Use:                    externalConfig.Use,
+		Except:                 externalConfig.Except,
+		Ignore:                 externalConfig.Ignore,
+		IgnoreOnly:             externalConfig.IgnoreOnly,
+		IgnoreUnstablePackages: externalConfig.IgnoreUnstablePackages,
+		Version:                v1Beta1Version,
 	}
-	return internalConfigToConfig(internalConfig), nil
 }
 
 // NewConfigV1 returns a new Config.
-func NewConfigV1(externalConfig ExternalConfigV1) (*Config, error) {
-	internalConfig, err := internal.ConfigBuilder{
-		Use:                           externalConfig.Use,
-		Except:                        externalConfig.Except,
-		IgnoreRootPaths:               externalConfig.Ignore,
-		IgnoreIDOrCategoryToRootPaths: externalConfig.IgnoreOnly,
-		IgnoreUnstablePackages:        externalConfig.IgnoreUnstablePackages,
-	}.NewConfig(
-		bufbreakingv1.VersionSpec,
-	)
-	if err != nil {
-		return nil, err
+func NewConfigV1(externalConfig ExternalConfigV1) *Config {
+	return &Config{
+		Use:                    externalConfig.Use,
+		Except:                 externalConfig.Except,
+		Ignore:                 externalConfig.Ignore,
+		IgnoreOnly:             externalConfig.IgnoreOnly,
+		IgnoreUnstablePackages: externalConfig.IgnoreUnstablePackages,
+		Version:                v1Version,
 	}
-	return internalConfigToConfig(internalConfig), nil
 }
 
 // GetAllRulesV1Beta1 gets all known rules.
 //
 // Should only be used for printing.
 func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
-	config, err := NewConfigV1Beta1(
-		ExternalConfigV1Beta1{
-			Use: bufbreakingv1beta1.VersionSpec.AllCategories,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return rulesToBufcheckRules(config.Rules), nil
+	return buildRules(&Config{
+		Use:     bufbreakingv1beta1.VersionSpec.AllCategories,
+		Version: v1Beta1Version,
+	})
 }
 
 // GetAllRulesV1 gets all known rules.
 //
 // Should only be used for printing.
 func GetAllRulesV1() ([]bufcheck.Rule, error) {
-	config, err := NewConfigV1(
-		ExternalConfigV1{
-			Use: bufbreakingv1.VersionSpec.AllCategories,
-		},
-	)
-	if err != nil {
-		return nil, err
+	return buildRules(&Config{
+		Use:     bufbreakingv1.VersionSpec.AllCategories,
+		Version: v1Version,
+	})
+}
+
+// BuildBufcheckInternalConfig takes a *Config and builds the internal.Config.
+func BuildBufcheckInternalConfig(config *Config) (*internal.Config, error) {
+	var versionSpec *internal.VersionSpec
+	switch config.Version {
+	case v1Beta1Version:
+		versionSpec = bufbreakingv1beta1.VersionSpec
+	case v1Version:
+		versionSpec = bufbreakingv1.VersionSpec
 	}
-	return rulesToBufcheckRules(config.Rules), nil
+	return internal.ConfigBuilder{
+		Use:                           config.Use,
+		Except:                        config.Except,
+		IgnoreRootPaths:               config.Ignore,
+		IgnoreIDOrCategoryToRootPaths: config.IgnoreOnly,
+		IgnoreUnstablePackages:        config.IgnoreUnstablePackages,
+	}.NewConfig(
+		versionSpec,
+	)
 }
 
 // ExternalConfigV1Beta1 is an external config.
@@ -134,27 +131,15 @@ type ExternalConfigV1 struct {
 	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
 }
 
-func internalConfigToConfig(internalConfig *internal.Config) *Config {
-	return &Config{
-		Rules:                  internalRulesToRules(internalConfig.Rules),
-		IgnoreIDToRootPaths:    internalConfig.IgnoreIDToRootPaths,
-		IgnoreRootPaths:        internalConfig.IgnoreRootPaths,
-		IgnoreUnstablePackages: internalConfig.IgnoreUnstablePackages,
+func buildRules(config *Config) ([]bufcheck.Rule, error) {
+	internalConfig, err := BuildBufcheckInternalConfig(config)
+	if err != nil {
+		return nil, err
 	}
+	return internalRulesToBufcheckRules(internalConfig.Rules), nil
 }
 
-func internalRulesToRules(internalRules []*internal.Rule) []Rule {
-	if internalRules == nil {
-		return nil
-	}
-	rules := make([]Rule, len(internalRules))
-	for i, internalRule := range internalRules {
-		rules[i] = newRule(internalRule)
-	}
-	return rules
-}
-
-func rulesToBufcheckRules(rules []Rule) []bufcheck.Rule {
+func internalRulesToBufcheckRules(rules []*internal.Rule) []bufcheck.Rule {
 	if rules == nil {
 		return nil
 	}
