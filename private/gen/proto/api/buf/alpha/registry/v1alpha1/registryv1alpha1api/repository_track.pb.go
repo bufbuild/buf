@@ -21,15 +21,25 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
-// ReferenceService is a service that provides RPCs that allow the BSR to query
-// for reference information.
-type ReferenceService interface {
-	// GetReferenceByName takes a reference name and returns the
-	// reference either as a tag, branch, track or commit.
-	GetReferenceByName(
+type RepositoryTrackService interface {
+	// CreateRepositoryTrack creates a new repository track.
+	CreateRepositoryTrack(
 		ctx context.Context,
+		repositoryId string,
 		name string,
-		owner string,
-		repositoryName string,
-	) (reference *v1alpha1.Reference, err error)
+	) (repositoryBranch *v1alpha1.RepositoryTrack, err error)
+	// ListRepositoryTracks lists the repository tracks associated with a repository.
+	ListRepositoryTracks(
+		ctx context.Context,
+		repositoryId string,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
+	) (repositoryBranches []*v1alpha1.RepositoryTrack, nextPageToken string, err error)
+	// AppendRepositoryTrack appends commits to a repository track.
+	AppendRepositoryTrack(
+		ctx context.Context,
+		repositoryTrackId string,
+		commitId []string,
+	) (err error)
 }

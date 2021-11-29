@@ -32,5 +32,6 @@ type PushService interface {
 		branch string,
 		module *v1alpha1.Module,
 		tags []string,
+		trackNames []string,
 	) (localModulePin *v1alpha11.LocalModulePin, err error)
 }

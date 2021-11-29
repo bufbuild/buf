@@ -149,6 +149,7 @@ func run(
 		bufmoduleref.MainBranch,
 		protoModule,
 		flags.Tags,
+		nil,
 	)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
