@@ -18,10 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/bufcheck"
-	"github.com/bufbuild/buf/private/buf/bufcheck/bufbreaking/bufbreakingconfig"
-	"github.com/bufbuild/buf/private/buf/bufconfig"
 	configinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/config/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
