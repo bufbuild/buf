@@ -305,3 +305,31 @@ func (s *repositoryService) SetRepositoryContributor(
 	}
 	return nil
 }
+
+// ListRepositoryContributors returns the list of contributors that has an explicit role against the repository.
+// This does not include users who have implicit roles against the repository, unless they have also been
+// assigned a role explicitly.
+func (s *repositoryService) ListRepositoryContributors(
+	ctx context.Context,
+	repositoryId string,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (users []*v1alpha1.RepositoryContributor, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListRepositoryContributors(
+		ctx,
+		&v1alpha1.ListRepositoryContributorsRequest{
+			RepositoryId: repositoryId,
+			PageSize:     pageSize,
+			PageToken:    pageToken,
+			Reverse:      reverse,
+		},
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.Users, response.NextPageToken, nil
+}
