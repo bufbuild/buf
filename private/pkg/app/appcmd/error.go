@@ -27,8 +27,3 @@ func newInvalidArgumentError(message string) *invalidArgumentError {
 func (a *invalidArgumentError) Error() string {
 	return a.message
 }
-
-func (a *invalidArgumentError) Is(err error) bool {
-	_, ok := err.(*invalidArgumentError)
-	return ok
-}

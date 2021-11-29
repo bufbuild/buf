@@ -68,7 +68,8 @@ func NewInternalError(err error) error {
 // isInternalError returns whether the error provided, or
 // any error wrapped by that error, is an internal error.
 func isInternalError(err error) bool {
-	return errors.Is(err, &errInternal{})
+	asErr := &errInternal{}
+	return errors.As(err, &asErr)
 }
 
 func (e *errInternal) Error() string {
@@ -79,12 +80,6 @@ func (e *errInternal) Error() string {
 		return message
 	}
 	return message + ", as well as the following message: " + e.cause.Error()
-}
-
-// Is implements errors.Is for errInternal.
-func (e *errInternal) Is(err error) bool {
-	_, ok := err.(*errInternal)
-	return ok
 }
 
 // NewErrorInterceptor returns a CLI interceptor that wraps Buf CLI errors.

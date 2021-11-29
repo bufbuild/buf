@@ -101,12 +101,6 @@ func (e *Error) Unwrap() error {
 	return e.Err
 }
 
-// Is implements errors.Is for Error.
-func (e *Error) Is(err error) bool {
-	_, ok := err.(*Error)
-	return ok
-}
-
 // Normalize normalizes the given path.
 //
 // This calls filepath.Clean and filepath.ToSlash on the path.
