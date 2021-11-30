@@ -55,25 +55,9 @@ func (h *handler) Check(
 	if err != nil {
 		return nil, err
 	}
-	return h.runner.Check(ctx, configToInternalConfig(config), nil, files)
-}
-
-func configToInternalConfig(config *buflintconfig.Config) *internal.Config {
-	return &internal.Config{
-		Rules:               rulesToInternalRules(config.Rules),
-		IgnoreIDToRootPaths: config.IgnoreIDToRootPaths,
-		IgnoreRootPaths:     config.IgnoreRootPaths,
-		AllowCommentIgnores: config.AllowCommentIgnores,
+	internalConfig, err := internalConfigForConfig(config)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func rulesToInternalRules(rules []buflintconfig.Rule) []*internal.Rule {
-	if rules == nil {
-		return nil
-	}
-	internalRules := make([]*internal.Rule, len(rules))
-	for i, rule := range rules {
-		internalRules[i] = rule.InternalRule()
-	}
-	return internalRules
+	return h.runner.Check(ctx, internalConfig, nil, files)
 }

@@ -64,7 +64,7 @@ type Config struct {
 	EnumZeroValueSuffix string `protobuf:"bytes,6,opt,name=enum_zero_value_suffix,json=enumZeroValueSuffix,proto3" json:"enum_zero_value_suffix,omitempty"`
 	// rpc_allow_same_request_response allows the same message type for both the request and response of an RPC.
 	RpcAllowSameRequestResponse bool `protobuf:"varint,7,opt,name=rpc_allow_same_request_response,json=rpcAllowSameRequestResponse,proto3" json:"rpc_allow_same_request_response,omitempty"`
-	// rpc_allow_google_protobuf_empty_responses allows the RPC requests to use the google.protobuf.Empty message.
+	// rpc_allow_google_protobuf_empty_requests allows the RPC requests to use the google.protobuf.Empty message.
 	RpcAllowGoogleProtobufEmptyRequests bool `protobuf:"varint,8,opt,name=rpc_allow_google_protobuf_empty_requests,json=rpcAllowGoogleProtobufEmptyRequests,proto3" json:"rpc_allow_google_protobuf_empty_requests,omitempty"`
 	// rpc_allow_google_protobuf_empty_responses allows the RPC responses to use the google.protobuf.Empty message.
 	RpcAllowGoogleProtobufEmptyResponses bool `protobuf:"varint,9,opt,name=rpc_allow_google_protobuf_empty_responses,json=rpcAllowGoogleProtobufEmptyResponses,proto3" json:"rpc_allow_google_protobuf_empty_responses,omitempty"`
