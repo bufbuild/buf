@@ -26,14 +26,6 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	breakingConfig, err := bufbreakingconfig.NewConfigV1Beta1(externalConfig.Breaking)
-	if err != nil {
-		return nil, err
-	}
-	lintConfig, err := buflintconfig.NewConfigV1Beta1(externalConfig.Lint)
-	if err != nil {
-		return nil, err
-	}
 	var moduleIdentity bufmoduleref.ModuleIdentity
 	if externalConfig.Name != "" {
 		moduleIdentity, err = bufmoduleref.ModuleIdentityForString(externalConfig.Name)
@@ -45,21 +37,13 @@ func newConfigV1Beta1(externalConfig ExternalConfigV1Beta1) (*Config, error) {
 		Version:        V1Beta1Version,
 		ModuleIdentity: moduleIdentity,
 		Build:          buildConfig,
-		Breaking:       breakingConfig,
-		Lint:           lintConfig,
+		Breaking:       bufbreakingconfig.NewConfigV1Beta1(externalConfig.Breaking),
+		Lint:           buflintconfig.NewConfigV1Beta1(externalConfig.Lint),
 	}, nil
 }
 
 func newConfigV1(externalConfig ExternalConfigV1) (*Config, error) {
 	buildConfig, err := bufmoduleconfig.NewConfigV1(externalConfig.Build, externalConfig.Deps...)
-	if err != nil {
-		return nil, err
-	}
-	breakingConfig, err := bufbreakingconfig.NewConfigV1(externalConfig.Breaking)
-	if err != nil {
-		return nil, err
-	}
-	lintConfig, err := buflintconfig.NewConfigV1(externalConfig.Lint)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +58,7 @@ func newConfigV1(externalConfig ExternalConfigV1) (*Config, error) {
 		Version:        V1Version,
 		ModuleIdentity: moduleIdentity,
 		Build:          buildConfig,
-		Breaking:       breakingConfig,
-		Lint:           lintConfig,
+		Breaking:       bufbreakingconfig.NewConfigV1(externalConfig.Breaking),
+		Lint:           buflintconfig.NewConfigV1(externalConfig.Lint),
 	}, nil
 }

@@ -21,7 +21,12 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv1"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/internal/bufbreakingv1beta1"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"go.uber.org/zap"
 )
@@ -45,4 +50,73 @@ type Handler interface {
 // NewHandler returns a new Handler.
 func NewHandler(logger *zap.Logger) Handler {
 	return newHandler(logger)
+}
+
+// RulesForConfig returns the rules for a given config.
+//
+// Should only be used for printing.
+func RulesForConfig(config *bufbreakingconfig.Config) ([]bufcheck.Rule, error) {
+	internalConfig, err := internalConfigForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return rulesForInternalRules(internalConfig.Rules), nil
+}
+
+// GetAllRulesV1Beta1 gets all known rules.
+//
+// Should only be used for printing.
+func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
+	internalConfig, err := internalConfigForConfig(&bufbreakingconfig.Config{
+		Use:     bufbreakingv1beta1.VersionSpec.AllCategories,
+		Version: bufconfig.V1Beta1Version,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return rulesForInternalRules(internalConfig.Rules), nil
+}
+
+// GetAllRulesV1 gets all known rules.
+//
+// Should only be used for printing.
+func GetAllRulesV1() ([]bufcheck.Rule, error) {
+	internalConfig, err := internalConfigForConfig(&bufbreakingconfig.Config{
+		Use:     bufbreakingv1.VersionSpec.AllCategories,
+		Version: bufconfig.V1Version,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return rulesForInternalRules(internalConfig.Rules), nil
+}
+
+func internalConfigForConfig(config *bufbreakingconfig.Config) (*internal.Config, error) {
+	var versionSpec *internal.VersionSpec
+	switch config.Version {
+	case bufconfig.V1Beta1Version:
+		versionSpec = bufbreakingv1beta1.VersionSpec
+	case bufconfig.V1Version:
+		versionSpec = bufbreakingv1.VersionSpec
+	}
+	return internal.ConfigBuilder{
+		Use:                           config.Use,
+		Except:                        config.Except,
+		IgnoreRootPaths:               config.IgnoreRootPaths,
+		IgnoreIDOrCategoryToRootPaths: config.IgnoreIDOrCategoryToRootPaths,
+		IgnoreUnstablePackages:        config.IgnoreUnstablePackages,
+	}.NewConfig(
+		versionSpec,
+	)
+}
+
+func rulesForInternalRules(rules []*internal.Rule) []bufcheck.Rule {
+	if rules == nil {
+		return nil
+	}
+	s := make([]bufcheck.Rule, len(rules))
+	for i, e := range rules {
+		s[i] = e
+	}
+	return s
 }
