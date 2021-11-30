@@ -16,6 +16,7 @@ package buflintconfig
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"sort"
 	"strings"
@@ -143,6 +144,59 @@ type ExternalConfigV1 struct {
 	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
 	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
 	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
+}
+
+// BytesForConfig takes a *Config and returns the deterministic []byte representation.
+// We use an unexported intermediary JSON form and sort all fields to ensure that the bytes
+// associated with the *Config are deterministic.
+func BytesForConfig(config *Config) ([]byte, error) {
+	if config == nil {
+		return nil, nil
+	}
+	ignoreIDPathsJSON := make([]idPathsJSON, 0, len(config.IgnoreIDOrCategoryToRootPaths))
+	for ignoreID, rootPaths := range config.IgnoreIDOrCategoryToRootPaths {
+		sort.Strings(rootPaths)
+		ignoreIDPathsJSON = append(ignoreIDPathsJSON, idPathsJSON{
+			ID:    ignoreID,
+			Paths: rootPaths,
+		})
+	}
+	sort.Slice(ignoreIDPathsJSON, func(i, j int) bool { return ignoreIDPathsJSON[i].ID < ignoreIDPathsJSON[j].ID })
+	sort.Strings(config.Use)
+	sort.Strings(config.Except)
+	sort.Strings(config.IgnoreRootPaths)
+	return json.Marshal(&configJSON{
+		Use:                                  config.Use,
+		Except:                               config.Except,
+		IgnoreRootPaths:                      config.IgnoreRootPaths,
+		IgnoreIDOrCategoryToRootPaths:        ignoreIDPathsJSON,
+		EnumZeroValueSuffix:                  config.EnumZeroValueSuffix,
+		RPCAllowSameRequestResponse:          config.RPCAllowSameRequestResponse,
+		RPCAllowGoogleProtobufEmptyRequests:  config.RPCAllowGoogleProtobufEmptyRequests,
+		RPCAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses,
+		ServiceSuffix:                        config.ServiceSuffix,
+		AllowCommentIgnores:                  config.AllowCommentIgnores,
+		Version:                              config.Version,
+	})
+}
+
+type configJSON struct {
+	Use                                  []string      `json:"use,omitempty"`
+	Except                               []string      `json:"except,omitempty"`
+	IgnoreRootPaths                      []string      `json:"ignore_root_paths,omitempty"`
+	IgnoreIDOrCategoryToRootPaths        []idPathsJSON `json:"ignore_id_to_root_paths,omitempty"`
+	EnumZeroValueSuffix                  string        `json:"enum_zero_value_suffix,omitempty"`
+	RPCAllowSameRequestResponse          bool          `json:"rpc_allow_same_request_response,omitempty"`
+	RPCAllowGoogleProtobufEmptyRequests  bool          `json:"rpc_allow_google_protobuf_empty_requests,omitempty"`
+	RPCAllowGoogleProtobufEmptyResponses bool          `json:"rpc_allow_google_protobuf_empty_response,omitempty"`
+	ServiceSuffix                        string        `json:"service_suffix,omitempty"`
+	AllowCommentIgnores                  bool          `json:"allow_comment_ignores,omitempty"`
+	Version                              string        `json:"version,omitempty"`
+}
+
+type idPathsJSON struct {
+	ID    string   `json:"id,omitempty"`
+	Paths []string `json:"paths,omitempty"`
 }
 
 // PrintFileAnnotations prints the FileAnnotations to the Writer.

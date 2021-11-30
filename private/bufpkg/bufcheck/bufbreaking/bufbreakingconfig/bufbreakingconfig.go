@@ -15,6 +15,9 @@
 package bufbreakingconfig
 
 import (
+	"encoding/json"
+	"sort"
+
 	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
 )
 
@@ -103,6 +106,49 @@ type ExternalConfigV1 struct {
 	// IgnoreIDOrCategoryToRootPaths
 	IgnoreOnly             map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
+}
+
+// BytesForConfig takes a *Config and returns the deterministic []byte representation.
+// We use an unexported intermediary JSON form and sort all fields to ensure that the bytes
+// associated with the *Config are deterministic.
+func BytesForConfig(config *Config) ([]byte, error) {
+	if config == nil {
+		return nil, nil
+	}
+	ignoreIDPathsJSON := make([]idPathsJSON, 0, len(config.IgnoreIDOrCategoryToRootPaths))
+	for ignoreID, rootPaths := range config.IgnoreIDOrCategoryToRootPaths {
+		sort.Strings(rootPaths)
+		ignoreIDPathsJSON = append(ignoreIDPathsJSON, idPathsJSON{
+			ID:    ignoreID,
+			Paths: rootPaths,
+		})
+	}
+	sort.Slice(ignoreIDPathsJSON, func(i, j int) bool { return ignoreIDPathsJSON[i].ID < ignoreIDPathsJSON[j].ID })
+	sort.Strings(config.Use)
+	sort.Strings(config.Except)
+	sort.Strings(config.IgnoreRootPaths)
+	return json.Marshal(&configJSON{
+		Use:                           config.Use,
+		Except:                        config.Except,
+		IgnoreRootPaths:               config.IgnoreRootPaths,
+		IgnoreIDOrCategoryToRootPaths: ignoreIDPathsJSON,
+		IgnoreUnstablePackages:        config.IgnoreUnstablePackages,
+		Version:                       config.Version,
+	})
+}
+
+type configJSON struct {
+	Use                           []string      `json:"use,omitempty"`
+	Except                        []string      `json:"except,omitempty"`
+	IgnoreRootPaths               []string      `json:"ignore_root_paths,omitempty"`
+	IgnoreIDOrCategoryToRootPaths []idPathsJSON `json:"ignore_id_to_root_paths,omitempty"`
+	IgnoreUnstablePackages        bool          `json:"ignore_unstable_packages,omitempty"`
+	Version                       string        `json:"version,omitempty"`
+}
+
+type idPathsJSON struct {
+	ID    string   `json:"id,omitempty"`
+	Paths []string `json:"paths,omitempty"`
 }
 
 func ignoreIDOrCategoryToRootPathsForProto(protoIgnoreIDPaths []*breakingv1.IDPaths) map[string][]string {

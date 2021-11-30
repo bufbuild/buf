@@ -190,6 +190,14 @@ func (m *module) Documentation() string {
 	return m.documentation
 }
 
+func (m *module) BreakingConfig() *bufbreakingconfig.Config {
+	return m.breakingConfig
+}
+
+func (m *module) LintConfig() *buflintconfig.Config {
+	return m.lintConfig
+}
+
 func (m *module) getSourceReadBucket() storage.ReadBucket {
 	return m.sourceReadBucket
 }
