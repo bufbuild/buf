@@ -27,8 +27,6 @@ message RepositoryTrack {
   // google.protobuf.Timestamp update_time = 3;
   // The name of the repository track, i.e. "v1".
   string name = 4;
-  // The ID of the repository this track belongs to.
-  string repository_id = 5;
 }
 
 service RepositoryTrackService {
