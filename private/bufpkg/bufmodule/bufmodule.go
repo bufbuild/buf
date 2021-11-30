@@ -416,11 +416,6 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
-	if moduleIdentity := module.getModuleIdentity(); moduleIdentity != nil {
-		if _, err := hash.Write([]byte(moduleIdentity.IdentityString())); err != nil {
-			return "", err
-		}
-	}
 	if docs := module.Documentation(); docs != "" {
 		if _, err := hash.Write([]byte(docs)); err != nil {
 			return "", err
