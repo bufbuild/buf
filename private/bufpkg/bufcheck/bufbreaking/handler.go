@@ -44,7 +44,7 @@ func newHandler(
 
 func (h *handler) Check(
 	ctx context.Context,
-	bufBreakingConfig *bufbreakingconfig.Config,
+	config *bufbreakingconfig.Config,
 	previousImage bufimage.Image,
 	image bufimage.Image,
 ) ([]bufanalysis.FileAnnotation, error) {
@@ -56,9 +56,9 @@ func (h *handler) Check(
 	if err != nil {
 		return nil, err
 	}
-	config, err := bufbreakingconfig.BuildBufcheckInternalConfig(bufBreakingConfig)
+	internalConfig, err := internalConfigForConfig(config)
 	if err != nil {
 		return nil, err
 	}
-	return h.runner.Check(ctx, config, previousFiles, files)
+	return h.runner.Check(ctx, internalConfig, previousFiles, files)
 }

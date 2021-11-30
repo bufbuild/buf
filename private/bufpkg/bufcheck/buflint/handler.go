@@ -48,16 +48,16 @@ func newHandler(logger *zap.Logger) *handler {
 
 func (h *handler) Check(
 	ctx context.Context,
-	bufLintConfig *buflintconfig.Config,
+	config *buflintconfig.Config,
 	image bufimage.Image,
 ) ([]bufanalysis.FileAnnotation, error) {
 	files, err := protosource.NewFilesUnstable(ctx, bufimageutil.NewInputFiles(image.Files())...)
 	if err != nil {
 		return nil, err
 	}
-	config, err := buflintconfig.BuildBufcheckInternalConfig(bufLintConfig)
+	internalConfig, err := internalConfigForConfig(config)
 	if err != nil {
 		return nil, err
 	}
-	return h.runner.Check(ctx, config, nil, files)
+	return h.runner.Check(ctx, internalConfig, nil, files)
 }

@@ -21,40 +21,44 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintv1"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/internal/buflintv1beta1"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 )
 
 const (
+	// These versions match the versions in bufconfig. We cannot take an explicit dependency
+	// on bufconfig without creating a circular dependency.
 	v1Beta1Version = "v1beta1"
 	v1Version      = "v1"
 )
 
 // Config is the lint check config.
 type Config struct {
-	// Use
-	Use    []string
+	// Use is a list of rule and/or category IDs that are included in the lint check.
+	Use []string
+	// Except is a list of the rule and/or category IDs that are excluded from the lint check.
 	Except []string
-	// IgnoreRootPaths
-	Ignore []string
-	// IgnoreIDOrCategoryToRootPaths
-	IgnoreOnly                           map[string][]string
-	EnumZeroValueSuffix                  string
-	RPCAllowSameRequestResponse          bool
-	RPCAllowGoogleProtobufEmptyRequests  bool
+	// IgnoreRootPaths is a list of paths of directories and/or files that should be ignored by the lint check.
+	// All paths are relative to the root of the module.
+	IgnoreRootPaths []string
+	// IgnoreIDOrCategoryToRootPaths is a map of rule and/or category IDs to directory and/or file paths to exclude from the
+	// lint check.
+	IgnoreIDOrCategoryToRootPaths map[string][]string
+	// EnumZeroValueSuffix controls the behavior of the ENUM_ZERO_VALUE lint rule ID. By default, this rule
+	// verifies that the zero value of all enums ends in _UNSPECIFIED. This config allows the user to override
+	// this value with the given string.
+	EnumZeroValueSuffix string
+	// RPCAllowSameRequestResponse allows the same message type for both the request and response of an RPC.
+	RPCAllowSameRequestResponse bool
+	// RPCAllowGoogleProtobufEmptyRequests allows the RPC requests to use the google.protobuf.Empty message.
+	RPCAllowGoogleProtobufEmptyRequests bool
+	// RPCAllowGoogleProtobufEmptyResponse allows the RPC responses to use the google.protobuf.Empty message.
 	RPCAllowGoogleProtobufEmptyResponses bool
-	ServiceSuffix                        string
-	AllowCommentIgnores                  bool
-	Version                              string
-}
-
-// GetRules returns the rules.
-//
-// Should only be used for printing.
-func (c *Config) GetRules() ([]bufcheck.Rule, error) {
-	return buildRules(c)
+	// ServiceSuffix applies to the SERVICE_SUFFIX rule ID. By default, the rule verifies that all service names
+	// end with the suffix Service. This allows users to override the value with the given string.
+	ServiceSuffix string
+	// AllowCommentIgnores turns on comment-driven ignores.
+	AllowCommentIgnores bool
+	// Version represents the version of the lint rule and category IDs that should be used with this config.
+	Version string
 }
 
 // NewConfigV1Beta1 returns a new Config.
@@ -62,8 +66,8 @@ func NewConfigV1Beta1(externalConfig ExternalConfigV1Beta1) *Config {
 	return &Config{
 		Use:                                  externalConfig.Use,
 		Except:                               externalConfig.Except,
-		Ignore:                               externalConfig.Ignore,
-		IgnoreOnly:                           externalConfig.IgnoreOnly,
+		IgnoreRootPaths:                      externalConfig.Ignore,
+		IgnoreIDOrCategoryToRootPaths:        externalConfig.IgnoreOnly,
 		EnumZeroValueSuffix:                  externalConfig.EnumZeroValueSuffix,
 		RPCAllowSameRequestResponse:          externalConfig.RPCAllowSameRequestResponse,
 		RPCAllowGoogleProtobufEmptyRequests:  externalConfig.RPCAllowGoogleProtobufEmptyRequests,
@@ -79,8 +83,8 @@ func NewConfigV1(externalConfig ExternalConfigV1) *Config {
 	return &Config{
 		Use:                                  externalConfig.Use,
 		Except:                               externalConfig.Except,
-		Ignore:                               externalConfig.Ignore,
-		IgnoreOnly:                           externalConfig.IgnoreOnly,
+		IgnoreRootPaths:                      externalConfig.Ignore,
+		IgnoreIDOrCategoryToRootPaths:        externalConfig.IgnoreOnly,
 		EnumZeroValueSuffix:                  externalConfig.EnumZeroValueSuffix,
 		RPCAllowSameRequestResponse:          externalConfig.RPCAllowSameRequestResponse,
 		RPCAllowGoogleProtobufEmptyRequests:  externalConfig.RPCAllowGoogleProtobufEmptyRequests,
@@ -89,51 +93,6 @@ func NewConfigV1(externalConfig ExternalConfigV1) *Config {
 		AllowCommentIgnores:                  externalConfig.AllowCommentIgnores,
 		Version:                              v1Version,
 	}
-}
-
-// GetAllRulesV1Beta1 gets all known rules.
-//
-// Should only be used for printing.
-func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
-	return buildRules(&Config{
-		Use:     buflintv1beta1.VersionSpec.AllCategories,
-		Version: v1Beta1Version,
-	})
-}
-
-// GetAllRulesV1 gets all known rules.
-//
-// Should only be used for printing.
-func GetAllRulesV1() ([]bufcheck.Rule, error) {
-	return buildRules(&Config{
-		Use:     buflintv1.VersionSpec.AllCategories,
-		Version: v1Version,
-	})
-}
-
-// BuildBufcheckInternalConfig takes a *Config and builds the internal.Config.
-func BuildBufcheckInternalConfig(config *Config) (*internal.Config, error) {
-	var versionSpec *internal.VersionSpec
-	switch config.Version {
-	case v1Beta1Version:
-		versionSpec = buflintv1beta1.VersionSpec
-	case v1Version:
-		versionSpec = buflintv1.VersionSpec
-	}
-	return internal.ConfigBuilder{
-		Use:                                  config.Use,
-		Except:                               config.Except,
-		IgnoreRootPaths:                      config.Ignore,
-		IgnoreIDOrCategoryToRootPaths:        config.IgnoreOnly,
-		AllowCommentIgnores:                  config.AllowCommentIgnores,
-		EnumZeroValueSuffix:                  config.EnumZeroValueSuffix,
-		RPCAllowSameRequestResponse:          config.RPCAllowSameRequestResponse,
-		RPCAllowGoogleProtobufEmptyRequests:  config.RPCAllowGoogleProtobufEmptyRequests,
-		RPCAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses,
-		ServiceSuffix:                        config.ServiceSuffix,
-	}.NewConfig(
-		versionSpec,
-	)
 }
 
 // ExternalConfigV1Beta1 is an external config.
@@ -238,23 +197,4 @@ lint:
 	}
 	_, err := writer.Write(buffer.Bytes())
 	return err
-}
-
-func buildRules(config *Config) ([]bufcheck.Rule, error) {
-	internalConfig, err := BuildBufcheckInternalConfig(config)
-	if err != nil {
-		return nil, err
-	}
-	return internalRulesToBufcheckRules(internalConfig.Rules), nil
-}
-
-func internalRulesToBufcheckRules(rules []*internal.Rule) []bufcheck.Rule {
-	if rules == nil {
-		return nil
-	}
-	s := make([]bufcheck.Rule, len(rules))
-	for i, e := range rules {
-		s[i] = e
-	}
-	return s
 }
