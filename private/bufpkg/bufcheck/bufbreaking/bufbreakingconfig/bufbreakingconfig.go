@@ -14,6 +14,10 @@
 
 package bufbreakingconfig
 
+import (
+	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
+)
+
 const (
 	// These versions match the versions in bufconfig. We cannot take an explicit dependency
 	// on bufconfig without creating a circular dependency.
@@ -67,6 +71,18 @@ func NewConfigV1(externalConfig ExternalConfigV1) *Config {
 	}
 }
 
+// ConfigForProto returns the Config given the proto.
+func ConfigForProto(protoConfig *breakingv1.Config) *Config {
+	return &Config{
+		Use:                           protoConfig.GetUseIds(),
+		Except:                        protoConfig.GetExceptIds(),
+		IgnoreRootPaths:               protoConfig.GetIgnorePaths(),
+		IgnoreIDOrCategoryToRootPaths: ignoreIDOrCategoryToRootPathsForProto(protoConfig.GetIgnoreIdPaths()),
+		IgnoreUnstablePackages:        protoConfig.GetIgnoreUnstablePackages(),
+		Version:                       protoConfig.GetVersion(),
+	}
+}
+
 // ExternalConfigV1Beta1 is an external config.
 type ExternalConfigV1Beta1 struct {
 	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
@@ -87,4 +103,15 @@ type ExternalConfigV1 struct {
 	// IgnoreIDOrCategoryToRootPaths
 	IgnoreOnly             map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
+}
+
+func ignoreIDOrCategoryToRootPathsForProto(protoIgnoreIDPaths []*breakingv1.IDPaths) map[string][]string {
+	if protoIgnoreIDPaths == nil {
+		return nil
+	}
+	ignoreIDOrCategoryToRootPaths := make(map[string][]string)
+	for _, protoIgnoreIDPath := range protoIgnoreIDPaths {
+		ignoreIDOrCategoryToRootPaths[protoIgnoreIDPath.GetId()] = protoIgnoreIDPath.GetPaths()
+	}
+	return ignoreIDOrCategoryToRootPaths
 }

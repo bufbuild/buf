@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 )
 
 const (
@@ -92,6 +93,23 @@ func NewConfigV1(externalConfig ExternalConfigV1) *Config {
 		ServiceSuffix:                        externalConfig.ServiceSuffix,
 		AllowCommentIgnores:                  externalConfig.AllowCommentIgnores,
 		Version:                              v1Version,
+	}
+}
+
+// ConfigForProto returns the Config given the proto.
+func ConfigForProto(protoConfig *lintv1.Config) *Config {
+	return &Config{
+		Use:                                  protoConfig.GetUseIds(),
+		Except:                               protoConfig.GetExceptIds(),
+		IgnoreRootPaths:                      protoConfig.GetIgnorePaths(),
+		IgnoreIDOrCategoryToRootPaths:        ignoreIDOrCategoryToRootPathsForProto(protoConfig.GetIgnoreIdPaths()),
+		EnumZeroValueSuffix:                  protoConfig.GetEnumZeroValueSuffix(),
+		RPCAllowSameRequestResponse:          protoConfig.GetRpcAllowSameRequestResponse(),
+		RPCAllowGoogleProtobufEmptyRequests:  protoConfig.GetRpcAllowGoogleProtobufEmptyRequests(),
+		RPCAllowGoogleProtobufEmptyResponses: protoConfig.GetRpcAllowGoogleProtobufEmptyResponses(),
+		ServiceSuffix:                        protoConfig.GetServiceSuffix(),
+		AllowCommentIgnores:                  protoConfig.GetAllowCommentIgnores(),
+		Version:                              protoConfig.GetVersion(),
 	}
 }
 
@@ -197,4 +215,15 @@ lint:
 	}
 	_, err := writer.Write(buffer.Bytes())
 	return err
+}
+
+func ignoreIDOrCategoryToRootPathsForProto(protoIgnoreIDPaths []*lintv1.IDPaths) map[string][]string {
+	if protoIgnoreIDPaths == nil {
+		return nil
+	}
+	ignoreIDOrCategoryToRootPaths := make(map[string][]string)
+	for _, protoIgnoreIDPath := range protoIgnoreIDPaths {
+		ignoreIDOrCategoryToRootPaths[protoIgnoreIDPath.GetId()] = protoIgnoreIDPath.GetPaths()
+	}
+	return ignoreIDOrCategoryToRootPaths
 }
