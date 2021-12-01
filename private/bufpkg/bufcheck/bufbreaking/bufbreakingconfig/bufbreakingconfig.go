@@ -86,6 +86,18 @@ func ConfigForProto(protoConfig *breakingv1.Config) *Config {
 	}
 }
 
+// ProtoForConfig takes a *Config and returns the proto representation.
+func ProtoForConfig(config *Config) *breakingv1.Config {
+	return &breakingv1.Config{
+		UseIds:                 config.Use,
+		ExceptIds:              config.Except,
+		IgnorePaths:            config.IgnoreRootPaths,
+		IgnoreIdPaths:          protoForIgnoreIDOrCategoryToRootPaths(config.IgnoreIDOrCategoryToRootPaths),
+		IgnoreUnstablePackages: config.IgnoreUnstablePackages,
+		Version:                config.Version,
+	}
+}
+
 // ExternalConfigV1Beta1 is an external config.
 type ExternalConfigV1Beta1 struct {
 	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
@@ -160,4 +172,18 @@ func ignoreIDOrCategoryToRootPathsForProto(protoIgnoreIDPaths []*breakingv1.IDPa
 		ignoreIDOrCategoryToRootPaths[protoIgnoreIDPath.GetId()] = protoIgnoreIDPath.GetPaths()
 	}
 	return ignoreIDOrCategoryToRootPaths
+}
+
+func protoForIgnoreIDOrCategoryToRootPaths(ignoreIDOrCategoryToRootPaths map[string][]string) []*breakingv1.IDPaths {
+	if ignoreIDOrCategoryToRootPaths == nil {
+		return nil
+	}
+	idPathsProto := make([]*breakingv1.IDPaths, 0, len(ignoreIDOrCategoryToRootPaths))
+	for id, paths := range ignoreIDOrCategoryToRootPaths {
+		idPathsProto = append(idPathsProto, &breakingv1.IDPaths{
+			Id:    id,
+			Paths: paths,
+		})
+	}
+	return idPathsProto
 }

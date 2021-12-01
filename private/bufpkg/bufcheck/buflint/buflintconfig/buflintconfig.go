@@ -114,6 +114,23 @@ func ConfigForProto(protoConfig *lintv1.Config) *Config {
 	}
 }
 
+// ProtoForConfig takes a *Config and returns the proto representation.
+func ProtoForConfig(config *Config) *lintv1.Config {
+	return &lintv1.Config{
+		UseIds:                               config.Use,
+		ExceptIds:                            config.Except,
+		IgnorePaths:                          config.IgnoreRootPaths,
+		IgnoreIdPaths:                        protoForIgnoreIDOrCategoryToRootPaths(config.IgnoreIDOrCategoryToRootPaths),
+		EnumZeroValueSuffix:                  config.EnumZeroValueSuffix,
+		RpcAllowSameRequestResponse:          config.RPCAllowSameRequestResponse,
+		RpcAllowGoogleProtobufEmptyRequests:  config.RPCAllowGoogleProtobufEmptyRequests,
+		RpcAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses,
+		ServiceSuffix:                        config.ServiceSuffix,
+		AllowCommentIgnores:                  config.AllowCommentIgnores,
+		Version:                              config.Version,
+	}
+}
+
 // ExternalConfigV1Beta1 is an external config.
 type ExternalConfigV1Beta1 struct {
 	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
@@ -280,4 +297,18 @@ func ignoreIDOrCategoryToRootPathsForProto(protoIgnoreIDPaths []*lintv1.IDPaths)
 		ignoreIDOrCategoryToRootPaths[protoIgnoreIDPath.GetId()] = protoIgnoreIDPath.GetPaths()
 	}
 	return ignoreIDOrCategoryToRootPaths
+}
+
+func protoForIgnoreIDOrCategoryToRootPaths(ignoreIDOrCategoryToRootPaths map[string][]string) []*lintv1.IDPaths {
+	if ignoreIDOrCategoryToRootPaths == nil {
+		return nil
+	}
+	idPathsProto := make([]*lintv1.IDPaths, 0, len(ignoreIDOrCategoryToRootPaths))
+	for id, paths := range ignoreIDOrCategoryToRootPaths {
+		idPathsProto = append(idPathsProto, &lintv1.IDPaths{
+			Id:    id,
+			Paths: paths,
+		})
+	}
+	return idPathsProto
 }

@@ -308,9 +308,11 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 		protoModulePins[i] = bufmoduleref.NewProtoModulePinForModulePin(dependencyModulePin)
 	}
 	protoModule := &modulev1alpha1.Module{
-		Files:         protoModuleFiles,
-		Dependencies:  protoModulePins,
-		Documentation: module.Documentation(),
+		Files:          protoModuleFiles,
+		Dependencies:   protoModulePins,
+		Documentation:  module.Documentation(),
+		BreakingConfig: bufbreakingconfig.ProtoForConfig(module.BreakingConfig()),
+		LintConfig:     buflintconfig.ProtoForConfig(module.LintConfig()),
 	}
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
