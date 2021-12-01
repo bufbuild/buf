@@ -115,7 +115,7 @@ func (s *repositoryCommitService) GetRepositoryCommitByReference(
 	return response.RepositoryCommit, nil
 }
 
-// GetRepositoryCommitBySequenceID returns the repository commit matching
+// GetRepositoryCommitBySequenceId returns the repository commit matching
 // the provided sequence ID and branch, if it exists.
 func (s *repositoryCommitService) GetRepositoryCommitBySequenceId(
 	ctx context.Context,

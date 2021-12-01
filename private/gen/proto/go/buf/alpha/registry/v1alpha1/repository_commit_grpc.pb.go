@@ -45,7 +45,7 @@ type RepositoryCommitServiceClient interface {
 	// GetRepositoryCommitByReference returns the repository commit matching
 	// the provided reference, if it exists.
 	GetRepositoryCommitByReference(ctx context.Context, in *GetRepositoryCommitByReferenceRequest, opts ...grpc.CallOption) (*GetRepositoryCommitByReferenceResponse, error)
-	// GetRepositoryCommitBySequenceID returns the repository commit matching
+	// GetRepositoryCommitBySequenceId returns the repository commit matching
 	// the provided sequence ID and branch, if it exists.
 	GetRepositoryCommitBySequenceId(ctx context.Context, in *GetRepositoryCommitBySequenceIdRequest, opts ...grpc.CallOption) (*GetRepositoryCommitBySequenceIdResponse, error)
 }
@@ -107,7 +107,7 @@ type RepositoryCommitServiceServer interface {
 	// GetRepositoryCommitByReference returns the repository commit matching
 	// the provided reference, if it exists.
 	GetRepositoryCommitByReference(context.Context, *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error)
-	// GetRepositoryCommitBySequenceID returns the repository commit matching
+	// GetRepositoryCommitBySequenceId returns the repository commit matching
 	// the provided sequence ID and branch, if it exists.
 	GetRepositoryCommitBySequenceId(context.Context, *GetRepositoryCommitBySequenceIdRequest) (*GetRepositoryCommitBySequenceIdResponse, error)
 }

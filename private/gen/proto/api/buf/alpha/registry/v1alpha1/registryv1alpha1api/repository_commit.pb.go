@@ -53,7 +53,7 @@ type RepositoryCommitService interface {
 		repositoryName string,
 		reference string,
 	) (repositoryCommit *v1alpha1.RepositoryCommit, err error)
-	// GetRepositoryCommitBySequenceID returns the repository commit matching
+	// GetRepositoryCommitBySequenceId returns the repository commit matching
 	// the provided sequence ID and branch, if it exists.
 	GetRepositoryCommitBySequenceId(
 		ctx context.Context,
