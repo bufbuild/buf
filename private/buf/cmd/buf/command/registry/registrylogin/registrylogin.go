@@ -86,10 +86,15 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	remote := bufrpc.DefaultRemote
+	if container.NumArgs() == 1 {
+		remote = container.Arg(0)
+	}
 	// Do not print unless we are prompting
 	if flags.Username == "" && !flags.TokenStdin {
+		loginMessage := fmt.Sprintf("Login with your Buf Schema Registry username. If you don't have a username, head over to https://%s to create one.\n\n", remote)
 		if _, err := container.Stdout().Write(
-			[]byte("Login with your Buf Schema Registry username. If you don't have a username, head over to https://buf.build to create one.\n\n"),
+			[]byte(loginMessage),
 		); err != nil {
 			return err
 		}
@@ -121,10 +126,6 @@ func run(
 			}
 			return err
 		}
-	}
-	remote := bufrpc.DefaultRemote
-	if container.NumArgs() == 1 {
-		remote = container.Arg(0)
 	}
 	if err := netrc.PutMachines(
 		container,
