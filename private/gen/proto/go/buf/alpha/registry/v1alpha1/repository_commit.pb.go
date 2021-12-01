@@ -553,7 +553,7 @@ func (x *GetRepositoryCommitByReferenceResponse) GetRepositoryCommit() *Reposito
 	return nil
 }
 
-type GetRepositoryCommitBySequenceIDRequest struct {
+type GetRepositoryCommitBySequenceIdRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -568,8 +568,8 @@ type GetRepositoryCommitBySequenceIDRequest struct {
 	CommitSequenceId int64 `protobuf:"varint,4,opt,name=commit_sequence_id,json=commitSequenceId,proto3" json:"commit_sequence_id,omitempty"`
 }
 
-func (x *GetRepositoryCommitBySequenceIDRequest) Reset() {
-	*x = GetRepositoryCommitBySequenceIDRequest{}
+func (x *GetRepositoryCommitBySequenceIdRequest) Reset() {
+	*x = GetRepositoryCommitBySequenceIdRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -577,13 +577,13 @@ func (x *GetRepositoryCommitBySequenceIDRequest) Reset() {
 	}
 }
 
-func (x *GetRepositoryCommitBySequenceIDRequest) String() string {
+func (x *GetRepositoryCommitBySequenceIdRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetRepositoryCommitBySequenceIDRequest) ProtoMessage() {}
+func (*GetRepositoryCommitBySequenceIdRequest) ProtoMessage() {}
 
-func (x *GetRepositoryCommitBySequenceIDRequest) ProtoReflect() protoreflect.Message {
+func (x *GetRepositoryCommitBySequenceIdRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -595,40 +595,40 @@ func (x *GetRepositoryCommitBySequenceIDRequest) ProtoReflect() protoreflect.Mes
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRepositoryCommitBySequenceIDRequest.ProtoReflect.Descriptor instead.
-func (*GetRepositoryCommitBySequenceIDRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetRepositoryCommitBySequenceIdRequest.ProtoReflect.Descriptor instead.
+func (*GetRepositoryCommitBySequenceIdRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *GetRepositoryCommitBySequenceIDRequest) GetRepositoryOwner() string {
+func (x *GetRepositoryCommitBySequenceIdRequest) GetRepositoryOwner() string {
 	if x != nil {
 		return x.RepositoryOwner
 	}
 	return ""
 }
 
-func (x *GetRepositoryCommitBySequenceIDRequest) GetRepositoryName() string {
+func (x *GetRepositoryCommitBySequenceIdRequest) GetRepositoryName() string {
 	if x != nil {
 		return x.RepositoryName
 	}
 	return ""
 }
 
-func (x *GetRepositoryCommitBySequenceIDRequest) GetRepositoryBranchName() string {
+func (x *GetRepositoryCommitBySequenceIdRequest) GetRepositoryBranchName() string {
 	if x != nil {
 		return x.RepositoryBranchName
 	}
 	return ""
 }
 
-func (x *GetRepositoryCommitBySequenceIDRequest) GetCommitSequenceId() int64 {
+func (x *GetRepositoryCommitBySequenceIdRequest) GetCommitSequenceId() int64 {
 	if x != nil {
 		return x.CommitSequenceId
 	}
 	return 0
 }
 
-type GetRepositoryCommitBySequenceIDResponse struct {
+type GetRepositoryCommitBySequenceIdResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -636,8 +636,8 @@ type GetRepositoryCommitBySequenceIDResponse struct {
 	RepositoryCommit *RepositoryCommit `protobuf:"bytes,1,opt,name=repository_commit,json=repositoryCommit,proto3" json:"repository_commit,omitempty"`
 }
 
-func (x *GetRepositoryCommitBySequenceIDResponse) Reset() {
-	*x = GetRepositoryCommitBySequenceIDResponse{}
+func (x *GetRepositoryCommitBySequenceIdResponse) Reset() {
+	*x = GetRepositoryCommitBySequenceIdResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -645,13 +645,13 @@ func (x *GetRepositoryCommitBySequenceIDResponse) Reset() {
 	}
 }
 
-func (x *GetRepositoryCommitBySequenceIDResponse) String() string {
+func (x *GetRepositoryCommitBySequenceIdResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetRepositoryCommitBySequenceIDResponse) ProtoMessage() {}
+func (*GetRepositoryCommitBySequenceIdResponse) ProtoMessage() {}
 
-func (x *GetRepositoryCommitBySequenceIDResponse) ProtoReflect() protoreflect.Message {
+func (x *GetRepositoryCommitBySequenceIdResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -663,12 +663,12 @@ func (x *GetRepositoryCommitBySequenceIDResponse) ProtoReflect() protoreflect.Me
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetRepositoryCommitBySequenceIDResponse.ProtoReflect.Descriptor instead.
-func (*GetRepositoryCommitBySequenceIDResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetRepositoryCommitBySequenceIdResponse.ProtoReflect.Descriptor instead.
+func (*GetRepositoryCommitBySequenceIdResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *GetRepositoryCommitBySequenceIDResponse) GetRepositoryCommit() *RepositoryCommit {
+func (x *GetRepositoryCommitBySequenceIdResponse) GetRepositoryCommit() *RepositoryCommit {
 	if x != nil {
 		return x.RepositoryCommit
 	}
@@ -781,7 +781,7 @@ var file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDesc = []byte{
 	0x69, 0x74, 0x52, 0x10, 0x72, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72, 0x79, 0x43, 0x6f,
 	0x6d, 0x6d, 0x69, 0x74, 0x22, 0xe0, 0x01, 0x0a, 0x26, 0x47, 0x65, 0x74, 0x52, 0x65, 0x70, 0x6f,
 	0x73, 0x69, 0x74, 0x6f, 0x72, 0x79, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x42, 0x79, 0x53, 0x65,
-	0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x49, 0x44, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
 	0x29, 0x0a, 0x10, 0x72, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72, 0x79, 0x5f, 0x6f, 0x77,
 	0x6e, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x72, 0x65, 0x70, 0x6f, 0x73,
 	0x69, 0x74, 0x6f, 0x72, 0x79, 0x4f, 0x77, 0x6e, 0x65, 0x72, 0x12, 0x27, 0x0a, 0x0f, 0x72, 0x65,
@@ -795,7 +795,7 @@ var file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDesc = []byte{
 	0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x10, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x53, 0x65, 0x71,
 	0x75, 0x65, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x22, 0x85, 0x01, 0x0a, 0x27, 0x47, 0x65, 0x74, 0x52,
 	0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72, 0x79, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x42,
-	0x79, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x49, 0x44, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x79, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f,
 	0x6e, 0x73, 0x65, 0x12, 0x5a, 0x0a, 0x11, 0x72, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72,
 	0x79, 0x5f, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2d,
 	0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73,
@@ -838,15 +838,15 @@ var file_buf_alpha_registry_v1alpha1_repository_commit_proto_rawDesc = []byte{
 	0x79, 0x52, 0x65, 0x66, 0x65, 0x72, 0x65, 0x6e, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
 	0x73, 0x65, 0x12, 0xac, 0x01, 0x0a, 0x1f, 0x47, 0x65, 0x74, 0x52, 0x65, 0x70, 0x6f, 0x73, 0x69,
 	0x74, 0x6f, 0x72, 0x79, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x42, 0x79, 0x53, 0x65, 0x71, 0x75,
-	0x65, 0x6e, 0x63, 0x65, 0x49, 0x44, 0x12, 0x43, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70,
+	0x65, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x12, 0x43, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70,
 	0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c,
 	0x70, 0x68, 0x61, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f,
 	0x72, 0x79, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x42, 0x79, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e,
-	0x63, 0x65, 0x49, 0x44, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x44, 0x2e, 0x62, 0x75,
+	0x63, 0x65, 0x49, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x44, 0x2e, 0x62, 0x75,
 	0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79,
 	0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x52, 0x65, 0x70,
 	0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72, 0x79, 0x43, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x42, 0x79, 0x53,
-	0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x49, 0x44, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
 	0x65, 0x42, 0xa2, 0x02, 0x0a, 0x1f, 0x63, 0x6f, 0x6d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c,
 	0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61,
 	0x6c, 0x70, 0x68, 0x61, 0x31, 0x42, 0x15, 0x52, 0x65, 0x70, 0x6f, 0x73, 0x69, 0x74, 0x6f, 0x72,
@@ -889,8 +889,8 @@ var file_buf_alpha_registry_v1alpha1_repository_commit_proto_goTypes = []interfa
 	(*ListRepositoryCommitsByReferenceResponse)(nil), // 4: buf.alpha.registry.v1alpha1.ListRepositoryCommitsByReferenceResponse
 	(*GetRepositoryCommitByReferenceRequest)(nil),    // 5: buf.alpha.registry.v1alpha1.GetRepositoryCommitByReferenceRequest
 	(*GetRepositoryCommitByReferenceResponse)(nil),   // 6: buf.alpha.registry.v1alpha1.GetRepositoryCommitByReferenceResponse
-	(*GetRepositoryCommitBySequenceIDRequest)(nil),   // 7: buf.alpha.registry.v1alpha1.GetRepositoryCommitBySequenceIDRequest
-	(*GetRepositoryCommitBySequenceIDResponse)(nil),  // 8: buf.alpha.registry.v1alpha1.GetRepositoryCommitBySequenceIDResponse
+	(*GetRepositoryCommitBySequenceIdRequest)(nil),   // 7: buf.alpha.registry.v1alpha1.GetRepositoryCommitBySequenceIdRequest
+	(*GetRepositoryCommitBySequenceIdResponse)(nil),  // 8: buf.alpha.registry.v1alpha1.GetRepositoryCommitBySequenceIdResponse
 	(*timestamppb.Timestamp)(nil),                    // 9: google.protobuf.Timestamp
 	(*RepositoryTag)(nil),                            // 10: buf.alpha.registry.v1alpha1.RepositoryTag
 }
@@ -900,15 +900,15 @@ var file_buf_alpha_registry_v1alpha1_repository_commit_proto_depIdxs = []int32{
 	0,  // 2: buf.alpha.registry.v1alpha1.ListRepositoryCommitsByBranchResponse.repository_commits:type_name -> buf.alpha.registry.v1alpha1.RepositoryCommit
 	0,  // 3: buf.alpha.registry.v1alpha1.ListRepositoryCommitsByReferenceResponse.repository_commits:type_name -> buf.alpha.registry.v1alpha1.RepositoryCommit
 	0,  // 4: buf.alpha.registry.v1alpha1.GetRepositoryCommitByReferenceResponse.repository_commit:type_name -> buf.alpha.registry.v1alpha1.RepositoryCommit
-	0,  // 5: buf.alpha.registry.v1alpha1.GetRepositoryCommitBySequenceIDResponse.repository_commit:type_name -> buf.alpha.registry.v1alpha1.RepositoryCommit
+	0,  // 5: buf.alpha.registry.v1alpha1.GetRepositoryCommitBySequenceIdResponse.repository_commit:type_name -> buf.alpha.registry.v1alpha1.RepositoryCommit
 	1,  // 6: buf.alpha.registry.v1alpha1.RepositoryCommitService.ListRepositoryCommitsByBranch:input_type -> buf.alpha.registry.v1alpha1.ListRepositoryCommitsByBranchRequest
 	3,  // 7: buf.alpha.registry.v1alpha1.RepositoryCommitService.ListRepositoryCommitsByReference:input_type -> buf.alpha.registry.v1alpha1.ListRepositoryCommitsByReferenceRequest
 	5,  // 8: buf.alpha.registry.v1alpha1.RepositoryCommitService.GetRepositoryCommitByReference:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryCommitByReferenceRequest
-	7,  // 9: buf.alpha.registry.v1alpha1.RepositoryCommitService.GetRepositoryCommitBySequenceID:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryCommitBySequenceIDRequest
+	7,  // 9: buf.alpha.registry.v1alpha1.RepositoryCommitService.GetRepositoryCommitBySequenceId:input_type -> buf.alpha.registry.v1alpha1.GetRepositoryCommitBySequenceIdRequest
 	2,  // 10: buf.alpha.registry.v1alpha1.RepositoryCommitService.ListRepositoryCommitsByBranch:output_type -> buf.alpha.registry.v1alpha1.ListRepositoryCommitsByBranchResponse
 	4,  // 11: buf.alpha.registry.v1alpha1.RepositoryCommitService.ListRepositoryCommitsByReference:output_type -> buf.alpha.registry.v1alpha1.ListRepositoryCommitsByReferenceResponse
 	6,  // 12: buf.alpha.registry.v1alpha1.RepositoryCommitService.GetRepositoryCommitByReference:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryCommitByReferenceResponse
-	8,  // 13: buf.alpha.registry.v1alpha1.RepositoryCommitService.GetRepositoryCommitBySequenceID:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryCommitBySequenceIDResponse
+	8,  // 13: buf.alpha.registry.v1alpha1.RepositoryCommitService.GetRepositoryCommitBySequenceId:output_type -> buf.alpha.registry.v1alpha1.GetRepositoryCommitBySequenceIdResponse
 	10, // [10:14] is the sub-list for method output_type
 	6,  // [6:10] is the sub-list for method input_type
 	6,  // [6:6] is the sub-list for extension type_name
@@ -1008,7 +1008,7 @@ func file_buf_alpha_registry_v1alpha1_repository_commit_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetRepositoryCommitBySequenceIDRequest); i {
+			switch v := v.(*GetRepositoryCommitBySequenceIdRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1020,7 +1020,7 @@ func file_buf_alpha_registry_v1alpha1_repository_commit_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_repository_commit_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetRepositoryCommitBySequenceIDResponse); i {
+			switch v := v.(*GetRepositoryCommitBySequenceIdResponse); i {
 			case 0:
 				return &v.state
 			case 1:

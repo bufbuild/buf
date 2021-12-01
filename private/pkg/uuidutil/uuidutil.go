@@ -78,3 +78,18 @@ func ValidateDashless(dashless string) error {
 	_, err := FromDashless(dashless)
 	return err
 }
+
+// FromStringSlice returns a slice of uuids from the string slice.
+//
+// This only accepts uuids with dashes.
+func FromStringSlice(s []string) ([]uuid.UUID, error) {
+	var parsedUUIDS []uuid.UUID
+	for _, stringID := range s {
+		parsed, err := FromString(stringID)
+		if err != nil {
+			return nil, err
+		}
+		parsedUUIDS = append(parsedUUIDS, parsed)
+	}
+	return parsedUUIDS, nil
+}

@@ -5,6 +5,7 @@
 - Change message documentation for fields to be either a single field or a oneof set of fields. This is a breaking API change.
 - Use a separate repository service to for each dependency remote to resolve dependencies for `buf mod update`. Previously, we used a single repository service based on the remote
   from the module, so it was unable to resolve dependencies from differente remotes.
+- Display the user-provided Buf Schema Registry remote, if specified, instead of the default within the `buf login` message.
 - Update the digest algorithm so that it encodes the `name`, `lint`, and `breaking` configuration encoded in the `buf.yaml`.
   When this change is deployed, users will observe the following:
   - Users on `v0.43.0` or before will notice mismatched digest errors similar to the one described in https://github.com/bufbuild/buf/issues/661.
