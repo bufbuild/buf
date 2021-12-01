@@ -64,3 +64,28 @@ func TestValidateDashlessFailsWithUUID(t *testing.T) {
 	err = ValidateDashless(id.String())
 	require.Error(t, err)
 }
+
+func TestFromStringSliceFailsWithDashless(t *testing.T) {
+	id1, err := New()
+	require.NoError(t, err)
+	id2, err := New()
+	require.NoError(t, err)
+	dashless1, err := ToDashless(id1)
+	require.NoError(t, err)
+	dashless2, err := ToDashless(id2)
+	require.NoError(t, err)
+	dashless := []string{dashless1, dashless2}
+	_, err = FromStringSlice(dashless)
+	require.Error(t, err)
+}
+
+func TestFromStringSlice(t *testing.T) {
+	id1, err := New()
+	require.NoError(t, err)
+	id2, err := New()
+	require.NoError(t, err)
+	ids := []string{id1.String(), id2.String()}
+	uuids, err := FromStringSlice(ids)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(uuids))
+}
