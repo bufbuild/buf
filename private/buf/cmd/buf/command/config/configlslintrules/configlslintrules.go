@@ -20,7 +20,7 @@ import (
 
 	configinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/config/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -110,18 +110,21 @@ func run(
 	if flags.All {
 		switch config.Version {
 		case bufconfig.V1Beta1Version:
-			rules, err = buflintconfig.GetAllRulesV1Beta1()
+			rules, err = buflint.GetAllRulesV1Beta1()
 			if err != nil {
 				return err
 			}
 		case bufconfig.V1Version:
-			rules, err = buflintconfig.GetAllRulesV1()
+			rules, err = buflint.GetAllRulesV1()
 			if err != nil {
 				return err
 			}
 		}
 	} else {
-		rules = config.Lint.GetRules()
+		rules, err = buflint.RulesForConfig(config.Lint)
+		if err != nil {
+			return err
+		}
 	}
 	return bufcheck.PrintRules(
 		container.Stdout(),

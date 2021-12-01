@@ -56,25 +56,9 @@ func (h *handler) Check(
 	if err != nil {
 		return nil, err
 	}
-	return h.runner.Check(ctx, configToInternalConfig(config), previousFiles, files)
-}
-
-func configToInternalConfig(config *bufbreakingconfig.Config) *internal.Config {
-	return &internal.Config{
-		Rules:                  rulesToInternalRules(config.Rules),
-		IgnoreIDToRootPaths:    config.IgnoreIDToRootPaths,
-		IgnoreRootPaths:        config.IgnoreRootPaths,
-		IgnoreUnstablePackages: config.IgnoreUnstablePackages,
+	internalConfig, err := internalConfigForConfig(config)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func rulesToInternalRules(rules []bufbreakingconfig.Rule) []*internal.Rule {
-	if rules == nil {
-		return nil
-	}
-	internalRules := make([]*internal.Rule, len(rules))
-	for i, rule := range rules {
-		internalRules[i] = rule.InternalRule()
-	}
-	return internalRules
+	return h.runner.Check(ctx, internalConfig, previousFiles, files)
 }
