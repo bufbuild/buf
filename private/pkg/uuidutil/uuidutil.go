@@ -85,10 +85,7 @@ func ValidateDashless(dashless string) error {
 func FromStringSlice(s []string) ([]uuid.UUID, error) {
 	var parsedUUIDS []uuid.UUID
 	for _, stringID := range s {
-		if len(stringID) != 36 {
-			return nil, fmt.Errorf("expected uuid to be of length 36 but was %d: %s", len(s), s)
-		}
-		parsed, err := uuid.FromString(stringID)
+		parsed, err := FromString(stringID)
 		if err != nil {
 			return nil, err
 		}
