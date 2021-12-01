@@ -53,7 +53,7 @@ service RepositoryCommitService {
   // GetRepositoryCommitByReference returns the repository commit matching
   // the provided reference, if it exists.
   rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse);
-  // GetRepositoryCommitBySequenceID returns the repository commit matching
+  // GetRepositoryCommitBySequenceId returns the repository commit matching
   // the provided sequence ID and branch, if it exists.
   rpc GetRepositoryCommitBySequenceId(GetRepositoryCommitBySequenceIdRequest) returns (GetRepositoryCommitBySequenceIdResponse);
 }
