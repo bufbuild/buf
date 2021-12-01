@@ -88,4 +88,6 @@ func TestFromStringSlice(t *testing.T) {
 	uuids, err := FromStringSlice(ids)
 	require.NoError(t, err)
 	require.Equal(t, 2, len(uuids))
+	require.Equal(t, id1, uuids[0])
+	require.Equal(t, id2, uuids[1])
 }
