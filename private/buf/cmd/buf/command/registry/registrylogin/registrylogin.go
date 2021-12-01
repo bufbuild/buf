@@ -92,9 +92,10 @@ func run(
 	}
 	// Do not print unless we are prompting
 	if flags.Username == "" && !flags.TokenStdin {
-		loginMessage := fmt.Sprintf("Login with your Buf Schema Registry username. If you don't have a username, head over to https://%s to create one.\n\n", remote)
-		if _, err := container.Stdout().Write(
-			[]byte(loginMessage),
+		if _, err := fmt.Fprintf(
+			container.Stdout(),
+			"Login with your Buf Schema Registry username. If you don't have a username, head over to https://%s to create one.\n\n",
+			remote,
 		); err != nil {
 			return err
 		}
