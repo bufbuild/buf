@@ -55,7 +55,7 @@ service RepositoryCommitService {
   rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse);
   // GetRepositoryCommitBySequenceID returns the repository commit matching
   // the provided sequence ID and branch, if it exists.
-  rpc GetRepositoryCommitBySequenceID(GetRepositoryCommitBySequenceIDRequest) returns (GetRepositoryCommitBySequenceIDResponse);
+  rpc GetRepositoryCommitBySequenceId(GetRepositoryCommitBySequenceIdRequest) returns (GetRepositoryCommitBySequenceIdResponse);
 }
 
 message ListRepositoryCommitsByBranchRequest {
@@ -105,7 +105,7 @@ message GetRepositoryCommitByReferenceResponse {
   RepositoryCommit repository_commit = 1;
 }
 
-message GetRepositoryCommitBySequenceIDRequest {
+message GetRepositoryCommitBySequenceIdRequest {
   // The owner of the repository which the repository branch belongs to.
   string repository_owner = 1;
   // The name of the repository which the repository branch belongs to.
@@ -116,6 +116,6 @@ message GetRepositoryCommitBySequenceIDRequest {
   int64 commit_sequence_id = 4;
 }
 
-message GetRepositoryCommitBySequenceIDResponse {
+message GetRepositoryCommitBySequenceIdResponse {
   RepositoryCommit repository_commit = 1;
 }

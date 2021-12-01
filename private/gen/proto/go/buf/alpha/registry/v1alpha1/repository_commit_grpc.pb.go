@@ -47,7 +47,7 @@ type RepositoryCommitServiceClient interface {
 	GetRepositoryCommitByReference(ctx context.Context, in *GetRepositoryCommitByReferenceRequest, opts ...grpc.CallOption) (*GetRepositoryCommitByReferenceResponse, error)
 	// GetRepositoryCommitBySequenceID returns the repository commit matching
 	// the provided sequence ID and branch, if it exists.
-	GetRepositoryCommitBySequenceID(ctx context.Context, in *GetRepositoryCommitBySequenceIDRequest, opts ...grpc.CallOption) (*GetRepositoryCommitBySequenceIDResponse, error)
+	GetRepositoryCommitBySequenceId(ctx context.Context, in *GetRepositoryCommitBySequenceIdRequest, opts ...grpc.CallOption) (*GetRepositoryCommitBySequenceIdResponse, error)
 }
 
 type repositoryCommitServiceClient struct {
@@ -85,9 +85,9 @@ func (c *repositoryCommitServiceClient) GetRepositoryCommitByReference(ctx conte
 	return out, nil
 }
 
-func (c *repositoryCommitServiceClient) GetRepositoryCommitBySequenceID(ctx context.Context, in *GetRepositoryCommitBySequenceIDRequest, opts ...grpc.CallOption) (*GetRepositoryCommitBySequenceIDResponse, error) {
-	out := new(GetRepositoryCommitBySequenceIDResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitBySequenceID", in, out, opts...)
+func (c *repositoryCommitServiceClient) GetRepositoryCommitBySequenceId(ctx context.Context, in *GetRepositoryCommitBySequenceIdRequest, opts ...grpc.CallOption) (*GetRepositoryCommitBySequenceIdResponse, error) {
+	out := new(GetRepositoryCommitBySequenceIdResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitBySequenceId", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ type RepositoryCommitServiceServer interface {
 	GetRepositoryCommitByReference(context.Context, *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error)
 	// GetRepositoryCommitBySequenceID returns the repository commit matching
 	// the provided sequence ID and branch, if it exists.
-	GetRepositoryCommitBySequenceID(context.Context, *GetRepositoryCommitBySequenceIDRequest) (*GetRepositoryCommitBySequenceIDResponse, error)
+	GetRepositoryCommitBySequenceId(context.Context, *GetRepositoryCommitBySequenceIdRequest) (*GetRepositoryCommitBySequenceIdResponse, error)
 }
 
 // UnimplementedRepositoryCommitServiceServer should be embedded to have forward compatible implementations.
@@ -125,8 +125,8 @@ func (UnimplementedRepositoryCommitServiceServer) ListRepositoryCommitsByReferen
 func (UnimplementedRepositoryCommitServiceServer) GetRepositoryCommitByReference(context.Context, *GetRepositoryCommitByReferenceRequest) (*GetRepositoryCommitByReferenceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRepositoryCommitByReference not implemented")
 }
-func (UnimplementedRepositoryCommitServiceServer) GetRepositoryCommitBySequenceID(context.Context, *GetRepositoryCommitBySequenceIDRequest) (*GetRepositoryCommitBySequenceIDResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetRepositoryCommitBySequenceID not implemented")
+func (UnimplementedRepositoryCommitServiceServer) GetRepositoryCommitBySequenceId(context.Context, *GetRepositoryCommitBySequenceIdRequest) (*GetRepositoryCommitBySequenceIdResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRepositoryCommitBySequenceId not implemented")
 }
 
 // UnsafeRepositoryCommitServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -194,20 +194,20 @@ func _RepositoryCommitService_GetRepositoryCommitByReference_Handler(srv interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RepositoryCommitService_GetRepositoryCommitBySequenceID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRepositoryCommitBySequenceIDRequest)
+func _RepositoryCommitService_GetRepositoryCommitBySequenceId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRepositoryCommitBySequenceIdRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RepositoryCommitServiceServer).GetRepositoryCommitBySequenceID(ctx, in)
+		return srv.(RepositoryCommitServiceServer).GetRepositoryCommitBySequenceId(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitBySequenceID",
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryCommitService/GetRepositoryCommitBySequenceId",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepositoryCommitServiceServer).GetRepositoryCommitBySequenceID(ctx, req.(*GetRepositoryCommitBySequenceIDRequest))
+		return srv.(RepositoryCommitServiceServer).GetRepositoryCommitBySequenceId(ctx, req.(*GetRepositoryCommitBySequenceIdRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -232,8 +232,8 @@ var RepositoryCommitService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RepositoryCommitService_GetRepositoryCommitByReference_Handler,
 		},
 		{
-			MethodName: "GetRepositoryCommitBySequenceID",
-			Handler:    _RepositoryCommitService_GetRepositoryCommitBySequenceID_Handler,
+			MethodName: "GetRepositoryCommitBySequenceId",
+			Handler:    _RepositoryCommitService_GetRepositoryCommitBySequenceId_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
