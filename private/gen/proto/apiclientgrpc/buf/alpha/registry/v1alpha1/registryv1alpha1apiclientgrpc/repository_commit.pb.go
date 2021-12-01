@@ -115,9 +115,9 @@ func (s *repositoryCommitService) GetRepositoryCommitByReference(
 	return response.RepositoryCommit, nil
 }
 
-// GetRepositoryCommitBySequenceID returns the repository commit matching
+// GetRepositoryCommitBySequenceId returns the repository commit matching
 // the provided sequence ID and branch, if it exists.
-func (s *repositoryCommitService) GetRepositoryCommitBySequenceID(
+func (s *repositoryCommitService) GetRepositoryCommitBySequenceId(
 	ctx context.Context,
 	repositoryOwner string,
 	repositoryName string,
@@ -127,9 +127,9 @@ func (s *repositoryCommitService) GetRepositoryCommitBySequenceID(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.GetRepositoryCommitBySequenceID(
+	response, err := s.client.GetRepositoryCommitBySequenceId(
 		ctx,
-		&v1alpha1.GetRepositoryCommitBySequenceIDRequest{
+		&v1alpha1.GetRepositoryCommitBySequenceIdRequest{
 			RepositoryOwner:      repositoryOwner,
 			RepositoryName:       repositoryName,
 			RepositoryBranchName: repositoryBranchName,
