@@ -120,6 +120,9 @@ func (m *moduleCacher) PutModule(
 	module bufmodule.Module,
 ) error {
 	modulePath := newCacheKey(modulePin)
+	if module.ModuleIdentity() == nil {
+		module.SetModuleIdentity(modulePin)
+	}
 	digest, err := bufmodule.ModuleDigestB3(ctx, module)
 	if err != nil {
 		return err

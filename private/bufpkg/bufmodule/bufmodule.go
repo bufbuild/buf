@@ -103,8 +103,8 @@ type Module interface {
 	//
 	// This may be nil, since older versions of the module would not have this stored.
 	LintConfig() *buflintconfig.Config
-
-	getSourceReadBucket() storage.ReadBucket
+	// ModuleIdentity returns the module identity of the mdule.
+	//
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
 	// nil checking should work since the backing type is always a pointer.
@@ -115,7 +115,11 @@ type Module interface {
 	// This approach assumes that all of the FileInfos returned
 	// from SourceFileInfos will have their ModuleReference
 	// set to the same value, which can be validated.
-	getModuleIdentity() bufmoduleref.ModuleIdentity
+	ModuleIdentity() bufmoduleref.ModuleIdentity
+	// SetModuleIdentity takes a module identity and sets the identity on the module.
+	SetModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity)
+
+	getSourceReadBucket() storage.ReadBucket
 	// Note this can be empty.
 	getCommit() string
 	isModule()
@@ -415,6 +419,11 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 			return "", multierr.Append(err, moduleFile.Close())
 		}
 		if err := moduleFile.Close(); err != nil {
+			return "", err
+		}
+	}
+	if moduleIdentity := module.ModuleIdentity(); moduleIdentity != nil {
+		if _, err := hash.Write([]byte(moduleIdentity.IdentityString())); err != nil {
 			return "", err
 		}
 	}
