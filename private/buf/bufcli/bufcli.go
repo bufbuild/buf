@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -684,13 +685,20 @@ func promptUser(container app.Container, prompt string, isPassword bool) (string
 		if isPassword {
 			data, err := term.ReadPassword(int(file.Fd()))
 			if err != nil {
+				if errors.Is(err, io.EOF) {
+					return "", err
+				}
 				return "", NewInternalError(err)
 			}
 			value = string(data)
 		} else {
 			scanner := bufio.NewScanner(container.Stdin())
 			if !scanner.Scan() {
-				return "", NewInternalError(scanner.Err())
+				// scanner.Err() returns nil on EOF.
+				if err := scanner.Err(); err != nil {
+					return "", NewInternalError(err)
+				}
+				return "", io.EOF
 			}
 			value = scanner.Text()
 			if err := scanner.Err(); err != nil {
