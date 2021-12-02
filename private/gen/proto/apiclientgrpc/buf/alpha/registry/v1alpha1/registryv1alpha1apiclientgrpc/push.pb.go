@@ -37,7 +37,7 @@ func (s *pushService) Push(
 	branch string,
 	module *v1alpha11.Module,
 	tags []string,
-	trackNames []string,
+	tracks []string,
 ) (localModulePin *v1alpha1.LocalModulePin, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -50,7 +50,7 @@ func (s *pushService) Push(
 			Branch:     branch,
 			Module:     module,
 			Tags:       tags,
-			TrackNames: trackNames,
+			Tracks:     tracks,
 		},
 	)
 	if err != nil {
