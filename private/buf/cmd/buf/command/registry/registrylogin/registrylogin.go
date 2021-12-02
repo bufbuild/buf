@@ -86,6 +86,25 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	errc := make(chan error)
+	defer close(errc)
+
+	go func() {
+		errc <- inner(container, flags)
+	}()
+
+	select {
+	case err := <-errc:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func inner(
+	container appflag.Container,
+	flags *flags,
+) error {
 	remote := bufrpc.DefaultRemote
 	if container.NumArgs() == 1 {
 		remote = container.Arg(0)
