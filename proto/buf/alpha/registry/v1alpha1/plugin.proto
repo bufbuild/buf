@@ -84,7 +84,9 @@ message PluginConfig {
   repeated string parameters = 3;
   // True if the source plugin has been deleted. This dooms
   // the template.
-  bool deleted = 4;
+  bool deleted = 4 [deprecated=true];
+  // True if the source plugin is inaccessible by the user.
+  bool inaccessible = 5;
 }
 
 // TemplateVersion defines a template at a
@@ -115,7 +117,9 @@ message PluginVersionMapping {
   string version = 3;
   // True if the source plugin has been deleted. This dooms
   // the template.
-  bool deleted = 4;
+  bool deleted = 4 [deprecated=true];
+  // True if the source plugin is inaccessible by the user.
+  bool inaccessible = 5;
 }
 
 // PluginService manages plugins.
