@@ -34,8 +34,6 @@ service RepositoryTrackService {
   rpc CreateRepositoryTrack(CreateRepositoryTrackRequest) returns (CreateRepositoryTrackResponse);
   // ListRepositoryTracks lists the repository tracks associated with a repository.
   rpc ListRepositoryTracks(ListRepositoryTracksRequest) returns (ListRepositoryTracksResponse);
-  // AppendRepositoryTrack appends commits to a repository track.
-  rpc AppendRepositoryTrack(AppendRepositoryTrackRequest) returns (AppendRepositoryTrackResponse);
 }
 
 message CreateRepositoryTrackRequest {
@@ -63,10 +61,3 @@ message ListRepositoryTracksResponse {
   // There are no more pages if this is empty.
   string next_page_token = 2;
 }
-
-message AppendRepositoryTrackRequest {
-  string repository_track_id = 1;
-  repeated string commit_id = 2;
-}
-
-message AppendRepositoryTrackResponse {}

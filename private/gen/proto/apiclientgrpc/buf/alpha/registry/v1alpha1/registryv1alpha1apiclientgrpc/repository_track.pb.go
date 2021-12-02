@@ -75,25 +75,3 @@ func (s *repositoryTrackService) ListRepositoryTracks(
 	}
 	return response.RepositoryTracks, response.NextPageToken, nil
 }
-
-// AppendRepositoryTrack appends commits to a repository track.
-func (s *repositoryTrackService) AppendRepositoryTrack(
-	ctx context.Context,
-	repositoryTrackId string,
-	commitId []string,
-) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.AppendRepositoryTrack(
-		ctx,
-		&v1alpha1.AppendRepositoryTrackRequest{
-			RepositoryTrackId: repositoryTrackId,
-			CommitId:          commitId,
-		},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}

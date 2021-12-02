@@ -36,10 +36,4 @@ type RepositoryTrackService interface {
 		pageToken string,
 		reverse bool,
 	) (repositoryTracks []*v1alpha1.RepositoryTrack, nextPageToken string, err error)
-	// AppendRepositoryTrack appends commits to a repository track.
-	AppendRepositoryTrack(
-		ctx context.Context,
-		repositoryTrackId string,
-		commitId []string,
-	) (err error)
 }

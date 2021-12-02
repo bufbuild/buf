@@ -40,8 +40,6 @@ type RepositoryTrackServiceClient interface {
 	CreateRepositoryTrack(ctx context.Context, in *CreateRepositoryTrackRequest, opts ...grpc.CallOption) (*CreateRepositoryTrackResponse, error)
 	// ListRepositoryTracks lists the repository tracks associated with a repository.
 	ListRepositoryTracks(ctx context.Context, in *ListRepositoryTracksRequest, opts ...grpc.CallOption) (*ListRepositoryTracksResponse, error)
-	// AppendRepositoryTrack appends commits to a repository track.
-	AppendRepositoryTrack(ctx context.Context, in *AppendRepositoryTrackRequest, opts ...grpc.CallOption) (*AppendRepositoryTrackResponse, error)
 }
 
 type repositoryTrackServiceClient struct {
@@ -70,15 +68,6 @@ func (c *repositoryTrackServiceClient) ListRepositoryTracks(ctx context.Context,
 	return out, nil
 }
 
-func (c *repositoryTrackServiceClient) AppendRepositoryTrack(ctx context.Context, in *AppendRepositoryTrackRequest, opts ...grpc.CallOption) (*AppendRepositoryTrackResponse, error) {
-	out := new(AppendRepositoryTrackResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryTrackService/AppendRepositoryTrack", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // RepositoryTrackServiceServer is the server API for RepositoryTrackService service.
 // All implementations should embed UnimplementedRepositoryTrackServiceServer
 // for forward compatibility
@@ -87,8 +76,6 @@ type RepositoryTrackServiceServer interface {
 	CreateRepositoryTrack(context.Context, *CreateRepositoryTrackRequest) (*CreateRepositoryTrackResponse, error)
 	// ListRepositoryTracks lists the repository tracks associated with a repository.
 	ListRepositoryTracks(context.Context, *ListRepositoryTracksRequest) (*ListRepositoryTracksResponse, error)
-	// AppendRepositoryTrack appends commits to a repository track.
-	AppendRepositoryTrack(context.Context, *AppendRepositoryTrackRequest) (*AppendRepositoryTrackResponse, error)
 }
 
 // UnimplementedRepositoryTrackServiceServer should be embedded to have forward compatible implementations.
@@ -100,9 +87,6 @@ func (UnimplementedRepositoryTrackServiceServer) CreateRepositoryTrack(context.C
 }
 func (UnimplementedRepositoryTrackServiceServer) ListRepositoryTracks(context.Context, *ListRepositoryTracksRequest) (*ListRepositoryTracksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRepositoryTracks not implemented")
-}
-func (UnimplementedRepositoryTrackServiceServer) AppendRepositoryTrack(context.Context, *AppendRepositoryTrackRequest) (*AppendRepositoryTrackResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AppendRepositoryTrack not implemented")
 }
 
 // UnsafeRepositoryTrackServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -152,24 +136,6 @@ func _RepositoryTrackService_ListRepositoryTracks_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RepositoryTrackService_AppendRepositoryTrack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AppendRepositoryTrackRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RepositoryTrackServiceServer).AppendRepositoryTrack(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryTrackService/AppendRepositoryTrack",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepositoryTrackServiceServer).AppendRepositoryTrack(ctx, req.(*AppendRepositoryTrackRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // RepositoryTrackService_ServiceDesc is the grpc.ServiceDesc for RepositoryTrackService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -184,10 +150,6 @@ var RepositoryTrackService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRepositoryTracks",
 			Handler:    _RepositoryTrackService_ListRepositoryTracks_Handler,
-		},
-		{
-			MethodName: "AppendRepositoryTrack",
-			Handler:    _RepositoryTrackService_AppendRepositoryTrack_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
