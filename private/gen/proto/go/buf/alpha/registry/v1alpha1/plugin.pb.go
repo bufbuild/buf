@@ -348,7 +348,6 @@ type PluginConfig struct {
 	// the template.
 	Deleted bool `protobuf:"varint,4,opt,name=deleted,proto3" json:"deleted,omitempty"`
 	// True if the source plugin is inaccessible by the user.
-	// This dooms the template.
 	Inaccessible bool `protobuf:"varint,5,opt,name=inaccessible,proto3" json:"inaccessible,omitempty"`
 }
 

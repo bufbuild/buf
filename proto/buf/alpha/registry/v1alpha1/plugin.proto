@@ -86,7 +86,6 @@ message PluginConfig {
   // the template.
   bool deleted = 4;
   // True if the source plugin is inaccessible by the user.
-  // This dooms the template.
   bool inaccessible = 5;
 }
 
