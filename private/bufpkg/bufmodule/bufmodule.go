@@ -103,8 +103,7 @@ type Module interface {
 	//
 	// This may be nil, since older versions of the module would not have this stored.
 	LintConfig() *buflintconfig.Config
-	// ModuleIdentity returns the module identity of the mdule.
-	//
+
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
 	// nil checking should work since the backing type is always a pointer.
@@ -115,10 +114,7 @@ type Module interface {
 	// This approach assumes that all of the FileInfos returned
 	// from SourceFileInfos will have their ModuleReference
 	// set to the same value, which can be validated.
-	ModuleIdentity() bufmoduleref.ModuleIdentity
-	// SetModuleIdentity takes a module identity and sets the identity on the module.
-	SetModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity)
-
+	getModuleIdentity() bufmoduleref.ModuleIdentity
 	getSourceReadBucket() storage.ReadBucket
 	// Note this can be empty.
 	getCommit() string
@@ -389,7 +385,7 @@ func ModuleDigestB1(ctx context.Context, module Module) (string, error) {
 // 		a. Add the file path
 // 		b. Add the file contents
 // 	2. Add the dependency's module identity and commit ID (sorted lexicographically by commit ID)
-// 	3. Add the module name if available.
+// 	3. Add the module identity if available.
 // 	4. Add the module documentation if available.
 // 	5. Add the breaking and lint configurations if available.
 // 	6. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
@@ -422,7 +418,7 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
-	if moduleIdentity := module.ModuleIdentity(); moduleIdentity != nil {
+	if moduleIdentity := module.getModuleIdentity(); moduleIdentity != nil {
 		if _, err := hash.Write([]byte(moduleIdentity.IdentityString())); err != nil {
 			return "", err
 		}

@@ -15,6 +15,9 @@
 package bufmoduletesting
 
 import (
+	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
+	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
@@ -98,12 +101,39 @@ var (
 		TestFile1Path: []byte(`syntax="proto3";`),
 		TestFile2Path: []byte(`syntax="proto3";`),
 	}
+	//TestDataProto is the proto representation of TestData.
+	TestDataProto = &modulev1alpha1.Module{
+		Files: []*modulev1alpha1.ModuleFile{
+			{
+				Path:    TestFile1Path,
+				Content: []byte(`syntax="proto3";`),
+			},
+			{
+				Path:    TestFile2Path,
+				Content: []byte(`syntax="proto3";`),
+			},
+		},
+		BreakingConfig: &breakingv1.Config{Version: "v1beta1"},
+		LintConfig:     &lintv1.Config{Version: "v1beta1"},
+	}
 	// TestDataWithDocumentation is the data that maps to TestDigestWithDocumentation.
 	//
 	// It includes a buf.md file.
 	TestDataWithDocumentation = map[string][]byte{
 		TestFile1Path: []byte(`syntax="proto3";`),
 		"buf.md":      []byte(TestModuleDocumentation),
+	}
+	// TestDataWithDocumentationProto is the proto representation of TestDataWithDocumentation.
+	TestDataWithDocumentationProto = &modulev1alpha1.Module{
+		Files: []*modulev1alpha1.ModuleFile{
+			{
+				Path:    TestFile1Path,
+				Content: []byte(`syntax="proto3";`),
+			},
+		},
+		Documentation:  TestModuleDocumentation,
+		BreakingConfig: &breakingv1.Config{Version: "v1beta1"},
+		LintConfig:     &lintv1.Config{Version: "v1beta1"},
 	}
 	// TestDataWithConfiguration is the data that maps to TestDigestWithConfiguration.
 	//

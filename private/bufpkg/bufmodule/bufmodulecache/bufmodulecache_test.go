@@ -55,7 +55,11 @@ func TestReaderBasic(t *testing.T) {
 	require.NoError(t, err)
 	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestData)
 	require.NoError(t, err)
-	module, err := bufmodule.NewModuleForBucket(ctx, readBucket)
+	module, err := bufmodule.NewModuleForProto(
+		ctx,
+		bufmoduletesting.TestDataProto,
+		bufmodule.ModuleWithModuleIdentity(modulePin),
+	)
 	require.NoError(t, err)
 
 	delegateDataReadWriteBucket, delegateSumReadWriteBucket, delegateFileLocker := newTestDataSumBucketsAndLocker(t)
@@ -196,9 +200,12 @@ func TestCacherBasic(t *testing.T) {
 		time.Now(),
 	)
 	require.NoError(t, err)
-	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestData)
 	require.NoError(t, err)
-	module, err := bufmodule.NewModuleForBucket(ctx, readBucket)
+	module, err := bufmodule.NewModuleForProto(
+		ctx,
+		bufmoduletesting.TestDataProto,
+		bufmodule.ModuleWithModuleIdentityAndCommit(modulePin, modulePin.Commit()),
+	)
 	require.NoError(t, err)
 
 	dataReadWriteBucket, sumReadWriteBucket, _ := newTestDataSumBucketsAndLocker(t)
@@ -236,9 +243,12 @@ func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 		time.Now(),
 	)
 	require.NoError(t, err)
-	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithDocumentation)
 	require.NoError(t, err)
-	module, err := bufmodule.NewModuleForBucket(ctx, readBucket)
+	module, err := bufmodule.NewModuleForProto(
+		ctx,
+		bufmoduletesting.TestDataWithDocumentationProto,
+		bufmodule.ModuleWithModuleIdentity(modulePin),
+	)
 	require.NoError(t, err)
 
 	dataReadWriteBucket, sumReadWriteBucket, _ := newTestDataSumBucketsAndLocker(t)

@@ -198,12 +198,8 @@ func (m *module) LintConfig() *buflintconfig.Config {
 	return m.lintConfig
 }
 
-func (m *module) ModuleIdentity() bufmoduleref.ModuleIdentity {
+func (m *module) getModuleIdentity() bufmoduleref.ModuleIdentity {
 	return m.moduleIdentity
-}
-
-func (m *module) SetModuleIdentity(moduleIdentity bufmoduleref.ModuleIdentity) {
-	m.moduleIdentity = moduleIdentity
 }
 
 func (m *module) getSourceReadBucket() storage.ReadBucket {
