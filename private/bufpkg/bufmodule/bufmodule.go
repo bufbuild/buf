@@ -104,6 +104,7 @@ type Module interface {
 	// This may be nil, since older versions of the module would not have this stored.
 	LintConfig() *buflintconfig.Config
 
+	getSourceReadBucket() storage.ReadBucket
 	// Note this *can* be nil if we did not build from a named module.
 	// All code must assume this can be nil.
 	// nil checking should work since the backing type is always a pointer.
@@ -115,7 +116,6 @@ type Module interface {
 	// from SourceFileInfos will have their ModuleReference
 	// set to the same value, which can be validated.
 	getModuleIdentity() bufmoduleref.ModuleIdentity
-	getSourceReadBucket() storage.ReadBucket
 	// Note this can be empty.
 	getCommit() string
 	isModule()
