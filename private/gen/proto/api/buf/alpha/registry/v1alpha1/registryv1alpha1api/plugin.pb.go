@@ -85,6 +85,16 @@ type PluginService interface {
 		userId string,
 		pluginRole v1alpha1.PluginRole,
 	) (err error)
+	// ListPluginContributors returns the list of contributors that has an explicit role against the plugin.
+	// This does not include users who have implicit roles against the plugin, unless they have also been
+	// assigned a role explicitly.
+	ListPluginContributors(
+		ctx context.Context,
+		pluginId string,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
+	) (users []*v1alpha1.PluginContributor, nextPageToken string, err error)
 	// GetTemplate returns the template, if found.
 	GetTemplate(
 		ctx context.Context,
@@ -161,4 +171,14 @@ type PluginService interface {
 		userId string,
 		templateRole v1alpha1.TemplateRole,
 	) (err error)
+	// ListTemplateContributors returns the list of contributors that has an explicit role against the template.
+	// This does not include users who have implicit roles against the template, unless they have also been
+	// assigned a role explicitly.
+	ListTemplateContributors(
+		ctx context.Context,
+		templateId string,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
+	) (users []*v1alpha1.TemplateContributor, nextPageToken string, err error)
 }
