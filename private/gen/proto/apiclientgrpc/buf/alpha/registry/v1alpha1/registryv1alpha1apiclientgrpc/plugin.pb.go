@@ -228,6 +228,34 @@ func (s *pluginService) SetPluginContributor(
 	return nil
 }
 
+// ListPluginContributors returns the list of contributors that has an explicit role against the plugin.
+// This does not include users who have implicit roles against the plugin, unless they have also been
+// assigned a role explicitly.
+func (s *pluginService) ListPluginContributors(
+	ctx context.Context,
+	pluginId string,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (users []*v1alpha1.PluginContributor, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListPluginContributors(
+		ctx,
+		&v1alpha1.ListPluginContributorsRequest{
+			PluginId:  pluginId,
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Reverse:   reverse,
+		},
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.Users, response.NextPageToken, nil
+}
+
 // GetTemplate returns the template, if found.
 func (s *pluginService) GetTemplate(
 	ctx context.Context,
@@ -476,4 +504,32 @@ func (s *pluginService) SetTemplateContributor(
 		return err
 	}
 	return nil
+}
+
+// ListTemplateContributors returns the list of contributors that has an explicit role against the template.
+// This does not include users who have implicit roles against the template, unless they have also been
+// assigned a role explicitly.
+func (s *pluginService) ListTemplateContributors(
+	ctx context.Context,
+	templateId string,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (users []*v1alpha1.TemplateContributor, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListTemplateContributors(
+		ctx,
+		&v1alpha1.ListTemplateContributorsRequest{
+			TemplateId: templateId,
+			PageSize:   pageSize,
+			PageToken:  pageToken,
+			Reverse:    reverse,
+		},
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.Users, response.NextPageToken, nil
 }

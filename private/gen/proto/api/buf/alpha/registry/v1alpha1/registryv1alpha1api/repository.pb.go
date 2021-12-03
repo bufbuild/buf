@@ -90,4 +90,14 @@ type RepositoryService interface {
 		userId string,
 		repositoryRole v1alpha1.RepositoryRole,
 	) (err error)
+	// ListRepositoryContributors returns the list of contributors that has an explicit role against the repository.
+	// This does not include users who have implicit roles against the repository, unless they have also been
+	// assigned a role explicitly.
+	ListRepositoryContributors(
+		ctx context.Context,
+		repositoryId string,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
+	) (users []*v1alpha1.RepositoryContributor, nextPageToken string, err error)
 }

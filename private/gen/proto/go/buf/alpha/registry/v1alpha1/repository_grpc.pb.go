@@ -63,6 +63,10 @@ type RepositoryServiceClient interface {
 	GetRepositoriesByFullName(ctx context.Context, in *GetRepositoriesByFullNameRequest, opts ...grpc.CallOption) (*GetRepositoriesByFullNameResponse, error)
 	// SetRepositoryContributor sets the role of a user in the repository.
 	SetRepositoryContributor(ctx context.Context, in *SetRepositoryContributorRequest, opts ...grpc.CallOption) (*SetRepositoryContributorResponse, error)
+	// ListRepositoryContributors returns the list of contributors that has an explicit role against the repository.
+	// This does not include users who have implicit roles against the repository, unless they have also been
+	// assigned a role explicitly.
+	ListRepositoryContributors(ctx context.Context, in *ListRepositoryContributorsRequest, opts ...grpc.CallOption) (*ListRepositoryContributorsResponse, error)
 }
 
 type repositoryServiceClient struct {
@@ -190,6 +194,15 @@ func (c *repositoryServiceClient) SetRepositoryContributor(ctx context.Context, 
 	return out, nil
 }
 
+func (c *repositoryServiceClient) ListRepositoryContributors(ctx context.Context, in *ListRepositoryContributorsRequest, opts ...grpc.CallOption) (*ListRepositoryContributorsResponse, error) {
+	out := new(ListRepositoryContributorsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoryContributors", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RepositoryServiceServer is the server API for RepositoryService service.
 // All implementations should embed UnimplementedRepositoryServiceServer
 // for forward compatibility
@@ -221,6 +234,10 @@ type RepositoryServiceServer interface {
 	GetRepositoriesByFullName(context.Context, *GetRepositoriesByFullNameRequest) (*GetRepositoriesByFullNameResponse, error)
 	// SetRepositoryContributor sets the role of a user in the repository.
 	SetRepositoryContributor(context.Context, *SetRepositoryContributorRequest) (*SetRepositoryContributorResponse, error)
+	// ListRepositoryContributors returns the list of contributors that has an explicit role against the repository.
+	// This does not include users who have implicit roles against the repository, unless they have also been
+	// assigned a role explicitly.
+	ListRepositoryContributors(context.Context, *ListRepositoryContributorsRequest) (*ListRepositoryContributorsResponse, error)
 }
 
 // UnimplementedRepositoryServiceServer should be embedded to have forward compatible implementations.
@@ -265,6 +282,9 @@ func (UnimplementedRepositoryServiceServer) GetRepositoriesByFullName(context.Co
 }
 func (UnimplementedRepositoryServiceServer) SetRepositoryContributor(context.Context, *SetRepositoryContributorRequest) (*SetRepositoryContributorResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetRepositoryContributor not implemented")
+}
+func (UnimplementedRepositoryServiceServer) ListRepositoryContributors(context.Context, *ListRepositoryContributorsRequest) (*ListRepositoryContributorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRepositoryContributors not implemented")
 }
 
 // UnsafeRepositoryServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -512,6 +532,24 @@ func _RepositoryService_SetRepositoryContributor_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryService_ListRepositoryContributors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRepositoryContributorsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).ListRepositoryContributors(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/ListRepositoryContributors",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).ListRepositoryContributors(ctx, req.(*ListRepositoryContributorsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RepositoryService_ServiceDesc is the grpc.ServiceDesc for RepositoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -570,6 +608,10 @@ var RepositoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetRepositoryContributor",
 			Handler:    _RepositoryService_SetRepositoryContributor_Handler,
+		},
+		{
+			MethodName: "ListRepositoryContributors",
+			Handler:    _RepositoryService_ListRepositoryContributors_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
