@@ -17,6 +17,7 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
+import "buf/alpha/registry/v1alpha1/user.proto";
 import "google/protobuf/timestamp.proto";
 
 enum Visibility {
@@ -45,6 +46,17 @@ message Repository {
   bool deprecated = 8;
   // deprecation_message is the message shown if the repository is deprecated.
   string deprecation_message = 9;
+}
+
+message RepositoryContributor {
+  User user = 1;
+  // The ID of the for which the role belongs to.
+  string repository_id = 2;
+  // The role that the user has been explicitly assigned against the repository.
+  RepositoryRole explicit_role = 3;
+  // Optionally defines the role that the user has implicitly against the repository through the owning organization.
+  // If the repository does not belong to an organization or the user is not part of the owning organization, this is unset.
+  RepositoryRole implicit_role = 4;
 }
 
 // RepositoryService is the Repository service.
@@ -76,6 +88,10 @@ service RepositoryService {
   rpc GetRepositoriesByFullName(GetRepositoriesByFullNameRequest) returns (GetRepositoriesByFullNameResponse);
   // SetRepositoryContributor sets the role of a user in the repository.
   rpc SetRepositoryContributor(SetRepositoryContributorRequest) returns (SetRepositoryContributorResponse);
+  // ListRepositoryContributors returns the list of contributors that has an explicit role against the repository.
+  // This does not include users who have implicit roles against the repository, unless they have also been
+  // assigned a role explicitly.
+  rpc ListRepositoryContributors(ListRepositoryContributorsRequest) returns (ListRepositoryContributorsResponse);
 }
 
 message GetRepositoriesByFullNameRequest{
@@ -214,3 +230,17 @@ message SetRepositoryContributorRequest {
 }
 
 message SetRepositoryContributorResponse {}
+
+message ListRepositoryContributorsRequest {
+  string repository_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  bool reverse = 4;
+}
+
+message ListRepositoryContributorsResponse {
+  repeated RepositoryContributor users = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}

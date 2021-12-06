@@ -17,6 +17,7 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
+import "buf/alpha/registry/v1alpha1/user.proto";
 
 // Plugin represents a protoc plugin, such as protoc-gen-go.
 message Plugin {
@@ -122,6 +123,28 @@ message PluginVersionMapping {
   bool inaccessible = 5;
 }
 
+message PluginContributor {
+  User user = 1;
+  // The ID of the plugin which the role belongs to.
+  string plugin_id = 2;
+  // The role that the user has been explicitly assigned against the plugin.
+  PluginRole explicit_role = 3;
+  // Optionally defines the role that the user has implicitly against the plugin through the owning organization.
+  // If the plugin does not belong to an organization or the user is not part of the owning organization, this is unset.
+  PluginRole implicit_role = 4;
+}
+
+message TemplateContributor {
+  User user = 1;
+  // The ID of the template which the role belongs to.
+  string template_id = 2;
+  // The role that the user has been explicitly assigned against the template.
+  TemplateRole explicit_role = 3;
+  // Optionally defines the role that the user has implicitly against the template through the owning organization.
+  // If the template does not belong to an organization or the user is not part of the owning organization, this is unset.
+  TemplateRole implicit_role = 4;
+}
+
 // PluginService manages plugins.
 service PluginService {
   // ListPlugins returns all the plugins available to the user. This includes
@@ -144,6 +167,10 @@ service PluginService {
   rpc DeletePlugin(DeletePluginRequest) returns (DeletePluginResponse);
   // SetPluginContributor sets the role of a user in the plugin.
   rpc SetPluginContributor(SetPluginContributorRequest) returns (SetPluginContributorResponse);
+  // ListPluginContributors returns the list of contributors that has an explicit role against the plugin.
+  // This does not include users who have implicit roles against the plugin, unless they have also been
+  // assigned a role explicitly.
+  rpc ListPluginContributors(ListPluginContributorsRequest) returns (ListPluginContributorsResponse);
   // GetTemplate returns the template, if found.
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
   // ListTemplates returns all the templates available to the user. This includes
@@ -166,6 +193,10 @@ service PluginService {
   rpc CreateTemplateVersion(CreateTemplateVersionRequest) returns (CreateTemplateVersionResponse);
   // SetTemplateContributor sets the role of a user in the template.
   rpc SetTemplateContributor(SetTemplateContributorRequest) returns (SetTemplateContributorResponse);
+  // ListTemplateContributors returns the list of contributors that has an explicit role against the template.
+  // This does not include users who have implicit roles against the template, unless they have also been
+  // assigned a role explicitly.
+  rpc ListTemplateContributors(ListTemplateContributorsRequest) returns (ListTemplateContributorsResponse);
 }
 
 message ListPluginsRequest {
@@ -278,6 +309,20 @@ message SetPluginContributorRequest {
 }
 
 message SetPluginContributorResponse {}
+
+message ListPluginContributorsRequest {
+  string plugin_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  bool reverse = 4;
+}
+
+message ListPluginContributorsResponse {
+  repeated PluginContributor users = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
 
 message GetTemplateRequest {
   // The owner of the template.
@@ -422,3 +467,17 @@ message SetTemplateContributorRequest {
 }
 
 message SetTemplateContributorResponse {}
+
+message ListTemplateContributorsRequest {
+  string template_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  bool reverse = 4;
+}
+
+message ListTemplateContributorsResponse {
+  repeated TemplateContributor users = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
