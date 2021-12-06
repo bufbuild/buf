@@ -438,21 +438,21 @@ message ActionBufAlphaRegistryinternalV1Alpha1DeletePluginVersionInfo {
   string name = 1;
 }
 
-// ActionBufAlphaRegistryinternalV1Alpha1SetRepositoryContributorInfo stores audit log details not included
+// ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo stores audit log details not included
 // in actor or object for the SetRepositoryContributor action.
-message ActionBufAlphaRegistryinternalV1Alpha1SetRepositoryContributorInfo {
+message ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo {
   BufAlphaRegistryV1Alpha1RepositoryRole repository_role = 1;
 }
 
-// ActionBufAlphaRegistryinternalV1Alpha1SetPluginContributorInfo stores audit log details not included
+// ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo stores audit log details not included
 // in actor or object for the SetPluginContributor action.
-message ActionBufAlphaRegistryinternalV1Alpha1SetPluginContributorInfo {
+message ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo {
   BufAlphaRegistryV1Alpha1PluginRole plugin_role = 1;
 }
 
-// ActionBufAlphaRegistryinternalV1Alpha1SetTemplateContributorInfo stores audit log details not included
+// ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo stores audit log details not included
 // in actor or object for the SetTemplateContributor action.
-message ActionBufAlphaRegistryinternalV1Alpha1SetTemplateContributorInfo {
+message ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo {
   BufAlphaRegistryV1Alpha1TemplateRole template_role = 1;
 }
 
