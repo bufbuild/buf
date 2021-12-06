@@ -14,6 +14,13 @@
 
 package bufbreakingconfig
 
+import (
+	"encoding/json"
+	"sort"
+
+	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
+)
+
 const (
 	// These versions match the versions in bufconfig. We cannot take an explicit dependency
 	// on bufconfig without creating a circular dependency.
@@ -67,6 +74,30 @@ func NewConfigV1(externalConfig ExternalConfigV1) *Config {
 	}
 }
 
+// ConfigForProto returns the Config given the proto.
+func ConfigForProto(protoConfig *breakingv1.Config) *Config {
+	return &Config{
+		Use:                           protoConfig.GetUseIds(),
+		Except:                        protoConfig.GetExceptIds(),
+		IgnoreRootPaths:               protoConfig.GetIgnorePaths(),
+		IgnoreIDOrCategoryToRootPaths: ignoreIDOrCategoryToRootPathsForProto(protoConfig.GetIgnoreIdPaths()),
+		IgnoreUnstablePackages:        protoConfig.GetIgnoreUnstablePackages(),
+		Version:                       protoConfig.GetVersion(),
+	}
+}
+
+// ProtoForConfig takes a *Config and returns the proto representation.
+func ProtoForConfig(config *Config) *breakingv1.Config {
+	return &breakingv1.Config{
+		UseIds:                 config.Use,
+		ExceptIds:              config.Except,
+		IgnorePaths:            config.IgnoreRootPaths,
+		IgnoreIdPaths:          protoForIgnoreIDOrCategoryToRootPaths(config.IgnoreIDOrCategoryToRootPaths),
+		IgnoreUnstablePackages: config.IgnoreUnstablePackages,
+		Version:                config.Version,
+	}
+}
+
 // ExternalConfigV1Beta1 is an external config.
 type ExternalConfigV1Beta1 struct {
 	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`
@@ -87,4 +118,76 @@ type ExternalConfigV1 struct {
 	// IgnoreIDOrCategoryToRootPaths
 	IgnoreOnly             map[string][]string `json:"ignore_only,omitempty" yaml:"ignore_only,omitempty"`
 	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
+}
+
+// BytesForConfig takes a *Config and returns the deterministic []byte representation.
+// We use an unexported intermediary JSON form and sort all fields to ensure that the bytes
+// associated with the *Config are deterministic.
+func BytesForConfig(config *Config) ([]byte, error) {
+	if config == nil {
+		return nil, nil
+	}
+	return json.Marshal(configToJSON(config))
+}
+
+type configJSON struct {
+	Use                           []string      `json:"use,omitempty"`
+	Except                        []string      `json:"except,omitempty"`
+	IgnoreRootPaths               []string      `json:"ignore_root_paths,omitempty"`
+	IgnoreIDOrCategoryToRootPaths []idPathsJSON `json:"ignore_id_to_root_paths,omitempty"`
+	IgnoreUnstablePackages        bool          `json:"ignore_unstable_packages,omitempty"`
+	Version                       string        `json:"version,omitempty"`
+}
+
+type idPathsJSON struct {
+	ID    string   `json:"id,omitempty"`
+	Paths []string `json:"paths,omitempty"`
+}
+
+func configToJSON(config *Config) *configJSON {
+	ignoreIDPathsJSON := make([]idPathsJSON, 0, len(config.IgnoreIDOrCategoryToRootPaths))
+	for ignoreID, rootPaths := range config.IgnoreIDOrCategoryToRootPaths {
+		sort.Strings(rootPaths)
+		ignoreIDPathsJSON = append(ignoreIDPathsJSON, idPathsJSON{
+			ID:    ignoreID,
+			Paths: rootPaths,
+		})
+	}
+	sort.Slice(ignoreIDPathsJSON, func(i, j int) bool { return ignoreIDPathsJSON[i].ID < ignoreIDPathsJSON[j].ID })
+	sort.Strings(config.Use)
+	sort.Strings(config.Except)
+	sort.Strings(config.IgnoreRootPaths)
+	return &configJSON{
+		Use:                           config.Use,
+		Except:                        config.Except,
+		IgnoreRootPaths:               config.IgnoreRootPaths,
+		IgnoreIDOrCategoryToRootPaths: ignoreIDPathsJSON,
+		IgnoreUnstablePackages:        config.IgnoreUnstablePackages,
+		Version:                       config.Version,
+	}
+}
+
+func ignoreIDOrCategoryToRootPathsForProto(protoIgnoreIDPaths []*breakingv1.IDPaths) map[string][]string {
+	if protoIgnoreIDPaths == nil {
+		return nil
+	}
+	ignoreIDOrCategoryToRootPaths := make(map[string][]string)
+	for _, protoIgnoreIDPath := range protoIgnoreIDPaths {
+		ignoreIDOrCategoryToRootPaths[protoIgnoreIDPath.GetId()] = protoIgnoreIDPath.GetPaths()
+	}
+	return ignoreIDOrCategoryToRootPaths
+}
+
+func protoForIgnoreIDOrCategoryToRootPaths(ignoreIDOrCategoryToRootPaths map[string][]string) []*breakingv1.IDPaths {
+	if ignoreIDOrCategoryToRootPaths == nil {
+		return nil
+	}
+	idPathsProto := make([]*breakingv1.IDPaths, 0, len(ignoreIDOrCategoryToRootPaths))
+	for id, paths := range ignoreIDOrCategoryToRootPaths {
+		idPathsProto = append(idPathsProto, &breakingv1.IDPaths{
+			Id:    id,
+			Paths: paths,
+		})
+	}
+	return idPathsProto
 }
