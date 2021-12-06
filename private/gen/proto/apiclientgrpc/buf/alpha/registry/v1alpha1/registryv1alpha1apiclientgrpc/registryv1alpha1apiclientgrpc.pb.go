@@ -66,6 +66,29 @@ func WithContextModifierProvider(contextModifierProvider func(address string) (f
 	}
 }
 
+func (p *provider) NewAuditLogsService(ctx context.Context, address string) (registryv1alpha1api.AuditLogsService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+	return &auditLogsService{
+		logger:          p.logger,
+		client:          v1alpha1.NewAuditLogsServiceClient(clientConn),
+		contextModifier: contextModifier,
+	}, nil
+}
+
 func (p *provider) NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
