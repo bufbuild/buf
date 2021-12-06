@@ -96,7 +96,7 @@ func (m *moduleCacher) GetModule(
 		// Note that we deal with invalid data in the cache at the ModuleReader level by overwriting via PutModule
 		return nil, storage.NewErrNotExist(modulePath)
 	}
-	digest, err := bufmodule.ModuleDigestB2(ctx, module)
+	digest, err := bufmodule.ModuleDigestB3(ctx, module)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (m *moduleCacher) PutModule(
 	module bufmodule.Module,
 ) error {
 	modulePath := newCacheKey(modulePin)
-	digest, err := bufmodule.ModuleDigestB2(ctx, module)
+	digest, err := bufmodule.ModuleDigestB3(ctx, module)
 	if err != nil {
 		return err
 	}

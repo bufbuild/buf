@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -37,10 +39,10 @@ const (
 	// It is intended to be eventually removed.
 	b1DigestPrefix = "b1"
 
-	// b2DigestPrefix is the digest prefix for the second version of the digest function.
+	// b3DigestPrefix is the digest prefix for the third version of the digest function.
 	//
-	// It is used by the CLI cache and intended to eventually replace b2.
-	b2DigestPrefix = "b2"
+	// It is used by the CLI cache and intended to eventually replace b1 entirely.
+	b3DigestPrefix = "b3"
 )
 
 // ModuleFile is a module file.
@@ -93,6 +95,14 @@ type Module interface {
 	// Documentation gets the contents of the module documentation file, buf.md and returns the string representation.
 	// This may return an empty string if the documentation file does not exist.
 	Documentation() string
+	// BreakingConfig returns the breaking change check configuration set for the module.
+	//
+	// This may be nil, since older versions of the module would not have this stored.
+	BreakingConfig() *bufbreakingconfig.Config
+	// LintConfig returns the lint check configuration set for the module.
+	//
+	// This may be nil, since older versions of the module would not have this stored.
+	LintConfig() *buflintconfig.Config
 
 	getSourceReadBucket() storage.ReadBucket
 	// Note this *can* be nil if we did not build from a named module.
@@ -298,9 +308,11 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 		protoModulePins[i] = bufmoduleref.NewProtoModulePinForModulePin(dependencyModulePin)
 	}
 	protoModule := &modulev1alpha1.Module{
-		Files:         protoModuleFiles,
-		Dependencies:  protoModulePins,
-		Documentation: module.Documentation(),
+		Files:          protoModuleFiles,
+		Dependencies:   protoModulePins,
+		Documentation:  module.Documentation(),
+		BreakingConfig: bufbreakingconfig.ProtoForConfig(module.BreakingConfig()),
+		LintConfig:     buflintconfig.ProtoForConfig(module.LintConfig()),
 	}
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
@@ -366,36 +378,24 @@ func ModuleDigestB1(ctx context.Context, module Module) (string, error) {
 	return fmt.Sprintf("%s-%s", b1DigestPrefix, base64.URLEncoding.EncodeToString(hash.Sum(nil))), nil
 }
 
-// ModuleDigestB2 returns the b2 digest for the Module.
+// ModuleDigestB3 returns the b3 digest for the Module.
 //
 // To create the module digest (SHA256):
 // 	1. For every file in the module (sorted lexicographically by path):
 // 		a. Add the file path
-//		b. Add the file contents
-// 	2. Add the dependency commits (sorted lexicographically by remote/owner/repository/commit)
-//	3. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
-func ModuleDigestB2(ctx context.Context, module Module) (string, error) {
+// 		b. Add the file contents
+// 	2. Add the dependency's module identity and commit ID (sorted lexicographically by commit ID)
+// 	3. Add the module identity if available.
+// 	4. Add the module documentation if available.
+// 	5. Add the breaking and lint configurations if available.
+// 	6. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
+func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	hash := sha256.New()
 	// We do not want to change the sort order as the rest of the codebase relies on it,
 	// but we only want to use commit as part of the sort order, so we make a copy of
 	// the slice and sort it by commit
 	for _, dependencyModulePin := range copyModulePinsSortedByOnlyCommit(module.DependencyModulePins()) {
-		// We include each of these individually as opposed to using String
-		// so that if the String representation changes, we still get the same digest.
-		//
-		// Note that this does mean that changing a repository name or owner
-		// will result in a different digest, this is something we may
-		// want to revisit.
-		if _, err := hash.Write([]byte(dependencyModulePin.Remote())); err != nil {
-			return "", err
-		}
-		if _, err := hash.Write([]byte(dependencyModulePin.Owner())); err != nil {
-			return "", err
-		}
-		if _, err := hash.Write([]byte(dependencyModulePin.Repository())); err != nil {
-			return "", err
-		}
-		if _, err := hash.Write([]byte(dependencyModulePin.Commit())); err != nil {
+		if _, err := hash.Write([]byte(dependencyModulePin.IdentityString())); err != nil {
 			return "", err
 		}
 	}
@@ -418,12 +418,35 @@ func ModuleDigestB2(ctx context.Context, module Module) (string, error) {
 			return "", err
 		}
 	}
+	if moduleIdentity := module.getModuleIdentity(); moduleIdentity != nil {
+		if _, err := hash.Write([]byte(moduleIdentity.IdentityString())); err != nil {
+			return "", err
+		}
+	}
 	if docs := module.Documentation(); docs != "" {
 		if _, err := hash.Write([]byte(docs)); err != nil {
 			return "", err
 		}
 	}
-	return fmt.Sprintf("%s-%s", b2DigestPrefix, base64.URLEncoding.EncodeToString(hash.Sum(nil))), nil
+	if breakingConfig := module.BreakingConfig(); breakingConfig != nil {
+		breakingConfigBytes, err := bufbreakingconfig.BytesForConfig(breakingConfig)
+		if err != nil {
+			return "", err
+		}
+		if _, err := hash.Write(breakingConfigBytes); err != nil {
+			return "", err
+		}
+	}
+	if lintConfig := module.LintConfig(); lintConfig != nil {
+		lintConfigBytes, err := buflintconfig.BytesForConfig(lintConfig)
+		if err != nil {
+			return "", err
+		}
+		if _, err := hash.Write(lintConfigBytes); err != nil {
+			return "", err
+		}
+	}
+	return fmt.Sprintf("%s-%s", b3DigestPrefix, base64.URLEncoding.EncodeToString(hash.Sum(nil))), nil
 }
 
 // ModuleToBucket writes the given Module to the WriteBucket.
