@@ -138,6 +138,12 @@ enum Action {
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_LIST_REPOSITORY_CONTRIBUTORS = 108;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_LIST_PLUGIN_CONTRIBUTORS = 109;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_LIST_TEMPLATE_CONTRIBUTORS = 110;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_SET_REPOSITORY_CONTRIBUTOR = 111;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_SET_PLUGIN_CONTRIBUTOR = 112;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_SET_TEMPLATE_CONTRIBUTOR = 113;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_USER_CAN_MANAGE_REPOSITORY_CONTRIBUTORS = 114;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_USER_CAN_MANAGE_PLUGIN_CONTRIBUTORS = 115;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_USER_CAN_MANAGE_TEMPLATE_CONTRIBUTORS = 116;
 }
 
 // ActionBufAlphaRegistryV1Alpha1DownloadInfo stores audit log details not included
@@ -430,6 +436,24 @@ message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo {
 // in actor or object for the DeletePluginVersion action.
 message ActionBufAlphaRegistryinternalV1Alpha1DeletePluginVersionInfo {
   string name = 1;
+}
+
+// ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo stores audit log details not included
+// in actor or object for the SetRepositoryContributor action.
+message ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo {
+  BufAlphaRegistryV1Alpha1RepositoryRole repository_role = 1;
+}
+
+// ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo stores audit log details not included
+// in actor or object for the SetPluginContributor action.
+message ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo {
+  BufAlphaRegistryV1Alpha1PluginRole plugin_role = 1;
+}
+
+// ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo stores audit log details not included
+// in actor or object for the SetTemplateContributor action.
+message ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo {
+  BufAlphaRegistryV1Alpha1TemplateRole template_role = 1;
 }
 
 message Event {
