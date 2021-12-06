@@ -685,6 +685,10 @@ func promptUser(container app.Container, prompt string, isPassword bool) (string
 		if isPassword {
 			data, err := term.ReadPassword(int(file.Fd()))
 			if err != nil {
+				// If the user submitted an EOF (e.g. via ^D) then we
+				// should not treat it as an internal error; returning
+				// the error directly makes it more clear as to
+				// why the command failed.
 				if errors.Is(err, io.EOF) {
 					return "", err
 				}
