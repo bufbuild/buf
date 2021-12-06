@@ -170,31 +170,7 @@ func BytesForConfig(config *Config) ([]byte, error) {
 	if config == nil {
 		return nil, nil
 	}
-	ignoreIDPathsJSON := make([]idPathsJSON, 0, len(config.IgnoreIDOrCategoryToRootPaths))
-	for ignoreID, rootPaths := range config.IgnoreIDOrCategoryToRootPaths {
-		sort.Strings(rootPaths)
-		ignoreIDPathsJSON = append(ignoreIDPathsJSON, idPathsJSON{
-			ID:    ignoreID,
-			Paths: rootPaths,
-		})
-	}
-	sort.Slice(ignoreIDPathsJSON, func(i, j int) bool { return ignoreIDPathsJSON[i].ID < ignoreIDPathsJSON[j].ID })
-	sort.Strings(config.Use)
-	sort.Strings(config.Except)
-	sort.Strings(config.IgnoreRootPaths)
-	return json.Marshal(&configJSON{
-		Use:                                  config.Use,
-		Except:                               config.Except,
-		IgnoreRootPaths:                      config.IgnoreRootPaths,
-		IgnoreIDOrCategoryToRootPaths:        ignoreIDPathsJSON,
-		EnumZeroValueSuffix:                  config.EnumZeroValueSuffix,
-		RPCAllowSameRequestResponse:          config.RPCAllowSameRequestResponse,
-		RPCAllowGoogleProtobufEmptyRequests:  config.RPCAllowGoogleProtobufEmptyRequests,
-		RPCAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses,
-		ServiceSuffix:                        config.ServiceSuffix,
-		AllowCommentIgnores:                  config.AllowCommentIgnores,
-		Version:                              config.Version,
-	})
+	return json.Marshal(configToJSON(config))
 }
 
 type configJSON struct {
@@ -214,6 +190,34 @@ type configJSON struct {
 type idPathsJSON struct {
 	ID    string   `json:"id,omitempty"`
 	Paths []string `json:"paths,omitempty"`
+}
+
+func configToJSON(config *Config) *configJSON {
+	ignoreIDPathsJSON := make([]idPathsJSON, 0, len(config.IgnoreIDOrCategoryToRootPaths))
+	for ignoreID, rootPaths := range config.IgnoreIDOrCategoryToRootPaths {
+		sort.Strings(rootPaths)
+		ignoreIDPathsJSON = append(ignoreIDPathsJSON, idPathsJSON{
+			ID:    ignoreID,
+			Paths: rootPaths,
+		})
+	}
+	sort.Slice(ignoreIDPathsJSON, func(i, j int) bool { return ignoreIDPathsJSON[i].ID < ignoreIDPathsJSON[j].ID })
+	sort.Strings(config.Use)
+	sort.Strings(config.Except)
+	sort.Strings(config.IgnoreRootPaths)
+	return &configJSON{
+		Use:                                  config.Use,
+		Except:                               config.Except,
+		IgnoreRootPaths:                      config.IgnoreRootPaths,
+		IgnoreIDOrCategoryToRootPaths:        ignoreIDPathsJSON,
+		EnumZeroValueSuffix:                  config.EnumZeroValueSuffix,
+		RPCAllowSameRequestResponse:          config.RPCAllowSameRequestResponse,
+		RPCAllowGoogleProtobufEmptyRequests:  config.RPCAllowGoogleProtobufEmptyRequests,
+		RPCAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses,
+		ServiceSuffix:                        config.ServiceSuffix,
+		AllowCommentIgnores:                  config.AllowCommentIgnores,
+		Version:                              config.Version,
+	}
 }
 
 // PrintFileAnnotations prints the FileAnnotations to the Writer.
