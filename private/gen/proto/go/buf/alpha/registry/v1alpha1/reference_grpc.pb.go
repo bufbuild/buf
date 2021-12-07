@@ -37,7 +37,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReferenceServiceClient interface {
 	// GetReferenceByName takes a reference name and returns the
-	// reference either as a tag, branch, or commit.
+	// reference either as a tag, branch, track or commit.
 	GetReferenceByName(ctx context.Context, in *GetReferenceByNameRequest, opts ...grpc.CallOption) (*GetReferenceByNameResponse, error)
 }
 
@@ -63,7 +63,7 @@ func (c *referenceServiceClient) GetReferenceByName(ctx context.Context, in *Get
 // for forward compatibility
 type ReferenceServiceServer interface {
 	// GetReferenceByName takes a reference name and returns the
-	// reference either as a tag, branch, or commit.
+	// reference either as a tag, branch, track or commit.
 	GetReferenceByName(context.Context, *GetReferenceByNameRequest) (*GetReferenceByNameResponse, error)
 }
 

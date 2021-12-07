@@ -1,0 +1,63 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "google/protobuf/timestamp.proto";
+
+message RepositoryTrack {
+  // primary key, unique, immutable
+  string id = 1;
+  // immutable
+  google.protobuf.Timestamp create_time = 2;
+  // We reserve field number '3' for the update_time.
+  // google.protobuf.Timestamp update_time = 3;
+  // The name of the repository track, i.e. "v1".
+  string name = 4;
+}
+
+service RepositoryTrackService {
+  // CreateRepositoryTrack creates a new repository track.
+  rpc CreateRepositoryTrack(CreateRepositoryTrackRequest) returns (CreateRepositoryTrackResponse);
+  // ListRepositoryTracks lists the repository tracks associated with a repository.
+  rpc ListRepositoryTracks(ListRepositoryTracksRequest) returns (ListRepositoryTracksResponse);
+}
+
+message CreateRepositoryTrackRequest {
+  // The ID of the repository this track should be created on.
+  string repository_id = 1;
+  // The name of the repository track, i.e. v1.
+  string name = 2;
+}
+
+message CreateRepositoryTrackResponse {
+  RepositoryTrack repository_track = 1;
+}
+
+message ListRepositoryTracksRequest {
+  // The ID of the repository whose tracks should be listed.
+  string repository_id = 1;
+  uint32 page_size = 2;
+  // The first page is returned if this is empty.
+  string page_token = 3;
+  bool reverse = 4;
+}
+
+message ListRepositoryTracksResponse {
+  repeated RepositoryTrack repository_tracks = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
