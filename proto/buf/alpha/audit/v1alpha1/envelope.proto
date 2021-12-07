@@ -528,6 +528,9 @@ message Event {
     ActionBufAlphaRegistryV1Alpha1UpdateUserServerRoleInfo action_buf_alpha_registry_v1alpha1_update_user_server_role_info = 49;
     ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_info = 50;
     ActionBufAlphaRegistryinternalV1Alpha1DeletePluginVersionInfo action_buf_alpha_registryinternal_v1alpha1_delete_plugin_version_info = 51;
+    ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo action_buf_alpha_registry_v1_alpha1_set_repository_contributor_info = 52;
+    ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo action_buf_alpha_registry_v1_alpha1_set_plugin_contributor_info = 53;
+    ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo action_buf_alpha_registry_v1_alpha1_set_template_contributor_info = 54;
   }
 }
 
