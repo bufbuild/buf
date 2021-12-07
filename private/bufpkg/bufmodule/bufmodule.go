@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -472,7 +473,37 @@ func ModuleToBucket(
 			return err
 		}
 	}
-	return bufmoduleref.PutDependencyModulePinsToBucket(ctx, writeBucket, module.DependencyModulePins())
+	if err := bufmoduleref.PutDependencyModulePinsToBucket(ctx, writeBucket, module.DependencyModulePins()); err != nil {
+		return err
+	}
+	// This is the default version created by bufconfig getters. The versions should be the
+	// same across lint and breaking configs.
+	version := bufconfig.V1Beta1Version
+	var breakingConfigVersion string
+	if module.BreakingConfig() != nil {
+		breakingConfigVersion = module.BreakingConfig().Version
+	}
+	var lintConfigVersion string
+	if module.LintConfig() != nil {
+		lintConfigVersion = module.LintConfig().Version
+	}
+	if breakingConfigVersion != "" && lintConfigVersion != "" {
+		if breakingConfigVersion != lintConfigVersion {
+			return fmt.Errorf("breaking config version %q does not match lint config version %q", breakingConfigVersion, lintConfigVersion)
+		}
+		version = breakingConfigVersion
+	} else if breakingConfigVersion != "" {
+		version = breakingConfigVersion
+	} else if lintConfigVersion != "" {
+		version = lintConfigVersion
+	}
+	writeConfigOptions := []bufconfig.WriteConfigOption{
+		bufconfig.WriteConfigWithModuleIdentity(module.getModuleIdentity()),
+		bufconfig.WriteConfigWithBreakingConfig(module.BreakingConfig()),
+		bufconfig.WriteConfigWithLintConfig(module.LintConfig()),
+		bufconfig.WriteConfigWithVersion(version),
+	}
+	return bufconfig.WriteConfig(ctx, writeBucket, writeConfigOptions...)
 }
 
 // TargetModuleFilesToBucket writes the target files of the given Module to the WriteBucket.

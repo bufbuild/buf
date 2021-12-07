@@ -1158,12 +1158,12 @@ func TestConfigInitBasic(t *testing.T) {
 	testConfigInit(
 		t,
 		`version: v1
-lint:
-  use:
-    - DEFAULT
 breaking:
   use:
-    - FILE
+  - FILE
+lint:
+  use:
+  - DEFAULT
 `,
 		false,
 		"",

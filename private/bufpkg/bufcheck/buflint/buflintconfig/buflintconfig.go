@@ -163,6 +163,37 @@ type ExternalConfigV1 struct {
 	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
 }
 
+// ExternalConfigV1Beta1ForConfig takes a *Config and returns the v1beta1 externalconfig representation.
+func ExternalConfigV1Beta1ForConfig(config *Config) ExternalConfigV1Beta1 {
+	return ExternalConfigV1Beta1{
+		Use:                                  config.Use,
+		Except:                               config.Except,
+		Ignore:                               config.IgnoreRootPaths,
+		IgnoreOnly:                           config.IgnoreIDOrCategoryToRootPaths,
+		EnumZeroValueSuffix:                  config.EnumZeroValueSuffix,
+		RPCAllowSameRequestResponse:          config.RPCAllowSameRequestResponse,
+		RPCAllowGoogleProtobufEmptyRequests:  config.RPCAllowGoogleProtobufEmptyRequests,
+		RPCAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses,
+		ServiceSuffix:                        config.ServiceSuffix,
+		AllowCommentIgnores:                  config.AllowCommentIgnores,
+	}
+}
+
+// ExternalConfigV1ForConfig takes a *Config and returns the v1 externalconfig representation.
+func ExternalConfigV1ForConfig(config *Config) ExternalConfigV1 {
+	return ExternalConfigV1{
+		Use:                                  config.Use,
+		Except:                               config.Except,
+		IgnoreOnly:                           config.IgnoreIDOrCategoryToRootPaths,
+		EnumZeroValueSuffix:                  config.EnumZeroValueSuffix,
+		RPCAllowSameRequestResponse:          config.RPCAllowSameRequestResponse,
+		RPCAllowGoogleProtobufEmptyRequests:  config.RPCAllowGoogleProtobufEmptyRequests,
+		RPCAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses,
+		ServiceSuffix:                        config.ServiceSuffix,
+		AllowCommentIgnores:                  config.AllowCommentIgnores,
+	}
+}
+
 // BytesForConfig takes a *Config and returns the deterministic []byte representation.
 // We use an unexported intermediary JSON form and sort all fields to ensure that the bytes
 // associated with the *Config are deterministic.

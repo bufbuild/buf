@@ -18,27 +18,21 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"text/template"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"gopkg.in/yaml.v2"
 )
 
 // If this is updated, make sure to update docs.buf.build TODO automate this
 
 const (
-	exampleName          = "buf.build/acme/weather"
-	tmplUndocumentedData = `{{$top := .}}version: v1
-{{if not .NameUnset}}name: {{.Name}}
-{{end}}{{if not .DepsUnset}}deps:
-{{range $dep := .Deps}}  - {{$dep}}
-{{end}}{{end}}lint:
-  use:
-{{range $lint_id := .LintIDs}}    - {{$lint_id}}
-{{end}}breaking:
-  use:
-{{range $breaking_id := .BreakingIDs}}    - {{$breaking_id}}
-{{end}}`
+	exampleName = "buf.build/acme/weather"
+	// This is only used for `buf config init`.
 	tmplDocumentationCommentsData = `{{$top := .}}# This specifies the configuration file version.
 #
 # This controls the configuration file layout, defaults, and lint/breaking
@@ -47,7 +41,7 @@ const (
 #
 # The only valid versions are "v1beta1", "v1".
 # This key is required.
-version: v1
+version: {{.Version}}
 
 # name is the module name.
 {{if .NameUnset}}#{{end}}name: {{.Name}}
@@ -89,7 +83,7 @@ lint:
   #
   # The default is [DEFAULT].
   use:
-{{range $lint_id := .LintIDs}}    - {{$lint_id}}
+{{range $lint_id := .LintConfig.Use}}    - {{$lint_id}}
 {{end}}
   # except is the list of rule ids or categories to remove from the use
   # list.
@@ -202,7 +196,7 @@ breaking:
   #
   # The default is [FILE], as done below.
   use:
-{{range $breaking_id := .BreakingIDs}}    - {{$breaking_id}}
+{{range $breaking_id := .BreakingConfig.Use}}    - {{$breaking_id}}
 {{end}}
   # except is the list of rule ids or categories to remove from the use
   # list.
@@ -254,16 +248,6 @@ breaking:
   {{if not .Uncomment}}#{{end}}ignore_unstable_packages: false`
 )
 
-var (
-	defaultLintIDs     = []string{"DEFAULT"}
-	defaultBreakingIDs = []string{"FILE"}
-	exampleDeps        = []string{
-		"buf.build/acme/petapis",
-		"buf.build/acme/pkg:alpha",
-		"buf.build/acme/paymentapis:7e8b594e68324329a7aefc6e750d18b9",
-	}
-)
-
 func writeConfig(
 	ctx context.Context,
 	writeBucket storage.WriteBucket,
@@ -273,30 +257,162 @@ func writeConfig(
 	for _, option := range options {
 		option(writeConfigOptions)
 	}
-	if !writeConfigOptions.documentationComments && writeConfigOptions.uncomment {
-		return errors.New("cannot set uncomment without documentationComments for WriteConfig")
+	if err := validateWriteConfigOptions(writeConfigOptions); err != nil {
+		return err
 	}
-	if writeConfigOptions.moduleIdentity == nil && len(writeConfigOptions.dependencyModuleReferences) > 0 {
-		return errors.New("cannot set deps without a name for WriteConfig")
+	// This is the same default as the bufconfig getters.
+	version := V1Beta1Version
+	if writeConfigOptions.version != "" {
+		if err := validateVersion(writeConfigOptions.version); err != nil {
+			return err
+		}
+		version = writeConfigOptions.version
 	}
-	externalConfigV1 := ExternalConfigV1{
-		Version: V1Version,
+	config := &Config{
+		Version:        version,
+		ModuleIdentity: writeConfigOptions.moduleIdentity,
 	}
-	externalConfigV1.Lint.Use = defaultLintIDs
-	externalConfigV1.Breaking.Use = defaultBreakingIDs
-	if writeConfigOptions.moduleIdentity != nil {
-		externalConfigV1.Name = writeConfigOptions.moduleIdentity.IdentityString()
+	if writeConfigOptions.breakingConfig != nil {
+		config.Breaking = writeConfigOptions.breakingConfig
+		// Always force the provided version.
+		config.Breaking.Version = version
 	}
-	for _, dependencyModuleReference := range writeConfigOptions.dependencyModuleReferences {
-		externalConfigV1.Deps = append(
-			externalConfigV1.Deps,
-			dependencyModuleReference.String(),
-		)
+	if writeConfigOptions.lintConfig != nil {
+		config.Lint = writeConfigOptions.lintConfig
+		// Always force the provided version.
+		config.Lint.Version = version
 	}
-	tmplData := tmplUndocumentedData
+	var dependencies []string
+	if len(writeConfigOptions.dependencyModuleReferences) > 0 {
+		dependencies = make([]string, len(writeConfigOptions.dependencyModuleReferences))
+		for i, dependencyModuleReference := range writeConfigOptions.dependencyModuleReferences {
+			dependencies[i] = dependencyModuleReference.String()
+		}
+	}
 	if writeConfigOptions.documentationComments {
-		tmplData = tmplDocumentationCommentsData
+		// Write out config using template with document comments.
+		return writeCommentedConfig(ctx, writeBucket, config, dependencies, writeConfigOptions.uncomment)
 	}
+	// Write out raw default config without comments using externalConfig{V1, V1Beta1}
+	return writeExternalConfig(ctx, writeBucket, version, config, dependencies)
+}
+
+func writeExternalConfig(
+	ctx context.Context,
+	writeBucket storage.WriteBucket,
+	version string,
+	config *Config,
+	dependencies []string,
+) error {
+	var name string
+	if config.ModuleIdentity != nil {
+		name = config.ModuleIdentity.IdentityString()
+	}
+	breakingConfig := config.Breaking
+	lintConfig := config.Lint
+	if version == V1Beta1Version {
+		var externalBreakingConfig bufbreakingconfig.ExternalConfigV1Beta1
+		if breakingConfig != nil {
+			externalBreakingConfig = bufbreakingconfig.ExternalConfigV1Beta1ForConfig(breakingConfig)
+		}
+		var externalLintConfig buflintconfig.ExternalConfigV1Beta1
+		if lintConfig != nil {
+			externalLintConfig = buflintconfig.ExternalConfigV1Beta1ForConfig(lintConfig)
+		}
+		externalConfig := ExternalConfigV1Beta1{
+			Name:     name,
+			Version:  config.Version,
+			Deps:     dependencies,
+			Breaking: externalBreakingConfig,
+			Lint:     externalLintConfig,
+		}
+		bytes, err := yaml.Marshal(externalConfig)
+		if err != nil {
+			return err
+		}
+		return storage.PutPath(ctx, writeBucket, ExternalConfigV1Beta1FilePath, bytes)
+	}
+	var externalBreakingConfig bufbreakingconfig.ExternalConfigV1
+	if breakingConfig != nil {
+		externalBreakingConfig = bufbreakingconfig.ExternalConfigV1ForConfig(breakingConfig)
+	}
+	var externalLintConfig buflintconfig.ExternalConfigV1
+	if lintConfig != nil {
+		externalLintConfig = buflintconfig.ExternalConfigV1ForConfig(lintConfig)
+	}
+	externalConfig := ExternalConfigV1{
+		Name:     name,
+		Version:  config.Version,
+		Deps:     dependencies,
+		Breaking: externalBreakingConfig,
+		Lint:     externalLintConfig,
+	}
+	bytes, err := yaml.Marshal(externalConfig)
+	if err != nil {
+		return err
+	}
+	return storage.PutPath(ctx, writeBucket, ExternalConfigV1FilePath, bytes)
+}
+
+func validateVersion(version string) error {
+	switch version {
+	case V1Version, V1Beta1Version:
+		return nil
+	default:
+		return fmt.Errorf("invalid config version %q provided", version)
+	}
+}
+
+type tmplParam struct {
+	Uncomment         bool
+	Version           string
+	Name              string
+	NameUnset         bool
+	Dependencies      []string
+	DependenciesUnset bool
+	LintConfig        *buflintconfig.Config
+	BreakingConfig    *bufbreakingconfig.Config
+}
+
+func newTmplParam(config *Config, dependencies []string, uncomment bool) *tmplParam {
+	var name string
+	var nameUnset bool
+	if config.ModuleIdentity != nil {
+		name = config.ModuleIdentity.IdentityString()
+	}
+	if name == "" {
+		name = exampleName
+		nameUnset = true
+	}
+	var dependenciesUnset bool
+	if len(dependencies) == 0 {
+		dependencies = []string{
+			"buf.build/acme/petapis",
+			"buf.build/acme/pkg:alpha",
+			"buf.build/acme/paymentapis:7e8b594e68324329a7aefc6e750d18b9",
+		}
+		dependenciesUnset = true
+	}
+	return &tmplParam{
+		Uncomment:         uncomment,
+		Version:           config.Version,
+		Name:              name,
+		NameUnset:         nameUnset,
+		Dependencies:      dependencies,
+		DependenciesUnset: dependenciesUnset,
+		LintConfig:        config.Lint,
+		BreakingConfig:    config.Breaking,
+	}
+}
+
+func writeCommentedConfig(
+	ctx context.Context,
+	writeBucket storage.WriteBucket,
+	config *Config,
+	dependencies []string,
+	uncomment bool,
+) error {
+	tmplData := tmplDocumentationCommentsData
 	tmpl, err := template.New("tmpl").Parse(tmplData)
 	if err != nil {
 		return err
@@ -305,8 +421,9 @@ func writeConfig(
 	if err := tmpl.Execute(
 		buffer,
 		newTmplParam(
-			externalConfigV1,
-			writeConfigOptions.uncomment,
+			config,
+			dependencies,
+			uncomment,
 		),
 	); err != nil {
 		return err
@@ -314,42 +431,26 @@ func writeConfig(
 	return storage.PutPath(ctx, writeBucket, ExternalConfigV1FilePath, buffer.Bytes())
 }
 
-type tmplParam struct {
-	Name        string
-	NameUnset   bool
-	Deps        []string
-	DepsUnset   bool
-	LintIDs     []string
-	BreakingIDs []string
-	Uncomment   bool
-}
-
-func newTmplParam(externalConfigV1 ExternalConfigV1, uncomment bool) *tmplParam {
-	tmplParam := &tmplParam{
-		Name:        externalConfigV1.Name,
-		Deps:        externalConfigV1.Deps,
-		LintIDs:     externalConfigV1.Lint.Use,
-		BreakingIDs: externalConfigV1.Breaking.Use,
-		Uncomment:   uncomment,
-	}
-	if tmplParam.Name == "" {
-		tmplParam.Name = exampleName
-		tmplParam.NameUnset = true
-	}
-	if len(tmplParam.Deps) == 0 {
-		tmplParam.Deps = exampleDeps
-		tmplParam.DepsUnset = true
-	}
-	return tmplParam
-}
-
 type writeConfigOptions struct {
 	documentationComments      bool
 	uncomment                  bool
 	moduleIdentity             bufmoduleref.ModuleIdentity
 	dependencyModuleReferences []bufmoduleref.ModuleReference
+	breakingConfig             *bufbreakingconfig.Config
+	lintConfig                 *buflintconfig.Config
+	version                    string
 }
 
 func newWriteConfigOptions() *writeConfigOptions {
 	return &writeConfigOptions{}
+}
+
+func validateWriteConfigOptions(writeConfigOptions *writeConfigOptions) error {
+	if !writeConfigOptions.documentationComments && writeConfigOptions.uncomment {
+		return errors.New("cannot set uncomment without documentationComments for WriteConfig")
+	}
+	if writeConfigOptions.moduleIdentity == nil && len(writeConfigOptions.dependencyModuleReferences) > 0 {
+		return errors.New("cannot set deps without a name for WriteConfig")
+	}
+	return nil
 }
