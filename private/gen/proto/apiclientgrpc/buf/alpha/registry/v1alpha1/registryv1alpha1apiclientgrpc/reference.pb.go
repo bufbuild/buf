@@ -29,7 +29,7 @@ type referenceService struct {
 }
 
 // GetReferenceByName takes a reference name and returns the
-// reference either as a tag, branch, or commit.
+// reference either as a tag, branch, track or commit.
 func (s *referenceService) GetReferenceByName(
 	ctx context.Context,
 	name string,

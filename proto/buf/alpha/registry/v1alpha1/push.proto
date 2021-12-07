@@ -33,6 +33,10 @@ message PushRequest {
   // Optional; if provided, the provided tags
   // are created for the pushed commit.
   repeated string tags = 5;
+  // Optional; if provided, the pushed commit
+  // will be appended to these tracks. If the
+  // tracks do not exist, they will be created.
+  repeated string tracks = 6;
 }
 
 message PushResponse {
