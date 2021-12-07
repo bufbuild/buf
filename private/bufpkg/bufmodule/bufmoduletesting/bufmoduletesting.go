@@ -15,6 +15,9 @@
 package bufmoduletesting
 
 import (
+	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
+	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
+	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/uuidutil"
 )
 
@@ -23,6 +26,10 @@ const (
 	//
 	// This matches TestData.
 	TestDigest = "b1-gLO3B_5ClhdU52w1gMOxk4GokvCoM1OqjarxMfjStGQ="
+	// TestDigestB3WithConfiguration is a valid digest.
+	//
+	// This matches TestDataWithConfiguration.
+	TestDigestB3WithConfiguration = "b3-okxtYzp_f8B6J4-QfxM1fs49X4QX_1XlGig_RhYXCL4="
 	// TestDigestWithDocumentation is a valid test digest.
 	//
 	// This matches TestDataWithDocumentation.
@@ -35,8 +42,57 @@ const (
 	TestModuleReferenceFooBazV1String = "buf.build/foob/baz:v1"
 	// TestModuleReferenceFooBazV2String is a valid module reference string.
 	TestModuleReferenceFooBazV2String = "buf.build/foob/baz:v2"
-	// TestDocumentation is a markdown module documentation file.
+	// TestModuleDocumentation is a markdown module documentation file.
 	TestModuleDocumentation = "# Module Documentation"
+	// TestModuleConfiguration is a configuration file with an arbitrary module name,
+	// and example lint and breaking configuration that covers every key. At least two
+	// items are included in every key (where applicable) so that we validate whether
+	// or not the digest is deterministic.
+	TestModuleConfiguration = `
+version: v1
+name: buf.build/acme/weather
+lint:
+  use:
+    - DEFAULT
+    - UNARY_RPC
+  except:
+    - BASIC
+    - FILE_LOWER_SNAKE_CASE
+  ignore:
+    - file1.proto
+    - folder/file2.proto
+  ignore_only:
+    ENUM_PASCAL_CASE:
+      - file1.proto
+      - folder
+    BASIC:
+      - file1.proto
+      - folder
+  enum_zero_value_suffix: _UNSPECIFIED
+  rpc_allow_same_request_response: true
+  rpc_allow_google_protobuf_empty_requests: true
+  rpc_allow_google_protobuf_empty_responses: true
+  service_suffix: Service
+  allow_comment_ignores: true
+breaking:
+  use:
+    - FILE
+    - WIRE
+  except:
+    - FILE_NO_DELETE
+    - RPC_NO_DELETE
+  ignore:
+    - file1.proto
+    - folder/file2.proto
+  ignore_only:
+    FIELD_SAME_JSON_NAME:
+      - file1.proto
+      - folder
+    WIRE:
+      - file1.proto
+      - folder
+  ignore_unstable_packages: true
+`
 )
 
 var (
@@ -45,11 +101,47 @@ var (
 		TestFile1Path: []byte(`syntax="proto3";`),
 		TestFile2Path: []byte(`syntax="proto3";`),
 	}
+	//TestDataProto is the proto representation of TestData.
+	TestDataProto = &modulev1alpha1.Module{
+		Files: []*modulev1alpha1.ModuleFile{
+			{
+				Path:    TestFile1Path,
+				Content: []byte(`syntax="proto3";`),
+			},
+			{
+				Path:    TestFile2Path,
+				Content: []byte(`syntax="proto3";`),
+			},
+		},
+		BreakingConfig: &breakingv1.Config{Version: "v1beta1"},
+		LintConfig:     &lintv1.Config{Version: "v1beta1"},
+	}
 	// TestDataWithDocumentation is the data that maps to TestDigestWithDocumentation.
 	//
 	// It includes a buf.md file.
 	TestDataWithDocumentation = map[string][]byte{
 		TestFile1Path: []byte(`syntax="proto3";`),
+		"buf.md":      []byte(TestModuleDocumentation),
+	}
+	// TestDataWithDocumentationProto is the proto representation of TestDataWithDocumentation.
+	TestDataWithDocumentationProto = &modulev1alpha1.Module{
+		Files: []*modulev1alpha1.ModuleFile{
+			{
+				Path:    TestFile1Path,
+				Content: []byte(`syntax="proto3";`),
+			},
+		},
+		Documentation:  TestModuleDocumentation,
+		BreakingConfig: &breakingv1.Config{Version: "v1beta1"},
+		LintConfig:     &lintv1.Config{Version: "v1beta1"},
+	}
+	// TestDataWithConfiguration is the data that maps to TestDigestWithConfiguration.
+	//
+	// It includes a buf.yaml and a buf.md file.
+	TestDataWithConfiguration = map[string][]byte{
+		TestFile1Path: []byte(`syntax="proto3";`),
+		TestFile2Path: []byte(`syntax="proto3";`),
+		"buf.yaml":    []byte(TestModuleConfiguration),
 		"buf.md":      []byte(TestModuleDocumentation),
 	}
 	// TestFile1Path is the path of file1.proto.
