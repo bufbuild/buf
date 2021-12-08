@@ -313,7 +313,8 @@ func writeExternalConfig(
 	}
 	breakingConfig := config.Breaking
 	lintConfig := config.Lint
-	if version == V1Beta1Version {
+	switch version {
+	case V1Beta1Version:
 		var externalBreakingConfig bufbreakingconfig.ExternalConfigV1Beta1
 		if breakingConfig != nil {
 			externalBreakingConfig = bufbreakingconfig.ExternalConfigV1Beta1ForConfig(breakingConfig)
@@ -336,29 +337,32 @@ func writeExternalConfig(
 			return err
 		}
 		return storage.PutPath(ctx, writeBucket, ExternalConfigV1Beta1FilePath, buffer.Bytes())
+	case V1Version:
+		var externalBreakingConfig bufbreakingconfig.ExternalConfigV1
+		if breakingConfig != nil {
+			externalBreakingConfig = bufbreakingconfig.ExternalConfigV1ForConfig(breakingConfig)
+		}
+		var externalLintConfig buflintconfig.ExternalConfigV1
+		if lintConfig != nil {
+			externalLintConfig = buflintconfig.ExternalConfigV1ForConfig(lintConfig)
+		}
+		externalConfig := ExternalConfigV1{
+			Name:     name,
+			Version:  config.Version,
+			Deps:     dependencies,
+			Breaking: externalBreakingConfig,
+			Lint:     externalLintConfig,
+		}
+		var buffer bytes.Buffer
+		encoder := yaml.NewEncoder(&buffer)
+		encoder.SetIndent(2)
+		if err := encoder.Encode(externalConfig); err != nil {
+			return err
+		}
+		return storage.PutPath(ctx, writeBucket, ExternalConfigV1FilePath, buffer.Bytes())
+	default:
+		return fmt.Errorf(`%s has an invalid "version %s"`, name, version)
 	}
-	var externalBreakingConfig bufbreakingconfig.ExternalConfigV1
-	if breakingConfig != nil {
-		externalBreakingConfig = bufbreakingconfig.ExternalConfigV1ForConfig(breakingConfig)
-	}
-	var externalLintConfig buflintconfig.ExternalConfigV1
-	if lintConfig != nil {
-		externalLintConfig = buflintconfig.ExternalConfigV1ForConfig(lintConfig)
-	}
-	externalConfig := ExternalConfigV1{
-		Name:     name,
-		Version:  config.Version,
-		Deps:     dependencies,
-		Breaking: externalBreakingConfig,
-		Lint:     externalLintConfig,
-	}
-	var buffer bytes.Buffer
-	encoder := yaml.NewEncoder(&buffer)
-	encoder.SetIndent(2)
-	if err := encoder.Encode(externalConfig); err != nil {
-		return err
-	}
-	return storage.PutPath(ctx, writeBucket, ExternalConfigV1FilePath, buffer.Bytes())
 }
 
 func validateVersion(version string) error {
