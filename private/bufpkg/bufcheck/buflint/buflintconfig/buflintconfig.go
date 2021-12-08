@@ -184,6 +184,7 @@ func ExternalConfigV1ForConfig(config *Config) ExternalConfigV1 {
 	return ExternalConfigV1{
 		Use:                                  config.Use,
 		Except:                               config.Except,
+		Ignore:                               config.IgnoreRootPaths,
 		IgnoreOnly:                           config.IgnoreIDOrCategoryToRootPaths,
 		EnumZeroValueSuffix:                  config.EnumZeroValueSuffix,
 		RPCAllowSameRequestResponse:          config.RPCAllowSameRequestResponse,

@@ -89,6 +89,10 @@ func newModuleForBucket(
 	if err != nil {
 		return nil, err
 	}
+	// if the module config has an identity, set the module identity
+	if moduleConfig.ModuleIdentity != nil {
+		options = append(options, ModuleWithModuleIdentity(moduleConfig.ModuleIdentity))
+	}
 	return newModule(
 		ctx,
 		storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
