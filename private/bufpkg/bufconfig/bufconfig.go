@@ -146,16 +146,16 @@ func WriteConfigWithDependencyModuleReferences(dependencyModuleReferences ...buf
 // WriteConfigWithBreakingConfig returns a new WriteConfigOption that sets the breaking change
 // config for the module.
 //
-// If this option is used and the version used will be consistent with the rest of the config.
+// If this option is used then the version used must be consistent with the rest of the config.
 func WriteConfigWithBreakingConfig(breakingConfig *bufbreakingconfig.Config) WriteConfigOption {
 	return func(writeConfigOptions *writeConfigOptions) {
 		writeConfigOptions.breakingConfig = breakingConfig
 	}
 }
 
-// WriteConfigWithLintConfig returns a new WriteConfigOption that sets the lint config for // the module.
+// WriteConfigWithLintConfig returns a new WriteConfigOption that sets the lint config for the module.
 //
-// If this option is used and the version used will be consistent with the rest of the config.
+// If this option is used then the version used must be consistent with the rest of the config.
 func WriteConfigWithLintConfig(lintConfig *buflintconfig.Config) WriteConfigOption {
 	return func(writeConfigOptions *writeConfigOptions) {
 		writeConfigOptions.lintConfig = lintConfig
