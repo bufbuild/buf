@@ -16,6 +16,7 @@ package uuidutil
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -90,4 +91,13 @@ func TestFromStringSlice(t *testing.T) {
 	require.Equal(t, 2, len(uuids))
 	require.Equal(t, id1, uuids[0])
 	require.Equal(t, id2, uuids[1])
+}
+
+func TestNewUlid(t *testing.T) {
+	t.Parallel()
+	ulid, err := NewULID(time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC))
+	require.NoError(t, err)
+	parsed, err := FromString(ulid.String())
+	require.NoError(t, err)
+	require.Equal(t, ulid, parsed)
 }

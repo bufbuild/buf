@@ -15,9 +15,12 @@
 package uuidutil
 
 import (
+	"crypto/rand"
 	"fmt"
+	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/oklog/ulid/v2"
 )
 
 // New returns a new random UUIDv4.
@@ -27,6 +30,16 @@ func New() (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 	return id, nil
+}
+
+// NewULID creates a new ULID for the given timestamp,
+// and returns it in its UUID form.
+func NewULID(timestamp time.Time) (uuid.UUID, error) {
+	id, err := ulid.New(ulid.Timestamp(timestamp), rand.Reader)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return uuid.FromBytes(id[:])
 }
 
 // ToDashless returns the uuid without dashes.
