@@ -27,4 +27,8 @@ type OwnerService interface {
 	// GetOwnerByName takes an owner name and returns the owner as
 	// either a user or organization.
 	GetOwnerByName(ctx context.Context, name string) (owner *v1alpha1.Owner, err error)
+	// GetOwnersByID takes a list of owner IDs and returns the owners. Duplicate
+	// ids are ignored, and any IDs that are not found are omitted from the
+	// results. The order of the returned owners is not defined.
+	GetOwnersByID(ctx context.Context, ids []string) (owners []*v1alpha1.Owner, err error)
 }

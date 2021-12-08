@@ -45,3 +45,22 @@ func (s *ownerService) GetOwnerByName(ctx context.Context, name string) (owner *
 	}
 	return response.Owner, nil
 }
+
+// GetOwnersByID takes a list of owner IDs and returns the owners. Duplicate
+// ids are ignored, and any IDs that are not found are omitted from the
+// results. The order of the returned owners is not defined.
+func (s *ownerService) GetOwnersByID(ctx context.Context, ids []string) (owners []*v1alpha1.Owner, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetOwnersByID(
+		ctx,
+		&v1alpha1.GetOwnersByIDRequest{
+			Ids: ids,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Owners, nil
+}

@@ -39,6 +39,10 @@ type OwnerServiceClient interface {
 	// GetOwnerByName takes an owner name and returns the owner as
 	// either a user or organization.
 	GetOwnerByName(ctx context.Context, in *GetOwnerByNameRequest, opts ...grpc.CallOption) (*GetOwnerByNameResponse, error)
+	// GetOwnersByID takes a list of owner IDs and returns the owners. Duplicate
+	// ids are ignored, and any IDs that are not found are omitted from the
+	// results. The order of the returned owners is not defined.
+	GetOwnersByID(ctx context.Context, in *GetOwnersByIDRequest, opts ...grpc.CallOption) (*GetOwnersByIDResponse, error)
 }
 
 type ownerServiceClient struct {
@@ -58,6 +62,15 @@ func (c *ownerServiceClient) GetOwnerByName(ctx context.Context, in *GetOwnerByN
 	return out, nil
 }
 
+func (c *ownerServiceClient) GetOwnersByID(ctx context.Context, in *GetOwnersByIDRequest, opts ...grpc.CallOption) (*GetOwnersByIDResponse, error) {
+	out := new(GetOwnersByIDResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OwnerService/GetOwnersByID", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OwnerServiceServer is the server API for OwnerService service.
 // All implementations should embed UnimplementedOwnerServiceServer
 // for forward compatibility
@@ -65,6 +78,10 @@ type OwnerServiceServer interface {
 	// GetOwnerByName takes an owner name and returns the owner as
 	// either a user or organization.
 	GetOwnerByName(context.Context, *GetOwnerByNameRequest) (*GetOwnerByNameResponse, error)
+	// GetOwnersByID takes a list of owner IDs and returns the owners. Duplicate
+	// ids are ignored, and any IDs that are not found are omitted from the
+	// results. The order of the returned owners is not defined.
+	GetOwnersByID(context.Context, *GetOwnersByIDRequest) (*GetOwnersByIDResponse, error)
 }
 
 // UnimplementedOwnerServiceServer should be embedded to have forward compatible implementations.
@@ -73,6 +90,9 @@ type UnimplementedOwnerServiceServer struct {
 
 func (UnimplementedOwnerServiceServer) GetOwnerByName(context.Context, *GetOwnerByNameRequest) (*GetOwnerByNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOwnerByName not implemented")
+}
+func (UnimplementedOwnerServiceServer) GetOwnersByID(context.Context, *GetOwnersByIDRequest) (*GetOwnersByIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOwnersByID not implemented")
 }
 
 // UnsafeOwnerServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -104,6 +124,24 @@ func _OwnerService_GetOwnerByName_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OwnerService_GetOwnersByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOwnersByIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OwnerServiceServer).GetOwnersByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.OwnerService/GetOwnersByID",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OwnerServiceServer).GetOwnersByID(ctx, req.(*GetOwnersByIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OwnerService_ServiceDesc is the grpc.ServiceDesc for OwnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -114,6 +152,10 @@ var OwnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOwnerByName",
 			Handler:    _OwnerService_GetOwnerByName_Handler,
+		},
+		{
+			MethodName: "GetOwnersByID",
+			Handler:    _OwnerService_GetOwnersByID_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

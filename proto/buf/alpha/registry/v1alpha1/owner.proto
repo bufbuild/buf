@@ -34,6 +34,11 @@ service OwnerService {
   // GetOwnerByName takes an owner name and returns the owner as
   // either a user or organization.
   rpc GetOwnerByName(GetOwnerByNameRequest) returns (GetOwnerByNameResponse);
+
+  // GetOwnersByID takes a list of owner IDs and returns the owners. Duplicate
+  // ids are ignored, and any IDs that are not found are omitted from the
+  // results. The order of the returned owners is not defined.
+  rpc GetOwnersByID(GetOwnersByIDRequest) returns (GetOwnersByIDResponse);
 }
 
 message GetOwnerByNameRequest {
@@ -43,4 +48,14 @@ message GetOwnerByNameRequest {
 
 message GetOwnerByNameResponse {
   Owner owner = 1;
+}
+
+message GetOwnersByIDRequest {
+  // IDs of the requested owners.
+  repeated string ids = 1;
+}
+
+message GetOwnersByIDResponse {
+  // Owners with the requested IDs.
+  repeated Owner owners = 1;
 }
