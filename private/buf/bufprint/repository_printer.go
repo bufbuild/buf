@@ -21,25 +21,21 @@ import (
 	"io"
 	"time"
 
-	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 type repositoryPrinter struct {
-	apiProvider registryv1alpha1apiclient.Provider
-	address     string
-	writer      io.Writer
+	address string
+	writer  io.Writer
 }
 
 func newRepositoryPrinter(
-	apiProvider registryv1alpha1apiclient.Provider,
 	address string,
 	writer io.Writer,
 ) *repositoryPrinter {
 	return &repositoryPrinter{
-		apiProvider: apiProvider,
-		address:     address,
-		writer:      writer,
+		address: address,
+		writer:  writer,
 	}
 }
 
@@ -85,39 +81,13 @@ func (p *repositoryPrinter) PrintRepositories(ctx context.Context, format Format
 func (p *repositoryPrinter) registryRepositoriesToOutRepositories(ctx context.Context, messages ...*registryv1alpha1.Repository) ([]outputRepository, error) {
 	var outputRepositories []outputRepository
 	for _, repository := range messages {
-		var ownerName string
-		switch owner := repository.Owner.(type) {
-		case *registryv1alpha1.Repository_OrganizationId:
-			organizationService, err := p.apiProvider.NewOrganizationService(ctx, p.address)
-			if err != nil {
-				return nil, err
-			}
-			organization, err := organizationService.GetOrganization(ctx, owner.OrganizationId)
-			if err != nil {
-				return nil, err
-			}
-			ownerName = organization.Name
-		case *registryv1alpha1.Repository_UserId:
-			userService, err := p.apiProvider.NewUserService(ctx, p.address)
-			if err != nil {
-				return nil, err
-			}
-			user, err := userService.GetUser(ctx, owner.UserId)
-			if err != nil {
-				return nil, err
-			}
-			ownerName = user.Username
-		default:
-			return nil, fmt.Errorf("unknown owner: %T", owner)
-		}
-		outputRepository := outputRepository{
+		outputRepositories = append(outputRepositories, outputRepository{
 			ID:         repository.Id,
 			Remote:     p.address,
-			Owner:      ownerName,
+			Owner:      repository.OwnerName,
 			Name:       repository.Name,
 			CreateTime: repository.CreateTime.AsTime(),
-		}
-		outputRepositories = append(outputRepositories, outputRepository)
+		})
 	}
 	return outputRepositories, nil
 }

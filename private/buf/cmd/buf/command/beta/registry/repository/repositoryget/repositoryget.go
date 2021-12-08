@@ -101,7 +101,6 @@ func run(
 		return err
 	}
 	return bufprint.NewRepositoryPrinter(
-		apiProvider,
 		moduleIdentity.Remote(),
 		container.Stdout(),
 	).PrintRepository(ctx, format, repository)

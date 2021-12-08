@@ -121,7 +121,6 @@ func run(
 		return err
 	}
 	return bufprint.NewRepositoryPrinter(
-		apiProvider,
 		remote,
 		container.Stdout(),
 	).PrintRepositories(ctx, format, nextPageToken, repositories...)
