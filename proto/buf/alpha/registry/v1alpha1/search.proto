@@ -16,6 +16,9 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/repository.proto";
+import "buf/alpha/registry/v1alpha1/plugin.proto";
+
 enum SearchFilter {
   SEARCH_FILTER_UNSPECIFIED = 0;
   SEARCH_FILTER_USER = 1;
@@ -30,8 +33,11 @@ message RepositorySearchResult {
   string id = 1;
   string name = 2;
   // The name of the user or organization
-  // who is the owner of this repository
+  // who is the owner of this repository.
   string owner = 3;
+  // The visibility of the repository.
+  Visibility visibility = 4;
+  bool deprecated = 5;
 }
 
 message OrganizationSearchResult {
@@ -55,16 +61,20 @@ message PluginSearchResult {
   string id = 1;
   string name = 2;
   // The name of the user or organization
-  // who is the owner of this plugin
+  // who is the owner of this plugin.
   string owner = 3;
+  // The visibility of the plugin.
+  PluginVisibility visibility = 4;
 }
 
 message TemplateSearchResult {
   string id = 1;
   string name = 2;
   // The name of the user or organization
-  // who is the owner of this template
+  // who is the owner of this template.
   string owner = 3;
+  // The visibility of the template.
+  PluginVisibility visibility = 4;
 }
 
 message SearchResult {
