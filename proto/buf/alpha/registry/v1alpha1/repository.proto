@@ -46,6 +46,7 @@ message Repository {
   bool deprecated = 8;
   // deprecation_message is the message shown if the repository is deprecated.
   string deprecation_message = 9;
+  string owner_name = 10;
 }
 
 message RepositoryContributor {
