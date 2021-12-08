@@ -272,15 +272,18 @@ func writeConfig(
 		Version:        version,
 		ModuleIdentity: writeConfigOptions.moduleIdentity,
 	}
+	var breakingConfigVersion string
 	if writeConfigOptions.breakingConfig != nil {
 		config.Breaking = writeConfigOptions.breakingConfig
-		// Always force the provided version.
-		config.Breaking.Version = version
+		breakingConfigVersion = version
 	}
+	var lintConfigVersion string
 	if writeConfigOptions.lintConfig != nil {
 		config.Lint = writeConfigOptions.lintConfig
-		// Always force the provided version.
-		config.Lint.Version = version
+		lintConfigVersion = version
+	}
+	if breakingConfigVersion != lintConfigVersion {
+		return fmt.Errorf("breaking config version %q does not match lint config version %q", breakingConfigVersion, lintConfigVersion)
 	}
 	var dependencies []string
 	if len(writeConfigOptions.dependencyModuleReferences) > 0 {
@@ -326,11 +329,13 @@ func writeExternalConfig(
 			Breaking: externalBreakingConfig,
 			Lint:     externalLintConfig,
 		}
-		bytes, err := yaml.Marshal(externalConfig)
-		if err != nil {
+		var buffer bytes.Buffer
+		encoder := yaml.NewEncoder(&buffer)
+		encoder.SetIndent(2)
+		if err := encoder.Encode(externalConfig); err != nil {
 			return err
 		}
-		return storage.PutPath(ctx, writeBucket, ExternalConfigV1Beta1FilePath, bytes)
+		return storage.PutPath(ctx, writeBucket, ExternalConfigV1Beta1FilePath, buffer.Bytes())
 	}
 	var externalBreakingConfig bufbreakingconfig.ExternalConfigV1
 	if breakingConfig != nil {
@@ -347,11 +352,13 @@ func writeExternalConfig(
 		Breaking: externalBreakingConfig,
 		Lint:     externalLintConfig,
 	}
-	bytes, err := yaml.Marshal(externalConfig)
-	if err != nil {
+	var buffer bytes.Buffer
+	encoder := yaml.NewEncoder(&buffer)
+	encoder.SetIndent(2)
+	if err := encoder.Encode(externalConfig); err != nil {
 		return err
 	}
-	return storage.PutPath(ctx, writeBucket, ExternalConfigV1FilePath, bytes)
+	return storage.PutPath(ctx, writeBucket, ExternalConfigV1FilePath, buffer.Bytes())
 }
 
 func validateVersion(version string) error {

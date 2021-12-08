@@ -165,7 +165,7 @@ func WriteConfigWithLintConfig(lintConfig *buflintconfig.Config) WriteConfigOpti
 // WriteConfigWithVersion returns a new WriteConfigOption that sets the version of the config
 // being written.
 //
-// If this is not set, the default is v1.
+// If this is not set, the default is v1beta1.
 func WriteConfigWithVersion(version string) WriteConfigOption {
 	return func(writeConfigOptions *writeConfigOptions) {
 		writeConfigOptions.version = version

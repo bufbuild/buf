@@ -487,15 +487,14 @@ func ModuleToBucket(
 	if module.LintConfig() != nil {
 		lintConfigVersion = module.LintConfig().Version
 	}
-	if breakingConfigVersion != "" && lintConfigVersion != "" {
-		if breakingConfigVersion != lintConfigVersion {
-			return fmt.Errorf("breaking config version %q does not match lint config version %q", breakingConfigVersion, lintConfigVersion)
-		}
+	// If one of either breaking or lint config is non-nil, then other config will also be non-nil,
+	// even if a module does not set both configurations. An empty with the correct version
+	// will be set by the configuration getters.
+	if breakingConfigVersion != lintConfigVersion {
+		return fmt.Errorf("breaking config version %q does not match lint config version %q", breakingConfigVersion, lintConfigVersion)
+	}
+	if breakingConfigVersion != "" || lintConfigVersion != "" {
 		version = breakingConfigVersion
-	} else if breakingConfigVersion != "" {
-		version = breakingConfigVersion
-	} else if lintConfigVersion != "" {
-		version = lintConfigVersion
 	}
 	writeConfigOptions := []bufconfig.WriteConfigOption{
 		bufconfig.WriteConfigWithModuleIdentity(module.getModuleIdentity()),
