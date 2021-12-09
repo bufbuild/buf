@@ -206,7 +206,7 @@ func run(
 			if err != nil {
 				return err
 			}
-			pluginResponses = append(pluginResponses, appproto.NewPluginResponse(response, pluginName))
+			pluginResponses = append(pluginResponses, appproto.NewPluginResponse(response, pluginName, pluginInfo.Out))
 		}
 		if err := appproto.ValidatePluginResponses(pluginResponses); err != nil {
 			return err
