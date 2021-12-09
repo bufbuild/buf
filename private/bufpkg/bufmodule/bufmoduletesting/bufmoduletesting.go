@@ -29,7 +29,7 @@ const (
 	// TestDigestB3WithConfiguration is a valid digest.
 	//
 	// This matches TestDataWithConfiguration.
-	TestDigestB3WithConfiguration = "b3-okxtYzp_f8B6J4-QfxM1fs49X4QX_1XlGig_RhYXCL4="
+	TestDigestB3WithConfiguration = "b3-b2gkRgE1WxTKpEfsK4ql8STGxqc6nRimCeMBGB5i2OU="
 	// TestDigestWithDocumentation is a valid test digest.
 	//
 	// This matches TestDataWithDocumentation.

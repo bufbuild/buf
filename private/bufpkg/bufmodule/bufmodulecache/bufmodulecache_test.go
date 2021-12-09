@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -200,7 +201,6 @@ func TestCacherBasic(t *testing.T) {
 		time.Now(),
 	)
 	require.NoError(t, err)
-	require.NoError(t, err)
 	module, err := bufmodule.NewModuleForProto(
 		ctx,
 		bufmoduletesting.TestDataProto,
@@ -243,7 +243,6 @@ func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 		time.Now(),
 	)
 	require.NoError(t, err)
-	require.NoError(t, err)
 	module, err := bufmodule.NewModuleForProto(
 		ctx,
 		bufmoduletesting.TestDataWithDocumentationProto,
@@ -268,6 +267,49 @@ func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.Equal(t, bufmoduletesting.TestModuleDocumentation, module.Documentation())
+}
+func TestModuleReaderCacherWithConfiguration(t *testing.T) {
+	ctx := context.Background()
+
+	modulePin, err := bufmoduleref.NewModulePin(
+		"buf.build",
+		"acme",
+		"weather",
+		"main",
+		bufmoduletesting.TestCommit,
+		bufmoduletesting.TestDigestB3WithConfiguration,
+		time.Now(),
+	)
+	require.NoError(t, err)
+	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithConfiguration)
+	require.NoError(t, err)
+	module, err := bufmodule.NewModuleForBucket(ctx, readBucket)
+	require.NoError(t, err)
+
+	dataReadWriteBucket, sumReadWriteBucket, _ := newTestDataSumBucketsAndLocker(t)
+	moduleCacher := newModuleCacher(zap.NewNop(), dataReadWriteBucket, sumReadWriteBucket)
+	err = moduleCacher.PutModule(
+		context.Background(),
+		modulePin,
+		module,
+	)
+	require.NoError(t, err)
+	module, err = moduleCacher.GetModule(ctx, modulePin)
+	require.NoError(t, err)
+	readWriteBucket := storagemem.NewReadWriteBucket()
+	require.NoError(t, bufmodule.ModuleToBucket(ctx, module, readWriteBucket))
+	// Verify that the buf.md file was created.
+	exists, err := storage.Exists(ctx, readWriteBucket, bufmodule.DocumentationFilePath)
+	require.NoError(t, err)
+	require.True(t, exists)
+	require.Equal(t, bufmoduletesting.TestModuleDocumentation, module.Documentation())
+	// Parse config from original data
+	config, err := bufconfig.GetConfigForData(ctx, []byte(bufmoduletesting.TestModuleConfiguration))
+	require.NoError(t, err)
+	cachedConfig, err := bufconfig.GetConfigForBucket(ctx, readWriteBucket)
+	require.NoError(t, err)
+	require.Equal(t, config.Breaking, cachedConfig.Breaking)
+	require.Equal(t, config.Lint, cachedConfig.Lint)
 }
 
 func newTestDataSumBucketsAndLocker(t *testing.T) (storage.ReadWriteBucket, storage.ReadWriteBucket, filelock.Locker) {

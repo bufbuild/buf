@@ -19,6 +19,8 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -126,6 +128,26 @@ func run(
 			bufconfig.WriteConfigWithUncomment(),
 		)
 	}
+	// Need to include the default version (v1), lint config, and breaking config.
+	version := bufconfig.V1Version
+	writeConfigOptions = append(
+		writeConfigOptions,
+		bufconfig.WriteConfigWithVersion(version),
+	)
+	writeConfigOptions = append(
+		writeConfigOptions,
+		bufconfig.WriteConfigWithBreakingConfig(&bufbreakingconfig.Config{
+			Version: version,
+			Use:     []string{"FILE"},
+		}),
+	)
+	writeConfigOptions = append(
+		writeConfigOptions,
+		bufconfig.WriteConfigWithLintConfig(&buflintconfig.Config{
+			Version: version,
+			Use:     []string{"DEFAULT"},
+		}),
+	)
 	return bufconfig.WriteConfig(
 		ctx,
 		readWriteBucket,
