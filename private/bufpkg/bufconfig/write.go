@@ -275,19 +275,22 @@ func writeConfig(
 	var breakingConfigVersion string
 	breakingConfig := writeConfigOptions.breakingConfig
 	if breakingConfig != nil {
-		if breakingConfig.Version != version {
-			return fmt.Errorf("invalid version found for breaking config: %q", breakingConfig.Version)
+		breakingConfigVersion = breakingConfig.Version
+		if breakingConfigVersion != version {
+			return fmt.Errorf("invalid version found for breaking config: %q", breakingConfigVersion)
 		}
 		config.Breaking = breakingConfig
 	}
 	var lintConfigVersion string
 	lintConfig := writeConfigOptions.lintConfig
 	if lintConfig != nil {
-		if lintConfig.Version != version {
-			return fmt.Errorf("invalid version found for lint config: %q", breakingConfig.Version)
+		lintConfigVersion = lintConfig.Version
+		if lintConfigVersion != version {
+			return fmt.Errorf("invalid version found for lint config: %q", lintConfigVersion)
 		}
-		config.Lint = writeConfigOptions.lintConfig
+		config.Lint = lintConfig
 	}
+	// We should never hit this condition since we are already validating against `version`.
 	if breakingConfigVersion != lintConfigVersion {
 		return fmt.Errorf("breaking config version %q does not match lint config version %q", breakingConfigVersion, lintConfigVersion)
 	}

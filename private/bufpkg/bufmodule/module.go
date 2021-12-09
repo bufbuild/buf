@@ -65,7 +65,7 @@ func newModuleForProto(
 		ctx,
 		readWriteBucket,
 		dependencyModulePins,
-		nil,
+		nil, // The module identity is not stored on the proto. We rely on the layer above, (e.g. `ModuleReader`) to set this as needed.
 		protoModule.GetDocumentation(),
 		bufbreakingconfig.ConfigForProto(protoModule.GetBreakingConfig()),
 		buflintconfig.ConfigForProto(protoModule.GetLintConfig()),
