@@ -39,7 +39,7 @@ func NewULID(timestamp time.Time) (uuid.UUID, error) {
 	if err != nil {
 		return uuid.Nil, err
 	}
-	return uuid.FromBytes(id[:])
+	return uuid.UUID(id), nil
 }
 
 // ToDashless returns the uuid without dashes.
