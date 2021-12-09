@@ -44,7 +44,7 @@ func TestNew(t *testing.T) {
 	parsed, err := FromString(id.String())
 	require.NoError(t, err)
 	require.Equal(t, id, parsed)
-	require.True(t, ulid.Time(ulid.ULID(id).Time()).Equal(testTime))
+	require.True(t, ulid.Time(id.Time()).Equal(testTime))
 }
 
 func TestNewParallel(t *testing.T) {
@@ -83,6 +83,6 @@ func TestNewParallel(t *testing.T) {
 			continue
 		}
 		idsSeen[id] = struct{}{}
-		require.True(t, ulid.Time(ulid.ULID(id).Time()).Equal(testTime))
+		require.True(t, ulid.Time(id.Time()).Equal(testTime))
 	}
 }
