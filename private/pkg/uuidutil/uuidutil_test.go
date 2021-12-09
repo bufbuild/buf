@@ -15,13 +15,8 @@
 package uuidutil
 
 import (
-	"sync"
 	"testing"
-	"time"
 
-	"github.com/gofrs/uuid"
-	"github.com/oklog/ulid/v2"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -101,55 +96,4 @@ func TestFromStringSlice(t *testing.T) {
 	require.Equal(t, 2, len(uuids))
 	require.Equal(t, id1, uuids[0])
 	require.Equal(t, id2, uuids[1])
-}
-
-func TestNewUlid(t *testing.T) {
-	t.Parallel()
-	testTime := time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
-	id, err := NewULID(testTime)
-	require.NoError(t, err)
-	parsed, err := FromString(id.String())
-	require.NoError(t, err)
-	require.Equal(t, id, parsed)
-	require.True(t, ulid.Time(ulid.ULID(id).Time()).Equal(testTime))
-}
-
-func TestNewULIDParallel(t *testing.T) {
-	t.Parallel()
-	testTime := time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
-	numGoroutines := 100
-	wait := make(chan struct{})
-	errChan := make(chan error, numGoroutines)
-	idChan := make(chan uuid.UUID, numGoroutines)
-	wg := &sync.WaitGroup{}
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			<-wait
-			id, err := NewULID(testTime)
-			if err != nil {
-				errChan <- err
-				return
-			}
-			idChan <- id
-		}()
-	}
-	// Start all the goroutines
-	close(wait)
-	wg.Wait()
-	close(errChan)
-	for err := range errChan {
-		assert.NoError(t, err)
-	}
-	close(idChan)
-	idsSeen := make(map[uuid.UUID]struct{})
-	for id := range idChan {
-		if _, ok := idsSeen[id]; ok {
-			t.Errorf("duplicate UUID generated: %s appeared at least twice", id)
-			continue
-		}
-		idsSeen[id] = struct{}{}
-		require.True(t, ulid.Time(ulid.ULID(id).Time()).Equal(testTime))
-	}
 }
