@@ -439,6 +439,7 @@ func validateResponses(
 			appproto.NewPluginResponse(
 				response,
 				pluginConfig.PluginName(),
+				pluginConfig.Out,
 			),
 		)
 	}

@@ -1,0 +1,8 @@
+# The same plugin can be executed more than once, as long as they are written
+# to different output directories.
+version: v1
+plugins:
+  - name: java
+    out: foo
+  - name: java
+    out: bar
