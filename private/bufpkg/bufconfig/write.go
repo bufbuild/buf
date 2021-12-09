@@ -273,14 +273,20 @@ func writeConfig(
 		ModuleIdentity: writeConfigOptions.moduleIdentity,
 	}
 	var breakingConfigVersion string
-	if writeConfigOptions.breakingConfig != nil {
-		config.Breaking = writeConfigOptions.breakingConfig
-		breakingConfigVersion = version
+	breakingConfig := writeConfigOptions.breakingConfig
+	if breakingConfig != nil {
+		if breakingConfig.Version != version {
+			return fmt.Errorf("invalid version found for breaking config: %q", breakingConfig.Version)
+		}
+		config.Breaking = breakingConfig
 	}
 	var lintConfigVersion string
-	if writeConfigOptions.lintConfig != nil {
+	lintConfig := writeConfigOptions.lintConfig
+	if lintConfig != nil {
+		if lintConfig.Version != version {
+			return fmt.Errorf("invalid version found for lint config: %q", breakingConfig.Version)
+		}
 		config.Lint = writeConfigOptions.lintConfig
-		lintConfigVersion = version
 	}
 	if breakingConfigVersion != lintConfigVersion {
 		return fmt.Errorf("breaking config version %q does not match lint config version %q", breakingConfigVersion, lintConfigVersion)
@@ -365,24 +371,15 @@ func writeExternalConfig(
 	}
 }
 
-func validateVersion(version string) error {
-	switch version {
-	case V1Version, V1Beta1Version:
-		return nil
-	default:
-		return fmt.Errorf("invalid config version %q provided", version)
-	}
-}
-
 type tmplParam struct {
-	Uncomment         bool
-	Version           string
-	Name              string
-	NameUnset         bool
-	Dependencies      []string
-	DependenciesUnset bool
-	LintConfig        *buflintconfig.Config
-	BreakingConfig    *bufbreakingconfig.Config
+	Uncomment      bool
+	Version        string
+	Name           string
+	NameUnset      bool
+	Deps           []string
+	DepsUnset      bool
+	LintConfig     *buflintconfig.Config
+	BreakingConfig *bufbreakingconfig.Config
 }
 
 func newTmplParam(config *Config, dependencies []string, uncomment bool) *tmplParam {
@@ -405,14 +402,14 @@ func newTmplParam(config *Config, dependencies []string, uncomment bool) *tmplPa
 		dependenciesUnset = true
 	}
 	return &tmplParam{
-		Uncomment:         uncomment,
-		Version:           config.Version,
-		Name:              name,
-		NameUnset:         nameUnset,
-		Dependencies:      dependencies,
-		DependenciesUnset: dependenciesUnset,
-		LintConfig:        config.Lint,
-		BreakingConfig:    config.Breaking,
+		Uncomment:      uncomment,
+		Version:        config.Version,
+		Name:           name,
+		NameUnset:      nameUnset,
+		Deps:           dependencies,
+		DepsUnset:      dependenciesUnset,
+		LintConfig:     config.Lint,
+		BreakingConfig: config.Breaking,
 	}
 }
 
@@ -464,4 +461,13 @@ func validateWriteConfigOptions(writeConfigOptions *writeConfigOptions) error {
 		return errors.New("cannot set deps without a name for WriteConfig")
 	}
 	return nil
+}
+
+func validateVersion(version string) error {
+	switch version {
+	case V1Version, V1Beta1Version:
+		return nil
+	default:
+		return fmt.Errorf("invalid config version %q provided", version)
+	}
 }

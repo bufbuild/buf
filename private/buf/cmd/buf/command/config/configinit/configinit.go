@@ -129,20 +129,23 @@ func run(
 		)
 	}
 	// Need to include the default version (v1), lint config, and breaking config.
+	version := bufconfig.V1Version
 	writeConfigOptions = append(
 		writeConfigOptions,
-		bufconfig.WriteConfigWithVersion(bufconfig.V1Version),
+		bufconfig.WriteConfigWithVersion(version),
 	)
 	writeConfigOptions = append(
 		writeConfigOptions,
 		bufconfig.WriteConfigWithBreakingConfig(&bufbreakingconfig.Config{
-			Use: []string{"FILE"},
+			Version: version,
+			Use:     []string{"FILE"},
 		}),
 	)
 	writeConfigOptions = append(
 		writeConfigOptions,
 		bufconfig.WriteConfigWithLintConfig(&buflintconfig.Config{
-			Use: []string{"DEFAULT"},
+			Version: version,
+			Use:     []string{"DEFAULT"},
 		}),
 	)
 	return bufconfig.WriteConfig(
