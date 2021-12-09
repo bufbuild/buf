@@ -28,12 +28,9 @@ func New(timestamp time.Time) (ulid.ULID, error) {
 }
 
 // FromString returns the ULID from the string.
-//
-// As opposed to uuid.FromString, this only accepts uuids with dashes.
-// Always use this instead of uuid.FromString.
 func FromString(s string) (ulid.ULID, error) {
 	if len(s) != ulid.EncodedSize {
-		return ulid.ULID{}, fmt.Errorf("expected uuid to be of length 36 but was %d: %s", len(s), s)
+		return ulid.ULID{}, fmt.Errorf("expected ULID to be of length %d but was %d: %s", ulid.EncodedSize, len(s), s)
 	}
 	return ulid.ParseStrict(s)
 }
