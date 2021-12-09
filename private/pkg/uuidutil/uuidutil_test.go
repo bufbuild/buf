@@ -15,9 +15,13 @@
 package uuidutil
 
 import (
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/gofrs/uuid"
+	"github.com/oklog/ulid/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,6 +39,7 @@ func TestRoundTrip(t *testing.T) {
 }
 
 func TestFromStringFailsWithDashless(t *testing.T) {
+	t.Parallel()
 	id, err := New()
 	require.NoError(t, err)
 	dashless, err := ToDashless(id)
@@ -44,6 +49,7 @@ func TestFromStringFailsWithDashless(t *testing.T) {
 }
 
 func TestFromDashlessFailsWithUUID(t *testing.T) {
+	t.Parallel()
 	id, err := New()
 	require.NoError(t, err)
 	_, err = FromDashless(id.String())
@@ -51,6 +57,7 @@ func TestFromDashlessFailsWithUUID(t *testing.T) {
 }
 
 func TestValidateFailsWithDashless(t *testing.T) {
+	t.Parallel()
 	id, err := New()
 	require.NoError(t, err)
 	dashless, err := ToDashless(id)
@@ -60,6 +67,7 @@ func TestValidateFailsWithDashless(t *testing.T) {
 }
 
 func TestValidateDashlessFailsWithUUID(t *testing.T) {
+	t.Parallel()
 	id, err := New()
 	require.NoError(t, err)
 	err = ValidateDashless(id.String())
@@ -67,6 +75,7 @@ func TestValidateDashlessFailsWithUUID(t *testing.T) {
 }
 
 func TestFromStringSliceFailsWithDashless(t *testing.T) {
+	t.Parallel()
 	id1, err := New()
 	require.NoError(t, err)
 	id2, err := New()
@@ -81,6 +90,7 @@ func TestFromStringSliceFailsWithDashless(t *testing.T) {
 }
 
 func TestFromStringSlice(t *testing.T) {
+	t.Parallel()
 	id1, err := New()
 	require.NoError(t, err)
 	id2, err := New()
@@ -95,9 +105,51 @@ func TestFromStringSlice(t *testing.T) {
 
 func TestNewUlid(t *testing.T) {
 	t.Parallel()
-	ulid, err := NewULID(time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC))
+	testTime := time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
+	id, err := NewULID(testTime)
 	require.NoError(t, err)
-	parsed, err := FromString(ulid.String())
+	parsed, err := FromString(id.String())
 	require.NoError(t, err)
-	require.Equal(t, ulid, parsed)
+	require.Equal(t, id, parsed)
+	require.True(t, ulid.Time(ulid.ULID(id).Time()).Equal(testTime))
+}
+
+func TestNewULIDParallel(t *testing.T) {
+	t.Parallel()
+	testTime := time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
+	numGoroutines := 100
+	wait := make(chan struct{})
+	errChan := make(chan error, numGoroutines)
+	idChan := make(chan uuid.UUID, numGoroutines)
+	wg := &sync.WaitGroup{}
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-wait
+			id, err := NewULID(testTime)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			idChan <- id
+		}()
+	}
+	// Start all the goroutines
+	close(wait)
+	wg.Wait()
+	close(errChan)
+	for err := range errChan {
+		assert.NoError(t, err)
+	}
+	close(idChan)
+	idsSeen := make(map[uuid.UUID]struct{})
+	for id := range idChan {
+		if _, ok := idsSeen[id]; ok {
+			t.Errorf("duplicate UUID generated: %s appeared at least twice", id)
+			continue
+		}
+		idsSeen[id] = struct{}{}
+		require.True(t, ulid.Time(ulid.ULID(id).Time()).Equal(testTime))
+	}
 }
