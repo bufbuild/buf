@@ -76,7 +76,7 @@ func TestWriteConfigMismatchedConfigVersions(t *testing.T) {
 		}
 		err = WriteConfig(context.Background(), readWriteBucket, writeConfigOptions...)
 		require.Error(t, err)
-		require.Equal(t, err.Error(), `invalid version found for breaking config: "v1"`)
+		require.Equal(t, err.Error(), `version "v1" found for breaking config, does not match top level config version: "v1beta1"`)
 	})
 	t.Run("invalid lint config", func(t *testing.T) {
 		storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
@@ -91,6 +91,6 @@ func TestWriteConfigMismatchedConfigVersions(t *testing.T) {
 		}
 		err = WriteConfig(context.Background(), readWriteBucket, writeConfigOptions...)
 		require.Error(t, err)
-		require.Equal(t, err.Error(), `invalid version found for lint config: "v1"`)
+		require.Equal(t, err.Error(), `version "v1" found for lint config, does not match top level config version: "v1beta1"`)
 	})
 }

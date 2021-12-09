@@ -277,7 +277,7 @@ func writeConfig(
 	if breakingConfig != nil {
 		breakingConfigVersion = breakingConfig.Version
 		if breakingConfigVersion != version {
-			return fmt.Errorf("invalid version found for breaking config: %q", breakingConfigVersion)
+			return fmt.Errorf("version %q found for breaking config, does not match top level config version: %q", breakingConfigVersion, version)
 		}
 		config.Breaking = breakingConfig
 	}
@@ -286,7 +286,7 @@ func writeConfig(
 	if lintConfig != nil {
 		lintConfigVersion = lintConfig.Version
 		if lintConfigVersion != version {
-			return fmt.Errorf("invalid version found for lint config: %q", lintConfigVersion)
+			return fmt.Errorf("version %q found for lint config, does not match top level config version: %q", lintConfigVersion, version)
 		}
 		config.Lint = lintConfig
 	}

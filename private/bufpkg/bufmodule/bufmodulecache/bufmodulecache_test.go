@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
@@ -302,6 +303,13 @@ func TestModuleReaderCacherWithConfiguration(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, exists)
 	require.Equal(t, bufmoduletesting.TestModuleDocumentation, module.Documentation())
+	// Parse config from original data
+	config, err := bufconfig.GetConfigForData(ctx, []byte(bufmoduletesting.TestModuleConfiguration))
+	require.NoError(t, err)
+	cachedConfig, err := bufconfig.GetConfigForBucket(ctx, readWriteBucket)
+	require.NoError(t, err)
+	require.Equal(t, config.Breaking, cachedConfig.Breaking)
+	require.Equal(t, config.Lint, cachedConfig.Lint)
 }
 
 func newTestDataSumBucketsAndLocker(t *testing.T) (storage.ReadWriteBucket, storage.ReadWriteBucket, filelock.Locker) {
