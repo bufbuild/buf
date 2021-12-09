@@ -120,6 +120,28 @@ type ExternalConfigV1 struct {
 	IgnoreUnstablePackages bool                `json:"ignore_unstable_packages,omitempty" yaml:"ignore_unstable_packages,omitempty"`
 }
 
+// ExternalConfigV1Beta1ForConfig takes a *Config and returns the v1beta1 external config representation.
+func ExternalConfigV1Beta1ForConfig(config *Config) ExternalConfigV1Beta1 {
+	return ExternalConfigV1Beta1{
+		Use:                    config.Use,
+		Except:                 config.Except,
+		Ignore:                 config.IgnoreRootPaths,
+		IgnoreOnly:             config.IgnoreIDOrCategoryToRootPaths,
+		IgnoreUnstablePackages: config.IgnoreUnstablePackages,
+	}
+}
+
+// ExternalConfigV1ForConfig takes a *Config and returns the v1 external config representation.
+func ExternalConfigV1ForConfig(config *Config) ExternalConfigV1 {
+	return ExternalConfigV1{
+		Use:                    config.Use,
+		Except:                 config.Except,
+		Ignore:                 config.IgnoreRootPaths,
+		IgnoreOnly:             config.IgnoreIDOrCategoryToRootPaths,
+		IgnoreUnstablePackages: config.IgnoreUnstablePackages,
+	}
+}
+
 // BytesForConfig takes a *Config and returns the deterministic []byte representation.
 // We use an unexported intermediary JSON form and sort all fields to ensure that the bytes
 // associated with the *Config are deterministic.

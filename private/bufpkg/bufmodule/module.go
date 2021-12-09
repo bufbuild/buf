@@ -65,6 +65,7 @@ func newModuleForProto(
 		ctx,
 		readWriteBucket,
 		dependencyModulePins,
+		nil, // The module identity is not stored on the proto. We rely on the layer above, (e.g. `ModuleReader`) to set this as needed.
 		protoModule.GetDocumentation(),
 		bufbreakingconfig.ConfigForProto(protoModule.GetBreakingConfig()),
 		buflintconfig.ConfigForProto(protoModule.GetLintConfig()),
@@ -89,10 +90,16 @@ func newModuleForBucket(
 	if err != nil {
 		return nil, err
 	}
+	var moduleIdentity bufmoduleref.ModuleIdentity
+	// if the module config has an identity, set the module identity
+	if moduleConfig.ModuleIdentity != nil {
+		moduleIdentity = moduleConfig.ModuleIdentity
+	}
 	return newModule(
 		ctx,
 		storage.MapReadBucket(sourceReadBucket, storage.MatchPathExt(".proto")),
 		dependencyModulePins,
+		moduleIdentity,
 		documentation,
 		moduleConfig.Breaking,
 		moduleConfig.Lint,
@@ -106,6 +113,7 @@ func newModule(
 	// must only contain .proto files
 	sourceReadBucket storage.ReadBucket,
 	dependencyModulePins []bufmoduleref.ModulePin,
+	moduleIdentity bufmoduleref.ModuleIdentity,
 	documentation string,
 	breakingConfig *bufbreakingconfig.Config,
 	lintConfig *buflintconfig.Config,
@@ -119,6 +127,7 @@ func newModule(
 	module := &module{
 		sourceReadBucket:     sourceReadBucket,
 		dependencyModulePins: dependencyModulePins,
+		moduleIdentity:       moduleIdentity,
 		documentation:        documentation,
 		breakingConfig:       breakingConfig,
 		lintConfig:           lintConfig,
