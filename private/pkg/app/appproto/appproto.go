@@ -25,6 +25,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
 	"unicode"
 	"unicode/utf8"
 
@@ -178,13 +179,19 @@ func WriteResponseWithInsertionPointReadBucket(
 type PluginResponse struct {
 	Response   *pluginpb.CodeGeneratorResponse
 	PluginName string
+	PluginOut  string
 }
 
 // NewPluginResponse retruns a new *PluginResponse.
-func NewPluginResponse(response *pluginpb.CodeGeneratorResponse, pluginName string) *PluginResponse {
+func NewPluginResponse(
+	response *pluginpb.CodeGeneratorResponse,
+	pluginName string,
+	pluginOut string,
+) *PluginResponse {
 	return &PluginResponse{
 		Response:   response,
 		PluginName: pluginName,
+		PluginOut:  pluginOut,
 	}
 }
 
@@ -198,7 +205,7 @@ func ValidatePluginResponses(pluginResponses []*PluginResponse) error {
 				// to files that already exist.
 				continue
 			}
-			fileName := file.GetName()
+			fileName := filepath.Join(pluginResponse.PluginOut, file.GetName())
 			if pluginName, ok := seen[fileName]; ok {
 				return fmt.Errorf(
 					"file %q was generated multiple times: once by plugin %q and again by plugin %q",

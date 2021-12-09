@@ -155,6 +155,22 @@ func TestProtoFileRefIncludePackageFiles(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestGenerateDuplicatePlugins(t *testing.T) {
+	tempDirPath := t.TempDir()
+	testRunSuccess(
+		t,
+		"--output",
+		tempDirPath,
+		"--template",
+		filepath.Join("testdata", "duplicate_plugins", "buf.gen.yaml"),
+		filepath.Join("testdata", "duplicate_plugins"),
+	)
+	_, err := os.Stat(filepath.Join(tempDirPath, "foo", "a", "v1", "A.java"))
+	require.NoError(t, err)
+	_, err = os.Stat(filepath.Join(tempDirPath, "bar", "a", "v1", "A.java"))
+	require.NoError(t, err)
+}
+
 func TestOutputWithPathEqualToExclude(t *testing.T) {
 	tempDirPath := t.TempDir()
 	testRunStdoutStderr(
