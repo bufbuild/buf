@@ -82,6 +82,24 @@ func (s *authzService) UserCanSeeOrganizationSettings(ctx context.Context, organ
 	return response.Authorized, nil
 }
 
+// UserCanUpdateOrganizationSettings returns whether the user is authorized
+// to update organization settings.
+func (s *authzService) UserCanUpdateOrganizationSettings(ctx context.Context, organizationId string) (authorized bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanUpdateOrganizationSettings(
+		ctx,
+		&v1alpha1.UserCanUpdateOrganizationSettingsRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Authorized, nil
+}
+
 // UserCanReadPlugin returns whether the user has read access to the specified plugin.
 func (s *authzService) UserCanReadPlugin(
 	ctx context.Context,
@@ -408,6 +426,29 @@ func (s *authzService) UserCanManageRepositoryContributors(ctx context.Context, 
 	return response.AuthorizedRoles, nil
 }
 
+// UserCanManageRepositoryContributor returns whether the user is authorized to manage
+// a specific user to the repository and the list of roles they can manage.
+func (s *authzService) UserCanManageRepositoryContributor(
+	ctx context.Context,
+	repositoryId string,
+	userId string,
+) (authorizedRoles []v1alpha1.RepositoryRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanManageRepositoryContributor(
+		ctx,
+		&v1alpha1.UserCanManageRepositoryContributorRequest{
+			RepositoryId: repositoryId,
+			UserId:       userId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.AuthorizedRoles, nil
+}
+
 // UserCanManagePluginContributors returns whether the user is authorized to manage
 // any contributors to the plugin and the list of roles they can manage.
 func (s *authzService) UserCanManagePluginContributors(ctx context.Context, pluginId string) (authorizedRoles []v1alpha1.PluginRole, _ error) {
@@ -426,6 +467,29 @@ func (s *authzService) UserCanManagePluginContributors(ctx context.Context, plug
 	return response.AuthorizedRoles, nil
 }
 
+// UserCanManagePluginContributor returns whether the user is authorized to manage
+// a specific user to the plugin and the list of roles they can manage.
+func (s *authzService) UserCanManagePluginContributor(
+	ctx context.Context,
+	pluginId string,
+	userId string,
+) (authorizedRoles []v1alpha1.PluginRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanManagePluginContributor(
+		ctx,
+		&v1alpha1.UserCanManagePluginContributorRequest{
+			PluginId: pluginId,
+			UserId:   userId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.AuthorizedRoles, nil
+}
+
 // UserCanManageTemplateContributors returns whether the user is authorized to manage
 // any contributors to the template and the list of roles they can manage.
 func (s *authzService) UserCanManageTemplateContributors(ctx context.Context, templateId string) (authorizedRoles []v1alpha1.TemplateRole, _ error) {
@@ -436,6 +500,29 @@ func (s *authzService) UserCanManageTemplateContributors(ctx context.Context, te
 		ctx,
 		&v1alpha1.UserCanManageTemplateContributorsRequest{
 			TemplateId: templateId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.AuthorizedRoles, nil
+}
+
+// UserCanManageTemplateContributor returns whether the user is authorized to manage
+// a specific user to the template and the list of roles they can manage.
+func (s *authzService) UserCanManageTemplateContributor(
+	ctx context.Context,
+	templateId string,
+	userId string,
+) (authorizedRoles []v1alpha1.TemplateRole, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.UserCanManageTemplateContributor(
+		ctx,
+		&v1alpha1.UserCanManageTemplateContributorRequest{
+			TemplateId: templateId,
+			UserId:     userId,
 		},
 	)
 	if err != nil {
