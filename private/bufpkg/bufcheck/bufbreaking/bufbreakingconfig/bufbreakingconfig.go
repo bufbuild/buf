@@ -91,6 +91,9 @@ func ConfigForProto(protoConfig *breakingv1.Config) *Config {
 
 // ProtoForConfig takes a *Config and returns the proto representation.
 func ProtoForConfig(config *Config) *breakingv1.Config {
+	if config == nil {
+		return nil
+	}
 	return &breakingv1.Config{
 		UseIds:                 config.Use,
 		ExceptIds:              config.Except,
