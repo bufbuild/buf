@@ -76,6 +76,9 @@ func NewConfigV1(externalConfig ExternalConfigV1) *Config {
 
 // ConfigForProto returns the Config given the proto.
 func ConfigForProto(protoConfig *breakingv1.Config) *Config {
+	if protoConfig == nil {
+		return nil
+	}
 	return &Config{
 		Use:                           protoConfig.GetUseIds(),
 		Except:                        protoConfig.GetExceptIds(),
