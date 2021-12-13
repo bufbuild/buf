@@ -25,6 +25,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
+	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"go.uber.org/multierr"
@@ -308,12 +310,20 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 	for i, dependencyModulePin := range dependencyModulePins {
 		protoModulePins[i] = bufmoduleref.NewProtoModulePinForModulePin(dependencyModulePin)
 	}
+	var protoBreakingConfig *breakingv1.Config
+	if module.BreakingConfig() != nil {
+		protoBreakingConfig = bufbreakingconfig.ProtoForConfig(module.BreakingConfig())
+	}
+	var protoLintConfig *lintv1.Config
+	if module.LintConfig() != nil {
+		protoLintConfig = buflintconfig.ProtoForConfig(module.LintConfig())
+	}
 	protoModule := &modulev1alpha1.Module{
 		Files:          protoModuleFiles,
 		Dependencies:   protoModulePins,
 		Documentation:  module.Documentation(),
-		BreakingConfig: bufbreakingconfig.ProtoForConfig(module.BreakingConfig()),
-		LintConfig:     buflintconfig.ProtoForConfig(module.LintConfig()),
+		BreakingConfig: protoBreakingConfig,
+		LintConfig:     protoLintConfig,
 	}
 	if err := ValidateProtoModule(protoModule); err != nil {
 		return nil, err
