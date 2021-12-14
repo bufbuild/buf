@@ -31,7 +31,7 @@ func init() {
 
 func check() error {
 	buildInfo, ok := debug.ReadBuildInfo()
-	if !ok {
+	if !ok || buildInfo.Main.Path == "" {
 		if !strings.HasSuffix(os.Args[0], testSuffix) && filepath.Base(os.Args[0]) != debugBin {
 			return errors.New("github.com/bufbuild/buf/private code must only be imported by github.com/bufbuild projects")
 		}
