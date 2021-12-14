@@ -32,13 +32,23 @@ func init() {
 func check() error {
 	buildInfo, ok := debug.ReadBuildInfo()
 	if !ok {
-		if !strings.HasSuffix(os.Args[0], testSuffix) && filepath.Base(os.Args[0]) != debugBin {
-			return errors.New("github.com/bufbuild/buf/private code must only be imported by github.com/bufbuild projects")
+		if shouldSkip() {
+			return nil
 		}
-		return nil
+		return errors.New("github.com/bufbuild/buf/private code must only be imported by github.com/bufbuild projects")
+	}
+	if buildInfo.Main.Path == "" {
+		if shouldSkip() {
+			return nil
+		}
+		return errors.New("github.com/bufbuild/buf/private code must only be imported by github.com/bufbuild projects")
 	}
 	if !strings.HasPrefix(buildInfo.Main.Path, "github.com/bufbuild") {
 		return fmt.Errorf("github.com/bufbuild/buf/private code must only be imported by github.com/bufbuild projects but was used in %s", buildInfo.Main.Path)
 	}
 	return nil
+}
+
+func shouldSkip() bool {
+	return strings.HasSuffix(os.Args[0], testSuffix) || filepath.Base(os.Args[0]) == debugBin
 }
