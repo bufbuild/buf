@@ -1984,7 +1984,7 @@ type UserCanManageRepositoryContributorsRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The ID of the repository for which to check
-	// whether the user is authorized.
+	// whether the user is authorized to manage.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 }
 
@@ -2082,10 +2082,10 @@ type UserCanManageRepositoryContributorRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The ID of the repository for which to check
-	// whether the user is authorized.
+	// whether the user is authorized to manage.
 	RepositoryId string `protobuf:"bytes,1,opt,name=repository_id,json=repositoryId,proto3" json:"repository_id,omitempty"`
 	// The ID of the target user for which to check
-	// whether the user is authorized.
+	// whether the user is authorized to manage.
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 }
 
@@ -2140,7 +2140,7 @@ type UserCanManageRepositoryContributorResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of roles that the user is authorized to manage against target user,
+	// The list of roles that the user is authorized to manage against the target user,
 	// empty list means the user is not authorized to manage the target user.
 	AuthorizedRoles []RepositoryRole `protobuf:"varint,1,rep,packed,name=authorized_roles,json=authorizedRoles,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"authorized_roles,omitempty"`
 }
@@ -2190,7 +2190,7 @@ type UserCanManagePluginContributorsRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The ID of the plugin for which to check
-	// whether the user is authorized.
+	// whether the user is authorized to manage.
 	PluginId string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 }
 
@@ -2288,10 +2288,10 @@ type UserCanManagePluginContributorRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The ID of the plugin for which to check
-	// whether the user is authorized.
+	// whether the user is authorized to manage.
 	PluginId string `protobuf:"bytes,1,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 	// The ID of the target user for which to check
-	// whether the user is authorized.
+	// whether the user is authorized to manage.
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 }
 
@@ -2346,7 +2346,7 @@ type UserCanManagePluginContributorResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of roles that the user is authorized to manage against target user,
+	// The list of roles that the user is authorized to manage against the target user,
 	// empty list means the user is not authorized to manage the target user.
 	AuthorizedRoles []PluginRole `protobuf:"varint,1,rep,packed,name=authorized_roles,json=authorizedRoles,proto3,enum=buf.alpha.registry.v1alpha1.PluginRole" json:"authorized_roles,omitempty"`
 }
@@ -2396,7 +2396,7 @@ type UserCanManageTemplateContributorsRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The ID of the template for which to check
-	// whether the user is authorized.
+	// whether the user is authorized to manage.
 	TemplateId string `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`
 }
 
@@ -2494,10 +2494,10 @@ type UserCanManageTemplateContributorRequest struct {
 	unknownFields protoimpl.UnknownFields
 
 	// The ID of the template for which to check
-	// whether the user is authorized.
+	// whether the user is authorized to manage.
 	TemplateId string `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`
 	// The ID of the target user for which to check
-	// whether the user is authorized.
+	// whether the user is authorized to manage.
 	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 }
 
@@ -2552,7 +2552,7 @@ type UserCanManageTemplateContributorResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of roles that the user is authorized to manage against target user,
+	// The list of roles that the user is authorized to manage against the target user,
 	// empty list means the user is not authorized to manage the target user.
 	AuthorizedRoles []TemplateRole `protobuf:"varint,1,rep,packed,name=authorized_roles,json=authorizedRoles,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"authorized_roles,omitempty"`
 }

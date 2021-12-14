@@ -427,7 +427,7 @@ func (s *authzService) UserCanManageRepositoryContributors(ctx context.Context, 
 }
 
 // UserCanManageRepositoryContributor returns whether the user is authorized to manage
-// a specific user to the repository and the list of roles they can manage.
+// a specific user on the repository and the list of roles they can manage.
 func (s *authzService) UserCanManageRepositoryContributor(
 	ctx context.Context,
 	repositoryId string,
@@ -468,7 +468,7 @@ func (s *authzService) UserCanManagePluginContributors(ctx context.Context, plug
 }
 
 // UserCanManagePluginContributor returns whether the user is authorized to manage
-// a specific user to the plugin and the list of roles they can manage.
+// a specific user on the plugin and the list of roles they can manage.
 func (s *authzService) UserCanManagePluginContributor(
 	ctx context.Context,
 	pluginId string,
@@ -509,7 +509,7 @@ func (s *authzService) UserCanManageTemplateContributors(ctx context.Context, te
 }
 
 // UserCanManageTemplateContributor returns whether the user is authorized to manage
-// a specific user to the template and the list of roles they can manage.
+// a specific user on the template and the list of roles they can manage.
 func (s *authzService) UserCanManageTemplateContributor(
 	ctx context.Context,
 	templateId string,

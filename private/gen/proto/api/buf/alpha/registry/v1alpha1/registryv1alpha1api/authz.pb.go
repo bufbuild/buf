@@ -106,7 +106,7 @@ type AuthzService interface {
 	// any contributors to the repository and the list of roles they can manage.
 	UserCanManageRepositoryContributors(ctx context.Context, repositoryId string) (authorizedRoles []v1alpha1.RepositoryRole, err error)
 	// UserCanManageRepositoryContributor returns whether the user is authorized to manage
-	// a specific user to the repository and the list of roles they can manage.
+	// a specific user on the repository and the list of roles they can manage.
 	UserCanManageRepositoryContributor(
 		ctx context.Context,
 		repositoryId string,
@@ -116,7 +116,7 @@ type AuthzService interface {
 	// any contributors to the plugin and the list of roles they can manage.
 	UserCanManagePluginContributors(ctx context.Context, pluginId string) (authorizedRoles []v1alpha1.PluginRole, err error)
 	// UserCanManagePluginContributor returns whether the user is authorized to manage
-	// a specific user to the plugin and the list of roles they can manage.
+	// a specific user on the plugin and the list of roles they can manage.
 	UserCanManagePluginContributor(
 		ctx context.Context,
 		pluginId string,
@@ -126,7 +126,7 @@ type AuthzService interface {
 	// any contributors to the template and the list of roles they can manage.
 	UserCanManageTemplateContributors(ctx context.Context, templateId string) (authorizedRoles []v1alpha1.TemplateRole, err error)
 	// UserCanManageTemplateContributor returns whether the user is authorized to manage
-	// a specific user to the template and the list of roles they can manage.
+	// a specific user on the template and the list of roles they can manage.
 	UserCanManageTemplateContributor(
 		ctx context.Context,
 		templateId string,

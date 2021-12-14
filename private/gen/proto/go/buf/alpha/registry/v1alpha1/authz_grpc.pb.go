@@ -99,19 +99,19 @@ type AuthzServiceClient interface {
 	// any contributors to the repository and the list of roles they can manage.
 	UserCanManageRepositoryContributors(ctx context.Context, in *UserCanManageRepositoryContributorsRequest, opts ...grpc.CallOption) (*UserCanManageRepositoryContributorsResponse, error)
 	// UserCanManageRepositoryContributor returns whether the user is authorized to manage
-	// a specific user to the repository and the list of roles they can manage.
+	// a specific user on the repository and the list of roles they can manage.
 	UserCanManageRepositoryContributor(ctx context.Context, in *UserCanManageRepositoryContributorRequest, opts ...grpc.CallOption) (*UserCanManageRepositoryContributorResponse, error)
 	// UserCanManagePluginContributors returns whether the user is authorized to manage
 	// any contributors to the plugin and the list of roles they can manage.
 	UserCanManagePluginContributors(ctx context.Context, in *UserCanManagePluginContributorsRequest, opts ...grpc.CallOption) (*UserCanManagePluginContributorsResponse, error)
 	// UserCanManagePluginContributor returns whether the user is authorized to manage
-	// a specific user to the plugin and the list of roles they can manage.
+	// a specific user on the plugin and the list of roles they can manage.
 	UserCanManagePluginContributor(ctx context.Context, in *UserCanManagePluginContributorRequest, opts ...grpc.CallOption) (*UserCanManagePluginContributorResponse, error)
 	// UserCanManageTemplateContributors returns whether the user is authorized to manage
 	// any contributors to the template and the list of roles they can manage.
 	UserCanManageTemplateContributors(ctx context.Context, in *UserCanManageTemplateContributorsRequest, opts ...grpc.CallOption) (*UserCanManageTemplateContributorsResponse, error)
 	// UserCanManageTemplateContributor returns whether the user is authorized to manage
-	// a specific user to the template and the list of roles they can manage.
+	// a specific user on the template and the list of roles they can manage.
 	UserCanManageTemplateContributor(ctx context.Context, in *UserCanManageTemplateContributorRequest, opts ...grpc.CallOption) (*UserCanManageTemplateContributorResponse, error)
 }
 
@@ -424,19 +424,19 @@ type AuthzServiceServer interface {
 	// any contributors to the repository and the list of roles they can manage.
 	UserCanManageRepositoryContributors(context.Context, *UserCanManageRepositoryContributorsRequest) (*UserCanManageRepositoryContributorsResponse, error)
 	// UserCanManageRepositoryContributor returns whether the user is authorized to manage
-	// a specific user to the repository and the list of roles they can manage.
+	// a specific user on the repository and the list of roles they can manage.
 	UserCanManageRepositoryContributor(context.Context, *UserCanManageRepositoryContributorRequest) (*UserCanManageRepositoryContributorResponse, error)
 	// UserCanManagePluginContributors returns whether the user is authorized to manage
 	// any contributors to the plugin and the list of roles they can manage.
 	UserCanManagePluginContributors(context.Context, *UserCanManagePluginContributorsRequest) (*UserCanManagePluginContributorsResponse, error)
 	// UserCanManagePluginContributor returns whether the user is authorized to manage
-	// a specific user to the plugin and the list of roles they can manage.
+	// a specific user on the plugin and the list of roles they can manage.
 	UserCanManagePluginContributor(context.Context, *UserCanManagePluginContributorRequest) (*UserCanManagePluginContributorResponse, error)
 	// UserCanManageTemplateContributors returns whether the user is authorized to manage
 	// any contributors to the template and the list of roles they can manage.
 	UserCanManageTemplateContributors(context.Context, *UserCanManageTemplateContributorsRequest) (*UserCanManageTemplateContributorsResponse, error)
 	// UserCanManageTemplateContributor returns whether the user is authorized to manage
-	// a specific user to the template and the list of roles they can manage.
+	// a specific user on the template and the list of roles they can manage.
 	UserCanManageTemplateContributor(context.Context, *UserCanManageTemplateContributorRequest) (*UserCanManageTemplateContributorResponse, error)
 }
 
