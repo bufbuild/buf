@@ -32,9 +32,6 @@ type AuthzService interface {
 	// UserCanSeeOrganizationSettings returns whether the user is authorized
 	// to see organization settings.
 	UserCanSeeOrganizationSettings(ctx context.Context, organizationId string) (authorized bool, err error)
-	// UserCanUpdateOrganizationSettings returns whether the user is authorized
-	// to update organization settings.
-	UserCanUpdateOrganizationSettings(ctx context.Context, organizationId string) (authorized bool, err error)
 	// UserCanReadPlugin returns whether the user has read access to the specified plugin.
 	UserCanReadPlugin(
 		ctx context.Context,
@@ -105,31 +102,10 @@ type AuthzService interface {
 	// UserCanManageRepositoryContributors returns whether the user is authorized to manage
 	// any contributors to the repository and the list of roles they can manage.
 	UserCanManageRepositoryContributors(ctx context.Context, repositoryId string) (authorizedRoles []v1alpha1.RepositoryRole, err error)
-	// UserCanManageRepositoryContributor returns whether the user is authorized to manage
-	// a specific user on the repository and the list of roles they can manage.
-	UserCanManageRepositoryContributor(
-		ctx context.Context,
-		repositoryId string,
-		userId string,
-	) (authorizedRoles []v1alpha1.RepositoryRole, err error)
 	// UserCanManagePluginContributors returns whether the user is authorized to manage
 	// any contributors to the plugin and the list of roles they can manage.
 	UserCanManagePluginContributors(ctx context.Context, pluginId string) (authorizedRoles []v1alpha1.PluginRole, err error)
-	// UserCanManagePluginContributor returns whether the user is authorized to manage
-	// a specific user on the plugin and the list of roles they can manage.
-	UserCanManagePluginContributor(
-		ctx context.Context,
-		pluginId string,
-		userId string,
-	) (authorizedRoles []v1alpha1.PluginRole, err error)
 	// UserCanManageTemplateContributors returns whether the user is authorized to manage
 	// any contributors to the template and the list of roles they can manage.
 	UserCanManageTemplateContributors(ctx context.Context, templateId string) (authorizedRoles []v1alpha1.TemplateRole, err error)
-	// UserCanManageTemplateContributor returns whether the user is authorized to manage
-	// a specific user on the template and the list of roles they can manage.
-	UserCanManageTemplateContributor(
-		ctx context.Context,
-		templateId string,
-		userId string,
-	) (authorizedRoles []v1alpha1.TemplateRole, err error)
 }

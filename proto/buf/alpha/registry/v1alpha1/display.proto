@@ -1,0 +1,117 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/registry/v1alpha1/role.proto";
+
+// DisplayService is the display service that
+// provides information regarding to UI element display.
+service DisplayService {
+  // DisplayRepositoryRolesToManage returns which roles should be displayed
+  // to the user when they are managing contributors on the repository.
+  rpc DisplayRepositoryRolesToManage(DisplayRepositoryRolesToManageRequest) returns (DisplayRepositoryRolesToManageResponse);
+  // DisplayRepositoryRolesToManageByUser returns which roles should be displayed
+  // to the user when they are managing a specific contributor on the repository.
+  rpc DisplayRepositoryRolesToManageByUser(DisplayRepositoryRolesToManageByUserRequest) returns (DisplayRepositoryRolesToManageByUserResponse);
+  // DisplayPluginRolesToManage returns which roles should be displayed
+  // to the user when they are managing contributors on the plugin.
+  rpc DisplayPluginRolesToManage(DisplayPluginRolesToManageRequest) returns (DisplayPluginRolesToManageResponse);
+  // DisplayPluginRolesToManageByUser returns which roles should be displayed
+  // to the user when they are managing a specific contributor on the plugin.
+  rpc DisplayPluginRolesToManageByUser(DisplayPluginRolesToManageByUserRequest) returns (DisplayPluginRolesToManageByUserResponse);
+  // DisplayTemplateRolesToManage returns which roles should be displayed
+  // to the user when they are managing contributors on the template.
+  rpc DisplayTemplateRolesToManage(DisplayTemplateRolesToManageRequest) returns (DisplayTemplateRolesToManageResponse);
+  // DisplayTemplateRolesToManageByUser returns which roles should be displayed
+  // to the user when they are managing a specific contributor on the template.
+  rpc DisplayTemplateRolesToManageByUser(DisplayTemplateRolesToManageByUserRequest) returns (DisplayTemplateRolesToManageByUserResponse);
+}
+
+message DisplayRepositoryRolesToManageRequest {
+  // The ID of the repository for which to check
+  // which roles should be displayed to manage.
+  string repository_id = 1;
+}
+
+message DisplayRepositoryRolesToManageResponse {
+  // The list of roles that should be displayed to the user to manage.
+  repeated RepositoryRole roles = 1;
+}
+
+message DisplayRepositoryRolesToManageByUserRequest {
+  // The ID of the repository for which to check
+  // which roles should be displayed to manage.
+  string repository_id = 1;
+  // The ID of the target user for which to check
+  // which roles should be displayed to manage.
+  string user_id = 2;
+}
+
+message DisplayRepositoryRolesToManageByUserResponse {
+  // The list of roles that should be displayed to the user to manage.
+  repeated RepositoryRole roles = 1;
+}
+
+message DisplayPluginRolesToManageRequest {
+  // The ID of the plugin for which to check
+  // which roles should be displayed to manage.
+  string plugin_id = 1;
+}
+
+message DisplayPluginRolesToManageResponse {
+  // The list of roles that should be displayed to the user to manage.
+  repeated PluginRole roles = 1;
+}
+
+message DisplayPluginRolesToManageByUserRequest {
+  // The ID of the plugin for which to check
+  // which roles should be displayed to manage.
+  string plugin_id = 1;
+  // The ID of the target user for which to check
+  // which roles should be displayed to manage.
+  string user_id = 2;
+}
+
+message DisplayPluginRolesToManageByUserResponse {
+  // The list of roles that should be displayed to the user to manage.
+  repeated PluginRole roles = 1;
+}
+
+message DisplayTemplateRolesToManageRequest {
+  // The ID of the template for which to check
+  // which roles should be displayed to manage.
+  string template_id = 1;
+}
+
+message DisplayTemplateRolesToManageResponse {
+  // The list of roles that should be displayed to the user to manage.
+  repeated TemplateRole roles = 1;
+}
+
+message DisplayTemplateRolesToManageByUserRequest {
+  // The ID of the template for which to check
+  // which roles should be displayed to manage.
+  string template_id = 1;
+  // The ID of the target user for which to check
+  // which roles should be displayed to manage.
+  string user_id = 2;
+}
+
+message DisplayTemplateRolesToManageByUserResponse {
+  // The list of roles that should be displayed to the user to manage.
+  repeated TemplateRole roles = 1;
+}
