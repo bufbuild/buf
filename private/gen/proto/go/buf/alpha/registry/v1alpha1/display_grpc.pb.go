@@ -36,24 +36,24 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DisplayServiceClient interface {
-	// DisplayRepositoryRolesToManage returns which roles should be displayed
+	// ListManageableRepositoryRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the repository.
-	DisplayRepositoryRolesToManage(ctx context.Context, in *DisplayRepositoryRolesToManageRequest, opts ...grpc.CallOption) (*DisplayRepositoryRolesToManageResponse, error)
-	// DisplayRepositoryRolesToManageByUser returns which roles should be displayed
+	ListManageableRepositoryRoles(ctx context.Context, in *ListManageableRepositoryRolesRequest, opts ...grpc.CallOption) (*ListManageableRepositoryRolesResponse, error)
+	// ListManageableUserRepositoryRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the repository.
-	DisplayRepositoryRolesToManageByUser(ctx context.Context, in *DisplayRepositoryRolesToManageByUserRequest, opts ...grpc.CallOption) (*DisplayRepositoryRolesToManageByUserResponse, error)
-	// DisplayPluginRolesToManage returns which roles should be displayed
+	ListManageableUserRepositoryRoles(ctx context.Context, in *ListManageableUserRepositoryRolesRequest, opts ...grpc.CallOption) (*ListManageableUserRepositoryRolesResponse, error)
+	// ListManageablePluginRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the plugin.
-	DisplayPluginRolesToManage(ctx context.Context, in *DisplayPluginRolesToManageRequest, opts ...grpc.CallOption) (*DisplayPluginRolesToManageResponse, error)
-	// DisplayPluginRolesToManageByUser returns which roles should be displayed
+	ListManageablePluginRoles(ctx context.Context, in *ListManageablePluginRolesRequest, opts ...grpc.CallOption) (*ListManageablePluginRolesResponse, error)
+	// ListManageableUserPluginRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the plugin.
-	DisplayPluginRolesToManageByUser(ctx context.Context, in *DisplayPluginRolesToManageByUserRequest, opts ...grpc.CallOption) (*DisplayPluginRolesToManageByUserResponse, error)
-	// DisplayTemplateRolesToManage returns which roles should be displayed
+	ListManageableUserPluginRoles(ctx context.Context, in *ListManageableUserPluginRolesRequest, opts ...grpc.CallOption) (*ListManageableUserPluginRolesResponse, error)
+	// ListManageableTemplateRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the template.
-	DisplayTemplateRolesToManage(ctx context.Context, in *DisplayTemplateRolesToManageRequest, opts ...grpc.CallOption) (*DisplayTemplateRolesToManageResponse, error)
-	// DisplayTemplateRolesToManageByUser returns which roles should be displayed
+	ListManageableTemplateRoles(ctx context.Context, in *ListManageableTemplateRolesRequest, opts ...grpc.CallOption) (*ListManageableTemplateRolesResponse, error)
+	// ListManageableUserTemplateRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the template.
-	DisplayTemplateRolesToManageByUser(ctx context.Context, in *DisplayTemplateRolesToManageByUserRequest, opts ...grpc.CallOption) (*DisplayTemplateRolesToManageByUserResponse, error)
+	ListManageableUserTemplateRoles(ctx context.Context, in *ListManageableUserTemplateRolesRequest, opts ...grpc.CallOption) (*ListManageableUserTemplateRolesResponse, error)
 }
 
 type displayServiceClient struct {
@@ -64,54 +64,54 @@ func NewDisplayServiceClient(cc grpc.ClientConnInterface) DisplayServiceClient {
 	return &displayServiceClient{cc}
 }
 
-func (c *displayServiceClient) DisplayRepositoryRolesToManage(ctx context.Context, in *DisplayRepositoryRolesToManageRequest, opts ...grpc.CallOption) (*DisplayRepositoryRolesToManageResponse, error) {
-	out := new(DisplayRepositoryRolesToManageResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryRolesToManage", in, out, opts...)
+func (c *displayServiceClient) ListManageableRepositoryRoles(ctx context.Context, in *ListManageableRepositoryRolesRequest, opts ...grpc.CallOption) (*ListManageableRepositoryRolesResponse, error) {
+	out := new(ListManageableRepositoryRolesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableRepositoryRoles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *displayServiceClient) DisplayRepositoryRolesToManageByUser(ctx context.Context, in *DisplayRepositoryRolesToManageByUserRequest, opts ...grpc.CallOption) (*DisplayRepositoryRolesToManageByUserResponse, error) {
-	out := new(DisplayRepositoryRolesToManageByUserResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryRolesToManageByUser", in, out, opts...)
+func (c *displayServiceClient) ListManageableUserRepositoryRoles(ctx context.Context, in *ListManageableUserRepositoryRolesRequest, opts ...grpc.CallOption) (*ListManageableUserRepositoryRolesResponse, error) {
+	out := new(ListManageableUserRepositoryRolesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserRepositoryRoles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *displayServiceClient) DisplayPluginRolesToManage(ctx context.Context, in *DisplayPluginRolesToManageRequest, opts ...grpc.CallOption) (*DisplayPluginRolesToManageResponse, error) {
-	out := new(DisplayPluginRolesToManageResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayPluginRolesToManage", in, out, opts...)
+func (c *displayServiceClient) ListManageablePluginRoles(ctx context.Context, in *ListManageablePluginRolesRequest, opts ...grpc.CallOption) (*ListManageablePluginRolesResponse, error) {
+	out := new(ListManageablePluginRolesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/ListManageablePluginRoles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *displayServiceClient) DisplayPluginRolesToManageByUser(ctx context.Context, in *DisplayPluginRolesToManageByUserRequest, opts ...grpc.CallOption) (*DisplayPluginRolesToManageByUserResponse, error) {
-	out := new(DisplayPluginRolesToManageByUserResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayPluginRolesToManageByUser", in, out, opts...)
+func (c *displayServiceClient) ListManageableUserPluginRoles(ctx context.Context, in *ListManageableUserPluginRolesRequest, opts ...grpc.CallOption) (*ListManageableUserPluginRolesResponse, error) {
+	out := new(ListManageableUserPluginRolesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserPluginRoles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *displayServiceClient) DisplayTemplateRolesToManage(ctx context.Context, in *DisplayTemplateRolesToManageRequest, opts ...grpc.CallOption) (*DisplayTemplateRolesToManageResponse, error) {
-	out := new(DisplayTemplateRolesToManageResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayTemplateRolesToManage", in, out, opts...)
+func (c *displayServiceClient) ListManageableTemplateRoles(ctx context.Context, in *ListManageableTemplateRolesRequest, opts ...grpc.CallOption) (*ListManageableTemplateRolesResponse, error) {
+	out := new(ListManageableTemplateRolesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableTemplateRoles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *displayServiceClient) DisplayTemplateRolesToManageByUser(ctx context.Context, in *DisplayTemplateRolesToManageByUserRequest, opts ...grpc.CallOption) (*DisplayTemplateRolesToManageByUserResponse, error) {
-	out := new(DisplayTemplateRolesToManageByUserResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayTemplateRolesToManageByUser", in, out, opts...)
+func (c *displayServiceClient) ListManageableUserTemplateRoles(ctx context.Context, in *ListManageableUserTemplateRolesRequest, opts ...grpc.CallOption) (*ListManageableUserTemplateRolesResponse, error) {
+	out := new(ListManageableUserTemplateRolesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserTemplateRoles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -122,47 +122,47 @@ func (c *displayServiceClient) DisplayTemplateRolesToManageByUser(ctx context.Co
 // All implementations should embed UnimplementedDisplayServiceServer
 // for forward compatibility
 type DisplayServiceServer interface {
-	// DisplayRepositoryRolesToManage returns which roles should be displayed
+	// ListManageableRepositoryRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the repository.
-	DisplayRepositoryRolesToManage(context.Context, *DisplayRepositoryRolesToManageRequest) (*DisplayRepositoryRolesToManageResponse, error)
-	// DisplayRepositoryRolesToManageByUser returns which roles should be displayed
+	ListManageableRepositoryRoles(context.Context, *ListManageableRepositoryRolesRequest) (*ListManageableRepositoryRolesResponse, error)
+	// ListManageableUserRepositoryRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the repository.
-	DisplayRepositoryRolesToManageByUser(context.Context, *DisplayRepositoryRolesToManageByUserRequest) (*DisplayRepositoryRolesToManageByUserResponse, error)
-	// DisplayPluginRolesToManage returns which roles should be displayed
+	ListManageableUserRepositoryRoles(context.Context, *ListManageableUserRepositoryRolesRequest) (*ListManageableUserRepositoryRolesResponse, error)
+	// ListManageablePluginRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the plugin.
-	DisplayPluginRolesToManage(context.Context, *DisplayPluginRolesToManageRequest) (*DisplayPluginRolesToManageResponse, error)
-	// DisplayPluginRolesToManageByUser returns which roles should be displayed
+	ListManageablePluginRoles(context.Context, *ListManageablePluginRolesRequest) (*ListManageablePluginRolesResponse, error)
+	// ListManageableUserPluginRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the plugin.
-	DisplayPluginRolesToManageByUser(context.Context, *DisplayPluginRolesToManageByUserRequest) (*DisplayPluginRolesToManageByUserResponse, error)
-	// DisplayTemplateRolesToManage returns which roles should be displayed
+	ListManageableUserPluginRoles(context.Context, *ListManageableUserPluginRolesRequest) (*ListManageableUserPluginRolesResponse, error)
+	// ListManageableTemplateRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the template.
-	DisplayTemplateRolesToManage(context.Context, *DisplayTemplateRolesToManageRequest) (*DisplayTemplateRolesToManageResponse, error)
-	// DisplayTemplateRolesToManageByUser returns which roles should be displayed
+	ListManageableTemplateRoles(context.Context, *ListManageableTemplateRolesRequest) (*ListManageableTemplateRolesResponse, error)
+	// ListManageableUserTemplateRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the template.
-	DisplayTemplateRolesToManageByUser(context.Context, *DisplayTemplateRolesToManageByUserRequest) (*DisplayTemplateRolesToManageByUserResponse, error)
+	ListManageableUserTemplateRoles(context.Context, *ListManageableUserTemplateRolesRequest) (*ListManageableUserTemplateRolesResponse, error)
 }
 
 // UnimplementedDisplayServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedDisplayServiceServer struct {
 }
 
-func (UnimplementedDisplayServiceServer) DisplayRepositoryRolesToManage(context.Context, *DisplayRepositoryRolesToManageRequest) (*DisplayRepositoryRolesToManageResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DisplayRepositoryRolesToManage not implemented")
+func (UnimplementedDisplayServiceServer) ListManageableRepositoryRoles(context.Context, *ListManageableRepositoryRolesRequest) (*ListManageableRepositoryRolesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListManageableRepositoryRoles not implemented")
 }
-func (UnimplementedDisplayServiceServer) DisplayRepositoryRolesToManageByUser(context.Context, *DisplayRepositoryRolesToManageByUserRequest) (*DisplayRepositoryRolesToManageByUserResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DisplayRepositoryRolesToManageByUser not implemented")
+func (UnimplementedDisplayServiceServer) ListManageableUserRepositoryRoles(context.Context, *ListManageableUserRepositoryRolesRequest) (*ListManageableUserRepositoryRolesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListManageableUserRepositoryRoles not implemented")
 }
-func (UnimplementedDisplayServiceServer) DisplayPluginRolesToManage(context.Context, *DisplayPluginRolesToManageRequest) (*DisplayPluginRolesToManageResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DisplayPluginRolesToManage not implemented")
+func (UnimplementedDisplayServiceServer) ListManageablePluginRoles(context.Context, *ListManageablePluginRolesRequest) (*ListManageablePluginRolesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListManageablePluginRoles not implemented")
 }
-func (UnimplementedDisplayServiceServer) DisplayPluginRolesToManageByUser(context.Context, *DisplayPluginRolesToManageByUserRequest) (*DisplayPluginRolesToManageByUserResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DisplayPluginRolesToManageByUser not implemented")
+func (UnimplementedDisplayServiceServer) ListManageableUserPluginRoles(context.Context, *ListManageableUserPluginRolesRequest) (*ListManageableUserPluginRolesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListManageableUserPluginRoles not implemented")
 }
-func (UnimplementedDisplayServiceServer) DisplayTemplateRolesToManage(context.Context, *DisplayTemplateRolesToManageRequest) (*DisplayTemplateRolesToManageResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DisplayTemplateRolesToManage not implemented")
+func (UnimplementedDisplayServiceServer) ListManageableTemplateRoles(context.Context, *ListManageableTemplateRolesRequest) (*ListManageableTemplateRolesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListManageableTemplateRoles not implemented")
 }
-func (UnimplementedDisplayServiceServer) DisplayTemplateRolesToManageByUser(context.Context, *DisplayTemplateRolesToManageByUserRequest) (*DisplayTemplateRolesToManageByUserResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DisplayTemplateRolesToManageByUser not implemented")
+func (UnimplementedDisplayServiceServer) ListManageableUserTemplateRoles(context.Context, *ListManageableUserTemplateRolesRequest) (*ListManageableUserTemplateRolesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListManageableUserTemplateRoles not implemented")
 }
 
 // UnsafeDisplayServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -176,110 +176,110 @@ func RegisterDisplayServiceServer(s grpc.ServiceRegistrar, srv DisplayServiceSer
 	s.RegisterService(&DisplayService_ServiceDesc, srv)
 }
 
-func _DisplayService_DisplayRepositoryRolesToManage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DisplayRepositoryRolesToManageRequest)
+func _DisplayService_ListManageableRepositoryRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListManageableRepositoryRolesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DisplayServiceServer).DisplayRepositoryRolesToManage(ctx, in)
+		return srv.(DisplayServiceServer).ListManageableRepositoryRoles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryRolesToManage",
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableRepositoryRoles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DisplayServiceServer).DisplayRepositoryRolesToManage(ctx, req.(*DisplayRepositoryRolesToManageRequest))
+		return srv.(DisplayServiceServer).ListManageableRepositoryRoles(ctx, req.(*ListManageableRepositoryRolesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DisplayService_DisplayRepositoryRolesToManageByUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DisplayRepositoryRolesToManageByUserRequest)
+func _DisplayService_ListManageableUserRepositoryRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListManageableUserRepositoryRolesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DisplayServiceServer).DisplayRepositoryRolesToManageByUser(ctx, in)
+		return srv.(DisplayServiceServer).ListManageableUserRepositoryRoles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryRolesToManageByUser",
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserRepositoryRoles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DisplayServiceServer).DisplayRepositoryRolesToManageByUser(ctx, req.(*DisplayRepositoryRolesToManageByUserRequest))
+		return srv.(DisplayServiceServer).ListManageableUserRepositoryRoles(ctx, req.(*ListManageableUserRepositoryRolesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DisplayService_DisplayPluginRolesToManage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DisplayPluginRolesToManageRequest)
+func _DisplayService_ListManageablePluginRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListManageablePluginRolesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DisplayServiceServer).DisplayPluginRolesToManage(ctx, in)
+		return srv.(DisplayServiceServer).ListManageablePluginRoles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayPluginRolesToManage",
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/ListManageablePluginRoles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DisplayServiceServer).DisplayPluginRolesToManage(ctx, req.(*DisplayPluginRolesToManageRequest))
+		return srv.(DisplayServiceServer).ListManageablePluginRoles(ctx, req.(*ListManageablePluginRolesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DisplayService_DisplayPluginRolesToManageByUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DisplayPluginRolesToManageByUserRequest)
+func _DisplayService_ListManageableUserPluginRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListManageableUserPluginRolesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DisplayServiceServer).DisplayPluginRolesToManageByUser(ctx, in)
+		return srv.(DisplayServiceServer).ListManageableUserPluginRoles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayPluginRolesToManageByUser",
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserPluginRoles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DisplayServiceServer).DisplayPluginRolesToManageByUser(ctx, req.(*DisplayPluginRolesToManageByUserRequest))
+		return srv.(DisplayServiceServer).ListManageableUserPluginRoles(ctx, req.(*ListManageableUserPluginRolesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DisplayService_DisplayTemplateRolesToManage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DisplayTemplateRolesToManageRequest)
+func _DisplayService_ListManageableTemplateRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListManageableTemplateRolesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DisplayServiceServer).DisplayTemplateRolesToManage(ctx, in)
+		return srv.(DisplayServiceServer).ListManageableTemplateRoles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayTemplateRolesToManage",
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableTemplateRoles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DisplayServiceServer).DisplayTemplateRolesToManage(ctx, req.(*DisplayTemplateRolesToManageRequest))
+		return srv.(DisplayServiceServer).ListManageableTemplateRoles(ctx, req.(*ListManageableTemplateRolesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _DisplayService_DisplayTemplateRolesToManageByUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DisplayTemplateRolesToManageByUserRequest)
+func _DisplayService_ListManageableUserTemplateRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListManageableUserTemplateRolesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DisplayServiceServer).DisplayTemplateRolesToManageByUser(ctx, in)
+		return srv.(DisplayServiceServer).ListManageableUserTemplateRoles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayTemplateRolesToManageByUser",
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/ListManageableUserTemplateRoles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DisplayServiceServer).DisplayTemplateRolesToManageByUser(ctx, req.(*DisplayTemplateRolesToManageByUserRequest))
+		return srv.(DisplayServiceServer).ListManageableUserTemplateRoles(ctx, req.(*ListManageableUserTemplateRolesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -292,28 +292,28 @@ var DisplayService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*DisplayServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "DisplayRepositoryRolesToManage",
-			Handler:    _DisplayService_DisplayRepositoryRolesToManage_Handler,
+			MethodName: "ListManageableRepositoryRoles",
+			Handler:    _DisplayService_ListManageableRepositoryRoles_Handler,
 		},
 		{
-			MethodName: "DisplayRepositoryRolesToManageByUser",
-			Handler:    _DisplayService_DisplayRepositoryRolesToManageByUser_Handler,
+			MethodName: "ListManageableUserRepositoryRoles",
+			Handler:    _DisplayService_ListManageableUserRepositoryRoles_Handler,
 		},
 		{
-			MethodName: "DisplayPluginRolesToManage",
-			Handler:    _DisplayService_DisplayPluginRolesToManage_Handler,
+			MethodName: "ListManageablePluginRoles",
+			Handler:    _DisplayService_ListManageablePluginRoles_Handler,
 		},
 		{
-			MethodName: "DisplayPluginRolesToManageByUser",
-			Handler:    _DisplayService_DisplayPluginRolesToManageByUser_Handler,
+			MethodName: "ListManageableUserPluginRoles",
+			Handler:    _DisplayService_ListManageableUserPluginRoles_Handler,
 		},
 		{
-			MethodName: "DisplayTemplateRolesToManage",
-			Handler:    _DisplayService_DisplayTemplateRolesToManage_Handler,
+			MethodName: "ListManageableTemplateRoles",
+			Handler:    _DisplayService_ListManageableTemplateRoles_Handler,
 		},
 		{
-			MethodName: "DisplayTemplateRolesToManageByUser",
-			Handler:    _DisplayService_DisplayTemplateRolesToManageByUser_Handler,
+			MethodName: "ListManageableUserTemplateRoles",
+			Handler:    _DisplayService_ListManageableUserTemplateRoles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -28,15 +28,15 @@ type displayService struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// DisplayRepositoryRolesToManage returns which roles should be displayed
+// ListManageableRepositoryRoles returns which roles should be displayed
 // to the user when they are managing contributors on the repository.
-func (s *displayService) DisplayRepositoryRolesToManage(ctx context.Context, repositoryId string) (roles []v1alpha1.RepositoryRole, _ error) {
+func (s *displayService) ListManageableRepositoryRoles(ctx context.Context, repositoryId string) (roles []v1alpha1.RepositoryRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.DisplayRepositoryRolesToManage(
+	response, err := s.client.ListManageableRepositoryRoles(
 		ctx,
-		&v1alpha1.DisplayRepositoryRolesToManageRequest{
+		&v1alpha1.ListManageableRepositoryRolesRequest{
 			RepositoryId: repositoryId,
 		},
 	)
@@ -46,9 +46,9 @@ func (s *displayService) DisplayRepositoryRolesToManage(ctx context.Context, rep
 	return response.Roles, nil
 }
 
-// DisplayRepositoryRolesToManageByUser returns which roles should be displayed
+// ListManageableUserRepositoryRoles returns which roles should be displayed
 // to the user when they are managing a specific contributor on the repository.
-func (s *displayService) DisplayRepositoryRolesToManageByUser(
+func (s *displayService) ListManageableUserRepositoryRoles(
 	ctx context.Context,
 	repositoryId string,
 	userId string,
@@ -56,9 +56,9 @@ func (s *displayService) DisplayRepositoryRolesToManageByUser(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.DisplayRepositoryRolesToManageByUser(
+	response, err := s.client.ListManageableUserRepositoryRoles(
 		ctx,
-		&v1alpha1.DisplayRepositoryRolesToManageByUserRequest{
+		&v1alpha1.ListManageableUserRepositoryRolesRequest{
 			RepositoryId: repositoryId,
 			UserId:       userId,
 		},
@@ -69,15 +69,15 @@ func (s *displayService) DisplayRepositoryRolesToManageByUser(
 	return response.Roles, nil
 }
 
-// DisplayPluginRolesToManage returns which roles should be displayed
+// ListManageablePluginRoles returns which roles should be displayed
 // to the user when they are managing contributors on the plugin.
-func (s *displayService) DisplayPluginRolesToManage(ctx context.Context, pluginId string) (roles []v1alpha1.PluginRole, _ error) {
+func (s *displayService) ListManageablePluginRoles(ctx context.Context, pluginId string) (roles []v1alpha1.PluginRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.DisplayPluginRolesToManage(
+	response, err := s.client.ListManageablePluginRoles(
 		ctx,
-		&v1alpha1.DisplayPluginRolesToManageRequest{
+		&v1alpha1.ListManageablePluginRolesRequest{
 			PluginId: pluginId,
 		},
 	)
@@ -87,9 +87,9 @@ func (s *displayService) DisplayPluginRolesToManage(ctx context.Context, pluginI
 	return response.Roles, nil
 }
 
-// DisplayPluginRolesToManageByUser returns which roles should be displayed
+// ListManageableUserPluginRoles returns which roles should be displayed
 // to the user when they are managing a specific contributor on the plugin.
-func (s *displayService) DisplayPluginRolesToManageByUser(
+func (s *displayService) ListManageableUserPluginRoles(
 	ctx context.Context,
 	pluginId string,
 	userId string,
@@ -97,9 +97,9 @@ func (s *displayService) DisplayPluginRolesToManageByUser(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.DisplayPluginRolesToManageByUser(
+	response, err := s.client.ListManageableUserPluginRoles(
 		ctx,
-		&v1alpha1.DisplayPluginRolesToManageByUserRequest{
+		&v1alpha1.ListManageableUserPluginRolesRequest{
 			PluginId: pluginId,
 			UserId:   userId,
 		},
@@ -110,15 +110,15 @@ func (s *displayService) DisplayPluginRolesToManageByUser(
 	return response.Roles, nil
 }
 
-// DisplayTemplateRolesToManage returns which roles should be displayed
+// ListManageableTemplateRoles returns which roles should be displayed
 // to the user when they are managing contributors on the template.
-func (s *displayService) DisplayTemplateRolesToManage(ctx context.Context, templateId string) (roles []v1alpha1.TemplateRole, _ error) {
+func (s *displayService) ListManageableTemplateRoles(ctx context.Context, templateId string) (roles []v1alpha1.TemplateRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.DisplayTemplateRolesToManage(
+	response, err := s.client.ListManageableTemplateRoles(
 		ctx,
-		&v1alpha1.DisplayTemplateRolesToManageRequest{
+		&v1alpha1.ListManageableTemplateRolesRequest{
 			TemplateId: templateId,
 		},
 	)
@@ -128,9 +128,9 @@ func (s *displayService) DisplayTemplateRolesToManage(ctx context.Context, templ
 	return response.Roles, nil
 }
 
-// DisplayTemplateRolesToManageByUser returns which roles should be displayed
+// ListManageableUserTemplateRoles returns which roles should be displayed
 // to the user when they are managing a specific contributor on the template.
-func (s *displayService) DisplayTemplateRolesToManageByUser(
+func (s *displayService) ListManageableUserTemplateRoles(
 	ctx context.Context,
 	templateId string,
 	userId string,
@@ -138,9 +138,9 @@ func (s *displayService) DisplayTemplateRolesToManageByUser(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.DisplayTemplateRolesToManageByUser(
+	response, err := s.client.ListManageableUserTemplateRoles(
 		ctx,
-		&v1alpha1.DisplayTemplateRolesToManageByUserRequest{
+		&v1alpha1.ListManageableUserTemplateRolesRequest{
 			TemplateId: templateId,
 			UserId:     userId,
 		},

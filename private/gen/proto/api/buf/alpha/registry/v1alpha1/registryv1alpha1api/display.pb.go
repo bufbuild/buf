@@ -21,35 +21,35 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
-// DisplayService is the display service that
-// provides information regarding to UI element display.
+// DisplayService provides information regarding
+// UI element displaying based on the users roles.
 type DisplayService interface {
-	// DisplayRepositoryRolesToManage returns which roles should be displayed
+	// ListManageableRepositoryRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the repository.
-	DisplayRepositoryRolesToManage(ctx context.Context, repositoryId string) (roles []v1alpha1.RepositoryRole, err error)
-	// DisplayRepositoryRolesToManageByUser returns which roles should be displayed
+	ListManageableRepositoryRoles(ctx context.Context, repositoryId string) (roles []v1alpha1.RepositoryRole, err error)
+	// ListManageableUserRepositoryRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the repository.
-	DisplayRepositoryRolesToManageByUser(
+	ListManageableUserRepositoryRoles(
 		ctx context.Context,
 		repositoryId string,
 		userId string,
 	) (roles []v1alpha1.RepositoryRole, err error)
-	// DisplayPluginRolesToManage returns which roles should be displayed
+	// ListManageablePluginRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the plugin.
-	DisplayPluginRolesToManage(ctx context.Context, pluginId string) (roles []v1alpha1.PluginRole, err error)
-	// DisplayPluginRolesToManageByUser returns which roles should be displayed
+	ListManageablePluginRoles(ctx context.Context, pluginId string) (roles []v1alpha1.PluginRole, err error)
+	// ListManageableUserPluginRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the plugin.
-	DisplayPluginRolesToManageByUser(
+	ListManageableUserPluginRoles(
 		ctx context.Context,
 		pluginId string,
 		userId string,
 	) (roles []v1alpha1.PluginRole, err error)
-	// DisplayTemplateRolesToManage returns which roles should be displayed
+	// ListManageableTemplateRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the template.
-	DisplayTemplateRolesToManage(ctx context.Context, templateId string) (roles []v1alpha1.TemplateRole, err error)
-	// DisplayTemplateRolesToManageByUser returns which roles should be displayed
+	ListManageableTemplateRoles(ctx context.Context, templateId string) (roles []v1alpha1.TemplateRole, err error)
+	// ListManageableUserTemplateRoles returns which roles should be displayed
 	// to the user when they are managing a specific contributor on the template.
-	DisplayTemplateRolesToManageByUser(
+	ListManageableUserTemplateRoles(
 		ctx context.Context,
 		templateId string,
 		userId string,
