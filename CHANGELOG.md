@@ -6,7 +6,7 @@
 
 ## [v1.0.0-rc9] - 2021-12-15
 
-- Fix issue where `buf mod update` was unable to resolve dependencies from differente remotes.
+- Fix issue where `buf mod update` was unable to resolve dependencies from different remotes.
 - Display the user-provided Buf Schema Registry remote, if specified, instead of the default within the `buf login` message.
 - Fix issue where `buf generate` fails when the same plugin was specified more than once in a single invocation.
 - Update the digest algorithm so that it encodes the `name`, `lint`, and `breaking` configuration encoded in the `buf.yaml`.
