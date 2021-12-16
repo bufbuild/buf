@@ -357,17 +357,20 @@ func ImageToFileDescriptorProtos(image Image) []*descriptorpb.FileDescriptorProt
 //
 // All non-imports are added as files to generate.
 // If includeImports is set, all non-well-known-type imports are also added as files to generate.
+// If includeWellKnownTypes is set, well-known-type imports are also added as files to generate.
 func ImageToCodeGeneratorRequest(
 	image Image,
 	parameter string,
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
+	includeWellKnownTypes bool,
 ) *pluginpb.CodeGeneratorRequest {
 	return imageToCodeGeneratorRequest(
 		image,
 		parameter,
 		compilerVersion,
 		includeImports,
+		includeWellKnownTypes,
 		nil,
 		nil,
 	)
@@ -378,17 +381,19 @@ func ImageToCodeGeneratorRequest(
 // All non-imports are added as files to generate.
 // If includeImports is set, all non-well-known-type imports are also added as files to generate.
 // If includeImports is set, only one CodeGeneratorRequest will contain any given file as a FileToGenerate.
+// If includeWellKnownTypes is set, well-known-type imports are also added as files to generate.
 func ImagesToCodeGeneratorRequests(
 	images []Image,
 	parameter string,
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
+	includeWellKnownTypes bool,
 ) []*pluginpb.CodeGeneratorRequest {
 	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
 	// we don't need to track these if includeImports as false, so don't waste the time
 	var alreadyUsedPaths map[string]struct{}
 	var nonImportPaths map[string]struct{}
-	if includeImports {
+	if includeImports || includeWellKnownTypes {
 		alreadyUsedPaths = make(map[string]struct{})
 		nonImportPaths = make(map[string]struct{})
 		for _, image := range images {
@@ -405,6 +410,7 @@ func ImagesToCodeGeneratorRequests(
 			parameter,
 			compilerVersion,
 			includeImports,
+			includeWellKnownTypes,
 			alreadyUsedPaths,
 			nonImportPaths,
 		)

@@ -95,6 +95,10 @@ func TestBasic(t *testing.T) {
 		t,
 		"import.proto",
 	)
+	protoImageWellKnownImport := NewProtoImageFileIsImport(
+		t,
+		"google/protobuf/timestamp.proto",
+	)
 	protoImageFileAA := NewProtoImageFile(
 		t,
 		"a/a.proto",
@@ -103,6 +107,11 @@ func TestBasic(t *testing.T) {
 		t,
 		"a/b.proto",
 		"import.proto",
+	)
+	protoImageFileAC := NewProtoImageFile(
+		t,
+		"a/c.proto",
+		"google/protobuf/timestamp.proto",
 	)
 	protoImageFileBA := NewProtoImageFile(
 		t,
@@ -133,6 +142,16 @@ func TestBasic(t *testing.T) {
 		false,
 		nil,
 	)
+	fileWellKnownImport := NewImageFile(
+		t,
+		protoImageWellKnownImport,
+		nil,
+		"",
+		"google/protobuf/timestamp.proto",
+		true,
+		false,
+		nil,
+	)
 	fileOneAA := NewImageFile(
 		t,
 		protoImageFileAA,
@@ -149,6 +168,16 @@ func TestBasic(t *testing.T) {
 		nil,
 		"",
 		"foo/one/a/b.proto",
+		false,
+		false,
+		nil,
+	)
+	fileOneAC := NewImageFile(
+		t,
+		protoImageFileAC,
+		nil,
+		"",
+		"foo/one/a/c.proto",
 		false,
 		false,
 		nil,
@@ -188,6 +217,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			fileOneAA,
 			fileImport,
+			fileWellKnownImport,
 			fileOneAB,
 			fileTwoBA,
 			fileTwoBB,
@@ -200,6 +230,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageWellKnownImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
@@ -435,6 +466,7 @@ func TestBasic(t *testing.T) {
 			File: []*descriptorpb.FileDescriptorProto{
 				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageWellKnownImport),
 				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 				testProtoImageFileToFileDescriptorProto(protoImageFileBA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileBB),
@@ -447,6 +479,7 @@ func TestBasic(t *testing.T) {
 		ProtoFile: []*descriptorpb.FileDescriptorProto{
 			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
 			testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+			testProtoImageFileToFileDescriptorProto(protoImageWellKnownImport),
 			testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 			testProtoImageFileToFileDescriptorProto(protoImageFileBA),
 			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
@@ -464,12 +497,13 @@ func TestBasic(t *testing.T) {
 	require.Equal(
 		t,
 		codeGeneratorRequest,
-		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false),
+		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false, false),
 	)
 	codeGeneratorRequestIncludeImports := &pluginpb.CodeGeneratorRequest{
 		ProtoFile: []*descriptorpb.FileDescriptorProto{
 			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
 			testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+			testProtoImageFileToFileDescriptorProto(protoImageWellKnownImport),
 			testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 			testProtoImageFileToFileDescriptorProto(protoImageFileBA),
 			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
@@ -488,7 +522,7 @@ func TestBasic(t *testing.T) {
 	require.Equal(
 		t,
 		codeGeneratorRequestIncludeImports,
-		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true),
+		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true, false),
 	)
 	newImage, err = bufimage.NewImageForCodeGeneratorRequest(codeGeneratorRequest)
 	require.NoError(t, err)
@@ -577,7 +611,7 @@ func TestBasic(t *testing.T) {
 	require.Equal(
 		t,
 		codeGeneratorRequests,
-		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, false),
+		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, false, false),
 	)
 	codeGeneratorRequestsIncludeImports := []*pluginpb.CodeGeneratorRequest{
 		{
@@ -621,7 +655,67 @@ func TestBasic(t *testing.T) {
 	require.Equal(
 		t,
 		codeGeneratorRequestsIncludeImports,
-		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, true),
+		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, true, false),
+	)
+
+	// tests related to generating well known files
+
+	image, err = bufimage.NewImage(
+		[]bufimage.ImageFile{
+			fileOneAA,
+			fileImport,
+			fileWellKnownImport,
+			fileOneAB,
+			fileOneAC,
+		},
+	)
+	require.NoError(t, err)
+	imagesByDir, err = bufimage.ImageByDir(image)
+	require.NoError(t, err)
+	codeGeneratorRequestsIncludeWellKnown := []*pluginpb.CodeGeneratorRequest{
+		{
+			ProtoFile: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+				testProtoImageFileToFileDescriptorProto(protoImageWellKnownImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileAC),
+			},
+			Parameter: proto.String("foo"),
+			FileToGenerate: []string{
+				"a/a.proto",
+				"a/b.proto",
+				"google/protobuf/timestamp.proto",
+				"a/c.proto",
+			},
+		},
+	}
+	require.Equal(
+		t,
+		codeGeneratorRequestsIncludeWellKnown,
+		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, false, true),
+	)
+	codeGeneratorRequestsIncludeWellKnownAndImported := []*pluginpb.CodeGeneratorRequest{
+		{
+			ProtoFile: []*descriptorpb.FileDescriptorProto{
+				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageWellKnownImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileAC),
+			},
+			Parameter: proto.String("foo"),
+			FileToGenerate: []string{
+				"a/a.proto",
+				"a/b.proto",
+				"google/protobuf/timestamp.proto",
+				"a/c.proto",
+			},
+		},
+	}
+	require.Equal(
+		t,
+		codeGeneratorRequestsIncludeWellKnownAndImported,
+		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, true, true),
 	)
 }
 

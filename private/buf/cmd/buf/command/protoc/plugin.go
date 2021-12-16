@@ -64,6 +64,7 @@ func executePlugin(
 			strings.Join(pluginInfo.Opt, ","),
 			appprotoexec.DefaultVersion,
 			false,
+			false, // maybe?
 		),
 		appprotoexec.GenerateWithPluginPath(pluginInfo.Path),
 	)

@@ -145,6 +145,13 @@ func GenerateWithIncludeImports() GenerateOption {
 	}
 }
 
+// GenerateWithWellKnownTypes says to also generate imports for well known types.
+func GenerateWithWellKnownTypes() GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.includeWellKnownTypes = true
+	}
+}
+
 // Config is a configuration.
 type Config struct {
 	// Required

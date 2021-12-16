@@ -33,14 +33,15 @@ import (
 )
 
 const (
-	templateFlagName            = "template"
-	baseOutDirPathFlagName      = "output"
-	baseOutDirPathFlagShortName = "o"
-	errorFormatFlagName         = "error-format"
-	configFlagName              = "config"
-	pathsFlagName               = "path"
-	includeImportsFlagName      = "include-imports"
-	excludePathsFlagName        = "exclude-path"
+	templateFlagName              = "template"
+	baseOutDirPathFlagName        = "output"
+	baseOutDirPathFlagShortName   = "o"
+	errorFormatFlagName           = "error-format"
+	configFlagName                = "config"
+	pathsFlagName                 = "path"
+	includeImportsFlagName        = "include-imports"
+	includeWellKnownTypesFlagName = "include-well-known-types"
+	excludePathsFlagName          = "exclude-path"
 
 	// deprecated
 	inputFlagName = "input"
@@ -187,14 +188,15 @@ Insertion points are processed in the order the plugins are specified in the tem
 }
 
 type flags struct {
-	Template       string
-	BaseOutDirPath string
-	ErrorFormat    string
-	Files          []string
-	Config         string
-	Paths          []string
-	IncludeImports bool
-	ExcludePaths   []string
+	Template              string
+	BaseOutDirPath        string
+	ErrorFormat           string
+	Files                 []string
+	Config                string
+	Paths                 []string
+	IncludeImports        bool
+	IncludeWellKnownTypes bool
+	ExcludePaths          []string
 
 	// deprecated
 	Input string
@@ -217,6 +219,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		includeImportsFlagName,
 		false,
 		"Also generate all imports except for Well-Known Types.",
+	)
+	flagSet.BoolVar(
+		&f.IncludeWellKnownTypes,
+		includeWellKnownTypesFlagName,
+		false,
+		"Also generate Well-Known Types.",
 	)
 	flagSet.StringVar(
 		&f.Template,
@@ -368,6 +376,12 @@ func run(
 		generateOptions = append(
 			generateOptions,
 			bufgen.GenerateWithIncludeImports(),
+		)
+	}
+	if flags.IncludeWellKnownTypes {
+		generateOptions = append(
+			generateOptions,
+			bufgen.GenerateWithWellKnownTypes(),
 		)
 	}
 	return bufgen.NewGenerator(
