@@ -61,11 +61,16 @@ func newModuleForProto(
 	if err != nil {
 		return nil, err
 	}
-	var breakingConfig *bufbreakingconfig.Config
+	// If there is no breaking and/or lint config, we want to default to the v1beta1 version
+	breakingConfig := &bufbreakingconfig.Config{
+		Version: bufconfig.V1Beta1Version,
+	}
 	if protoModule.GetBreakingConfig() != nil {
 		breakingConfig = bufbreakingconfig.ConfigForProto(protoModule.GetBreakingConfig())
 	}
-	var lintConfig *buflintconfig.Config
+	lintConfig := &buflintconfig.Config{
+		Version: bufconfig.V1Beta1Version,
+	}
 	if protoModule.GetLintConfig() != nil {
 		lintConfig = buflintconfig.ConfigForProto(protoModule.GetLintConfig())
 	}
