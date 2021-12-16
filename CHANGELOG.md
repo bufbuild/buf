@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.0.0-rc10] - 2021-12-16
 
 - Fix issue where remote references were not correctly cached.
@@ -600,6 +604,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc10...HEAD
 [v1.0.0-rc10]: https://github.com/bufbuild/buf/compare/v1.0.0-rc9...v1.0.0-rc10
 [v1.0.0-rc9]: https://github.com/bufbuild/buf/compare/v1.0.0-rc8...v1.0.0-rc9
 [v1.0.0-rc8]: https://github.com/bufbuild/buf/compare/v1.0.0-rc7...v1.0.0-rc8
