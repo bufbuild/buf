@@ -16,6 +16,7 @@ package bufmodulecache
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -120,10 +121,6 @@ func (m *moduleCacher) PutModule(
 	module bufmodule.Module,
 ) error {
 	modulePath := newCacheKey(modulePin)
-	digest, err := bufmodule.ModuleDigestB3(ctx, module)
-	if err != nil {
-		return err
-	}
 	dataReadWriteBucket := storage.MapReadWriteBucket(
 		m.dataReadWriteBucket,
 		storage.MapOnPrefix(modulePath),
@@ -140,6 +137,18 @@ func (m *moduleCacher) PutModule(
 		}
 	}
 	if err := bufmodule.ModuleToBucket(ctx, module, dataReadWriteBucket); err != nil {
+		return err
+	}
+	bucketModule, err := bufmodule.NewModuleForBucket(
+		ctx,
+		dataReadWriteBucket,
+		bufmodule.ModuleWithModuleIdentityAndCommit(modulePin, modulePin.Commit()),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to write module to bucket: %w", err)
+	}
+	digest, err := bufmodule.ModuleDigestB3(ctx, bucketModule)
+	if err != nil {
 		return err
 	}
 	// This will overwrite if necessary

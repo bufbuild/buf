@@ -280,6 +280,11 @@ func writeConfig(
 			return fmt.Errorf("version %q found for breaking config, does not match top level config version: %q", breakingConfigVersion, version)
 		}
 		config.Breaking = breakingConfig
+	} else {
+		// Otherwise, we set a breaking config with the given version.
+		config.Breaking = &bufbreakingconfig.Config{
+			Version: version,
+		}
 	}
 	var lintConfigVersion string
 	lintConfig := writeConfigOptions.lintConfig
@@ -289,6 +294,11 @@ func writeConfig(
 			return fmt.Errorf("version %q found for lint config, does not match top level config version: %q", lintConfigVersion, version)
 		}
 		config.Lint = lintConfig
+	} else {
+		// Otherwise, we set a breaking config with the given version.
+		config.Lint = &buflintconfig.Config{
+			Version: version,
+		}
 	}
 	// We should never hit this condition since we are already validating against `version`.
 	if breakingConfigVersion != lintConfigVersion {
