@@ -83,9 +83,6 @@ message PluginConfig {
   // Parameters that should be provided to the plugin. These are
   // joined with a "," before being provided to the plugin at runtime.
   repeated string parameters = 3;
-  // True if the source plugin has been deleted. This dooms
-  // the template.
-  bool deleted = 4 [deprecated=true];
   // True if the source plugin is inaccessible by the user.
   bool inaccessible = 5;
 }
@@ -116,9 +113,6 @@ message PluginVersionMapping {
   string plugin_name = 2;
   // The version of the plugin to use, i.e. "v1.4.0".
   string version = 3;
-  // True if the source plugin has been deleted. This dooms
-  // the template.
-  bool deleted = 4 [deprecated=true];
   // True if the source plugin is inaccessible by the user.
   bool inaccessible = 5;
 }
