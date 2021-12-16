@@ -263,7 +263,7 @@ func writeConfig(
 	// This is the same default as the bufconfig getters.
 	version := V1Beta1Version
 	if writeConfigOptions.version != "" {
-		if err := validateVersion(writeConfigOptions.version); err != nil {
+		if err := ValidateVersion(writeConfigOptions.version); err != nil {
 			return err
 		}
 		version = writeConfigOptions.version
@@ -464,13 +464,4 @@ func validateWriteConfigOptions(writeConfigOptions *writeConfigOptions) error {
 		return errors.New("cannot set deps without a name for WriteConfig")
 	}
 	return nil
-}
-
-func validateVersion(version string) error {
-	switch version {
-	case V1Version, V1Beta1Version:
-		return nil
-	default:
-		return fmt.Errorf("invalid config version %q provided", version)
-	}
 }

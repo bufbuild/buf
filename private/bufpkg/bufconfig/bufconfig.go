@@ -17,6 +17,7 @@ package bufconfig
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
@@ -218,6 +219,16 @@ func ExistingConfigFilePath(ctx context.Context, readBucket storage.ReadBucket) 
 		}
 	}
 	return "", nil
+}
+
+// ValidateVersion checks that a given version string is valid.
+func ValidateVersion(version string) error {
+	switch version {
+	case V1Version, V1Beta1Version:
+		return nil
+	default:
+		return fmt.Errorf("invalid config version %q provided", version)
+	}
 }
 
 // ExternalConfigV1Beta1 represents the on-disk representation of the Config
