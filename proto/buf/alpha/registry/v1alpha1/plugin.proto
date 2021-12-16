@@ -76,6 +76,7 @@ message Template {
 
 // PluginConfig defines a runtime configuration for a plugin.
 message PluginConfig {
+  reserved 4;
   // The owner of the plugin to which this config relates.
   string plugin_owner = 1;
   // The name of the plugin to which this config relates.
@@ -107,6 +108,7 @@ message TemplateVersion {
 
 // PluginVersionMapping maps a plugin_id to a version.
 message PluginVersionMapping {
+  reserved 4;
   // The owner of the plugin to which this mapping relates.
   string plugin_owner = 1;
   // The name of the plugin to which this mapping relates.
