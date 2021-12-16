@@ -22,6 +22,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
+	lintv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/lint/v1"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -61,18 +63,9 @@ func newModuleForProto(
 	if err != nil {
 		return nil, err
 	}
-	// If there is no breaking and/or lint config, we want to default to the v1beta1 version
-	breakingConfig := &bufbreakingconfig.Config{
-		Version: bufconfig.V1Beta1Version,
-	}
-	if protoModule.GetBreakingConfig() != nil {
-		breakingConfig = bufbreakingconfig.ConfigForProto(protoModule.GetBreakingConfig())
-	}
-	lintConfig := &buflintconfig.Config{
-		Version: bufconfig.V1Beta1Version,
-	}
-	if protoModule.GetLintConfig() != nil {
-		lintConfig = buflintconfig.ConfigForProto(protoModule.GetLintConfig())
+	breakingConfig, lintConfig, err := configsForProto(protoModule.GetBreakingConfig(), protoModule.GetLintConfig())
+	if err != nil {
+		return nil, err
 	}
 	return newModule(
 		ctx,
@@ -84,6 +77,57 @@ func newModuleForProto(
 		lintConfig,
 		options...,
 	)
+}
+
+func configsForProto(
+	protoBreakingConfig *breakingv1.Config,
+	protoLintConfig *lintv1.Config,
+) (*bufbreakingconfig.Config, *buflintconfig.Config, error) {
+	var breakingConfig *bufbreakingconfig.Config
+	var breakingConfigVersion string
+	if protoBreakingConfig != nil {
+		breakingConfig = bufbreakingconfig.ConfigForProto(protoBreakingConfig)
+		breakingConfigVersion = breakingConfig.Version
+	}
+	var lintConfig *buflintconfig.Config
+	var lintConfigVersion string
+	if protoLintConfig != nil {
+		lintConfig = buflintconfig.ConfigForProto(protoLintConfig)
+		lintConfigVersion = lintConfig.Version
+	}
+	if lintConfigVersion != breakingConfigVersion {
+		return nil, nil, fmt.Errorf("mismatched breaking config version %q and lint config version %q found", breakingConfigVersion, lintConfigVersion)
+	}
+	// If there is no breaking and lint configs, we want to default to the v1beta1 version.
+	if breakingConfig == nil && lintConfig == nil {
+		breakingConfig = &bufbreakingconfig.Config{
+			Version: bufconfig.V1Beta1Version,
+		}
+		lintConfig = &buflintconfig.Config{
+			Version: bufconfig.V1Beta1Version,
+		}
+	} else if breakingConfig == nil {
+		// In the case that only breaking config is nil, we'll use generated an empty default config
+		// using the lint config version.
+		breakingConfig = &bufbreakingconfig.Config{
+			Version: lintConfigVersion,
+		}
+	} else if lintConfig == nil {
+		// In the case that only lint config is nil, we'll use generated an empty default config
+		// using the breaking config version.
+		lintConfig = &buflintconfig.Config{
+			Version: breakingConfigVersion,
+		}
+	}
+	// Finally, validate the config versions are valid. This should always pass in the case of
+	// the default values.
+	if err := bufconfig.ValidateVersion(breakingConfig.Version); err != nil {
+		return nil, nil, err
+	}
+	if err := bufconfig.ValidateVersion(lintConfig.Version); err != nil {
+		return nil, nil, err
+	}
+	return breakingConfig, lintConfig, nil
 }
 
 func newModuleForBucket(
