@@ -295,7 +295,7 @@ func writeConfig(
 		}
 		config.Lint = lintConfig
 	} else {
-		// Otherwise, we set a breaking config with the given version.
+		// Otherwise, we set a lint config with the given version.
 		config.Lint = &buflintconfig.Config{
 			Version: version,
 		}
