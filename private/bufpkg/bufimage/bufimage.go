@@ -138,12 +138,14 @@ func MergeImages(images ...Image) (Image, error) {
 	case 1:
 		return images[0], nil
 	default:
+		var paths []string
 		imageFileSet := make(map[string]ImageFile)
 		for _, image := range images {
 			for _, currentImageFile := range image.Files() {
 				storedImageFile, ok := imageFileSet[currentImageFile.Path()]
 				if !ok {
 					imageFileSet[currentImageFile.Path()] = currentImageFile
+					paths = append(paths, currentImageFile.Path())
 					continue
 				}
 				if !storedImageFile.IsImport() && !currentImageFile.IsImport() {
@@ -154,9 +156,12 @@ func MergeImages(images ...Image) (Image, error) {
 				}
 			}
 		}
+		// We need to preserve order for deterministic results, so we add
+		// the files in the order they're given, but base our selection
+		// on the imageFileSet.
 		imageFiles := make([]ImageFile, 0, len(imageFileSet))
-		for _, imageFile := range imageFileSet {
-			imageFiles = append(imageFiles, imageFile)
+		for _, path := range paths {
+			imageFiles = append(imageFiles, imageFileSet[path] /* Guaranteed to exist */)
 		}
 		return newImage(imageFiles, true)
 	}

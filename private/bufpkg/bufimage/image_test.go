@@ -97,3 +97,43 @@ func TestMergeImagesWithDuplicateFile(t *testing.T) {
 	_, err = MergeImages(firstImage, secondImage)
 	require.Error(t, err)
 }
+
+func TestMergeImagesOrdered(t *testing.T) {
+	t.Parallel()
+	firstProtoImage := &imagev1.Image{
+		File: []*imagev1.ImageFile{
+			{
+				Syntax: proto.String("proto3"),
+				Name:   proto.String("a.proto"),
+			},
+			{
+				Syntax: proto.String("proto3"),
+				Name:   proto.String("b.proto"),
+			},
+		},
+	}
+	secondProtoImage := &imagev1.Image{
+		File: []*imagev1.ImageFile{
+			{
+				Syntax: proto.String("proto3"),
+				Name:   proto.String("c.proto"),
+			},
+			{
+				Syntax: proto.String("proto3"),
+				Name:   proto.String("d.proto"),
+			},
+		},
+	}
+
+	firstImage, err := NewImageForProto(firstProtoImage)
+	require.NoError(t, err)
+	secondImage, err := NewImageForProto(secondProtoImage)
+	require.NoError(t, err)
+	image, err := MergeImages(firstImage, secondImage)
+	require.NoError(t, err)
+	var paths []string
+	for _, imageFile := range image.Files() {
+		paths = append(paths, imageFile.Path())
+	}
+	assert.Equal(t, []string{"a.proto", "b.proto", "c.proto", "d.proto"}, paths)
+}
