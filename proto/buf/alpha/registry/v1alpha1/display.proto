@@ -48,7 +48,8 @@ message ListManageableRepositoryRolesRequest {
 }
 
 message ListManageableRepositoryRolesResponse {
-  // The list of roles that should be displayed to the user as manageable.
+  // The list of roles that should be displayed
+  // to the user as manageable.
   repeated RepositoryRole roles = 1;
 }
 
@@ -62,7 +63,8 @@ message ListManageableUserRepositoryRolesRequest {
 }
 
 message ListManageableUserRepositoryRolesResponse {
-  // The list of roles that should be displayed to the user as manageable.
+  // The list of roles that should be displayed
+  // to the user as manageable.
   repeated RepositoryRole roles = 1;
 }
 
@@ -73,7 +75,8 @@ message ListManageablePluginRolesRequest {
 }
 
 message ListManageablePluginRolesResponse {
-  // The list of roles that should be displayed to the user as manageable.
+  // The list of roles that should be displayed
+  // to the user as manageable.
   repeated PluginRole roles = 1;
 }
 
@@ -87,7 +90,8 @@ message ListManageableUserPluginRolesRequest {
 }
 
 message ListManageableUserPluginRolesResponse {
-  // The list of roles that should be displayed to the user as manageable.
+  // The list of roles that should be displayed
+  // to the user as manageable.
   repeated PluginRole roles = 1;
 }
 
@@ -98,7 +102,8 @@ message ListManageableTemplateRolesRequest {
 }
 
 message ListManageableTemplateRolesResponse {
-  // The list of roles that should be displayed to the user as manageable.
+  // The list of roles that should be displayed
+  // to the user as manageable.
   repeated TemplateRole roles = 1;
 }
 
@@ -112,6 +117,7 @@ message ListManageableUserTemplateRolesRequest {
 }
 
 message ListManageableUserTemplateRolesResponse {
-  // The list of roles that should be displayed to the user as manageable.
+  // The list of roles that should be displayed
+  // to the user as manageable.
   repeated TemplateRole roles = 1;
 }

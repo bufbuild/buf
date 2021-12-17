@@ -88,7 +88,8 @@ type ListManageableRepositoryRolesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of roles that should be displayed to the user as manageable.
+	// The list of roles that should be displayed
+	// to the user as manageable.
 	Roles []RepositoryRole `protobuf:"varint,1,rep,packed,name=roles,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"roles,omitempty"`
 }
 
@@ -195,7 +196,8 @@ type ListManageableUserRepositoryRolesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of roles that should be displayed to the user as manageable.
+	// The list of roles that should be displayed
+	// to the user as manageable.
 	Roles []RepositoryRole `protobuf:"varint,1,rep,packed,name=roles,proto3,enum=buf.alpha.registry.v1alpha1.RepositoryRole" json:"roles,omitempty"`
 }
 
@@ -292,7 +294,8 @@ type ListManageablePluginRolesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of roles that should be displayed to the user as manageable.
+	// The list of roles that should be displayed
+	// to the user as manageable.
 	Roles []PluginRole `protobuf:"varint,1,rep,packed,name=roles,proto3,enum=buf.alpha.registry.v1alpha1.PluginRole" json:"roles,omitempty"`
 }
 
@@ -399,7 +402,8 @@ type ListManageableUserPluginRolesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of roles that should be displayed to the user as manageable.
+	// The list of roles that should be displayed
+	// to the user as manageable.
 	Roles []PluginRole `protobuf:"varint,1,rep,packed,name=roles,proto3,enum=buf.alpha.registry.v1alpha1.PluginRole" json:"roles,omitempty"`
 }
 
@@ -496,7 +500,8 @@ type ListManageableTemplateRolesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of roles that should be displayed to the user as manageable.
+	// The list of roles that should be displayed
+	// to the user as manageable.
 	Roles []TemplateRole `protobuf:"varint,1,rep,packed,name=roles,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"roles,omitempty"`
 }
 
@@ -603,7 +608,8 @@ type ListManageableUserTemplateRolesResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The list of roles that should be displayed to the user as manageable.
+	// The list of roles that should be displayed
+	// to the user as manageable.
 	Roles []TemplateRole `protobuf:"varint,1,rep,packed,name=roles,proto3,enum=buf.alpha.registry.v1alpha1.TemplateRole" json:"roles,omitempty"`
 }
 
