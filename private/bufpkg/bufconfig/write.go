@@ -339,8 +339,8 @@ func writeExternalConfig(
 			Breaking: externalBreakingConfig,
 			Lint:     externalLintConfig,
 		}
-		var buffer bytes.Buffer
-		encoder := yaml.NewEncoder(&buffer)
+		buffer := bytes.NewBuffer(nil)
+		encoder := yaml.NewEncoder(buffer)
 		encoder.SetIndent(2)
 		if err := encoder.Encode(externalConfig); err != nil {
 			return err
@@ -362,8 +362,8 @@ func writeExternalConfig(
 			Breaking: externalBreakingConfig,
 			Lint:     externalLintConfig,
 		}
-		var buffer bytes.Buffer
-		encoder := yaml.NewEncoder(&buffer)
+		buffer := bytes.NewBuffer(nil)
+		encoder := yaml.NewEncoder(buffer)
 		encoder.SetIndent(2)
 		if err := encoder.Encode(externalConfig); err != nil {
 			return err

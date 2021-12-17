@@ -136,17 +136,21 @@ func run(
 	)
 	writeConfigOptions = append(
 		writeConfigOptions,
-		bufconfig.WriteConfigWithBreakingConfig(&bufbreakingconfig.Config{
-			Version: version,
-			Use:     []string{"FILE"},
-		}),
+		bufconfig.WriteConfigWithBreakingConfig(
+			&bufbreakingconfig.Config{
+				Version: version,
+				Use:     []string{"FILE"},
+			},
+		),
 	)
 	writeConfigOptions = append(
 		writeConfigOptions,
-		bufconfig.WriteConfigWithLintConfig(&buflintconfig.Config{
-			Version: version,
-			Use:     []string{"DEFAULT"},
-		}),
+		bufconfig.WriteConfigWithLintConfig(
+			&buflintconfig.Config{
+				Version: version,
+				Use:     []string{"DEFAULT"},
+			},
+		),
 	)
 	return bufconfig.WriteConfig(
 		ctx,
