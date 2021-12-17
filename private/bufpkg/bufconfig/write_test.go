@@ -31,14 +31,18 @@ func TestWriteConfigSuccess(t *testing.T) {
 	require.NoError(t, err)
 	writeConfigOptions := []WriteConfigOption{
 		WriteConfigWithVersion(V1Version),
-		WriteConfigWithBreakingConfig(&bufbreakingconfig.Config{
-			Version: V1Version,
-			Use:     []string{"FILE"},
-		}),
-		WriteConfigWithLintConfig(&buflintconfig.Config{
-			Version: V1Version,
-			Use:     []string{"DEFAULT"},
-		}),
+		WriteConfigWithBreakingConfig(
+			&bufbreakingconfig.Config{
+				Version: V1Version,
+				Use:     []string{"FILE"},
+			},
+		),
+		WriteConfigWithLintConfig(
+			&buflintconfig.Config{
+				Version: V1Version,
+				Use:     []string{"DEFAULT"},
+			},
+		),
 	}
 	err = WriteConfig(context.Background(), readWriteBucket, writeConfigOptions...)
 	require.NoError(t, err)
