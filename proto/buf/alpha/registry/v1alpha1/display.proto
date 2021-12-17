@@ -1,0 +1,123 @@
+// Copyright 2020-2021 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/registry/v1alpha1/role.proto";
+
+// DisplayService provides information regarding
+// UI element displaying based on the users roles.
+service DisplayService {
+  // ListManageableRepositoryRoles returns which roles should be displayed
+  // to the user when they are managing contributors on the repository.
+  rpc ListManageableRepositoryRoles(ListManageableRepositoryRolesRequest) returns (ListManageableRepositoryRolesResponse);
+  // ListManageableUserRepositoryRoles returns which roles should be displayed
+  // to the user when they are managing a specific contributor on the repository.
+  rpc ListManageableUserRepositoryRoles(ListManageableUserRepositoryRolesRequest) returns (ListManageableUserRepositoryRolesResponse);
+  // ListManageablePluginRoles returns which roles should be displayed
+  // to the user when they are managing contributors on the plugin.
+  rpc ListManageablePluginRoles(ListManageablePluginRolesRequest) returns (ListManageablePluginRolesResponse);
+  // ListManageableUserPluginRoles returns which roles should be displayed
+  // to the user when they are managing a specific contributor on the plugin.
+  rpc ListManageableUserPluginRoles(ListManageableUserPluginRolesRequest) returns (ListManageableUserPluginRolesResponse);
+  // ListManageableTemplateRoles returns which roles should be displayed
+  // to the user when they are managing contributors on the template.
+  rpc ListManageableTemplateRoles(ListManageableTemplateRolesRequest) returns (ListManageableTemplateRolesResponse);
+  // ListManageableUserTemplateRoles returns which roles should be displayed
+  // to the user when they are managing a specific contributor on the template.
+  rpc ListManageableUserTemplateRoles(ListManageableUserTemplateRolesRequest) returns (ListManageableUserTemplateRolesResponse);
+}
+
+message ListManageableRepositoryRolesRequest {
+  // The ID of the repository for which to check
+  // which roles should be displayed as manageable.
+  string repository_id = 1;
+}
+
+message ListManageableRepositoryRolesResponse {
+  // The list of roles that should be displayed
+  // to the user as manageable.
+  repeated RepositoryRole roles = 1;
+}
+
+message ListManageableUserRepositoryRolesRequest {
+  // The ID of the repository for which to check
+  // which roles should be displayed as manageable.
+  string repository_id = 1;
+  // The ID of the target user for which to check
+  // which roles are manageable.
+  string user_id = 2;
+}
+
+message ListManageableUserRepositoryRolesResponse {
+  // The list of roles that should be displayed
+  // to the user as manageable.
+  repeated RepositoryRole roles = 1;
+}
+
+message ListManageablePluginRolesRequest {
+  // The ID of the plugin for which to check
+  // which roles should be displayed as manageable.
+  string plugin_id = 1;
+}
+
+message ListManageablePluginRolesResponse {
+  // The list of roles that should be displayed
+  // to the user as manageable.
+  repeated PluginRole roles = 1;
+}
+
+message ListManageableUserPluginRolesRequest {
+  // The ID of the plugin for which to check
+  // which roles should be displayed as manageable.
+  string plugin_id = 1;
+  // The ID of the target user for which to check
+  // which roles are manageable.
+  string user_id = 2;
+}
+
+message ListManageableUserPluginRolesResponse {
+  // The list of roles that should be displayed
+  // to the user as manageable.
+  repeated PluginRole roles = 1;
+}
+
+message ListManageableTemplateRolesRequest {
+  // The ID of the template for which to check
+  // which roles should be displayed as manageable.
+  string template_id = 1;
+}
+
+message ListManageableTemplateRolesResponse {
+  // The list of roles that should be displayed
+  // to the user as manageable.
+  repeated TemplateRole roles = 1;
+}
+
+message ListManageableUserTemplateRolesRequest {
+  // The ID of the template for which to check
+  // which roles should be displayed as manageable.
+  string template_id = 1;
+  // The ID of the target user for which to check
+  // which roles are manageable.
+  string user_id = 2;
+}
+
+message ListManageableUserTemplateRolesResponse {
+  // The list of roles that should be displayed
+  // to the user as manageable.
+  repeated TemplateRole roles = 1;
+}

@@ -26,6 +26,7 @@ type Provider interface {
 	AuditLogsServiceProvider
 	AuthnServiceProvider
 	AuthzServiceProvider
+	DisplayServiceProvider
 	DocServiceProvider
 	DownloadServiceProvider
 	GenerateServiceProvider
@@ -61,6 +62,11 @@ type AuthnServiceProvider interface {
 // AuthzServiceProvider provides a client-side AuthzService for an address.
 type AuthzServiceProvider interface {
 	NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error)
+}
+
+// DisplayServiceProvider provides a client-side DisplayService for an address.
+type DisplayServiceProvider interface {
+	NewDisplayService(ctx context.Context, address string) (registryv1alpha1api.DisplayService, error)
 }
 
 // DocServiceProvider provides a client-side DocService for an address.
