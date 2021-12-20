@@ -46,6 +46,15 @@ message PluginVersion {
   string plugin_owner = 4;
 }
 
+// PluginVersionRuntimeLibrary represents a specific runtime library
+// dependency for a plugin version.
+message PluginVersionRuntimeLibrary {
+  // The name of the runtime library, i.e. "google.golang.org/protobuf"
+  string name = 1;
+  // The version of the runtime library, i.e. "v1.27.1"
+  string version = 2;
+}
+
 // PluginVisibility defines the visibility options available
 // for Plugins and Templates.
 enum PluginVisibility {
