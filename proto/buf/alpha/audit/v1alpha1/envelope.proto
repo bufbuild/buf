@@ -445,6 +445,13 @@ message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo {
   string name = 1;
 }
 
+// ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionRuntimeLibrariesInfo stores audit log details 
+// not included in actor or object for the CreatePluginVersionRuntimeLibraries action.
+message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionRuntimeLibrariesInfo { 
+  string name = 1;
+  repeated BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary runtime_libraries = 2;
+}
+
 // ActionBufAlphaRegistryinternalV1Alpha1DeletePluginVersionInfo stores audit log details not included
 // in actor or object for the DeletePluginVersion action.
 message ActionBufAlphaRegistryinternalV1Alpha1DeletePluginVersionInfo {
@@ -544,6 +551,7 @@ message Event {
     ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo action_buf_alpha_registry_v1_alpha1_set_repository_contributor_info = 52;
     ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo action_buf_alpha_registry_v1_alpha1_set_plugin_contributor_info = 53;
     ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo action_buf_alpha_registry_v1_alpha1_set_template_contributor_info = 54;
+    ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionRuntimeLibrariesInfo action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_runtime_libraries_info = 55;
   }
 }
 
