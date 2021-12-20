@@ -39,7 +39,8 @@ type RepositoryTrackService interface {
 	// DeleteRepositoryTrackByName deletes a repository track by name.
 	DeleteRepositoryTrackByName(
 		ctx context.Context,
-		repositoryId string,
+		ownerName string,
+		repositoryName string,
 		name string,
 	) (err error)
 }

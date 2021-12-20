@@ -65,10 +65,10 @@ message ListRepositoryTracksResponse {
 }
 
 message DeleteRepositoryTrackByNameRequest {
-  // The ID of the repository this track should be deleted from.
-  string repository_id = 1;
-  // The name of the repository track.
-  string name = 2;
+  string owner_name = 1;
+  string repository_name = 2;
+  // The name of the repository track
+  string name = 3;
 }
 
 message DeleteRepositoryTrackByNameResponse {}
