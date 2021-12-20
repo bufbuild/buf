@@ -27,6 +27,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 )
 
@@ -156,7 +157,7 @@ func (c *clientConnProvider) getDialOptions() ([]grpc.DialOption, error) {
 	} else {
 		dialOptions = append(
 			dialOptions,
-			grpc.WithInsecure(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)
 	}
 	if c.observability {
