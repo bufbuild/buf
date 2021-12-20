@@ -156,7 +156,7 @@ enum Action {
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_DISPLAY_SERVICE_LIST_MANAGEABLE_TEMPLATE_ROLES = 126;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_DISPLAY_SERVICE_LIST_MANAGEABLE_USER_TEMPLATE_ROLES = 127;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_TRACK_SERVICE_DELETE_REPOSITORY_TRACK_BY_NAME = 128;
-  ACTION_BUF_ALPHA_REGISTRYINTERNAL_V1_ALPHA1_INTERNAL_PLUGIN_SERVICE_CREATE_PLUGIN_VERSION_RUNTIME_LIBRARIES = 129;
+  ACTION_BUF_ALPHA_REGISTRYINTERNAL_V1_ALPHA1_INTERNAL_PLUGIN_SERVICE_CREATE_PLUGIN_VERSION_METADATA = 129;
 }
 
 // ActionBufAlphaRegistryV1Alpha1DownloadInfo stores audit log details not included
@@ -445,11 +445,12 @@ message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo {
   string name = 1;
 }
 
-// ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionRuntimeLibrariesInfo stores audit log details 
+// ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo stores audit log details 
 // not included in actor or object for the CreatePluginVersionRuntimeLibraries action.
-message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionRuntimeLibrariesInfo { 
+message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo { 
   string name = 1;
-  repeated BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary runtime_libraries = 2;
+  string image_digest_hash = 2;
+  repeated BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary runtime_libraries = 3;
 }
 
 // ActionBufAlphaRegistryinternalV1Alpha1DeletePluginVersionInfo stores audit log details not included
@@ -551,7 +552,7 @@ message Event {
     ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo action_buf_alpha_registry_v1_alpha1_set_repository_contributor_info = 52;
     ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo action_buf_alpha_registry_v1_alpha1_set_plugin_contributor_info = 53;
     ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo action_buf_alpha_registry_v1_alpha1_set_template_contributor_info = 54;
-    ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionRuntimeLibrariesInfo action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_runtime_libraries_info = 55;
+    ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_metadata_info = 55;
   }
 }
 
