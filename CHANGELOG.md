@@ -10,6 +10,7 @@
 
 ## [v1.0.0-rc9] - 2021-12-15
 
+- Always set `compiler_version` parameter in the `CodeGeneratorRequest` to "(unknown)".
 - Fix issue where `buf mod update` was unable to resolve dependencies from different remotes.
 - Display the user-provided Buf Schema Registry remote, if specified, instead of the default within the `buf login` message.
 - Fix issue where `buf generate` fails when the same plugin was specified more than once in a single invocation.
