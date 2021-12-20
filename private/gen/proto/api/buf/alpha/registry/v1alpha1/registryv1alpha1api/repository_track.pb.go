@@ -36,4 +36,11 @@ type RepositoryTrackService interface {
 		pageToken string,
 		reverse bool,
 	) (repositoryTracks []*v1alpha1.RepositoryTrack, nextPageToken string, err error)
+	// DeleteRepositoryTrackByName deletes a repository track by name.
+	DeleteRepositoryTrackByName(
+		ctx context.Context,
+		ownerName string,
+		repositoryName string,
+		name string,
+	) (err error)
 }
