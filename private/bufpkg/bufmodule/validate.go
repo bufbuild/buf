@@ -18,6 +18,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 )
@@ -61,5 +63,8 @@ func ValidateProtoModule(protoModule *modulev1alpha1.Module) error {
 			return fmt.Errorf("module had invalid dependency: %v", err)
 		}
 	}
-	return nil
+	if err := bufbreakingconfig.ValidateProtoConfig(protoModule.GetBreakingConfig()); err != nil {
+		return err
+	}
+	return buflintconfig.ValidateProtoConfig(protoModule.GetLintConfig())
 }

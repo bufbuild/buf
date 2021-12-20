@@ -16,6 +16,7 @@ package bufbreakingconfig
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 
 	breakingv1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/breaking/v1"
@@ -95,6 +96,21 @@ func ProtoForConfig(config *Config) *breakingv1.Config {
 		IgnoreIdPaths:          protoForIgnoreIDOrCategoryToRootPaths(config.IgnoreIDOrCategoryToRootPaths),
 		IgnoreUnstablePackages: config.IgnoreUnstablePackages,
 		Version:                config.Version,
+	}
+}
+
+// ValidateProtoConfig validates that the proto config is valid.
+func ValidateProtoConfig(protoConfig *breakingv1.Config) error {
+	// An empty config is valid.
+	if protoConfig == nil {
+		return nil
+	}
+	version := protoConfig.GetVersion()
+	switch version {
+	case v1Version, v1Beta1Version:
+		return nil
+	default:
+		return fmt.Errorf("invalid breaking config version %q provided", version)
 	}
 }
 

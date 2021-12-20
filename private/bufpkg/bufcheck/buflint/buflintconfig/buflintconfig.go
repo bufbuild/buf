@@ -17,6 +17,7 @@ package buflintconfig
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"sort"
 	"strings"
@@ -131,6 +132,22 @@ func ProtoForConfig(config *Config) *lintv1.Config {
 	}
 }
 
+// ValidateProtoConfig validates that the proto config is valid.
+func ValidateProtoConfig(protoConfig *lintv1.Config) error {
+	// An empty config is valid.
+	if protoConfig == nil {
+		return nil
+	}
+	version := protoConfig.GetVersion()
+	switch version {
+	case v1Version, v1Beta1Version:
+		return nil
+	default:
+		return fmt.Errorf("invalid lint config version %q provided", version)
+	}
+}
+
+// ExternalConfigV1Beta1 is an external config.
 // ExternalConfigV1Beta1 is an external config.
 type ExternalConfigV1Beta1 struct {
 	Use    []string `json:"use,omitempty" yaml:"use,omitempty"`

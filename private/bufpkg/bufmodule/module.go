@@ -119,14 +119,6 @@ func configsForProto(
 			Version: breakingConfigVersion,
 		}
 	}
-	// Finally, validate the config versions are valid. This should always pass in the case of
-	// the default values.
-	if err := bufconfig.ValidateVersion(breakingConfig.Version); err != nil {
-		return nil, nil, err
-	}
-	if err := bufconfig.ValidateVersion(lintConfig.Version); err != nil {
-		return nil, nil, err
-	}
 	return breakingConfig, lintConfig, nil
 }
 
