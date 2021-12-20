@@ -35,3 +35,8 @@ message BufAlphaRegistryV1Alpha1PluginConfig {
   repeated string parameters = 3;
   bool deleted = 4;
 }
+
+message BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary {
+  string name = 1;
+  string version = 2;
+}
