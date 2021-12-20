@@ -446,10 +446,10 @@ message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo {
 }
 
 // ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo stores audit log details 
-// not included in actor or object for the CreatePluginVersionRuntimeLibraries action.
+// not included in actor or object for the CreatePluginVersionMetadata action.
 message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo { 
   string name = 1;
-  string image_digest_hash = 2;
+  string image_digest = 2;
   repeated BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary runtime_libraries = 3;
 }
 
