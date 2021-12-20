@@ -75,3 +75,27 @@ func (s *repositoryTrackService) ListRepositoryTracks(
 	}
 	return response.RepositoryTracks, response.NextPageToken, nil
 }
+
+// DeleteRepositoryTrackByName deletes a repository track by name.
+func (s *repositoryTrackService) DeleteRepositoryTrackByName(
+	ctx context.Context,
+	ownerName string,
+	repositoryName string,
+	name string,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.DeleteRepositoryTrackByName(
+		ctx,
+		&v1alpha1.DeleteRepositoryTrackByNameRequest{
+			OwnerName:      ownerName,
+			RepositoryName: repositoryName,
+			Name:           name,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
