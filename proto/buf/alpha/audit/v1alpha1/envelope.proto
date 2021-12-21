@@ -291,6 +291,7 @@ message ActionBufAlphaRegistryV1Alpha1GetReferenceByNameInfo {
     BufAlphaRegistryV1Alpha1RepositoryBranch branch = 2;
     BufAlphaRegistryV1Alpha1RepositoryTag tag = 3;
     BufAlphaRegistryV1Alpha1RepositoryCommit commit = 4;
+    BufAlphaRegistryV1Alpha1RepositoryTrack track = 5;
   }
 }
 
