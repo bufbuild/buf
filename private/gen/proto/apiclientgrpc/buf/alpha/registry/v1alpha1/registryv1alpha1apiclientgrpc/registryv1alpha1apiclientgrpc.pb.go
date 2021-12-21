@@ -411,6 +411,29 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 	}, nil
 }
 
+func (p *provider) NewReflectionService(ctx context.Context, address string) (registryv1alpha1api.ReflectionService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+	return &reflectionService{
+		logger:          p.logger,
+		client:          v1alpha1.NewReflectionServiceClient(clientConn),
+		contextModifier: contextModifier,
+	}, nil
+}
+
 func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error

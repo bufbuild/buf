@@ -1,0 +1,56 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.reflect.v1alpha1;
+
+// Reflector is a message that has enough information to be decoded at runtime.
+message Reflector {
+  // descriptor_info holds information about what type of descriptor is encoded.
+  DescriptorInfo descriptor_info = 8555;
+}
+
+// DescriptorInfo contains information about a module that a descriptor belongs to.
+message DescriptorInfo {
+  // module_info is the module that defines this descriptor.
+  ModuleInfo module_info = 1;
+  // type_name is the fully-qualified name of this descriptor.
+  // This type_name must be found in the associated module_info.
+  string type_name = 2;
+}
+
+// ModuleInfo contains information about a module that a descriptor belongs to.
+//
+// This definition is equivalent to buf.alpha.image.v1.ModuleInfo, but it's
+// purposefully redefined here to prevent import cycles in the generated code.
+message ModuleInfo {
+  // name is the name of the module.
+  //
+  // This will always be set.
+  ModuleName name = 1;
+  // commit is the repository commit.
+  //
+  // This will always be set.
+  string commit = 2;
+}
+
+// ModuleName is a module name.
+//
+// All fields will always be set.
+message ModuleName {
+  string remote = 1;
+  string owner = 2;
+  string repository = 3;
+}

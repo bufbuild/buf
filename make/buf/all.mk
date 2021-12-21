@@ -6,6 +6,7 @@ GO_BINS := $(GO_BINS) \
 	cmd/buf \
 	cmd/protoc-gen-buf-breaking \
 	cmd/protoc-gen-buf-lint \
+	cmd/protoc-gen-buf-marshal-go \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc \
@@ -88,6 +89,7 @@ privateusage:
 postprepostgenerate:: privateusage
 
 bufgeneratedeps:: \
+	installprotoc-gen-buf-marshal-go \
 	installprotoc-gen-go-api \
 	installprotoc-gen-go-apiclient \
 	installprotoc-gen-go-apiclientgrpc \

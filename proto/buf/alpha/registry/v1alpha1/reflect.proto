@@ -1,0 +1,86 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/image/v1/image.proto";
+import "buf/alpha/reflect/v1alpha1/reflect.proto";
+
+// ReflectionService encodes and decodes serialized descriptors.
+service ReflectionService {
+  // Encode encodes descriptors into binary using either an image or
+  // module_info.
+  rpc Encode(EncodeRequest) returns (EncodeResponse);
+  // Decode decodes a serialized descriptor. It automatically resolves the
+  // image if the serialized descriptor embeds DescriptorInfo. Otherwise, it
+  // uses either an image or module_info to decode the payload according to
+  // the type_name.
+  rpc Decode(DecodeRequest) returns (DecodeResponse);
+}
+
+message EncodeRequest {
+  // descriptor_bytes is the descriptor (e.g. in JSON format).
+  bytes descriptor_bytes = 1;
+  // type_name is the fully-qualified name of the descriptor (e.g. acme.weather.v1.Units).
+  string type_name = 2;
+  // image is the image source that defines the descriptor.
+  //
+  // Required if module_info is not provided.
+  buf.alpha.image.v1.Image image = 3;
+  // module_info is the module source that defines the descriptor.
+  // If provided, the ModuleInfo will be encoded within the result
+  // as buf.alpha.reflect.v1alpha1.DescriptorInfo.
+  //
+  // Required if image is not provided.
+  buf.alpha.reflect.v1alpha1.ModuleInfo module_info = 4;
+}
+
+message EncodeResponse {
+  // result is the encoded descriptor in one of the supported formats.
+  //
+  // For now, the only supported format is the Protobuf wire format.
+  bytes result = 1;
+}
+
+message DecodeRequest {
+  // descriptor_bytes is the serialized Protobuf descriptor.
+  bytes descriptor_bytes = 1;
+  // type_name is the fully-qualified name of the descriptor (e.g. acme.weather.v1.Units).
+  //
+  // Optional if descriptor_bytes embeds buf.alpha.encoding.v1alpha1.DescriptorInfo.
+  string type_name = 2;
+  // image is the image source that defines the serialized descriptor.
+  //
+  // Optional if descriptor_bytes embeds buf.alpha.reflect.v1alpha1.DescriptorInfo
+  // or is a google.protobuf.Any.
+  //
+  // Cannot be provided if module_info is provided.
+  buf.alpha.image.v1.Image image = 3;
+  // module_info is the module source that defines the serialized descriptor.
+  //
+  // Optional if descriptor_bytes embeds buf.alpha.reflect.v1alpha1.DescriptorInfo
+  // or is a google.protobuf.Any.
+  //
+  // Cannot be provided if image is provided.
+  buf.alpha.reflect.v1alpha1.ModuleInfo module_info = 4;
+}
+
+message DecodeResponse {
+  // result is the decoded descriptor in one of the supported formats.
+  //
+  // For now, the only supported format is JSON.
+  bytes result = 1;
+}

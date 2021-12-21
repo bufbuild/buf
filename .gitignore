@@ -7,6 +7,7 @@
 /cmd/buf/buf
 /cmd/protoc-gen-buf-breaking/protoc-gen-buf-breaking
 /cmd/protoc-gen-buf-lint/protoc-gen-buf-lint
+/cmd/protoc-gen-buf-marshal-go/protoc-gen-buf-marshal-go
 /private/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver/protoc-gen-insertion-point-receiver
 /private/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer/protoc-gen-insertion-point-writer
 /private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/

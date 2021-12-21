@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
@@ -788,6 +789,61 @@ func ReadModuleWithWorkspacesDisabled(
 		return nil, nil, err
 	}
 	return module, moduleIdentity, err
+}
+
+// NewImageForSource acts like the 'buf build' command, such that it resolves a single
+// bufimage.Image from the user-provided source. This function is primarily used by the
+// 'buf encode' and 'buf decode' commands, so it doesn't need to support all of the build
+// options, such as paths and exclude paths.
+func NewImageForSource(
+	ctx context.Context,
+	container appflag.Container,
+	registryProvider registryv1alpha1apiclient.Provider,
+	source string,
+	errorFormat string,
+) (bufimage.Image, error) {
+	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, source)
+	if err != nil {
+		return nil, err
+	}
+	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	imageConfigReader, err := NewWireImageConfigReader(
+		container,
+		storageosProvider,
+		command.NewRunner(),
+		registryProvider,
+	)
+	if err != nil {
+		return nil, err
+	}
+	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
+		ctx,
+		container,
+		ref,
+		"",
+		nil,
+		nil,
+		false,
+		false,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(fileAnnotations) > 0 {
+		if err := bufanalysis.PrintFileAnnotations(
+			container.Stderr(),
+			fileAnnotations,
+			errorFormat,
+		); err != nil {
+			return nil, err
+		}
+		return nil, ErrFileAnnotation
+	}
+	images := make([]bufimage.Image, 0, len(imageConfigs))
+	for _, imageConfig := range imageConfigs {
+		images = append(images, imageConfig.Image())
+	}
+	return bufimage.MergeImages(images...)
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.

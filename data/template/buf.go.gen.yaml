@@ -8,3 +8,9 @@ plugins:
   - name: go
     out: private/gen/proto/go
     opt: paths=source_relative
+  - name: buf-marshal-go
+    out: private/gen/proto/go
+    opt:
+      - paths=source_relative
+      # TODO: Use remote generation instead of hard-coding this here.
+      - buf_module=buf.build/bufbuild/buf:53fae5b0c13c448c82f650a2e4da89da

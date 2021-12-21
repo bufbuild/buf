@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -1515,6 +1516,173 @@ a/v3/a.proto:7:10:Field "2" on message "Foo" changed name from "value" to "Value
 		filepath.Join("a", "v3"),
 		"--exclude-path",
 		filepath.Join("a", "v3", "foo"),
+	)
+}
+
+func TestDecodeRoundTrip(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "success"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+	)
+	encodedDescriptor := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		encodedDescriptor,
+		"encode",
+		`{"one":"55"}`,
+		"--source",
+		filepath.Join(tempDir, "image.bin"),
+		"--type",
+		"buf.Foo",
+	)
+	decodedDescriptor := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		encodedDescriptor,
+		decodedDescriptor,
+		"decode",
+		"--source",
+		filepath.Join(tempDir, "image.bin"),
+		"--type",
+		"buf.Foo",
+	)
+	require.Equal(
+		t,
+		`{"one":"55"}`,
+		// TODO: Clean this up.
+		strings.ReplaceAll(
+			strings.ReplaceAll(
+				decodedDescriptor.String(),
+				" ",
+				"",
+			),
+			"\n",
+			"",
+		),
+	)
+}
+
+func TestDecodeWithImage(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "success"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+	)
+	stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+	require.NoError(t, err)
+	defer stdin.Close()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		stdin,
+		stdout,
+		"decode",
+		"--source",
+		filepath.Join(tempDir, "image.bin"),
+		"--type",
+		"buf.Foo",
+	)
+	require.Equal(
+		t,
+		`{"one":"55"}`,
+		// TODO: Clean this up.
+		strings.ReplaceAll(
+			strings.ReplaceAll(
+				stdout.String(),
+				" ",
+				"",
+			),
+			"\n",
+			"",
+		),
+	)
+}
+
+func TestDecodeWithImageAndAny(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "success"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+	)
+	stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.any.bin"))
+	require.NoError(t, err)
+	defer stdin.Close()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		stdin,
+		stdout,
+		"decode",
+		"--source",
+		filepath.Join(tempDir, "image.bin"),
+	)
+	require.Equal(
+		t,
+		`{"one":"55"}`,
+		// TODO: Clean this up.
+		strings.ReplaceAll(
+			strings.ReplaceAll(
+				stdout.String(),
+				" ",
+				"",
+			),
+			"\n",
+			"",
+		),
+	)
+}
+
+func TestDecodeInvalidTypeName(t *testing.T) {
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: ".foo" is not a valid fully qualified name`,
+		"decode",
+		"descriptor_placeholder",
+		"--source",
+		"placeholder.bin",
+		"--type",
+		".foo",
+	)
+}
+
+func TestDecodeNoImageSource(t *testing.T) {
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		"Failure: a source could not be resolved; specify one with --source ",
+		"decode",
+		"descriptor_placeholder",
+		"--type",
+		"pet.v1.Pet",
 	)
 }
 

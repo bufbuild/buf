@@ -1,0 +1,62 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package pet.v1;
+
+// PetType represents the different types of pets in the pet store.
+enum PetType {
+  PET_TYPE_UNSPECIFIED = 0;
+  PET_TYPE_CAT = 1;
+  PET_TYPE_DOG = 2;
+  PET_TYPE_SNAKE = 3;
+  PET_TYPE_HAMSTER = 4;
+}
+
+// Pet represents a pet in the pet store.
+message Pet {
+  PetType pet_type = 1;
+  string pet_id = 2;
+  string name = 3;
+}
+
+message GetPetRequest {
+  string pet_id = 1;
+}
+
+message GetPetResponse {
+  Pet pet = 1;
+}
+
+message PutPetRequest {
+  PetType pet_type = 1;
+  string name = 2;
+}
+
+message PutPetResponse {
+  Pet pet = 1;
+}
+
+message DeletePetRequest {
+  string pet_id = 1;
+}
+
+message DeletePetResponse {}
+
+service PetStoreService {
+  rpc GetPet(GetPetRequest) returns (GetPetResponse) {}
+  rpc PutPet(PutPetRequest) returns (PutPetResponse) {}
+  rpc DeletePet(DeletePetRequest) returns (DeletePetResponse) {}
+}
