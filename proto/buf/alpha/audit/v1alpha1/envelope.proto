@@ -445,9 +445,9 @@ message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo {
   string name = 1;
 }
 
-// ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo stores audit log details 
+// ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo stores audit log details
 // not included in actor or object for the CreatePluginVersionMetadata action.
-message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo { 
+message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo {
   string name = 1;
   string image_digest = 2;
   repeated BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary runtime_libraries = 3;
@@ -475,6 +475,12 @@ message ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo {
 // in actor or object for the SetTemplateContributor action.
 message ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo {
   BufAlphaRegistryV1Alpha1TemplateRole template_role = 1;
+}
+
+// ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo stores audit log details not included
+// in actor or object for the CreateRepositoryTrack action.
+message ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo {
+  BufAlphaRegistryV1Alpha1RepositoryTrack track = 1;
 }
 
 message Event {
@@ -553,6 +559,7 @@ message Event {
     ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo action_buf_alpha_registry_v1_alpha1_set_plugin_contributor_info = 53;
     ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo action_buf_alpha_registry_v1_alpha1_set_template_contributor_info = 54;
     ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_metadata_info = 55;
+    ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo action_buf_alpha_registry_v1_alpha1_create_repository_track_info = 56;
   }
 }
 

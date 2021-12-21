@@ -51,3 +51,10 @@ message BufAlphaRegistryV1Alpha1RepositoryCommit {
   string author = 7;
   BufAlphaRegistryV1Alpha1RepositoryTag tags = 8;
 }
+
+message BufAlphaRegistryV1Alpha1RepositoryTrack {
+  string id = 1;
+  google.protobuf.Timestamp create_time = 2;
+  // Field number '3' reserved for the update_time.
+  string name = 4;
+}
