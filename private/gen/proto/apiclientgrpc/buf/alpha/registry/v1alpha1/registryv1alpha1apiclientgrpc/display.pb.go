@@ -28,6 +28,116 @@ type displayService struct {
 	contextModifier func(context.Context) context.Context
 }
 
+// DisplayOrganizationElements returns which organization elements should be displayed to the user.
+func (s *displayService) DisplayOrganizationElements(
+	ctx context.Context,
+	organizationId string,
+) (createRepository bool, createPlugin bool, createTemplate bool, settings bool, updateSettings bool, delete bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.DisplayOrganizationElements(
+		ctx,
+		&v1alpha1.DisplayOrganizationElementsRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return false, false, false, false, false, false, err
+	}
+	return response.CreateRepository, response.CreatePlugin, response.CreateTemplate, response.Settings, response.UpdateSettings, response.Delete, nil
+}
+
+// DisplayRepositoryElements returns which repository elements should be displayed to the user.
+func (s *displayService) DisplayRepositoryElements(
+	ctx context.Context,
+	repositoryId string,
+) (settings bool, delete bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.DisplayRepositoryElements(
+		ctx,
+		&v1alpha1.DisplayRepositoryElementsRequest{
+			RepositoryId: repositoryId,
+		},
+	)
+	if err != nil {
+		return false, false, err
+	}
+	return response.Settings, response.Delete, nil
+}
+
+// DisplayPluginElements returns which plugin elements should be displayed to the user.
+func (s *displayService) DisplayPluginElements(
+	ctx context.Context,
+	pluginId string,
+) (createVersion bool, settings bool, delete bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.DisplayPluginElements(
+		ctx,
+		&v1alpha1.DisplayPluginElementsRequest{
+			PluginId: pluginId,
+		},
+	)
+	if err != nil {
+		return false, false, false, err
+	}
+	return response.CreateVersion, response.Settings, response.Delete, nil
+}
+
+// DisplayTemplateElements returns which template elements should be displayed to the user.
+func (s *displayService) DisplayTemplateElements(
+	ctx context.Context,
+	templateId string,
+) (createVersion bool, settings bool, delete bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.DisplayTemplateElements(
+		ctx,
+		&v1alpha1.DisplayTemplateElementsRequest{
+			TemplateId: templateId,
+		},
+	)
+	if err != nil {
+		return false, false, false, err
+	}
+	return response.CreateVersion, response.Settings, response.Delete, nil
+}
+
+// DisplayUserElements returns which user elements should be displayed to the user.
+func (s *displayService) DisplayUserElements(ctx context.Context) (delete bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.DisplayUserElements(
+		ctx,
+		&v1alpha1.DisplayUserElementsRequest{},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.Delete, nil
+}
+
+// DisplayServerElements returns which server elements should be displayed to the user.
+func (s *displayService) DisplayServerElements(ctx context.Context) (adminPanel bool, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.DisplayServerElements(
+		ctx,
+		&v1alpha1.DisplayServerElementsRequest{},
+	)
+	if err != nil {
+		return false, err
+	}
+	return response.AdminPanel, nil
+}
+
 // ListManageableRepositoryRoles returns which roles should be displayed
 // to the user when they are managing contributors on the repository.
 func (s *displayService) ListManageableRepositoryRoles(ctx context.Context, repositoryId string) (roles []v1alpha1.RepositoryRole, _ error) {

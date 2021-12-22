@@ -36,6 +36,18 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DisplayServiceClient interface {
+	// DisplayOrganizationElements returns which organization elements should be displayed to the user.
+	DisplayOrganizationElements(ctx context.Context, in *DisplayOrganizationElementsRequest, opts ...grpc.CallOption) (*DisplayOrganizationElementsResponse, error)
+	// DisplayRepositoryElements returns which repository elements should be displayed to the user.
+	DisplayRepositoryElements(ctx context.Context, in *DisplayRepositoryElementsRequest, opts ...grpc.CallOption) (*DisplayRepositoryElementsResponse, error)
+	// DisplayPluginElements returns which plugin elements should be displayed to the user.
+	DisplayPluginElements(ctx context.Context, in *DisplayPluginElementsRequest, opts ...grpc.CallOption) (*DisplayPluginElementsResponse, error)
+	// DisplayTemplateElements returns which template elements should be displayed to the user.
+	DisplayTemplateElements(ctx context.Context, in *DisplayTemplateElementsRequest, opts ...grpc.CallOption) (*DisplayTemplateElementsResponse, error)
+	// DisplayUserElements returns which user elements should be displayed to the user.
+	DisplayUserElements(ctx context.Context, in *DisplayUserElementsRequest, opts ...grpc.CallOption) (*DisplayUserElementsResponse, error)
+	// DisplayServerElements returns which server elements should be displayed to the user.
+	DisplayServerElements(ctx context.Context, in *DisplayServerElementsRequest, opts ...grpc.CallOption) (*DisplayServerElementsResponse, error)
 	// ListManageableRepositoryRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the repository.
 	ListManageableRepositoryRoles(ctx context.Context, in *ListManageableRepositoryRolesRequest, opts ...grpc.CallOption) (*ListManageableRepositoryRolesResponse, error)
@@ -62,6 +74,60 @@ type displayServiceClient struct {
 
 func NewDisplayServiceClient(cc grpc.ClientConnInterface) DisplayServiceClient {
 	return &displayServiceClient{cc}
+}
+
+func (c *displayServiceClient) DisplayOrganizationElements(ctx context.Context, in *DisplayOrganizationElementsRequest, opts ...grpc.CallOption) (*DisplayOrganizationElementsResponse, error) {
+	out := new(DisplayOrganizationElementsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayOrganizationElements", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *displayServiceClient) DisplayRepositoryElements(ctx context.Context, in *DisplayRepositoryElementsRequest, opts ...grpc.CallOption) (*DisplayRepositoryElementsResponse, error) {
+	out := new(DisplayRepositoryElementsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryElements", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *displayServiceClient) DisplayPluginElements(ctx context.Context, in *DisplayPluginElementsRequest, opts ...grpc.CallOption) (*DisplayPluginElementsResponse, error) {
+	out := new(DisplayPluginElementsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayPluginElements", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *displayServiceClient) DisplayTemplateElements(ctx context.Context, in *DisplayTemplateElementsRequest, opts ...grpc.CallOption) (*DisplayTemplateElementsResponse, error) {
+	out := new(DisplayTemplateElementsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayTemplateElements", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *displayServiceClient) DisplayUserElements(ctx context.Context, in *DisplayUserElementsRequest, opts ...grpc.CallOption) (*DisplayUserElementsResponse, error) {
+	out := new(DisplayUserElementsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayUserElements", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *displayServiceClient) DisplayServerElements(ctx context.Context, in *DisplayServerElementsRequest, opts ...grpc.CallOption) (*DisplayServerElementsResponse, error) {
+	out := new(DisplayServerElementsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.DisplayService/DisplayServerElements", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *displayServiceClient) ListManageableRepositoryRoles(ctx context.Context, in *ListManageableRepositoryRolesRequest, opts ...grpc.CallOption) (*ListManageableRepositoryRolesResponse, error) {
@@ -122,6 +188,18 @@ func (c *displayServiceClient) ListManageableUserTemplateRoles(ctx context.Conte
 // All implementations should embed UnimplementedDisplayServiceServer
 // for forward compatibility
 type DisplayServiceServer interface {
+	// DisplayOrganizationElements returns which organization elements should be displayed to the user.
+	DisplayOrganizationElements(context.Context, *DisplayOrganizationElementsRequest) (*DisplayOrganizationElementsResponse, error)
+	// DisplayRepositoryElements returns which repository elements should be displayed to the user.
+	DisplayRepositoryElements(context.Context, *DisplayRepositoryElementsRequest) (*DisplayRepositoryElementsResponse, error)
+	// DisplayPluginElements returns which plugin elements should be displayed to the user.
+	DisplayPluginElements(context.Context, *DisplayPluginElementsRequest) (*DisplayPluginElementsResponse, error)
+	// DisplayTemplateElements returns which template elements should be displayed to the user.
+	DisplayTemplateElements(context.Context, *DisplayTemplateElementsRequest) (*DisplayTemplateElementsResponse, error)
+	// DisplayUserElements returns which user elements should be displayed to the user.
+	DisplayUserElements(context.Context, *DisplayUserElementsRequest) (*DisplayUserElementsResponse, error)
+	// DisplayServerElements returns which server elements should be displayed to the user.
+	DisplayServerElements(context.Context, *DisplayServerElementsRequest) (*DisplayServerElementsResponse, error)
 	// ListManageableRepositoryRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the repository.
 	ListManageableRepositoryRoles(context.Context, *ListManageableRepositoryRolesRequest) (*ListManageableRepositoryRolesResponse, error)
@@ -146,6 +224,24 @@ type DisplayServiceServer interface {
 type UnimplementedDisplayServiceServer struct {
 }
 
+func (UnimplementedDisplayServiceServer) DisplayOrganizationElements(context.Context, *DisplayOrganizationElementsRequest) (*DisplayOrganizationElementsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisplayOrganizationElements not implemented")
+}
+func (UnimplementedDisplayServiceServer) DisplayRepositoryElements(context.Context, *DisplayRepositoryElementsRequest) (*DisplayRepositoryElementsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisplayRepositoryElements not implemented")
+}
+func (UnimplementedDisplayServiceServer) DisplayPluginElements(context.Context, *DisplayPluginElementsRequest) (*DisplayPluginElementsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisplayPluginElements not implemented")
+}
+func (UnimplementedDisplayServiceServer) DisplayTemplateElements(context.Context, *DisplayTemplateElementsRequest) (*DisplayTemplateElementsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisplayTemplateElements not implemented")
+}
+func (UnimplementedDisplayServiceServer) DisplayUserElements(context.Context, *DisplayUserElementsRequest) (*DisplayUserElementsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisplayUserElements not implemented")
+}
+func (UnimplementedDisplayServiceServer) DisplayServerElements(context.Context, *DisplayServerElementsRequest) (*DisplayServerElementsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DisplayServerElements not implemented")
+}
 func (UnimplementedDisplayServiceServer) ListManageableRepositoryRoles(context.Context, *ListManageableRepositoryRolesRequest) (*ListManageableRepositoryRolesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListManageableRepositoryRoles not implemented")
 }
@@ -174,6 +270,114 @@ type UnsafeDisplayServiceServer interface {
 
 func RegisterDisplayServiceServer(s grpc.ServiceRegistrar, srv DisplayServiceServer) {
 	s.RegisterService(&DisplayService_ServiceDesc, srv)
+}
+
+func _DisplayService_DisplayOrganizationElements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DisplayOrganizationElementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DisplayServiceServer).DisplayOrganizationElements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayOrganizationElements",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DisplayServiceServer).DisplayOrganizationElements(ctx, req.(*DisplayOrganizationElementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DisplayService_DisplayRepositoryElements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DisplayRepositoryElementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DisplayServiceServer).DisplayRepositoryElements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayRepositoryElements",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DisplayServiceServer).DisplayRepositoryElements(ctx, req.(*DisplayRepositoryElementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DisplayService_DisplayPluginElements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DisplayPluginElementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DisplayServiceServer).DisplayPluginElements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayPluginElements",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DisplayServiceServer).DisplayPluginElements(ctx, req.(*DisplayPluginElementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DisplayService_DisplayTemplateElements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DisplayTemplateElementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DisplayServiceServer).DisplayTemplateElements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayTemplateElements",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DisplayServiceServer).DisplayTemplateElements(ctx, req.(*DisplayTemplateElementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DisplayService_DisplayUserElements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DisplayUserElementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DisplayServiceServer).DisplayUserElements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayUserElements",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DisplayServiceServer).DisplayUserElements(ctx, req.(*DisplayUserElementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _DisplayService_DisplayServerElements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DisplayServerElementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DisplayServiceServer).DisplayServerElements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.DisplayService/DisplayServerElements",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DisplayServiceServer).DisplayServerElements(ctx, req.(*DisplayServerElementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _DisplayService_ListManageableRepositoryRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -291,6 +495,30 @@ var DisplayService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "buf.alpha.registry.v1alpha1.DisplayService",
 	HandlerType: (*DisplayServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "DisplayOrganizationElements",
+			Handler:    _DisplayService_DisplayOrganizationElements_Handler,
+		},
+		{
+			MethodName: "DisplayRepositoryElements",
+			Handler:    _DisplayService_DisplayRepositoryElements_Handler,
+		},
+		{
+			MethodName: "DisplayPluginElements",
+			Handler:    _DisplayService_DisplayPluginElements_Handler,
+		},
+		{
+			MethodName: "DisplayTemplateElements",
+			Handler:    _DisplayService_DisplayTemplateElements_Handler,
+		},
+		{
+			MethodName: "DisplayUserElements",
+			Handler:    _DisplayService_DisplayUserElements_Handler,
+		},
+		{
+			MethodName: "DisplayServerElements",
+			Handler:    _DisplayService_DisplayServerElements_Handler,
+		},
 		{
 			MethodName: "ListManageableRepositoryRoles",
 			Handler:    _DisplayService_ListManageableRepositoryRoles_Handler,
