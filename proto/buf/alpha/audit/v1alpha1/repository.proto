@@ -49,7 +49,7 @@ message BufAlphaRegistryV1Alpha1RepositoryCommit {
   string branch = 5;
   int64 commit_sequence_id = 6;
   string author = 7;
-  BufAlphaRegistryV1Alpha1RepositoryTag tags = 8;
+  repeated BufAlphaRegistryV1Alpha1RepositoryTag tags = 8;
 }
 
 message BufAlphaRegistryV1Alpha1RepositoryTrack {
