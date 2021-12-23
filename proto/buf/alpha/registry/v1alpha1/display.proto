@@ -21,6 +21,19 @@ import "buf/alpha/registry/v1alpha1/role.proto";
 // DisplayService provides information regarding
 // UI element displaying based on the users roles.
 service DisplayService {
+  // DisplayOrganizationElements returns which organization elements should be displayed to the user.
+  rpc DisplayOrganizationElements(DisplayOrganizationElementsRequest) returns (DisplayOrganizationElementsResponse);
+  // DisplayRepositoryElements returns which repository elements should be displayed to the user.
+  rpc DisplayRepositoryElements(DisplayRepositoryElementsRequest) returns (DisplayRepositoryElementsResponse);
+  // DisplayPluginElements returns which plugin elements should be displayed to the user.
+  rpc DisplayPluginElements(DisplayPluginElementsRequest) returns (DisplayPluginElementsResponse);
+  // DisplayTemplateElements returns which template elements should be displayed to the user.
+  rpc DisplayTemplateElements(DisplayTemplateElementsRequest) returns (DisplayTemplateElementsResponse);
+  // DisplayUserElements returns which user elements should be displayed to the user.
+  rpc DisplayUserElements(DisplayUserElementsRequest) returns (DisplayUserElementsResponse);
+  // DisplayServerElements returns which server elements should be displayed to the user.
+  rpc DisplayServerElements(DisplayServerElementsRequest) returns (DisplayServerElementsResponse);
+
   // ListManageableRepositoryRoles returns which roles should be displayed
   // to the user when they are managing contributors on the repository.
   rpc ListManageableRepositoryRoles(ListManageableRepositoryRolesRequest) returns (ListManageableRepositoryRolesResponse);
@@ -39,6 +52,86 @@ service DisplayService {
   // ListManageableUserTemplateRoles returns which roles should be displayed
   // to the user when they are managing a specific contributor on the template.
   rpc ListManageableUserTemplateRoles(ListManageableUserTemplateRolesRequest) returns (ListManageableUserTemplateRolesResponse);
+}
+
+message DisplayOrganizationElementsRequest {
+  // The ID of the organization for which to check
+  // which elements should be displayed.
+  string organization_id = 1;
+}
+
+message DisplayOrganizationElementsResponse {
+  // Display create organization repository element if true.
+  bool create_repository = 1;
+  // Display create organization plugin element if true.
+  bool create_plugin = 2;
+  // Display create organization template element if true.
+  bool create_template = 3;
+  // Display organization settings element if true.
+  bool settings = 4;
+  // Display update organization settings element if true.
+  bool update_settings = 5;
+  // Display delete organization element if true.
+  bool delete = 6;
+}
+
+message DisplayRepositoryElementsRequest {
+  // The ID of the repository for which to check
+  // which elements should be displayed.
+  string repository_id = 1;
+}
+
+message DisplayRepositoryElementsResponse {
+  // Display repository settings element if true.
+  bool settings = 1;
+  // Display delete repository element if true.
+  bool delete = 2;
+}
+
+message DisplayPluginElementsRequest {
+  // The ID of the plugin for which to check
+  // which elements should be displayed.
+  string plugin_id = 1;
+}
+
+message DisplayPluginElementsResponse {
+  // Display create plugin version element if true.
+  bool create_version = 1;
+  // Display plugin settings element if true.
+  bool settings = 2;
+  // Display delete plugin element if true.
+  bool delete = 3;
+}
+
+message DisplayTemplateElementsRequest {
+  // The ID of the template for which to check
+  // which elements should be displayed.
+  string template_id = 1;
+}
+
+message DisplayTemplateElementsResponse {
+  // Display create template version element if true.
+  bool create_version = 1;
+  // Display template settings element if true.
+  bool settings = 2;
+  // Display delete template element if true.
+  bool delete = 3;
+}
+
+message DisplayUserElementsRequest {
+}
+
+message DisplayUserElementsResponse {
+  // Display delete user element if true.
+  bool delete = 1;
+}
+
+message DisplayServerElementsRequest {
+}
+
+message DisplayServerElementsResponse {
+  // Display server admin panel element if true.
+  bool admin_panel = 1;
 }
 
 message ListManageableRepositoryRolesRequest {
