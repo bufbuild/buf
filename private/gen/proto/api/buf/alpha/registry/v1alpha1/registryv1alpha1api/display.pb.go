@@ -24,6 +24,30 @@ import (
 // DisplayService provides information regarding
 // UI element displaying based on the users roles.
 type DisplayService interface {
+	// DisplayOrganizationElements returns which organization elements should be displayed to the user.
+	DisplayOrganizationElements(
+		ctx context.Context,
+		organizationId string,
+	) (createRepository bool, createPlugin bool, createTemplate bool, settings bool, updateSettings bool, delete bool, err error)
+	// DisplayRepositoryElements returns which repository elements should be displayed to the user.
+	DisplayRepositoryElements(
+		ctx context.Context,
+		repositoryId string,
+	) (settings bool, delete bool, err error)
+	// DisplayPluginElements returns which plugin elements should be displayed to the user.
+	DisplayPluginElements(
+		ctx context.Context,
+		pluginId string,
+	) (createVersion bool, settings bool, delete bool, err error)
+	// DisplayTemplateElements returns which template elements should be displayed to the user.
+	DisplayTemplateElements(
+		ctx context.Context,
+		templateId string,
+	) (createVersion bool, settings bool, delete bool, err error)
+	// DisplayUserElements returns which user elements should be displayed to the user.
+	DisplayUserElements(ctx context.Context) (delete bool, err error)
+	// DisplayServerElements returns which server elements should be displayed to the user.
+	DisplayServerElements(ctx context.Context) (adminPanel bool, err error)
 	// ListManageableRepositoryRoles returns which roles should be displayed
 	// to the user when they are managing contributors on the repository.
 	ListManageableRepositoryRoles(ctx context.Context, repositoryId string) (roles []v1alpha1.RepositoryRole, err error)
