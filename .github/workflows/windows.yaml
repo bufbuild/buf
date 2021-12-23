@@ -1,5 +1,8 @@
 name: windows
-on: push
+on:
+  push:
+  workflow_dispatch:
+
 # Prevent writing to the repository using the CI token.
 # Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
 permissions: read-all
@@ -15,13 +18,15 @@ jobs:
         uses: WillAbides/setup-go-faster@v1.7.0
         with:
           go-version: 1.17.5
+#          ignore-local: true
       - uses: actions/cache@v2
         with:
           path: |
             ${{ steps.setup-go.outputs.GOCACHE }}
             ${{ steps.setup-go.outputs.GOMODCACHE }}
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
+          key: ${{ runner.os }}-buf-windows-${{ hashFiles('**/go.sum', '/windows/**') }}
+          restore-keys: |
+            ${{ runner.os }}-buf-windows-
 #      - name: cache
 #        if: success()
 #        uses: actions/cache@v2
