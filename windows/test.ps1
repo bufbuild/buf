@@ -3,7 +3,7 @@ $protocGenGoVersion = 'v1.27.1'
 $protocGenGoGRPCVersion = '30dfb4b933a50fd366d7ed36ed4f71dbba2d382e'
 
 Invoke-WebRequest -Uri  https://github.com/protocolbuffers/protobuf/releases/download/v$protocVersion/protoc-$protocVersion-win64.zip -OutFile protoc.zip
-7z e protoc.zip
+7z x protoc.zip
 New-Item -ItemType Directory -Path C:\Users\runneradmin\protoc\bin -Force
 Move-Item -Path bin\protoc.exe -Destination C:\Users\runneradmin\protoc\bin;
 New-Item -ItemType Directory -Path C:\Users\runneradmin\protoc\lib\include\google\protobuf -Force
