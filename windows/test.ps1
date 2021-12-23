@@ -2,7 +2,7 @@ $protocVersion = '3.19.1'
 $protocGenGoVersion = 'v1.27.1'
 $protocGenGoGRPCVersion = '30dfb4b933a50fd366d7ed36ed4f71dbba2d382e'
 
-choco install --confirm curl zip
+choco install --confirm --no-progress curl zip
 curl -sSL https://github.com/protocolbuffers/protobuf/releases/download/v$protocVersion/protoc-$protocVersion-win64.zip -o protoc.zip
 unzip protoc.zip
 New-Item -ItemType Directory -Path C:\Users\runneradmin\protoc\bin -Force
