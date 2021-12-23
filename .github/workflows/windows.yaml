@@ -24,7 +24,7 @@ jobs:
           path: |
             ${{ steps.setup-go.outputs.GOCACHE }}
             ${{ steps.setup-go.outputs.GOMODCACHE }}
-          key: ${{ runner.os }}-buf-windows2-${{ hashFiles('**/go.sum', '.github/workflows/windows.yaml') }}
+          key: ${{ runner.os }}-buf-windows-${{ hashFiles('**/go.sum', '.github/workflows/windows.yaml') }}
           restore-keys: |
             ${{ runner.os }}-buf-windows-
 #      - name: cache
