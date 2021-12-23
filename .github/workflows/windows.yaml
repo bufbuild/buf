@@ -16,17 +16,15 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: setup-go
-        id: setup-go
         if: success()
         uses: WillAbides/setup-go-faster@v1.7.0
         with:
           go-version: 1.17.5
-          ignore-local: true
       - uses: actions/cache@v2
         with:
           path: |
-            ${{ steps.setup-go.outputs.GOCACHE }}
-            ${{ steps.setup-go.outputs.GOMODCACHE }}
+            ${{ env.GOCACHE }}
+            ${{ env.GOMODCACHE }}
           key: ${{ runner.os }}-buf-windows-${{ hashFiles('**/go.sum', '.github/workflows/windows.yaml') }}
           restore-keys: |
             ${{ runner.os }}-buf-windows-
