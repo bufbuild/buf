@@ -5,6 +5,9 @@ on: push
 permissions: read-all
 jobs:
   test:
+    env:
+      GOMODCACHE: 'D:\gomodcache'
+      GOCACHE: 'D:\gocache'
     runs-on: windows-2019
     steps:
       - name: checkout
@@ -19,9 +22,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            C:\Users\runneradmin\AppData\Local\Temp\chocolatey
-            C:\Users\runneradmin\go\pkg\mod
-          key: ${{ runner.os }}-buf-windows-${{ hashFiles('**/go.sum', '/windows/**') }}
+            ${{ env.GOCACHE }}
+            ${{ env.GOMODCACHE }}
+          key: ${{ runner.os }}-buf-windows-${{ hashFiles('**/go.sum', '.github/workflows/windows.yaml') }}
           restore-keys: |
             ${{ runner.os }}-buf-windows-
       - name: test
