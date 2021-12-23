@@ -420,12 +420,6 @@ message ActionBufAlphaRegistryV1Alpha1ListUsersInfo {
   BufAlphaRegistryV1Alpha1UserState user_state_filter = 1;
 }
 
-// ActionBufAlphaRegistryV1Alpha1DeleteUserInfo stores audit log details not included
-// in objects for the DeleteUser action if the deletion fails.
-message ActionBufAlphaRegistryV1Alpha1DeleteUserInfo {
-  string user_id = 1;
-}
-
 // ActionBufAlphaRegistryV1Alpha1DeactivateUserInfo stores audit log details not included
 // in objects for the DeactivateeUser action if the deactivation fails.
 message ActionBufAlphaRegistryV1Alpha1DeactivateUserInfo {
@@ -551,16 +545,15 @@ message Event {
     ActionBufAlphaRegistryV1Alpha1DeleteTokenInfo action_buf_alpha_registry_v1alpha1_delete_token_info = 44;
     ActionBufAlphaRegistryV1Alpha1CreateUserInfo action_buf_alpha_registry_v1alpha1_create_user_info = 45;
     ActionBufAlphaRegistryV1Alpha1ListUsersInfo action_buf_alpha_registry_v1alpha1_list_users_info = 46;
-    ActionBufAlphaRegistryV1Alpha1DeleteUserInfo action_buf_alpha_registry_v1alpha1_delete_user_info = 47;
-    ActionBufAlphaRegistryV1Alpha1DeactivateUserInfo action_buf_alpha_registry_v1alpha1_deactivate_user_info = 48;
-    ActionBufAlphaRegistryV1Alpha1UpdateUserServerRoleInfo action_buf_alpha_registry_v1alpha1_update_user_server_role_info = 49;
-    ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_info = 50;
-    ActionBufAlphaRegistryinternalV1Alpha1DeletePluginVersionInfo action_buf_alpha_registryinternal_v1alpha1_delete_plugin_version_info = 51;
-    ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo action_buf_alpha_registry_v1alpha1_set_repository_contributor_info = 52;
-    ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo action_buf_alpha_registry_v1alpha1_set_plugin_contributor_info = 53;
-    ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo action_buf_alpha_registry_v1alpha1_set_template_contributor_info = 54;
-    ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_metadata_info = 55;
-    ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo action_buf_alpha_registry_v1alpha1_create_repository_track_info = 56;
+    ActionBufAlphaRegistryV1Alpha1DeactivateUserInfo action_buf_alpha_registry_v1alpha1_deactivate_user_info = 47;
+    ActionBufAlphaRegistryV1Alpha1UpdateUserServerRoleInfo action_buf_alpha_registry_v1alpha1_update_user_server_role_info = 48;
+    ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_info = 49;
+    ActionBufAlphaRegistryinternalV1Alpha1DeletePluginVersionInfo action_buf_alpha_registryinternal_v1alpha1_delete_plugin_version_info = 50;
+    ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo action_buf_alpha_registry_v1alpha1_set_repository_contributor_info = 51;
+    ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo action_buf_alpha_registry_v1alpha1_set_plugin_contributor_info = 52;
+    ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo action_buf_alpha_registry_v1alpha1_set_template_contributor_info = 53;
+    ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_metadata_info = 54;
+    ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo action_buf_alpha_registry_v1alpha1_create_repository_track_info = 55;
   }
 }
 
