@@ -99,7 +99,8 @@ func GetAllRulesV1() ([]bufcheck.Rule, error) {
 //
 // This is used for validation purposes only.
 func GetAllRulesAndCategoriesV1() []string {
-	var allRulesAndCategories []string
+	allRulesAndCategories := make([]string, 0, len(buflintv1.VersionSpec.AllCategories)+len(buflintv1.VersionSpec.IDToCategories))
+
 	allRulesAndCategories = append(allRulesAndCategories, buflintv1.VersionSpec.AllCategories...)
 	for id := range buflintv1.VersionSpec.IDToCategories {
 		allRulesAndCategories = append(allRulesAndCategories, id)
@@ -111,7 +112,8 @@ func GetAllRulesAndCategoriesV1() []string {
 //
 // This is used for validation purposes only.
 func GetAllRulesAndCategoriesV1Beta1() []string {
-	var allRulesAndCategories []string
+	allRulesAndCategories := make([]string, 0, len(buflintv1beta1.VersionSpec.AllCategories)+len(buflintv1beta1.VersionSpec.IDToCategories))
+
 	allRulesAndCategories = append(allRulesAndCategories, buflintv1beta1.VersionSpec.AllCategories...)
 	for id := range buflintv1beta1.VersionSpec.IDToCategories {
 		allRulesAndCategories = append(allRulesAndCategories, id)
