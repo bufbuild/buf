@@ -10,6 +10,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
       - name: setup-go
+        id: setup-go
         if: success()
         uses: WillAbides/setup-go-faster@v1.7.0
         with:
