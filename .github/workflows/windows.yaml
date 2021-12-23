@@ -10,6 +10,7 @@ jobs:
   test:
     env:
       GOMODCACHE: 'D:\gomodcache'
+      GOCACHE: 'D:\gocache'
     runs-on: windows-2019
     steps:
       - name: checkout
