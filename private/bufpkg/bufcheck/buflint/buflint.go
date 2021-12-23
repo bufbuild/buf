@@ -95,6 +95,30 @@ func GetAllRulesV1() ([]bufcheck.Rule, error) {
 	return rulesForInternalRules(internalConfig.Rules), nil
 }
 
+// GetAllRulesAndCategoriesV1 returns all rules and categories for v1 as a string slice.
+//
+// This is used for validation purposes only.
+func GetAllRulesAndCategoriesV1() []string {
+	var allRulesAndCategories []string
+	allRulesAndCategories = append(allRulesAndCategories, buflintv1.VersionSpec.AllCategories...)
+	for id := range buflintv1.VersionSpec.IDToCategories {
+		allRulesAndCategories = append(allRulesAndCategories, id)
+	}
+	return allRulesAndCategories
+}
+
+// GetAllRulesAndCategoriesV1Beta1 returns all rules and categories for v1beta1 as a string slice.
+//
+// This is used for validation purposes only.
+func GetAllRulesAndCategoriesV1Beta1() []string {
+	var allRulesAndCategories []string
+	allRulesAndCategories = append(allRulesAndCategories, buflintv1beta1.VersionSpec.AllCategories...)
+	for id := range buflintv1beta1.VersionSpec.IDToCategories {
+		allRulesAndCategories = append(allRulesAndCategories, id)
+	}
+	return allRulesAndCategories
+}
+
 func internalConfigForConfig(config *buflintconfig.Config) (*internal.Config, error) {
 	var versionSpec *internal.VersionSpec
 	switch config.Version {
