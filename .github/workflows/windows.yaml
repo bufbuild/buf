@@ -8,6 +8,8 @@ on:
 permissions: read-all
 jobs:
   test:
+    env:
+      GOMODCACHE: 'D:\gomodcache'
     runs-on: windows-2019
     steps:
       - name: checkout
