@@ -18,13 +18,13 @@ jobs:
         uses: WillAbides/setup-go-faster@v1.7.0
         with:
           go-version: 1.17.5
-#          ignore-local: true
+          ignore-local: true
       - uses: actions/cache@v2
         with:
           path: |
             ${{ steps.setup-go.outputs.GOCACHE }}
             ${{ steps.setup-go.outputs.GOMODCACHE }}
-          key: ${{ runner.os }}-buf-windows-${{ hashFiles('**/go.sum', '/windows/**') }}
+          key: ${{ runner.os }}-buf-windows2-${{ hashFiles('**/go.sum', '/windows/**') }}
           restore-keys: |
             ${{ runner.os }}-buf-windows-
 #      - name: cache
