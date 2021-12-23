@@ -241,14 +241,14 @@ type BufAlphaRegistryV1Alpha1RepositoryCommit struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id               string                                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	CreateTime       *timestamppb.Timestamp                 `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	Digest           string                                 `protobuf:"bytes,3,opt,name=digest,proto3" json:"digest,omitempty"`
-	Name             string                                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
-	Branch           string                                 `protobuf:"bytes,5,opt,name=branch,proto3" json:"branch,omitempty"`
-	CommitSequenceId int64                                  `protobuf:"varint,6,opt,name=commit_sequence_id,json=commitSequenceId,proto3" json:"commit_sequence_id,omitempty"`
-	Author           string                                 `protobuf:"bytes,7,opt,name=author,proto3" json:"author,omitempty"`
-	Tags             *BufAlphaRegistryV1Alpha1RepositoryTag `protobuf:"bytes,8,opt,name=tags,proto3" json:"tags,omitempty"`
+	Id               string                                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	CreateTime       *timestamppb.Timestamp                   `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	Digest           string                                   `protobuf:"bytes,3,opt,name=digest,proto3" json:"digest,omitempty"`
+	Name             string                                   `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	Branch           string                                   `protobuf:"bytes,5,opt,name=branch,proto3" json:"branch,omitempty"`
+	CommitSequenceId int64                                    `protobuf:"varint,6,opt,name=commit_sequence_id,json=commitSequenceId,proto3" json:"commit_sequence_id,omitempty"`
+	Author           string                                   `protobuf:"bytes,7,opt,name=author,proto3" json:"author,omitempty"`
+	Tags             []*BufAlphaRegistryV1Alpha1RepositoryTag `protobuf:"bytes,8,rep,name=tags,proto3" json:"tags,omitempty"`
 }
 
 func (x *BufAlphaRegistryV1Alpha1RepositoryCommit) Reset() {
@@ -332,7 +332,7 @@ func (x *BufAlphaRegistryV1Alpha1RepositoryCommit) GetAuthor() string {
 	return ""
 }
 
-func (x *BufAlphaRegistryV1Alpha1RepositoryCommit) GetTags() *BufAlphaRegistryV1Alpha1RepositoryTag {
+func (x *BufAlphaRegistryV1Alpha1RepositoryCommit) GetTags() []*BufAlphaRegistryV1Alpha1RepositoryTag {
 	if x != nil {
 		return x.Tags
 	}
@@ -452,7 +452,7 @@ var file_buf_alpha_audit_v1alpha1_repository_proto_rawDesc = []byte{
 	0x64, 0x18, 0x06, 0x20, 0x01, 0x28, 0x03, 0x52, 0x10, 0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x53,
 	0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x49, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x61, 0x75, 0x74,
 	0x68, 0x6f, 0x72, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x61, 0x75, 0x74, 0x68, 0x6f,
-	0x72, 0x12, 0x53, 0x0a, 0x04, 0x74, 0x61, 0x67, 0x73, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x72, 0x12, 0x53, 0x0a, 0x04, 0x74, 0x61, 0x67, 0x73, 0x18, 0x08, 0x20, 0x03, 0x28, 0x0b, 0x32,
 	0x3f, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x61, 0x75, 0x64, 0x69,
 	0x74, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x42, 0x75, 0x66, 0x41, 0x6c,
 	0x70, 0x68, 0x61, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x56, 0x31, 0x41, 0x6c, 0x70,
