@@ -29,7 +29,7 @@ PATH="${DOWNLOAD_CACHE}/protoc/bin:${PATH}"
 
 go install google.golang.org/protobuf/cmd/protoc-gen-go@${PROTOC_GEN_GO_VERSION}
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@${PROTOC_GEN_GO_GRPC_VERSION}
-go install ./private/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer
-go install ./private/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver
-go install ./cmd/buf
+go install ./cmd/buf \
+  ./private/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-writer \
+  ./private/buf/cmd/buf/command/protoc/internal/protoc-gen-insertion-point-receiver
 go test ./...
