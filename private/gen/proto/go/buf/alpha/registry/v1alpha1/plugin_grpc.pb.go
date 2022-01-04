@@ -60,6 +60,10 @@ type PluginServiceClient interface {
 	// This does not include users who have implicit roles against the plugin, unless they have also been
 	// assigned a role explicitly.
 	ListPluginContributors(ctx context.Context, in *ListPluginContributorsRequest, opts ...grpc.CallOption) (*ListPluginContributorsResponse, error)
+	// DeprecatePluginByName deprecates the plugin, if found.
+	DeprecatePluginByName(ctx context.Context, in *DeprecatePluginByNameRequest, opts ...grpc.CallOption) (*DeprecatePluginByNameResponse, error)
+	// UndeprecatePluginByName makes the plugin not deprecated and removes any deprecation_message.
+	UndeprecatePluginByName(ctx context.Context, in *UndeprecatePluginByNameRequest, opts ...grpc.CallOption) (*UndeprecatePluginByNameResponse, error)
 	// GetTemplate returns the template, if found.
 	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error)
 	// ListTemplates returns all the templates available to the user. This includes
@@ -86,6 +90,10 @@ type PluginServiceClient interface {
 	// This does not include users who have implicit roles against the template, unless they have also been
 	// assigned a role explicitly.
 	ListTemplateContributors(ctx context.Context, in *ListTemplateContributorsRequest, opts ...grpc.CallOption) (*ListTemplateContributorsResponse, error)
+	// DeprecateTemplateByName deprecates the template, if found.
+	DeprecateTemplateByName(ctx context.Context, in *DeprecateTemplateByNameRequest, opts ...grpc.CallOption) (*DeprecateTemplateByNameResponse, error)
+	// UndeprecateTemplateByName makes the template not deprecated and removes any deprecation_message.
+	UndeprecateTemplateByName(ctx context.Context, in *UndeprecateTemplateByNameRequest, opts ...grpc.CallOption) (*UndeprecateTemplateByNameResponse, error)
 }
 
 type pluginServiceClient struct {
@@ -171,6 +179,24 @@ func (c *pluginServiceClient) SetPluginContributor(ctx context.Context, in *SetP
 func (c *pluginServiceClient) ListPluginContributors(ctx context.Context, in *ListPluginContributorsRequest, opts ...grpc.CallOption) (*ListPluginContributorsResponse, error) {
 	out := new(ListPluginContributorsResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/ListPluginContributors", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pluginServiceClient) DeprecatePluginByName(ctx context.Context, in *DeprecatePluginByNameRequest, opts ...grpc.CallOption) (*DeprecatePluginByNameResponse, error) {
+	out := new(DeprecatePluginByNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/DeprecatePluginByName", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pluginServiceClient) UndeprecatePluginByName(ctx context.Context, in *UndeprecatePluginByNameRequest, opts ...grpc.CallOption) (*UndeprecatePluginByNameResponse, error) {
+	out := new(UndeprecatePluginByNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/UndeprecatePluginByName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -276,6 +302,24 @@ func (c *pluginServiceClient) ListTemplateContributors(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *pluginServiceClient) DeprecateTemplateByName(ctx context.Context, in *DeprecateTemplateByNameRequest, opts ...grpc.CallOption) (*DeprecateTemplateByNameResponse, error) {
+	out := new(DeprecateTemplateByNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/DeprecateTemplateByName", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pluginServiceClient) UndeprecateTemplateByName(ctx context.Context, in *UndeprecateTemplateByNameRequest, opts ...grpc.CallOption) (*UndeprecateTemplateByNameResponse, error) {
+	out := new(UndeprecateTemplateByNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/UndeprecateTemplateByName", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PluginServiceServer is the server API for PluginService service.
 // All implementations should embed UnimplementedPluginServiceServer
 // for forward compatibility
@@ -304,6 +348,10 @@ type PluginServiceServer interface {
 	// This does not include users who have implicit roles against the plugin, unless they have also been
 	// assigned a role explicitly.
 	ListPluginContributors(context.Context, *ListPluginContributorsRequest) (*ListPluginContributorsResponse, error)
+	// DeprecatePluginByName deprecates the plugin, if found.
+	DeprecatePluginByName(context.Context, *DeprecatePluginByNameRequest) (*DeprecatePluginByNameResponse, error)
+	// UndeprecatePluginByName makes the plugin not deprecated and removes any deprecation_message.
+	UndeprecatePluginByName(context.Context, *UndeprecatePluginByNameRequest) (*UndeprecatePluginByNameResponse, error)
 	// GetTemplate returns the template, if found.
 	GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error)
 	// ListTemplates returns all the templates available to the user. This includes
@@ -330,6 +378,10 @@ type PluginServiceServer interface {
 	// This does not include users who have implicit roles against the template, unless they have also been
 	// assigned a role explicitly.
 	ListTemplateContributors(context.Context, *ListTemplateContributorsRequest) (*ListTemplateContributorsResponse, error)
+	// DeprecateTemplateByName deprecates the template, if found.
+	DeprecateTemplateByName(context.Context, *DeprecateTemplateByNameRequest) (*DeprecateTemplateByNameResponse, error)
+	// UndeprecateTemplateByName makes the template not deprecated and removes any deprecation_message.
+	UndeprecateTemplateByName(context.Context, *UndeprecateTemplateByNameRequest) (*UndeprecateTemplateByNameResponse, error)
 }
 
 // UnimplementedPluginServiceServer should be embedded to have forward compatible implementations.
@@ -363,6 +415,12 @@ func (UnimplementedPluginServiceServer) SetPluginContributor(context.Context, *S
 func (UnimplementedPluginServiceServer) ListPluginContributors(context.Context, *ListPluginContributorsRequest) (*ListPluginContributorsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPluginContributors not implemented")
 }
+func (UnimplementedPluginServiceServer) DeprecatePluginByName(context.Context, *DeprecatePluginByNameRequest) (*DeprecatePluginByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeprecatePluginByName not implemented")
+}
+func (UnimplementedPluginServiceServer) UndeprecatePluginByName(context.Context, *UndeprecatePluginByNameRequest) (*UndeprecatePluginByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UndeprecatePluginByName not implemented")
+}
 func (UnimplementedPluginServiceServer) GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTemplate not implemented")
 }
@@ -395,6 +453,12 @@ func (UnimplementedPluginServiceServer) SetTemplateContributor(context.Context, 
 }
 func (UnimplementedPluginServiceServer) ListTemplateContributors(context.Context, *ListTemplateContributorsRequest) (*ListTemplateContributorsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTemplateContributors not implemented")
+}
+func (UnimplementedPluginServiceServer) DeprecateTemplateByName(context.Context, *DeprecateTemplateByNameRequest) (*DeprecateTemplateByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeprecateTemplateByName not implemented")
+}
+func (UnimplementedPluginServiceServer) UndeprecateTemplateByName(context.Context, *UndeprecateTemplateByNameRequest) (*UndeprecateTemplateByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UndeprecateTemplateByName not implemented")
 }
 
 // UnsafePluginServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -566,6 +630,42 @@ func _PluginService_ListPluginContributors_Handler(srv interface{}, ctx context.
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PluginServiceServer).ListPluginContributors(ctx, req.(*ListPluginContributorsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PluginService_DeprecatePluginByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeprecatePluginByNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServiceServer).DeprecatePluginByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.PluginService/DeprecatePluginByName",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServiceServer).DeprecatePluginByName(ctx, req.(*DeprecatePluginByNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PluginService_UndeprecatePluginByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UndeprecatePluginByNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServiceServer).UndeprecatePluginByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.PluginService/UndeprecatePluginByName",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServiceServer).UndeprecatePluginByName(ctx, req.(*UndeprecatePluginByNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -768,6 +868,42 @@ func _PluginService_ListTemplateContributors_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PluginService_DeprecateTemplateByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeprecateTemplateByNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServiceServer).DeprecateTemplateByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.PluginService/DeprecateTemplateByName",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServiceServer).DeprecateTemplateByName(ctx, req.(*DeprecateTemplateByNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PluginService_UndeprecateTemplateByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UndeprecateTemplateByNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServiceServer).UndeprecateTemplateByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.PluginService/UndeprecateTemplateByName",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServiceServer).UndeprecateTemplateByName(ctx, req.(*UndeprecateTemplateByNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PluginService_ServiceDesc is the grpc.ServiceDesc for PluginService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -812,6 +948,14 @@ var PluginService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PluginService_ListPluginContributors_Handler,
 		},
 		{
+			MethodName: "DeprecatePluginByName",
+			Handler:    _PluginService_DeprecatePluginByName_Handler,
+		},
+		{
+			MethodName: "UndeprecatePluginByName",
+			Handler:    _PluginService_UndeprecatePluginByName_Handler,
+		},
+		{
 			MethodName: "GetTemplate",
 			Handler:    _PluginService_GetTemplate_Handler,
 		},
@@ -854,6 +998,14 @@ var PluginService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTemplateContributors",
 			Handler:    _PluginService_ListTemplateContributors_Handler,
+		},
+		{
+			MethodName: "DeprecateTemplateByName",
+			Handler:    _PluginService_DeprecateTemplateByName_Handler,
+		},
+		{
+			MethodName: "UndeprecateTemplateByName",
+			Handler:    _PluginService_UndeprecateTemplateByName_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
