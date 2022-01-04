@@ -65,6 +65,7 @@ message PluginSearchResult {
   string owner = 3;
   // The visibility of the plugin.
   PluginVisibility visibility = 4;
+  bool deprecated = 5;
 }
 
 message TemplateSearchResult {
@@ -75,6 +76,7 @@ message TemplateSearchResult {
   string owner = 3;
   // The visibility of the template.
   PluginVisibility visibility = 4;
+  bool deprecated = 5;
 }
 
 message SearchResult {

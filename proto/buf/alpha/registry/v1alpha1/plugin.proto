@@ -30,6 +30,10 @@ message Plugin {
   string owner = 3;
   // The visibility of the plugin.
   PluginVisibility visibility = 4;
+  // deprecated means this plugin is deprecated.
+  bool deprecated = 5;
+  // deprecation_message is the message shown if the plugin is deprecated.
+  string deprecation_message = 6;
 }
 
 // PluginVersion represents a specific build of a plugin,
@@ -72,6 +76,10 @@ message Template {
   repeated PluginConfig plugin_configs = 4;
   // The visibility of the template.
   PluginVisibility visibility = 5;
+  // deprecated means this template is deprecated.
+  bool deprecated = 8;
+  // deprecation_message is the message shown if the template is deprecated.
+  string deprecation_message = 9;
 }
 
 // PluginConfig defines a runtime configuration for a plugin.
@@ -171,6 +179,10 @@ service PluginService {
   // This does not include users who have implicit roles against the plugin, unless they have also been
   // assigned a role explicitly.
   rpc ListPluginContributors(ListPluginContributorsRequest) returns (ListPluginContributorsResponse);
+  // DeprecatePlugin deprecates the plugin, if found.
+  rpc DeprecatePlugin(DeprecatePluginRequest) returns (DeprecatePluginResponse);
+  // UndeprecatePlugin makes the plugin not deprecated and removes any deprecation_message.
+  rpc UndeprecatePlugin(UndeprecatePluginRequest) returns (UndeprecatePluginResponse);
   // GetTemplate returns the template, if found.
   rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
   // ListTemplates returns all the templates available to the user. This includes
@@ -197,6 +209,10 @@ service PluginService {
   // This does not include users who have implicit roles against the template, unless they have also been
   // assigned a role explicitly.
   rpc ListTemplateContributors(ListTemplateContributorsRequest) returns (ListTemplateContributorsResponse);
+  // DeprecateTemplate deprecates the template, if found.
+  rpc DeprecateTemplate(DeprecateTemplateRequest) returns (DeprecateTemplateResponse);
+  // UndeprecateTemplate makes the template not deprecated and removes any deprecation_message.
+  rpc UndeprecateTemplate(UndeprecateTemplateRequest) returns (UndeprecateTemplateResponse);
 }
 
 message ListPluginsRequest {
@@ -323,6 +339,26 @@ message ListPluginContributorsResponse {
   // There are no more pages if this is empty.
   string next_page_token = 2;
 }
+
+message DeprecatePluginRequest {
+  // The owner of the plugin.
+  string owner = 1;
+  // The name of the plugin.
+  string name = 2;
+  // A message shown along with the deprecation warning for this plugin.
+  string message = 3;
+}
+
+message DeprecatePluginResponse {}
+
+message UndeprecatePluginRequest {
+  // The owner of the plugin.
+  string owner = 1;
+  // The name of the plugin.
+  string name = 2;
+}
+
+message UndeprecatePluginResponse {}
 
 message GetTemplateRequest {
   // The owner of the template.
@@ -481,3 +517,23 @@ message ListTemplateContributorsResponse {
   // There are no more pages if this is empty.
   string next_page_token = 2;
 }
+
+message DeprecateTemplateRequest {
+  // The owner of the template.
+  string owner = 1;
+  // The name of the template.
+  string name = 2;
+  // A message shown along with the deprecation warning for this template.
+  string message = 3;
+}
+
+message DeprecateTemplateResponse {}
+
+message UndeprecateTemplateRequest {
+  // The owner of the template.
+  string owner = 1;
+  // The name of the template.
+  string name = 2;
+}
+
+message UndeprecateTemplateResponse {}

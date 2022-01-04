@@ -256,6 +256,52 @@ func (s *pluginService) ListPluginContributors(
 	return response.Users, response.NextPageToken, nil
 }
 
+// DeprecatePlugin deprecates the plugin, if found.
+func (s *pluginService) DeprecatePlugin(
+	ctx context.Context,
+	owner string,
+	name string,
+	message string,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.DeprecatePlugin(
+		ctx,
+		&v1alpha1.DeprecatePluginRequest{
+			Owner:   owner,
+			Name:    name,
+			Message: message,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UndeprecatePlugin makes the plugin not deprecated and removes any deprecation_message.
+func (s *pluginService) UndeprecatePlugin(
+	ctx context.Context,
+	owner string,
+	name string,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.UndeprecatePlugin(
+		ctx,
+		&v1alpha1.UndeprecatePluginRequest{
+			Owner: owner,
+			Name:  name,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetTemplate returns the template, if found.
 func (s *pluginService) GetTemplate(
 	ctx context.Context,
@@ -532,4 +578,50 @@ func (s *pluginService) ListTemplateContributors(
 		return nil, "", err
 	}
 	return response.Users, response.NextPageToken, nil
+}
+
+// DeprecateTemplate deprecates the template, if found.
+func (s *pluginService) DeprecateTemplate(
+	ctx context.Context,
+	owner string,
+	name string,
+	message string,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.DeprecateTemplate(
+		ctx,
+		&v1alpha1.DeprecateTemplateRequest{
+			Owner:   owner,
+			Name:    name,
+			Message: message,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// UndeprecateTemplate makes the template not deprecated and removes any deprecation_message.
+func (s *pluginService) UndeprecateTemplate(
+	ctx context.Context,
+	owner string,
+	name string,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.UndeprecateTemplate(
+		ctx,
+		&v1alpha1.UndeprecateTemplateRequest{
+			Owner: owner,
+			Name:  name,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
