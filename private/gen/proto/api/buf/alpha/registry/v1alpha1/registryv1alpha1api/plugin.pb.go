@@ -95,15 +95,15 @@ type PluginService interface {
 		pageToken string,
 		reverse bool,
 	) (users []*v1alpha1.PluginContributor, nextPageToken string, err error)
-	// DeprecatePluginByName deprecates the plugin, if found.
-	DeprecatePluginByName(
+	// DeprecatePlugin deprecates the plugin, if found.
+	DeprecatePlugin(
 		ctx context.Context,
 		owner string,
 		name string,
 		message string,
 	) (err error)
-	// UndeprecatePluginByName makes the plugin not deprecated and removes any deprecation_message.
-	UndeprecatePluginByName(
+	// UndeprecatePlugin makes the plugin not deprecated and removes any deprecation_message.
+	UndeprecatePlugin(
 		ctx context.Context,
 		owner string,
 		name string,
@@ -194,15 +194,15 @@ type PluginService interface {
 		pageToken string,
 		reverse bool,
 	) (users []*v1alpha1.TemplateContributor, nextPageToken string, err error)
-	// DeprecateTemplateByName deprecates the template, if found.
-	DeprecateTemplateByName(
+	// DeprecateTemplate deprecates the template, if found.
+	DeprecateTemplate(
 		ctx context.Context,
 		owner string,
 		name string,
 		message string,
 	) (err error)
-	// UndeprecateTemplateByName makes the template not deprecated and removes any deprecation_message.
-	UndeprecateTemplateByName(
+	// UndeprecateTemplate makes the template not deprecated and removes any deprecation_message.
+	UndeprecateTemplate(
 		ctx context.Context,
 		owner string,
 		name string,

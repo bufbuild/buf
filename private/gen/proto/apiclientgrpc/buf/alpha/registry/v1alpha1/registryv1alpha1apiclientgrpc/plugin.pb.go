@@ -256,8 +256,8 @@ func (s *pluginService) ListPluginContributors(
 	return response.Users, response.NextPageToken, nil
 }
 
-// DeprecatePluginByName deprecates the plugin, if found.
-func (s *pluginService) DeprecatePluginByName(
+// DeprecatePlugin deprecates the plugin, if found.
+func (s *pluginService) DeprecatePlugin(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -266,9 +266,9 @@ func (s *pluginService) DeprecatePluginByName(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.DeprecatePluginByName(
+	_, err := s.client.DeprecatePlugin(
 		ctx,
-		&v1alpha1.DeprecatePluginByNameRequest{
+		&v1alpha1.DeprecatePluginRequest{
 			Owner:   owner,
 			Name:    name,
 			Message: message,
@@ -280,8 +280,8 @@ func (s *pluginService) DeprecatePluginByName(
 	return nil
 }
 
-// UndeprecatePluginByName makes the plugin not deprecated and removes any deprecation_message.
-func (s *pluginService) UndeprecatePluginByName(
+// UndeprecatePlugin makes the plugin not deprecated and removes any deprecation_message.
+func (s *pluginService) UndeprecatePlugin(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -289,9 +289,9 @@ func (s *pluginService) UndeprecatePluginByName(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.UndeprecatePluginByName(
+	_, err := s.client.UndeprecatePlugin(
 		ctx,
-		&v1alpha1.UndeprecatePluginByNameRequest{
+		&v1alpha1.UndeprecatePluginRequest{
 			Owner: owner,
 			Name:  name,
 		},
@@ -580,8 +580,8 @@ func (s *pluginService) ListTemplateContributors(
 	return response.Users, response.NextPageToken, nil
 }
 
-// DeprecateTemplateByName deprecates the template, if found.
-func (s *pluginService) DeprecateTemplateByName(
+// DeprecateTemplate deprecates the template, if found.
+func (s *pluginService) DeprecateTemplate(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -590,9 +590,9 @@ func (s *pluginService) DeprecateTemplateByName(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.DeprecateTemplateByName(
+	_, err := s.client.DeprecateTemplate(
 		ctx,
-		&v1alpha1.DeprecateTemplateByNameRequest{
+		&v1alpha1.DeprecateTemplateRequest{
 			Owner:   owner,
 			Name:    name,
 			Message: message,
@@ -604,8 +604,8 @@ func (s *pluginService) DeprecateTemplateByName(
 	return nil
 }
 
-// UndeprecateTemplateByName makes the template not deprecated and removes any deprecation_message.
-func (s *pluginService) UndeprecateTemplateByName(
+// UndeprecateTemplate makes the template not deprecated and removes any deprecation_message.
+func (s *pluginService) UndeprecateTemplate(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -613,9 +613,9 @@ func (s *pluginService) UndeprecateTemplateByName(
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.UndeprecateTemplateByName(
+	_, err := s.client.UndeprecateTemplate(
 		ctx,
-		&v1alpha1.UndeprecateTemplateByNameRequest{
+		&v1alpha1.UndeprecateTemplateRequest{
 			Owner: owner,
 			Name:  name,
 		},
