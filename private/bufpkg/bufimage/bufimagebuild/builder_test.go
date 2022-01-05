@@ -230,6 +230,12 @@ func TestCompareProto3Optional1(t *testing.T) {
 	testCompare(t, runner, "proto3optional1")
 }
 
+func TestCompareTrailingComments(t *testing.T) {
+	t.Parallel()
+	runner := command.NewRunner()
+	testCompare(t, runner, "trailingcomments")
+}
+
 func TestCustomOptionsError1(t *testing.T) {
 	t.Parallel()
 	testFileAnnotations(
