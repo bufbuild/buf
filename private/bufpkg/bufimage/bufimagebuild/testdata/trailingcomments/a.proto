@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package a;
+
+// https://github.com/bufbuild/buf/issues/798
+
+enum Foo { // first comment
+  FOO_UNSPECIFIED = 0;
+} // second comment
