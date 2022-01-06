@@ -10,8 +10,8 @@ $(call _assert_var,CACHE_INCLUDE)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/protocolbuffers/protobuf/releases 20211028 checked 20211112
-PROTOC_VERSION ?= 3.19.1
+# https://github.com/protocolbuffers/protobuf/releases 20220105 checked 20220106
+PROTOC_VERSION ?= 3.19.2
 
 # There are no protobuf releases for Darwin ARM so for
 # now we always use the x86_64 release through Rosetta.

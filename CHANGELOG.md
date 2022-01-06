@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Upgrade to `protoc` 3.19.2 support.
 
 ## [v1.0.0-rc10] - 2021-12-16
 
