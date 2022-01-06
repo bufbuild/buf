@@ -38,6 +38,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsByBranch(
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
+	omitTags bool,
 ) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -51,6 +52,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsByBranch(
 			PageSize:             pageSize,
 			PageToken:            pageToken,
 			Reverse:              reverse,
+			OmitTags:             omitTags,
 		},
 	)
 	if err != nil {

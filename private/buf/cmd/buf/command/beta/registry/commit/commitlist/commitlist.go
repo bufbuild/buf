@@ -124,6 +124,7 @@ func run(
 		flags.PageSize,
 		flags.PageToken,
 		flags.Reverse,
+		false,
 	)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
