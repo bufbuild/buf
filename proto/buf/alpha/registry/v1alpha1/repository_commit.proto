@@ -87,6 +87,8 @@ message ListRepositoryCommitsByReferenceRequest {
   uint32 page_size = 4;
   string page_token = 5;
   bool reverse = 6;
+  // Allow the server to omit tags from the response.
+  bool omit_tags = 7;
 }
 
 message ListRepositoryCommitsByReferenceResponse {
