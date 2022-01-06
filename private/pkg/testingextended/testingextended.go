@@ -34,5 +34,5 @@ func GetTestTimeout(t *testing.T) time.Duration {
 	}
 	// It's fine if this panics. We expect to be in a test, and this should
 	// be covered by the Go 1 compatability promise.
-	return flag.Lookup("timeout").Value.(testing.Getter).Get().(time.Duration)
+	return flag.Lookup("timeout").Value.(flag.Getter).Get().(time.Duration)
 }
