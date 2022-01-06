@@ -27,12 +27,12 @@ func SkipIfShort(t *testing.T) {
 	}
 }
 
-//GetTestTimeout returns the value of the go test -timeout flag.
+// GetTestTimeout returns the value of the go test -timeout flag.
 func GetTestTimeout(t *testing.T) time.Duration {
 	if !flag.Parsed() {
 		t.Fatal("unable to read testing timeout flag as flags have not been parsed")
 	}
 	// It's fine if this panics. We expect to be in a test, and this should
-	// be covered by the Go 1 compatability promise.
+	// be covered by the Go 1 compatibility promise.
 	return flag.Lookup("test.timeout").Value.(flag.Getter).Get().(time.Duration)
 }
