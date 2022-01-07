@@ -44,7 +44,9 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatecreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatedelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatedeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatelist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversioncreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
@@ -227,6 +229,8 @@ func NewRootCommand(name string) *appcmd.Command {
 									templatecreate.NewCommand("create", builder),
 									templatelist.NewCommand("list", builder),
 									templatedelete.NewCommand("delete", builder),
+									templatedeprecate.NewCommand("deprecate", builder),
+									templateundeprecate.NewCommand("undeprecate", builder),
 									{
 										Use:   "version",
 										Short: "Template version commands.",
