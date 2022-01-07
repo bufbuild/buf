@@ -113,6 +113,20 @@ func run(
 	remote := bufrpc.DefaultRemote
 	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
 		remote = moduleConfig.ModuleIdentity.Remote()
+	} else {
+		for _, moduleReference := range moduleConfig.Build.DependencyModuleReferences {
+			if moduleReference.Remote() != bufrpc.DefaultRemote {
+				warnMsg := fmt.Sprintf(
+					`%q does not specify a "name", buf will default to using remote %q for dependency resolution. This remote may not be able to resolve %q if it is a enterprise BSR module, did you mean to specify a "name: %s/..." on this module?`,
+					existingConfigFilePath,
+					bufrpc.DefaultRemote,
+					moduleReference.IdentityString(),
+					moduleReference.Remote(),
+				)
+				container.Logger().Warn(warnMsg)
+				break
+			}
+		}
 	}
 
 	pinnedRepositories, err := getDependencies(
