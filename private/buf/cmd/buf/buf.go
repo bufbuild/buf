@@ -30,7 +30,9 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugincreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/plugindeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/plugin/pluginversion/pluginversionlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorycreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorydelete"
@@ -207,6 +209,8 @@ func NewRootCommand(name string) *appcmd.Command {
 									plugincreate.NewCommand("create", builder),
 									pluginlist.NewCommand("list", builder),
 									plugindelete.NewCommand("delete", builder),
+									plugindeprecate.NewCommand("deprecate", builder),
+									pluginundeprecate.NewCommand("undeprecate", builder),
 									{
 										Use:   "version",
 										Short: "Plugin version commands.",
