@@ -233,6 +233,30 @@ func (s *organizationService) RemoveOrganizationMember(
 	return nil
 }
 
+// SetOrganizationMember sets the role of a user in the organization.
+func (s *organizationService) SetOrganizationMember(
+	ctx context.Context,
+	organizationId string,
+	userId string,
+	organizationRole v1alpha1.OrganizationRole,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.SetOrganizationMember(
+		ctx,
+		&v1alpha1.SetOrganizationMemberRequest{
+			OrganizationId:   organizationId,
+			UserId:           userId,
+			OrganizationRole: organizationRole,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetOrganizationSettings gets the settings of an organization, including organization base roles.
 func (s *organizationService) GetOrganizationSettings(
 	ctx context.Context,

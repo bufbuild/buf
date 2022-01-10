@@ -1172,6 +1172,111 @@ func (*RemoveOrganizationMemberResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP(), []int{21}
 }
 
+type SetOrganizationMemberRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// The ID of the organization for which the user's role will be set.
+	OrganizationId string `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3" json:"organization_id,omitempty"`
+	// The ID of the user whose role will be set.
+	UserId string `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	// The role to assign to the user.
+	// Setting UNSPECIFIED means removing the user's role.
+	OrganizationRole OrganizationRole `protobuf:"varint,3,opt,name=organization_role,json=organizationRole,proto3,enum=buf.alpha.registry.v1alpha1.OrganizationRole" json:"organization_role,omitempty"`
+}
+
+func (x *SetOrganizationMemberRequest) Reset() {
+	*x = SetOrganizationMemberRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[22]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SetOrganizationMemberRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetOrganizationMemberRequest) ProtoMessage() {}
+
+func (x *SetOrganizationMemberRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[22]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetOrganizationMemberRequest.ProtoReflect.Descriptor instead.
+func (*SetOrganizationMemberRequest) Descriptor() ([]byte, []int) {
+	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *SetOrganizationMemberRequest) GetOrganizationId() string {
+	if x != nil {
+		return x.OrganizationId
+	}
+	return ""
+}
+
+func (x *SetOrganizationMemberRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *SetOrganizationMemberRequest) GetOrganizationRole() OrganizationRole {
+	if x != nil {
+		return x.OrganizationRole
+	}
+	return OrganizationRole_ORGANIZATION_ROLE_UNSPECIFIED
+}
+
+type SetOrganizationMemberResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *SetOrganizationMemberResponse) Reset() {
+	*x = SetOrganizationMemberResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[23]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SetOrganizationMemberResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetOrganizationMemberResponse) ProtoMessage() {}
+
+func (x *SetOrganizationMemberResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[23]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetOrganizationMemberResponse.ProtoReflect.Descriptor instead.
+func (*SetOrganizationMemberResponse) Descriptor() ([]byte, []int) {
+	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP(), []int{23}
+}
+
 type GetOrganizationSettingsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1184,7 +1289,7 @@ type GetOrganizationSettingsRequest struct {
 func (x *GetOrganizationSettingsRequest) Reset() {
 	*x = GetOrganizationSettingsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[22]
+		mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1197,7 +1302,7 @@ func (x *GetOrganizationSettingsRequest) String() string {
 func (*GetOrganizationSettingsRequest) ProtoMessage() {}
 
 func (x *GetOrganizationSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[22]
+	mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1210,7 +1315,7 @@ func (x *GetOrganizationSettingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOrganizationSettingsRequest.ProtoReflect.Descriptor instead.
 func (*GetOrganizationSettingsRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP(), []int{22}
+	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GetOrganizationSettingsRequest) GetOrganizationId() string {
@@ -1233,7 +1338,7 @@ type GetOrganizationSettingsResponse struct {
 func (x *GetOrganizationSettingsResponse) Reset() {
 	*x = GetOrganizationSettingsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[23]
+		mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1246,7 +1351,7 @@ func (x *GetOrganizationSettingsResponse) String() string {
 func (*GetOrganizationSettingsResponse) ProtoMessage() {}
 
 func (x *GetOrganizationSettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[23]
+	mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1259,7 +1364,7 @@ func (x *GetOrganizationSettingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOrganizationSettingsResponse.ProtoReflect.Descriptor instead.
 func (*GetOrganizationSettingsResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP(), []int{23}
+	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetOrganizationSettingsResponse) GetRepositoryBaseRole() RepositoryRole {
@@ -1301,7 +1406,7 @@ type UpdateOrganizationSettingsRequest struct {
 func (x *UpdateOrganizationSettingsRequest) Reset() {
 	*x = UpdateOrganizationSettingsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[24]
+		mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1314,7 +1419,7 @@ func (x *UpdateOrganizationSettingsRequest) String() string {
 func (*UpdateOrganizationSettingsRequest) ProtoMessage() {}
 
 func (x *UpdateOrganizationSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[24]
+	mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1327,7 +1432,7 @@ func (x *UpdateOrganizationSettingsRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use UpdateOrganizationSettingsRequest.ProtoReflect.Descriptor instead.
 func (*UpdateOrganizationSettingsRequest) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP(), []int{24}
+	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *UpdateOrganizationSettingsRequest) GetOrganizationId() string {
@@ -1367,7 +1472,7 @@ type UpdateOrganizationSettingsResponse struct {
 func (x *UpdateOrganizationSettingsResponse) Reset() {
 	*x = UpdateOrganizationSettingsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[25]
+		mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1380,7 +1485,7 @@ func (x *UpdateOrganizationSettingsResponse) String() string {
 func (*UpdateOrganizationSettingsResponse) ProtoMessage() {}
 
 func (x *UpdateOrganizationSettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[25]
+	mi := &file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[27]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1393,7 +1498,7 @@ func (x *UpdateOrganizationSettingsResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use UpdateOrganizationSettingsResponse.ProtoReflect.Descriptor instead.
 func (*UpdateOrganizationSettingsResponse) Descriptor() ([]byte, []int) {
-	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP(), []int{25}
+	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP(), []int{27}
 }
 
 var File_buf_alpha_registry_v1alpha1_organization_proto protoreflect.FileDescriptor
@@ -1544,6 +1649,20 @@ var file_buf_alpha_registry_v1alpha1_organization_proto_rawDesc = []byte{
 	0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64,
 	0x22, 0x22, 0x0a, 0x20, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69,
 	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0xbc, 0x01, 0x0a, 0x1c, 0x53, 0x65, 0x74, 0x4f, 0x72, 0x67, 0x61,
+	0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x27, 0x0a, 0x0f, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e,
+	0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x17,
+	0x0a, 0x07, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x12, 0x5a, 0x0a, 0x11, 0x6f, 0x72, 0x67, 0x61, 0x6e,
+	0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x72, 0x6f, 0x6c, 0x65, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x0e, 0x32, 0x2d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72,
+	0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
+	0x2e, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x6f, 0x6c,
+	0x65, 0x52, 0x10, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52,
+	0x6f, 0x6c, 0x65, 0x22, 0x1f, 0x0a, 0x1d, 0x53, 0x65, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69,
+	0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70,
 	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x49, 0x0a, 0x1e, 0x47, 0x65, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e,
 	0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52,
 	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x27, 0x0a, 0x0f, 0x6f, 0x72, 0x67, 0x61, 0x6e, 0x69,
@@ -1591,8 +1710,8 @@ var file_buf_alpha_registry_v1alpha1_organization_proto_rawDesc = []byte{
 	0x74, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x10, 0x74, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65,
 	0x42, 0x61, 0x73, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x22, 0x24, 0x0a, 0x22, 0x55, 0x70, 0x64, 0x61,
 	0x74, 0x65, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65,
-	0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xe0,
-	0x0d, 0x0a, 0x13, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53,
+	0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xf1,
+	0x0e, 0x0a, 0x13, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53,
 	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x7c, 0x0a, 0x0f, 0x47, 0x65, 0x74, 0x4f, 0x72, 0x67,
 	0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x33, 0x2e, 0x62, 0x75, 0x66, 0x2e,
 	0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76,
@@ -1682,45 +1801,54 @@ var file_buf_alpha_registry_v1alpha1_organization_proto_rawDesc = []byte{
 	0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79,
 	0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x52, 0x65, 0x6d, 0x6f, 0x76, 0x65,
 	0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x6d, 0x62,
-	0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x94, 0x01, 0x0a, 0x17, 0x47,
-	0x65, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65,
-	0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x3b, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70,
-	0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61,
-	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x1a, 0x3c, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e,
-	0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61,
-	0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x12, 0x9d, 0x01, 0x0a, 0x1a, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4f, 0x72, 0x67, 0x61,
-	0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73,
-	0x12, 0x3e, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67,
-	0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x55,
-	0x70, 0x64, 0x61, 0x74, 0x65, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x3f, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67,
-	0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x55,
-	0x70, 0x64, 0x61, 0x74, 0x65, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f,
-	0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x42, 0x9e, 0x02, 0x0a, 0x1f, 0x63, 0x6f, 0x6d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c,
+	0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x8e, 0x01, 0x0a, 0x15, 0x53,
+	0x65, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65,
+	0x6d, 0x62, 0x65, 0x72, 0x12, 0x39, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61,
+	0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68,
+	0x61, 0x31, 0x2e, 0x53, 0x65, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x4d, 0x65, 0x6d, 0x62, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x3a, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69,
+	0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x53, 0x65,
+	0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x4d, 0x65, 0x6d,
+	0x62, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x94, 0x01, 0x0a, 0x17,
+	0x47, 0x65, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53,
+	0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x3b, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c,
 	0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x31, 0x42, 0x11, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74,
-	0x69, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x59, 0x67, 0x69, 0x74, 0x68,
-	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x62, 0x75, 0x66, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x2f,
-	0x62, 0x75, 0x66, 0x2f, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x2f, 0x67, 0x65, 0x6e, 0x2f,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x2f, 0x62, 0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70,
-	0x68, 0x61, 0x2f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x61, 0x6c,
-	0x70, 0x68, 0x61, 0x31, 0x3b, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x76, 0x31, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x31, 0xa2, 0x02, 0x03, 0x42, 0x41, 0x52, 0xaa, 0x02, 0x1b, 0x42, 0x75,
-	0x66, 0x2e, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79,
-	0x2e, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xca, 0x02, 0x1b, 0x42, 0x75, 0x66, 0x5c,
-	0x41, 0x6c, 0x70, 0x68, 0x61, 0x5c, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x5c, 0x56,
-	0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xe2, 0x02, 0x27, 0x42, 0x75, 0x66, 0x5c, 0x41, 0x6c,
-	0x70, 0x68, 0x61, 0x5c, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x5c, 0x56, 0x31, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
-	0x61, 0xea, 0x02, 0x1e, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a,
-	0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68,
-	0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a,
+	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x3c, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61,
+	0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68,
+	0x61, 0x31, 0x2e, 0x47, 0x65, 0x74, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x9d, 0x01, 0x0a, 0x1a, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4f, 0x72, 0x67,
+	0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67,
+	0x73, 0x12, 0x3e, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65,
+	0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e,
+	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x3f, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65,
+	0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e,
+	0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x53, 0x65, 0x74, 0x74, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x42, 0x9e, 0x02, 0x0a, 0x1f, 0x63, 0x6f, 0x6d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61,
+	0x6c, 0x70, 0x68, 0x61, 0x2e, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2e, 0x76, 0x31,
+	0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x42, 0x11, 0x4f, 0x72, 0x67, 0x61, 0x6e, 0x69, 0x7a, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x59, 0x67, 0x69, 0x74,
+	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x62, 0x75, 0x66, 0x62, 0x75, 0x69, 0x6c, 0x64,
+	0x2f, 0x62, 0x75, 0x66, 0x2f, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x2f, 0x67, 0x65, 0x6e,
+	0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x2f, 0x62, 0x75, 0x66, 0x2f, 0x61, 0x6c,
+	0x70, 0x68, 0x61, 0x2f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x2f, 0x76, 0x31, 0x61,
+	0x6c, 0x70, 0x68, 0x61, 0x31, 0x3b, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x76, 0x31,
+	0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xa2, 0x02, 0x03, 0x42, 0x41, 0x52, 0xaa, 0x02, 0x1b, 0x42,
+	0x75, 0x66, 0x2e, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
+	0x79, 0x2e, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xca, 0x02, 0x1b, 0x42, 0x75, 0x66,
+	0x5c, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x5c, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x5c,
+	0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xe2, 0x02, 0x27, 0x42, 0x75, 0x66, 0x5c, 0x41,
+	0x6c, 0x70, 0x68, 0x61, 0x5c, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x5c, 0x56, 0x31,
+	0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
+	0x74, 0x61, 0xea, 0x02, 0x1e, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a,
+	0x3a, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70,
+	0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1735,7 +1863,7 @@ func file_buf_alpha_registry_v1alpha1_organization_proto_rawDescGZIP() []byte {
 	return file_buf_alpha_registry_v1alpha1_organization_proto_rawDescData
 }
 
-var file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_buf_alpha_registry_v1alpha1_organization_proto_goTypes = []interface{}{
 	(*Organization)(nil),                       // 0: buf.alpha.registry.v1alpha1.Organization
 	(*OrganizationMembership)(nil),             // 1: buf.alpha.registry.v1alpha1.OrganizationMembership
@@ -1759,63 +1887,68 @@ var file_buf_alpha_registry_v1alpha1_organization_proto_goTypes = []interface{}{
 	(*UpdateOrganizationMemberResponse)(nil),   // 19: buf.alpha.registry.v1alpha1.UpdateOrganizationMemberResponse
 	(*RemoveOrganizationMemberRequest)(nil),    // 20: buf.alpha.registry.v1alpha1.RemoveOrganizationMemberRequest
 	(*RemoveOrganizationMemberResponse)(nil),   // 21: buf.alpha.registry.v1alpha1.RemoveOrganizationMemberResponse
-	(*GetOrganizationSettingsRequest)(nil),     // 22: buf.alpha.registry.v1alpha1.GetOrganizationSettingsRequest
-	(*GetOrganizationSettingsResponse)(nil),    // 23: buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse
-	(*UpdateOrganizationSettingsRequest)(nil),  // 24: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest
-	(*UpdateOrganizationSettingsResponse)(nil), // 25: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsResponse
-	(*timestamppb.Timestamp)(nil),              // 26: google.protobuf.Timestamp
-	(OrganizationRole)(0),                      // 27: buf.alpha.registry.v1alpha1.OrganizationRole
-	(RepositoryRole)(0),                        // 28: buf.alpha.registry.v1alpha1.RepositoryRole
-	(PluginRole)(0),                            // 29: buf.alpha.registry.v1alpha1.PluginRole
-	(TemplateRole)(0),                          // 30: buf.alpha.registry.v1alpha1.TemplateRole
+	(*SetOrganizationMemberRequest)(nil),       // 22: buf.alpha.registry.v1alpha1.SetOrganizationMemberRequest
+	(*SetOrganizationMemberResponse)(nil),      // 23: buf.alpha.registry.v1alpha1.SetOrganizationMemberResponse
+	(*GetOrganizationSettingsRequest)(nil),     // 24: buf.alpha.registry.v1alpha1.GetOrganizationSettingsRequest
+	(*GetOrganizationSettingsResponse)(nil),    // 25: buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse
+	(*UpdateOrganizationSettingsRequest)(nil),  // 26: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest
+	(*UpdateOrganizationSettingsResponse)(nil), // 27: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsResponse
+	(*timestamppb.Timestamp)(nil),              // 28: google.protobuf.Timestamp
+	(OrganizationRole)(0),                      // 29: buf.alpha.registry.v1alpha1.OrganizationRole
+	(RepositoryRole)(0),                        // 30: buf.alpha.registry.v1alpha1.RepositoryRole
+	(PluginRole)(0),                            // 31: buf.alpha.registry.v1alpha1.PluginRole
+	(TemplateRole)(0),                          // 32: buf.alpha.registry.v1alpha1.TemplateRole
 }
 var file_buf_alpha_registry_v1alpha1_organization_proto_depIdxs = []int32{
-	26, // 0: buf.alpha.registry.v1alpha1.Organization.create_time:type_name -> google.protobuf.Timestamp
-	26, // 1: buf.alpha.registry.v1alpha1.Organization.update_time:type_name -> google.protobuf.Timestamp
+	28, // 0: buf.alpha.registry.v1alpha1.Organization.create_time:type_name -> google.protobuf.Timestamp
+	28, // 1: buf.alpha.registry.v1alpha1.Organization.update_time:type_name -> google.protobuf.Timestamp
 	0,  // 2: buf.alpha.registry.v1alpha1.OrganizationMembership.organization:type_name -> buf.alpha.registry.v1alpha1.Organization
-	27, // 3: buf.alpha.registry.v1alpha1.OrganizationMembership.organization_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	29, // 3: buf.alpha.registry.v1alpha1.OrganizationMembership.organization_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
 	0,  // 4: buf.alpha.registry.v1alpha1.GetOrganizationResponse.organization:type_name -> buf.alpha.registry.v1alpha1.Organization
 	0,  // 5: buf.alpha.registry.v1alpha1.GetOrganizationByNameResponse.organization:type_name -> buf.alpha.registry.v1alpha1.Organization
 	0,  // 6: buf.alpha.registry.v1alpha1.ListOrganizationsResponse.organizations:type_name -> buf.alpha.registry.v1alpha1.Organization
 	1,  // 7: buf.alpha.registry.v1alpha1.ListUserOrganizationsResponse.organizations:type_name -> buf.alpha.registry.v1alpha1.OrganizationMembership
 	0,  // 8: buf.alpha.registry.v1alpha1.CreateOrganizationResponse.organization:type_name -> buf.alpha.registry.v1alpha1.Organization
-	27, // 9: buf.alpha.registry.v1alpha1.AddOrganizationMemberRequest.organization_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	27, // 10: buf.alpha.registry.v1alpha1.UpdateOrganizationMemberRequest.organization_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
-	28, // 11: buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse.repository_base_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	29, // 12: buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse.plugin_base_role:type_name -> buf.alpha.registry.v1alpha1.PluginRole
-	30, // 13: buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse.template_base_role:type_name -> buf.alpha.registry.v1alpha1.TemplateRole
-	28, // 14: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest.repository_base_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
-	29, // 15: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest.plugin_base_role:type_name -> buf.alpha.registry.v1alpha1.PluginRole
-	30, // 16: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest.template_base_role:type_name -> buf.alpha.registry.v1alpha1.TemplateRole
-	2,  // 17: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationRequest
-	4,  // 18: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationByName:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationByNameRequest
-	6,  // 19: buf.alpha.registry.v1alpha1.OrganizationService.ListOrganizations:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationsRequest
-	8,  // 20: buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations:input_type -> buf.alpha.registry.v1alpha1.ListUserOrganizationsRequest
-	10, // 21: buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization:input_type -> buf.alpha.registry.v1alpha1.CreateOrganizationRequest
-	12, // 22: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganization:input_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationRequest
-	14, // 23: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganizationByName:input_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationByNameRequest
-	16, // 24: buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.AddOrganizationMemberRequest
-	18, // 25: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationMemberRequest
-	20, // 26: buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.RemoveOrganizationMemberRequest
-	22, // 27: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationSettingsRequest
-	24, // 28: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings:input_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest
-	3,  // 29: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationResponse
-	5,  // 30: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationByName:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationByNameResponse
-	7,  // 31: buf.alpha.registry.v1alpha1.OrganizationService.ListOrganizations:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationsResponse
-	9,  // 32: buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations:output_type -> buf.alpha.registry.v1alpha1.ListUserOrganizationsResponse
-	11, // 33: buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization:output_type -> buf.alpha.registry.v1alpha1.CreateOrganizationResponse
-	13, // 34: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganization:output_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationResponse
-	15, // 35: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganizationByName:output_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationByNameResponse
-	17, // 36: buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.AddOrganizationMemberResponse
-	19, // 37: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationMemberResponse
-	21, // 38: buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.RemoveOrganizationMemberResponse
-	23, // 39: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse
-	25, // 40: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings:output_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsResponse
-	29, // [29:41] is the sub-list for method output_type
-	17, // [17:29] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	29, // 9: buf.alpha.registry.v1alpha1.AddOrganizationMemberRequest.organization_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	29, // 10: buf.alpha.registry.v1alpha1.UpdateOrganizationMemberRequest.organization_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	29, // 11: buf.alpha.registry.v1alpha1.SetOrganizationMemberRequest.organization_role:type_name -> buf.alpha.registry.v1alpha1.OrganizationRole
+	30, // 12: buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse.repository_base_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	31, // 13: buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse.plugin_base_role:type_name -> buf.alpha.registry.v1alpha1.PluginRole
+	32, // 14: buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse.template_base_role:type_name -> buf.alpha.registry.v1alpha1.TemplateRole
+	30, // 15: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest.repository_base_role:type_name -> buf.alpha.registry.v1alpha1.RepositoryRole
+	31, // 16: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest.plugin_base_role:type_name -> buf.alpha.registry.v1alpha1.PluginRole
+	32, // 17: buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest.template_base_role:type_name -> buf.alpha.registry.v1alpha1.TemplateRole
+	2,  // 18: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationRequest
+	4,  // 19: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationByName:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationByNameRequest
+	6,  // 20: buf.alpha.registry.v1alpha1.OrganizationService.ListOrganizations:input_type -> buf.alpha.registry.v1alpha1.ListOrganizationsRequest
+	8,  // 21: buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations:input_type -> buf.alpha.registry.v1alpha1.ListUserOrganizationsRequest
+	10, // 22: buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization:input_type -> buf.alpha.registry.v1alpha1.CreateOrganizationRequest
+	12, // 23: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganization:input_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationRequest
+	14, // 24: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganizationByName:input_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationByNameRequest
+	16, // 25: buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.AddOrganizationMemberRequest
+	18, // 26: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationMemberRequest
+	20, // 27: buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.RemoveOrganizationMemberRequest
+	22, // 28: buf.alpha.registry.v1alpha1.OrganizationService.SetOrganizationMember:input_type -> buf.alpha.registry.v1alpha1.SetOrganizationMemberRequest
+	24, // 29: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings:input_type -> buf.alpha.registry.v1alpha1.GetOrganizationSettingsRequest
+	26, // 30: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings:input_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsRequest
+	3,  // 31: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganization:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationResponse
+	5,  // 32: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationByName:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationByNameResponse
+	7,  // 33: buf.alpha.registry.v1alpha1.OrganizationService.ListOrganizations:output_type -> buf.alpha.registry.v1alpha1.ListOrganizationsResponse
+	9,  // 34: buf.alpha.registry.v1alpha1.OrganizationService.ListUserOrganizations:output_type -> buf.alpha.registry.v1alpha1.ListUserOrganizationsResponse
+	11, // 35: buf.alpha.registry.v1alpha1.OrganizationService.CreateOrganization:output_type -> buf.alpha.registry.v1alpha1.CreateOrganizationResponse
+	13, // 36: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganization:output_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationResponse
+	15, // 37: buf.alpha.registry.v1alpha1.OrganizationService.DeleteOrganizationByName:output_type -> buf.alpha.registry.v1alpha1.DeleteOrganizationByNameResponse
+	17, // 38: buf.alpha.registry.v1alpha1.OrganizationService.AddOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.AddOrganizationMemberResponse
+	19, // 39: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationMemberResponse
+	21, // 40: buf.alpha.registry.v1alpha1.OrganizationService.RemoveOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.RemoveOrganizationMemberResponse
+	23, // 41: buf.alpha.registry.v1alpha1.OrganizationService.SetOrganizationMember:output_type -> buf.alpha.registry.v1alpha1.SetOrganizationMemberResponse
+	25, // 42: buf.alpha.registry.v1alpha1.OrganizationService.GetOrganizationSettings:output_type -> buf.alpha.registry.v1alpha1.GetOrganizationSettingsResponse
+	27, // 43: buf.alpha.registry.v1alpha1.OrganizationService.UpdateOrganizationSettings:output_type -> buf.alpha.registry.v1alpha1.UpdateOrganizationSettingsResponse
+	31, // [31:44] is the sub-list for method output_type
+	18, // [18:31] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_registry_v1alpha1_organization_proto_init() }
@@ -2090,7 +2223,7 @@ func file_buf_alpha_registry_v1alpha1_organization_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetOrganizationSettingsRequest); i {
+			switch v := v.(*SetOrganizationMemberRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2102,7 +2235,7 @@ func file_buf_alpha_registry_v1alpha1_organization_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*GetOrganizationSettingsResponse); i {
+			switch v := v.(*SetOrganizationMemberResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2114,7 +2247,7 @@ func file_buf_alpha_registry_v1alpha1_organization_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UpdateOrganizationSettingsRequest); i {
+			switch v := v.(*GetOrganizationSettingsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -2126,6 +2259,30 @@ func file_buf_alpha_registry_v1alpha1_organization_proto_init() {
 			}
 		}
 		file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GetOrganizationSettingsResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*UpdateOrganizationSettingsRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_buf_alpha_registry_v1alpha1_organization_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UpdateOrganizationSettingsResponse); i {
 			case 0:
 				return &v.state
@@ -2144,7 +2301,7 @@ func file_buf_alpha_registry_v1alpha1_organization_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_buf_alpha_registry_v1alpha1_organization_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

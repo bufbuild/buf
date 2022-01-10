@@ -68,6 +68,13 @@ type OrganizationService interface {
 		organizationId string,
 		userId string,
 	) (err error)
+	// SetOrganizationMember sets the role of a user in the organization.
+	SetOrganizationMember(
+		ctx context.Context,
+		organizationId string,
+		userId string,
+		organizationRole v1alpha1.OrganizationRole,
+	) (err error)
 	// GetOrganizationSettings gets the settings of an organization, including organization base roles.
 	GetOrganizationSettings(
 		ctx context.Context,

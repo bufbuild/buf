@@ -59,6 +59,8 @@ service OrganizationService {
   rpc UpdateOrganizationMember(UpdateOrganizationMemberRequest) returns (UpdateOrganizationMemberResponse);
   // RemoveOrganizationMember remove the role of an user in the organization.
   rpc RemoveOrganizationMember(RemoveOrganizationMemberRequest) returns (RemoveOrganizationMemberResponse);
+  // SetOrganizationMember sets the role of a user in the organization.
+  rpc SetOrganizationMember(SetOrganizationMemberRequest) returns (SetOrganizationMemberResponse);
   // GetOrganizationSettings gets the settings of an organization, including organization base roles.
   rpc GetOrganizationSettings(GetOrganizationSettingsRequest) returns (GetOrganizationSettingsResponse);
   // UpdateOrganizationSettings update the organization settings including base roles.
@@ -160,6 +162,18 @@ message RemoveOrganizationMemberRequest {
 }
 
 message RemoveOrganizationMemberResponse {}
+
+message SetOrganizationMemberRequest {
+  // The ID of the organization for which the user's role will be set.
+  string organization_id = 1;
+  // The ID of the user whose role will be set.
+  string user_id = 2;
+  // The role to assign to the user.
+  // Setting UNSPECIFIED means removing the user's role.
+  OrganizationRole organization_role = 3;
+}
+
+message SetOrganizationMemberResponse {}
 
 message GetOrganizationSettingsRequest{
   // The ID of the organization for which to get the settings.
