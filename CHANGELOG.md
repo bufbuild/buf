@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Upgrade to `protoc` 3.19.2 support.
+- Add `buf beta registry plugin deprecate`, `buf beta registry plugin undeprecate`, `buf beta registry template deprecate` and `buf beta registry template undeprecate`.
 
 ## [v1.0.0-rc10] - 2021-12-16
 
