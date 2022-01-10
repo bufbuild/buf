@@ -43,7 +43,7 @@ func readConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, 
 		}
 		config := &Config{}
 		for _, dep := range externalConfig.Deps {
-			config.Dependencies = append(config.Dependencies, Dependency(dep))
+			config.Dependencies = append(config.Dependencies, DependencyForExternalConfigDependencyV1Beta1(dep))
 		}
 		return config, nil
 	case V1Version:
@@ -53,7 +53,7 @@ func readConfig(ctx context.Context, readBucket storage.ReadBucket) (_ *Config, 
 		}
 		config := &Config{}
 		for _, dep := range externalConfig.Deps {
-			config.Dependencies = append(config.Dependencies, Dependency(dep))
+			config.Dependencies = append(config.Dependencies, DependencyForExternalConfigDependencyV1(dep))
 		}
 		return config, nil
 	default:
@@ -67,7 +67,7 @@ func writeConfig(ctx context.Context, writeBucket storage.WriteBucket, config *C
 		Deps:    make([]ExternalConfigDependencyV1, 0, len(config.Dependencies)),
 	}
 	for _, dep := range config.Dependencies {
-		externalConfig.Deps = append(externalConfig.Deps, ExternalConfigDependencyV1(dep))
+		externalConfig.Deps = append(externalConfig.Deps, ExternalConfigDependencyV1ForDependency(dep))
 	}
 	configBytes, err := encoding.MarshalYAML(&externalConfig)
 	if err != nil {

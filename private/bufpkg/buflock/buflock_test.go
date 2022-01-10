@@ -18,7 +18,6 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/bufbuild/buf/private/bufpkg/buflock"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduletesting"
@@ -45,9 +44,6 @@ func testReadConfig(t *testing.T, version string) {
 				Owner:      "acme",
 				Repository: "weather",
 				Commit:     "e9191fcdc2294e2f8f3b82c528fc90a8",
-				Digest:     bufmoduletesting.TestDigest,
-				Branch:     "main",
-				CreateTime: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 		},
 	}
@@ -77,18 +73,12 @@ func TestWriteReadConfig(t *testing.T) {
 				Owner:      "test1",
 				Repository: "foob1",
 				Commit:     bufmoduletesting.TestCommit,
-				Digest:     bufmoduletesting.TestDigest,
-				Branch:     "barr",
-				CreateTime: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 			{
 				Remote:     "buf.build",
 				Owner:      "test2",
 				Repository: "foob2",
 				Commit:     bufmoduletesting.TestCommit,
-				Digest:     bufmoduletesting.TestDigest,
-				Branch:     "main", // Can't import bufmodule here without causing an import cycle
-				CreateTime: time.Date(2000, 1, 2, 0, 0, 0, 0, time.UTC),
 			},
 		},
 	}
@@ -127,18 +117,12 @@ func TestParseV1Beta1Config(t *testing.T) {
 				Owner:      "test1",
 				Repository: "foob1",
 				Commit:     bufmoduletesting.TestCommit,
-				Digest:     bufmoduletesting.TestDigest,
-				Branch:     "barr",
-				CreateTime: time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
 			{
 				Remote:     "buf.build",
 				Owner:      "test2",
 				Repository: "foob2",
 				Commit:     bufmoduletesting.TestCommit,
-				Digest:     bufmoduletesting.TestDigest,
-				Branch:     "main", // Can't import bufmodule here without causing an import cycle
-				CreateTime: time.Date(2000, 1, 2, 0, 0, 0, 0, time.UTC),
 			},
 		},
 	}
@@ -149,8 +133,8 @@ func TestParseV1Beta1Config(t *testing.T) {
 	})
 	v1beta1Config := &buflock.ExternalConfigV1Beta1{
 		Deps: []buflock.ExternalConfigDependencyV1Beta1{
-			buflock.ExternalConfigDependencyV1Beta1(testConfig.Dependencies[0]),
-			buflock.ExternalConfigDependencyV1Beta1(testConfig.Dependencies[1]),
+			buflock.ExternalConfigDependencyV1Beta1ForDependency(testConfig.Dependencies[0]),
+			buflock.ExternalConfigDependencyV1Beta1ForDependency(testConfig.Dependencies[1]),
 		},
 	}
 	err = encoding.NewYAMLEncoder(writeObjectCloser).Encode(v1beta1Config)
@@ -187,7 +171,7 @@ func TestParseIncompleteConfig(t *testing.T) {
 	configBytes, err := encoding.MarshalYAML(&buflock.ExternalConfigV1{
 		Version: buflock.V1Version,
 		Deps: []buflock.ExternalConfigDependencyV1{
-			buflock.ExternalConfigDependencyV1(testConfig.Dependencies[0]),
+			buflock.ExternalConfigDependencyV1ForDependency(testConfig.Dependencies[0]),
 		},
 	})
 	require.NoError(t, err)
