@@ -473,7 +473,7 @@ func checkPackageNoImportCycle(add addFunc, files []protosource.File) error {
 					directlyImportedPackage,
 					packageToDirectlyImportedPackageToFileImports,
 					map[string]struct{}{
-						pkg: struct{}{},
+						pkg: {},
 					},
 					[]string{
 						pkg,
