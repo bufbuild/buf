@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Upgrade to `protoc` 3.19.2 support.
+- Add warning when using enterprise dependencies without specifying a enterprise
+  remote in the module's identity.
 
 ## [v1.0.0-rc10] - 2021-12-16
 
