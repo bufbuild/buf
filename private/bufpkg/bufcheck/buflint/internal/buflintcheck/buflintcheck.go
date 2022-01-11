@@ -488,6 +488,8 @@ func checkPackageNoImportCycle(add addFunc, files []protosource.File) error {
 }
 
 // Returns the usedPackageList if there is an import cycle.
+//
+// Note this stops on the first import cycle detected, it doesn't attempt to get all of them - not perfect.
 func getImportCycleIfExists(
 	// Will never be "" due to how we call this
 	pkg string,
