@@ -294,6 +294,21 @@ func (g *generator) execRemotePlugin(
 	if len(responses) != 1 {
 		return nil, fmt.Errorf("unexpected number of responses received, got %d, wanted %d", len(responses), 1)
 	}
+	pluginService, err := g.registryProvider.NewPluginService(ctx, remote)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create plugin service for remote %q: %w", remote, err)
+	}
+	plugin, err := pluginService.GetPlugin(ctx, owner, name)
+	if err != nil {
+		return nil, err
+	}
+	if plugin.Deprecated {
+		warnMsg := fmt.Sprintf(`Plugin "%s/%s/%s" is deprecated`, remote, owner, name)
+		if plugin.DeprecationMessage != "" {
+			warnMsg = fmt.Sprintf("%s: %s", warnMsg, plugin.DeprecationMessage)
+		}
+		g.logger.Sugar().Warn(warnMsg)
+	}
 	return responses[0], nil
 }
 
