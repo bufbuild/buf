@@ -47,6 +47,10 @@ import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 //  * COMMENTS
 //  * UNARY_RPC
 //
+//  A new category is also added, which is similar to OTHER but differently named TODO:
+//
+//  * SPECIAL
+//
 // The rules included in the MINIMAL lint category have also been adjusted.
 // The difference is shown below:
 //

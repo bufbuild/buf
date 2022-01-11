@@ -538,6 +538,7 @@ COMMENT_RPC                       COMMENTS                 Checks that RPCs have
 COMMENT_SERVICE                   COMMENTS                 Checks that services have non-empty comments.
 RPC_NO_CLIENT_STREAMING           UNARY_RPC                Checks that RPCs are not client streaming.
 RPC_NO_SERVER_STREAMING           UNARY_RPC                Checks that RPCs are not server streaming.
+PACKAGE_NO_IMPORT_CYCLE           SPECIAL                  Checks that packages do not have import cycles.
 		`
 	testRunStdout(
 		t,

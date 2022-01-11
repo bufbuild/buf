@@ -440,6 +440,13 @@ func checkPackageLowerSnakeCase(add addFunc, file protosource.File) error {
 	return nil
 }
 
+// CheckPackageNoImportCycle is a check function.
+var CheckPackageNoImportCycle = newFilesCheckFunc(checkPackageNoImportCycle)
+
+func checkPackageNoImportCycle(add addFunc, files []protosource.File) error {
+	return errors.New("TODO")
+}
+
 // CheckPackageSameDirectory is a check function.
 var CheckPackageSameDirectory = newPackageToFilesCheckFunc(checkPackageSameDirectory)
 

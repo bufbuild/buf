@@ -46,6 +46,7 @@ var (
 		buflintbuild.PackageDefinedRuleBuilder,
 		buflintbuild.PackageDirectoryMatchRuleBuilder,
 		buflintbuild.PackageLowerSnakeCaseRuleBuilder,
+		buflintbuild.PackageNoImportCycleRuleBuilder,
 		buflintbuild.PackageSameCsharpNamespaceRuleBuilder,
 		buflintbuild.PackageSameDirectoryRuleBuilder,
 		buflintbuild.PackageSameGoPackageRuleBuilder,
@@ -77,6 +78,7 @@ var (
 		"DEFAULT",
 		"COMMENTS",
 		"UNARY_RPC",
+		"SPECIAL",
 	}
 	// v1IDToCategories associates IDs to categories.
 	v1IDToCategories = map[string][]string{
@@ -168,6 +170,9 @@ var (
 		"PACKAGE_LOWER_SNAKE_CASE": {
 			"BASIC",
 			"DEFAULT",
+		},
+		"PACKAGE_NO_IMPORT_CYCLE": {
+			"SPECIAL",
 		},
 		"PACKAGE_SAME_CSHARP_NAMESPACE": {
 			"BASIC",
