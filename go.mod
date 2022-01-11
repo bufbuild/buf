@@ -7,7 +7,7 @@ require (
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/google/go-cmp v0.5.6
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
-	github.com/jhump/protoreflect v1.10.2-0.20220105161451-d06079fc10ae
+	github.com/jhump/protoreflect v1.10.2-0.20220106155029-0464bedeace3
 	github.com/klauspost/compress v1.13.6
 	github.com/klauspost/pgzip v1.2.5
 	github.com/oklog/ulid/v2 v2.0.2
