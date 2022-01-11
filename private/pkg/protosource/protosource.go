@@ -864,8 +864,7 @@ func PackageToDirectlyImportedPackageToFileImports(files ...File) (map[string]ma
 			packageToDirectlyImportedPackageToFileImports[pkg] = directlyImportedPackageToFileImports
 		}
 		for _, fileImport := range file.FileImports() {
-			importedFile, ok := filePathToFile[fileImport.Import()]
-			if ok {
+			if importedFile, ok := filePathToFile[fileImport.Import()]; ok {
 				importedPkg := importedFile.Package()
 				if importedPkg != pkg {
 					directlyImportedPackageToFileImports[importedFile.Package()] = append(
