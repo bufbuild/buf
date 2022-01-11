@@ -444,7 +444,75 @@ func checkPackageLowerSnakeCase(add addFunc, file protosource.File) error {
 var CheckPackageNoImportCycle = newFilesCheckFunc(checkPackageNoImportCycle)
 
 func checkPackageNoImportCycle(add addFunc, files []protosource.File) error {
-	return errors.New("TODO")
+	packageToDirectlyImportedPackageToFileImports, err := protosource.PackageToDirectlyImportedPackageToFileImports(files...)
+	if err != nil {
+		return err
+	}
+	// Do not consider the empty package case.
+	delete(packageToDirectlyImportedPackageToFileImports, "")
+	// This is way more algorithmically complex than it needs to be.
+	//
+	// We're doing a DFS starting at each package. What we should do is start from any package,
+	// do the DFS and keep track of the packages hit, and then don't ever do DFS from a given
+	// package twice. The problem is is that with the current janky package -> direct -> file imports
+	// setup, we would then end up with error messages like "import cycle: a -> b -> c -> b", and
+	// attach the error message to a file with package a, and we want to just print "b -> c -> b".
+	// So to get this to market, we just do a DFS from each package.
+	//
+	// This may prove to be too expensive TODO test.
+	for pkg := range packageToDirectlyImportedPackageToFileImports {
+		// Can equal "" per the function signature of PackageToDirectlyImportedPackageToFileImports
+		if pkg != "" {
+			// Go one deep in the potential import cycle so that we can get the file imports
+			// we want to potentially attach errors to.
+			//
+			// We know that pkg is never equal to directlyImportedPackage due to the signature
+			// of PackageToDirectlyImportedPackageToFileImports.
+			for directlyImportedPackage, fileImports := range packageToDirectlyImportedPackageToFileImports[pkg] {
+				if importCycle := getImportCycleIfExists(
+					directlyImportedPackage,
+					packageToDirectlyImportedPackageToFileImports,
+					[]string{
+						pkg,
+					},
+				); len(importCycle) > 0 {
+					for _, fileImport := range fileImports {
+						// TODO: better error message
+						add(fileImport, fileImport.Location(), nil, `Package import cycle: %s`, strings.Join(importCycle, ` -> `))
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// Returns the usedPackageList if there is an import cycle.
+func getImportCycleIfExists(
+	// Will never be "" due to how we call this
+	pkg string,
+	packageToDirectlyImportedPackageToFileImports map[string]map[string][]protosource.FileImport,
+	usedPackageList []string,
+	// If we were doing proper DFS and not visiting nodes twice, we'd need a map as well.
+) []string {
+	if usedPackageList[0] == pkg {
+		// We have an import cycle
+		return append(usedPackageList, pkg)
+	}
+	// Will never equal pkg
+	for directlyImportedPackage := range packageToDirectlyImportedPackageToFileImports[pkg] {
+		// Can equal "" per the function signature of PackageToDirectlyImportedPackageToFileImports
+		if directlyImportedPackage != "" {
+			if importCycle := getImportCycleIfExists(
+				directlyImportedPackage,
+				packageToDirectlyImportedPackageToFileImports,
+				append(usedPackageList, pkg),
+			); len(importCycle) != 0 {
+				return importCycle
+			}
+		}
+	}
+	return nil
 }
 
 // CheckPackageSameDirectory is a check function.
