@@ -472,6 +472,9 @@ func checkPackageNoImportCycle(add addFunc, files []protosource.File) error {
 				if importCycle := getImportCycleIfExists(
 					directlyImportedPackage,
 					packageToDirectlyImportedPackageToFileImports,
+					map[string]struct{}{
+						pkg: struct{}{},
+					},
 					[]string{
 						pkg,
 					},
@@ -481,36 +484,6 @@ func checkPackageNoImportCycle(add addFunc, files []protosource.File) error {
 						add(fileImport, fileImport.Location(), nil, `Package import cycle: %s`, strings.Join(importCycle, ` -> `))
 					}
 				}
-			}
-		}
-	}
-	return nil
-}
-
-// Returns the usedPackageList if there is an import cycle.
-//
-// Note this stops on the first import cycle detected, it doesn't attempt to get all of them - not perfect.
-func getImportCycleIfExists(
-	// Will never be "" due to how we call this
-	pkg string,
-	packageToDirectlyImportedPackageToFileImports map[string]map[string][]protosource.FileImport,
-	usedPackageList []string,
-	// If we were doing proper DFS and not visiting nodes twice, we'd need a map as well.
-) []string {
-	if usedPackageList[0] == pkg {
-		// We have an import cycle
-		return append(usedPackageList, pkg)
-	}
-	// Will never equal pkg
-	for directlyImportedPackage := range packageToDirectlyImportedPackageToFileImports[pkg] {
-		// Can equal "" per the function signature of PackageToDirectlyImportedPackageToFileImports
-		if directlyImportedPackage != "" {
-			if importCycle := getImportCycleIfExists(
-				directlyImportedPackage,
-				packageToDirectlyImportedPackageToFileImports,
-				append(usedPackageList, pkg),
-			); len(importCycle) != 0 {
-				return importCycle
 			}
 		}
 	}
