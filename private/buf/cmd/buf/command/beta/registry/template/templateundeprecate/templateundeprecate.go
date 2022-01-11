@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositoryundeprecate
+package templateundeprecate
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/rpc"
@@ -27,41 +26,44 @@ import (
 )
 
 // NewCommand returns a new Command
-func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
+func NewCommand(
+	name string,
+	builder appflag.Builder,
+) *appcmd.Command {
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
-		Short: "Undeprecate a repository.",
+		Use:   name + " <buf.build/owner/" + bufplugin.TemplatesPathName + "/template>",
+		Short: "Undeprecate a template by name.",
 		Args:  cobra.ExactArgs(1),
 		Run:   builder.NewRunFunc(run, bufcli.NewErrorInterceptor()),
 	}
 }
 
-func run(ctx context.Context, container appflag.Container) error {
+func run(
+	ctx context.Context,
+	container appflag.Container,
+) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
+	templatePath := container.Arg(0)
+	if templatePath == "" {
+		return appcmd.NewInvalidArgumentError("a template path must be specified")
 	}
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
-	if err != nil {
-		return err
-	}
-	service, err := apiProvider.NewRepositoryService(ctx, moduleIdentity.Remote())
+	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
 	}
-	if _, err = service.UndeprecateRepositoryByName(
-		ctx,
-		moduleIdentity.Owner(),
-		moduleIdentity.Repository(),
-	); err != nil {
+	remote, owner, name, err := bufplugin.ParseTemplatePath(templatePath)
+	if err != nil {
+		return err
+	}
+	pluginService, err := registryProvider.NewPluginService(ctx, remote)
+	if err != nil {
+		return err
+	}
+	if err := pluginService.UndeprecateTemplate(ctx, owner, name); err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
-			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
+			return bufcli.NewTemplateNotFoundError(owner, name)
 		}
 		return err
-	}
-	if _, err := fmt.Fprintln(container.Stdout(), "Repository undeprecated."); err != nil {
-		return bufcli.NewInternalError(err)
 	}
 	return nil
 }

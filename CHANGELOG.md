@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Upgrade to `protoc` 3.19.2 support.
+- Add `buf beta registry {plugin,template} {deprecate,undeprecate}`.
 - Add warning when using enterprise dependencies without specifying a enterprise
   remote in the module's identity.
 

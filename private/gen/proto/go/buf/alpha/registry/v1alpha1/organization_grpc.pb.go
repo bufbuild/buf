@@ -56,6 +56,8 @@ type OrganizationServiceClient interface {
 	UpdateOrganizationMember(ctx context.Context, in *UpdateOrganizationMemberRequest, opts ...grpc.CallOption) (*UpdateOrganizationMemberResponse, error)
 	// RemoveOrganizationMember remove the role of an user in the organization.
 	RemoveOrganizationMember(ctx context.Context, in *RemoveOrganizationMemberRequest, opts ...grpc.CallOption) (*RemoveOrganizationMemberResponse, error)
+	// SetOrganizationMember sets the role of a user in the organization.
+	SetOrganizationMember(ctx context.Context, in *SetOrganizationMemberRequest, opts ...grpc.CallOption) (*SetOrganizationMemberResponse, error)
 	// GetOrganizationSettings gets the settings of an organization, including organization base roles.
 	GetOrganizationSettings(ctx context.Context, in *GetOrganizationSettingsRequest, opts ...grpc.CallOption) (*GetOrganizationSettingsResponse, error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
@@ -160,6 +162,15 @@ func (c *organizationServiceClient) RemoveOrganizationMember(ctx context.Context
 	return out, nil
 }
 
+func (c *organizationServiceClient) SetOrganizationMember(ctx context.Context, in *SetOrganizationMemberRequest, opts ...grpc.CallOption) (*SetOrganizationMemberResponse, error) {
+	out := new(SetOrganizationMemberResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/SetOrganizationMember", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *organizationServiceClient) GetOrganizationSettings(ctx context.Context, in *GetOrganizationSettingsRequest, opts ...grpc.CallOption) (*GetOrganizationSettingsResponse, error) {
 	out := new(GetOrganizationSettingsResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.OrganizationService/GetOrganizationSettings", in, out, opts...)
@@ -202,6 +213,8 @@ type OrganizationServiceServer interface {
 	UpdateOrganizationMember(context.Context, *UpdateOrganizationMemberRequest) (*UpdateOrganizationMemberResponse, error)
 	// RemoveOrganizationMember remove the role of an user in the organization.
 	RemoveOrganizationMember(context.Context, *RemoveOrganizationMemberRequest) (*RemoveOrganizationMemberResponse, error)
+	// SetOrganizationMember sets the role of a user in the organization.
+	SetOrganizationMember(context.Context, *SetOrganizationMemberRequest) (*SetOrganizationMemberResponse, error)
 	// GetOrganizationSettings gets the settings of an organization, including organization base roles.
 	GetOrganizationSettings(context.Context, *GetOrganizationSettingsRequest) (*GetOrganizationSettingsResponse, error)
 	// UpdateOrganizationSettings update the organization settings including base roles.
@@ -241,6 +254,9 @@ func (UnimplementedOrganizationServiceServer) UpdateOrganizationMember(context.C
 }
 func (UnimplementedOrganizationServiceServer) RemoveOrganizationMember(context.Context, *RemoveOrganizationMemberRequest) (*RemoveOrganizationMemberResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveOrganizationMember not implemented")
+}
+func (UnimplementedOrganizationServiceServer) SetOrganizationMember(context.Context, *SetOrganizationMemberRequest) (*SetOrganizationMemberResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetOrganizationMember not implemented")
 }
 func (UnimplementedOrganizationServiceServer) GetOrganizationSettings(context.Context, *GetOrganizationSettingsRequest) (*GetOrganizationSettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrganizationSettings not implemented")
@@ -440,6 +456,24 @@ func _OrganizationService_RemoveOrganizationMember_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrganizationService_SetOrganizationMember_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetOrganizationMemberRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrganizationServiceServer).SetOrganizationMember(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.OrganizationService/SetOrganizationMember",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrganizationServiceServer).SetOrganizationMember(ctx, req.(*SetOrganizationMemberRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _OrganizationService_GetOrganizationSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetOrganizationSettingsRequest)
 	if err := dec(in); err != nil {
@@ -522,6 +556,10 @@ var OrganizationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveOrganizationMember",
 			Handler:    _OrganizationService_RemoveOrganizationMember_Handler,
+		},
+		{
+			MethodName: "SetOrganizationMember",
+			Handler:    _OrganizationService_SetOrganizationMember_Handler,
 		},
 		{
 			MethodName: "GetOrganizationSettings",
