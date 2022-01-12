@@ -36,7 +36,6 @@ import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 //  * SENSIBLE
 //  * STYLE_BASIC
 //  * STYLE_DEFAULT
-//  * OTHER
 //
 // Thus, the only remaining categories are:
 //
@@ -46,10 +45,7 @@ import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 //  * DEFAULT
 //  * COMMENTS
 //  * UNARY_RPC
-//
-//  A new category is also added, which is similar to OTHER but differently named TODO:
-//
-//  * SPECIAL
+//  * OTHER
 //
 // The rules included in the MINIMAL lint category have also been adjusted.
 // The difference is shown below:
@@ -74,6 +70,8 @@ import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 //  * PACKAGE_DEFINED
 //  * PACKAGE_DIRECTORY_MATCH
 //  * PACKAGE_SAME_DIRECTORY
+//
+// ENUM_FIRST_VALUE_ZERO has been moved from OTHER to BASIC, DEFAULT.
 //
 // Finally, the FIELD_NO_DESCRIPTOR rule was removed altogether.
 var VersionSpec = &internal.VersionSpec{

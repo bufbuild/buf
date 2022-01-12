@@ -78,7 +78,7 @@ var (
 		"DEFAULT",
 		"COMMENTS",
 		"UNARY_RPC",
-		"SPECIAL",
+		"OTHER",
 	}
 	// v1IDToCategories associates IDs to categories.
 	v1IDToCategories = map[string][]string{
@@ -172,7 +172,7 @@ var (
 			"DEFAULT",
 		},
 		"PACKAGE_NO_IMPORT_CYCLE": {
-			"SPECIAL",
+			"OTHER",
 		},
 		"PACKAGE_SAME_CSHARP_NAMESPACE": {
 			"BASIC",
