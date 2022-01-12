@@ -33,7 +33,7 @@ type VersionSpec struct {
 //
 // Sorted by category priority.
 func AllCategoriesForVersionSpec(versionSpec *VersionSpec) []string {
-	categoriesMap := make(map[string]struct{}, 0)
+	categoriesMap := make(map[string]struct{})
 	for _, categories := range versionSpec.IDToCategories {
 		for _, category := range categories {
 			categoriesMap[category] = struct{}{}
@@ -53,7 +53,7 @@ func AllCategoriesForVersionSpec(versionSpec *VersionSpec) []string {
 //
 // Sorted lexographically.
 func AllIDsForVersionSpec(versionSpec *VersionSpec) []string {
-	m := make(map[string]struct{}, 0)
+	m := make(map[string]struct{})
 	for id := range versionSpec.IDToCategories {
 		m[id] = struct{}{}
 	}
@@ -64,7 +64,7 @@ func AllIDsForVersionSpec(versionSpec *VersionSpec) []string {
 //
 // Sorted lexographically.
 func AllCategoriesAndIDsForVersionSpec(versionSpec *VersionSpec) []string {
-	m := make(map[string]struct{}, 0)
+	m := make(map[string]struct{})
 	for id, categories := range versionSpec.IDToCategories {
 		m[id] = struct{}{}
 		for _, category := range categories {
