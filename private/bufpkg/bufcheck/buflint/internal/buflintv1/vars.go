@@ -71,15 +71,6 @@ var (
 	v1DefaultCategories = []string{
 		"DEFAULT",
 	}
-	// v1AllCategories are all categories.
-	v1AllCategories = []string{
-		"MINIMAL",
-		"BASIC",
-		"DEFAULT",
-		"COMMENTS",
-		"UNARY_RPC",
-		"OTHER",
-	}
 	// v1IDToCategories associates IDs to categories.
 	v1IDToCategories = map[string][]string{
 		"COMMENT_ENUM": {
@@ -171,9 +162,7 @@ var (
 			"BASIC",
 			"DEFAULT",
 		},
-		"PACKAGE_NO_IMPORT_CYCLE": {
-			"OTHER",
-		},
+		"PACKAGE_NO_IMPORT_CYCLE": {},
 		"PACKAGE_SAME_CSHARP_NAMESPACE": {
 			"BASIC",
 			"DEFAULT",

@@ -14,10 +14,62 @@
 
 package internal
 
+import (
+	"sort"
+
+	"github.com/bufbuild/buf/private/pkg/stringutil"
+)
+
 // VersionSpec specifies the rules, ids, and categories for a given version.
 type VersionSpec struct {
 	RuleBuilders      []*RuleBuilder
 	DefaultCategories []string
-	AllCategories     []string
-	IDToCategories    map[string][]string
+	// May include IDs without any categories.
+	// To get all categories, use AllCategoriesForVersionSpec.
+	IDToCategories map[string][]string
+}
+
+// AllCategoriesForVersionSpec returns all categories for the VersionSpec.
+//
+// Sorted by category priority.
+func AllCategoriesForVersionSpec(versionSpec *VersionSpec) []string {
+	categoriesMap := make(map[string]struct{}, 0)
+	for _, categories := range versionSpec.IDToCategories {
+		for _, category := range categories {
+			categoriesMap[category] = struct{}{}
+		}
+	}
+	categories := stringutil.MapToSlice(categoriesMap)
+	sort.Slice(
+		categories,
+		func(i int, j int) bool {
+			return categoryLess(categories[i], categories[j])
+		},
+	)
+	return categories
+}
+
+// AllIDsForVersionSpec returns all ids for the VersionSpec.
+//
+// Sorted lexographically.
+func AllIDsForVersionSpec(versionSpec *VersionSpec) []string {
+	m := make(map[string]struct{}, 0)
+	for id := range versionSpec.IDToCategories {
+		m[id] = struct{}{}
+	}
+	return stringutil.MapToSortedSlice(m)
+}
+
+// AllCategoriesAndIDsForVersionSpec returns all categories and rules for the VersionSpec.
+//
+// Sorted lexographically.
+func AllCategoriesAndIDsForVersionSpec(versionSpec *VersionSpec) []string {
+	m := make(map[string]struct{}, 0)
+	for id, categories := range versionSpec.IDToCategories {
+		m[id] = struct{}{}
+		for _, category := range categories {
+			m[category] = struct{}{}
+		}
+	}
+	return stringutil.MapToSortedSlice(m)
 }
