@@ -83,13 +83,6 @@ var (
 	v1beta1DefaultCategories = []string{
 		"FILE",
 	}
-	// v1beta1AllCategories are all categories.
-	v1beta1AllCategories = []string{
-		"FILE",
-		"PACKAGE",
-		"WIRE_JSON",
-		"WIRE",
-	}
 	// v1beta1IDToCategories associates IDs to categories.
 	v1beta1IDToCategories = map[string][]string{
 		"ENUM_NO_DELETE": {
