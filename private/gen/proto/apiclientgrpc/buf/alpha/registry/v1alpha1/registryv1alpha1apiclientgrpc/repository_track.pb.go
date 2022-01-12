@@ -99,3 +99,30 @@ func (s *repositoryTrackService) DeleteRepositoryTrackByName(
 	}
 	return nil
 }
+
+// GetReferenceAncestorSequenceIdOnRepositoryTrack finds reference's first ancestor on base_track and returns its
+// sequence_id. Errors with NOT_FOUND if head_reference is not found on base_track.
+func (s *repositoryTrackService) GetReferenceAncestorSequenceIdOnRepositoryTrack(
+	ctx context.Context,
+	ownerName string,
+	repositoryName string,
+	reference string,
+	repositoryTrackName string,
+) (sequenceId int64, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetReferenceAncestorSequenceIdOnRepositoryTrack(
+		ctx,
+		&v1alpha1.GetReferenceAncestorSequenceIdOnRepositoryTrackRequest{
+			OwnerName:           ownerName,
+			RepositoryName:      repositoryName,
+			Reference:           reference,
+			RepositoryTrackName: repositoryTrackName,
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return response.SequenceId, nil
+}

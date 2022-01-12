@@ -36,6 +36,9 @@ service RepositoryTrackService {
   rpc ListRepositoryTracks(ListRepositoryTracksRequest) returns (ListRepositoryTracksResponse);
   // DeleteRepositoryTrackByName deletes a repository track by name.
   rpc DeleteRepositoryTrackByName(DeleteRepositoryTrackByNameRequest) returns (DeleteRepositoryTrackByNameResponse);
+  // GetReferenceAncestorSequenceIdOnRepositoryTrack finds reference's first ancestor on base_track and returns its
+  // sequence_id. Errors with NOT_FOUND if head_reference is not found on base_track.
+  rpc GetReferenceAncestorSequenceIdOnRepositoryTrack(GetReferenceAncestorSequenceIdOnRepositoryTrackRequest) returns (GetReferenceAncestorSequenceIdOnRepositoryTrackResponse);
 }
 
 message CreateRepositoryTrackRequest {
@@ -72,3 +75,14 @@ message DeleteRepositoryTrackByNameRequest {
 }
 
 message DeleteRepositoryTrackByNameResponse {}
+
+message GetReferenceAncestorSequenceIdOnRepositoryTrackRequest {
+  string owner_name = 1;
+  string repository_name = 2;
+  string reference = 3;
+  string repository_track_name = 4;
+}
+
+message GetReferenceAncestorSequenceIdOnRepositoryTrackResponse {
+  int64 sequence_id = 1;
+}

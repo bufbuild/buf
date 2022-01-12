@@ -42,6 +42,9 @@ type RepositoryTrackServiceClient interface {
 	ListRepositoryTracks(ctx context.Context, in *ListRepositoryTracksRequest, opts ...grpc.CallOption) (*ListRepositoryTracksResponse, error)
 	// DeleteRepositoryTrackByName deletes a repository track by name.
 	DeleteRepositoryTrackByName(ctx context.Context, in *DeleteRepositoryTrackByNameRequest, opts ...grpc.CallOption) (*DeleteRepositoryTrackByNameResponse, error)
+	// GetReferenceAncestorSequenceIdOnRepositoryTrack finds reference's first ancestor on base_track and returns its
+	// sequence_id. Errors with NOT_FOUND if head_reference is not found on base_track.
+	GetReferenceAncestorSequenceIdOnRepositoryTrack(ctx context.Context, in *GetReferenceAncestorSequenceIdOnRepositoryTrackRequest, opts ...grpc.CallOption) (*GetReferenceAncestorSequenceIdOnRepositoryTrackResponse, error)
 }
 
 type repositoryTrackServiceClient struct {
@@ -79,6 +82,15 @@ func (c *repositoryTrackServiceClient) DeleteRepositoryTrackByName(ctx context.C
 	return out, nil
 }
 
+func (c *repositoryTrackServiceClient) GetReferenceAncestorSequenceIdOnRepositoryTrack(ctx context.Context, in *GetReferenceAncestorSequenceIdOnRepositoryTrackRequest, opts ...grpc.CallOption) (*GetReferenceAncestorSequenceIdOnRepositoryTrackResponse, error) {
+	out := new(GetReferenceAncestorSequenceIdOnRepositoryTrackResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryTrackService/GetReferenceAncestorSequenceIdOnRepositoryTrack", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RepositoryTrackServiceServer is the server API for RepositoryTrackService service.
 // All implementations should embed UnimplementedRepositoryTrackServiceServer
 // for forward compatibility
@@ -89,6 +101,9 @@ type RepositoryTrackServiceServer interface {
 	ListRepositoryTracks(context.Context, *ListRepositoryTracksRequest) (*ListRepositoryTracksResponse, error)
 	// DeleteRepositoryTrackByName deletes a repository track by name.
 	DeleteRepositoryTrackByName(context.Context, *DeleteRepositoryTrackByNameRequest) (*DeleteRepositoryTrackByNameResponse, error)
+	// GetReferenceAncestorSequenceIdOnRepositoryTrack finds reference's first ancestor on base_track and returns its
+	// sequence_id. Errors with NOT_FOUND if head_reference is not found on base_track.
+	GetReferenceAncestorSequenceIdOnRepositoryTrack(context.Context, *GetReferenceAncestorSequenceIdOnRepositoryTrackRequest) (*GetReferenceAncestorSequenceIdOnRepositoryTrackResponse, error)
 }
 
 // UnimplementedRepositoryTrackServiceServer should be embedded to have forward compatible implementations.
@@ -103,6 +118,9 @@ func (UnimplementedRepositoryTrackServiceServer) ListRepositoryTracks(context.Co
 }
 func (UnimplementedRepositoryTrackServiceServer) DeleteRepositoryTrackByName(context.Context, *DeleteRepositoryTrackByNameRequest) (*DeleteRepositoryTrackByNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteRepositoryTrackByName not implemented")
+}
+func (UnimplementedRepositoryTrackServiceServer) GetReferenceAncestorSequenceIdOnRepositoryTrack(context.Context, *GetReferenceAncestorSequenceIdOnRepositoryTrackRequest) (*GetReferenceAncestorSequenceIdOnRepositoryTrackResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReferenceAncestorSequenceIdOnRepositoryTrack not implemented")
 }
 
 // UnsafeRepositoryTrackServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -170,6 +188,24 @@ func _RepositoryTrackService_DeleteRepositoryTrackByName_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryTrackService_GetReferenceAncestorSequenceIdOnRepositoryTrack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReferenceAncestorSequenceIdOnRepositoryTrackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryTrackServiceServer).GetReferenceAncestorSequenceIdOnRepositoryTrack(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryTrackService/GetReferenceAncestorSequenceIdOnRepositoryTrack",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryTrackServiceServer).GetReferenceAncestorSequenceIdOnRepositoryTrack(ctx, req.(*GetReferenceAncestorSequenceIdOnRepositoryTrackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RepositoryTrackService_ServiceDesc is the grpc.ServiceDesc for RepositoryTrackService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -188,6 +224,10 @@ var RepositoryTrackService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteRepositoryTrackByName",
 			Handler:    _RepositoryTrackService_DeleteRepositoryTrackByName_Handler,
+		},
+		{
+			MethodName: "GetReferenceAncestorSequenceIdOnRepositoryTrack",
+			Handler:    _RepositoryTrackService_GetReferenceAncestorSequenceIdOnRepositoryTrack_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

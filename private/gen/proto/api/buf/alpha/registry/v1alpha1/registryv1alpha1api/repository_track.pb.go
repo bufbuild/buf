@@ -43,4 +43,13 @@ type RepositoryTrackService interface {
 		repositoryName string,
 		name string,
 	) (err error)
+	// GetReferenceAncestorSequenceIdOnRepositoryTrack finds reference's first ancestor on base_track and returns its
+	// sequence_id. Errors with NOT_FOUND if head_reference is not found on base_track.
+	GetReferenceAncestorSequenceIdOnRepositoryTrack(
+		ctx context.Context,
+		ownerName string,
+		repositoryName string,
+		reference string,
+		repositoryTrackName string,
+	) (sequenceId int64, err error)
 }
