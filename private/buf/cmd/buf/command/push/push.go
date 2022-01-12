@@ -33,8 +33,7 @@ import (
 )
 
 const (
-	//banchFlagName      = "branch"
-	//branchFlagShortName = "b"
+	trackFlagName       = "track"
 	tagFlagName         = "tag"
 	tagFlagShortName    = "t"
 	errorFormatFlagName = "error-format"
@@ -62,7 +61,7 @@ func NewCommand(
 }
 
 type flags struct {
-	//Branch      string
+	Tracks      []string
 	Tags        []string
 	ErrorFormat string
 	// special
@@ -75,13 +74,12 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
-	//flagSet.StringVarP(
-	//	&f.Branch,
-	//	branchFlagName,
-	//	branchFlagShortName,
-	//	bufmoduleref.MainBranch,
-	//	`The branch to push to.`,
-	//)
+	flagSet.StringSliceVar(
+		&f.Tracks,
+		trackFlagName,
+		nil,
+		"Append the pushed module to this track. If specified multiple times, multiple tracks will be appended.",
+	)
 	flagSet.StringSliceVarP(
 		&f.Tags,
 		tagFlagName,
@@ -105,9 +103,6 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) (retErr error) {
-	//if flags.Branch == "" {
-	//	return appcmd.NewInvalidArgumentErrorf("required flag %q not set", branchFlagName)
-	//}
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
@@ -141,15 +136,18 @@ func run(
 	if err != nil {
 		return err
 	}
+	tracks := flags.Tracks
+	if tracks == nil {
+		tracks = []string{bufmoduleref.MainTrack}
+	}
 	localModulePin, err := service.Push(
 		ctx,
 		moduleIdentity.Owner(),
 		moduleIdentity.Repository(),
-		//flags.Branch,
-		bufmoduleref.MainBranch,
+		"",
 		protoModule,
 		flags.Tags,
-		nil,
+		tracks,
 	)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
