@@ -440,6 +440,58 @@ func checkPackageLowerSnakeCase(add addFunc, file protosource.File) error {
 	return nil
 }
 
+// CheckPackageNoImportCycle is a check function.
+var CheckPackageNoImportCycle = newFilesCheckFunc(checkPackageNoImportCycle)
+
+func checkPackageNoImportCycle(add addFunc, files []protosource.File) error {
+	packageToDirectlyImportedPackageToFileImports, err := protosource.PackageToDirectlyImportedPackageToFileImports(files...)
+	if err != nil {
+		return err
+	}
+	// This is way more algorithmically complex than it needs to be.
+	//
+	// We're doing a DFS starting at each package. What we should do is start from any package,
+	// do the DFS and keep track of the packages hit, and then don't ever do DFS from a given
+	// package twice. The problem is is that with the current janky package -> direct -> file imports
+	// setup, we would then end up with error messages like "import cycle: a -> b -> c -> b", and
+	// attach the error message to a file with package a, and we want to just print "b -> c -> b".
+	// So to get this to market, we just do a DFS from each package.
+	//
+	// This may prove to be too expensive but early testing say it is not so far.
+	for pkg := range packageToDirectlyImportedPackageToFileImports {
+		// Can equal "" per the function signature of PackageToDirectlyImportedPackageToFileImports
+		if pkg == "" {
+			continue
+		}
+		// Go one deep in the potential import cycle so that we can get the file imports
+		// we want to potentially attach errors to.
+		//
+		// We know that pkg is never equal to directlyImportedPackage due to the signature
+		// of PackageToDirectlyImportedPackageToFileImports.
+		for directlyImportedPackage, fileImports := range packageToDirectlyImportedPackageToFileImports[pkg] {
+			// Can equal "" per the function signature of PackageToDirectlyImportedPackageToFileImports
+			if directlyImportedPackage == "" {
+				continue
+			}
+			if importCycle := getImportCycleIfExists(
+				directlyImportedPackage,
+				packageToDirectlyImportedPackageToFileImports,
+				map[string]struct{}{
+					pkg: {},
+				},
+				[]string{
+					pkg,
+				},
+			); len(importCycle) > 0 {
+				for _, fileImport := range fileImports {
+					add(fileImport, fileImport.Location(), nil, `Package import cycle: %s`, strings.Join(importCycle, ` -> `))
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // CheckPackageSameDirectory is a check function.
 var CheckPackageSameDirectory = newPackageToFilesCheckFunc(checkPackageSameDirectory)
 

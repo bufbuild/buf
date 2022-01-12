@@ -67,10 +67,12 @@ func RulesForConfig(config *bufbreakingconfig.Config) ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(&bufbreakingconfig.Config{
-		Use:     bufbreakingv1beta1.VersionSpec.AllCategories,
-		Version: bufconfig.V1Beta1Version,
-	})
+	internalConfig, err := internalConfigForConfig(
+		&bufbreakingconfig.Config{
+			Use:     internal.AllIDsForVersionSpec(bufbreakingv1beta1.VersionSpec),
+			Version: bufconfig.V1Beta1Version,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -81,39 +83,30 @@ func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(&bufbreakingconfig.Config{
-		Use:     bufbreakingv1.VersionSpec.AllCategories,
-		Version: bufconfig.V1Version,
-	})
+	internalConfig, err := internalConfigForConfig(
+		&bufbreakingconfig.Config{
+			Use:     internal.AllIDsForVersionSpec(bufbreakingv1.VersionSpec),
+			Version: bufconfig.V1Version,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
 	return rulesForInternalRules(internalConfig.Rules), nil
 }
 
-// GetAllRulesAndCategoriesV1 returns all rules and categories for v1 as a string slice.
-//
-// This is used for validation purposes only.
-func GetAllRulesAndCategoriesV1() []string {
-	allRulesAndCategories := make([]string, 0, len(bufbreakingv1.VersionSpec.AllCategories)+len(bufbreakingv1.VersionSpec.IDToCategories))
-
-	allRulesAndCategories = append(allRulesAndCategories, bufbreakingv1.VersionSpec.AllCategories...)
-	for id := range bufbreakingv1.VersionSpec.IDToCategories {
-		allRulesAndCategories = append(allRulesAndCategories, id)
-	}
-	return allRulesAndCategories
-}
-
 // GetAllRulesAndCategoriesV1Beta1 returns all rules and categories for v1beta1 as a string slice.
 //
 // This is used for validation purposes only.
 func GetAllRulesAndCategoriesV1Beta1() []string {
-	allRulesAndCategories := make([]string, 0, len(bufbreakingv1beta1.VersionSpec.AllCategories)+len(bufbreakingv1beta1.VersionSpec.IDToCategories))
-	allRulesAndCategories = append(allRulesAndCategories, bufbreakingv1beta1.VersionSpec.AllCategories...)
-	for id := range bufbreakingv1beta1.VersionSpec.IDToCategories {
-		allRulesAndCategories = append(allRulesAndCategories, id)
-	}
-	return allRulesAndCategories
+	return internal.AllCategoriesAndIDsForVersionSpec(bufbreakingv1beta1.VersionSpec)
+}
+
+// GetAllRulesAndCategoriesV1 returns all rules and categories for v1 as a string slice.
+//
+// This is used for validation purposes only.
+func GetAllRulesAndCategoriesV1() []string {
+	return internal.AllCategoriesAndIDsForVersionSpec(bufbreakingv1.VersionSpec)
 }
 
 func internalConfigForConfig(config *bufbreakingconfig.Config) (*internal.Config, error) {

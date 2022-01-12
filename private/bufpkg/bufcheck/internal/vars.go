@@ -28,6 +28,10 @@ var topLevelCategoryToPriority = map[string]int{
 	"WIRE":      4,
 }
 
+func categoryLess(one string, two string) bool {
+	return categoryCompare(one, two) < 0
+}
+
 func categoryCompare(one string, two string) int {
 	onePriority, oneIsTopLevel := topLevelCategoryToPriority[one]
 	twoPriority, twoIsTopLevel := topLevelCategoryToPriority[two]

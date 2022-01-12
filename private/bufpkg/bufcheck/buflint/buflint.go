@@ -71,10 +71,12 @@ func RulesForConfig(config *buflintconfig.Config) ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(&buflintconfig.Config{
-		Use:     buflintv1beta1.VersionSpec.AllCategories,
-		Version: bufconfig.V1Beta1Version,
-	})
+	internalConfig, err := internalConfigForConfig(
+		&buflintconfig.Config{
+			Use:     internal.AllIDsForVersionSpec(buflintv1beta1.VersionSpec),
+			Version: bufconfig.V1Beta1Version,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -85,40 +87,30 @@ func GetAllRulesV1Beta1() ([]bufcheck.Rule, error) {
 //
 // Should only be used for printing.
 func GetAllRulesV1() ([]bufcheck.Rule, error) {
-	internalConfig, err := internalConfigForConfig(&buflintconfig.Config{
-		Use:     buflintv1.VersionSpec.AllCategories,
-		Version: bufconfig.V1Version,
-	})
+	internalConfig, err := internalConfigForConfig(
+		&buflintconfig.Config{
+			Use:     internal.AllIDsForVersionSpec(buflintv1.VersionSpec),
+			Version: bufconfig.V1Version,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
 	return rulesForInternalRules(internalConfig.Rules), nil
 }
 
-// GetAllRulesAndCategoriesV1 returns all rules and categories for v1 as a string slice.
-//
-// This is used for validation purposes only.
-func GetAllRulesAndCategoriesV1() []string {
-	allRulesAndCategories := make([]string, 0, len(buflintv1.VersionSpec.AllCategories)+len(buflintv1.VersionSpec.IDToCategories))
-
-	allRulesAndCategories = append(allRulesAndCategories, buflintv1.VersionSpec.AllCategories...)
-	for id := range buflintv1.VersionSpec.IDToCategories {
-		allRulesAndCategories = append(allRulesAndCategories, id)
-	}
-	return allRulesAndCategories
-}
-
 // GetAllRulesAndCategoriesV1Beta1 returns all rules and categories for v1beta1 as a string slice.
 //
 // This is used for validation purposes only.
 func GetAllRulesAndCategoriesV1Beta1() []string {
-	allRulesAndCategories := make([]string, 0, len(buflintv1beta1.VersionSpec.AllCategories)+len(buflintv1beta1.VersionSpec.IDToCategories))
+	return internal.AllCategoriesAndIDsForVersionSpec(buflintv1beta1.VersionSpec)
+}
 
-	allRulesAndCategories = append(allRulesAndCategories, buflintv1beta1.VersionSpec.AllCategories...)
-	for id := range buflintv1beta1.VersionSpec.IDToCategories {
-		allRulesAndCategories = append(allRulesAndCategories, id)
-	}
-	return allRulesAndCategories
+// GetAllRulesAndCategoriesV1 returns all rules and categories for v1 as a string slice.
+//
+// This is used for validation purposes only.
+func GetAllRulesAndCategoriesV1() []string {
+	return internal.AllCategoriesAndIDsForVersionSpec(buflintv1.VersionSpec)
 }
 
 func internalConfigForConfig(config *buflintconfig.Config) (*internal.Config, error) {

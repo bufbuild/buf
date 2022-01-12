@@ -187,6 +187,12 @@ var (
 		"packages are lower_snake.case",
 		newAdapter(buflintcheck.CheckPackageLowerSnakeCase),
 	)
+	// PackageNoImportCycleRuleBuilder is a rule builder.
+	PackageNoImportCycleRuleBuilder = internal.NewNopRuleBuilder(
+		"PACKAGE_NO_IMPORT_CYCLE",
+		"packages do not have import cycles",
+		newAdapter(buflintcheck.CheckPackageNoImportCycle),
+	)
 	// PackageSameCsharpNamespaceRuleBuilder is a rule builder.
 	PackageSameCsharpNamespaceRuleBuilder = internal.NewNopRuleBuilder(
 		"PACKAGE_SAME_CSHARP_NAMESPACE",

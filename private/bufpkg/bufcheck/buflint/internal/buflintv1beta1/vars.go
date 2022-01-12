@@ -69,20 +69,6 @@ var (
 	v1beta1DefaultCategories = []string{
 		"DEFAULT",
 	}
-	// v1beta1AllCategories are all categories.
-	v1beta1AllCategories = []string{
-		"MINIMAL",
-		"BASIC",
-		"DEFAULT",
-		"COMMENTS",
-		"UNARY_RPC",
-		"FILE_LAYOUT",
-		"PACKAGE_AFFINITY",
-		"SENSIBLE",
-		"STYLE_BASIC",
-		"STYLE_DEFAULT",
-		"OTHER",
-	}
 	// v1beta1IDToCategories associates IDs to categories.
 	v1beta1IDToCategories = map[string][]string{
 		"COMMENT_ENUM": {
