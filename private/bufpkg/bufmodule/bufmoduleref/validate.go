@@ -17,11 +17,9 @@ package bufmoduleref
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/netextended"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // ValidateProtoModuleReference verifies the given module reference is well-formed.
@@ -59,16 +57,7 @@ func ValidateProtoModulePin(protoModulePin *modulev1alpha1.ModulePin) error {
 	if err := ValidateRepository(protoModulePin.Repository); err != nil {
 		return err
 	}
-	if err := ValidateBranch(protoModulePin.Branch); err != nil {
-		return err
-	}
 	if err := ValidateCommit(protoModulePin.Commit); err != nil {
-		return err
-	}
-	if err := validateDigest(protoModulePin.Digest); err != nil {
-		return err
-	}
-	if err := validateCreateTime(protoModulePin.CreateTime); err != nil {
 		return err
 	}
 	return nil
@@ -161,30 +150,6 @@ func ValidateModuleFilePath(path string) error {
 	return nil
 }
 
-// validateDigest verifies the given digest's prefix,
-// decodes its base64 representation and checks the
-// length of the encoded bytes.
-// It performs client-side validation only, and is limited to properties
-// we do not think will change in the future.
-func validateDigest(digest string) error {
-	if digest == "" {
-		return errors.New("empty digest")
-	}
-	split := strings.SplitN(digest, "-", 2)
-	if len(split) != 2 {
-		return fmt.Errorf("invalid digest: %s", digest)
-	}
-	digestPrefix := split[0]
-	digestValue := split[1]
-	if digestPrefix == "" {
-		return fmt.Errorf("empty digest prefix for %s", digest)
-	}
-	if digestValue == "" {
-		return fmt.Errorf("empty digest value for %s", digest)
-	}
-	return nil
-}
-
 func validateModuleOwner(moduleOwner ModuleOwner) error {
 	if moduleOwner == nil {
 		return errors.New("module owner is required")
@@ -219,14 +184,4 @@ func validateRemote(remote string) error {
 		return fmt.Errorf("invalid remote %q: %w", remote, err)
 	}
 	return nil
-}
-
-func validateCreateTime(createTime *timestamppb.Timestamp) error {
-	if createTime == nil {
-		return errors.New("create_time is required")
-	}
-	if createTime.Seconds == 0 && createTime.Nanos == 0 {
-		return errors.New("create_time must not be 0")
-	}
-	return createTime.CheckValid()
 }
