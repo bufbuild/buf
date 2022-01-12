@@ -80,15 +80,16 @@ func getImportCycleIfExists(
 	// Will never equal pkg
 	for directlyImportedPackage := range packageToDirectlyImportedPackageToFileImports[pkg] {
 		// Can equal "" per the function signature of PackageToDirectlyImportedPackageToFileImports
-		if directlyImportedPackage != "" {
-			if importCycle := getImportCycleIfExists(
-				directlyImportedPackage,
-				packageToDirectlyImportedPackageToFileImports,
-				usedPackageMap,
-				usedPackageList,
-			); len(importCycle) != 0 {
-				return importCycle
-			}
+		if directlyImportedPackage == "" {
+			continue
+		}
+		if importCycle := getImportCycleIfExists(
+			directlyImportedPackage,
+			packageToDirectlyImportedPackageToFileImports,
+			usedPackageMap,
+			usedPackageList,
+		); len(importCycle) != 0 {
+			return importCycle
 		}
 	}
 	delete(usedPackageMap, pkg)

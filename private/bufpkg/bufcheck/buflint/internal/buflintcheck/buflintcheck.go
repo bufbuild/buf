@@ -460,29 +460,31 @@ func checkPackageNoImportCycle(add addFunc, files []protosource.File) error {
 	// This may prove to be too expensive but early testing say it is not so far.
 	for pkg := range packageToDirectlyImportedPackageToFileImports {
 		// Can equal "" per the function signature of PackageToDirectlyImportedPackageToFileImports
-		if pkg != "" {
-			// Go one deep in the potential import cycle so that we can get the file imports
-			// we want to potentially attach errors to.
-			//
-			// We know that pkg is never equal to directlyImportedPackage due to the signature
-			// of PackageToDirectlyImportedPackageToFileImports.
-			for directlyImportedPackage, fileImports := range packageToDirectlyImportedPackageToFileImports[pkg] {
-				// Can equal "" per the function signature of PackageToDirectlyImportedPackageToFileImports
-				if directlyImportedPackage != "" {
-					if importCycle := getImportCycleIfExists(
-						directlyImportedPackage,
-						packageToDirectlyImportedPackageToFileImports,
-						map[string]struct{}{
-							pkg: {},
-						},
-						[]string{
-							pkg,
-						},
-					); len(importCycle) > 0 {
-						for _, fileImport := range fileImports {
-							add(fileImport, fileImport.Location(), nil, `Package import cycle: %s`, strings.Join(importCycle, ` -> `))
-						}
-					}
+		if pkg == "" {
+			continue
+		}
+		// Go one deep in the potential import cycle so that we can get the file imports
+		// we want to potentially attach errors to.
+		//
+		// We know that pkg is never equal to directlyImportedPackage due to the signature
+		// of PackageToDirectlyImportedPackageToFileImports.
+		for directlyImportedPackage, fileImports := range packageToDirectlyImportedPackageToFileImports[pkg] {
+			// Can equal "" per the function signature of PackageToDirectlyImportedPackageToFileImports
+			if directlyImportedPackage == "" {
+				continue
+			}
+			if importCycle := getImportCycleIfExists(
+				directlyImportedPackage,
+				packageToDirectlyImportedPackageToFileImports,
+				map[string]struct{}{
+					pkg: {},
+				},
+				[]string{
+					pkg,
+				},
+			); len(importCycle) > 0 {
+				for _, fileImport := range fileImports {
+					add(fileImport, fileImport.Location(), nil, `Package import cycle: %s`, strings.Join(importCycle, ` -> `))
 				}
 			}
 		}
