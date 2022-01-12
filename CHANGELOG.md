@@ -4,6 +4,7 @@
 
 - Upgrade to `protoc` 3.19.2 support.
 - Add `buf beta registry {plugin,template} {deprecate,undeprecate}`
+- Add `PACKAGE_NO_IMPORT_CYCLE` lint rule to `OTHER` lint category to detect package import cycles.
 
 ## [v1.0.0-rc10] - 2021-12-16
 
