@@ -144,7 +144,7 @@ func run(
 		ctx,
 		moduleIdentity.Owner(),
 		moduleIdentity.Repository(),
-		"",
+		bufmoduleref.MainBranch,
 		protoModule,
 		flags.Tags,
 		tracks,
