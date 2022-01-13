@@ -97,7 +97,6 @@ func NewRepositoryPrinter(
 // RepositoryBranchPrinter is a repository branch printer.
 type RepositoryBranchPrinter interface {
 	PrintRepositoryBranch(ctx context.Context, format Format, repositoryBranch *registryv1alpha1.RepositoryBranch) error
-	PrintRepositoryBranches(ctx context.Context, format Format, nextPageToken string, repositoryBranches ...*registryv1alpha1.RepositoryBranch) error
 }
 
 // NewRepositoryBranchPrinter returns a new RepositoryBranchPrinter.
@@ -114,6 +113,17 @@ type RepositoryTagPrinter interface {
 // NewRepositoryTagPrinter returns a new RepositoryTagPrinter.
 func NewRepositoryTagPrinter(writer io.Writer) RepositoryTagPrinter {
 	return newRepositoryTagPrinter(writer)
+}
+
+// RepositoryTrackPrinter is a repository track printer.
+type RepositoryTrackPrinter interface {
+	PrintRepositoryTrack(format Format, message *registryv1alpha1.RepositoryTrack) error
+	PrintRepositoryTracks(format Format, nextPageToken string, messages ...*registryv1alpha1.RepositoryTrack) error
+}
+
+// NewRepositoryTrackPrinter returns a new RepositoryTrackPrinter.
+func NewRepositoryTrackPrinter(writer io.Writer) RepositoryTrackPrinter {
+	return newRepositoryTrackPrinter(writer)
 }
 
 // RepositoryCommitPrinter is a repository commit printer.
