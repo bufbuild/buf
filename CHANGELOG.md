@@ -7,6 +7,9 @@
 - Add `buf beta registry {plugin,template} {deprecate,undeprecate}`.
 - Add warning when using enterprise dependencies without specifying a enterprise
   remote in the module's identity.
+- Add `--track` flag to `buf push`
+- Update `buf beta registry commit list` to allow a track to be specified.
+- Add `buf beta registry track {list,delete}` commands.
 
 ## [v1.0.0-rc10] - 2021-12-16
 
