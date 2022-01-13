@@ -45,8 +45,6 @@ type Dependency struct {
 	Repository string
 	Branch     string
 	Commit     string
-	Digest     string
-	CreateTime time.Time
 }
 
 // ReadConfig reads the lock file at ExternalConfigFilePath relative
@@ -84,6 +82,30 @@ type ExternalConfigDependencyV1 struct {
 	CreateTime time.Time `json:"create_time,omitempty" yaml:"create_time,omitempty"`
 }
 
+// DependencyForExternalConfigDependencyV1 returns the Dependency representation of a ExternalConfigDependencyV1.
+func DependencyForExternalConfigDependencyV1(dep ExternalConfigDependencyV1) Dependency {
+	return Dependency{
+		Remote:     dep.Remote,
+		Owner:      dep.Owner,
+		Repository: dep.Repository,
+		Branch:     dep.Branch,
+		Commit:     dep.Commit,
+	}
+}
+
+// ExternalConfigDependencyV1ForDependency returns the ExternalConfigDependencyV1 of a Dependency.
+//
+// Note, some fields will be their empty value since not all values are available on the Dependency.
+func ExternalConfigDependencyV1ForDependency(dep Dependency) ExternalConfigDependencyV1 {
+	return ExternalConfigDependencyV1{
+		Remote:     dep.Remote,
+		Owner:      dep.Owner,
+		Repository: dep.Repository,
+		Branch:     dep.Branch,
+		Commit:     dep.Commit,
+	}
+}
+
 // ExternalConfigDependencyV1Beta1 represents a single dependency within
 // the v1beta1 lock file.
 type ExternalConfigDependencyV1Beta1 struct {
@@ -94,6 +116,30 @@ type ExternalConfigDependencyV1Beta1 struct {
 	Commit     string    `json:"commit,omitempty" yaml:"commit,omitempty"`
 	Digest     string    `json:"digest,omitempty" yaml:"digest,omitempty"`
 	CreateTime time.Time `json:"create_time,omitempty" yaml:"create_time,omitempty"`
+}
+
+// DepedencyForExternalConfigDependencyV1Beta1 returns the Dependency representation of a ExternalConfigDependencyV1Beta1.
+func DependencyForExternalConfigDependencyV1Beta1(dep ExternalConfigDependencyV1Beta1) Dependency {
+	return Dependency{
+		Remote:     dep.Remote,
+		Owner:      dep.Owner,
+		Repository: dep.Repository,
+		Branch:     dep.Branch,
+		Commit:     dep.Commit,
+	}
+}
+
+// ExternalConfigDependencyV1Beta1ForDependency returns the ExternalConfigDependencyV1Beta1 of a Dependency.
+//
+// Note, some fields will be their empty value since not all values are available on the Dependency.
+func ExternalConfigDependencyV1Beta1ForDependency(dep Dependency) ExternalConfigDependencyV1Beta1 {
+	return ExternalConfigDependencyV1Beta1{
+		Remote:     dep.Remote,
+		Owner:      dep.Owner,
+		Repository: dep.Repository,
+		Branch:     dep.Branch,
+		Commit:     dep.Commit,
+	}
 }
 
 // ExternalConfigVersion defines the subset of all lock
