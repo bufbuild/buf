@@ -7,6 +7,8 @@
 - Add `buf beta registry {plugin,template} {deprecate,undeprecate}`.
 - Add warning when using enterprise dependencies without specifying a enterprise
   remote in the module's identity.
+- Remove `branch`, `digest`, and `created_at` fields from the `buf.lock`. This will create
+  when pushing the same contents to an existing repository, since the `ModulePin` has been reduced down.
 
 ## [v1.0.0-rc10] - 2021-12-16
 
