@@ -416,7 +416,7 @@ func DependencyModulePinsForBucket(
 			dep.Remote,
 			dep.Owner,
 			dep.Repository,
-			"",
+			MainBranch,
 			dep.Commit,
 			"",
 			time.Time{},
