@@ -33,6 +33,5 @@ import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 var VersionSpec = &internal.VersionSpec{
 	RuleBuilders:      v1RuleBuilders,
 	DefaultCategories: v1DefaultCategories,
-	AllCategories:     v1AllCategories,
 	IDToCategories:    v1IDToCategories,
 }

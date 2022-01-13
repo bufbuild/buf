@@ -17,6 +17,7 @@ package modupdate
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -36,7 +37,8 @@ import (
 )
 
 const (
-	onlyFlagName = "only"
+	onlyFlagName   = "only"
+	bufTeamsRemote = "buf.team"
 )
 
 // NewCommand returns a new update Command.
@@ -113,6 +115,20 @@ func run(
 	remote := bufrpc.DefaultRemote
 	if moduleConfig.ModuleIdentity != nil && moduleConfig.ModuleIdentity.Remote() != "" {
 		remote = moduleConfig.ModuleIdentity.Remote()
+	} else {
+		for _, moduleReference := range moduleConfig.Build.DependencyModuleReferences {
+			if strings.HasSuffix(moduleReference.Remote(), bufTeamsRemote) && !strings.HasSuffix(bufrpc.DefaultRemote, bufTeamsRemote) {
+				warnMsg := fmt.Sprintf(
+					`%q does not specify a "name", buf will default to using remote %q for dependency resolution. This remote may not be able to resolve %q if it is a enterprise BSR module, did you mean to specify a "name: %s/..." on this module?`,
+					existingConfigFilePath,
+					bufrpc.DefaultRemote,
+					moduleReference.IdentityString(),
+					moduleReference.Remote(),
+				)
+				container.Logger().Warn(warnMsg)
+				break
+			}
+		}
 	}
 
 	pinnedRepositories, err := getDependencies(

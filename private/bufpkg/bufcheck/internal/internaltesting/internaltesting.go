@@ -40,18 +40,14 @@ func runTestRuleBuilders(t *testing.T, versionSpec *internal.VersionSpec) {
 		assert.False(t, ok, "duplicated id %q", ruleBuilder.ID())
 		idsMap[ruleBuilder.ID()] = struct{}{}
 	}
-	allCategoriesMap := stringutil.SliceToMap(versionSpec.AllCategories)
 	for id := range idsMap {
 		expectedID := stringutil.ToUpperSnakeCase(id)
 		assert.Equal(t, expectedID, id)
 		categories, ok := versionSpec.IDToCategories[id]
 		assert.True(t, ok, "id %q categories are not configured", id)
-		assert.True(t, len(categories) > 0, "id %q must have categories", id)
 		for _, category := range categories {
 			expectedCategory := stringutil.ToUpperSnakeCase(category)
 			assert.Equal(t, expectedCategory, category)
-			_, ok := allCategoriesMap[category]
-			assert.True(t, ok, "category %q configured for id %q is not a known category", category, id)
 		}
 	}
 	for id := range versionSpec.IDToCategories {

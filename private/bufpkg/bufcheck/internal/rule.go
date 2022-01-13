@@ -61,7 +61,7 @@ func newRule(
 	sort.Slice(
 		c,
 		func(i int, j int) bool {
-			return categoryCompare(c[i], c[j]) < 0
+			return categoryLess(c[i], c[j])
 		},
 	)
 	return &Rule{

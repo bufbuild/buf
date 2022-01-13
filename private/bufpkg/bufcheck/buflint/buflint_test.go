@@ -437,6 +437,16 @@ func TestRunPackageLowerSnakeCase(t *testing.T) {
 	)
 }
 
+func TestRunPackageNoImportCycle(t *testing.T) {
+	testLint(
+		t,
+		"package_no_import_cycle",
+		bufanalysistesting.NewFileAnnotation(t, "b1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
+		bufanalysistesting.NewFileAnnotation(t, "c1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
+		bufanalysistesting.NewFileAnnotation(t, "d1.proto", 5, 1, 5, 19, "PACKAGE_NO_IMPORT_CYCLE"),
+	)
+}
+
 func TestRunPackageSameDirectory(t *testing.T) {
 	testLint(
 		t,

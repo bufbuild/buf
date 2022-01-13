@@ -47,6 +47,7 @@ type Rule interface {
 	//
 	// UPPER_SNAKE_CASE.
 	// Sorted.
+	// May be empty.
 	Categories() []string
 	// Purpose returns the purpose of the Rule.
 	//

@@ -46,6 +46,7 @@ var (
 		buflintbuild.PackageDefinedRuleBuilder,
 		buflintbuild.PackageDirectoryMatchRuleBuilder,
 		buflintbuild.PackageLowerSnakeCaseRuleBuilder,
+		buflintbuild.PackageNoImportCycleRuleBuilder,
 		buflintbuild.PackageSameCsharpNamespaceRuleBuilder,
 		buflintbuild.PackageSameDirectoryRuleBuilder,
 		buflintbuild.PackageSameGoPackageRuleBuilder,
@@ -69,14 +70,6 @@ var (
 	// v1DefaultCategories are the default categories.
 	v1DefaultCategories = []string{
 		"DEFAULT",
-	}
-	// v1AllCategories are all categories.
-	v1AllCategories = []string{
-		"MINIMAL",
-		"BASIC",
-		"DEFAULT",
-		"COMMENTS",
-		"UNARY_RPC",
 	}
 	// v1IDToCategories associates IDs to categories.
 	v1IDToCategories = map[string][]string{
@@ -169,6 +162,7 @@ var (
 			"BASIC",
 			"DEFAULT",
 		},
+		"PACKAGE_NO_IMPORT_CYCLE": {},
 		"PACKAGE_SAME_CSHARP_NAMESPACE": {
 			"BASIC",
 			"DEFAULT",
