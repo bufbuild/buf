@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Upgrade to `protoc` 3.19.2 support.
+- Add `PACKAGE_NO_IMPORT_CYCLE` lint rule to detect package import cycles.
 - Add `buf beta registry {plugin,template} {deprecate,undeprecate}`.
 - Add warning when using enterprise dependencies without specifying a enterprise
   remote in the module's identity.

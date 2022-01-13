@@ -253,6 +253,7 @@ func getCategoryToIDs(idToCategories map[string][]string) map[string][]string {
 	categoryToIDs := make(map[string][]string)
 	for id, categories := range idToCategories {
 		for _, category := range categories {
+			// handles empty category as well
 			categoryToIDs[category] = append(categoryToIDs[category], id)
 		}
 	}
@@ -293,6 +294,12 @@ func sortRules(rules []*Rule) {
 			two := rules[j]
 			oneCategories := one.Categories()
 			twoCategories := two.Categories()
+			if len(oneCategories) == 0 && len(twoCategories) > 0 {
+				return false
+			}
+			if len(oneCategories) > 0 && len(twoCategories) == 0 {
+				return true
+			}
 			if len(oneCategories) > 0 && len(twoCategories) > 0 {
 				compare := categoryCompare(oneCategories[0], twoCategories[0])
 				if compare < 0 {
