@@ -49,6 +49,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversioncreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/track/trackdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/track/tracklist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
@@ -186,6 +187,7 @@ func NewRootCommand(name string) *appcmd.Command {
 								Short: "Repository track commands.",
 								SubCommands: []*appcmd.Command{
 									tracklist.NewCommand("list", builder),
+									trackdelete.NewCommand("delete", builder),
 								},
 							},
 							{
