@@ -66,7 +66,7 @@ func (p *pluginVersionPrinter) printPluginVersionsText(ctx context.Context, plug
 			"Name",
 			"Plugin Name",
 			"Plugin Owner",
-			"Image Digest",
+			"Docker Image Digest",
 		},
 		func(tabWriter TabWriter) error {
 			for _, plugin := range plugins {
@@ -74,7 +74,7 @@ func (p *pluginVersionPrinter) printPluginVersionsText(ctx context.Context, plug
 					plugin.Name,
 					plugin.PluginName,
 					plugin.PluginOwner,
-					plugin.ImageDigest,
+					plugin.DockerImageDigest,
 				); err != nil {
 					return err
 				}
@@ -85,17 +85,17 @@ func (p *pluginVersionPrinter) printPluginVersionsText(ctx context.Context, plug
 }
 
 type outputPluginVersion struct {
-	Name        string `json:"name,omitempty"`
-	PluginName  string `json:"plugin_name,omitempty"`
-	PluginOwner string `json:"plugin_owner,omitempty"`
-	ImageDigest string `json:"image_digest,omitempty"`
+	Name              string `json:"name,omitempty"`
+	PluginName        string `json:"plugin_name,omitempty"`
+	PluginOwner       string `json:"plugin_owner,omitempty"`
+	DockerImageDigest string `json:"docker_image_digest,omitempty"`
 }
 
 func registryPluginVersionToOutputPluginVersion(pluginVersion *registryv1alpha1.PluginVersion) outputPluginVersion {
 	return outputPluginVersion{
-		Name:        pluginVersion.Name,
-		PluginName:  pluginVersion.PluginName,
-		PluginOwner: pluginVersion.PluginOwner,
-		ImageDigest: pluginVersion.ImageDigest,
+		Name:              pluginVersion.Name,
+		PluginName:        pluginVersion.PluginName,
+		PluginOwner:       pluginVersion.PluginOwner,
+		DockerImageDigest: pluginVersion.DockerImageDigest,
 	}
 }
