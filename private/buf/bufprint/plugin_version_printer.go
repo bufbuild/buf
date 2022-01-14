@@ -88,7 +88,7 @@ type outputPluginVersion struct {
 	Name        string `json:"name,omitempty"`
 	PluginName  string `json:"plugin_name,omitempty"`
 	PluginOwner string `json:"plugin_owner,omitempty"`
-	Digest      string `json:"image_digest,omitempty"`
+	ImageDigest string `json:"image_digest,omitempty"`
 }
 
 func registryPluginVersionToOutputPluginVersion(pluginVersion *registryv1alpha1.PluginVersion) outputPluginVersion {
@@ -96,6 +96,6 @@ func registryPluginVersionToOutputPluginVersion(pluginVersion *registryv1alpha1.
 		Name:        pluginVersion.Name,
 		PluginName:  pluginVersion.PluginName,
 		PluginOwner: pluginVersion.PluginOwner,
-		Digest:      pluginVersion.ImageDigest,
+		ImageDigest: pluginVersion.ImageDigest,
 	}
 }
