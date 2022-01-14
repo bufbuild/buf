@@ -49,7 +49,7 @@ message PluginVersion {
   // The owner of the plugin to which this version relates.
   string plugin_owner = 4;
   // The full docker image digest of this plugin version.
-  string digest = 5;
+  string image_digest = 5;
 }
 
 // PluginVisibility defines the visibility options available
