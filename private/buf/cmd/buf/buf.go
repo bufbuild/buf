@@ -49,6 +49,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversioncreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templateversion/templateversionlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/track/trackdelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/track/tracklist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configinit"
@@ -180,14 +182,14 @@ func NewRootCommand(name string) *appcmd.Command {
 									repositoryundeprecate.NewCommand("undeprecate", builder),
 								},
 							},
-							//{
-							//	Use:   "branch",
-							//	Short: "Repository branch commands.",
-							//	SubCommands: []*appcmd.Command{
-							//		branchcreate.NewCommand("create", builder),
-							//		branchlist.NewCommand("list", builder),
-							//	},
-							//},
+							{
+								Use:   "track",
+								Short: "Repository track commands.",
+								SubCommands: []*appcmd.Command{
+									tracklist.NewCommand("list", builder),
+									trackdelete.NewCommand("delete", builder),
+								},
+							},
 							{
 								Use:   "tag",
 								Short: "Repository tag commands.",
