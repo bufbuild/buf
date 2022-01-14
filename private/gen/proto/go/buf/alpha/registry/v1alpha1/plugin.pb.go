@@ -196,7 +196,7 @@ type PluginVersion struct {
 	PluginName string `protobuf:"bytes,3,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
 	// The owner of the plugin to which this version relates.
 	PluginOwner string `protobuf:"bytes,4,opt,name=plugin_owner,json=pluginOwner,proto3" json:"plugin_owner,omitempty"`
-	// The full docker image digest of the plugin.
+	// The full docker image digest of this plugin version.
 	Digest string `protobuf:"bytes,5,opt,name=digest,proto3" json:"digest,omitempty"`
 }
 
