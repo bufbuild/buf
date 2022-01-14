@@ -32,7 +32,17 @@ func GetTestTimeout(t *testing.T) time.Duration {
 	if !flag.Parsed() {
 		t.Fatal("unable to read testing timeout flag as flags have not been parsed")
 	}
-	// It's fine if this panics. We expect to be in a test, and this should
-	// be covered by the Go 1 compatibility promise.
-	return flag.Lookup("test.timeout").Value.(flag.Getter).Get().(time.Duration)
+
+	// default is 10m to match the default timeout for go test
+	timeout := 10 * time.Minute
+
+	// If the test.timeout flag is set, use it.
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "test.timeout" {
+			// It's fine if this panics. We expect to be in a test, and this should
+			// be covered by the Go 1 compatibility promise.
+			timeout = f.Value.(flag.Getter).Get().(time.Duration)
+		}
+	})
+	return timeout
 }
