@@ -15,7 +15,6 @@
 package testingextended
 
 import (
-	"flag"
 	"testing"
 	"time"
 )
@@ -27,12 +26,10 @@ func SkipIfShort(t *testing.T) {
 	}
 }
 
-// GetTestTimeout returns the value of the go test -timeout flag.
+// GetTestTimeout returns the time remaining until the test times out or 10m if the test is not set to timeout.
 func GetTestTimeout(t *testing.T) time.Duration {
-	if !flag.Parsed() {
-		t.Fatal("unable to read testing timeout flag as flags have not been parsed")
+	if deadline, ok := t.Deadline(); ok && !deadline.IsZero() {
+		return time.Until(deadline)
 	}
-	// It's fine if this panics. We expect to be in a test, and this should
-	// be covered by the Go 1 compatibility promise.
-	return flag.Lookup("test.timeout").Value.(flag.Getter).Get().(time.Duration)
+	return 10 * time.Minute
 }
