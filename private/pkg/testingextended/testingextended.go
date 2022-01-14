@@ -28,7 +28,7 @@ func SkipIfShort(t *testing.T) {
 
 // GetTestTimeout returns the time remaining until the test times out or 10m if the test is not set to timeout.
 func GetTestTimeout(t *testing.T) time.Duration {
-	if deadline, ok := t.Deadline(); ok {
+	if deadline, ok := t.Deadline(); ok && !deadline.IsZero() {
 		return time.Until(deadline)
 	}
 	return 10 * time.Minute
