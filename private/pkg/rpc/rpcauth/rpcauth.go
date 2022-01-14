@@ -32,6 +32,10 @@ const (
 	authenticationTokenPrefix = "Bearer "
 )
 
+var (
+	ErrTokenExpired = rpc.NewUnauthenticatedError("token expired")
+)
+
 type authContextKey struct{}
 
 // User describes an authenticated user.
@@ -113,8 +117,13 @@ func NewServerInterceptor(authenticator Authenticator) rpc.ServerInterceptor {
 			serverInfo *rpc.ServerInfo,
 			serverHandler rpc.ServerHandler,
 		) (interface{}, error) {
-			user, ok := authenticate(ctx, authenticator)
-			if ok {
+			user, err := authenticate(ctx, authenticator)
+			if err != nil {
+				if errors.Is(err, ErrTokenExpired) {
+					return nil, err
+				}
+			}
+			if user != nil {
 				ctx = context.WithValue(ctx, authContextKey{}, user)
 			}
 			return serverHandler.Handle(ctx, request)
@@ -122,14 +131,14 @@ func NewServerInterceptor(authenticator Authenticator) rpc.ServerInterceptor {
 	)
 }
 
-func authenticate(ctx context.Context, authenticator Authenticator) (*User, bool) {
+func authenticate(ctx context.Context, authenticator Authenticator) (*User, error) {
 	token, err := GetTokenFromHeader(ctx)
 	if err != nil {
-		return nil, false
+		return nil, err
 	}
 	user, err := authenticator.Authenticate(ctx, token)
 	if err != nil {
-		return nil, false
+		return nil, err
 	}
-	return user, true
+	return user, nil
 }
