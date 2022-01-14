@@ -66,6 +66,7 @@ func (p *pluginVersionPrinter) printPluginVersionsText(ctx context.Context, plug
 			"Name",
 			"Plugin Name",
 			"Plugin Owner",
+			"Digest",
 		},
 		func(tabWriter TabWriter) error {
 			for _, plugin := range plugins {
@@ -73,6 +74,7 @@ func (p *pluginVersionPrinter) printPluginVersionsText(ctx context.Context, plug
 					plugin.Name,
 					plugin.PluginName,
 					plugin.PluginOwner,
+					plugin.Digest,
 				); err != nil {
 					return err
 				}
@@ -86,6 +88,7 @@ type outputPluginVersion struct {
 	Name        string `json:"name,omitempty"`
 	PluginName  string `json:"plugin_name,omitempty"`
 	PluginOwner string `json:"plugin_owner,omitempty"`
+	Digest      string `json:"digest,omitempty"`
 }
 
 func registryPluginVersionToOutputPluginVersion(pluginVersion *registryv1alpha1.PluginVersion) outputPluginVersion {
@@ -93,5 +96,6 @@ func registryPluginVersionToOutputPluginVersion(pluginVersion *registryv1alpha1.
 		Name:        pluginVersion.Name,
 		PluginName:  pluginVersion.PluginName,
 		PluginOwner: pluginVersion.PluginOwner,
+		Digest:      pluginVersion.Digest,
 	}
 }
