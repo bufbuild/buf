@@ -418,8 +418,8 @@ func DependencyModulePinsForBucket(
 			dep.Repository,
 			dep.Branch,
 			dep.Commit,
-			dep.Digest,
-			dep.CreateTime,
+			"",
+			time.Time{},
 		)
 		if err != nil {
 			return nil, err
@@ -456,8 +456,6 @@ func PutDependencyModulePinsToBucket(
 				Repository: pin.Repository(),
 				Branch:     pin.Branch(),
 				Commit:     pin.Commit(),
-				Digest:     pin.Digest(),
-				CreateTime: pin.CreateTime(),
 			},
 		)
 	}
