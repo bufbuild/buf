@@ -12,6 +12,7 @@
 - Add `--track` flag to `buf push`
 - Update `buf beta registry commit list` to allow a track to be specified.
 - Add `buf beta registry track {list,delete}` commands.
+- Add manpages for `buf`.
 
 ## [v1.0.0-rc10] - 2021-12-16
 
