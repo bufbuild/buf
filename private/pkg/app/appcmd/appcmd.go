@@ -23,6 +23,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 	"github.com/spf13/pflag"
 )
 
@@ -167,32 +168,55 @@ func run(
 	cobraCommand.CompletionOptions.DisableDefaultCmd = true
 
 	// If the root command is not the only command, add hidden bash-completion,
-	// fish-completion, and zsh-completion commands.
+	// fish-completion, zsh-completion, and manpages commands.
 	if len(command.SubCommands) > 0 {
-		cobraCommand.AddCommand(&cobra.Command{
-			Use:    "bash-completion",
-			Args:   cobra.NoArgs,
-			Hidden: true,
-			Run: func(*cobra.Command, []string) {
-				runErr = cobraCommand.GenBashCompletion(container.Stdout())
+		cobraCommand.AddCommand(
+			&cobra.Command{
+				Use:    "bash-completion",
+				Args:   cobra.NoArgs,
+				Hidden: true,
+				Run: func(*cobra.Command, []string) {
+					runErr = cobraCommand.GenBashCompletion(container.Stdout())
+				},
 			},
-		})
-		cobraCommand.AddCommand(&cobra.Command{
-			Use:    "fish-completion",
-			Args:   cobra.NoArgs,
-			Hidden: true,
-			Run: func(*cobra.Command, []string) {
-				runErr = cobraCommand.GenFishCompletion(container.Stdout(), true)
+		)
+		cobraCommand.AddCommand(
+			&cobra.Command{
+				Use:    "fish-completion",
+				Args:   cobra.NoArgs,
+				Hidden: true,
+				Run: func(*cobra.Command, []string) {
+					runErr = cobraCommand.GenFishCompletion(container.Stdout(), true)
+				},
 			},
-		})
-		cobraCommand.AddCommand(&cobra.Command{
-			Use:    "zsh-completion",
-			Args:   cobra.NoArgs,
-			Hidden: true,
-			Run: func(*cobra.Command, []string) {
-				runErr = cobraCommand.GenZshCompletion(container.Stdout())
+		)
+		cobraCommand.AddCommand(
+			&cobra.Command{
+				Use:    "zsh-completion",
+				Args:   cobra.NoArgs,
+				Hidden: true,
+				Run: func(*cobra.Command, []string) {
+					runErr = cobraCommand.GenZshCompletion(container.Stdout())
+				},
 			},
-		})
+		)
+		cobraCommand.AddCommand(
+			&cobra.Command{
+				Use:    "manpages",
+				Args:   cobra.ExactArgs(1),
+				Hidden: true,
+				Run: func(_ *cobra.Command, args []string) {
+					runErr = doc.GenManTree(
+						cobraCommand,
+						&doc.GenManHeader{
+							Title:   "Buf",
+							Section: "1",
+						},
+						args[0],
+					)
+				},
+			},
+		)
 	}
 
 	cobraCommand.SetOut(container.Stderr())
