@@ -9,7 +9,6 @@
   remote in the module's identity.
 - Remove `digest`, and `created_at` fields from the `buf.lock`. This will temporarily create a new commit
   when pushing the same contents to an existing repository, since the `ModulePin` has been reduced down.
-- Update `buf beta registry commit list` to allow a track to be specified.
 - Add manpages for `buf`.
 
 ## [v1.0.0-rc10] - 2021-12-16
