@@ -28,9 +28,13 @@ import (
 )
 
 const (
+	// MainTrack is the name of the track created for every repository.
+	// This is the default track used if no track is specified.
+	MainTrack = "main"
+
 	// MainBranch is the name of the branch created for every repository.
 	// This is the default branch used if no branch or commit is specified.
-	MainBranch = "main"
+	MainBranch = MainTrack
 )
 
 // FileInfo contains module file info.
@@ -414,8 +418,8 @@ func DependencyModulePinsForBucket(
 			dep.Repository,
 			dep.Branch,
 			dep.Commit,
-			dep.Digest,
-			dep.CreateTime,
+			"",
+			time.Time{},
 		)
 		if err != nil {
 			return nil, err
@@ -452,8 +456,6 @@ func PutDependencyModulePinsToBucket(
 				Repository: pin.Repository(),
 				Branch:     pin.Branch(),
 				Commit:     pin.Commit(),
-				Digest:     pin.Digest(),
-				CreateTime: pin.CreateTime(),
 			},
 		)
 	}

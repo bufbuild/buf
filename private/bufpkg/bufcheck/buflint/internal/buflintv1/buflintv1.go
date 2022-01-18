@@ -26,6 +26,9 @@ import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 //
 // The SYNTAX_SPECIFIED rule was added to BASIC, DEFAULT.
 // The IMPORT_USED rule was added to BASIC, DEFAULT.
+// ENUM_FIRST_VALUE_ZERO was added to BASIC, DEFAULT.
+// PACKAGE_NO_IMPORT_CYCLE was added as an uncategorized lint rule.
+// The FIELD_NO_DESCRIPTOR rule was removed altogether.
 //
 // A number of categories were removed between v1beta1 and v1. The difference
 // is shown below:
@@ -70,11 +73,8 @@ import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 //  * PACKAGE_DEFINED
 //  * PACKAGE_DIRECTORY_MATCH
 //  * PACKAGE_SAME_DIRECTORY
-//
-// Finally, the FIELD_NO_DESCRIPTOR rule was removed altogether.
 var VersionSpec = &internal.VersionSpec{
 	RuleBuilders:      v1RuleBuilders,
 	DefaultCategories: v1DefaultCategories,
-	AllCategories:     v1AllCategories,
 	IDToCategories:    v1IDToCategories,
 }

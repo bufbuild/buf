@@ -2,10 +2,18 @@
 
 ## [Unreleased]
 
-- Upgrade to `protoc` 3.19.2 support.
+- No changes yet.
+
+## [v1.0.0-rc11] - 2022-01-18
+
+- Upgrade to `protoc` 3.19.3 support.
+- Add `PACKAGE_NO_IMPORT_CYCLE` lint rule to detect package import cycles.
 - Add `buf beta registry {plugin,template} {deprecate,undeprecate}`.
 - Add warning when using enterprise dependencies without specifying a enterprise
   remote in the module's identity.
+- Remove `digest`, and `created_at` fields from the `buf.lock`. This will temporarily create a new commit
+  when pushing the same contents to an existing repository, since the `ModulePin` has been reduced down.
+- Add manpages for `buf`.
 
 ## [v1.0.0-rc10] - 2021-12-16
 
@@ -608,7 +616,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc10...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc11...HEAD
+[v1.0.0-rc11]: https://github.com/bufbuild/buf/compare/v1.0.0-rc10...v1.0.0-rc11
 [v1.0.0-rc10]: https://github.com/bufbuild/buf/compare/v1.0.0-rc9...v1.0.0-rc10
 [v1.0.0-rc9]: https://github.com/bufbuild/buf/compare/v1.0.0-rc8...v1.0.0-rc9
 [v1.0.0-rc8]: https://github.com/bufbuild/buf/compare/v1.0.0-rc7...v1.0.0-rc8

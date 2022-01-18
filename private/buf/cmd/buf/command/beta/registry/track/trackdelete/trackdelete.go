@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package commitlist
+package trackdelete
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -28,12 +26,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-const (
-	pageSizeFlagName  = "page-size"
-	pageTokenFlagName = "page-token"
-	reverseFlagName   = "reverse"
-	formatFlagName    = "format"
-)
+const forceFlagName = "force"
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -42,8 +35,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repo[:ref]>",
-		Short: "List commit details",
+		Use:   name + " <buf.build/owner/repository:track>",
+		Short: "Delete a track",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -56,10 +49,7 @@ func NewCommand(
 }
 
 type flags struct {
-	Format    string
-	PageSize  uint32
-	PageToken string
-	Reverse   bool
+	Force bool
 }
 
 func newFlags() *flags {
@@ -67,26 +57,11 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.Uint32Var(&f.PageSize,
-		pageSizeFlagName,
-		10,
-		`The page size.`,
-	)
-	flagSet.StringVar(&f.PageToken,
-		pageTokenFlagName,
-		"",
-		`The page token. If more results are available, a "next_page" key will be present in the --format=json output.`,
-	)
-	flagSet.BoolVar(&f.Reverse,
-		reverseFlagName,
+	flagSet.BoolVar(
+		&f.Force,
+		forceFlagName,
 		false,
-		`Reverse the results.`,
-	)
-	flagSet.StringVar(
-		&f.Format,
-		formatFlagName,
-		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+		"Force deletion without confirming. Use with caution.",
 	)
 }
 
@@ -100,41 +75,29 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	format, err := bufprint.ParseFormat(flags.Format)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-
-	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewRepositoryCommitService(ctx, moduleReference.Remote())
+	repositoryTrackService, err := registryProvider.NewRepositoryTrackService(ctx, moduleReference.Remote())
 	if err != nil {
 		return err
 	}
-
-	reference := moduleReference.Reference()
-	if reference == "" {
-		reference = bufmoduleref.MainTrack
+	if !flags.Force {
+		if err := bufcli.PromptUserForDelete(container, "track", moduleReference.String()); err != nil {
+			return err
+		}
 	}
-
-	repositoryCommits, nextPageToken, err := service.ListRepositoryCommitsByReference(
+	if err := repositoryTrackService.DeleteRepositoryTrackByName(
 		ctx,
 		moduleReference.Owner(),
 		moduleReference.Repository(),
-		reference,
-		flags.PageSize,
-		flags.PageToken,
-		flags.Reverse,
-	)
-	if err != nil {
+		moduleReference.Reference(),
+	); err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
 			return bufcli.NewModuleReferenceNotFoundError(moduleReference)
 		}
 		return err
 	}
-	return bufprint.NewRepositoryCommitPrinter(
-		container.Stdout(),
-	).PrintRepositoryCommits(ctx, format, nextPageToken, repositoryCommits...)
+	return nil
 }
