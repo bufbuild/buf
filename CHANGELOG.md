@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.0.0-rc11] - 2022-01-18
 
 - Upgrade to `protoc` 3.19.3 support.
@@ -612,6 +616,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc11...HEAD
 [v1.0.0-rc11]: https://github.com/bufbuild/buf/compare/v1.0.0-rc10...v1.0.0-rc11
 [v1.0.0-rc10]: https://github.com/bufbuild/buf/compare/v1.0.0-rc9...v1.0.0-rc10
 [v1.0.0-rc9]: https://github.com/bufbuild/buf/compare/v1.0.0-rc8...v1.0.0-rc9

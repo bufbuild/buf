@@ -116,7 +116,7 @@ for os in Darwin Linux; do
     "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" bash-completion > "${dir}/etc/bash_completion.d/buf"
     "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" fish-completion > "${dir}/share/fish/vendor_completions.d/buf.fish"
     "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" zsh-completion > "${dir}/share/zsh/site-functions/_buf"
-    "$(uname -s)/$(uname -m)/${1}/bin/buf" manpages "${dir}/share/man/man1"
+    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" manpages "${dir}/share/man/man1"
     cp -R "${DIR}/LICENSE" "${dir}/LICENSE"
   done
 done
