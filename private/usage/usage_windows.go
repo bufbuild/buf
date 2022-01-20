@@ -17,7 +17,4 @@
 
 package usage
 
-const (
-	testSuffix = ".test.exe"
-	debugBin   = "__debug_bin.exe"
-)
+const testSuffix = ".test.exe"
