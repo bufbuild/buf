@@ -48,6 +48,12 @@ type UserService interface {
 	) (users []*v1alpha1.OrganizationUser, nextPageToken string, err error)
 	// DeleteUser deletes a user.
 	DeleteUser(ctx context.Context) (err error)
+	// ForceDeleteUser forces to delete a user. Resources and organizations that is
+	// solely owned by the user will also be deleted.
+	ForceDeleteUser(
+		ctx context.Context,
+		id string,
+	) (organizations []string, repositories []string, plugins []string, templates []string, err error)
 	// Deactivate user deactivates a user.
 	DeactivateUser(ctx context.Context, id string) (err error)
 	// UpdateUserServerRole update the role of an user in the server.
