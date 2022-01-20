@@ -49,9 +49,6 @@ type UserServiceClient interface {
 	ListOrganizationUsers(ctx context.Context, in *ListOrganizationUsersRequest, opts ...grpc.CallOption) (*ListOrganizationUsersResponse, error)
 	// DeleteUser deletes a user.
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
-	// ForceDeleteUser forces to delete a user. Resources and organizations that are
-	// solely owned by the user will also be deleted.
-	ForceDeleteUser(ctx context.Context, in *ForceDeleteUserRequest, opts ...grpc.CallOption) (*ForceDeleteUserResponse, error)
 	// Deactivate user deactivates a user.
 	DeactivateUser(ctx context.Context, in *DeactivateUserRequest, opts ...grpc.CallOption) (*DeactivateUserResponse, error)
 	// UpdateUserServerRole update the role of an user in the server.
@@ -122,15 +119,6 @@ func (c *userServiceClient) DeleteUser(ctx context.Context, in *DeleteUserReques
 	return out, nil
 }
 
-func (c *userServiceClient) ForceDeleteUser(ctx context.Context, in *ForceDeleteUserRequest, opts ...grpc.CallOption) (*ForceDeleteUserResponse, error) {
-	out := new(ForceDeleteUserResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/ForceDeleteUser", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *userServiceClient) DeactivateUser(ctx context.Context, in *DeactivateUserRequest, opts ...grpc.CallOption) (*DeactivateUserResponse, error) {
 	out := new(DeactivateUserResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.UserService/DeactivateUser", in, out, opts...)
@@ -175,9 +163,6 @@ type UserServiceServer interface {
 	ListOrganizationUsers(context.Context, *ListOrganizationUsersRequest) (*ListOrganizationUsersResponse, error)
 	// DeleteUser deletes a user.
 	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
-	// ForceDeleteUser forces to delete a user. Resources and organizations that are
-	// solely owned by the user will also be deleted.
-	ForceDeleteUser(context.Context, *ForceDeleteUserRequest) (*ForceDeleteUserResponse, error)
 	// Deactivate user deactivates a user.
 	DeactivateUser(context.Context, *DeactivateUserRequest) (*DeactivateUserResponse, error)
 	// UpdateUserServerRole update the role of an user in the server.
@@ -207,9 +192,6 @@ func (UnimplementedUserServiceServer) ListOrganizationUsers(context.Context, *Li
 }
 func (UnimplementedUserServiceServer) DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
-}
-func (UnimplementedUserServiceServer) ForceDeleteUser(context.Context, *ForceDeleteUserRequest) (*ForceDeleteUserResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ForceDeleteUser not implemented")
 }
 func (UnimplementedUserServiceServer) DeactivateUser(context.Context, *DeactivateUserRequest) (*DeactivateUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeactivateUser not implemented")
@@ -340,24 +322,6 @@ func _UserService_DeleteUser_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _UserService_ForceDeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ForceDeleteUserRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(UserServiceServer).ForceDeleteUser(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.UserService/ForceDeleteUser",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UserServiceServer).ForceDeleteUser(ctx, req.(*ForceDeleteUserRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _UserService_DeactivateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeactivateUserRequest)
 	if err := dec(in); err != nil {
@@ -442,10 +406,6 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteUser",
 			Handler:    _UserService_DeleteUser_Handler,
-		},
-		{
-			MethodName: "ForceDeleteUser",
-			Handler:    _UserService_ForceDeleteUser_Handler,
 		},
 		{
 			MethodName: "DeactivateUser",
