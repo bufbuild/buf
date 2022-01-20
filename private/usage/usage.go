@@ -34,7 +34,7 @@ func init() {
 func check() error {
 	buildInfo, ok := debug.ReadBuildInfo()
 	if !ok || buildInfo.Main.Path == "" {
-		// Detect and allow *.test and __debug_bin files.
+		// Detect and allow *.test and __debug_bin* files.
 		if !strings.HasSuffix(os.Args[0], testSuffix) && !strings.HasPrefix(filepath.Base(os.Args[0]), debugBinPrefix) {
 			return errors.New("github.com/bufbuild/buf/private code must only be imported by github.com/bufbuild projects")
 		}
