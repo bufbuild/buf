@@ -17,7 +17,4 @@
 
 package usage
 
-const (
-	testSuffix = ".test"
-	debugBin   = "__debug_bin"
-)
+const testSuffix = ".test"
