@@ -168,6 +168,7 @@ enum Action {
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_PLUGIN_SERVICE_DEPRECATE_TEMPLATE = 138;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_PLUGIN_SERVICE_UNDEPRECATE_TEMPLATE = 139;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ORGANIZATION_SERVICE_SET_ORGANIZATION_MEMBER = 140;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_USER_SERVICE_FORCE_DELETE_USER = 141;
 }
 
 // ActionBufAlphaRegistryV1Alpha1DownloadInfo stores audit log details not included
@@ -495,6 +496,16 @@ message ActionBufAlphaRegistryV1Alpha1SetOrganizationMemberInfo {
   BufAlphaRegistryV1Alpha1OrganizationRole organization_role = 1;
 }
 
+// ActionBufAlphaRegistryV1Alpha1ForceDeleteUserInfo stores audit log details not included
+// in objects for the ForceDeleteUser action.
+message ActionBufAlphaRegistryV1Alpha1ForceDeleteUserInfo {
+  string username = 1;
+  repeated string organizations = 2;
+  repeated string repositories = 3;
+  repeated string plugins = 4;
+  repeated string templates = 5;
+}
+
 message Event {
   // The ID representing the event.
   string event_id = 1;
@@ -572,6 +583,7 @@ message Event {
     ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_metadata_info = 54;
     ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo action_buf_alpha_registry_v1alpha1_create_repository_track_info = 55;
     ActionBufAlphaRegistryV1Alpha1SetOrganizationMemberInfo action_buf_alpha_registry_v1alpha1_set_organization_member_info = 56;
+    ActionBufAlphaRegistryV1Alpha1ForceDeleteUserInfo action_buf_alpha_registry_v1alpha1_force_delete_user_info = 57;
   }
 }
 
