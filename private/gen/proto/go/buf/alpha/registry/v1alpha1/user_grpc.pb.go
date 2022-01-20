@@ -49,7 +49,7 @@ type UserServiceClient interface {
 	ListOrganizationUsers(ctx context.Context, in *ListOrganizationUsersRequest, opts ...grpc.CallOption) (*ListOrganizationUsersResponse, error)
 	// DeleteUser deletes a user.
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
-	// ForceDeleteUser forces to delete a user. Resources and organizations that is
+	// ForceDeleteUser forces to delete a user. Resources and organizations that are
 	// solely owned by the user will also be deleted.
 	ForceDeleteUser(ctx context.Context, in *ForceDeleteUserRequest, opts ...grpc.CallOption) (*ForceDeleteUserResponse, error)
 	// Deactivate user deactivates a user.
@@ -175,7 +175,7 @@ type UserServiceServer interface {
 	ListOrganizationUsers(context.Context, *ListOrganizationUsersRequest) (*ListOrganizationUsersResponse, error)
 	// DeleteUser deletes a user.
 	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
-	// ForceDeleteUser forces to delete a user. Resources and organizations that is
+	// ForceDeleteUser forces to delete a user. Resources and organizations that are
 	// solely owned by the user will also be deleted.
 	ForceDeleteUser(context.Context, *ForceDeleteUserRequest) (*ForceDeleteUserResponse, error)
 	// Deactivate user deactivates a user.

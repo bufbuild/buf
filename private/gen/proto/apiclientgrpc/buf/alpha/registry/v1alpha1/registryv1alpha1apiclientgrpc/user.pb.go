@@ -147,12 +147,12 @@ func (s *userService) DeleteUser(ctx context.Context) (_ error) {
 	return nil
 }
 
-// ForceDeleteUser forces to delete a user. Resources and organizations that is
+// ForceDeleteUser forces to delete a user. Resources and organizations that are
 // solely owned by the user will also be deleted.
 func (s *userService) ForceDeleteUser(
 	ctx context.Context,
 	id string,
-) (organizations []string, repositories []string, plugins []string, templates []string, _ error) {
+) (username string, organizations []string, repositories []string, plugins []string, templates []string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -163,9 +163,9 @@ func (s *userService) ForceDeleteUser(
 		},
 	)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return "", nil, nil, nil, nil, err
 	}
-	return response.Organizations, response.Repositories, response.Plugins, response.Templates, nil
+	return response.Username, response.Organizations, response.Repositories, response.Plugins, response.Templates, nil
 }
 
 // Deactivate user deactivates a user.
