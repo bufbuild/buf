@@ -62,6 +62,9 @@ service UserService {
   rpc ListOrganizationUsers(ListOrganizationUsersRequest) returns (ListOrganizationUsersResponse);
   // DeleteUser deletes a user.
   rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  // ForceDeleteUser forces to delete a user. Resources and organizations that are
+  // solely owned by the user will also be deleted.
+  rpc ForceDeleteUser(ForceDeleteUserRequest) returns (ForceDeleteUserResponse);
   // Deactivate user deactivates a user.
   rpc DeactivateUser(DeactivateUserRequest) returns (DeactivateUserResponse);
   // UpdateUserServerRole update the role of an user in the server.
@@ -126,6 +129,23 @@ message ListOrganizationUsersResponse {
 message DeleteUserRequest {}
 
 message DeleteUserResponse {}
+
+message ForceDeleteUserRequest {
+  string id = 1;
+}
+
+message ForceDeleteUserResponse{
+  // The username of the deleted user.
+  string username = 1;
+  // The names of deleted organizations.
+  repeated string organizations = 2;
+  // The names of deleted repositories.
+  repeated string repositories = 3;
+  // The names of deleted plugins.
+  repeated string plugins = 4;
+  // The names of deleted templates.
+  repeated string templates = 5;
+}
 
 message DeactivateUserRequest {
   string id = 1;

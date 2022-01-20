@@ -147,6 +147,27 @@ func (s *userService) DeleteUser(ctx context.Context) (_ error) {
 	return nil
 }
 
+// ForceDeleteUser forces to delete a user. Resources and organizations that are
+// solely owned by the user will also be deleted.
+func (s *userService) ForceDeleteUser(
+	ctx context.Context,
+	id string,
+) (username string, organizations []string, repositories []string, plugins []string, templates []string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ForceDeleteUser(
+		ctx,
+		&v1alpha1.ForceDeleteUserRequest{
+			Id: id,
+		},
+	)
+	if err != nil {
+		return "", nil, nil, nil, nil, err
+	}
+	return response.Username, response.Organizations, response.Repositories, response.Plugins, response.Templates, nil
+}
+
 // Deactivate user deactivates a user.
 func (s *userService) DeactivateUser(ctx context.Context, id string) (_ error) {
 	if s.contextModifier != nil {
