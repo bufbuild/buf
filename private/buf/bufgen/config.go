@@ -200,6 +200,10 @@ func newManagedConfigV1(externalManagedConfig ExternalManagedConfigV1) (*Managed
 	if !externalManagedConfig.Enabled {
 		return nil, nil
 	}
+	javaPackagePrefixConfig, err := newJavaPackagePrefixConfigV1(externalManagedConfig.JavaPackagePrefix)
+	if err != nil {
+		return nil, err
+	}
 	var optimizeFor *descriptorpb.FileOptions_OptimizeMode
 	if externalManagedConfig.OptimizeFor != "" {
 		value, ok := descriptorpb.FileOptions_OptimizeMode_value[externalManagedConfig.OptimizeFor]
@@ -239,10 +243,49 @@ func newManagedConfigV1(externalManagedConfig ExternalManagedConfigV1) (*Managed
 		CcEnableArenas:        externalManagedConfig.CcEnableArenas,
 		JavaMultipleFiles:     externalManagedConfig.JavaMultipleFiles,
 		JavaStringCheckUtf8:   externalManagedConfig.JavaStringCheckUtf8,
-		JavaPackagePrefix:     externalManagedConfig.JavaPackagePrefix,
+		JavaPackagePrefix:     javaPackagePrefixConfig,
 		OptimizeFor:           optimizeFor,
 		GoPackagePrefixConfig: goPackagePrefixConfig,
 		Override:              override,
+	}, nil
+}
+
+func newJavaPackagePrefixConfigV1(externalJavaPackagePrefixConfig ExternalJavaPackagePrefixConfigV1) (*JavaPackagePrefixConfig, error) {
+	if externalJavaPackagePrefixConfig.IsEmpty() {
+		return nil, nil
+	}
+	if externalJavaPackagePrefixConfig.Default == "" {
+		return nil, errors.New("java_package_prefix setting requires a default value")
+	}
+	seenModuleIdentities := make(map[string]struct{}, len(externalJavaPackagePrefixConfig.Except))
+	except := make([]bufmoduleref.ModuleIdentity, 0, len(externalJavaPackagePrefixConfig.Except))
+	for _, moduleName := range externalJavaPackagePrefixConfig.Except {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid java_package_prefix except: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid java_package_prefix except: %q is defined multiple times", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		except = append(except, moduleIdentity)
+	}
+	override := make(map[bufmoduleref.ModuleIdentity]string, len(externalJavaPackagePrefixConfig.Override))
+	for moduleName, javaPackagePrefix := range externalJavaPackagePrefixConfig.Override {
+		moduleIdentity, err := bufmoduleref.ModuleIdentityForString(moduleName)
+		if err != nil {
+			return nil, fmt.Errorf("invalid java_package_prefix override key: %w", err)
+		}
+		if _, ok := seenModuleIdentities[moduleIdentity.IdentityString()]; ok {
+			return nil, fmt.Errorf("invalid java_package_prefix override: %q is already defined as an except", moduleIdentity.IdentityString())
+		}
+		seenModuleIdentities[moduleIdentity.IdentityString()] = struct{}{}
+		override[moduleIdentity] = javaPackagePrefix
+	}
+	return &JavaPackagePrefixConfig{
+		Default:  externalJavaPackagePrefixConfig.Default,
+		Except:   except,
+		Override: override,
 	}, nil
 }
 
