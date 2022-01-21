@@ -572,7 +572,7 @@ func TestJavaPackageWithOverride(t *testing.T) {
 		assertFileOptionSourceCodeInfoEmpty(t, image, javaPackagePath, true)
 
 		sweeper := NewFileOptionSweeper()
-		goPackageModifier, err := JavaPackage(
+		javaPackageModifier, err := JavaPackage(
 			zap.NewNop(),
 			sweeper,
 			testJavaPackagePrefix,
@@ -584,7 +584,7 @@ func TestJavaPackageWithOverride(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		modifier := NewMultiModifier(goPackageModifier, ModifierFunc(sweeper.Sweep))
+		modifier := NewMultiModifier(javaPackageModifier, ModifierFunc(sweeper.Sweep))
 		err = modifier.Modify(
 			context.Background(),
 			image,

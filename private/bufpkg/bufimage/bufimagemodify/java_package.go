@@ -55,8 +55,8 @@ func javaPackage(
 		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
 	}
 	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
-	for moduleIdentity, goPackagePrefix := range moduleOverrides {
-		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = goPackagePrefix
+	for moduleIdentity, javaPackagePrefix := range moduleOverrides {
+		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = javaPackagePrefix
 	}
 	seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
 	seenOverrideFiles := make(map[string]struct{}, len(overrides))

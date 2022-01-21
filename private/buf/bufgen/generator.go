@@ -353,7 +353,7 @@ func newModifier(
 			managedConfig.JavaPackagePrefix.Default,
 			managedConfig.JavaPackagePrefix.Except,
 			managedConfig.JavaPackagePrefix.Override,
-			managedConfig.Override[bufimagemodify.GoPackageID],
+			managedConfig.Override[bufimagemodify.JavaPackageID],
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to construct java_package modifier: %w", err)
@@ -362,7 +362,7 @@ func newModifier(
 			modifier,
 			javaPackageModifier,
 		)
-	}	
+	}
 	javaMultipleFilesValue := bufimagemodify.DefaultJavaMultipleFilesValue
 	if managedConfig.JavaMultipleFiles != nil {
 		javaMultipleFilesValue = *managedConfig.JavaMultipleFiles
