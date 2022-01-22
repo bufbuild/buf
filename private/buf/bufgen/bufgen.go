@@ -305,8 +305,8 @@ func (e ExternalJavaPackagePrefixConfigV1) IsEmpty() bool {
 		len(e.Override) == 0
 }
 
-// UnmarshalYAML satisfies the yaml.Unmarshaler interface. This is done to maintain backward compatability
-// of accepting a plain string value for java_package prefix configuration
+// UnmarshalYAML satisfies the yaml.Unmarshaler interface. This is done to maintain backward compatibility
+// of accepting a plain string value for java_package_prefix
 func (e *ExternalJavaPackagePrefixConfigV1) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var prefix string
 	if err := unmarshal(&prefix); err == nil {
@@ -322,6 +322,8 @@ func (e *ExternalJavaPackagePrefixConfigV1) UnmarshalYAML(unmarshal func(interfa
 	return nil
 }
 
+// UnmarshalJSON satisfies the json.Unmarshaler interface. This is done to maintain backward compatibility
+// of accepting a plain string value for java_package_prefix
 func (e *ExternalJavaPackagePrefixConfigV1) UnmarshalJSON(data []byte) error {
 	var prefix string
 	if err := json.Unmarshal(data, &prefix); err == nil {
