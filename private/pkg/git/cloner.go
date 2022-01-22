@@ -39,6 +39,17 @@ import (
 // will fail to fetch so we need to pick something.
 const bufCloneOrigin = "bufCloneOrigin"
 
+var (
+	validGitEnvVariables = []string{
+		"GIT_EXEC_PATH",
+		"GIT_SSH",
+		"GIT_SSH_COMMAND",
+		"GIT_SSL_CAINFO",
+		"GIT_SSL_NO_VERIFY",
+		"GIT_CONFIG_COUNT",
+	}
+)
+
 type cloner struct {
 	logger            *zap.Logger
 	storageosProvider storageos.Provider
@@ -70,6 +81,8 @@ func (c *cloner) CloneToBucket(
 ) (retErr error) {
 	ctx, span := trace.StartSpan(ctx, "git_clone_to_bucket")
 	defer span.End()
+
+	envContainer = c.getEnvContainerWithoutGitVariables(envContainer)
 
 	var err error
 	switch {
@@ -295,6 +308,34 @@ func (c *cloner) getEnvContainerWithGitSSHCommand(envContainer app.EnvContainer)
 		), nil
 	}
 	return envContainer, nil
+}
+
+// getEnvContainerWithoutGitVariables removes any environment variables might set
+// by `git` when running the context of a git hook.
+func (c *cloner) getEnvContainerWithoutGitVariables(envContainer app.EnvContainer) app.EnvContainer {
+	c.logger.Debug("git_clean_env_variables")
+
+	cleanEnvs := map[string]string{}
+	envContainer.ForEachEnv(func(key, _ string) {
+		if !strings.HasPrefix(key, "GIT_") {
+			return
+		}
+		if strings.HasPrefix(key, "GIT_CONFIG_KEY_") || strings.HasPrefix(key, "GIT_CONFIG_VALUE_") {
+			return
+		}
+		for _, envName := range validGitEnvVariables {
+			if envName == key {
+				return
+			}
+		}
+
+		cleanEnvs[key] = ""
+	})
+
+	return app.NewEnvContainerWithOverrides(
+		envContainer,
+		cleanEnvs,
+	)
 }
 
 func (c *cloner) getGitSSHCommand(envContainer app.EnvContainer) (string, error) {
