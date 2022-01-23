@@ -42,7 +42,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flgs := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
+		Use:   name + " <buf.build/{owner}/{repo}>",
 		Short: "List tracks for the specified repository",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(

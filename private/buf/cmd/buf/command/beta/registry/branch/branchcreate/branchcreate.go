@@ -41,7 +41,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository:branch>",
+		Use:   name + " <buf.build/{owner}/{repo}:{branch}>",
 		Short: "Create a branch for the specified repository.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(

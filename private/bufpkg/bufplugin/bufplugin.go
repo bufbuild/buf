@@ -38,7 +38,7 @@ const (
 	v1Version = "v1"
 )
 
-// ParsePluginPath parses a string in the format <buf.build/owner/plugins/name>
+// ParsePluginPath parses a string in the format <buf.build/{owner}/plugins/{name}>
 // into remote, owner and name.
 func ParsePluginPath(pluginPath string) (remote string, owner string, name string, _ error) {
 	if pluginPath == "" {
@@ -51,7 +51,7 @@ func ParsePluginPath(pluginPath string) (remote string, owner string, name strin
 	return components[0], components[1], components[3], nil
 }
 
-// ParsePluginVersionPath parses a string in the format <buf.build/owner/plugins/name[:version]>
+// ParsePluginVersionPath parses a string in the format <buf.build/{owner}/plugins/{name}[:{version}]>
 // into remote, owner, name and version. The version is empty if not specified.
 func ParsePluginVersionPath(pluginVersionPath string) (remote string, owner string, name string, version string, _ error) {
 	remote, owner, name, err := ParsePluginPath(pluginVersionPath)
@@ -69,7 +69,7 @@ func ParsePluginVersionPath(pluginVersionPath string) (remote string, owner stri
 	}
 }
 
-// ParseTemplatePath parses a string in the format <buf.build/owner/templates/name>
+// ParseTemplatePath parses a string in the format <buf.build/{owner}/templates/{name}>
 // into remote, owner and name.
 func ParseTemplatePath(templatePath string) (remote string, owner string, name string, _ error) {
 	if templatePath == "" {

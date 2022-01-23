@@ -36,7 +36,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/repository>",
+		Use:   name + " <buf.build/{owner}/{repo}>",
 		Short: "Delete a repository by name.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
