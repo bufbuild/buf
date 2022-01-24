@@ -24,10 +24,10 @@ message ModuleMethod {
   string name = 1;
 
   // A fully qualified name of the request type for the method, e.g.
-  // "pkg.foo.BarRequest"
+  // "pkg.baz.FooRequest"
   string input_type = 2;
   // A fully qualified name of the request type for the method, e.g.
-  // "pkg.foo.BarResponse"
+  // "pkg.baz.FooResponse"
   string output_type = 3;
 
   // Indicates if the method is annotated as deprecated.
