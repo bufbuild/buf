@@ -77,7 +77,7 @@ message GetMethodDetailsRequest {
   string repository = 2;
   string reference = 3;
 
-  // Fully qualified method in the module, like "pkg.foo.BarService/Foo"
+  // Fully qualified method in the module, like "pkg.baz.BarService/Foo"
   string method = 4;
 }
 

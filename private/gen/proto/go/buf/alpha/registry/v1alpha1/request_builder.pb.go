@@ -44,10 +44,10 @@ type ModuleMethod struct {
 	// The name of the method, e.g. "Foo"
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// A fully qualified name of the request type for the method, e.g.
-	// "pkg.foo.BarRequest"
+	// "pkg.baz.FooRequest"
 	InputType string `protobuf:"bytes,2,opt,name=input_type,json=inputType,proto3" json:"input_type,omitempty"`
 	// A fully qualified name of the request type for the method, e.g.
-	// "pkg.foo.BarResponse"
+	// "pkg.baz.FooResponse"
 	OutputType string `protobuf:"bytes,3,opt,name=output_type,json=outputType,proto3" json:"output_type,omitempty"`
 	// Indicates if the method is annotated as deprecated.
 	Deprecated bool `protobuf:"varint,4,opt,name=deprecated,proto3" json:"deprecated,omitempty"`
@@ -317,7 +317,7 @@ type GetMethodDetailsRequest struct {
 	Owner      string `protobuf:"bytes,1,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
 	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
-	// Fully qualified method in the module, like "pkg.foo.BarService/Foo"
+	// Fully qualified method in the module, like "pkg.baz.BarService/Foo"
 	Method string `protobuf:"bytes,4,opt,name=method,proto3" json:"method,omitempty"`
 }
 
