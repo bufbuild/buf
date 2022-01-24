@@ -43,6 +43,7 @@ type Provider interface {
 	RepositoryServiceProvider
 	RepositoryTagServiceProvider
 	RepositoryTrackServiceProvider
+	RequestBuilderServiceProvider
 	ResolveServiceProvider
 	SearchServiceProvider
 	TokenServiceProvider
@@ -147,6 +148,11 @@ type RepositoryTagServiceProvider interface {
 // RepositoryTrackServiceProvider provides a client-side RepositoryTrackService for an address.
 type RepositoryTrackServiceProvider interface {
 	NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error)
+}
+
+// RequestBuilderServiceProvider provides a client-side RequestBuilderService for an address.
+type RequestBuilderServiceProvider interface {
+	NewRequestBuilderService(ctx context.Context, address string) (registryv1alpha1api.RequestBuilderService, error)
 }
 
 // ResolveServiceProvider provides a client-side ResolveService for an address.
