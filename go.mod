@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid v4.2.0+incompatible
-	github.com/google/go-cmp v0.5.6
+	github.com/google/go-cmp v0.5.7
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
 	github.com/jhump/protoreflect v1.10.2-0.20220118162304-602a8db873e3
 	github.com/klauspost/compress v1.14.1
