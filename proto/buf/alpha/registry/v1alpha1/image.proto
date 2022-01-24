@@ -23,6 +23,9 @@ service ImageService {
   // GetImage serves a compiled image for the local module. It automatically
   // downloads dependencies if necessary.
   rpc GetImage(GetImageRequest) returns (GetImageResponse);
+
+  // GetPartialImage serves a compiled image for part of the local module.
+  rpc GetPartialImage(GetImageRequest) returns (GetImageResponse);
 }
 
 message GetImageRequest {
@@ -33,4 +36,54 @@ message GetImageRequest {
 
 message GetImageResponse {
   buf.alpha.image.v1.Image image = 1;
+}
+
+enum PartialImageLevel {
+  PARTIAL_IMAGE_LEVEL_UNSPECIFIED = 0;
+
+  // Returns complete files in which the requested types are contained.
+  PARTIAL_IMAGE_LEVEL_FILES = 1;
+
+  // Returns trimmed files in which the requested types are contained. In a
+  // trimmed file, all declarations that are not embedded (directly or
+  // indirectly) in requested types are removed.
+  PARTIAL_IMAGE_LEVEL_TYPES = 2;
+}
+
+message GetPartialImageRequest {
+  string owner = 1;
+  string repository = 2;
+  string reference = 3;
+
+  // If the image should exclude depdendencies. When set to true, a incomplete
+  // image without descriptors for dependencies of the requested types is
+  // returned.
+  bool exclude_dependencies = 4;
+
+  // Determines if the patterns specified in {messages,enums,services} should
+  // consider types from imported modules.
+  bool match_dependencies = 5;
+  
+  // Type names or patterns describing which messages should be included in the
+  // partial image, e.g. 
+  // - "pkg.foo.Bar" for a message named 'Bar' in 'pkg.foo'
+  // - "pkg.foo.*" for all messages in package 'pkg.foo'
+  // - "pkg.foo.*.**" for all messages under 'pkg.foo' and subpackages
+  // - "*.**" for all messages in all packages.
+  repeated string messages = 6;
+  // Type names or patterns describing which enums should be included in the
+  // partial image. For examples see `messages`.
+  repeated string enums = 7;
+  // Type names or patterns describing which services should be included in the
+  // partial image. For examples see `messages`.
+  repeated string services = 8;
+}
+
+message GetPartialImageResponse {
+  // The commit the request reference resolved to. May be used on the
+  // client side to merge multiple partial_image's into one for repeated
+  // GetPartialImage requests on the same module.
+  string resolved_commit = 1;
+
+  buf.alpha.image.v1.Image partial_image = 2;
 }
