@@ -37,7 +37,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/{org}>",
+		Use:   name + " (buf.build)/{org}",
 		Short: "Create a new organization.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(

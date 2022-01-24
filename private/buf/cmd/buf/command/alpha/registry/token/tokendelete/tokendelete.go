@@ -37,7 +37,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build>",
+		Use:   name + " (buf.build)",
 		Short: "Delete a token by ID.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(

@@ -36,7 +36,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/{org}>",
+		Use:   name + " (buf.build)/{org}",
 		Short: "Delete an organization by name.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(

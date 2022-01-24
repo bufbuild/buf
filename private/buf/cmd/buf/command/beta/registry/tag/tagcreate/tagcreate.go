@@ -37,7 +37,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/{owner}/{repo}:{commit}> <tag>",
+		Use:   name + " (buf.build)/{owner}/{repo}:{commit} <tag>",
 		Short: "Create a tag for the specified commit.",
 		Args:  cobra.ExactArgs(2),
 		Run: builder.NewRunFunc(

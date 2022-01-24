@@ -35,7 +35,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/{owner}/{repo}:{track}>",
+		Use:   name + " (buf.build)/{owner}/{repo}:{track}",
 		Short: "Delete a track",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(

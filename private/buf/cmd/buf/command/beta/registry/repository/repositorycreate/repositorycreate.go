@@ -50,7 +50,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/{owner}/{repo}>",
+		Use:   name + " (buf.build)/{owner}/{repo}",
 		Short: "Create a new repository.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(

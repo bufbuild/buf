@@ -39,7 +39,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build>",
+		Use:   name + " (buf.build)",
 		Short: "Create a new token for a user.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(

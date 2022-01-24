@@ -37,7 +37,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/{owner}/" + bufplugin.PluginsPathName + "/{plugin}>",
+		Use:   name + " (buf.build)/{owner}/" + bufplugin.PluginsPathName + "/{plugin}",
 		Short: "Deprecate a plugin by name.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
