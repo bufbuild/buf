@@ -21,7 +21,7 @@ import "buf/alpha/registry/v1alpha1/plugin.proto";
 import "buf/alpha/registry/v1alpha1/repository.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
 
-// UserService is the User service.
+// AdminService is the Admin service.
 service AdminService {
   // ForceDeleteUser forces to delete a user. Resources and organizations that are
   // solely owned by the user will also be deleted.

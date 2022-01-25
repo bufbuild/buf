@@ -21,7 +21,7 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
-// UserService is the User service.
+// AdminService is the Admin service.
 type AdminService interface {
 	// ForceDeleteUser forces to delete a user. Resources and organizations that are
 	// solely owned by the user will also be deleted.
