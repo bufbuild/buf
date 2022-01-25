@@ -100,4 +100,6 @@ type RepositoryService interface {
 		pageToken string,
 		reverse bool,
 	) (users []*v1alpha1.RepositoryContributor, nextPageToken string, err error)
+	// CountRepositoryContributors returns the number of outside contributors of a repository.
+	CountRepositoryContributors(ctx context.Context, repositoryId string) (totalCount uint32, err error)
 }

@@ -92,6 +92,8 @@ service RepositoryService {
   // This does not include users who have implicit roles against the repository, unless they have also been
   // assigned a role explicitly.
   rpc ListRepositoryContributors(ListRepositoryContributorsRequest) returns (ListRepositoryContributorsResponse);
+  // CountRepositoryContributors returns the number of outside contributors of a repository.
+  rpc CountRepositoryContributors(CountRepositoryContributorsRequest) returns (CountRepositoryContributorsResponse);
 }
 
 message GetRepositoriesByFullNameRequest{
@@ -243,4 +245,12 @@ message ListRepositoryContributorsResponse {
   repeated RepositoryContributor users = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+}
+
+message CountRepositoryContributorsRequest {
+  string repository_id = 1;
+}
+
+message CountRepositoryContributorsResponse {
+  uint32 total_count = 1;
 }

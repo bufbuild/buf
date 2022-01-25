@@ -65,6 +65,8 @@ service OrganizationService {
   rpc GetOrganizationSettings(GetOrganizationSettingsRequest) returns (GetOrganizationSettingsResponse);
   // UpdateOrganizationSettings update the organization settings including base roles.
   rpc UpdateOrganizationSettings(UpdateOrganizationSettingsRequest) returns (UpdateOrganizationSettingsResponse);
+  // CountOrganizationMembers returns the number of members of an organization.
+  rpc CountOrganizationMembers(CountOrganizationMembersRequest) returns (CountOrganizationMembersResponse);
 }
 
 message GetOrganizationRequest {
@@ -198,3 +200,12 @@ message UpdateOrganizationSettingsRequest {
 }
 
 message UpdateOrganizationSettingsResponse {}
+
+message CountOrganizationMembersRequest {
+  // The ID of the organization for which to get the number of members.
+  string organization_id = 1;
+}
+
+message CountOrganizationMembersResponse {
+  uint32 total_count = 1;
+}

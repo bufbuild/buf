@@ -333,3 +333,20 @@ func (s *repositoryService) ListRepositoryContributors(
 	}
 	return response.Users, response.NextPageToken, nil
 }
+
+// CountRepositoryContributors returns the number of outside contributors of a repository.
+func (s *repositoryService) CountRepositoryContributors(ctx context.Context, repositoryId string) (totalCount uint32, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.CountRepositoryContributors(
+		ctx,
+		&v1alpha1.CountRepositoryContributorsRequest{
+			RepositoryId: repositoryId,
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return response.TotalCount, nil
+}

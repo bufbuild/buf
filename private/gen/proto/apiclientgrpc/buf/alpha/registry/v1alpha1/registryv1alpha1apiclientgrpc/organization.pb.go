@@ -302,3 +302,20 @@ func (s *organizationService) UpdateOrganizationSettings(
 	}
 	return nil
 }
+
+// CountOrganizationMembers returns the number of members of an organization.
+func (s *organizationService) CountOrganizationMembers(ctx context.Context, organizationId string) (totalCount uint32, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.CountOrganizationMembers(
+		ctx,
+		&v1alpha1.CountOrganizationMembersRequest{
+			OrganizationId: organizationId,
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return response.TotalCount, nil
+}

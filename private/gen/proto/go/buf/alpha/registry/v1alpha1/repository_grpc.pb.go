@@ -67,6 +67,8 @@ type RepositoryServiceClient interface {
 	// This does not include users who have implicit roles against the repository, unless they have also been
 	// assigned a role explicitly.
 	ListRepositoryContributors(ctx context.Context, in *ListRepositoryContributorsRequest, opts ...grpc.CallOption) (*ListRepositoryContributorsResponse, error)
+	// CountRepositoryContributors returns the number of outside contributors of a repository.
+	CountRepositoryContributors(ctx context.Context, in *CountRepositoryContributorsRequest, opts ...grpc.CallOption) (*CountRepositoryContributorsResponse, error)
 }
 
 type repositoryServiceClient struct {
@@ -203,6 +205,15 @@ func (c *repositoryServiceClient) ListRepositoryContributors(ctx context.Context
 	return out, nil
 }
 
+func (c *repositoryServiceClient) CountRepositoryContributors(ctx context.Context, in *CountRepositoryContributorsRequest, opts ...grpc.CallOption) (*CountRepositoryContributorsResponse, error) {
+	out := new(CountRepositoryContributorsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/CountRepositoryContributors", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RepositoryServiceServer is the server API for RepositoryService service.
 // All implementations should embed UnimplementedRepositoryServiceServer
 // for forward compatibility
@@ -238,6 +249,8 @@ type RepositoryServiceServer interface {
 	// This does not include users who have implicit roles against the repository, unless they have also been
 	// assigned a role explicitly.
 	ListRepositoryContributors(context.Context, *ListRepositoryContributorsRequest) (*ListRepositoryContributorsResponse, error)
+	// CountRepositoryContributors returns the number of outside contributors of a repository.
+	CountRepositoryContributors(context.Context, *CountRepositoryContributorsRequest) (*CountRepositoryContributorsResponse, error)
 }
 
 // UnimplementedRepositoryServiceServer should be embedded to have forward compatible implementations.
@@ -285,6 +298,9 @@ func (UnimplementedRepositoryServiceServer) SetRepositoryContributor(context.Con
 }
 func (UnimplementedRepositoryServiceServer) ListRepositoryContributors(context.Context, *ListRepositoryContributorsRequest) (*ListRepositoryContributorsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRepositoryContributors not implemented")
+}
+func (UnimplementedRepositoryServiceServer) CountRepositoryContributors(context.Context, *CountRepositoryContributorsRequest) (*CountRepositoryContributorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CountRepositoryContributors not implemented")
 }
 
 // UnsafeRepositoryServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -550,6 +566,24 @@ func _RepositoryService_ListRepositoryContributors_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryService_CountRepositoryContributors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CountRepositoryContributorsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).CountRepositoryContributors(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/CountRepositoryContributors",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).CountRepositoryContributors(ctx, req.(*CountRepositoryContributorsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RepositoryService_ServiceDesc is the grpc.ServiceDesc for RepositoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -612,6 +646,10 @@ var RepositoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRepositoryContributors",
 			Handler:    _RepositoryService_ListRepositoryContributors_Handler,
+		},
+		{
+			MethodName: "CountRepositoryContributors",
+			Handler:    _RepositoryService_CountRepositoryContributors_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -88,4 +88,6 @@ type OrganizationService interface {
 		pluginBaseRole v1alpha1.PluginRole,
 		templateBaseRole v1alpha1.TemplateRole,
 	) (err error)
+	// CountOrganizationMembers returns the number of members of an organization.
+	CountOrganizationMembers(ctx context.Context, organizationId string) (totalCount uint32, err error)
 }
