@@ -18,6 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
+import "buf/alpha/registry/v1alpha1/generate.proto";
 
 // Plugin represents a protoc plugin, such as protoc-gen-go.
 message Plugin {
@@ -48,8 +49,10 @@ message PluginVersion {
   string plugin_name = 3;
   // The owner of the plugin to which this version relates.
   string plugin_owner = 4;
-  // The full docker image digest associated with this plugin version.
-  string docker_image_digest = 5;
+  // The full container image digest associated with this plugin version.
+  string container_image_digest = 5;
+  // Optionally define the runtime libraries.
+  repeated RuntimeLibrary runtime_libraries = 6;
 }
 
 // PluginVisibility defines the visibility options available

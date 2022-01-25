@@ -449,6 +449,8 @@ message ActionBufAlphaRegistryV1Alpha1UpdateUserServerRoleInfo {
 // in actor or object for the CreatePluginVersion action.
 message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo {
   string name = 1;
+  string image_digest = 2;
+  repeated BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary runtime_libraries = 3;
 }
 
 // ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo stores audit log details
