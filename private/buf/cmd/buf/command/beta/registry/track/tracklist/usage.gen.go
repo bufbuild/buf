@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build windows
-// +build windows
+// Generated. DO NOT EDIT.
 
-package usage
+package tracklist
 
-const testSuffix = ".test.exe"
+import _ "github.com/bufbuild/buf/private/usage"

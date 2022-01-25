@@ -16,6 +16,7 @@ mkdir -p "${OUT_DIR}/bin"
 mkdir -p "${OUT_DIR}/etc/bash_completion.d"
 mkdir -p "${OUT_DIR}/share/fish/vendor_completions.d"
 mkdir -p "${OUT_DIR}/share/zsh/site-functions"
+mkdir -p "${OUT_DIR}/share/man/man1"
 
 for binary in buf protoc-gen-buf-breaking protoc-gen-buf-lint; do
   echo go build -ldflags \"-s -w\" -trimpath -o \"${OUT_DIR}/bin/${binary}\" \"cmd/${binary}/main.go\"
@@ -27,5 +28,7 @@ echo \"${OUT_DIR}/bin/buf\" fish-completion \> \"${OUT_DIR}/share/fish/vendor_co
 "${OUT_DIR}/bin/buf" fish-completion > "${OUT_DIR}/share/fish/vendor_completions.d/buf.fish"
 echo \"${OUT_DIR}/bin/buf\" zsh-completion \> \"${OUT_DIR}/share/zsh/site-functions/_buf\"
 "${OUT_DIR}/bin/buf" zsh-completion > "${OUT_DIR}/share/zsh/site-functions/_buf"
+echo \"${OUT_DIR}/bin/buf\" manpages \"${OUT_DIR}/share/man/man1\"
+"${OUT_DIR}/bin/buf" manpages "${OUT_DIR}/share/man/man1"
 echo cp \"LICENSE\" \"${OUT_DIR}/LICENSE\"
 cp "LICENSE" "${OUT_DIR}/LICENSE"

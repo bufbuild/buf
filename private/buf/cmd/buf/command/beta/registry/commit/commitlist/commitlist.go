@@ -42,8 +42,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		//Use:   name + " <buf.build/owner/repo:branch>",
-		Use:   name + " <buf.build/owner/repo>",
+		Use:   name + " <buf.build/owner/repo[:ref]>",
 		Short: "List commit details",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
@@ -115,12 +114,16 @@ func run(
 		return err
 	}
 
-	repositoryCommits, nextPageToken, err := service.ListRepositoryCommitsByBranch(
+	reference := moduleReference.Reference()
+	if reference == "" {
+		reference = bufmoduleref.MainTrack
+	}
+
+	repositoryCommits, nextPageToken, err := service.ListRepositoryCommitsByReference(
 		ctx,
 		moduleReference.Owner(),
 		moduleReference.Repository(),
-		//moduleReference.Reference(),
-		bufmoduleref.MainBranch,
+		reference,
 		flags.PageSize,
 		flags.PageToken,
 		flags.Reverse,

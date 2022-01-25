@@ -158,10 +158,19 @@ func JavaOuterClassname(
 func JavaPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
-	packagePrefix string,
+	defaultPrefix string,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) (Modifier, error) {
-	return javaPackage(logger, sweeper, packagePrefix, overrides)
+	return javaPackage(
+		logger,
+		sweeper,
+		defaultPrefix,
+		except,
+		moduleOverrides,
+		overrides,
+	)
 }
 
 // JavaStringCheckUtf8 returns a Modifier that sets the java_string_check_utf8 file option according

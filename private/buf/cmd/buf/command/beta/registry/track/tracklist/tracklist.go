@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package branchlist
+package tracklist
 
 import (
 	"context"
@@ -40,18 +40,18 @@ func NewCommand(
 	name string,
 	builder appflag.Builder,
 ) *appcmd.Command {
-	flags := newFlags()
+	flgs := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "List branches for the specified repository.",
+		Short: "List tracks for the specified repository",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
-				return run(ctx, container, flags)
+				return run(ctx, container, flgs)
 			},
 			bufcli.NewErrorInterceptor(),
 		),
-		BindFlags: flags.Bind,
+		BindFlags: flgs.Bind,
 	}
 }
 
@@ -67,17 +67,20 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.Uint32Var(&f.PageSize,
+	flagSet.Uint32Var(
+		&f.PageSize,
 		pageSizeFlagName,
 		10,
 		`The page size.`,
 	)
-	flagSet.StringVar(&f.PageToken,
+	flagSet.StringVar(
+		&f.PageToken,
 		pageTokenFlagName,
 		"",
 		`The page token. If more results are available, a "next_page" key will be present in the --format=json output.`,
 	)
-	flagSet.BoolVar(&f.Reverse,
+	flagSet.BoolVar(
+		&f.Reverse,
 		reverseFlagName,
 		false,
 		`Reverse the results.`,
@@ -99,7 +102,7 @@ func run(
 	if container.Arg(0) == "" {
 		return appcmd.NewInvalidArgumentError("repository is required")
 	}
-	moduleIdentity, err := bufmoduleref.ModuleIdentityForString(container.Arg(0))
+	moduleReference, err := bufmoduleref.ModuleReferenceForString(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -112,22 +115,25 @@ func run(
 	if err != nil {
 		return err
 	}
-	repositoryService, err := apiProvider.NewRepositoryService(ctx, moduleIdentity.Remote())
+	repositoryService, err := apiProvider.NewRepositoryService(ctx, moduleReference.Remote())
 	if err != nil {
 		return err
 	}
-	repository, err := repositoryService.GetRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Repository())
+	repository, err := repositoryService.GetRepositoryByFullName(
+		ctx,
+		moduleReference.Owner()+"/"+moduleReference.Repository(),
+	)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	repositoryBranchService, err := apiProvider.NewRepositoryBranchService(ctx, moduleIdentity.Remote())
+	repositoryTrackService, err := apiProvider.NewRepositoryTrackService(ctx, moduleReference.Remote())
 	if err != nil {
 		return err
 	}
-	repositoryBranches, nextPageToken, err := repositoryBranchService.ListRepositoryBranches(
+	repositoryTracks, nextPageToken, err := repositoryTrackService.ListRepositoryTracks(
 		ctx,
 		repository.Id,
 		flags.PageSize,
@@ -137,5 +143,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	return bufprint.NewRepositoryBranchPrinter(container.Stdout()).PrintRepositoryBranches(ctx, format, nextPageToken, repositoryBranches...)
+	return bufprint.NewRepositoryTrackPrinter(container.Stdout()).PrintRepositoryTracks(
+		format,
+		nextPageToken,
+		repositoryTracks...,
+	)
 }

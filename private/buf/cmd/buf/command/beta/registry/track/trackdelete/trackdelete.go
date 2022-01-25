@@ -12,27 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package templateversionlist
+package trackdelete
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/rpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
-const (
-	pageSizeFlagName  = "page-size"
-	pageTokenFlagName = "page-token"
-	reverseFlagName   = "reverse"
-	formatFlagName    = "format"
-)
+const forceFlagName = "force"
 
 // NewCommand returns a new Command
 func NewCommand(
@@ -41,8 +35,8 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/" + bufplugin.TemplatesPathName + "/template>",
-		Short: "List versions for the specified template.",
+		Use:   name + " <buf.build/owner/repository:track>",
+		Short: "Delete a track",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -55,10 +49,7 @@ func NewCommand(
 }
 
 type flags struct {
-	PageSize  uint32
-	PageToken string
-	Reverse   bool
-	Format    string
+	Force bool
 }
 
 func newFlags() *flags {
@@ -66,26 +57,11 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	flagSet.Uint32Var(&f.PageSize,
-		pageSizeFlagName,
-		10,
-		`The page size.`,
-	)
-	flagSet.StringVar(&f.PageToken,
-		pageTokenFlagName,
-		"",
-		`The page token. If more results are available, a "next_page" key will be present in the --format=json output.`,
-	)
-	flagSet.BoolVar(&f.Reverse,
-		reverseFlagName,
+	flagSet.BoolVar(
+		&f.Force,
+		forceFlagName,
 		false,
-		`Reverse the results.`,
-	)
-	flagSet.StringVar(
-		&f.Format,
-		formatFlagName,
-		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s`, bufprint.AllFormatsString),
+		"Force deletion without confirming. Use with caution.",
 	)
 }
 
@@ -93,10 +69,9 @@ func run(
 	ctx context.Context,
 	container appflag.Container,
 	flags *flags,
-) (retErr error) {
+) error {
 	bufcli.WarnBetaCommand(ctx, container)
-	templatePath := container.Arg(0)
-	format, err := bufprint.ParseFormat(flags.Format)
+	moduleReference, err := bufmoduleref.ModuleReferenceForString(container.Arg(0))
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
@@ -104,26 +79,25 @@ func run(
 	if err != nil {
 		return err
 	}
-	remote, owner, name, err := bufplugin.ParseTemplatePath(templatePath)
+	repositoryTrackService, err := registryProvider.NewRepositoryTrackService(ctx, moduleReference.Remote())
 	if err != nil {
 		return err
 	}
-	pluginService, err := registryProvider.NewPluginService(ctx, remote)
-	if err != nil {
-		return err
+	if !flags.Force {
+		if err := bufcli.PromptUserForDelete(container, "track", moduleReference.String()); err != nil {
+			return err
+		}
 	}
-	templateVersions, nextPageToken, err := pluginService.ListTemplateVersions(
+	if err := repositoryTrackService.DeleteRepositoryTrackByName(
 		ctx,
-		owner,
-		name,
-		flags.PageSize,
-		flags.PageToken,
-		flags.Reverse,
-	)
-	if err != nil {
+		moduleReference.Owner(),
+		moduleReference.Repository(),
+		moduleReference.Reference(),
+	); err != nil {
+		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
+			return bufcli.NewModuleReferenceNotFoundError(moduleReference)
+		}
 		return err
 	}
-	return bufprint.NewTemplateVersionPrinter(
-		container.Stdout(),
-	).PrintTemplateVersions(ctx, format, nextPageToken, templateVersions...)
+	return nil
 }
