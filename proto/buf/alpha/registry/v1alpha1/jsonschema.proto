@@ -1,0 +1,51 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/image/v1/image.proto";
+
+// JSONSchemaService serves JSONSchemas describing protobuf types in buf
+// modules.
+service JSONSchemaService {
+  // GetJSONSchema allows users to get an (approximate) json schema for a
+  // protobuf type.
+  rpc GetJSONSchema(GetJSONSchemaRequest) returns (GetJSONSchemaResponse);
+}
+
+
+message GetJSONSchemaRequest {
+  string owner = 1;
+  string repository = 2;
+  string reference = 3;
+
+  // A fully qualified name of the type to generate a JSONSchema for, e.g.
+  // "pkg.foo.Bar".
+  string type = 4;
+}
+
+message GetJSONSchemaResponse {
+  // A json schema representing what the json encoded request message of
+  // the method should conform to. This schema is an approximation to be
+  // used by editors for validation and autocompletion, not a lossless
+  // representation of the type's descriptor.
+  //
+  // If the requested type resolves to a message or enum, the json schema can be
+  // used as is. If the type resolves to a service, the json schema will only
+  // contain definitions for each request type for that service and the client
+  // will have to manaully set the toplevel "$ref" property.
+  bytes request_json_schema = 1;
+}
