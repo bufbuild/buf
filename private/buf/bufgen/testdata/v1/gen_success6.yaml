@@ -1,0 +1,10 @@
+version: v1
+managed:  
+  enabled: true
+  java_package_prefix:
+    default: "org"
+    except: 
+      - someremote.com/owner/repo
+plugins:
+  - remote: someremote.com/owner/plugins/myplugin
+    out: gen/go

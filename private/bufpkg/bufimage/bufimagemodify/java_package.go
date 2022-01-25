@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -39,23 +40,55 @@ var javaPackagePath = []int32{8, 1}
 func javaPackage(
 	logger *zap.Logger,
 	sweeper Sweeper,
-	packagePrefix string,
+	defaultPackagePrefix string,
+	except []bufmoduleref.ModuleIdentity,
+	moduleOverrides map[bufmoduleref.ModuleIdentity]string,
 	overrides map[string]string,
 ) (Modifier, error) {
-	if packagePrefix == "" {
+	if defaultPackagePrefix == "" {
 		return nil, fmt.Errorf("a non-empty package prefix is required")
 	}
+	// Convert the bufmoduleref.ModuleIdentity types into
+	// strings so that they're comparable.
+	exceptModuleIdentityStrings := make(map[string]struct{}, len(except))
+	for _, moduleIdentity := range except {
+		exceptModuleIdentityStrings[moduleIdentity.IdentityString()] = struct{}{}
+	}
+	overrideModuleIdentityStrings := make(map[string]string, len(moduleOverrides))
+	for moduleIdentity, javaPackagePrefix := range moduleOverrides {
+		overrideModuleIdentityStrings[moduleIdentity.IdentityString()] = javaPackagePrefix
+	}
+	seenModuleIdentityStrings := make(map[string]struct{}, len(overrideModuleIdentityStrings))
+	seenOverrideFiles := make(map[string]struct{}, len(overrides))
 	return ModifierFunc(
 		func(ctx context.Context, image bufimage.Image) error {
-			seenOverrideFiles := make(map[string]struct{}, len(overrides))
 			for _, imageFile := range image.Files() {
+				packagePrefix := defaultPackagePrefix
+				if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+					moduleIdentityString := moduleIdentity.IdentityString()
+					if modulePrefixOverride, ok := overrideModuleIdentityStrings[moduleIdentityString]; ok {
+						packagePrefix = modulePrefixOverride
+						seenModuleIdentityStrings[moduleIdentityString] = struct{}{}
+					}
+				}
 				javaPackageValue := javaPackageValue(imageFile, packagePrefix)
 				if overridePackagePrefix, ok := overrides[imageFile.Path()]; ok {
 					javaPackageValue = overridePackagePrefix
 					seenOverrideFiles[imageFile.Path()] = struct{}{}
 				}
-				if err := javaPackageForFile(ctx, sweeper, imageFile, javaPackageValue); err != nil {
+				if err := javaPackageForFile(
+					ctx,
+					sweeper,
+					imageFile,
+					javaPackageValue,
+					exceptModuleIdentityStrings,
+				); err != nil {
 					return err
+				}
+			}
+			for moduleIdentityString := range overrideModuleIdentityStrings {
+				if _, ok := seenModuleIdentityStrings[moduleIdentityString]; !ok {
+					logger.Sugar().Warnf("java_package_prefix override for %q was unused", moduleIdentityString)
 				}
 			}
 			for overrideFile := range overrides {
@@ -73,13 +106,12 @@ func javaPackageForFile(
 	sweeper Sweeper,
 	imageFile bufimage.ImageFile,
 	javaPackageValue string,
+	exceptModuleIdentityStrings map[string]struct{},
 ) error {
-	descriptor := imageFile.Proto()
-	if isWellKnownType(ctx, imageFile) || javaPackageValue == "" {
-		// This is a well-known type or we could not resolve a non-empty java_package
-		// value, so this is a no-op.
+	if shouldSkipJavaPackageForFile(ctx, imageFile, javaPackageValue, exceptModuleIdentityStrings) {
 		return nil
 	}
+	descriptor := imageFile.Proto()
 	if descriptor.Options == nil {
 		descriptor.Options = &descriptorpb.FileOptions{}
 	}
@@ -88,6 +120,26 @@ func javaPackageForFile(
 		sweeper.mark(imageFile.Path(), javaPackagePath)
 	}
 	return nil
+}
+
+func shouldSkipJavaPackageForFile(
+	ctx context.Context,
+	imageFile bufimage.ImageFile,
+	javaPackageValue string,
+	exceptModuleIdentityStrings map[string]struct{},
+) bool {
+	if isWellKnownType(ctx, imageFile) || javaPackageValue == "" {
+		// This is a well-known type or we could not resolve a non-empty java_package
+		// value, so this is a no-op.
+		return true
+	}
+
+	if moduleIdentity := imageFile.ModuleIdentity(); moduleIdentity != nil {
+		if _, ok := exceptModuleIdentityStrings[moduleIdentity.IdentityString()]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 // javaPackageValue returns the java_package for the given ImageFile based on its
