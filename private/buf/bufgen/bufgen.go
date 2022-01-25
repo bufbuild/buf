@@ -306,8 +306,23 @@ func (e ExternalJavaPackagePrefixConfigV1) IsEmpty() bool {
 }
 
 // UnmarshalYAML satisfies the yaml.Unmarshaler interface. This is done to maintain backward compatibility
-// of accepting a plain string value for java_package_prefix
+// of accepting a plain string value for java_package_prefix.
 func (e *ExternalJavaPackagePrefixConfigV1) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	return e.unmarshalWith(unmarshal)
+}
+
+// UnmarshalJSON satisfies the json.Unmarshaler interface. This is done to maintain backward compatibility
+// of accepting a plain string value for java_package_prefix.
+func (e *ExternalJavaPackagePrefixConfigV1) UnmarshalJSON(data []byte) error {
+	unmarshal := func(v interface{}) error {
+		return json.Unmarshal(data, v)
+	}
+
+	return e.unmarshalWith(unmarshal)
+}
+
+// unmarshalWith is used to unmarshal into json/yaml. See https://abhinavg.net/posts/flexible-yaml for details.
+func (e *ExternalJavaPackagePrefixConfigV1) unmarshalWith(unmarshal func(interface{}) error) error {
 	var prefix string
 	if err := unmarshal(&prefix); err == nil {
 		e.Default = prefix
@@ -316,23 +331,6 @@ func (e *ExternalJavaPackagePrefixConfigV1) UnmarshalYAML(unmarshal func(interfa
 
 	type rawExternalJavaPackagePrefixConfigV1 ExternalJavaPackagePrefixConfigV1
 	if err := unmarshal((*rawExternalJavaPackagePrefixConfigV1)(e)); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// UnmarshalJSON satisfies the json.Unmarshaler interface. This is done to maintain backward compatibility
-// of accepting a plain string value for java_package_prefix
-func (e *ExternalJavaPackagePrefixConfigV1) UnmarshalJSON(data []byte) error {
-	var prefix string
-	if err := json.Unmarshal(data, &prefix); err == nil {
-		e.Default = prefix
-		return nil
-	}
-
-	type rawExternalJavaPackagePrefixConfigV1 ExternalJavaPackagePrefixConfigV1
-	if err := json.Unmarshal(data, (*rawExternalJavaPackagePrefixConfigV1)(e)); err != nil {
 		return err
 	}
 
