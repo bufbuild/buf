@@ -18,64 +18,39 @@ package registryv1alpha1apiclientgrpc
 
 import (
 	context "context"
-	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	zap "go.uber.org/zap"
 )
 
-type requestBuilderService struct {
+type jSONSchemaService struct {
 	logger          *zap.Logger
-	client          v1alpha1.RequestBuilderServiceClient
+	client          v1alpha1.JSONSchemaServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
-// GetServices returns an overview of all services declared in a module
-// and their methods.
-func (s *requestBuilderService) GetServices(
+// GetJSONSchema allows users to get an (approximate) json schema for a
+// protobuf type.
+func (s *jSONSchemaService) GetJSONSchema(
 	ctx context.Context,
 	owner string,
 	repository string,
 	reference string,
-) (services []*v1alpha1.ModuleService, _ error) {
+	typeName string,
+) (requestJsonSchema []byte, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.GetServices(
+	response, err := s.client.GetJSONSchema(
 		ctx,
-		&v1alpha1.GetServicesRequest{
+		&v1alpha1.GetJSONSchemaRequest{
 			Owner:      owner,
 			Repository: repository,
 			Reference:  reference,
+			TypeName:   typeName,
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return response.Services, nil
-}
-
-// GetMethodDetails returns data needed to make dynamic requests for a method.
-func (s *requestBuilderService) GetMethodDetails(
-	ctx context.Context,
-	owner string,
-	repository string,
-	reference string,
-	method string,
-) (partialImage *v1.Image, requestJsonSchema []byte, resolvedCommit string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.GetMethodDetails(
-		ctx,
-		&v1alpha1.GetMethodDetailsRequest{
-			Owner:      owner,
-			Repository: repository,
-			Reference:  reference,
-			Method:     method,
-		},
-	)
-	if err != nil {
-		return nil, nil, "", err
-	}
-	return response.PartialImage, response.RequestJsonSchema, response.ResolvedCommit, nil
+	return response.RequestJsonSchema, nil
 }

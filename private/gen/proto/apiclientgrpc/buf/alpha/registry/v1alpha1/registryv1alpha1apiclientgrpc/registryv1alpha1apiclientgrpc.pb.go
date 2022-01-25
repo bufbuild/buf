@@ -250,6 +250,29 @@ func (p *provider) NewImageService(ctx context.Context, address string) (registr
 	}, nil
 }
 
+func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (registryv1alpha1api.JSONSchemaService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
+	if err != nil {
+		return nil, err
+	}
+	return &jSONSchemaService{
+		logger:          p.logger,
+		client:          v1alpha1.NewJSONSchemaServiceClient(clientConn),
+		contextModifier: contextModifier,
+	}, nil
+}
+
 func (p *provider) NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -522,29 +545,6 @@ func (p *provider) NewRepositoryTrackService(ctx context.Context, address string
 	return &repositoryTrackService{
 		logger:          p.logger,
 		client:          v1alpha1.NewRepositoryTrackServiceClient(clientConn),
-		contextModifier: contextModifier,
-	}, nil
-}
-
-func (p *provider) NewRequestBuilderService(ctx context.Context, address string) (registryv1alpha1api.RequestBuilderService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	clientConn, err := p.clientConnProvider.NewClientConn(ctx, address)
-	if err != nil {
-		return nil, err
-	}
-	return &requestBuilderService{
-		logger:          p.logger,
-		client:          v1alpha1.NewRequestBuilderServiceClient(clientConn),
 		contextModifier: contextModifier,
 	}, nil
 }

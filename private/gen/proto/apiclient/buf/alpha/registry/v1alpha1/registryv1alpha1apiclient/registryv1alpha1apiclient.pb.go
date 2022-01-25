@@ -31,6 +31,7 @@ type Provider interface {
 	DownloadServiceProvider
 	GenerateServiceProvider
 	ImageServiceProvider
+	JSONSchemaServiceProvider
 	LocalResolveServiceProvider
 	OrganizationServiceProvider
 	OwnerServiceProvider
@@ -43,7 +44,6 @@ type Provider interface {
 	RepositoryServiceProvider
 	RepositoryTagServiceProvider
 	RepositoryTrackServiceProvider
-	RequestBuilderServiceProvider
 	ResolveServiceProvider
 	SearchServiceProvider
 	TokenServiceProvider
@@ -88,6 +88,11 @@ type GenerateServiceProvider interface {
 // ImageServiceProvider provides a client-side ImageService for an address.
 type ImageServiceProvider interface {
 	NewImageService(ctx context.Context, address string) (registryv1alpha1api.ImageService, error)
+}
+
+// JSONSchemaServiceProvider provides a client-side JSONSchemaService for an address.
+type JSONSchemaServiceProvider interface {
+	NewJSONSchemaService(ctx context.Context, address string) (registryv1alpha1api.JSONSchemaService, error)
 }
 
 // LocalResolveServiceProvider provides a client-side LocalResolveService for an address.
@@ -148,11 +153,6 @@ type RepositoryTagServiceProvider interface {
 // RepositoryTrackServiceProvider provides a client-side RepositoryTrackService for an address.
 type RepositoryTrackServiceProvider interface {
 	NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error)
-}
-
-// RequestBuilderServiceProvider provides a client-side RequestBuilderService for an address.
-type RequestBuilderServiceProvider interface {
-	NewRequestBuilderService(ctx context.Context, address string) (registryv1alpha1api.RequestBuilderService, error)
 }
 
 // ResolveServiceProvider provides a client-side ResolveService for an address.

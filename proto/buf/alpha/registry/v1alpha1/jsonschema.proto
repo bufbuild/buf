@@ -34,7 +34,7 @@ message GetJSONSchemaRequest {
 
   // A fully qualified name of the type to generate a JSONSchema for, e.g.
   // "pkg.foo.Bar".
-  string type = 4;
+  string type_name = 4;
 }
 
 message GetJSONSchemaResponse {

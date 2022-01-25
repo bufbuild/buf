@@ -18,26 +18,18 @@ package registryv1alpha1api
 
 import (
 	context "context"
-	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
-// RequestBuilderService serves endpoints used by requestbuilder.
-type RequestBuilderService interface {
-	// GetServices returns an overview of all services declared in a module
-	// and their methods.
-	GetServices(
+// JSONSchemaService serves JSONSchemas describing protobuf types in buf
+// modules.
+type JSONSchemaService interface {
+	// GetJSONSchema allows users to get an (approximate) json schema for a
+	// protobuf type.
+	GetJSONSchema(
 		ctx context.Context,
 		owner string,
 		repository string,
 		reference string,
-	) (services []*v1alpha1.ModuleService, err error)
-	// GetMethodDetails returns data needed to make dynamic requests for a method.
-	GetMethodDetails(
-		ctx context.Context,
-		owner string,
-		repository string,
-		reference string,
-		method string,
-	) (partialImage *v1.Image, requestJsonSchema []byte, resolvedCommit string, err error)
+		typeName string,
+	) (requestJsonSchema []byte, err error)
 }
