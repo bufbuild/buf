@@ -196,7 +196,9 @@ type PluginVersion struct {
 	PluginName string `protobuf:"bytes,3,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
 	// The owner of the plugin to which this version relates.
 	PluginOwner string `protobuf:"bytes,4,opt,name=plugin_owner,json=pluginOwner,proto3" json:"plugin_owner,omitempty"`
-	// The full container image digest associated with this plugin version.
+	// The full container image digest associated with this plugin version including
+	// the algorithm.
+	// Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
 	ContainerImageDigest string `protobuf:"bytes,5,opt,name=container_image_digest,json=containerImageDigest,proto3" json:"container_image_digest,omitempty"`
 	// Optionally define the runtime libraries.
 	RuntimeLibraries []*RuntimeLibrary `protobuf:"bytes,6,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
