@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `except` and `override` to `java_package_prefix`.
 
 ## [v1.0.0-rc11] - 2022-01-18
 
