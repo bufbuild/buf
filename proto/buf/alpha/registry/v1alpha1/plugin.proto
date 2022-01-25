@@ -49,7 +49,9 @@ message PluginVersion {
   string plugin_name = 3;
   // The owner of the plugin to which this version relates.
   string plugin_owner = 4;
-  // The full container image digest associated with this plugin version.
+  // The full container image digest associated with this plugin version including
+  // the algorithm.
+  // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
   string container_image_digest = 5;
   // Optionally define the runtime libraries.
   repeated RuntimeLibrary runtime_libraries = 6;
