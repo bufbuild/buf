@@ -92,6 +92,8 @@ service RepositoryService {
   // This does not include users who have implicit roles against the repository, unless they have also been
   // assigned a role explicitly.
   rpc ListRepositoryContributors(ListRepositoryContributorsRequest) returns (ListRepositoryContributorsResponse);
+  // GetRepositorySettings gets the settings of a repository.
+  rpc GetRepositorySettings(GetRepositorySettingsRequest) returns (GetRepositorySettingsResponse);
 }
 
 message GetRepositoriesByFullNameRequest{
@@ -243,4 +245,14 @@ message ListRepositoryContributorsResponse {
   repeated RepositoryContributor users = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+}
+
+message GetRepositorySettingsRequest {
+  // The ID of the repository for which to get the settings.
+  string repository_id = 1;
+}
+
+message GetRepositorySettingsResponse {
+  // The number of outside contributors in the repository.
+  uint32 contributors_count = 1;
 }
