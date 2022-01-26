@@ -261,7 +261,7 @@ func (s *organizationService) SetOrganizationMember(
 func (s *organizationService) GetOrganizationSettings(
 	ctx context.Context,
 	organizationId string,
-) (repositoryBaseRole v1alpha1.RepositoryRole, pluginBaseRole v1alpha1.PluginRole, templateBaseRole v1alpha1.TemplateRole, _ error) {
+) (repositoryBaseRole v1alpha1.RepositoryRole, pluginBaseRole v1alpha1.PluginRole, templateBaseRole v1alpha1.TemplateRole, membersCount uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -272,9 +272,9 @@ func (s *organizationService) GetOrganizationSettings(
 		},
 	)
 	if err != nil {
-		return v1alpha1.RepositoryRole(0), v1alpha1.PluginRole(0), v1alpha1.TemplateRole(0), err
+		return v1alpha1.RepositoryRole(0), v1alpha1.PluginRole(0), v1alpha1.TemplateRole(0), 0, err
 	}
-	return response.RepositoryBaseRole, response.PluginBaseRole, response.TemplateBaseRole, nil
+	return response.RepositoryBaseRole, response.PluginBaseRole, response.TemplateBaseRole, response.MembersCount, nil
 }
 
 // UpdateOrganizationSettings update the organization settings including base roles.

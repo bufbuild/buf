@@ -100,4 +100,6 @@ type RepositoryService interface {
 		pageToken string,
 		reverse bool,
 	) (users []*v1alpha1.RepositoryContributor, nextPageToken string, err error)
+	// GetRepositorySettings gets the settings of a repository.
+	GetRepositorySettings(ctx context.Context, repositoryId string) (contributorsCount uint32, err error)
 }
