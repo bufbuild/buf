@@ -1858,7 +1858,8 @@ type GetRepositorySettingsResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The number of outside contributors in the repository.
+	// The number of outside contributors in the repository,
+	// excluding owning-organization's members that have an explicit role.
 	ContributorsCount uint32 `protobuf:"varint,1,opt,name=contributors_count,json=contributorsCount,proto3" json:"contributors_count,omitempty"`
 }
 

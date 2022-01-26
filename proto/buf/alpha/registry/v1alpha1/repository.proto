@@ -253,6 +253,7 @@ message GetRepositorySettingsRequest {
 }
 
 message GetRepositorySettingsResponse {
-  // The number of outside contributors in the repository.
+  // The number of outside contributors in the repository,
+  // excluding owning-organization's members that have an explicit role.
   uint32 contributors_count = 1;
 }
