@@ -48,6 +48,13 @@ type PluginService interface {
 		pageToken string,
 		reverse bool,
 	) (plugins []*v1alpha1.Plugin, nextPageToken string, err error)
+	// GetPluginVersion returns the plugin version, if found.
+	GetPluginVersion(
+		ctx context.Context,
+		name string,
+		pluginOwner string,
+		pluginName string,
+	) (pluginVersion *v1alpha1.PluginVersion, err error)
 	// ListPluginVersions lists all the versions available for the specified plugin.
 	ListPluginVersions(
 		ctx context.Context,
