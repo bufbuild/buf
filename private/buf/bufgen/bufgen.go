@@ -19,6 +19,7 @@ package bufgen
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -188,10 +189,18 @@ type ManagedConfig struct {
 	CcEnableArenas        *bool
 	JavaMultipleFiles     *bool
 	JavaStringCheckUtf8   *bool
-	JavaPackagePrefix     string
+	JavaPackagePrefix     *JavaPackagePrefixConfig
 	OptimizeFor           *descriptorpb.FileOptions_OptimizeMode
 	GoPackagePrefixConfig *GoPackagePrefixConfig
 	Override              map[string]map[string]string
+}
+
+// JavaPackagePrefixConfig is the java_package prefix configuration.
+type JavaPackagePrefixConfig struct {
+	Default string
+	Except  []bufmoduleref.ModuleIdentity
+	// bufmoduleref.ModuleIdentity -> java_package prefix.
+	Override map[bufmoduleref.ModuleIdentity]string
 }
 
 // GoPackagePrefixConfig is the go_package prefix configuration.
@@ -261,14 +270,14 @@ type ExternalPluginConfigV1 struct {
 //
 // Only use outside of this package for testing.
 type ExternalManagedConfigV1 struct {
-	Enabled             bool                            `json:"enabled,omitempty" yaml:"enabled,omitempty"`
-	CcEnableArenas      *bool                           `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
-	JavaMultipleFiles   *bool                           `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
-	JavaStringCheckUtf8 *bool                           `json:"java_string_check_utf8,omitempty" yaml:"java_string_check_utf8,omitempty"`
-	JavaPackagePrefix   string                          `json:"java_package_prefix,omitempty" yaml:"java_package_prefix,omitempty"`
-	OptimizeFor         string                          `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
-	GoPackagePrefix     ExternalGoPackagePrefixConfigV1 `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
-	Override            map[string]map[string]string    `json:"override,omitempty" yaml:"override,omitempty"`
+	Enabled             bool                              `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	CcEnableArenas      *bool                             `json:"cc_enable_arenas,omitempty" yaml:"cc_enable_arenas,omitempty"`
+	JavaMultipleFiles   *bool                             `json:"java_multiple_files,omitempty" yaml:"java_multiple_files,omitempty"`
+	JavaStringCheckUtf8 *bool                             `json:"java_string_check_utf8,omitempty" yaml:"java_string_check_utf8,omitempty"`
+	JavaPackagePrefix   ExternalJavaPackagePrefixConfigV1 `json:"java_package_prefix,omitempty" yaml:"java_package_prefix,omitempty"`
+	OptimizeFor         string                            `json:"optimize_for,omitempty" yaml:"optimize_for,omitempty"`
+	GoPackagePrefix     ExternalGoPackagePrefixConfigV1   `json:"go_package_prefix,omitempty" yaml:"go_package_prefix,omitempty"`
+	Override            map[string]map[string]string      `json:"override,omitempty" yaml:"override,omitempty"`
 }
 
 // IsEmpty returns true if the config is empty, excluding the 'Enabled' setting.
@@ -276,10 +285,56 @@ func (e ExternalManagedConfigV1) IsEmpty() bool {
 	return e.CcEnableArenas == nil &&
 		e.JavaMultipleFiles == nil &&
 		e.JavaStringCheckUtf8 == nil &&
-		e.JavaPackagePrefix == "" &&
+		e.JavaPackagePrefix.IsEmpty() &&
 		e.OptimizeFor == "" &&
 		e.GoPackagePrefix.IsEmpty() &&
 		len(e.Override) == 0
+}
+
+// ExternalJavaPackagePrefixConfigV1 is the external java_package prefix configuration.
+type ExternalJavaPackagePrefixConfigV1 struct {
+	Default  string            `json:"default,omitempty" yaml:"default,omitempty"`
+	Except   []string          `json:"except,omitempty" yaml:"except,omitempty"`
+	Override map[string]string `json:"override,omitempty" yaml:"override,omitempty"`
+}
+
+// IsEmpty returns true if the config is empty.
+func (e ExternalJavaPackagePrefixConfigV1) IsEmpty() bool {
+	return e.Default == "" &&
+		len(e.Except) == 0 &&
+		len(e.Override) == 0
+}
+
+// UnmarshalYAML satisfies the yaml.Unmarshaler interface. This is done to maintain backward compatibility
+// of accepting a plain string value for java_package_prefix.
+func (e *ExternalJavaPackagePrefixConfigV1) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	return e.unmarshalWith(unmarshal)
+}
+
+// UnmarshalJSON satisfies the json.Unmarshaler interface. This is done to maintain backward compatibility
+// of accepting a plain string value for java_package_prefix.
+func (e *ExternalJavaPackagePrefixConfigV1) UnmarshalJSON(data []byte) error {
+	unmarshal := func(v interface{}) error {
+		return json.Unmarshal(data, v)
+	}
+
+	return e.unmarshalWith(unmarshal)
+}
+
+// unmarshalWith is used to unmarshal into json/yaml. See https://abhinavg.net/posts/flexible-yaml for details.
+func (e *ExternalJavaPackagePrefixConfigV1) unmarshalWith(unmarshal func(interface{}) error) error {
+	var prefix string
+	if err := unmarshal(&prefix); err == nil {
+		e.Default = prefix
+		return nil
+	}
+
+	type rawExternalJavaPackagePrefixConfigV1 ExternalJavaPackagePrefixConfigV1
+	if err := unmarshal((*rawExternalJavaPackagePrefixConfigV1)(e)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ExternalGoPackagePrefixConfigV1 is the external go_package prefix configuration.

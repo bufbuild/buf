@@ -346,20 +346,25 @@ func newModifier(
 		bufimagemodify.PhpMetadataNamespace(logger, sweeper, managedConfig.Override[bufimagemodify.PhpMetadataNamespaceID]),
 		bufimagemodify.RubyPackage(logger, sweeper, managedConfig.Override[bufimagemodify.RubyPackageID]),
 	)
-	javaPackagePrefix := bufimagemodify.DefaultJavaPackagePrefix
-	if managedConfig.JavaPackagePrefix != "" {
+	javaPackagePrefix := &JavaPackagePrefixConfig{Default: bufimagemodify.DefaultJavaPackagePrefix}
+	if managedConfig.JavaPackagePrefix != nil {
 		javaPackagePrefix = managedConfig.JavaPackagePrefix
 	}
 	javaPackageModifier, err := bufimagemodify.JavaPackage(
 		logger,
 		sweeper,
-		javaPackagePrefix,
+		javaPackagePrefix.Default,
+		javaPackagePrefix.Except,
+		javaPackagePrefix.Override,
 		managedConfig.Override[bufimagemodify.JavaPackageID],
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to construct java_package modifier: %w", err)
 	}
-	modifier = bufimagemodify.Merge(modifier, javaPackageModifier)
+	modifier = bufimagemodify.Merge(
+		modifier,
+		javaPackageModifier,
+	)
 	javaMultipleFilesValue := bufimagemodify.DefaultJavaMultipleFilesValue
 	if managedConfig.JavaMultipleFiles != nil {
 		javaMultipleFilesValue = *managedConfig.JavaMultipleFiles

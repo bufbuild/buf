@@ -182,7 +182,8 @@ const (
 	Action_ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_PLUGIN_SERVICE_UNDEPRECATE_TEMPLATE                            Action = 139
 	Action_ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ORGANIZATION_SERVICE_SET_ORGANIZATION_MEMBER                   Action = 140
 	Action_ACTION_BUF_ALPHA_GENREGISTRYINTERNAL_V1_ALPHA1_GENERATION_REGISTRY_SERVICE_DELETE_REPOSITORY       Action = 141
-	Action_ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ADMIN_SERVICE_FORCE_DELETE_USER                                Action = 142
+	Action_ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_SERVICE_GET_REPOSITORY_SETTINGS                     Action = 142
+	Action_ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ADMIN_SERVICE_FORCE_DELETE_USER                                Action = 143
 )
 
 // Enum value maps for Action.
@@ -330,7 +331,8 @@ var (
 		139: "ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_PLUGIN_SERVICE_UNDEPRECATE_TEMPLATE",
 		140: "ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ORGANIZATION_SERVICE_SET_ORGANIZATION_MEMBER",
 		141: "ACTION_BUF_ALPHA_GENREGISTRYINTERNAL_V1_ALPHA1_GENERATION_REGISTRY_SERVICE_DELETE_REPOSITORY",
-		142: "ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ADMIN_SERVICE_FORCE_DELETE_USER",
+		142: "ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_SERVICE_GET_REPOSITORY_SETTINGS",
+		143: "ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ADMIN_SERVICE_FORCE_DELETE_USER",
 	}
 	Action_value = map[string]int32{
 		"ACTION_UNSPECIFIED": 0,
@@ -475,7 +477,8 @@ var (
 		"ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_PLUGIN_SERVICE_UNDEPRECATE_TEMPLATE":                            139,
 		"ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ORGANIZATION_SERVICE_SET_ORGANIZATION_MEMBER":                   140,
 		"ACTION_BUF_ALPHA_GENREGISTRYINTERNAL_V1_ALPHA1_GENERATION_REGISTRY_SERVICE_DELETE_REPOSITORY":       141,
-		"ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ADMIN_SERVICE_FORCE_DELETE_USER":                                142,
+		"ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_SERVICE_GET_REPOSITORY_SETTINGS":                     142,
+		"ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ADMIN_SERVICE_FORCE_DELETE_USER":                                143,
 	}
 )
 
@@ -2719,7 +2722,9 @@ type ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Name             string                                                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ImageDigest      string                                                 `protobuf:"bytes,2,opt,name=image_digest,json=imageDigest,proto3" json:"image_digest,omitempty"`
+	RuntimeLibraries []*BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary `protobuf:"bytes,3,rep,name=runtime_libraries,json=runtimeLibraries,proto3" json:"runtime_libraries,omitempty"`
 }
 
 func (x *ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo) Reset() {
@@ -2759,6 +2764,20 @@ func (x *ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo) GetName(
 		return x.Name
 	}
 	return ""
+}
+
+func (x *ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo) GetImageDigest() string {
+	if x != nil {
+		return x.ImageDigest
+	}
+	return ""
+}
+
+func (x *ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo) GetRuntimeLibraries() []*BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary {
+	if x != nil {
+		return x.RuntimeLibraries
+	}
+	return nil
 }
 
 // ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo stores audit log details
@@ -4969,12 +4988,22 @@ var file_buf_alpha_audit_v1alpha1_envelope_proto_rawDesc = []byte{
 	0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x42, 0x75, 0x66, 0x41, 0x6c, 0x70, 0x68, 0x61,
 	0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x56, 0x31, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x31,
 	0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x52, 0x0a, 0x73, 0x65, 0x72, 0x76,
-	0x65, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x22, 0x53, 0x0a, 0x3d, 0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e,
-	0x42, 0x75, 0x66, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x79,
-	0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x56, 0x31, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x31,
-	0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x56, 0x65, 0x72, 0x73,
-	0x69, 0x6f, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x22, 0xfa, 0x01, 0x0a, 0x45,
+	0x65, 0x72, 0x52, 0x6f, 0x6c, 0x65, 0x22, 0xf2, 0x01, 0x0a, 0x3d, 0x41, 0x63, 0x74, 0x69, 0x6f,
+	0x6e, 0x42, 0x75, 0x66, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72,
+	0x79, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x56, 0x31, 0x41, 0x6c, 0x70, 0x68, 0x61,
+	0x31, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x56, 0x65, 0x72,
+	0x73, 0x69, 0x6f, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x21, 0x0a, 0x0c,
+	0x69, 0x6d, 0x61, 0x67, 0x65, 0x5f, 0x64, 0x69, 0x67, 0x65, 0x73, 0x74, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0b, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x44, 0x69, 0x67, 0x65, 0x73, 0x74, 0x12,
+	0x7a, 0x0a, 0x11, 0x72, 0x75, 0x6e, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x6c, 0x69, 0x62, 0x72, 0x61,
+	0x72, 0x69, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x4d, 0x2e, 0x62, 0x75, 0x66,
+	0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x61, 0x75, 0x64, 0x69, 0x74, 0x2e, 0x76, 0x31, 0x61,
+	0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x42, 0x75, 0x66, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x52, 0x65,
+	0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x56, 0x31, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x50, 0x6c,
+	0x75, 0x67, 0x69, 0x6e, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x75, 0x6e, 0x74, 0x69,
+	0x6d, 0x65, 0x4c, 0x69, 0x62, 0x72, 0x61, 0x72, 0x79, 0x52, 0x10, 0x72, 0x75, 0x6e, 0x74, 0x69,
+	0x6d, 0x65, 0x4c, 0x69, 0x62, 0x72, 0x61, 0x72, 0x69, 0x65, 0x73, 0x22, 0xfa, 0x01, 0x0a, 0x45,
 	0x41, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x42, 0x75, 0x66, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x52, 0x65,
 	0x67, 0x69, 0x73, 0x74, 0x72, 0x79, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x56, 0x31,
 	0x41, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x50, 0x6c, 0x75, 0x67,
@@ -5745,7 +5774,7 @@ var file_buf_alpha_audit_v1alpha1_envelope_proto_rawDesc = []byte{
 	0x0b, 0x32, 0x25, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x61, 0x75,
 	0x64, 0x69, 0x74, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x54, 0x6f, 0x6b,
 	0x65, 0x6e, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x48, 0x00, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65,
-	0x6e, 0x42, 0x06, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x2a, 0xf6, 0x5b, 0x0a, 0x06, 0x41, 0x63,
+	0x6e, 0x42, 0x06, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x2a, 0xcb, 0x5c, 0x0a, 0x06, 0x41, 0x63,
 	0x74, 0x69, 0x6f, 0x6e, 0x12, 0x16, 0x0a, 0x12, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x55,
 	0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x46, 0x0a, 0x42,
 	0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x42, 0x55, 0x46, 0x5f, 0x41, 0x4c, 0x50, 0x48, 0x41,
@@ -6476,29 +6505,34 @@ var file_buf_alpha_audit_v1alpha1_envelope_proto_rawDesc = []byte{
 	0x5f, 0x41, 0x4c, 0x50, 0x48, 0x41, 0x31, 0x5f, 0x47, 0x45, 0x4e, 0x45, 0x52, 0x41, 0x54, 0x49,
 	0x4f, 0x4e, 0x5f, 0x52, 0x45, 0x47, 0x49, 0x53, 0x54, 0x52, 0x59, 0x5f, 0x53, 0x45, 0x52, 0x56,
 	0x49, 0x43, 0x45, 0x5f, 0x44, 0x45, 0x4c, 0x45, 0x54, 0x45, 0x5f, 0x52, 0x45, 0x50, 0x4f, 0x53,
-	0x49, 0x54, 0x4f, 0x52, 0x59, 0x10, 0x8d, 0x01, 0x12, 0x48, 0x0a, 0x43, 0x41, 0x43, 0x54, 0x49,
+	0x49, 0x54, 0x4f, 0x52, 0x59, 0x10, 0x8d, 0x01, 0x12, 0x53, 0x0a, 0x4e, 0x41, 0x43, 0x54, 0x49,
 	0x4f, 0x4e, 0x5f, 0x42, 0x55, 0x46, 0x5f, 0x41, 0x4c, 0x50, 0x48, 0x41, 0x5f, 0x52, 0x45, 0x47,
 	0x49, 0x53, 0x54, 0x52, 0x59, 0x5f, 0x56, 0x31, 0x5f, 0x41, 0x4c, 0x50, 0x48, 0x41, 0x31, 0x5f,
-	0x41, 0x44, 0x4d, 0x49, 0x4e, 0x5f, 0x53, 0x45, 0x52, 0x56, 0x49, 0x43, 0x45, 0x5f, 0x46, 0x4f,
-	0x52, 0x43, 0x45, 0x5f, 0x44, 0x45, 0x4c, 0x45, 0x54, 0x45, 0x5f, 0x55, 0x53, 0x45, 0x52, 0x10,
-	0x8e, 0x01, 0x42, 0x85, 0x02, 0x0a, 0x1c, 0x63, 0x6f, 0x6d, 0x2e, 0x62, 0x75, 0x66, 0x2e, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x2e, 0x61, 0x75, 0x64, 0x69, 0x74, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70,
-	0x68, 0x61, 0x31, 0x42, 0x0d, 0x45, 0x6e, 0x76, 0x65, 0x6c, 0x6f, 0x70, 0x65, 0x50, 0x72, 0x6f,
-	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x53, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
-	0x2f, 0x62, 0x75, 0x66, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x2f, 0x62, 0x75, 0x66, 0x2f, 0x70, 0x72,
-	0x69, 0x76, 0x61, 0x74, 0x65, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f,
-	0x67, 0x6f, 0x2f, 0x62, 0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2f, 0x61, 0x75, 0x64,
-	0x69, 0x74, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x3b, 0x61, 0x75, 0x64, 0x69,
-	0x74, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xa2, 0x02, 0x03, 0x42, 0x41, 0x41, 0xaa,
-	0x02, 0x18, 0x42, 0x75, 0x66, 0x2e, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x41, 0x75, 0x64, 0x69,
-	0x74, 0x2e, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xca, 0x02, 0x18, 0x42, 0x75, 0x66,
+	0x52, 0x45, 0x50, 0x4f, 0x53, 0x49, 0x54, 0x4f, 0x52, 0x59, 0x5f, 0x53, 0x45, 0x52, 0x56, 0x49,
+	0x43, 0x45, 0x5f, 0x47, 0x45, 0x54, 0x5f, 0x52, 0x45, 0x50, 0x4f, 0x53, 0x49, 0x54, 0x4f, 0x52,
+	0x59, 0x5f, 0x53, 0x45, 0x54, 0x54, 0x49, 0x4e, 0x47, 0x53, 0x10, 0x8e, 0x01, 0x12, 0x48, 0x0a,
+	0x43, 0x41, 0x43, 0x54, 0x49, 0x4f, 0x4e, 0x5f, 0x42, 0x55, 0x46, 0x5f, 0x41, 0x4c, 0x50, 0x48,
+	0x41, 0x5f, 0x52, 0x45, 0x47, 0x49, 0x53, 0x54, 0x52, 0x59, 0x5f, 0x56, 0x31, 0x5f, 0x41, 0x4c,
+	0x50, 0x48, 0x41, 0x31, 0x5f, 0x41, 0x44, 0x4d, 0x49, 0x4e, 0x5f, 0x53, 0x45, 0x52, 0x56, 0x49,
+	0x43, 0x45, 0x5f, 0x46, 0x4f, 0x52, 0x43, 0x45, 0x5f, 0x44, 0x45, 0x4c, 0x45, 0x54, 0x45, 0x5f,
+	0x55, 0x53, 0x45, 0x52, 0x10, 0x8f, 0x01, 0x42, 0x85, 0x02, 0x0a, 0x1c, 0x63, 0x6f, 0x6d, 0x2e,
+	0x62, 0x75, 0x66, 0x2e, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x2e, 0x61, 0x75, 0x64, 0x69, 0x74, 0x2e,
+	0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x42, 0x0d, 0x45, 0x6e, 0x76, 0x65, 0x6c, 0x6f,
+	0x70, 0x65, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x53, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x62, 0x75, 0x66, 0x62, 0x75, 0x69, 0x6c, 0x64, 0x2f, 0x62,
+	0x75, 0x66, 0x2f, 0x70, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x2f, 0x62, 0x75, 0x66, 0x2f, 0x61, 0x6c, 0x70, 0x68,
+	0x61, 0x2f, 0x61, 0x75, 0x64, 0x69, 0x74, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
+	0x3b, 0x61, 0x75, 0x64, 0x69, 0x74, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xa2, 0x02,
+	0x03, 0x42, 0x41, 0x41, 0xaa, 0x02, 0x18, 0x42, 0x75, 0x66, 0x2e, 0x41, 0x6c, 0x70, 0x68, 0x61,
+	0x2e, 0x41, 0x75, 0x64, 0x69, 0x74, 0x2e, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xca,
+	0x02, 0x18, 0x42, 0x75, 0x66, 0x5c, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x5c, 0x41, 0x75, 0x64, 0x69,
+	0x74, 0x5c, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0xe2, 0x02, 0x24, 0x42, 0x75, 0x66,
 	0x5c, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x5c, 0x41, 0x75, 0x64, 0x69, 0x74, 0x5c, 0x56, 0x31, 0x61,
-	0x6c, 0x70, 0x68, 0x61, 0x31, 0xe2, 0x02, 0x24, 0x42, 0x75, 0x66, 0x5c, 0x41, 0x6c, 0x70, 0x68,
-	0x61, 0x5c, 0x41, 0x75, 0x64, 0x69, 0x74, 0x5c, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
-	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x1b, 0x42,
-	0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a, 0x41, 0x75, 0x64, 0x69, 0x74,
-	0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x6c, 0x70, 0x68, 0x61, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74,
+	0x61, 0xea, 0x02, 0x1b, 0x42, 0x75, 0x66, 0x3a, 0x3a, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x3a, 0x3a,
+	0x41, 0x75, 0x64, 0x69, 0x74, 0x3a, 0x3a, 0x56, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62,
+	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -6619,73 +6653,74 @@ var file_buf_alpha_audit_v1alpha1_envelope_proto_depIdxs = []int32{
 	72, // 21: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateTokenInfo.expire_time:type_name -> google.protobuf.Timestamp
 	73, // 22: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1ListUsersInfo.user_state_filter:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1UserState
 	74, // 23: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1UpdateUserServerRoleInfo.server_role:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1ServerRole
-	75, // 24: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo.runtime_libraries:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary
-	56, // 25: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo.repository_role:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1RepositoryRole
-	57, // 26: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo.plugin_role:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1PluginRole
-	58, // 27: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo.template_role:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1TemplateRole
-	65, // 28: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo.track:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1RepositoryTrack
-	55, // 29: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetOrganizationMemberInfo.organization_role:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1OrganizationRole
-	47, // 30: buf.alpha.audit.v1alpha1.Event.user:type_name -> buf.alpha.audit.v1alpha1.UserActor
-	72, // 31: buf.alpha.audit.v1alpha1.Event.event_time:type_name -> google.protobuf.Timestamp
-	54, // 32: buf.alpha.audit.v1alpha1.Event.objects:type_name -> buf.alpha.audit.v1alpha1.Object
-	76, // 33: buf.alpha.audit.v1alpha1.Event.error_code:type_name -> buf.alpha.rpc.v1alpha1.ErrorCode
-	0,  // 34: buf.alpha.audit.v1alpha1.Event.action:type_name -> buf.alpha.audit.v1alpha1.Action
-	1,  // 35: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_download_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DownloadInfo
-	2,  // 36: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_image_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetImageInfo
-	3,  // 37: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_organization_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateOrganizationInfo
-	4,  // 38: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_organization_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteOrganizationInfo
-	5,  // 39: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_organization_by_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteOrganizationByNameInfo
-	6,  // 40: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_add_organization_member_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1AddOrganizationMemberInfo
-	7,  // 41: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_update_organization_member_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1UpdateOrganizationMemberInfo
-	8,  // 42: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_remove_organization_member_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1RemoveOrganizationMemberInfo
-	9,  // 43: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_update_organization_settings_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1UpdateOrganizationSettingsInfo
-	10, // 44: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_plugin_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreatePluginInfo
-	11, // 45: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_plugin_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeletePluginInfo
-	12, // 46: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_template_version_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetTemplateVersionInfo
-	13, // 47: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_template_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateTemplateInfo
-	14, // 48: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_template_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteTemplateInfo
-	15, // 49: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_template_version_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateTemplateVersionInfo
-	16, // 50: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_push_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1PushInfo
-	17, // 51: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_reference_by_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetReferenceByNameInfo
-	18, // 52: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_repository_branch_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateRepositoryBranchInfo
-	19, // 53: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_list_repository_commits_by_branch_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1ListRepositoryCommitsByBranchInfo
-	20, // 54: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_list_repository_commits_by_reference_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1ListRepositoryCommitsByReferenceInfo
-	21, // 55: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_repository_commit_by_reference_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetRepositoryCommitByReferenceInfo
-	22, // 56: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_repository_commit_by_sequence_id_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetRepositoryCommitBySequenceIDInfo
-	23, // 57: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_repository_tag_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateRepositoryTagInfo
-	24, // 58: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_repository_by_full_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateRepositoryByFullNameInfo
-	25, // 59: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_repository_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteRepositoryInfo
-	26, // 60: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_repository_by_full_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteRepositoryByFullNameInfo
-	27, // 61: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_deprecate_repository_by_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeprecateRepositoryByNameInfo
-	28, // 62: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_undeprecate_repository_by_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1UndeprecateRepositoryByNameInfo
-	29, // 63: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_module_pins_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetModulePinsInfo
-	30, // 64: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_local_module_pins_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetLocalModulePinsInfo
-	31, // 65: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_search_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SearchInfo
-	32, // 66: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_token_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateTokenInfo
-	33, // 67: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_token_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteTokenInfo
-	34, // 68: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_user_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateUserInfo
-	35, // 69: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_list_users_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1ListUsersInfo
-	36, // 70: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_deactivate_user_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeactivateUserInfo
-	37, // 71: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_update_user_server_role_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1UpdateUserServerRoleInfo
-	38, // 72: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo
-	40, // 73: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registryinternal_v1alpha1_delete_plugin_version_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryinternalV1Alpha1DeletePluginVersionInfo
-	41, // 74: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_set_repository_contributor_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo
-	42, // 75: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_set_plugin_contributor_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo
-	43, // 76: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_set_template_contributor_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo
-	39, // 77: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_metadata_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo
-	44, // 78: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_repository_track_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo
-	45, // 79: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_set_organization_member_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetOrganizationMemberInfo
-	48, // 80: buf.alpha.audit.v1alpha1.Object.user:type_name -> buf.alpha.audit.v1alpha1.UserObject
-	49, // 81: buf.alpha.audit.v1alpha1.Object.organization:type_name -> buf.alpha.audit.v1alpha1.OrganizationObject
-	50, // 82: buf.alpha.audit.v1alpha1.Object.repository:type_name -> buf.alpha.audit.v1alpha1.RepositoryObject
-	51, // 83: buf.alpha.audit.v1alpha1.Object.plugin:type_name -> buf.alpha.audit.v1alpha1.PluginObject
-	52, // 84: buf.alpha.audit.v1alpha1.Object.template:type_name -> buf.alpha.audit.v1alpha1.TemplateObject
-	53, // 85: buf.alpha.audit.v1alpha1.Object.token:type_name -> buf.alpha.audit.v1alpha1.TokenObject
-	86, // [86:86] is the sub-list for method output_type
-	86, // [86:86] is the sub-list for method input_type
-	86, // [86:86] is the sub-list for extension type_name
-	86, // [86:86] is the sub-list for extension extendee
-	0,  // [0:86] is the sub-list for field type_name
+	75, // 24: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo.runtime_libraries:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary
+	75, // 25: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo.runtime_libraries:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary
+	56, // 26: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo.repository_role:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1RepositoryRole
+	57, // 27: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo.plugin_role:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1PluginRole
+	58, // 28: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo.template_role:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1TemplateRole
+	65, // 29: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo.track:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1RepositoryTrack
+	55, // 30: buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetOrganizationMemberInfo.organization_role:type_name -> buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1OrganizationRole
+	47, // 31: buf.alpha.audit.v1alpha1.Event.user:type_name -> buf.alpha.audit.v1alpha1.UserActor
+	72, // 32: buf.alpha.audit.v1alpha1.Event.event_time:type_name -> google.protobuf.Timestamp
+	54, // 33: buf.alpha.audit.v1alpha1.Event.objects:type_name -> buf.alpha.audit.v1alpha1.Object
+	76, // 34: buf.alpha.audit.v1alpha1.Event.error_code:type_name -> buf.alpha.rpc.v1alpha1.ErrorCode
+	0,  // 35: buf.alpha.audit.v1alpha1.Event.action:type_name -> buf.alpha.audit.v1alpha1.Action
+	1,  // 36: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_download_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DownloadInfo
+	2,  // 37: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_image_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetImageInfo
+	3,  // 38: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_organization_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateOrganizationInfo
+	4,  // 39: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_organization_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteOrganizationInfo
+	5,  // 40: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_organization_by_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteOrganizationByNameInfo
+	6,  // 41: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_add_organization_member_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1AddOrganizationMemberInfo
+	7,  // 42: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_update_organization_member_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1UpdateOrganizationMemberInfo
+	8,  // 43: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_remove_organization_member_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1RemoveOrganizationMemberInfo
+	9,  // 44: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_update_organization_settings_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1UpdateOrganizationSettingsInfo
+	10, // 45: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_plugin_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreatePluginInfo
+	11, // 46: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_plugin_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeletePluginInfo
+	12, // 47: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_template_version_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetTemplateVersionInfo
+	13, // 48: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_template_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateTemplateInfo
+	14, // 49: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_template_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteTemplateInfo
+	15, // 50: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_template_version_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateTemplateVersionInfo
+	16, // 51: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_push_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1PushInfo
+	17, // 52: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_reference_by_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetReferenceByNameInfo
+	18, // 53: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_repository_branch_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateRepositoryBranchInfo
+	19, // 54: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_list_repository_commits_by_branch_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1ListRepositoryCommitsByBranchInfo
+	20, // 55: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_list_repository_commits_by_reference_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1ListRepositoryCommitsByReferenceInfo
+	21, // 56: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_repository_commit_by_reference_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetRepositoryCommitByReferenceInfo
+	22, // 57: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_repository_commit_by_sequence_id_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetRepositoryCommitBySequenceIDInfo
+	23, // 58: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_repository_tag_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateRepositoryTagInfo
+	24, // 59: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_repository_by_full_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateRepositoryByFullNameInfo
+	25, // 60: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_repository_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteRepositoryInfo
+	26, // 61: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_repository_by_full_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteRepositoryByFullNameInfo
+	27, // 62: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_deprecate_repository_by_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeprecateRepositoryByNameInfo
+	28, // 63: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_undeprecate_repository_by_name_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1UndeprecateRepositoryByNameInfo
+	29, // 64: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_module_pins_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetModulePinsInfo
+	30, // 65: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_get_local_module_pins_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1GetLocalModulePinsInfo
+	31, // 66: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_search_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SearchInfo
+	32, // 67: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_token_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateTokenInfo
+	33, // 68: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_delete_token_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeleteTokenInfo
+	34, // 69: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_user_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateUserInfo
+	35, // 70: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_list_users_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1ListUsersInfo
+	36, // 71: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_deactivate_user_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1DeactivateUserInfo
+	37, // 72: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_update_user_server_role_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1UpdateUserServerRoleInfo
+	38, // 73: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo
+	40, // 74: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registryinternal_v1alpha1_delete_plugin_version_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryinternalV1Alpha1DeletePluginVersionInfo
+	41, // 75: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_set_repository_contributor_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetRepositoryContributorInfo
+	42, // 76: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_set_plugin_contributor_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetPluginContributorInfo
+	43, // 77: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_set_template_contributor_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetTemplateContributorInfo
+	39, // 78: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_metadata_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo
+	44, // 79: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_create_repository_track_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo
+	45, // 80: buf.alpha.audit.v1alpha1.Event.action_buf_alpha_registry_v1alpha1_set_organization_member_info:type_name -> buf.alpha.audit.v1alpha1.ActionBufAlphaRegistryV1Alpha1SetOrganizationMemberInfo
+	48, // 81: buf.alpha.audit.v1alpha1.Object.user:type_name -> buf.alpha.audit.v1alpha1.UserObject
+	49, // 82: buf.alpha.audit.v1alpha1.Object.organization:type_name -> buf.alpha.audit.v1alpha1.OrganizationObject
+	50, // 83: buf.alpha.audit.v1alpha1.Object.repository:type_name -> buf.alpha.audit.v1alpha1.RepositoryObject
+	51, // 84: buf.alpha.audit.v1alpha1.Object.plugin:type_name -> buf.alpha.audit.v1alpha1.PluginObject
+	52, // 85: buf.alpha.audit.v1alpha1.Object.template:type_name -> buf.alpha.audit.v1alpha1.TemplateObject
+	53, // 86: buf.alpha.audit.v1alpha1.Object.token:type_name -> buf.alpha.audit.v1alpha1.TokenObject
+	87, // [87:87] is the sub-list for method output_type
+	87, // [87:87] is the sub-list for method input_type
+	87, // [87:87] is the sub-list for extension type_name
+	87, // [87:87] is the sub-list for extension extendee
+	0,  // [0:87] is the sub-list for field type_name
 }
 
 func init() { file_buf_alpha_audit_v1alpha1_envelope_proto_init() }

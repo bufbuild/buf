@@ -169,7 +169,8 @@ enum Action {
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_PLUGIN_SERVICE_UNDEPRECATE_TEMPLATE = 139;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ORGANIZATION_SERVICE_SET_ORGANIZATION_MEMBER = 140;
   ACTION_BUF_ALPHA_GENREGISTRYINTERNAL_V1_ALPHA1_GENERATION_REGISTRY_SERVICE_DELETE_REPOSITORY = 141;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ADMIN_SERVICE_FORCE_DELETE_USER = 142;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_SERVICE_GET_REPOSITORY_SETTINGS = 142;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_ADMIN_SERVICE_FORCE_DELETE_USER = 143;
 }
 
 // ActionBufAlphaRegistryV1Alpha1DownloadInfo stores audit log details not included
@@ -451,6 +452,8 @@ message ActionBufAlphaRegistryV1Alpha1UpdateUserServerRoleInfo {
 // in actor or object for the CreatePluginVersion action.
 message ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionInfo {
   string name = 1;
+  string image_digest = 2;
+  repeated BufAlphaRegistryV1Alpha1PluginVersionRuntimeLibrary runtime_libraries = 3;
 }
 
 // ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo stores audit log details
