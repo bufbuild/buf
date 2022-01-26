@@ -333,3 +333,20 @@ func (s *repositoryService) ListRepositoryContributors(
 	}
 	return response.Users, response.NextPageToken, nil
 }
+
+// GetRepositorySettings gets the settings of a repository.
+func (s *repositoryService) GetRepositorySettings(ctx context.Context, repositoryId string) (contributorsCount uint32, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetRepositorySettings(
+		ctx,
+		&v1alpha1.GetRepositorySettingsRequest{
+			RepositoryId: repositoryId,
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return response.ContributorsCount, nil
+}

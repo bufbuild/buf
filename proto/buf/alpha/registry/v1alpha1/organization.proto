@@ -184,6 +184,8 @@ message GetOrganizationSettingsResponse {
   RepositoryRole repository_base_role = 1;
   PluginRole plugin_base_role = 2;
   TemplateRole template_base_role = 3;
+  // The number of members in the organization.
+  uint32 members_count = 4;
 }
 
 message UpdateOrganizationSettingsRequest {
