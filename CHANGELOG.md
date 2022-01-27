@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `default`, `except` and `override` to `java_package_prefix`.
+- Add dependency commits as a part of the `b3` digest.
 
 ## [v1.0.0-rc11] - 2022-01-18
 

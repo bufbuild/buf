@@ -406,7 +406,7 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	// but we only want to use commit as part of the sort order, so we make a copy of
 	// the slice and sort it by commit
 	for _, dependencyModulePin := range copyModulePinsSortedByOnlyCommit(module.DependencyModulePins()) {
-		if _, err := hash.Write([]byte(dependencyModulePin.IdentityString())); err != nil {
+		if _, err := hash.Write([]byte(dependencyModulePin.IdentityString() + ":" + dependencyModulePin.Commit())); err != nil {
 			return "", err
 		}
 	}
