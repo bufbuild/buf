@@ -139,10 +139,20 @@ func GenerateWithBaseOutDirPath(baseOutDirPath string) GenerateOption {
 
 // GenerateWithIncludeImports says to also generate imports.
 //
-// Note that this does NOT result in the Well-Known Types being generated.
+// Note that this does NOT result in the Well-Known Types being generated, use
+// GenerateWithIncludeWellKnownTypes to include the Well-Known Types.
 func GenerateWithIncludeImports() GenerateOption {
 	return func(generateOptions *generateOptions) {
 		generateOptions.includeImports = true
+	}
+}
+
+// GenerateWithIncludeWellKnownTypes says to also generate well known types.
+//
+// This option has no effect if GenerateWithIncludeImports is not set.
+func GenerateWithIncludeWellKnownTypes() GenerateOption {
+	return func(generateOptions *generateOptions) {
+		generateOptions.includeWellKnownTypes = true
 	}
 }
 

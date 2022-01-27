@@ -374,6 +374,7 @@ func imageToCodeGeneratorRequest(
 	parameter string,
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
+	includeWellKnownTypes bool,
 	alreadyUsedPaths map[string]struct{},
 	nonImportPaths map[string]struct{},
 ) *pluginpb.CodeGeneratorRequest {
@@ -392,6 +393,7 @@ func imageToCodeGeneratorRequest(
 			alreadyUsedPaths,
 			nonImportPaths,
 			includeImports,
+			includeWellKnownTypes,
 		) {
 			request.FileToGenerate = append(request.FileToGenerate, imageFile.Path())
 		}
@@ -404,6 +406,7 @@ func isFileToGenerate(
 	alreadyUsedPaths map[string]struct{},
 	nonImportPaths map[string]struct{},
 	includeImports bool,
+	includeWellKnownTypes bool,
 ) bool {
 	path := imageFile.Path()
 	if !imageFile.IsImport() {
@@ -418,8 +421,9 @@ func isFileToGenerate(
 		// we don't want to include imports
 		return false
 	}
-	if datawkt.Exists(path) {
-		// we don't want to generate wkt even if includeImports is set
+	if !includeWellKnownTypes && datawkt.Exists(path) {
+		// we don't want to generate wkt even if includeImports is set unless
+		// includeWellKnownTypes is set
 		return false
 	}
 	if alreadyUsedPaths != nil {

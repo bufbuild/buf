@@ -95,6 +95,10 @@ func TestBasic(t *testing.T) {
 		t,
 		"import.proto",
 	)
+	protoImageFileWellKnownTypeImport := NewProtoImageFileIsImport(
+		t,
+		"google/protobuf/timestamp.proto",
+	)
 	protoImageFileAA := NewProtoImageFile(
 		t,
 		"a/a.proto",
@@ -103,6 +107,7 @@ func TestBasic(t *testing.T) {
 		t,
 		"a/b.proto",
 		"import.proto",
+		"google/protobuf/timestamp.proto",
 	)
 	protoImageFileBA := NewProtoImageFile(
 		t,
@@ -129,6 +134,16 @@ func TestBasic(t *testing.T) {
 		nil,
 		"",
 		"some/import/import.proto",
+		true,
+		false,
+		nil,
+	)
+	fileWellKnownTypeImport := NewImageFile(
+		t,
+		protoImageFileWellKnownTypeImport,
+		nil,
+		"",
+		"google/protobuf/timestamp.proto",
 		true,
 		false,
 		nil,
@@ -188,6 +203,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			fileOneAA,
 			fileImport,
+			fileWellKnownTypeImport,
 			fileOneAB,
 			fileTwoBA,
 			fileTwoBB,
@@ -200,6 +216,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
@@ -235,6 +252,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 		},
@@ -267,6 +285,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 		},
@@ -285,6 +304,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
 		},
 		newImage.Files(),
@@ -302,6 +322,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", true, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
@@ -322,6 +343,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 		},
@@ -352,6 +374,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 		},
@@ -372,6 +395,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
@@ -393,6 +417,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "foo/three/d/d.proto/d.proto", false, false, nil),
@@ -404,6 +429,7 @@ func TestBasic(t *testing.T) {
 		File: []*imagev1.ImageFile{
 			protoImageFileAA,
 			protoImageFileImport,
+			protoImageFileWellKnownTypeImport,
 			protoImageFileAB,
 			protoImageFileBA,
 			protoImageFileBB,
@@ -417,6 +443,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "a/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "a/b.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "b/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBB, nil, "", "b/b.proto", false, false, nil),
@@ -435,6 +462,7 @@ func TestBasic(t *testing.T) {
 			File: []*descriptorpb.FileDescriptorProto{
 				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileWellKnownTypeImport),
 				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 				testProtoImageFileToFileDescriptorProto(protoImageFileBA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileBB),
@@ -447,6 +475,7 @@ func TestBasic(t *testing.T) {
 		ProtoFile: []*descriptorpb.FileDescriptorProto{
 			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
 			testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+			testProtoImageFileToFileDescriptorProto(protoImageFileWellKnownTypeImport),
 			testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 			testProtoImageFileToFileDescriptorProto(protoImageFileBA),
 			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
@@ -464,12 +493,19 @@ func TestBasic(t *testing.T) {
 	require.Equal(
 		t,
 		codeGeneratorRequest,
-		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false),
+		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false, false),
+	)
+	// verify that includeWellKnownTypes is a no-op if includeImports is false
+	require.Equal(
+		t,
+		codeGeneratorRequest,
+		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, false, true),
 	)
 	codeGeneratorRequestIncludeImports := &pluginpb.CodeGeneratorRequest{
 		ProtoFile: []*descriptorpb.FileDescriptorProto{
 			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
 			testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+			testProtoImageFileToFileDescriptorProto(protoImageFileWellKnownTypeImport),
 			testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 			testProtoImageFileToFileDescriptorProto(protoImageFileBA),
 			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
@@ -479,6 +515,7 @@ func TestBasic(t *testing.T) {
 		FileToGenerate: []string{
 			"a/a.proto",
 			"import.proto",
+			// no WKT
 			"a/b.proto",
 			"b/a.proto",
 			"b/b.proto",
@@ -488,7 +525,7 @@ func TestBasic(t *testing.T) {
 	require.Equal(
 		t,
 		codeGeneratorRequestIncludeImports,
-		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true),
+		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true, false),
 	)
 	newImage, err = bufimage.NewImageForCodeGeneratorRequest(codeGeneratorRequest)
 	require.NoError(t, err)
@@ -497,12 +534,39 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "a/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "a/b.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "b/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBB, nil, "", "b/b.proto", false, false, nil),
 			NewImageFile(t, protoImageFileOutlandishDirectoryName, nil, "", "d/d.proto/d.proto", false, false, nil),
 		},
 		newImage.Files(),
+	)
+	codeGeneratorRequestIncludeImportsAndWellKnownTypes := &pluginpb.CodeGeneratorRequest{
+		ProtoFile: []*descriptorpb.FileDescriptorProto{
+			testProtoImageFileToFileDescriptorProto(protoImageFileAA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+			testProtoImageFileToFileDescriptorProto(protoImageFileWellKnownTypeImport),
+			testProtoImageFileToFileDescriptorProto(protoImageFileAB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBA),
+			testProtoImageFileToFileDescriptorProto(protoImageFileBB),
+			testProtoImageFileToFileDescriptorProto(protoImageFileOutlandishDirectoryName),
+		},
+		Parameter: proto.String("foo"),
+		FileToGenerate: []string{
+			"a/a.proto",
+			"import.proto",
+			"google/protobuf/timestamp.proto",
+			"a/b.proto",
+			"b/a.proto",
+			"b/b.proto",
+			"d/d.proto/d.proto",
+		},
+	}
+	require.Equal(
+		t,
+		codeGeneratorRequestIncludeImportsAndWellKnownTypes,
+		bufimage.ImageToCodeGeneratorRequest(image, "foo", nil, true, true),
 	)
 	// imagesByDir and multiple Image tests
 	imagesByDir, err := bufimage.ImageByDir(image)
@@ -513,6 +577,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", false, false, nil),
 		},
 		imagesByDir[0].Files(),
@@ -522,6 +587,7 @@ func TestBasic(t *testing.T) {
 		[]bufimage.ImageFile{
 			NewImageFile(t, protoImageFileAA, nil, "", "foo/one/a/a.proto", true, false, nil),
 			NewImageFile(t, protoImageFileImport, nil, "", "some/import/import.proto", true, false, nil),
+			NewImageFile(t, protoImageFileWellKnownTypeImport, nil, "", "google/protobuf/timestamp.proto", true, false, nil),
 			NewImageFile(t, protoImageFileAB, nil, "", "foo/one/a/b.proto", true, false, nil),
 			NewImageFile(t, protoImageFileBA, nil, "", "foo/two/b/a.proto", false, false, nil),
 			NewImageFile(t, protoImageFileBB, nil, "", "foo/two/b/b.proto", false, false, nil),
@@ -541,6 +607,7 @@ func TestBasic(t *testing.T) {
 			ProtoFile: []*descriptorpb.FileDescriptorProto{
 				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileWellKnownTypeImport),
 				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 			},
 			Parameter: proto.String("foo"),
@@ -553,6 +620,7 @@ func TestBasic(t *testing.T) {
 			ProtoFile: []*descriptorpb.FileDescriptorProto{
 				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileWellKnownTypeImport),
 				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 				testProtoImageFileToFileDescriptorProto(protoImageFileBA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileBB),
@@ -577,13 +645,14 @@ func TestBasic(t *testing.T) {
 	require.Equal(
 		t,
 		codeGeneratorRequests,
-		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, false),
+		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, false, false),
 	)
 	codeGeneratorRequestsIncludeImports := []*pluginpb.CodeGeneratorRequest{
 		{
 			ProtoFile: []*descriptorpb.FileDescriptorProto{
 				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileWellKnownTypeImport),
 				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 			},
 			Parameter: proto.String("foo"),
@@ -597,6 +666,7 @@ func TestBasic(t *testing.T) {
 			ProtoFile: []*descriptorpb.FileDescriptorProto{
 				testProtoImageFileToFileDescriptorProto(protoImageFileAA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileImport),
+				testProtoImageFileToFileDescriptorProto(protoImageFileWellKnownTypeImport),
 				testProtoImageFileToFileDescriptorProto(protoImageFileAB),
 				testProtoImageFileToFileDescriptorProto(protoImageFileBA),
 				testProtoImageFileToFileDescriptorProto(protoImageFileBB),
@@ -621,7 +691,7 @@ func TestBasic(t *testing.T) {
 	require.Equal(
 		t,
 		codeGeneratorRequestsIncludeImports,
-		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, true),
+		bufimage.ImagesToCodeGeneratorRequests(imagesByDir, "foo", nil, true, false),
 	)
 }
 

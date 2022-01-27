@@ -40,6 +40,7 @@ const (
 	configFlagName              = "config"
 	pathsFlagName               = "path"
 	includeImportsFlagName      = "include-imports"
+	includeWKTFlagName          = "include-wkt"
 	excludePathsFlagName        = "exclude-path"
 
 	// deprecated
@@ -194,6 +195,7 @@ type flags struct {
 	Config         string
 	Paths          []string
 	IncludeImports bool
+	IncludeWKT     bool
 	ExcludePaths   []string
 
 	// deprecated
@@ -217,6 +219,15 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		includeImportsFlagName,
 		false,
 		"Also generate all imports except for Well-Known Types.",
+	)
+	flagSet.BoolVar(
+		&f.IncludeWKT,
+		includeWKTFlagName,
+		false,
+		fmt.Sprintf(
+			"Also generate Well-Known Types. Cannot be set without --%s.",
+			includeImportsFlagName,
+		),
 	)
 	flagSet.StringVar(
 		&f.Template,
@@ -274,6 +285,10 @@ func run(
 	flags *flags,
 ) (retErr error) {
 	logger := container.Logger()
+	if flags.IncludeWKT && !flags.IncludeImports {
+		// TODO: this is weird UX
+		return appcmd.NewInvalidArgumentErrorf("Cannot set --%s without --%s", includeWKTFlagName, includeImportsFlagName)
+	}
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
@@ -368,6 +383,12 @@ func run(
 		generateOptions = append(
 			generateOptions,
 			bufgen.GenerateWithIncludeImports(),
+		)
+	}
+	if flags.IncludeWKT {
+		generateOptions = append(
+			generateOptions,
+			bufgen.GenerateWithIncludeWellKnownTypes(),
 		)
 	}
 	return bufgen.NewGenerator(
