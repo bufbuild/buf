@@ -17,13 +17,73 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/image/v1/image.proto";
-import "google/protobuf/field_mask.proto";
 
 // ImageService serves compiled images.
 service ImageService {
   // GetImage serves a compiled image for the local module. It automatically
   // downloads dependencies if necessary.
   rpc GetImage(GetImageRequest) returns (GetImageResponse);
+}
+
+// ImageMask is used in GetImageRequest to specify which parts of an image are
+// requested.
+enum ImageMask {
+  IMAGE_MASK_UNSPECIFIED = 0;
+
+  // IMAGE_MASK_MESSAGES refers to ImageFile's `google.protobuf.DescriptorProto
+  // message_type` field.
+  IMAGE_MASK_MESSAGES = 1;
+
+  // IMAGE_MASK_ENUMS refers to ImageFile's `google.protobuf.EnumDescriptorProto
+  // enum_type` field.
+  IMAGE_MASK_ENUMS = 2;
+
+  // IMAGE_MASK_SERVICES refers to ImageFile's
+  // `google.protobuf.ServiceDescriptorProto service` field.
+  IMAGE_MASK_SERVICES = 3;
+
+  // IMAGE_MASK_EXTENSIONS refers to ImageFile's
+  // `google.protobuf.FieldDescriptorProto extension` field.
+  IMAGE_MASK_EXTENSIONS = 4;
+}
+
+// TypeDependencyStrategy is used to determine which referenced types to include
+// when only a subset of types is requested.
+// 
+// Below is an example proto that is referred to by the comments on the enum options below. 
+// 
+//    message Foo {
+//      optional Bar bar = 1 [(my_option).field = "buf"];
+//      extensions 2 to 3;
+//    }
+//    extend Foo {
+//      optional Baz baz = 2;
+//    }
+//    extend google.protobuf.FieldOptions {
+//      optional Qux my_option = 51234;
+//    }
+//
+enum TypeDependencyStrategy {
+  TYPE_DEPENDENCY_STRATEGY_UNSPECIFIED = 0;
+
+  // TYPE_DEPENDENCY_STRATEGY_MINIMAL makes sure descriptors to parse a message
+  // are included in the response.
+  // In the example above, for type "Foo" the messages "Foo" and "Bar" are
+  // guaranteed to be included.
+  TYPE_DEPENDENCY_STRATEGY_MINIMAL = 1;
+
+  // TYPE_DEPENDENCY_STRATEGY_EXTENSION makes sure descriptors to parse a
+  // message and all its known extensions are included in the response. 
+  // In the example above, for type "Foo" the messages "Foo", "Bar" and "Baz"
+  // are guaranteed to be be included.
+  TYPE_DEPENDENCY_STRATEGY_EXTENSIONS = 2;
+
+  // TYPE_DEPENDENCY_STRATEGY_EXTENSION makes sure descriptors to parse a
+  // message, its known extensions and its custom options are included in the
+  // response. 
+  // In the example above, for type "Foo" the messages "Foo", "Bar", "Baz" and
+  // "Qux" are guaranteed to be be included.
+  TYPE_DEPENDENCY_STRATEGY_OPTIONS = 3;
 }
 
 message GetImageRequest {
@@ -34,13 +94,21 @@ message GetImageRequest {
   // Exclude files from imported buf modules in this image.
   bool exclude_imports = 4;
 
-  // When specified the returned image will only contain the necessary files to
-  // describe these types.
-  repeated string types = 5;
+  // Exclude source_code_info fields from each ImageFile.
+  bool exclude_source_info = 5;
 
-  // When specified, applies as projection mask to the resulting Image, i.e.
-  // only fields specified in this mask are returned.
-  google.protobuf.FieldMask image_mask = 6;
+  // When specified the returned image will only contain the necessary files to
+  // describe these types. Accepts messages, enums and services. All types must
+  // be defined in the buf module, dependencies are not considered.
+  repeated string types = 6;
+
+  // When types are specified, type_dependency_strategy dictates what will be
+  // included in the resulting Image.
+  TypeDependencyStrategy type_dependency_strategy = 7;
+
+  // When not empty, the returned image's files will only include
+  // *DescriptorProto fields for the elements specified here.
+  repeated ImageMask include_mask = 8;
 }
 
 message GetImageResponse {

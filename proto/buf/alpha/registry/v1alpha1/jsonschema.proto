@@ -31,7 +31,8 @@ message GetJSONSchemaRequest {
   string reference = 3;
 
   // A fully qualified name of the type to generate a JSONSchema for, e.g.
-  // "pkg.foo.Bar".
+  // "pkg.foo.Bar". The type needs to resolve in the referenced module or any of
+  // its dependencies. Currently only messages types are supported.
   string type_name = 4;
 }
 
@@ -40,10 +41,5 @@ message GetJSONSchemaResponse {
   // the method should conform to. This schema is an approximation to be
   // used by editors for validation and autocompletion, not a lossless
   // representation of the type's descriptor.
-  //
-  // If the requested type resolves to a message or enum, the json schema can be
-  // used as is. If the type resolves to a service, the json schema will only
-  // contain definitions for each request type for that service and the client
-  // will have to manaully set the toplevel "$ref" property.
   bytes request_json_schema = 1;
 }

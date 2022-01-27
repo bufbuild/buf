@@ -43,7 +43,8 @@ type GetJSONSchemaRequest struct {
 	Repository string `protobuf:"bytes,2,opt,name=repository,proto3" json:"repository,omitempty"`
 	Reference  string `protobuf:"bytes,3,opt,name=reference,proto3" json:"reference,omitempty"`
 	// A fully qualified name of the type to generate a JSONSchema for, e.g.
-	// "pkg.foo.Bar".
+	// "pkg.foo.Bar". The type needs to resolve in the referenced module or any of
+	// its dependencies. Currently only messages types are supported.
 	TypeName string `protobuf:"bytes,4,opt,name=type_name,json=typeName,proto3" json:"type_name,omitempty"`
 }
 
@@ -116,11 +117,6 @@ type GetJSONSchemaResponse struct {
 	// the method should conform to. This schema is an approximation to be
 	// used by editors for validation and autocompletion, not a lossless
 	// representation of the type's descriptor.
-	//
-	// If the requested type resolves to a message or enum, the json schema can be
-	// used as is. If the type resolves to a service, the json schema will only
-	// contain definitions for each request type for that service and the client
-	// will have to manaully set the toplevel "$ref" property.
 	RequestJsonSchema []byte `protobuf:"bytes,1,opt,name=request_json_schema,json=requestJsonSchema,proto3" json:"request_json_schema,omitempty"`
 }
 

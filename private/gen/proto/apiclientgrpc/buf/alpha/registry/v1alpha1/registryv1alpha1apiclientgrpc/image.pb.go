@@ -21,7 +21,6 @@ import (
 	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	zap "go.uber.org/zap"
-	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
 type imageService struct {
@@ -38,8 +37,10 @@ func (s *imageService) GetImage(
 	repository string,
 	reference string,
 	excludeImports bool,
+	excludeSourceInfo bool,
 	types []string,
-	imageMask *fieldmaskpb.FieldMask,
+	typeDependencyStrategy v1alpha1.TypeDependencyStrategy,
+	includeMask []v1alpha1.ImageMask,
 ) (image *v1.Image, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -47,12 +48,14 @@ func (s *imageService) GetImage(
 	response, err := s.client.GetImage(
 		ctx,
 		&v1alpha1.GetImageRequest{
-			Owner:          owner,
-			Repository:     repository,
-			Reference:      reference,
-			ExcludeImports: excludeImports,
-			Types:          types,
-			ImageMask:      imageMask,
+			Owner:                  owner,
+			Repository:             repository,
+			Reference:              reference,
+			ExcludeImports:         excludeImports,
+			ExcludeSourceInfo:      excludeSourceInfo,
+			Types:                  types,
+			TypeDependencyStrategy: typeDependencyStrategy,
+			IncludeMask:            includeMask,
 		},
 	)
 	if err != nil {

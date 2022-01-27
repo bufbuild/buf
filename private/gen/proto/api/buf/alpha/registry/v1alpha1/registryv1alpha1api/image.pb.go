@@ -19,7 +19,7 @@ package registryv1alpha1api
 import (
 	context "context"
 	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
+	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 // ImageService serves compiled images.
@@ -32,7 +32,9 @@ type ImageService interface {
 		repository string,
 		reference string,
 		excludeImports bool,
+		excludeSourceInfo bool,
 		types []string,
-		imageMask *fieldmaskpb.FieldMask,
+		typeDependencyStrategy v1alpha1.TypeDependencyStrategy,
+		includeMask []v1alpha1.ImageMask,
 	) (image *v1.Image, err error)
 }
