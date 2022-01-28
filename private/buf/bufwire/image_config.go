@@ -38,3 +38,10 @@ func (i *imageConfig) Image() bufimage.Image {
 func (i *imageConfig) Config() *bufconfig.Config {
 	return i.config
 }
+
+func NewImageConfig(image bufimage.Image, config *bufconfig.Config) *imageConfig {
+	return &imageConfig{
+		image:  image,
+		config: config,
+	}
+}

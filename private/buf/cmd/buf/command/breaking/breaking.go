@@ -24,10 +24,12 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufwire"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
@@ -333,7 +335,39 @@ func run(
 		//
 		// And similar to the note above, if the roots change,
 		// we're torched.
-		return fmt.Errorf("input contained %d images, whereas against contained %d images", len(imageConfigs), len(againstImageConfigs))
+
+		// We merge the images to check images one to one.
+		readWriteBucket, err := storageosProvider.NewReadWriteBucket(
+			".",
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		if err != nil {
+			return err
+		}
+		mergedImageConfig, err := mergeImageConfigs(
+			ctx,
+			imageConfigs,
+			readWriteBucket,
+			inputConfig,
+		)
+		if err != nil {
+			return err
+		}
+		imageConfigs = []bufwire.ImageConfig{
+			mergedImageConfig,
+		}
+		mergedAgainstImageConfig, err := mergeImageConfigs(
+			ctx,
+			againstImageConfigs,
+			readWriteBucket,
+			againstInputConfig,
+		)
+		if err != nil {
+			return err
+		}
+		againstImageConfigs = []bufwire.ImageConfig{
+			mergedAgainstImageConfig,
+		}
 	}
 	var allFileAnnotations []bufanalysis.FileAnnotation
 	for i, imageConfig := range imageConfigs {
@@ -399,4 +433,31 @@ func getExternalPathsForImages(imageConfigs []bufwire.ImageConfig, excludeImport
 		}
 	}
 	return stringutil.MapToSlice(externalPaths), nil
+}
+
+func mergeImageConfigs(
+	ctx context.Context,
+	imageConfigs []bufwire.ImageConfig,
+	readBucket storage.ReadBucket,
+	inputConfig string,
+) (bufwire.ImageConfig, error) {
+	config, err := bufconfig.ReadConfigOS(
+		ctx,
+		readBucket,
+		bufconfig.ReadConfigOSWithOverride(
+			inputConfig,
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+	images := make([]bufimage.Image, 0, len(imageConfigs))
+	for _, imageConfig := range imageConfigs {
+		images = append(images, imageConfig.Image())
+	}
+	image, err := bufimage.MergeImages(images...)
+	if err != nil {
+		return nil, err
+	}
+	return bufwire.NewImageConfig(image, config), nil
 }

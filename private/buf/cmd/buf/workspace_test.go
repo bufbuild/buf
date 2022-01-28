@@ -919,12 +919,11 @@ func TestWorkspaceBreakingFail(t *testing.T) {
 		"build",
 		filepath.Join("testdata", "workspace", "fail", "breaking"),
 	)
-	testRunStdoutStderr(
+	testRunStdout(
 		t,
 		nil,
-		1,
-		``,
-		`Failure: input contained 1 images, whereas against contained 2 images`,
+		bufcli.ExitCodeFileAnnotation,
+		`<input>:1:1:Previously present file "rpc.proto" was deleted.`,
 		"breaking",
 		filepath.Join("testdata", "workspace", "fail", "breaking"),
 		"--against",
