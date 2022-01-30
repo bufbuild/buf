@@ -1,0 +1,51 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "google/protobuf/timestamp.proto";
+
+message RepositoryTrackCommit {
+  // primary key, unique, immutable
+  string id = 1;
+  // immutable
+  google.protobuf.Timestamp create_time = 2;
+
+  // We reserve field number '3' for the update_time.
+  // google.protobuf.Timestamp update_time = 3;
+
+  // unique for repository_track, immutable
+  int64 sequence_id = 4;
+}
+
+service RepositoryTrackCommitService {
+  // GetRepositoryTrackCommitForCommitReference returns the RepositoryTrackCommit associated with the given
+  // CommitReference on the given RepositoryTrack. Returns NOT_FOUND if the RepositoryTrackCommit does not exist.
+  rpc GetRepositoryTrackCommitForCommitReference(GetRepositoryTrackCommitForCommitReferenceRequest) returns (GetRepositoryTrackCommitForCommitReferenceResponse);
+}
+
+message GetRepositoryTrackCommitForCommitReferenceRequest {
+  // The id of the repository containing the commit.
+  string repository_id = 1;
+  // The name of the repository track.
+  string repository_track_name = 2;
+  // The commit reference to resolve.
+  string commit_reference = 3;
+}
+
+message GetRepositoryTrackCommitForCommitReferenceResponse {
+  RepositoryTrackCommit repository_track_commit = 1;
+}
