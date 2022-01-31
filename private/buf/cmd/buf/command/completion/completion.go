@@ -15,7 +15,7 @@ package completion
 // limitations under the License.
 
 import (
-	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -42,7 +42,11 @@ func NewCommand(cmd *cobra.Command, container app.Container) *cobra.Command {
 			case "zsh":
 				return cmd.GenZshCompletion(container.Stdout())
 			default:
-				return errors.New("unrecognized shell")
+				return fmt.Errorf(
+					"%s is not a recognized shell. These shells are supported: %s.",
+					shell,
+					strings.Join(supportedShells, ", "),
+				)
 			}
 		},
 	}
