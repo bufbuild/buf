@@ -170,6 +170,8 @@ service PluginService {
   rpc ListUserPlugins(ListUserPluginsRequest) returns (ListUserPluginsResponse);
   // ListOrganizationPlugins lists all plugins for an organization.
   rpc ListOrganizationPlugins(ListOrganizationPluginsRequest) returns (ListOrganizationPluginsResponse);
+  // GetPluginVersion returns the plugin version, if found.
+  rpc GetPluginVersion(GetPluginVersionRequest) returns (GetPluginVersionResponse);
   // ListPluginVersions lists all the versions available for the specified plugin.
   rpc ListPluginVersions(ListPluginVersionsRequest) returns (ListPluginVersionsResponse);
   // CreatePlugin creates a new plugin.
@@ -263,6 +265,19 @@ message ListOrganizationPluginsResponse {
   repeated Plugin plugins = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+}
+
+message GetPluginVersionRequest {
+  // The owner of the plugin the version belongs to.
+  string owner = 1;
+  // The name of the plugin the version belongs to.
+  string name = 2;
+  // The name of the version.
+  string version = 3;
+}
+
+message GetPluginVersionResponse {
+  PluginVersion plugin_version = 1;
 }
 
 message ListPluginVersionsRequest {
