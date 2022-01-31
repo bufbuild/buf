@@ -39,7 +39,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <directory>",
 		Short: "Prunes unused dependencies from the " + buflock.ExternalConfigFilePath + " file.",
-		Long:  `The first argument is the directory of the local module to prune. If no argument is specified, defaults to "."`,
+		Long:  `The first argument is the directory of the local module to prune. Defaults to "." if no argument is specified.`,
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -133,7 +133,7 @@ func referencesPinnedByLock(moduleReferences []bufmoduleref.ModuleReference, mod
 	for _, moduleReference := range moduleReferences {
 		pin, ok := pinsByIdentity[moduleReference.IdentityString()]
 		if !ok {
-			return nil, fmt.Errorf("cannot tidy with dependency %q: no corresponding entry found in buf.lock; use `mod update` first if this is a new dependency", moduleReference.IdentityString())
+			return nil, fmt.Errorf(`can't tidy with dependency %q: no corresponding entry found in buf.lock. Use "mod update" first if this is a new dependency`, moduleReference.IdentityString())
 		}
 		newModuleReference, err := bufmoduleref.NewModuleReference(
 			moduleReference.Remote(),

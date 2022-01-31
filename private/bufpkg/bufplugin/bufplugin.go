@@ -42,7 +42,7 @@ const (
 // into remote, owner and name.
 func ParsePluginPath(pluginPath string) (remote string, owner string, name string, _ error) {
 	if pluginPath == "" {
-		return "", "", "", appcmd.NewInvalidArgumentError("a plugin path must be specified")
+		return "", "", "", appcmd.NewInvalidArgumentError("you must specify a plugin path")
 	}
 	components := strings.Split(pluginPath, "/")
 	if len(components) != 4 || components[2] != PluginsPathName {
@@ -73,7 +73,7 @@ func ParsePluginVersionPath(pluginVersionPath string) (remote string, owner stri
 // into remote, owner and name.
 func ParseTemplatePath(templatePath string) (remote string, owner string, name string, _ error) {
 	if templatePath == "" {
-		return "", "", "", appcmd.NewInvalidArgumentError("a template path must be specified")
+		return "", "", "", appcmd.NewInvalidArgumentError("you must specify a template path")
 	}
 	components := strings.Split(templatePath, "/")
 	if len(components) != 4 || components[2] != TemplatesPathName {

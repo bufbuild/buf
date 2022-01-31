@@ -44,8 +44,8 @@ func NewCommand(
 		// Not documenting the first arg (remote) as this is just for testing for now.
 		// TODO: Update when we have self-hosted.
 		Use:   name,
-		Short: `Login to the Buf Schema Registry.`,
-		Long:  fmt.Sprintf(`This will prompt for your BSR username and a BSR token, and update your %s file with these credentials.`, netrc.Filename),
+		Short: `Log in to the Buf Schema Registry.`,
+		Long:  fmt.Sprintf(`This prompts for your BSR username and a BSR token and updates your %s file with these credentials.`, netrc.Filename),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -71,13 +71,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Username,
 		usernameFlagName,
 		"",
-		"The username to use. By default, this command will prompt for a username.",
+		"The username to use. The command prompts for a username by default.",
 	)
 	flagSet.BoolVar(
 		&f.TokenStdin,
 		tokenStdinFlagName,
 		false,
-		"Read the token from stdin. By default, this command will prompt for a token.",
+		"Read the token from stdin. This command prompts for a token by default.",
 	)
 }
 
@@ -94,7 +94,7 @@ func run(
 	if flags.Username == "" && !flags.TokenStdin {
 		if _, err := fmt.Fprintf(
 			container.Stdout(),
-			"Login with your Buf Schema Registry username. If you don't have a username, head over to https://%s to create one.\n\n",
+			"Log in with your Buf Schema Registry username. If you don't have a username, create one at https://%s.\n\n",
 			remote,
 		); err != nil {
 			return err

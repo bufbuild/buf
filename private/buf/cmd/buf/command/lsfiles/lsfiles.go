@@ -88,14 +88,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.AsImportPaths,
 		asImportPathsFlagName,
 		false,
-		"Strip local directory paths and print file paths as they are imported.",
+		"Strip local directory paths and print filepaths as they are imported.",
 	)
 	flagSet.StringVar(
 		&f.Input,
 		inputFlagName,
 		"",
 		fmt.Sprintf(
-			`The source or image to list the files from. Must be one of format %s.`,
+			`The source or Image to list files from. Must be one of format %s.`,
 			buffetch.AllFormatsString,
 		),
 	)
@@ -103,14 +103,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The config file or data to use.`,
+		`The file or data to use for configuration.`,
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors, printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s.",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -126,7 +126,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.InputConfig,
 		inputConfigFlagName,
 		"",
-		`The config file or data to use.`,
+		`The file or data to use for configuration.`,
 	)
 	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
