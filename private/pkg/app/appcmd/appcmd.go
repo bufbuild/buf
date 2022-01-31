@@ -74,7 +74,9 @@ type Command struct {
 	// that precedes all other functionality, and which prints the version
 	// to stdout.
 	Version string
-	IsRoot  bool
+	// Whether the command is the root command. This is currently used only
+	// to add the "completion" command at the root level.
+	IsRoot bool
 }
 
 // NewInvalidArgumentError creates a new invalidArgumentError, indicating that
