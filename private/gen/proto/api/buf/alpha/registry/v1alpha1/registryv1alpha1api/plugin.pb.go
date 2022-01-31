@@ -51,9 +51,9 @@ type PluginService interface {
 	// GetPluginVersion returns the plugin version, if found.
 	GetPluginVersion(
 		ctx context.Context,
+		owner string,
+		name string,
 		version string,
-		pluginOwner string,
-		pluginName string,
 	) (pluginVersion *v1alpha1.PluginVersion, err error)
 	// ListPluginVersions lists all the versions available for the specified plugin.
 	ListPluginVersions(

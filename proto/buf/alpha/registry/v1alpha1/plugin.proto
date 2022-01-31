@@ -268,17 +268,15 @@ message ListOrganizationPluginsResponse {
 }
 
 message GetPluginVersionRequest {
-  // The name of the plugin version, i.e. "v1.4.0-1".
-  string version = 1;
-  // The owner of the plugin. This will be either a username
-  // or organization name.
-  string plugin_owner = 2;
-  // The name of the plugin, i.e. "protoc-gen-go".
-  string plugin_name = 3;
+  // The owner of the plugin the version belongs to.
+  string owner = 1;
+  // The name of the plugin the version belongs to.
+  string name = 2;
+  // The name of the version.
+  string version = 3;
 }
 
 message GetPluginVersionResponse {
-  // The plugin version.
   PluginVersion plugin_version = 1;
 }
 

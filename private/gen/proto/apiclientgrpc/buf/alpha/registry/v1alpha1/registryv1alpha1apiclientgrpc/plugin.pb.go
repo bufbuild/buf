@@ -109,9 +109,9 @@ func (s *pluginService) ListOrganizationPlugins(
 // GetPluginVersion returns the plugin version, if found.
 func (s *pluginService) GetPluginVersion(
 	ctx context.Context,
+	owner string,
+	name string,
 	version string,
-	pluginOwner string,
-	pluginName string,
 ) (pluginVersion *v1alpha1.PluginVersion, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -119,9 +119,9 @@ func (s *pluginService) GetPluginVersion(
 	response, err := s.client.GetPluginVersion(
 		ctx,
 		&v1alpha1.GetPluginVersionRequest{
-			Version:     version,
-			PluginOwner: pluginOwner,
-			PluginName:  pluginName,
+			Owner:   owner,
+			Name:    name,
+			Version: version,
 		},
 	)
 	if err != nil {
