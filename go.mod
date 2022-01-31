@@ -8,7 +8,7 @@ require (
 	github.com/google/go-cmp v0.5.7
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
 	github.com/jhump/protoreflect v1.10.2-0.20220118162304-602a8db873e3
-	github.com/klauspost/compress v1.14.1
+	github.com/klauspost/compress v1.14.2
 	github.com/klauspost/pgzip v1.2.5
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/pkg/profile v1.6.0
