@@ -44,6 +44,9 @@ service RepositoryTrackCommitService {
   // GetRepositoryTrackCommitByCommitReference returns the RepositoryTrackCommit associated with the given
   // CommitReference on the given RepositoryTrack. Returns NOT_FOUND if the RepositoryTrackCommit does not exist.
   rpc GetRepositoryTrackCommitByCommitReference(GetRepositoryTrackCommitByCommitReferenceRequest) returns (GetRepositoryTrackCommitByCommitReferenceResponse);
+  // ListRepositoryTrackCommitsByRepositoryTrack lists the commits associated with a repository track, ordered
+  // by their sequence id.
+  rpc ListRepositoryTrackCommitsByRepositoryTrack(ListRepositoryTrackCommitsByRepositoryTrackRequest) returns (ListRepositoryTrackCommitsByRepositoryTrackResponse);
 }
 
 message GetRepositoryTrackCommitByCommitReferenceRequest {
@@ -57,4 +60,19 @@ message GetRepositoryTrackCommitByCommitReferenceRequest {
 
 message GetRepositoryTrackCommitByCommitReferenceResponse {
   RepositoryTrackCommit repository_track_commit = 1;
+}
+
+message ListRepositoryTrackCommitsByRepositoryTrackRequest {
+  // The id of the repository containing the commit.
+  string repository_id = 1;
+  // The name of the repository track.
+  string repository_track_name = 2;
+  uint32 page_size = 4;
+  string page_token = 5;
+  bool reverse = 6;
+}
+
+message ListRepositoryTrackCommitsByRepositoryTrackResponse {
+  repeated RepositoryTrackCommit repository_track_commits = 1;
+  string next_page_token = 2;
 }

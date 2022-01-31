@@ -52,3 +52,32 @@ func (s *repositoryTrackCommitService) GetRepositoryTrackCommitByCommitReference
 	}
 	return response.RepositoryTrackCommit, nil
 }
+
+// ListRepositoryTrackCommitsByRepositoryTrack lists the commits associated with a repository track, ordered
+// by their sequence id.
+func (s *repositoryTrackCommitService) ListRepositoryTrackCommitsByRepositoryTrack(
+	ctx context.Context,
+	repositoryId string,
+	repositoryTrackName string,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (repositoryTrackCommits []*v1alpha1.RepositoryTrackCommit, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListRepositoryTrackCommitsByRepositoryTrack(
+		ctx,
+		&v1alpha1.ListRepositoryTrackCommitsByRepositoryTrackRequest{
+			RepositoryId:        repositoryId,
+			RepositoryTrackName: repositoryTrackName,
+			PageSize:            pageSize,
+			PageToken:           pageToken,
+			Reverse:             reverse,
+		},
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.RepositoryTrackCommits, response.NextPageToken, nil
+}

@@ -30,4 +30,14 @@ type RepositoryTrackCommitService interface {
 		repositoryTrackName string,
 		commit string,
 	) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, err error)
+	// ListRepositoryTrackCommitsByRepositoryTrack lists the commits associated with a repository track, ordered
+	// by their sequence id.
+	ListRepositoryTrackCommitsByRepositoryTrack(
+		ctx context.Context,
+		repositoryId string,
+		repositoryTrackName string,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
+	) (repositoryTrackCommits []*v1alpha1.RepositoryTrackCommit, nextPageToken string, err error)
 }
