@@ -34,7 +34,7 @@ func (s *repositoryTrackCommitService) GetRepositoryTrackCommitByCommitReference
 	ctx context.Context,
 	repositoryId string,
 	repositoryTrackName string,
-	commitReference string,
+	commit string,
 ) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -44,7 +44,7 @@ func (s *repositoryTrackCommitService) GetRepositoryTrackCommitByCommitReference
 		&v1alpha1.GetRepositoryTrackCommitByCommitReferenceRequest{
 			RepositoryId:        repositoryId,
 			RepositoryTrackName: repositoryTrackName,
-			CommitReference:     commitReference,
+			Commit:              commit,
 		},
 	)
 	if err != nil {

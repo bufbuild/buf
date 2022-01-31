@@ -30,8 +30,14 @@ message RepositoryTrackCommit {
   // We reserve field number '3' for the update_time.
   // google.protobuf.Timestamp update_time = 3;
 
+  // immutable
+  string repository_track_id = 4;
+
+  // immutable
+  string repository_commit_id = 5;
+
   // unique for repository_track, immutable
-  int64 sequence_id = 4;
+  int64 sequence_id = 6;
 }
 
 service RepositoryTrackCommitService {
@@ -46,7 +52,7 @@ message GetRepositoryTrackCommitByCommitReferenceRequest {
   // The name of the repository track.
   string repository_track_name = 2;
   // The commit reference to resolve.
-  string commit_reference = 3;
+  string commit = 3;
 }
 
 message GetRepositoryTrackCommitByCommitReferenceResponse {

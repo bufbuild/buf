@@ -28,6 +28,6 @@ type RepositoryTrackCommitService interface {
 		ctx context.Context,
 		repositoryId string,
 		repositoryTrackName string,
-		commitReference string,
+		commit string,
 	) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, err error)
 }
