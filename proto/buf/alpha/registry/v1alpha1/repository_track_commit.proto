@@ -67,9 +67,9 @@ message ListRepositoryTrackCommitsByRepositoryTrackRequest {
   string repository_id = 1;
   // The name of the repository track.
   string repository_track_name = 2;
-  uint32 page_size = 4;
-  string page_token = 5;
-  bool reverse = 6;
+  uint32 page_size = 3;
+  string page_token = 4;
+  bool reverse = 5;
 }
 
 message ListRepositoryTrackCommitsByRepositoryTrackResponse {
