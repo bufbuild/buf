@@ -114,6 +114,8 @@ func NewRootCommand(name string) *appcmd.Command {
 	globalFlags := bufcli.NewGlobalFlags()
 	return &appcmd.Command{
 		Use:                 name,
+		Short:               "The Buf CLI",
+		Long:                "A tool for working with Protocol Buffers and managing resources on the Buf Schema Registry (BSR).",
 		Version:             bufcli.Version,
 		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		SubCommands: []*appcmd.Command{
