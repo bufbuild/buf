@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/completion"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -172,7 +171,35 @@ func run(
 	// Add an explicit "completion" command to the root to cover the most
 	// common use case.
 	if command.IsRoot {
-		cobraCommand.AddCommand(completion.NewCommand(cobraCommand, container))
+		supportedShells := []string{"bash", "fish", "powershell", "zsh"}
+
+		cobraCommand.AddCommand(
+			&cobra.Command{
+				Use:   "completion <" + strings.Join(supportedShells, "|") + ">",
+				Short: "Generate auto-completion scripts for commonly used shells.",
+				Long:  "Output shell completion code for the specified shell to stdout.",
+				Args:  cobra.ExactArgs(1),
+				RunE: func(_ *cobra.Command, args []string) error {
+					shell := args[0]
+					switch shell {
+					case "bash":
+						return cobraCommand.GenBashCompletion(container.Stdout())
+					case "fish":
+						return cobraCommand.GenFishCompletion(container.Stdout(), true)
+					case "powershell":
+						return cobraCommand.GenPowerShellCompletion(container.Stdout())
+					case "zsh":
+						return cobraCommand.GenZshCompletion(container.Stdout())
+					default:
+						return fmt.Errorf(
+							"%s is not a recognized shell. These shells are supported: %s.",
+							shell,
+							strings.Join(supportedShells, ", "),
+						)
+					}
+				},
+			},
+		)
 	}
 
 	// If the root command is not the only command, add hidden bash-completion,
