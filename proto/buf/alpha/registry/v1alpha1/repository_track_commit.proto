@@ -18,9 +18,12 @@ package buf.alpha.registry.v1alpha1;
 
 import "google/protobuf/timestamp.proto";
 
+// RepositoryTrackCommit is the existance of a RepositoryCommit on a RepositoryTrack. Currently its only purpose is
+// for querying whether a RepositoryCommit is on a RepositoryTrack and determining it's sequence id.
 message RepositoryTrackCommit {
-  // primary key, unique, immutable
-  string id = 1;
+  // We reserve field number '3' for id, but RepositoryTrackCommits have no id.
+  // string id = 1;
+
   // immutable
   google.protobuf.Timestamp create_time = 2;
 
@@ -32,12 +35,12 @@ message RepositoryTrackCommit {
 }
 
 service RepositoryTrackCommitService {
-  // GetRepositoryTrackCommitForCommitReference returns the RepositoryTrackCommit associated with the given
+  // GetRepositoryTrackCommitByCommitReference returns the RepositoryTrackCommit associated with the given
   // CommitReference on the given RepositoryTrack. Returns NOT_FOUND if the RepositoryTrackCommit does not exist.
-  rpc GetRepositoryTrackCommitForCommitReference(GetRepositoryTrackCommitForCommitReferenceRequest) returns (GetRepositoryTrackCommitForCommitReferenceResponse);
+  rpc GetRepositoryTrackCommitByCommitReference(GetRepositoryTrackCommitByCommitReferenceRequest) returns (GetRepositoryTrackCommitByCommitReferenceResponse);
 }
 
-message GetRepositoryTrackCommitForCommitReferenceRequest {
+message GetRepositoryTrackCommitByCommitReferenceRequest {
   // The id of the repository containing the commit.
   string repository_id = 1;
   // The name of the repository track.
@@ -46,6 +49,6 @@ message GetRepositoryTrackCommitForCommitReferenceRequest {
   string commit_reference = 3;
 }
 
-message GetRepositoryTrackCommitForCommitReferenceResponse {
+message GetRepositoryTrackCommitByCommitReferenceResponse {
   RepositoryTrackCommit repository_track_commit = 1;
 }

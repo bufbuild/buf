@@ -22,9 +22,9 @@ import (
 )
 
 type RepositoryTrackCommitService interface {
-	// GetRepositoryTrackCommitForCommitReference returns the RepositoryTrackCommit associated with the given
+	// GetRepositoryTrackCommitByCommitReference returns the RepositoryTrackCommit associated with the given
 	// CommitReference on the given RepositoryTrack. Returns NOT_FOUND if the RepositoryTrackCommit does not exist.
-	GetRepositoryTrackCommitForCommitReference(
+	GetRepositoryTrackCommitByCommitReference(
 		ctx context.Context,
 		repositoryId string,
 		repositoryTrackName string,

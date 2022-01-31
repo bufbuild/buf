@@ -28,9 +28,9 @@ type repositoryTrackCommitService struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// GetRepositoryTrackCommitForCommitReference returns the RepositoryTrackCommit associated with the given
+// GetRepositoryTrackCommitByCommitReference returns the RepositoryTrackCommit associated with the given
 // CommitReference on the given RepositoryTrack. Returns NOT_FOUND if the RepositoryTrackCommit does not exist.
-func (s *repositoryTrackCommitService) GetRepositoryTrackCommitForCommitReference(
+func (s *repositoryTrackCommitService) GetRepositoryTrackCommitByCommitReference(
 	ctx context.Context,
 	repositoryId string,
 	repositoryTrackName string,
@@ -39,9 +39,9 @@ func (s *repositoryTrackCommitService) GetRepositoryTrackCommitForCommitReferenc
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.GetRepositoryTrackCommitForCommitReference(
+	response, err := s.client.GetRepositoryTrackCommitByCommitReference(
 		ctx,
-		&v1alpha1.GetRepositoryTrackCommitForCommitReferenceRequest{
+		&v1alpha1.GetRepositoryTrackCommitByCommitReferenceRequest{
 			RepositoryId:        repositoryId,
 			RepositoryTrackName: repositoryTrackName,
 			CommitReference:     commitReference,
