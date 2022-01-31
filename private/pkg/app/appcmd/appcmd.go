@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/completion"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -74,6 +75,7 @@ type Command struct {
 	// that precedes all other functionality, and which prints the version
 	// to stdout.
 	Version string
+	IsRoot  bool
 }
 
 // NewInvalidArgumentError creates a new invalidArgumentError, indicating that
@@ -166,6 +168,12 @@ func run(
 	// our own completion commands, disable the generation of the default
 	// commands.
 	cobraCommand.CompletionOptions.DisableDefaultCmd = true
+
+	// Add an explicit "completion" command to the root to cover the most
+	// common use case.
+	if command.IsRoot {
+		cobraCommand.AddCommand(completion.NewCommand(cobraCommand, container))
+	}
 
 	// If the root command is not the only command, add hidden bash-completion,
 	// fish-completion, zsh-completion, and manpages commands.
