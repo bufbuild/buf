@@ -269,7 +269,7 @@ message ListOrganizationPluginsResponse {
 
 message GetPluginVersionRequest {
   // The name of the plugin version, i.e. "v1.4.0-1".
-  string name = 1;
+  string version = 1;
   // The owner of the plugin. This will be either a username
   // or organization name.
   string plugin_owner = 2;
