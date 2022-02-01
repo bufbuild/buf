@@ -2,9 +2,14 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.0.0-rc12] - 2022-02-01
+
 - Add `default`, `except` and `override` to `java_package_prefix`.
 - Add dependency commits as a part of the `b3` digest.
 - Upgrade to `protoc` 3.19.4 support.
+- Remove `branch` field from `buf.lock`.
 
 ## [v1.0.0-rc11] - 2022-01-18
 
@@ -618,7 +623,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc11...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc12...HEAD
+[v1.0.0-rc12]: https://github.com/bufbuild/buf/compare/v1.0.0-rc11...v1.0.0-rc12
 [v1.0.0-rc11]: https://github.com/bufbuild/buf/compare/v1.0.0-rc10...v1.0.0-rc11
 [v1.0.0-rc10]: https://github.com/bufbuild/buf/compare/v1.0.0-rc9...v1.0.0-rc10
 [v1.0.0-rc9]: https://github.com/bufbuild/buf/compare/v1.0.0-rc8...v1.0.0-rc9
