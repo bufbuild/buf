@@ -71,7 +71,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Username,
 		usernameFlagName,
 		"",
-		"The username to use. The command prompts for a username by default.",
+		"The username to use. This command prompts for a username by default.",
 	)
 	flagSet.BoolVar(
 		&f.TokenStdin,
