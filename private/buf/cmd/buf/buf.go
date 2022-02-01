@@ -115,7 +115,6 @@ func NewRootCommand(name string) *appcmd.Command {
 	return &appcmd.Command{
 		Use:                 name,
 		Version:             bufcli.Version,
-		IsRoot:              true,
 		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder),
