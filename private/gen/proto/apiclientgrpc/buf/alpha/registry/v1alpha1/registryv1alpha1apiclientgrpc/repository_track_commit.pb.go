@@ -28,23 +28,21 @@ type repositoryTrackCommitService struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// GetRepositoryTrackCommitByCommitReference returns the RepositoryTrackCommit associated with the given
-// CommitReference on the given RepositoryTrack. Returns NOT_FOUND if the RepositoryTrackCommit does not exist.
-func (s *repositoryTrackCommitService) GetRepositoryTrackCommitByCommitReference(
+// GetRepositoryTrackCommitByRepositoryCommit returns the RepositoryTrackCommit associated given repository_commit on
+// the given repository_track. Returns NOT_FOUND if the RepositoryTrackCommit does not exist.
+func (s *repositoryTrackCommitService) GetRepositoryTrackCommitByRepositoryCommit(
 	ctx context.Context,
-	repositoryId string,
-	repositoryTrackName string,
-	commit string,
+	repositoryTrackId string,
+	repositoryCommitId string,
 ) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.GetRepositoryTrackCommitByCommitReference(
+	response, err := s.client.GetRepositoryTrackCommitByRepositoryCommit(
 		ctx,
-		&v1alpha1.GetRepositoryTrackCommitByCommitReferenceRequest{
-			RepositoryId:        repositoryId,
-			RepositoryTrackName: repositoryTrackName,
-			Commit:              commit,
+		&v1alpha1.GetRepositoryTrackCommitByRepositoryCommitRequest{
+			RepositoryTrackId:  repositoryTrackId,
+			RepositoryCommitId: repositoryCommitId,
 		},
 	)
 	if err != nil {
@@ -53,12 +51,11 @@ func (s *repositoryTrackCommitService) GetRepositoryTrackCommitByCommitReference
 	return response.RepositoryTrackCommit, nil
 }
 
-// ListRepositoryTrackCommitsByRepositoryTrack lists the commits associated with a repository track, ordered
-// by their sequence id.
+// ListRepositoryTrackCommitsByRepositoryTrack lists the RepositoryTrackCommitS associated with a repository track,
+// ordered by their sequence id.
 func (s *repositoryTrackCommitService) ListRepositoryTrackCommitsByRepositoryTrack(
 	ctx context.Context,
-	repositoryId string,
-	repositoryTrackName string,
+	repositoryTrackId string,
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
@@ -69,11 +66,10 @@ func (s *repositoryTrackCommitService) ListRepositoryTrackCommitsByRepositoryTra
 	response, err := s.client.ListRepositoryTrackCommitsByRepositoryTrack(
 		ctx,
 		&v1alpha1.ListRepositoryTrackCommitsByRepositoryTrackRequest{
-			RepositoryId:        repositoryId,
-			RepositoryTrackName: repositoryTrackName,
-			PageSize:            pageSize,
-			PageToken:           pageToken,
-			Reverse:             reverse,
+			RepositoryTrackId: repositoryTrackId,
+			PageSize:          pageSize,
+			PageToken:         pageToken,
+			Reverse:           reverse,
 		},
 	)
 	if err != nil {

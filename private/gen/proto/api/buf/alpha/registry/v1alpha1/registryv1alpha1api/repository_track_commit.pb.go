@@ -22,20 +22,18 @@ import (
 )
 
 type RepositoryTrackCommitService interface {
-	// GetRepositoryTrackCommitByCommitReference returns the RepositoryTrackCommit associated with the given
-	// CommitReference on the given RepositoryTrack. Returns NOT_FOUND if the RepositoryTrackCommit does not exist.
-	GetRepositoryTrackCommitByCommitReference(
+	// GetRepositoryTrackCommitByRepositoryCommit returns the RepositoryTrackCommit associated given repository_commit on
+	// the given repository_track. Returns NOT_FOUND if the RepositoryTrackCommit does not exist.
+	GetRepositoryTrackCommitByRepositoryCommit(
 		ctx context.Context,
-		repositoryId string,
-		repositoryTrackName string,
-		commit string,
+		repositoryTrackId string,
+		repositoryCommitId string,
 	) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, err error)
-	// ListRepositoryTrackCommitsByRepositoryTrack lists the commits associated with a repository track, ordered
-	// by their sequence id.
+	// ListRepositoryTrackCommitsByRepositoryTrack lists the RepositoryTrackCommitS associated with a repository track,
+	// ordered by their sequence id.
 	ListRepositoryTrackCommitsByRepositoryTrack(
 		ctx context.Context,
-		repositoryId string,
-		repositoryTrackName string,
+		repositoryTrackId string,
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
