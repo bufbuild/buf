@@ -100,7 +100,7 @@ const (
 
 // Deprecation messages for the hidden commands replaced by the "completion" command
 func shellDeprecationMessage(shell string) string {
-	return fmt.Sprintf(`"buf %s-completion" has been moved to "buf completion %s"`, shell, shell)
+	return fmt.Sprintf(`"buf %s-completion" has been moved to "buf completion %s. %s"`, shell, shell, bufcli.DeprecationMessageSuffix)
 }
 
 // Main is the entrypoint to the buf CLI.
@@ -354,16 +354,19 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:        "bash-completion",
 				Deprecated: shellDeprecationMessage("bash"),
 				Hidden:     true,
+				Run:        appcmd.NoAction(),
 			},
 			{
 				Use:        "fish-completion",
 				Deprecated: shellDeprecationMessage("fish"),
 				Hidden:     true,
+				Run:        appcmd.NoAction(),
 			},
 			{
 				Use:        "zsh-completion",
 				Deprecated: shellDeprecationMessage("zsh"),
 				Hidden:     true,
+				Run:        appcmd.NoAction(),
 			},
 		},
 	}
