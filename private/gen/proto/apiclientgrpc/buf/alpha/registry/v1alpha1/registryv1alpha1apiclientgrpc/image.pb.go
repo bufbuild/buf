@@ -39,7 +39,8 @@ func (s *imageService) GetImage(
 	excludeImports bool,
 	excludeSourceInfo bool,
 	types []string,
-	typeDependencyStrategy v1alpha1.TypeDependencyStrategy,
+	excludeExtensions bool,
+	excludeOptions bool,
 	includeMask []v1alpha1.ImageMask,
 ) (image *v1.Image, _ error) {
 	if s.contextModifier != nil {
@@ -48,14 +49,15 @@ func (s *imageService) GetImage(
 	response, err := s.client.GetImage(
 		ctx,
 		&v1alpha1.GetImageRequest{
-			Owner:                  owner,
-			Repository:             repository,
-			Reference:              reference,
-			ExcludeImports:         excludeImports,
-			ExcludeSourceInfo:      excludeSourceInfo,
-			Types:                  types,
-			TypeDependencyStrategy: typeDependencyStrategy,
-			IncludeMask:            includeMask,
+			Owner:             owner,
+			Repository:        repository,
+			Reference:         reference,
+			ExcludeImports:    excludeImports,
+			ExcludeSourceInfo: excludeSourceInfo,
+			Types:             types,
+			ExcludeExtensions: excludeExtensions,
+			ExcludeOptions:    excludeOptions,
+			IncludeMask:       includeMask,
 		},
 	)
 	if err != nil {
