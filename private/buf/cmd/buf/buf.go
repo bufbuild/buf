@@ -16,6 +16,7 @@ package buf
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -96,6 +97,11 @@ const (
 	modInitDeprecationMessage                  = `"buf mod init" has been moved to "buf config init".` + bufcli.DeprecationMessageSuffix
 	pushDeprecationMessage                     = `"buf push" has been moved to "buf mod push".` + bufcli.DeprecationMessageSuffix
 )
+
+// Deprecation messages for the hidden commands replaced by the "completion" command
+func shellDeprecationMessage(shell string) string {
+	return fmt.Sprintf(`"buf %s-completion" has been moved to "buf completion %s"`, shell, shell)
+}
 
 // Main is the entrypoint to the buf CLI.
 func Main(name string) {
@@ -342,6 +348,22 @@ func NewRootCommand(name string) *appcmd.Command {
 						},
 					},
 				},
+			},
+			// Deprecated shell completion commands (replaced by "buf completion")
+			{
+				Use:        "bash-completion",
+				Deprecated: shellDeprecationMessage("bash"),
+				Hidden:     true,
+			},
+			{
+				Use:        "fish-completion",
+				Deprecated: shellDeprecationMessage("fish"),
+				Hidden:     true,
+			},
+			{
+				Use:        "zsh-completion",
+				Deprecated: shellDeprecationMessage("zsh"),
+				Hidden:     true,
 			},
 		},
 	}
