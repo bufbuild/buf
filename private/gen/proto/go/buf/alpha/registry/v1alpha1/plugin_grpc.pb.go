@@ -44,6 +44,8 @@ type PluginServiceClient interface {
 	ListUserPlugins(ctx context.Context, in *ListUserPluginsRequest, opts ...grpc.CallOption) (*ListUserPluginsResponse, error)
 	// ListOrganizationPlugins lists all plugins for an organization.
 	ListOrganizationPlugins(ctx context.Context, in *ListOrganizationPluginsRequest, opts ...grpc.CallOption) (*ListOrganizationPluginsResponse, error)
+	// GetPluginVersion returns the plugin version, if found.
+	GetPluginVersion(ctx context.Context, in *GetPluginVersionRequest, opts ...grpc.CallOption) (*GetPluginVersionResponse, error)
 	// ListPluginVersions lists all the versions available for the specified plugin.
 	ListPluginVersions(ctx context.Context, in *ListPluginVersionsRequest, opts ...grpc.CallOption) (*ListPluginVersionsResponse, error)
 	// CreatePlugin creates a new plugin.
@@ -125,6 +127,15 @@ func (c *pluginServiceClient) ListUserPlugins(ctx context.Context, in *ListUserP
 func (c *pluginServiceClient) ListOrganizationPlugins(ctx context.Context, in *ListOrganizationPluginsRequest, opts ...grpc.CallOption) (*ListOrganizationPluginsResponse, error) {
 	out := new(ListOrganizationPluginsResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/ListOrganizationPlugins", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pluginServiceClient) GetPluginVersion(ctx context.Context, in *GetPluginVersionRequest, opts ...grpc.CallOption) (*GetPluginVersionResponse, error) {
+	out := new(GetPluginVersionResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/GetPluginVersion", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -332,6 +343,8 @@ type PluginServiceServer interface {
 	ListUserPlugins(context.Context, *ListUserPluginsRequest) (*ListUserPluginsResponse, error)
 	// ListOrganizationPlugins lists all plugins for an organization.
 	ListOrganizationPlugins(context.Context, *ListOrganizationPluginsRequest) (*ListOrganizationPluginsResponse, error)
+	// GetPluginVersion returns the plugin version, if found.
+	GetPluginVersion(context.Context, *GetPluginVersionRequest) (*GetPluginVersionResponse, error)
 	// ListPluginVersions lists all the versions available for the specified plugin.
 	ListPluginVersions(context.Context, *ListPluginVersionsRequest) (*ListPluginVersionsResponse, error)
 	// CreatePlugin creates a new plugin.
@@ -396,6 +409,9 @@ func (UnimplementedPluginServiceServer) ListUserPlugins(context.Context, *ListUs
 }
 func (UnimplementedPluginServiceServer) ListOrganizationPlugins(context.Context, *ListOrganizationPluginsRequest) (*ListOrganizationPluginsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListOrganizationPlugins not implemented")
+}
+func (UnimplementedPluginServiceServer) GetPluginVersion(context.Context, *GetPluginVersionRequest) (*GetPluginVersionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPluginVersion not implemented")
 }
 func (UnimplementedPluginServiceServer) ListPluginVersions(context.Context, *ListPluginVersionsRequest) (*ListPluginVersionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListPluginVersions not implemented")
@@ -522,6 +538,24 @@ func _PluginService_ListOrganizationPlugins_Handler(srv interface{}, ctx context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PluginServiceServer).ListOrganizationPlugins(ctx, req.(*ListOrganizationPluginsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PluginService_GetPluginVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPluginVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServiceServer).GetPluginVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.PluginService/GetPluginVersion",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServiceServer).GetPluginVersion(ctx, req.(*GetPluginVersionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -922,6 +956,10 @@ var PluginService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListOrganizationPlugins",
 			Handler:    _PluginService_ListOrganizationPlugins_Handler,
+		},
+		{
+			MethodName: "GetPluginVersion",
+			Handler:    _PluginService_GetPluginVersion_Handler,
 		},
 		{
 			MethodName: "ListPluginVersions",

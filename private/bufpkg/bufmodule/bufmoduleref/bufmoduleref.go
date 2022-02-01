@@ -416,7 +416,7 @@ func DependencyModulePinsForBucket(
 			dep.Remote,
 			dep.Owner,
 			dep.Repository,
-			dep.Branch,
+			"",
 			dep.Commit,
 			"",
 			time.Time{},
@@ -454,7 +454,6 @@ func PutDependencyModulePinsToBucket(
 				Remote:     pin.Remote(),
 				Owner:      pin.Owner(),
 				Repository: pin.Repository(),
-				Branch:     pin.Branch(),
 				Commit:     pin.Commit(),
 			},
 		)

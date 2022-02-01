@@ -43,7 +43,6 @@ func testReadConfig(t *testing.T, version string) {
 				Remote:     "bufbuild.test",
 				Owner:      "acme",
 				Repository: "weather",
-				Branch:     "main",
 				Commit:     "e9191fcdc2294e2f8f3b82c528fc90a8",
 			},
 		},
@@ -73,14 +72,12 @@ func TestWriteReadConfig(t *testing.T) {
 				Remote:     "buf.build",
 				Owner:      "test1",
 				Repository: "foob1",
-				Branch:     "main",
 				Commit:     bufmoduletesting.TestCommit,
 			},
 			{
 				Remote:     "buf.build",
 				Owner:      "test2",
 				Repository: "foob2",
-				Branch:     "main", // Can't import bufmodule here without causing an import cycle
 				Commit:     bufmoduletesting.TestCommit,
 			},
 		},
@@ -119,14 +116,12 @@ func TestParseV1Beta1Config(t *testing.T) {
 				Remote:     "buf.build",
 				Owner:      "test1",
 				Repository: "foob1",
-				Branch:     "main",
 				Commit:     bufmoduletesting.TestCommit,
 			},
 			{
 				Remote:     "buf.build",
 				Owner:      "test2",
 				Repository: "foob2",
-				Branch:     "main", // Can't import bufmodule here without causing an import cycle
 				Commit:     bufmoduletesting.TestCommit,
 			},
 		},
