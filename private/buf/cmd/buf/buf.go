@@ -354,19 +354,19 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:        "bash-completion",
 				Deprecated: shellDeprecationMessage("bash"),
 				Hidden:     true,
-				Run:        appcmd.NoAction(),
+				Run:        appcmd.NoAction,
 			},
 			{
 				Use:        "fish-completion",
 				Deprecated: shellDeprecationMessage("fish"),
 				Hidden:     true,
-				Run:        appcmd.NoAction(),
+				Run:        appcmd.NoAction,
 			},
 			{
 				Use:        "zsh-completion",
 				Deprecated: shellDeprecationMessage("zsh"),
 				Hidden:     true,
-				Run:        appcmd.NoAction(),
+				Run:        appcmd.NoAction,
 			},
 		},
 	}

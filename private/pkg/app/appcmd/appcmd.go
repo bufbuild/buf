@@ -114,7 +114,7 @@ func BindMultiple(bindFuncs ...func(*pflag.FlagSet)) func(*pflag.FlagSet) {
 
 // NoAction is a convenience function for cases when you want a command to do nothing but also
 // display information like deprecation warnings.
-func NoAction() func(context.Context, app.Container) error {
+var NoAction = func(context.Context, app.Container) error {
 	return nil
 }
 
