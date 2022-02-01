@@ -48,11 +48,12 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <proto_file1> <proto_file2> ...",
 		Short: "High-performance protoc replacement.",
-		Long: `This replaces protoc using Buf's internal compiler.
+		Long: `This command replaces protoc using Buf's internal compiler.
 
-The implementation is in progress, and while it already outperforms mainline
-protoc, it has not been optimized yet. While this command is stable, it should
-be considered a preview.
+The implementation is in progress. Although it outperforms mainline protoc,
+it hasn't yet been optimized.
+
+This protoc replacement is currently stable but should be considered a preview.
 
 Additional flags:
 
