@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/netrc"
+	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -127,6 +128,26 @@ func run(
 			}
 			return err
 		}
+	}
+	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	if err != nil {
+		return err
+	}
+	authnService, err := registryProvider.NewAuthnService(ctx, remote)
+	if err != nil {
+		return err
+	}
+	user, err := authnService.GetCurrentUser(rpcauth.WithToken(ctx, token))
+	if err != nil {
+		// We don't want to use the default error from wrapError here if the error
+		// an unauthenticated error.
+		return errors.New("invalid token provided")
+	}
+	if user == nil {
+		return errors.New("no user found for provided token")
+	}
+	if user.Username != username {
+		return fmt.Errorf("token user does not match username provided: %s", username)
 	}
 	if err := netrc.PutMachines(
 		container,
