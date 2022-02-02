@@ -39,8 +39,6 @@ func (s *imageService) GetImage(
 	excludeImports bool,
 	excludeSourceInfo bool,
 	types []string,
-	excludeExtensions bool,
-	excludeOptions bool,
 	includeMask []v1alpha1.ImageMask,
 ) (image *v1.Image, _ error) {
 	if s.contextModifier != nil {
@@ -55,8 +53,6 @@ func (s *imageService) GetImage(
 			ExcludeImports:    excludeImports,
 			ExcludeSourceInfo: excludeSourceInfo,
 			Types:             types,
-			ExcludeExtensions: excludeExtensions,
-			ExcludeOptions:    excludeOptions,
 			IncludeMask:       includeMask,
 		},
 	)

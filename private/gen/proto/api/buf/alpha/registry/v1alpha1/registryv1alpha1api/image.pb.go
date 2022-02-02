@@ -34,8 +34,6 @@ type ImageService interface {
 		excludeImports bool,
 		excludeSourceInfo bool,
 		types []string,
-		excludeExtensions bool,
-		excludeOptions bool,
 		includeMask []v1alpha1.ImageMask,
 	) (image *v1.Image, err error)
 }
