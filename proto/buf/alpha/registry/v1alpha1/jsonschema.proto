@@ -37,9 +37,9 @@ message GetJSONSchemaRequest {
 }
 
 message GetJSONSchemaResponse {
-  // A json schema representing what the json encoded request message of
-  // the method should conform to. This schema is an approximation to be
-  // used by editors for validation and autocompletion, not a lossless
-  // representation of the type's descriptor.
-  bytes request_json_schema = 1;
+  // A json schema representing what the json encoded payload for type_name
+  // should conform to. This schema is an approximation to be used by editors
+  // for validation and autocompletion, not a lossless representation of the
+  // type's descriptor.
+  bytes json_schema = 1;
 }
