@@ -23,6 +23,7 @@ import (
 
 // Provider provides all the types in registryv1alpha1apiclient.
 type Provider interface {
+	AdminServiceProvider
 	AuditLogsServiceProvider
 	AuthnServiceProvider
 	AuthzServiceProvider
@@ -43,11 +44,17 @@ type Provider interface {
 	RepositoryCommitServiceProvider
 	RepositoryServiceProvider
 	RepositoryTagServiceProvider
+	RepositoryTrackCommitServiceProvider
 	RepositoryTrackServiceProvider
 	ResolveServiceProvider
 	SearchServiceProvider
 	TokenServiceProvider
 	UserServiceProvider
+}
+
+// AdminServiceProvider provides a client-side AdminService for an address.
+type AdminServiceProvider interface {
+	NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error)
 }
 
 // AuditLogsServiceProvider provides a client-side AuditLogsService for an address.
@@ -148,6 +155,11 @@ type RepositoryServiceProvider interface {
 // RepositoryTagServiceProvider provides a client-side RepositoryTagService for an address.
 type RepositoryTagServiceProvider interface {
 	NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error)
+}
+
+// RepositoryTrackCommitServiceProvider provides a client-side RepositoryTrackCommitService for an address.
+type RepositoryTrackCommitServiceProvider interface {
+	NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error)
 }
 
 // RepositoryTrackServiceProvider provides a client-side RepositoryTrackService for an address.

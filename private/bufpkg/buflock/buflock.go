@@ -43,7 +43,6 @@ type Dependency struct {
 	Remote     string
 	Owner      string
 	Repository string
-	Branch     string
 	Commit     string
 }
 
@@ -88,7 +87,6 @@ func DependencyForExternalConfigDependencyV1(dep ExternalConfigDependencyV1) Dep
 		Remote:     dep.Remote,
 		Owner:      dep.Owner,
 		Repository: dep.Repository,
-		Branch:     dep.Branch,
 		Commit:     dep.Commit,
 	}
 }
@@ -101,7 +99,6 @@ func ExternalConfigDependencyV1ForDependency(dep Dependency) ExternalConfigDepen
 		Remote:     dep.Remote,
 		Owner:      dep.Owner,
 		Repository: dep.Repository,
-		Branch:     dep.Branch,
 		Commit:     dep.Commit,
 	}
 }
@@ -124,7 +121,6 @@ func DependencyForExternalConfigDependencyV1Beta1(dep ExternalConfigDependencyV1
 		Remote:     dep.Remote,
 		Owner:      dep.Owner,
 		Repository: dep.Repository,
-		Branch:     dep.Branch,
 		Commit:     dep.Commit,
 	}
 }
@@ -137,7 +133,6 @@ func ExternalConfigDependencyV1Beta1ForDependency(dep Dependency) ExternalConfig
 		Remote:     dep.Remote,
 		Owner:      dep.Owner,
 		Repository: dep.Repository,
-		Branch:     dep.Branch,
 		Commit:     dep.Commit,
 	}
 }

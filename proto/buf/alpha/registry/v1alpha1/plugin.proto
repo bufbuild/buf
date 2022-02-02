@@ -18,6 +18,7 @@ package buf.alpha.registry.v1alpha1;
 
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
+import "buf/alpha/registry/v1alpha1/generate.proto";
 
 // Plugin represents a protoc plugin, such as protoc-gen-go.
 message Plugin {
@@ -48,6 +49,12 @@ message PluginVersion {
   string plugin_name = 3;
   // The owner of the plugin to which this version relates.
   string plugin_owner = 4;
+  // The full container image digest associated with this plugin version including
+  // the algorithm.
+  // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
+  string container_image_digest = 5;
+  // Optionally define the runtime libraries.
+  repeated RuntimeLibrary runtime_libraries = 6;
 }
 
 // PluginVisibility defines the visibility options available
@@ -163,6 +170,8 @@ service PluginService {
   rpc ListUserPlugins(ListUserPluginsRequest) returns (ListUserPluginsResponse);
   // ListOrganizationPlugins lists all plugins for an organization.
   rpc ListOrganizationPlugins(ListOrganizationPluginsRequest) returns (ListOrganizationPluginsResponse);
+  // GetPluginVersion returns the plugin version, if found.
+  rpc GetPluginVersion(GetPluginVersionRequest) returns (GetPluginVersionResponse);
   // ListPluginVersions lists all the versions available for the specified plugin.
   rpc ListPluginVersions(ListPluginVersionsRequest) returns (ListPluginVersionsResponse);
   // CreatePlugin creates a new plugin.
@@ -256,6 +265,19 @@ message ListOrganizationPluginsResponse {
   repeated Plugin plugins = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
+}
+
+message GetPluginVersionRequest {
+  // The owner of the plugin the version belongs to.
+  string owner = 1;
+  // The name of the plugin the version belongs to.
+  string name = 2;
+  // The name of the version.
+  string version = 3;
+}
+
+message GetPluginVersionResponse {
+  PluginVersion plugin_version = 1;
 }
 
 message ListPluginVersionsRequest {
