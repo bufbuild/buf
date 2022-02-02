@@ -99,3 +99,27 @@ func (s *repositoryTrackService) DeleteRepositoryTrackByName(
 	}
 	return nil
 }
+
+// GetRepositoryTrackByName gets a repository track by name.
+func (s *repositoryTrackService) GetRepositoryTrackByName(
+	ctx context.Context,
+	ownerName string,
+	repositoryName string,
+	name string,
+) (repositoryTrack *v1alpha1.RepositoryTrack, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetRepositoryTrackByName(
+		ctx,
+		&v1alpha1.GetRepositoryTrackByNameRequest{
+			OwnerName:      ownerName,
+			RepositoryName: repositoryName,
+			Name:           name,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.RepositoryTrack, nil
+}
