@@ -15,8 +15,8 @@
 package bufanalysis
 
 import (
+	"bytes"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -64,6 +64,11 @@ var (
 		FormatJSON: "json",
 		FormatMSVS: "msvs",
 	}
+	formatToPrinter = map[Format]printer{
+		FormatText: printerFunc(textPrinter),
+		FormatJSON: printerFunc(jsonPrinter),
+		FormatMSVS: printerFunc(msvsPrinter),
+	}
 )
 
 // Format is a FileAnnotation format.
@@ -101,15 +106,6 @@ type FileInfo interface {
 
 // FileAnnotation is a file annotation.
 type FileAnnotation interface {
-	// Stringer returns the string representation in text format.
-	fmt.Stringer
-	// Marshaler returns the string representation in JSON foramt.
-	json.Marshaler
-	// MSVSString returns the string representation in MSVS format.
-	//
-	// https://docs.microsoft.com/en-us/cpp/build/formatting-the-output-of-a-custom-build-step-or-build-event?view=vs-2019
-	MSVSString() string
-
 	// FileInfo is the FileInfo for this annotation.
 	//
 	// This may be nil.
@@ -200,34 +196,27 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, fo
 	if err != nil {
 		return err
 	}
-	for _, fileAnnotation := range fileAnnotations {
-		s, err := FormatFileAnnotation(fileAnnotation, format)
-		if err != nil {
-			return err
-		}
-		if _, err := writer.Write([]byte(s + "\n")); err != nil {
-			return err
-		}
-	}
-	return nil
+	return formatToPrinter[format].PrintFileAnnotations(
+		writer,
+		fileAnnotations,
+		"",
+	)
 }
 
 // FormatFileAnnotation formats the FileAnnotation.
 func FormatFileAnnotation(fileAnnotation FileAnnotation, format Format) (string, error) {
+	buffer := bytes.NewBuffer(nil)
 	switch format {
 	case FormatText:
-		return fileAnnotation.String(), nil
+		printFileAnnotationAsText(buffer, fileAnnotation)
 	case FormatJSON:
-		data, err := fileAnnotation.MarshalJSON()
-		if err != nil {
-			return "", err
-		}
-		return string(data), nil
+		printFileAnnotationAsJSON(buffer, fileAnnotation)
 	case FormatMSVS:
-		return fileAnnotation.MSVSString(), nil
+		printFileAnnotationAsMSVS(buffer, fileAnnotation)
 	default:
 		return "", fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}
+	return buffer.String(), nil
 }
 
 // hash returns a hash value that uniquely identifies the given FileAnnotation.
