@@ -175,6 +175,7 @@ enum Action {
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_TRACK_COMMIT_SERVICE_GET_REPOSITORY_TRACK_COMMIT_BY_REPOSITORY_COMMIT = 145;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_TRACK_COMMIT_SERVICE_LIST_REPOSITORY_TRACK_COMMITS_BY_REPOSITORY_TRACK = 146;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_TRACK_SERVICE_GET_REPOSITORY_TRACK_BY_NAME = 147;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_JSON_SCHEMA_SERVICE_GET_JSON_SCHEMA = 148;
 }
 
 // ActionBufAlphaRegistryV1Alpha1DownloadInfo stores audit log details not included
@@ -504,6 +505,12 @@ message ActionBufAlphaRegistryV1Alpha1SetOrganizationMemberInfo {
   BufAlphaRegistryV1Alpha1OrganizationRole organization_role = 1;
 }
 
+// ActionBufAlphaRegistryV1Alpha1GetJSONSchema stores audit log details not included
+// in objects for the GetJSONSchema action.
+message ActionBufAlphaRegistryV1Alpha1GetJSONSchema {
+  string reference = 1;
+}
+
 message Event {
   // The ID representing the event.
   string event_id = 1;
@@ -581,6 +588,7 @@ message Event {
     ActionBufAlphaRegistryinternalV1Alpha1CreatePluginVersionMetadataInfo action_buf_alpha_registryinternal_v1alpha1_create_plugin_version_metadata_info = 54;
     ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo action_buf_alpha_registry_v1alpha1_create_repository_track_info = 55;
     ActionBufAlphaRegistryV1Alpha1SetOrganizationMemberInfo action_buf_alpha_registry_v1alpha1_set_organization_member_info = 56;
+    ActionBufAlphaRegistryV1Alpha1GetJSONSchema action_buf_alpha_registry_v1alpha1_get_jsonschema = 57;
   }
 }
 
