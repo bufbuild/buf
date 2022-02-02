@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Check that the user provided a valid token when running `buf registry login`.
 
 ## [v1.0.0-rc12] - 2022-02-01
 
