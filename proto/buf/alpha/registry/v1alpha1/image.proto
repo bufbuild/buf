@@ -25,8 +25,8 @@ service ImageService {
   rpc GetImage(GetImageRequest) returns (GetImageResponse);
 }
 
-// ImageMask is used in GetImageRequest to specify which parts of an image are
-// requested.
+// ImageMask is used in GetImageRequest to specify which parts of an image 
+// should be masked in responses.
 enum ImageMask {
   IMAGE_MASK_UNSPECIFIED = 0;
 
@@ -54,49 +54,21 @@ message GetImageRequest {
   // Exclude source_code_info fields from each ImageFile.
   bool exclude_source_info = 5;
 
-  // When specified the returned image will only contain the necessary files to
-  // describe these types. Accepts messages, enums and services. All types must
-  // be defined in the buf module, types in dependencies are not accepted.
+  // When specified the returned image will only contain the necessary files and
+  // descriptors in those files to describe these types. Accepts messages, enums
+  // and services. All types must be defined in the buf module, types in
+  // dependencies are not accepted.
+  // 
+  // At this time specifying `types` requires `exclude_source_info` to be set to
+  // true. 
   repeated string types = 6;
 
-  // When `exclude_extensions` is true, images may omit extension declarations
-  // for regular proto2 messages. When used in combination with `types`,
-  // extensions will not be considered for determining what types are referenced
-  // by the requested type.
-  //
-  // For example, in the following example proto structure:
-  //
-  //    --- foo.proto ---
-  //    message Foo {
-  //      optional Bar bar = 1 [(my_option).field = "buf"];
-  //      extensions 2 to 3;
-  //    }
-  //    --- baz.proto ---
-  //    extend Foo {
-  //      optional Baz baz = 2;
-  //    }
-  //    --- qux.proto ---
-  //    extend google.protobuf.FieldOptions {
-  //      optional Qux my_option = 51234;
-  //    }
-  //
-  //  When `exclude_extensions` is true and `types` is "Foo", the resulting image
-  //  will contains types for "Foo", "Bar" and "Qux", but not "Baz".
-  bool exclude_extensions = 7;
-
-  // When `exclude_extensions` is true, images may omit extends declarations for
-  // `google.protobuf.*Option` messages and their usage in annotations. When
-  // used in combination with `types`, custom options will not be considered for
-  // determining what types are referenced by the requested type.
-  //
-  // In the example proto referenced in `exclude_options`, if `exclude_options`
-  // is true and `types` is "Foo", the resulting image will contains types for
-  // "Foo", "Bar" and "Baz", but not "Qux". Field "bar" on "Foo" will not
-  // have a custom option for "Qux" set.
-  bool exclude_options = 8;
-
   // When not empty, the returned image's files will only include
-  // *DescriptorProto fields for the elements specified here.
+  // *DescriptorProto fields for the elements specified here. The masks are
+  // applied without regard for dependenices between types. For example, if
+  // `IMAGE_MASK_MESSAGES` is specified without `IMAGE_MASK_ENUMS` the resulting
+  // image will NOT contain enum definitions even if they are referenced from
+  // message fields.
   repeated ImageMask include_mask = 9;
 }
 
