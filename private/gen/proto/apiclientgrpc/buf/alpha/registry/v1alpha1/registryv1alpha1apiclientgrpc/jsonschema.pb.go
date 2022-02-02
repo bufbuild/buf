@@ -36,7 +36,7 @@ func (s *jSONSchemaService) GetJSONSchema(
 	repository string,
 	reference string,
 	typeName string,
-) (requestJsonSchema []byte, _ error) {
+) (jsonSchema []byte, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -52,5 +52,5 @@ func (s *jSONSchemaService) GetJSONSchema(
 	if err != nil {
 		return nil, err
 	}
-	return response.RequestJsonSchema, nil
+	return response.JsonSchema, nil
 }

@@ -31,5 +31,5 @@ type JSONSchemaService interface {
 		repository string,
 		reference string,
 		typeName string,
-	) (requestJsonSchema []byte, err error)
+	) (jsonSchema []byte, err error)
 }
