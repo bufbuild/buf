@@ -27,7 +27,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewCommand returns a new prune Command.
+// NewCommand returns a new open Command.
 func NewCommand(
 	name string,
 	builder appflag.Builder,
