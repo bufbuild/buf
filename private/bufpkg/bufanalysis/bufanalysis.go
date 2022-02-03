@@ -199,7 +199,6 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, fo
 	return formatToPrinter[format].PrintFileAnnotations(
 		writer,
 		fileAnnotations,
-		"",
 	)
 }
 

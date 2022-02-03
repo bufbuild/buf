@@ -22,16 +22,16 @@ import (
 )
 
 type printer interface {
-	PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, cause string) error
+	PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation) error
 }
 
-type printerFunc func(writer io.Writer, fileAnnotations []FileAnnotation, cause string) error
+type printerFunc func(writer io.Writer, fileAnnotations []FileAnnotation) error
 
-func (f printerFunc) PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, cause string) error {
-	return f(writer, fileAnnotations, cause)
+func (f printerFunc) PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation) error {
+	return f(writer, fileAnnotations)
 }
 
-func textPrinter(writer io.Writer, fileAnnotations []FileAnnotation, cause string) error {
+func textPrinter(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	return printEachAnnotationOnNewLine(
 		writer,
 		fileAnnotations,
@@ -39,7 +39,7 @@ func textPrinter(writer io.Writer, fileAnnotations []FileAnnotation, cause strin
 	)
 }
 
-func msvsPrinter(writer io.Writer, fileAnnotations []FileAnnotation, cause string) error {
+func msvsPrinter(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	return printEachAnnotationOnNewLine(
 		writer,
 		fileAnnotations,
@@ -47,7 +47,7 @@ func msvsPrinter(writer io.Writer, fileAnnotations []FileAnnotation, cause strin
 	)
 }
 
-func jsonPrinter(writer io.Writer, fileAnnotations []FileAnnotation, cause string) error {
+func jsonPrinter(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	return printEachAnnotationOnNewLine(
 		writer,
 		fileAnnotations,
@@ -55,9 +55,10 @@ func jsonPrinter(writer io.Writer, fileAnnotations []FileAnnotation, cause strin
 	)
 }
 
-func printFileAnnotationAsText(buffer *bytes.Buffer, f FileAnnotation) {
+func printFileAnnotationAsText(buffer *bytes.Buffer, f FileAnnotation) error {
+	// This will work as long as f != (*fileAnnotation)(nil)
 	if f == nil {
-		return
+		return nil
 	}
 	path := "<input>"
 	line := f.StartLine()
@@ -86,11 +87,13 @@ func printFileAnnotationAsText(buffer *bytes.Buffer, f FileAnnotation) {
 	_, _ = buffer.WriteString(strconv.Itoa(column))
 	_, _ = buffer.WriteRune(':')
 	_, _ = buffer.WriteString(message)
+	return nil
 }
 
-func printFileAnnotationAsMSVS(buffer *bytes.Buffer, f FileAnnotation) {
+func printFileAnnotationAsMSVS(buffer *bytes.Buffer, f FileAnnotation) error {
+	// This will work as long as f != (*fileAnnotation)(nil)
 	if f == nil {
-		return
+		return nil
 	}
 	path := "<input>"
 	line := f.StartLine()
@@ -125,27 +128,15 @@ func printFileAnnotationAsMSVS(buffer *bytes.Buffer, f FileAnnotation) {
 	_, _ = buffer.WriteString(typeString)
 	_, _ = buffer.WriteString(" : ")
 	_, _ = buffer.WriteString(message)
+	return nil
 }
 
-func printFileAnnotationAsJSON(buffer *bytes.Buffer, f FileAnnotation) {
-	data, _ := json.Marshal(newExternalFileAnnotation(f))
-	_, _ = buffer.Write(data)
-}
-
-func printEachAnnotationOnNewLine(
-	writer io.Writer,
-	fileAnnotations []FileAnnotation,
-	singleAnnotationPrinter func(writer *bytes.Buffer, fileAnnotation FileAnnotation),
-) error {
-	buffer := bytes.NewBuffer(nil)
-	for _, fileAnnotation := range fileAnnotations {
-		buffer.Reset()
-		singleAnnotationPrinter(buffer, fileAnnotation)
-		buffer.WriteString("\n")
-		if _, err := writer.Write(buffer.Bytes()); err != nil {
-			return err
-		}
+func printFileAnnotationAsJSON(buffer *bytes.Buffer, f FileAnnotation) error {
+	data, err := json.Marshal(newExternalFileAnnotation(f))
+	if err != nil {
+		return err
 	}
+	_, _ = buffer.Write(data)
 	return nil
 }
 
@@ -173,4 +164,23 @@ func newExternalFileAnnotation(f FileAnnotation) externalFileAnnotation {
 		Type:        f.Type(),
 		Message:     f.Message(),
 	}
+}
+
+func printEachAnnotationOnNewLine(
+	writer io.Writer,
+	fileAnnotations []FileAnnotation,
+	fileAnnotationPrinter func(writer *bytes.Buffer, fileAnnotation FileAnnotation) error,
+) error {
+	buffer := bytes.NewBuffer(nil)
+	for _, fileAnnotation := range fileAnnotations {
+		buffer.Reset()
+		if err := fileAnnotationPrinter(buffer, fileAnnotation); err != nil {
+			return err
+		}
+		_, _ = buffer.WriteString("\n")
+		if _, err := writer.Write(buffer.Bytes()); err != nil {
+			return err
+		}
+	}
+	return nil
 }
