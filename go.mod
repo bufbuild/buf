@@ -11,6 +11,7 @@ require (
 	github.com/klauspost/compress v1.14.2
 	github.com/klauspost/pgzip v1.2.5
 	github.com/oklog/ulid/v2 v2.0.2
+	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
 	github.com/pkg/profile v1.6.0
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/pflag v1.0.5

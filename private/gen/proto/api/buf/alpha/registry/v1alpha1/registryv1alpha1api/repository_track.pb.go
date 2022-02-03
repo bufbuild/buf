@@ -43,4 +43,11 @@ type RepositoryTrackService interface {
 		repositoryName string,
 		name string,
 	) (err error)
+	// GetRepositoryTrackByName gets a repository track by name.
+	GetRepositoryTrackByName(
+		ctx context.Context,
+		ownerName string,
+		repositoryName string,
+		name string,
+	) (repositoryTrack *v1alpha1.RepositoryTrack, err error)
 }

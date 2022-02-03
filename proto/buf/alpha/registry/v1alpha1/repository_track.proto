@@ -36,6 +36,8 @@ service RepositoryTrackService {
   rpc ListRepositoryTracks(ListRepositoryTracksRequest) returns (ListRepositoryTracksResponse);
   // DeleteRepositoryTrackByName deletes a repository track by name.
   rpc DeleteRepositoryTrackByName(DeleteRepositoryTrackByNameRequest) returns (DeleteRepositoryTrackByNameResponse);
+  // GetRepositoryTrackByName gets a repository track by name.
+  rpc GetRepositoryTrackByName(GetRepositoryTrackByNameRequest) returns (GetRepositoryTrackByNameResponse);
 }
 
 message CreateRepositoryTrackRequest {
@@ -72,3 +74,14 @@ message DeleteRepositoryTrackByNameRequest {
 }
 
 message DeleteRepositoryTrackByNameResponse {}
+
+message GetRepositoryTrackByNameRequest {
+  string owner_name = 1;
+  string repository_name = 2;
+  // The name of the repository track
+  string name = 3;
+}
+
+message GetRepositoryTrackByNameResponse {
+  RepositoryTrack repository_track = 1;
+}
