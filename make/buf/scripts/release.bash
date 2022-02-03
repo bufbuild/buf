@@ -113,9 +113,9 @@ for os in Darwin Linux; do
     mkdir -p "${dir}/share/fish/vendor_completions.d"
     mkdir -p "${dir}/share/zsh/site-functions"
     mkdir -p "${dir}/share/man/man1"
-    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" bash-completion > "${dir}/etc/bash_completion.d/buf"
-    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" fish-completion > "${dir}/share/fish/vendor_completions.d/buf.fish"
-    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" zsh-completion > "${dir}/share/zsh/site-functions/_buf"
+    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" completion bash > "${dir}/etc/bash_completion.d/buf"
+    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" completion fish > "${dir}/share/fish/vendor_completions.d/buf.fish"
+    "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" completion zsh > "${dir}/share/zsh/site-functions/_buf"
     "$(uname -s)/$(uname -m)/${BASE_NAME}/bin/buf" manpages "${dir}/share/man/man1"
     cp -R "${DIR}/LICENSE" "${dir}/LICENSE"
   done
