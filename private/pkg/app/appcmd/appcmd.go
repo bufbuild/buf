@@ -179,7 +179,7 @@ func run(
 				SubCommands: []*Command{
 					{
 						Use:   "bash",
-						Short: "Generation auto-completion scripts for bash.",
+						Short: "Generate auto-completion scripts for bash.",
 						Args:  cobra.NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenBashCompletion(container.Stdout())
@@ -187,7 +187,7 @@ func run(
 					},
 					{
 						Use:   "fish",
-						Short: "Generation auto-completion scripts for fish.",
+						Short: "Generate auto-completion scripts for fish.",
 						Args:  cobra.NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenFishCompletion(container.Stdout(), true)
@@ -195,7 +195,7 @@ func run(
 					},
 					{
 						Use:   "powershell",
-						Short: "Generation auto-completion scripts for powershell.",
+						Short: "Generate auto-completion scripts for powershell.",
 						Args:  cobra.NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenPowerShellCompletion(container.Stdout())
@@ -203,7 +203,7 @@ func run(
 					},
 					{
 						Use:   "zsh",
-						Short: "Generation auto-completion scripts for zsh.",
+						Short: "Generate auto-completion scripts for zsh.",
 						Args:  cobra.NoArgs,
 						Run: func(ctx context.Context, container app.Container) error {
 							return cobraCommand.GenZshCompletion(container.Stdout())
