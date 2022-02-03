@@ -80,7 +80,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		"Append the pushed module to this track. If specified multiple times, multiple tracks will be appended.",
 	)
-	_ = flagSet.MarkHidden(trackFlagName) // TODO: (tracks) remove this when ready
 	flagSet.StringSliceVarP(
 		&f.Tags,
 		tagFlagName,
