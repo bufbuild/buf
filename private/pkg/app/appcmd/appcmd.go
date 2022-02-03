@@ -167,56 +167,80 @@ func run(
 	// commands.
 	cobraCommand.CompletionOptions.DisableDefaultCmd = true
 
-	// If the root command is not the only command, add hidden bash-completion,
-	// fish-completion, zsh-completion, and manpages commands.
+	// If the root command is not the only command, add a hidden manpages command
+	// and a visible completion command.
 	if len(command.SubCommands) > 0 {
-		cobraCommand.AddCommand(
-			&cobra.Command{
-				Use:    "bash-completion",
-				Args:   cobra.NoArgs,
-				Hidden: true,
-				Run: func(*cobra.Command, []string) {
-					runErr = cobraCommand.GenBashCompletion(container.Stdout())
+		shellCobraCommand, err := commandToCobra(
+			ctx,
+			container,
+			&Command{
+				Use:   "completion",
+				Short: "Generate auto-completion scripts for commonly used shells.",
+				SubCommands: []*Command{
+					{
+						Use:   "bash",
+						Short: "Generate auto-completion scripts for bash.",
+						Args:  cobra.NoArgs,
+						Run: func(ctx context.Context, container app.Container) error {
+							return cobraCommand.GenBashCompletion(container.Stdout())
+						},
+					},
+					{
+						Use:   "fish",
+						Short: "Generate auto-completion scripts for fish.",
+						Args:  cobra.NoArgs,
+						Run: func(ctx context.Context, container app.Container) error {
+							return cobraCommand.GenFishCompletion(container.Stdout(), true)
+						},
+					},
+					{
+						Use:   "powershell",
+						Short: "Generate auto-completion scripts for powershell.",
+						Args:  cobra.NoArgs,
+						Run: func(ctx context.Context, container app.Container) error {
+							return cobraCommand.GenPowerShellCompletion(container.Stdout())
+						},
+					},
+					{
+						Use:   "zsh",
+						Short: "Generate auto-completion scripts for zsh.",
+						Args:  cobra.NoArgs,
+						Run: func(ctx context.Context, container app.Container) error {
+							return cobraCommand.GenZshCompletion(container.Stdout())
+						},
+					},
 				},
 			},
+			&runErr,
 		)
-		cobraCommand.AddCommand(
-			&cobra.Command{
-				Use:    "fish-completion",
-				Args:   cobra.NoArgs,
-				Hidden: true,
-				Run: func(*cobra.Command, []string) {
-					runErr = cobraCommand.GenFishCompletion(container.Stdout(), true)
-				},
-			},
-		)
-		cobraCommand.AddCommand(
-			&cobra.Command{
-				Use:    "zsh-completion",
-				Args:   cobra.NoArgs,
-				Hidden: true,
-				Run: func(*cobra.Command, []string) {
-					runErr = cobraCommand.GenZshCompletion(container.Stdout())
-				},
-			},
-		)
-		cobraCommand.AddCommand(
-			&cobra.Command{
+		if err != nil {
+			return err
+		}
+		cobraCommand.AddCommand(shellCobraCommand)
+		manpagesCobraCommand, err := commandToCobra(
+			ctx,
+			container,
+			&Command{
 				Use:    "manpages",
 				Args:   cobra.ExactArgs(1),
 				Hidden: true,
-				Run: func(_ *cobra.Command, args []string) {
-					runErr = doc.GenManTree(
+				Run: func(ctx context.Context, container app.Container) error {
+					return doc.GenManTree(
 						cobraCommand,
 						&doc.GenManHeader{
 							Title:   "Buf",
 							Section: "1",
 						},
-						args[0],
+						container.Arg(0),
 					)
 				},
 			},
+			&runErr,
 		)
+		if err != nil {
+			return err
+		}
+		cobraCommand.AddCommand(manpagesCobraCommand)
 	}
 
 	cobraCommand.SetOut(container.Stderr())
