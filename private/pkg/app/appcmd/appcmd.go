@@ -177,7 +177,7 @@ func run(
 				Use:   "completion",
 				Short: "Generate auto-completion scripts for commonly used shells.",
 				SubCommands: []*Command{
-					&Command{
+					{
 						Use:   "bash",
 						Short: "Generation auto-completion scripts for bash.",
 						Args:  cobra.NoArgs,
@@ -185,7 +185,7 @@ func run(
 							return cobraCommand.GenBashCompletion(container.Stdout())
 						},
 					},
-					&Command{
+					{
 						Use:   "fish",
 						Short: "Generation auto-completion scripts for fish.",
 						Args:  cobra.NoArgs,
@@ -193,7 +193,7 @@ func run(
 							return cobraCommand.GenFishCompletion(container.Stdout(), true)
 						},
 					},
-					&Command{
+					{
 						Use:   "powershell",
 						Short: "Generation auto-completion scripts for powershell.",
 						Args:  cobra.NoArgs,
@@ -201,7 +201,7 @@ func run(
 							return cobraCommand.GenPowerShellCompletion(container.Stdout())
 						},
 					},
-					&Command{
+					{
 						Use:   "zsh",
 						Short: "Generation auto-completion scripts for zsh.",
 						Args:  cobra.NoArgs,
