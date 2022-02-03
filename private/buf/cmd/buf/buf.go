@@ -187,9 +187,8 @@ func NewRootCommand(name string) *appcmd.Command {
 								},
 							},
 							{
-								Use:    "track",
-								Hidden: true, // TODO: (tracks) remove this when ready
-								Short:  "Manage a repository's tracks.",
+								Use:   "track",
+								Short: "Manage a repository's tracks.",
 								SubCommands: []*appcmd.Command{
 									tracklist.NewCommand("list", builder),
 									trackdelete.NewCommand("delete", builder),
