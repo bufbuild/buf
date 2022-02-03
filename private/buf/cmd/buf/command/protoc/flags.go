@@ -98,7 +98,7 @@ func (f *flagsBuilder) Bind(flagSet *pflag.FlagSet) {
 		// no way to differentiate between default and set for now
 		// perhaps we could rework pflag usage somehow
 		nil,
-		`The include directory paths. This is equivalent to roots in Buf.`,
+		`The directory paths to include.`,
 	)
 	flagSet.BoolVar(
 		&f.IncludeImports,

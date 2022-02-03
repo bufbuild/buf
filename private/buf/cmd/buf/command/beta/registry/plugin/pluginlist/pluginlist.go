@@ -73,7 +73,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	flagSet.StringVar(&f.PageToken,
 		pageTokenFlagName,
 		"",
-		`The page token. If more results are available, a "next_page" key will be present in the --format=json output.`,
+		`The page token. If more results are available, a "next_page" key is present in the --format=json output.`,
 	)
 	flagSet.BoolVar(&f.Reverse,
 		reverseFlagName,
@@ -96,7 +96,7 @@ func run(
 	bufcli.WarnBetaCommand(ctx, container)
 	remote := container.Arg(0)
 	if remote == "" {
-		return appcmd.NewInvalidArgumentError("a remote must be specified")
+		return appcmd.NewInvalidArgumentError("you must specify a remote")
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {

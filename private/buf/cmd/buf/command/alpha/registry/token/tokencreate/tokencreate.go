@@ -73,7 +73,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.TimeToLive,
 		timeToLiveFlagName,
 		24*30*time.Hour,
-		`How long the token should live for. Set to 0 for no expiry.`,
+		`How long the token should live. Set to 0 for no expiry.`,
 	)
 }
 
@@ -85,7 +85,7 @@ func run(
 	bufcli.WarnAlphaCommand(ctx, container)
 	remote := container.Arg(0)
 	if remote == "" {
-		return appcmd.NewInvalidArgumentError("a module remote must be specified")
+		return appcmd.NewInvalidArgumentError("you must specify a remote module")
 	}
 	var expireTime *timestamppb.Timestamp
 	var err error

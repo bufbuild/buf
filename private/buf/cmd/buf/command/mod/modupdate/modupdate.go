@@ -49,11 +49,11 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <directory>",
-		Short: "Update the modules dependencies. Updates the " + buflock.ExternalConfigFilePath + " file.",
-		Long: "Gets the latest digests for the specified references in the config file, " +
-			"and writes them and their transitive dependencies to the " +
+		Short: "Update a module's dependencies by updating the " + buflock.ExternalConfigFilePath + " file.",
+		Long: "Fetch the latest digests for the specified references in the config file, " +
+			"and write them and their transitive dependencies to the " +
 			buflock.ExternalConfigFilePath +
-			` file. The first argument is the directory of the local module to update. If no argument is specified, defaults to "."`,
+			` file. The first argument is the directory of the local module to update. Defaults to "." if no argument is specified.`,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -78,7 +78,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Only,
 		onlyFlagName,
 		nil,
-		"The name of a dependency to update. When used, only this dependency (and possibly its dependencies) will be updated. May be passed multiple times.",
+		"The name of the dependency to update. When set, only this dependency is updated (along with any of its sub-dependencies). May be passed multiple times.",
 	)
 }
 
@@ -119,7 +119,7 @@ func run(
 		for _, moduleReference := range moduleConfig.Build.DependencyModuleReferences {
 			if strings.HasSuffix(moduleReference.Remote(), bufTeamsRemote) && !strings.HasSuffix(bufrpc.DefaultRemote, bufTeamsRemote) {
 				warnMsg := fmt.Sprintf(
-					`%q does not specify a "name", buf will default to using remote %q for dependency resolution. This remote may not be able to resolve %q if it is a enterprise BSR module, did you mean to specify a "name: %s/..." on this module?`,
+					`%q does not specify a "name", so Buf is defaulting to using remote %q for dependency resolution. This remote may be unable to resolve %q if it's an enterprise BSR module. Did you mean to specify a "name: %s/..." on this module?`,
 					existingConfigFilePath,
 					bufrpc.DefaultRemote,
 					moduleReference.IdentityString(),

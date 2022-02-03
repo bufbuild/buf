@@ -85,7 +85,7 @@ func run(
 	bufcli.WarnAlphaCommand(ctx, container)
 	remote := container.Arg(0)
 	if remote == "" {
-		return appcmd.NewInvalidArgumentError("a module remote must be specified")
+		return appcmd.NewInvalidArgumentError("you must specify a remote module")
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {

@@ -54,7 +54,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Export the files from the input location.",
+		Short: "Export the files from the input location to an output location.",
 		Long:  bufcli.GetInputLong(`the source or module to export`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -92,14 +92,14 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagName,
 		outputFlagShortName,
 		"",
-		`The directory to write the files to.`,
+		`The output directory for exported files.`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, outputFlagName)
 	flagSet.StringVar(
 		&f.Config,
 		configFlagName,
 		"",
-		`The config file or data to use.`,
+		`The file or data to use for configuration.`,
 	)
 }
 

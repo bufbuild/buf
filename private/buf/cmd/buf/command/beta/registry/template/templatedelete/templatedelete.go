@@ -75,7 +75,7 @@ func run(
 	bufcli.WarnBetaCommand(ctx, container)
 	templatePath := container.Arg(0)
 	if templatePath == "" {
-		return appcmd.NewInvalidArgumentError("a template path must be specified")
+		return appcmd.NewInvalidArgumentError("you must specify a template path")
 	}
 	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
