@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	globalParallelism = runtime.NumCPU()
+	globalParallelism = runtime.GOMAXPROCS(0)
 	globalLock        sync.RWMutex
 )
 
