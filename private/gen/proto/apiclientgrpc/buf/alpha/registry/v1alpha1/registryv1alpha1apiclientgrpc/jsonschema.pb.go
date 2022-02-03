@@ -18,46 +18,39 @@ package registryv1alpha1apiclientgrpc
 
 import (
 	context "context"
-	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	zap "go.uber.org/zap"
 )
 
-type imageService struct {
+type jSONSchemaService struct {
 	logger          *zap.Logger
-	client          v1alpha1.ImageServiceClient
+	client          v1alpha1.JSONSchemaServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
-// GetImage serves a compiled image for the local module. It automatically
-// downloads dependencies if necessary.
-func (s *imageService) GetImage(
+// GetJSONSchema allows users to get an (approximate) json schema for a
+// protobuf type.
+func (s *jSONSchemaService) GetJSONSchema(
 	ctx context.Context,
 	owner string,
 	repository string,
 	reference string,
-	excludeImports bool,
-	excludeSourceInfo bool,
-	types []string,
-	includeMask []v1alpha1.ImageMask,
-) (image *v1.Image, _ error) {
+	typeName string,
+) (jsonSchema []byte, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.GetImage(
+	response, err := s.client.GetJSONSchema(
 		ctx,
-		&v1alpha1.GetImageRequest{
-			Owner:             owner,
-			Repository:        repository,
-			Reference:         reference,
-			ExcludeImports:    excludeImports,
-			ExcludeSourceInfo: excludeSourceInfo,
-			Types:             types,
-			IncludeMask:       includeMask,
+		&v1alpha1.GetJSONSchemaRequest{
+			Owner:      owner,
+			Repository: repository,
+			Reference:  reference,
+			TypeName:   typeName,
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return response.Image, nil
+	return response.JsonSchema, nil
 }

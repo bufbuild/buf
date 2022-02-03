@@ -18,22 +18,24 @@ package registryv1alpha1api
 
 import (
 	context "context"
-	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
-// ImageService serves compiled images.
-type ImageService interface {
-	// GetImage serves a compiled image for the local module. It automatically
-	// downloads dependencies if necessary.
-	GetImage(
+type RepositoryTrackCommitService interface {
+	// GetRepositoryTrackCommitByRepositoryCommit returns the RepositoryTrackCommit associated given repository_commit on
+	// the given repository_track. Returns NOT_FOUND if the RepositoryTrackCommit does not exist.
+	GetRepositoryTrackCommitByRepositoryCommit(
 		ctx context.Context,
-		owner string,
-		repository string,
-		reference string,
-		excludeImports bool,
-		excludeSourceInfo bool,
-		types []string,
-		includeMask []v1alpha1.ImageMask,
-	) (image *v1.Image, err error)
+		repositoryTrackId string,
+		repositoryCommitId string,
+	) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, err error)
+	// ListRepositoryTrackCommitsByRepositoryTrack lists the RepositoryTrackCommitS associated with a repository track,
+	// ordered by their sequence id.
+	ListRepositoryTrackCommitsByRepositoryTrack(
+		ctx context.Context,
+		repositoryTrackId string,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
+	) (repositoryTrackCommits []*v1alpha1.RepositoryTrackCommit, nextPageToken string, err error)
 }
