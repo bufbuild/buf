@@ -23,6 +23,7 @@ import (
 )
 
 func TestParallelizeWithImmediateCancellation(t *testing.T) {
+	t.Parallel()
 	// The bulk of the code relies on subtle timing that's difficult to
 	// reproduce, but we can test the most basic use case.
 	var executed atomic.Int64
