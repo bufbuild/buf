@@ -207,11 +207,13 @@ func FormatFileAnnotation(fileAnnotation FileAnnotation, format Format) (string,
 	buffer := bytes.NewBuffer(nil)
 	switch format {
 	case FormatText:
-		printFileAnnotationAsText(buffer, fileAnnotation)
+		_ = printFileAnnotationAsText(buffer, fileAnnotation)
 	case FormatJSON:
-		printFileAnnotationAsJSON(buffer, fileAnnotation)
+		if err := printFileAnnotationAsJSON(buffer, fileAnnotation); err != nil {
+			return "", err
+		}
 	case FormatMSVS:
-		printFileAnnotationAsMSVS(buffer, fileAnnotation)
+		_ = printFileAnnotationAsMSVS(buffer, fileAnnotation)
 	default:
 		return "", fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}
