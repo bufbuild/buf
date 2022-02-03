@@ -78,21 +78,21 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Tracks,
 		trackFlagName,
 		nil,
-		"Append the pushed module to this track. If specified multiple times, multiple tracks will be appended.",
+		"Append the pushed module to this track. Multiple tracks are appended if specified multiple times.",
 	)
 	flagSet.StringSliceVarP(
 		&f.Tags,
 		tagFlagName,
 		tagFlagShortName,
 		nil,
-		"Create a tag for the pushed commit. If specified multiple times, multiple tags will be created.",
+		"Create a tag for the pushed commit. Multiple tracks are appended if specified multiple times.",
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors, printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s.",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -152,7 +152,7 @@ func run(
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
 			if _, err := container.Stderr().Write(
-				[]byte("The latest commit has the same content, not creating a new commit.\n"),
+				[]byte("The latest commit has the same content; not creating a new commit.\n"),
 			); err != nil {
 				return err
 			}

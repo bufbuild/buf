@@ -51,7 +51,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/" + bufplugin.TemplatesPathName + "/template>",
-		Short: "Create a new template.",
+		Short: "Create a new Buf template.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -78,7 +78,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The template config file or data to use. Must be in either YAML or JSON format.`,
+		`The template file or data to use for configuration. Must be in either YAML or JSON format.`,
 	)
 	_ = cobra.MarkFlagRequired(flagSet, configFlagName)
 	flagSet.StringVar(
