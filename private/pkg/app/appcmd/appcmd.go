@@ -31,9 +31,6 @@ import (
 // a non-empty string value.
 const fakeString = "__fake__"
 
-// Shells for which autocompletion is supported
-var supportedShells = []string{"bash", "fish", "powershell", "zsh"}
-
 // Command is a command.
 type Command struct {
 	// Use is the one-line usage message.
@@ -112,12 +109,6 @@ func BindMultiple(bindFuncs ...func(*pflag.FlagSet)) func(*pflag.FlagSet) {
 	}
 }
 
-// NoAction is a convenience function for cases when you want a command to do nothing but also
-// display information like deprecation warnings.
-var NoAction = func(context.Context, app.Container) error {
-	return nil
-}
-
 // NewDeletedCommand returns a new Command that accepts any flags and any arguments,
 // but will return an error with the given message for all invocations. The short
 // help is also equal to the given message.
@@ -179,50 +170,77 @@ func run(
 	// If the root command is not the only command, add a hidden manpages command
 	// and a visible completion command.
 	if len(command.SubCommands) > 0 {
-		cobraCommand.AddCommand(
-			&cobra.Command{
-				Use:   "completion <" + strings.Join(supportedShells, "|") + ">",
+		shellCobraCommand, err := commandToCobra(
+			ctx,
+			container,
+			&Command{
+				Use:   "completion",
 				Short: "Generate auto-completion scripts for commonly used shells.",
-				Long:  "Output shell completion code for the specified shell to stdout.",
-				Args:  cobra.ExactArgs(1),
-				Run: func(_ *cobra.Command, args []string) {
-					shell := args[0]
-					switch shell {
-					case "bash":
-						runErr = cobraCommand.GenBashCompletion(container.Stdout())
-					case "fish":
-						runErr = cobraCommand.GenFishCompletion(container.Stdout(), true)
-					case "powershell":
-						runErr = cobraCommand.GenPowerShellCompletion(container.Stdout())
-					case "zsh":
-						runErr = cobraCommand.GenZshCompletion(container.Stdout())
-					default:
-						runErr = fmt.Errorf(
-							"%s is not a recognized shell. These shells are supported: %s.",
-							shell,
-							strings.Join(supportedShells, ", "),
-						)
-					}
+				SubCommands: []*Command{
+					&Command{
+						Use:   "bash",
+						Short: "Generation auto-completion scripts for bash.",
+						Args:  cobra.NoArgs,
+						Run: func(ctx context.Context, container app.Container) error {
+							return cobraCommand.GenBashCompletion(container.Stdout())
+						},
+					},
+					&Command{
+						Use:   "fish",
+						Short: "Generation auto-completion scripts for fish.",
+						Args:  cobra.NoArgs,
+						Run: func(ctx context.Context, container app.Container) error {
+							return cobraCommand.GenFishCompletion(container.Stdout(), true)
+						},
+					},
+					&Command{
+						Use:   "powershell",
+						Short: "Generation auto-completion scripts for powershell.",
+						Args:  cobra.NoArgs,
+						Run: func(ctx context.Context, container app.Container) error {
+							return cobraCommand.GenPowerShellCompletion(container.Stdout())
+						},
+					},
+					&Command{
+						Use:   "zsh",
+						Short: "Generation auto-completion scripts for zsh.",
+						Args:  cobra.NoArgs,
+						Run: func(ctx context.Context, container app.Container) error {
+							return cobraCommand.GenZshCompletion(container.Stdout())
+						},
+					},
 				},
 			},
+			&runErr,
 		)
-		cobraCommand.AddCommand(
-			&cobra.Command{
+		if err != nil {
+			return err
+		}
+		cobraCommand.AddCommand(shellCobraCommand)
+		manpagesCobraCommand, err := commandToCobra(
+			ctx,
+			container,
+			&Command{
 				Use:    "manpages",
 				Args:   cobra.ExactArgs(1),
 				Hidden: true,
-				Run: func(_ *cobra.Command, args []string) {
-					runErr = doc.GenManTree(
+				Run: func(ctx context.Context, container app.Container) error {
+					return doc.GenManTree(
 						cobraCommand,
 						&doc.GenManHeader{
 							Title:   "Buf",
 							Section: "1",
 						},
-						args[0],
+						container.Arg(0),
 					)
 				},
 			},
+			&runErr,
 		)
+		if err != nil {
+			return err
+		}
+		cobraCommand.AddCommand(manpagesCobraCommand)
 	}
 
 	cobraCommand.SetOut(container.Stderr())

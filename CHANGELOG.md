@@ -4,6 +4,7 @@
 
 - Check that the user provided a valid token when running `buf registry login`.
 - Add `buf mod open` that opens a module's homepage in a browser.
+- Add `buf completion` command to generate auto-completion scripts in commonly-used shells.
 
 ## [v1.0.0-rc12] - 2022-02-01
 
