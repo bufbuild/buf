@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Check that the user provided a valid token when running `buf registry login`.
+- Add `buf mod open` that opens a module's homepage in a browser.
 
 ## [v1.0.0-rc12] - 2022-02-01
 
