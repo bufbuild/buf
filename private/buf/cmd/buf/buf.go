@@ -62,6 +62,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/protoc"
@@ -132,6 +133,7 @@ func NewRootCommand(name string) *appcmd.Command {
 					appcmd.NewDeletedCommand("init", modInitDeprecationMessage),
 					modprune.NewCommand("prune", builder),
 					modupdate.NewCommand("update", builder),
+					modopen.NewCommand("open", builder),
 					modclearcache.NewCommand("clear-cache", builder, "cc"),
 				},
 			},
