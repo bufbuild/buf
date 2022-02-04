@@ -43,9 +43,18 @@ For other installation methods, see our [official docs][install], which covers:
 * Installing as a [binary], from a [tarball], and from [source] through [GitHub Releases][releases]
 * [Verifying] releases using a [minisign] public key
 
+## Commands
+
+The best way to learn about `buf` commands is through the help interface:
+
+```sh
+buf --help
+```
+
 ## Goal
 
-Buf's long-term goal is to enable schema-driven development: a future where APIs are defined consistently, in a way that service owners and clients can depend on.
+[Buf]'s long-term goal is to push API development toward a schema-driven approach, where APIs are defined consistently and in a way that service owners and clients can depend on—in other words, to make API development feel much closer to using standard programming languages.
+
 
 Defining APIs using an [IDL](https://en.wikipedia.org/wiki/Interface_description_language) provides a number of benefits over simply exposing JSON/REST services, and today, [Protobuf](https://developers.google.com/protocol-buffers) is the most stable, widely-adopted IDL in the industry.
 
