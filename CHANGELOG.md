@@ -14,7 +14,8 @@
   a better Protobuf future that provides easier mechanics than our former `protoc`-based
   world. `buf protoc` itself added no benefit over mainline `protoc` beyond being considerably
   faster and allowing parallel compilation. If `protoc` is required, move back to mainline `protoc`
-  until you can upgrade to `buf`.
+  until you can upgrade to `buf`. See [#915](https://github.com/bufbuild/buf/pull/915) for more
+  details.
 
 ## [v1.0.0-rc12] - 2022-02-01
 
