@@ -42,13 +42,6 @@ const (
 	configFlagName              = "config"
 	excludePathsFlagName        = "exclude-path"
 	disableSymlinksFlagName     = "disable-symlinks"
-
-	// deprecated
-	sourceFlagName = "source"
-	// deprecated
-	sourceConfigFlagName = "source-config"
-	// deprecated
-	filesFlagName = "file"
 )
 
 // NewCommand returns a new Command.
@@ -82,13 +75,6 @@ type flags struct {
 	Config              string
 	ExcludePaths        []string
 	DisableSymlinks     bool
-
-	// deprecated
-	Source string
-	// deprecated
-	SourceConfig string
-	// deprecated
-	Files []string
 	// special
 	InputHashtag string
 }
@@ -102,7 +88,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindAsFileDescriptorSet(flagSet, &f.AsFileDescriptorSet, asFileDescriptorSetFlagName)
 	bufcli.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
 	bufcli.BindExcludeSourceInfo(flagSet, &f.ExcludeSourceInfo, excludeSourceInfoFlagName)
-	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
+	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.StringVar(
@@ -130,26 +116,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		`The file or data to use to use for configuration.`,
 	)
-
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.Source,
-		sourceFlagName,
-		"",
-		fmt.Sprintf(
-			`The source or module to build or Image to convert. Must be one of format %s.`,
-			buffetch.AllFormatsString,
-		),
-	)
-	_ = flagSet.MarkHidden(sourceFlagName)
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.SourceConfig,
-		sourceConfigFlagName,
-		"",
-		`The file or data to use for configuration.`,
-	)
-	_ = flagSet.MarkHidden(sourceConfigFlagName)
 }
 
 func run(
@@ -163,25 +129,7 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Source, sourceFlagName, ".")
-	if err != nil {
-		return err
-	}
-	inputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
-		flags.Config,
-		configFlagName,
-		flags.SourceConfig,
-		sourceConfigFlagName,
-	)
-	if err != nil {
-		return err
-	}
-	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
-		flags.Paths,
-		pathsFlagName,
-		flags.Files,
-		filesFlagName,
-	)
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
@@ -208,8 +156,8 @@ func run(
 		ctx,
 		container,
 		ref,
-		inputConfig,
-		paths,
+		flags.Config,
+		flags.Paths,
 		flags.ExcludePaths, // we exclude these paths
 		false,
 		flags.ExcludeSourceInfo,

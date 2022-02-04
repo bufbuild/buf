@@ -73,31 +73,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 )
 
-const (
-	betaConfigDeprecationMessage               = `"buf beta config ..." has been moved to "buf config ...".` + bufcli.DeprecationMessageSuffix
-	betaConfigInitDeprecationMessage           = `"buf beta config init" has been moved to "buf config init".` + bufcli.DeprecationMessageSuffix
-	betaImageConvertDeprecationMessage         = `"buf beta image convert" has been moved to "buf build".` + bufcli.DeprecationMessageSuffix
-	betaModClearCacheDeprecationMessage        = `"buf beta mod clear-cache" has been moved to "buf mod clear-cache".` + bufcli.DeprecationMessageSuffix
-	betaModDeprecationMessage                  = `"buf beta mod ..." has been moved to "buf mod ...".` + bufcli.DeprecationMessageSuffix
-	betaModExportDeprecationMessage            = `"buf beta mod export" has been moved to "buf export".` + bufcli.DeprecationMessageSuffix
-	betaModInitDeprecationMessage              = `"buf beta mod init" has been moved to "buf config init".` + bufcli.DeprecationMessageSuffix
-	betaModUpdateDeprecationMessage            = `"buf beta mod update" has been moved to "buf mod update".` + bufcli.DeprecationMessageSuffix
-	betaPushDeprecationMessage                 = `"buf beta push" has been moved to "buf mod push".` + bufcli.DeprecationMessageSuffix
-	checkBreakingDeprecationMessage            = `"buf check breaking" has been moved to "buf breaking".` + bufcli.DeprecationMessageSuffix
-	checkDeprecationMessage                    = `"buf check" sub-commands are now all implemented with the top-level "buf lint" and "buf breaking" commands.` + bufcli.DeprecationMessageSuffix
-	checkLintDeprecationMessage                = `"buf check lint" has been moved to "buf lint".` + bufcli.DeprecationMessageSuffix
-	checkLsBreakingCheckersDeprecationMessage  = `"buf check ls-breaking-checkers" has been moved to "buf config ls-breaking-rules".` + bufcli.DeprecationMessageSuffix
-	checkLsLintCheckersDeprecationMessage      = `"buf check ls-lint-checkers" has been moved to "buf config ls-lint-rules".` + bufcli.DeprecationMessageSuffix
-	experimentalDeprecationMessage             = `"buf experimental" sub-commands have moved to "buf beta".` + bufcli.DeprecationMessageSuffix
-	experimentalImageConvertDeprecationMessage = `"buf experimental image convert" has been moved to "buf build".` + bufcli.DeprecationMessageSuffix
-	imageBuildDeprecationMessage               = `"buf image build" has been moved to "buf build".` + bufcli.DeprecationMessageSuffix
-	imageDeprecationMessage                    = `"buf image" sub-commands are now all implemented under the top-level "buf build" command.` + bufcli.DeprecationMessageSuffix
-	loginDeprecationMessage                    = `"buf login" has been moved to "buf registry login".` + bufcli.DeprecationMessageSuffix
-	logoutDeprecationMessage                   = `"buf logout" has been moved to "buf registry logout".` + bufcli.DeprecationMessageSuffix
-	modInitDeprecationMessage                  = `"buf mod init" has been moved to "buf config init".` + bufcli.DeprecationMessageSuffix
-	pushDeprecationMessage                     = `"buf push" has been moved to "buf mod push".` + bufcli.DeprecationMessageSuffix
-)
-
 // Main is the entrypoint to the buf CLI.
 func Main(name string) {
 	appcmd.Main(context.Background(), NewRootCommand(name))
@@ -131,7 +106,6 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "mod",
 				Short: "Manage Buf modules.",
 				SubCommands: []*appcmd.Command{
-					appcmd.NewDeletedCommand("init", modInitDeprecationMessage),
 					modprune.NewCommand("prune", builder),
 					modupdate.NewCommand("update", builder),
 					modopen.NewCommand("open", builder),
@@ -248,37 +222,6 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 						},
 					},
-					{
-						Use:        "config",
-						Short:      "Manage Buf module configuration.",
-						Deprecated: betaConfigDeprecationMessage,
-						Hidden:     true,
-						SubCommands: []*appcmd.Command{
-							appcmd.NewDeletedCommand("init", betaConfigInitDeprecationMessage),
-						},
-					},
-					{
-						Use:        "image",
-						Short:      "Manage Images and FileDescriptorSets.",
-						Deprecated: imageDeprecationMessage,
-						Hidden:     true,
-						SubCommands: []*appcmd.Command{
-							appcmd.NewDeletedCommand("convert", betaImageConvertDeprecationMessage),
-						},
-					},
-					{
-						Use:        "mod",
-						Short:      "Manage Buf modules.",
-						Deprecated: betaModDeprecationMessage,
-						Hidden:     true,
-						SubCommands: []*appcmd.Command{
-							appcmd.NewDeletedCommand("init", betaModInitDeprecationMessage),
-							appcmd.NewDeletedCommand("update", betaModUpdateDeprecationMessage),
-							appcmd.NewDeletedCommand("export", betaModExportDeprecationMessage),
-							appcmd.NewDeletedCommand("clear-cache", betaModClearCacheDeprecationMessage, "cc"),
-						},
-					},
-					appcmd.NewDeletedCommand("push", betaPushDeprecationMessage),
 				},
 			},
 			{
@@ -301,47 +244,6 @@ func NewRootCommand(name string) *appcmd.Command {
 									tokendelete.NewCommand("delete", builder),
 								},
 							},
-						},
-					},
-				},
-			},
-			appcmd.NewDeletedCommand("login", loginDeprecationMessage),
-			appcmd.NewDeletedCommand("logout", logoutDeprecationMessage),
-			appcmd.NewDeletedCommand("push", pushDeprecationMessage),
-			{
-				Use:        "image",
-				Short:      "Manage Images and FileDescriptorSets.",
-				Deprecated: imageDeprecationMessage,
-				Hidden:     true,
-				SubCommands: []*appcmd.Command{
-					appcmd.NewDeletedCommand("build", imageBuildDeprecationMessage),
-				},
-			},
-			{
-				Use:        "check",
-				Short:      "Run linting or breaking change detection against Buf modules.",
-				Deprecated: checkDeprecationMessage,
-				Hidden:     true,
-				SubCommands: []*appcmd.Command{
-					appcmd.NewDeletedCommand("lint", checkLintDeprecationMessage),
-					appcmd.NewDeletedCommand("breaking", checkBreakingDeprecationMessage),
-					appcmd.NewDeletedCommand("ls-lint-checkers", checkLsLintCheckersDeprecationMessage),
-					appcmd.NewDeletedCommand("ls-breaking-checkers", checkLsBreakingCheckersDeprecationMessage),
-				},
-			},
-			{
-				Use:        "experimental",
-				Short:      "Experimental commands. Unstable and likely to change.",
-				Deprecated: experimentalDeprecationMessage,
-				Hidden:     true,
-				SubCommands: []*appcmd.Command{
-					{
-						Use:        "image",
-						Short:      "Manage Images and FileDescriptorSets.",
-						Deprecated: imageDeprecationMessage,
-						Hidden:     true,
-						SubCommands: []*appcmd.Command{
-							appcmd.NewDeletedCommand("convert", experimentalImageConvertDeprecationMessage),
 						},
 					},
 				},
