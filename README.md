@@ -60,11 +60,11 @@ Defining APIs using an [IDL] provides a number of benefits over simply exposing 
 
 However, as it stands, using Protobuf is much more difficult than using JSON as your data transfer format.
 
-Enter Buf: We’re building tooling to make Protobuf reliable and easy to use for service owners and clients, while keeping it the obvious choice on the technical merits.
+Enter Buf: We're building tooling to make Protobuf reliable and easy to use for service owners and clients, while keeping it the obvious choice on the technical merits.
 
 Your organization should not have to reinvent the wheel to create, maintain, and consume Protobuf APIs efficiently and effectively. We'll handle your Protobuf management strategy for you, so you can focus on what matters.
 
-We’re working quickly to build a modern Protobuf ecosystem. Our first tool is the **Buf CLI**, built to help you create consistent Protobuf APIs that preserve compatibility and comply with design best-practices. The tool is currently available on an open-source basis.
+We're working quickly to build a modern Protobuf ecosystem. Our first tool is the **Buf CLI**, built to help you create consistent Protobuf APIs that preserve compatibility and comply with design best-practices. The tool is currently available on an open-source basis.
 
 Our second tool, the **Buf Schema Registry** (BSR), is the hub of our ecosystem. The BSR is a platform that serves as the source of truth for your organization's Protobuf files, enabling you to centrally maintain compatibility and manage dependencies, while enabling your clients to consume APIs reliably and efficiently. The BSR is currently in **beta**.
 
@@ -161,7 +161,7 @@ The Buf CLI is designed to be simple to use while also providing functionality f
 
 ### The Buf Schema Registry
 
-The [Buf Schema Registry][bsr] (BSR) is a hosted SaaS platform that serves as your organization's source of truth for Protobuf APIs, built around the primitive of Protobuf Modules. We’re introducing the concept of Protobuf Modules to enable the BSR to manage a group of Protobuf files together, similar to a Go Module.
+The [Buf Schema Registry][bsr] (BSR) is a hosted SaaS platform that serves as your organization's source of truth for Protobuf APIs, built around the primitive of Protobuf Modules. We're introducing the concept of Protobuf Modules to enable the BSR to manage a group of Protobuf files together, similar to a Go Module.
 
 The BSR offers these key features:
 
@@ -169,7 +169,7 @@ The BSR offers these key features:
 
 - **Automatically enforce forwards and backwards compatibility**: Ensure API clients never break, without wasteful team-to-team communication or custom SLAs.
 
-- **Generated libraries produced by a managed compiler**: Language-specific stub generation using Buf’s high-performance, drop-in protoc replacement.
+- **Generated libraries produced by a managed compiler**: Language-specific stub generation using Buf's high-performance, drop-in protoc replacement.
 
 Over time, our goal is to make the BSR the only tool you need to manage your Protobuf workflow from end to end. For a quick overview of our many plans for the BSR, see the [roadmap].
 
