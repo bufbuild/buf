@@ -42,6 +42,7 @@ const (
 	includeImportsFlagName      = "include-imports"
 	includeWKTFlagName          = "include-wkt"
 	excludePathsFlagName        = "exclude-path"
+	disableSymlinksFlagName     = "disable-symlinks"
 
 	// deprecated
 	inputFlagName = "input"
@@ -188,15 +189,16 @@ Insertion points are processed in the order the plugins are specified in the tem
 }
 
 type flags struct {
-	Template       string
-	BaseOutDirPath string
-	ErrorFormat    string
-	Files          []string
-	Config         string
-	Paths          []string
-	IncludeImports bool
-	IncludeWKT     bool
-	ExcludePaths   []string
+	Template        string
+	BaseOutDirPath  string
+	ErrorFormat     string
+	Files           []string
+	Config          string
+	Paths           []string
+	IncludeImports  bool
+	IncludeWKT      bool
+	ExcludePaths    []string
+	DisableSymlinks bool
 
 	// deprecated
 	Input string
@@ -211,6 +213,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
@@ -321,7 +324,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		".",

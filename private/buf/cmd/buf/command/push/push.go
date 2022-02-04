@@ -26,17 +26,17 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/rpc"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 const (
-	trackFlagName       = "track"
-	tagFlagName         = "tag"
-	tagFlagShortName    = "t"
-	errorFormatFlagName = "error-format"
+	trackFlagName           = "track"
+	tagFlagName             = "tag"
+	tagFlagShortName        = "t"
+	errorFormatFlagName     = "error-format"
+	disableSymlinksFlagName = "disable-symlinks"
 )
 
 // NewCommand returns a new Command.
@@ -61,9 +61,10 @@ func NewCommand(
 }
 
 type flags struct {
-	Tracks      []string
-	Tags        []string
-	ErrorFormat string
+	Tracks          []string
+	Tags            []string
+	ErrorFormat     string
+	DisableSymlinks bool
 	// special
 	InputHashtag string
 }
@@ -74,6 +75,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.StringSliceVar(
 		&f.Tracks,
 		trackFlagName,
@@ -110,7 +112,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
 	// We are pushing to the BSR, this module has to be independently buildable
 	// given the configuration it has without any enclosing workspace.
