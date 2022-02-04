@@ -270,6 +270,18 @@ If specified multiple times, the union will be taken.`,
 	)
 }
 
+// BindDisableSymlinks binds the disable-symlinks flag.
+func BindDisableSymlinks(flagSet *pflag.FlagSet, addr *bool, flagName string) {
+	flagSet.BoolVar(
+		addr,
+		flagName,
+		false,
+		`Do not follow symlinks when reading sources or configuration from the local filesystem.
+By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry.
+Symlinks are never followed in Windows.`,
+	)
+}
+
 // GetInputLong gets the long command description for an input-based command.
 func GetInputLong(inputArgDescription string) string {
 	return fmt.Sprintf(
@@ -400,6 +412,14 @@ func WarnBetaCommand(ctx context.Context, container appflag.Container) {
 	if container.Env(betaSuppressWarningsEnvKey) == "" {
 		container.Logger().Warn("This command is in beta. It is unstable and likely to change. To suppress this warning, set " + betaSuppressWarningsEnvKey + "=1")
 	}
+}
+
+// NewStorageosProvider returns a new storageos.Provider based on the value of the disable-symlinks flag.
+func NewStorageosProvider(disableSymlinks bool) storageos.Provider {
+	if disableSymlinks {
+		return storageos.NewProvider()
+	}
+	return storageos.NewProvider(storageos.ProviderWithSymlinks())
 }
 
 // NewWireImageConfigReader returns a new ImageConfigReader.
