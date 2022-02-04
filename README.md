@@ -66,7 +66,7 @@ Your organization should not have to reinvent the wheel to create, maintain, and
 
 We’re working quickly to build a modern Protobuf ecosystem. Our first tool is the **Buf CLI**, built to help you create consistent Protobuf APIs that preserve compatibility and comply with design best-practices. The tool is currently available on an open-source basis.
 
-Our second tool, the **Buf Schema Registry (“BSR”)**, will be the hub of our ecosystem. The BSR is a platform that serves as the source of truth for your organization's Protobuf files, enabling you to centrally maintain compatibility and manage dependencies, while enabling your clients to consume APIs reliably and efficiently. The BSR will be available for a limited, free private beta shortly.
+Our second tool, the **Buf Schema Registry** (BSR), is the hub of our ecosystem. The BSR is a platform that serves as the source of truth for your organization's Protobuf files, enabling you to centrally maintain compatibility and manage dependencies, while enabling your clients to consume APIs reliably and efficiently. The BSR is currently in **beta**.
 
 ## Quick Links
 
@@ -104,7 +104,7 @@ Traditionally, adopting Protobuf presents a number of challenges across the API 
 
 ## Buf is building a modern Protobuf ecosystem
 
-Our tools will address many of the problems above, ultimately allowing you to redirect much of your time and energy from managing Protobuf files to implementing your core features and infrastructure.
+Our tools address many of the problems above, allowing you to redirect much of your time and energy from managing Protobuf files to implementing your core features and infrastructure.
 
 ### The Buf CLI
 
@@ -118,7 +118,7 @@ The Buf CLI incorporates the following components to help you create consistent 
 
 The Buf CLI is designed to be simple to use while also providing functionality for the most advanced use cases. Features of the CLI include:
 
-- **Automatic file discovery**: By default, Buf will build your `.proto` files by walking your file
+- **Automatic file discovery**: By default, Buf builds your `.proto` files by walking your file
   tree and building them per your [build configuration][configuration]. This means you no longer need to
   manually specify your `--proto_paths` and files every time you run the tool. However, Buf does
   allow manual file specification through command-line flags if you want no file discovery to
@@ -139,7 +139,7 @@ The Buf CLI is designed to be simple to use while also providing functionality f
   of the lint error is also available, and JUnit output is coming soon.
 
 - **Editor integration**: The default error output is easily parseable by any editor, making the
-  feedback loop for issues very short. Currently, we only provide
+  feedback loop for issues very short. Currently, we provide
   [Vim and Visual Studio Code integration][ide] for linting but will extend this
   in the future to include other editors such as Emacs and Intellij IDEs.
 
@@ -161,9 +161,9 @@ The Buf CLI is designed to be simple to use while also providing functionality f
 
 ### The Buf Schema Registry
 
-The Buf Schema Registry is a powerful hosted SaaS platform to serve as your organization’s source of truth for your Protobuf APIs, built around the primitive of Protobuf Modules. We’re introducing the concept of Protobuf Modules to enable the BSR to manage a group of Protobuf files together, similar to a Go Module.
+The [Buf Schema Registry][bsr] (BSR) is a hosted SaaS platform that serves as your organization's source of truth for Protobuf APIs, built around the primitive of Protobuf Modules. We’re introducing the concept of Protobuf Modules to enable the BSR to manage a group of Protobuf files together, similar to a Go Module.
 
-Initially, the BSR offers these key features:
+The BSR offers these key features:
 
 - **Centrally managed dependencies**: Resolve diamond dependency issues caused by haphazard versioning, even with external repository dependants.
 
@@ -171,7 +171,7 @@ Initially, the BSR offers these key features:
 
 - **Generated libraries produced by a managed compiler**: Language-specific stub generation using Buf’s high-performance, drop-in protoc replacement.
 
-Over time, our goal is to make the BSR the only tool you need to manage your Protobuf workflow from end to end. To that end, there's a lot we are planning with the Buf Schema Registry. For a quick overview, see our [roadmap].
+Over time, our goal is to make the BSR the only tool you need to manage your Protobuf workflow from end to end. For a quick overview of our many plans for the BSR, see the [roadmap].
 
 ## Where to go from here
 

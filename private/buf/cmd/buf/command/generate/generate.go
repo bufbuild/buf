@@ -286,7 +286,7 @@ func run(
 ) (retErr error) {
 	logger := container.Logger()
 	if flags.IncludeWKT && !flags.IncludeImports {
-		// You need to set --include-imports if you set --include-wkt, which isn’t great. The alternative is to have
+		// You need to set --include-imports if you set --include-wkt, which isn't great. The alternative is to have
 		// --include-wkt implicitly set --include-imports, but this could be surprising. Or we could rename
 		// --include-wkt to --include-imports-and/with-wkt. But the summary is that the flag only makes sense
 		// in the context of including imports.
