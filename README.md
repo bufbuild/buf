@@ -11,10 +11,16 @@
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)](https://hub.docker.com/r/bufbuild/buf)
 [![License](https://img.shields.io/github/license/bufbuild/buf?color=blue)](https://github.com/bufbuild/buf/blob/main/LICENSE)
 
-The [Buf] CLI is a tool for working with [Protocol Buffers][protobuf], offering a range of features
-not found in the standard [`protoc`][protoc] compiler, such as [breaking change detection][breaking]
-for Protobuf APIs, [linting][lint] Protobuf sources, [dependency management][deps], and interactions
-with the [Buf Schema Registry][bsr] (BSR).
+The [Buf] CLI is a tool for working with [Protocol Buffers][protobuf], offering a range of features not found in the standard [`protoc`][protoc] compiler:
+
+* [Breaking change detection][breaking] for Protobuf APIs
+* Enforcing [linting][lint] rules for Protobuf sources
+* Simplified [dependency management][deps] for your `.proto` files
+* The ability to manage Protobuf assets, including [plugins] and [templates], on the [Buf Schema Registry][bsr] (BSR).
+
+## Installation
+
+For installation instructions, see our [official docs][installation].
 
 ## Goal
 
@@ -138,14 +144,14 @@ Initially, the BSR will offer the following key features:
 
 - **Generated libraries produced by a managed compiler**: Language-specific stub generation using Buf’s high-performance, drop-in protoc replacement.
 
-Over time, our goal is to make the BSR the only tool you need to manage your Protobuf workflow from end to end. To that end, there's a lot we are planning with the Buf Schema Registry. For a quick overview, see our [roadmap](https://docs.buf.build/roadmap/).
+Over time, our goal is to make the BSR the only tool you need to manage your Protobuf workflow from end to end. To that end, there's a lot we are planning with the Buf Schema Registry. For a quick overview, see our [roadmap].
 
 ## Where to go from here
 
-To install Buf, proceed to [installation](https://docs.buf.build/installation/). This includes links to an example
+To install Buf, proceed to [installation][install]. This includes links to an example
 repository for Travis CI and GitHub Actions integration.
 
-Next, we recommend completing the [tour](https://docs.buf.build/tour/introduction/). This tour should only take about 10 minutes, and
+Next, we recommend completing the [tour]. This tour should only take about 10 minutes, and
 will give you an overview of most of the existing functionality of Buf.
 
 After completing the tour, check out the remainder of the docs for your specific areas of interest.
@@ -159,7 +165,12 @@ Finally, [follow the project on GitHub][repo] and [contact us][contact] if you'd
 [buf]: https://buf.build
 [contact]: https://docs.buf.build/contact
 [deps]: https://docs.buf.build/bsr/overview#dependencies
+[installation]: https://docs.buf.build/installation
 [lint]: https://docs.buf.build/lint
+[plugins]: /todo
 [protobuf]: https://developers.google.com/protocol-buffers
 [protoc]: https://developers.google.com/protocol-buffers
 [repo]: ./
+[roadmap]: https://docs.buf.build/roadmap
+[templates]: /todo
+[tour]: https://docs.buf.build/tour/introduction
