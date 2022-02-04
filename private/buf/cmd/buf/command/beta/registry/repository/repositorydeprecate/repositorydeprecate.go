@@ -36,7 +36,7 @@ func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "Deprecate a repository.",
+		Short: "Deprecate a repository on the BSR.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -61,7 +61,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Message,
 		messageFlagName,
 		"",
-		`The deprecation message to display with deprecation warnings.`,
+		`The message to display with deprecation warnings.`,
 	)
 }
 

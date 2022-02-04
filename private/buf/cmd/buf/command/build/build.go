@@ -59,8 +59,8 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Build all files from the input location and output an image.",
-		Long:  bufcli.GetInputLong(`the source or module to build, or image to convert`),
+		Short: "Build all Protobuf files from the specified input and output an Image.",
+		Long:  bufcli.GetInputLong(`the source or module to build or image to convert`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -108,7 +108,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors, printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s.",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -118,7 +118,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagShortName,
 		app.DevNullFilePath,
 		fmt.Sprintf(
-			`The location to write the image to. Must be one of format %s.`,
+			`The output location for the built Image. Must be one of format %s.`,
 			buffetch.ImageFormatsString,
 		),
 	)
@@ -126,7 +126,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The config file or data to use.`,
+		`The file or data to use to use for configuration.`,
 	)
 
 	// deprecated, but not marked as deprecated as we return error if this is used
@@ -135,7 +135,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		sourceFlagName,
 		"",
 		fmt.Sprintf(
-			`The source or module to build, or image to convert. Must be one of format %s.`,
+			`The source or module to build or Image to convert. Must be one of format %s.`,
 			buffetch.AllFormatsString,
 		),
 	)
@@ -145,7 +145,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.SourceConfig,
 		sourceConfigFlagName,
 		"",
-		`The config file or data to use.`,
+		`The file or data to use for configuration.`,
 	)
 	_ = flagSet.MarkHidden(sourceConfigFlagName)
 }

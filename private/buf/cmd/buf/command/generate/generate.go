@@ -255,7 +255,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The config file or data to use.`,
+		`The file or data to use for configuration.`,
 	)
 
 	// deprecated, but not marked as deprecated as we return error if this is used
@@ -274,7 +274,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.InputConfig,
 		inputConfigFlagName,
 		"",
-		`The config file or data to use.`,
+		`The file or data to use for configuration.`,
 	)
 	_ = flagSet.MarkHidden(inputConfigFlagName)
 }

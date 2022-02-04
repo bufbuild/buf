@@ -63,7 +63,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Message,
 		messageFlagName,
 		"",
-		`The deprecation message to display with deprecation warnings.`,
+		`The message to display with deprecation warnings.`,
 	)
 }
 
@@ -75,7 +75,7 @@ func run(
 	bufcli.WarnBetaCommand(ctx, container)
 	pluginPath := container.Arg(0)
 	if pluginPath == "" {
-		return appcmd.NewInvalidArgumentError("a plugin path must be specified")
+		return appcmd.NewInvalidArgumentError("you must specify a plugin path")
 	}
 	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {

@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	globalParallelism = runtime.NumCPU()
+	globalParallelism = runtime.GOMAXPROCS(0)
 	globalLock        sync.RWMutex
 )
 
@@ -63,41 +63,35 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 		return nil
 	case 1:
 		return jobs[0](ctx)
-	default:
-		multiplier := parallelizeOptions.multiplier
-		if multiplier < 1 {
-			multiplier = 1
+	}
+	multiplier := parallelizeOptions.multiplier
+	if multiplier < 1 {
+		multiplier = 1
+	}
+	semaphoreC := make(chan struct{}, Parallelism()*multiplier)
+	var retErr error
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	var stop bool
+	for _, job := range jobs {
+		if stop {
+			break
 		}
-		semaphoreC := make(chan struct{}, Parallelism()*multiplier)
-		var retErr error
-		var wg sync.WaitGroup
-		var lock sync.Mutex
-		stop := false
-		for _, job := range jobs {
-			if stop {
-				break
-			}
-			job := job
-			// First, check if the context is done before even hitting a new job start.
-			// We don't want to do the select with the semaphore as we want the context
-			// being done to take precedence.
+		job := job
+		// We always want context cancellation/deadline expiration to take
+		// precedence over the semaphore unblocking, but select statements choose
+		// among the unblocked non-default cases pseudorandomly. To correctly
+		// enforce precedence, use a similar pattern to the check-lock-check
+		// pattern common with sync.RWMutex: check the context twice, and only do
+		// the semaphore-protected work in the innermost default case.
+		select {
+		case <-ctx.Done():
+			stop = true
+		case semaphoreC <- struct{}{}:
 			select {
 			case <-ctx.Done():
 				stop = true
 			default:
-			}
-			if stop {
-				// We want to break the for loop without using labels/gotos but if
-				// we put a break inside the select then it only breaks the select
-				break
-			}
-			// Next, we still do a select between the context and the semaphore, so that
-			// if we are blocking on the semaphore, and then the context is cancelled,
-			// we will then end up breaking.
-			select {
-			case <-ctx.Done():
-				stop = true
-			case semaphoreC <- struct{}{}:
 				wg.Add(1)
 				go func() {
 					if err := job(ctx); err != nil {
@@ -114,9 +108,9 @@ func Parallelize(ctx context.Context, jobs []func(context.Context) error, option
 				}()
 			}
 		}
-		wg.Wait()
-		return retErr
 	}
+	wg.Wait()
+	return retErr
 }
 
 // ParallelizeOption is an option to Parallelize.

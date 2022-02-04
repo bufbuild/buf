@@ -40,7 +40,7 @@ func BindLSRulesConfig(flagSet *pflag.FlagSet, addr *string, flagName string, al
 		flagName,
 		"",
 		fmt.Sprintf(
-			`The config file or data to use. If --%s or --%s are specified, this is ignored.`,
+			`The file or data to use for configuration. Ignored if --%s or --%s is specified.`,
 			allFlagName,
 			versionFlagName,
 		),

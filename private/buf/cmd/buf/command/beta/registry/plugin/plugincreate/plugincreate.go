@@ -50,7 +50,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/" + bufplugin.PluginsPathName + "/plugin>",
-		Short: "Create a new plugin.",
+		Short: "Create a new Protobuf plugin.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {

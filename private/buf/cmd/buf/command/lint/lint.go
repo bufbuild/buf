@@ -55,8 +55,8 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Check that the input location passes lint checks.",
-		Long:  bufcli.GetInputLong(`the source, module, or image to lint`),
+		Short: "Verify that the input location passes lint checks.",
+		Long:  bufcli.GetInputLong(`the source, module, or Image to lint`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -97,7 +97,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors or check violations, printed to stdout. Must be one of %s.",
+			"The format for build errors or check violations printed to stdout. Must be one of %s.",
 			stringutil.SliceToString(buflint.AllFormatStrings),
 		),
 	)
@@ -105,7 +105,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Config,
 		configFlagName,
 		"",
-		`The config file or data to use.`,
+		`The file or data to use for configuration.`,
 	)
 
 	// deprecated, but not marked as deprecated as we return error if this is used
@@ -114,7 +114,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		inputFlagName,
 		"",
 		fmt.Sprintf(
-			`The source or image to lint. Must be one of format %s.`,
+			`The source or Image to lint. Must be one of format %s.`,
 			buffetch.AllFormatsString,
 		),
 	)
@@ -124,7 +124,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.InputConfig,
 		inputConfigFlagName,
 		"",
-		`The config file or data to use.`,
+		`The file or data to use for configuration.`,
 	)
 	_ = flagSet.MarkHidden(inputConfigFlagName)
 }

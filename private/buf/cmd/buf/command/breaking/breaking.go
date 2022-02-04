@@ -64,8 +64,8 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " --against against-input <input>",
-		Short: "Check that the input location has no breaking changes compared to the against location.",
-		Long:  bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
+		Short: "Verify that the input location has no breaking changes compared to the against location.",
+		Long:  bufcli.GetInputLong(`the source, module, or Image to check for breaking changes`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -114,7 +114,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors or check violations, printed to stdout. Must be one of %s.",
+			"The format for build errors or check violations printed to stdout. Must be one of %s.",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -130,7 +130,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		false,
 		fmt.Sprintf(
 			`Only run breaking checks against the files in the input.
-This has the effect of filtering the against input to only contain the files in the input.
+When set, the against input contains only the files in the input.
 Overrides --%s.`,
 			pathsFlagName,
 		),
@@ -139,14 +139,14 @@ Overrides --%s.`,
 		&f.Config,
 		configFlagName,
 		"",
-		`The config file or data to use.`,
+		`The file or data to use for configuration.`,
 	)
 	flagSet.StringVar(
 		&f.Against,
 		againstFlagName,
 		"",
 		fmt.Sprintf(
-			`Required. The source, module, or image to check against. Must be one of format %s.`,
+			`Required. The source, module, or Image to check against. Must be one of format %s.`,
 			buffetch.AllFormatsString,
 		),
 	)
@@ -154,7 +154,7 @@ Overrides --%s.`,
 		&f.AgainstConfig,
 		againstConfigFlagName,
 		"",
-		`The config file or data to use for the against source, module, or image.`,
+		`The file or data to use to configure the against source, module, or image.`,
 	)
 
 	// deprecated, but not marked as deprecated as we return error if this is used
@@ -163,7 +163,7 @@ Overrides --%s.`,
 		inputFlagName,
 		"",
 		fmt.Sprintf(
-			`The source or image to check for breaking changes. Must be one of format %s.`,
+			`The source or Image to check for breaking changes. Must be one of format %s.`,
 			buffetch.AllFormatsString,
 		),
 	)
@@ -173,7 +173,7 @@ Overrides --%s.`,
 		&f.InputConfig,
 		inputConfigFlagName,
 		"",
-		`The config file or data to use.`,
+		`The file or data to use for configuration.`,
 	)
 	_ = flagSet.MarkHidden(inputConfigFlagName)
 	// deprecated, but not marked as deprecated as we return error if this is used
@@ -182,7 +182,7 @@ Overrides --%s.`,
 		againstInputFlagName,
 		"",
 		fmt.Sprintf(
-			`Required. The source or image to check against. Must be one of format %s.`,
+			`Required. The source or Image to check against. Must be one of format %s.`,
 			buffetch.AllFormatsString,
 		),
 	)
@@ -192,7 +192,7 @@ Overrides --%s.`,
 		&f.AgainstInputConfig,
 		againstInputConfigFlagName,
 		"",
-		`The config file or data to use for the against source or image.`,
+		`The file or data to use to configure the against source or Image.`,
 	)
 	_ = flagSet.MarkHidden(againstInputConfigFlagName)
 }
