@@ -255,8 +255,7 @@ type GeneratePluginsRequest struct {
 	IncludeImports bool `protobuf:"varint,3,opt,name=include_imports,json=includeImports,proto3" json:"include_imports,omitempty"`
 	// Include Well-Known Types from the Image in generation.
 	//
-	// This is a no-nop if include_imports is not set.
-	// TODO weird API
+	// include_imports must be set if include_well_known_types is set. TODO weird API
 	IncludeWellKnownTypes bool `protobuf:"varint,4,opt,name=include_well_known_types,json=includeWellKnownTypes,proto3" json:"include_well_known_types,omitempty"`
 }
 
@@ -407,8 +406,7 @@ type GenerateTemplateRequest struct {
 	IncludeImports bool `protobuf:"varint,5,opt,name=include_imports,json=includeImports,proto3" json:"include_imports,omitempty"`
 	// Include Well-Known Types from the Image in generation.
 	//
-	// This is a no-nop if include_imports is not set.
-	// TODO weird API
+	// include_imports must be set if include_well_known_types is set. TODO weird API
 	IncludeWellKnownTypes bool `protobuf:"varint,6,opt,name=include_well_known_types,json=includeWellKnownTypes,proto3" json:"include_well_known_types,omitempty"`
 }
 
