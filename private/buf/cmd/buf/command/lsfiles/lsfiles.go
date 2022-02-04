@@ -25,17 +25,17 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 const (
-	asImportPathsFlagName  = "as-import-paths"
-	configFlagName         = "config"
-	errorFormatFlagName    = "error-format"
-	includeImportsFlagName = "include-imports"
+	asImportPathsFlagName   = "as-import-paths"
+	configFlagName          = "config"
+	errorFormatFlagName     = "error-format"
+	includeImportsFlagName  = "include-imports"
+	disableSymlinksFlagName = "disable-symlinks"
 
 	// deprecated
 	inputFlagName = "input"
@@ -65,10 +65,11 @@ func NewCommand(
 }
 
 type flags struct {
-	AsImportPaths  bool
-	Config         string
-	ErrorFormat    string
-	IncludeImports bool
+	AsImportPaths   bool
+	Config          string
+	ErrorFormat     string
+	IncludeImports  bool
+	DisableSymlinks bool
 
 	// deprecated
 	Input string
@@ -84,6 +85,7 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.BoolVar(
 		&f.AsImportPaths,
 		asImportPathsFlagName,
@@ -153,7 +155,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
 	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {

@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -43,6 +42,7 @@ const (
 	againstFlagName           = "against"
 	againstConfigFlagName     = "against-config"
 	excludePathsFlagName      = "exclude-path"
+	disableSymlinksFlagName   = "disable-symlinks"
 
 	// deprecated
 	inputFlagName = "input"
@@ -86,6 +86,7 @@ type flags struct {
 	Against           string
 	AgainstConfig     string
 	ExcludePaths      []string
+	DisableSymlinks   bool
 
 	// deprecated
 	Input string
@@ -109,6 +110,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
+	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -252,7 +254,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
 	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
