@@ -86,7 +86,7 @@ type ModuleIncludeBuilder interface {
 // NewModuleIncludeBuilder returns a new ModuleIncludeBuilder.
 //
 // TODO: we should parse includeDirPaths for modules as well in theory
-// would be nice to be able to do buf protoc -I path/to/dir -I buf.build/foo/bar/v1
+// would be nice to be able to do buf alpha protoc -I path/to/dir -I buf.build/foo/bar/v1
 func NewModuleIncludeBuilder(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,

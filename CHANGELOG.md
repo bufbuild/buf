@@ -9,6 +9,13 @@
   `--include-imports`, this will result in the [Well-Known Types](https://github.com/bufbuild/wellknowntypes/tree/11ea259bf71c4d386131c1986ffe103cb1edb3d6/v3.19.4/google/protobuf)
   being generated as well. Most language runtimes have the Well-Known Types included as part
   of the core library, making generating the Well-Known Types separately undesirable.
+- Remove `buf protoc`. This was a pre-v1.0 demonstration to show that `buf` compilation
+  produces equivalent results to mainline `protoc`, however `buf` is working on building
+  a better Protobuf future that provides easier mechanics than our former `protoc`-based
+  world. `buf protoc` itself added no benefit over mainline `protoc` beyond being considerably
+  faster and allowing parallel compilation. If `protoc` is required, move back to mainline `protoc`
+  until you can upgrade to `buf`. See [#915](https://github.com/bufbuild/buf/pull/915) for more
+  details.
 
 ## [v1.0.0-rc12] - 2022-02-01
 

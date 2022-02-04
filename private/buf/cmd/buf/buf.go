@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokencreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
@@ -65,7 +66,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/protoc"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/push"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogin"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/registry/registrylogout"
@@ -125,7 +125,6 @@ func NewRootCommand(name string) *appcmd.Command {
 			lint.NewCommand("lint", builder),
 			breaking.NewCommand("breaking", builder),
 			generate.NewCommand("generate", builder),
-			protoc.NewCommand("protoc", builder),
 			lsfiles.NewCommand("ls-files", builder),
 			push.NewCommand("push", builder),
 			{
@@ -284,9 +283,10 @@ func NewRootCommand(name string) *appcmd.Command {
 			},
 			{
 				Use:    "alpha",
-				Short:  "Alpha commands. Unstable and recommended only for experimentation.",
+				Short:  "Alpha commands. Unstable and recommended only for experimentation. These may be deleted.",
 				Hidden: true,
 				SubCommands: []*appcmd.Command{
+					protoc.NewCommand("protoc", builder),
 					{
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry.",

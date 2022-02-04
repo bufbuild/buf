@@ -172,7 +172,7 @@ as "proto/foo" is contained within "proto".
 
 Plugins are invoked in the order they are specified in the template, but each plugin
 has a per-directory parallel invocation, with results from each invocation combined
-before writing the result. This is equivalent behavior to "buf protoc --by_dir".
+before writing the result.
 
 Insertion points are processed in the order the plugins are specified in the template.
 `,
