@@ -38,6 +38,9 @@ message RepositoryTrackCommit {
 
   // unique for repository_track, immutable
   int64 sequence_id = 6;
+
+  // immutable
+  string repository_commit = 7;
 }
 
 service RepositoryTrackCommitService {

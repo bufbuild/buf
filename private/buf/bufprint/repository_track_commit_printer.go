@@ -72,11 +72,11 @@ func (p *repositoryTrackCommitPrinter) PrintRepositoryTrackCommits(
 func (p *repositoryTrackCommitPrinter) printRepositoryTrackCommitsText(output []outputRepositoryTrackCommit) error {
 	return WithTabWriter(
 		p.writer,
-		[]string{"Commit ID", "Track ID"},
+		[]string{"Commit", "Track ID"},
 		func(tabWriter TabWriter) error {
 			for _, outputCommit := range output {
 				if err := tabWriter.Write(
-					outputCommit.RepositoryCommitID,
+					outputCommit.RepositoryCommit,
 					outputCommit.RepositoryTrackID,
 				); err != nil {
 					return err
@@ -88,13 +88,13 @@ func (p *repositoryTrackCommitPrinter) printRepositoryTrackCommitsText(output []
 }
 
 type outputRepositoryTrackCommit struct {
-	RepositoryCommitID string `json:"commit_id,omitempty"`
-	RepositoryTrackID  string `json:"track_id,omitempty"`
+	RepositoryCommit  string `json:"commit,omitempty"`
+	RepositoryTrackID string `json:"track_id,omitempty"`
 }
 
 func registryRepositoryTrackCommitToOutputRepositoryTrackCommit(message *registryv1alpha1.RepositoryTrackCommit) outputRepositoryTrackCommit {
 	return outputRepositoryTrackCommit{
-		RepositoryTrackID:  message.GetRepositoryTrackId(),
-		RepositoryCommitID: message.GetRepositoryCommitId(),
+		RepositoryCommit:  message.GetRepositoryCommit(),
+		RepositoryTrackID: message.GetRepositoryTrackId(),
 	}
 }
