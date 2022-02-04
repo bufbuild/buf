@@ -138,6 +138,11 @@ func NewModuleReferenceNotFoundError(reference bufmoduleref.ModuleReference) err
 	return fmt.Errorf("%q does not exist", reference)
 }
 
+// NewTrackNotFoundError informs the user that a track doesn't exist.
+func NewTrackNotFoundError(track string) error {
+	return fmt.Errorf("a track named %q does not exist", track)
+}
+
 // NewTokenNotFoundError informs the user that a token with
 // that identifier does not exist.
 func NewTokenNotFoundError(tokenID string) error {

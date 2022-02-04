@@ -38,4 +38,10 @@ type RepositoryTrackCommitService interface {
 		pageToken string,
 		reverse bool,
 	) (repositoryTrackCommits []*v1alpha1.RepositoryTrackCommit, nextPageToken string, err error)
+	// CreateRepositoryTrackCommit creates a RepositoryTrackCommit.
+	CreateRepositoryTrackCommit(
+		ctx context.Context,
+		repositoryTrackId string,
+		repositoryCommitId string,
+	) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, err error)
 }

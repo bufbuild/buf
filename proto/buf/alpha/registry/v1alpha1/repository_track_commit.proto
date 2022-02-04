@@ -47,6 +47,8 @@ service RepositoryTrackCommitService {
   // ListRepositoryTrackCommitsByRepositoryTrack lists the RepositoryTrackCommitS associated with a repository track,
   // ordered by their sequence id.
   rpc ListRepositoryTrackCommitsByRepositoryTrack(ListRepositoryTrackCommitsByRepositoryTrackRequest) returns (ListRepositoryTrackCommitsByRepositoryTrackResponse);
+  // CreateRepositoryTrackCommit creates a RepositoryTrackCommit.
+  rpc CreateRepositoryTrackCommit(CreateRepositoryTrackCommitRequest) returns (CreateRepositoryTrackCommitResponse);
 }
 
 message GetRepositoryTrackCommitByRepositoryCommitRequest {
@@ -68,4 +70,15 @@ message ListRepositoryTrackCommitsByRepositoryTrackRequest {
 message ListRepositoryTrackCommitsByRepositoryTrackResponse {
   repeated RepositoryTrackCommit repository_track_commits = 1;
   string next_page_token = 2;
+}
+
+message CreateRepositoryTrackCommitRequest {
+  // The id of the repository track for this repository track commit.
+  string repository_track_id = 1;
+  // The id of the repository commit to associate with the repository track commit.
+  string repository_commit_id = 2;
+}
+
+message CreateRepositoryTrackCommitResponse {
+  RepositoryTrackCommit repository_track_commit = 1;
 }

@@ -77,3 +77,25 @@ func (s *repositoryTrackCommitService) ListRepositoryTrackCommitsByRepositoryTra
 	}
 	return response.RepositoryTrackCommits, response.NextPageToken, nil
 }
+
+// CreateRepositoryTrackCommit creates a RepositoryTrackCommit.
+func (s *repositoryTrackCommitService) CreateRepositoryTrackCommit(
+	ctx context.Context,
+	repositoryTrackId string,
+	repositoryCommitId string,
+) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.CreateRepositoryTrackCommit(
+		ctx,
+		&v1alpha1.CreateRepositoryTrackCommitRequest{
+			RepositoryTrackId:  repositoryTrackId,
+			RepositoryCommitId: repositoryCommitId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.RepositoryTrackCommit, nil
+}

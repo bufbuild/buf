@@ -42,6 +42,8 @@ type RepositoryTrackCommitServiceClient interface {
 	// ListRepositoryTrackCommitsByRepositoryTrack lists the RepositoryTrackCommitS associated with a repository track,
 	// ordered by their sequence id.
 	ListRepositoryTrackCommitsByRepositoryTrack(ctx context.Context, in *ListRepositoryTrackCommitsByRepositoryTrackRequest, opts ...grpc.CallOption) (*ListRepositoryTrackCommitsByRepositoryTrackResponse, error)
+	// CreateRepositoryTrackCommit creates a RepositoryTrackCommit.
+	CreateRepositoryTrackCommit(ctx context.Context, in *CreateRepositoryTrackCommitRequest, opts ...grpc.CallOption) (*CreateRepositoryTrackCommitResponse, error)
 }
 
 type repositoryTrackCommitServiceClient struct {
@@ -70,6 +72,15 @@ func (c *repositoryTrackCommitServiceClient) ListRepositoryTrackCommitsByReposit
 	return out, nil
 }
 
+func (c *repositoryTrackCommitServiceClient) CreateRepositoryTrackCommit(ctx context.Context, in *CreateRepositoryTrackCommitRequest, opts ...grpc.CallOption) (*CreateRepositoryTrackCommitResponse, error) {
+	out := new(CreateRepositoryTrackCommitResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryTrackCommitService/CreateRepositoryTrackCommit", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RepositoryTrackCommitServiceServer is the server API for RepositoryTrackCommitService service.
 // All implementations should embed UnimplementedRepositoryTrackCommitServiceServer
 // for forward compatibility
@@ -80,6 +91,8 @@ type RepositoryTrackCommitServiceServer interface {
 	// ListRepositoryTrackCommitsByRepositoryTrack lists the RepositoryTrackCommitS associated with a repository track,
 	// ordered by their sequence id.
 	ListRepositoryTrackCommitsByRepositoryTrack(context.Context, *ListRepositoryTrackCommitsByRepositoryTrackRequest) (*ListRepositoryTrackCommitsByRepositoryTrackResponse, error)
+	// CreateRepositoryTrackCommit creates a RepositoryTrackCommit.
+	CreateRepositoryTrackCommit(context.Context, *CreateRepositoryTrackCommitRequest) (*CreateRepositoryTrackCommitResponse, error)
 }
 
 // UnimplementedRepositoryTrackCommitServiceServer should be embedded to have forward compatible implementations.
@@ -91,6 +104,9 @@ func (UnimplementedRepositoryTrackCommitServiceServer) GetRepositoryTrackCommitB
 }
 func (UnimplementedRepositoryTrackCommitServiceServer) ListRepositoryTrackCommitsByRepositoryTrack(context.Context, *ListRepositoryTrackCommitsByRepositoryTrackRequest) (*ListRepositoryTrackCommitsByRepositoryTrackResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRepositoryTrackCommitsByRepositoryTrack not implemented")
+}
+func (UnimplementedRepositoryTrackCommitServiceServer) CreateRepositoryTrackCommit(context.Context, *CreateRepositoryTrackCommitRequest) (*CreateRepositoryTrackCommitResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRepositoryTrackCommit not implemented")
 }
 
 // UnsafeRepositoryTrackCommitServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -140,6 +156,24 @@ func _RepositoryTrackCommitService_ListRepositoryTrackCommitsByRepositoryTrack_H
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryTrackCommitService_CreateRepositoryTrackCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRepositoryTrackCommitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryTrackCommitServiceServer).CreateRepositoryTrackCommit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryTrackCommitService/CreateRepositoryTrackCommit",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryTrackCommitServiceServer).CreateRepositoryTrackCommit(ctx, req.(*CreateRepositoryTrackCommitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RepositoryTrackCommitService_ServiceDesc is the grpc.ServiceDesc for RepositoryTrackCommitService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -154,6 +188,10 @@ var RepositoryTrackCommitService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRepositoryTrackCommitsByRepositoryTrack",
 			Handler:    _RepositoryTrackCommitService_ListRepositoryTrackCommitsByRepositoryTrack_Handler,
+		},
+		{
+			MethodName: "CreateRepositoryTrackCommit",
+			Handler:    _RepositoryTrackCommitService_CreateRepositoryTrackCommit_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
