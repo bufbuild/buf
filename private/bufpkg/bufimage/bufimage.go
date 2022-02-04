@@ -362,17 +362,21 @@ func ImageToFileDescriptorProtos(image Image) []*descriptorpb.FileDescriptorProt
 //
 // All non-imports are added as files to generate.
 // If includeImports is set, all non-well-known-type imports are also added as files to generate.
+// If includeWellKnownTypes is set, well-known-type imports are also added as files to generate.
+// includeWellKnownTypes has no effect if includeImports is not set.
 func ImageToCodeGeneratorRequest(
 	image Image,
 	parameter string,
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
+	includeWellKnownTypes bool,
 ) *pluginpb.CodeGeneratorRequest {
 	return imageToCodeGeneratorRequest(
 		image,
 		parameter,
 		compilerVersion,
 		includeImports,
+		includeWellKnownTypes,
 		nil,
 		nil,
 	)
@@ -383,17 +387,37 @@ func ImageToCodeGeneratorRequest(
 // All non-imports are added as files to generate.
 // If includeImports is set, all non-well-known-type imports are also added as files to generate.
 // If includeImports is set, only one CodeGeneratorRequest will contain any given file as a FileToGenerate.
+// If includeWellKnownTypes is set, well-known-type imports are also added as files to generate.
+// includeWellKnownTypes has no effect if includeImports is not set.
 func ImagesToCodeGeneratorRequests(
 	images []Image,
 	parameter string,
 	compilerVersion *pluginpb.Version,
 	includeImports bool,
+	includeWellKnownTypes bool,
 ) []*pluginpb.CodeGeneratorRequest {
 	requests := make([]*pluginpb.CodeGeneratorRequest, len(images))
-	// we don't need to track these if includeImports as false, so don't waste the time
+	// alreadyUsedPaths is a map of paths that have already been added to an image.
+	//
+	// We track this if includeImports is set, so that when we find an import, we can
+	// see if the import was already added to a CodeGeneratorRequest via another Image
+	// in the Image slice. If the import was already added, we do not add duplicates
+	// across CodeGeneratorRequests.
 	var alreadyUsedPaths map[string]struct{}
+	// nonImportPaths is a map of non-import paths.
+	//
+	// We track this if includeImports is set. If we find a non-import file in Image A
+	// and this file is an import in Image B, the file will have already been added to
+	// a CodeGeneratorRequest via Image A, so do not add the duplicate to any other
+	// CodeGeneratorRequest.
 	var nonImportPaths map[string]struct{}
 	if includeImports {
+		// We don't need to track these if includeImports is false, so we only populate
+		// the maps if includeImports is true. If includeImports is false, only non-imports
+		// will be added to each CodeGeneratorRequest, so figuring out whether or not
+		// we should add a given import to a given CodeGeneratorRequest is unnecessary.
+		//
+		// imageToCodeGeneratorRequest checks if these maps are nil before every access.
 		alreadyUsedPaths = make(map[string]struct{})
 		nonImportPaths = make(map[string]struct{})
 		for _, image := range images {
@@ -410,6 +434,7 @@ func ImagesToCodeGeneratorRequests(
 			parameter,
 			compilerVersion,
 			includeImports,
+			includeWellKnownTypes,
 			alreadyUsedPaths,
 			nonImportPaths,
 		)

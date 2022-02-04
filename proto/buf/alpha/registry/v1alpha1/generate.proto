@@ -79,6 +79,10 @@ message GeneratePluginsRequest {
   repeated PluginReference plugins = 2;
   // Include imports from the Image in generation.
   bool include_imports = 3;
+  // Include Well-Known Types from the Image in generation.
+  //
+  // include_imports must be set if include_well_known_types is set.
+  bool include_well_known_types = 4;
 }
 
 message GeneratePluginsResponse {
@@ -112,6 +116,10 @@ message GenerateTemplateRequest {
   string template_version = 4;
   // Include imports from the Image in generation.
   bool include_imports = 5;
+  // Include Well-Known Types from the Image in generation.
+  //
+  // include_imports must be set if include_well_known_types is set.
+  bool include_well_known_types = 6;
 }
 
 message GenerateTemplateResponse {
