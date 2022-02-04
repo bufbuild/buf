@@ -87,10 +87,10 @@ func run(
 	flags *flags,
 ) error {
 	errc := make(chan error)
-	defer close(errc)
 
 	go func() {
 		errc <- inner(container, flags)
+		close(errc)
 	}()
 
 	select {
