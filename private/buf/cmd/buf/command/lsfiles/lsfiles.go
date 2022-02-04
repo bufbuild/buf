@@ -36,11 +36,6 @@ const (
 	errorFormatFlagName     = "error-format"
 	includeImportsFlagName  = "include-imports"
 	disableSymlinksFlagName = "disable-symlinks"
-
-	// deprecated
-	inputFlagName = "input"
-	// deprecated
-	inputConfigFlagName = "input-config"
 )
 
 // NewCommand returns a new Command.
@@ -70,11 +65,6 @@ type flags struct {
 	ErrorFormat     string
 	IncludeImports  bool
 	DisableSymlinks bool
-
-	// deprecated
-	Input string
-	// deprecated
-	InputConfig string
 	// special
 	InputHashtag string
 }
@@ -91,15 +81,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		asImportPathsFlagName,
 		false,
 		"Strip local directory paths and print filepaths as they are imported.",
-	)
-	flagSet.StringVar(
-		&f.Input,
-		inputFlagName,
-		"",
-		fmt.Sprintf(
-			`The source or Image to list files from. Must be one of format %s.`,
-			buffetch.AllFormatsString,
-		),
 	)
 	flagSet.StringVar(
 		&f.Config,
@@ -122,15 +103,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		false,
 		"Include imports.",
 	)
-
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.InputConfig,
-		inputConfigFlagName,
-		"",
-		`The file or data to use for configuration.`,
-	)
-	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
 
 func run(
@@ -138,16 +110,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
-	if err != nil {
-		return err
-	}
-	inputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
-		flags.Config,
-		configFlagName,
-		flags.InputConfig,
-		inputConfigFlagName,
-	)
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
@@ -174,7 +137,7 @@ func run(
 		ctx,
 		container,
 		ref,
-		inputConfig,
+		flags.Config,
 		flags.IncludeImports,
 	)
 	if err != nil {
