@@ -32,7 +32,7 @@ import (
 func TestCompareGoogleapis(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	// Don't run in parallel as it allocates a lot of memory
-	// cannot directly compare with source code info as buf protoc creates additional source
+	// cannot directly compare with source code info as buf alpha protoc creates additional source
 	// code infos that protoc does not
 	image := testBuildGoogleapis(t, false)
 	fileDescriptorSet := bufimage.ImageToFileDescriptorSet(image)
