@@ -1,3 +1,5 @@
+![The Buf logo](./.github/buf-logo.svg)
+
 # Buf
 
 [![License](https://img.shields.io/github/license/bufbuild/buf?color=blue)](https://github.com/bufbuild/buf/blob/main/LICENSE)
@@ -9,9 +11,14 @@
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)](https://join.slack.com/t/bufbuild/shared_invite/zt-f5k547ki-VDs_iC4TblNCu7ubhRD17w)
 [![Twitter](https://img.shields.io/twitter/follow/bufbuild?style=social)](https://twitter.com/intent/follow?screen_name=bufbuild)
 
+The [Buf] CLI is a tool for working with [Protocol Buffers][protobuf], offering a range of features
+not found in the standard [`protoc`][protoc] compiler, such as [breaking change detection][breaking]
+for Protobuf APIs, [linting][lint] Protobuf sources, [dependency management][deps], and interactions
+with the [Buf Schema Registry][bsr] (BSR).
+
 ## Goal
 
-Buf’s long-term goal is to enable schema-driven development: a future where APIs are defined consistently, in a way that service owners and clients can depend on.
+Buf's long-term goal is to enable schema-driven development: a future where APIs are defined consistently, in a way that service owners and clients can depend on.
 
 Defining APIs using an [IDL](https://en.wikipedia.org/wiki/Interface_description_language) provides a number of benefits over simply exposing JSON/REST services, and today, [Protobuf](https://developers.google.com/protocol-buffers) is the most stable, widely-adopted IDL in the industry.
 
@@ -145,5 +152,14 @@ After completing the tour, check out the remainder of the docs for your specific
 We've aimed to provide as much documentation as we can for the various components of Buf to give
 you a full understanding of Buf's surface area.
 
-Finally, [follow the project on GitHub](https://github.com/bufbuild/buf),
-and [contact us](https://docs.buf.build/contact/) if you'd like to get involved.
+Finally, [follow the project on GitHub][repo] and [contact us][contact] if you'd like to get involved.
+
+[breaking]: https://docs.buf.build/breaking
+[bsr]: https://docs.buf.build/bsr
+[buf]: https://buf.build
+[contact]: https://docs.buf.build/contact
+[deps]: https://docs.buf.build/bsr/overview#dependencies
+[lint]: https://docs.buf.build/lint
+[protobuf]: https://developers.google.com/protocol-buffers
+[protoc]: https://developers.google.com/protocol-buffers
+[repo]: ./
