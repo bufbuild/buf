@@ -1043,49 +1043,6 @@ func TestLsFilesImage5(t *testing.T) {
 	)
 }
 
-func TestLsFilesSymlinks(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		0,
-		filepath.FromSlash(`testdata/symlinks/a.proto
-testdata/symlinks/b.proto`),
-		"ls-files",
-		filepath.Join("testdata", "symlinks"),
-	)
-	testRunStdout(
-		t,
-		nil,
-		0,
-		filepath.FromSlash(`testdata/symlinks/a.proto`),
-		"ls-files",
-		"--disable-symlinks",
-		filepath.Join("testdata", "symlinks"),
-	)
-}
-
-func TestBuildSymlinks(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		100,
-		``,
-		"build",
-		filepath.Join("testdata", "symlinks"),
-	)
-	testRunStdout(
-		t,
-		nil,
-		0,
-		``,
-		"build",
-		"--disable-symlinks",
-		filepath.Join("testdata", "symlinks"),
-	)
-}
-
 func TestBuildFailProtoFileRefWithPathFlag(t *testing.T) {
 	t.Parallel()
 	testRunStdoutStderr(
