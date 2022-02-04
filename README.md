@@ -11,7 +11,7 @@
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)](https://hub.docker.com/r/bufbuild/buf)
 [![License](https://img.shields.io/github/license/bufbuild/buf?color=blue)](https://github.com/bufbuild/buf/blob/main/LICENSE)
 
-The [Buf] CLI is a tool for working with [Protocol Buffers][protobuf], offering a range of features not found in the standard [`protoc`][protoc] compiler:
+The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf] APIs, offering a range of features not found in the standard [`protoc`][protoc] compiler, including:
 
 * [Breaking change detection][breaking] for Protobuf APIs
 * Enforcing [linting][lint] rules for Protobuf sources
@@ -20,7 +20,28 @@ The [Buf] CLI is a tool for working with [Protocol Buffers][protobuf], offering 
 
 ## Installation
 
-For installation instructions, see our [official docs][installation].
+### Homebrew
+
+You can install `buf` using [Homebrew][brew] (macOS or Linux) through the [`bufbuild/bufbrew`][tap] tap.
+
+```sh
+brew tap bufbuild/bufbrew install buf
+brew install buf
+```
+
+This installs:
+
+* The `buf`, [`protoc-gen-buf-breaking`][breaking], and [`protoc-gen-buf-lint`][lint] binaries
+* Shell completion scripts for [Bash], [Fish], [Powershell], and [zsh]
+
+### Other methods
+
+For other installation methods, see our [official docs][install], which covers:
+
+* Installing `buf` on [Windows]
+* Using `buf` as a [Docker image][docker]
+* Installing as a [binary], from a [tarball], and from [source] through [GitHub Releases][releases]
+* [Verifying] releases using a [minisign] public key
 
 ## Goal
 
@@ -42,9 +63,9 @@ Our second tool, the **Buf Schema Registry (“BSR”)**, will be the hub of our
 
 However, we recommend you read the below introduction first!
 
-- [Tour of existing functionality - takes about 20 minutes to complete](https://docs.buf.build/tour/introduction/)
-- [Installation guide](https://docs.buf.build/installation)
-- [Overview of our 40 lint rules](https://docs.buf.build/lint/rules/)
+- [Tour of existing functionality - takes about 20 minutes to complete][tour]
+- [Installation guide][install]
+- [Overview of our 40 lint rules][rules]
 - [Overview of our 54 breaking change rules](https://docs.buf.build/breaking/rules/)
 - [Simple code generation](https://docs.buf.build/generate/usage/)
 - [High-performance protoc replacement](https://docs.buf.build/generate/high-performance-protoc-replacement/)
@@ -160,17 +181,32 @@ you a full understanding of Buf's surface area.
 
 Finally, [follow the project on GitHub][repo] and [contact us][contact] if you'd like to get involved.
 
+[bash]: /todo
+[binary]: https://docs.buf.build/installation#binary
 [breaking]: https://docs.buf.build/breaking
+[brew]: https://brew.sh
 [bsr]: https://docs.buf.build/bsr
 [buf]: https://buf.build
 [contact]: https://docs.buf.build/contact
 [deps]: https://docs.buf.build/bsr/overview#dependencies
-[installation]: https://docs.buf.build/installation
+[docker]: https://docs.buf.build/installation#use-the-docker-image
+[fish]: https://fishshell.com
+[install]: https://docs.buf.build/installation
 [lint]: https://docs.buf.build/lint
+[minisign]: https://github.com/jedisct1/minisign
 [plugins]: /todo
+[powershell]: https://docs.microsoft.com/en-us/powershell
 [protobuf]: https://developers.google.com/protocol-buffers
 [protoc]: https://developers.google.com/protocol-buffers
+[releases]: https://docs.buf.build/installation#github-releases
 [repo]: ./
 [roadmap]: https://docs.buf.build/roadmap
+[rules]: https://docs.buf.build/lint/rules
+[source]: https://docs.buf.build/installation#from-source
+[tap]: https://github.com/bufbuild/homebrew-buf
+[tarball]: https://docs.buf.build/installation#tarball
 [templates]: /todo
 [tour]: https://docs.buf.build/tour/introduction
+[verifying]: https://docs.buf.build/installation#verifying-a-release
+[windows]: https://docs.buf.build/installation#windows-support
+[zsh]: /todo
