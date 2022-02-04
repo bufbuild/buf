@@ -81,7 +81,7 @@ message GeneratePluginsRequest {
   bool include_imports = 3;
   // Include Well-Known Types from the Image in generation.
   //
-  // include_imports must be set if include_well_known_types is set. TODO weird API
+  // include_imports must be set if include_well_known_types is set.
   bool include_well_known_types = 4;
 }
 
@@ -118,7 +118,7 @@ message GenerateTemplateRequest {
   bool include_imports = 5;
   // Include Well-Known Types from the Image in generation.
   //
-  // include_imports must be set if include_well_known_types is set. TODO weird API
+  // include_imports must be set if include_well_known_types is set.
   bool include_well_known_types = 6;
 }
 
