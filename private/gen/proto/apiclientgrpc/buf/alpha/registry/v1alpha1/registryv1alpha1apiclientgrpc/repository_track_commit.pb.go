@@ -82,7 +82,7 @@ func (s *repositoryTrackCommitService) ListRepositoryTrackCommitsByRepositoryTra
 func (s *repositoryTrackCommitService) CreateRepositoryTrackCommit(
 	ctx context.Context,
 	repositoryTrackId string,
-	repositoryCommitId string,
+	repositoryCommit string,
 ) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -90,8 +90,8 @@ func (s *repositoryTrackCommitService) CreateRepositoryTrackCommit(
 	response, err := s.client.CreateRepositoryTrackCommit(
 		ctx,
 		&v1alpha1.CreateRepositoryTrackCommitRequest{
-			RepositoryTrackId:  repositoryTrackId,
-			RepositoryCommitId: repositoryCommitId,
+			RepositoryTrackId: repositoryTrackId,
+			RepositoryCommit:  repositoryCommit,
 		},
 	)
 	if err != nil {

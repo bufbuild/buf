@@ -42,6 +42,6 @@ type RepositoryTrackCommitService interface {
 	CreateRepositoryTrackCommit(
 		ctx context.Context,
 		repositoryTrackId string,
-		repositoryCommitId string,
+		repositoryCommit string,
 	) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, err error)
 }

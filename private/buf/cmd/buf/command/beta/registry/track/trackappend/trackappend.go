@@ -138,7 +138,7 @@ func run(
 	repositoryTrackCommit, err := repositoryTrackCommitService.CreateRepositoryTrackCommit(
 		ctx,
 		repositoryTrack.Id,
-		repositoryCommit.Id,
+		repositoryCommit.Name,
 	)
 	if err != nil {
 		return err

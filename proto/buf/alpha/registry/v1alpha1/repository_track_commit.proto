@@ -78,8 +78,8 @@ message ListRepositoryTrackCommitsByRepositoryTrackResponse {
 message CreateRepositoryTrackCommitRequest {
   // The id of the repository track for this repository track commit.
   string repository_track_id = 1;
-  // The id of the repository commit to associate with the repository track commit.
-  string repository_commit_id = 2;
+  // The repository commit to associate with the repository track commit.
+  string repository_commit = 2;
 }
 
 message CreateRepositoryTrackCommitResponse {
