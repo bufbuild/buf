@@ -282,10 +282,7 @@ func RubyPackage(
 
 // isWellKnownType returns true if the given path is one of the well-known types.
 func isWellKnownType(ctx context.Context, imageFile bufimage.ImageFile) bool {
-	if _, err := datawkt.ReadBucket.Stat(ctx, imageFile.Path()); err == nil {
-		return true
-	}
-	return false
+	return datawkt.Exists(imageFile.Path())
 }
 
 // int32SliceIsEqual returns true if x and y contain the same elements.

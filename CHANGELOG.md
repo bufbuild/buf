@@ -5,6 +5,10 @@
 - Check that the user provided a valid token when running `buf registry login`.
 - Add `buf mod open` that opens a module's homepage in a browser.
 - Add `buf completion` command to generate auto-completion scripts in commonly used shells.
+- Add `--include-wkt` flag to `buf generate`. When this flag is specified alongside
+  `--include-imports`, this will result in the [Well-Known Types](https://github.com/bufbuild/wellknowntypes/tree/11ea259bf71c4d386131c1986ffe103cb1edb3d6/v3.19.4/google/protobuf)
+  being generated as well. Most language runtimes have the Well-Known Types included as part
+  of the core library, making generating the Well-Known Types separately undesirable.
 
 ## [v1.0.0-rc12] - 2022-02-01
 

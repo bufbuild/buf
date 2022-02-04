@@ -92,6 +92,7 @@ func (g *generator) Generate(
 		image,
 		generateOptions.baseOutDirPath,
 		generateOptions.includeImports,
+		generateOptions.includeWellKnownTypes,
 	)
 }
 
@@ -102,6 +103,7 @@ func (g *generator) generate(
 	image bufimage.Image,
 	baseOutDirPath string,
 	includeImports bool,
+	includeWellKnownTypes bool,
 ) error {
 	if err := modifyImage(ctx, g.logger, config, image); err != nil {
 		return err
@@ -113,6 +115,7 @@ func (g *generator) generate(
 		config,
 		image,
 		includeImports,
+		includeWellKnownTypes,
 	)
 	if err != nil {
 		return err
@@ -153,6 +156,7 @@ func (g *generator) execPlugins(
 	config *Config,
 	image bufimage.Image,
 	includeImports bool,
+	includeWellKnownTypes bool,
 ) ([]*pluginpb.CodeGeneratorResponse, error) {
 	imageProvider := newImageProvider(image)
 	// Collect all of the plugin jobs so that they can be executed in parallel.
@@ -169,6 +173,7 @@ func (g *generator) execPlugins(
 					image,
 					currentPluginConfig,
 					includeImports,
+					includeWellKnownTypes,
 				)
 				if err != nil {
 					return err
@@ -186,6 +191,7 @@ func (g *generator) execPlugins(
 					imageProvider,
 					currentPluginConfig,
 					includeImports,
+					includeWellKnownTypes,
 				)
 				if err != nil {
 					return err
@@ -232,6 +238,7 @@ func (g *generator) execLocalPlugin(
 	imageProvider *imageProvider,
 	pluginConfig *PluginConfig,
 	includeImports bool,
+	includeWellKnownTypes bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	pluginImages, err := imageProvider.GetImages(pluginConfig.Strategy)
 	if err != nil {
@@ -246,6 +253,7 @@ func (g *generator) execLocalPlugin(
 			pluginConfig.Opt,
 			nil,
 			includeImports,
+			includeWellKnownTypes,
 		),
 		appprotoexec.GenerateWithPluginPath(pluginConfig.Path),
 	)
@@ -261,6 +269,7 @@ func (g *generator) execRemotePlugin(
 	image bufimage.Image,
 	pluginConfig *PluginConfig,
 	includeImports bool,
+	includeWellKnownTypes bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
 	remote, owner, name, version, err := bufplugin.ParsePluginVersionPath(pluginConfig.Remote)
 	if err != nil {
@@ -287,6 +296,7 @@ func (g *generator) execRemotePlugin(
 			},
 		},
 		includeImports,
+		includeWellKnownTypes,
 	)
 	if err != nil {
 		return nil, err
@@ -470,8 +480,9 @@ func validateResponses(
 }
 
 type generateOptions struct {
-	baseOutDirPath string
-	includeImports bool
+	baseOutDirPath        string
+	includeImports        bool
+	includeWellKnownTypes bool
 }
 
 func newGenerateOptions() *generateOptions {
