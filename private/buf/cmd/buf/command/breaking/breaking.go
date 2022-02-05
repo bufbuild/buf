@@ -28,7 +28,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -43,17 +42,7 @@ const (
 	againstFlagName           = "against"
 	againstConfigFlagName     = "against-config"
 	excludePathsFlagName      = "exclude-path"
-
-	// deprecated
-	inputFlagName = "input"
-	// deprecated
-	inputConfigFlagName = "input-config"
-	// deprecated
-	againstInputFlagName = "against-input"
-	// deprecated
-	againstInputConfigFlagName = "against-input-config"
-	// deprecated
-	filesFlagName = "file"
+	disableSymlinksFlagName   = "disable-symlinks"
 )
 
 // NewCommand returns a new Command.
@@ -86,17 +75,7 @@ type flags struct {
 	Against           string
 	AgainstConfig     string
 	ExcludePaths      []string
-
-	// deprecated
-	Input string
-	// deprecated
-	InputConfig string
-	// deprecated
-	AgainstInput string
-	// deprecated
-	AgainstInputConfig string
-	// deprecated
-	Files []string
+	DisableSymlinks   bool
 	// special
 	InputHashtag string
 }
@@ -106,9 +85,10 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
+	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
+	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -156,45 +136,6 @@ Overrides --%s.`,
 		"",
 		`The file or data to use to configure the against source, module, or image.`,
 	)
-
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.Input,
-		inputFlagName,
-		"",
-		fmt.Sprintf(
-			`The source or Image to check for breaking changes. Must be one of format %s.`,
-			buffetch.AllFormatsString,
-		),
-	)
-	_ = flagSet.MarkHidden(inputFlagName)
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.InputConfig,
-		inputConfigFlagName,
-		"",
-		`The file or data to use for configuration.`,
-	)
-	_ = flagSet.MarkHidden(inputConfigFlagName)
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.AgainstInput,
-		againstInputFlagName,
-		"",
-		fmt.Sprintf(
-			`Required. The source or Image to check against. Must be one of format %s.`,
-			buffetch.AllFormatsString,
-		),
-	)
-	_ = flagSet.MarkHidden(againstInputFlagName)
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.AgainstInputConfig,
-		againstInputConfigFlagName,
-		"",
-		`The file or data to use to configure the against source or Image.`,
-	)
-	_ = flagSet.MarkHidden(againstInputConfigFlagName)
 }
 
 func run(
@@ -202,49 +143,13 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	if flags.Against == "" {
+		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", againstFlagName)
+	}
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
-	if err != nil {
-		return err
-	}
-	inputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
-		flags.Config,
-		configFlagName,
-		flags.InputConfig,
-		inputConfigFlagName,
-	)
-	if err != nil {
-		return err
-	}
-	againstInput, err := bufcli.GetStringFlagOrDeprecatedFlag(
-		flags.Against,
-		againstFlagName,
-		flags.AgainstInput,
-		againstInputFlagName,
-	)
-	if err != nil {
-		return err
-	}
-	againstInputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
-		flags.AgainstConfig,
-		againstConfigFlagName,
-		flags.AgainstInputConfig,
-		againstInputConfigFlagName,
-	)
-	if err != nil {
-		return err
-	}
-	if againstInput == "" {
-		return appcmd.NewInvalidArgumentErrorf("required flag %q not set", againstFlagName)
-	}
-	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
-		flags.Paths,
-		pathsFlagName,
-		flags.Files,
-		filesFlagName,
-	)
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
@@ -252,7 +157,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
 	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
@@ -271,8 +176,8 @@ func run(
 		ctx,
 		container,
 		ref,
-		inputConfig,
-		paths,              // we filter checks for files
+		flags.Config,
+		flags.Paths,        // we filter checks for files
 		flags.ExcludePaths, // we exclude these paths
 		false,              // files specified must exist on the main input
 		false,              // we must include source info for this side of the check
@@ -292,14 +197,14 @@ func run(
 	}
 	// TODO: this doesn't actually work because we're using the same file paths for both sides
 	// if the roots change, then we're torched
-	externalPaths := paths
+	externalPaths := flags.Paths
 	if flags.LimitToInputFiles {
 		externalPaths, err = getExternalPathsForImages(imageConfigs, flags.ExcludeImports)
 		if err != nil {
 			return err
 		}
 	}
-	againstRef, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, againstInput)
+	againstRef, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, flags.Against)
 	if err != nil {
 		return err
 	}
@@ -307,7 +212,7 @@ func run(
 		ctx,
 		container,
 		againstRef,
-		againstInputConfig,
+		flags.AgainstConfig,
 		externalPaths,      // we filter checks for files
 		flags.ExcludePaths, // we exclude these paths
 		true,               // files are allowed to not exist on the against input

@@ -27,24 +27,17 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 const (
-	errorFormatFlagName  = "error-format"
-	configFlagName       = "config"
-	pathsFlagName        = "path"
-	excludePathsFlagName = "exclude-path"
-
-	// deprecated
-	inputFlagName = "input"
-	// deprecated
-	inputConfigFlagName = "input-config"
-	// deprecated
-	filesFlagName = "file"
+	errorFormatFlagName     = "error-format"
+	configFlagName          = "config"
+	pathsFlagName           = "path"
+	excludePathsFlagName    = "exclude-path"
+	disableSymlinksFlagName = "disable-symlinks"
 )
 
 // NewCommand returns a new Command.
@@ -69,17 +62,11 @@ func NewCommand(
 }
 
 type flags struct {
-	ErrorFormat  string
-	Config       string
-	Paths        []string
-	ExcludePaths []string
-
-	// deprecated
-	Input string
-	// deprecated
-	InputConfig string
-	// deprecated
-	Files []string
+	ErrorFormat     string
+	Config          string
+	Paths           []string
+	ExcludePaths    []string
+	DisableSymlinks bool
 	// special
 	InputHashtag string
 }
@@ -90,8 +77,9 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
-	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
+	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
+	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.StringVar(
 		&f.ErrorFormat,
 		errorFormatFlagName,
@@ -107,26 +95,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		`The file or data to use for configuration.`,
 	)
-
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.Input,
-		inputFlagName,
-		"",
-		fmt.Sprintf(
-			`The source or Image to lint. Must be one of format %s.`,
-			buffetch.AllFormatsString,
-		),
-	)
-	_ = flagSet.MarkHidden(inputFlagName)
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.InputConfig,
-		inputConfigFlagName,
-		"",
-		`The file or data to use for configuration.`,
-	)
-	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
 
 func run(
@@ -137,25 +105,7 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlagLint(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
-	if err != nil {
-		return err
-	}
-	inputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
-		flags.Config,
-		configFlagName,
-		flags.InputConfig,
-		inputConfigFlagName,
-	)
-	if err != nil {
-		return err
-	}
-	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
-		flags.Paths,
-		pathsFlagName,
-		flags.Files,
-		filesFlagName,
-	)
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
@@ -163,7 +113,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
 	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
@@ -182,8 +132,8 @@ func run(
 		ctx,
 		container,
 		ref,
-		inputConfig,
-		paths,              // we filter checks for files
+		flags.Config,
+		flags.Paths,        // we filter checks for files
 		flags.ExcludePaths, // we exclude these paths
 		false,              // input files must exist
 		false,              // we must include source info for linting

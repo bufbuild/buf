@@ -25,22 +25,17 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
 const (
-	asImportPathsFlagName  = "as-import-paths"
-	configFlagName         = "config"
-	errorFormatFlagName    = "error-format"
-	includeImportsFlagName = "include-imports"
-
-	// deprecated
-	inputFlagName = "input"
-	// deprecated
-	inputConfigFlagName = "input-config"
+	asImportPathsFlagName   = "as-import-paths"
+	configFlagName          = "config"
+	errorFormatFlagName     = "error-format"
+	includeImportsFlagName  = "include-imports"
+	disableSymlinksFlagName = "disable-symlinks"
 )
 
 // NewCommand returns a new Command.
@@ -65,15 +60,11 @@ func NewCommand(
 }
 
 type flags struct {
-	AsImportPaths  bool
-	Config         string
-	ErrorFormat    string
-	IncludeImports bool
-
-	// deprecated
-	Input string
-	// deprecated
-	InputConfig string
+	AsImportPaths   bool
+	Config          string
+	ErrorFormat     string
+	IncludeImports  bool
+	DisableSymlinks bool
 	// special
 	InputHashtag string
 }
@@ -84,20 +75,12 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
+	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	flagSet.BoolVar(
 		&f.AsImportPaths,
 		asImportPathsFlagName,
 		false,
 		"Strip local directory paths and print filepaths as they are imported.",
-	)
-	flagSet.StringVar(
-		&f.Input,
-		inputFlagName,
-		"",
-		fmt.Sprintf(
-			`The source or Image to list files from. Must be one of format %s.`,
-			buffetch.AllFormatsString,
-		),
 	)
 	flagSet.StringVar(
 		&f.Config,
@@ -120,15 +103,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		false,
 		"Include imports.",
 	)
-
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.InputConfig,
-		inputConfigFlagName,
-		"",
-		`The file or data to use for configuration.`,
-	)
-	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
 
 func run(
@@ -136,16 +110,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
-	if err != nil {
-		return err
-	}
-	inputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
-		flags.Config,
-		configFlagName,
-		flags.InputConfig,
-		inputConfigFlagName,
-	)
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
@@ -153,7 +118,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
 	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
@@ -172,7 +137,7 @@ func run(
 		ctx,
 		container,
 		ref,
-		inputConfig,
+		flags.Config,
 		flags.IncludeImports,
 	)
 	if err != nil {

@@ -42,13 +42,7 @@ const (
 	includeImportsFlagName      = "include-imports"
 	includeWKTFlagName          = "include-wkt"
 	excludePathsFlagName        = "exclude-path"
-
-	// deprecated
-	inputFlagName = "input"
-	// deprecated
-	inputConfigFlagName = "input-config"
-	// deprecated
-	filesFlagName = "file"
+	disableSymlinksFlagName     = "disable-symlinks"
 )
 
 // NewCommand returns a new Command.
@@ -188,20 +182,16 @@ Insertion points are processed in the order the plugins are specified in the tem
 }
 
 type flags struct {
-	Template       string
-	BaseOutDirPath string
-	ErrorFormat    string
-	Files          []string
-	Config         string
-	Paths          []string
-	IncludeImports bool
-	IncludeWKT     bool
-	ExcludePaths   []string
-
-	// deprecated
-	Input string
-	// deprecated
-	InputConfig string
+	Template        string
+	BaseOutDirPath  string
+	ErrorFormat     string
+	Files           []string
+	Config          string
+	Paths           []string
+	IncludeImports  bool
+	IncludeWKT      bool
+	ExcludePaths    []string
+	DisableSymlinks bool
 	// special
 	InputHashtag string
 }
@@ -211,8 +201,9 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
-	bufcli.BindPathsAndDeprecatedFiles(flagSet, &f.Paths, pathsFlagName, &f.Files, filesFlagName)
+	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
 	bufcli.BindExcludePaths(flagSet, &f.ExcludePaths, excludePathsFlagName)
 	flagSet.BoolVar(
 		&f.IncludeImports,
@@ -257,26 +248,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		`The file or data to use for configuration.`,
 	)
-
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.Input,
-		inputFlagName,
-		"",
-		fmt.Sprintf(
-			`The source or image to generate for. Must be one of format %s.`,
-			buffetch.AllFormatsString,
-		),
-	)
-	_ = flagSet.MarkHidden(inputFlagName)
-	// deprecated, but not marked as deprecated as we return error if this is used
-	flagSet.StringVar(
-		&f.InputConfig,
-		inputConfigFlagName,
-		"",
-		`The file or data to use for configuration.`,
-	)
-	_ = flagSet.MarkHidden(inputConfigFlagName)
 }
 
 func run(
@@ -295,25 +266,7 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, flags.Input, inputFlagName, ".")
-	if err != nil {
-		return err
-	}
-	inputConfig, err := bufcli.GetStringFlagOrDeprecatedFlag(
-		flags.Config,
-		configFlagName,
-		flags.InputConfig,
-		inputConfigFlagName,
-	)
-	if err != nil {
-		return err
-	}
-	paths, err := bufcli.GetStringSliceFlagOrDeprecatedFlag(
-		flags.Paths,
-		pathsFlagName,
-		flags.Files,
-		filesFlagName,
-	)
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
@@ -321,7 +274,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
 	readWriteBucket, err := storageosProvider.NewReadWriteBucket(
 		".",
@@ -356,8 +309,8 @@ func run(
 		ctx,
 		container,
 		ref,
-		inputConfig,
-		paths,              // we filter on files
+		flags.Config,
+		flags.Paths,        // we filter on files
 		flags.ExcludePaths, // we exclude these paths
 		false,              // input files must exist
 		false,              // we must include source info for generation

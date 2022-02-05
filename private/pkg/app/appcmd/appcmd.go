@@ -27,10 +27,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// fakeString is used for deleted commands for areas where we need
-// a non-empty string value.
-const fakeString = "__fake__"
-
 // Command is a command.
 type Command struct {
 	// Use is the one-line usage message.
@@ -106,40 +102,6 @@ func BindMultiple(bindFuncs ...func(*pflag.FlagSet)) func(*pflag.FlagSet) {
 		for _, bindFunc := range bindFuncs {
 			bindFunc(flagSet)
 		}
-	}
-}
-
-// NewDeletedCommand returns a new Command that accepts any flags and any arguments,
-// but will return an error with the given message for all invocations. The short
-// help is also equal to the given message.
-func NewDeletedCommand(name string, message string, aliases ...string) *Command {
-	return &Command{
-		Use:     name,
-		Short:   message,
-		Aliases: aliases,
-		Hidden:  true,
-		Run: func(context.Context, app.Container) error {
-			return errors.New(message)
-		},
-		BindFlags: func(flagSet *pflag.FlagSet) {
-			// Bind the single flag fakeString that sets a fakeValue.
-			var fakeValue fakeValue
-			flagSet.Var(&fakeValue, fakeString, "")
-			_ = flagSet.MarkHidden(fakeString)
-		},
-		NormalizeFlag: func(flagSet *pflag.FlagSet, name string) string {
-			// For any flag, act as if it is flag fakeString.
-			// This will result in any flag being accepted, and pflag
-			// not erroring out early before the error with the message
-			// can be returned.
-			//
-			// Note that "--help" is special where if we don't allow
-			// this to pass through, cobra/pflag error.
-			if name != "help" {
-				return fakeString
-			}
-			return name
-		},
 	}
 }
 
@@ -398,18 +360,4 @@ func normalizeFunc(f func(*pflag.FlagSet, string) string) func(*pflag.FlagSet, s
 
 func printUsage(container app.StderrContainer, usage string) {
 	_, _ = container.Stderr().Write([]byte(usage + "\n"))
-}
-
-type fakeValue struct{}
-
-func (fakeValue) String() string {
-	return fakeString
-}
-
-func (fakeValue) Set(string) error {
-	return nil
-}
-
-func (fakeValue) Type() string {
-	return fakeString
 }

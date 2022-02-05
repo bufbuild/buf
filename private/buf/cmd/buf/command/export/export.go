@@ -38,12 +38,13 @@ import (
 )
 
 const (
-	excludeImportsFlagName = "exclude-imports"
-	pathsFlagName          = "path"
-	outputFlagName         = "output"
-	outputFlagShortName    = "o"
-	configFlagName         = "config"
-	excludePathsFlagName   = "exclude-path"
+	excludeImportsFlagName  = "exclude-imports"
+	pathsFlagName           = "path"
+	outputFlagName          = "output"
+	outputFlagShortName     = "o"
+	configFlagName          = "config"
+	excludePathsFlagName    = "exclude-path"
+	disableSymlinksFlagName = "disable-symlinks"
 )
 
 // NewCommand returns a new Command.
@@ -68,11 +69,12 @@ func NewCommand(
 }
 
 type flags struct {
-	ExcludeImports bool
-	Paths          []string
-	Output         string
-	Config         string
-	ExcludePaths   []string
+	ExcludeImports  bool
+	Paths           []string
+	Output          string
+	Config          string
+	ExcludePaths    []string
+	DisableSymlinks bool
 
 	// special
 	InputHashtag string
@@ -83,6 +85,7 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindExcludeImports(flagSet, &f.ExcludeImports, excludeImportsFlagName)
 	bufcli.BindPaths(flagSet, &f.Paths, pathsFlagName)
@@ -108,7 +111,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	input, err := bufcli.GetInputValue(container, flags.InputHashtag, "", "", ".")
+	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
 		return err
 	}
@@ -116,7 +119,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
 	runner := command.NewRunner()
 	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
