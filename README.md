@@ -67,7 +67,7 @@ For more comprehensive info, consult Buf's [documentation][docs] for usage infor
 
 Once you've installed `buf`, we recommend completing the [Tour of Buf][tour], which provides a broad but hands-on overview of the core functionality of both the CLI and the [BSR]. The tour takes about 10 minutes to complete.
 
-After completing the tour, check out the remainder of the [docs] for your specific areas of interest.
+After completing the tour, check out the remainder of the [docs] for your specific areas of interest and our [roadmap] to see what we have in store for the future.
 
 Finally, [follow the Buf CLI on GitHub][repo] and [contact us][contact] if you'd like to get involved.
 
@@ -82,7 +82,6 @@ Finally, [follow the Buf CLI on GitHub][repo] and [contact us][contact] if you'd
 [bash]: https://www.gnu.org/software/bash
 [binary]: https://docs.buf.build/installation#binary
 [breaking]: https://docs.buf.build/breaking
-[breaking_rules]: https://docs.buf.build/breaking/rules
 [breaking_usage]: https://docs.buf.build/breaking/usage
 [brew]: https://brew.sh
 [bsr]: https://docs.buf.build/bsr
@@ -90,37 +89,26 @@ Finally, [follow the Buf CLI on GitHub][repo] and [contact us][contact] if you'd
 [buf]: https://buf.build
 [build_usage]: https://docs.buf.build/build/usage
 [compiler]: https://docs.buf.build/build/internal-compiler
-[configuration]: https://docs.buf.build/build/usage/#configuration
 [contact]: https://docs.buf.build/contact
-[deps]: https://docs.buf.build/bsr/overview#dependencies
 [docker]: https://docs.buf.build/installation#use-the-docker-image
 [docs]: https://docs.buf.build
 [filedescriptorset]: https://github.com/protocolbuffers/protobuf/blob/044c766fd4777713fef2d1a9a095e4308d770c68/src/google/protobuf/descriptor.proto#L57
 [features]: #cli-features
 [fish]: https://fishshell.com
 [generate_usage]: https://docs.buf.build/generate/usage
-[googleapis]: https://github.com/googleapis/googleapis
-[ide]: https://docs.buf.build/editor-integration
-[idl]: https://en.wikipedia.org/wiki/Interface_description_language
 [images]: https://docs.buf.build/reference/images
-[inputs]: https://docs.buf.build/reference/input
 [install]: https://docs.buf.build/installation
 [lint]: https://docs.buf.build/lint
-[lint_rules]: https://docs.buf.build/lint/rules
 [lint_usage]: https://docs.buf.build/lint/usage
 [minisign]: https://github.com/jedisct1/minisign
-[modules]: https://docs.buf.build/bsr/overview#module
 [plugins]: https://docs.buf.build/bsr/remote-generation/concepts#plugin
 [powershell]: https://docs.microsoft.com/en-us/powershell
 [protobuf]: https://developers.google.com/protocol-buffers
 [protoc]: https://docs.buf.build/generate/high-performance-protoc-replacement
-[protolock]: https://docs.buf.build/how-to/migrate-from-protolock
-[prototool]: https://docs.buf.build/how-to/migrate-from-prototool
 [releases]: https://docs.buf.build/installation#github-releases
 [repo]: ./
 [roadmap]: https://docs.buf.build/roadmap
 [source]: https://docs.buf.build/installation#from-source
-[style]: https://docs.buf.build/best-practices/style-guide
 [tap]: https://github.com/bufbuild/homebrew-buf
 [tarball]: https://docs.buf.build/installation#tarball
 [templates]: https://docs.buf.build/bsr/remote-generation/concepts#template
