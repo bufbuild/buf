@@ -26,11 +26,10 @@ See more [features] below.
 
 ### Homebrew
 
-You can install `buf` using [Homebrew][brew] (macOS or Linux) through the [`bufbuild/bufbrew`][tap] tap.
+You can install `buf` using [Homebrew][brew] (macOS or Linux):
 
 ```sh
-brew tap bufbuild/bufbrew install buf
-brew install buf
+brew install bufbuild/buf/buf
 ```
 
 This installs:
@@ -109,7 +108,6 @@ Finally, [follow the Buf CLI on GitHub][repo] and [contact us][contact] if you'd
 [repo]: ./
 [roadmap]: https://docs.buf.build/roadmap
 [source]: https://docs.buf.build/installation#from-source
-[tap]: https://github.com/bufbuild/homebrew-buf
 [tarball]: https://docs.buf.build/installation#tarball
 [templates]: https://docs.buf.build/bsr/remote-generation/concepts#template
 [tour]: https://docs.buf.build/tour/introduction
