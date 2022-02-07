@@ -15,7 +15,6 @@
 package bufanalysis
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -64,11 +63,6 @@ var (
 		FormatJSON: "json",
 		FormatMSVS: "msvs",
 	}
-	formatToPrinter = map[Format]printer{
-		FormatText: printerFunc(textPrinter),
-		FormatJSON: printerFunc(jsonPrinter),
-		FormatMSVS: printerFunc(msvsPrinter),
-	}
 )
 
 // Format is a FileAnnotation format.
@@ -106,6 +100,9 @@ type FileInfo interface {
 
 // FileAnnotation is a file annotation.
 type FileAnnotation interface {
+	// Stringer returns the string representation in text format.
+	fmt.Stringer
+
 	// FileInfo is the FileInfo for this annotation.
 	//
 	// This may be nil.
@@ -196,28 +193,17 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, fo
 	if err != nil {
 		return err
 	}
-	return formatToPrinter[format].PrintFileAnnotations(
-		writer,
-		fileAnnotations,
-	)
-}
 
-// FormatFileAnnotation formats the FileAnnotation.
-func FormatFileAnnotation(fileAnnotation FileAnnotation, format Format) (string, error) {
-	buffer := bytes.NewBuffer(nil)
 	switch format {
 	case FormatText:
-		_ = printFileAnnotationAsText(buffer, fileAnnotation)
+		return textPrinter(writer, fileAnnotations)
 	case FormatJSON:
-		if err := printFileAnnotationAsJSON(buffer, fileAnnotation); err != nil {
-			return "", err
-		}
+		return jsonPrinter(writer, fileAnnotations)
 	case FormatMSVS:
-		_ = printFileAnnotationAsMSVS(buffer, fileAnnotation)
+		return msvsPrinter(writer, fileAnnotations)
 	default:
-		return "", fmt.Errorf("unknown FileAnnotation Format: %v", format)
+		return fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}
-	return buffer.String(), nil
 }
 
 // hash returns a hash value that uniquely identifies the given FileAnnotation.

@@ -374,7 +374,7 @@ func testFileAnnotations(t *testing.T, relDirPath string, want ...string) {
 	_, fileAnnotations := testBuild(t, false, filepath.Join("testdata", filepath.FromSlash(relDirPath)))
 	got := make([]string, len(fileAnnotations))
 	for i, annotation := range fileAnnotations {
-		got[i], _ = bufanalysis.FormatFileAnnotation(annotation, bufanalysis.FormatText)
+		got[i] = annotation.String()
 	}
 	require.Equal(t, want, got)
 }

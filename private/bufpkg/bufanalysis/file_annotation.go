@@ -14,6 +14,11 @@
 
 package bufanalysis
 
+import (
+	"bytes"
+	"strconv"
+)
+
 type fileAnnotation struct {
 	fileInfo    FileInfo
 	startLine   int
@@ -70,4 +75,39 @@ func (f *fileAnnotation) Type() string {
 
 func (f *fileAnnotation) Message() string {
 	return f.message
+}
+
+func (f *fileAnnotation) String() string {
+	if f == nil {
+		return ""
+	}
+	path := "<input>"
+	line := f.startLine
+	column := f.startColumn
+	message := f.message
+	if f.fileInfo != nil {
+		path = f.fileInfo.ExternalPath()
+	}
+	if line == 0 {
+		line = 1
+	}
+	if column == 0 {
+		column = 1
+	}
+	if message == "" {
+		message = f.typeString
+		// should never happen but just in case
+		if message == "" {
+			message = "FAILURE"
+		}
+	}
+	buffer := bytes.NewBuffer(nil)
+	_, _ = buffer.WriteString(path)
+	_, _ = buffer.WriteRune(':')
+	_, _ = buffer.WriteString(strconv.Itoa(line))
+	_, _ = buffer.WriteRune(':')
+	_, _ = buffer.WriteString(strconv.Itoa(column))
+	_, _ = buffer.WriteRune(':')
+	_, _ = buffer.WriteString(message)
+	return buffer.String()
 }

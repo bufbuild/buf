@@ -21,16 +21,6 @@ import (
 	"strconv"
 )
 
-type printer interface {
-	PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation) error
-}
-
-type printerFunc func(writer io.Writer, fileAnnotations []FileAnnotation) error
-
-func (f printerFunc) PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation) error {
-	return f(writer, fileAnnotations)
-}
-
 func textPrinter(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	return printEachAnnotationOnNewLine(
 		writer,
@@ -56,37 +46,7 @@ func jsonPrinter(writer io.Writer, fileAnnotations []FileAnnotation) error {
 }
 
 func printFileAnnotationAsText(buffer *bytes.Buffer, f FileAnnotation) error {
-	// This will work as long as f != (*fileAnnotation)(nil)
-	if f == nil {
-		return nil
-	}
-	path := "<input>"
-	line := f.StartLine()
-	column := f.StartColumn()
-	message := f.Message()
-	if f.FileInfo() != nil {
-		path = f.FileInfo().ExternalPath()
-	}
-	if line == 0 {
-		line = 1
-	}
-	if column == 0 {
-		column = 1
-	}
-	if message == "" {
-		message = f.Type()
-		// should never happen but just in case
-		if message == "" {
-			message = "FAILURE"
-		}
-	}
-	_, _ = buffer.WriteString(path)
-	_, _ = buffer.WriteRune(':')
-	_, _ = buffer.WriteString(strconv.Itoa(line))
-	_, _ = buffer.WriteRune(':')
-	_, _ = buffer.WriteString(strconv.Itoa(column))
-	_, _ = buffer.WriteRune(':')
-	_, _ = buffer.WriteString(message)
+	_, _ = buffer.WriteString(f.String())
 	return nil
 }
 
