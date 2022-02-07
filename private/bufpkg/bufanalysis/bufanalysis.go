@@ -196,11 +196,11 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, fo
 
 	switch format {
 	case FormatText:
-		return textPrinter(writer, fileAnnotations)
+		return printAsText(writer, fileAnnotations)
 	case FormatJSON:
-		return jsonPrinter(writer, fileAnnotations)
+		return printAsJSON(writer, fileAnnotations)
 	case FormatMSVS:
-		return msvsPrinter(writer, fileAnnotations)
+		return printAsMSVS(writer, fileAnnotations)
 	default:
 		return fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}

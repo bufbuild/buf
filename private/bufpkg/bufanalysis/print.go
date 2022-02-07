@@ -21,7 +21,7 @@ import (
 	"strconv"
 )
 
-func textPrinter(writer io.Writer, fileAnnotations []FileAnnotation) error {
+func printAsText(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	return printEachAnnotationOnNewLine(
 		writer,
 		fileAnnotations,
@@ -29,7 +29,7 @@ func textPrinter(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	)
 }
 
-func msvsPrinter(writer io.Writer, fileAnnotations []FileAnnotation) error {
+func printAsMSVS(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	return printEachAnnotationOnNewLine(
 		writer,
 		fileAnnotations,
@@ -37,7 +37,7 @@ func msvsPrinter(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	)
 }
 
-func jsonPrinter(writer io.Writer, fileAnnotations []FileAnnotation) error {
+func printAsJSON(writer io.Writer, fileAnnotations []FileAnnotation) error {
 	return printEachAnnotationOnNewLine(
 		writer,
 		fileAnnotations,
