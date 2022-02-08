@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking/bufbreakingconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint/buflintconfig"
@@ -460,6 +461,25 @@ func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	return fmt.Sprintf("%s-%s", b3DigestPrefix, base64.URLEncoding.EncodeToString(hash.Sum(nil))), nil
 }
 
+// ModuleMatchesDigest if the digest matches any version digest of the module.
+func ModuleMatchesDigest(ctx context.Context, module Module, digest string) (bool, error) {
+	switch {
+	case strings.HasPrefix(digest, b1DigestPrefix):
+		got, err := ModuleDigestB1(ctx, module)
+		if err != nil {
+			return false, err
+		}
+		return got == digest, nil
+	case strings.HasPrefix(digest, b3DigestPrefix):
+		got, err := ModuleDigestB3(ctx, module)
+		if err != nil {
+			return false, err
+		}
+		return got == digest, nil
+	}
+	return false, fmt.Errorf("unknown digest format")
+}
+
 // ModuleToBucket writes the given Module to the WriteBucket.
 //
 // This writes the sources and the buf.lock file.
@@ -501,7 +521,11 @@ func ModuleToBucket(
 	// even if a module does not set both configurations. An empty with the correct version
 	// will be set by the configuration getters.
 	if breakingConfigVersion != lintConfigVersion {
-		return fmt.Errorf("breaking config version %q does not match lint config version %q", breakingConfigVersion, lintConfigVersion)
+		return fmt.Errorf(
+			"breaking config version %q does not match lint config version %q",
+			breakingConfigVersion,
+			lintConfigVersion,
+		)
 	}
 	if breakingConfigVersion != "" || lintConfigVersion != "" {
 		version = breakingConfigVersion

@@ -61,6 +61,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configmigratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/githubaction/githubactionpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
@@ -346,6 +347,14 @@ func NewRootCommand(name string) *appcmd.Command {
 							appcmd.NewDeletedCommand("convert", experimentalImageConvertDeprecationMessage),
 						},
 					},
+				},
+			},
+			{
+				Use:    "githubaction",
+				Short:  "Commands that implement GitHub Actions.",
+				Hidden: true,
+				SubCommands: []*appcmd.Command{
+					githubactionpush.NewCommand("push", builder),
 				},
 			},
 		},

@@ -74,12 +74,13 @@ have a clean setup going forward.
 
 Update your invocation for v1.0 and you'll be good to go. We apologize for any inconvenience.`
 
+	// TokenEnvKey is the environment variable for the bsr token.
+	TokenEnvKey = "BUF_TOKEN"
+
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
 	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
-
-	tokenEnvKey = "BUF_TOKEN"
 
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
@@ -333,13 +334,21 @@ func GetInputValue(
 		return "", fmt.Errorf("only 1 argument allowed but %d arguments specified", numArgs)
 	}
 	if arg != "" && deprecatedFlag != "" {
-		return "", fmt.Errorf("cannot specify both first argument and deprecated flag --%s, use the first argument instead%s", deprecatedFlagName, DeprecationMessageSuffix)
+		return "", fmt.Errorf(
+			"cannot specify both first argument and deprecated flag --%s, use the first argument instead%s",
+			deprecatedFlagName,
+			DeprecationMessageSuffix,
+		)
 	}
 	if arg != "" {
 		return arg, nil
 	}
 	if deprecatedFlag != "" {
-		return "", fmt.Errorf("flag --%s is no longer supported, use the first argument instead%s", deprecatedFlagName, DeprecationMessageSuffix)
+		return "", fmt.Errorf(
+			"flag --%s is no longer supported, use the first argument instead%s",
+			deprecatedFlagName,
+			DeprecationMessageSuffix,
+		)
 	}
 	return defaultValue, nil
 }
@@ -354,13 +363,24 @@ func GetStringFlagOrDeprecatedFlag(
 	deprecatedFlagName string,
 ) (string, error) {
 	if flag != "" && deprecatedFlag != "" {
-		return "", fmt.Errorf("cannot specify both --%s and --%s, use --%s instead%s", flagName, deprecatedFlagName, flagName, DeprecationMessageSuffix)
+		return "", fmt.Errorf(
+			"cannot specify both --%s and --%s, use --%s instead%s",
+			flagName,
+			deprecatedFlagName,
+			flagName,
+			DeprecationMessageSuffix,
+		)
 	}
 	if flag != "" {
 		return flag, nil
 	}
 	if deprecatedFlag != "" {
-		return "", fmt.Errorf("flag --%s is no longer supported, use --%s instead%s", deprecatedFlagName, flagName, DeprecationMessageSuffix)
+		return "", fmt.Errorf(
+			"flag --%s is no longer supported, use --%s instead%s",
+			deprecatedFlagName,
+			flagName,
+			DeprecationMessageSuffix,
+		)
 	}
 	return "", nil
 }
@@ -375,13 +395,24 @@ func GetStringSliceFlagOrDeprecatedFlag(
 	deprecatedFlagName string,
 ) ([]string, error) {
 	if len(flag) > 0 && len(deprecatedFlag) > 0 {
-		return nil, fmt.Errorf("cannot specify both --%s and --%s, use --%s instead%s", flagName, deprecatedFlagName, flagName, DeprecationMessageSuffix)
+		return nil, fmt.Errorf(
+			"cannot specify both --%s and --%s, use --%s instead%s",
+			flagName,
+			deprecatedFlagName,
+			flagName,
+			DeprecationMessageSuffix,
+		)
 	}
 	if len(flag) > 0 {
 		return flag, nil
 	}
 	if len(deprecatedFlag) > 0 {
-		return nil, fmt.Errorf("flag --%s is no longer supported, use --%s instead%s", deprecatedFlagName, flagName, DeprecationMessageSuffix)
+		return nil, fmt.Errorf(
+			"flag --%s is no longer supported, use --%s instead%s",
+			deprecatedFlagName,
+			flagName,
+			DeprecationMessageSuffix,
+		)
 	}
 	return nil, nil
 }
@@ -390,7 +421,9 @@ func GetStringSliceFlagOrDeprecatedFlag(
 // environment variable is set.
 func WarnAlphaCommand(ctx context.Context, container appflag.Container) {
 	if container.Env(alphaSuppressWarningsEnvKey) == "" {
-		container.Logger().Warn("This command is in alpha. It is hidden for a reason. This command is purely for development purposes, and may never even be promoted to beta, do not rely on this command's functionality. To suppress this warning, set " + alphaSuppressWarningsEnvKey + "=1")
+		container.Logger().Warn(
+			"This command is in alpha. It is hidden for a reason. This command is purely for development purposes, and may never even be promoted to beta, do not rely on this command's functionality. To suppress this warning, set " + alphaSuppressWarningsEnvKey + "=1",
+		)
 	}
 }
 
@@ -398,7 +431,9 @@ func WarnAlphaCommand(ctx context.Context, container appflag.Container) {
 // environment variable is set.
 func WarnBetaCommand(ctx context.Context, container appflag.Container) {
 	if container.Env(betaSuppressWarningsEnvKey) == "" {
-		container.Logger().Warn("This command is in beta. It is unstable and likely to change. To suppress this warning, set " + betaSuppressWarningsEnvKey + "=1")
+		container.Logger().Warn(
+			"This command is in beta. It is unstable and likely to change. To suppress this warning, set " + betaSuppressWarningsEnvKey + "=1",
+		)
 	}
 }
 
@@ -600,7 +635,7 @@ func NewContextModifierProvider(
 	container appflag.Container,
 ) func(string) (func(context.Context) context.Context, error) {
 	return func(address string) (func(context.Context) context.Context, error) {
-		token := container.Env(tokenEnvKey)
+		token := container.Env(TokenEnvKey)
 		if token == "" {
 			machine, err := netrc.GetMachineForName(container, address)
 			if err != nil {
@@ -873,10 +908,18 @@ func checkExistingCacheDirs(baseCacheDirPath string, dirPaths ...string) error {
 			return err
 		}
 		if !fileInfo.IsDir() {
-			return fmt.Errorf("Expected %q to be a directory. This is used for buf's cache. The base cache directory %q can be overridden by setting the $BUF_CACHE_DIR environment variable.", dirPath, baseCacheDirPath)
+			return fmt.Errorf(
+				"Expected %q to be a directory. This is used for buf's cache. The base cache directory %q can be overridden by setting the $BUF_CACHE_DIR environment variable.",
+				dirPath,
+				baseCacheDirPath,
+			)
 		}
 		if fileInfo.Mode().Perm()&0700 != 0700 {
-			return fmt.Errorf("Expected %q to be a writeable directory. This is used for buf's cache. The base cache directory %q can be overridden by setting the $BUF_CACHE_DIR environment variable.", dirPath, baseCacheDirPath)
+			return fmt.Errorf(
+				"Expected %q to be a writeable directory. This is used for buf's cache. The base cache directory %q can be overridden by setting the $BUF_CACHE_DIR environment variable.",
+				dirPath,
+				baseCacheDirPath,
+			)
 		}
 	}
 	return nil

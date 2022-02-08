@@ -94,6 +94,11 @@ issues:
       text: "G101:"
     - linters:
         - gosec
+      # G101 checks for hardcoded credentials, and the const "githubTokenEnvKey" triggers this.
+      path: private/buf/githubaction/githubaction.go
+      text: "G101:"
+    - linters:
+        - gosec
       # G204 checks that exec.Command is not called with non-constants.
       path: private/pkg/command/runner.go
       text: "G204:"
