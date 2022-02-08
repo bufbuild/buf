@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -1720,6 +1721,128 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 			"invalid-version",
 			`failed to migrate config: unknown config file version: spaghetti`,
 		)
+	})
+}
+
+func TestDecodeWithImage(t *testing.T) {
+	t.Run("stdin input", func(t *testing.T) {
+		tempDir := t.TempDir()
+		testRunStdout(
+			t,
+			nil,
+			0,
+			``,
+			"build",
+			filepath.Join("testdata", "success"),
+			"-o",
+			filepath.Join(tempDir, "image.bin"),
+		)
+		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		require.NoError(t, err)
+		defer stdin.Close()
+		stdout := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			stdin,
+			stdout,
+			"beta",
+			"decode",
+			"--source",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+		)
+		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
+	})
+	t.Run("stdin input with dash", func(t *testing.T) {
+		tempDir := t.TempDir()
+		testRunStdout(
+			t,
+			nil,
+			0,
+			``,
+			"build",
+			filepath.Join("testdata", "success"),
+			"-o",
+			filepath.Join(tempDir, "image.bin"),
+		)
+		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		require.NoError(t, err)
+		defer stdin.Close()
+		stdout := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			stdin,
+			stdout,
+			"beta",
+			"decode",
+			"-",
+			"--source",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+		)
+		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
+	})
+	t.Run("file input", func(t *testing.T) {
+		tempDir := t.TempDir()
+		testRunStdout(
+			t,
+			nil,
+			0,
+			``,
+			"build",
+			filepath.Join("testdata", "success"),
+			"-o",
+			filepath.Join(tempDir, "image.bin"),
+		)
+		stdout := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			nil,
+			stdout,
+			"beta",
+			"decode",
+			"testdata/decode/descriptor.plain.bin",
+			"--source",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+		)
+		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
+	})
+	t.Run("argument input", func(t *testing.T) {
+		tempDir := t.TempDir()
+		testRunStdout(
+			t,
+			nil,
+			0,
+			``,
+			"build",
+			filepath.Join("testdata", "success"),
+			"-o",
+			filepath.Join(tempDir, "image.bin"),
+		)
+		data, err := os.ReadFile(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		require.NoError(t, err)
+		stdout := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			nil,
+			stdout,
+			"beta",
+			"decode",
+			string(data),
+			"--source",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+		)
+		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
 	})
 }
 

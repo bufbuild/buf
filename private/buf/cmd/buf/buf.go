@@ -97,7 +97,6 @@ func NewRootCommand(name string) *appcmd.Command {
 		BindPersistentFlags: appcmd.BindMultiple(builder.BindRoot, globalFlags.BindRoot),
 		SubCommands: []*appcmd.Command{
 			build.NewCommand("build", builder),
-			decode.NewCommand("decode", builder),
 			export.NewCommand("export", builder),
 			lint.NewCommand("lint", builder),
 			breaking.NewCommand("breaking", builder),
@@ -136,6 +135,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "beta",
 				Short: "Beta commands. Unstable and likely to change.",
 				SubCommands: []*appcmd.Command{
+					decode.NewCommand("decode", builder),
 					{
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry.",

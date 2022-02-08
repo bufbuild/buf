@@ -17,7 +17,6 @@ package decode
 import (
 	"context"
 	"fmt"
-	"io"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -111,6 +110,10 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	input, err := bufcli.GetInputValue(container, "", "-")
+	if err != nil {
+		return err
+	}
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
@@ -118,24 +121,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	// TODO: There's probably a better way to distinguish between stdin and positional parameters.
-	// We're normally able to do all of this within buffetch, supporting multiple input formats
-	// and whatnot.
-	//
-	// All of the following use cases will eventually need to be supported.
-	//
-	//  $ buf decode descriptor.bin | jq
-	//  $ buf decode <$bytes> | jq
-	//  $ echo <$bytes> | buf decode | jq
-	//
-	var descriptorBytes []byte
-	if container.NumArgs() > 0 {
-		descriptorBytes = []byte(container.Arg(0))
-	} else {
-		descriptorBytes, err = io.ReadAll(container.Stdin())
-		if err != nil {
-			return err
-		}
+	descriptorBytes, err := bufcli.NewDescriptorBytesForInput(ctx, container, registryProvider, input)
+	if err != nil {
+		return err
 	}
 	image, err := bufcli.NewImageForSource(ctx, container, registryProvider, flags.Source, flags.ErrorFormat)
 	if err != nil {
