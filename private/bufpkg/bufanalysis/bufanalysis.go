@@ -100,7 +100,7 @@ type FileInfo interface {
 
 // FileAnnotation is a file annotation.
 type FileAnnotation interface {
-	// Stringer returns the string representation in text format.
+	// Stringer returns the string representation of this annotation.
 	fmt.Stringer
 
 	// FileInfo is the FileInfo for this annotation.
