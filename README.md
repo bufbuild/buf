@@ -13,6 +13,8 @@
 
 The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf] APIs, offering a range of features not found in the standard `protoc` compiler, including:
 
+<a id="features"></a>
+
 - The ability to manage Protobuf assets, including [plugins] and [templates], on the [Buf Schema Registry][bsr] (BSR).
 - A [linter][lint_usage] that enforces good API design choices and structure.
 - A [breaking change detector][breaking_usage] that enforces compatibility at the source code or wire level.
@@ -60,6 +62,12 @@ For more comprehensive usage information, consult Buf's [documentation][docs], e
 * [`buf lint`][lint_usage]
 * [`buf registry`][bsr_usage] (for using the [BSR])
 
+## The Buf Schema Registry
+
+The [Buf Schema Registry][bsr] (BSR) is a SaaS platform for managing your Protobuf APIs. It provides a centralized registry for all of your Protobuf assets, including not just your `.proto` files but also [plugins] and code generation [templates]. Although the BSR provides an intuitive browser UI, the `buf` CLI enables you to perform most BSR-related tasks, such as [pushing] Protobuf sources to the registry and managing [users] and [repositories].
+
+The BSR is purely opt-in. We've made the core [features] of the `buf` CLI available to _all_ Protobuf users.
+
 ## Next steps
 
 Once you've installed `buf`, we recommend completing the [Tour of Buf][tour], which provides a broad but hands-on overview of the core functionality of both the CLI and the [BSR]. The tour takes about 10 minutes to complete.
@@ -90,7 +98,7 @@ Finally, [follow the Buf CLI on GitHub][repo] and [contact us][contact] if you'd
 [docker]: https://docs.buf.build/installation#use-the-docker-image
 [docs]: https://docs.buf.build
 [filedescriptorset]: https://github.com/protocolbuffers/protobuf/blob/044c766fd4777713fef2d1a9a095e4308d770c68/src/google/protobuf/descriptor.proto#L57
-[features]: #cli-features
+[features]: #features
 [fish]: https://fishshell.com
 [generate_usage]: https://docs.buf.build/generate/usage
 [images]: https://docs.buf.build/reference/images
@@ -102,13 +110,16 @@ Finally, [follow the Buf CLI on GitHub][repo] and [contact us][contact] if you'd
 [powershell]: https://docs.microsoft.com/en-us/powershell
 [protobuf]: https://developers.google.com/protocol-buffers
 [protoc]: https://docs.buf.build/generate/high-performance-protoc-replacement
+[pushing]: https://docs.buf.build/bsr/usage#push-a-module
 [releases]: https://docs.buf.build/installation#github-releases
 [repo]: ./
+[repositories]: https://docs.buf.build/bsr/overview#module
 [roadmap]: https://docs.buf.build/roadmap
 [source]: https://docs.buf.build/installation#from-source
 [tarball]: https://docs.buf.build/installation#tarball
 [templates]: https://docs.buf.build/bsr/remote-generation/concepts#template
 [tour]: https://docs.buf.build/tour/introduction
+[users]: https://docs.buf.build/bsr/user-management#organization-roles
 [verifying]: https://docs.buf.build/installation#verifying-a-release
 [windows]: https://docs.buf.build/installation#windows-support
 [zsh]: https://zsh.org
