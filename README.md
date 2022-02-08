@@ -20,8 +20,6 @@ The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf] API
   A [protoc replacement][protoc] that uses Buf's [high-performance Protobuf compiler][compiler].
 - A configurable file [builder][build_usage] that produces [Images], our extension of Protobuf's native [FileDescriptorSets][filedescriptorset].
 
-See more [features] below.
-
 ## Installation
 
 ### Homebrew
