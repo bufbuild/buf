@@ -46,13 +46,13 @@ For other installation methods, see our [official documentation][install], which
 
 ## Usage
 
-Buf's help interface provides comprehensive docs:
+Buf's help interface provides summaries for commands and flags:
 
 ```sh
 buf --help
 ```
 
-For more comprehensive info, consult Buf's [documentation][docs] for usage information, especially these guides:
+For more comprehensive usage information, consult Buf's [documentation][docs], especially these guides:
 
 * [`buf breaking`][breaking_usage]
 * [`buf build`][build_usage]
