@@ -39,8 +39,8 @@ const (
 	testGithubSHA        = "1111111111111111111111111111111111111111"
 	testGithubParentSHA  = "2222222222222222222222222222222222222222"
 	testGithubRefName    = "test-branch"
-	testBufCommitName    = "11111111111111111111111111111111"
-	testBufCommitName2   = "22222222222222222222222222222222"
+	testBufCommitName    = "33333333333333333333333333333333"
+	testBufCommitName2   = "44444444444444444444444444444444"
 
 	testUserAgent  = "userAgent"
 	testTrack      = "test-track"
