@@ -1,0 +1,4 @@
+- id: buf
+  name: buf linter
+  description: Validates proto files
+  entry: buf        
