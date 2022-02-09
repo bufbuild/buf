@@ -15,6 +15,7 @@
 package protosource
 
 import (
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -34,4 +35,17 @@ func (o *optionExtensionDescriptor) OptionExtension(extensionType protoreflect.E
 		return nil, false
 	}
 	return proto.GetExtension(o.message, extensionType), true
+}
+
+func (o *optionExtensionDescriptor) ExtendedFieldNo() []int32 {
+	var extended []int32
+	for b := o.message.ProtoReflect().GetUnknown(); len(b) > 0; {
+		fieldNo, _, n := protowire.ConsumeField(b)
+		// We should filter these to only take the ones in the message's
+		// declared extension ranges , but I haven't figured out how to
+		// get those yet.
+		extended = append(extended, int32(fieldNo))
+		b = b[n:]
+	}
+	return extended
 }

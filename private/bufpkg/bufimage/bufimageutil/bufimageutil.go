@@ -64,6 +64,7 @@ func FreeMessageRangeStrings(
 type imageIndex struct {
 	NameToDescriptor map[string]protosource.NamedDescriptor
 	NameToExtensions map[string][]protosource.Field
+	NameToOptions    map[string]map[int32]protosource.Field
 }
 
 // ImageFilteredByTypes returns a minimal image containing only the descriptors
@@ -72,6 +73,7 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 	imageIndex := &imageIndex{
 		NameToDescriptor: make(map[string]protosource.NamedDescriptor),
 		NameToExtensions: make(map[string][]protosource.Field),
+		NameToOptions:    make(map[string]map[int32]protosource.Field),
 	}
 	for _, file := range image.Files() {
 		protosourceFile, err := protosource.NewFile(newInputFile(file))
@@ -80,7 +82,7 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 		}
 		for _, field := range protosourceFile.Extensions() {
 			imageIndex.NameToDescriptor[field.FullName()] = field
-			imageIndex.NameToExtensions[strings.TrimPrefix(field.Extendee(), ".")] = append(imageIndex.NameToExtensions[field.Extendee()], field)
+			imageIndex.NameToExtensions[strings.TrimPrefix(field.Extendee(), ".")] = append(imageIndex.NameToExtensions[strings.TrimPrefix(field.Extendee(), ".")], field)
 		}
 		if err := protosource.ForEachMessage(func(message protosource.Message) error {
 			if storedDescriptor, ok := imageIndex.NameToDescriptor[message.FullName()]; ok && storedDescriptor != message {
@@ -112,7 +114,29 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 			imageIndex.NameToDescriptor[service.FullName()] = service
 		}
 	}
-
+	// should probably do this when constructing the imageIndex
+	optionNames := map[string]struct{}{
+		"google.protobuf.FileOptions":      {},
+		"google.protobuf.MessageOptions":   {},
+		"google.protobuf.FieldOptions":     {},
+		"google.protobuf.OneofOptions":     {},
+		"google.protobuf.EnumOptions":      {},
+		"google.protobuf.EnumValueOptions": {},
+		"google.protobuf.ServiceOptions":   {},
+		"google.protobuf.MethodOptions":    {},
+	}
+	for name, extensions := range imageIndex.NameToExtensions {
+		if _, ok := optionNames[name]; !ok {
+			continue
+		}
+		for _, ext := range extensions {
+			if _, ok := imageIndex.NameToOptions[name]; !ok {
+				imageIndex.NameToOptions[name] = make(map[int32]protosource.Field)
+			}
+			imageIndex.NameToOptions[name][int32(ext.Number())] = ext
+		}
+		delete(imageIndex.NameToExtensions, name)
+	}
 	// Check types exist
 	startingDescriptors := make([]protosource.NamedDescriptor, 0, len(types))
 	for _, typeName := range types {
@@ -136,6 +160,12 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 		}
 		neededDescriptors = append(neededDescriptors, new...)
 	}
+	// for _, d := range neededDescriptors {
+	// 	fmt.Println(d.Descriptor.FullName())
+	// 	for _, e := range d.ExplicitDeps {
+	// 		fmt.Println("\t" + e.FullName())
+	// 	}
+	// }
 
 	// Now create a thinned image.
 	descriptorsByFile := make(map[string][]namedDescriptorAndExplicitDeps)
@@ -198,8 +228,12 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 		// go.
 		i = 0
 		for _, messageDescriptor := range imageFileDescriptor.MessageType {
+			name := *messageDescriptor.Name
+			if imageFileDescriptor.Package != nil {
+				name = *imageFileDescriptor.Package + "." + name
+			}
 			// Won't work for nested
-			if _, ok := descriptorNames[*imageFileDescriptor.Package+"."+*messageDescriptor.Name]; ok {
+			if _, ok := descriptorNames[name]; ok {
 				imageFileDescriptor.MessageType[i] = messageDescriptor
 				i++
 			}
@@ -214,6 +248,7 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 				i++
 			}
 		}
+		imageFileDescriptor.EnumType = imageFileDescriptor.EnumType[:i]
 
 		i = 0
 		for _, serviceDescriptor := range imageFileDescriptor.Service {
@@ -223,18 +258,23 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 				i++
 			}
 		}
+		imageFileDescriptor.Service = imageFileDescriptor.Service[:i]
 
 		i = 0
 		for _, extensionDescriptor := range imageFileDescriptor.Extension {
 			// Won't work for nested
-			if _, ok := descriptorNames[*imageFileDescriptor.Package+"."+*extensionDescriptor.Name]; ok {
+			name := *extensionDescriptor.Name
+			if imageFileDescriptor.Package != nil {
+				name = *imageFileDescriptor.Package + "." + name
+			}
+			if _, ok := descriptorNames[name]; ok {
 				imageFileDescriptor.Extension[i] = extensionDescriptor
 				i++
 			}
 		}
-		// TODO: options
-		imageFileDescriptor.Options = nil
+		imageFileDescriptor.Extension = imageFileDescriptor.Extension[:i]
 		imageFileDescriptor.SourceCodeInfo = nil
+
 	}
 	return bufimage.NewImage(includedFiles)
 }
@@ -254,7 +294,8 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageInde
 	recursedDescriptorsWithDependencies := []namedDescriptorAndExplicitDeps{}
 	switch x := starting.(type) {
 	case protosource.Message:
-		for _, field := range append(x.Fields(), imageIndex.NameToExtensions["."+starting.FullName()]...) {
+		fields := x.Fields()
+		for _, field := range fields {
 			switch field.Type() {
 			case protosource.FieldDescriptorProtoTypeEnum, protosource.FieldDescriptorProtoTypeMessage, protosource.FieldDescriptorProtoTypeGroup:
 				inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(field.TypeName(), ".")]
@@ -270,6 +311,16 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageInde
 			default:
 				// add known types and error here
 			}
+		}
+
+		// Extensions
+		for _, extendsDescriptor := range imageIndex.NameToExtensions[starting.FullName()] {
+			explicitDescriptorDependencies = append(explicitDescriptorDependencies, extendsDescriptor)
+			recursiveDescriptors, err := descriptorTransitiveClosure(extendsDescriptor, imageIndex, seen)
+			if err != nil {
+				return nil, err
+			}
+			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
 		}
 		// TODO: Options
 	case protosource.Enum:
@@ -299,22 +350,52 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageInde
 			explicitDescriptorDependencies = append(explicitDescriptorDependencies, outputDescriptor)
 		}
 	case protosource.Field:
-		inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(x.TypeName(), ".")]
-		if !ok {
-			return nil, fmt.Errorf("missing %q", x.TypeName())
+		switch x.Type() {
+		case protosource.FieldDescriptorProtoTypeEnum, protosource.FieldDescriptorProtoTypeMessage, protosource.FieldDescriptorProtoTypeGroup:
+			inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(x.TypeName(), ".")]
+			if !ok {
+				return nil, fmt.Errorf("missing %q", x.TypeName())
+			}
+			explicitDescriptorDependencies = append(explicitDescriptorDependencies, inputDescriptor)
+			recursiveDescriptors, err := descriptorTransitiveClosure(inputDescriptor, imageIndex, seen)
+			if err != nil {
+				return nil, err
+			}
+			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
+
 		}
-		explicitDescriptorDependencies = append(explicitDescriptorDependencies, inputDescriptor)
-		recursiveDescriptors, err := descriptorTransitiveClosure(inputDescriptor, imageIndex, seen)
-		if err != nil {
-			return nil, err
+		if x.Extendee() != "" {
+			extendeeDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(x.Extendee(), ".")]
+			if !ok {
+				return nil, fmt.Errorf("missing %q", x.Extendee())
+			}
+			explicitDescriptorDependencies = append(explicitDescriptorDependencies, extendeeDescriptor)
+			recursiveDescriptors, err := descriptorTransitiveClosure(extendeeDescriptor, imageIndex, seen)
+			if err != nil {
+				return nil, err
+			}
+			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
 		}
-		recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
 		// TODO: Options
 	default:
 		panic(x)
 	}
 
-	// TODO: for descriptor get the file, and follow any custom options on the file.
+	for _, no := range starting.File().ExtendedFieldNo() {
+		opts := imageIndex.NameToOptions["google.protobuf.FileOptions"]
+		field, ok := opts[no]
+		if !ok {
+			return nil, fmt.Errorf("cannot find ext no %d on %s", no, "google.protobuf.FileOptions")
+		}
+
+		explicitDescriptorDependencies = append(explicitDescriptorDependencies, field)
+		recursiveDescriptors, err := descriptorTransitiveClosure(field, imageIndex, seen)
+		if err != nil {
+			return nil, err
+		}
+		recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
+	}
+
 	return append(
 		[]namedDescriptorAndExplicitDeps{{Descriptor: starting, ExplicitDeps: explicitDescriptorDependencies}},
 		recursedDescriptorsWithDependencies...,

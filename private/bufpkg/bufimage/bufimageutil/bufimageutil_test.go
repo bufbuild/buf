@@ -42,21 +42,42 @@ func TestImageFilteredByTypes(t *testing.T) {
 	ctx := context.Background()
 	bucket, err := storagemem.NewReadBucket(map[string][]byte{
 		"a.proto": []byte(`syntax = "proto2";
+import "e.proto";
+import "google/protobuf/descriptor.proto";
 package pkg;
+option (extendthatthing).foo = "no!";
 message Baz { 
 	message NestedBaz {
-		optional Baz in_nested_baz = 1;
+		optional Baz in_nested_baz = 1 [(extend_that_field) = "foo"];
 	}
 	optional Baz baz = 1; 
 	optional NestedBaz nested_baz = 2; 
-	extensions 3 to 4; 
+	optional google.protobuf.FileDescriptorSet fds = 3;
+	extensions 4 to 5; 
 } 
-extend Baz { optional string extended_field = 3; }
+extend Baz { optional string extended_field = 5; }
 `),
 		"b.proto":  []byte(`syntax = "proto3";import "a.proto"; package pkg; message Bar { Baz baz = 1; }`),
-		"c.proto":  []byte(`syntax = "proto3";import weak "dependency.proto"; import weak "b1.proto";import "b.proto"; package pkg; enum FooEnum{X=0;};message XYZ {Qux qux = 2;}; message Foo { Bar baz = 1; dependency.Dep d = 2; FooEnum foo_enum = 3; }`),
+		"c.proto":  []byte(`syntax = "proto3";import "dependency.proto"; import weak "b1.proto"; import public "b.proto"; package pkg; enum FooEnum{X=0;};message XYZ {Qux qux = 2;}; message Foo { Bar baz = 1; dependency.Dep d = 2; FooEnum foo_enum = 3; }`),
 		"b1.proto": []byte(`syntax = "proto3";import "b.proto"; package pkg; message Qux { Bar what = 1; }`),
 		"s.proto":  []byte(`syntax = "proto3";import "c.proto";import "a.proto"; package pkg; service Quux { rpc Do(Foo) returns (Baz); }`),
+		"e.proto": []byte(`syntax = "proto3";
+import "google/protobuf/descriptor.proto";
+
+message UnusedFileOption {
+	string foo = 1;
+}
+
+extend google.protobuf.FieldOptions {
+	optional string extend_that_field = 9999998;
+}
+extend google.protobuf.FileOptions {
+	optional string extend_that_file = 9999999;
+	optional UnusedFileOption extendthatthing = 999991;
+}
+// extend google.protobuf.FileOptions {
+// }
+`),
 	})
 	require.NoError(t, err)
 	moduleIdentity, err := bufmoduleref.NewModuleIdentity("buf.build", "repo", "main")
@@ -103,9 +124,17 @@ extend Baz { optional string extended_field = 3; }
 func txtarForImage(t *testing.T, image bufimage.Image) []byte {
 	fds := bufimage.ImageToFileDescriptorSet(image)
 	reflectFDS, err := desc.CreateFileDescriptorsFromSet(fds)
+	if err != nil {
+		b, err := proto.Marshal(fds)
+		require.NoError(t, err)
+		err = ioutil.WriteFile("testdata/malformed_image.bin", b, 0644)
+		require.NoError(t, err)
+	}
 	require.NoError(t, err)
 	archive := &txtar.Archive{}
-	printer := protoprint.Printer{}
+	printer := protoprint.Printer{
+		SortElements: true,
+	}
 	for fname, d := range reflectFDS {
 		fileBuilder := &bytes.Buffer{}
 		require.NoError(t, printer.PrintProtoFile(d, fileBuilder), "expected no error while printing %q", fname)

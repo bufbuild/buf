@@ -129,6 +129,7 @@ type OptionExtensionDescriptor interface {
 	// See https://pkg.go.dev/google.golang.org/protobuf/proto#HasExtension
 	// See https://pkg.go.dev/google.golang.org/protobuf/proto#GetExtension
 	OptionExtension(extensionType protoreflect.ExtensionType) (interface{}, bool)
+	ExtendedFieldNo() []int32
 }
 
 // Location defines source code info location information.
