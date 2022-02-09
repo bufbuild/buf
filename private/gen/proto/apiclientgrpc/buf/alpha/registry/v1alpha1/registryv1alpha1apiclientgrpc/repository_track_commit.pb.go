@@ -77,3 +77,29 @@ func (s *repositoryTrackCommitService) ListRepositoryTrackCommitsByRepositoryTra
 	}
 	return response.RepositoryTrackCommits, response.NextPageToken, nil
 }
+
+// GetRepositoryTrackCommitByReference returns the RepositoryTrackCommit associated with the given reference.
+func (s *repositoryTrackCommitService) GetRepositoryTrackCommitByReference(
+	ctx context.Context,
+	repositoryOwner string,
+	repositoryName string,
+	track string,
+	reference string,
+) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetRepositoryTrackCommitByReference(
+		ctx,
+		&v1alpha1.GetRepositoryTrackCommitByReferenceRequest{
+			RepositoryOwner: repositoryOwner,
+			RepositoryName:  repositoryName,
+			Track:           track,
+			Reference:       reference,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.RepositoryTrackCommit, nil
+}

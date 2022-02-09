@@ -38,4 +38,12 @@ type RepositoryTrackCommitService interface {
 		pageToken string,
 		reverse bool,
 	) (repositoryTrackCommits []*v1alpha1.RepositoryTrackCommit, nextPageToken string, err error)
+	// GetRepositoryTrackCommitByReference returns the RepositoryTrackCommit associated with the given reference.
+	GetRepositoryTrackCommitByReference(
+		ctx context.Context,
+		repositoryOwner string,
+		repositoryName string,
+		track string,
+		reference string,
+	) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, err error)
 }
