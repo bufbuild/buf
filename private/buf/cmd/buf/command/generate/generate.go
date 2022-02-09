@@ -140,7 +140,7 @@ $ buf generate --template buf.gen.yaml .
 # --template also takes YAML or JSON data as input, so it can be used without a file
 $ buf generate --template '{"version":"v1","plugins":[{"name":"go","out":"gen/go"}]}'
 
-# download the repository, compile it, and generate per the bar.yaml template
+# download the repository and generate code stubs per the bar.yaml template
 $ buf generate --template bar.yaml https://github.com/foo/bar.git
 
 # generate to the bar/ directory, prepending bar/ to the out directives in the template
