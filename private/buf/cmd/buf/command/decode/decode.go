@@ -125,11 +125,15 @@ func run(
 	if err != nil {
 		return err
 	}
-	image, err := bufcli.NewImageForSource(ctx, container, registryProvider, flags.Source, flags.ErrorFormat)
+	protoSource, protoType, err := parseSourceAndType(ctx, flags.Source, flags.Type)
 	if err != nil {
 		return err
 	}
-	message, err := bufreflect.NewMessage(ctx, image, flags.Type)
+	image, err := bufcli.NewImageForSource(ctx, container, registryProvider, protoSource, flags.ErrorFormat)
+	if err != nil {
+		return err
+	}
+	message, err := bufreflect.NewMessage(ctx, image, protoType)
 	if err != nil {
 		return err
 	}
@@ -148,4 +152,22 @@ func run(
 		return err
 	}
 	return nil
+}
+
+func parseSourceAndType(
+	ctx context.Context,
+	flagSource string,
+	flagType string,
+) (protoSource string, protoType string, _ error) {
+	if flagSource != "" && flagType != "" {
+		return flagSource, flagType, nil
+	}
+	if flagType == "" {
+		return "", "", appcmd.NewInvalidArgumentError("type is required")
+	}
+	moduleName, typeName, err := bufreflect.ParseFullyQualifiedPath(flagType)
+	if err != nil {
+		return "", "", err
+	}
+	return moduleName, typeName, nil
 }

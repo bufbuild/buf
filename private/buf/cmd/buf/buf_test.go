@@ -1725,18 +1725,19 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 }
 
 func TestDecodeWithImage(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "success"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+	)
+
 	t.Run("stdin input", func(t *testing.T) {
-		tempDir := t.TempDir()
-		testRunStdout(
-			t,
-			nil,
-			0,
-			``,
-			"build",
-			filepath.Join("testdata", "success"),
-			"-o",
-			filepath.Join(tempDir, "image.bin"),
-		)
 		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
 		require.NoError(t, err)
 		defer stdin.Close()
@@ -1756,17 +1757,6 @@ func TestDecodeWithImage(t *testing.T) {
 		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
 	})
 	t.Run("stdin input with dash", func(t *testing.T) {
-		tempDir := t.TempDir()
-		testRunStdout(
-			t,
-			nil,
-			0,
-			``,
-			"build",
-			filepath.Join("testdata", "success"),
-			"-o",
-			filepath.Join(tempDir, "image.bin"),
-		)
 		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
 		require.NoError(t, err)
 		defer stdin.Close()
@@ -1787,17 +1777,6 @@ func TestDecodeWithImage(t *testing.T) {
 		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
 	})
 	t.Run("file input", func(t *testing.T) {
-		tempDir := t.TempDir()
-		testRunStdout(
-			t,
-			nil,
-			0,
-			``,
-			"build",
-			filepath.Join("testdata", "success"),
-			"-o",
-			filepath.Join(tempDir, "image.bin"),
-		)
 		stdout := bytes.NewBuffer(nil)
 		testRun(
 			t,
@@ -1815,17 +1794,6 @@ func TestDecodeWithImage(t *testing.T) {
 		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
 	})
 	t.Run("argument input", func(t *testing.T) {
-		tempDir := t.TempDir()
-		testRunStdout(
-			t,
-			nil,
-			0,
-			``,
-			"build",
-			filepath.Join("testdata", "success"),
-			"-o",
-			filepath.Join(tempDir, "image.bin"),
-		)
 		data, err := os.ReadFile(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
 		require.NoError(t, err)
 		stdout := bytes.NewBuffer(nil)
@@ -1844,6 +1812,34 @@ func TestDecodeWithImage(t *testing.T) {
 		)
 		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
 	})
+}
+
+func TestDecodeInvalidTypeName(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "success"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: ".foo" is not a valid fully qualified type name`,
+		"beta",
+		"decode",
+		"descriptor_placeholder",
+		"--source",
+		filepath.Join(tempDir, "image.bin"),
+		"--type",
+		".foo",
+	)
 }
 
 func testMigrateV1Beta1Diff(

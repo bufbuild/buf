@@ -17,8 +17,10 @@ package bufreflect
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -32,7 +34,7 @@ func NewMessage(
 	image bufimage.Image,
 	typeName string,
 ) (proto.Message, error) {
-	if err := ValidateTypeName(typeName); err != nil {
+	if err := validateTypeName(typeName); err != nil {
 		return nil, err
 	}
 	files, err := protodesc.NewFiles(bufimage.ImageToFileDescriptorSet(image))
@@ -51,11 +53,27 @@ func NewMessage(
 	}
 }
 
-// ValidateTypeName validates that the typeName is well-formed, such that it has one or more
+func ParseFullyQualifiedPath(
+	moduleTypeName string,
+) (moduleName string, typeName string, _ error) {
+	if moduleTypeName == "" {
+		return "", "", appcmd.NewInvalidArgumentError("you must specify a module type name")
+	}
+	components := strings.Split(moduleTypeName, "/")
+	if len(components) != 4 {
+		return "", "", appcmd.NewInvalidArgumentErrorf("%q is not a valid fully qualified path", moduleTypeName)
+	}
+	if err := validateTypeName(components[3]); err != nil {
+		return "", "", err
+	}
+	return moduleTypeName[:strings.LastIndex(moduleTypeName, "/")], components[3], nil
+}
+
+// validateTypeName validates that the typeName is well-formed, such that it has one or more
 // '.'-delimited package components and no '/' elements.
-func ValidateTypeName(typeName string) error {
+func validateTypeName(typeName string) error {
 	if fullName := protoreflect.FullName(typeName); !fullName.IsValid() {
-		return fmt.Errorf("%q is not a valid fully qualified name", fullName)
+		return fmt.Errorf("%q is not a valid fully qualified type name", fullName)
 	}
 	return nil
 }
