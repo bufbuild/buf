@@ -61,57 +61,68 @@ func FreeMessageRangeStrings(
 	return s, nil
 }
 
+type imageIndex struct {
+	NameToDescriptor map[string]protosource.NamedDescriptor
+	NameToExtensions map[string][]protosource.Field
+}
+
 // ImageFilteredByTypes returns a minimal image containing only the descriptors
 // required to interpet types.
 func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image, error) {
-	nameToDescriptor := make(map[string]protosource.NamedDescriptor)
-	nameToExtensions := make(map[string][]protosource.OptionExtensionDescriptor)
-	_ = nameToExtensions // we need a map of string->[]int
+	imageIndex := &imageIndex{
+		NameToDescriptor: make(map[string]protosource.NamedDescriptor),
+		NameToExtensions: make(map[string][]protosource.Field),
+	}
 	for _, file := range image.Files() {
 		protosourceFile, err := protosource.NewFile(newInputFile(file))
 		if err != nil {
 			return nil, err
 		}
+		for _, field := range protosourceFile.Extensions() {
+			imageIndex.NameToDescriptor[field.FullName()] = field
+			imageIndex.NameToExtensions[strings.TrimPrefix(field.Extendee(), ".")] = append(imageIndex.NameToExtensions[field.Extendee()], field)
+		}
 		if err := protosource.ForEachMessage(func(message protosource.Message) error {
-			if storedDescriptor, ok := nameToDescriptor[message.FullName()]; ok && storedDescriptor != message {
+			if storedDescriptor, ok := imageIndex.NameToDescriptor[message.FullName()]; ok && storedDescriptor != message {
 				return fmt.Errorf("duplicate for %q: %#v != %#v", message.FullName(), storedDescriptor, message)
 			}
-			nameToDescriptor[message.FullName()] = message
+			imageIndex.NameToDescriptor[message.FullName()] = message
+
+			for _, field := range message.Extensions() {
+				imageIndex.NameToDescriptor[field.FullName()] = field
+				imageIndex.NameToExtensions[field.Extendee()] = append(imageIndex.NameToExtensions[field.Extendee()], field)
+			}
 			return nil
 		}, protosourceFile); err != nil {
 			return nil, err
 		}
 		if err = protosource.ForEachEnum(func(enum protosource.Enum) error {
-			if storedDescriptor, ok := nameToDescriptor[enum.FullName()]; ok {
+			if storedDescriptor, ok := imageIndex.NameToDescriptor[enum.FullName()]; ok {
 				return fmt.Errorf("duplicate for %q: %#v != %#v", enum.FullName(), storedDescriptor, enum)
 			}
-			nameToDescriptor[enum.FullName()] = enum
+			imageIndex.NameToDescriptor[enum.FullName()] = enum
 			return nil
 		}, protosourceFile); err != nil {
 			return nil, err
 		}
 		for _, service := range protosourceFile.Services() {
-			if storedDescriptor, ok := nameToDescriptor[service.FullName()]; ok {
+			if storedDescriptor, ok := imageIndex.NameToDescriptor[service.FullName()]; ok {
 				return nil, fmt.Errorf("duplicate for %q: %#v != %#v", service.FullName(), storedDescriptor, service)
 			}
-			nameToDescriptor[service.FullName()] = service
+			imageIndex.NameToDescriptor[service.FullName()] = service
 		}
 	}
 
 	// Check types exist
 	startingDescriptors := make([]protosource.NamedDescriptor, 0, len(types))
 	for _, typeName := range types {
-		descriptor, ok := nameToDescriptor[typeName]
+		descriptor, ok := imageIndex.NameToDescriptor[typeName]
 		if !ok {
 			return nil, fmt.Errorf("not found: %q", typeName)
 		}
-		// imageFile, ok := descriptor.File().(bufimage.ImageFile)
-		// if !ok {
-		// 	return nil, fmt.Errorf("expected file to be a imagefile (was %T)", descriptor.File())
-		// }
-		// if imageFile.IsImport() {
-		// 	return nil, fmt.Errorf("type %q is in an import", typeName)
-		// }
+		if image.GetFile(descriptor.File().Path()).IsImport() {
+			return nil, fmt.Errorf("type %q is in an import", typeName)
+		}
 		startingDescriptors = append(startingDescriptors, descriptor)
 	}
 
@@ -119,7 +130,7 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 	seen := make(map[string]struct{})
 	neededDescriptors := []namedDescriptorAndExplicitDeps{}
 	for _, startingDescriptor := range startingDescriptors {
-		new, err := descriptorTransitiveClosure(startingDescriptor, nameToDescriptor, seen)
+		new, err := descriptorTransitiveClosure(startingDescriptor, imageIndex, seen)
 		if err != nil {
 			return nil, err
 		}
@@ -134,6 +145,7 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 			descriptor,
 		)
 	}
+	var includedFiles []bufimage.ImageFile
 	for file, descriptors := range descriptorsByFile {
 		importsMap := make(map[string]struct{})
 		descriptorNames := make(map[string]struct{})
@@ -146,23 +158,44 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 			}
 		}
 
+		imageFile := image.GetFile(file)
+		includedFiles = append(includedFiles, imageFile)
 		// the comment on `.Proto` says its for modifying. Probably
 		// thats easier to do than recreating the image from scratch,
 		// trying that out first.
-		imageFileDescriptor := image.GetFile(file).Proto()
+		imageFileDescriptor := imageFile.Proto()
 		// https://github.com/golang/go/wiki/SliceTricks#filter-in-place
-		i := 0
-		for _, importPath := range imageFileDescriptor.GetDependency() {
+		indexFromTo := make(map[int32]int32)
+		indexTo := 0
+		for indexFrom, importPath := range imageFileDescriptor.GetDependency() {
 			if _, ok := importsMap[importPath]; ok {
-				imageFileDescriptor.Dependency[i] = importPath
+				indexFromTo[int32(indexFrom)] = int32(indexTo)
+				imageFileDescriptor.Dependency[indexTo] = importPath
+				indexTo++
+			}
+		}
+		imageFileDescriptor.Dependency = imageFileDescriptor.Dependency[:indexTo]
+		i := 0
+		for _, indexFrom := range imageFileDescriptor.PublicDependency {
+			if indexTo, ok := indexFromTo[indexFrom]; ok {
+				imageFileDescriptor.PublicDependency[i] = indexTo
 				i++
 			}
 		}
-		imageFileDescriptor.Dependency = imageFileDescriptor.Dependency[:i]
-		// TODO: fixup these
-		imageFileDescriptor.PublicDependency = nil
-		imageFileDescriptor.WeakDependency = nil
+		imageFileDescriptor.PublicDependency = imageFileDescriptor.PublicDependency[:i]
+		i = 0
+		for _, indexFrom := range imageFileDescriptor.WeakDependency {
+			if indexTo, ok := indexFromTo[indexFrom]; ok {
+				imageFileDescriptor.WeakDependency[i] = indexTo
+				i++
+			}
+		}
+		imageFileDescriptor.WeakDependency = imageFileDescriptor.WeakDependency[:i]
 
+		// all the below is a mess, and doesn't work for nested
+		// messages/enums as intended, going to make this nice once
+		// validated that rewriting the descriptor proto is the way to
+		// go.
 		i = 0
 		for _, messageDescriptor := range imageFileDescriptor.MessageType {
 			// Won't work for nested
@@ -190,14 +223,20 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 				i++
 			}
 		}
-		imageFileDescriptor.Extension = nil
+
+		i = 0
+		for _, extensionDescriptor := range imageFileDescriptor.Extension {
+			// Won't work for nested
+			if _, ok := descriptorNames[*imageFileDescriptor.Package+"."+*extensionDescriptor.Name]; ok {
+				imageFileDescriptor.Extension[i] = extensionDescriptor
+				i++
+			}
+		}
 		// TODO: options
 		imageFileDescriptor.Options = nil
 		imageFileDescriptor.SourceCodeInfo = nil
 	}
-
-	// spew.Dump(nameToDescriptor)
-	return image, nil
+	return bufimage.NewImage(includedFiles)
 }
 
 type namedDescriptorAndExplicitDeps struct {
@@ -205,7 +244,7 @@ type namedDescriptorAndExplicitDeps struct {
 	ExplicitDeps []protosource.NamedDescriptor // maybe make this a []string and store imported paths directly?
 }
 
-func descriptorTransitiveClosure(starting protosource.NamedDescriptor, all map[string]protosource.NamedDescriptor, seen map[string]struct{}) ([]namedDescriptorAndExplicitDeps, error) {
+func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageIndex *imageIndex, seen map[string]struct{}) ([]namedDescriptorAndExplicitDeps, error) {
 	if _, ok := seen[starting.FullName()]; ok {
 		return nil, nil
 	}
@@ -213,18 +252,17 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, all map[s
 
 	explicitDescriptorDependencies := []protosource.NamedDescriptor{}
 	recursedDescriptorsWithDependencies := []namedDescriptorAndExplicitDeps{}
-
 	switch x := starting.(type) {
 	case protosource.Message:
-		for _, field := range x.Fields() {
+		for _, field := range append(x.Fields(), imageIndex.NameToExtensions["."+starting.FullName()]...) {
 			switch field.Type() {
 			case protosource.FieldDescriptorProtoTypeEnum, protosource.FieldDescriptorProtoTypeMessage, protosource.FieldDescriptorProtoTypeGroup:
-				inputDescriptor, ok := all[strings.TrimPrefix(field.TypeName(), ".")]
+				inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(field.TypeName(), ".")]
 				if !ok {
 					return nil, fmt.Errorf("missing %q", field.TypeName())
 				}
 				explicitDescriptorDependencies = append(explicitDescriptorDependencies, inputDescriptor)
-				recursiveDescriptors, err := descriptorTransitiveClosure(inputDescriptor, all, seen)
+				recursiveDescriptors, err := descriptorTransitiveClosure(inputDescriptor, imageIndex, seen)
 				if err != nil {
 					return nil, err
 				}
@@ -233,38 +271,50 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, all map[s
 				// add known types and error here
 			}
 		}
-		// TODO: if nested message, message in which this was declared.
-		// TODO: Extensions
 		// TODO: Options
 	case protosource.Enum:
 		// TODO: Options
 	case protosource.Service:
 		for _, method := range x.Methods() {
-			inputDescriptor, ok := all[strings.TrimPrefix(method.InputTypeName(), ".")]
+			inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(method.InputTypeName(), ".")]
 			if !ok {
 				return nil, fmt.Errorf("missing %q", method.InputTypeName())
 			}
-			recursiveDescriptorsIn, err := descriptorTransitiveClosure(inputDescriptor, all, seen)
+			recursiveDescriptorsIn, err := descriptorTransitiveClosure(inputDescriptor, imageIndex, seen)
 			if err != nil {
 				return nil, err
 			}
 			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptorsIn...)
 			explicitDescriptorDependencies = append(explicitDescriptorDependencies, inputDescriptor)
 
-			outputDescriptor, ok := all[strings.TrimPrefix(method.OutputTypeName(), ".")]
+			outputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(method.OutputTypeName(), ".")]
 			if !ok {
 				return nil, fmt.Errorf("missing %q", method.OutputTypeName())
 			}
-			recursiveDescriptorsOut, err := descriptorTransitiveClosure(outputDescriptor, all, seen)
+			recursiveDescriptorsOut, err := descriptorTransitiveClosure(outputDescriptor, imageIndex, seen)
 			if err != nil {
 				return nil, err
 			}
 			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptorsOut...)
 			explicitDescriptorDependencies = append(explicitDescriptorDependencies, outputDescriptor)
 		}
+	case protosource.Field:
+		inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(x.TypeName(), ".")]
+		if !ok {
+			return nil, fmt.Errorf("missing %q", x.TypeName())
+		}
+		explicitDescriptorDependencies = append(explicitDescriptorDependencies, inputDescriptor)
+		recursiveDescriptors, err := descriptorTransitiveClosure(inputDescriptor, imageIndex, seen)
+		if err != nil {
+			return nil, err
+		}
+		recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
+		// TODO: Options
 	default:
 		panic(x)
 	}
+
+	// TODO: for descriptor get the file, and follow any custom options on the file.
 	return append(
 		[]namedDescriptorAndExplicitDeps{{Descriptor: starting, ExplicitDeps: explicitDescriptorDependencies}},
 		recursedDescriptorsWithDependencies...,
