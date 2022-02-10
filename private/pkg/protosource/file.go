@@ -295,6 +295,7 @@ func newFile(inputFile InputFile) (*file, error) {
 			enumIndex,
 			nil,
 			nil,
+			nil,
 		)
 		if err != nil {
 			return nil, err
@@ -349,6 +350,7 @@ func (f *file) populateEnum(
 	nestedMessageIndexes []int,
 	// all message names leading to this enum
 	nestedMessageNames []string,
+	parent Message,
 ) (Enum, error) {
 	enumNamedDescriptor, err := newNamedDescriptor(
 		newLocationDescriptor(
@@ -369,6 +371,7 @@ func (f *file) populateEnum(
 		),
 		enumDescriptorProto.GetOptions().GetAllowAlias(),
 		getEnumAllowAliasPath(enumIndex, nestedMessageIndexes...),
+		parent,
 	)
 
 	for enumValueIndex, enumValueDescriptorProto := range enumDescriptorProto.GetValue() {
@@ -682,6 +685,7 @@ func (f *file) populateMessage(
 			// TODO we should refactor get.*Path messages to be more consistent
 			append([]int{topLevelMessageIndex}, nestedMessageIndexes...),
 			append(nestedMessageNames, message.Name()),
+			message,
 		)
 		if err != nil {
 			return nil, err

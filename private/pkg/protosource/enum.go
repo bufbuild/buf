@@ -23,6 +23,7 @@ type enum struct {
 	allowAliasPath     []int32
 	reservedEnumRanges []EnumRange
 	reservedNames      []ReservedName
+	parent             Message
 }
 
 func newEnum(
@@ -30,12 +31,14 @@ func newEnum(
 	optionExtensionDescriptor optionExtensionDescriptor,
 	allowAlias bool,
 	allowAliasPath []int32,
+	parent Message,
 ) *enum {
 	return &enum{
 		namedDescriptor:           namedDescriptor,
 		optionExtensionDescriptor: optionExtensionDescriptor,
 		allowAlias:                allowAlias,
 		allowAliasPath:            allowAliasPath,
+		parent:                    parent,
 	}
 }
 
@@ -65,6 +68,10 @@ func (e *enum) ReservedTagRanges() []TagRange {
 
 func (e *enum) ReservedNames() []ReservedName {
 	return e.reservedNames
+}
+
+func (e *enum) Parent() Message {
+	return e.parent
 }
 
 func (e *enum) addValue(value EnumValue) {

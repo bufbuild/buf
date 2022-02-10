@@ -309,6 +309,9 @@ type Enum interface {
 
 	AllowAlias() bool
 	AllowAliasLocation() Location
+
+	// Will return nil if this is a top-level Enum
+	Parent() Message
 }
 
 // EnumValue is an enum value descriptor.
