@@ -36,32 +36,15 @@ import "a.proto";
 message Bar {
   Baz baz = 1;
 }
--- c.proto --
+-- b1.proto --
 syntax = "proto3";
 
 package pkg;
 
-import public "b.proto";
+import "b.proto";
 
-import "dependency.proto";
-
-message Foo {
-  Bar baz = 1;
-
-  dependency.Dep d = 2;
-
-  FooEnum foo_enum = 3;
-}
-
-enum FooEnum {
-  X = 0;
-}
--- dependency.proto --
-syntax = "proto3";
-
-package dependency;
-
-message Dep {
+message Qux {
+  Bar what = 1;
 }
 -- e.proto --
 syntax = "proto3";
@@ -486,16 +469,4 @@ message UninterpretedOption {
 
     required bool is_extension = 2;
   }
-}
--- s.proto --
-syntax = "proto3";
-
-package pkg;
-
-import "a.proto";
-
-import "c.proto";
-
-service Quux {
-  rpc Do ( Foo ) returns ( Baz );
 }

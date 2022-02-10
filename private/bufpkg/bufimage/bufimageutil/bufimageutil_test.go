@@ -109,7 +109,7 @@ extend google.protobuf.FileOptions {
 
 	_, err = ImageFilteredByTypes(image, []string{"dependency.Dep"})
 	require.Error(t, err)
-	filteredImage, err := ImageFilteredByTypes(image, []string{"pkg.Quux"})
+	filteredImage, err := ImageFilteredByTypes(image, []string{"pkg.Qux"})
 	require.NoError(t, err)
 	assert.NotNil(t, image)
 

@@ -381,7 +381,7 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageInde
 		panic(x)
 	}
 
-	for _, no := range starting.File().ExtendedFieldNo() {
+	for _, no := range starting.File().PresentExtensionNumbers() {
 		opts := imageIndex.NameToOptions["google.protobuf.FileOptions"]
 		field, ok := opts[no]
 		if !ok {

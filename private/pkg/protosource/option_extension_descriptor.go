@@ -37,15 +37,22 @@ func (o *optionExtensionDescriptor) OptionExtension(extensionType protoreflect.E
 	return proto.GetExtension(o.message, extensionType), true
 }
 
-func (o *optionExtensionDescriptor) ExtendedFieldNo() []int32 {
-	var extended []int32
+func (o *optionExtensionDescriptor) PresentExtensionNumbers() []int32 {
+	var fieldNumbers []int32
+	extensionRanges := o.message.ProtoReflect().Descriptor().ExtensionRanges()
 	for b := o.message.ProtoReflect().GetUnknown(); len(b) > 0; {
 		fieldNo, _, n := protowire.ConsumeField(b)
-		// We should filter these to only take the ones in the message's
-		// declared extension ranges , but I haven't figured out how to
-		// get those yet.
-		extended = append(extended, int32(fieldNo))
+		if extensionRanges.Has(fieldNo) {
+			fieldNumbers = append(fieldNumbers, int32(fieldNo))
+		}
 		b = b[n:]
 	}
-	return extended
+	// Need to think if this is actually necessary, or if extensions will
+	// always be unknown...
+	knownExtensions := o.message.ProtoReflect().Descriptor().Extensions()
+	for i := 0; i < knownExtensions.Len(); i++ {
+		ext := knownExtensions.Get(i)
+		fieldNumbers = append(fieldNumbers, int32(ext.Number()))
+	}
+	return fieldNumbers
 }
