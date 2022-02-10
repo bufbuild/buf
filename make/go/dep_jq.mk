@@ -9,7 +9,7 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://stedolan.github.io/jq/download checked 20211112
+# https://stedolan.github.io/jq/download checked 20210210
 JQ_VERSION ?= 1.6
 
 # jq does not have an ARM release on Github so we'll use

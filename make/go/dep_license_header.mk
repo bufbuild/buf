@@ -8,7 +8,7 @@ $(call _assert_var,CACHE_BIN)
 
 # Settable
 # https://github.com/bufbuild/buf/releases
-LICENSE_HEADER_VERSION ?= v1.0.0-rc8
+LICENSE_HEADER_VERSION ?= v1.0.0-rc12
 
 LICENSE_HEADER := $(CACHE_VERSIONS)/license-header/$(LICENSE_HEADER_VERSION)
 $(LICENSE_HEADER):
