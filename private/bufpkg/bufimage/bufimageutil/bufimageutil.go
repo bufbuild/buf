@@ -362,8 +362,15 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageInde
 		explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
 		recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
 	case protosource.Enum:
-		// TODO: Parent messages
-		// protosource.Enum doesn't have a .Parent like message does.
+		// Parent messages
+		if x.Parent() != nil {
+			explicitDescriptorDependencies = append(explicitDescriptorDependencies, x.Parent())
+			recursiveDescriptors, err := descriptorTransitiveClosure(x.Parent(), imageIndex, seen)
+			if err != nil {
+				return nil, err
+			}
+			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
+		}
 
 		for _, enumValue := range x.Values() {
 			explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(enumValue, imageIndex, seen)
@@ -424,7 +431,7 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageInde
 		}
 		explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
 		recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
-	case protosource.Field:
+	case protosource.Field: // regular fields should be handled by protosource.Message, this is for extends.
 		switch x.Type() {
 		case protosource.FieldDescriptorProtoTypeEnum, protosource.FieldDescriptorProtoTypeMessage, protosource.FieldDescriptorProtoTypeGroup:
 			inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(x.TypeName(), ".")]

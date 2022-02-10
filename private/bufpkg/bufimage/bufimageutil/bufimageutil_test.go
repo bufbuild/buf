@@ -46,20 +46,27 @@ import "e.proto";
 import "google/protobuf/descriptor.proto";
 package pkg;
 option (extendthatthing).foo = "no!";
-message Baz { 
+message Baz {
 	message NestedBaz {
 		optional string in_nested_baz = 1 [(extend_that_field) = "foo"];
 	}
 	optional Baz baz = 1; 
 	optional NestedBaz nested_baz = 2; 
-	optional EeNum fds = 3;
+	optional EnumContainer.EeNum fds = 3;
 	extensions 4 to 5; 
 }
-enum EeNum {
-	option (extend_that_enum) = "unset";
-	EE_X = 0;
-	EE_Y = 1 [(extend_that_enum_value) = "okk"];
-	EE_Z = 2;
+message EnumContainer {
+	enum EeNum {
+		option (extend_that_enum) = "unset";
+		EE_X = 0;
+		EE_Y = 1 [(extend_that_enum_value) = "okk"];
+		EE_Z = 2;
+	}
+	optional string dont_omit_me = 1;
+
+	message DontReferToThis {
+		optional int32 it_should_be_removed = 1;
+	}
 }
 extend Baz { optional string extended_field = 5; }
 `),
