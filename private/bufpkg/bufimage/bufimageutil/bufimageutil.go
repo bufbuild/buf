@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/protosource"
+	"google.golang.org/protobuf/types/descriptorpb"
 )
 
 // NewInputFiles converts the ImageFiles to InputFiles.
@@ -233,33 +234,25 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 		// messages/enums as intended, going to make this nice once
 		// validated that rewriting the descriptor proto is the way to
 		// go.
-		i = 0
-		for _, messageDescriptor := range imageFileDescriptor.MessageType {
-			name := *messageDescriptor.Name
-			if imageFileDescriptor.Package != nil {
-				name = *imageFileDescriptor.Package + "." + name
-			}
-			// Won't work for nested
-			if _, ok := descriptorNames[name]; ok {
-				imageFileDescriptor.MessageType[i] = messageDescriptor
-				i++
-			}
+		prefix := ""
+		if imageFileDescriptor.Package != nil {
+			prefix = *imageFileDescriptor.Package + "."
 		}
-		imageFileDescriptor.MessageType = imageFileDescriptor.MessageType[:i]
-
-		i = 0
-		for _, enumDescriptor := range imageFileDescriptor.EnumType {
-			// Won't work for nested
-			if _, ok := descriptorNames[*imageFileDescriptor.Package+"."+*enumDescriptor.Name]; ok {
-				imageFileDescriptor.EnumType[i] = enumDescriptor
-				i++
-			}
+		trimMessages, err := trimMessageDescriptor(imageFileDescriptor.MessageType, prefix, descriptorNames)
+		if err != nil {
+			return nil, err
 		}
-		imageFileDescriptor.EnumType = imageFileDescriptor.EnumType[:i]
+		imageFileDescriptor.MessageType = trimMessages
+		trimEnums, err := trimEnumDescriptor(imageFileDescriptor.EnumType, prefix, descriptorNames)
+		if err != nil {
+			return nil, err
+		}
+		imageFileDescriptor.EnumType = trimEnums
 
 		i = 0
 		for _, serviceDescriptor := range imageFileDescriptor.Service {
-			if _, ok := descriptorNames[*imageFileDescriptor.Package+"."+*serviceDescriptor.Name]; ok {
+			name := prefix + *serviceDescriptor.Name
+			if _, ok := descriptorNames[name]; ok {
 				imageFileDescriptor.Service[i] = serviceDescriptor
 				i++
 			}
@@ -268,20 +261,55 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 
 		i = 0
 		for _, extensionDescriptor := range imageFileDescriptor.Extension {
-			name := *extensionDescriptor.Name
-			if imageFileDescriptor.Package != nil {
-				name = *imageFileDescriptor.Package + "." + name
-			}
+			name := prefix + *extensionDescriptor.Name
 			if _, ok := descriptorNames[name]; ok {
 				imageFileDescriptor.Extension[i] = extensionDescriptor
 				i++
 			}
 		}
 		imageFileDescriptor.Extension = imageFileDescriptor.Extension[:i]
+
+		// With some from/to mappings, perhaps even sourcecodeinfo isn't too bad.
 		imageFileDescriptor.SourceCodeInfo = nil
 
 	}
 	return bufimage.NewImage(includedFiles)
+}
+
+func trimMessageDescriptor(in []*descriptorpb.DescriptorProto, prefix string, toKeep map[string]struct{}) ([]*descriptorpb.DescriptorProto, error) {
+	i := 0
+	for _, messageDescriptor := range in {
+		name := prefix + *messageDescriptor.Name
+		// Won't work for nested
+		if _, ok := toKeep[name]; ok {
+			trimMessages, err := trimMessageDescriptor(messageDescriptor.NestedType, name+".", toKeep)
+			if err != nil {
+				return nil, err
+			}
+			messageDescriptor.NestedType = trimMessages
+			trimEnums, err := trimEnumDescriptor(messageDescriptor.EnumType, name+".", toKeep)
+			if err != nil {
+				return nil, err
+			}
+			messageDescriptor.EnumType = trimEnums
+			in[i] = messageDescriptor
+			i++
+		}
+	}
+	return in[:i], nil
+}
+
+func trimEnumDescriptor(in []*descriptorpb.EnumDescriptorProto, prefix string, toKeep map[string]struct{}) ([]*descriptorpb.EnumDescriptorProto, error) {
+	i := 0
+	for _, enumDescriptor := range in {
+		name := prefix + *enumDescriptor.Name
+		// Won't work for nested
+		if _, ok := toKeep[name]; ok {
+			in[i] = enumDescriptor
+			i++
+		}
+	}
+	return in[:i], nil
 }
 
 type namedDescriptorAndExplicitDeps struct {

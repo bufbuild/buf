@@ -24,10 +24,6 @@ message Baz {
 message EnumContainer {
   optional string dont_omit_me = 1;
 
-  message DontReferToThis {
-    optional int32 it_should_be_removed = 1;
-  }
-
   enum EeNum {
     option (extend_that_enum) = "unset";
 
