@@ -48,13 +48,19 @@ package pkg;
 option (extendthatthing).foo = "no!";
 message Baz { 
 	message NestedBaz {
-		optional Baz in_nested_baz = 1 [(extend_that_field) = "foo"];
+		optional string in_nested_baz = 1 [(extend_that_field) = "foo"];
 	}
 	optional Baz baz = 1; 
 	optional NestedBaz nested_baz = 2; 
-	optional google.protobuf.FileDescriptorSet fds = 3;
+	optional EeNum fds = 3;
 	extensions 4 to 5; 
-} 
+}
+enum EeNum {
+	option (extend_that_enum) = "unset";
+	EE_X = 0;
+	EE_Y = 1 [(extend_that_enum_value) = "okk"];
+	EE_Z = 2;
+}
 extend Baz { optional string extended_field = 5; }
 `),
 		"b.proto":  []byte(`syntax = "proto3";import "a.proto"; package pkg; message Bar { Baz baz = 1; }`),
@@ -74,6 +80,12 @@ extend google.protobuf.FieldOptions {
 extend google.protobuf.FileOptions {
 	optional string extend_that_file = 9999999;
 	optional UnusedFileOption extendthatthing = 999991;
+}
+extend google.protobuf.EnumOptions {
+	optional string extend_that_enum = 9999999;
+}
+extend google.protobuf.EnumValueOptions {
+	optional string extend_that_enum_value = 9999999;
 }
 // extend google.protobuf.FileOptions {
 // }
@@ -109,7 +121,7 @@ extend google.protobuf.FileOptions {
 
 	_, err = ImageFilteredByTypes(image, []string{"dependency.Dep"})
 	require.Error(t, err)
-	filteredImage, err := ImageFilteredByTypes(image, []string{"pkg.Qux"})
+	filteredImage, err := ImageFilteredByTypes(image, []string{"pkg.Baz.NestedBaz"})
 	require.NoError(t, err)
 	assert.NotNil(t, image)
 

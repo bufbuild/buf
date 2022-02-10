@@ -47,6 +47,7 @@ func newMessage(
 	return &message{
 		namedDescriptor:                  namedDescriptor,
 		optionExtensionDescriptor:        optionExtensionDescriptor,
+		parent:                           parent,
 		isMapEntry:                       isMapEntry,
 		messageSetWireFormat:             messageSetWireFormat,
 		noStandardDescriptorAccessor:     noStandardDescriptorAccessor,
