@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -75,6 +76,7 @@ type flags struct {
 	Config              string
 	ExcludePaths        []string
 	DisableSymlinks     bool
+	Types               []string
 	// special
 	InputHashtag string
 }
@@ -116,6 +118,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		`The file or data to use to use for configuration.`,
 	)
+	flagSet.StringSliceVar(&f.Types, "type", nil, "create filtered images")
 }
 
 func run(
@@ -187,6 +190,12 @@ func run(
 	image, err := bufimage.MergeImages(images...)
 	if err != nil {
 		return err
+	}
+	if len(flags.Types) > 0 {
+		image, err = bufimageutil.ImageFilteredByTypes(image, flags.Types)
+		if err != nil {
+			return err
+		}
 	}
 	return bufcli.NewWireImageWriter(
 		container.Logger(),
