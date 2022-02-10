@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
-	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -97,7 +96,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Output,
 		outputFlagName,
 		outputFlagShortName,
-		app.DevStdoutFilePath,
+		"-",
 		// TODO: If we ever support other formats (e.g. prototext), we will need
 		// to build a buffetch.DecodeOutputRefParser.
 		`The location to write the decoded result to. This is always JSON for now.`,
