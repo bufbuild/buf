@@ -1814,6 +1814,105 @@ func TestDecodeWithImage(t *testing.T) {
 	})
 }
 
+func TestDecodeOutput(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "success"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+	)
+	t.Run("json file output", func(t *testing.T) {
+		outputTempDir := t.TempDir()
+		testRunStdout(
+			t,
+			nil,
+			0,
+			``,
+			"beta",
+			"decode",
+			"testdata/decode/descriptor.plain.bin",
+			"--source",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--output",
+			filepath.Join(outputTempDir, "result.json"),
+		)
+		readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(outputTempDir)
+		require.NoError(t, err)
+		storagetesting.AssertPaths(
+			t,
+			readWriteBucket,
+			"",
+			"result.json",
+		)
+		// read the output file and use assert.JSONEq to compare the output
+		// as the return of protojson Marshal is not stable (not byte-for-byte identical)
+		readObjectCloser, err := readWriteBucket.Get(context.Background(), "result.json")
+		require.NoError(t, err)
+		data, err := io.ReadAll(readObjectCloser)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"one":"55"}`, string(data))
+	})
+	t.Run("txt file output", func(t *testing.T) {
+		outputTempDir := t.TempDir()
+		testRunStdout(
+			t,
+			nil,
+			0,
+			``,
+			"beta",
+			"decode",
+			"testdata/decode/descriptor.plain.bin",
+			"--source",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"-o",
+			filepath.Join(outputTempDir, "result.txt"),
+		)
+		readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(outputTempDir)
+		require.NoError(t, err)
+		storagetesting.AssertPaths(
+			t,
+			readWriteBucket,
+			"",
+			"result.txt",
+		)
+		// read the output file and use assert.JSONEq to compare the output
+		// as the return of protojson Marshal is not stable (not byte-for-byte identical)
+		readObjectCloser, err := readWriteBucket.Get(context.Background(), "result.txt")
+		require.NoError(t, err)
+		data, err := io.ReadAll(readObjectCloser)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"one":"55"}`, string(data))
+	})
+	t.Run("stdout with dash", func(t *testing.T) {
+		stdout := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			nil,
+			stdout,
+			"beta",
+			"decode",
+			"testdata/decode/descriptor.plain.bin",
+			"--source",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"-o",
+			"-",
+		)
+		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
+	})
+}
+
 func TestDecodeInvalidTypeName(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(

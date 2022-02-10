@@ -21,12 +21,12 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -97,11 +97,10 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Output,
 		outputFlagName,
 		outputFlagShortName,
-		"",
-		fmt.Sprintf(
-			`The location to write the decoded result to. Must be one of format %s.`,
-			`[json]`, // TODO: We need to support other formats.
-		),
+		app.DevStdoutFilePath,
+		// TODO: If we ever support other formats (e.g. prototext), we will need
+		// to build a buffetch.DecodeOutputRefParser.
+		`The location to write the decoded result to. This is always JSON for now.`,
 	)
 }
 
@@ -140,18 +139,14 @@ func run(
 	if err := proto.Unmarshal(descriptorBytes, message); err != nil {
 		return err
 	}
-	marshaler := protojson.MarshalOptions{
-		Indent:       "  ",
-		AllowPartial: true,
-	}
-	jsonBytes, err := marshaler.Marshal(message)
-	if err != nil {
-		return err
-	}
-	if _, err := container.Stdout().Write(jsonBytes); err != nil {
-		return err
-	}
-	return nil
+	return bufcli.NewWireProtoEncodingWriter(
+		container.Logger(),
+	).PutMessage(
+		ctx,
+		container,
+		message,
+		flags.Output,
+	)
 }
 
 func parseSourceAndType(

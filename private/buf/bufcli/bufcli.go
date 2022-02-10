@@ -448,6 +448,18 @@ func NewWireImageWriter(
 	)
 }
 
+// NewWireProtoEncodingWriter returns a new ProtoEncodingWriter.
+func NewWireProtoEncodingWriter(
+	logger *zap.Logger,
+) bufwire.ProtoEncodingWriter {
+	return bufwire.NewProtoEncodingWriter(
+		logger,
+		buffetch.NewWriter(
+			logger,
+		),
+	)
+}
+
 // NewModuleReaderAndCreateCacheDirs returns a new ModuleReader while creating the
 // required cache directories.
 func NewModuleReaderAndCreateCacheDirs(
