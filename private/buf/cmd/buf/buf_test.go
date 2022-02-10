@@ -1855,6 +1855,10 @@ func TestDecodeOutput(t *testing.T) {
 		// as the return of protojson Marshal is not stable (not byte-for-byte identical)
 		readObjectCloser, err := readWriteBucket.Get(context.Background(), "result.json")
 		require.NoError(t, err)
+		t.Cleanup(func() {
+			err = readObjectCloser.Close()
+			require.NoError(t, err)
+		})
 		data, err := io.ReadAll(readObjectCloser)
 		require.NoError(t, err)
 		assert.JSONEq(t, `{"one":"55"}`, string(data))
@@ -1888,6 +1892,10 @@ func TestDecodeOutput(t *testing.T) {
 		// as the return of protojson Marshal is not stable (not byte-for-byte identical)
 		readObjectCloser, err := readWriteBucket.Get(context.Background(), "result.txt")
 		require.NoError(t, err)
+		t.Cleanup(func() {
+			err = readObjectCloser.Close()
+			require.NoError(t, err)
+		})
 		data, err := io.ReadAll(readObjectCloser)
 		require.NoError(t, err)
 		assert.JSONEq(t, `{"one":"55"}`, string(data))
