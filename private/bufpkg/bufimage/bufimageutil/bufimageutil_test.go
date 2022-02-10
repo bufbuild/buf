@@ -122,7 +122,8 @@ extend google.protobuf.EnumValueOptions {
 	// ImageFilteredByTypes changes the backing FileDescriptorSet, so we
 	// need to make a copy of the original one to compare to.
 	protoImage := bufimage.ImageToProtoImage(image)
-	protoImageCopy := proto.Clone(protoImage).(*imagev1.Image)
+	protoImageCopy, ok := proto.Clone(protoImage).(*imagev1.Image)
+	require.True(t, ok)
 	originalImage, err := bufimage.NewImageForProto(protoImageCopy)
 	require.NoError(t, err)
 
@@ -134,9 +135,8 @@ extend google.protobuf.EnumValueOptions {
 
 	// This isnt really supposed to be equal, but prints good enough
 	// debugging to see what gets filtered.
-
-	assert.NoError(t, ioutil.WriteFile("testdata/in.txtar", txtarForImage(t, originalImage), 0644))
-	assert.NoError(t, ioutil.WriteFile("testdata/out.txtar", txtarForImage(t, filteredImage), 0644))
+	assert.NoError(t, ioutil.WriteFile("testdata/in.txtar", txtarForImage(t, originalImage), 0600))
+	assert.NoError(t, ioutil.WriteFile("testdata/out.txtar", txtarForImage(t, filteredImage), 0600))
 	t.Error("now diff")
 }
 
@@ -146,7 +146,7 @@ func txtarForImage(t *testing.T, image bufimage.Image) []byte {
 	if err != nil {
 		b, err := proto.Marshal(fds)
 		require.NoError(t, err)
-		err = ioutil.WriteFile("testdata/malformed_image.bin", b, 0644)
+		err = ioutil.WriteFile("testdata/malformed_image.bin", b, 0600)
 		require.NoError(t, err)
 	}
 	require.NoError(t, err)

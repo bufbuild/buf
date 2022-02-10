@@ -69,7 +69,7 @@ type imageIndex struct {
 }
 
 // ImageFilteredByTypes returns a minimal image containing only the descriptors
-// required to interpet types.
+// required to interpret types.
 func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image, error) {
 	imageIndex := &imageIndex{
 		NameToDescriptor: make(map[string]protosource.NamedDescriptor),
@@ -155,11 +155,11 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 	seen := make(map[string]struct{})
 	neededDescriptors := []namedDescriptorAndExplicitDeps{}
 	for _, startingDescriptor := range startingDescriptors {
-		new, err := descriptorTransitiveClosure(startingDescriptor, imageIndex, seen)
+		closure, err := descriptorTransitiveClosure(startingDescriptor, imageIndex, seen)
 		if err != nil {
 			return nil, err
 		}
-		neededDescriptors = append(neededDescriptors, new...)
+		neededDescriptors = append(neededDescriptors, closure...)
 	}
 	// for _, d := range neededDescriptors {
 	// 	fmt.Println(d.Descriptor.FullName())
@@ -271,7 +271,6 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 
 		// With some from/to mappings, perhaps even sourcecodeinfo isn't too bad.
 		imageFileDescriptor.SourceCodeInfo = nil
-
 	}
 	return bufimage.NewImage(includedFiles)
 }
@@ -472,7 +471,6 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageInde
 				return nil, err
 			}
 			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
-
 		}
 		if x.Extendee() != "" {
 			extendeeDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(x.Extendee(), ".")]
