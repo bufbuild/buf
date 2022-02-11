@@ -12,43 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufreflect_test
+package bufcli_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
+	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseFullyQualifiedPath(t *testing.T) {
+func TestParseSourceAndType(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	t.Run("default", func(t *testing.T) {
-		moduleReference, typeName, err := bufreflect.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo#buf.v1.Foo")
+		moduleReference, typeName, err := bufcli.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo#buf.v1.Foo")
 		assert.NoError(t, err)
 		assert.Equal(t, "buf.test/testuser/testrepo", moduleReference)
 		assert.Equal(t, "buf.v1.Foo", typeName)
 	})
 	t.Run("main track", func(t *testing.T) {
-		moduleReference, typeName, err := bufreflect.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo:main#buf.v1.Foo")
+		moduleReference, typeName, err := bufcli.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo:main#buf.v1.Foo")
 		assert.NoError(t, err)
 		assert.Equal(t, "buf.test/testuser/testrepo", moduleReference)
 		assert.Equal(t, "buf.v1.Foo", typeName)
 	})
 	t.Run("dev track", func(t *testing.T) {
-		moduleReference, typeName, err := bufreflect.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo:dev#buf.v1.Foo")
+		moduleReference, typeName, err := bufcli.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo:dev#buf.v1.Foo")
 		assert.NoError(t, err)
 		assert.Equal(t, "buf.test/testuser/testrepo:dev", moduleReference)
 		assert.Equal(t, "buf.v1.Foo", typeName)
 	})
 	t.Run("fail with module name", func(t *testing.T) {
-		_, _, err := bufreflect.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo")
+		_, _, err := bufcli.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo")
 		assert.EqualError(t, err, `if source is not provided, the type need to be a fully-qualified path that includes the module reference, failed to parse the type: "buf.test/testuser/testrepo" is not a valid fully qualified path`)
 	})
 	t.Run("fail with type name", func(t *testing.T) {
-		_, _, err := bufreflect.ParseSourceAndType(ctx, "", "buf.v1.Foo")
+		_, _, err := bufcli.ParseSourceAndType(ctx, "", "buf.v1.Foo")
 		assert.EqualError(t, err, `if source is not provided, the type need to be a fully-qualified path that includes the module reference, failed to parse the type: "buf.v1.Foo" is not a valid fully qualified path`)
 	})
 }

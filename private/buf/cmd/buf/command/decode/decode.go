@@ -119,7 +119,7 @@ func run(
 	if len(messageBytes) == 0 {
 		return fmt.Errorf("stdin is required as the input")
 	}
-	protoSource, protoType, err := bufreflect.ParseSourceAndType(ctx, flags.Source, flags.Type)
+	protoSource, protoType, err := bufcli.ParseSourceAndType(ctx, flags.Source, flags.Type)
 	if err != nil {
 		return err
 	}
