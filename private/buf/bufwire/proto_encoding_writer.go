@@ -19,10 +19,10 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -50,11 +50,7 @@ func (i *protoEncodingWriter) PutMessage(
 	ctx, span := trace.StartSpan(ctx, "put_message")
 	defer span.End()
 	// Currently, this only support json format.
-	marshaler := protojson.MarshalOptions{
-		Indent:       "  ",
-		AllowPartial: true,
-	}
-	data, err := marshaler.Marshal(message)
+	data, err := protoencoding.NewJSONMarshalerIndent(nil).Marshal(message)
 	if err != nil {
 		return err
 	}
