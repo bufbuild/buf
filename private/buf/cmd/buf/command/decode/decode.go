@@ -24,10 +24,10 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -135,7 +135,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	if err := proto.Unmarshal(descriptorBytes, message); err != nil {
+	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(descriptorBytes, message); err != nil {
 		return err
 	}
 	return bufcli.NewWireProtoEncodingWriter(
@@ -148,7 +148,7 @@ func run(
 	)
 }
 
-// parseSourceAndType returns the moduleName and typeName from the source and type provided by the user.
+// parseSourceAndType returns the moduleReference and typeName from the source and type provided by the user.
 // When source is not provided, we assume the type is a fully-qualified path to the type and try to parse it.
 // When source and type are redundantly specified (e.g. buf.build/acme/weather and buf.build/acme/weather#weather.v1.Units),
 // we are not handling it and just let it fail.
