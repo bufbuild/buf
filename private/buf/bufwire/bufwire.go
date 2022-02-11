@@ -206,7 +206,7 @@ func NewImageWriter(
 
 // ProtoEncodingWriter is a proto encoding writer.
 type ProtoEncodingWriter interface {
-	// PutMessage writes the message to the value.
+	// PutMessage writes the message to the path.
 	//
 	// Currently, this only support json format.
 	PutMessage(

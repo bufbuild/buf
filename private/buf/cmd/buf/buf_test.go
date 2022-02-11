@@ -1756,61 +1756,21 @@ func TestDecodeWithImage(t *testing.T) {
 		)
 		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
 	})
-	t.Run("stdin input with dash", func(t *testing.T) {
-		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
-		require.NoError(t, err)
-		defer stdin.Close()
-		stdout := bytes.NewBuffer(nil)
-		testRun(
+
+	t.Run("no stdin input", func(t *testing.T) {
+		testRunStdoutStderr(
 			t,
-			0,
-			stdin,
-			stdout,
-			"beta",
-			"decode",
-			"-",
-			"--source",
-			filepath.Join(tempDir, "image.bin"),
-			"--type",
-			"buf.Foo",
-		)
-		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
-	})
-	t.Run("file input", func(t *testing.T) {
-		stdout := bytes.NewBuffer(nil)
-		testRun(
-			t,
-			0,
 			nil,
-			stdout,
+			1,
+			"",
+			"Failure: stdin is required as the input",
 			"beta",
 			"decode",
-			"testdata/decode/descriptor.plain.bin",
 			"--source",
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
 		)
-		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
-	})
-	t.Run("argument input", func(t *testing.T) {
-		data, err := os.ReadFile(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
-		require.NoError(t, err)
-		stdout := bytes.NewBuffer(nil)
-		testRun(
-			t,
-			0,
-			nil,
-			stdout,
-			"beta",
-			"decode",
-			string(data),
-			"--source",
-			filepath.Join(tempDir, "image.bin"),
-			"--type",
-			"buf.Foo",
-		)
-		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
 	})
 }
 
@@ -1827,15 +1787,17 @@ func TestDecodeOutput(t *testing.T) {
 		filepath.Join(tempDir, "image.bin"),
 	)
 	t.Run("json file output", func(t *testing.T) {
+		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		require.NoError(t, err)
+		defer stdin.Close()
 		outputTempDir := t.TempDir()
 		testRunStdout(
 			t,
-			nil,
+			stdin,
 			0,
 			``,
 			"beta",
 			"decode",
-			"testdata/decode/descriptor.plain.bin",
 			"--source",
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
@@ -1864,15 +1826,17 @@ func TestDecodeOutput(t *testing.T) {
 		assert.JSONEq(t, `{"one":"55"}`, string(data))
 	})
 	t.Run("txt file output", func(t *testing.T) {
+		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		require.NoError(t, err)
+		defer stdin.Close()
 		outputTempDir := t.TempDir()
 		testRunStdout(
 			t,
-			nil,
+			stdin,
 			0,
 			``,
 			"beta",
 			"decode",
-			"testdata/decode/descriptor.plain.bin",
 			"--source",
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
@@ -1901,15 +1865,17 @@ func TestDecodeOutput(t *testing.T) {
 		assert.JSONEq(t, `{"one":"55"}`, string(data))
 	})
 	t.Run("stdout with dash", func(t *testing.T) {
+		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		require.NoError(t, err)
+		defer stdin.Close()
 		stdout := bytes.NewBuffer(nil)
 		testRun(
 			t,
 			0,
-			nil,
+			stdin,
 			stdout,
 			"beta",
 			"decode",
-			"testdata/decode/descriptor.plain.bin",
 			"--source",
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
@@ -1933,15 +1899,17 @@ func TestDecodeInvalidTypeName(t *testing.T) {
 		"-o",
 		filepath.Join(tempDir, "image.bin"),
 	)
+	stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+	require.NoError(t, err)
+	defer stdin.Close()
 	testRunStdoutStderr(
 		t,
-		nil,
+		stdin,
 		1,
 		"",
 		`Failure: ".foo" is not a valid fully qualified type name`,
 		"beta",
 		"decode",
-		"descriptor_placeholder",
 		"--source",
 		filepath.Join(tempDir, "image.bin"),
 		"--type",

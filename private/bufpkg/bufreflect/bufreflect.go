@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
@@ -45,28 +46,33 @@ func NewMessage(
 	if err != nil {
 		return nil, err
 	}
-	switch typedDescriptor := descriptor.(type) {
-	case protoreflect.MessageDescriptor:
-		return dynamicpb.NewMessage(typedDescriptor), nil
-	default:
-		return nil, fmt.Errorf("%q must be a message but is a %T", typeName, typedDescriptor)
+	typedDescriptor, ok := descriptor.(protoreflect.MessageDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("%q must be a message but is a %T", typeName, descriptor)
 	}
+	return dynamicpb.NewMessage(typedDescriptor), nil
 }
 
+// ParseFullyQualifiedPath parse a string in <buf.build/owner/repository#fully-qualified-type> or
+// <buf.build/owner/repository:reference#fully-qualified-type> format into a module reference and a type name
 func ParseFullyQualifiedPath(
-	moduleTypeName string,
-) (moduleName string, typeName string, _ error) {
-	if moduleTypeName == "" {
-		return "", "", appcmd.NewInvalidArgumentError("you must specify a module type name")
+	fullyQualifiedPath string,
+) (moduleRef string, typeName string, _ error) {
+	if fullyQualifiedPath == "" {
+		return "", "", appcmd.NewInvalidArgumentError("you must specify a fully qualified path")
 	}
-	components := strings.Split(moduleTypeName, "/")
-	if len(components) != 4 {
-		return "", "", appcmd.NewInvalidArgumentErrorf("%q is not a valid fully qualified path", moduleTypeName)
+	components := strings.Split(fullyQualifiedPath, "#")
+	if len(components) != 2 {
+		return "", "", appcmd.NewInvalidArgumentErrorf("%q is not a valid fully qualified path", fullyQualifiedPath)
 	}
-	if err := validateTypeName(components[3]); err != nil {
+	moduleReference, err := bufmoduleref.ModuleReferenceForString(components[0])
+	if err != nil {
 		return "", "", err
 	}
-	return moduleTypeName[:strings.LastIndex(moduleTypeName, "/")], components[3], nil
+	if err := validateTypeName(components[1]); err != nil {
+		return "", "", err
+	}
+	return moduleReference.String(), components[1], nil
 }
 
 // validateTypeName validates that the typeName is well-formed, such that it has one or more

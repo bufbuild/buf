@@ -17,6 +17,7 @@ package decode
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -48,7 +49,7 @@ func NewCommand(
 		Short: "Decode binary descriptors with a source reference.",
 		Long: `The first argument is the serialized descriptor to decode.
 If no argument is specified, defaults to stdin.`,
-		Args: cobra.MaximumNArgs(1),
+		Args: cobra.ExactArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -98,7 +99,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagShortName,
 		"-",
 		// TODO: If we ever support other formats (e.g. prototext), we will need
-		// to build a buffetch.DecodeOutputRefParser.
+		// to build a buffetch.ProtoEncodingRefParser.
 		`The location to write the decoded result to. This is always JSON for now.`,
 	)
 }
@@ -108,22 +109,21 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	input, err := bufcli.GetInputValue(container, "", "-")
-	if err != nil {
-		return err
-	}
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	descriptorBytes, err := io.ReadAll(container.Stdin())
 	if err != nil {
 		return err
 	}
-	descriptorBytes, err := bufcli.NewDescriptorBytesForInput(ctx, container, registryProvider, input)
-	if err != nil {
-		return err
+	if len(descriptorBytes) == 0 {
+		return fmt.Errorf("stdin is required as the input")
 	}
 	protoSource, protoType, err := parseSourceAndType(ctx, flags.Source, flags.Type)
+	if err != nil {
+		return err
+	}
+	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
 	}
@@ -148,11 +148,15 @@ func run(
 	)
 }
 
+// parseSourceAndType returns the moduleName and typeName from the source and type provided by the user.
+// When source is not provided, we assume the type is a fully-qualified path to the type and try to parse it.
+// When source and type are redundantly specified (e.g. buf.build/acme/weather and buf.build/acme/weather#weather.v1.Units),
+// we are not handling it and just let it fail.
 func parseSourceAndType(
 	ctx context.Context,
 	flagSource string,
 	flagType string,
-) (protoSource string, protoType string, _ error) {
+) (moduleName string, typeName string, _ error) {
 	if flagSource != "" && flagType != "" {
 		return flagSource, flagType, nil
 	}
@@ -161,7 +165,7 @@ func parseSourceAndType(
 	}
 	moduleName, typeName, err := bufreflect.ParseFullyQualifiedPath(flagType)
 	if err != nil {
-		return "", "", err
+		return "", "", appcmd.NewInvalidArgumentErrorf("if source is not provided, the type need to be a fully-qualified path that includes the module reference, failed to parse the type: %v", err)
 	}
 	return moduleName, typeName, nil
 }

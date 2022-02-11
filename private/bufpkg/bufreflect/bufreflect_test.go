@@ -21,12 +21,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseFullyQualifiedModuleTypeName(t *testing.T) {
+func TestParseFullyQualifiedPath(t *testing.T) {
 	t.Parallel()
-	t.Run("success", func(t *testing.T) {
-		moduleName, typeName, err := bufreflect.ParseFullyQualifiedPath("buf.test/testuser/testrepo/buf.v1.Foo")
+	t.Run("default", func(t *testing.T) {
+		moduleName, typeName, err := bufreflect.ParseFullyQualifiedPath("buf.test/testuser/testrepo#buf.v1.Foo")
 		assert.NoError(t, err)
 		assert.Equal(t, "buf.test/testuser/testrepo", moduleName)
+		assert.Equal(t, "buf.v1.Foo", typeName)
+	})
+	t.Run("main track", func(t *testing.T) {
+		moduleName, typeName, err := bufreflect.ParseFullyQualifiedPath("buf.test/testuser/testrepo:main#buf.v1.Foo")
+		assert.NoError(t, err)
+		assert.Equal(t, "buf.test/testuser/testrepo", moduleName)
+		assert.Equal(t, "buf.v1.Foo", typeName)
+	})
+	t.Run("dev track", func(t *testing.T) {
+		moduleName, typeName, err := bufreflect.ParseFullyQualifiedPath("buf.test/testuser/testrepo:dev#buf.v1.Foo")
+		assert.NoError(t, err)
+		assert.Equal(t, "buf.test/testuser/testrepo:dev", moduleName)
 		assert.Equal(t, "buf.v1.Foo", typeName)
 	})
 	t.Run("fail with module name", func(t *testing.T) {

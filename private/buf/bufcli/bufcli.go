@@ -793,48 +793,6 @@ func NewImageForSource(
 	return bufimage.MergeImages(images...)
 }
 
-// NewDescriptorBytesForInput returns the descriptor bytes for an input, which can be
-// from stdin, argument, or a file.
-func NewDescriptorBytesForInput(
-	ctx context.Context,
-	container appflag.Container,
-	registryProvider registryv1alpha1apiclient.Provider,
-	input string,
-) ([]byte, error) {
-	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-	switch t := ref.(type) {
-	case buffetch.SourceRef:
-		return []byte(input), nil
-	case buffetch.ImageRef:
-		path, err := ref.PathForExternalPath(input)
-		if err != nil {
-			return nil, err
-		}
-		if path == "-" {
-			return io.ReadAll(container.Stdin())
-		}
-		storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
-		runner := command.NewRunner()
-		logger := container.Logger()
-		moduleResolver := bufapimodule.NewModuleResolver(logger, registryProvider)
-		moduleReader, err := NewModuleReaderAndCreateCacheDirs(container, registryProvider)
-		if err != nil {
-			return nil, err
-		}
-		reader := newFetchReader(logger, storageosProvider, runner, moduleResolver, moduleReader)
-		readCloser, err := reader.GetImageFile(ctx, container, t)
-		if err != nil {
-			return nil, err
-		}
-		return io.ReadAll(readCloser)
-	default:
-		return nil, fmt.Errorf("invalid ref: %T", ref)
-	}
-}
-
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.
 func ValidateErrorFormatFlag(errorFormatString string, errorFormatFlagName string) error {
 	return validateErrorFormatFlag(bufanalysis.AllFormatStrings, errorFormatString, errorFormatFlagName)
