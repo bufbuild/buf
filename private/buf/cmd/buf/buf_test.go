@@ -1807,23 +1807,14 @@ func TestDecodeOutput(t *testing.T) {
 		)
 		readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(outputTempDir)
 		require.NoError(t, err)
-		storagetesting.AssertPaths(
+		storagetesting.AssertPathToContent(
 			t,
 			readWriteBucket,
 			"",
-			"result.json",
+			map[string]string{
+				"result.json": `{"one":"55"}`,
+			},
 		)
-		// read the output file and use assert.JSONEq to compare the output
-		// as the return of protojson Marshal is not stable (not byte-for-byte identical)
-		readObjectCloser, err := readWriteBucket.Get(context.Background(), "result.json")
-		require.NoError(t, err)
-		t.Cleanup(func() {
-			err = readObjectCloser.Close()
-			require.NoError(t, err)
-		})
-		data, err := io.ReadAll(readObjectCloser)
-		require.NoError(t, err)
-		assert.JSONEq(t, `{"one":"55"}`, string(data))
 	})
 	t.Run("txt file output", func(t *testing.T) {
 		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
@@ -1846,23 +1837,14 @@ func TestDecodeOutput(t *testing.T) {
 		)
 		readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(outputTempDir)
 		require.NoError(t, err)
-		storagetesting.AssertPaths(
+		storagetesting.AssertPathToContent(
 			t,
 			readWriteBucket,
 			"",
-			"result.txt",
+			map[string]string{
+				"result.txt": `{"one":"55"}`,
+			},
 		)
-		// read the output file and use assert.JSONEq to compare the output
-		// as the return of protojson Marshal is not stable (not byte-for-byte identical)
-		readObjectCloser, err := readWriteBucket.Get(context.Background(), "result.txt")
-		require.NoError(t, err)
-		t.Cleanup(func() {
-			err = readObjectCloser.Close()
-			require.NoError(t, err)
-		})
-		data, err := io.ReadAll(readObjectCloser)
-		require.NoError(t, err)
-		assert.JSONEq(t, `{"one":"55"}`, string(data))
 	})
 	t.Run("stdout with dash", func(t *testing.T) {
 		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
