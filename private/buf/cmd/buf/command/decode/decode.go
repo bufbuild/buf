@@ -45,7 +45,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <descriptor>",
+		Use:   name,
 		Short: "Decode binary serialized message with a source reference.",
 		Long:  `The stdin is the serialized message to decode.`,
 		Args:  cobra.ExactArgs(0),
@@ -84,13 +84,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Source,
 		sourceFlagName,
 		"",
-		"The source that defines the serialized descriptor (e.g. buf.build/acme/weather)",
+		"The source that defines the serialized message (e.g. buf.build/acme/weather)",
 	)
 	flagSet.StringVar(
 		&f.Type,
 		typeFlagName,
 		"",
-		`The fully-qualified type name of the serialized descriptor (e.g. acme.weather.v1.Units)
+		`The fully-qualified type name of the serialized message (e.g. acme.weather.v1.Units)
 Alternatively, this can be a fully-qualified path to the type (e.g. buf.build/acme/weather#acme.weather.v1.Units) without providing the source`,
 	)
 	flagSet.StringVarP(
