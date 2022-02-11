@@ -156,16 +156,16 @@ func parseSourceAndType(
 	ctx context.Context,
 	flagSource string,
 	flagType string,
-) (moduleName string, typeName string, _ error) {
+) (moduleReference string, typeName string, _ error) {
 	if flagSource != "" && flagType != "" {
 		return flagSource, flagType, nil
 	}
 	if flagType == "" {
 		return "", "", appcmd.NewInvalidArgumentError("type is required")
 	}
-	moduleName, typeName, err := bufreflect.ParseFullyQualifiedPath(flagType)
+	moduleReference, typeName, err := bufreflect.ParseFullyQualifiedPath(flagType)
 	if err != nil {
 		return "", "", appcmd.NewInvalidArgumentErrorf("if source is not provided, the type need to be a fully-qualified path that includes the module reference, failed to parse the type: %v", err)
 	}
-	return moduleName, typeName, nil
+	return moduleReference, typeName, nil
 }
