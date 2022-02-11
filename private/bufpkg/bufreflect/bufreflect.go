@@ -53,9 +53,33 @@ func NewMessage(
 	return dynamicpb.NewMessage(typedDescriptor), nil
 }
 
-// ParseFullyQualifiedPath parse a string in <buf.build/owner/repository#fully-qualified-type> or
+// ParseSourceAndType returns the moduleReference and typeName from the source and type provided by the user.
+// When source is not provided, we assume the type is a fully-qualified path to the type and try to parse it.
+// Otherwise, if both source and type are provided, the type must be a valid Protobuf identifier (e.g. weather.v1.Units).
+func ParseSourceAndType(
+	ctx context.Context,
+	flagSource string,
+	flagType string,
+) (moduleReference string, typeName string, _ error) {
+	if flagSource != "" && flagType != "" {
+		if err := validateTypeName(flagType); err != nil {
+			return "", "", err
+		}
+		return flagSource, flagType, nil
+	}
+	if flagType == "" {
+		return "", "", appcmd.NewInvalidArgumentError("type is required")
+	}
+	moduleReference, typeName, err := parseFullyQualifiedPath(flagType)
+	if err != nil {
+		return "", "", appcmd.NewInvalidArgumentErrorf("if source is not provided, the type need to be a fully-qualified path that includes the module reference, failed to parse the type: %v", err)
+	}
+	return moduleReference, typeName, nil
+}
+
+// parseFullyQualifiedPath parse a string in <buf.build/owner/repository#fully-qualified-type> or
 // <buf.build/owner/repository:reference#fully-qualified-type> format into a module reference and a type name
-func ParseFullyQualifiedPath(
+func parseFullyQualifiedPath(
 	fullyQualifiedPath string,
 ) (moduleRef string, typeName string, _ error) {
 	if fullyQualifiedPath == "" {

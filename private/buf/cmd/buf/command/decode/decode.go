@@ -46,10 +46,9 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <descriptor>",
-		Short: "Decode binary descriptors with a source reference.",
-		Long: `The first argument is the serialized descriptor to decode.
-If no argument is specified, defaults to stdin.`,
-		Args: cobra.ExactArgs(0),
+		Short: "Decode binary serialized message with a source reference.",
+		Long:  `The stdin is the serialized message to decode.`,
+		Args:  cobra.ExactArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -91,7 +90,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		"The fully-qualified type name of the serialized descriptor (e.g. acme.weather.v1.Units)",
+		`The fully-qualified type name of the serialized descriptor (e.g. acme.weather.v1.Units)
+Alternatively, this can be a fully-qualified path to the type (e.g. buf.build/acme/weather#acme.weather.v1.Units) without providing the source`,
 	)
 	flagSet.StringVarP(
 		&f.Output,
@@ -112,14 +112,14 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	descriptorBytes, err := io.ReadAll(container.Stdin())
+	messageBytes, err := io.ReadAll(container.Stdin())
 	if err != nil {
 		return err
 	}
-	if len(descriptorBytes) == 0 {
+	if len(messageBytes) == 0 {
 		return fmt.Errorf("stdin is required as the input")
 	}
-	protoSource, protoType, err := parseSourceAndType(ctx, flags.Source, flags.Type)
+	protoSource, protoType, err := bufreflect.ParseSourceAndType(ctx, flags.Source, flags.Type)
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(descriptorBytes, message); err != nil {
+	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(messageBytes, message); err != nil {
 		return err
 	}
 	return bufcli.NewWireProtoEncodingWriter(
@@ -146,26 +146,4 @@ func run(
 		message,
 		flags.Output,
 	)
-}
-
-// parseSourceAndType returns the moduleReference and typeName from the source and type provided by the user.
-// When source is not provided, we assume the type is a fully-qualified path to the type and try to parse it.
-// When source and type are redundantly specified (e.g. buf.build/acme/weather and buf.build/acme/weather#weather.v1.Units),
-// we are not handling it and just let it fail.
-func parseSourceAndType(
-	ctx context.Context,
-	flagSource string,
-	flagType string,
-) (moduleReference string, typeName string, _ error) {
-	if flagSource != "" && flagType != "" {
-		return flagSource, flagType, nil
-	}
-	if flagType == "" {
-		return "", "", appcmd.NewInvalidArgumentError("type is required")
-	}
-	moduleReference, typeName, err := bufreflect.ParseFullyQualifiedPath(flagType)
-	if err != nil {
-		return "", "", appcmd.NewInvalidArgumentErrorf("if source is not provided, the type need to be a fully-qualified path that includes the module reference, failed to parse the type: %v", err)
-	}
-	return moduleReference, typeName, nil
 }
