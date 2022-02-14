@@ -37,6 +37,7 @@ const (
 	tagFlagShortName        = "t"
 	errorFormatFlagName     = "error-format"
 	disableSymlinksFlagName = "disable-symlinks"
+	vcsCheckFlagName        = "vcs-check"
 )
 
 // NewCommand returns a new Command.
@@ -65,6 +66,7 @@ type flags struct {
 	Tags            []string
 	ErrorFormat     string
 	DisableSymlinks bool
+	VCSCheck        string
 	// special
 	InputHashtag string
 }
@@ -97,6 +99,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			"The format for build errors printed to stderr. Must be one of %s.",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
+	)
+	flagSet.StringVar(
+		&f.VCSCheck,
+		vcsCheckFlagName,
+		checkTypeNone.String(),
+		fmt.Sprintf("The VCS check to use. Must be one of %s.", stringutil.SliceToString(allCheckTypeStrings)),
 	)
 }
 
@@ -142,6 +150,19 @@ func run(
 	if tracks == nil {
 		tracks = []string{bufmoduleref.MainTrack}
 	}
+	vcsCheckType, ok := stringToCheckType[flags.VCSCheck]
+	if !ok {
+		return fmt.Errorf("invalid --vcs-check: %s", flags.VCSCheck)
+	}
+	switch vcsCheckType {
+	case checkTypeNone:
+		// no-op
+	case checkTypeGithub:
+		if err := githubCheck(ctx, container, apiProvider, module, moduleIdentity, flags.Tags, tracks); err != nil {
+			return err
+		}
+	}
+
 	localModulePin, err := service.Push(
 		ctx,
 		moduleIdentity.Owner(),

@@ -94,6 +94,12 @@ issues:
       text: "G101:"
     - linters:
         - gosec
+      # G101 checks for hardcoded credentials, and the variables named "*Token*
+      # trip this off.
+      path: private/buf/cmd/buf/command/push/vcscheck.go
+      text: "G101:"
+    - linters:
+        - gosec
       # G204 checks that exec.Command is not called with non-constants.
       path: private/pkg/command/runner.go
       text: "G204:"
