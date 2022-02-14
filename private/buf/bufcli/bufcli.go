@@ -739,26 +739,33 @@ func ReadModuleWithWorkspacesDisabled(
 	return module, moduleIdentity, err
 }
 
-// NewImageForSource acts like the 'buf build' command, such that it resolves a single
-// bufimage.Image from the user-provided source. This function is primarily used by the
-// 'buf encode' and 'buf decode' commands, so it doesn't need to support all of the build
-// options, such as paths and exclude paths.
+// NewImageForSource resolves a single bufimage.Image from the user-provided source with the build options.
 func NewImageForSource(
 	ctx context.Context,
 	container appflag.Container,
-	registryProvider registryv1alpha1apiclient.Provider,
 	source string,
 	errorFormat string,
+	disableSymlinks bool,
+	configOverride string,
+	externalDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
+	excludeSourceCodeInfo bool,
 ) (bufimage.Image, error) {
 	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, source)
 	if err != nil {
 		return nil, err
 	}
-	storageosProvider := storageos.NewProvider(storageos.ProviderWithSymlinks())
+	storageosProvider := NewStorageosProvider(disableSymlinks)
+	runner := command.NewRunner()
+	registryProvider, err := NewRegistryProvider(ctx, container)
+	if err != nil {
+		return nil, err
+	}
 	imageConfigReader, err := NewWireImageConfigReader(
 		container,
 		storageosProvider,
-		command.NewRunner(),
+		runner,
 		registryProvider,
 	)
 	if err != nil {
@@ -768,16 +775,17 @@ func NewImageForSource(
 		ctx,
 		container,
 		ref,
-		"",
-		nil,
-		nil,
-		false,
-		false,
+		configOverride,
+		externalDirOrFilePaths,
+		externalExcludeDirOrFilePaths,
+		externalDirOrFilePathsAllowNotExist,
+		excludeSourceCodeInfo,
 	)
 	if err != nil {
 		return nil, err
 	}
 	if len(fileAnnotations) > 0 {
+		// stderr since we do output to stdout potentially
 		if err := bufanalysis.PrintFileAnnotations(
 			container.Stderr(),
 			fileAnnotations,

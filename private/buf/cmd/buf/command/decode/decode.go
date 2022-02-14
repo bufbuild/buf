@@ -123,11 +123,18 @@ func run(
 	if err != nil {
 		return err
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
-	if err != nil {
-		return err
-	}
-	image, err := bufcli.NewImageForSource(ctx, container, registryProvider, protoSource, flags.ErrorFormat)
+	image, err := bufcli.NewImageForSource(
+		ctx,
+		container,
+		protoSource,
+		flags.ErrorFormat,
+		false,
+		"",
+		nil,
+		nil,
+		false,
+		false,
+	)
 	if err != nil {
 		return err
 	}
