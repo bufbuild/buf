@@ -547,10 +547,7 @@ func NewContextModifierProvider(
 		}
 		return func(ctx context.Context) context.Context {
 			ctx = bufrpc.WithOutgoingCLIVersionHeader(ctx, Version)
-			if token != "" {
-				return rpcauth.WithToken(ctx, token)
-			}
-			return ctx
+			return rpcauth.WithTokenIfNoneSet(ctx, token)
 		}, nil
 	}
 }

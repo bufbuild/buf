@@ -19,6 +19,8 @@
   faster and allowing parallel compilation. If `protoc` is required, move back to mainline `protoc`
   until you can upgrade to `buf`. See [#915](https://github.com/bufbuild/buf/pull/915) for more
   details.
+- Context modifier no longer overrides an existing token on the context. This allows `buf registry login`
+  to properly check the user provided token without the token being overriden by the CLI interceptor.
 
 ## [v1.0.0-rc12] - 2022-02-01
 

@@ -60,6 +60,15 @@ func WithToken(ctx context.Context, token string) context.Context {
 	return ctx
 }
 
+// WithTokenIfNoneSet adds the token to the context via a header if none is already set.
+// If a token is already set on the header, this function just returns the context as is.
+func WithTokenIfNoneSet(ctx context.Context, token string) context.Context {
+	if rpc.GetOutgoingHeader(ctx, authenticationHeader) != "" {
+		return ctx
+	}
+	return WithToken(ctx, token)
+}
+
 // GetTokenFromHeader gets the current authentication token, if
 // there is one.
 func GetTokenFromHeader(ctx context.Context) (string, error) {
