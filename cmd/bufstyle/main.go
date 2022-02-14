@@ -16,14 +16,6 @@ package main
 
 import "github.com/bufbuild/buf/private/bufstyle"
 
-// AnalyzerPlugin implements the go/analysis API. This variable
-// must be exported so that it's compatible with golangci-lint.
-//
-// We don't actually need to define the traditional main function
-// here. We can compile this program as a plugin with the following
-// command:
-//
-//  $ go build -buildmode=plugin cmd/bufstyle/main.go
-//
-// For more, see https://golangci-lint.run/contributing/new-linters.
-var AnalyzerPlugin bufstyle.AnalyzerPlugin
+func main() {
+	bufstyle.Main()
+}

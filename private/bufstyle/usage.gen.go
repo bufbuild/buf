@@ -12,18 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufstyle defines a golangi-lint plugin that enforces
-// Buf's Go code standards.
+// Generated. DO NOT EDIT.
+
 package bufstyle
 
-import (
-	"github.com/bufbuild/buf/private/bufstyle/packagefilename"
-	"golang.org/x/tools/go/analysis/multichecker"
-)
-
-// Main runs the bufstyle linter.
-func Main() {
-	multichecker.Main(
-		packagefilename.NewAnalyzer(),
-	)
-}
+import _ "github.com/bufbuild/buf/private/usage"
