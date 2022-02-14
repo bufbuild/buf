@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/storage/storagetesting"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -1721,6 +1722,175 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 			`failed to migrate config: unknown config file version: spaghetti`,
 		)
 	})
+}
+
+func TestDecodeWithImage(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "success"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+	)
+
+	t.Run("stdin input", func(t *testing.T) {
+		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		require.NoError(t, err)
+		defer stdin.Close()
+		stdout := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			stdin,
+			stdout,
+			"beta",
+			"decode",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+		)
+		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
+	})
+
+	t.Run("no stdin input", func(t *testing.T) {
+		testRunStdoutStderr(
+			t,
+			nil,
+			1,
+			"",
+			"Failure: stdin is required as the input",
+			"beta",
+			"decode",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+		)
+	})
+}
+
+func TestDecodeOutput(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "success"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+	)
+	t.Run("json file output", func(t *testing.T) {
+		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		require.NoError(t, err)
+		defer stdin.Close()
+		outputTempDir := t.TempDir()
+		testRunStdout(
+			t,
+			stdin,
+			0,
+			``,
+			"beta",
+			"decode",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--output",
+			filepath.Join(outputTempDir, "result.json"),
+		)
+		readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(outputTempDir)
+		require.NoError(t, err)
+		storagetesting.AssertPathToContent(
+			t,
+			readWriteBucket,
+			"",
+			map[string]string{
+				"result.json": `{"one":"55"}`,
+			},
+		)
+	})
+	t.Run("txt file output", func(t *testing.T) {
+		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		require.NoError(t, err)
+		defer stdin.Close()
+		outputTempDir := t.TempDir()
+		testRunStdout(
+			t,
+			stdin,
+			0,
+			``,
+			"beta",
+			"decode",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"-o",
+			filepath.Join(outputTempDir, "result.txt"),
+		)
+		readWriteBucket, err := storageos.NewProvider().NewReadWriteBucket(outputTempDir)
+		require.NoError(t, err)
+		storagetesting.AssertPathToContent(
+			t,
+			readWriteBucket,
+			"",
+			map[string]string{
+				"result.txt": `{"one":"55"}`,
+			},
+		)
+	})
+	t.Run("stdout with dash", func(t *testing.T) {
+		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		require.NoError(t, err)
+		defer stdin.Close()
+		stdout := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			stdin,
+			stdout,
+			"beta",
+			"decode",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"-o",
+			"-",
+		)
+		assert.JSONEq(t, `{"one":"55"}`, stdout.String())
+	})
+}
+
+func TestDecodeInvalidTypeName(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "success"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+	)
+	stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+	require.NoError(t, err)
+	defer stdin.Close()
+	testRunStdoutStderr(
+		t,
+		stdin,
+		1,
+		"",
+		`Failure: ".foo" is not a valid fully qualified type name`,
+		"beta",
+		"decode",
+		filepath.Join(tempDir, "image.bin"),
+		"--type",
+		".foo",
+	)
 }
 
 func testMigrateV1Beta1Diff(

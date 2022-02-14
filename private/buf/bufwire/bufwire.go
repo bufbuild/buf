@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 )
 
 // ImageConfig is an image and configuration.
@@ -198,6 +199,32 @@ func NewImageWriter(
 	fetchWriter buffetch.Writer,
 ) ImageWriter {
 	return newImageWriter(
+		logger,
+		fetchWriter,
+	)
+}
+
+// ProtoEncodingWriter is a writer that writes a protobuf message in different encoding (e.g. JSON).
+type ProtoEncodingWriter interface {
+	// PutMessage writes the message to the path, which can be
+	// a path in file system, or stdout represented by "-".
+	//
+	// Currently, this only support json format.
+	PutMessage(
+		ctx context.Context,
+		container app.EnvStdoutContainer,
+		image bufimage.Image,
+		message proto.Message,
+		path string,
+	) error
+}
+
+// NewProtoEncodingWriter returns a new ProtoEncodingWriter.
+func NewProtoEncodingWriter(
+	logger *zap.Logger,
+	fetchWriter buffetch.Writer,
+) ProtoEncodingWriter {
+	return newProtoEncodingWriter(
 		logger,
 		fetchWriter,
 	)

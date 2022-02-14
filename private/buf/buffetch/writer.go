@@ -46,3 +46,15 @@ func (w *writer) PutImageFile(
 ) (io.WriteCloser, error) {
 	return w.internalWriter.PutFile(ctx, container, imageRef.internalFileRef())
 }
+
+func (w *writer) PutSingleFile(
+	ctx context.Context,
+	container app.EnvStdoutContainer,
+	path string,
+) (io.WriteCloser, error) {
+	ref, err := internal.NewSingleRef(path, internal.CompressionTypeNone)
+	if err != nil {
+		return nil, err
+	}
+	return w.internalWriter.PutFile(ctx, container, ref)
+}
