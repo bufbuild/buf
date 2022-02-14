@@ -64,7 +64,7 @@ For more comprehensive usage information, consult Buf's [documentation][docs], e
 
 ## CLI breaking change policy
 
-Our policy is to _never_ make breaking changes within a version of the CLI. Now that `buf` has reached a stable version 1.0, you can expect no breaking changes until v2.0. But as we have no plans to ever release a v2.0, we will likely never break the `buf` CLI.
+We will never make breaking changes within a given major version of the CLI. Once `buf` reaches v1.0, you can expect no breaking changes until v2.0. But as we have no plans to ever release a v2.0, we will likely never break the `buf` CLI.
 
 ## Our goals for Protobuf
 
