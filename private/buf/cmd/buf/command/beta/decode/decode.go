@@ -47,7 +47,7 @@ func NewCommand(
 		Use:   name,
 		Short: "Decode binary serialized message with a source reference.",
 		Long: `The first argument is the source that defines the serialized message (e.g. buf.build/acme/weather).
-If no argument is specified, the type provided need to be a fully-qualified path to the type (e.g. buf.build/acme/weather#acme.weather.v1.Units).`,
+If no argument is specified, the type provided must be a fully-qualified path to the type (e.g. buf.build/acme/weather#acme.weather.v1.Units).`,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -83,7 +83,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The fully-qualified type name of the serialized message (e.g. acme.weather.v1.Units)
+		`The full type name of the serialized message (e.g. acme.weather.v1.Units)
 Alternatively, this can be a fully-qualified path to the type (e.g. buf.build/acme/weather#acme.weather.v1.Units) without providing the source`,
 	)
 	flagSet.StringVarP(

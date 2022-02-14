@@ -807,23 +807,23 @@ func NewImageForSource(
 // Otherwise, if both source and type are provided, the type must be a valid Protobuf identifier (e.g. weather.v1.Units).
 func ParseSourceAndType(
 	ctx context.Context,
-	flagSource string,
-	flagType string,
-) (moduleReference string, typeName string, _ error) {
-	if flagSource != "" && flagType != "" {
-		if err := bufreflect.ValidateTypeName(flagType); err != nil {
+	source string,
+	typeName string,
+) (string, string, error) {
+	if source != "" && typeName != "" {
+		if err := bufreflect.ValidateTypeName(typeName); err != nil {
 			return "", "", err
 		}
-		return flagSource, flagType, nil
+		return source, typeName, nil
 	}
-	if flagType == "" {
+	if typeName == "" {
 		return "", "", appcmd.NewInvalidArgumentError("type is required")
 	}
-	moduleReference, typeName, err := parseFullyQualifiedPath(flagType)
+	moduleReference, moduleTypeName, err := parseFullyQualifiedPath(typeName)
 	if err != nil {
 		return "", "", appcmd.NewInvalidArgumentErrorf("if source is not provided, the type need to be a fully-qualified path that includes the module reference, failed to parse the type: %v", err)
 	}
-	return moduleReference, typeName, nil
+	return moduleReference, moduleTypeName, nil
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.
