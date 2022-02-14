@@ -550,7 +550,7 @@ func NewContextModifierProvider(
 			if token != "" {
 				// Only set the token if there is no existing token on the context.
 				// This allows requests to override the token at the call site as needed.
-				if !rpcauth.ExistingTokenOutgoingHeader(ctx) {
+				if !rpcauth.TokenOutgoingHeaderExists(ctx) {
 					return rpcauth.WithToken(ctx, token)
 				}
 			}
