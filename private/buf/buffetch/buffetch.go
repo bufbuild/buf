@@ -352,8 +352,9 @@ type Writer interface {
 		container app.EnvStdoutContainer,
 		imageRef ImageRef,
 	) (io.WriteCloser, error)
-	// PutFile puts the file.
-	PutFile(
+	// PutSingleFile puts the file to the path, which can be
+	// a path in file system, or stdout represented by "-".
+	PutSingleFile(
 		ctx context.Context,
 		container app.EnvStdoutContainer,
 		path string,

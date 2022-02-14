@@ -204,14 +204,16 @@ func NewImageWriter(
 	)
 }
 
-// ProtoEncodingWriter is a proto encoding writer.
+// ProtoEncodingWriter is a writer that writes a protobuf message in different encoding (e.g. JSON).
 type ProtoEncodingWriter interface {
-	// PutMessage writes the message to the path.
+	// PutMessage writes the message to the path, which can be
+	// a path in file system, or stdout represented by "-".
 	//
 	// Currently, this only support json format.
 	PutMessage(
 		ctx context.Context,
 		container app.EnvStdoutContainer,
+		image bufimage.Image,
 		message proto.Message,
 		path string,
 	) error

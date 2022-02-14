@@ -32,7 +32,6 @@ import (
 
 const (
 	errorFormatFlagName = "error-format"
-	sourceFlagName      = "source"
 	typeFlagName        = "type"
 	outputFlagName      = "output"
 	outputFlagShortName = "o"
@@ -47,8 +46,9 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name,
 		Short: "Decode binary serialized message with a source reference.",
-		Long:  `The stdin is the serialized message to decode.`,
-		Args:  cobra.ExactArgs(0),
+		Long: `The first argument is the source that defines the serialized message (e.g. buf.build/acme/weather).
+If no argument is specified, the type provided need to be a fully-qualified path to the type (e.g. buf.build/acme/weather#acme.weather.v1.Units).`,
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -61,7 +61,6 @@ func NewCommand(
 
 type flags struct {
 	ErrorFormat string
-	Source      string
 	Type        string
 	Output      string
 }
@@ -79,12 +78,6 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			"The format for build errors, printed to stderr. Must be one of %s.",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
-	)
-	flagSet.StringVar(
-		&f.Source,
-		sourceFlagName,
-		"",
-		"The source that defines the serialized message (e.g. buf.build/acme/weather)",
 	)
 	flagSet.StringVar(
 		&f.Type,
@@ -119,7 +112,11 @@ func run(
 	if len(messageBytes) == 0 {
 		return fmt.Errorf("stdin is required as the input")
 	}
-	protoSource, protoType, err := bufcli.ParseSourceAndType(ctx, flags.Source, flags.Type)
+	input, err := bufcli.GetInputValue(container, "", "")
+	if err != nil {
+		return err
+	}
+	protoSource, protoType, err := bufcli.ParseSourceAndType(ctx, input, flags.Type)
 	if err != nil {
 		return err
 	}
@@ -150,6 +147,7 @@ func run(
 	).PutMessage(
 		ctx,
 		container,
+		image,
 		message,
 		flags.Output,
 	)

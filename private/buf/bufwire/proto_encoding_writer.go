@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.opencensus.io/trace"
@@ -44,17 +45,26 @@ func newProtoEncodingWriter(
 func (i *protoEncodingWriter) PutMessage(
 	ctx context.Context,
 	container app.EnvStdoutContainer,
+	image bufimage.Image,
 	message proto.Message,
 	path string,
 ) (retErr error) {
 	ctx, span := trace.StartSpan(ctx, "put_message")
 	defer span.End()
 	// Currently, this only support json format.
-	data, err := protoencoding.NewJSONMarshalerIndent(nil).Marshal(message)
+	resolver, err := protoencoding.NewResolver(
+		bufimage.ImageToFileDescriptors(
+			image,
+		)...,
+	)
 	if err != nil {
 		return err
 	}
-	writeCloser, err := i.fetchWriter.PutFile(ctx, container, path)
+	data, err := protoencoding.NewJSONMarshalerIndent(resolver).Marshal(message)
+	if err != nil {
+		return err
+	}
+	writeCloser, err := i.fetchWriter.PutSingleFile(ctx, container, path)
 	if err != nil {
 		return err
 	}

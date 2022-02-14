@@ -47,7 +47,7 @@ func (w *writer) PutImageFile(
 	return w.internalWriter.PutFile(ctx, container, imageRef.internalFileRef())
 }
 
-func (w *writer) PutFile(
+func (w *writer) PutSingleFile(
 	ctx context.Context,
 	container app.EnvStdoutContainer,
 	path string,
