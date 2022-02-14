@@ -32,11 +32,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
@@ -447,6 +449,18 @@ func NewWireImageWriter(
 	)
 }
 
+// NewWireProtoEncodingWriter returns a new ProtoEncodingWriter.
+func NewWireProtoEncodingWriter(
+	logger *zap.Logger,
+) bufwire.ProtoEncodingWriter {
+	return bufwire.NewProtoEncodingWriter(
+		logger,
+		buffetch.NewWriter(
+			logger,
+		),
+	)
+}
+
 // NewModuleReaderAndCreateCacheDirs returns a new ModuleReader while creating the
 // required cache directories.
 func NewModuleReaderAndCreateCacheDirs(
@@ -722,6 +736,93 @@ func ReadModuleWithWorkspacesDisabled(
 	return module, moduleIdentity, err
 }
 
+// NewImageForSource resolves a single bufimage.Image from the user-provided source with the build options.
+func NewImageForSource(
+	ctx context.Context,
+	container appflag.Container,
+	source string,
+	errorFormat string,
+	disableSymlinks bool,
+	configOverride string,
+	externalDirOrFilePaths []string,
+	externalExcludeDirOrFilePaths []string,
+	externalDirOrFilePathsAllowNotExist bool,
+	excludeSourceCodeInfo bool,
+) (bufimage.Image, error) {
+	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, source)
+	if err != nil {
+		return nil, err
+	}
+	storageosProvider := NewStorageosProvider(disableSymlinks)
+	runner := command.NewRunner()
+	registryProvider, err := NewRegistryProvider(ctx, container)
+	if err != nil {
+		return nil, err
+	}
+	imageConfigReader, err := NewWireImageConfigReader(
+		container,
+		storageosProvider,
+		runner,
+		registryProvider,
+	)
+	if err != nil {
+		return nil, err
+	}
+	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
+		ctx,
+		container,
+		ref,
+		configOverride,
+		externalDirOrFilePaths,
+		externalExcludeDirOrFilePaths,
+		externalDirOrFilePathsAllowNotExist,
+		excludeSourceCodeInfo,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(fileAnnotations) > 0 {
+		// stderr since we do output to stdout potentially
+		if err := bufanalysis.PrintFileAnnotations(
+			container.Stderr(),
+			fileAnnotations,
+			errorFormat,
+		); err != nil {
+			return nil, err
+		}
+		return nil, ErrFileAnnotation
+	}
+	images := make([]bufimage.Image, 0, len(imageConfigs))
+	for _, imageConfig := range imageConfigs {
+		images = append(images, imageConfig.Image())
+	}
+	return bufimage.MergeImages(images...)
+}
+
+// ParseSourceAndType returns the moduleReference and typeName from the source and type provided by the user.
+// When source is not provided, we assume the type is a fully-qualified path to the type and try to parse it.
+// Otherwise, if both source and type are provided, the type must be a valid Protobuf identifier (e.g. weather.v1.Units).
+func ParseSourceAndType(
+	ctx context.Context,
+	source string,
+	typeName string,
+) (string, string, error) {
+	if source != "" && typeName != "" {
+		if err := bufreflect.ValidateTypeName(typeName); err != nil {
+			return "", "", err
+		}
+		return source, typeName, nil
+	}
+	if typeName == "" {
+		return "", "", appcmd.NewInvalidArgumentError("type is required")
+	}
+	moduleReference, moduleTypeName, err := parseFullyQualifiedPath(typeName)
+	if err != nil {
+		return "", "", appcmd.NewInvalidArgumentErrorf("if source is not provided, the type need to be a fully-qualified path that includes the module reference, failed to parse the type: %v", err)
+	}
+	return moduleReference, moduleTypeName, nil
+}
+
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.
 func ValidateErrorFormatFlag(errorFormatString string, errorFormatFlagName string) error {
 	return validateErrorFormatFlag(bufanalysis.AllFormatStrings, errorFormatString, errorFormatFlagName)
@@ -822,4 +923,26 @@ func createCacheDirs(dirPaths ...string) error {
 		}
 	}
 	return nil
+}
+
+// parseFullyQualifiedPath parse a string in <buf.build/owner/repository#fully-qualified-type> or
+// <buf.build/owner/repository:reference#fully-qualified-type> format into a module reference and a type name
+func parseFullyQualifiedPath(
+	fullyQualifiedPath string,
+) (moduleRef string, typeName string, _ error) {
+	if fullyQualifiedPath == "" {
+		return "", "", appcmd.NewInvalidArgumentError("you must specify a fully qualified path")
+	}
+	components := strings.Split(fullyQualifiedPath, "#")
+	if len(components) != 2 {
+		return "", "", appcmd.NewInvalidArgumentErrorf("%q is not a valid fully qualified path", fullyQualifiedPath)
+	}
+	moduleReference, err := bufmoduleref.ModuleReferenceForString(components[0])
+	if err != nil {
+		return "", "", err
+	}
+	if err := bufreflect.ValidateTypeName(components[1]); err != nil {
+		return "", "", err
+	}
+	return moduleReference.String(), components[1], nil
 }
