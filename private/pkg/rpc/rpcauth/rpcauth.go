@@ -60,12 +60,10 @@ func WithToken(ctx context.Context, token string) context.Context {
 	return ctx
 }
 
-// ExistingToken returns true if a token is already set on the context and false otherwise.
-func ExistingToken(ctx context.Context) bool {
-	if token := rpc.GetOutgoingHeader(ctx, authenticationHeader); token != "" {
-		return true
-	}
-	return false
+// ExistingTokenOutgoingHeader returns true if a token is already set on the outgoing
+// context, otherwise it returns false.
+func ExistingTokenOutgoingHeader(ctx context.Context) bool {
+	return rpc.GetOutgoingHeader(ctx, authenticationHeader) != ""
 }
 
 // GetTokenFromHeader gets the current authentication token, if
