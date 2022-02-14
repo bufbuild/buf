@@ -7,7 +7,7 @@ require (
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/google/go-cmp v0.5.7
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
-	github.com/jhump/protoreflect v1.10.4-0.20220210001327-6224817bacc5
+	github.com/jhump/protoreflect v1.11.1-0.20220213155251-0c2aedc66cf4
 	github.com/klauspost/compress v1.14.2
 	github.com/klauspost/pgzip v1.2.5
 	github.com/oklog/ulid/v2 v2.0.2
@@ -24,7 +24,7 @@ require (
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	golang.org/x/tools v0.1.9
-	google.golang.org/genproto v0.0.0-20220208230804-65c12eb4c068 // indirect
+	google.golang.org/genproto v0.0.0-20220211171837-173942840c17 // indirect
 	google.golang.org/grpc v1.45.0-dev.0.20220209221444-a354b1eec350
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
