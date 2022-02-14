@@ -547,7 +547,9 @@ func NewContextModifierProvider(
 		}
 		return func(ctx context.Context) context.Context {
 			ctx = bufrpc.WithOutgoingCLIVersionHeader(ctx, Version)
-			if token != "" {
+			// Only set the token if there is no existing token on the context.
+			// This allows requests to override the token at the call site as needed.
+			if token != "" && !rpcauth.ExistingToken(ctx) {
 				return rpcauth.WithToken(ctx, token)
 			}
 			return ctx
