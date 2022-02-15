@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package configmigratev1beta1
+package modinit
 
 import _ "github.com/bufbuild/buf/private/usage"

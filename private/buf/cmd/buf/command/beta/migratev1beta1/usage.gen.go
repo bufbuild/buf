@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package configinit
+package migratev1beta1
 
 import _ "github.com/bufbuild/buf/private/usage"
