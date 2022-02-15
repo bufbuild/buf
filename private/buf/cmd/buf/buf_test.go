@@ -241,32 +241,6 @@ func TestFail6(t *testing.T) {
 
 func TestFail7(t *testing.T) {
 	t.Parallel()
-	testRunStdoutStderr(
-		t,
-		nil,
-		1,
-		"", // stdout should be empty
-		"Failure: the --config flag has been disabled for workspaces",
-		"lint",
-		"--path",
-		filepath.Join("testdata", "fail", "buf", "buf.proto"),
-		filepath.Join("testdata"),
-		"--config",
-		`{"version":"v1beta1","lint":{"use":["BASIC"]}}`,
-	)
-	testRunStdoutStderr(
-		t,
-		nil,
-		1,
-		"", // stdout should be empty
-		"Failure: the --config flag has been disabled for workspaces",
-		"lint",
-		"--path",
-		filepath.Join("testdata", "fail", "buf", "buf.proto"),
-		filepath.Join("testdata"),
-		"--config",
-		`{"version":"v1","lint":{"use":["BASIC"]}}`,
-	)
 	testRunStdout(
 		t,
 		nil,
@@ -282,7 +256,20 @@ func TestFail7(t *testing.T) {
 		nil,
 		1,
 		"", // stdout should be empty
-		"Failure: the --config flag has been disabled for workspaces",
+		"Failure: the --config flag is not compatible with workspaces",
+		"lint",
+		"--path",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+		filepath.Join("testdata"),
+		"--config",
+		`{"version":"v1beta1","lint":{"use":["BASIC"]}}`,
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"", // stdout should be empty
+		"Failure: the --config flag is not compatible with workspaces",
 		"lint",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		"--config",

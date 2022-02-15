@@ -166,7 +166,7 @@ func TestWorkspaceDir(t *testing.T) {
 			nil,
 			1,
 			"", // stdout should be empty
-			"Failure: the --config flag has been disabled for workspaces",
+			"Failure: the --config flag is not compatible with workspaces",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
@@ -199,52 +199,13 @@ func TestWorkspaceDir(t *testing.T) {
 			nil,
 			1,
 			"", // stdout should be empty
-			"Failure: the --config flag has been disabled for workspaces",
-			"lint",
-			filepath.Join("testdata", "workspace", "success", baseDirPath),
-			"--config",
-			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
-			"--path",
-			filepath.Join("testdata", "workspace", "success", baseDirPath, "proto", "rpc.proto"),
-		)
-		testRunStdoutStderr(
-			t,
-			nil,
-			1,
-			"", // stdout should be empty
-			"Failure: the --config flag has been disabled for workspaces",
+			"Failure: the --config flag is not compatible with workspaces",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
 			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
-		)
-		testRunStdoutStderr(
-			t,
-			nil,
-			1,
-			"", // stdout should be empty
-			"Failure: the --config flag has been disabled for workspaces",
-			"lint",
-			filepath.Join("testdata", "workspace", "success", baseDirPath),
-			"--config",
-			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
-			"--path",
-			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
-		)
-		testRunStdoutStderr(
-			t,
-			nil,
-			1,
-			"", // stdout should be empty
-			"Failure: the --config flag has been disabled for workspaces",
-			"lint",
-			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath),
-			"--config",
-			`{"version":"v1","lint": {"use": ["PACKAGE_DIRECTORY_MATCH"]}}`,
-			"--path",
-			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
 	}
 }
