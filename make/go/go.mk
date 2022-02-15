@@ -98,7 +98,7 @@ checknonolint:
 # newlines, etc).
 .PHONY: bufstylelint
 bufstylelint: $(BUFSTYLE)
-	$(BUFSTYLE_BIN) ./private/buf/... ./private/bufpkg/... ./private/bufstyle/... ./private/pkg/... 2>&1
+	$(BUFSTYLE_BIN) ./private/buf/... ./private/bufpkg/... ./private/bufstyle/... ./private/pkg/...
 
 .PHONY: golangcilint
 golangcilint: $(GOLANGCI_LINT)
