@@ -241,12 +241,12 @@ func TestFail6(t *testing.T) {
 
 func TestFail7(t *testing.T) {
 	t.Parallel()
-	testRunStdout(
+	testRunStdoutStderr(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		"", // stdout should be empty
+		"Failure: the --config flag has been disabled for workspaces",
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -254,12 +254,12 @@ func TestFail7(t *testing.T) {
 		"--config",
 		`{"version":"v1beta1","lint":{"use":["BASIC"]}}`,
 	)
-	testRunStdout(
+	testRunStdoutStderr(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		"", // stdout should be empty
+		"Failure: the --config flag has been disabled for workspaces",
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -277,12 +277,12 @@ func TestFail7(t *testing.T) {
 		"--input-config",
 		`{"version":"v1","lint":{"use":["BASIC"]}}`,
 	)
-	testRunStdout(
+	testRunStdoutStderr(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		"", // stdout should be empty
+		"Failure: the --config flag has been disabled for workspaces",
 		"lint",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		"--config",

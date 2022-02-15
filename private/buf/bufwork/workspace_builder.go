@@ -56,6 +56,9 @@ func (w *workspaceBuilder) BuildWorkspace(
 	if workspaceConfig == nil {
 		return nil, errors.New("received a nil workspace config")
 	}
+	if configOverride != "" {
+		return nil, errors.New("the --config flag has been disabled for workspaces")
+	}
 	// We know that if the file is actually buf.work for legacy reasons, this will be wrong,
 	// but we accept that as this shouldn't happen often anymore and this is just
 	// used for error messages.

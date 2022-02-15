@@ -26,6 +26,7 @@
 - Removed the `buf config ls-lint-rules` command in favor of `buf mod ls-lint-rules`.
 - Removed the `buf config migrate-v1beta1` command in favor of `buf beta migrate-v1beta1`.
 - Add `buf beta decode` command to decode message with provided image source and message type.
+- Disable `--config` flag for workspaces.
 
 ## [v1.0.0-rc12] - 2022-02-01
 

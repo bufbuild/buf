@@ -161,12 +161,12 @@ func TestWorkspaceDir(t *testing.T) {
 			"--against",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 		)
-		testRunStdout(
+		testRunStdoutStderr(
 			t,
 			nil,
-			bufcli.ExitCodeFileAnnotation,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".
-		    testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".`),
+			1,
+			"", // stdout should be empty
+			"Failure: the --config flag has been disabled for workspaces",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
@@ -194,11 +194,12 @@ func TestWorkspaceDir(t *testing.T) {
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
-		testRunStdout(
+		testRunStdoutStderr(
 			t,
 			nil,
-			bufcli.ExitCodeFileAnnotation,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/proto/rpc.proto:3:1:Files with package "example" must be within a directory "example" relative to root but were in directory ".".`),
+			1,
+			"", // stdout should be empty
+			"Failure: the --config flag has been disabled for workspaces",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
@@ -206,11 +207,12 @@ func TestWorkspaceDir(t *testing.T) {
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "proto", "rpc.proto"),
 		)
-		testRunStdout(
+		testRunStdoutStderr(
 			t,
 			nil,
-			bufcli.ExitCodeFileAnnotation,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`),
+			1,
+			"", // stdout should be empty
+			"Failure: the --config flag has been disabled for workspaces",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
@@ -218,11 +220,12 @@ func TestWorkspaceDir(t *testing.T) {
 			"--path",
 			filepath.Join("testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
-		testRunStdout(
+		testRunStdoutStderr(
 			t,
 			nil,
-			bufcli.ExitCodeFileAnnotation,
-			filepath.FromSlash(`testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`),
+			1,
+			"", // stdout should be empty
+			"Failure: the --config flag has been disabled for workspaces",
 			"lint",
 			filepath.Join("testdata", "workspace", "success", baseDirPath),
 			"--config",
@@ -230,13 +233,12 @@ func TestWorkspaceDir(t *testing.T) {
 			"--path",
 			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath, "other", "proto", "request.proto"),
 		)
-		testRunStdout(
+		testRunStdoutStderr(
 			t,
 			nil,
-			bufcli.ExitCodeFileAnnotation,
-			filepath.FromSlash(fmt.Sprintf(`%s/testdata/workspace/success/`+baseDirPath+`/other/proto/request.proto:3:1:Files with package "request" must be within a directory "request" relative to root but were in directory ".".`,
-				wd,
-			)),
+			1,
+			"", // stdout should be empty
+			"Failure: the --config flag has been disabled for workspaces",
 			"lint",
 			filepath.Join(wd, "testdata", "workspace", "success", baseDirPath),
 			"--config",
