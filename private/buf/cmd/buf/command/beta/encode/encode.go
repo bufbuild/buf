@@ -20,7 +20,9 @@ import (
 	"io"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -28,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -45,7 +48,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
-		Short: "Use a source reference to decode a binary serialized message supplied through stdin.",
+		Short: "Use a source reference to encode or decode a binary serialized message supplied through stdin.",
 		Long: `The first argument is the source that defines the serialized message (like buf.build/acme/weather).
 Alternatively, you can omit the source and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
 		Args: cobra.MaximumNArgs(1),
@@ -116,14 +119,14 @@ func run(
 	if err != nil {
 		return err
 	}
-	protoSource, protoType, err := bufcli.ParseSourceAndType(ctx, input, flags.Type)
+	source, typeName, err := bufcli.ParseSourceAndType(ctx, input, flags.Type)
 	if err != nil {
 		return err
 	}
 	image, err := bufcli.NewImageForSource(
 		ctx,
 		container,
-		protoSource,
+		source,
 		flags.ErrorFormat,
 		false,
 		"",
@@ -135,12 +138,18 @@ func run(
 	if err != nil {
 		return err
 	}
-	message, err := bufreflect.NewMessage(ctx, image, protoType)
+	message, encoding, err := unmarshalMessage(ctx, image, typeName, messageBytes)
 	if err != nil {
 		return err
 	}
-	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(messageBytes, message); err != nil {
-		return err
+	var outputEncoding buffetch.MessageEncoding
+	switch encoding {
+	case buffetch.MessageEncodingBin:
+		outputEncoding = buffetch.MessageEncodingJSON
+	case buffetch.MessageEncodingJSON:
+		outputEncoding = buffetch.MessageEncodingBin
+	default:
+		return fmt.Errorf("unknown message encoding type for input")
 	}
 	return bufcli.NewWireProtoEncodingWriter(
 		container.Logger(),
@@ -149,6 +158,35 @@ func run(
 		container,
 		image,
 		message,
+		outputEncoding,
 		flags.Output,
 	)
+}
+
+// unmarshalMessage returns an unmarshalled message and the message encoding type of the input bytes.
+func unmarshalMessage(
+	ctx context.Context,
+	image bufimage.Image,
+	typeName string,
+	messageBytes []byte,
+) (proto.Message, buffetch.MessageEncoding, error) {
+	resolver, err := protoencoding.NewResolver(
+		bufimage.ImageToFileDescriptors(
+			image,
+		)...,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	message, err := bufreflect.NewMessage(ctx, image, typeName)
+	if err != nil {
+		return nil, 0, err
+	}
+	if err := protoencoding.NewWireUnmarshaler(resolver).Unmarshal(messageBytes, message); err == nil {
+		return message, buffetch.MessageEncodingBin, nil
+	}
+	if err := protoencoding.NewJSONUnmarshaler(resolver).Unmarshal(messageBytes, message); err != nil {
+		return nil, 0, fmt.Errorf("unable to unmarshal the input: %v", err)
+	}
+	return message, buffetch.MessageEncodingJSON, nil
 }

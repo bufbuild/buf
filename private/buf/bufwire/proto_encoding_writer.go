@@ -16,6 +16,7 @@ package bufwire
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
@@ -47,6 +48,7 @@ func (i *protoEncodingWriter) PutMessage(
 	container app.EnvStdoutContainer,
 	image bufimage.Image,
 	message proto.Message,
+	encoding buffetch.MessageEncoding,
 	path string,
 ) (retErr error) {
 	ctx, span := trace.StartSpan(ctx, "put_message")
@@ -60,7 +62,16 @@ func (i *protoEncodingWriter) PutMessage(
 	if err != nil {
 		return err
 	}
-	data, err := protoencoding.NewJSONMarshalerIndent(resolver).Marshal(message)
+	var marshaler protoencoding.Marshaler
+	switch encoding {
+	case buffetch.MessageEncodingBin:
+		marshaler = protoencoding.NewWireMarshaler()
+	case buffetch.MessageEncodingJSON:
+		marshaler = protoencoding.NewJSONMarshalerIndent(resolver)
+	default:
+		return fmt.Errorf("unknown message encoding type")
+	}
+	data, err := marshaler.Marshal(message)
 	if err != nil {
 		return err
 	}

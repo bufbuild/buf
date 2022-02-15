@@ -215,6 +215,7 @@ type ProtoEncodingWriter interface {
 		container app.EnvStdoutContainer,
 		image bufimage.Image,
 		message proto.Message,
+		encoding buffetch.MessageEncoding,
 		path string,
 	) error
 }
