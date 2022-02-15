@@ -9,7 +9,7 @@ $(call _assert_var,CACHE_BIN)
 # Settable
 # https://github.com/golangci/golangci-lint/releases 20211103 checked 20211112
 # Check for new linters and add to .golangci.yml (even if commented out) when upgrading
-GOLANGCI_LINT_VERSION ?= v1.43.0
+GOLANGCI_LINT_VERSION ?= v1.44.0
 
 GOLANGCI_LINT := $(CACHE_VERSIONS)/golangci-lint/$(GOLANGCI_LINT_VERSION)
 $(GOLANGCI_LINT):
