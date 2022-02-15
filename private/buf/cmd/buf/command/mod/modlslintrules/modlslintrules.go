@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package configlslintrules
+package modlslintrules
 
 import (
 	"context"
 	"fmt"
 
-	configinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/config/internal"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -67,10 +67,10 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	configinternal.BindLSRulesAll(flagSet, &f.All, allFlagName)
-	configinternal.BindLSRulesConfig(flagSet, &f.Config, configFlagName, allFlagName, versionFlagName)
-	configinternal.BindLSRulesFormat(flagSet, &f.Format, formatFlagName)
-	configinternal.BindLSRulesVersion(flagSet, &f.Version, versionFlagName, allFlagName)
+	internal.BindLSRulesAll(flagSet, &f.All, allFlagName)
+	internal.BindLSRulesConfig(flagSet, &f.Config, configFlagName, allFlagName, versionFlagName)
+	internal.BindLSRulesFormat(flagSet, &f.Format, formatFlagName)
+	internal.BindLSRulesVersion(flagSet, &f.Version, versionFlagName, allFlagName)
 }
 
 func run(

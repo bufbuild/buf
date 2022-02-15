@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package configinit
+package modinit
 
 import _ "github.com/bufbuild/buf/private/usage"

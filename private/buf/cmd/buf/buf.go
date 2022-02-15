@@ -24,6 +24,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/config/configmigratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/decode"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
@@ -55,15 +56,14 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/track/tracklist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/breaking"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/build"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configinit"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlsbreakingrules"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configlslintrules"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/config/configmigratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/export"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/generate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lint"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/lsfiles"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modclearcache"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modinit"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlsbreakingrules"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modlslintrules"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modopen"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modprune"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/modupdate"
@@ -107,20 +107,13 @@ func NewRootCommand(name string) *appcmd.Command {
 				Use:   "mod",
 				Short: "Manage Buf modules.",
 				SubCommands: []*appcmd.Command{
+					modinit.NewCommand("init", builder),
 					modprune.NewCommand("prune", builder),
 					modupdate.NewCommand("update", builder),
 					modopen.NewCommand("open", builder),
 					modclearcache.NewCommand("clear-cache", builder, "cc"),
-				},
-			},
-			{
-				Use:   "config",
-				Short: "Manage Buf module configuration.",
-				SubCommands: []*appcmd.Command{
-					configinit.NewCommand("init", builder),
-					configlslintrules.NewCommand("ls-lint-rules", builder),
-					configlsbreakingrules.NewCommand("ls-breaking-rules", builder),
-					configmigratev1beta1.NewCommand("migrate-v1beta1", builder),
+					modlslintrules.NewCommand("ls-lint-rules", builder),
+					modlsbreakingrules.NewCommand("ls-breaking-rules", builder),
 				},
 			},
 			{
@@ -136,6 +129,13 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short: "Beta commands. Unstable and likely to change.",
 				SubCommands: []*appcmd.Command{
 					decode.NewCommand("decode", builder),
+					{
+						Use:   "config",
+						Short: "Manage Buf module configuration.",
+						SubCommands: []*appcmd.Command{
+							configmigratev1beta1.NewCommand("migrate-v1beta1", builder),
+						},
+					},
 					{
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry.",

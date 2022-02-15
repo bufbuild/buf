@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package configlsbreakingrules
+package modlslintrules
 
 import _ "github.com/bufbuild/buf/private/usage"
