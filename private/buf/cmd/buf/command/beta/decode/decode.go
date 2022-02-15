@@ -46,8 +46,8 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <source>",
 		Short: "Use a source reference to decode a binary serialized message supplied through stdin.",
-		Long: `This command accepts The first argument is the source that defines the serialized message (like buf.build/acme/weather).
-Alternatively, you can omit the <source> argument and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
+		Long: `The first argument is the source that defines the serialized message (like buf.build/acme/weather).
+Alternatively, you can omit the source and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
