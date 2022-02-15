@@ -24,7 +24,7 @@
 - Removed the `buf config init` command in favor of `buf mod init`.
 - Removed the `buf config ls-breaking-rules` command in favor of `buf mod ls-breaking-rules`.
 - Removed the `buf config ls-lint-rules` command in favor of `buf mod ls-lint-rules`.
-- Removed the `buf config migrate-v1beta1` command in favor of `buf beta config migrate-v1beta1`.
+- Removed the `buf config migrate-v1beta1` command in favor of `buf beta migrate-v1beta1`.
 
 ## [v1.0.0-rc12] - 2022-02-01
 

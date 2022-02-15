@@ -1912,7 +1912,6 @@ func testMigrateV1Beta1Diff(
 		"",
 		expectedStderr,
 		"beta",
-		"config",
 		"migrate-v1beta1",
 		tempDir,
 	)
@@ -1938,7 +1937,6 @@ func testMigrateV1Beta1Failure(t *testing.T, storageosProvider storageos.Provide
 		"",
 		expectedStderr,
 		"beta",
-		"config",
 		"migrate-v1beta1",
 		tempDir,
 	)

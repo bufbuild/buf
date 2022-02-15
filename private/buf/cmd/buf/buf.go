@@ -24,8 +24,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokendelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/config/configmigratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/decode"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
@@ -129,13 +129,7 @@ func NewRootCommand(name string) *appcmd.Command {
 				Short: "Beta commands. Unstable and likely to change.",
 				SubCommands: []*appcmd.Command{
 					decode.NewCommand("decode", builder),
-					{
-						Use:   "config",
-						Short: "Manage Buf module configuration.",
-						SubCommands: []*appcmd.Command{
-							configmigratev1beta1.NewCommand("migrate-v1beta1", builder),
-						},
-					},
+					migratev1beta1.NewCommand("migrate-v1beta1", builder),
 					{
 						Use:   "registry",
 						Short: "Manage assets on the Buf Schema Registry.",

@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
+	modinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -67,10 +67,10 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	internal.BindLSRulesAll(flagSet, &f.All, allFlagName)
-	internal.BindLSRulesConfig(flagSet, &f.Config, configFlagName, allFlagName, versionFlagName)
-	internal.BindLSRulesFormat(flagSet, &f.Format, formatFlagName)
-	internal.BindLSRulesVersion(flagSet, &f.Version, versionFlagName, allFlagName)
+	modinternal.BindLSRulesAll(flagSet, &f.All, allFlagName)
+	modinternal.BindLSRulesConfig(flagSet, &f.Config, configFlagName, allFlagName, versionFlagName)
+	modinternal.BindLSRulesFormat(flagSet, &f.Format, formatFlagName)
+	modinternal.BindLSRulesVersion(flagSet, &f.Version, versionFlagName, allFlagName)
 }
 
 func run(
