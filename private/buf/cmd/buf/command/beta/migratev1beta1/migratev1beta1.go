@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package configmigratev1beta1
+package migratev1beta1
 
 import (
 	"context"
