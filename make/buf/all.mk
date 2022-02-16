@@ -57,7 +57,7 @@ installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
 .PHONY: bufstyle
 bufstyle: installbufstyle
-	bufstyle ./private/buf/... ./private/bufpkg/... ./private/bufstyle/... ./private/pkg/...
+	bufstyle ./private/buf/... ./private/bufpkg/... ./private/pkg/...
 
 postlint:: bufstyle
 
