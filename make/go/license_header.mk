@@ -17,15 +17,11 @@ $(call _assert_var,LICENSE_HEADER_IGNORES)
 
 .PHONY: licenseheader
 licenseheader: $(LICENSE_HEADER) $(GIT_LS_FILES_UNSTAGED)
-	@echo license-header \
-		--license-type "$(LICENSE_HEADER_LICENSE_TYPE)" \
-		--copyright-holder "$(LICENSE_HEADER_COPYRIGHT_HOLDER)" \
-		--year-range "$(LICENSE_HEADER_YEAR_RANGE)" \
-		ALL_FILES
-	@license-header \
-		--license-type "$(LICENSE_HEADER_LICENSE_TYPE)" \
-		--copyright-holder "$(LICENSE_HEADER_COPYRIGHT_HOLDER)" \
-		--year-range "$(LICENSE_HEADER_YEAR_RANGE)" \
-		$(shell git-ls-files-unstaged | grep -v $(patsubst %,-e %,$(sort $(LICENSE_HEADER_IGNORES))))
+	git-ls-files-unstaged | \
+		grep -v $(patsubst %,-e %,$(sort $(LICENSE_HEADER_IGNORES))) | \
+		xargs license-header \
+			--license-type "$(LICENSE_HEADER_LICENSE_TYPE)" \
+			--copyright-holder "$(LICENSE_HEADER_COPYRIGHT_HOLDER)" \
+			--year-range "$(LICENSE_HEADER_YEAR_RANGE)"
 
 licensegenerate:: licenseheader
