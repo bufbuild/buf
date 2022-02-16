@@ -244,32 +244,6 @@ func TestFail7(t *testing.T) {
 	testRunStdout(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
-		"lint",
-		"--path",
-		filepath.Join("testdata", "fail", "buf", "buf.proto"),
-		filepath.Join("testdata"),
-		"--config",
-		`{"version":"v1beta1","lint":{"use":["BASIC"]}}`,
-	)
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
-		"lint",
-		"--path",
-		filepath.Join("testdata", "fail", "buf", "buf.proto"),
-		filepath.Join("testdata"),
-		"--config",
-		`{"version":"v1","lint":{"use":["BASIC"]}}`,
-	)
-	testRunStdout(
-		t,
-		nil,
 		1,
 		``,
 		"lint",
@@ -277,12 +251,25 @@ func TestFail7(t *testing.T) {
 		"--input-config",
 		`{"version":"v1","lint":{"use":["BASIC"]}}`,
 	)
-	testRunStdout(
+	testRunStdoutStderr(
 		t,
 		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
-        testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		1,
+		"", // stdout should be empty
+		"Failure: the --config flag is not compatible with workspaces",
+		"lint",
+		"--path",
+		filepath.Join("testdata", "fail", "buf", "buf.proto"),
+		filepath.Join("testdata"),
+		"--config",
+		`{"version":"v1beta1","lint":{"use":["BASIC"]}}`,
+	)
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"", // stdout should be empty
+		"Failure: the --config flag is not compatible with workspaces",
 		"lint",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		"--config",
@@ -546,7 +533,7 @@ PACKAGE_NO_IMPORT_CYCLE                                    Checks that packages 
 		nil,
 		0,
 		expectedStdout,
-		"config",
+		"mod",
 		"ls-lint-rules",
 		"--version",
 		"v1",
@@ -564,7 +551,7 @@ func TestCheckLsLintRules2(t *testing.T) {
 		PACKAGE_DIRECTORY_MATCH  MINIMAL, BASIC, DEFAULT, FILE_LAYOUT  Checks that all files are in a directory that matches their package name.
 		ENUM_NO_ALLOW_ALIAS      MINIMAL, BASIC, DEFAULT, SENSIBLE     Checks that enums do not have the allow_alias option set.
 		`,
-		"config",
+		"mod",
 		"ls-lint-rules",
 		"--config",
 		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1FilePath),
@@ -622,7 +609,7 @@ ENUM_FIRST_VALUE_ZERO             OTHER                                       Ch
 		nil,
 		0,
 		expectedStdout,
-		"config",
+		"mod",
 		"ls-lint-rules",
 		"--all",
 	)
@@ -695,7 +682,7 @@ FIELD_WIRE_COMPATIBLE_TYPE                      WIRE                            
 		nil,
 		0,
 		expectedStdout,
-		"config",
+		"mod",
 		"ls-breaking-rules",
 		"--version",
 		"v1",
@@ -713,7 +700,7 @@ func TestCheckLsBreakingRules2(t *testing.T) {
 		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
 		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
 		`,
-		"config",
+		"mod",
 		"ls-breaking-rules",
 		"--config",
 		filepath.Join("testdata", "small_list_rules", bufconfig.ExternalConfigV1FilePath),
@@ -731,7 +718,7 @@ func TestCheckLsBreakingRules3(t *testing.T) {
 		ENUM_VALUE_NO_DELETE  FILE, PACKAGE  Checks that enum values are not deleted from a given enum.
 		FIELD_SAME_JSTYPE     FILE, PACKAGE  Checks that fields have the same value for the jstype option.
 		`,
-		"config",
+		"mod",
 		"ls-breaking-rules",
 		"--config",
 		// making sure that .yml works
@@ -804,7 +791,7 @@ FIELD_NO_DELETE_UNLESS_NUMBER_RESERVED          WIRE_JSON, WIRE                 
 		nil,
 		0,
 		expectedStdout,
-		"config",
+		"mod",
 		"ls-breaking-rules",
 		"--version",
 		"v1beta1",
@@ -1155,9 +1142,9 @@ func TestImageConvertRoundtripJSONBinaryJSON(t *testing.T) {
 	require.Equal(t, json1, stdout.Bytes())
 }
 
-func TestConfigInitBasic(t *testing.T) {
+func TestModInitBasic(t *testing.T) {
 	t.Parallel()
-	testConfigInit(
+	testModInit(
 		t,
 		`version: v1
 breaking:
@@ -1911,7 +1898,7 @@ func testMigrateV1Beta1Diff(
 		0,
 		"",
 		expectedStderr,
-		"config",
+		"beta",
 		"migrate-v1beta1",
 		tempDir,
 	)
@@ -1936,15 +1923,15 @@ func testMigrateV1Beta1Failure(t *testing.T, storageosProvider storageos.Provide
 		1,
 		"",
 		expectedStderr,
-		"config",
+		"beta",
 		"migrate-v1beta1",
 		tempDir,
 	)
 }
 
-func testConfigInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {
+func testModInit(t *testing.T, expectedData string, document bool, name string, deps ...string) {
 	tempDir := t.TempDir()
-	baseArgs := []string{"config", "init"}
+	baseArgs := []string{"mod", "init"}
 	args := append(baseArgs, "-o", tempDir)
 	if document {
 		args = append(args, "--doc")

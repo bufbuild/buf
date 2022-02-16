@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package configlsbreakingrules
+package modlslintrules
 
 import (
 	"context"
 	"fmt"
 
-	configinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/config/internal"
+	modinternal "github.com/bufbuild/buf/private/buf/cmd/buf/command/mod/internal"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck"
-	"github.com/bufbuild/buf/private/bufpkg/bufcheck/bufbreaking"
+	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -44,7 +44,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name,
-		Short: "List breaking rules.",
+		Short: "List lint rules.",
 		Args:  cobra.NoArgs,
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -67,10 +67,10 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
-	configinternal.BindLSRulesAll(flagSet, &f.All, allFlagName)
-	configinternal.BindLSRulesConfig(flagSet, &f.Config, configFlagName, allFlagName, versionFlagName)
-	configinternal.BindLSRulesFormat(flagSet, &f.Format, formatFlagName)
-	configinternal.BindLSRulesVersion(flagSet, &f.Version, versionFlagName, allFlagName)
+	modinternal.BindLSRulesAll(flagSet, &f.All, allFlagName)
+	modinternal.BindLSRulesConfig(flagSet, &f.Config, configFlagName, allFlagName, versionFlagName)
+	modinternal.BindLSRulesFormat(flagSet, &f.Format, formatFlagName)
+	modinternal.BindLSRulesVersion(flagSet, &f.Version, versionFlagName, allFlagName)
 }
 
 func run(
@@ -110,18 +110,18 @@ func run(
 	if flags.All {
 		switch config.Version {
 		case bufconfig.V1Beta1Version:
-			rules, err = bufbreaking.GetAllRulesV1Beta1()
+			rules, err = buflint.GetAllRulesV1Beta1()
 			if err != nil {
 				return err
 			}
 		case bufconfig.V1Version:
-			rules, err = bufbreaking.GetAllRulesV1()
+			rules, err = buflint.GetAllRulesV1()
 			if err != nil {
 				return err
 			}
 		}
 	} else {
-		rules, err = bufbreaking.RulesForConfig(config.Breaking)
+		rules, err = buflint.RulesForConfig(config.Lint)
 		if err != nil {
 			return err
 		}

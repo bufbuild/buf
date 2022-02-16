@@ -44,10 +44,10 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name,
-		Short: "Decode binary serialized message with a source reference.",
-		Long: `The first argument is the source that defines the serialized message (e.g. buf.build/acme/weather).
-If no argument is specified, the type provided must be a fully-qualified path to the type (e.g. buf.build/acme/weather#acme.weather.v1.Units).`,
+		Use:   name + " <source>",
+		Short: "Use a source reference to decode a binary serialized message supplied through stdin.",
+		Long: `The first argument is the source that defines the serialized message (like buf.build/acme/weather).
+Alternatively, you can omit the source and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
 		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -75,7 +75,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		errorFormatFlagName,
 		"text",
 		fmt.Sprintf(
-			"The format for build errors, printed to stderr. Must be one of %s.",
+			"The format for build errors printed to stderr. Must be one of %s.",
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
@@ -83,8 +83,8 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Type,
 		typeFlagName,
 		"",
-		`The full type name of the serialized message (e.g. acme.weather.v1.Units)
-Alternatively, this can be a fully-qualified path to the type (e.g. buf.build/acme/weather#acme.weather.v1.Units) without providing the source`,
+		`The full type name of the serialized message (like acme.weather.v1.Units).
+Alternatively, this can be a fully qualified path to the type without providing the source (like buf.build/acme/weather#acme.weather.v1.Units).`,
 	)
 	flagSet.StringVarP(
 		&f.Output,
@@ -93,7 +93,7 @@ Alternatively, this can be a fully-qualified path to the type (e.g. buf.build/ac
 		"-",
 		// TODO: If we ever support other formats (e.g. prototext), we will need
 		// to build a buffetch.ProtoEncodingRefParser.
-		`The location to write the decoded result to. This is always JSON for now.`,
+		`The location to write the decoded result to. Output is currently only in JSON form.`,
 	)
 }
 
