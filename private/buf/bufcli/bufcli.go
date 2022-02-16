@@ -166,7 +166,7 @@ func BindAsFileDescriptorSet(flagSet *pflag.FlagSet, addr *bool, flagName string
 		flagName,
 		false,
 		`Output as a google.protobuf.FileDescriptorSet instead of an image.
-Note that images are wire-compatible with FileDescriptorSets, however this flag will strip
+Note that images are wire compatible with FileDescriptorSets, but this flag strips
 the additional metadata added for Buf usage.`,
 	)
 }

@@ -322,7 +322,7 @@ func (g *generator) execRemotePlugin(
 	return responses[0], nil
 }
 
-// modifyImage modifies the image according to the given configuration (i.e. Managed Mode).
+// modifyImage modifies the image according to the given configuration (i.e. managed mode).
 func modifyImage(
 	ctx context.Context,
 	logger *zap.Logger,

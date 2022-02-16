@@ -54,7 +54,7 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input> --against <against-input>",
 		Short: "Verify that the input location has no breaking changes compared to the against location.",
-		Long:  bufcli.GetInputLong(`the source, module, or Image to check for breaking changes`),
+		Long:  bufcli.GetInputLong(`the source, module, or image to check for breaking changes`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -126,7 +126,7 @@ Overrides --%s.`,
 		againstFlagName,
 		"",
 		fmt.Sprintf(
-			`Required. The source, module, or Image to check against. Must be one of format %s.`,
+			`Required. The source, module, or image to check against. Must be one of format %s.`,
 			buffetch.AllFormatsString,
 		),
 	)
