@@ -153,6 +153,7 @@ func txtarForImage(t *testing.T, image bufimage.Image) []byte {
 	archive := &txtar.Archive{}
 	printer := protoprint.Printer{
 		SortElements: true,
+		Compact:      true,
 	}
 	for fname, d := range reflectFDS {
 		fileBuilder := &bytes.Buffer{}

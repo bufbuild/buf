@@ -62,81 +62,12 @@ func FreeMessageRangeStrings(
 	return s, nil
 }
 
-type imageIndex struct {
-	NameToDescriptor map[string]protosource.NamedDescriptor
-	NameToExtensions map[string][]protosource.Field
-	NameToOptions    map[string]map[int32]protosource.Field
-}
-
 // ImageFilteredByTypes returns a minimal image containing only the descriptors
 // required to interpret types.
 func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image, error) {
-	imageIndex := &imageIndex{
-		NameToDescriptor: make(map[string]protosource.NamedDescriptor),
-		NameToExtensions: make(map[string][]protosource.Field),
-		NameToOptions:    make(map[string]map[int32]protosource.Field),
-	}
-	for _, file := range image.Files() {
-		protosourceFile, err := protosource.NewFile(newInputFile(file))
-		if err != nil {
-			return nil, err
-		}
-		for _, field := range protosourceFile.Extensions() {
-			imageIndex.NameToDescriptor[field.FullName()] = field
-			imageIndex.NameToExtensions[strings.TrimPrefix(field.Extendee(), ".")] = append(imageIndex.NameToExtensions[strings.TrimPrefix(field.Extendee(), ".")], field)
-		}
-		if err := protosource.ForEachMessage(func(message protosource.Message) error {
-			if storedDescriptor, ok := imageIndex.NameToDescriptor[message.FullName()]; ok && storedDescriptor != message {
-				return fmt.Errorf("duplicate for %q: %#v != %#v", message.FullName(), storedDescriptor, message)
-			}
-			imageIndex.NameToDescriptor[message.FullName()] = message
-
-			for _, field := range message.Extensions() {
-				imageIndex.NameToDescriptor[field.FullName()] = field
-				imageIndex.NameToExtensions[field.Extendee()] = append(imageIndex.NameToExtensions[field.Extendee()], field)
-			}
-			return nil
-		}, protosourceFile); err != nil {
-			return nil, err
-		}
-		if err = protosource.ForEachEnum(func(enum protosource.Enum) error {
-			if storedDescriptor, ok := imageIndex.NameToDescriptor[enum.FullName()]; ok {
-				return fmt.Errorf("duplicate for %q: %#v != %#v", enum.FullName(), storedDescriptor, enum)
-			}
-			imageIndex.NameToDescriptor[enum.FullName()] = enum
-			return nil
-		}, protosourceFile); err != nil {
-			return nil, err
-		}
-		for _, service := range protosourceFile.Services() {
-			if storedDescriptor, ok := imageIndex.NameToDescriptor[service.FullName()]; ok {
-				return nil, fmt.Errorf("duplicate for %q: %#v != %#v", service.FullName(), storedDescriptor, service)
-			}
-			imageIndex.NameToDescriptor[service.FullName()] = service
-		}
-	}
-	// should probably do this when constructing the imageIndex
-	optionNames := map[string]struct{}{
-		"google.protobuf.FileOptions":      {},
-		"google.protobuf.MessageOptions":   {},
-		"google.protobuf.FieldOptions":     {},
-		"google.protobuf.OneofOptions":     {},
-		"google.protobuf.EnumOptions":      {},
-		"google.protobuf.EnumValueOptions": {},
-		"google.protobuf.ServiceOptions":   {},
-		"google.protobuf.MethodOptions":    {},
-	}
-	for name, extensions := range imageIndex.NameToExtensions {
-		if _, ok := optionNames[name]; !ok {
-			continue
-		}
-		for _, ext := range extensions {
-			if _, ok := imageIndex.NameToOptions[name]; !ok {
-				imageIndex.NameToOptions[name] = make(map[int32]protosource.Field)
-			}
-			imageIndex.NameToOptions[name][int32(ext.Number())] = ext
-		}
-		delete(imageIndex.NameToExtensions, name)
+	imageIndex, err := newImageIndexForImage(image)
+	if err != nil {
+		return nil, err
 	}
 	// Check types exist
 	startingDescriptors := make([]protosource.NamedDescriptor, 0, len(types))
@@ -150,10 +81,10 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 		}
 		startingDescriptors = append(startingDescriptors, descriptor)
 	}
-
-	// Find all the types they refer to
+	//
 	seen := make(map[string]struct{})
-	neededDescriptors := []namedDescriptorAndExplicitDeps{}
+	neededDescriptors := []descriptorAndDirects{}
+	descriptorsByFile := make(map[string][]descriptorAndDirects)
 	for _, startingDescriptor := range startingDescriptors {
 		closure, err := descriptorTransitiveClosure(startingDescriptor, imageIndex, seen)
 		if err != nil {
@@ -161,28 +92,20 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 		}
 		neededDescriptors = append(neededDescriptors, closure...)
 	}
-	// for _, d := range neededDescriptors {
-	// 	fmt.Println(d.Descriptor.FullName())
-	// 	for _, e := range d.ExplicitDeps {
-	// 		fmt.Println("\t" + e.FullName())
-	// 	}
-	// }
-
-	// Now create a thinned image.
-	descriptorsByFile := make(map[string][]namedDescriptorAndExplicitDeps)
 	for _, descriptor := range neededDescriptors {
 		descriptorsByFile[descriptor.Descriptor.File().Path()] = append(
 			descriptorsByFile[descriptor.Descriptor.File().Path()],
 			descriptor,
 		)
 	}
+	// Now create a thinned image.
 	var includedFiles []bufimage.ImageFile
 	for file, descriptors := range descriptorsByFile {
 		importsMap := make(map[string]struct{})
 		descriptorNames := make(map[string]struct{})
 		for _, descriptor := range descriptors {
 			descriptorNames[descriptor.Descriptor.FullName()] = struct{}{}
-			for _, importedDescdescriptor := range descriptor.ExplicitDeps {
+			for _, importedDescdescriptor := range descriptor.Directs {
 				if importedDescdescriptor.File() != descriptor.Descriptor.File() {
 					importsMap[importedDescdescriptor.File().Path()] = struct{}{}
 				}
@@ -236,7 +159,7 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 		// go.
 		prefix := ""
 		if imageFileDescriptor.Package != nil {
-			prefix = *imageFileDescriptor.Package + "."
+			prefix = imageFileDescriptor.GetPackage() + "."
 		}
 		trimMessages, err := trimMessageDescriptor(imageFileDescriptor.MessageType, prefix, descriptorNames)
 		if err != nil {
@@ -279,7 +202,6 @@ func trimMessageDescriptor(in []*descriptorpb.DescriptorProto, prefix string, to
 	i := 0
 	for _, messageDescriptor := range in {
 		name := prefix + *messageDescriptor.Name
-		// Won't work for nested
 		if _, ok := toKeep[name]; ok {
 			trimMessages, err := trimMessageDescriptor(messageDescriptor.NestedType, name+".", toKeep)
 			if err != nil {
@@ -302,7 +224,6 @@ func trimEnumDescriptor(in []*descriptorpb.EnumDescriptorProto, prefix string, t
 	i := 0
 	for _, enumDescriptor := range in {
 		name := prefix + *enumDescriptor.Name
-		// Won't work for nested
 		if _, ok := toKeep[name]; ok {
 			in[i] = enumDescriptor
 			i++
@@ -311,35 +232,36 @@ func trimEnumDescriptor(in []*descriptorpb.EnumDescriptorProto, prefix string, t
 	return in[:i], nil
 }
 
-type namedDescriptorAndExplicitDeps struct {
-	Descriptor   protosource.NamedDescriptor
-	ExplicitDeps []protosource.NamedDescriptor // maybe make this a []string and store imported paths directly?
+type descriptorAndDirects struct {
+	Descriptor protosource.NamedDescriptor
+	Directs    []protosource.NamedDescriptor // maybe make this a []string and store imported paths directly?
 }
 
-func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageIndex *imageIndex, seen map[string]struct{}) ([]namedDescriptorAndExplicitDeps, error) {
-	if _, ok := seen[starting.FullName()]; ok {
+func descriptorTransitiveClosure(namedDescriptor protosource.NamedDescriptor, imageIndex *imageIndex, seen map[string]struct{}) ([]descriptorAndDirects, error) {
+	if _, ok := seen[namedDescriptor.FullName()]; ok {
 		return nil, nil
 	}
-	seen[starting.FullName()] = struct{}{}
+	seen[namedDescriptor.FullName()] = struct{}{}
 
-	explicitDescriptorDependencies := []protosource.NamedDescriptor{}
-	recursedDescriptorsWithDependencies := []namedDescriptorAndExplicitDeps{}
-	switch x := starting.(type) {
+	directDependencies := []protosource.NamedDescriptor{}
+	transitiveDependencies := []descriptorAndDirects{}
+	switch typedDesctriptor := namedDescriptor.(type) {
 	case protosource.Message:
-		fields := x.Fields()
-		for _, field := range fields {
+		for _, field := range typedDesctriptor.Fields() {
 			switch field.Type() {
-			case protosource.FieldDescriptorProtoTypeEnum, protosource.FieldDescriptorProtoTypeMessage, protosource.FieldDescriptorProtoTypeGroup:
+			case protosource.FieldDescriptorProtoTypeEnum,
+				protosource.FieldDescriptorProtoTypeMessage,
+				protosource.FieldDescriptorProtoTypeGroup:
 				inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(field.TypeName(), ".")]
 				if !ok {
 					return nil, fmt.Errorf("missing %q", field.TypeName())
 				}
-				explicitDescriptorDependencies = append(explicitDescriptorDependencies, inputDescriptor)
+				directDependencies = append(directDependencies, inputDescriptor)
 				recursiveDescriptors, err := descriptorTransitiveClosure(inputDescriptor, imageIndex, seen)
 				if err != nil {
 					return nil, err
 				}
-				recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
+				transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 			default:
 				// add known types and error here
 			}
@@ -348,79 +270,79 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageInde
 			if err != nil {
 				return nil, err
 			}
-			explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
-			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
+			directDependencies = append(directDependencies, explicitOptionDeps...)
+			transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 		}
 
 		// Extensions
-		for _, extendsDescriptor := range imageIndex.NameToExtensions[starting.FullName()] {
-			explicitDescriptorDependencies = append(explicitDescriptorDependencies, extendsDescriptor)
+		for _, extendsDescriptor := range imageIndex.NameToExtensions[namedDescriptor.FullName()] {
+			directDependencies = append(directDependencies, extendsDescriptor)
 			recursiveDescriptors, err := descriptorTransitiveClosure(extendsDescriptor, imageIndex, seen)
 			if err != nil {
 				return nil, err
 			}
-			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
+			transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 		}
 
-		for _, oneOfDescriptor := range x.Oneofs() {
+		for _, oneOfDescriptor := range typedDesctriptor.Oneofs() {
 			explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(oneOfDescriptor, imageIndex, seen)
 			if err != nil {
 				return nil, err
 			}
-			explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
-			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
+			directDependencies = append(directDependencies, explicitOptionDeps...)
+			transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 		}
 
 		// Parent messages
-		if x.Parent() != nil {
-			explicitDescriptorDependencies = append(explicitDescriptorDependencies, x.Parent())
-			recursiveDescriptors, err := descriptorTransitiveClosure(x.Parent(), imageIndex, seen)
+		if typedDesctriptor.Parent() != nil {
+			directDependencies = append(directDependencies, typedDesctriptor.Parent())
+			recursiveDescriptors, err := descriptorTransitiveClosure(typedDesctriptor.Parent(), imageIndex, seen)
 			if err != nil {
 				return nil, err
 			}
-			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
+			transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 		}
 
 		// Options
-		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(x, imageIndex, seen)
+		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(typedDesctriptor, imageIndex, seen)
 		if err != nil {
 			return nil, err
 		}
-		explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
-		recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
+		directDependencies = append(directDependencies, explicitOptionDeps...)
+		transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 	case protosource.Enum:
 		// Parent messages
-		if x.Parent() != nil {
-			explicitDescriptorDependencies = append(explicitDescriptorDependencies, x.Parent())
-			recursiveDescriptors, err := descriptorTransitiveClosure(x.Parent(), imageIndex, seen)
+		if typedDesctriptor.Parent() != nil {
+			directDependencies = append(directDependencies, typedDesctriptor.Parent())
+			recursiveDescriptors, err := descriptorTransitiveClosure(typedDesctriptor.Parent(), imageIndex, seen)
 			if err != nil {
 				return nil, err
 			}
-			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
+			transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 		}
 
-		for _, enumValue := range x.Values() {
+		for _, enumValue := range typedDesctriptor.Values() {
 			explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(enumValue, imageIndex, seen)
 			if err != nil {
 				return nil, err
 			}
-			explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
-			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
+			directDependencies = append(directDependencies, explicitOptionDeps...)
+			transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 		}
 
 		// Options
-		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(x, imageIndex, seen)
+		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(typedDesctriptor, imageIndex, seen)
 		if err != nil {
 			return nil, err
 		}
-		explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
-		recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
+		directDependencies = append(directDependencies, explicitOptionDeps...)
+		transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 	case protosource.EnumValue:
 		panic("shouldnt reach") // should be handled in protosource.Enum case
 	case protosource.Oneof:
 		panic("shouldnt reach") // should be handled in protosource.Message case
 	case protosource.Service:
-		for _, method := range x.Methods() {
+		for _, method := range typedDesctriptor.Methods() {
 			inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(method.InputTypeName(), ".")]
 			if !ok {
 				return nil, fmt.Errorf("missing %q", method.InputTypeName())
@@ -429,8 +351,8 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageInde
 			if err != nil {
 				return nil, err
 			}
-			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptorsIn...)
-			explicitDescriptorDependencies = append(explicitDescriptorDependencies, inputDescriptor)
+			transitiveDependencies = append(transitiveDependencies, recursiveDescriptorsIn...)
+			directDependencies = append(directDependencies, inputDescriptor)
 
 			outputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(method.OutputTypeName(), ".")]
 			if !ok {
@@ -440,76 +362,86 @@ func descriptorTransitiveClosure(starting protosource.NamedDescriptor, imageInde
 			if err != nil {
 				return nil, err
 			}
-			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptorsOut...)
-			explicitDescriptorDependencies = append(explicitDescriptorDependencies, outputDescriptor)
+			transitiveDependencies = append(transitiveDependencies, recursiveDescriptorsOut...)
+			directDependencies = append(directDependencies, outputDescriptor)
 
 			// options
 			explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(method, imageIndex, seen)
 			if err != nil {
 				return nil, err
 			}
-			explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
-			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
+			directDependencies = append(directDependencies, explicitOptionDeps...)
+			transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 		}
 		// Options
-		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(x, imageIndex, seen)
+		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(typedDesctriptor, imageIndex, seen)
 		if err != nil {
 			return nil, err
 		}
-		explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
-		recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
+		directDependencies = append(directDependencies, explicitOptionDeps...)
+		transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 	case protosource.Field: // regular fields should be handled by protosource.Message, this is for extends.
-		switch x.Type() {
+		switch typedDesctriptor.Type() {
 		case protosource.FieldDescriptorProtoTypeEnum, protosource.FieldDescriptorProtoTypeMessage, protosource.FieldDescriptorProtoTypeGroup:
-			inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(x.TypeName(), ".")]
+			inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(typedDesctriptor.TypeName(), ".")]
 			if !ok {
-				return nil, fmt.Errorf("missing %q", x.TypeName())
+				return nil, fmt.Errorf("missing %q", typedDesctriptor.TypeName())
 			}
-			explicitDescriptorDependencies = append(explicitDescriptorDependencies, inputDescriptor)
+			directDependencies = append(directDependencies, inputDescriptor)
 			recursiveDescriptors, err := descriptorTransitiveClosure(inputDescriptor, imageIndex, seen)
 			if err != nil {
 				return nil, err
 			}
-			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
+			transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 		}
-		if x.Extendee() != "" {
-			extendeeDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(x.Extendee(), ".")]
+		if typedDesctriptor.Extendee() != "" {
+			extendeeDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(typedDesctriptor.Extendee(), ".")]
 			if !ok {
-				return nil, fmt.Errorf("missing %q", x.Extendee())
+				return nil, fmt.Errorf("missing %q", typedDesctriptor.Extendee())
 			}
-			explicitDescriptorDependencies = append(explicitDescriptorDependencies, extendeeDescriptor)
+			directDependencies = append(directDependencies, extendeeDescriptor)
 			recursiveDescriptors, err := descriptorTransitiveClosure(extendeeDescriptor, imageIndex, seen)
 			if err != nil {
 				return nil, err
 			}
-			recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursiveDescriptors...)
+			transitiveDependencies = append(transitiveDependencies, recursiveDescriptors...)
 		}
-		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(x, imageIndex, seen)
+		explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(typedDesctriptor, imageIndex, seen)
 		if err != nil {
 			return nil, err
 		}
-		explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
-		recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
+		directDependencies = append(directDependencies, explicitOptionDeps...)
+		transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 	default:
-		panic(x)
+		panic(typedDesctriptor)
 	}
 
-	explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(starting.File(), imageIndex, seen)
+	// todo: remove others
+	// if optionsDescriptor, ok := starting.(protosource.OptionExtensionDescriptor); ok {
+	// 	explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(optionsDescriptor, imageIndex, seen)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
+	// 	recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
+	// }
+
+	explicitOptionDeps, recursedOptionDeps, err := exploreCustomOptions(namedDescriptor.File(), imageIndex, seen)
 	if err != nil {
 		return nil, err
 	}
-	explicitDescriptorDependencies = append(explicitDescriptorDependencies, explicitOptionDeps...)
-	recursedDescriptorsWithDependencies = append(recursedDescriptorsWithDependencies, recursedOptionDeps...)
+	directDependencies = append(directDependencies, explicitOptionDeps...)
+	transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 
 	return append(
-		[]namedDescriptorAndExplicitDeps{{Descriptor: starting, ExplicitDeps: explicitDescriptorDependencies}},
-		recursedDescriptorsWithDependencies...,
+		[]descriptorAndDirects{{Descriptor: namedDescriptor, Directs: directDependencies}},
+		transitiveDependencies...,
 	), nil
 }
 
-func exploreCustomOptions(descriptor protosource.OptionExtensionDescriptor, imageIndex *imageIndex, seen map[string]struct{}) ([]protosource.NamedDescriptor, []namedDescriptorAndExplicitDeps, error) {
+func exploreCustomOptions(descriptor protosource.OptionExtensionDescriptor, imageIndex *imageIndex, seen map[string]struct{}) ([]protosource.NamedDescriptor, []descriptorAndDirects, error) {
 	explicitDescriptorDependencies := []protosource.NamedDescriptor{}
-	recursedDescriptorsWithDependencies := []namedDescriptorAndExplicitDeps{}
+	recursedDescriptorsWithDependencies := []descriptorAndDirects{}
 
 	var optionName string
 	switch descriptor.(type) {
