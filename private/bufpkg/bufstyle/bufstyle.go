@@ -38,6 +38,11 @@ var (
 
 // packagefilenameRun is run once per package.
 func packagefilenameRun(pass *analysis.Pass) (interface{}, error) {
+	if len(pass.Files) == 0 {
+		// Nothing to do. We can't report the error anywhere because
+		// this package doesn't have any files.
+		return nil, nil
+	}
 	packageName := pass.Pkg.Name()
 	if strings.HasSuffix(packageName, "_test") {
 		// Ignore test packages.
@@ -54,12 +59,11 @@ func packagefilenameRun(pass *analysis.Pass) (interface{}, error) {
 			return true
 		},
 	)
-	// The package is guaranteed to have at least one
-	// file with a package declaration, so we report
-	// the failure there.
-	pos := pass.Files[0].Package
 	if !found {
-		pass.Reportf(pos, "Package %q does not have a %s.go", packageName, packageName)
+		// The package is guaranteed to have at least one
+		// file with a package declaration, so we report the failure there.
+		// We checked that len(pass.Files) > 0 above.
+		pass.Reportf(pass.Files[0].Package, "Package %q does not have a %s.go", packageName, packageName)
 	}
 	return nil, nil
 }
