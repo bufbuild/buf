@@ -49,7 +49,8 @@ func GetUser(ctx context.Context) (*User, bool) {
 	}
 	// This is the only package where we can set this context key, so
 	// this is guaranteed to be of this type if it exists.
-	return userValue.(*User), true
+	user, ok := userValue.(*User)
+	return user, ok
 }
 
 // WithToken adds the token to the context via a header.
