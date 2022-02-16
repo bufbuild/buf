@@ -7,7 +7,11 @@ option (UsedOption.file_foo) = { foo:"str" };
 message Foo {
   option (message_baz) = "str";
   option (message_foo) = { foo:"str" };
-  optional string foo = 1 [jstype = JS_STRING, (field_baz) = "str", (field_foo) = { foo:"str" }];
+  optional string foo = 1 [
+    jstype = JS_STRING,
+    (field_baz) = "str",
+    (field_foo) = { foo:"str" }
+  ];
   oneof testOneof {
     option (oneof_baz) = "str";
     option (oneof_foo) = { foo:"str" };

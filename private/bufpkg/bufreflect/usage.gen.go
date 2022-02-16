@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package configlslintrules
+package bufreflect
 
 import _ "github.com/bufbuild/buf/private/usage"

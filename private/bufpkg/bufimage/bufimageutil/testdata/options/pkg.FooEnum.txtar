@@ -9,7 +9,10 @@ enum FooEnum {
   option (enum_baz) = "str";
   option (enum_foo) = { foo:"str" };
   FOO_ENUM_X = 0;
-  FOO_ENUM_Y = 1 [(enum_value_baz) = "str", (enum_value_foo) = { foo:"str" }];
+  FOO_ENUM_Y = 1 [
+    (enum_value_baz) = "str",
+    (enum_value_foo) = { foo:"str" }
+  ];
 }
 -- google/protobuf/descriptor.proto --
 syntax = "proto2";

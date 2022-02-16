@@ -1,6 +1,6 @@
-# https://github.com/jhump/protoreflect/commits/master 20220204 checked 20220204
+# https://github.com/jhump/protoreflect/commits/master 20220213 checked 20220214
 GO_GET_PKGS := $(GO_GET_PKGS) \
-	github.com/jhump/protoreflect@1bb2aa9349c21cd01d4a1137769f0192e8e6b2ab
+	github.com/jhump/protoreflect@0c2aedc66cf40543c74e9cc20b2601bce0028ccc
 GO_ALL_REPO_PKGS := ./cmd/... ./private/...
 GO_BINS := $(GO_BINS) \
 	cmd/buf \
@@ -113,7 +113,7 @@ bufgeneratesteps:: \
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
-	DOCKER_IMAGE=golang:1.17.6-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.17.7-buster bash make/buf/scripts/release.bash
 
 # We have to manually set the Homebrew version on the Homebrew badge as there
 # is no badge on shields.io for Homebrew packages outside of homebrew-core

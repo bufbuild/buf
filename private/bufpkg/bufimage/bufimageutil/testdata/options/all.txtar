@@ -9,7 +9,11 @@ message Empty {
 message Foo {
   option (message_baz) = "str";
   option (message_foo) = { foo:"str" };
-  optional string foo = 1 [jstype = JS_STRING, (field_baz) = "str", (field_foo) = { foo:"str" }];
+  optional string foo = 1 [
+    jstype = JS_STRING,
+    (field_baz) = "str",
+    (field_foo) = { foo:"str" }
+  ];
   oneof testOneof {
     option (oneof_baz) = "str";
     option (oneof_foo) = { foo:"str" };
@@ -23,7 +27,10 @@ enum FooEnum {
   option (enum_baz) = "str";
   option (enum_foo) = { foo:"str" };
   FOO_ENUM_X = 0;
-  FOO_ENUM_Y = 1 [(enum_value_baz) = "str", (enum_value_foo) = { foo:"str" }];
+  FOO_ENUM_Y = 1 [
+    (enum_value_baz) = "str",
+    (enum_value_foo) = { foo:"str" }
+  ];
 }
 service FooService {
   option (service_baz) = "str";

@@ -21,12 +21,10 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimageutil"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -136,29 +134,12 @@ func run(
 	if err != nil {
 		return err
 	}
-	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, input)
-	if err != nil {
-		return err
-	}
-	storageosProvider := bufcli.NewStorageosProvider(flags.DisableSymlinks)
-	runner := command.NewRunner()
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
-	if err != nil {
-		return err
-	}
-	imageConfigReader, err := bufcli.NewWireImageConfigReader(
-		container,
-		storageosProvider,
-		runner,
-		registryProvider,
-	)
-	if err != nil {
-		return err
-	}
-	imageConfigs, fileAnnotations, err := imageConfigReader.GetImageConfigs(
+	image, err := bufcli.NewImageForSource(
 		ctx,
 		container,
-		ref,
+		input,
+		flags.ErrorFormat,
+		flags.DisableSymlinks,
 		flags.Config,
 		flags.Paths,
 		flags.ExcludePaths, // we exclude these paths
@@ -168,28 +149,9 @@ func run(
 	if err != nil {
 		return err
 	}
-	if len(fileAnnotations) > 0 {
-		// stderr since we do output to stdout potentially
-		if err := bufanalysis.PrintFileAnnotations(
-			container.Stderr(),
-			fileAnnotations,
-			flags.ErrorFormat,
-		); err != nil {
-			return err
-		}
-		return bufcli.ErrFileAnnotation
-	}
 	imageRef, err := buffetch.NewImageRefParser(container.Logger()).GetImageRef(ctx, flags.Output)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
-	}
-	images := make([]bufimage.Image, 0, len(imageConfigs))
-	for _, imageConfig := range imageConfigs {
-		images = append(images, imageConfig.Image())
-	}
-	image, err := bufimage.MergeImages(images...)
-	if err != nil {
-		return err
 	}
 	if len(flags.Types) > 0 {
 		image, err = bufimageutil.ImageFilteredByTypes(image, flags.Types)
