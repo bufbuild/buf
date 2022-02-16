@@ -707,7 +707,7 @@ func checkRPCRequestResponseUnique(
 		for _, method := range allFullNameToMethod {
 			if method.InputTypeName() == method.OutputTypeName() {
 				// if we allow both empty requests and responses, we do not want to add a FileAnnotation
-				if !(method.InputTypeName() == ".google.protobuf.Empty" && allowGoogleProtobufEmptyRequests && allowGoogleProtobufEmptyResponses) {
+				if !(method.InputTypeName() == "google.protobuf.Empty" && allowGoogleProtobufEmptyRequests && allowGoogleProtobufEmptyResponses) {
 					add(
 						method,
 						method.Location(),
@@ -744,7 +744,7 @@ func checkRPCRequestResponseUnique(
 		}
 		// if the request or response type is google.protobuf.Empty and we allow this for requests or responses,
 		// we have to do a harder check
-		if requestResponseType == ".google.protobuf.Empty" && (allowGoogleProtobufEmptyRequests || allowGoogleProtobufEmptyResponses) {
+		if requestResponseType == "google.protobuf.Empty" && (allowGoogleProtobufEmptyRequests || allowGoogleProtobufEmptyResponses) {
 			// if both requests and responses can be google.protobuf.Empty, then do not add any error
 			// else, we check
 			if !(allowGoogleProtobufEmptyRequests && allowGoogleProtobufEmptyResponses) {
@@ -752,10 +752,10 @@ func checkRPCRequestResponseUnique(
 				var requestMethods []protosource.Method
 				var responseMethods []protosource.Method
 				for _, method := range fullNameToMethod {
-					if method.InputTypeName() == ".google.protobuf.Empty" {
+					if method.InputTypeName() == "google.protobuf.Empty" {
 						requestMethods = append(requestMethods, method)
 					}
-					if method.OutputTypeName() == ".google.protobuf.Empty" {
+					if method.OutputTypeName() == "google.protobuf.Empty" {
 						responseMethods = append(responseMethods, method)
 					}
 				}
@@ -830,7 +830,7 @@ func checkRPCRequestStandardName(add addFunc, method protosource.Method, allowGo
 		return errors.New("method.Service() is nil")
 	}
 	name := method.InputTypeName()
-	if allowGoogleProtobufEmptyRequests && name == ".google.protobuf.Empty" {
+	if allowGoogleProtobufEmptyRequests && name == "google.protobuf.Empty" {
 		return nil
 	}
 	if strings.Contains(name, ".") {
@@ -878,7 +878,7 @@ func checkRPCResponseStandardName(add addFunc, method protosource.Method, allowG
 		return errors.New("method.Service() is nil")
 	}
 	name := method.OutputTypeName()
-	if allowGoogleProtobufEmptyResponses && name == ".google.protobuf.Empty" {
+	if allowGoogleProtobufEmptyResponses && name == "google.protobuf.Empty" {
 		return nil
 	}
 	if strings.Contains(name, ".") {
