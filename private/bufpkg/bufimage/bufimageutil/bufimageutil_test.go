@@ -25,8 +25,9 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	imagev1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
+	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
+	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoprint"
 	"github.com/stretchr/testify/assert"
@@ -36,67 +37,67 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func TestImageFilteredByTypes(t *testing.T) {
+const shouldUpdateExpectations = false
+
+func TestOptions(t *testing.T) {
+	t.Parallel()
+	t.Run("message", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo"}, "pkg.Foo.txtar")
+	})
+	t.Run("enum", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.FooEnum"}, "pkg.FooEnum.txtar")
+	})
+	t.Run("service", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.FooService"}, "pkg.FooService.txtar")
+	})
+	t.Run("all", func(t *testing.T) {
+		runDiffTest(t, "testdata/options", []string{"pkg.Foo", "pkg.FooEnum", "pkg.FooService"}, "all.txtar")
+	})
+}
+
+func TestNesting(t *testing.T) {
+	t.Parallel()
+	t.Run("message", func(t *testing.T) {
+		runDiffTest(t, "testdata/nesting", []string{"pkg.Foo"}, "message.txtar")
+	})
+	t.Run("recursenested", func(t *testing.T) {
+		runDiffTest(t, "testdata/nesting", []string{"pkg.Foo.NestedFoo.NestedNestedFoo"}, "recursenested.txtar")
+	})
+	t.Run("enum", func(t *testing.T) {
+		runDiffTest(t, "testdata/nesting", []string{"pkg.FooEnum"}, "enum.txtar")
+	})
+	t.Run("usingother", func(t *testing.T) {
+		runDiffTest(t, "testdata/nesting", []string{"pkg.Baz"}, "usingother.txtar")
+	})
+}
+
+func TestImportModifiers(t *testing.T) {
+	t.Parallel()
+	t.Run("regular_weak", func(t *testing.T) {
+		runDiffTest(t, "testdata/importmods", []string{"ImportRegular", "ImportWeak"}, "regular_weak.txtar")
+	})
+	t.Run("weak_public", func(t *testing.T) {
+		runDiffTest(t, "testdata/importmods", []string{"ImportWeak", "ImportPublic"}, "weak_public.txtar")
+	})
+	t.Run("regular_public", func(t *testing.T) {
+		runDiffTest(t, "testdata/importmods", []string{"ImportRegular", "ImportPublic"}, "regular_public.txtar")
+	})
+	t.Run("noimports", func(t *testing.T) {
+		runDiffTest(t, "testdata/importmods", []string{"NoImports"}, "noimports.txtar")
+	})
+}
+
+func TestExtensions(t *testing.T) {
+	t.Parallel()
+	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions.txtar")
+}
+
+func TestTypesFromMainModule(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
 	bucket, err := storagemem.NewReadBucket(map[string][]byte{
-		"a.proto": []byte(`syntax = "proto2";
-import "e.proto";
-import "google/protobuf/descriptor.proto";
-package pkg;
-option (extendthatthing).foo = "no!";
-message Baz {
-	message NestedBaz {
-		optional string in_nested_baz = 1 [(extend_that_field) = "foo"];
-	}
-	optional Baz baz = 1; 
-	optional NestedBaz nested_baz = 2; 
-	optional EnumContainer.EeNum fds = 3;
-	extensions 4 to 5; 
-}
-message EnumContainer {
-	enum EeNum {
-		option (extend_that_enum) = "unset";
-		EE_X = 0;
-		EE_Y = 1 [(extend_that_enum_value) = "okk"];
-		EE_Z = 2;
-	}
-	optional string dont_omit_me = 1;
-
-	message DontReferToThis {
-		optional int32 it_should_be_removed = 1;
-	}
-}
-extend Baz { optional string extended_field = 5; }
-`),
-		"b.proto":  []byte(`syntax = "proto3";import "a.proto"; package pkg; message Bar { Baz baz = 1; }`),
-		"c.proto":  []byte(`syntax = "proto3";import "dependency.proto"; import weak "b1.proto"; import public "b.proto"; package pkg; enum FooEnum{X=0;};message XYZ {Qux qux = 2;}; message Foo { Bar baz = 1; dependency.Dep d = 2; FooEnum foo_enum = 3; }`),
-		"b1.proto": []byte(`syntax = "proto3";import "b.proto"; package pkg; message Qux { Bar what = 1; }`),
-		"s.proto":  []byte(`syntax = "proto3";import "c.proto";import "a.proto"; package pkg; service Quux { rpc Do(Foo) returns (Baz); }`),
-		"e.proto": []byte(`syntax = "proto3";
-import "google/protobuf/descriptor.proto";
-
-message UnusedFileOption {
-	string foo = 1;
-}
-
-extend google.protobuf.FieldOptions {
-	optional string extend_that_field = 9999998;
-}
-extend google.protobuf.FileOptions {
-	optional string extend_that_file = 9999999;
-	optional UnusedFileOption extendthatthing = 999991;
-}
-extend google.protobuf.EnumOptions {
-	optional string extend_that_enum = 9999999;
-}
-extend google.protobuf.EnumValueOptions {
-	optional string extend_that_enum_value = 9999999;
-}
-// extend google.protobuf.FileOptions {
-// }
-`),
+		"a.proto": []byte(`syntax = "proto3";import "b.proto";package pkg;message Foo { dependency.Dep bar = 1;}`),
 	})
 	require.NoError(t, err)
 	moduleIdentity, err := bufmoduleref.NewModuleIdentity("buf.build", "repo", "main")
@@ -104,7 +105,7 @@ extend google.protobuf.EnumValueOptions {
 	module, err := bufmodule.NewModuleForBucket(ctx, bucket, bufmodule.ModuleWithModuleIdentity(moduleIdentity))
 	require.NoError(t, err)
 	bucketDep, err := storagemem.NewReadBucket(map[string][]byte{
-		"dependency.proto": []byte(`syntax = "proto3";package dependency; message Dep{}`),
+		"b.proto": []byte(`syntax = "proto3";package dependency; message Dep{}`),
 	})
 	require.NoError(t, err)
 	moduleIdentityDep, err := bufmoduleref.NewModuleIdentity("buf.build", "repo", "dep")
@@ -119,35 +120,37 @@ extend google.protobuf.EnumValueOptions {
 	require.NoError(t, err)
 	require.Empty(t, analysis)
 
-	// ImageFilteredByTypes changes the backing FileDescriptorSet, so we
-	// need to make a copy of the original one to compare to.
-	protoImage := bufimage.ImageToProtoImage(image)
-	protoImageCopy, ok := proto.Clone(protoImage).(*imagev1.Image)
-	require.True(t, ok)
-	originalImage, err := bufimage.NewImageForProto(protoImageCopy)
-	require.NoError(t, err)
-
 	_, err = ImageFilteredByTypes(image, []string{"dependency.Dep"})
 	require.Error(t, err)
-	filteredImage, err := ImageFilteredByTypes(image, []string{"pkg.Baz.NestedBaz"})
+}
+
+func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string) {
+	ctx := context.Background()
+	bucket, err := storageos.NewProvider().NewReadWriteBucket(testdataDir)
+	require.NoError(t, err)
+	module, err := bufmodule.NewModuleForBucket(
+		ctx,
+		storage.MapReadBucket(bucket, storage.MatchPathExt(".proto")),
+	)
+	require.NoError(t, err)
+	builder := bufimagebuild.NewBuilder(zaptest.NewLogger(t))
+	image, analysis, err := builder.Build(
+		ctx,
+		bufmodule.NewModuleFileSet(module, nil),
+		bufimagebuild.WithExcludeSourceCodeInfo(),
+	)
+	require.NoError(t, err)
+	require.Empty(t, analysis)
+
+	filteredImage, err := ImageFilteredByTypes(image, typenames)
 	require.NoError(t, err)
 	assert.NotNil(t, image)
 
-	// This isnt really supposed to be equal, but prints good enough
-	// debugging to see what gets filtered.
-	assert.NoError(t, ioutil.WriteFile("testdata/in.txtar", txtarForImage(t, originalImage), 0600))
-	assert.NoError(t, ioutil.WriteFile("testdata/out.txtar", txtarForImage(t, filteredImage), 0600))
-	t.Error("now diff")
-}
-
-func txtarForImage(t *testing.T, image bufimage.Image) []byte {
-	fds := bufimage.ImageToFileDescriptorSet(image)
-	reflectFDS, err := desc.CreateFileDescriptorsFromSet(fds)
+	reflectDescriptors, err := desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
 	if err != nil {
-		b, err := proto.Marshal(fds)
-		require.NoError(t, err)
-		err = ioutil.WriteFile("testdata/malformed_image.bin", b, 0600)
-		require.NoError(t, err)
+		b, err := proto.Marshal(bufimage.ImageToProtoImage(filteredImage))
+		assert.NoError(t, err)
+		assert.NoError(t, ioutil.WriteFile("testdata/malformed_descriptor.bin", b, 0600))
 	}
 	require.NoError(t, err)
 	archive := &txtar.Archive{}
@@ -155,7 +158,7 @@ func txtarForImage(t *testing.T, image bufimage.Image) []byte {
 		SortElements: true,
 		Compact:      true,
 	}
-	for fname, d := range reflectFDS {
+	for fname, d := range reflectDescriptors {
 		fileBuilder := &bytes.Buffer{}
 		require.NoError(t, printer.PrintProtoFile(d, fileBuilder), "expected no error while printing %q", fname)
 		archive.Files = append(
@@ -169,5 +172,19 @@ func txtarForImage(t *testing.T, image bufimage.Image) []byte {
 	sort.SliceStable(archive.Files, func(i, j int) bool {
 		return archive.Files[i].Name < archive.Files[j].Name
 	})
-	return txtar.Format(archive)
+	generated := txtar.Format(archive)
+
+	expectedReader, err := bucket.Get(ctx, expectedFile)
+	require.NoError(t, err)
+	expected, err := ioutil.ReadAll(expectedReader)
+	require.NoError(t, err)
+	assert.Equal(t, string(expected), string(generated))
+
+	if shouldUpdateExpectations {
+		writer, err := bucket.Put(ctx, expectedFile)
+		require.NoError(t, err)
+		_, err = writer.Write(generated)
+		require.NoError(t, err)
+		require.NoError(t, writer.Close())
+	}
 }

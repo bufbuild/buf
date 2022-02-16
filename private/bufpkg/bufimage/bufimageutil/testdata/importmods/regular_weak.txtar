@@ -1,0 +1,18 @@
+-- a.proto --
+syntax = "proto3";
+import "regular.proto";
+import weak "weak.proto";
+message ImportRegular {
+  Regular x = 1;
+}
+message ImportWeak {
+  Weak x = 1;
+}
+-- regular.proto --
+syntax = "proto3";
+message Regular {
+}
+-- weak.proto --
+syntax = "proto3";
+message Weak {
+}

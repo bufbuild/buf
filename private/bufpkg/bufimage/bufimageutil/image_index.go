@@ -25,24 +25,11 @@ func newImageIndexForImage(image bufimage.Image) (*imageIndex, error) {
 		if err != nil {
 			return nil, err
 		}
-		for _, field := range protosourceFile.Extensions() {
-			index.NameToDescriptor[field.FullName()] = field
-			extendeeName := strings.TrimPrefix(field.Extendee(), ".")
-			if isOptionsTypeName(extendeeName) {
-				if _, ok := index.NameToOptions[extendeeName]; !ok {
-					index.NameToOptions[extendeeName] = make(map[int32]protosource.Field)
-				}
-				index.NameToOptions[extendeeName][int32(field.Number())] = field
-			} else {
-				index.NameToExtensions[extendeeName] = append(index.NameToExtensions[extendeeName], field)
-			}
-		}
 		if err := protosource.ForEachMessage(func(message protosource.Message) error {
 			if storedDescriptor, ok := index.NameToDescriptor[message.FullName()]; ok && storedDescriptor != message {
 				return fmt.Errorf("duplicate for %q: %#v != %#v", message.FullName(), storedDescriptor, message)
 			}
 			index.NameToDescriptor[message.FullName()] = message
-
 			for _, field := range message.Extensions() {
 				index.NameToDescriptor[field.FullName()] = field
 				extendeeName := strings.TrimPrefix(field.Extendee(), ".")
@@ -73,6 +60,18 @@ func newImageIndexForImage(image bufimage.Image) (*imageIndex, error) {
 				return nil, fmt.Errorf("duplicate for %q: %#v != %#v", service.FullName(), storedDescriptor, service)
 			}
 			index.NameToDescriptor[service.FullName()] = service
+		}
+		for _, field := range protosourceFile.Extensions() {
+			index.NameToDescriptor[field.FullName()] = field
+			extendeeName := strings.TrimPrefix(field.Extendee(), ".")
+			if isOptionsTypeName(extendeeName) {
+				if _, ok := index.NameToOptions[extendeeName]; !ok {
+					index.NameToOptions[extendeeName] = make(map[int32]protosource.Field)
+				}
+				index.NameToOptions[extendeeName][int32(field.Number())] = field
+			} else {
+				index.NameToExtensions[extendeeName] = append(index.NameToExtensions[extendeeName], field)
+			}
 		}
 	}
 	return index, nil

@@ -1,0 +1,27 @@
+-- a.proto --
+syntax = "proto2";
+package pkg;
+message Foo {
+  optional string a = 1;
+  optional Foo b = 2;
+  extensions 10 to max;
+}
+extend Foo {
+  optional string extended = 11;
+}
+-- b.proto --
+syntax = "proto2";
+package other;
+import "a.proto";
+message Embedded {
+  optional string foo = 1;
+  extend pkg.Foo {
+    optional Embedded from_other_file = 12;
+  }
+}
+message Referenced {
+  optional string x = 1;
+}
+extend pkg.Foo {
+  optional Referenced from_other_file = 13;
+}

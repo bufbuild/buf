@@ -1,0 +1,52 @@
+syntax = "proto3";
+import "google/protobuf/descriptor.proto";
+
+message UnusedOption {
+	string foo = 1;
+}
+
+message UsedOption {
+	string foo = 1;
+}
+
+extend google.protobuf.FileOptions {
+	optional UsedOption   file_foo = 50000;
+	optional UnusedOption file_bar = 50001;
+	optional string       file_baz = 50002;
+}
+
+extend google.protobuf.MessageOptions {
+	optional UsedOption   message_foo = 50000;
+	optional UnusedOption message_bar = 50001;
+	optional string       message_baz = 50002;
+}
+extend google.protobuf.FieldOptions {
+	optional UsedOption   field_foo = 50000;
+	optional UnusedOption field_bar = 50001;
+	optional string       field_baz = 50002;
+}
+extend google.protobuf.OneofOptions {
+	optional UsedOption   oneof_foo = 50000;
+	optional UnusedOption oneof_bar = 50001;
+	optional string       oneof_baz = 50002;
+}
+extend google.protobuf.EnumOptions {
+	optional UsedOption   enum_foo = 50000;
+	optional UnusedOption enum_bar = 50001;
+	optional string       enum_baz = 50002;
+}
+extend google.protobuf.EnumValueOptions {
+	optional UsedOption   enum_value_foo = 50000;
+	optional UnusedOption enum_value_bar = 50001;
+	optional string       enum_value_baz = 50002;
+}
+extend google.protobuf.ServiceOptions {
+	optional UsedOption   service_foo = 50000;
+	optional UnusedOption service_bar = 50001;
+	optional string       service_baz = 50002;
+}
+extend google.protobuf.MethodOptions {
+	optional UsedOption   method_foo = 50000;
+	optional UnusedOption method_bar = 50001;
+	optional string       method_baz = 50002;
+}

@@ -1,0 +1,5 @@
+-- a.proto --
+syntax = "proto3";
+message NoImports {
+  string x = 1;
+}

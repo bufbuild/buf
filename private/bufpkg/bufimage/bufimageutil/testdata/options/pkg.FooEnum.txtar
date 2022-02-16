@@ -1,46 +1,14 @@
 -- a.proto --
 syntax = "proto2";
 package pkg;
-import "e.proto";
-option (extendthatthing) = { foo:"no!" };
-message Baz {
-  optional Baz baz = 1;
-  optional NestedBaz nested_baz = 2;
-  optional EnumContainer.EeNum fds = 3;
-  message NestedBaz {
-    optional string in_nested_baz = 1 [(extend_that_field) = "foo"];
-  }
-  extensions 4 to 5;
-}
-message EnumContainer {
-  optional string dont_omit_me = 1;
-  enum EeNum {
-    option (extend_that_enum) = "unset";
-    EE_X = 0;
-    EE_Y = 1 [(extend_that_enum_value) = "okk"];
-    EE_Z = 2;
-  }
-}
-extend Baz {
-  optional string extended_field = 5;
-}
--- e.proto --
-syntax = "proto3";
-import "google/protobuf/descriptor.proto";
-message UnusedFileOption {
-  string foo = 1;
-}
-extend google.protobuf.EnumOptions {
-  optional string extend_that_enum = 9999999;
-}
-extend google.protobuf.EnumValueOptions {
-  optional string extend_that_enum_value = 9999999;
-}
-extend google.protobuf.FieldOptions {
-  optional string extend_that_field = 9999998;
-}
-extend google.protobuf.FileOptions {
-  optional UnusedFileOption extendthatthing = 999991;
+import "options.proto";
+option (file_baz) = "str";
+option (file_foo) = { foo:"str" };
+enum FooEnum {
+  option (enum_baz) = "str";
+  option (enum_foo) = { foo:"str" };
+  FOO_ENUM_X = 0;
+  FOO_ENUM_Y = 1 [(enum_value_baz) = "str", (enum_value_foo) = { foo:"str" }];
 }
 -- google/protobuf/descriptor.proto --
 syntax = "proto2";
@@ -63,27 +31,6 @@ message EnumValueOptions {
   optional bool deprecated = 1 [default = false];
   repeated UninterpretedOption uninterpreted_option = 999;
   extensions 1000 to max;
-}
-message FieldOptions {
-  optional CType ctype = 1 [default = STRING];
-  optional bool packed = 2;
-  optional bool deprecated = 3 [default = false];
-  optional bool lazy = 5 [default = false];
-  optional JSType jstype = 6 [default = JS_NORMAL];
-  optional bool weak = 10 [default = false];
-  repeated UninterpretedOption uninterpreted_option = 999;
-  enum CType {
-    STRING = 0;
-    CORD = 1;
-    STRING_PIECE = 2;
-  }
-  enum JSType {
-    JS_NORMAL = 0;
-    JS_STRING = 1;
-    JS_NUMBER = 2;
-  }
-  extensions 1000 to max;
-  reserved 4;
 }
 message FileOptions {
   optional string java_package = 1;
@@ -127,4 +74,22 @@ message UninterpretedOption {
     required string name_part = 1;
     required bool is_extension = 2;
   }
+}
+-- options.proto --
+syntax = "proto3";
+import "google/protobuf/descriptor.proto";
+message UsedOption {
+  string foo = 1;
+}
+extend google.protobuf.EnumOptions {
+  optional UsedOption enum_foo = 50000;
+  optional string enum_baz = 50002;
+}
+extend google.protobuf.EnumValueOptions {
+  optional UsedOption enum_value_foo = 50000;
+  optional string enum_value_baz = 50002;
+}
+extend google.protobuf.FileOptions {
+  optional UsedOption file_foo = 50000;
+  optional string file_baz = 50002;
 }
