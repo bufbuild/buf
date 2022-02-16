@@ -3,16 +3,19 @@
 # Must be set
 $(call _assert_var,MAKEGO)
 $(call _conditional_include,$(MAKEGO)/base.mk)
+$(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-BUFSTYLE_VERSION ?= v1.0.0
+# https://github.com/bufbuild/buf/releases
+BUFSTYLE_VERSION ?= v1.0.0-rc12
 
-# Unlike 'buf', we always install bufstyle from source since
-# we don't release it as an independent binary.
 BUFSTYLE := $(CACHE_VERSIONS)/bufstyle/$(BUFSTYLE_VERSION)
 $(BUFSTYLE):
-	GOBIN=$(CACHE_BIN) go install ./cmd/bufstyle
+	@rm -f $(CACHE_BIN)/bufstyle
+	GOBIN=$(CACHE_BIN) go install github.com/bufbuild/buf/private/bufpkg/bufstyle/cmd/bufstyle@$(BUFSTYLE_VERSION)
+	@rm -rf $(dir $(BUFSTYLE))
+	@mkdir -p $(dir $(BUFSTYLE))
+	@touch $(BUFSTYLE)
 
-# Use this instead of "buf" when using buf.
-BUFSTYLE_BIN := $(CACHE_BIN)/bufstyle
+dockerdeps:: $(BUFSTYLE)

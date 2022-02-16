@@ -3,10 +3,8 @@
 # Must be set
 $(call _assert_var,MAKEGO)
 $(call _conditional_include,$(MAKEGO)/base.mk)
-$(call _conditional_include,$(MAKEGO)/dep_bufstyle.mk)
 $(call _conditional_include,$(MAKEGO)/dep_golangci_lint.mk)
 # Must be set
-$(call _assert_var,BUFSTYLE_BIN)
 $(call _assert_var,GO_MODULE)
 $(call _assert_var,GOLANGCI_LINT)
 $(call _assert_var,TMP)
@@ -93,13 +91,6 @@ checknonolint:
 		exit 1; \
 	fi
 
-# We explicitly include each path (instead of only excluding ./private/buf/gen/...) because it's painful
-# to preserve the output we want in a Makefile (i.e. capturing the result a variable, preserving
-# newlines, etc).
-.PHONY: bufstylelint
-bufstylelint: $(BUFSTYLE)
-	$(BUFSTYLE_BIN) ./private/buf/... ./private/bufpkg/... ./private/bufstyle/... ./private/pkg/...
-
 .PHONY: golangcilint
 golangcilint: $(GOLANGCI_LINT)
 	golangci-lint run --timeout $(GOLANGCILINTTIMEOUT)
@@ -113,7 +104,7 @@ postlonglint::
 .PHONY: shortlint
 shortlint: ## Run all linters but exclude long-running linters.
 	@$(MAKE) checknodiffgenerated
-	@$(MAKE) checknonolint golangcilint bufstylelint postlint
+	@$(MAKE) checknonolint golangcilint postlint
 
 .PHONY: lint
 lint: ## Run all linters.

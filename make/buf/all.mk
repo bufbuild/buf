@@ -9,6 +9,7 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc \
+	private/bufpkg/bufstyle/cmd/bufstyle \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
@@ -49,6 +50,16 @@ include make/go/docker.mk
 include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
+
+# We explicitly include each path (instead of only excluding ./private/buf/gen/...)
+# because it's painful to preserve the output we want in a Makefile (i.e. capturing
+# the result a variable, preserving newlines, etc).
+
+.PHONY: bufstyle
+bufstyle: installbufstyle
+	bufstyle ./private/buf/... ./private/bufpkg/... ./private/bufstyle/... ./private/pkg/...
+
+postlint:: bufstyle
 
 .PHONY: bandeps
 bandeps: installbandeps
