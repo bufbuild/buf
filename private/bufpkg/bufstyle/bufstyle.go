@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufstyle defines a golangi-lint plugin that enforces
-// Buf's Go code standards.
+// Package bufstyle defines lint analyzers that help enforce Buf's Go code standards.
 package bufstyle
 
 import (
