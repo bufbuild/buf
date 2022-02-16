@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package packagefilename defines a go/analysis analyzer that verifies every
-// Go package has a file with the same name as the package.
-package packagefilename
+// Package bufstyle defines a golangi-lint plugin that enforces
+// Buf's Go code standards.
+package bufstyle
 
 import (
 	"go/token"
@@ -24,20 +24,21 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
-// name identifies this analzyer's diagnostic reports.
-const name = "packagefilename"
-
-// NewAnalyzer returns a new analyzer.
-func NewAnalyzer() *analysis.Analyzer {
-	return &analysis.Analyzer{
-		Name: name,
-		Doc:  "Verifies that every package has a file with the same name as the package.",
-		Run:  run,
+var (
+	// Analyzers are all the analyzers implemented to help enforce Buf's style guide.
+	Analyzers = []*analysis.Analyzer{
+		packagefilenameAnalyzer,
 	}
-}
 
-// run is run once per package.
-func run(pass *analysis.Pass) (interface{}, error) {
+	packagefilenameAnalyzer = &analysis.Analyzer{
+		Name: "packagefilename",
+		Doc:  "Verifies that every package has a file with the same name as the package.",
+		Run:  packagefilenameRun,
+	}
+)
+
+// packagefilenameRun is run once per package.
+func packagefilenameRun(pass *analysis.Pass) (interface{}, error) {
 	packageName := pass.Pkg.Name()
 	if strings.HasSuffix(packageName, "_test") {
 		// Ignore test packages.

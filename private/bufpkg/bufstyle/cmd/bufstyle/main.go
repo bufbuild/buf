@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generated. DO NOT EDIT.
+package main
 
-package packagefilename
+import (
+	"github.com/bufbuild/buf/private/bufpkg/bufstyle"
+	"golang.org/x/tools/go/analysis/multichecker"
+)
 
-import _ "github.com/bufbuild/buf/private/usage"
+func main() {
+	multichecker.Main(bufstyle.Analyzers...)
+}
