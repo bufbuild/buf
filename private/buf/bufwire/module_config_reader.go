@@ -624,7 +624,7 @@ func (m *moduleConfigReader) getModuleConfig(
 				// This also may be nil.
 				//
 				// This is particularly useful for the GoPackage modifier used in
-				// Managed Mode, which supports module-specific overrides.
+				// managed mode, which supports module-specific overrides.
 				bufmodulebuild.WithModuleIdentity(moduleConfig.ModuleIdentity),
 			}
 			bucketRelPaths := make([]string, len(externalDirOrFilePaths))
