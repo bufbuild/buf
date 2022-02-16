@@ -5,6 +5,7 @@ import "options.proto";
 option (UsedOption.file_baz) = "str";
 option (UsedOption.file_foo) = { foo:"str" };
 enum FooEnum {
+  option deprecated = true;
   option (enum_baz) = "str";
   option (enum_foo) = { foo:"str" };
   FOO_ENUM_X = 0;

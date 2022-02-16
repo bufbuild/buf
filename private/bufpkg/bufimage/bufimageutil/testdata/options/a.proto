@@ -11,7 +11,8 @@ message Foo {
 
 	optional string foo = 1 [
 		(field_foo).foo = "str",
-		(field_baz) = "str"
+		(field_baz) = "str",
+		jstype = JS_STRING
 	];
 
 	oneof testOneof {
@@ -28,6 +29,7 @@ message Foo {
 enum FooEnum {
 	option (enum_foo).foo = "str";
 	option (enum_baz) = "str";
+	option deprecated = true;
 	
 	FOO_ENUM_X = 0;
 	FOO_ENUM_Y = 1 [
