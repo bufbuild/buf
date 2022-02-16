@@ -737,7 +737,7 @@ func NumberToMessageField(message Message) (map[int]Field, error) {
 		numberToMessageField[number] = messageField
 	}
 	for _, messageField := range message.Extensions() {
-		if messageField.Extendee() != "."+message.FullName() {
+		if messageField.Extendee() != message.FullName() {
 			// TODO: ideally we want this field to be returned when
 			// the Extendee message is passed into some function,
 			// need to investigate what index is necessary for that.

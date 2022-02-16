@@ -16,6 +16,7 @@ package protosource
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -539,8 +540,8 @@ func (f *file) populateMessage(
 			int(fieldDescriptorProto.GetNumber()),
 			label,
 			typ,
-			fieldDescriptorProto.GetTypeName(),
-			fieldDescriptorProto.GetExtendee(),
+			strings.TrimPrefix(fieldDescriptorProto.GetTypeName(), "."),
+			strings.TrimPrefix(fieldDescriptorProto.GetExtendee(), "."),
 			oneof,
 			fieldDescriptorProto.GetProto3Optional(),
 			fieldDescriptorProto.GetJsonName(),
@@ -612,8 +613,8 @@ func (f *file) populateMessage(
 			int(fieldDescriptorProto.GetNumber()),
 			label,
 			typ,
-			fieldDescriptorProto.GetTypeName(),
-			fieldDescriptorProto.GetExtendee(),
+			strings.TrimPrefix(fieldDescriptorProto.GetTypeName(), "."),
+			strings.TrimPrefix(fieldDescriptorProto.GetExtendee(), "."),
 			oneof,
 			fieldDescriptorProto.GetProto3Optional(),
 			fieldDescriptorProto.GetJsonName(),
@@ -753,8 +754,8 @@ func (f *file) populateService(
 				methodDescriptorProto.GetOptions(),
 			),
 			service,
-			methodDescriptorProto.GetInputType(),
-			methodDescriptorProto.GetOutputType(),
+			strings.TrimPrefix(methodDescriptorProto.GetInputType(), "."),
+			strings.TrimPrefix(methodDescriptorProto.GetOutputType(), "."),
 			methodDescriptorProto.GetClientStreaming(),
 			methodDescriptorProto.GetServerStreaming(),
 			getMethodInputTypePath(serviceIndex, methodIndex),
@@ -815,8 +816,8 @@ func (f *file) populateExtension(
 		int(fieldDescriptorProto.GetNumber()),
 		label,
 		typ,
-		fieldDescriptorProto.GetTypeName(),
-		fieldDescriptorProto.GetExtendee(),
+		strings.TrimPrefix(fieldDescriptorProto.GetTypeName(), "."),
+		strings.TrimPrefix(fieldDescriptorProto.GetExtendee(), "."),
 		nil,
 		fieldDescriptorProto.GetProto3Optional(),
 		fieldDescriptorProto.GetJsonName(),

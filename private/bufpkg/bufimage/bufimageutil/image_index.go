@@ -2,7 +2,6 @@ package bufimageutil
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/protosource"
@@ -32,7 +31,7 @@ func newImageIndexForImage(image bufimage.Image) (*imageIndex, error) {
 			index.NameToDescriptor[message.FullName()] = message
 			for _, field := range message.Extensions() {
 				index.NameToDescriptor[field.FullName()] = field
-				extendeeName := strings.TrimPrefix(field.Extendee(), ".")
+				extendeeName := field.Extendee()
 				if isOptionsTypeName(extendeeName) {
 					if _, ok := index.NameToOptions[extendeeName]; !ok {
 						index.NameToOptions[extendeeName] = make(map[int32]protosource.Field)
@@ -63,7 +62,7 @@ func newImageIndexForImage(image bufimage.Image) (*imageIndex, error) {
 		}
 		for _, field := range protosourceFile.Extensions() {
 			index.NameToDescriptor[field.FullName()] = field
-			extendeeName := strings.TrimPrefix(field.Extendee(), ".")
+			extendeeName := field.Extendee()
 			if isOptionsTypeName(extendeeName) {
 				if _, ok := index.NameToOptions[extendeeName]; !ok {
 					index.NameToOptions[extendeeName] = make(map[int32]protosource.Field)

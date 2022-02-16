@@ -17,7 +17,6 @@ package bufimageutil
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/protosource"
@@ -274,7 +273,7 @@ func descriptorTransitiveClosure(namedDescriptor protosource.NamedDescriptor, im
 			case protosource.FieldDescriptorProtoTypeEnum,
 				protosource.FieldDescriptorProtoTypeMessage,
 				protosource.FieldDescriptorProtoTypeGroup:
-				inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(field.TypeName(), ".")]
+				inputDescriptor, ok := imageIndex.NameToDescriptor[field.TypeName()]
 				if !ok {
 					return nil, fmt.Errorf("missing %q", field.TypeName())
 				}
@@ -373,7 +372,7 @@ func descriptorTransitiveClosure(namedDescriptor protosource.NamedDescriptor, im
 		transitiveDependencies = append(transitiveDependencies, recursedOptionDeps...)
 	case protosource.Service:
 		for _, method := range typedDesctriptor.Methods() {
-			inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(method.InputTypeName(), ".")]
+			inputDescriptor, ok := imageIndex.NameToDescriptor[method.InputTypeName()]
 			if !ok {
 				return nil, fmt.Errorf("missing %q", method.InputTypeName())
 			}
@@ -384,7 +383,7 @@ func descriptorTransitiveClosure(namedDescriptor protosource.NamedDescriptor, im
 			transitiveDependencies = append(transitiveDependencies, recursiveDescriptorsIn...)
 			directDependencies = append(directDependencies, inputDescriptor)
 
-			outputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(method.OutputTypeName(), ".")]
+			outputDescriptor, ok := imageIndex.NameToDescriptor[method.OutputTypeName()]
 			if !ok {
 				return nil, fmt.Errorf("missing %q", method.OutputTypeName())
 			}
@@ -417,7 +416,7 @@ func descriptorTransitiveClosure(namedDescriptor protosource.NamedDescriptor, im
 		if typedDesctriptor.Extendee() == "" {
 			return nil, fmt.Errorf("expected extendee for field %q to not be empty", typedDesctriptor.FullName())
 		}
-		extendeeDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(typedDesctriptor.Extendee(), ".")]
+		extendeeDescriptor, ok := imageIndex.NameToDescriptor[typedDesctriptor.Extendee()]
 		if !ok {
 			return nil, fmt.Errorf("missing %q", typedDesctriptor.Extendee())
 		}
@@ -432,7 +431,7 @@ func descriptorTransitiveClosure(namedDescriptor protosource.NamedDescriptor, im
 		case protosource.FieldDescriptorProtoTypeEnum,
 			protosource.FieldDescriptorProtoTypeMessage,
 			protosource.FieldDescriptorProtoTypeGroup:
-			inputDescriptor, ok := imageIndex.NameToDescriptor[strings.TrimPrefix(typedDesctriptor.TypeName(), ".")]
+			inputDescriptor, ok := imageIndex.NameToDescriptor[typedDesctriptor.TypeName()]
 			if !ok {
 				return nil, fmt.Errorf("missing %q", typedDesctriptor.TypeName())
 			}
