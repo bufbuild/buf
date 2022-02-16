@@ -202,7 +202,7 @@ func BindPaths(
 		pathsFlagName,
 		nil,
 		`Limit to specific files or directories, for example "proto/a/a.proto" or "proto/a".
-If specified multiple times, the union will be taken.`,
+If specified multiple times, the union is taken.`,
 	)
 }
 
@@ -233,7 +233,7 @@ func BindExcludePaths(
 		excludePathsFlagName,
 		nil,
 		`Exclude specific files or directories, for example "proto/a/a.proto" or "proto/a".
-If specified multiple times, the union will be taken.`,
+If specified multiple times, the union is taken.`,
 	)
 }
 
@@ -665,7 +665,7 @@ func promptUser(container app.Container, prompt string, isPassword bool) (string
 			// have another attempt.
 			if _, err := fmt.Fprintln(
 				container.Stdout(),
-				"An answer was not provided; please try again.",
+				"No answer was provided. Please try again.",
 			); err != nil {
 				return "", NewInternalError(err)
 			}
@@ -800,7 +800,7 @@ func NewImageForSource(
 }
 
 // ParseSourceAndType returns the moduleReference and typeName from the source and type provided by the user.
-// When source is not provided, we assume the type is a fully-qualified path to the type and try to parse it.
+// When source is not provided, we assume the type is a fully qualified path to the type and try to parse it.
 // Otherwise, if both source and type are provided, the type must be a valid Protobuf identifier (e.g. weather.v1.Units).
 func ParseSourceAndType(
 	ctx context.Context,
@@ -818,7 +818,7 @@ func ParseSourceAndType(
 	}
 	moduleReference, moduleTypeName, err := parseFullyQualifiedPath(typeName)
 	if err != nil {
-		return "", "", appcmd.NewInvalidArgumentErrorf("if source is not provided, the type need to be a fully-qualified path that includes the module reference, failed to parse the type: %v", err)
+		return "", "", appcmd.NewInvalidArgumentErrorf("if a source isn't provided, the type needs to be a fully qualified path that includes the module reference; failed to parse the type: %v", err)
 	}
 	return moduleReference, moduleTypeName, nil
 }
@@ -906,10 +906,10 @@ func checkExistingCacheDirs(baseCacheDirPath string, dirPaths ...string) error {
 			return err
 		}
 		if !fileInfo.IsDir() {
-			return fmt.Errorf("Expected %q to be a directory. This is used for buf's cache. The base cache directory %q can be overridden by setting the $BUF_CACHE_DIR environment variable.", dirPath, baseCacheDirPath)
+			return fmt.Errorf("Expected %q to be a directory. This is used for buf's cache. You can override the base cache directory %q by setting the $BUF_CACHE_DIR environment variable.", dirPath, baseCacheDirPath)
 		}
 		if fileInfo.Mode().Perm()&0700 != 0700 {
-			return fmt.Errorf("Expected %q to be a writeable directory. This is used for buf's cache. The base cache directory %q can be overridden by setting the $BUF_CACHE_DIR environment variable.", dirPath, baseCacheDirPath)
+			return fmt.Errorf("Expected %q to be a writeable directory. This is used for buf's cache. You can override the base cache directory %q by setting the $BUF_CACHE_DIR environment variable.", dirPath, baseCacheDirPath)
 		}
 	}
 	return nil
