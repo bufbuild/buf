@@ -20,7 +20,7 @@ import (
 	"io"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/buffetch"
+	"github.com/bufbuild/buf/private/buf/bufencoding"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
@@ -142,14 +142,20 @@ func run(
 	if err != nil {
 		return err
 	}
-	var outputEncoding buffetch.MessageEncoding
-	switch encoding {
-	case buffetch.MessageEncodingBin:
-		outputEncoding = buffetch.MessageEncodingJSON
-	case buffetch.MessageEncodingJSON:
-		outputEncoding = buffetch.MessageEncodingBin
-	default:
-		return fmt.Errorf("unknown message encoding type for input")
+	messageRef, err := bufencoding.NewMessageEncodingRef(ctx, flags.Output)
+	if err != nil {
+		return fmt.Errorf("--%s: %v", outputFlagName, err)
+	}
+	outputEncoding := messageRef.MessageEncoding()
+	if outputEncoding == 0 {
+		switch encoding {
+		case bufencoding.MessageEncodingBin:
+			outputEncoding = bufencoding.MessageEncodingJSON
+		case bufencoding.MessageEncodingJSON:
+			outputEncoding = bufencoding.MessageEncodingBin
+		default:
+			return fmt.Errorf("unknown message encoding type of input")
+		}
 	}
 	return bufcli.NewWireProtoEncodingWriter(
 		container.Logger(),
@@ -159,7 +165,7 @@ func run(
 		image,
 		message,
 		outputEncoding,
-		flags.Output,
+		messageRef.Path(),
 	)
 }
 
@@ -169,7 +175,7 @@ func unmarshalMessage(
 	image bufimage.Image,
 	typeName string,
 	messageBytes []byte,
-) (proto.Message, buffetch.MessageEncoding, error) {
+) (proto.Message, bufencoding.MessageEncoding, error) {
 	resolver, err := protoencoding.NewResolver(
 		bufimage.ImageToFileDescriptors(
 			image,
@@ -183,10 +189,10 @@ func unmarshalMessage(
 		return nil, 0, err
 	}
 	if err := protoencoding.NewWireUnmarshaler(resolver).Unmarshal(messageBytes, message); err == nil {
-		return message, buffetch.MessageEncodingBin, nil
+		return message, bufencoding.MessageEncodingBin, nil
 	}
 	if err := protoencoding.NewJSONUnmarshaler(resolver).Unmarshal(messageBytes, message); err != nil {
 		return nil, 0, fmt.Errorf("unable to unmarshal the input: %v", err)
 	}
-	return message, buffetch.MessageEncodingJSON, nil
+	return message, bufencoding.MessageEncodingJSON, nil
 }

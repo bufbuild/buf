@@ -34,10 +34,6 @@ const (
 	ImageEncodingBin ImageEncoding = iota + 1
 	// ImageEncodingJSON is the JSON image encoding.
 	ImageEncodingJSON
-	// MessageEncodingBin is the binary image encoding.
-	MessageEncodingBin MessageEncoding = iota + 1
-	// MessageEncodingJSON is the JSON image encoding.
-	MessageEncodingJSON
 )
 
 var (
@@ -67,9 +63,6 @@ var (
 
 // ImageEncoding is the encoding of the image.
 type ImageEncoding int
-
-// MessageEncoding is the encoding of the message
-type MessageEncoding int
 
 // PathResolver resolves external paths to paths.
 type PathResolver interface {

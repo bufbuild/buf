@@ -20,6 +20,7 @@ package bufwire
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/buf/bufencoding"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -215,7 +216,7 @@ type ProtoEncodingWriter interface {
 		container app.EnvStdoutContainer,
 		image bufimage.Image,
 		message proto.Message,
-		encoding buffetch.MessageEncoding,
+		encoding bufencoding.MessageEncoding,
 		path string,
 	) error
 }
