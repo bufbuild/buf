@@ -31,7 +31,12 @@ type incomingHeadersContextKey struct{}
 // If the key is unset, this returns the empty string.
 func GetIncomingHeader(ctx context.Context, key string) string {
 	if contextValue := ctx.Value(incomingHeadersContextKey{}); contextValue != nil {
-		return contextValue.(map[string]string)[normalizeHeaderKey(key)]
+		value, ok := contextValue.(map[string]string)[normalizeHeaderKey(key)]
+		if !ok {
+			// Unreachable
+			return ""
+		}
+		return value
 	}
 	return ""
 }
@@ -45,7 +50,12 @@ func GetIncomingHeader(ctx context.Context, key string) string {
 // If the key is unset, this returns the empty string.
 func GetOutgoingHeader(ctx context.Context, key string) string {
 	if contextValue := ctx.Value(outgoingHeadersContextKey{}); contextValue != nil {
-		return contextValue.(map[string]string)[normalizeHeaderKey(key)]
+		value, ok := contextValue.(map[string]string)[normalizeHeaderKey(key)]
+		if !ok {
+			// Unreachable
+			return ""
+		}
+		return value
 	}
 	return ""
 }
