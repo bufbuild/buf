@@ -50,7 +50,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <input>",
-		Short: "Build all Protobuf files from the specified input and output an Image.",
+		Short: "Build all Protobuf files from the specified input and output a Buf image.",
 		Long:  bufcli.GetInputLong(`the source or module to build or image to convert`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
@@ -104,7 +104,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		outputFlagShortName,
 		app.DevNullFilePath,
 		fmt.Sprintf(
-			`The output location for the built Image. Must be one of format %s.`,
+			`The output location for the built image. Must be one of format %s.`,
 			buffetch.ImageFormatsString,
 		),
 	)

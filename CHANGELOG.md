@@ -555,8 +555,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 ## [v0.18.0] - 2020-06-22
 
-- Handle custom options when marshalling JSON Images (#87).
-- Add `buf experimental image convert` command to convert to/from binary/JSON Images (#87).
+- Handle custom options when marshalling JSON images (#87).
+- Add `buf experimental image convert` command to convert to/from binary/JSON images (#87).
 
 ## [v0.17.0] - 2020-06-17
 
@@ -574,7 +574,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 ## [v0.14.0] - 2020-05-30
 
-- Add `--file` flag to `buf image build` to only add specific files and their imports to outputted Images. To exclude imports, use `--exclude-imports`.
+- Add `--file` flag to `buf image build` to only add specific files and their imports to outputted images. To exclude imports, use `--exclude-imports`.
 - Add `zip` as a source format. Buf can now read `zip` files, either locally or remotely, for image building, linting, and breaking change detection.
 - Add `zstd` as a compression format. Buf can now read and write Image files that are compressed using zstandard, and can read tarballs compressed with zstandard.
 - Deprecated: The formats `bingz, jsongz, targz` are now deprecated. Instead, use `format=bin,compression=gzip`, `format=json,compression=gzip`, or `format=tar,compression=gzip`. The formats `bingz, jsongz, targz` will continue to work forever and will not be broken, but will print a deprecation warning and we recommend updating. Automatic file extension parsing continues to work the same as well.
