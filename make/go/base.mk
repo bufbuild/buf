@@ -120,7 +120,7 @@ envrestore:
 	cp -R "$(ENV_BACKUP_DIR)" "$(ENV_DIR)"
 
 # All variables set in env.sh by this target need to also be exported
-# above in the Runtime ALL section.
+# above in the Runtime ALL section, except for MAKEFLAGS.
 .PHONY: direnv
 direnv:
 	@mkdir -p $(CACHE_ENV)
@@ -134,6 +134,7 @@ direnv:
 	@echo 'export GOMODCACHE="$(GOPATH)/pkg/mod"' >> $(CACHE_ENV)/env.sh
 	@echo 'export PATH="$(EXTRAPATH):$${PATH}"' >> $(CACHE_ENV)/env.sh
 	@echo 'export DOCKER_BUILDKIT=1' >> $(CACHE_ENV)/env.sh
+	@echo 'export MAKEFLAGS="-j $$(exec 2>/dev/null; nproc || getconf _NPROCESSORS_ONLN || sysctl -n hw.ncpu || echo 1)"' >> $(CACHE_ENV)/env.sh
 ifneq ($(DOCKER_DEFAULT_PLATFORM),)
 	@echo 'export DOCKER_DEFAULT_PLATFORM="$(DOCKER_DEFAULT_PLATFORM)"' >> $(CACHE_ENV)/env.sh
 endif
