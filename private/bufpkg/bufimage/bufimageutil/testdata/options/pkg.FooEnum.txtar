@@ -2,8 +2,8 @@
 syntax = "proto2";
 package pkg;
 import "options.proto";
-option (file_baz) = "str";
-option (file_foo) = { foo:"str" };
+option (UsedOption.file_baz) = "str";
+option (UsedOption.file_foo) = { foo:"str" };
 enum FooEnum {
   option (enum_baz) = "str";
   option (enum_foo) = { foo:"str" };
@@ -80,6 +80,10 @@ syntax = "proto3";
 import "google/protobuf/descriptor.proto";
 message UsedOption {
   string foo = 1;
+  extend google.protobuf.FileOptions {
+    optional UsedOption file_foo = 50000;
+    optional string file_baz = 50002;
+  }
 }
 extend google.protobuf.EnumOptions {
   optional UsedOption enum_foo = 50000;
@@ -88,8 +92,4 @@ extend google.protobuf.EnumOptions {
 extend google.protobuf.EnumValueOptions {
   optional UsedOption enum_value_foo = 50000;
   optional string enum_value_baz = 50002;
-}
-extend google.protobuf.FileOptions {
-  optional UsedOption file_foo = 50000;
-  optional string file_baz = 50002;
 }

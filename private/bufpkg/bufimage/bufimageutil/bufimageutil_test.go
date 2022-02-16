@@ -34,7 +34,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 	"golang.org/x/tools/txtar"
-	"google.golang.org/protobuf/proto"
 )
 
 const shouldUpdateExpectations = false
@@ -147,11 +146,6 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	assert.NotNil(t, image)
 
 	reflectDescriptors, err := desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
-	if err != nil {
-		b, err := proto.Marshal(bufimage.ImageToProtoImage(filteredImage))
-		assert.NoError(t, err)
-		assert.NoError(t, ioutil.WriteFile("testdata/malformed_descriptor.bin", b, 0600))
-	}
 	require.NoError(t, err)
 	archive := &txtar.Archive{}
 	printer := protoprint.Printer{

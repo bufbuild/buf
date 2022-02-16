@@ -2,8 +2,8 @@ syntax = "proto2";
 package pkg;
 import "options.proto";
 
-option (file_foo).foo = "str";
-option (file_baz) = "str";
+option (UsedOption.file_foo).foo = "str";
+option (UsedOption.file_baz) = "str";
 
 message Foo {
 	option (message_foo).foo = "str";

@@ -160,10 +160,6 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 		}
 		imageFileDescriptor.WeakDependency = imageFileDescriptor.WeakDependency[:i]
 
-		// all the below is a mess, and doesn't work for nested
-		// messages/enums as intended, going to make this nice once
-		// validated that rewriting the descriptor proto is the way to
-		// go.
 		prefix := ""
 		if imageFileDescriptor.Package != nil {
 			prefix = imageFileDescriptor.GetPackage() + "."
@@ -178,7 +174,11 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 			return nil, err
 		}
 		imageFileDescriptor.EnumType = trimEnums
-
+		trimExtensions, err := trimExtensionDescriptors(imageFileDescriptor.Extension, prefix, typesToKeep)
+		if err != nil {
+			return nil, err
+		}
+		imageFileDescriptor.Extension = trimExtensions
 		i = 0
 		for _, serviceDescriptor := range imageFileDescriptor.Service {
 			name := prefix + serviceDescriptor.GetName()
@@ -188,16 +188,6 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 			}
 		}
 		imageFileDescriptor.Service = imageFileDescriptor.Service[:i]
-
-		i = 0
-		for _, extensionDescriptor := range imageFileDescriptor.Extension {
-			name := prefix + extensionDescriptor.GetName()
-			if _, ok := typesToKeep[name]; ok {
-				imageFileDescriptor.Extension[i] = extensionDescriptor
-				i++
-			}
-		}
-		imageFileDescriptor.Extension = imageFileDescriptor.Extension[:i]
 
 		// With some from/to mappings, perhaps even sourcecodeinfo isn't too bad.
 		imageFileDescriptor.SourceCodeInfo = nil
@@ -222,6 +212,11 @@ func trimMessageDescriptor(in []*descriptorpb.DescriptorProto, prefix string, to
 				return nil, err
 			}
 			messageDescriptor.EnumType = trimEnums
+			trimExtensions, err := trimExtensionDescriptors(messageDescriptor.Extension, name+".", toKeep)
+			if err != nil {
+				return nil, err
+			}
+			messageDescriptor.Extension = trimExtensions
 			in[i] = messageDescriptor
 			i++
 		}
@@ -237,6 +232,18 @@ func trimEnumDescriptor(in []*descriptorpb.EnumDescriptorProto, prefix string, t
 		name := prefix + enumDescriptor.GetName()
 		if _, ok := toKeep[name]; ok {
 			in[i] = enumDescriptor
+			i++
+		}
+	}
+	return in[:i], nil
+}
+
+func trimExtensionDescriptors(in []*descriptorpb.FieldDescriptorProto, prefix string, toKeep map[string]struct{}) ([]*descriptorpb.FieldDescriptorProto, error) {
+	i := 0
+	for _, fieldDescriptor := range in {
+		name := prefix + fieldDescriptor.GetName()
+		if _, ok := toKeep[name]; ok {
+			in[i] = fieldDescriptor
 			i++
 		}
 	}

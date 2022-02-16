@@ -6,13 +6,13 @@ message UnusedOption {
 }
 
 message UsedOption {
-	string foo = 1;
-}
+	extend google.protobuf.FileOptions {
+		optional UsedOption   file_foo = 50000;
+		optional UnusedOption file_bar = 50001;
+		optional string       file_baz = 50002;
+	}
 
-extend google.protobuf.FileOptions {
-	optional UsedOption   file_foo = 50000;
-	optional UnusedOption file_bar = 50001;
-	optional string       file_baz = 50002;
+	string foo = 1;
 }
 
 extend google.protobuf.MessageOptions {

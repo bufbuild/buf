@@ -2,8 +2,8 @@
 syntax = "proto2";
 package pkg;
 import "options.proto";
-option (file_baz) = "str";
-option (file_foo) = { foo:"str" };
+option (UsedOption.file_baz) = "str";
+option (UsedOption.file_foo) = { foo:"str" };
 message Empty {
 }
 service FooService {
@@ -88,10 +88,10 @@ syntax = "proto3";
 import "google/protobuf/descriptor.proto";
 message UsedOption {
   string foo = 1;
-}
-extend google.protobuf.FileOptions {
-  optional UsedOption file_foo = 50000;
-  optional string file_baz = 50002;
+  extend google.protobuf.FileOptions {
+    optional UsedOption file_foo = 50000;
+    optional string file_baz = 50002;
+  }
 }
 extend google.protobuf.MethodOptions {
   optional UsedOption method_foo = 50000;
