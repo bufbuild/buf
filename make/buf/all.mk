@@ -51,13 +51,10 @@ include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
 
-# We explicitly include each path (instead of only excluding ./private/buf/gen/...)
-# because it's painful to preserve the output we want in a Makefile (i.e. capturing
-# the result a variable, preserving newlines, etc).
-
 .PHONY: bufstyle
 bufstyle: installbufstyle
-	bufstyle ./private/buf/... ./private/bufpkg/... ./private/pkg/...
+	@echo bufstyle NON_GEN_GOPKGS
+	@bufstyle $(shell go list $(GOPKGS) | grep -v \/gen\/)
 
 postlint:: bufstyle
 
