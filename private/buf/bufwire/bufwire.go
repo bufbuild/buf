@@ -239,18 +239,15 @@ type ProtoEncodingWriter interface {
 		container app.EnvStdoutContainer,
 		image bufimage.Image,
 		message proto.Message,
-		encoding bufencoding.MessageEncoding,
-		path string,
+		messageRef bufencoding.MessageEncodingRef,
 	) error
 }
 
 // NewProtoEncodingWriter returns a new ProtoEncodingWriter.
 func NewProtoEncodingWriter(
 	logger *zap.Logger,
-	fetchWriter buffetch.Writer,
 ) ProtoEncodingWriter {
 	return newProtoEncodingWriter(
 		logger,
-		fetchWriter,
 	)
 }

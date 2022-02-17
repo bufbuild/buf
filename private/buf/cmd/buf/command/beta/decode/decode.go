@@ -165,7 +165,6 @@ func run(
 		container,
 		image,
 		message,
-		outputMessageRef.MessageEncoding(),
-		outputMessageRef.Path(),
+		outputMessageRef,
 	)
 }

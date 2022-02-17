@@ -17,32 +17,30 @@ package bufwire
 import (
 	"context"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufencoding"
-	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
+	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
 type protoEncodingWriter struct {
-	logger      *zap.Logger
-	fetchWriter buffetch.Writer
+	logger *zap.Logger
 }
 
 var _ ProtoEncodingWriter = &protoEncodingWriter{}
 
 func newProtoEncodingWriter(
 	logger *zap.Logger,
-	fetchWriter buffetch.Writer,
 ) *protoEncodingWriter {
 	return &protoEncodingWriter{
-		logger:      logger,
-		fetchWriter: fetchWriter,
+		logger: logger,
 	}
 }
 
@@ -51,11 +49,8 @@ func (p *protoEncodingWriter) PutMessage(
 	container app.EnvStdoutContainer,
 	image bufimage.Image,
 	message proto.Message,
-	encoding bufencoding.MessageEncoding,
-	path string,
+	messageRef bufencoding.MessageEncodingRef,
 ) (retErr error) {
-	ctx, span := trace.StartSpan(ctx, "put_message")
-	defer span.End()
 	// Currently, this support bin and JSON format.
 	resolver, err := protoencoding.NewResolver(
 		bufimage.ImageToFileDescriptors(
@@ -66,7 +61,7 @@ func (p *protoEncodingWriter) PutMessage(
 		return err
 	}
 	var marshaler protoencoding.Marshaler
-	switch encoding {
+	switch messageRef.MessageEncoding() {
 	case bufencoding.MessageEncodingBin:
 		marshaler = protoencoding.NewWireMarshaler()
 	case bufencoding.MessageEncodingJSON:
@@ -78,9 +73,15 @@ func (p *protoEncodingWriter) PutMessage(
 	if err != nil {
 		return err
 	}
-	writeCloser, err := p.fetchWriter.PutSingleFile(ctx, container, path)
-	if err != nil {
-		return err
+	var writeCloser io.WriteCloser
+	if messageRef.Path() == "-" {
+		writeCloser = ioextended.NopWriteCloser(container.Stdout())
+	} else {
+		var err error
+		writeCloser, err = os.Create(messageRef.Path())
+		if err != nil {
+			return err
+		}
 	}
 	defer func() {
 		retErr = multierr.Append(retErr, writeCloser.Close())

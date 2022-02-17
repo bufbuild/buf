@@ -449,23 +449,20 @@ func NewWireImageWriter(
 	)
 }
 
-// NewWireProtoEncodingWriter returns a new ProtoEncodingWriter.
-func NewWireProtoEncodingWriter(
-	logger *zap.Logger,
-) bufwire.ProtoEncodingWriter {
-	return bufwire.NewProtoEncodingWriter(
-		logger,
-		buffetch.NewWriter(
-			logger,
-		),
-	)
-}
-
 // NewWireProtoEncodingReader returns a new ProtoEncodingReader.
 func NewWireProtoEncodingReader(
 	logger *zap.Logger,
 ) bufwire.ProtoEncodingReader {
 	return bufwire.NewProtoEncodingReader(
+		logger,
+	)
+}
+
+// NewWireProtoEncodingWriter returns a new ProtoEncodingWriter.
+func NewWireProtoEncodingWriter(
+	logger *zap.Logger,
+) bufwire.ProtoEncodingWriter {
+	return bufwire.NewProtoEncodingWriter(
 		logger,
 	)
 }
