@@ -9,6 +9,7 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc \
+	private/bufpkg/bufstyle/cmd/bufstyle \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
 	private/pkg/storage/cmd/ddiff \
@@ -49,6 +50,13 @@ include make/go/docker.mk
 include make/go/buf.mk
 
 installtest:: $(PROTOC) $(PROTOC_GEN_GO)
+
+.PHONY: bufstyle
+bufstyle: installbufstyle
+	@echo bufstyle NON_GEN_GOPKGS
+	@bufstyle $(shell go list $(GOPKGS) | grep -v \/gen\/)
+
+postlint:: bufstyle
 
 .PHONY: bandeps
 bandeps: installbandeps

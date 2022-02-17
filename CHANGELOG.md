@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.0.0] - 2022-02-17
+
 - Check that the user provided a valid token when running `buf registry login`.
 - Add `buf mod open` that opens a module's homepage in a browser.
 - Add `buf completion` command to generate auto-completion scripts in commonly used shells.
@@ -27,6 +31,7 @@
 - Removed the `buf config migrate-v1beta1` command in favor of `buf beta migrate-v1beta1`.
 - Add `buf beta decode` command to decode message with provided image source and message type.
 - Disable `--config` flag for workspaces.
+- Move default config version from `v1beta1` to `v1`.
 
 ## [v1.0.0-rc12] - 2022-02-01
 
@@ -555,8 +560,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 ## [v0.18.0] - 2020-06-22
 
-- Handle custom options when marshalling JSON Images (#87).
-- Add `buf experimental image convert` command to convert to/from binary/JSON Images (#87).
+- Handle custom options when marshalling JSON images (#87).
+- Add `buf experimental image convert` command to convert to/from binary/JSON images (#87).
 
 ## [v0.17.0] - 2020-06-17
 
@@ -574,7 +579,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 ## [v0.14.0] - 2020-05-30
 
-- Add `--file` flag to `buf image build` to only add specific files and their imports to outputted Images. To exclude imports, use `--exclude-imports`.
+- Add `--file` flag to `buf image build` to only add specific files and their imports to outputted images. To exclude imports, use `--exclude-imports`.
 - Add `zip` as a source format. Buf can now read `zip` files, either locally or remotely, for image building, linting, and breaking change detection.
 - Add `zstd` as a compression format. Buf can now read and write Image files that are compressed using zstandard, and can read tarballs compressed with zstandard.
 - Deprecated: The formats `bingz, jsongz, targz` are now deprecated. Instead, use `format=bin,compression=gzip`, `format=json,compression=gzip`, or `format=tar,compression=gzip`. The formats `bingz, jsongz, targz` will continue to work forever and will not be broken, but will print a deprecation warning and we recommend updating. Automatic file extension parsing continues to work the same as well.
@@ -650,7 +655,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc12...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0...HEAD
+[v1.0.0]: https://github.com/bufbuild/buf/compare/v1.0.0-rc12...v1.0.0
 [v1.0.0-rc12]: https://github.com/bufbuild/buf/compare/v1.0.0-rc11...v1.0.0-rc12
 [v1.0.0-rc11]: https://github.com/bufbuild/buf/compare/v1.0.0-rc10...v1.0.0-rc11
 [v1.0.0-rc10]: https://github.com/bufbuild/buf/compare/v1.0.0-rc9...v1.0.0-rc10

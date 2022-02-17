@@ -29,12 +29,13 @@ linters-settings:
         alias: registryv1alpha1
 linters:
   enable:
-    - govet
     - asciicheck
     - bidichk
     - bodyclose
+    - containedctx
     - contextcheck
     - deadcode
+    - decorder
     - depguard
     - dogsled
     - errcheck
@@ -47,9 +48,10 @@ linters:
     - goimports
     - gomodguard
     - goprintffuncname
-    - gosimple
     - gosec
+    - gosimple
     - govet
+    - grouper
     - importas
     - ineffassign
     - makezero
@@ -110,3 +112,11 @@ issues:
     - linters:
         - gochecknoinits
       path: private/usage/usage.go
+      # we actually want to embed a context here
+    - linters:
+        - containedctx
+      path: private/bufpkg/bufmodule/bufmoduleprotoparse/path_resolver.go
+      # we actually want to embed a context here
+    - linters:
+        - containedctx
+      path: private/pkg/transport/grpc/grpcclient/client_conn_provider.go

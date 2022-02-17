@@ -16,6 +16,7 @@ package protosource
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/protodescriptor"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -295,6 +296,7 @@ func newFile(inputFile InputFile) (*file, error) {
 			enumIndex,
 			nil,
 			nil,
+			nil,
 		)
 		if err != nil {
 			return nil, err
@@ -349,6 +351,7 @@ func (f *file) populateEnum(
 	nestedMessageIndexes []int,
 	// all message names leading to this enum
 	nestedMessageNames []string,
+	parent Message,
 ) (Enum, error) {
 	enumNamedDescriptor, err := newNamedDescriptor(
 		newLocationDescriptor(
@@ -369,6 +372,7 @@ func (f *file) populateEnum(
 		),
 		enumDescriptorProto.GetOptions().GetAllowAlias(),
 		getEnumAllowAliasPath(enumIndex, nestedMessageIndexes...),
+		parent,
 	)
 
 	for enumValueIndex, enumValueDescriptorProto := range enumDescriptorProto.GetValue() {
@@ -536,8 +540,8 @@ func (f *file) populateMessage(
 			int(fieldDescriptorProto.GetNumber()),
 			label,
 			typ,
-			fieldDescriptorProto.GetTypeName(),
-			fieldDescriptorProto.GetExtendee(),
+			strings.TrimPrefix(fieldDescriptorProto.GetTypeName(), "."),
+			strings.TrimPrefix(fieldDescriptorProto.GetExtendee(), "."),
 			oneof,
 			fieldDescriptorProto.GetProto3Optional(),
 			fieldDescriptorProto.GetJsonName(),
@@ -609,8 +613,8 @@ func (f *file) populateMessage(
 			int(fieldDescriptorProto.GetNumber()),
 			label,
 			typ,
-			fieldDescriptorProto.GetTypeName(),
-			fieldDescriptorProto.GetExtendee(),
+			strings.TrimPrefix(fieldDescriptorProto.GetTypeName(), "."),
+			strings.TrimPrefix(fieldDescriptorProto.GetExtendee(), "."),
 			oneof,
 			fieldDescriptorProto.GetProto3Optional(),
 			fieldDescriptorProto.GetJsonName(),
@@ -682,6 +686,7 @@ func (f *file) populateMessage(
 			// TODO we should refactor get.*Path messages to be more consistent
 			append([]int{topLevelMessageIndex}, nestedMessageIndexes...),
 			append(nestedMessageNames, message.Name()),
+			message,
 		)
 		if err != nil {
 			return nil, err
@@ -749,8 +754,8 @@ func (f *file) populateService(
 				methodDescriptorProto.GetOptions(),
 			),
 			service,
-			methodDescriptorProto.GetInputType(),
-			methodDescriptorProto.GetOutputType(),
+			strings.TrimPrefix(methodDescriptorProto.GetInputType(), "."),
+			strings.TrimPrefix(methodDescriptorProto.GetOutputType(), "."),
 			methodDescriptorProto.GetClientStreaming(),
 			methodDescriptorProto.GetServerStreaming(),
 			getMethodInputTypePath(serviceIndex, methodIndex),
@@ -811,8 +816,8 @@ func (f *file) populateExtension(
 		int(fieldDescriptorProto.GetNumber()),
 		label,
 		typ,
-		fieldDescriptorProto.GetTypeName(),
-		fieldDescriptorProto.GetExtendee(),
+		strings.TrimPrefix(fieldDescriptorProto.GetTypeName(), "."),
+		strings.TrimPrefix(fieldDescriptorProto.GetExtendee(), "."),
 		nil,
 		fieldDescriptorProto.GetProto3Optional(),
 		fieldDescriptorProto.GetJsonName(),

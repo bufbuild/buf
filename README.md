@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/bufbuild/buf?include_prereleases)][badges.release]
 [![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)][badges.ci]
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)][badges.docker]
-[![Homebrew](https://img.shields.io/badge/homebrew-v1.0.0--rc12-blue)][badges.homebrew]
+[![Homebrew](https://img.shields.io/badge/homebrew-v1.0.0-blue)][badges.homebrew]
 [![AUR](https://img.shields.io/aur/version/buf)][badges.aur]
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges.slack]
 [![Twitter](https://img.shields.io/twitter/follow/bufbuild?style=social)][badges.twitter]
@@ -20,7 +20,7 @@ The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf] API
 - A [breaking change detector][breaking_usage] that enforces compatibility at the sourfce code or wire level.
 - A [generator][generate_usage] that invokes your protoc plugins based on a configurable [template][templates].
   A [`protoc` replacement][protoc] that uses Buf's [high-performance Protobuf compiler][compiler].
-- A configurable file [builder][build_usage] that produces [Images], our extension of Protobuf's native [FileDescriptorSets][filedescriptorset].
+- A configurable file [builder][build_usage] that produces [images], our extension of Protobuf's native [FileDescriptorSets][filedescriptorset].
 
 ## Installation
 
@@ -90,7 +90,7 @@ While `buf`'s [core features][features] should cover most use cases, we've inclu
 * **Fine-grained rule configuration** for [linting][lint.rules] and [breaking change][breaking.rules]. While we do have recommended defaults, you can always select the exact set of rules that your use case requires, with [40 lint rules][lint.rules] and [53 breaking change rules][breaking.rules] available.
 * **Configurable error formats** for CLI output. `buf` outputs information in `file:line:column:message` form by default for each lint error and breaking change it encounters, but you can also select JSON and, in the near future, JUnit output.
 * **Editor integration** driven by `buf`'s granular error output. We currently provide linting integrations for both [Vim and Visual Studio Code][ide] but we plan to support other editors, such as Emacs and [JetBrains IDEs][jetbrains] like IntelliJ and GoLand, in the future.
-* **Universal Input targeting**. But enables you to perform actions like linting and breaking change detection not just against local `.proto` files but also against a broad range of other [Inputs], such as tarballs and ZIP files, remote Git repositories, and pre-built [Image][images] files.
+* **Universal Input targeting**. But enables you to perform actions like linting and breaking change detection not just against local `.proto` files but also against a broad range of other [Inputs], such as tarballs and ZIP files, remote Git repositories, and pre-built [image][images] files.
 * **Speed**. Buf's internal Protobuf compiler compiles your Protobuf sources using all available cores without compromising deterministic output, which is considerably faster than [`protoc`][protoc]. This allows for near-instantaneous feedback, which is of special importance for features like [editor integration][id].
 
 ## Next steps

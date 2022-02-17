@@ -261,7 +261,7 @@ func writeConfig(
 		return err
 	}
 	// This is the same default as the bufconfig getters.
-	version := V1Beta1Version
+	version := V1Version
 	if writeConfigOptions.version != "" {
 		if err := ValidateVersion(writeConfigOptions.version); err != nil {
 			return err

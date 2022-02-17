@@ -47,8 +47,7 @@ func getConfigForBucket(ctx context.Context, readBucket storage.ReadBucket) (_ *
 	switch len(foundConfigFilePaths) {
 	case 0:
 		// Did not find anything, return the default.
-		// TODO: change to V1 when we make V1 the default
-		return newConfigV1Beta1(ExternalConfigV1Beta1{})
+		return newConfigV1(ExternalConfigV1{})
 	case 1:
 		readObjectCloser, err := readBucket.Get(ctx, foundConfigFilePaths[0])
 		if err != nil {

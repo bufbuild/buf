@@ -195,7 +195,7 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 
 func newManagedConfigV1(externalManagedConfig ExternalManagedConfigV1) (*ManagedConfig, error) {
 	if !externalManagedConfig.Enabled && !externalManagedConfig.IsEmpty() {
-		return nil, errors.New("Managed Mode options are set, but 'managed.enabled: true' is not set")
+		return nil, errors.New("managed mode options are set but 'managed.enabled: true' is not set")
 	}
 	if !externalManagedConfig.Enabled {
 		return nil, nil
