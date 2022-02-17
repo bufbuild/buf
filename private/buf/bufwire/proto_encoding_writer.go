@@ -34,6 +34,8 @@ type protoEncodingWriter struct {
 	fetchWriter buffetch.Writer
 }
 
+var _ ProtoEncodingWriter = &protoEncodingWriter{}
+
 func newProtoEncodingWriter(
 	logger *zap.Logger,
 	fetchWriter buffetch.Writer,
@@ -44,7 +46,7 @@ func newProtoEncodingWriter(
 	}
 }
 
-func (i *protoEncodingWriter) PutMessage(
+func (p *protoEncodingWriter) PutMessage(
 	ctx context.Context,
 	container app.EnvStdoutContainer,
 	image bufimage.Image,
@@ -54,7 +56,7 @@ func (i *protoEncodingWriter) PutMessage(
 ) (retErr error) {
 	ctx, span := trace.StartSpan(ctx, "put_message")
 	defer span.End()
-	// Currently, this only support json format.
+	// Currently, this support bin and JSON format.
 	resolver, err := protoencoding.NewResolver(
 		bufimage.ImageToFileDescriptors(
 			image,
@@ -76,7 +78,7 @@ func (i *protoEncodingWriter) PutMessage(
 	if err != nil {
 		return err
 	}
-	writeCloser, err := i.fetchWriter.PutSingleFile(ctx, container, path)
+	writeCloser, err := p.fetchWriter.PutSingleFile(ctx, container, path)
 	if err != nil {
 		return err
 	}

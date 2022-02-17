@@ -1749,7 +1749,7 @@ func TestDecodeWithImage(t *testing.T) {
 			nil,
 			1,
 			"",
-			"Failure: stdin is required as the input",
+			"Failure: size of input message is zero",
 			"beta",
 			"decode",
 			filepath.Join(tempDir, "image.bin"),
@@ -1878,6 +1878,121 @@ func TestDecodeInvalidTypeName(t *testing.T) {
 		"--type",
 		".foo",
 	)
+}
+
+func TestEncodeDecodeRoundTrip(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "success"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+	)
+	t.Run("stdin and stdout", func(t *testing.T) {
+		stdin := bytes.NewBuffer([]byte(`{"one":"55"}`))
+		encodedMessage := bytes.NewBuffer(nil)
+		decodedMessage := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			stdin,
+			encodedMessage,
+			"beta",
+			"decode",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--input",
+			"-#format=json",
+			"-o",
+			"-#format=bin",
+		)
+		testRun(
+			t,
+			0,
+			encodedMessage,
+			decodedMessage,
+			"beta",
+			"decode",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+		)
+		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
+	})
+	t.Run("stdin and stdout with type specified", func(t *testing.T) {
+		stdin := bytes.NewBuffer([]byte(`{"one":"55"}`))
+		encodedMessage := bytes.NewBuffer(nil)
+		decodedMessage := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			stdin,
+			encodedMessage,
+			"beta",
+			"decode",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--input",
+			"-#format=json",
+			"-o",
+			"-#format=bin",
+		)
+		testRun(
+			t,
+			0,
+			encodedMessage,
+			decodedMessage,
+			"beta",
+			"decode",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--input",
+			"-#format=bin",
+			"-o",
+			"-#format=json",
+		)
+		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
+	})
+	t.Run("file output and input", func(t *testing.T) {
+		stdin := bytes.NewBuffer([]byte(`{"one":"55"}`))
+		decodedMessage := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			stdin,
+			nil,
+			"beta",
+			"decode",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--input",
+			"-#format=json",
+			"-o",
+			filepath.Join(tempDir, "decoded_message.bin"),
+		)
+		testRun(
+			t,
+			0,
+			nil,
+			decodedMessage,
+			"beta",
+			"decode",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--input",
+			filepath.Join(tempDir, "decoded_message.bin"),
+		)
+		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
+	})
 }
 
 func testMigrateV1Beta1Diff(

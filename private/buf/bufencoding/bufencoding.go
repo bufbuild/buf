@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opencensus.io/trace"
 )
 
@@ -28,6 +29,22 @@ const (
 	MessageEncodingBin MessageEncoding = iota + 1
 	// MessageEncodingJSON is the JSON image encoding.
 	MessageEncodingJSON
+	// formatBin is the binary format.
+	formatBin = "bin"
+	// formatJSON is the JSON format.
+	formatJSON = "json"
+)
+
+var (
+	// MessageEncodingFormatsString is the string representation of all message encoding formats.
+	//
+	// This does not include deprecated formats.
+	MessageEncodingFormatsString = stringutil.SliceToString(messageEncodingFormats)
+	// sorted
+	messageEncodingFormats = []string{
+		formatBin,
+		formatJSON,
+	}
 )
 
 // MessageEncoding is the encoding of the message
@@ -41,10 +58,11 @@ type MessageEncodingRef interface {
 func NewMessageEncodingRef(
 	ctx context.Context,
 	value string,
+	defaultEncoding MessageEncoding,
 ) (MessageEncodingRef, error) {
 	ctx, span := trace.StartSpan(ctx, "new_message_encoding_ref")
 	defer span.End()
-	path, messageEncoding, err := getPathAndMessageEncoding(ctx, value)
+	path, messageEncoding, err := getPathAndMessageEncoding(ctx, value, defaultEncoding)
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +72,13 @@ func NewMessageEncodingRef(
 func getPathAndMessageEncoding(
 	ctx context.Context,
 	value string,
+	defaultEncoding MessageEncoding,
 ) (string, MessageEncoding, error) {
 	path, options, err := getRawPathAndOptions(value)
 	if err != nil {
 		return "", 0, err
 	}
-	messageEncoding := parseMessageEncodingExt(filepath.Ext(path))
+	messageEncoding := parseMessageEncodingExt(filepath.Ext(path), defaultEncoding)
 	if format, ok := options["format"]; ok {
 		messageEncoding, err = parseMessageEncodingFormat(format)
 		if err != nil {
@@ -69,23 +88,22 @@ func getPathAndMessageEncoding(
 	return path, messageEncoding, nil
 }
 
-func parseMessageEncodingExt(ext string) MessageEncoding {
-	switch ext {
-	case ".bin":
+func parseMessageEncodingExt(ext string, defaultEncoding MessageEncoding) MessageEncoding {
+	switch strings.TrimPrefix(ext, ".") {
+	case formatBin:
 		return MessageEncodingBin
-	case ".json":
+	case formatJSON:
 		return MessageEncodingJSON
 	default:
-		// this allows the filename without extension use the default encoding type based on the message encoding type of input.
-		return 0
+		return defaultEncoding
 	}
 }
 
 func parseMessageEncodingFormat(format string) (MessageEncoding, error) {
 	switch format {
-	case "bin":
+	case formatBin:
 		return MessageEncodingBin, nil
-	case "json":
+	case formatJSON:
 		return MessageEncodingJSON, nil
 	default:
 		return 0, fmt.Errorf("invalid format for message: %q", format)

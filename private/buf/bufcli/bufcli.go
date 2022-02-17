@@ -461,6 +461,15 @@ func NewWireProtoEncodingWriter(
 	)
 }
 
+// NewWireProtoEncodingReader returns a new ProtoEncodingReader.
+func NewWireProtoEncodingReader(
+	logger *zap.Logger,
+) bufwire.ProtoEncodingReader {
+	return bufwire.NewProtoEncodingReader(
+		logger,
+	)
+}
+
 // NewModuleReaderAndCreateCacheDirs returns a new ModuleReader while creating the
 // required cache directories.
 func NewModuleReaderAndCreateCacheDirs(
