@@ -1749,7 +1749,7 @@ func TestDecodeWithImage(t *testing.T) {
 			nil,
 			1,
 			"",
-			"Failure: size of input message is zero",
+			"Failure: size of input message must not be zero",
 			"beta",
 			"decode",
 			filepath.Join(tempDir, "image.bin"),
