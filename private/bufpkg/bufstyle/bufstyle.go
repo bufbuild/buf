@@ -26,18 +26,23 @@ import (
 var (
 	// Analyzers are all the analyzers implemented to help enforce Buf's style guide.
 	Analyzers = []*analysis.Analyzer{
-		packagefilenameAnalyzer,
+		packageFilenameAnalyzer,
+		noSyncPoolAnalyzer,
 	}
 
-	packagefilenameAnalyzer = &analysis.Analyzer{
-		Name: "packagefilename",
+	packageFilenameAnalyzer = &analysis.Analyzer{
+		Name: "package_filename",
 		Doc:  "Verifies that every package has a file with the same name as the package.",
-		Run:  packagefilenameRun,
+		Run:  packageFilenameRun,
+	}
+	noSyncPoolAnalyzer = &analysis.Analyzer{
+		Name: "no_sync_pool",
+		Doc:  "Verifies that sync.Pool is not used.",
+		Run:  noSyncPoolRun,
 	}
 )
 
-// packagefilenameRun is run once per package.
-func packagefilenameRun(pass *analysis.Pass) (interface{}, error) {
+func packageFilenameRun(pass *analysis.Pass) (interface{}, error) {
 	if len(pass.Files) == 0 {
 		// Nothing to do. We can't report the error anywhere because
 		// this package doesn't have any files.
@@ -64,6 +69,19 @@ func packagefilenameRun(pass *analysis.Pass) (interface{}, error) {
 		// file with a package declaration, so we report the failure there.
 		// We checked that len(pass.Files) > 0 above.
 		pass.Reportf(pass.Files[0].Package, "Package %q does not have a %s.go", packageName, packageName)
+	}
+	return nil, nil
+}
+
+func noSyncPoolRun(pass *analysis.Pass) (interface{}, error) {
+	if typesInfo := pass.TypesInfo; typesInfo != nil {
+		for expr, typeAndValue := range pass.TypesInfo.Types {
+			if t := typeAndValue.Type; t != nil {
+				if t.String() == "sync.Pool" {
+					pass.Reportf(expr.Pos(), "sync.Pool cannot be used")
+				}
+			}
+		}
 	}
 	return nil, nil
 }
