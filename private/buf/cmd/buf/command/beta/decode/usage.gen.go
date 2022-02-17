@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package encode
+package decode
 
 import _ "github.com/bufbuild/buf/private/usage"
