@@ -29,7 +29,6 @@ linters-settings:
         alias: registryv1alpha1
 linters:
   enable:
-    - govet
     - asciicheck
     - bidichk
     - bodyclose
@@ -47,8 +46,8 @@ linters:
     - goimports
     - gomodguard
     - goprintffuncname
-    - gosimple
     - gosec
+    - gosimple
     - govet
     - importas
     - ineffassign
