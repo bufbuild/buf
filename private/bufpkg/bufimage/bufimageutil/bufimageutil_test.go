@@ -119,7 +119,7 @@ func TestTypesFromMainModule(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, analysis)
 
-	_, err = ImageFilteredByTypes(image, []string{"dependency.Dep"})
+	_, err = ImageFilteredByTypes(image, "dependency.Dep")
 	require.Error(t, err)
 }
 
@@ -141,7 +141,7 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	require.NoError(t, err)
 	require.Empty(t, analysis)
 
-	filteredImage, err := ImageFilteredByTypes(image, typenames)
+	filteredImage, err := ImageFilteredByTypes(image, typenames...)
 	require.NoError(t, err)
 	assert.NotNil(t, image)
 

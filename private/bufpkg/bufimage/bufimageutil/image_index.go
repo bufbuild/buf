@@ -21,12 +21,24 @@ import (
 	"github.com/bufbuild/buf/private/pkg/protosource"
 )
 
+// imageIndex holds an index of fully qualified type names to various
+// protosource descriptors.
 type imageIndex struct {
+	// NameToDescriptor maps fully qualified type names to a NamedDescriptor
+	// and can be used to lookup Descriptors referenced by other
+	// descriptor's fields like `Extendee`, `Parent`, `InputType`, etc.
 	NameToDescriptor map[string]protosource.NamedDescriptor
+
+	// NameToExtensions maps fully qualified type names to all known
+	// extension definitions for a type name.
 	NameToExtensions map[string][]protosource.Field
-	NameToOptions    map[string]map[int32]protosource.Field
+
+	// NameToOptions maps `google.protobuf.*Options` type names to their
+	// known extensions by field tag.
+	NameToOptions map[string]map[int32]protosource.Field
 }
 
+// newImageIndexForImage builds an imageIndex for a given image.
 func newImageIndexForImage(image bufimage.Image) (*imageIndex, error) {
 	index := &imageIndex{
 		NameToDescriptor: make(map[string]protosource.NamedDescriptor),

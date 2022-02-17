@@ -62,12 +62,73 @@ func FreeMessageRangeStrings(
 }
 
 // ImageFilteredByTypes returns a minimal image containing only the descriptors
-// required to interpret types.
+// required to define those types. The resulting contains only files in which
+// those descriptors and their transitive closure of required descriptors, with
+// each file only contains the minimal required types and imports.
 //
 // Although this returns a new bufimage.Image, it mutates the original image's
 // underlying file's `descriptorpb.FileDescriptorProto` and the old image should
 // not continue to be used.
-func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image, error) {
+//
+// A descriptor is said to require another descriptor if the dependent
+// descriptor is needed to accurately and completely describe that descriptor.
+// For the follwing types that includes:
+//
+//    Messages
+//     - messages & enums referenced in fields
+//     - proto2 extension declarations for this field
+//     - custom options for the message, its fields, and the file in which the
+//       message is defined
+//     - the parent message if this message is a nested definition
+//
+//    Enums
+//     - Custom options used in the enum, enum values, and the file
+//       in which the message is defined
+//     - the parent message if this message is a nested definition
+//
+//    Services
+//     - request & response types referenced in methods
+//     - custom options for the service, its methods, and the file
+//       in which the message is defined
+//
+// As an example, consider the following proto structure:
+//
+//   --- foo.proto ---
+//   package pkg;
+//   message Foo {
+//     optional Bar bar = 1;
+//     extensions 2 to 3;
+//   }
+//   message Bar { ... }
+//   message Baz {
+//     other.Qux qux = 1 [(other.my_option).field = "buf"];
+//   }
+//   --- baz.proto ---
+//   package other;
+//   extend Foo {
+//     optional Qux baz = 2;
+//   }
+//   message Qux{ ... }
+//   message Quux{ ... }
+//   extend google.protobuf.FieldOptions {
+//     optional Quux my_option = 51234;
+//   }
+//
+// A filtered image for type `pkg.Foo` would include
+//   files:      [foo.proto, bar.proto]
+//   messages:   [pkg.Foo, pkg.Bar, other.Qux]
+//   extensions: [other.baz]
+//
+// A filtered image for type `pkg.Bar` would include
+//   files:      [foo.proto]
+//   messages:   [pkg.Bar]
+//
+//  A filtered image for type `pkg.Baz` would include
+//   files:      [foo.proto, bar.proto]
+//   messages:   [pkg.Baz, other.Quux, other.Qux]
+//   extensions: [other.my_option]
+//
+func ImageFilteredByTypes(image bufimage.Image, types ...string) (bufimage.Image, error) {
 	imageIndex, err := newImageIndexForImage(image)
 	if err != nil {
 		return nil, err
@@ -142,7 +203,7 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 			}
 		}
 		imageFileDescriptor.Dependency = imageFileDescriptor.Dependency[:indexTo]
-		i := 0
+		var i int
 		for _, indexFrom := range imageFileDescriptor.PublicDependency {
 			if indexTo, ok := indexFromTo[indexFrom]; ok {
 				imageFileDescriptor.PublicDependency[i] = indexTo
@@ -188,7 +249,8 @@ func ImageFilteredByTypes(image bufimage.Image, types []string) (bufimage.Image,
 		}
 		imageFileDescriptor.Service = imageFileDescriptor.Service[:i]
 
-		// With some from/to mappings, perhaps even sourcecodeinfo isn't too bad.
+		// TODO: With some from/to mappings, perhaps even sourcecodeinfo
+		// isn't too bad.
 		imageFileDescriptor.SourceCodeInfo = nil
 	}
 	return bufimage.NewImage(includedFiles)
@@ -237,6 +299,8 @@ func trimEnumDescriptor(in []*descriptorpb.EnumDescriptorProto, prefix string, t
 	return in[:i], nil
 }
 
+// trimExtensionDescriptors removes fields from a slice of field descriptors if their
+// type names are not found in the toKeep map.
 func trimExtensionDescriptors(in []*descriptorpb.FieldDescriptorProto, prefix string, toKeep map[string]struct{}) ([]*descriptorpb.FieldDescriptorProto, error) {
 	i := 0
 	for _, fieldDescriptor := range in {
