@@ -116,7 +116,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		"",
 		`The file or data to use to use for configuration.`,
 	)
-	flagSet.StringSliceVar(&f.Types, "type", nil, "create filtered images")
+	flagSet.StringSliceVar(
+		&f.Types,
+		"type",
+		nil,
+		"The types (message, enum, service) that should be included in this image. When specified, the resulting image will only include descriptors to describe the requested types."
+	)
 }
 
 func run(
