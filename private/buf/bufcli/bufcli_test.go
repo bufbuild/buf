@@ -45,10 +45,10 @@ func TestParseSourceAndType(t *testing.T) {
 	})
 	t.Run("fail with module name", func(t *testing.T) {
 		_, _, err := bufcli.ParseSourceAndType(ctx, "", "buf.test/testuser/testrepo")
-		assert.EqualError(t, err, `if source is not provided, the type need to be a fully-qualified path that includes the module reference, failed to parse the type: "buf.test/testuser/testrepo" is not a valid fully qualified path`)
+		assert.EqualError(t, err, `if a source isn't provided, the type needs to be a fully qualified path that includes the module reference; failed to parse the type: "buf.test/testuser/testrepo" is not a valid fully qualified path`)
 	})
 	t.Run("fail with type name", func(t *testing.T) {
 		_, _, err := bufcli.ParseSourceAndType(ctx, "", "buf.v1.Foo")
-		assert.EqualError(t, err, `if source is not provided, the type need to be a fully-qualified path that includes the module reference, failed to parse the type: "buf.v1.Foo" is not a valid fully qualified path`)
+		assert.EqualError(t, err, `if a source isn't provided, the type needs to be a fully qualified path that includes the module reference; failed to parse the type: "buf.v1.Foo" is not a valid fully qualified path`)
 	})
 }

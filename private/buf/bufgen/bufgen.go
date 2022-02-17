@@ -194,7 +194,7 @@ func (p *PluginConfig) PluginName() string {
 	return ""
 }
 
-// ManagedConfig is the Managed Mode configuration.
+// ManagedConfig is the managed mode configuration.
 type ManagedConfig struct {
 	CcEnableArenas        *bool
 	JavaMultipleFiles     *bool
@@ -276,7 +276,7 @@ type ExternalPluginConfigV1 struct {
 	Strategy string      `json:"strategy,omitempty" yaml:"strategy,omitempty"`
 }
 
-// ExternalManagedConfigV1 is an external Managed Mode configuration.
+// ExternalManagedConfigV1 is an external managed mode configuration.
 //
 // Only use outside of this package for testing.
 type ExternalManagedConfigV1 struct {
