@@ -98,13 +98,13 @@ func configsForProto(
 	if lintConfigVersion != breakingConfigVersion {
 		return nil, nil, fmt.Errorf("mismatched breaking config version %q and lint config version %q found", breakingConfigVersion, lintConfigVersion)
 	}
-	// If there is no breaking and lint configs, we want to default to the v1beta1 version.
+	// If there is no breaking and lint configs, we want to default to the v1 version.
 	if breakingConfig == nil && lintConfig == nil {
 		breakingConfig = &bufbreakingconfig.Config{
-			Version: bufconfig.V1Beta1Version,
+			Version: bufconfig.V1Version,
 		}
 		lintConfig = &buflintconfig.Config{
-			Version: bufconfig.V1Beta1Version,
+			Version: bufconfig.V1Version,
 		}
 	} else if breakingConfig == nil {
 		// In the case that only breaking config is nil, we'll use generated an empty default config
