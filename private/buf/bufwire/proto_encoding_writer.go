@@ -20,7 +20,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/bufbuild/buf/private/buf/bufencode"
+	"github.com/bufbuild/buf/private/buf/bufdecode"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/ioextended"
@@ -49,7 +49,7 @@ func (p *protoEncodingWriter) PutMessage(
 	container app.EnvStdoutContainer,
 	image bufimage.Image,
 	message proto.Message,
-	messageRef bufencode.MessageEncodingRef,
+	messageRef bufdecode.MessageEncodingRef,
 ) (retErr error) {
 	// Currently, this support bin and JSON format.
 	resolver, err := protoencoding.NewResolver(
@@ -62,9 +62,9 @@ func (p *protoEncodingWriter) PutMessage(
 	}
 	var marshaler protoencoding.Marshaler
 	switch messageRef.MessageEncoding() {
-	case bufencode.MessageEncodingBin:
+	case bufdecode.MessageEncodingBin:
 		marshaler = protoencoding.NewWireMarshaler()
-	case bufencode.MessageEncodingJSON:
+	case bufdecode.MessageEncodingJSON:
 		marshaler = protoencoding.NewJSONMarshalerIndent(resolver)
 	default:
 		return fmt.Errorf("unknown message encoding type")

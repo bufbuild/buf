@@ -21,7 +21,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/bufbuild/buf/private/buf/bufencode"
+	"github.com/bufbuild/buf/private/buf/bufdecode"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -51,7 +51,7 @@ func (p *protoEncodingReader) GetMessage(
 	container app.EnvStdinContainer,
 	image bufimage.Image,
 	typeName string,
-	messageRef bufencode.MessageEncodingRef,
+	messageRef bufdecode.MessageEncodingRef,
 ) (_ proto.Message, retErr error) {
 	ctx, span := trace.StartSpan(ctx, "get_message")
 	defer span.End()
@@ -90,9 +90,9 @@ func (p *protoEncodingReader) GetMessage(
 	}
 	var unmarshaler protoencoding.Unmarshaler
 	switch messageRef.MessageEncoding() {
-	case bufencode.MessageEncodingBin:
+	case bufdecode.MessageEncodingBin:
 		unmarshaler = protoencoding.NewWireUnmarshaler(resolver)
-	case bufencode.MessageEncodingJSON:
+	case bufdecode.MessageEncodingJSON:
 		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
 	default:
 		return nil, fmt.Errorf("unknown message encoding type")

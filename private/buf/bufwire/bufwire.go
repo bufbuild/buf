@@ -20,7 +20,7 @@ package bufwire
 import (
 	"context"
 
-	"github.com/bufbuild/buf/private/buf/bufencode"
+	"github.com/bufbuild/buf/private/buf/bufdecode"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -215,7 +215,7 @@ type ProtoEncodingReader interface {
 		container app.EnvStdinContainer,
 		image bufimage.Image,
 		typeName string,
-		messageRef bufencode.MessageEncodingRef,
+		messageRef bufdecode.MessageEncodingRef,
 	) (proto.Message, error)
 }
 
@@ -239,7 +239,7 @@ type ProtoEncodingWriter interface {
 		container app.EnvStdoutContainer,
 		image bufimage.Image,
 		message proto.Message,
-		messageRef bufencode.MessageEncodingRef,
+		messageRef bufdecode.MessageEncodingRef,
 	) error
 }
 

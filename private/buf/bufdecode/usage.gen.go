@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package bufencode
+package bufdecode
 
 import _ "github.com/bufbuild/buf/private/usage"

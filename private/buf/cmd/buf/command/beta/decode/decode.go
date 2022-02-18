@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufencode"
+	"github.com/bufbuild/buf/private/buf/bufdecode"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -92,7 +92,7 @@ Alternatively, this can be a fully qualified path to the type without providing 
 		"-",
 		fmt.Sprintf(
 			`The location to read the input message. Must be one of format %s.`,
-			bufencode.MessageEncodingFormatsString,
+			bufdecode.MessageEncodingFormatsString,
 		),
 	)
 	flagSet.StringVarP(
@@ -102,7 +102,7 @@ Alternatively, this can be a fully qualified path to the type without providing 
 		"-",
 		fmt.Sprintf(
 			`The location to write the decoded result to. Must be one of format %s.`,
-			bufencode.MessageEncodingFormatsString,
+			bufdecode.MessageEncodingFormatsString,
 		),
 	)
 }
@@ -138,7 +138,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	inputMessageRef, err := bufencode.NewMessageEncodingRef(ctx, flags.Input, bufencode.MessageEncodingBin)
+	inputMessageRef, err := bufdecode.NewMessageEncodingRef(ctx, flags.Input, bufdecode.MessageEncodingBin)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
@@ -154,7 +154,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	outputMessageRef, err := bufencode.NewMessageEncodingRef(ctx, flags.Output, bufencode.MessageEncodingJSON)
+	outputMessageRef, err := bufdecode.NewMessageEncodingRef(ctx, flags.Output, bufdecode.MessageEncodingJSON)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
