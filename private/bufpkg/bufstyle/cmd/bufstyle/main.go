@@ -20,5 +20,5 @@ import (
 )
 
 func main() {
-	multichecker.Main(bufstyle.Analyzers...)
+	multichecker.Main(bufstyle.NewAnalyzerProvider().Analyzers()...)
 }
