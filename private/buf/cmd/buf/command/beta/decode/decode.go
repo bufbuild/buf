@@ -128,12 +128,12 @@ func run(
 		container,
 		source,
 		flags.ErrorFormat,
-		false,
-		"",
-		nil,
-		nil,
-		false,
-		false,
+		false, // disableSymlinks
+		"",    // configOverride
+		nil,   // externalDirOrFilePaths
+		nil,   // externalExcludeDirOrFilePaths
+		false, // externalDirOrFilePathsAllowNotExist
+		false, // excludeSourceCodeInfo
 	)
 	if err != nil {
 		return err

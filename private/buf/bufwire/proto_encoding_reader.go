@@ -56,10 +56,8 @@ func (p *protoEncodingReader) GetMessage(
 	ctx, span := trace.StartSpan(ctx, "get_message")
 	defer span.End()
 	// Currently, this support bin and JSON format.
-	var readCloser io.ReadCloser
-	if messageRef.Path() == "-" {
-		readCloser = io.NopCloser(container.Stdin())
-	} else {
+	readCloser := io.NopCloser(container.Stdin())
+	if messageRef.Path() != "-" {
 		var err error
 		readCloser, err = os.Open(messageRef.Path())
 		if err != nil {

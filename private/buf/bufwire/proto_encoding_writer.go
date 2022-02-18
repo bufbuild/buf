@@ -17,7 +17,6 @@ package bufwire
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufdecode"
@@ -73,11 +72,8 @@ func (p *protoEncodingWriter) PutMessage(
 	if err != nil {
 		return err
 	}
-	var writeCloser io.WriteCloser
-	if messageRef.Path() == "-" {
-		writeCloser = ioextended.NopWriteCloser(container.Stdout())
-	} else {
-		var err error
+	writeCloser := ioextended.NopWriteCloser(container.Stdout())
+	if messageRef.Path() != "-" {
 		writeCloser, err = os.Create(messageRef.Path())
 		if err != nil {
 			return err
