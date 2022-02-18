@@ -154,7 +154,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	outputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Output, bufconvert.MessageEncodingJSON)
+	defaultOutputEncoding, err := counterEncoding(inputMessageRef.MessageEncoding())
+	if err != nil {
+		return err
+	}
+	outputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Output, defaultOutputEncoding)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
@@ -167,4 +171,15 @@ func run(
 		message,
 		outputMessageRef,
 	)
+}
+
+func counterEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
+	switch encoding {
+	case bufconvert.MessageEncodingBin:
+		return bufconvert.MessageEncodingJSON, nil
+	case bufconvert.MessageEncodingJSON:
+		return bufconvert.MessageEncodingBin, nil
+	default:
+		return 0, fmt.Errorf("unknown message encoding %v", encoding)
+	}
 }

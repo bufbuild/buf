@@ -1908,8 +1908,6 @@ func TestConvertEncodeDecodeRoundTrip(t *testing.T) {
 			"buf.Foo",
 			"--input",
 			"-#format=json",
-			"-o",
-			"-#format=bin",
 		)
 		testRun(
 			t,
