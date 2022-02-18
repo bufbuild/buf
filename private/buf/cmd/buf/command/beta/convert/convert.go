@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package decode
+package convert
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufdecode"
+	"github.com/bufbuild/buf/private/buf/bufconvert"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -92,7 +92,7 @@ Alternatively, this can be a fully qualified path to the type without providing 
 		"-",
 		fmt.Sprintf(
 			`The location to read the input message. Must be one of format %s.`,
-			bufdecode.MessageEncodingFormatsString,
+			bufconvert.MessageEncodingFormatsString,
 		),
 	)
 	flagSet.StringVarP(
@@ -101,8 +101,8 @@ Alternatively, this can be a fully qualified path to the type without providing 
 		outputFlagShortName,
 		"-",
 		fmt.Sprintf(
-			`The location to write the decoded result to. Must be one of format %s.`,
-			bufdecode.MessageEncodingFormatsString,
+			`The location to write the converted result to. Must be one of format %s.`,
+			bufconvert.MessageEncodingFormatsString,
 		),
 	)
 }
@@ -138,7 +138,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	inputMessageRef, err := bufdecode.NewMessageEncodingRef(ctx, flags.Input, bufdecode.MessageEncodingBin)
+	inputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Input, bufconvert.MessageEncodingBin)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
@@ -154,7 +154,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	outputMessageRef, err := bufdecode.NewMessageEncodingRef(ctx, flags.Output, bufdecode.MessageEncodingJSON)
+	outputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Output, bufconvert.MessageEncodingJSON)
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
