@@ -15,21 +15,33 @@
 package bufstyle
 
 import (
+	"path/filepath"
+
+	"go.uber.org/multierr"
 	"golang.org/x/tools/go/analysis"
 )
 
 type analyzerProvider struct {
-	filePathToIgnoreAnalyzerNames map[string]map[string]struct{}
+	absRootDirPath                   string
+	ignoreRelFilePathToAnalyzerNames map[string]map[string]struct{}
 }
 
-func newAnalyzerProvider(options ...AnalyzerProviderOption) *analyzerProvider {
+func newAnalyzerProvider(rootDirPath string, options ...AnalyzerProviderOption) (*analyzerProvider, error) {
+	if rootDirPath == "" {
+		rootDirPath = "."
+	}
+	absRootDirPath, err := filepath.Abs(rootDirPath)
+	if err != nil {
+		return nil, err
+	}
 	analyzerProvider := &analyzerProvider{
-		filePathToIgnoreAnalyzerNames: make(map[string]map[string]struct{}),
+		absRootDirPath:                   absRootDirPath,
+		ignoreRelFilePathToAnalyzerNames: make(map[string]map[string]struct{}),
 	}
 	for _, option := range options {
 		option(analyzerProvider)
 	}
-	return analyzerProvider
+	return analyzerProvider, nil
 }
 
 func (a *analyzerProvider) Analyzers() []*analysis.Analyzer {
@@ -50,20 +62,39 @@ func (a *analyzerProvider) modifyAnalyzer(analyzer *analysis.Analyzer) {
 	oldRun := analyzer.Run
 	analyzer.Run = func(pass *analysis.Pass) (interface{}, error) {
 		oldReport := pass.Report
+		var reportErr error
 		pass.Report = func(diagnostic analysis.Diagnostic) {
 			if pass.Fset == nil {
 				oldReport(diagnostic)
 				return
 			}
 			position := pass.Fset.Position(diagnostic.Pos)
-			ignoreAnalyzerNames, ok := a.filePathToIgnoreAnalyzerNames[position.Filename]
+			filePath := position.Filename
+			if filePath == "" {
+				oldReport(diagnostic)
+				return
+			}
+			absFilePath, err := filepath.Abs(position.Filename)
+			if err != nil {
+				reportErr = multierr.Append(reportErr, err)
+				return
+			}
+			relFilePath, err := filepath.Rel(a.absRootDirPath, absFilePath)
+			if err != nil {
+				reportErr = multierr.Append(reportErr, err)
+				return
+			}
+			analyzerNames, ok := a.ignoreRelFilePathToAnalyzerNames[relFilePath]
 			if !ok {
 				oldReport(diagnostic)
 				return
 			}
-			if _, ok := ignoreAnalyzerNames[analyzer.Name]; !ok {
+			if _, ok := analyzerNames[analyzer.Name]; !ok {
 				oldReport(diagnostic)
 			}
+		}
+		if reportErr != nil {
+			return nil, reportErr
 		}
 		return oldRun(pass)
 	}
