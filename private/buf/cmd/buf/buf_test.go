@@ -535,8 +535,7 @@ PACKAGE_NO_IMPORT_CYCLE                                    Checks that packages 
 		expectedStdout,
 		"mod",
 		"ls-lint-rules",
-		"--version",
-		"v1",
+		"--all",
 	)
 }
 
@@ -611,7 +610,8 @@ ENUM_FIRST_VALUE_ZERO             OTHER                                       Ch
 		expectedStdout,
 		"mod",
 		"ls-lint-rules",
-		"--all",
+		"--version",
+		"v1beta1",
 	)
 }
 

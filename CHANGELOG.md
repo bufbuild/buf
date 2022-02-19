@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.0.0] - 2022-02-17
+
 - Check that the user provided a valid token when running `buf registry login`.
 - Add `buf mod open` that opens a module's homepage in a browser.
 - Add `buf completion` command to generate auto-completion scripts in commonly used shells.
@@ -27,6 +31,7 @@
 - Removed the `buf config migrate-v1beta1` command in favor of `buf beta migrate-v1beta1`.
 - Add `buf beta decode` command to decode message with provided image source and message type.
 - Disable `--config` flag for workspaces.
+- Move default config version from `v1beta1` to `v1`.
 
 ## [v1.0.0-rc12] - 2022-02-01
 
@@ -650,7 +655,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0-rc12...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0...HEAD
+[v1.0.0]: https://github.com/bufbuild/buf/compare/v1.0.0-rc12...v1.0.0
 [v1.0.0-rc12]: https://github.com/bufbuild/buf/compare/v1.0.0-rc11...v1.0.0-rc12
 [v1.0.0-rc11]: https://github.com/bufbuild/buf/compare/v1.0.0-rc10...v1.0.0-rc11
 [v1.0.0-rc10]: https://github.com/bufbuild/buf/compare/v1.0.0-rc9...v1.0.0-rc10
