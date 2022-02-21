@@ -1711,7 +1711,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 	})
 }
 
-func TestConvertDecodeWithImage(t *testing.T) {
+func TestConvertWithImage(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1759,7 +1759,7 @@ func TestConvertDecodeWithImage(t *testing.T) {
 	})
 }
 
-func TestConvertDecodeOutput(t *testing.T) {
+func TestConvertOutput(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1851,7 +1851,7 @@ func TestConvertDecodeOutput(t *testing.T) {
 	})
 }
 
-func TestConvertDecodeInvalidTypeName(t *testing.T) {
+func TestConvertInvalidTypeName(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1880,7 +1880,7 @@ func TestConvertDecodeInvalidTypeName(t *testing.T) {
 	)
 }
 
-func TestConvertEncodeDecodeRoundTrip(t *testing.T) {
+func TestConvertRoundTrip(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,

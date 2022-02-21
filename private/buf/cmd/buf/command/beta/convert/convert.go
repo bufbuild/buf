@@ -44,7 +44,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
-		Short: "Use a source reference to encode or decode a binary serialized message supplied through stdin.",
+		Short: "Use a source reference to convert a binary or JSON serialized message supplied through stdin or the input flag.",
 		Long: `The first argument is the source that defines the serialized message (like buf.build/acme/weather).
 Alternatively, you can omit the source and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
 		Args: cobra.MaximumNArgs(1),
@@ -154,7 +154,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	defaultOutputEncoding, err := counterEncoding(inputMessageRef.MessageEncoding())
+	defaultOutputEncoding, err := inverseEncoding(inputMessageRef.MessageEncoding())
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,9 @@ func run(
 	)
 }
 
-func counterEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
+// inverseEncoding returns the opposite encoding of the provided encoding,
+// which will be the default output encoding for a given input encoding.
+func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
 	switch encoding {
 	case bufconvert.MessageEncodingBin:
 		return bufconvert.MessageEncodingJSON, nil

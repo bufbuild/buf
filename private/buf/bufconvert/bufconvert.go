@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufref"
+	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opencensus.io/trace"
 )
@@ -80,10 +81,18 @@ func getPathAndMessageEncoding(
 		return "", 0, err
 	}
 	messageEncoding := parseMessageEncodingExt(filepath.Ext(path), defaultEncoding)
-	if format, ok := options["format"]; ok {
-		messageEncoding, err = parseMessageEncodingFormat(format)
-		if err != nil {
-			return "", 0, err
+	for key, value := range options {
+		switch key {
+		case "format":
+			if app.IsDevNull(path) {
+				return "", 0, fmt.Errorf("not allowed if path is %s", app.DevNullFilePath)
+			}
+			messageEncoding, err = parseMessageEncodingFormat(value)
+			if err != nil {
+				return "", 0, err
+			}
+		default:
+			return "", 0, fmt.Errorf("invalid options key: %q", key)
 		}
 	}
 	return path, messageEncoding, nil

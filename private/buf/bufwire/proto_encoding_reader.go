@@ -56,6 +56,23 @@ func (p *protoEncodingReader) GetMessage(
 	ctx, span := trace.StartSpan(ctx, "get_message")
 	defer span.End()
 	// Currently, this support bin and JSON format.
+	resolver, err := protoencoding.NewResolver(
+		bufimage.ImageToFileDescriptors(
+			image,
+		)...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	var unmarshaler protoencoding.Unmarshaler
+	switch messageRef.MessageEncoding() {
+	case bufconvert.MessageEncodingBin:
+		unmarshaler = protoencoding.NewWireUnmarshaler(resolver)
+	case bufconvert.MessageEncodingJSON:
+		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
+	default:
+		return nil, fmt.Errorf("unknown message encoding type")
+	}
 	readCloser := io.NopCloser(container.Stdin())
 	if messageRef.Path() != "-" {
 		var err error
@@ -74,26 +91,9 @@ func (p *protoEncodingReader) GetMessage(
 	if len(data) == 0 {
 		return nil, errors.New("size of input message must not be zero")
 	}
-	resolver, err := protoencoding.NewResolver(
-		bufimage.ImageToFileDescriptors(
-			image,
-		)...,
-	)
-	if err != nil {
-		return nil, err
-	}
 	message, err := bufreflect.NewMessage(ctx, image, typeName)
 	if err != nil {
 		return nil, err
-	}
-	var unmarshaler protoencoding.Unmarshaler
-	switch messageRef.MessageEncoding() {
-	case bufconvert.MessageEncodingBin:
-		unmarshaler = protoencoding.NewWireUnmarshaler(resolver)
-	case bufconvert.MessageEncodingJSON:
-		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
-	default:
-		return nil, fmt.Errorf("unknown message encoding type")
 	}
 	if err := unmarshaler.Unmarshal(data, message); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal the message: %v", err)
