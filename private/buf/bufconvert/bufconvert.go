@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/bufbuild/buf/private/buf/bufref"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"go.opencensus.io/trace"
 )
@@ -74,7 +75,7 @@ func getPathAndMessageEncoding(
 	value string,
 	defaultEncoding MessageEncoding,
 ) (string, MessageEncoding, error) {
-	path, options, err := getRawPathAndOptions(value)
+	path, options, err := bufref.GetRawPathAndOptions(value)
 	if err != nil {
 		return "", 0, err
 	}
@@ -107,45 +108,5 @@ func parseMessageEncodingFormat(format string) (MessageEncoding, error) {
 		return MessageEncodingJSON, nil
 	default:
 		return 0, fmt.Errorf("invalid format for message: %q", format)
-	}
-}
-
-// rawPath will be non-empty
-func getRawPathAndOptions(value string) (string, map[string]string, error) {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return "", nil, fmt.Errorf("value is required")
-	}
-	switch splitValue := strings.Split(value, "#"); len(splitValue) {
-	case 1:
-		return value, nil, nil
-	case 2:
-		path := strings.TrimSpace(splitValue[0])
-		optionsString := strings.TrimSpace(splitValue[1])
-		if path == "" {
-			return "", nil, fmt.Errorf("%q starts with # which is invalid", value)
-		}
-		if optionsString == "" {
-			return "", nil, fmt.Errorf("%q ends with # which is invalid", value)
-		}
-		options := make(map[string]string)
-		for _, pair := range strings.Split(optionsString, ",") {
-			split := strings.Split(pair, "=")
-			if len(split) != 2 {
-				return "", nil, fmt.Errorf("invalid options: %q", optionsString)
-			}
-			key := strings.TrimSpace(split[0])
-			value := strings.TrimSpace(split[1])
-			if key == "" || value == "" {
-				return "", nil, fmt.Errorf("invalid options: %q", optionsString)
-			}
-			if _, ok := options[key]; ok {
-				return "", nil, fmt.Errorf("duplicate options key: %q", key)
-			}
-			options[key] = value
-		}
-		return path, options, nil
-	default:
-		return "", nil, fmt.Errorf("%q has multiple #s which is invalid", value)
 	}
 }
