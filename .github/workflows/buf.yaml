@@ -41,7 +41,7 @@ jobs:
         if: success()
         with:
           version: 1.0.0-rc11
-      - uses: bufbuild/buf-push-action@v1.0.0
+      - uses: bufbuild/buf-push-action@v1.0.1
         if: success()
         with:
           input: 'proto'
