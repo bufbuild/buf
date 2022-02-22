@@ -19,10 +19,8 @@ import "golang.org/x/tools/go/analysis"
 
 // ExternalConfig is an external configuration for bufstyle.
 type ExternalConfig struct {
-	Ignore []struct {
-		Path      string   `json:"path,omitempty" yaml:"path,omitempty"`
-		Analyzers []string `json:"analyzers,omitempty" yaml:"analyzers,omitempty"`
-	} `json:"ignore,omitempty" yaml:"ignore,omitempty"`
+	// Ignore is a map from analyzer name to a list of relative paths to ignore.
+	Ignore map[string][]string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
 }
 
 // AnalyzerProvider provides analyzers.
@@ -41,13 +39,13 @@ type AnalyzerProviderOption func(*analyzerProvider)
 // WithIgnore will ignore diagnostics for the given file path and analyzer name.
 //
 // relFilePath should be relative to rootDirPath.
-func WithIgnore(relFilePath string, analyzerName string) AnalyzerProviderOption {
+func WithIgnore(analyzerName string, relFilePath string) AnalyzerProviderOption {
 	return func(analyzerProvider *analyzerProvider) {
-		analyzerNames := analyzerProvider.ignoreRelFilePathToAnalyzerNames[relFilePath]
-		if analyzerNames == nil {
-			analyzerNames = make(map[string]struct{})
-			analyzerProvider.ignoreRelFilePathToAnalyzerNames[relFilePath] = analyzerNames
+		relFilePaths, ok := analyzerProvider.ignoreAnalyzerNameToRelFilePaths[analyzerName]
+		if !ok {
+			relFilePaths = make(map[string]struct{})
+			analyzerProvider.ignoreAnalyzerNameToRelFilePaths[analyzerName] = relFilePaths
 		}
-		analyzerNames[analyzerName] = struct{}{}
+		relFilePaths[relFilePath] = struct{}{}
 	}
 }

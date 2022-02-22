@@ -1,4 +1,0 @@
-ignore:
-  - path: private/bufpkg/bufstyle/cmd/bufstyle/main.go
-    analyzers:
-      - NO_SYNC_POOL

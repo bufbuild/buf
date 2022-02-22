@@ -23,7 +23,7 @@ import (
 
 type analyzerProvider struct {
 	absRootDirPath                   string
-	ignoreRelFilePathToAnalyzerNames map[string]map[string]struct{}
+	ignoreAnalyzerNameToRelFilePaths map[string]map[string]struct{}
 }
 
 func newAnalyzerProvider(rootDirPath string, options ...AnalyzerProviderOption) (*analyzerProvider, error) {
@@ -36,7 +36,7 @@ func newAnalyzerProvider(rootDirPath string, options ...AnalyzerProviderOption) 
 	}
 	analyzerProvider := &analyzerProvider{
 		absRootDirPath:                   absRootDirPath,
-		ignoreRelFilePathToAnalyzerNames: make(map[string]map[string]struct{}),
+		ignoreAnalyzerNameToRelFilePaths: make(map[string]map[string]struct{}),
 	}
 	for _, option := range options {
 		option(analyzerProvider)
@@ -68,6 +68,11 @@ func (a *analyzerProvider) modifyAnalyzer(analyzer *analysis.Analyzer) {
 				oldReport(diagnostic)
 				return
 			}
+			relFilePaths, ok := a.ignoreAnalyzerNameToRelFilePaths[analyzer.Name]
+			if !ok {
+				oldReport(diagnostic)
+				return
+			}
 			position := pass.Fset.Position(diagnostic.Pos)
 			filePath := position.Filename
 			if filePath == "" {
@@ -84,12 +89,7 @@ func (a *analyzerProvider) modifyAnalyzer(analyzer *analysis.Analyzer) {
 				reportErr = multierr.Append(reportErr, err)
 				return
 			}
-			analyzerNames, ok := a.ignoreRelFilePathToAnalyzerNames[relFilePath]
-			if !ok {
-				oldReport(diagnostic)
-				return
-			}
-			if _, ok := analyzerNames[analyzer.Name]; !ok {
+			if _, ok := relFilePaths[relFilePath]; !ok {
 				oldReport(diagnostic)
 			}
 		}

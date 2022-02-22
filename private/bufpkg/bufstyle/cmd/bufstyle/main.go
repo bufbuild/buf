@@ -17,7 +17,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufstyle"
 	"github.com/bufbuild/buf/private/pkg/encoding"
@@ -25,8 +24,6 @@ import (
 )
 
 var externalConfigPath = ".bufstyle.yaml"
-
-var _ sync.Pool
 
 func main() {
 	analyzerProvider, err := newAnalyzerProvider()
@@ -44,16 +41,16 @@ func newAnalyzerProvider() (bufstyle.AnalyzerProvider, error) {
 	if err != nil {
 		return nil, err
 	}
-	ignoreRelFilePathToAnalyzerNames, err := getIgnoreRelFilePathToAnalyzerNames(externalConfig)
+	ignoreAnalyzerNameToRelFilePaths, err := getIgnoreAnalyzerNameToRelFilePaths(externalConfig)
 	if err != nil {
 		return nil, err
 	}
 	var analyzerProviderOptions []bufstyle.AnalyzerProviderOption
-	for filePath, analyzerNames := range ignoreRelFilePathToAnalyzerNames {
-		for analyzerName := range analyzerNames {
+	for analyzerName, relFilePaths := range ignoreAnalyzerNameToRelFilePaths {
+		for relFilePath := range relFilePaths {
 			analyzerProviderOptions = append(
 				analyzerProviderOptions,
-				bufstyle.WithIgnore(filePath, analyzerName),
+				bufstyle.WithIgnore(analyzerName, relFilePath),
 			)
 		}
 	}
@@ -79,26 +76,23 @@ func readExternalConfig() (bufstyle.ExternalConfig, error) {
 	return externalConfig, nil
 }
 
-func getIgnoreRelFilePathToAnalyzerNames(externalConfig bufstyle.ExternalConfig) (map[string]map[string]struct{}, error) {
-	ignoreRelFilePathToAnalyzerNames := make(map[string]map[string]struct{})
-	for _, ignore := range externalConfig.Ignore {
-		if ignore.Path == "" {
-			return nil, fmt.Errorf("empty ignore.path")
+func getIgnoreAnalyzerNameToRelFilePaths(externalConfig bufstyle.ExternalConfig) (map[string]map[string]struct{}, error) {
+	ignoreAnalyzerNameToRelFilePaths := make(map[string]map[string]struct{})
+	for analyzerName, relFilePaths := range externalConfig.Ignore {
+		if len(relFilePaths) == 0 {
+			return nil, fmt.Errorf("empty ignore file paths")
 		}
-		if len(ignore.Analyzers) == 0 {
-			return nil, fmt.Errorf("empty ignore.analyzers")
-		}
-		analyzerNames := make(map[string]struct{})
-		for _, analyzer := range ignore.Analyzers {
-			if _, ok := analyzerNames[analyzer]; ok {
-				return nil, fmt.Errorf("duplicate ignore.analyzer %q for path: %q", analyzer, ignore.Path)
+		relFilePathMap := make(map[string]struct{})
+		for _, relFilePath := range relFilePaths {
+			if _, ok := relFilePathMap[relFilePath]; ok {
+				return nil, fmt.Errorf("duplicate ignore file path %q for analyzer %q", relFilePath, analyzerName)
 			}
-			analyzerNames[analyzer] = struct{}{}
+			relFilePathMap[relFilePath] = struct{}{}
 		}
-		if _, ok := ignoreRelFilePathToAnalyzerNames[ignore.Path]; ok {
-			return nil, fmt.Errorf("duplicate ignore.path: %q", ignore.Path)
+		if _, ok := ignoreAnalyzerNameToRelFilePaths[analyzerName]; ok {
+			return nil, fmt.Errorf("duplicate ignore analyzer name: %q", analyzerName)
 		}
-		ignoreRelFilePathToAnalyzerNames[ignore.Path] = analyzerNames
+		ignoreAnalyzerNameToRelFilePaths[analyzerName] = relFilePathMap
 	}
-	return ignoreRelFilePathToAnalyzerNames, nil
+	return ignoreAnalyzerNameToRelFilePaths, nil
 }
