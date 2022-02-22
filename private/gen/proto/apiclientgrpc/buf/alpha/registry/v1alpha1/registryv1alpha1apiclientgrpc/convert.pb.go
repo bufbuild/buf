@@ -35,7 +35,6 @@ func (s *convertService) Convert(
 	ctx context.Context,
 	typeName string,
 	image *v1.Image,
-	moduleInfo *v1.ModuleInfo,
 	payload []byte,
 	requestFormat v1alpha1.ConvertFormat,
 	responseFormat v1alpha1.ConvertFormat,
@@ -48,7 +47,6 @@ func (s *convertService) Convert(
 		&v1alpha1.ConvertRequest{
 			TypeName:       typeName,
 			Image:          image,
-			ModuleInfo:     moduleInfo,
 			Payload:        payload,
 			RequestFormat:  requestFormat,
 			ResponseFormat: responseFormat,

@@ -518,9 +518,8 @@ message ActionBufAlphaRegistryV1Alpha1GetJSONSchema {
 // in objects for the Convert action.
 message ActionBufAlphaRegistryV1Alpha1Convert {
   string type_name = 1;
-  string commit = 2;
-  BufAlphaRegistryV1Alpha1ConvertFormat request_format = 3;
-  BufAlphaRegistryV1Alpha1ConvertFormat response_format = 4;
+  BufAlphaRegistryV1Alpha1ConvertFormat request_format = 2;
+  BufAlphaRegistryV1Alpha1ConvertFormat response_format = 3;
 }
 
 message Event {

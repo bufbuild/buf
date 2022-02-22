@@ -39,16 +39,12 @@ message ConvertRequest {
   //
   // Cannot be provided if module_info is provided.
   buf.alpha.image.v1.Image image = 2;
-  // module_info is the module source that defines the serialized message.
-  //
-  // Cannot be provided if image is provided.
-  buf.alpha.image.v1.ModuleInfo module_info = 3;
   // payload is the serialized Protobuf message.
-  bytes payload = 4;
-  // input_format is the format of the payload.
-  ConvertFormat request_format = 5;
-  // output_format is the desired format of the output result.
-  ConvertFormat response_format = 6;
+  bytes payload = 3;
+  // request_format is the format of the payload.
+  ConvertFormat request_format = 4;
+  // response_format is the desired format of the output result.
+  ConvertFormat response_format = 5;
 }
 
 message ConvertResponse {
