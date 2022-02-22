@@ -91,6 +91,41 @@ func TestExtensions(t *testing.T) {
 	runDiffTest(t, "testdata/extensions", []string{"pkg.Foo"}, "extensions.txtar")
 }
 
+func TestTransitivePublicFail(t *testing.T) {
+	ctx := context.Background()
+	bucket, err := storagemem.NewReadBucket(map[string][]byte{
+		"a.proto": []byte(`syntax = "proto3";package a;message Foo{}`),
+		"b.proto": []byte(`syntax = "proto3";package b;import public "a.proto";message Bar {}`),
+		"c.proto": []byte(`syntax = "proto3";package c;import "b.proto";message Baz{ a.Foo foo = 1; }`),
+	})
+	require.NoError(t, err)
+	module, err := bufmodule.NewModuleForBucket(ctx, bucket)
+	require.NoError(t, err)
+	image, analysis, err := bufimagebuild.NewBuilder(zaptest.NewLogger(t)).Build(
+		ctx,
+		bufmodule.NewModuleFileSet(module, nil),
+		bufimagebuild.WithExcludeSourceCodeInfo(),
+	)
+	require.NoError(t, err)
+	require.Empty(t, analysis)
+
+	filteredImage, err := ImageFilteredByTypes(image, "c.Baz")
+	require.NoError(t, err)
+
+	// This filtered image won't be usable as c.proto doesn't have a import
+	// for `a.Foo`. There's two ways to resolve this:
+	//
+	//  1. generate a b.proto with only a public import for a.proto and no other types.
+	//  2. import a.proto directly in c.proto
+	//
+	// Both have some pro's and cons, given that we lint against public
+	// imports alltogether I'm currently inclined to defer this decision
+	// until we have a customer need for picking either.
+	_, err = desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unresolvable reference")
+}
+
 func TestTypesFromMainModule(t *testing.T) {
 	t.Parallel()
 

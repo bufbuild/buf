@@ -47,8 +47,14 @@ func (o *optionExtensionDescriptor) PresentExtensionNumbers() []int32 {
 		}
 		b = b[n:]
 	}
-	// Need to think if this is actually necessary, or if extensions will
-	// always be unknown...
+	// Extensions for google.protobuf.*Options are a bit of a special case
+	// as the extensions in a FileDescriptorSet message may differ with
+	// the extensions defined in the proto with which buf is compiled.
+	//
+	// Also loop through known extensions here to get extension numbers.
+	// This shouldn't cause any issue, but some extra investigation would be
+	// needed to fully determine if this is the correct way of using
+	// protreflect here.
 	knownExtensions := o.message.ProtoReflect().Descriptor().Extensions()
 	for i := 0; i < knownExtensions.Len(); i++ {
 		ext := knownExtensions.Get(i)

@@ -194,8 +194,8 @@ func ImageFilteredByTypes(image bufimage.Image, types ...string) (bufimage.Image
 			// through a public import in a dependent file may
 			// filter out that file here, a type not to be found. We
 			// may need to add the file directly (or have a file
-			// with public import only inserted in the middle).
-			// We should check if all keys in importmap get looked up.
+			// with public import only inserted in the middle). See
+			// TestTransitivePublicFail.
 			if _, ok := importsRequired[importPath]; ok {
 				indexFromTo[int32(indexFrom)] = int32(indexTo)
 				imageFileDescriptor.Dependency[indexTo] = importPath
