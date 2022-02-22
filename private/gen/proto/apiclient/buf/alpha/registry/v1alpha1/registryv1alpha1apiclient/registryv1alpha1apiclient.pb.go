@@ -27,6 +27,7 @@ type Provider interface {
 	AuditLogsServiceProvider
 	AuthnServiceProvider
 	AuthzServiceProvider
+	ConvertServiceProvider
 	DisplayServiceProvider
 	DocServiceProvider
 	DownloadServiceProvider
@@ -70,6 +71,11 @@ type AuthnServiceProvider interface {
 // AuthzServiceProvider provides a client-side AuthzService for an address.
 type AuthzServiceProvider interface {
 	NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error)
+}
+
+// ConvertServiceProvider provides a client-side ConvertService for an address.
+type ConvertServiceProvider interface {
+	NewConvertService(ctx context.Context, address string) (registryv1alpha1api.ConvertService, error)
 }
 
 // DisplayServiceProvider provides a client-side DisplayService for an address.

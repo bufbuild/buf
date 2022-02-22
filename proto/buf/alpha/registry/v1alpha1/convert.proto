@@ -1,0 +1,57 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "buf/alpha/convert/v1alpha1/convert.proto";
+import "buf/alpha/image/v1/image.proto";
+
+enum ConvertFormat {
+  CONVERT_FORMAT_UNSPECIFIED = 0;
+  CONVERT_FORMAT_BIN = 1;
+  CONVERT_FORMAT_JSON = 2;
+}
+
+// ConvertService coverts serialized messages
+service ConvertService {
+  // Convert converts a serialized message according to
+  // the provided type name using either an image or a module_info.
+  rpc Convert(ConvertRequest) returns (ConvertResponse);
+}
+
+message ConvertRequest {
+  // type_name is the full type name of the serialized message (like acme.weather.v1.Units).
+  string type_name = 1;
+  // image is the image source that defines the serialized message.
+  //
+  // Cannot be provided if module_info is provided.
+  buf.alpha.image.v1.Image image = 2;
+  // module_info is the module source that defines the serialized message.
+  //
+  // Cannot be provided if image is provided.
+  buf.alpha.convert.v1alpha1.ModuleInfo module_info = 3;
+  // message_bytes is the serialized Protobuf message.
+  bytes message_bytes = 4;
+  // input_format is the format of the message_bytes.
+  ConvertFormat input_format = 5;
+  // output_format is the desired format of the output result.
+  ConvertFormat output_format = 6;
+}
+
+message ConvertResponse {
+  // result is the converted serialized message in one of the supported formats.
+  bytes result = 1;
+}
