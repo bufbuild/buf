@@ -119,8 +119,8 @@ func TestTransitivePublicFail(t *testing.T) {
 	//  2. import a.proto directly in c.proto
 	//
 	// Both have some pro's and cons, given that we lint against public
-	// imports alltogether I'm currently inclined to defer this decision
-	// until we have a customer need for picking either.
+	// imports I'm currently inclined to defer this decision until we have a
+	// customer need for picking either.
 	_, err = desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unresolvable reference")
