@@ -412,9 +412,13 @@ func GetRequestAndResponseParameterStrings(
 			return nil, nil, err
 		}
 		fieldName := GetUnexportGoName(field.GoName)
-		if _, ok := fieldNames[fieldName]; ok {
+		for {
+			if _, ok := fieldNames[fieldName]; !ok {
+				break
+			}
 			fieldName = fieldName + "Response"
 		}
+		fieldNames[fieldName] = struct{}{}
 		responseParameterStrings[i] = fieldName + ` ` + fieldGoType
 	}
 	return requestParameterStrings, responseParameterStrings, nil
