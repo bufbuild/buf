@@ -488,7 +488,7 @@ func ModuleToBucket(
 	}
 	// This is the default version created by bufconfig getters. The versions should be the
 	// same across lint and breaking configs.
-	version := bufconfig.V1Beta1Version
+	version := bufconfig.V1Version
 	var breakingConfigVersion string
 	if module.BreakingConfig() != nil {
 		breakingConfigVersion = module.BreakingConfig().Version
