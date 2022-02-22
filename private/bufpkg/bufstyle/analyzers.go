@@ -77,5 +77,4 @@ func newAnalyzers() []*analysis.Analyzer {
 			},
 		},
 	}
-
 }
