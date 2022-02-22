@@ -15,6 +15,7 @@
 package protosource
 
 import (
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -34,4 +35,30 @@ func (o *optionExtensionDescriptor) OptionExtension(extensionType protoreflect.E
 		return nil, false
 	}
 	return proto.GetExtension(o.message, extensionType), true
+}
+
+func (o *optionExtensionDescriptor) PresentExtensionNumbers() []int32 {
+	var fieldNumbers []int32
+	extensionRanges := o.message.ProtoReflect().Descriptor().ExtensionRanges()
+	for b := o.message.ProtoReflect().GetUnknown(); len(b) > 0; {
+		fieldNo, _, n := protowire.ConsumeField(b)
+		if extensionRanges.Has(fieldNo) {
+			fieldNumbers = append(fieldNumbers, int32(fieldNo))
+		}
+		b = b[n:]
+	}
+	// Extensions for google.protobuf.*Options are a bit of a special case
+	// as the extensions in a FileDescriptorSet message may differ with
+	// the extensions defined in the proto with which buf is compiled.
+	//
+	// Also loop through known extensions here to get extension numbers.
+	// This shouldn't cause any issue, but some extra investigation would be
+	// needed to fully determine if this is the correct way of using
+	// protreflect here.
+	knownExtensions := o.message.ProtoReflect().Descriptor().Extensions()
+	for i := 0; i < knownExtensions.Len(); i++ {
+		ext := knownExtensions.Get(i)
+		fieldNumbers = append(fieldNumbers, int32(ext.Number()))
+	}
+	return fieldNumbers
 }
