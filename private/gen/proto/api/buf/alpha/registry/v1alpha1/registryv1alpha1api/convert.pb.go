@@ -33,5 +33,5 @@ type ConvertService interface {
 		payload []byte,
 		requestFormat v1alpha1.ConvertFormat,
 		responseFormat v1alpha1.ConvertFormat,
-	) (result []byte, err error)
+	) (payloadResponse []byte, err error)
 }

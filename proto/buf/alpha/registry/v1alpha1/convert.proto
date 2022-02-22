@@ -48,6 +48,6 @@ message ConvertRequest {
 }
 
 message ConvertResponse {
-  // result is the converted serialized message in one of the supported formats.
-  bytes result = 1;
+  // payload is the converted serialized message in one of the supported formats.
+  bytes payload = 1;
 }

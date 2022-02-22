@@ -38,7 +38,7 @@ func (s *convertService) Convert(
 	payload []byte,
 	requestFormat v1alpha1.ConvertFormat,
 	responseFormat v1alpha1.ConvertFormat,
-) (result []byte, _ error) {
+) (payloadResponse []byte, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -55,5 +55,5 @@ func (s *convertService) Convert(
 	if err != nil {
 		return nil, err
 	}
-	return response.Result, nil
+	return response.Payload, nil
 }
