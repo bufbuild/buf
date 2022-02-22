@@ -382,26 +382,42 @@ func GetUnexportGoName(goName string) string {
 	return strings.ToLower(goName[:1]) + goName[1:]
 }
 
-// GetParameterStrings gets the parameters for the given fields.
-func GetParameterStrings(
+// GetRequestAndResponseParameterStrings gets the parameters for the given request and response fields.
+func GetRequestAndResponseParameterStrings(
 	generatedFile *protogen.GeneratedFile,
-	fields []*protogen.Field,
-) ([]string, error) {
-	if len(fields) == 0 {
-		return nil, nil
-	}
-	parameterStrings := make([]string, len(fields))
-	for i, field := range fields {
+	requestFields []*protogen.Field,
+	responseFields []*protogen.Field,
+) (requestParameterStrings []string, responseParameterStrings []string, _ error) {
+	requestParameterStrings = make([]string, len(requestFields))
+	responseParameterStrings = make([]string, len(responseFields))
+	fieldNames := make(map[string]struct{})
+	for i, field := range requestFields {
 		if err := ValidateFieldNotOneof(field); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		fieldGoType, err := GetFieldGoType(generatedFile, field)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		parameterStrings[i] = GetUnexportGoName(field.GoName) + ` ` + fieldGoType
+		fieldName := GetUnexportGoName(field.GoName)
+		fieldNames[fieldName] = struct{}{}
+		requestParameterStrings[i] = fieldName + ` ` + fieldGoType
 	}
-	return parameterStrings, nil
+	for i, field := range responseFields {
+		if err := ValidateFieldNotOneof(field); err != nil {
+			return nil, nil, err
+		}
+		fieldGoType, err := GetFieldGoType(generatedFile, field)
+		if err != nil {
+			return nil, nil, err
+		}
+		fieldName := GetUnexportGoName(field.GoName)
+		if _, ok := fieldNames[fieldName]; ok {
+			fieldName = fieldName + "Response"
+		}
+		responseParameterStrings[i] = fieldName + ` ` + fieldGoType
+	}
+	return requestParameterStrings, responseParameterStrings, nil
 }
 
 // GetParameterErrorReturnString gets the return string for an error for a method.
