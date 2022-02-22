@@ -15,73 +15,37 @@
 // Package bufstyle defines lint analyzers that help enforce Buf's Go code standards.
 package bufstyle
 
-import (
-	"go/token"
-	"path/filepath"
-	"strings"
+import "golang.org/x/tools/go/analysis"
 
-	"golang.org/x/tools/go/analysis"
-)
-
-var (
-	// Analyzers are all the analyzers implemented to help enforce Buf's style guide.
-	Analyzers = []*analysis.Analyzer{
-		packageFilenameAnalyzer,
-		noSyncPoolAnalyzer,
-	}
-
-	packageFilenameAnalyzer = &analysis.Analyzer{
-		Name: "package_filename",
-		Doc:  "Verifies that every package has a file with the same name as the package.",
-		Run:  packageFilenameRun,
-	}
-	noSyncPoolAnalyzer = &analysis.Analyzer{
-		Name: "no_sync_pool",
-		Doc:  "Verifies that sync.Pool is not used.",
-		Run:  noSyncPoolRun,
-	}
-)
-
-func packageFilenameRun(pass *analysis.Pass) (interface{}, error) {
-	if len(pass.Files) == 0 {
-		// Nothing to do. We can't report the error anywhere because
-		// this package doesn't have any files.
-		return nil, nil
-	}
-	packageName := pass.Pkg.Name()
-	if strings.HasSuffix(packageName, "_test") {
-		// Ignore test packages.
-		return nil, nil
-	}
-	var found bool
-	pass.Fset.Iterate(
-		func(file *token.File) bool {
-			filename := filepath.Base(file.Name())
-			if strings.TrimSuffix(filename, ".go") == packageName {
-				found = true
-				return false
-			}
-			return true
-		},
-	)
-	if !found {
-		// The package is guaranteed to have at least one
-		// file with a package declaration, so we report the failure there.
-		// We checked that len(pass.Files) > 0 above.
-		pass.Reportf(pass.Files[0].Package, "Package %q does not have a %s.go", packageName, packageName)
-	}
-	return nil, nil
+// ExternalConfig is an external configuration for bufstyle.
+type ExternalConfig struct {
+	// Ignore is a map from analyzer name to a list of relative paths to ignore.
+	Ignore map[string][]string `json:"ignore,omitempty" yaml:"ignore,omitempty"`
 }
 
-func noSyncPoolRun(pass *analysis.Pass) (interface{}, error) {
-	if typesInfo := pass.TypesInfo; typesInfo != nil {
-		for expr, typeAndValue := range pass.TypesInfo.Types {
-			if t := typeAndValue.Type; t != nil {
-				if t.String() == "sync.Pool" {
-					pass.Reportf(expr.Pos(), "sync.Pool cannot be used")
-				}
-			}
+// AnalyzerProvider provides analyzers.
+type AnalyzerProvider interface {
+	Analyzers() []*analysis.Analyzer
+}
+
+// NewAnalyzerProvider returns a new AnalyzerProvider.
+func NewAnalyzerProvider(rootDirPath string, options ...AnalyzerProviderOption) (AnalyzerProvider, error) {
+	return newAnalyzerProvider(rootDirPath, options...)
+}
+
+// AnalyzerProviderOption is an option for a new AnalyzerProvider.
+type AnalyzerProviderOption func(*analyzerProvider)
+
+// WithIgnore will ignore diagnostics for the given file path and analyzer name.
+//
+// relFilePath should be relative to rootDirPath.
+func WithIgnore(analyzerName string, relFilePath string) AnalyzerProviderOption {
+	return func(analyzerProvider *analyzerProvider) {
+		relFilePaths, ok := analyzerProvider.ignoreAnalyzerNameToRelFilePaths[analyzerName]
+		if !ok {
+			relFilePaths = make(map[string]struct{})
+			analyzerProvider.ignoreAnalyzerNameToRelFilePaths[analyzerName] = relFilePaths
 		}
+		relFilePaths[relFilePath] = struct{}{}
 	}
-	return nil, nil
 }
