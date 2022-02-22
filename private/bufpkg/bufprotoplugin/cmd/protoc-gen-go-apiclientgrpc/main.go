@@ -192,11 +192,7 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 			if err := protogenutil.ValidateMethodUnary(method); err != nil {
 				return err
 			}
-			requestParameterStrings, err := protogenutil.GetParameterStrings(g, method.Input.Fields)
-			if err != nil {
-				return err
-			}
-			responseParameterStrings, err := protogenutil.GetParameterStrings(g, method.Output.Fields)
+			requestParameterStrings, responseParameterStrings, err := protogenutil.GetRequestAndResponseParameterStrings(g, method.Input.Fields, method.Output.Fields)
 			if err != nil {
 				return err
 			}

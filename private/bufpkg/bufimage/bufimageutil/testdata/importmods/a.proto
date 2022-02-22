@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+import "regular.proto";
+import weak "weak.proto";
+import public "public.proto";
+
+message ImportRegular {
+	Regular x = 1;
+}
+
+message ImportWeak {
+	Weak x = 1;
+}
+
+message ImportPublic {
+	Public x = 1;
+}
+
+message NoImports {
+	string x = 1;
+}
