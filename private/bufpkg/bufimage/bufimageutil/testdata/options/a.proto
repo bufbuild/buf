@@ -1,0 +1,58 @@
+syntax = "proto2";
+package pkg;
+import "options.proto";
+
+option (UsedOption.file_foo).foo = "str";
+option (UsedOption.file_baz) = "str";
+
+message Foo {
+	option (message_foo).foo = "str";
+	option (message_baz) = "str";
+
+	optional string foo = 1 [
+		(field_foo).foo = "str",
+		(field_baz) = "str",
+		jstype = JS_STRING
+	];
+
+	oneof testOneof {
+		option (oneof_foo).foo = "str";
+		option (oneof_baz) = "str";
+
+		string bar = 2;
+		bytes baz = 3;
+	}
+
+	extensions 10 to max;
+}
+
+enum FooEnum {
+	option (enum_foo).foo = "str";
+	option (enum_baz) = "str";
+	option deprecated = true;
+	
+	FOO_ENUM_X = 0;
+	FOO_ENUM_Y = 1 [
+		(enum_value_foo).foo = "str",
+		(enum_value_baz) = "str"
+	];
+}
+
+message Empty{}
+
+service FooService {
+	option (service_foo).foo = "str";
+	option (service_baz) = "str";
+
+	rpc Do(Empty) returns (Empty) {
+		option (method_foo).foo = "str";
+		option (method_baz) = "str";
+	};
+}
+
+extend Foo {
+	optional string extension = 11 [
+		(field_foo).foo = "str",
+		(field_baz) = "str"
+	];
+}

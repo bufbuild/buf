@@ -1,0 +1,35 @@
+syntax = "proto3";
+package pkg;
+
+message Foo {
+	message NestedFoo {
+		message NestedNestedFoo {
+			string nested_nested_x = 1;
+		}
+		string nested_x = 1;
+	}
+
+	message NestedButNotUsed {
+		string nested_but_not_used = 1;
+	}
+	string x = 1;
+	NestedFoo nested_foo = 2;
+}
+
+enum FooEnum {
+	FOO_ENUM_X = 0;
+	FOO_ENUM_Y = 1;
+}
+
+message Bar {
+	enum NestedBarEnum {
+		NESTED_BAR_ENUM_X = 0;
+		NESTED_BAR_ENUM_Y = 1;
+	}
+	FooEnum foo_enum = 1;
+	Foo.NestedFoo nested_foo = 2;
+}
+
+message Baz {
+	Bar.NestedBarEnum nested_bar_enum = 1;
+}

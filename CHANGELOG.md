@@ -1,8 +1,8 @@
 # Changelog
 
 ## [Unreleased]
-
-- No changes yet.
+- Add `--type` flag to the `build` command to create filtered images containing
+  only the specified types and their required dependencies.
 
 ## [v1.0.0] - 2022-02-17
 

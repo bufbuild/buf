@@ -1,0 +1,19 @@
+syntax = "proto2";
+package other;
+import "a.proto";
+
+message Embedded {
+	extend pkg.Foo {
+		optional Embedded from_other_file = 12;
+	}
+
+	optional string foo = 1;
+}
+
+message Referenced {
+	optional string x = 1;	
+}
+
+extend pkg.Foo {
+	optional Referenced from_other_file = 13;
+}
