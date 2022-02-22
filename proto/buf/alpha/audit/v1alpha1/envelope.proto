@@ -519,8 +519,8 @@ message ActionBufAlphaRegistryV1Alpha1GetJSONSchema {
 message ActionBufAlphaRegistryV1Alpha1Convert {
   string type_name = 1;
   string commit = 2;
-  BufAlphaRegistryV1Alpha1ConvertFormat input_format = 3;
-  BufAlphaRegistryV1Alpha1ConvertFormat output_format = 4;
+  BufAlphaRegistryV1Alpha1ConvertFormat request_format = 3;
+  BufAlphaRegistryV1Alpha1ConvertFormat response_format = 4;
 }
 
 message Event {

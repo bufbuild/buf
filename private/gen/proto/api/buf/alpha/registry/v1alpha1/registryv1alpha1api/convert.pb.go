@@ -18,9 +18,8 @@ package registryv1alpha1api
 
 import (
 	context "context"
-	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/convert/v1alpha1"
 	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
-	v1alpha11 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
+	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 // ConvertService coverts serialized messages
@@ -31,9 +30,9 @@ type ConvertService interface {
 		ctx context.Context,
 		typeName string,
 		image *v1.Image,
-		moduleInfo *v1alpha1.ModuleInfo,
-		messageBytes []byte,
-		inputFormat v1alpha11.ConvertFormat,
-		outputFormat v1alpha11.ConvertFormat,
+		moduleInfo *v1.ModuleInfo,
+		payload []byte,
+		requestFormat v1alpha1.ConvertFormat,
+		responseFormat v1alpha1.ConvertFormat,
 	) (result []byte, err error)
 }

@@ -18,7 +18,6 @@ package registryv1alpha1apiclientgrpc
 
 import (
 	context "context"
-	v1alpha11 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/convert/v1alpha1"
 	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	zap "go.uber.org/zap"
@@ -36,10 +35,10 @@ func (s *convertService) Convert(
 	ctx context.Context,
 	typeName string,
 	image *v1.Image,
-	moduleInfo *v1alpha11.ModuleInfo,
-	messageBytes []byte,
-	inputFormat v1alpha1.ConvertFormat,
-	outputFormat v1alpha1.ConvertFormat,
+	moduleInfo *v1.ModuleInfo,
+	payload []byte,
+	requestFormat v1alpha1.ConvertFormat,
+	responseFormat v1alpha1.ConvertFormat,
 ) (result []byte, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -47,12 +46,12 @@ func (s *convertService) Convert(
 	response, err := s.client.Convert(
 		ctx,
 		&v1alpha1.ConvertRequest{
-			TypeName:     typeName,
-			Image:        image,
-			ModuleInfo:   moduleInfo,
-			MessageBytes: messageBytes,
-			InputFormat:  inputFormat,
-			OutputFormat: outputFormat,
+			TypeName:       typeName,
+			Image:          image,
+			ModuleInfo:     moduleInfo,
+			Payload:        payload,
+			RequestFormat:  requestFormat,
+			ResponseFormat: responseFormat,
 		},
 	)
 	if err != nil {
