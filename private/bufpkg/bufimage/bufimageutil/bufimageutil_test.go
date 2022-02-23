@@ -156,6 +156,10 @@ func TestTypesFromMainModule(t *testing.T) {
 
 	_, err = ImageFilteredByTypes(image, "dependency.Dep")
 	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrImageFilterTypeIsImport)
+	_, err = ImageFilteredByTypes(image, "nonexisting")
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrImageFilterTypeNotFound)
 }
 
 func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedFile string) {
