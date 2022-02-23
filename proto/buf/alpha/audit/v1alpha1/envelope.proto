@@ -19,6 +19,7 @@ package buf.alpha.audit.v1alpha1;
 import "google/protobuf/timestamp.proto";
 import "buf/alpha/rpc/v1alpha1/error.proto";
 import "buf/alpha/module/v1alpha1/module.proto";
+import "buf/alpha/audit/v1alpha1/convert.proto";
 import "buf/alpha/audit/v1alpha1/role.proto";
 import "buf/alpha/audit/v1alpha1/plugin.proto";
 import "buf/alpha/audit/v1alpha1/repository.proto";
@@ -177,6 +178,7 @@ enum Action {
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_TRACK_SERVICE_GET_REPOSITORY_TRACK_BY_NAME = 147;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_JSON_SCHEMA_SERVICE_GET_JSON_SCHEMA = 148;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_TRACK_COMMIT_SERVICE_GET_REPOSITORY_TRACK_COMMIT_BY_REFERENCE = 149;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_CONVERT_SERVICE_CONVERT = 150;
 }
 
 // ActionBufAlphaRegistryV1Alpha1DownloadInfo stores audit log details not included
@@ -512,6 +514,14 @@ message ActionBufAlphaRegistryV1Alpha1GetJSONSchema {
   string reference = 1;
 }
 
+// ActionBufAlphaRegistryV1Alpha1Convert stores audit log details not included
+// in objects for the Convert action.
+message ActionBufAlphaRegistryV1Alpha1Convert {
+  string type_name = 1;
+  BufAlphaRegistryV1Alpha1ConvertFormat request_format = 2;
+  BufAlphaRegistryV1Alpha1ConvertFormat response_format = 3;
+}
+
 message Event {
   // The ID representing the event.
   string event_id = 1;
@@ -590,6 +600,7 @@ message Event {
     ActionBufAlphaRegistryV1Alpha1CreateRepositoryTrackInfo action_buf_alpha_registry_v1alpha1_create_repository_track_info = 55;
     ActionBufAlphaRegistryV1Alpha1SetOrganizationMemberInfo action_buf_alpha_registry_v1alpha1_set_organization_member_info = 56;
     ActionBufAlphaRegistryV1Alpha1GetJSONSchema action_buf_alpha_registry_v1alpha1_get_jsonschema = 57;
+    ActionBufAlphaRegistryV1Alpha1Convert action_buf_alpha_registry_v1alpha1_convert = 58;
   }
 }
 
