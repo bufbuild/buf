@@ -30,7 +30,7 @@ type convertService struct {
 }
 
 // Convert converts a serialized message according to
-// the provided type name using either an image or a module_info.
+// the provided type name using an image.
 func (s *convertService) Convert(
 	ctx context.Context,
 	typeName string,

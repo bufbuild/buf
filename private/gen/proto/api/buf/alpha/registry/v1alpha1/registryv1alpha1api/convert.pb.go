@@ -25,7 +25,7 @@ import (
 // ConvertService coverts serialized messages
 type ConvertService interface {
 	// Convert converts a serialized message according to
-	// the provided type name using either an image or a module_info.
+	// the provided type name using an image.
 	Convert(
 		ctx context.Context,
 		typeName string,

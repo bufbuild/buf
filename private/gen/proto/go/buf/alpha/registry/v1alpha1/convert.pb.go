@@ -93,8 +93,6 @@ type ConvertRequest struct {
 	// type_name is the full type name of the serialized message (like acme.weather.v1.Units).
 	TypeName string `protobuf:"bytes,1,opt,name=type_name,json=typeName,proto3" json:"type_name,omitempty"`
 	// image is the image source that defines the serialized message.
-	//
-	// Cannot be provided if module_info is provided.
 	Image *v1.Image `protobuf:"bytes,2,opt,name=image,proto3" json:"image,omitempty"`
 	// payload is the serialized Protobuf message.
 	Payload []byte `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`

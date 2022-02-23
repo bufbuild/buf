@@ -28,7 +28,7 @@ enum ConvertFormat {
 // ConvertService coverts serialized messages
 service ConvertService {
   // Convert converts a serialized message according to
-  // the provided type name using either an image or a module_info.
+  // the provided type name using an image.
   rpc Convert(ConvertRequest) returns (ConvertResponse);
 }
 
@@ -36,8 +36,6 @@ message ConvertRequest {
   // type_name is the full type name of the serialized message (like acme.weather.v1.Units).
   string type_name = 1;
   // image is the image source that defines the serialized message.
-  //
-  // Cannot be provided if module_info is provided.
   buf.alpha.image.v1.Image image = 2;
   // payload is the serialized Protobuf message.
   bytes payload = 3;

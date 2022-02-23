@@ -37,7 +37,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ConvertServiceClient interface {
 	// Convert converts a serialized message according to
-	// the provided type name using either an image or a module_info.
+	// the provided type name using an image.
 	Convert(ctx context.Context, in *ConvertRequest, opts ...grpc.CallOption) (*ConvertResponse, error)
 }
 
@@ -63,7 +63,7 @@ func (c *convertServiceClient) Convert(ctx context.Context, in *ConvertRequest, 
 // for forward compatibility
 type ConvertServiceServer interface {
 	// Convert converts a serialized message according to
-	// the provided type name using either an image or a module_info.
+	// the provided type name using an image.
 	Convert(context.Context, *ConvertRequest) (*ConvertResponse, error)
 }
 
