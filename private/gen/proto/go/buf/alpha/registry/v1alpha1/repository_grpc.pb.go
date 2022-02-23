@@ -67,6 +67,8 @@ type RepositoryServiceClient interface {
 	// This does not include users who have implicit roles against the repository, unless they have also been
 	// assigned a role explicitly.
 	ListRepositoryContributors(ctx context.Context, in *ListRepositoryContributorsRequest, opts ...grpc.CallOption) (*ListRepositoryContributorsResponse, error)
+	// GetRepositoryContributor returns the contributor information of a user in a repository.
+	GetRepositoryContributor(ctx context.Context, in *GetRepositoryContributorRequest, opts ...grpc.CallOption) (*GetRepositoryContributorResponse, error)
 	// GetRepositorySettings gets the settings of a repository.
 	GetRepositorySettings(ctx context.Context, in *GetRepositorySettingsRequest, opts ...grpc.CallOption) (*GetRepositorySettingsResponse, error)
 }
@@ -205,6 +207,15 @@ func (c *repositoryServiceClient) ListRepositoryContributors(ctx context.Context
 	return out, nil
 }
 
+func (c *repositoryServiceClient) GetRepositoryContributor(ctx context.Context, in *GetRepositoryContributorRequest, opts ...grpc.CallOption) (*GetRepositoryContributorResponse, error) {
+	out := new(GetRepositoryContributorResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryContributor", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *repositoryServiceClient) GetRepositorySettings(ctx context.Context, in *GetRepositorySettingsRequest, opts ...grpc.CallOption) (*GetRepositorySettingsResponse, error) {
 	out := new(GetRepositorySettingsResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositorySettings", in, out, opts...)
@@ -249,6 +260,8 @@ type RepositoryServiceServer interface {
 	// This does not include users who have implicit roles against the repository, unless they have also been
 	// assigned a role explicitly.
 	ListRepositoryContributors(context.Context, *ListRepositoryContributorsRequest) (*ListRepositoryContributorsResponse, error)
+	// GetRepositoryContributor returns the contributor information of a user in a repository.
+	GetRepositoryContributor(context.Context, *GetRepositoryContributorRequest) (*GetRepositoryContributorResponse, error)
 	// GetRepositorySettings gets the settings of a repository.
 	GetRepositorySettings(context.Context, *GetRepositorySettingsRequest) (*GetRepositorySettingsResponse, error)
 }
@@ -298,6 +311,9 @@ func (UnimplementedRepositoryServiceServer) SetRepositoryContributor(context.Con
 }
 func (UnimplementedRepositoryServiceServer) ListRepositoryContributors(context.Context, *ListRepositoryContributorsRequest) (*ListRepositoryContributorsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRepositoryContributors not implemented")
+}
+func (UnimplementedRepositoryServiceServer) GetRepositoryContributor(context.Context, *GetRepositoryContributorRequest) (*GetRepositoryContributorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRepositoryContributor not implemented")
 }
 func (UnimplementedRepositoryServiceServer) GetRepositorySettings(context.Context, *GetRepositorySettingsRequest) (*GetRepositorySettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRepositorySettings not implemented")
@@ -566,6 +582,24 @@ func _RepositoryService_ListRepositoryContributors_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryService_GetRepositoryContributor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRepositoryContributorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).GetRepositoryContributor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/GetRepositoryContributor",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).GetRepositoryContributor(ctx, req.(*GetRepositoryContributorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _RepositoryService_GetRepositorySettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRepositorySettingsRequest)
 	if err := dec(in); err != nil {
@@ -646,6 +680,10 @@ var RepositoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRepositoryContributors",
 			Handler:    _RepositoryService_ListRepositoryContributors_Handler,
+		},
+		{
+			MethodName: "GetRepositoryContributor",
+			Handler:    _RepositoryService_GetRepositoryContributor_Handler,
 		},
 		{
 			MethodName: "GetRepositorySettings",
