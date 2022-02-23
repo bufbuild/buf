@@ -16,11 +16,22 @@ package bufimageutil
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/protosource"
 	"google.golang.org/protobuf/types/descriptorpb"
+)
+
+var (
+	// ErrImageFilterTypeNotFound is returned from ImageFilteredByTypes when
+	// a specified type cannot be found in an image.
+	ErrImageFilterTypeNotFound = errors.New("not found")
+
+	// ErrImageFilterTypeIsImport is returned from ImageFilteredByTypes when
+	// a specified type name is declared in a module dependency.
+	ErrImageFilterTypeIsImport = errors.New("type declared in imported module")
 )
 
 // NewInputFiles converts the ImageFiles to InputFiles.
@@ -138,10 +149,10 @@ func ImageFilteredByTypes(image bufimage.Image, types ...string) (bufimage.Image
 	for _, typeName := range types {
 		descriptor, ok := imageIndex.NameToDescriptor[typeName]
 		if !ok {
-			return nil, fmt.Errorf("not found: %q", typeName)
+			return nil, fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeNotFound)
 		}
 		if image.GetFile(descriptor.File().Path()).IsImport() {
-			return nil, fmt.Errorf("type %q is in an import", typeName)
+			return nil, fmt.Errorf("filtering by type %q: %w", typeName, ErrImageFilterTypeIsImport)
 		}
 		startingDescriptors = append(startingDescriptors, descriptor)
 	}
