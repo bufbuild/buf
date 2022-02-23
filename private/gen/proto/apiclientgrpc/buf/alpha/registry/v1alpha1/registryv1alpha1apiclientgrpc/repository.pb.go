@@ -334,6 +334,28 @@ func (s *repositoryService) ListRepositoryContributors(
 	return response.Users, response.NextPageToken, nil
 }
 
+// GetRepositoryContributor returns the contributor information of a user in a repository.
+func (s *repositoryService) GetRepositoryContributor(
+	ctx context.Context,
+	repositoryId string,
+	userId string,
+) (user *v1alpha1.RepositoryContributor, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.GetRepositoryContributor(
+		ctx,
+		&v1alpha1.GetRepositoryContributorRequest{
+			RepositoryId: repositoryId,
+			UserId:       userId,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.User, nil
+}
+
 // GetRepositorySettings gets the settings of a repository.
 func (s *repositoryService) GetRepositorySettings(ctx context.Context, repositoryId string) (contributorsCount uint32, _ error) {
 	if s.contextModifier != nil {
