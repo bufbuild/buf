@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
@@ -136,6 +137,13 @@ func run(
 	authnService, err := registryProvider.NewAuthnService(ctx, remote)
 	if err != nil {
 		return err
+	}
+	// Remove leading and trailing spaces from user-supplied token to avoid
+	// common input errors such as trailing new lines, as-is the case of using
+	// echo vs echo -n.
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return errors.New("token cannot be empty string")
 	}
 	user, err := authnService.GetCurrentUser(rpcauth.WithToken(ctx, token))
 	if err != nil {
