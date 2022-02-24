@@ -44,6 +44,8 @@ type RepositoryTrackCommit struct {
 
 	// immutable
 	CreateTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	// We reserve field number '3' for the update_time.
+	// google.protobuf.Timestamp update_time = 3;
 	// immutable
 	RepositoryTrackId string `protobuf:"bytes,4,opt,name=repository_track_id,json=repositoryTrackId,proto3" json:"repository_track_id,omitempty"`
 	// immutable

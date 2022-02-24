@@ -33,7 +33,6 @@ service DisplayService {
   rpc DisplayUserElements(DisplayUserElementsRequest) returns (DisplayUserElementsResponse);
   // DisplayServerElements returns which server elements should be displayed to the user.
   rpc DisplayServerElements(DisplayServerElementsRequest) returns (DisplayServerElementsResponse);
-
   // ListManageableRepositoryRoles returns which roles should be displayed
   // to the user when they are managing contributors on the repository.
   rpc ListManageableRepositoryRoles(ListManageableRepositoryRolesRequest) returns (ListManageableRepositoryRolesResponse);
@@ -118,16 +117,14 @@ message DisplayTemplateElementsResponse {
   bool delete = 3;
 }
 
-message DisplayUserElementsRequest {
-}
+message DisplayUserElementsRequest {}
 
 message DisplayUserElementsResponse {
   // Display delete user element if true.
   bool delete = 1;
 }
 
-message DisplayServerElementsRequest {
-}
+message DisplayServerElementsRequest {}
 
 message DisplayServerElementsResponse {
   // Display server admin panel element if true.

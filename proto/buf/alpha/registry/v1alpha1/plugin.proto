@@ -16,9 +16,9 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/generate.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
-import "buf/alpha/registry/v1alpha1/generate.proto";
 
 // Plugin represents a protoc plugin, such as protoc-gen-go.
 message Plugin {
@@ -94,6 +94,7 @@ message PluginConfig {
   // deleted is no longer used and should be replaced by inaccessible.
   reserved "deleted";
   reserved 4;
+
   // The owner of the plugin to which this config relates.
   string plugin_owner = 1;
   // The name of the plugin to which this config relates.
@@ -128,6 +129,7 @@ message PluginVersionMapping {
   // deleted is no longer used and should be replaced by inaccessible.
   reserved "deleted";
   reserved 4;
+
   // The owner of the plugin to which this mapping relates.
   string plugin_owner = 1;
   // The name of the plugin to which this mapping relates.
