@@ -45,15 +45,15 @@ func (f *formatter) Run() error {
 }
 
 // P prints a line to the generated output.
-func (f *formatter) P(elements ...interface{}) {
+func (f *formatter) P(elements ...string) {
 	if len(elements) > 0 {
 		// Don't use an indent if we're just writing a newline.
-		fmt.Fprint(f.writer, strings.Repeat("  ", f.indent))
+		_, _ = fmt.Fprint(f.writer, strings.Repeat("  ", f.indent))
 	}
 	for _, elem := range elements {
-		fmt.Fprint(f.writer, elem)
+		_, _ = fmt.Fprint(f.writer, elem)
 	}
-	fmt.Fprintln(f.writer)
+	_, _ = fmt.Fprintln(f.writer)
 }
 
 // In increases the current level of indentation.
@@ -533,10 +533,10 @@ func (f *formatter) writeExtend(extendNode *ast.ExtendNode) error {
 		return err
 	}
 	if len(extendElements) == 0 {
-		f.P("extend ", extendNode.Extendee.AsIdentifier(), "{};")
+		f.P("extend ", string(extendNode.Extendee.AsIdentifier()), "{};")
 		return nil
 	}
-	f.P("extend ", extendNode.Extendee.AsIdentifier(), "{")
+	f.P("extend ", string(extendNode.Extendee.AsIdentifier()), "{")
 	f.In()
 	for _, extendElement := range extendElements {
 		if err := f.writeNode(extendElement); err != nil {
