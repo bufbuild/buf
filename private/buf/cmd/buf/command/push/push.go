@@ -87,7 +87,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		tagFlagName,
 		tagFlagShortName,
 		nil,
-		"Create a tag for the pushed commit. Multiple tracks are appended if specified multiple times.",
+		"Create a tag for the pushed commit. Multiple tags are created if specified multiple times.",
 	)
 	flagSet.StringVar(
 		&f.ErrorFormat,
