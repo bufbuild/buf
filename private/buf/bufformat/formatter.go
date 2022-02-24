@@ -204,7 +204,7 @@ func (f *formatter) writePackage(packageNode *ast.PackageNode) error {
 	return nil
 }
 
-// writeImport write an import statement.
+// writeImport writes an import statement.
 //
 // For example,
 //
@@ -227,7 +227,7 @@ func (f *formatter) writeImport(importNode *ast.ImportNode) error {
 	return nil
 }
 
-// writeOption write an option.
+// writeOption writes an option.
 //
 // For example,
 //
@@ -402,7 +402,7 @@ func (f *formatter) writeRPC(rpcNode *ast.RPCNode) error {
 		f.P(rpcPrefix + ";")
 		return nil
 	}
-	f.P(rpcPrefix + "{")
+	f.P(rpcPrefix + " {")
 	f.In()
 	for _, option := range options {
 		if err := f.writeOption(option); err != nil {
@@ -536,7 +536,7 @@ func (f *formatter) writeExtend(extendNode *ast.ExtendNode) error {
 		f.P("extend ", string(extendNode.Extendee.AsIdentifier()), "{};")
 		return nil
 	}
-	f.P("extend ", string(extendNode.Extendee.AsIdentifier()), "{")
+	f.P("extend ", string(extendNode.Extendee.AsIdentifier()), " {")
 	f.In()
 	for _, extendElement := range extendElements {
 		if err := f.writeNode(extendElement); err != nil {
@@ -822,10 +822,10 @@ func stringForRange(rangeNode *ast.RangeNode) string {
 	}
 	// Either EndVal or Max will be set, but never both.
 	var end string
-	if rangeNode.EndVal != nil {
+	switch {
+	case rangeNode.EndVal != nil:
 		end = stringForValue(rangeNode.EndVal)
-	}
-	if rangeNode.Max != nil {
+	case rangeNode.Max != nil:
 		end = "max"
 	}
 	return fmt.Sprintf("%s to %s", start, end)

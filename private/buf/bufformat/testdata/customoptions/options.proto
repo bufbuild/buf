@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+import "google/protobuf/descriptor.proto";
+
+package custom;
+
+// Thing is a thing.
+message Thing {
+  int64 foo = 1;
+  int64 bar = 2;
+  bool truth = 3;
+  Thing recursive = 4;
+  repeated int64 repeated_foo = 5;
+  repeated Thing repeated_thing = 6;
+}
+
+extend google.protobuf.MessageOptions {
+  bool message_option = 80001;
+  Thing message_thing_option = 80003;
+}
+
+extend google.protobuf.FileOptions {
+  bool file_option = 80002;
+  Thing file_thing_option = 80004;
+}
+
+extend google.protobuf.FieldOptions {
+  bool field_option = 80006;
+  Thing field_thing_option = 80007;
+  repeated int64 repeated_field_option = 80017;
+  repeated Thing repeated_field_thing_option = 80018;
+}
+
+extend google.protobuf.OneofOptions {
+  bool oneof_option = 80008;
+  Thing oneof_thing_option = 80009;
+}
+
+extend google.protobuf.MethodOptions {
+  bool method_option = 80010;
+  Thing method_thing_option = 80011;
+}
+
+extend google.protobuf.EnumOptions {
+  bool enum_option = 80012;
+  Thing enum_thing_option = 80014;
+}
+
+extend google.protobuf.EnumValueOptions {
+  bool enum_value_option = 80015;
+  Thing enum_value_thing_option = 80016;
+}
+
+extend google.protobuf.ServiceOptions {
+  bool service_option = 80012;
+  Thing service_thing_option = 80014;
+}
