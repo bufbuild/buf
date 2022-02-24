@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
@@ -26,7 +27,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -138,7 +138,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	token = stringutil.TrimLines(token)
+	token = strings.TrimSpace(token)
 	user, err := authnService.GetCurrentUser(rpcauth.WithToken(ctx, token))
 	if err != nil {
 		// We don't want to use the default error from wrapError here if the error
