@@ -46,14 +46,36 @@ func (f *formatter) Run() error {
 
 // P prints a line to the generated output.
 func (f *formatter) P(elements ...string) {
-	if len(elements) > 0 {
-		// Don't use an indent if we're just writing a newline.
-		_, _ = fmt.Fprint(f.writer, strings.Repeat("  ", f.indent))
+	f.p(elements...)
+	f.newline()
+}
+
+// PWithTrailingComments prints a line to the generated output, and includes
+// the trailing comments attached to the given node, if any.
+func (f *formatter) PWithTrailingComments(node ast.Node, elements ...string) {
+	f.p(elements...)
+	trailingComments := f.fileNode.NodeInfo(node).TrailingComments()
+	if length := trailingComments.Len(); length > 0 {
+		if length == 1 {
+			// There's only a single trailing comment, so we write
+			// it in-line and finish with a newline.
+			//
+			// We need to add a space between the previous element
+			// and the beginning of the in-line comment.
+			_, _ = fmt.Fprint(f.writer, " "+strings.TrimSpace(trailingComments.Index(0).RawText()))
+			f.newline()
+			return
+		}
+		// There's more than one trailing comment, so all of them
+		// should be printed in a block underneath the type, each
+		// separated by a newline.
+		f.newline()
+		for i := 0; i < length; i++ {
+			f.writeComment(trailingComments.Index(i))
+		}
+		return
 	}
-	for _, elem := range elements {
-		_, _ = fmt.Fprint(f.writer, elem)
-	}
-	_, _ = fmt.Fprintln(f.writer)
+	f.newline()
 }
 
 // In increases the current level of indentation.
@@ -66,6 +88,22 @@ func (f *formatter) Out() {
 	if f.indent > 0 {
 		f.indent--
 	}
+}
+
+// p prints the given elements to the generated output.
+func (f *formatter) p(elements ...string) {
+	if len(elements) > 0 {
+		// Don't use an indent if we're just writing a newline.
+		_, _ = fmt.Fprint(f.writer, strings.Repeat("  ", f.indent))
+	}
+	for _, elem := range elements {
+		_, _ = fmt.Fprint(f.writer, elem)
+	}
+}
+
+// newline adds a newline.
+func (f *formatter) newline() {
+	_, _ = fmt.Fprintln(f.writer)
 }
 
 // writeFile writes the file node.
@@ -160,14 +198,14 @@ func (f *formatter) writeFileHeader(fileNode *ast.FileNode) error {
 // writeFileTypes writes the types defined in a .proto file. This includes the messages, enums,
 // services, etc. All other elements are ignored since they are handled by f.writeFileHeader.
 func (f *formatter) writeFileTypes(fileNode *ast.FileNode) error {
-	var writeNewline bool
+	var writeP bool
 	for _, fileElement := range f.fileNode.Decls {
 		switch node := fileElement.(type) {
 		case *ast.PackageNode, *ast.OptionNode, *ast.ImportNode:
 			// These elements have already been written by f.writeFileHeader.
 			continue
 		default:
-			if writeNewline {
+			if writeP {
 				// File-level nodes should be separated by a newline.
 				f.P()
 			}
@@ -176,7 +214,7 @@ func (f *formatter) writeFileTypes(fileNode *ast.FileNode) error {
 			}
 			// We want to start writing newlines as soon as we've written
 			// a single type.
-			writeNewline = true
+			writeP = true
 		}
 	}
 	return nil
@@ -189,7 +227,7 @@ func (f *formatter) writeFileTypes(fileNode *ast.FileNode) error {
 //  syntax = "proto3";
 //
 func (f *formatter) writeSyntax(syntaxNode *ast.SyntaxNode) error {
-	f.P(`syntax = "`, syntaxNode.Syntax.AsString(), `";`)
+	f.PWithTrailingComments(syntaxNode, `syntax = "`, syntaxNode.Syntax.AsString(), `";`)
 	return nil
 }
 
@@ -200,7 +238,7 @@ func (f *formatter) writeSyntax(syntaxNode *ast.SyntaxNode) error {
 //  package acme.weather.v1;
 //
 func (f *formatter) writePackage(packageNode *ast.PackageNode) error {
-	f.P("package ", string(packageNode.Name.AsIdentifier()), ";")
+	f.PWithTrailingComments(packageNode, "package ", string(packageNode.Name.AsIdentifier()), ";")
 	return nil
 }
 
@@ -223,7 +261,7 @@ func (f *formatter) writeImport(importNode *ast.ImportNode) error {
 		label,
 		importNode.Name.AsString(),
 	)
-	f.P(importStatement)
+	f.PWithTrailingComments(importNode, importStatement)
 	return nil
 }
 
@@ -239,7 +277,7 @@ func (f *formatter) writeOption(optionNode *ast.OptionNode) error {
 		stringForOptionName(optionNode.Name),
 		stringForValue(optionNode.Val),
 	)
-	f.P(option)
+	f.PWithTrailingComments(optionNode, option)
 	return nil
 }
 
@@ -279,7 +317,7 @@ func (f *formatter) writeMessage(messageNode *ast.MessageNode) error {
 		return err
 	}
 	if messageElements == nil {
-		f.P(`message `, messageNode.Name.Val, ` {}`)
+		f.PWithTrailingComments(messageNode, `message `, messageNode.Name.Val, ` {}`)
 		return nil
 	}
 	f.P(`message `, messageNode.Name.Val, ` {`)
@@ -288,7 +326,7 @@ func (f *formatter) writeMessage(messageNode *ast.MessageNode) error {
 		return err
 	}
 	f.Out()
-	f.P(`}`)
+	f.PWithTrailingComments(messageNode, `}`)
 	return nil
 }
 
@@ -314,7 +352,7 @@ func (f *formatter) writeEnum(enumNode *ast.EnumNode) error {
 		return err
 	}
 	if enumElements == nil {
-		f.P(`enum `, enumNode.Name.Val, ` {}`)
+		f.PWithTrailingComments(enumNode, `enum `, enumNode.Name.Val, ` {}`)
 		return nil
 	}
 	f.P(`enum `, enumNode.Name.Val, ` {`)
@@ -323,7 +361,7 @@ func (f *formatter) writeEnum(enumNode *ast.EnumNode) error {
 		return err
 	}
 	f.Out()
-	f.P(`}`)
+	f.PWithTrailingComments(enumNode, `}`)
 	return nil
 }
 
@@ -340,7 +378,7 @@ func (f *formatter) writeEnumValue(enumValueNode *ast.EnumValueNode) error {
 		stringForValue(enumValueNode.Number),
 		stringForCompactOptions(enumValueNode.Options),
 	)
-	f.P(enumValue)
+	f.PWithTrailingComments(enumValueNode, enumValue)
 	return nil
 }
 
@@ -363,7 +401,7 @@ func (f *formatter) writeService(serviceNode *ast.ServiceNode) error {
 		return err
 	}
 	if serviceElements == nil {
-		f.P(`service `, serviceNode.Name.Val, ` {}`)
+		f.PWithTrailingComments(serviceNode, `service `, serviceNode.Name.Val, ` {}`)
 		return nil
 	}
 	f.P(`service `, serviceNode.Name.Val, ` {`)
@@ -372,7 +410,7 @@ func (f *formatter) writeService(serviceNode *ast.ServiceNode) error {
 		return err
 	}
 	f.Out()
-	f.P(`}`)
+	f.PWithTrailingComments(serviceNode, `}`)
 	return nil
 }
 
@@ -399,7 +437,7 @@ func (f *formatter) writeRPC(rpcNode *ast.RPCNode) error {
 		stringForRPCType(rpcNode.Output),
 	)
 	if options == nil {
-		f.P(rpcPrefix + ";")
+		f.PWithTrailingComments(rpcNode, rpcPrefix+";")
 		return nil
 	}
 	f.P(rpcPrefix + " {")
@@ -410,7 +448,7 @@ func (f *formatter) writeRPC(rpcNode *ast.RPCNode) error {
 		}
 	}
 	f.Out()
-	f.P(`}`)
+	f.PWithTrailingComments(rpcNode, `}`)
 	return nil
 }
 
@@ -429,7 +467,7 @@ func (f *formatter) writeField(fieldNode *ast.FieldNode) error {
 		strconv.FormatUint(fieldNode.Tag.Val, 10),
 		stringForCompactOptions(fieldNode.GetOptions()),
 	)
-	f.P(field)
+	f.PWithTrailingComments(fieldNode, field)
 	return nil
 }
 
@@ -447,7 +485,7 @@ func (f *formatter) writeMapField(mapFieldNode *ast.MapFieldNode) error {
 		strconv.FormatUint(mapFieldNode.Tag.Val, 10),
 		stringForCompactOptions(mapFieldNode.GetOptions()),
 	)
-	f.P(mapField)
+	f.PWithTrailingComments(mapFieldNode, mapField)
 	return nil
 }
 
@@ -472,7 +510,7 @@ func (f *formatter) writeOneOf(oneOfNode *ast.OneOfNode) error {
 		return err
 	}
 	if oneOfElements == nil {
-		f.P(`oneof `, oneOfNode.Name.Val, ` {}`)
+		f.PWithTrailingComments(oneOfNode, `oneof `, oneOfNode.Name.Val, ` {}`)
 		return nil
 	}
 	f.P(`oneof `, oneOfNode.Name.Val, ` {`)
@@ -481,7 +519,7 @@ func (f *formatter) writeOneOf(oneOfNode *ast.OneOfNode) error {
 		return err
 	}
 	f.Out()
-	f.P(`}`)
+	f.PWithTrailingComments(oneOfNode, `}`)
 	return nil
 }
 
@@ -507,7 +545,7 @@ func (f *formatter) writeGroup(groupNode *ast.GroupNode) error {
 		stringForCompactOptions(groupNode.Options),
 	)
 	if messageElements == nil {
-		f.P(groupPrefix + "};")
+		f.PWithTrailingComments(groupNode, groupPrefix+"};")
 		return nil
 	}
 	f.P(groupPrefix)
@@ -516,7 +554,7 @@ func (f *formatter) writeGroup(groupNode *ast.GroupNode) error {
 		return err
 	}
 	f.Out()
-	f.P(`}`)
+	f.PWithTrailingComments(groupNode, `}`)
 	return nil
 }
 
@@ -533,7 +571,7 @@ func (f *formatter) writeExtend(extendNode *ast.ExtendNode) error {
 		return err
 	}
 	if len(extendElements) == 0 {
-		f.P("extend ", string(extendNode.Extendee.AsIdentifier()), "{};")
+		f.PWithTrailingComments(extendNode, "extend ", string(extendNode.Extendee.AsIdentifier()), "{};")
 		return nil
 	}
 	f.P("extend ", string(extendNode.Extendee.AsIdentifier()), " {")
@@ -544,7 +582,7 @@ func (f *formatter) writeExtend(extendNode *ast.ExtendNode) error {
 		}
 	}
 	f.Out()
-	f.P(`}`)
+	f.PWithTrailingComments(extendNode, `}`)
 	return nil
 }
 
@@ -560,7 +598,7 @@ func (f *formatter) writeExtensionRange(extensionRangeNode *ast.ExtensionRangeNo
 		stringForRanges(extensionRangeNode.Ranges),
 		stringForCompactOptions(extensionRangeNode.Options),
 	)
-	f.P(extension)
+	f.PWithTrailingComments(extensionRangeNode, extension)
 	return nil
 }
 
@@ -584,7 +622,7 @@ func (f *formatter) writeReserved(reservedNode *ast.ReservedNode) error {
 	if len(reservedNode.Ranges) > 0 {
 		reservedValue = stringForRanges(reservedNode.Ranges)
 	}
-	f.P("reserved ", reservedValue, ";")
+	f.PWithTrailingComments(reservedNode, "reserved ", reservedValue, ";")
 	return nil
 }
 
@@ -694,10 +732,13 @@ func (f *formatter) writeServiceElements(serviceElements *serviceElements) error
 	return nil
 }
 
-// writeNode writes the node, as well as the comments surrounding it.
-// Note that this function only includes the nodes that have comments
-// attached to them. Other nodes written in-line (e.g. compact options)
-// are handled with simpler string conversion functions.
+// writeNode writes the node, as well as its leading comments. Note that
+// this function only includes the nodes that have comments attached to them.
+// Other nodes written in-line (e.g. compact options) are handled with simpler
+// string conversion functions.
+//
+// Trailing comments are handled in each respective write function so that it
+// can take the line length into account (i.e. whether to write it in-line or not).
 func (f *formatter) writeNode(node ast.Node) error {
 	info := f.fileNode.NodeInfo(node)
 	if err := f.writeComments(info.LeadingComments()); err != nil {
@@ -738,10 +779,8 @@ func (f *formatter) writeNode(node ast.Node) error {
 		return f.writeSyntax(element)
 	case *ast.EmptyDeclNode:
 		// Nothing to do here.
-	default:
-		return fmt.Errorf("unexpected node: %T", node)
 	}
-	return f.writeComments(info.TrailingComments())
+	return fmt.Errorf("unexpected node: %T", node)
 }
 
 // writeComments writes the given comments.
@@ -750,13 +789,14 @@ func (f *formatter) writeComments(comments ast.Comments) error {
 		return nil
 	}
 	for i := 0; i < comments.Len(); i++ {
-		// Preserve the indentation configured on the formatter.
-		//
-		// f.P will automatically handle newlines, so we make sure
-		// to remove the trailing newline from the comment, if any.
-		f.P(strings.TrimRight(comments.Index(i).RawText(), "\n"))
+		f.writeComment(comments.Index(i))
 	}
 	return nil
+}
+
+// writeComment writes the given comment.
+func (f *formatter) writeComment(comment ast.Comment) {
+	f.P(strings.TrimSpace(comment.RawText()))
 }
 
 // stringForFieldLabel returns the string representation of this field label, if any.
