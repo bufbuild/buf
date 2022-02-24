@@ -238,6 +238,8 @@ github.com/inconshreveable/mousetrap v1.0.0 h1:Z8tu5sraLXCXIcARxBp/8cbvlwVa7Z1NH
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a h1:d4+I1YEKVmWZrgkt6jpXBnLgV2ZjO0YxEtLDdfIZfH4=
 github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a/go.mod h1:Zi/ZFkEqFHTm7qkjyNJjaWH4LQA9LQhGJyF0lTYGpxw=
+github.com/jhump/protocompile v0.0.0-20220209020618-b218a88181be h1:KaWUOInov+KmpTsneglPtk85TNdircm5dkewhuMW4iA=
+github.com/jhump/protocompile v0.0.0-20220209020618-b218a88181be/go.mod h1:qr2b5kx4HbFS7/g4uYO5qv9ei8303JMsC7ESbYiqr2Q=
 github.com/jhump/protoreflect v1.11.1-0.20220213155251-0c2aedc66cf4 h1:E2CdxLXYSn6Zrj2+u8DWrwMJW3YZLSWtM/7kIL8OL18=
 github.com/jhump/protoreflect v1.11.1-0.20220213155251-0c2aedc66cf4/go.mod h1:U7aMIjN0NWq9swDP7xDdoMfRHb35uiuTd3Z9nFXJf5E=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
@@ -795,6 +797,7 @@ google.golang.org/protobuf v1.24.0/go.mod h1:r/3tXBNzIEhYS9I1OUVjXDlt8tc493IdKGj
 google.golang.org/protobuf v1.25.0/go.mod h1:9JNX74DMeImyA3h4bdi1ymwjUzf21/xIlbajtzgsN7c=
 google.golang.org/protobuf v1.26.0-rc.1/go.mod h1:jlhhOSvTdKEhbULTjvd4ARK9grFBp09yW+WbY/TyQbw=
 google.golang.org/protobuf v1.26.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
+google.golang.org/protobuf v1.27.0/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
 google.golang.org/protobuf v1.27.1 h1:SnqbnDw1V7RiZcXPx5MEeqPv2s79L9i7BJUlG/+RurQ=
 google.golang.org/protobuf v1.27.1/go.mod h1:9q0QmTI4eRPtz6boOQmLYwt+qCgq0jsYwAQnmE0givc=
 gopkg.in/alecthomas/kingpin.v2 v2.2.6/go.mod h1:FMv+mEhP44yOT+4EoQTLFTRgOQ1FBLkstjWtayDeSgw=
