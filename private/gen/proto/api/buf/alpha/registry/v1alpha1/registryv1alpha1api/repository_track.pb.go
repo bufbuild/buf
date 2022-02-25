@@ -50,6 +50,4 @@ type RepositoryTrackService interface {
 		repositoryName string,
 		name string,
 	) (repositoryTrack *v1alpha1.RepositoryTrack, err error)
-	// CountRepositoryTracks counts the number of repository tracks associated with a repository.
-	CountRepositoryTracks(ctx context.Context, repositoryId string) (totalCount uint32, err error)
 }

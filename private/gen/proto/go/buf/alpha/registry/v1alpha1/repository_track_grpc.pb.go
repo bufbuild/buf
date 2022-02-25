@@ -44,8 +44,6 @@ type RepositoryTrackServiceClient interface {
 	DeleteRepositoryTrackByName(ctx context.Context, in *DeleteRepositoryTrackByNameRequest, opts ...grpc.CallOption) (*DeleteRepositoryTrackByNameResponse, error)
 	// GetRepositoryTrackByName gets a repository track by name.
 	GetRepositoryTrackByName(ctx context.Context, in *GetRepositoryTrackByNameRequest, opts ...grpc.CallOption) (*GetRepositoryTrackByNameResponse, error)
-	// CountRepositoryTracks counts the number of repository tracks associated with a repository.
-	CountRepositoryTracks(ctx context.Context, in *CountRepositoryTracksRequest, opts ...grpc.CallOption) (*CountRepositoryTracksResponse, error)
 }
 
 type repositoryTrackServiceClient struct {
@@ -92,15 +90,6 @@ func (c *repositoryTrackServiceClient) GetRepositoryTrackByName(ctx context.Cont
 	return out, nil
 }
 
-func (c *repositoryTrackServiceClient) CountRepositoryTracks(ctx context.Context, in *CountRepositoryTracksRequest, opts ...grpc.CallOption) (*CountRepositoryTracksResponse, error) {
-	out := new(CountRepositoryTracksResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryTrackService/CountRepositoryTracks", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // RepositoryTrackServiceServer is the server API for RepositoryTrackService service.
 // All implementations should embed UnimplementedRepositoryTrackServiceServer
 // for forward compatibility
@@ -113,8 +102,6 @@ type RepositoryTrackServiceServer interface {
 	DeleteRepositoryTrackByName(context.Context, *DeleteRepositoryTrackByNameRequest) (*DeleteRepositoryTrackByNameResponse, error)
 	// GetRepositoryTrackByName gets a repository track by name.
 	GetRepositoryTrackByName(context.Context, *GetRepositoryTrackByNameRequest) (*GetRepositoryTrackByNameResponse, error)
-	// CountRepositoryTracks counts the number of repository tracks associated with a repository.
-	CountRepositoryTracks(context.Context, *CountRepositoryTracksRequest) (*CountRepositoryTracksResponse, error)
 }
 
 // UnimplementedRepositoryTrackServiceServer should be embedded to have forward compatible implementations.
@@ -132,9 +119,6 @@ func (UnimplementedRepositoryTrackServiceServer) DeleteRepositoryTrackByName(con
 }
 func (UnimplementedRepositoryTrackServiceServer) GetRepositoryTrackByName(context.Context, *GetRepositoryTrackByNameRequest) (*GetRepositoryTrackByNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRepositoryTrackByName not implemented")
-}
-func (UnimplementedRepositoryTrackServiceServer) CountRepositoryTracks(context.Context, *CountRepositoryTracksRequest) (*CountRepositoryTracksResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CountRepositoryTracks not implemented")
 }
 
 // UnsafeRepositoryTrackServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -220,24 +204,6 @@ func _RepositoryTrackService_GetRepositoryTrackByName_Handler(srv interface{}, c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RepositoryTrackService_CountRepositoryTracks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CountRepositoryTracksRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RepositoryTrackServiceServer).CountRepositoryTracks(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryTrackService/CountRepositoryTracks",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepositoryTrackServiceServer).CountRepositoryTracks(ctx, req.(*CountRepositoryTracksRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // RepositoryTrackService_ServiceDesc is the grpc.ServiceDesc for RepositoryTrackService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -260,10 +226,6 @@ var RepositoryTrackService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRepositoryTrackByName",
 			Handler:    _RepositoryTrackService_GetRepositoryTrackByName_Handler,
-		},
-		{
-			MethodName: "CountRepositoryTracks",
-			Handler:    _RepositoryTrackService_CountRepositoryTracks_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

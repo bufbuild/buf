@@ -40,8 +40,6 @@ type RepositoryTagServiceClient interface {
 	CreateRepositoryTag(ctx context.Context, in *CreateRepositoryTagRequest, opts ...grpc.CallOption) (*CreateRepositoryTagResponse, error)
 	// ListRepositoryTags lists the repository tags associated with a Repository.
 	ListRepositoryTags(ctx context.Context, in *ListRepositoryTagsRequest, opts ...grpc.CallOption) (*ListRepositoryTagsResponse, error)
-	// CountRepositoryTags counts the number of repository tags associated with a Repository.
-	CountRepositoryTags(ctx context.Context, in *CountRepositoryTagsRequest, opts ...grpc.CallOption) (*CountRepositoryTagsResponse, error)
 }
 
 type repositoryTagServiceClient struct {
@@ -70,15 +68,6 @@ func (c *repositoryTagServiceClient) ListRepositoryTags(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *repositoryTagServiceClient) CountRepositoryTags(ctx context.Context, in *CountRepositoryTagsRequest, opts ...grpc.CallOption) (*CountRepositoryTagsResponse, error) {
-	out := new(CountRepositoryTagsResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryTagService/CountRepositoryTags", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // RepositoryTagServiceServer is the server API for RepositoryTagService service.
 // All implementations should embed UnimplementedRepositoryTagServiceServer
 // for forward compatibility
@@ -87,8 +76,6 @@ type RepositoryTagServiceServer interface {
 	CreateRepositoryTag(context.Context, *CreateRepositoryTagRequest) (*CreateRepositoryTagResponse, error)
 	// ListRepositoryTags lists the repository tags associated with a Repository.
 	ListRepositoryTags(context.Context, *ListRepositoryTagsRequest) (*ListRepositoryTagsResponse, error)
-	// CountRepositoryTags counts the number of repository tags associated with a Repository.
-	CountRepositoryTags(context.Context, *CountRepositoryTagsRequest) (*CountRepositoryTagsResponse, error)
 }
 
 // UnimplementedRepositoryTagServiceServer should be embedded to have forward compatible implementations.
@@ -100,9 +87,6 @@ func (UnimplementedRepositoryTagServiceServer) CreateRepositoryTag(context.Conte
 }
 func (UnimplementedRepositoryTagServiceServer) ListRepositoryTags(context.Context, *ListRepositoryTagsRequest) (*ListRepositoryTagsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListRepositoryTags not implemented")
-}
-func (UnimplementedRepositoryTagServiceServer) CountRepositoryTags(context.Context, *CountRepositoryTagsRequest) (*CountRepositoryTagsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CountRepositoryTags not implemented")
 }
 
 // UnsafeRepositoryTagServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -152,24 +136,6 @@ func _RepositoryTagService_ListRepositoryTags_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RepositoryTagService_CountRepositoryTags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CountRepositoryTagsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RepositoryTagServiceServer).CountRepositoryTags(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryTagService/CountRepositoryTags",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepositoryTagServiceServer).CountRepositoryTags(ctx, req.(*CountRepositoryTagsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // RepositoryTagService_ServiceDesc is the grpc.ServiceDesc for RepositoryTagService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -184,10 +150,6 @@ var RepositoryTagService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListRepositoryTags",
 			Handler:    _RepositoryTagService_ListRepositoryTags_Handler,
-		},
-		{
-			MethodName: "CountRepositoryTags",
-			Handler:    _RepositoryTagService_CountRepositoryTags_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

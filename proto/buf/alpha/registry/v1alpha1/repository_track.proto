@@ -38,8 +38,6 @@ service RepositoryTrackService {
   rpc DeleteRepositoryTrackByName(DeleteRepositoryTrackByNameRequest) returns (DeleteRepositoryTrackByNameResponse);
   // GetRepositoryTrackByName gets a repository track by name.
   rpc GetRepositoryTrackByName(GetRepositoryTrackByNameRequest) returns (GetRepositoryTrackByNameResponse);
-  // CountRepositoryTracks counts the number of repository tracks associated with a repository.
-  rpc CountRepositoryTracks(CountRepositoryTracksRequest) returns (CountRepositoryTracksResponse);
 }
 
 message CreateRepositoryTrackRequest {
@@ -86,13 +84,4 @@ message GetRepositoryTrackByNameRequest {
 
 message GetRepositoryTrackByNameResponse {
   RepositoryTrack repository_track = 1;
-}
-
-message CountRepositoryTracksRequest {
-  // The ID of the repository whose tracks should be counted.
-  string repository_id = 1;
-}
-
-message CountRepositoryTracksResponse {
-  uint32 total_count = 1;
 }

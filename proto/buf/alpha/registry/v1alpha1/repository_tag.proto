@@ -39,8 +39,6 @@ service RepositoryTagService {
   rpc CreateRepositoryTag(CreateRepositoryTagRequest) returns (CreateRepositoryTagResponse);
   // ListRepositoryTags lists the repository tags associated with a Repository.
   rpc ListRepositoryTags(ListRepositoryTagsRequest) returns (ListRepositoryTagsResponse);
-  // CountRepositoryTags counts the number of repository tags associated with a Repository.
-  rpc CountRepositoryTags(CountRepositoryTagsRequest) returns (CountRepositoryTagsResponse);
 }
 
 message CreateRepositoryTagRequest {
@@ -69,13 +67,4 @@ message ListRepositoryTagsResponse {
   repeated RepositoryTag repository_tags = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
-}
-
-message CountRepositoryTagsRequest {
-  // The ID of the repository whose tags should be counted.
-  string repository_id = 1;
-}
-
-message CountRepositoryTagsResponse {
-  uint32 total_count = 1;
 }
