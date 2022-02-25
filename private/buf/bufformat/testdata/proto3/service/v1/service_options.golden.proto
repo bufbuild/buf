@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "custom.proto";
+
+message Message {}
+
+service Ping {
+  // This is a trailing comment on the Ping service.
+
+  // This is a comment on the deprecated option.
+  option deprecated = true;
+  // This is a comment on the service_option.
+  option (custom.service_option) = false;
+  // This is a comment on the service_thing_option.
+  option (custom.service_thing_option) = {
+    foo:1
+    bar:2
+  };
+}

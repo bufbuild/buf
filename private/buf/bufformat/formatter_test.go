@@ -30,6 +30,7 @@ import (
 
 func TestFormatter(t *testing.T) {
 	testFormatCustomOptions(t)
+	testFormatProto2(t)
 	testFormatProto3(t)
 }
 
@@ -37,8 +38,19 @@ func testFormatCustomOptions(t *testing.T) {
 	testFormatNoDiff(t, "testdata/customoptions")
 }
 
+func testFormatProto2(t *testing.T) {
+	testFormatNoDiff(t, "testdata/proto2/enum/v1")
+	testFormatNoDiff(t, "testdata/proto2/field/v1")
+	testFormatNoDiff(t, "testdata/proto2/group/v1")
+	testFormatNoDiff(t, "testdata/proto2/header/v1")
+	testFormatNoDiff(t, "testdata/proto2/message/v1")
+}
+
 func testFormatProto3(t *testing.T) {
-	testFormatNoDiff(t, "testdata/proto3/all/v1")
+	testFormatNoDiff(t, "testdata/proto3/header/v1")
+	testFormatNoDiff(t, "testdata/proto3/oneof/v1")
+	testFormatNoDiff(t, "testdata/proto3/range/v1")
+	testFormatNoDiff(t, "testdata/proto3/service/v1")
 }
 
 func testFormatNoDiff(t *testing.T, path string) {

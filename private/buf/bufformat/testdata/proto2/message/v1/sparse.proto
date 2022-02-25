@@ -1,0 +1,16 @@
+message  
+
+
+  Foo
+
+{
+
+  // This is a comment on something.
+
+
+                                string name = 1;
+
+    string value = 2; // In-line on value.
+
+
+}
