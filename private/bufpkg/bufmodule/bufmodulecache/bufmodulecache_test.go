@@ -346,6 +346,6 @@ type fakeRepositoryService struct {
 	repository *registryv1alpha1.Repository
 }
 
-func (f *fakeRepositoryService) GetRepositoryByFullName(context.Context, string) (*registryv1alpha1.Repository, error) {
-	return f.repository, nil
+func (f *fakeRepositoryService) GetRepositoryByFullName(context.Context, string) (*registryv1alpha1.Repository, *registryv1alpha1.RepositoryCounts, error) {
+	return f.repository, nil, nil
 }

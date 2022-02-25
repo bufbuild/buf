@@ -29,7 +29,10 @@ type repositoryService struct {
 }
 
 // GetRepository gets a repository by ID.
-func (s *repositoryService) GetRepository(ctx context.Context, id string) (repository *v1alpha1.Repository, _ error) {
+func (s *repositoryService) GetRepository(
+	ctx context.Context,
+	id string,
+) (repository *v1alpha1.Repository, counts *v1alpha1.RepositoryCounts, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -40,13 +43,16 @@ func (s *repositoryService) GetRepository(ctx context.Context, id string) (repos
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return response.Repository, nil
+	return response.Repository, response.Counts, nil
 }
 
 // GetRepositoryByFullName gets a repository by full name.
-func (s *repositoryService) GetRepositoryByFullName(ctx context.Context, fullName string) (repository *v1alpha1.Repository, _ error) {
+func (s *repositoryService) GetRepositoryByFullName(
+	ctx context.Context,
+	fullName string,
+) (repository *v1alpha1.Repository, counts *v1alpha1.RepositoryCounts, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -57,9 +63,9 @@ func (s *repositoryService) GetRepositoryByFullName(ctx context.Context, fullNam
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return response.Repository, nil
+	return response.Repository, response.Counts, nil
 }
 
 // ListRepositories lists all repositories.
