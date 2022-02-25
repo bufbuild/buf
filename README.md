@@ -17,9 +17,9 @@ The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf] API
 
 - The ability to manage Protobuf assets, including [plugins] and [templates], on the [Buf Schema Registry][bsr] (BSR).
 - A [linter][lint.usage] that enforces good API design choices and structure.
-- A [breaking change detector][breaking_usage] that enforces compatibility at the sourfce code or wire level.
+- A [breaking change detector][breaking_usage] that enforces compatibility at the source code or wire level.
 - A [generator][generate_usage] that invokes your protoc plugins based on a configurable [template][templates].
-  A [`protoc` replacement][protoc] that uses Buf's [high-performance Protobuf compiler][compiler].
+- A [`protoc` replacement][protoc] that uses Buf's [high-performance Protobuf compiler][compiler].
 - A configurable file [builder][build_usage] that produces [images], our extension of Protobuf's native [FileDescriptorSets][filedescriptorset].
 
 ## Installation
@@ -36,6 +36,14 @@ This installs:
 
 * The `buf`, [`protoc-gen-buf-breaking`][breaking], and [`protoc-gen-buf-lint`][lint] binaries
 * Shell completion scripts for [Bash], [Fish], [Powershell], and [zsh]
+
+### Scoop
+
+You can install `buf` on Windows using [Scoop]:
+
+```powershell
+scoop install buf
+```
 
 ### Other methods
 
@@ -94,7 +102,6 @@ While `buf`'s [core features][features] should cover most use cases, we've inclu
 * **Speed**. Buf's internal Protobuf compiler compiles your Protobuf sources using all available cores without compromising deterministic output, which is considerably faster than [`protoc`][protoc]. This allows for near-instantaneous feedback, which is of special importance for features like [editor integration][id].
 
 ## Next steps
-
 
 Once you've installed `buf`, we recommend completing the [Tour of Buf][tour], which provides a broad but hands-on overview of the core functionality of both the CLI and the [BSR]. The tour takes about 10 minutes to complete.
 
@@ -157,6 +164,7 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [repo]: ./
 [repositories]: https://docs.buf.build/bsr/overview#module
 [roadmap]: https://docs.buf.build/roadmap
+[scoop]: https://scoop.sh
 [source]: https://docs.buf.build/installation#from-source
 [tarball]: https://docs.buf.build/installation#tarball
 [templates]: https://docs.buf.build/bsr/remote-generation/concepts#template
