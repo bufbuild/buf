@@ -77,3 +77,20 @@ func (s *repositoryTagService) ListRepositoryTags(
 	}
 	return response.RepositoryTags, response.NextPageToken, nil
 }
+
+// CountRepositoryTags counts the number of repository tags associated with a Repository.
+func (s *repositoryTagService) CountRepositoryTags(ctx context.Context, repositoryId string) (totalCount uint32, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.CountRepositoryTags(
+		ctx,
+		&v1alpha1.CountRepositoryTagsRequest{
+			RepositoryId: repositoryId,
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return response.TotalCount, nil
+}

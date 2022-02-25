@@ -38,4 +38,6 @@ type RepositoryTagService interface {
 		pageToken string,
 		reverse bool,
 	) (repositoryTags []*v1alpha1.RepositoryTag, nextPageToken string, err error)
+	// CountRepositoryTags counts the number of repository tags associated with a Repository.
+	CountRepositoryTags(ctx context.Context, repositoryId string) (totalCount uint32, err error)
 }

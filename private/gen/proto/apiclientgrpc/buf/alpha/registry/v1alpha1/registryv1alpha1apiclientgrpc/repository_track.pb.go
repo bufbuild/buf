@@ -123,3 +123,20 @@ func (s *repositoryTrackService) GetRepositoryTrackByName(
 	}
 	return response.RepositoryTrack, nil
 }
+
+// CountRepositoryTracks counts the number of repository tracks associated with a repository.
+func (s *repositoryTrackService) CountRepositoryTracks(ctx context.Context, repositoryId string) (totalCount uint32, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.CountRepositoryTracks(
+		ctx,
+		&v1alpha1.CountRepositoryTracksRequest{
+			RepositoryId: repositoryId,
+		},
+	)
+	if err != nil {
+		return 0, err
+	}
+	return response.TotalCount, nil
+}
