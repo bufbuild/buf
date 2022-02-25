@@ -48,6 +48,11 @@ message Repository {
   string deprecation_message = 9;
 }
 
+message RepositoryCounts {
+  uint32 tags_count = 1;
+  uint32 tracks_count = 2;
+}
+
 message RepositoryContributor {
   User user = 1;
   // The ID of the for which the role belongs to.
@@ -114,6 +119,7 @@ message GetRepositoryRequest {
 
 message GetRepositoryResponse {
   Repository repository = 1;
+  RepositoryCounts counts = 2;
 }
 
 message GetRepositoryByFullNameRequest {
@@ -122,6 +128,7 @@ message GetRepositoryByFullNameRequest {
 
 message GetRepositoryByFullNameResponse {
   Repository repository = 1;
+  RepositoryCounts counts = 2;
 }
 
 message ListRepositoriesRequest {

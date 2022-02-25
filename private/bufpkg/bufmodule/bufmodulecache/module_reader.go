@@ -143,7 +143,7 @@ func (m *moduleReader) GetModule(
 	if err != nil {
 		return nil, err
 	}
-	repository, err := repositoryService.GetRepositoryByFullName(
+	repository, _, err := repositoryService.GetRepositoryByFullName(
 		ctx,
 		fmt.Sprintf("%s/%s", modulePin.Owner(), modulePin.Repository()),
 	)

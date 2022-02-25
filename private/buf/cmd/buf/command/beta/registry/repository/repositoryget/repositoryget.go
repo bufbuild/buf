@@ -90,7 +90,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	repository, err := service.GetRepositoryByFullName(
+	repository, _, err := service.GetRepositoryByFullName(
 		ctx,
 		moduleIdentity.Owner()+"/"+moduleIdentity.Repository(),
 	)

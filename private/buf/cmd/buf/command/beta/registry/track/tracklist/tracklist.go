@@ -119,7 +119,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	repository, err := repositoryService.GetRepositoryByFullName(
+	repository, _, err := repositoryService.GetRepositoryByFullName(
 		ctx,
 		moduleReference.Owner()+"/"+moduleReference.Repository(),
 	)
