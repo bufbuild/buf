@@ -52,6 +52,7 @@ var (
 // MessageEncoding is the encoding of the message
 type MessageEncoding int
 
+// MessageEncodingRef is a message encoding file reference.
 type MessageEncodingRef interface {
 	Path() string
 	MessageEncoding() MessageEncoding
