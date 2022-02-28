@@ -16,40 +16,45 @@ package bufwire
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufconvert"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/ioextended"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
+	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 )
 
-type protoEncodingWriter struct {
+type protoEncodingReader struct {
 	logger *zap.Logger
 }
 
-var _ ProtoEncodingWriter = &protoEncodingWriter{}
+var _ ProtoEncodingReader = &protoEncodingReader{}
 
-func newProtoEncodingWriter(
+func newProtoEncodingReader(
 	logger *zap.Logger,
-) *protoEncodingWriter {
-	return &protoEncodingWriter{
+) *protoEncodingReader {
+	return &protoEncodingReader{
 		logger: logger,
 	}
 }
 
-func (p *protoEncodingWriter) PutMessage(
+func (p *protoEncodingReader) GetMessage(
 	ctx context.Context,
-	container app.EnvStdoutContainer,
+	container app.EnvStdinContainer,
 	image bufimage.Image,
-	message proto.Message,
+	typeName string,
 	messageRef bufconvert.MessageEncodingRef,
-) (retErr error) {
+) (_ proto.Message, retErr error) {
+	ctx, span := trace.StartSpan(ctx, "get_message")
+	defer span.End()
 	// Currently, this support bin and JSON format.
 	resolver, err := protoencoding.NewResolver(
 		bufimage.ImageToFileDescriptors(
@@ -57,31 +62,41 @@ func (p *protoEncodingWriter) PutMessage(
 		)...,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	var marshaler protoencoding.Marshaler
+	var unmarshaler protoencoding.Unmarshaler
 	switch messageRef.MessageEncoding() {
 	case bufconvert.MessageEncodingBin:
-		marshaler = protoencoding.NewWireMarshaler()
+		unmarshaler = protoencoding.NewWireUnmarshaler(resolver)
 	case bufconvert.MessageEncodingJSON:
-		marshaler = protoencoding.NewJSONMarshalerIndent(resolver)
+		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
 	default:
-		return fmt.Errorf("unknown message encoding type")
+		return nil, fmt.Errorf("unknown message encoding type")
 	}
-	data, err := marshaler.Marshal(message)
-	if err != nil {
-		return err
-	}
-	writeCloser := ioextended.NopWriteCloser(container.Stdout())
+	readCloser := io.NopCloser(container.Stdin())
 	if messageRef.Path() != "-" {
-		writeCloser, err = os.Create(messageRef.Path())
+		var err error
+		readCloser, err = os.Open(messageRef.Path())
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	defer func() {
-		retErr = multierr.Append(retErr, writeCloser.Close())
+		retErr = multierr.Append(retErr, readCloser.Close())
 	}()
-	_, err = writeCloser.Write(data)
-	return err
+	data, err := io.ReadAll(readCloser)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, errors.New("size of input message must not be zero")
+	}
+	message, err := bufreflect.NewMessage(ctx, image, typeName)
+	if err != nil {
+		return nil, err
+	}
+	if err := unmarshaler.Unmarshal(data, message); err != nil {
+		return nil, fmt.Errorf("unable to unmarshal the message: %v", err)
+	}
+	return message, nil
 }

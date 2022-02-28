@@ -1711,7 +1711,7 @@ Successfully migrated your buf.yaml and buf.gen.yaml to v1.`,
 	})
 }
 
-func TestDecodeWithImage(t *testing.T) {
+func TestConvertWithImage(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1725,7 +1725,7 @@ func TestDecodeWithImage(t *testing.T) {
 	)
 
 	t.Run("stdin input", func(t *testing.T) {
-		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join("testdata", "convert", "descriptor.plain.bin"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		stdout := bytes.NewBuffer(nil)
@@ -1735,7 +1735,7 @@ func TestDecodeWithImage(t *testing.T) {
 			stdin,
 			stdout,
 			"beta",
-			"decode",
+			"convert",
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
@@ -1749,9 +1749,9 @@ func TestDecodeWithImage(t *testing.T) {
 			nil,
 			1,
 			"",
-			"Failure: stdin is required as the input",
+			"Failure: size of input message must not be zero",
 			"beta",
-			"decode",
+			"convert",
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
@@ -1759,7 +1759,7 @@ func TestDecodeWithImage(t *testing.T) {
 	})
 }
 
-func TestDecodeOutput(t *testing.T) {
+func TestConvertOutput(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1772,7 +1772,7 @@ func TestDecodeOutput(t *testing.T) {
 		filepath.Join(tempDir, "image.bin"),
 	)
 	t.Run("json file output", func(t *testing.T) {
-		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join("testdata", "convert", "descriptor.plain.bin"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		outputTempDir := t.TempDir()
@@ -1782,7 +1782,7 @@ func TestDecodeOutput(t *testing.T) {
 			0,
 			``,
 			"beta",
-			"decode",
+			"convert",
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
@@ -1801,7 +1801,7 @@ func TestDecodeOutput(t *testing.T) {
 		)
 	})
 	t.Run("txt file output", func(t *testing.T) {
-		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join("testdata", "convert", "descriptor.plain.bin"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		outputTempDir := t.TempDir()
@@ -1811,7 +1811,7 @@ func TestDecodeOutput(t *testing.T) {
 			0,
 			``,
 			"beta",
-			"decode",
+			"convert",
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
@@ -1830,7 +1830,7 @@ func TestDecodeOutput(t *testing.T) {
 		)
 	})
 	t.Run("stdout with dash", func(t *testing.T) {
-		stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+		stdin, err := os.Open(filepath.Join("testdata", "convert", "descriptor.plain.bin"))
 		require.NoError(t, err)
 		defer stdin.Close()
 		stdout := bytes.NewBuffer(nil)
@@ -1840,7 +1840,7 @@ func TestDecodeOutput(t *testing.T) {
 			stdin,
 			stdout,
 			"beta",
-			"decode",
+			"convert",
 			filepath.Join(tempDir, "image.bin"),
 			"--type",
 			"buf.Foo",
@@ -1851,7 +1851,7 @@ func TestDecodeOutput(t *testing.T) {
 	})
 }
 
-func TestDecodeInvalidTypeName(t *testing.T) {
+func TestConvertInvalidTypeName(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1863,7 +1863,7 @@ func TestDecodeInvalidTypeName(t *testing.T) {
 		"-o",
 		filepath.Join(tempDir, "image.bin"),
 	)
-	stdin, err := os.Open(filepath.Join("testdata", "decode", "descriptor.plain.bin"))
+	stdin, err := os.Open(filepath.Join("testdata", "convert", "descriptor.plain.bin"))
 	require.NoError(t, err)
 	defer stdin.Close()
 	testRunStdoutStderr(
@@ -1873,11 +1873,124 @@ func TestDecodeInvalidTypeName(t *testing.T) {
 		"",
 		`Failure: ".foo" is not a valid fully qualified type name`,
 		"beta",
-		"decode",
+		"convert",
 		filepath.Join(tempDir, "image.bin"),
 		"--type",
 		".foo",
 	)
+}
+
+func TestConvertRoundTrip(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "success"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+	)
+	t.Run("stdin and stdout", func(t *testing.T) {
+		stdin := bytes.NewBuffer([]byte(`{"one":"55"}`))
+		encodedMessage := bytes.NewBuffer(nil)
+		decodedMessage := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			stdin,
+			encodedMessage,
+			"beta",
+			"convert",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--input",
+			"-#format=json",
+		)
+		testRun(
+			t,
+			0,
+			encodedMessage,
+			decodedMessage,
+			"beta",
+			"convert",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+		)
+		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
+	})
+	t.Run("stdin and stdout with type specified", func(t *testing.T) {
+		stdin := bytes.NewBuffer([]byte(`{"one":"55"}`))
+		encodedMessage := bytes.NewBuffer(nil)
+		decodedMessage := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			stdin,
+			encodedMessage,
+			"beta",
+			"convert",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--input",
+			"-#format=json",
+			"-o",
+			"-#format=bin",
+		)
+		testRun(
+			t,
+			0,
+			encodedMessage,
+			decodedMessage,
+			"beta",
+			"convert",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--input",
+			"-#format=bin",
+			"-o",
+			"-#format=json",
+		)
+		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
+	})
+	t.Run("file output and input", func(t *testing.T) {
+		stdin := bytes.NewBuffer([]byte(`{"one":"55"}`))
+		decodedMessage := bytes.NewBuffer(nil)
+		testRun(
+			t,
+			0,
+			stdin,
+			nil,
+			"beta",
+			"convert",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--input",
+			"-#format=json",
+			"-o",
+			filepath.Join(tempDir, "decoded_message.bin"),
+		)
+		testRun(
+			t,
+			0,
+			nil,
+			decodedMessage,
+			"beta",
+			"convert",
+			filepath.Join(tempDir, "image.bin"),
+			"--type",
+			"buf.Foo",
+			"--input",
+			filepath.Join(tempDir, "decoded_message.bin"),
+		)
+		assert.JSONEq(t, `{"one":"55"}`, decodedMessage.String())
+	})
 }
 
 func testMigrateV1Beta1Diff(
