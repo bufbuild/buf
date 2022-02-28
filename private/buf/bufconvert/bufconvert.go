@@ -57,6 +57,7 @@ type MessageEncodingRef interface {
 	MessageEncoding() MessageEncoding
 }
 
+// NewMessageEncodingRef returns a new MessageEncodingRef.
 func NewMessageEncodingRef(
 	ctx context.Context,
 	value string,
