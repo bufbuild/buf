@@ -20,6 +20,7 @@ package bufwire
 import (
 	"context"
 
+	"github.com/bufbuild/buf/private/buf/bufconvert"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
@@ -204,28 +205,49 @@ func NewImageWriter(
 	)
 }
 
-// ProtoEncodingWriter is a writer that writes a protobuf message in different encoding (e.g. JSON).
+// ProtoEncodingReader is a reader that reads a protobuf message in different encoding.
+type ProtoEncodingReader interface {
+	// GetMessage reads the message by the messageRef.
+	//
+	// Currently, this support bin and JSON format.
+	GetMessage(
+		ctx context.Context,
+		container app.EnvStdinContainer,
+		image bufimage.Image,
+		typeName string,
+		messageRef bufconvert.MessageEncodingRef,
+	) (proto.Message, error)
+}
+
+// NewProtoEncodingReader returns a new ProtoEncodingReader.
+func NewProtoEncodingReader(
+	logger *zap.Logger,
+) ProtoEncodingReader {
+	return newProtoEncodingReader(
+		logger,
+	)
+}
+
+// ProtoEncodingWriter is a writer that writes a protobuf message in different encoding.
 type ProtoEncodingWriter interface {
 	// PutMessage writes the message to the path, which can be
 	// a path in file system, or stdout represented by "-".
 	//
-	// Currently, this only support json format.
+	// Currently, this support bin and JSON format.
 	PutMessage(
 		ctx context.Context,
 		container app.EnvStdoutContainer,
 		image bufimage.Image,
 		message proto.Message,
-		path string,
+		messageRef bufconvert.MessageEncodingRef,
 	) error
 }
 
 // NewProtoEncodingWriter returns a new ProtoEncodingWriter.
 func NewProtoEncodingWriter(
 	logger *zap.Logger,
-	fetchWriter buffetch.Writer,
 ) ProtoEncodingWriter {
 	return newProtoEncodingWriter(
 		logger,
-		fetchWriter,
 	)
 }

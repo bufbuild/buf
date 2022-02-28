@@ -904,26 +904,6 @@ func TestGetParsedRefSuccess(t *testing.T) {
 func TestGetParsedRefError(t *testing.T) {
 	testGetParsedRefError(
 		t,
-		internal.NewValueEmptyError(),
-		"",
-	)
-	testGetParsedRefError(
-		t,
-		internal.NewValueMultipleHashtagsError("foo#format=git#branch=main"),
-		"foo#format=git#branch=main",
-	)
-	testGetParsedRefError(
-		t,
-		internal.NewValueStartsWithHashtagError("#path/to/dir"),
-		"#path/to/dir",
-	)
-	testGetParsedRefError(
-		t,
-		internal.NewValueEndsWithHashtagError("path/to/dir#"),
-		"path/to/dir#",
-	)
-	testGetParsedRefError(
-		t,
 		internal.NewInvalidPathError(formatDir, "-"),
 		"-#format=dir",
 	)
@@ -959,11 +939,6 @@ func TestGetParsedRefError(t *testing.T) {
 	)
 	testGetParsedRefError(
 		t,
-		internal.NewOptionsDuplicateKeyError("branch"),
-		"path/to/foo#format=git,branch=foo,branch=bar",
-	)
-	testGetParsedRefError(
-		t,
 		internal.NewPathUnknownGzError("path/to/foo.gz"),
 		"path/to/foo.gz",
 	)
@@ -971,26 +946,6 @@ func TestGetParsedRefError(t *testing.T) {
 		t,
 		internal.NewPathUnknownGzError("path/to/foo.bar.gz"),
 		"path/to/foo.bar.gz",
-	)
-	testGetParsedRefError(
-		t,
-		internal.NewOptionsInvalidError("bar"),
-		"path/to/foo#bar",
-	)
-	testGetParsedRefError(
-		t,
-		internal.NewOptionsInvalidError("bar="),
-		"path/to/foo#bar=",
-	)
-	testGetParsedRefError(
-		t,
-		internal.NewOptionsInvalidError("format=bin,bar="),
-		"path/to/foo#format=bin,bar=",
-	)
-	testGetParsedRefError(
-		t,
-		internal.NewOptionsInvalidError("format=bin,=bar"),
-		"path/to/foo#format=bin,=bar",
 	)
 	testGetParsedRefError(
 		t,
@@ -1026,11 +981,6 @@ func TestGetParsedRefError(t *testing.T) {
 		t,
 		internal.NewOptionsInvalidForFormatError(formatDir, "path/to/some/foo#strip_components=1"),
 		"path/to/some/foo#strip_components=1",
-	)
-	testGetParsedRefError(
-		t,
-		internal.NewOptionsDuplicateKeyError("strip_components"),
-		"path/to/foo.tar#strip_components=0,strip_components=1",
 	)
 	testGetParsedRefError(
 		t,

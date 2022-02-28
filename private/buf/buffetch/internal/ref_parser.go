@@ -17,8 +17,8 @@ package internal
 import (
 	"context"
 	"strconv"
-	"strings"
 
+	"github.com/bufbuild/buf/private/buf/bufref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -111,7 +111,7 @@ func (a *refParser) getParsedRef(
 // validated per rules on rawRef
 func (a *refParser) getRawRef(value string) (*RawRef, error) {
 	// path is never empty after returning from this function
-	path, options, err := getRawPathAndOptions(value)
+	path, options, err := bufref.GetRawPathAndOptions(value)
 	if err != nil {
 		return nil, err
 	}
@@ -247,47 +247,6 @@ func (a *refParser) getRawRef(value string) (*RawRef, error) {
 		}
 	}
 	return rawRef, nil
-}
-
-// rawPath will be non-empty
-func getRawPathAndOptions(value string) (string, map[string]string, error) {
-	value = strings.TrimSpace(value)
-	if value == "" {
-		return "", nil, NewValueEmptyError()
-	}
-
-	switch splitValue := strings.Split(value, "#"); len(splitValue) {
-	case 1:
-		return value, nil, nil
-	case 2:
-		path := strings.TrimSpace(splitValue[0])
-		optionsString := strings.TrimSpace(splitValue[1])
-		if path == "" {
-			return "", nil, NewValueStartsWithHashtagError(value)
-		}
-		if optionsString == "" {
-			return "", nil, NewValueEndsWithHashtagError(value)
-		}
-		options := make(map[string]string)
-		for _, pair := range strings.Split(optionsString, ",") {
-			split := strings.Split(pair, "=")
-			if len(split) != 2 {
-				return "", nil, NewOptionsInvalidError(optionsString)
-			}
-			key := strings.TrimSpace(split[0])
-			value := strings.TrimSpace(split[1])
-			if key == "" || value == "" {
-				return "", nil, NewOptionsInvalidError(optionsString)
-			}
-			if _, ok := options[key]; ok {
-				return "", nil, NewOptionsDuplicateKeyError(key)
-			}
-			options[key] = value
-		}
-		return path, options, nil
-	default:
-		return "", nil, NewValueMultipleHashtagsError(value)
-	}
 }
 
 func getSingleRef(
