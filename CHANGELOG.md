@@ -3,6 +3,8 @@
 ## [Unreleased]
 - Add `--type` flag to the `build` command to create filtered images containing
   only the specified types and their required dependencies.
+- Trim spaces and new lines from user-supplied token for `buf registry login`.
+- Add support for JSON input and binary output for `buf beta decode`.
 
 ## [v1.0.0] - 2022-02-17
 
