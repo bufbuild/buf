@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.1.0] - 2022-03-01
 - Add `--type` flag to the `build` command to create filtered images containing
   only the specified types and their required dependencies.
 - Trim spaces and new lines from user-supplied token for `buf registry login`.
@@ -657,7 +657,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.0.0...HEAD
+[v1.1.0]: https://github.com/bufbuild/buf/compare/v1.0.0...HEAD
 [v1.0.0]: https://github.com/bufbuild/buf/compare/v1.0.0-rc12...v1.0.0
 [v1.0.0-rc12]: https://github.com/bufbuild/buf/compare/v1.0.0-rc11...v1.0.0-rc12
 [v1.0.0-rc11]: https://github.com/bufbuild/buf/compare/v1.0.0-rc10...v1.0.0-rc11
