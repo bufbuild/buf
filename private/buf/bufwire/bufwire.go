@@ -32,7 +32,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 )
 
 // ImageConfig is an image and configuration.
@@ -207,16 +206,12 @@ func NewImageWriter(
 
 // ProtoEncodingReader is a reader that reads a protobuf message in different encoding.
 type ProtoEncodingReader interface {
-	// GetMessage reads the message by the messageRef.
-	//
-	// Currently, this support bin and JSON format.
-	GetMessage(
+	// GetMessagePayload reads the message payload by the messageRef.
+	GetMessagePayload(
 		ctx context.Context,
 		container app.EnvStdinContainer,
-		image bufimage.Image,
-		typeName string,
 		messageRef bufconvert.MessageEncodingRef,
-	) (proto.Message, error)
+	) ([]byte, error)
 }
 
 // NewProtoEncodingReader returns a new ProtoEncodingReader.
@@ -230,15 +225,11 @@ func NewProtoEncodingReader(
 
 // ProtoEncodingWriter is a writer that writes a protobuf message in different encoding.
 type ProtoEncodingWriter interface {
-	// PutMessage writes the message to the path, which can be
-	// a path in file system, or stdout represented by "-".
-	//
-	// Currently, this support bin and JSON format.
-	PutMessage(
+	// PutMessagePayload writes the message payload by the messageRef.
+	PutMessagePayload(
 		ctx context.Context,
 		container app.EnvStdoutContainer,
-		image bufimage.Image,
-		message proto.Message,
+		payload []byte,
 		messageRef bufconvert.MessageEncodingRef,
 	) error
 }

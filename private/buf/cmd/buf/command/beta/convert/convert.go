@@ -20,7 +20,12 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufconvert"
+	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
+	"github.com/bufbuild/buf/private/bufpkg/bufimage"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
@@ -142,13 +147,11 @@ func run(
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
-	message, err := bufcli.NewWireProtoEncodingReader(
+	messagePayload, err := bufcli.NewWireProtoEncodingReader(
 		container.Logger(),
-	).GetMessage(
+	).GetMessagePayload(
 		ctx,
 		container,
-		image,
-		typeName,
 		inputMessageRef,
 	)
 	if err != nil {
@@ -162,13 +165,43 @@ func run(
 	if err != nil {
 		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
+	remote, err := remoteForSource(ctx, container, source)
+	if err != nil {
+		return err
+	}
+	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	if err != nil {
+		return err
+	}
+	convertService, err := registryProvider.NewConvertService(ctx, remote)
+	if err != nil {
+		return err
+	}
+	requestFormat, err := messageEncodingToConvertFormat(inputMessageRef.MessageEncoding())
+	if err != nil {
+		return err
+	}
+	responseFormat, err := messageEncodingToConvertFormat(outputMessageRef.MessageEncoding())
+	if err != nil {
+		return err
+	}
+	payload, err := convertService.Convert(
+		ctx,
+		typeName,
+		bufimage.ImageToProtoImage(image),
+		messagePayload,
+		requestFormat,
+		responseFormat,
+	)
+	if err != nil {
+		return err
+	}
 	return bufcli.NewWireProtoEncodingWriter(
 		container.Logger(),
-	).PutMessage(
+	).PutMessagePayload(
 		ctx,
 		container,
-		image,
-		message,
+		payload,
 		outputMessageRef,
 	)
 }
@@ -183,5 +216,40 @@ func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEnc
 		return bufconvert.MessageEncodingBin, nil
 	default:
 		return 0, fmt.Errorf("unknown message encoding %v", encoding)
+	}
+}
+
+// messageEncodingToConvertFormat parses a MessageEncoding to a ConvertFormat.
+func messageEncodingToConvertFormat(encoding bufconvert.MessageEncoding) (registryv1alpha1.ConvertFormat, error) {
+	switch encoding {
+	case bufconvert.MessageEncodingBin:
+		return registryv1alpha1.ConvertFormat_CONVERT_FORMAT_BIN, nil
+	case bufconvert.MessageEncodingJSON:
+		return registryv1alpha1.ConvertFormat_CONVERT_FORMAT_JSON, nil
+	default:
+		return 0, fmt.Errorf("unknown message encoding %v", encoding)
+	}
+}
+
+// remoteForSource returns the module remote if the source is a module ref,
+// and returns the default remote if it is other type of ref.
+func remoteForSource(
+	ctx context.Context,
+	container appflag.Container,
+	source string,
+) (string, error) {
+	ref, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetRef(ctx, source)
+	if err != nil {
+		return "", err
+	}
+	switch ref.(type) {
+	case buffetch.ModuleRef:
+		moduleReference, err := bufmoduleref.ModuleReferenceForString(source)
+		if err != nil {
+			return "", appcmd.NewInvalidArgumentError(err.Error())
+		}
+		return moduleReference.Remote(), nil
+	default:
+		return bufrpc.DefaultRemote, nil
 	}
 }

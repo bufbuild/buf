@@ -17,19 +17,13 @@ package bufwire
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufconvert"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
-	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/pkg/app"
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
-	"go.opencensus.io/trace"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 )
 
 type protoEncodingReader struct {
@@ -46,33 +40,11 @@ func newProtoEncodingReader(
 	}
 }
 
-func (p *protoEncodingReader) GetMessage(
+func (p *protoEncodingReader) GetMessagePayload(
 	ctx context.Context,
 	container app.EnvStdinContainer,
-	image bufimage.Image,
-	typeName string,
 	messageRef bufconvert.MessageEncodingRef,
-) (_ proto.Message, retErr error) {
-	ctx, span := trace.StartSpan(ctx, "get_message")
-	defer span.End()
-	// Currently, this support bin and JSON format.
-	resolver, err := protoencoding.NewResolver(
-		bufimage.ImageToFileDescriptors(
-			image,
-		)...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	var unmarshaler protoencoding.Unmarshaler
-	switch messageRef.MessageEncoding() {
-	case bufconvert.MessageEncodingBin:
-		unmarshaler = protoencoding.NewWireUnmarshaler(resolver)
-	case bufconvert.MessageEncodingJSON:
-		unmarshaler = protoencoding.NewJSONUnmarshaler(resolver)
-	default:
-		return nil, fmt.Errorf("unknown message encoding type")
-	}
+) (_ []byte, retErr error) {
 	readCloser := io.NopCloser(container.Stdin())
 	if messageRef.Path() != "-" {
 		var err error
@@ -91,12 +63,5 @@ func (p *protoEncodingReader) GetMessage(
 	if len(data) == 0 {
 		return nil, errors.New("size of input message must not be zero")
 	}
-	message, err := bufreflect.NewMessage(ctx, image, typeName)
-	if err != nil {
-		return nil, err
-	}
-	if err := unmarshaler.Unmarshal(data, message); err != nil {
-		return nil, fmt.Errorf("unable to unmarshal the message: %v", err)
-	}
-	return message, nil
+	return data, nil
 }

@@ -16,17 +16,13 @@ package bufwire
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufconvert"
-	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/ioextended"
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 )
 
 type protoEncodingWriter struct {
@@ -43,37 +39,15 @@ func newProtoEncodingWriter(
 	}
 }
 
-func (p *protoEncodingWriter) PutMessage(
+func (p *protoEncodingWriter) PutMessagePayload(
 	ctx context.Context,
 	container app.EnvStdoutContainer,
-	image bufimage.Image,
-	message proto.Message,
+	payload []byte,
 	messageRef bufconvert.MessageEncodingRef,
 ) (retErr error) {
-	// Currently, this support bin and JSON format.
-	resolver, err := protoencoding.NewResolver(
-		bufimage.ImageToFileDescriptors(
-			image,
-		)...,
-	)
-	if err != nil {
-		return err
-	}
-	var marshaler protoencoding.Marshaler
-	switch messageRef.MessageEncoding() {
-	case bufconvert.MessageEncodingBin:
-		marshaler = protoencoding.NewWireMarshaler()
-	case bufconvert.MessageEncodingJSON:
-		marshaler = protoencoding.NewJSONMarshalerIndent(resolver)
-	default:
-		return fmt.Errorf("unknown message encoding type")
-	}
-	data, err := marshaler.Marshal(message)
-	if err != nil {
-		return err
-	}
 	writeCloser := ioextended.NopWriteCloser(container.Stdout())
 	if messageRef.Path() != "-" {
+		var err error
 		writeCloser, err = os.Create(messageRef.Path())
 		if err != nil {
 			return err
@@ -82,6 +56,6 @@ func (p *protoEncodingWriter) PutMessage(
 	defer func() {
 		retErr = multierr.Append(retErr, writeCloser.Close())
 	}()
-	_, err = writeCloser.Write(data)
+	_, err := writeCloser.Write(payload)
 	return err
 }
