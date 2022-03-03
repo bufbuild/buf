@@ -38,6 +38,8 @@ service RepositoryTrackService {
   rpc DeleteRepositoryTrackByName(DeleteRepositoryTrackByNameRequest) returns (DeleteRepositoryTrackByNameResponse);
   // GetRepositoryTrackByName gets a repository track by name.
   rpc GetRepositoryTrackByName(GetRepositoryTrackByNameRequest) returns (GetRepositoryTrackByNameResponse);
+  // ListRepositoryTracksByRepositoryCommit lists the repository tracks associated with a repository commit.
+  rpc ListRepositoryTracksByRepositoryCommit(ListRepositoryTracksByRepositoryCommitRequest) returns (ListRepositoryTracksByRepositoryCommitResponse);
 }
 
 message CreateRepositoryTrackRequest {
@@ -84,4 +86,21 @@ message GetRepositoryTrackByNameRequest {
 
 message GetRepositoryTrackByNameResponse {
   RepositoryTrack repository_track = 1;
+}
+
+message ListRepositoryTracksByRepositoryCommitRequest {
+  // The ID of the repository where these tracks reside.
+  string repository_id = 1;
+  // The commit (name) to list tracks for.
+  string commit = 2;
+  uint32 page_size = 3;
+  // The first page is returned if this is empty.
+  string page_token = 4;
+  bool reverse = 5;
+}
+
+message ListRepositoryTracksByRepositoryCommitResponse {
+  repeated RepositoryTrack repository_tracks = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
 }
