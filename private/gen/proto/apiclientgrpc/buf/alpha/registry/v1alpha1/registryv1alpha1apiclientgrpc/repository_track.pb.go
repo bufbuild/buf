@@ -123,3 +123,31 @@ func (s *repositoryTrackService) GetRepositoryTrackByName(
 	}
 	return response.RepositoryTrack, nil
 }
+
+// ListRepositoryTracksByRepositoryCommit lists the repository tracks associated with a repository commit.
+func (s *repositoryTrackService) ListRepositoryTracksByRepositoryCommit(
+	ctx context.Context,
+	repositoryId string,
+	commit string,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (repositoryTracks []*v1alpha1.RepositoryTrack, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListRepositoryTracksByRepositoryCommit(
+		ctx,
+		&v1alpha1.ListRepositoryTracksByRepositoryCommitRequest{
+			RepositoryId: repositoryId,
+			Commit:       commit,
+			PageSize:     pageSize,
+			PageToken:    pageToken,
+			Reverse:      reverse,
+		},
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.RepositoryTracks, response.NextPageToken, nil
+}
