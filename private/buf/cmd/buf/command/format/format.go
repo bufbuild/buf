@@ -190,15 +190,7 @@ func run(
 		return err
 	}
 	var readWriteBucket storage.ReadWriteBucket
-	if flags.Output != "-" || flags.Write {
-		// Exactly one of flags.Output and flags.Write will be set
-		// according to the validation above.
-		if flags.Write {
-			// Rewriting files in-place is equivalent to copying
-			// the formatted files in the current directory (based
-			// on their external paths).
-			flags.Output = "."
-		}
+	if flags.Output != "-" {
 		if err := os.MkdirAll(flags.Output, 0755); err != nil {
 			return err
 		}
@@ -264,6 +256,7 @@ func run(
 			readWriteBucket,
 			flags.ErrorFormat,
 			flags.Diff,
+			flags.Write,
 		)
 	}
 	for _, moduleConfig := range moduleConfigs {
@@ -275,6 +268,7 @@ func run(
 			readWriteBucket,
 			flags.ErrorFormat,
 			flags.Diff,
+			flags.Write,
 		); err != nil {
 			return err
 		}
@@ -293,14 +287,16 @@ func formatModule(
 	writeBucket storage.WriteBucket,
 	errorFormat string,
 	diff bool,
+	rewrite bool,
 ) (retErr error) {
 	// Note that external paths are set properly for the files in this read bucket.
 	formattedReadBucket, err := bufformat.Format(ctx, module)
 	if err != nil {
 		return err
 	}
-	if diff {
-		originalReadWriteBucket := storagemem.NewReadWriteBucket()
+	var originalReadWriteBucket storage.ReadWriteBucket
+	if diff || rewrite {
+		originalReadWriteBucket = storagemem.NewReadWriteBucket()
 		if err := bufmodule.TargetModuleFilesToBucket(
 			ctx,
 			module,
@@ -308,6 +304,8 @@ func formatModule(
 		); err != nil {
 			return err
 		}
+	}
+	if diff {
 		if err := storage.Diff(
 			ctx,
 			runner,
@@ -318,11 +316,37 @@ func formatModule(
 		); err != nil {
 			return err
 		}
-		if writeBucket == nil {
+		if writeBucket == nil || !rewrite {
 			// If the user specified --diff and has not explicitly overridden
-			// the --output, we can stop here.
+			// the --output or rewritten the sources in-place with --write, we
+			// can stop here.
 			return nil
 		}
+	}
+	if rewrite {
+		// Rewrite the sources in place.
+		return storage.WalkReadObjects(
+			ctx,
+			originalReadWriteBucket,
+			"",
+			func(readObject storage.ReadObject) error {
+				formattedReadObject, err := formattedReadBucket.Get(ctx, readObject.Path())
+				if err != nil {
+					return err
+				}
+				file, err := os.OpenFile(readObject.ExternalPath(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+				if err != nil {
+					return err
+				}
+				defer func() {
+					retErr = multierr.Append(retErr, file.Close())
+				}()
+				if _, err := file.ReadFrom(formattedReadObject); err != nil {
+					return err
+				}
+				return nil
+			},
+		)
 	}
 	if writeBucket == nil {
 		// If the writeBucket is nil, we write the output to stdout.
@@ -345,13 +369,11 @@ func formatModule(
 			},
 		)
 	}
-	// The user specified -o or -w. Copy the files into
-	// the configured bucket based on their external paths.
+	// The user specified -o, so we copy the files into the output bucket.
 	if _, err := storage.Copy(
 		ctx,
 		formattedReadBucket,
 		writeBucket,
-		storage.CopyWithWriteToExternalPaths(),
 	); err != nil {
 		return err
 	}
