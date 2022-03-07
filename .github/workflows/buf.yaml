@@ -7,7 +7,7 @@ jobs:
   lint:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: bufbuild/buf-setup-action@v1.0.0
         if: success()
         with:
@@ -19,7 +19,7 @@ jobs:
   breaking:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: bufbuild/buf-setup-action@v1.0.0
         if: success()
         with:
@@ -36,7 +36,7 @@ jobs:
       - lint
       - breaking
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: bufbuild/buf-setup-action@v1.0.0
         if: success()
         with:
