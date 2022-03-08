@@ -20,6 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/protogenutil"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/compiler/protogen"
 )
 
@@ -294,10 +295,10 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 		newProviderGoIdent := apiclientgrpcGoImportPath.Ident("NewProvider")
 		newProviderGoIdentString := g.QualifiedGoIdent(newProviderGoIdent)
 		optionsName := protogenutil.GetUnexportGoName(
-			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+			stringutil.ToPascalCase(goPackageFileSet.ProtoPackage),
 		) + "ProviderOptions"
 		providerName := protogenutil.GetUnexportGoName(
-			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+			stringutil.ToPascalCase(goPackageFileSet.ProtoPackage),
 		) + "Provider"
 		g.P(providerName, `:`, newProviderGoIdentString, `(`)
 		g.P(`logger,`)
@@ -317,7 +318,7 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 		providerGoIdent := goImportPath.Ident("Provider")
 		providerGoIdentString := g.QualifiedGoIdent(providerGoIdent)
 		providerName := protogenutil.GetUnexportGoName(
-			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+			stringutil.ToPascalCase(goPackageFileSet.ProtoPackage),
 		) + "Provider"
 		g.P(providerName, ` `, providerGoIdentString)
 	}
@@ -337,7 +338,7 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 		withAddressMapperGoIdent := goImportPath.Ident("WithAddressMapper")
 		withAddressMapperGoIdentString := g.QualifiedGoIdent(withAddressMapperGoIdent)
 		optionsName := protogenutil.GetUnexportGoName(
-			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+			stringutil.ToPascalCase(goPackageFileSet.ProtoPackage),
 		) + "ProviderOptions"
 		g.P(`providerOptions.`, optionsName, ` = append(`)
 		g.P(`providerOptions.`, optionsName, `,`)
@@ -359,7 +360,7 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 		withContextModifierProviderGoIdent := goImportPath.Ident("WithContextModifierProvider")
 		withContextModifierProviderGoIdentString := g.QualifiedGoIdent(withContextModifierProviderGoIdent)
 		optionsName := protogenutil.GetUnexportGoName(
-			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+			stringutil.ToPascalCase(goPackageFileSet.ProtoPackage),
 		) + "ProviderOptions"
 		g.P(`providerOptions.`, optionsName, ` = append(`)
 		g.P(`providerOptions.`, optionsName, `,`)
@@ -377,9 +378,9 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 		providerGoIdent := apiclientGoImportPath.Ident("Provider")
 		providerGoIdentString := g.QualifiedGoIdent(providerGoIdent)
 		providerName := protogenutil.GetUnexportGoName(
-			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+			stringutil.ToPascalCase(goPackageFileSet.ProtoPackage),
 		) + "Provider"
-		funcName := protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage)
+		funcName := stringutil.ToPascalCase(goPackageFileSet.ProtoPackage)
 		g.P(`func (p *provider) `, funcName, `() `, providerGoIdentString, `{`)
 		g.P(`return p.`, providerName)
 		g.P(`}`)
@@ -394,7 +395,7 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 		providerOptionGoIdent := goImportPath.Ident("ProviderOption")
 		providerOptionGoIdentString := g.QualifiedGoIdent(providerOptionGoIdent)
 		optionsName := protogenutil.GetUnexportGoName(
-			protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage),
+			stringutil.ToPascalCase(goPackageFileSet.ProtoPackage),
 		) + "ProviderOptions"
 		g.P(optionsName, `[]`, providerOptionGoIdentString)
 	}

@@ -19,6 +19,7 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/protogenutil"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"google.golang.org/protobuf/compiler/protogen"
 )
 
@@ -103,7 +104,7 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 		}
 		providerGoIdent := goImportPath.Ident("Provider")
 		providerGoIdentString := g.QualifiedGoIdent(providerGoIdent)
-		funcName := protogenutil.ProtoPackagePascalCase(goPackageFileSet.ProtoPackage)
+		funcName := stringutil.ToPascalCase(goPackageFileSet.ProtoPackage)
 		g.P(funcName, `() `, providerGoIdentString)
 	}
 	g.P(`}`)
