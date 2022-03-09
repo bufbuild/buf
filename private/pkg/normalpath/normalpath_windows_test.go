@@ -462,7 +462,7 @@ func TestEqualsOrContainsPathAbs(t *testing.T) {
 	testEqualsOrContainsPathAbs(t, true, "c:/i", "c:/I")
 	// TODO: The Go stdlib unicode tables seem to fold \u0131 to \u0131 which
 	// doesn't seem spec compliant, but not important enough right now to warrant
-	// futher research, or further complicating this module.
+	// further research, or further complicating this module.
 	testEqualsOrContainsPathAbs(t, false, "c:/\u0131", "c:/I")
 	testEqualsOrContainsPathAbs(t, false, "c:/i", "c:/\u0130")
 

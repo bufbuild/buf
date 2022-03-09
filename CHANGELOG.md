@@ -30,7 +30,7 @@
   until you can upgrade to `buf`. See [#915](https://github.com/bufbuild/buf/pull/915) for more
   details.
 - Context modifier no longer overrides an existing token on the context. This allows `buf registry login`
-  to properly check the user provided token without the token being overriden by the CLI interceptor.
+  to properly check the user provided token without the token being overridden by the CLI interceptor.
 - Removed the `buf config init` command in favor of `buf mod init`.
 - Removed the `buf config ls-breaking-rules` command in favor of `buf mod ls-breaking-rules`.
 - Removed the `buf config ls-lint-rules` command in favor of `buf mod ls-lint-rules`.
