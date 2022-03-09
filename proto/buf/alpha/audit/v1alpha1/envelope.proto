@@ -531,6 +531,7 @@ message Event {
   // of the event.
   oneof actor {
     UserActor user = 2;
+    MachineActor machine = 59;
   }
   // The time the event took place.
   google.protobuf.Timestamp event_time = 3;
@@ -612,6 +613,10 @@ message UserActor {
   string source_ip = 3;
   bool anonymous = 4;
   string subject = 5;
+}
+
+message MachineActor {
+  string service_name = 1;
 }
 
 message UserObject {
