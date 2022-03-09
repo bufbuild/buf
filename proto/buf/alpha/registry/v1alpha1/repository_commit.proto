@@ -66,6 +66,10 @@ message ListRepositoryCommitsByBranchRequest {
   // The name of the repository branch whose commits should be listed.
   string repository_branch_name = 3;
   uint32 page_size = 4;
+  // For now this is the id of he last commit returned in the previous page.
+  // This is directly set by the frontend when listing track history starting with a
+  // specific commit. If we page_token to be anything other than a commit id
+  // we need to change the frontend as well.
   string page_token = 5;
   bool reverse = 6;
 }

@@ -162,8 +162,12 @@ type ListRepositoryCommitsByBranchRequest struct {
 	// The name of the repository branch whose commits should be listed.
 	RepositoryBranchName string `protobuf:"bytes,3,opt,name=repository_branch_name,json=repositoryBranchName,proto3" json:"repository_branch_name,omitempty"`
 	PageSize             uint32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	PageToken            string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	Reverse              bool   `protobuf:"varint,6,opt,name=reverse,proto3" json:"reverse,omitempty"`
+	// For now this is the id of he last commit returned in the previous page.
+	// This is directly set by the frontend when listing track history starting with a
+	// specific commit. If we page_token to be anything other than a commit id
+	// we need to change the frontend as well.
+	PageToken string `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Reverse   bool   `protobuf:"varint,6,opt,name=reverse,proto3" json:"reverse,omitempty"`
 }
 
 func (x *ListRepositoryCommitsByBranchRequest) Reset() {
