@@ -35,7 +35,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// RepositoryTrackCommit is the existance of a RepositoryCommit on a RepositoryTrack. Currently its only purpose is
+// RepositoryTrackCommit is the existence of a RepositoryCommit on a RepositoryTrack. Currently its only purpose is
 // for querying whether a RepositoryCommit is on a RepositoryTrack and determining it's sequence id.
 type RepositoryTrackCommit struct {
 	state         protoimpl.MessageState
