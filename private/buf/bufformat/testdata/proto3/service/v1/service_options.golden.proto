@@ -13,7 +13,7 @@ service Ping {
   option (custom.service_option) = false;
   // This is a comment on the service_thing_option.
   option (custom.service_thing_option) = {
-    foo:1
-    bar:2
+    foo: 1
+    bar: 2
   };
 }

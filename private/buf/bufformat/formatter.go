@@ -101,6 +101,18 @@ func (f *formatter) writeFile(fileNode *ast.FileNode) error {
 	if err := f.writeFileTypes(fileNode); err != nil {
 		return err
 	}
+	if fileNode.EOF != nil {
+		info := f.fileNode.NodeInfo(fileNode.EOF)
+		if info.LeadingComments().Len() > 0 {
+			if len(fileNode.Decls) > 0 {
+				f.P()
+			}
+			f.P()
+			if err := f.writeMultilineComments(info.LeadingComments()); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -328,13 +340,35 @@ func (f *formatter) writeOption(optionNode *ast.OptionNode) error {
 //
 func (f *formatter) writeOptionName(optionNameNode *ast.OptionNameNode) error {
 	for i := 0; i < len(optionNameNode.Parts); i++ {
-		if i > 0 {
-			// The length of this slice must be exactly len(Parts)-1.
-			if err := f.writeInline(optionNameNode.Dots[i-1]); err != nil {
-				return err
+		if i == 0 {
+			// The comments will have already been written as a multiline
+			// comment above the option name, so we need to handle this case
+			// specially.
+			fieldReferenceNode := optionNameNode.Parts[0]
+			if fieldReferenceNode.Open != nil {
+				if err := f.writeNode(fieldReferenceNode.Open); err != nil {
+					return err
+				}
+				if err := f.writeInline(fieldReferenceNode.Name); err != nil {
+					return err
+				}
+			} else {
+				if err := f.writeNode(fieldReferenceNode.Name); err != nil {
+					return err
+				}
 			}
+			if fieldReferenceNode.Close != nil {
+				if err := f.writeInline(fieldReferenceNode.Close); err != nil {
+					return err
+				}
+			}
+			continue
 		}
-		if err := f.writeInline(optionNameNode.Parts[i]); err != nil {
+		// The length of this slice must be exactly len(Parts)-1.
+		if err := f.writeInline(optionNameNode.Dots[i-1]); err != nil {
+			return err
+		}
+		if err := f.writeNode(optionNameNode.Parts[i]); err != nil {
 			return err
 		}
 	}
@@ -371,89 +405,24 @@ func (f *formatter) writeOptionName(optionNameNode *ast.OptionNameNode) error {
 //    Baz baz = 2;
 //  }
 //
-// TODO: The complexity around comment handling needs to be incorporated
-// into all of the other composite node implementations (e.g. enum, extend,
-// oneof, etc).
 func (f *formatter) writeMessage(messageNode *ast.MessageNode) error {
 	messageElements, err := elementsForMessage(messageNode)
 	if err != nil {
 		return err
 	}
-	if err := f.writeMultiline(messageNode.Keyword); err != nil {
-		return err
-	}
-	f.Space()
-	if err := f.writeInline(messageNode.Name); err != nil {
-		return err
-	}
-	// We need to handle the comments for the '{' specially since
-	// the trailing comments need to be written in the message block.
-	info := f.fileNode.NodeInfo(messageNode.OpenBrace)
-	if info.LeadingComments().Len() > 0 {
-		f.Space()
-		if err := f.writeInlineComments(info.LeadingComments()); err != nil {
-			return err
-		}
-	}
-	f.Space()
-	if err := f.writeNode(messageNode.OpenBrace); err != nil {
-		return err
-	}
-	if info.TrailingComments().Len() == 0 && messageElements == nil {
-		info = f.fileNode.NodeInfo(messageNode.CloseBrace)
-		if info.LeadingComments().Len() == 0 {
-			// This is an empty message definition without any comments in
-			// the body, so we return early.
-			return f.writeInline(messageNode.CloseBrace)
-		}
-		// Writing comments in this case requires special care - we need
-		// to write all of the leading comments in an empty message body,
-		// so the comments need to be indented, but not the tokens they're
-		// attached to.
-		//
-		// For example,
-		//
-		//  message Foo {
-		//    // This message might have multiple comments.
-		//    // They're attached to the '}'.
-		//  }
-		f.P()
-		f.In()
-		if err := f.writeMultilineComments(info.LeadingComments()); err != nil {
-			return err
-		}
-		f.Out()
-		if err := f.writeNode(messageNode.CloseBrace); err != nil {
-			return err
-		}
-		return f.writeInlineComments(info.TrailingComments())
-	}
-	f.P()
-	f.In()
-	if info.TrailingComments().Len() > 0 {
-		if err := f.writeMultilineComments(info.TrailingComments()); err != nil {
-			return err
-		}
-		if messageElements != nil {
-			// If there are other elements to write, we need another
-			// newline after the trailing comments.
-			f.P()
-		}
-	}
+	var elementWriterFunc func() error
 	if messageElements != nil {
-		if err := f.writeMessageElements(messageElements); err != nil {
-			return err
+		elementWriterFunc = func() error {
+			return f.writeMessageElements(messageElements)
 		}
-		f.P()
 	}
-	f.Out()
-	if info := f.fileNode.NodeInfo(messageNode.CloseBrace); info.LeadingComments().Len() > 0 {
-		f.P()
-	}
-	if err := f.writeMultiline(messageNode.CloseBrace); err != nil {
-		return err
-	}
-	return nil
+	return f.writeCompositeType(
+		messageNode.Keyword,
+		messageNode.Name,
+		messageNode.OpenBrace,
+		messageNode.CloseBrace,
+		elementWriterFunc,
+	)
 }
 
 // writeMessageElements writes the message elements for a single message.
@@ -508,12 +477,20 @@ func (f *formatter) writeMessageElements(messageElements *messageElements) error
 	return nil
 }
 
-// writeMessageLiteral writes a message literal (e.g. '{ foo:1 foo:2 foo:3 bar:<name:"abc" id:123> }').
+// writeMessageLiteral writes a message literal.
 //
-// TODO: This needs to be adapted to be like f.writeMessage.
+// For example,
+//  {
+//    foo: 1
+//    foo: 2
+//    foo: 3
+//    bar: <
+//      name:"abc"
+//      id:123
+//    >
+//  }
+//
 func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNode) error {
-	// We need to handle the comments for the '{' specially since
-	// the trailing comments need to be written in the message block.
 	info := f.fileNode.NodeInfo(messageLiteralNode.Open)
 	if info.LeadingComments().Len() > 0 {
 		if err := f.writeInlineComments(info.LeadingComments()); err != nil {
@@ -526,35 +503,51 @@ func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNo
 	}
 	if info.TrailingComments().Len() == 0 && len(messageLiteralNode.Elements) == 0 {
 		// This is an empty message literal, so we return early.
-		return f.writeInline(messageLiteralNode.Close)
-	}
-	if info.TrailingComments().Len() > 0 || len(messageLiteralNode.Elements) > 0 {
+		info = f.fileNode.NodeInfo(messageLiteralNode.Close)
+		if info.LeadingComments().Len() == 0 {
+			// This is an empty options definition without any comments in
+			// the body, so we return early.
+			return f.writeInline(messageLiteralNode.Close)
+		}
 		f.P()
 		f.In()
-		if info.TrailingComments().Len() > 0 {
-			if err := f.writeMultilineComments(info.TrailingComments()); err != nil {
-				return err
-			}
-			f.P()
-		}
-		for i := 0; i < len(messageLiteralNode.Elements); i++ {
-			if i > 0 {
-				f.P()
-			}
-			// Comments are handled in the message field layer.
-			if err := f.writeNode(messageLiteralNode.Elements[i]); err != nil {
-				return err
-			}
-			if sep := messageLiteralNode.Seps[i]; sep != nil {
-				if err := f.writeInline(messageLiteralNode.Seps[i]); err != nil {
-					return err
-				}
-			}
+		if err := f.writeMultilineComments(info.LeadingComments()); err != nil {
+			return err
 		}
 		f.Out()
+		if err := f.writeNode(messageLiteralNode.Close); err != nil {
+			return err
+		}
+		return f.writeInlineComments(info.TrailingComments())
+	}
+	f.P()
+	f.In()
+	if info.TrailingComments().Len() > 0 {
+		if err := f.writeMultilineComments(info.TrailingComments()); err != nil {
+			return err
+		}
+		if len(messageLiteralNode.Elements) > 0 {
+			// If there are other elements to write, we need another
+			// newline after the trailing comments.
+			f.P()
+		}
+	}
+	for i := 0; i < len(messageLiteralNode.Elements); i++ {
+		if err := f.writeNode(messageLiteralNode.Elements[i]); err != nil {
+			return err
+		}
+		if sep := messageLiteralNode.Seps[i]; sep != nil {
+			if err := f.writeInline(messageLiteralNode.Seps[i]); err != nil {
+				return err
+			}
+		}
 		f.P()
 	}
-	if err := f.writeInlineIndented(messageLiteralNode.Close); err != nil {
+	f.Out()
+	if info := f.fileNode.NodeInfo(messageLiteralNode.Close); info.LeadingComments().Len() > 0 {
+		f.P()
+	}
+	if err := f.writeMultiline(messageLiteralNode.Close); err != nil {
 		return err
 	}
 	return nil
@@ -567,14 +560,35 @@ func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNo
 //  foo:"bar"
 //
 func (f *formatter) writeMessageField(messageFieldNode *ast.MessageFieldNode) error {
-	if err := f.writeInlineIndented(messageFieldNode.Name); err != nil {
-		return err
+	// The comments need to be written as a multiline comment above
+	// the message field name.
+	//
+	// Note that this is different than how field reference nodes are
+	// normally formatted in-line (i.e. as option name components).
+	fieldReferenceNode := messageFieldNode.Name
+	if fieldReferenceNode.Open != nil {
+		if err := f.writeMultiline(fieldReferenceNode.Open); err != nil {
+			return err
+		}
+		if err := f.writeInline(fieldReferenceNode.Name); err != nil {
+			return err
+		}
+	} else {
+		if err := f.writeMultiline(fieldReferenceNode.Name); err != nil {
+			return err
+		}
+	}
+	if fieldReferenceNode.Close != nil {
+		if err := f.writeInline(fieldReferenceNode.Close); err != nil {
+			return err
+		}
 	}
 	if messageFieldNode.Sep != nil {
 		if err := f.writeInline(messageFieldNode.Sep); err != nil {
 			return err
 		}
 	}
+	f.Space()
 	if err := f.writeInline(messageFieldNode.Val); err != nil {
 		return err
 	}
@@ -602,51 +616,19 @@ func (f *formatter) writeEnum(enumNode *ast.EnumNode) error {
 	if err != nil {
 		return err
 	}
-	if err := f.writeMultiline(enumNode.Keyword); err != nil {
-		return err
-	}
-	f.Space()
-	if err := f.writeInline(enumNode.Name); err != nil {
-		return err
-	}
-	// We need to handle the comments for the '{' specially since
-	// the trailing comments need to be written in the enum block.
-	info := f.fileNode.NodeInfo(enumNode.OpenBrace)
-	if info.LeadingComments().Len() > 0 {
-		f.Space()
-		if err := f.writeInlineComments(info.LeadingComments()); err != nil {
-			return err
+	var elementWriterFunc func() error
+	if enumElements != nil {
+		elementWriterFunc = func() error {
+			return f.writeEnumElements(enumElements)
 		}
 	}
-	f.Space()
-	if err := f.writeNode(enumNode.OpenBrace); err != nil {
-		return err
-	}
-	if info.TrailingComments().Len() == 0 && enumElements == nil {
-		// This is an empty enum definition, so we return early.
-		return f.writeInline(enumNode.CloseBrace)
-	}
-	if info.TrailingComments().Len() > 0 || enumElements != nil {
-		f.P()
-		f.In()
-		if info.TrailingComments().Len() > 0 {
-			if err := f.writeMultilineComments(info.TrailingComments()); err != nil {
-				return err
-			}
-			f.P()
-		}
-		if enumElements != nil {
-			if err := f.writeEnumElements(enumElements); err != nil {
-				return err
-			}
-		}
-		f.Out()
-		f.P()
-	}
-	if err := f.writeInlineIndented(enumNode.CloseBrace); err != nil {
-		return err
-	}
-	return nil
+	return f.writeCompositeType(
+		enumNode.Keyword,
+		enumNode.Name,
+		enumNode.OpenBrace,
+		enumNode.CloseBrace,
+		elementWriterFunc,
+	)
 }
 
 // writeEnumElements writes the enum elements for a single enum.
@@ -707,7 +689,7 @@ func (f *formatter) writeEnumValue(enumValueNode *ast.EnumValueNode) error {
 	}
 	if enumValueNode.Options != nil {
 		f.Space()
-		if err := f.writeInline(enumValueNode.Options); err != nil {
+		if err := f.writeNode(enumValueNode.Options); err != nil {
 			return err
 		}
 	}
@@ -760,7 +742,7 @@ func (f *formatter) writeField(fieldNode *ast.FieldNode) error {
 	}
 	if fieldNode.Options != nil {
 		f.Space()
-		if err := f.writeInline(fieldNode.Options); err != nil {
+		if err := f.writeNode(fieldNode.Options); err != nil {
 			return err
 		}
 	}
@@ -789,7 +771,7 @@ func (f *formatter) writeMapField(mapFieldNode *ast.MapFieldNode) error {
 	}
 	if mapFieldNode.Options != nil {
 		f.Space()
-		if err := f.writeInline(mapFieldNode.Options); err != nil {
+		if err := f.writeNode(mapFieldNode.Options); err != nil {
 			return err
 		}
 	}
@@ -826,7 +808,7 @@ func (f *formatter) writeMapType(mapTypeNode *ast.MapTypeNode) error {
 // writeFieldReference writes a field reference (e.g. '(foo.bar)').
 func (f *formatter) writeFieldReference(fieldReferenceNode *ast.FieldReferenceNode) error {
 	if fieldReferenceNode.Open != nil {
-		if err := f.writeInline(fieldReferenceNode.Open); err != nil {
+		if err := f.writeInline(fieldReferenceNode.Name); err != nil {
 			return err
 		}
 	}
@@ -853,54 +835,27 @@ func (f *formatter) writeExtend(extendNode *ast.ExtendNode) error {
 	if err != nil {
 		return err
 	}
-	if err := f.writeMultiline(extendNode.Keyword); err != nil {
-		return err
-	}
-	f.Space()
-	if err := f.writeInline(extendNode.Extendee); err != nil {
-		return err
-	}
-	// We need to handle the comments for the '{' specially since
-	// the trailing comments need to be written in the extend block.
-	info := f.fileNode.NodeInfo(extendNode.OpenBrace)
-	if info.LeadingComments().Len() > 0 {
-		f.Space()
-		if err := f.writeInlineComments(info.LeadingComments()); err != nil {
-			return err
+	var elementWriterFunc func() error
+	if extendElements != nil {
+		elementWriterFunc = func() error {
+			for i, extendElement := range extendElements {
+				if i > 0 {
+					f.P()
+				}
+				if err := f.writeNode(extendElement); err != nil {
+					return err
+				}
+			}
+			return nil
 		}
 	}
-	f.Space()
-	if err := f.writeNode(extendNode.OpenBrace); err != nil {
-		return err
-	}
-	if info.TrailingComments().Len() == 0 && extendElements == nil {
-		// This is an empty extend definition, so we return early.
-		return f.writeInline(extendNode.CloseBrace)
-	}
-	if info.TrailingComments().Len() > 0 || extendElements != nil {
-		f.P()
-		f.In()
-		if info.TrailingComments().Len() > 0 {
-			if err := f.writeMultilineComments(info.TrailingComments()); err != nil {
-				return err
-			}
-			f.P()
-		}
-		for i, extendElement := range extendElements {
-			if i > 0 {
-				f.P()
-			}
-			if err := f.writeNode(extendElement); err != nil {
-				return err
-			}
-		}
-		f.Out()
-		f.P()
-	}
-	if err := f.writeInlineIndented(extendNode.CloseBrace); err != nil {
-		return err
-	}
-	return nil
+	return f.writeCompositeType(
+		extendNode.Keyword,
+		extendNode.Extendee,
+		extendNode.OpenBrace,
+		extendNode.CloseBrace,
+		elementWriterFunc,
+	)
 }
 
 // writeService writes the service node. Services are formatted in
@@ -921,51 +876,19 @@ func (f *formatter) writeService(serviceNode *ast.ServiceNode) error {
 	if err != nil {
 		return err
 	}
-	if err := f.writeMultiline(serviceNode.Keyword); err != nil {
-		return err
-	}
-	f.Space()
-	if err := f.writeInline(serviceNode.Name); err != nil {
-		return err
-	}
-	// We need to handle the comments for the '{' specially since
-	// the trailing comments need to be written in the service block.
-	info := f.fileNode.NodeInfo(serviceNode.OpenBrace)
-	if info.LeadingComments().Len() > 0 {
-		f.Space()
-		if err := f.writeInlineComments(info.LeadingComments()); err != nil {
-			return err
+	var elementWriterFunc func() error
+	if serviceElements != nil {
+		elementWriterFunc = func() error {
+			return f.writeServiceElements(serviceElements)
 		}
 	}
-	f.Space()
-	if err := f.writeNode(serviceNode.OpenBrace); err != nil {
-		return err
-	}
-	if info.TrailingComments().Len() == 0 && serviceElements == nil {
-		// This is an empty service definition, so we return early.
-		return f.writeInline(serviceNode.CloseBrace)
-	}
-	if info.TrailingComments().Len() > 0 || serviceElements != nil {
-		f.P()
-		f.In()
-		if info.TrailingComments().Len() > 0 {
-			if err := f.writeMultilineComments(info.TrailingComments()); err != nil {
-				return err
-			}
-			f.P()
-		}
-		if serviceElements != nil {
-			if err := f.writeServiceElements(serviceElements); err != nil {
-				return err
-			}
-		}
-		f.Out()
-		f.P()
-	}
-	if err := f.writeInlineIndented(serviceNode.CloseBrace); err != nil {
-		return err
-	}
-	return nil
+	return f.writeCompositeType(
+		serviceNode.Keyword,
+		serviceNode.Name,
+		serviceNode.OpenBrace,
+		serviceNode.CloseBrace,
+		elementWriterFunc,
+	)
 }
 
 // writeServiceElements writes the elements for a single service.
@@ -1003,6 +926,8 @@ func (f *formatter) writeServiceElements(serviceElements *serviceElements) error
 //    option deprecated = true;
 //  };
 //
+//
+// TODO: This needs to be adapted to look like writeCompositeType.
 func (f *formatter) writeRPC(rpcNode *ast.RPCNode) error {
 	var options []*ast.OptionNode
 	for _, rpcElement := range rpcNode.Decls {
@@ -1069,7 +994,7 @@ func (f *formatter) writeRPC(rpcNode *ast.RPCNode) error {
 		f.Out()
 		f.P()
 	}
-	if err := f.writeInlineIndented(rpcNode.CloseBrace); err != nil {
+	if err := f.writeMultiline(rpcNode.CloseBrace); err != nil {
 		return err
 	}
 	return nil
@@ -1115,51 +1040,19 @@ func (f *formatter) writeOneOf(oneOfNode *ast.OneOfNode) error {
 	if err != nil {
 		return err
 	}
-	if err := f.writeMultiline(oneOfNode.Keyword); err != nil {
-		return err
-	}
-	f.Space()
-	if err := f.writeInline(oneOfNode.Name); err != nil {
-		return err
-	}
-	// We need to handle the comments for the '{' specially since
-	// the trailing comments need to be written in the oneof block.
-	info := f.fileNode.NodeInfo(oneOfNode.OpenBrace)
-	if info.LeadingComments().Len() > 0 {
-		f.Space()
-		if err := f.writeInlineComments(info.LeadingComments()); err != nil {
-			return err
+	var elementWriterFunc func() error
+	if oneOfElements != nil {
+		elementWriterFunc = func() error {
+			return f.writeOneOfElements(oneOfElements)
 		}
 	}
-	f.Space()
-	if err := f.writeNode(oneOfNode.OpenBrace); err != nil {
-		return err
-	}
-	if info.TrailingComments().Len() == 0 && oneOfElements == nil {
-		// This is an empty oneof definition, so we return early.
-		return f.writeInline(oneOfNode.CloseBrace)
-	}
-	if info.TrailingComments().Len() > 0 || oneOfElements != nil {
-		f.P()
-		f.In()
-		if info.TrailingComments().Len() > 0 {
-			if err := f.writeMultilineComments(info.TrailingComments()); err != nil {
-				return err
-			}
-			f.P()
-		}
-		if oneOfElements != nil {
-			if err := f.writeOneOfElements(oneOfElements); err != nil {
-				return err
-			}
-		}
-		f.Out()
-		f.P()
-	}
-	if err := f.writeInlineIndented(oneOfNode.CloseBrace); err != nil {
-		return err
-	}
-	return nil
+	return f.writeCompositeType(
+		oneOfNode.Keyword,
+		oneOfNode.Name,
+		oneOfNode.OpenBrace,
+		oneOfNode.CloseBrace,
+		elementWriterFunc,
+	)
 }
 
 // writeOneOfElements writes the oneOf elements for a single oneof.
@@ -1237,7 +1130,7 @@ func (f *formatter) writeGroup(groupNode *ast.GroupNode) error {
 	}
 	if groupNode.Options != nil {
 		f.Space()
-		if err := f.writeInline(groupNode.Options); err != nil {
+		if err := f.writeNode(groupNode.Options); err != nil {
 			return err
 		}
 	}
@@ -1261,17 +1154,6 @@ func (f *formatter) writeGroup(groupNode *ast.GroupNode) error {
 			// the body, so we return early.
 			return f.writeInline(groupNode.CloseBrace)
 		}
-		// Writing comments in this case requires special care - we need
-		// to write all of the leading comments in an empty message body,
-		// so the comments need to be indented, but not the tokens they're
-		// attached to.
-		//
-		// For example,
-		//
-		//  optional group Foo {
-		//    // This group might have multiple comments.
-		//    // They're attached to the '}'.
-		//  }
 		f.P()
 		f.In()
 		if err := f.writeMultilineComments(info.LeadingComments()); err != nil {
@@ -1336,7 +1218,7 @@ func (f *formatter) writeExtensionRange(extensionRangeNode *ast.ExtensionRangeNo
 	}
 	if extensionRangeNode.Options != nil {
 		f.Space()
-		if err := f.writeInline(extensionRangeNode.Options); err != nil {
+		if err := f.writeNode(extensionRangeNode.Options); err != nil {
 			return err
 		}
 	}
@@ -1414,6 +1296,94 @@ func (f *formatter) writeRange(rangeNode *ast.RangeNode) error {
 	return nil
 }
 
+// writeCompositeType writes a composite type, e.g. message, enum, extend, oneof, etc.
+//
+// TODO: Extract out keywordNode and nameNode so that other types can use this too
+// (e.g. group).
+func (f *formatter) writeCompositeType(
+	keywordNode *ast.KeywordNode,
+	nameNode ast.IdentValueNode,
+	openBrace *ast.RuneNode,
+	closeBrace *ast.RuneNode,
+	elementWriterFunc func() error,
+) error {
+	if err := f.writeMultiline(keywordNode); err != nil {
+		return err
+	}
+	f.Space()
+	if err := f.writeInline(nameNode); err != nil {
+		return err
+	}
+	// We need to handle the comments for the '{' specially since
+	// the trailing comments need to be written in the enum block.
+	info := f.fileNode.NodeInfo(openBrace)
+	if info.LeadingComments().Len() > 0 {
+		f.Space()
+		if err := f.writeInlineComments(info.LeadingComments()); err != nil {
+			return err
+		}
+	}
+	f.Space()
+	if err := f.writeNode(openBrace); err != nil {
+		return err
+	}
+	if info.TrailingComments().Len() == 0 && elementWriterFunc == nil {
+		info = f.fileNode.NodeInfo(closeBrace)
+		if info.LeadingComments().Len() == 0 {
+			// This is an empty definition without any comments in
+			// the body, so we return early.
+			return f.writeInline(closeBrace)
+		}
+		// Writing comments in this case requires special care - we need
+		// to write all of the leading comments in an empty type body,
+		// so the comments need to be indented, but the tokens they're
+		// attached to should not be indented.
+		//
+		// For example,
+		//
+		//  message Foo {
+		//    // This message might have multiple comments.
+		//    // They're attached to the '}'.
+		//  }
+		f.P()
+		f.In()
+		if err := f.writeMultilineComments(info.LeadingComments()); err != nil {
+			return err
+		}
+		f.Out()
+		if err := f.writeNode(closeBrace); err != nil {
+			return err
+		}
+		return f.writeInlineComments(info.TrailingComments())
+	}
+	f.P()
+	f.In()
+	if info.TrailingComments().Len() > 0 {
+		if err := f.writeMultilineComments(info.TrailingComments()); err != nil {
+			return err
+		}
+		if elementWriterFunc != nil {
+			// If there are other elements to write, we need another
+			// newline after the trailing comments.
+			f.P()
+		}
+	}
+	if elementWriterFunc != nil {
+		if err := elementWriterFunc(); err != nil {
+			return err
+		}
+		f.P()
+	}
+	f.Out()
+	if info := f.fileNode.NodeInfo(closeBrace); info.LeadingComments().Len() > 0 {
+		f.P()
+	}
+	if err := f.writeMultiline(closeBrace); err != nil {
+		return err
+	}
+	return nil
+}
+
 // writeCompactOptions writes a compact options node.
 //
 // For example,
@@ -1423,33 +1393,71 @@ func (f *formatter) writeRange(rangeNode *ast.RangeNode) error {
 //    json_name = "something"
 //  ]
 func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNode) error {
-	if err := f.writeInline(compactOptionsNode.OpenBracket); err != nil {
+	info := f.fileNode.NodeInfo(compactOptionsNode.OpenBracket)
+	if info.LeadingComments().Len() > 0 {
+		if err := f.writeInlineComments(info.LeadingComments()); err != nil {
+			return err
+		}
+		f.Space()
+	}
+	if err := f.writeNode(compactOptionsNode.OpenBracket); err != nil {
 		return err
 	}
+	if info.TrailingComments().Len() == 0 && len(compactOptionsNode.Options) == 0 {
+		info = f.fileNode.NodeInfo(compactOptionsNode.CloseBracket)
+		if info.LeadingComments().Len() == 0 {
+			// This is an empty options definition without any comments in
+			// the body, so we return early.
+			return f.writeInline(compactOptionsNode.CloseBracket)
+		}
+		f.P()
+		f.In()
+		if err := f.writeMultilineComments(info.LeadingComments()); err != nil {
+			return err
+		}
+		f.Out()
+		if err := f.writeNode(compactOptionsNode.CloseBracket); err != nil {
+			return err
+		}
+		return f.writeInlineComments(info.TrailingComments())
+	}
+	f.P()
 	f.In()
+	if info.TrailingComments().Len() > 0 {
+		if err := f.writeMultilineComments(info.TrailingComments()); err != nil {
+			return err
+		}
+		if len(compactOptionsNode.Options) > 0 {
+			// If there are other elements to write, we need another
+			// newline after the trailing comments.
+			f.P()
+		}
+	}
 	for i := 0; i < len(compactOptionsNode.Options); i++ {
-		if i > 0 {
+		if err := f.writeNode(compactOptionsNode.Options[i]); err != nil {
+			return err
+		}
+		if i < len(compactOptionsNode.Options)-1 {
 			// The length of this slice must be exactly len(Options)-1.
-			if err := f.writeInline(compactOptionsNode.Commas[i-1]); err != nil {
+			if err := f.writeInline(compactOptionsNode.Commas[i]); err != nil {
 				return err
 			}
 		}
 		f.P()
-		if err := f.writeNode(compactOptionsNode.Options[i]); err != nil {
-			return err
-		}
 	}
 	f.Out()
-	if len(compactOptionsNode.Options) > 0 {
+	if info := f.fileNode.NodeInfo(compactOptionsNode.CloseBracket); info.LeadingComments().Len() > 0 {
 		f.P()
 	}
-	if err := f.writeInlineIndented(compactOptionsNode.CloseBracket); err != nil {
+	if err := f.writeMultiline(compactOptionsNode.CloseBracket); err != nil {
 		return err
 	}
 	return nil
 }
 
 // writeCompoundIdent writes a compound identifier (e.g. '.com.foo.Bar').
+//
+// TODO: Fix the case where this can be written by both multiline and in-line.
 func (f *formatter) writeCompoundIdent(compoundIdentNode *ast.CompoundIdentNode) error {
 	if compoundIdentNode.LeadingDot != nil {
 		if err := f.writeInline(compoundIdentNode.LeadingDot); err != nil {
@@ -1478,6 +1486,7 @@ func (f *formatter) writeCompoundIdent(compoundIdentNode *ast.CompoundIdentNode)
 //    "foo",
 //    "bar"
 //  ]
+//
 func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) error {
 	if err := f.writeInline(arrayLiteralNode.OpenBracket); err != nil {
 		return err
@@ -1491,7 +1500,7 @@ func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) er
 			}
 		}
 		f.P()
-		if err := f.writeInlineIndented(arrayLiteralNode.Elements[i]); err != nil {
+		if err := f.writeMultiline(arrayLiteralNode.Elements[i]); err != nil {
 			return err
 		}
 	}
@@ -1499,7 +1508,7 @@ func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) er
 	if len(arrayLiteralNode.Elements) > 0 {
 		f.P()
 	}
-	if err := f.writeInlineIndented(arrayLiteralNode.CloseBracket); err != nil {
+	if err := f.writeMultiline(arrayLiteralNode.CloseBracket); err != nil {
 		return err
 	}
 	return nil
@@ -1721,15 +1730,6 @@ func (f *formatter) writeMultiline(node ast.Node) error {
 	return nil
 }
 
-// writeInlineIndented writes the node in a single indented line.
-//
-// This is useful for writing single line declarations that need to
-// be indented, such as options, fields, etc.
-func (f *formatter) writeInlineIndented(node ast.Node) error {
-	_, _ = fmt.Fprint(f.writer, strings.Repeat("  ", f.indent))
-	return f.writeInline(node)
-}
-
 // writeInline writes the node and its surrounding comments in-line.
 //
 // This is useful for writing individual nodes like keywords, runes,
@@ -1776,9 +1776,6 @@ func (f *formatter) writeMultilineComments(comments ast.Comments) error {
 
 // writeInlineComments writes the given comments in-line. Multiple in-line comments
 // are separated by a space.
-//
-// TODO: We might need to transform '//' comments into C-style comments if the
-// node MUST be written in-line.
 func (f *formatter) writeInlineComments(comments ast.Comments) error {
 	for i := 0; i < comments.Len(); i++ {
 		if i > 0 {

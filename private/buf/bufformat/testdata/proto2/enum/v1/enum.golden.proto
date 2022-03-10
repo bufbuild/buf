@@ -11,4 +11,6 @@ enum Type {
   TYPE_ONE = 1; // In-line comment on TYPE_ONE.
   // TYPE_TWO leading comment.
   TYPE_TWO = 2 /* Before the ';' */;
-}
+
+// Leading comment on '}'.
+} // Trailing comment on '}'.

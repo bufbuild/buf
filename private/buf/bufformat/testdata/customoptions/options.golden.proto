@@ -67,3 +67,8 @@ extend google.protobuf.ServiceOptions {
   bool service_option = 80012;
   Thing service_thing_option = 80014;
 }
+
+extend google.protobuf.ExtensionRangeOptions {
+  bool extension_range_option = 80012;
+  Thing extension_range_thing_option = 80014;
+}

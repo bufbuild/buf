@@ -12,4 +12,6 @@
 
        // TYPE_TWO leading comment.
     TYPE_TWO    = 2 /* Before the ';' */;
-  }
+
+  // Leading comment on '}'.
+  } // Trailing comment on '}'.

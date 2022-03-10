@@ -11,9 +11,12 @@ message Foo {
     // This should be a trailing comment block on the message literal.
     // It's spread across multiple lines.
 
-    /* Leading comment on the 'foo' element */ foo:1
-    /* Comment on bar */ bar:2
-    /* Comment on truth */ truth:false
+    /* Leading comment on the 'foo' element */
+    foo: 1
+    /* Comment on bar */
+    bar: 2
+    /* Comment on truth */
+    truth: false
   };
 
   // This is attached to the optional label.

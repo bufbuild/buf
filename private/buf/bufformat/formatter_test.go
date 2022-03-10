@@ -40,13 +40,16 @@ func testFormatCustomOptions(t *testing.T) {
 
 func testFormatProto2(t *testing.T) {
 	testFormatNoDiff(t, "testdata/proto2/enum/v1")
+	testFormatNoDiff(t, "testdata/proto2/extend/v1")
 	testFormatNoDiff(t, "testdata/proto2/field/v1")
 	testFormatNoDiff(t, "testdata/proto2/group/v1")
 	testFormatNoDiff(t, "testdata/proto2/header/v1")
 	testFormatNoDiff(t, "testdata/proto2/message/v1")
+	testFormatNoDiff(t, "testdata/proto2/option/v1")
 }
 
 func testFormatProto3(t *testing.T) {
+	testFormatNoDiff(t, "testdata/proto3/file/v1")
 	testFormatNoDiff(t, "testdata/proto3/header/v1")
 	testFormatNoDiff(t, "testdata/proto3/oneof/v1")
 	testFormatNoDiff(t, "testdata/proto3/range/v1")
