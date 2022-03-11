@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+import "custom.proto";
+
+message Thing {
+  // Trailing comment on '}'.
+
+  // Leading comment on thing field.
+  custom.Thing thing = 1; // Trailing comment on thing field.
+
+// Leading comment on '}',
+}

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+service Foo {
+  /* C-style comment in the middle */
+}
+
+service Bar {
+  // Normal comment in the middle
+}
+
+service Baz {
+  // Body comment.
+}

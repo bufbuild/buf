@@ -5,7 +5,7 @@ message Message {}
 service Ping {
   option deprecated = true;
 
-  rpc Echo (Message) returns (Message) {
+  rpc Echo(Message) returns (Message) {
     option deprecated = true;
   }
 }

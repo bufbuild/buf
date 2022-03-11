@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+message Message {}
+
+service Foo {
+  rpc One(Message) returns (Message) {
+    /* C-style comment in the middle */
+  }
+  rpc Two(Message) returns (Message) {
+    // Normal comment in the middle
+  }
+  rpc Three(Message) returns (Message) {
+    // Body comment.
+  }
+
+// Leading comment on '}'.
+}

@@ -129,7 +129,7 @@ service FooService {
   option deprecated = true;
 
   // Leading comment on Foo.
-  rpc Foo (Foo) returns (Foo) {
+  rpc Foo(Foo) returns (Foo) {
     // Trailing comment on Foo.
 
     // Leading comment on deprecated.
