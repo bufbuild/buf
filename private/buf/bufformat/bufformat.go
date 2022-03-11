@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storagemem"
 	"github.com/bufbuild/buf/private/pkg/thread"
-	"github.com/jhump/protocompile/ast"
 	"github.com/jhump/protocompile/parser"
 	"github.com/jhump/protocompile/reporter"
 	"go.uber.org/multierr"
@@ -33,31 +32,22 @@ func Format(ctx context.Context, module bufmodule.Module) (_ storage.ReadBucket,
 	if err != nil {
 		return nil, err
 	}
-	moduleFiles := make([]bufmodule.ModuleFile, 0, len(fileInfos))
-	for _, fileInfo := range fileInfos {
-		moduleFile, err := module.GetModuleFile(ctx, fileInfo.Path())
-		if err != nil {
-			return nil, err
-		}
-		defer func() {
-			retErr = multierr.Append(retErr, moduleFile.Close())
-		}()
-		moduleFiles = append(moduleFiles, moduleFile)
-	}
-	fileNodes := make([]*ast.FileNode, 0, len(moduleFiles))
-	for _, moduleFile := range moduleFiles {
-		fileNode, err := parser.Parse(moduleFile.ExternalPath(), moduleFile, reporter.NewHandler(nil))
-		if err != nil {
-			return nil, err
-		}
-		fileNodes = append(fileNodes, fileNode)
-	}
 	readWriteBucket := storagemem.NewReadWriteBucket()
-	jobs := make([]func(context.Context) error, len(fileNodes))
-	for i, fileNode := range fileNodes {
-		fileNode := fileNode
-		moduleFile := moduleFiles[i]
+	jobs := make([]func(context.Context) error, len(fileInfos))
+	for i, fileInfo := range fileInfos {
+		fileInfo := fileInfo
 		jobs[i] = func(ctx context.Context) (retErr error) {
+			moduleFile, err := module.GetModuleFile(ctx, fileInfo.Path())
+			if err != nil {
+				return err
+			}
+			defer func() {
+				retErr = multierr.Append(retErr, moduleFile.Close())
+			}()
+			fileNode, err := parser.Parse(moduleFile.ExternalPath(), moduleFile, reporter.NewHandler(nil))
+			if err != nil {
+				return err
+			}
 			writeObjectCloser, err := readWriteBucket.Put(ctx, moduleFile.Path())
 			if err != nil {
 				return err
