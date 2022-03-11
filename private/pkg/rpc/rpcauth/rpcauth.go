@@ -125,11 +125,17 @@ func NewServerInterceptor(authenticator Authenticator) rpc.ServerInterceptor {
 		) (interface{}, error) {
 			user, ok := authenticate(ctx, authenticator)
 			if ok {
-				ctx = context.WithValue(ctx, authContextKey{}, user)
+				ctx = WithContextUser(ctx, user)
 			}
 			return serverHandler.Handle(ctx, request)
 		},
 	)
+}
+
+// WithContextUser sets the user on the context. It is intended to be used
+// by interceptors following token authentication.
+func WithContextUser(ctx context.Context, user *User) context.Context {
+	return context.WithValue(ctx, authContextKey{}, user)
 }
 
 func authenticate(ctx context.Context, authenticator Authenticator) (*User, bool) {
