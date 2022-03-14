@@ -1,0 +1,5 @@
+syntax = "proto2";
+
+import "custom.proto";
+
+option (custom  /* One */  .  /* Two */  file_thing_option).  /* Three */  foo = 0;

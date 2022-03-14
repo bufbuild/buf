@@ -32,15 +32,18 @@ extend google.protobuf.FieldOptions {
   float float_field_option = 80019;
   double double_field_option = 80020;
   int32 int32_field_option = 80021;
-  uint32 uint32_field_option = 80022;
-  uint64 uint64_field_option = 80023;
-  sint32 sint32_field_option = 80024;
-  sint64 sint64_field_option = 80025;
-  fixed32 fixed32_field_option = 80026;
-  fixed64 fixed64_field_option = 80027;
-  sfixed32 sfixed32_field_option = 80028;
-  sfixed64 sfixed64_field_option = 80029;
-  bytes bytes_field_option = 80030;
+  int64 int64_field_option = 80022;
+  uint32 uint32_field_option = 80023;
+  uint64 uint64_field_option = 80024;
+  sint32 sint32_field_option = 80025;
+  sint64 sint64_field_option = 80026;
+  fixed32 fixed32_field_option = 80027;
+  fixed64 fixed64_field_option = 80028;
+  sfixed32 sfixed32_field_option = 80029;
+  sfixed64 sfixed64_field_option = 80030;
+  bool bool_field_option = 80031;
+  bytes bytes_field_option = 80032;
+  string string_field_option = 80033;
 }
 
 extend google.protobuf.OneofOptions {
