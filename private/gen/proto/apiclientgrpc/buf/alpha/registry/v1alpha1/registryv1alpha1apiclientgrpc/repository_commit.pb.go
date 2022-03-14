@@ -90,6 +90,37 @@ func (s *repositoryCommitService) ListRepositoryCommitsByReference(
 	return response.RepositoryCommits, response.NextPageToken, nil
 }
 
+// ListRepositoryCommitsOnTrack returns repository commits up-to and including
+// the provided reference.
+func (s *repositoryCommitService) ListRepositoryCommitsOnTrack(
+	ctx context.Context,
+	repositoryOwner string,
+	repositoryName string,
+	reference string,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListRepositoryCommitsOnTrack(
+		ctx,
+		&v1alpha1.ListRepositoryCommitsOnTrackRequest{
+			RepositoryOwner: repositoryOwner,
+			RepositoryName:  repositoryName,
+			Reference:       reference,
+			PageSize:        pageSize,
+			PageToken:       pageToken,
+			Reverse:         reverse,
+		},
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.RepositoryCommits, response.NextPageToken, nil
+}
+
 // GetRepositoryCommitByReference returns the repository commit matching
 // the provided reference, if it exists.
 func (s *repositoryCommitService) GetRepositoryCommitByReference(

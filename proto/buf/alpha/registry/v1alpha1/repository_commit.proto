@@ -50,6 +50,9 @@ service RepositoryCommitService {
   // ListRepositoryCommitsByReference returns repository commits up-to and including
   // the provided reference.
   rpc ListRepositoryCommitsByReference(ListRepositoryCommitsByReferenceRequest) returns (ListRepositoryCommitsByReferenceResponse);
+  // ListRepositoryCommitsOnTrack returns repository commits up-to and including
+  // the provided reference.
+  rpc ListRepositoryCommitsOnTrack(ListRepositoryCommitsOnTrackRequest) returns (ListRepositoryCommitsOnTrackResponse);
   // GetRepositoryCommitByReference returns the repository commit matching
   // the provided reference, if it exists.
   rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse);
@@ -79,12 +82,30 @@ message ListRepositoryCommitsByBranchResponse {
   string next_page_token = 2;
 }
 
+message ListRepositoryCommitsOnTrackRequest {
+  // The owner of the repository which the repository reference belongs to.
+  string repository_owner = 1;
+  // The name of the repository which the repository reference belongs to.
+  string repository_name = 2;
+  // The reference used to resolve repository commits. Can be a track, tag or commit.
+  // Commits will be returned from [reference, latest in track]
+  string reference = 3;
+  uint32 page_size = 4;
+  string page_token = 5;
+  bool reverse = 6;
+}
+
+message ListRepositoryCommitsOnTrackResponse {
+  repeated RepositoryCommit repository_commits = 1;
+  string next_page_token = 2;
+}
+
 message ListRepositoryCommitsByReferenceRequest {
   // The owner of the repository which the repository reference belongs to.
   string repository_owner = 1;
   // The name of the repository which the repository reference belongs to.
   string repository_name = 2;
-  // The reference used to resolve repository commits. Can be a branch, tag or commit.
+  // The reference used to resolve repository commits. Can be a track, tag or commit.
   string reference = 3;
   uint32 page_size = 4;
   string page_token = 5;
