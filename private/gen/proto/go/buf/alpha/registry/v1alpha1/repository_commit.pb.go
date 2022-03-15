@@ -310,10 +310,11 @@ type ListRepositoryCommitsOnTrackRequest struct {
 	RepositoryName string `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
 	// The id of the track which to list commits from.
 	RepositoryTrackId string `protobuf:"bytes,3,opt,name=repository_track_id,json=repositoryTrackId,proto3" json:"repository_track_id,omitempty"`
-	// The reference used to resolve track commits. Can be a track, tag or commit.
+	// The reference used to resolve track commits. Can be a track, tag or commit name.
 	// Commits will be returned starting at reference.
 	// Using a track as a reference will return results if the reference track head
 	// is in the queried track's history.
+	// Returns the entire commit history of the track when reference is empty.
 	Reference string `protobuf:"bytes,4,opt,name=reference,proto3" json:"reference,omitempty"`
 	PageSize  uint32 `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	PageToken string `protobuf:"bytes,6,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
