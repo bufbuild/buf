@@ -17,7 +17,7 @@ jobs:
         if: success()
         uses: actions/setup-go@v2.1.4 # this contains a fix for Windows file extraction
         with:
-          go-version: 1.17.7
+          go-version: 1.18.0
       - name: cache
         if: success()
         uses: actions/cache@v2
