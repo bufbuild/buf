@@ -96,7 +96,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsOnTrack(
 	ctx context.Context,
 	repositoryOwner string,
 	repositoryName string,
-	repositoryTrackId string,
+	repositoryTrackName string,
 	reference string,
 	pageSize uint32,
 	pageToken string,
@@ -108,13 +108,13 @@ func (s *repositoryCommitService) ListRepositoryCommitsOnTrack(
 	response, err := s.client.ListRepositoryCommitsOnTrack(
 		ctx,
 		&v1alpha1.ListRepositoryCommitsOnTrackRequest{
-			RepositoryOwner:   repositoryOwner,
-			RepositoryName:    repositoryName,
-			RepositoryTrackId: repositoryTrackId,
-			Reference:         reference,
-			PageSize:          pageSize,
-			PageToken:         pageToken,
-			Reverse:           reverse,
+			RepositoryOwner:     repositoryOwner,
+			RepositoryName:      repositoryName,
+			RepositoryTrackName: repositoryTrackName,
+			Reference:           reference,
+			PageSize:            pageSize,
+			PageToken:           pageToken,
+			Reverse:             reverse,
 		},
 	)
 	if err != nil {
