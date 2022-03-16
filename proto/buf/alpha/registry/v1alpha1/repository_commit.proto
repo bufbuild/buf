@@ -87,8 +87,8 @@ message ListRepositoryCommitsOnTrackRequest {
   string repository_owner = 1;
   // The name of the repository which the repository reference belongs to.
   string repository_name = 2;
-  // The id of the track which to list commits from.
-  string repository_track_id = 3;
+  // The name of the track which to list commits from.
+  string repository_track_name = 3;
   // The reference used to resolve track commits. Can be a track, tag or commit name.
   // Commits will be returned starting at reference.
   // Using a track as a reference will return results if the reference track head

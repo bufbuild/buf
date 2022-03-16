@@ -51,7 +51,7 @@ type RepositoryCommitService interface {
 		ctx context.Context,
 		repositoryOwner string,
 		repositoryName string,
-		repositoryTrackId string,
+		repositoryTrackName string,
 		reference string,
 		pageSize uint32,
 		pageToken string,
