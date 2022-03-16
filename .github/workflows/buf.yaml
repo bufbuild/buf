@@ -11,7 +11,7 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1.1.0
         if: success()
         with:
-          version: 1.0.0-rc11
+          version: 1.1.0
       - uses: bufbuild/buf-lint-action@v1.0.0
         if: success()
         with:
@@ -23,7 +23,7 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1.1.0
         if: success()
         with:
-          version: 1.0.0-rc11
+          version: 1.1.0
       - uses: bufbuild/buf-breaking-action@v1.0.0
         if: success()
         with:
@@ -40,7 +40,7 @@ jobs:
       - uses: bufbuild/buf-setup-action@v1.1.0
         if: success()
         with:
-          version: 1.0.0-rc11
+          version: 1.1.0
       - uses: bufbuild/buf-push-action@v1.0.1
         if: success()
         with:
