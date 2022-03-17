@@ -1,5 +1,33 @@
 syntax = "proto2";
 
+package foo.bar;
+
 import "custom.proto";
+
+extend google.protobuf.MessageOptions {
+  optional Another another = 20000;
+}
+
+message Thing {
+  message Nested {
+    message _NestedNested {
+      extend Test {
+        optional string one = 100;
+        optional string two = 101;
+      }
+    }
+  }
+}
+
+message Another {
+
+  // Leading on complex option name.
+  option (another).thing.(.foo.bar.Thing.Nested._NestedNested.one) = "one";
+
+  // Leading on complex option name with in-line.
+  option (another).thing.( /* One */ . /* Two */ foo.bar.Thing.Nested._NestedNested.one) = "one"; // Trailing
+
+  optional Thing thing = 1;
+}
 
 option (custom  /* One */  .  /* Two */  file_thing_option).  /* Three */  foo = 0;

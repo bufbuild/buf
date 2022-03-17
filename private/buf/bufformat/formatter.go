@@ -588,17 +588,6 @@ func (f *formatter) writeMessageLiteralElements(messageLiteralNode *ast.MessageL
 	return nil
 }
 
-// writeMessageFieldWithSeparator writes the message field node,
-// but leaves room for a trailing separator in the parent message
-// literal.
-func (f *formatter) writeMessageFieldWithSeparator(messageFieldNode *ast.MessageFieldNode) error {
-	if err := f.writeMessageFieldPrefix(messageFieldNode); err != nil {
-		return err
-	}
-	f.Space()
-	return f.writeInline(messageFieldNode.Val)
-}
-
 // writeMessageField writes the message field node, and concludes the
 // line without leaving room for a trailing separator in the parent
 // message literal.
@@ -608,6 +597,17 @@ func (f *formatter) writeMessageField(messageFieldNode *ast.MessageFieldNode) er
 	}
 	f.Space()
 	return f.writeLineEnd(messageFieldNode.Val)
+}
+
+// writeMessageFieldWithSeparator writes the message field node,
+// but leaves room for a trailing separator in the parent message
+// literal.
+func (f *formatter) writeMessageFieldWithSeparator(messageFieldNode *ast.MessageFieldNode) error {
+	if err := f.writeMessageFieldPrefix(messageFieldNode); err != nil {
+		return err
+	}
+	f.Space()
+	return f.writeInline(messageFieldNode.Val)
 }
 
 // writeMessageFieldPrefix writes the message field node as a single line.
@@ -631,7 +631,6 @@ func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNo
 			return err
 		}
 	} else {
-		// TODO: I think this needs to same FieldType and ArrayLiteral special treatment.
 		if err := f.writeStart(fieldReferenceNode.Name); err != nil {
 			return err
 		}
@@ -860,12 +859,9 @@ func (f *formatter) writeMapType(mapTypeNode *ast.MapTypeNode) error {
 }
 
 // writeFieldReference writes a field reference (e.g. '(foo.bar)').
-//
-// TODO: This might need to be adapted for message literals (similar to
-// compound idents for fields).
 func (f *formatter) writeFieldReference(fieldReferenceNode *ast.FieldReferenceNode) error {
 	if fieldReferenceNode.Open != nil {
-		if err := f.writeInline(fieldReferenceNode.Name); err != nil {
+		if err := f.writeInline(fieldReferenceNode.Open); err != nil {
 			return err
 		}
 	}
@@ -1408,8 +1404,6 @@ func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) er
 //
 // The lastElement boolean is used to signal whether or not the composite value
 // should be written as the last element (i.e. it doesn't have a trailing comma).
-
-// TODO: Add a test for the special float values like "nan" and "inf".
 func (f *formatter) writeCompositeValueForArrayLiteral(
 	compositeNode ast.CompositeNode,
 	lastElement bool,
@@ -1713,7 +1707,7 @@ func (f *formatter) writeSignedFloatLiteralForArray(
 
 // writeSpecialFloatLiteral writes a special float literal value (e.g. "nan" or "inf").
 func (f *formatter) writeSpecialFloatLiteral(specialFloatLiteralNode *ast.SpecialFloatLiteralNode) error {
-	f.WriteString(fmt.Sprintf("%q", specialFloatLiteralNode.KeywordNode.Val))
+	f.WriteString(specialFloatLiteralNode.KeywordNode.Val)
 	return nil
 }
 

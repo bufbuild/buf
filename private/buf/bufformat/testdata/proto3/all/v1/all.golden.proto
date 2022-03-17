@@ -38,6 +38,8 @@ option java_package = "com.foo"; // option-inline comment 2
 // leading comment one1
 // leading comment one2
 message One {
+  // body comment one1
+
   // message-option comment
   // subsequent message-option comment
   option (custom.message_option) = false; // message-option-inline comment
@@ -68,6 +70,8 @@ message One {
   Three one_three = 3; /* field-inline c-style comment */
   map<string, uint32> map_field = 4;
   oneof oneof_field {
+    // oneof-body comment
+
     // oneof-field comment
     option (custom.oneof_option) = true; // oneof-option-field-inline comment
     option (custom.oneof_thing_option) = {
@@ -92,16 +96,16 @@ message One {
   ];
   int64 integer_field_two = 13 [
     (custom.field_thing_option) = {
-      foo: 9
+      foo: 9,
       repeated_foo: [
         1,
         2
       ]
     },
     (custom.repeated_field_thing_option) = {
-      foo: 1
+      foo: 1,
       recursive: {
-        foo: 2
+        foo: 2,
         repeated_foo: [
           3,
           4
@@ -109,9 +113,9 @@ message One {
       }
     },
     (custom.repeated_field_thing_option) = {
-      foo: 5
+      foo: 5,
       recursive: {
-        foo: 6
+        foo: 6,
         repeated_foo: [
           7,
           8
@@ -119,17 +123,17 @@ message One {
       }
     },
     (custom.repeated_field_thing_option) = {
-      foo: 1
+      foo: 1,
       repeated_thing: [
         {
-          foo: 1
+          foo: 1,
           repeated_foo: [
             1,
             2
           ]
         },
-{
-          foo: 3
+        {
+          foo: 3,
           repeated_foo: [
             3,
             4
@@ -138,6 +142,8 @@ message One {
       ]
     }
   ];
+
+// body comment one2
 } // trailing comment one1
 
 message Two {
@@ -149,6 +155,8 @@ message Two {
 }
 
 enum EnumWithAlias {
+  // enum-body comment
+
   option allow_alias = true;
 
   ENUM_WITH_ALIAS_UNSPECIFIED = 0;
@@ -170,10 +178,10 @@ enum OtherEnum {
   OTHER_ENUM_UNSPECIFIED = 0 [
     (custom.enum_value_option) = true,
     (custom.enum_value_thing_option) = {
-      foo: 1
-      bar: 2
+      foo: 1,
+      bar: 2,
       recursive: {
-        foo: 3
+        foo: 3,
         recursive: {
           bar: 2
         }
@@ -198,10 +206,10 @@ service ExampleService {
   rpc Example(One) returns (Two) {
     option (custom.method_option) = true;
     option (custom.method_thing_option) = {
-      foo: 1
-      bar: 2
+      foo: 1,
+      bar: 2,
       recursive: {
-        foo: 3
+        foo: 3,
         recursive: {
           bar: 2
         }

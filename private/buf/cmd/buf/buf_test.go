@@ -1880,6 +1880,49 @@ func TestDecodeInvalidTypeName(t *testing.T) {
 	)
 }
 
+// Tests if the image produced by the formatted result is
+// equivalent to the original result.
+func TestFormat(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "format"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+		"--exclude-source-info",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"format",
+		filepath.Join("testdata", "format"),
+		"-o",
+		filepath.Join(tempDir, "formatted"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join(tempDir, "formatted"),
+		"-o",
+		filepath.Join(tempDir, "formatted.bin"),
+		"--exclude-source-info",
+	)
+	originalImageData, err := os.ReadFile(filepath.Join(tempDir, "image.bin"))
+	require.NoError(t, err)
+	formattedImageData, err := os.ReadFile(filepath.Join(tempDir, "formatted.bin"))
+	require.NoError(t, err)
+	require.Equal(t, originalImageData, formattedImageData)
+}
+
 func testMigrateV1Beta1Diff(
 	t *testing.T,
 	storageosProvider storageos.Provider,

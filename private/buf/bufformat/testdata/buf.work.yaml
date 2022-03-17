@@ -1,5 +1,0 @@
-# This workspace enables all of the testdata (both proto2
-# and proto3) files to import from the customoptions definitions.
-version: v1
-directories:
-  - customoptions
