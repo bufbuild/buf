@@ -25,7 +25,7 @@ service ImageService {
   rpc GetImage(GetImageRequest) returns (GetImageResponse);
 }
 
-// ImageMask is used in GetImageRequest to specify which parts of an image 
+// ImageMask is used in GetImageRequest to specify which parts of an image
 // should be masked in responses.
 enum ImageMask {
   IMAGE_MASK_UNSPECIFIED = 0;
@@ -52,9 +52,9 @@ message GetImageRequest {
   // descriptors in those files to describe these types. Accepts messages, enums
   // and services. All types must be defined in the buf module, types in
   // dependencies are not accepted.
-  // 
+  //
   // At this time specifying `types` requires `exclude_source_info` to be set to
-  // true. 
+  // true.
   repeated string types = 6;
   // When not empty, the returned image's files will only include
   // *DescriptorProto fields for the elements specified here. The masks are

@@ -21,6 +21,9 @@ import "google/protobuf/timestamp.proto";
 // RepositoryTrackCommit is the existence of a RepositoryCommit on a RepositoryTrack. Currently its only purpose is
 // for querying whether a RepositoryCommit is on a RepositoryTrack and determining it's sequence id.
 message RepositoryTrackCommit {
+  // We reserve field number '3' for id, but RepositoryTrackCommits have no id.
+  // string id = 1;
+
   // immutable
   google.protobuf.Timestamp create_time = 2;
   // We reserve field number '3' for the update_time.
