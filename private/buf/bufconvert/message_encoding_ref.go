@@ -12,37 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buffetch
+package bufconvert
 
-import (
-	"context"
-	"io"
+var _ MessageEncodingRef = &messageEncodingRef{}
 
-	"github.com/bufbuild/buf/private/buf/buffetch/internal"
-	"github.com/bufbuild/buf/private/pkg/app"
-	"go.uber.org/zap"
-)
-
-type writer struct {
-	internalWriter internal.Writer
+type messageEncodingRef struct {
+	path            string
+	messageEncoding MessageEncoding
 }
 
-func newWriter(
-	logger *zap.Logger,
-) *writer {
-	return &writer{
-		internalWriter: internal.NewWriter(
-			logger,
-			internal.WithWriterLocal(),
-			internal.WithWriterStdio(),
-		),
+func newMessageEncodingRef(
+	path string,
+	messageEncoding MessageEncoding,
+) *messageEncodingRef {
+	return &messageEncodingRef{
+		path:            path,
+		messageEncoding: messageEncoding,
 	}
 }
 
-func (w *writer) PutImageFile(
-	ctx context.Context,
-	container app.EnvStdoutContainer,
-	imageRef ImageRef,
-) (io.WriteCloser, error) {
-	return w.internalWriter.PutFile(ctx, container, imageRef.internalFileRef())
+func (r *messageEncodingRef) Path() string {
+	return r.path
+}
+
+func (r *messageEncodingRef) MessageEncoding() MessageEncoding {
+	return r.messageEncoding
 }

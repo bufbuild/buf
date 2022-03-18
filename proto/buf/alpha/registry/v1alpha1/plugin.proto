@@ -19,6 +19,7 @@ package buf.alpha.registry.v1alpha1;
 import "buf/alpha/registry/v1alpha1/generate.proto";
 import "buf/alpha/registry/v1alpha1/role.proto";
 import "buf/alpha/registry/v1alpha1/user.proto";
+import "google/protobuf/timestamp.proto";
 
 // Plugin represents a protoc plugin, such as protoc-gen-go.
 message Plugin {
@@ -35,6 +36,10 @@ message Plugin {
   bool deprecated = 5;
   // deprecation_message is the message shown if the plugin is deprecated.
   string deprecation_message = 6;
+  // The creation time of the plugin.
+  google.protobuf.Timestamp create_time = 7;
+  // The last update time of the plugin object.
+  google.protobuf.Timestamp update_time = 8;
 }
 
 // PluginVersion represents a specific build of a plugin,
@@ -87,6 +92,10 @@ message Template {
   bool deprecated = 8;
   // deprecation_message is the message shown if the template is deprecated.
   string deprecation_message = 9;
+  // The creation time of the template.
+  google.protobuf.Timestamp create_time = 10;
+  // The last update time of the template object.
+  google.protobuf.Timestamp update_time = 11;
 }
 
 // PluginConfig defines a runtime configuration for a plugin.

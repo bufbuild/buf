@@ -1,3 +1,4 @@
+# Disabled due to needing generics from 1.18, re-enable when 1.19 comes out
 name: previous
 on: push
 # Prevent writing to the repository using the CI token.
@@ -10,12 +11,12 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: setup-go
         if: success()
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16.10
+          go-version: 1.17.8
       - name: cache
         if: success()
         uses: actions/cache@v2

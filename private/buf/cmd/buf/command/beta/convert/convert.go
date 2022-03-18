@@ -12,19 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package decode
+package convert
 
 import (
 	"context"
 	"fmt"
-	"io"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/buf/bufconvert"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
-	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -33,6 +31,7 @@ import (
 const (
 	errorFormatFlagName = "error-format"
 	typeFlagName        = "type"
+	inputFlagName       = "input"
 	outputFlagName      = "output"
 	outputFlagShortName = "o"
 )
@@ -45,7 +44,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
-		Short: "Use a source reference to decode a binary serialized message supplied through stdin.",
+		Short: "Use a source reference to convert a binary or JSON serialized message supplied through stdin or the input flag.",
 		Long: `The first argument is the source that defines the serialized message (like buf.build/acme/weather).
 Alternatively, you can omit the source and specify a fully qualified path for the type using the --type option (like buf.build/acme/weather#acme.weather.v1.Units).`,
 		Args: cobra.MaximumNArgs(1),
@@ -62,6 +61,7 @@ Alternatively, you can omit the source and specify a fully qualified path for th
 type flags struct {
 	ErrorFormat string
 	Type        string
+	Input       string
 	Output      string
 }
 
@@ -86,14 +86,24 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		`The full type name of the serialized message (like acme.weather.v1.Units).
 Alternatively, this can be a fully qualified path to the type without providing the source (like buf.build/acme/weather#acme.weather.v1.Units).`,
 	)
+	flagSet.StringVar(
+		&f.Input,
+		inputFlagName,
+		"-",
+		fmt.Sprintf(
+			`The location to read the input message. Must be one of format %s.`,
+			bufconvert.MessageEncodingFormatsString,
+		),
+	)
 	flagSet.StringVarP(
 		&f.Output,
 		outputFlagName,
 		outputFlagShortName,
 		"-",
-		// TODO: If we ever support other formats (e.g. prototext), we will need
-		// to build a buffetch.ProtoEncodingRefParser.
-		`The location to write the decoded result to. Output is currently only in JSON form.`,
+		fmt.Sprintf(
+			`The location to write the converted result to. Must be one of format %s.`,
+			bufconvert.MessageEncodingFormatsString,
+		),
 	)
 }
 
@@ -105,42 +115,52 @@ func run(
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
-	messageBytes, err := io.ReadAll(container.Stdin())
-	if err != nil {
-		return err
-	}
-	if len(messageBytes) == 0 {
-		return fmt.Errorf("stdin is required as the input")
-	}
 	input, err := bufcli.GetInputValue(container, "", "")
 	if err != nil {
 		return err
 	}
-	protoSource, protoType, err := bufcli.ParseSourceAndType(ctx, input, flags.Type)
+	source, typeName, err := bufcli.ParseSourceAndType(ctx, input, flags.Type)
 	if err != nil {
 		return err
 	}
 	image, err := bufcli.NewImageForSource(
 		ctx,
 		container,
-		protoSource,
+		source,
 		flags.ErrorFormat,
-		false,
-		"",
-		nil,
-		nil,
-		false,
-		false,
+		false, // disableSymlinks
+		"",    // configOverride
+		nil,   // externalDirOrFilePaths
+		nil,   // externalExcludeDirOrFilePaths
+		false, // externalDirOrFilePathsAllowNotExist
+		false, // excludeSourceCodeInfo
 	)
 	if err != nil {
 		return err
 	}
-	message, err := bufreflect.NewMessage(ctx, image, protoType)
+	inputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Input, bufconvert.MessageEncodingBin)
+	if err != nil {
+		return fmt.Errorf("--%s: %v", outputFlagName, err)
+	}
+	message, err := bufcli.NewWireProtoEncodingReader(
+		container.Logger(),
+	).GetMessage(
+		ctx,
+		container,
+		image,
+		typeName,
+		inputMessageRef,
+	)
 	if err != nil {
 		return err
 	}
-	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(messageBytes, message); err != nil {
+	defaultOutputEncoding, err := inverseEncoding(inputMessageRef.MessageEncoding())
+	if err != nil {
 		return err
+	}
+	outputMessageRef, err := bufconvert.NewMessageEncodingRef(ctx, flags.Output, defaultOutputEncoding)
+	if err != nil {
+		return fmt.Errorf("--%s: %v", outputFlagName, err)
 	}
 	return bufcli.NewWireProtoEncodingWriter(
 		container.Logger(),
@@ -149,6 +169,19 @@ func run(
 		container,
 		image,
 		message,
-		flags.Output,
+		outputMessageRef,
 	)
+}
+
+// inverseEncoding returns the opposite encoding of the provided encoding,
+// which will be the default output encoding for a given input encoding.
+func inverseEncoding(encoding bufconvert.MessageEncoding) (bufconvert.MessageEncoding, error) {
+	switch encoding {
+	case bufconvert.MessageEncodingBin:
+		return bufconvert.MessageEncodingJSON, nil
+	case bufconvert.MessageEncodingJSON:
+		return bufconvert.MessageEncodingBin, nil
+	default:
+		return 0, fmt.Errorf("unknown message encoding %v", encoding)
+	}
 }

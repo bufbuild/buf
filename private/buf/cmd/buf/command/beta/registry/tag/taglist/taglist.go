@@ -116,7 +116,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	repository, err := repositoryService.GetRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Repository())
+	repository, _, err := repositoryService.GetRepositoryByFullName(ctx, moduleIdentity.Owner()+"/"+moduleIdentity.Repository())
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))

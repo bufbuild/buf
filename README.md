@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/bufbuild/buf?include_prereleases)][badges.release]
 [![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)][badges.ci]
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)][badges.docker]
-[![Homebrew](https://img.shields.io/badge/homebrew-v1.0.0-blue)][badges.homebrew]
+[![Homebrew](https://img.shields.io/badge/homebrew-v1.1.0-blue)][badges.homebrew]
 [![AUR](https://img.shields.io/aur/version/buf)][badges.aur]
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges.slack]
 [![Twitter](https://img.shields.io/twitter/follow/bufbuild?style=social)][badges.twitter]
@@ -17,9 +17,9 @@ The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf] API
 
 - The ability to manage Protobuf assets, including [plugins] and [templates], on the [Buf Schema Registry][bsr] (BSR).
 - A [linter][lint.usage] that enforces good API design choices and structure.
-- A [breaking change detector][breaking_usage] that enforces compatibility at the sourfce code or wire level.
+- A [breaking change detector][breaking_usage] that enforces compatibility at the source code or wire level.
 - A [generator][generate_usage] that invokes your protoc plugins based on a configurable [template][templates].
-  A [`protoc` replacement][protoc] that uses Buf's [high-performance Protobuf compiler][compiler].
+- A [`protoc` replacement][protoc] that uses Buf's [high-performance Protobuf compiler][compiler].
 - A configurable file [builder][build_usage] that produces [images], our extension of Protobuf's native [FileDescriptorSets][filedescriptorset].
 
 ## Installation

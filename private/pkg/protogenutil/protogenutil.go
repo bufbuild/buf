@@ -551,18 +551,6 @@ func GetFieldGoZeroValue(
 	}
 }
 
-// ProtoPackagePascalCase converts a package in the form foo.bar.baz to FooBarBaz.
-func ProtoPackagePascalCase(protoPackage string) string {
-	if protoPackage == "" {
-		return ""
-	}
-	packageParts := strings.Split(protoPackage, ".")
-	for i, part := range packageParts {
-		packageParts[i] = strings.Title(part)
-	}
-	return strings.Join(packageParts, "")
-}
-
 type handlerOptions struct {
 	optionHandler func(string, string) error
 }

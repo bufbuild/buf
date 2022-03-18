@@ -50,4 +50,13 @@ type RepositoryTrackService interface {
 		repositoryName string,
 		name string,
 	) (repositoryTrack *v1alpha1.RepositoryTrack, err error)
+	// ListRepositoryTracksByRepositoryCommit lists the repository tracks associated with a repository commit.
+	ListRepositoryTracksByRepositoryCommit(
+		ctx context.Context,
+		repositoryId string,
+		commit string,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
+	) (repositoryTracks []*v1alpha1.RepositoryTrack, nextPageToken string, err error)
 }

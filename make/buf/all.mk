@@ -31,6 +31,7 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2022
 LICENSE_HEADER_IGNORES := \/testdata enterprise
+SKIP_GOLANGCI_LINT := 1
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf
 
@@ -121,7 +122,7 @@ bufgeneratesteps:: \
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
-	DOCKER_IMAGE=golang:1.17.7-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.18.0-buster bash make/buf/scripts/release.bash
 
 # We have to manually set the Homebrew version on the Homebrew badge as there
 # is no badge on shields.io for Homebrew packages outside of homebrew-core
@@ -146,7 +147,7 @@ endif
 	# make sure both of these docker images exist
 	# the release of these images will lag the actual release
 	docker pull golang:$(GOVERSION)-buster
-	docker pull golang:$(GOVERSION)-alpine3.14
+	docker pull golang:$(GOVERSION)-alpine3.15
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep Dockerfile)
 	$(SED_I) "s/golang:1\.[0-9][0-9]*\.[0-9][0-9]*/golang:$(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.mk$)
 	$(SED_I) "s/go-version: 1\.[0-9][0-9]*\.[0-9][0-9]*/go-version: $(GOVERSION)/g" $(shell git-ls-files-unstaged | grep \.github\/workflows | grep -v previous.yaml)

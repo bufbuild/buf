@@ -58,7 +58,7 @@ message GetImageRequest {
   repeated string types = 6;
   // When not empty, the returned image's files will only include
   // *DescriptorProto fields for the elements specified here. The masks are
-  // applied without regard for dependenices between types. For example, if
+  // applied without regard for dependencies between types. For example, if
   // `IMAGE_MASK_MESSAGES` is specified without `IMAGE_MASK_ENUMS` the resulting
   // image will NOT contain enum definitions even if they are referenced from
   // message fields.

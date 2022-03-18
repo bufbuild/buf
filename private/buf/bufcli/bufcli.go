@@ -61,7 +61,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.1.0-dev"
+	Version = "1.2.0-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -449,15 +449,21 @@ func NewWireImageWriter(
 	)
 }
 
+// NewWireProtoEncodingReader returns a new ProtoEncodingReader.
+func NewWireProtoEncodingReader(
+	logger *zap.Logger,
+) bufwire.ProtoEncodingReader {
+	return bufwire.NewProtoEncodingReader(
+		logger,
+	)
+}
+
 // NewWireProtoEncodingWriter returns a new ProtoEncodingWriter.
 func NewWireProtoEncodingWriter(
 	logger *zap.Logger,
 ) bufwire.ProtoEncodingWriter {
 	return bufwire.NewProtoEncodingWriter(
 		logger,
-		buffetch.NewWriter(
-			logger,
-		),
 	)
 }
 

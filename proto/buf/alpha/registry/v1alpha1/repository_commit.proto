@@ -50,6 +50,9 @@ service RepositoryCommitService {
   // ListRepositoryCommitsByReference returns repository commits up-to and including
   // the provided reference.
   rpc ListRepositoryCommitsByReference(ListRepositoryCommitsByReferenceRequest) returns (ListRepositoryCommitsByReferenceResponse);
+  // ListRepositoryCommitsOnTrack returns repository commits up-to and including
+  // the provided reference.
+  rpc ListRepositoryCommitsOnTrack(ListRepositoryCommitsOnTrackRequest) returns (ListRepositoryCommitsOnTrackResponse);
   // GetRepositoryCommitByReference returns the repository commit matching
   // the provided reference, if it exists.
   rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse);
@@ -66,6 +69,10 @@ message ListRepositoryCommitsByBranchRequest {
   // The name of the repository branch whose commits should be listed.
   string repository_branch_name = 3;
   uint32 page_size = 4;
+  // For now this is the id of he last commit returned in the previous page.
+  // This is directly set by the frontend when listing track history starting with a
+  // specific commit. If we page_token to be anything other than a commit id
+  // we need to change the frontend as well.
   string page_token = 5;
   bool reverse = 6;
 }
@@ -75,12 +82,35 @@ message ListRepositoryCommitsByBranchResponse {
   string next_page_token = 2;
 }
 
+message ListRepositoryCommitsOnTrackRequest {
+  // The owner of the repository which the repository reference belongs to.
+  string repository_owner = 1;
+  // The name of the repository which the repository reference belongs to.
+  string repository_name = 2;
+  // The name of the track which to list commits from.
+  string repository_track_name = 3;
+  // The reference used to resolve track commits. Can be a track, tag or commit name.
+  // Commits will be returned starting at reference.
+  // Using a track as a reference will return results if the reference track head
+  // is in the queried track's history.
+  // Returns the entire commit history of the track when reference is empty.
+  string reference = 4;
+  uint32 page_size = 5;
+  string page_token = 6;
+  bool reverse = 7;
+}
+
+message ListRepositoryCommitsOnTrackResponse {
+  repeated RepositoryCommit repository_commits = 1;
+  string next_page_token = 2;
+}
+
 message ListRepositoryCommitsByReferenceRequest {
   // The owner of the repository which the repository reference belongs to.
   string repository_owner = 1;
   // The name of the repository which the repository reference belongs to.
   string repository_name = 2;
-  // The reference used to resolve repository commits. Can be a branch, tag or commit.
+  // The reference used to resolve repository commits. Can be a track, tag or commit.
   string reference = 3;
   uint32 page_size = 4;
   string page_token = 5;
