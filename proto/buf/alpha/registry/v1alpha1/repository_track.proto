@@ -16,6 +16,7 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
+import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "google/protobuf/timestamp.proto";
 
 message RepositoryTrack {
@@ -27,10 +28,8 @@ message RepositoryTrack {
   // google.protobuf.Timestamp update_time = 3;
   // The name of the repository track, i.e. "v1".
   string name = 4;
-  // The create time of the latest commit to the track.
-  google.protobuf.Timestamp latest_commit_time = 5;
-  // The username of the author of the latest commit to the track.
-  string latest_commit_author = 6;
+  // The latest commit to the track.
+  RepositoryCommit latest_commit = 5;
 }
 
 service RepositoryTrackService {
