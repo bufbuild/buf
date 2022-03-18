@@ -144,7 +144,7 @@ func run(
 		return err
 	}
 	if flags.Output != "-" && flags.Write {
-		return appcmd.NewInvalidArgumentErrorf("--%s cannot be used with --%s", outputFlagName, writeFlagName)
+		return fmt.Errorf("--%s cannot be used with --%s", outputFlagName, writeFlagName)
 	}
 	input, err := bufcli.GetInputValue(container, flags.InputHashtag, ".")
 	if err != nil {
@@ -155,7 +155,7 @@ func run(
 		return err
 	}
 	if _, ok := sourceOrModuleRef.(buffetch.ModuleRef); ok && flags.Write {
-		return appcmd.NewInvalidArgumentErrorf("--%s cannot be used with module reference inputs", writeFlagName)
+		return fmt.Errorf("--%s cannot be used with module reference inputs", writeFlagName)
 	}
 	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {

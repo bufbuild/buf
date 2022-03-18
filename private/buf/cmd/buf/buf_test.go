@@ -1880,9 +1880,76 @@ func TestDecodeInvalidTypeName(t *testing.T) {
 	)
 }
 
+func TestFormat(t *testing.T) {
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+syntax = "proto3";
+
+package simple;
+
+message Object {
+  string key = 1;
+  bytes value = 2;
+}
+		`,
+		"format",
+		filepath.Join("testdata", "format", "simple"),
+	)
+}
+
+func TestFormatDiff(t *testing.T) {
+	tempDir := t.TempDir()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"format",
+		filepath.Join("testdata", "format", "diff"),
+		"-d",
+		"-o",
+		filepath.Join(tempDir, "formatted"),
+	)
+	assert.Contains(
+		t,
+		stdout.String(),
+		`
+@@ -1,13 +1,7 @@
+-
+ syntax = "proto3";
+ 
+-
+-
+ package diff;
+ 
+-
+-message   Diff  {
+-
++message Diff {
+   string content = 1;
+-
+-  }
++}
+`,
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"format",
+		filepath.Join(tempDir, "formatted"),
+		"-d",
+	)
+}
+
 // Tests if the image produced by the formatted result is
 // equivalent to the original result.
-func TestFormat(t *testing.T) {
+func TestFormatEquivalence(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(
 		t,
@@ -1890,7 +1957,7 @@ func TestFormat(t *testing.T) {
 		0,
 		``,
 		"build",
-		filepath.Join("testdata", "format"),
+		filepath.Join("testdata", "format", "complex"),
 		"-o",
 		filepath.Join(tempDir, "image.bin"),
 		"--exclude-source-info",
@@ -1901,7 +1968,7 @@ func TestFormat(t *testing.T) {
 		0,
 		``,
 		"format",
-		filepath.Join("testdata", "format"),
+		filepath.Join("testdata", "format", "complex"),
 		"-o",
 		filepath.Join(tempDir, "formatted"),
 	)
@@ -1921,6 +1988,35 @@ func TestFormat(t *testing.T) {
 	formattedImageData, err := os.ReadFile(filepath.Join(tempDir, "formatted.bin"))
 	require.NoError(t, err)
 	require.Equal(t, originalImageData, formattedImageData)
+}
+
+func TestFormatInvalidFlagCombination(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: --output cannot be used with --write`,
+		"format",
+		filepath.Join("testdata", "format", "diff"),
+		"-w",
+		"-o",
+		filepath.Join(tempDir, "formatted"),
+	)
+}
+
+func TestFormatInvalidWriteWithModuleReference(t *testing.T) {
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: --write cannot be used with module reference inputs`,
+		"format",
+		"buf.build/acme/weather",
+		"-w",
+	)
 }
 
 func testMigrateV1Beta1Diff(
