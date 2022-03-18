@@ -29,12 +29,15 @@ service ImageService {
 // should be masked in responses.
 enum ImageMask {
   IMAGE_MASK_UNSPECIFIED = 0;
+
   // IMAGE_MASK_MESSAGES refers to ImageFile's `google.protobuf.DescriptorProto
   // message_type` field.
   IMAGE_MASK_MESSAGES = 1;
+
   // IMAGE_MASK_ENUMS refers to ImageFile's `google.protobuf.EnumDescriptorProto
   // enum_type` field.
   IMAGE_MASK_ENUMS = 2;
+
   // IMAGE_MASK_SERVICES refers to ImageFile's
   // `google.protobuf.ServiceDescriptorProto service` field.
   IMAGE_MASK_SERVICES = 3;
@@ -44,10 +47,13 @@ message GetImageRequest {
   string owner = 1;
   string repository = 2;
   string reference = 3;
+
   // Exclude files from imported buf modules in this image.
   bool exclude_imports = 4;
+
   // Exclude source_code_info fields from each ImageFile.
   bool exclude_source_info = 5;
+
   // When specified the returned image will only contain the necessary files and
   // descriptors in those files to describe these types. Accepts messages, enums
   // and services. All types must be defined in the buf module, types in
@@ -56,6 +62,7 @@ message GetImageRequest {
   // At this time specifying `types` requires `exclude_source_info` to be set to
   // true.
   repeated string types = 6;
+
   // When not empty, the returned image's files will only include
   // *DescriptorProto fields for the elements specified here. The masks are
   // applied without regard for dependencies between types. For example, if

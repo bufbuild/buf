@@ -15,7 +15,7 @@ message Foo {
 
 
 
-// Leading Comment on baz.
+// Leading comment on baz.
 oneof   baz  { 
      int64 three = 3;
 

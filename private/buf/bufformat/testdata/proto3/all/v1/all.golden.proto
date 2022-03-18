@@ -1,8 +1,10 @@
 // top-level comment 1
 // top-level comment 2
+
 syntax = "proto3"; // syntax-level-inline comment
 
 // between-syntax-and-package comment
+
 package all.v1; // package-level-inline comment
 
 import "custom.proto";
@@ -58,6 +60,7 @@ message One {
   /*
   c-style comment
   */
+
   int64 one_one = 1 [
     (custom.field_option) = true
   ];
@@ -67,8 +70,11 @@ message One {
       foo: 6
     }
   ]; // field-option-inline comment
+
   Three one_three = 3; /* field-inline c-style comment */
+
   map<string, uint32> map_field = 4;
+
   oneof oneof_field {
     // oneof-body comment
 
@@ -77,7 +83,6 @@ message One {
     option (custom.oneof_thing_option) = {
       foo: 7
     }; // oneof-option-field-inline comment 2
-
     int64 foo1 = 8;
     string foo2 = 9;
     // oneof-field comment 2
@@ -90,6 +95,7 @@ message One {
     // oneof-field comment 2
     custom.Thing custom_field = 11; // oneof-option-field-inline comment 4
   }
+
   int64 integer_field = 12 [
     (custom.repeated_field_option) = 1,
     (custom.repeated_field_option) = 2
@@ -147,23 +153,22 @@ message One {
 } // trailing comment one1
 
 message Two {
+  int64 two_one = 1;
+
   reserved 2 to 10, 1000 to 1100;
   reserved "foo";
   reserved "bar", "baz";
-
-  int64 two_one = 1;
 }
 
 enum EnumWithAlias {
   // enum-body comment
-
-  option allow_alias = true;
 
   ENUM_WITH_ALIAS_UNSPECIFIED = 0;
   ENUM_WITH_ALIAS_FIRST = 1;
   ENUM_WITH_ALIAS_SECOND = 2;
   ENUM_WITH_ALIAS_THIRD = 3;
   ENUM_WITH_ALIAS_OTHER_THIRD = 3;
+  option allow_alias = true;
 } // trailing enum comment
 
 // Empty is an empty message.
@@ -173,7 +178,6 @@ message Empty {}
 // OtherEnum is another enum.
 enum OtherEnum {
   option (custom.enum_option) = 1;
-
   // enum comment
   OTHER_ENUM_UNSPECIFIED = 0 [
     (custom.enum_value_option) = true,
@@ -201,7 +205,6 @@ service ExampleService {
   option (custom.service_thing_option) = {
     foo: 1
   }; // service-option-inline comment 2
-
   // rpc-leading comment
   rpc Example(One) returns (Two) {
     option (custom.method_option) = true;
@@ -216,6 +219,7 @@ service ExampleService {
       }
     }; // service-option-inline comment 2
   } // rpc-inline comment
+
   // service-body comment
   // rpc-leading comment 2
   rpc Foo(Empty) returns (One);/* rpc-inline comment 2 */

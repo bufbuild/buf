@@ -29,6 +29,10 @@ type formatter struct {
 	writer   io.Writer
 	fileNode *ast.FileNode
 	indent   int
+
+	// Used to determine how the current node's
+	// leading comments should be written.
+	previousNode ast.Node
 }
 
 // newFormatter returns a new formatter for the given file.
@@ -81,6 +85,12 @@ func (f *formatter) WriteString(elem string) {
 	_, _ = fmt.Fprint(f.writer, elem)
 }
 
+// SetPreviousNode sets the previously written node. This should
+// be called in all of the comment writing functions.
+func (f *formatter) SetPreviousNode(node ast.Node) {
+	f.previousNode = node
+}
+
 // writeFile writes the file node.
 func (f *formatter) writeFile(fileNode *ast.FileNode) error {
 	if err := f.writeFileHeader(fileNode); err != nil {
@@ -102,8 +112,8 @@ func (f *formatter) writeFile(fileNode *ast.FileNode) error {
 }
 
 // writeFileHeader writes the header of a .proto file. This includes the syntax,
-// package, imports, and options (in that order). The imports and options are sorted.
-// All other file elements are handled by f.writeFileTypes.
+// package, imports, and options (in that order). The imports and options are
+// sorted. All other file elements are handled by f.writeFileTypes.
 //
 // For example,
 //
@@ -111,8 +121,8 @@ func (f *formatter) writeFile(fileNode *ast.FileNode) error {
 //
 //  package acme.v1.weather;
 //
-//  import "google/type/datetime.proto";
 //  import "acme/payment/v1/payment.proto";
+//  import "google/type/datetime.proto";
 //
 //  option cc_enable_arenas = true;
 //  option optimize_for = SPEED;
@@ -143,51 +153,52 @@ func (f *formatter) writeFileHeader(fileNode *ast.FileNode) error {
 		return nil
 	}
 	if syntaxNode := f.fileNode.Syntax; syntaxNode != nil {
-		if err := f.writeNode(syntaxNode); err != nil {
+		if err := f.writeSyntax(syntaxNode); err != nil {
 			return err
 		}
 	}
 	if packageNode != nil {
-		if f.fileNode.Syntax != nil {
-			f.P()
+		if f.previousNode != nil {
+			if !f.startsWithNewline(f.fileNode.NodeInfo(packageNode.Keyword)) {
+				f.P()
+			}
 			f.P()
 		}
-		if err := f.writeNode(packageNode); err != nil {
+		if err := f.writePackage(packageNode); err != nil {
 			return err
 		}
-	}
-	if len(importNodes) > 0 && (f.fileNode.Syntax != nil || packageNode != nil) {
-		f.P()
-		f.P()
 	}
 	sort.Slice(importNodes, func(i, j int) bool {
 		return importNodes[i].Name.AsString() < importNodes[j].Name.AsString()
 	})
 	for i, importNode := range importNodes {
+		if i == 0 && f.previousNode != nil {
+			f.P()
+			f.P()
+		}
 		if i > 0 {
 			f.P()
 		}
-		if err := f.writeNode(importNode); err != nil {
+		if err := f.writeImport(importNode); err != nil {
 			return err
 		}
-	}
-	if len(optionNodes) > 0 && (f.fileNode.Syntax != nil || packageNode != nil || len(importNodes) > 0) {
-		f.P()
-		f.P()
 	}
 	sort.Slice(optionNodes, func(i, j int) bool {
 		return stringForOptionName(optionNodes[i].Name) < stringForOptionName(optionNodes[j].Name)
 	})
 	for i, optionNode := range optionNodes {
+		if i == 0 && f.previousNode != nil {
+			f.P()
+			f.P()
+		}
 		if i > 0 {
 			f.P()
 		}
-		if err := f.writeNode(optionNode); err != nil {
+		if err := f.writeFileOption(optionNode); err != nil {
 			return err
 		}
 	}
 	if len(typeNodes) > 0 {
-		f.P()
 		f.P()
 	}
 	return nil
@@ -205,7 +216,6 @@ func (f *formatter) writeFileTypes(fileNode *ast.FileNode) error {
 		default:
 			if writeNewline {
 				// File-level nodes should be separated by a newline.
-				f.P()
 				f.P()
 			}
 			if err := f.writeNode(node); err != nil {
@@ -264,7 +274,9 @@ func (f *formatter) writePackage(packageNode *ast.PackageNode) error {
 //  import "google/protobuf/descriptor.proto";
 //
 func (f *formatter) writeImport(importNode *ast.ImportNode) error {
-	if err := f.writeStart(importNode.Keyword); err != nil {
+	// We don't use f.writeStart here because the imports are sorted
+	// and potentially changed order.
+	if err := f.writeBodyEndInline(importNode.Keyword); err != nil {
 		return err
 	}
 	f.Space()
@@ -286,6 +298,30 @@ func (f *formatter) writeImport(importNode *ast.ImportNode) error {
 		return err
 	}
 	return f.writeLineEnd(importNode.Semicolon)
+}
+
+// writeFileOption writes a file option. This function is slightly
+// different than f.writeOption because file options are sorted at
+// the top of the file, and leading comments are adjusted accordingly.
+func (f *formatter) writeFileOption(optionNode *ast.OptionNode) error {
+	// We don't use f.writeStart here because the options are sorted
+	// and potentially changed order.
+	if err := f.writeBodyEndInline(optionNode.Keyword); err != nil {
+		return err
+	}
+	f.Space()
+	if err := f.writeNode(optionNode.Name); err != nil {
+		return err
+	}
+	f.Space()
+	if err := f.writeInline(optionNode.Equals); err != nil {
+		return err
+	}
+	f.Space()
+	if err := f.writeInline(optionNode.Val); err != nil {
+		return err
+	}
+	return f.writeLineEnd(optionNode.Semicolon)
 }
 
 // writeOption writes an option.
@@ -404,14 +440,7 @@ func (f *formatter) writeOptionName(optionNameNode *ast.OptionNameNode) error {
 	return nil
 }
 
-// writeMessage writes the message node. Messages are formatted in the
-// following order:
-//
-//  * Options
-//  * Reserved Ranges
-//  * Extension Ranges
-//  * Messages, Enums, Extends
-//  * Fields, Groups, Oneofs
+// writeMessage writes the message node.
 //
 // For example,
 //
@@ -435,14 +464,18 @@ func (f *formatter) writeOptionName(optionNameNode *ast.OptionNameNode) error {
 //  }
 //
 func (f *formatter) writeMessage(messageNode *ast.MessageNode) error {
-	messageElements, err := elementsForMessage(messageNode)
-	if err != nil {
-		return err
-	}
 	var elementWriterFunc func() error
-	if messageElements != nil {
+	if len(messageNode.Decls) != 0 {
 		elementWriterFunc = func() error {
-			return f.writeMessageElements(messageElements)
+			for i, decl := range messageNode.Decls {
+				if i > 0 {
+					f.P()
+				}
+				if err := f.writeNode(decl); err != nil {
+					return err
+				}
+			}
+			return nil
 		}
 	}
 	if err := f.writeStart(messageNode.Keyword); err != nil {
@@ -458,58 +491,6 @@ func (f *formatter) writeMessage(messageNode *ast.MessageNode) error {
 		messageNode.CloseBrace,
 		elementWriterFunc,
 	)
-}
-
-// writeMessageElements writes the message elements for a single message.
-func (f *formatter) writeMessageElements(messageElements *messageElements) error {
-	// Group all of the options, reserved, and extension ranges
-	// in a single slice so that they are formatted together.
-	var header []ast.MessageElement
-	for _, option := range messageElements.Options {
-		header = append(header, option)
-	}
-	for _, reserved := range messageElements.Reserved {
-		header = append(header, reserved)
-	}
-	for _, extensionRange := range messageElements.ExtensionRanges {
-		header = append(header, extensionRange)
-	}
-	for i, node := range header {
-		if i > 0 {
-			f.P()
-		}
-		if err := f.writeNode(node); err != nil {
-			return err
-		}
-	}
-	if len(header) > 0 && (len(messageElements.NestedTypes) > 0 || len(messageElements.Fields) > 0) {
-		// Include a newline between the header and the types and/or fields.
-		f.P()
-		f.P()
-	}
-	for i, node := range messageElements.NestedTypes {
-		if i > 0 {
-			f.P()
-			f.P()
-		}
-		if err := f.writeNode(node); err != nil {
-			return err
-		}
-	}
-	if len(messageElements.NestedTypes) > 0 && len(messageElements.Fields) > 0 {
-		// Include a newline between the types and fields.
-		f.P()
-		f.P()
-	}
-	for i, node := range messageElements.Fields {
-		if i > 0 {
-			f.P()
-		}
-		if err := f.writeNode(node); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // writeMessageLiteral writes a message literal.
@@ -556,7 +537,7 @@ func (f *formatter) writeMessageLiteralForArray(
 		messageLiteralNode.Close,
 		elementWriterFunc,
 		f.writeOpenBracePrefixForArray,
-		f.writeStart,
+		f.writeBodyEndInline,
 	)
 }
 
@@ -648,12 +629,7 @@ func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNo
 	return nil
 }
 
-// writeEnum writes the enum node. Enums are formatted in the
-// following order:
-//
-//  * Options
-//  * Reserved Ranges
-//  * Enum Values
+// writeEnum writes the enum node.
 //
 // For example,
 //
@@ -665,14 +641,18 @@ func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNo
 //  }
 //
 func (f *formatter) writeEnum(enumNode *ast.EnumNode) error {
-	enumElements, err := elementsForEnum(enumNode)
-	if err != nil {
-		return err
-	}
 	var elementWriterFunc func() error
-	if enumElements != nil {
+	if len(enumNode.Decls) > 0 {
 		elementWriterFunc = func() error {
-			return f.writeEnumElements(enumElements)
+			for i, decl := range enumNode.Decls {
+				if i > 0 {
+					f.P()
+				}
+				if err := f.writeNode(decl); err != nil {
+					return err
+				}
+			}
+			return nil
 		}
 	}
 	if err := f.writeStart(enumNode.Keyword); err != nil {
@@ -688,41 +668,6 @@ func (f *formatter) writeEnum(enumNode *ast.EnumNode) error {
 		enumNode.CloseBrace,
 		elementWriterFunc,
 	)
-}
-
-// writeEnumElements writes the enum elements for a single enum.
-func (f *formatter) writeEnumElements(enumElements *enumElements) error {
-	// Group all of the options and reserved ranges in a
-	// single slice so that they are formatted together.
-	var header []ast.EnumElement
-	for _, option := range enumElements.Options {
-		header = append(header, option)
-	}
-	for _, reserved := range enumElements.Reserved {
-		header = append(header, reserved)
-	}
-	for i, node := range header {
-		if i > 0 {
-			f.P()
-		}
-		if err := f.writeNode(node); err != nil {
-			return err
-		}
-	}
-	if len(header) > 0 && len(enumElements.EnumValues) > 0 {
-		// Include a newline between the header and the enum values.
-		f.P()
-		f.P()
-	}
-	for i, node := range enumElements.EnumValues {
-		if i > 0 {
-			f.P()
-		}
-		if err := f.writeNode(node); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // writeEnumValue writes the enum value as a single line. If the enum has
@@ -882,18 +827,14 @@ func (f *formatter) writeFieldReference(fieldReferenceNode *ast.FieldReferenceNo
 //    bool redacted = 33333;
 //  }
 func (f *formatter) writeExtend(extendNode *ast.ExtendNode) error {
-	extendElements, err := elementsForExtend(extendNode)
-	if err != nil {
-		return err
-	}
 	var elementWriterFunc func() error
-	if extendElements != nil {
+	if len(extendNode.Decls) > 0 {
 		elementWriterFunc = func() error {
-			for i, extendElement := range extendElements {
+			for i, decl := range extendNode.Decls {
 				if i > 0 {
 					f.P()
 				}
-				if err := f.writeNode(extendElement); err != nil {
+				if err := f.writeNode(decl); err != nil {
 					return err
 				}
 			}
@@ -915,11 +856,7 @@ func (f *formatter) writeExtend(extendNode *ast.ExtendNode) error {
 	)
 }
 
-// writeService writes the service node. Services are formatted in
-// the following order:
-//
-//  * Options
-//  * RPCs
+// writeService writes the service node.
 //
 // For example,
 //
@@ -929,14 +866,18 @@ func (f *formatter) writeExtend(extendNode *ast.ExtendNode) error {
 //    rpc Foo(FooRequest) returns (FooResponse) {};
 //
 func (f *formatter) writeService(serviceNode *ast.ServiceNode) error {
-	serviceElements, err := elementsForService(serviceNode)
-	if err != nil {
-		return err
-	}
 	var elementWriterFunc func() error
-	if serviceElements != nil {
+	if len(serviceNode.Decls) > 0 {
 		elementWriterFunc = func() error {
-			return f.writeServiceElements(serviceElements)
+			for i, decl := range serviceNode.Decls {
+				if i > 0 {
+					f.P()
+				}
+				if err := f.writeNode(decl); err != nil {
+					return err
+				}
+			}
+			return nil
 		}
 	}
 	if err := f.writeStart(serviceNode.Keyword); err != nil {
@@ -954,32 +895,6 @@ func (f *formatter) writeService(serviceNode *ast.ServiceNode) error {
 	)
 }
 
-// writeServiceElements writes the elements for a single service.
-func (f *formatter) writeServiceElements(serviceElements *serviceElements) error {
-	for i, node := range serviceElements.Options {
-		if i > 0 {
-			f.P()
-		}
-		if err := f.writeNode(node); err != nil {
-			return err
-		}
-	}
-	if len(serviceElements.Options) > 0 && len(serviceElements.RPCs) > 0 {
-		// Include a newline between the options and the RPCs.
-		f.P()
-		f.P()
-	}
-	for i, node := range serviceElements.RPCs {
-		if i > 0 {
-			f.P()
-		}
-		if err := f.writeNode(node); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // writeRPC writes the RPC node. RPCs are formatted in
 // the following order:
 //
@@ -990,20 +905,14 @@ func (f *formatter) writeServiceElements(serviceElements *serviceElements) error
 //  };
 //
 func (f *formatter) writeRPC(rpcNode *ast.RPCNode) error {
-	var options []*ast.OptionNode
-	for _, rpcElement := range rpcNode.Decls {
-		if option, ok := rpcElement.(*ast.OptionNode); ok {
-			options = append(options, option)
-		}
-	}
 	var elementWriterFunc func() error
-	if options != nil {
+	if len(rpcNode.Decls) > 0 {
 		elementWriterFunc = func() error {
-			for i, option := range options {
+			for i, decl := range rpcNode.Decls {
 				if i > 0 {
 					f.P()
 				}
-				if err := f.writeNode(option); err != nil {
+				if err := f.writeNode(decl); err != nil {
 					return err
 				}
 			}
@@ -1061,11 +970,7 @@ func (f *formatter) writeRPCType(rpcTypeNode *ast.RPCTypeNode) error {
 	return f.writeInline(rpcTypeNode.CloseParen)
 }
 
-// writeOneOf writes the oneof node. OneOfs are formatted in the
-// following order:
-//
-//  * Options
-//  * Fields, Groups
+// writeOneOf writes the oneof node.
 //
 // For example,
 //
@@ -1077,14 +982,18 @@ func (f *formatter) writeRPCType(rpcTypeNode *ast.RPCTypeNode) error {
 //  }
 //
 func (f *formatter) writeOneOf(oneOfNode *ast.OneOfNode) error {
-	oneOfElements, err := elementsForOneOf(oneOfNode)
-	if err != nil {
-		return err
-	}
 	var elementWriterFunc func() error
-	if oneOfElements != nil {
+	if len(oneOfNode.Decls) > 0 {
 		elementWriterFunc = func() error {
-			return f.writeOneOfElements(oneOfElements)
+			for i, decl := range oneOfNode.Decls {
+				if i > 0 {
+					f.P()
+				}
+				if err := f.writeNode(decl); err != nil {
+					return err
+				}
+			}
+			return nil
 		}
 	}
 	if err := f.writeStart(oneOfNode.Keyword); err != nil {
@@ -1102,32 +1011,6 @@ func (f *formatter) writeOneOf(oneOfNode *ast.OneOfNode) error {
 	)
 }
 
-// writeOneOfElements writes the oneOf elements for a single oneof.
-func (f *formatter) writeOneOfElements(oneOfElements *oneOfElements) error {
-	for i, node := range oneOfElements.Options {
-		if i > 0 {
-			f.P()
-		}
-		if err := f.writeNode(node); err != nil {
-			return err
-		}
-	}
-	if len(oneOfElements.Options) > 0 && len(oneOfElements.Fields) > 0 {
-		// Include a newline between the options and the oneOf values.
-		f.P()
-		f.P()
-	}
-	for i, node := range oneOfElements.Fields {
-		if i > 0 {
-			f.P()
-		}
-		if err := f.writeNode(node); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // writeGroup writes the group node.
 //
 // For example,
@@ -1141,14 +1024,18 @@ func (f *formatter) writeOneOfElements(oneOfElements *oneOfElements) error {
 //  }
 //
 func (f *formatter) writeGroup(groupNode *ast.GroupNode) error {
-	messageElements, err := elementsForGroup(groupNode)
-	if err != nil {
-		return err
-	}
 	var elementWriterFunc func() error
-	if messageElements != nil {
+	if len(groupNode.Decls) > 0 {
 		elementWriterFunc = func() error {
-			return f.writeMessageElements(messageElements)
+			for i, decl := range groupNode.Decls {
+				if i > 0 {
+					f.P()
+				}
+				if err := f.writeNode(decl); err != nil {
+					return err
+				}
+			}
+			return nil
 		}
 	}
 	// We need to handle the comments for the group label specially since
@@ -1452,7 +1339,7 @@ func (f *formatter) writeCompositeValueBody(
 		closeBrace,
 		elementWriterFunc,
 		f.writeOpenBracePrefix,
-		f.writeStart,
+		f.writeBodyEndInline,
 	)
 }
 
@@ -1903,14 +1790,68 @@ func (f *formatter) writeNode(node ast.Node) error {
 //  // Spread across multiple lines.
 //  message /* This is a trailing comment on 'message' */ Foo {}
 //
+// Newlines are preserved, so that any logical grouping of elements
+// is maintained in the formatted result.
+//
+// For example,
+//
+//  // Type represents a set of different types.
+//  enum Type {
+//    // Unspecified is the naming convention for default enum values.
+//    TYPE_UNSPECIFIED = 0;
+//
+//    // The following elements are the real values.
+//    TYPE_ONE = 1;
+//    TYPE_TWO = 2;
+//  }
+//
 // Start nodes are always indented according to the formatter's
 // current level of indentation (e.g. nested messages, fields, etc).
+//
+// Note that this is one of the most complex component of the formatter - it
+// controls how each node should be separated from one another and preserves
+// newlines in the original source.
 func (f *formatter) writeStart(node ast.Node) error {
+	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
-	if info.LeadingComments().Len() > 0 {
+	var (
+		nodeNewlineCount               = newlineCount(info.LeadingWhitespace())
+		previousNodeHasTrailingComment = f.hasTrailingComment(f.previousNode)
+	)
+	if length := info.LeadingComments().Len(); length > 0 {
+		firstCommentNewlineCount := newlineCount(info.LeadingComments().Index(0).LeadingWhitespace())
+		if !previousNodeHasTrailingComment && firstCommentNewlineCount > 1 || previousNodeHasTrailingComment && firstCommentNewlineCount > 0 {
+			// If leading comments are defined, the whitespace we care about
+			// is attached to the first comment.
+			//
+			// If the previous node has a trailing comment, then we expect
+			// to see one fewer newline characters.
+			f.P()
+		}
 		if err := f.writeMultilineComments(info.LeadingComments()); err != nil {
 			return err
 		}
+		var (
+			lastCommentIsCStyle = cStyleComment(info.LeadingComments().Index(length - 1))
+			nodeNewlineCount    = newlineCount(info.LeadingWhitespace())
+		)
+		if lastCommentIsCStyle && nodeNewlineCount > 1 || !lastCommentIsCStyle && nodeNewlineCount > 0 {
+			// At this point, we're looking at the lines between
+			// a comment and the node its attached to.
+			//
+			// If the last comment is a standard comment, a single newline
+			// character is sufficient to warrant a separation of the
+			// two.
+			//
+			// If the last comment is a C-style comment, multiple newline
+			// characters are required because C-style comments can
+			// be written in-line.
+			f.P()
+		}
+	} else if !previousNodeHasTrailingComment && nodeNewlineCount > 1 || previousNodeHasTrailingComment && nodeNewlineCount > 0 {
+		// If leading comments are not attached to this node, we still
+		// want to check whether or not there are any newlines before it.
+		f.P()
 	}
 	_, _ = fmt.Fprint(f.writer, strings.Repeat("  ", f.indent))
 	if err := f.writeNode(node); err != nil {
@@ -1941,6 +1882,7 @@ func (f *formatter) writeInline(node ast.Node) error {
 		// will be written twice.
 		return f.writeNode(node)
 	}
+	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
 	if info.LeadingComments().Len() > 0 {
 		if err := f.writeInlineComments(info.LeadingComments()); err != nil {
@@ -1985,6 +1927,7 @@ func (f *formatter) writeBodyEnd(node ast.Node) error {
 		// will be written twice.
 		return f.writeNode(node)
 	}
+	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
 	if info.LeadingComments().Len() > 0 {
 		if err := f.writeMultilineComments(info.LeadingComments()); err != nil {
@@ -1998,6 +1941,60 @@ func (f *formatter) writeBodyEnd(node ast.Node) error {
 	if info.TrailingComments().Len() > 0 {
 		f.Space()
 		if err := f.writeTrailingEndComments(info.TrailingComments()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// writeBodyEndInline writes the node as the end of a body.
+// Leading comments are written above the token across
+// multiple lines, whereas the trailing comments are
+// written in-line and adapt their comment style if they
+// exist.
+//
+// Body end nodes are always indented according to the
+// formatter's current level of indentation (e.g. nested
+// messages).
+//
+// This is useful for writing a node that concludes either
+// compact options or an array literal.
+//
+// This is behaviorally similar to f.writeStart, but it ignores
+// the preceding newline logic because these body ends should
+// always be compact.
+//
+// For example,
+//
+//  message Foo {
+//    string bar = 1 [
+//      deprecated = true
+//
+//    // Leading comment on ']'.
+//    ] /* Trailing comment on ']' */ ;
+//  }
+//
+func (f *formatter) writeBodyEndInline(node ast.Node) error {
+	if _, ok := node.(ast.CompositeNode); ok {
+		// We only want to write comments for terminal nodes.
+		// Otherwise comments accessible from CompositeNodes
+		// will be written twice.
+		return f.writeNode(node)
+	}
+	defer f.SetPreviousNode(node)
+	info := f.fileNode.NodeInfo(node)
+	if info.LeadingComments().Len() > 0 {
+		if err := f.writeMultilineComments(info.LeadingComments()); err != nil {
+			return err
+		}
+	}
+	_, _ = fmt.Fprint(f.writer, strings.Repeat("  ", f.indent))
+	if err := f.writeNode(node); err != nil {
+		return err
+	}
+	if info.TrailingComments().Len() > 0 {
+		f.Space()
+		if err := f.writeInlineComments(info.TrailingComments()); err != nil {
 			return err
 		}
 	}
@@ -2023,6 +2020,7 @@ func (f *formatter) writeLineEnd(node ast.Node) error {
 		// will be written twice.
 		return f.writeNode(node)
 	}
+	defer f.SetPreviousNode(node)
 	info := f.fileNode.NodeInfo(node)
 	if info.LeadingComments().Len() > 0 {
 		if err := f.writeInlineComments(info.LeadingComments()); err != nil {
@@ -2108,6 +2106,43 @@ func (f *formatter) writeTrailingEndComments(comments ast.Comments) error {
 	return nil
 }
 
+// startsWithNewline returns true if the formatter needs to insert a newline
+// before the node is printed. We need to use this in special circumstances,
+// namely the file header types, when we always want to include a newline
+// between the syntax, package, and import/option blocks.
+func (f *formatter) startsWithNewline(info ast.NodeInfo) bool {
+	nodeNewlineCount := newlineCount(info.LeadingWhitespace())
+	if info.LeadingComments().Len() > 0 {
+		// If leading comments are defined, the whitespace we care about
+		// is attached to the first comment.
+		nodeNewlineCount = newlineCount(info.LeadingComments().Index(0).LeadingWhitespace())
+	}
+	previousNodeHasTrailingComment := f.hasTrailingComment(f.previousNode)
+	return !previousNodeHasTrailingComment && nodeNewlineCount > 1 || previousNodeHasTrailingComment && nodeNewlineCount > 0
+}
+
+// hasTrailingComment returns true if the given node has a standard
+// trailing comment.
+//
+// For example,
+//
+//  message Foo {
+//    string name = 1; // Like this.
+//  }
+//
+func (f *formatter) hasTrailingComment(node ast.Node) bool {
+	if node == nil {
+		return false
+	}
+	info := f.fileNode.NodeInfo(node)
+	length := info.TrailingComments().Len()
+	if length == 0 {
+		return false
+	}
+	lastComment := info.TrailingComments().Index(length - 1)
+	return strings.HasPrefix(lastComment.RawText(), "//")
+}
+
 // stringForOptionName returns the string representation of the given option name node.
 // This is used for sorting file-level options.
 func stringForOptionName(optionNameNode *ast.OptionNameNode) string {
@@ -2134,4 +2169,21 @@ func stringForFieldReference(fieldReference *ast.FieldReferenceNode) string {
 		result += ")"
 	}
 	return result
+}
+
+// newlineCount returns the number of newlines in the given value.
+// This is useful for determining whether or not we should preserve
+// the newline between nodes.
+//
+// The newlines don't need to be adjacent to each other - all of the
+// tokens between them are other whitespace characters, so we can
+// safely ignore them.
+func newlineCount(value string) int {
+	return strings.Count(value, "\n")
+}
+
+// cStyleComment returns true if the given comment is a C-Style comment,
+// such that it starts with /*.
+func cStyleComment(comment ast.Comment) bool {
+	return strings.HasPrefix(comment.RawText(), "/*")
 }

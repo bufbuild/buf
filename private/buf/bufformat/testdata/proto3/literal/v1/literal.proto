@@ -5,10 +5,8 @@ import "custom.proto";
 message Foo {
   string name = 1 [
     (custom.float_field_option) = 42.2,
-
     (custom.double_field_option) = 42.2424,
     (custom.int32_field_option) = 32,
-
     (custom.int64_field_option) = 64,
     (custom.uint32_field_option) = 3200,
     (custom.uint64_field_option) = 6400,
@@ -21,5 +19,7 @@ message Foo {
     (custom.bool_field_option) = true,
     (custom.bytes_field_option) = "bytes",
     (custom.string_field_option) = "this" "is a" "compound string"
+
+
   ];
 }

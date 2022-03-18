@@ -637,7 +637,6 @@ message OrganizationObject {
   string id = 1;
   string name = 2;
 }
-
 message RepositoryObject {
   string id = 1;
   string name = 2;

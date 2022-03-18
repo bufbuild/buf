@@ -24,6 +24,7 @@ message Thing {
 message Another {
   // Leading on complex option name.
   option (another).thing.(.foo.bar.Thing.Nested._NestedNested.one) = "one";
+
   // Leading on complex option name with in-line.
   option (another).thing.(/* One */./* Two */foo.bar.Thing.Nested._NestedNested.one) = "one"; // Trailing
 

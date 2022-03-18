@@ -10,7 +10,7 @@
 // This is another leading comment on the syntax.
 syntax /* This comment is attached to the '=' */ = "proto3"; // Trailing comment on syntax.
 
-// Leading on package.
+// Between syntax and package.
 
 package /* Leading on package name. */   header.v1   /* Leading on semicolon */;    // Trailing in-line.
 

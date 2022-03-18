@@ -6,10 +6,6 @@ import "custom.proto";
 message Foo {
   // Trailing comment on Foo.
 
-  // Leading comment on deprecated.
-  option deprecated = true;
-  // Leading comment on message_set_wire_format.
-  option message_set_wire_format = false;
   // Leading comment on extensions.
   extensions 5 [
     // Trailing comment on '['.
@@ -19,6 +15,11 @@ message Foo {
 
   // Leading comment on ']'.
   ];
+
+  // Leading comment on deprecated.
+  option deprecated = true;
+  // Leading comment on message_set_wire_format.
+  option message_set_wire_format = false;
 
   // Leading comment on something.
   optional string something = 1 [
@@ -134,6 +135,7 @@ service FooService {
 
     // Leading comment on deprecated.
     option deprecated = true;
+
     // Leading comment on idempotency_level.
     option idempotency_level = NO_SIDE_EFFECTS;
   }

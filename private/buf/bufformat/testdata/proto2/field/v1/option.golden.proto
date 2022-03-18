@@ -6,6 +6,7 @@ message Foo {
     deprecated = true,
     lazy = true
   ];
+
   // Leading comment on name_with_options.
   string name_with_options = 2 [
     (custom.float_field_option) = "nan",

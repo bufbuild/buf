@@ -9,8 +9,10 @@ service Ping {
 
   // This is a comment on the deprecated option.
   option deprecated = true;
+
   // This is a comment on the service_option.
   option (custom.service_option) = false;
+
   // This is a comment on the service_thing_option.
   option (custom.service_thing_option) = {
     foo: 1

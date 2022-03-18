@@ -3,6 +3,7 @@ syntax = "proto3";
 message Foo {
   /* Leading comment on oneof */
   oneof /* Comment between oneof and 'bar' */bar/* Comment before '{' */ {
+
     // This is a trailing comment on the oneof's '{'.
     // This is another trailing comment.
     // This is a leading comment on name.

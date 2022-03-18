@@ -42,7 +42,6 @@ option (list) = {
     
         // Leading comment on '-44'.
         -44, // Trailing on '-44'.
-        
         // Leading on '45'.
         45 // Trailing on '45'.
       ]

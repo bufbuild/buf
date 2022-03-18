@@ -14,7 +14,6 @@ message Foo {
 
           // Leading comment on '1'.
           1, // Trailing comment on '1'.
-
           // Leading comment on '2'.
           2 // Trailing comment on '2'.
 

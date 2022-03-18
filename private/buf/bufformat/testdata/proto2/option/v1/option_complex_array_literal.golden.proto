@@ -10,14 +10,17 @@ option (list) = {
     // Leading comment on compound string.
     "one" /* One */"two" /* Two */"three" // Trailing
   ],
+
   values: [
     // Trailing comment on '['.
 
     // Leading comment on '-42'.
     -42, // Trailing on '-42'.
+
     // Leading comment on '-43'.
     -/* Between '-' and '43' */43 // Trailing on '43'.
   ],
+
   recursive: [
     // Trailing comment on '['.
 

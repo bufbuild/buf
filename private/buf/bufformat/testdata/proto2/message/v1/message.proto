@@ -1,13 +1,19 @@
 syntax = "proto2";
 
-  message Foo    { 
-       
-       option deprecated = false;
+message Foo {
 
-       // This is attached to the optional label.
-     optional string name = 1 [    deprecated   = true  ];
-   
-   repeated int64 values = 2;  
 
-  // Leading comment on '}'.
-  }
+
+  // The newline is preserved between the message
+  // and the first option.
+  option deprecated = false;
+
+  // This is attached to the optional label.
+  optional string name = 1 [
+    deprecated = true
+  ];
+
+  repeated int64 values = 2;
+
+// Leading comment on '}'.
+}

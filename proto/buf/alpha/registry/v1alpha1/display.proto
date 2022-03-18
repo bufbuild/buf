@@ -33,6 +33,7 @@ service DisplayService {
   rpc DisplayUserElements(DisplayUserElementsRequest) returns (DisplayUserElementsResponse);
   // DisplayServerElements returns which server elements should be displayed to the user.
   rpc DisplayServerElements(DisplayServerElementsRequest) returns (DisplayServerElementsResponse);
+
   // ListManageableRepositoryRoles returns which roles should be displayed
   // to the user when they are managing contributors on the repository.
   rpc ListManageableRepositoryRoles(ListManageableRepositoryRolesRequest) returns (ListManageableRepositoryRolesResponse);

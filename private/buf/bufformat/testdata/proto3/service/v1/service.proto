@@ -9,7 +9,6 @@ message Message   {};
       option deprecated = true; // In-line comment on deprecated option.
 
 rpc /* Before Ping Method */ Ping(/* Before Request */Message/* After Request */)    returns   /* Before paren */ (Message)  ;
-
   rpc Echo(Message) returns (Message)   { // Trailing comment on '{'
     
     option deprecated = true; // In-line on deprecated option.

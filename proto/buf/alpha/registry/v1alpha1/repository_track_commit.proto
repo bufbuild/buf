@@ -26,12 +26,15 @@ message RepositoryTrackCommit {
 
   // immutable
   google.protobuf.Timestamp create_time = 2;
+
   // We reserve field number '3' for the update_time.
   // google.protobuf.Timestamp update_time = 3;
   // immutable
   string repository_track_id = 4;
+
   // immutable
   string repository_commit_id = 5;
+
   // unique for repository_track, immutable
   int64 sequence_id = 6;
 }

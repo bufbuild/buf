@@ -11,6 +11,7 @@ extend Foo {
   optional string value = 2 [
     deprecated = true
   ]; // Trailing comment on value.
+
   // Leading comment on Additional.
   optional group Additional = 3 [
     deprecated = false

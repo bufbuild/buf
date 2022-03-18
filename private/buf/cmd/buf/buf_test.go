@@ -1918,7 +1918,7 @@ func TestFormatDiff(t *testing.T) {
 		t,
 		stdout.String(),
 		`
-@@ -1,13 +1,7 @@
+@@ -1,13 +1,8 @@
 -
  syntax = "proto3";
  
@@ -1928,8 +1928,8 @@ func TestFormatDiff(t *testing.T) {
  
 -
 -message   Diff  {
--
 +message Diff {
+ 
    string content = 1;
 -
 -  }

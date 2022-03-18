@@ -103,7 +103,6 @@ message PluginConfig {
   // deleted is no longer used and should be replaced by inaccessible.
   reserved "deleted";
   reserved 4;
-
   // The owner of the plugin to which this config relates.
   string plugin_owner = 1;
   // The name of the plugin to which this config relates.
@@ -138,7 +137,6 @@ message PluginVersionMapping {
   // deleted is no longer used and should be replaced by inaccessible.
   reserved "deleted";
   reserved 4;
-
   // The owner of the plugin to which this mapping relates.
   string plugin_owner = 1;
   // The name of the plugin to which this mapping relates.

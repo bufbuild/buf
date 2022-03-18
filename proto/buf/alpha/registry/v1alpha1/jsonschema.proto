@@ -28,6 +28,7 @@ message GetJSONSchemaRequest {
   string owner = 1;
   string repository = 2;
   string reference = 3;
+
   // A fully qualified name of the type to generate a JSONSchema for, e.g.
   // "pkg.foo.Bar". The type needs to resolve in the referenced module or any of
   // its dependencies. Currently only messages types are supported.
