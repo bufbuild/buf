@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Temporarily remove private usage check on private packages to unbreak Homebrew releases.
 
 ## [v1.1.0] - 2022-03-01
 - Add `--type` flag to the `build` command to create filtered images containing
