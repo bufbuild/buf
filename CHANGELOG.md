@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix build scripts to avoid using the `command-line-arguments` pseudo-package
+  when building binaries and re-introduce checking for proper usage of private
+  packages.
 
 ## [v1.1.1] - 2022-03-21
 
