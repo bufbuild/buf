@@ -25,12 +25,12 @@ import (
 
 const debugBinPrefix = "__debug_bin"
 
-func init() {
-	// TODO: remove until we are able to find a workaround for BuildInfo, details at https://github.com/bufbuild/buf/issues/1013
-	// if err := check(); err != nil {
-	// 	panic(err.Error())
-	// }
-}
+// TODO: remove until we are able to find a workaround for BuildInfo, details at https://github.com/bufbuild/buf/issues/1013
+// func init() {
+// if err := check(); err != nil {
+// 	panic(err.Error())
+// }
+// }
 
 func check() error {
 	buildInfo, ok := debug.ReadBuildInfo()
