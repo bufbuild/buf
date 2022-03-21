@@ -97,7 +97,7 @@ for os in Darwin Linux Windows; do
       protoc-gen-buf-breaking \
       protoc-gen-buf-lint; do
       CGO_ENABLED=0 GOOS=$(goos "${os}") GOARCH=$(goarch "${arch}") \
-        go build -a -ldflags "-s -w" -trimpath -o "${dir}/bin/${binary}${extension}" "${DIR}/cmd/${binary}/main.go"
+        go build -a -ldflags "-s -w" -trimpath -o "${dir}/bin/${binary}${extension}" "${DIR}/cmd/${binary}"
       cp "${dir}/bin/${binary}${extension}" "${binary}-${os}-${arch}${extension}"
     done
   done
