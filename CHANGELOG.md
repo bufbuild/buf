@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Remove check for proper usage of private packages due to a breaking change made in the Golang standard library in 1.18.
 
 ## [v1.1.0] - 2022-03-01
 - Add `--type` flag to the `build` command to create filtered images containing
