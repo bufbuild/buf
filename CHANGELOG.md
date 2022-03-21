@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v1.1.1] - 2022-03-21
 
 - Remove check for proper usage of private packages due to a breaking change made in the Golang standard library in 1.18.
 
@@ -661,8 +661,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.1.0...HEAD
-[v1.1.0]: https://github.com/bufbuild/buf/compare/v1.0.0...HEAD
+[v1.1.1]: https://github.com/bufbuild/buf/compare/v1.1.0...v1.1.1
+[v1.1.0]: https://github.com/bufbuild/buf/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/bufbuild/buf/compare/v1.0.0-rc12...v1.0.0
 [v1.0.0-rc12]: https://github.com/bufbuild/buf/compare/v1.0.0-rc11...v1.0.0-rc12
 [v1.0.0-rc11]: https://github.com/bufbuild/buf/compare/v1.0.0-rc10...v1.0.0-rc11
