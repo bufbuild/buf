@@ -5,6 +5,7 @@
 - Fix build scripts to avoid using the `command-line-arguments` pseudo-package
   when building binaries and re-introduce checking for proper usage of private
   packages.
+- Allow `--config` flag to be set when targeting a module within a workspace.
 
 ## [v1.1.1] - 2022-03-21
 
