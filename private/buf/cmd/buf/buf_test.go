@@ -254,9 +254,10 @@ func TestFail7(t *testing.T) {
 	testRunStdoutStderr(
 		t,
 		nil,
-		1,
-		"", // stdout should be empty
-		"Failure: the --config flag is not compatible with workspaces",
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "fail/buf".
+testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		"", // stderr should be empty
 		"lint",
 		"--path",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
@@ -267,9 +268,10 @@ func TestFail7(t *testing.T) {
 	testRunStdoutStderr(
 		t,
 		nil,
-		1,
-		"", // stdout should be empty
-		"Failure: the --config flag is not compatible with workspaces",
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/fail/buf/buf.proto:3:1:Files with package "other" must be within a directory "other" relative to root but were in directory "buf".
+testdata/fail/buf/buf.proto:6:9:Field name "oneTwo" should be lower_snake_case, such as "one_two".`),
+		"", // stderr should be empty
 		"lint",
 		filepath.Join("testdata", "fail", "buf", "buf.proto"),
 		"--config",
