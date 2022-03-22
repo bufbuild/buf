@@ -207,6 +207,9 @@ service PluginService {
   // public templates, those owned by organizations the user is part of,
   // and any created directly by the user.
   rpc ListTemplates(ListTemplatesRequest) returns (ListTemplatesResponse);
+  // ListTemplatesUserCanAccess is like ListTemplates, but does not return
+  // public templates.
+  rpc ListTemplatesUserCanAccess(ListTemplatesUserCanAccessRequest) returns (ListTemplatesUserCanAccessResponse);
   // ListUserPlugins lists all templates belonging to a user.
   rpc ListUserTemplates(ListUserTemplatesRequest) returns (ListUserTemplatesResponse);
   // ListOrganizationTemplates lists all templates for an organization.
@@ -410,6 +413,19 @@ message ListTemplatesRequest {
 }
 
 message ListTemplatesResponse {
+  repeated Template templates = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
+
+message ListTemplatesUserCanAccessRequest {
+  uint32 page_size = 1;
+  // The first page is returned if this is empty.
+  string page_token = 2;
+  bool reverse = 3;
+}
+
+message ListTemplatesUserCanAccessResponse {
   repeated Template templates = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
