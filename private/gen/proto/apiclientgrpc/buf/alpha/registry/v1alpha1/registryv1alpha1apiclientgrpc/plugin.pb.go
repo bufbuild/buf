@@ -374,6 +374,31 @@ func (s *pluginService) ListTemplates(
 	return response.Templates, response.NextPageToken, nil
 }
 
+// ListTemplatesUserCanAccess is like ListTemplates, but does not return
+// public templates.
+func (s *pluginService) ListTemplatesUserCanAccess(
+	ctx context.Context,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (templates []*v1alpha1.Template, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListTemplatesUserCanAccess(
+		ctx,
+		&v1alpha1.ListTemplatesUserCanAccessRequest{
+			PageSize:  pageSize,
+			PageToken: pageToken,
+			Reverse:   reverse,
+		},
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.Templates, response.NextPageToken, nil
+}
+
 // ListUserPlugins lists all templates belonging to a user.
 func (s *pluginService) ListUserTemplates(
 	ctx context.Context,
