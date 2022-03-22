@@ -118,7 +118,7 @@ func (s *repositoryService) ListUserRepositories(
 	return response.Repositories, response.NextPageToken, nil
 }
 
-// ListUserRepositories lists all repositories a user can access.
+// ListRepositoriesUserCanAccess lists all repositories a user can access.
 func (s *repositoryService) ListRepositoriesUserCanAccess(
 	ctx context.Context,
 	pageSize uint32,
