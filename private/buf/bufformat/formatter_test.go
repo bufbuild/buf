@@ -45,6 +45,7 @@ func testFormatProto2(t *testing.T) {
 	testFormatNoDiff(t, "testdata/proto2/field/v1")
 	testFormatNoDiff(t, "testdata/proto2/group/v1")
 	testFormatNoDiff(t, "testdata/proto2/header/v1")
+	testFormatNoDiff(t, "testdata/proto2/license/v1")
 	testFormatNoDiff(t, "testdata/proto2/message/v1")
 	testFormatNoDiff(t, "testdata/proto2/option/v1")
 }
