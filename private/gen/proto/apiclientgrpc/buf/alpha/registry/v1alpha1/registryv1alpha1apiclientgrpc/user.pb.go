@@ -84,7 +84,6 @@ func (s *userService) ListUsers(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
-	reverse bool,
 	userStateFilter v1alpha1.UserState,
 	orderBy string,
 ) (users []*v1alpha1.User, nextPageToken string, _ error) {
@@ -96,7 +95,6 @@ func (s *userService) ListUsers(
 		&v1alpha1.ListUsersRequest{
 			PageSize:        pageSize,
 			PageToken:       pageToken,
-			Reverse:         reverse,
 			UserStateFilter: userStateFilter,
 			OrderBy:         orderBy,
 		},

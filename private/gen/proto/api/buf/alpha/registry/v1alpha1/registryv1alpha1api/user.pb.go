@@ -34,7 +34,6 @@ type UserService interface {
 		ctx context.Context,
 		pageSize uint32,
 		pageToken string,
-		reverse bool,
 		userStateFilter v1alpha1.UserState,
 		orderBy string,
 	) (users []*v1alpha1.User, nextPageToken string, err error)
