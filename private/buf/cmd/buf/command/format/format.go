@@ -204,7 +204,7 @@ func run(
 	}
 	if protoFileRef, ok := sourceOrModuleRef.(buffetch.ProtoFileRef); ok {
 		// If we have a single ProtoFileRef, we only want to format that file.
-		// The file is guaranteed to be available from the first module (i.e. it's
+		// The file will be available from the first module (i.e. it's
 		// the target input, or the first module in a workspace).
 		if len(moduleConfigs) == 0 {
 			// Unreachable - we should always have at least one module.
@@ -235,8 +235,15 @@ func run(
 			break
 		}
 		if moduleFile == nil {
-			// Unreachable - a module file should always be found if we got this far.
-			return fmt.Errorf("input %s was not found", container.Arg(0))
+			// This will only happen if a buf.work.yaml exists in a parent
+			// directory, but it does not contain the target file.
+			//
+			// This is also a problem for other commands that interact
+			// with buffetch.ProtoFileRef.
+			//
+			// TODO: Fix the buffetch.ProtoFileRef so that it works in
+			// these situtations.
+			return fmt.Errorf("input %s was not found - is the directory containing this file defined in your buf.work.yaml?", container.Arg(0))
 		}
 		module, err = bufmodule.ModuleWithTargetPaths(
 			module,
