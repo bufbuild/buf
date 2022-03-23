@@ -36,6 +36,7 @@ type UserService interface {
 		pageToken string,
 		reverse bool,
 		userStateFilter v1alpha1.UserState,
+		orderBy string,
 	) (users []*v1alpha1.User, nextPageToken string, err error)
 	// ListOrganizationUsers lists all users for an organization.
 	// TODO: #663 move this to organization service

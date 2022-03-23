@@ -101,6 +101,10 @@ message ListUsersRequest {
   bool reverse = 3;
   // If the user_state_filter is unspecified, all users are included.
   UserState user_state_filter = 4;
+  // Comma-separated list of fields for ordering. Default sort value is ascending.
+  // To specify descending for a field, " desc" should be appended to the field name.
+  // For example: "create_time desc,username".
+  string order_by = 5;
 }
 
 message ListUsersResponse {
