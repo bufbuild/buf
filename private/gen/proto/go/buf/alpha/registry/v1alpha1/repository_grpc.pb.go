@@ -44,7 +44,7 @@ type RepositoryServiceClient interface {
 	ListRepositories(ctx context.Context, in *ListRepositoriesRequest, opts ...grpc.CallOption) (*ListRepositoriesResponse, error)
 	// ListUserRepositories lists all repositories belonging to a user.
 	ListUserRepositories(ctx context.Context, in *ListUserRepositoriesRequest, opts ...grpc.CallOption) (*ListUserRepositoriesResponse, error)
-	// ListUserRepositories lists all repositories a user can access.
+	// ListRepositoriesUserCanAccess lists all repositories a user can access.
 	ListRepositoriesUserCanAccess(ctx context.Context, in *ListRepositoriesUserCanAccessRequest, opts ...grpc.CallOption) (*ListRepositoriesUserCanAccessResponse, error)
 	// ListOrganizationRepositories lists all repositories for an organization.
 	ListOrganizationRepositories(ctx context.Context, in *ListOrganizationRepositoriesRequest, opts ...grpc.CallOption) (*ListOrganizationRepositoriesResponse, error)
@@ -237,7 +237,7 @@ type RepositoryServiceServer interface {
 	ListRepositories(context.Context, *ListRepositoriesRequest) (*ListRepositoriesResponse, error)
 	// ListUserRepositories lists all repositories belonging to a user.
 	ListUserRepositories(context.Context, *ListUserRepositoriesRequest) (*ListUserRepositoriesResponse, error)
-	// ListUserRepositories lists all repositories a user can access.
+	// ListRepositoriesUserCanAccess lists all repositories a user can access.
 	ListRepositoriesUserCanAccess(context.Context, *ListRepositoriesUserCanAccessRequest) (*ListRepositoriesUserCanAccessResponse, error)
 	// ListOrganizationRepositories lists all repositories for an organization.
 	ListOrganizationRepositories(context.Context, *ListOrganizationRepositoriesRequest) (*ListOrganizationRepositoriesResponse, error)
