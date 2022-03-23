@@ -222,5 +222,5 @@ service ExampleService {
 
   // service-body comment
   // rpc-leading comment 2
-  rpc Foo(Empty) returns (One);/* rpc-inline comment 2 */
+  rpc Foo(Empty) returns (One); // rpc-inline comment 2
 }
