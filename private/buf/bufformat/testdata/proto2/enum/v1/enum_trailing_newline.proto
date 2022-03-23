@@ -1,0 +1,26 @@
+enum One {
+
+  // This value should be formatted to the top
+  // because the newline is meaningless.
+  ONE_UNSPECIFIED = 0;
+}
+
+enum Two {
+  // The trailing comments should remain separated.
+
+  TWO_UNSPECIFIED = 0;
+}
+
+enum Three {
+  // The trailing comments should remain at the top.
+
+  // The leading comments should continue to be separated.
+  THREE_UNSPECIFIED = 0;
+}
+
+// FOUR_UNSPECIFIED should be compact because it has
+// no trailing or leading comments.
+enum Four {
+
+  FOUR_UNSPECIFIED = 0;
+}

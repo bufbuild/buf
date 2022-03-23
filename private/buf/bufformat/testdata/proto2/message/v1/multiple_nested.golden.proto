@@ -1,7 +1,6 @@
 syntax = "proto2";
 
 message Foo {
-
   option deprecated = false;
 
   optional string name = 1/* Between the '1' and the '[' */ [
@@ -12,13 +11,11 @@ message Foo {
   repeated int64 values = 2/* Before the semiolon */;
 
   message /* Bar is a nested message */Bar/* Before the '{' */ {
-
     /* This one is required */
     required bool /* Between 'bool' and 'truth' */truth = 3;
   }
   // Comment on the nested Baz message.
   message Baz {
-
     string something = 5;
 
     // Comment on the nested Qux message.

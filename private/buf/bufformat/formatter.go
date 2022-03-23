@@ -1419,6 +1419,7 @@ func (f *formatter) writeBody(
 // This is used for nearly every use case of f.writeBody, excluding the instances
 // in array literals.
 func (f *formatter) writeOpenBracePrefix(openBrace ast.Node) error {
+	defer f.SetPreviousNode(openBrace)
 	info := f.fileNode.NodeInfo(openBrace)
 	if info.LeadingComments().Len() > 0 {
 		if err := f.writeInlineComments(info.LeadingComments()); err != nil {
@@ -1432,6 +1433,7 @@ func (f *formatter) writeOpenBracePrefix(openBrace ast.Node) error {
 // writeOpenBracePrefixForArray writes the open brace with its leading comments
 // on multiple lines. This is only used for message literals in arrays.
 func (f *formatter) writeOpenBracePrefixForArray(openBrace ast.Node) error {
+	defer f.SetPreviousNode(openBrace)
 	info := f.fileNode.NodeInfo(openBrace)
 	if info.LeadingComments().Len() > 0 {
 		if err := f.writeMultilineComments(info.LeadingComments()); err != nil {
@@ -1817,15 +1819,21 @@ func (f *formatter) writeStart(node ast.Node) error {
 	var (
 		nodeNewlineCount               = newlineCount(info.LeadingWhitespace())
 		previousNodeHasTrailingComment = f.hasTrailingComment(f.previousNode)
+		previousNodeIsOpenBrace        = isOpenBrace(f.previousNode)
 	)
 	if length := info.LeadingComments().Len(); length > 0 {
+		// If leading comments are defined, the whitespace we care about
+		// is attached to the first comment.
 		firstCommentNewlineCount := newlineCount(info.LeadingComments().Index(0).LeadingWhitespace())
-		if !previousNodeHasTrailingComment && firstCommentNewlineCount > 1 || previousNodeHasTrailingComment && firstCommentNewlineCount > 0 {
-			// If leading comments are defined, the whitespace we care about
-			// is attached to the first comment.
+		if !previousNodeIsOpenBrace && (!previousNodeHasTrailingComment && firstCommentNewlineCount > 1 ||
+			previousNodeHasTrailingComment && firstCommentNewlineCount > 0) {
+			// If the previous node is an open brace, this is the first element
+			// in the body of a composite type, so we don't want to write a
+			// newline, regardless of the previous node's comments. This makes
+			// it so that trailing newlines are removed.
 			//
-			// If the previous node has a trailing comment, then we expect
-			// to see one fewer newline characters.
+			// Otherwise, if the previous node has a trailing comment, then we
+			// expect to see one fewer newline characters.
 			f.P()
 		}
 		if err := f.writeMultilineComments(info.LeadingComments()); err != nil {
@@ -1844,13 +1852,28 @@ func (f *formatter) writeStart(node ast.Node) error {
 			// two.
 			//
 			// If the last comment is a C-style comment, multiple newline
-			// characters are required because C-style comments can
-			// be written in-line.
+			// characters are required because C-style comments don't consume
+			// a newline.
 			f.P()
 		}
-	} else if !previousNodeHasTrailingComment && nodeNewlineCount > 1 || previousNodeHasTrailingComment && nodeNewlineCount > 0 {
-		// If leading comments are not attached to this node, we still
-		// want to check whether or not there are any newlines before it.
+	} else if !previousNodeIsOpenBrace && (!previousNodeHasTrailingComment && nodeNewlineCount > 1 ||
+		previousNodeHasTrailingComment && nodeNewlineCount > 0) {
+		// If the previous node is an open brace, this is the first element
+		// in the body of a composite type, so we don't want to write a
+		// newline. This makes it so that trailing newlines are removed.
+		//
+		// For example,
+		//
+		//  message Foo {
+		//
+		//    string bar = 1;
+		//  }
+		//
+		// Is formatted into the following:
+		//
+		//  message Foo {
+		//    string bar = 1;
+		//  }
 		f.P()
 	}
 	_, _ = fmt.Fprint(f.writer, strings.Repeat("  ", f.indent))
@@ -2169,6 +2192,19 @@ func stringForFieldReference(fieldReference *ast.FieldReferenceNode) string {
 		result += ")"
 	}
 	return result
+}
+
+// isOpenBrace returns true if the given node represents one of the
+// possible open brace tokens, namely '{', '[', or '<'.
+func isOpenBrace(node ast.Node) bool {
+	if node == nil {
+		return false
+	}
+	runeNode, ok := node.(*ast.RuneNode)
+	if !ok {
+		return false
+	}
+	return runeNode.Rune == '{' || runeNode.Rune == '[' || runeNode.Rune == '<'
 }
 
 // newlineCount returns the number of newlines in the given value.

@@ -1,9 +1,9 @@
 syntax = "proto2";
 
 message Foo {
-
-  // The newline is preserved between the message
-  // and the first option.
+  // The newline is not preserved between the message
+  // and the first element if there aren't any trailing
+  // comments on the '{'.
   option deprecated = false;
 
   // This is attached to the optional label.

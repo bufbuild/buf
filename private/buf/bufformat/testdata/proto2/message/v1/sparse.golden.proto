@@ -1,6 +1,5 @@
 message Foo {
-
-  // This is a comment on something.
+  // This is a trailing comment on the '{'.
 
   string name = 1;
 
