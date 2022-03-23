@@ -149,8 +149,7 @@ func copyReadObject(
 	readObject ReadObject,
 	copyExternalPaths bool,
 ) (retErr error) {
-	path := readObject.Path()
-	writeObjectCloser, err := writeBucket.Put(ctx, path)
+	writeObjectCloser, err := writeBucket.Put(ctx, readObject.Path())
 	if err != nil {
 		return err
 	}
