@@ -128,7 +128,11 @@ func (f *formatter) writeFile(fileNode *ast.FileNode) {
 			return
 		}
 	}
-	f.P()
+	if f.previousNode != nil {
+		// If anything was written, we always conclude with
+		// a newline.
+		f.P()
+	}
 }
 
 // writeFileHeader writes the header of a .proto file. This includes the syntax,
