@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
@@ -220,7 +221,11 @@ func run(
 	if err != nil {
 		return err
 	}
-	sourceOrModuleRef, err := buffetch.NewRefParser(container.Logger(), buffetch.RefParserWithProtoFileRefAllowed()).GetSourceOrModuleRef(ctx, input)
+	refParser := buffetch.NewRefParser(
+		container.Logger(),
+		buffetch.RefParserWithProtoFileRefAllowed(),
+	)
+	sourceOrModuleRef, err := refParser.GetSourceOrModuleRef(ctx, input)
 	if err != nil {
 		return err
 	}
@@ -260,16 +265,54 @@ func run(
 		return err
 	}
 	var readWriteBucket storage.ReadWriteBucket
+	var singleFileOutputFilename string
 	if flags.Output != "-" {
-		if err := os.MkdirAll(flags.Output, 0755); err != nil {
-			return err
-		}
-		readWriteBucket, err = storageosProvider.NewReadWriteBucket(
-			flags.Output,
-			storageos.ReadWriteBucketWithSymlinksIfSupported(),
-		)
+		// The output file type is determined based on its extension,
+		// so it's possible to write a single file's formatted content
+		// to another single file.
+		//
+		//  $ buf format simple.proto -o simple.formatted.proto
+		//
+		// In this case, it's also possible to write an entire directory's
+		// formatted content to a single file (like we see in the default
+		// behavior with stdout).
+		//
+		//  $ buf format simple -o simple.formatted.proto
+		//
+		outputRef, err := refParser.GetSourceOrModuleRef(ctx, flags.Output)
 		if err != nil {
 			return err
+		}
+		// The output directory will not be set for single file outputs
+		// in the current directory (e.g. simple.formatted.proto).
+		var outputDirectory string
+		if _, ok := outputRef.(buffetch.ProtoFileRef); ok {
+			if directory := filepath.Dir(flags.Output); directory != "." {
+				// The output is a single file, so we need to create
+				// the file's directory (if any).
+				//
+				// For example,
+				//
+				//  $ buf format simple.proto -o formatted/simple.formatted.proto
+				//
+				outputDirectory = directory
+			}
+			singleFileOutputFilename = flags.Output
+		} else {
+			// The output is a directory, so we can just create it as-is.
+			outputDirectory = flags.Output
+		}
+		if outputDirectory != "" {
+			if err := os.MkdirAll(outputDirectory, 0755); err != nil {
+				return err
+			}
+			readWriteBucket, err = storageosProvider.NewReadWriteBucket(
+				outputDirectory,
+				storageos.ReadWriteBucketWithSymlinksIfSupported(),
+			)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if protoFileRef, ok := sourceOrModuleRef.(buffetch.ProtoFileRef); ok {
@@ -335,6 +378,7 @@ func run(
 			runner,
 			module,
 			readWriteBucket,
+			singleFileOutputFilename,
 			flags.ErrorFormat,
 			flags.Diff,
 			flags.Write,
@@ -347,6 +391,7 @@ func run(
 			runner,
 			moduleConfig.Module(),
 			readWriteBucket,
+			singleFileOutputFilename,
 			flags.ErrorFormat,
 			flags.Diff,
 			flags.Write,
@@ -366,6 +411,7 @@ func formatModule(
 	runner command.Runner,
 	module bufmodule.Module,
 	writeBucket storage.WriteBucket,
+	singleFileOutputFilename string,
 	errorFormat string,
 	diff bool,
 	rewrite bool,
@@ -429,11 +475,26 @@ func formatModule(
 			},
 		)
 	}
-	if writeBucket == nil {
+	if writeBucket == nil || singleFileOutputFilename != "" {
 		// If the writeBucket is nil, we write the output to stdout.
 		//
+		// If a single file output was used, we can't just copy the content
+		// between buckets - we need to write all of the bucket's content
+		// into the single file (exactly like we do for writing to stdout).
+		//
 		// We might want to order these, although the output is kind of useless
-		// if we're writing more than one file to stdout.
+		// if we're writing more than one file.
+		writer := container.Stdout()
+		if singleFileOutputFilename != "" {
+			file, err := os.OpenFile(singleFileOutputFilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				retErr = multierr.Append(retErr, file.Close())
+			}()
+			writer = file
+		}
 		return storage.WalkReadObjects(
 			ctx,
 			formattedReadBucket,
@@ -443,7 +504,7 @@ func formatModule(
 				if err != nil {
 					return err
 				}
-				if _, err := container.Stdout().Write(data); err != nil {
+				if _, err := writer.Write(data); err != nil {
 					return err
 				}
 				return nil
