@@ -461,6 +461,19 @@ func formatModule(
 				if err != nil {
 					return err
 				}
+				// We use os.OpenFile here instead of storage.Copy for a few reasons.
+				//
+				// storage.Copy operates on normal paths, so the copied content is always placed
+				// relative to the bucket's root (as expected). The rewrite in-place behavior can
+				// be rephrased as writing to the same bucket as the input (e.g. buf format proto -o proto).
+				//
+				// Now, if the user asks to rewrite an entire workspace (i.e. a directory containing
+				// a buf.work.yaml), we would need to call storage.Copy for each of the directories
+				// defined in the workspace. This involves parsing the buf.work.yaml and creating
+				// a storage.Bucket for each of the directories.
+				//
+				// It's simpler to just copy the files in-place based on their external path since
+				// it's the same behavior for single files, directories, and workspaces.
 				file, err := os.OpenFile(readObject.ExternalPath(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 				if err != nil {
 					return err
