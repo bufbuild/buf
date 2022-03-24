@@ -3,9 +3,7 @@ syntax = "proto2";
 message Foo {
   option deprecated = false;
 
-  optional string name = 1/* Between the '1' and the '[' */ [
-    deprecated = true
-  ]; // In-line comment on name.
+  optional string name = 1/* Between the '1' and the '[' */ [deprecated = true]; // In-line comment on name.
 
   // Repeated values comment.
   repeated int64 values = 2/* Before the semiolon */;

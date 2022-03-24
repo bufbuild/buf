@@ -17,6 +17,7 @@ message Foo {
     // Leading comment on deprecated.
     deprecated/* After deprecated */ = true,
     // Leading comment on another.
+
     (/* One */another/* Two */) = 2
   ];
 }

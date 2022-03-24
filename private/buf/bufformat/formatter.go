@@ -122,7 +122,11 @@ func (f *formatter) writeFile(fileNode *ast.FileNode) {
 	if fileNode.EOF != nil {
 		info := f.fileNode.NodeInfo(fileNode.EOF)
 		if info.LeadingComments().Len() > 0 {
-			f.P()
+			if !f.previousTrailingCommentsWroteNewline() {
+				// If the previous node didn't have trailing comments that
+				// wrote a newline, we need to add one here.
+				f.P()
+			}
 			f.P()
 			f.writeMultilineComments(info.LeadingComments())
 			return
@@ -986,6 +990,38 @@ func (f *formatter) writeRange(rangeNode *ast.RangeNode) {
 //  ]
 //
 func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNode) {
+	if len(compactOptionsNode.Options) == 1 {
+		// If there's only a single compact option without comments, we can write it in-line.
+		//
+		// For example,
+		//
+		//  [deprecated = true]
+		//
+		// However, this does not include the case when the '[' has trailing comments,
+		// or the option name has leading comments. In those cases, we write the option
+		// across multiple lines.
+		//
+		// For example,
+		//
+		//  [
+		//    // This type is deprecated.
+		//    deprecated = true;
+		//  ]
+		//
+		optionNode := compactOptionsNode.Options[0]
+		openBracketInfo := f.fileNode.NodeInfo(compactOptionsNode.OpenBracket)
+		optionNameInfo := f.fileNode.NodeInfo(optionNode.Name)
+		if openBracketInfo.TrailingComments().Len() == 0 && optionNameInfo.LeadingComments().Len() == 0 {
+			f.writeInline(compactOptionsNode.OpenBracket)
+			f.writeInline(optionNode.Name)
+			f.Space()
+			f.writeInline(optionNode.Equals)
+			f.Space()
+			f.writeInline(optionNode.Val)
+			f.writeInline(compactOptionsNode.CloseBracket)
+			return
+		}
+	}
 	var elementWriterFunc func()
 	if len(compactOptionsNode.Options) > 0 {
 		elementWriterFunc = func() {
@@ -1179,7 +1215,11 @@ func (f *formatter) writeBody(
 	}
 	if elementWriterFunc != nil {
 		elementWriterFunc()
-		f.P()
+		if !f.previousTrailingCommentsWroteNewline() {
+			// If the previous node didn't have trailing comments that
+			// wrote a newline, we need to add one here.
+			f.P()
+		}
 	}
 	f.Out()
 	if info := f.fileNode.NodeInfo(closeBrace); info.LeadingComments().Len() > 0 {
@@ -1314,7 +1354,7 @@ func (f *formatter) writeFloatLiteral(floatLiteralNode *ast.FloatLiteralNode) {
 // writeSignedFloatLiteral writes a signed float literal value (e.g. '-42.2').
 func (f *formatter) writeSignedFloatLiteral(signedFloatLiteralNode *ast.SignedFloatLiteralNode) {
 	f.writeInline(signedFloatLiteralNode.Sign)
-	f.writeLineEnd(signedFloatLiteralNode.Float)
+	f.writeInline(signedFloatLiteralNode.Float)
 }
 
 // writeSignedFloatLiteralForArray writes a signed float literal value, but writes
@@ -1357,7 +1397,7 @@ func (f *formatter) writeUintLiteral(uintLiteralNode *ast.UintLiteralNode) {
 // writeNegativeIntLiteral writes a negative int literal (e.g. '-42').
 func (f *formatter) writeNegativeIntLiteral(negativeIntLiteralNode *ast.NegativeIntLiteralNode) {
 	f.writeInline(negativeIntLiteralNode.Minus)
-	f.writeLineEnd(negativeIntLiteralNode.Uint)
+	f.writeInline(negativeIntLiteralNode.Uint)
 }
 
 // writeNegativeIntLiteralForArray writes a negative int literal value, but writes
@@ -1380,7 +1420,7 @@ func (f *formatter) writeNegativeIntLiteralForArray(
 // writePositiveUintLiteral writes a positive uint literal (e.g. '+42').
 func (f *formatter) writePositiveUintLiteral(positiveIntLiteralNode *ast.PositiveUintLiteralNode) {
 	f.writeInline(positiveIntLiteralNode.Plus)
-	f.writeLineEnd(positiveIntLiteralNode.Uint)
+	f.writeInline(positiveIntLiteralNode.Uint)
 }
 
 // writePositiveUintLiteralForArray writes a positive uint literal value, but writes
@@ -1673,7 +1713,6 @@ func (f *formatter) writeBodyEnd(node ast.Node) {
 	f.Indent()
 	f.writeNode(node)
 	if info.TrailingComments().Len() > 0 {
-		f.Space()
 		f.writeTrailingEndComments(info.TrailingComments())
 	}
 }
@@ -1753,7 +1792,6 @@ func (f *formatter) writeLineEnd(node ast.Node) {
 	}
 	f.writeNode(node)
 	if info.TrailingComments().Len() > 0 {
-		f.Space()
 		f.writeTrailingEndComments(info.TrailingComments())
 	}
 }
@@ -1837,11 +1875,30 @@ func (f *formatter) writeInlineComments(comments ast.Comments) {
 // preserves the comment style. This is useful or writing comments attached to
 // things like ';' and other tokens that conclude a type definition on a single
 // line.
+//
+// If there is a newline between this trailing comment and the previous node, the
+// comments are written immediately underneath the node on a newline.
+//
+// For example,
+//
+//  enum Type {
+//    TYPE_UNSPECIFIED = 0;
+//  }
+//  // This comment is attached to the '}'
+//  // So is this one.
+//
 func (f *formatter) writeTrailingEndComments(comments ast.Comments) {
 	for i := 0; i < comments.Len(); i++ {
-		if i > 0 {
-			f.Space()
+		comment := comments.Index(i)
+		if i == 0 && newlineCount(comment.LeadingWhitespace()) > 0 {
+			// If the first comment has a newline before it, we need to preserve
+			// the trailing comments in a block immediately under the previous
+			// node.
+			f.P()
+			f.writeMultilineComments(comments)
+			return
 		}
+		f.Space()
 		f.WriteString(strings.TrimSpace(comments.Index(i).RawText()))
 	}
 }
@@ -1881,6 +1938,18 @@ func (f *formatter) hasTrailingComment(node ast.Node) bool {
 	}
 	lastComment := info.TrailingComments().Index(length - 1)
 	return strings.HasPrefix(lastComment.RawText(), "//")
+}
+
+// previousTrailingCommentsWroteNewline returns true if the previous node's
+// trailing comments wrote a newline. We need to use this whenever we otherwise
+// need to add a newline (e.g. at the end of a composite type's body, and
+// for EOF comments).
+func (f *formatter) previousTrailingCommentsWroteNewline() bool {
+	previousTrailingComments := f.fileNode.NodeInfo(f.previousNode).TrailingComments()
+	if previousTrailingComments.Len() > 0 {
+		return newlineCount(previousTrailingComments.Index(0).LeadingWhitespace()) > 0
+	}
+	return false
 }
 
 // stringForOptionName returns the string representation of the given option name node.
