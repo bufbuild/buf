@@ -1765,10 +1765,34 @@ func (f *formatter) writeLineEnd(node ast.Node) {
 //  // multiple lines.
 //  message Foo {}
 //
-func (f *formatter) writeMultilineComments(comments ast.Comments) {
+func (f *formatter) writeMultilineComments(comments ast.Comments) error {
+	var previousComment ast.Comment
 	for i := 0; i < comments.Len(); i++ {
-		f.P(strings.TrimSpace(comments.Index(i).RawText()))
+		comment := comments.Index(i)
+		if i > 0 {
+			var (
+				previousCommentIsCStyle = cStyleComment(previousComment)
+				precedingNewlineCount   = newlineCount(comment.LeadingWhitespace())
+			)
+			if previousCommentIsCStyle && precedingNewlineCount > 1 ||
+				!previousCommentIsCStyle && precedingNewlineCount > 0 {
+				// Newlines between blocks of comments should be preserved.
+				//
+				// For example,
+				//
+				//  // This is a license header
+				//  // spread across multiple lines.
+				//
+				//  // Package pet.v1 defines a PetStore API.
+				//  package pet.v1;
+				//
+				f.P()
+			}
+		}
+		f.P(strings.TrimSpace(comment.RawText()))
+		previousComment = comments.Index(i)
 	}
+	return nil
 }
 
 // writeInlineComments writes the given comments in-line. Standard comments are

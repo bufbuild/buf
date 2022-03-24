@@ -24,4 +24,5 @@ extend Foo {
 } // Trailing comment on '}'.
 
 // Another trailing comment on '}'.
+
 // Comment on EOF.

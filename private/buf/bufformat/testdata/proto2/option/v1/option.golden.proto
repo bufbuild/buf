@@ -37,6 +37,7 @@ message Foo {
     // Leading comment on deprecated.
     deprecated = true, // Trailing comment on deprecated.
     // Another trailing comment on deprecated.
+
     // Leading comment on ctype.
     ctype = CORD
   ] {

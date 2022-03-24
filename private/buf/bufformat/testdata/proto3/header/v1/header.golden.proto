@@ -1,9 +1,12 @@
 // This is a top level leading comment attached to the syntax.
 //
+
 //
 //  It can be separated across multiple lines like this.
+
 //
-//      All of them should be consolidated together.
+//      All of them should retain their newlines.
+
 // This is another leading comment on the syntax.
 syntax/* This comment is attached to the '=' */ = "proto3"; // Trailing comment on syntax.
 

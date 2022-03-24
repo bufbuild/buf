@@ -1,4 +1,5 @@
 // top-level comment 1
+
 // top-level comment 2
 
 syntax = "proto3"; // syntax-level-inline comment
@@ -11,6 +12,7 @@ import "custom.proto";
 // between-imports comment
 import "google/protobuf/duration.proto"; // import-inline comment  2
 // between-package-and-import comment
+
 // import comment
 import "google/protobuf/timestamp.proto"; // import-inline comment
 
@@ -30,6 +32,7 @@ option (custom.file_thing_option) = {
 // option comment 3
 option go_package = "foopb"; // option-inline comment 3
 // between-imports-and-options comment
+
 // option comment
 option java_multiple_files = true; // option-inline comment
 // option comment 4
@@ -51,7 +54,9 @@ message One {
   }; // message-option-inline comment 2
 
   // body comment 2
+
   // body comment 3
+
   // nested-message comment
   message Three {
     int64 three_one = 1;
@@ -175,6 +180,7 @@ enum EnumWithAlias {
 message Empty {}
 
 // Pre-enum comment
+
 // OtherEnum is another enum.
 enum OtherEnum {
   option (custom.enum_option) = 1;
@@ -199,6 +205,7 @@ enum OtherEnum {
 }
 
 // Pre-service comment
+
 // ExampleService is the example service.
 service ExampleService {
   option (custom.service_option) = true; // service-option-inline comment
@@ -221,6 +228,7 @@ service ExampleService {
   } // rpc-inline comment
 
   // service-body comment
+
   // rpc-leading comment 2
   rpc Foo(Empty) returns (One); // rpc-inline comment 2
 }
