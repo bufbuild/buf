@@ -60,8 +60,77 @@ func NewCommand(
 	return &appcmd.Command{
 		Use:   name + " <input>",
 		Short: "Format all Protobuf files from the specified input and output the result.",
-		Long:  bufcli.GetInputLong(`the source or module to format`),
-		Args:  cobra.MaximumNArgs(1),
+		Long: `
+By default, the formatted content is written to stdout. For example,
+
+# Write the formatted file to stdout
+$ buf format simple/simple.proto
+syntax = "proto3";
+
+package simple;
+
+message Object {
+  string key = 1;
+  bytes value = 2;
+}
+
+# Write the formatted directory to stdout
+$ buf format simple
+syntax = "proto3";
+
+package simple;
+
+message Object {
+  string key = 1;
+  bytes value = 2;
+}
+
+Write the result to a specified output file or directory with -o. For example,
+
+# Write the formatted file to another file
+$ buf format simple/simple.proto -o simple/simple.formatted.proto
+
+# Write the formatted directory to another directory, creating it if it doesn't exist
+$ buf format proto -o formatted
+
+# This also works with module references
+$ buf format buf.build/acme/weather -o formatted
+
+Rewrite the file(s) in-place with -w. For example,
+
+# Rewrite a single file in-place
+$ buf format simple.proto -w
+
+# Rewrite an entire directory in-place
+$ buf format proto -w
+
+Display a diff between the original and formatted content with -d. For example,
+
+# Write a diff instead of the formatted file
+$ buf format simple/simple.proto -d
+diff -u simple/simple.proto.orig simple/simple.proto
+--- simple/simple.proto.orig	2022-03-24 09:44:10.000000000 -0700
++++ simple/simple.proto	2022-03-24 09:44:10.000000000 -0700
+@@ -2,8 +2,7 @@
+
+ package simple;
+
+-
+ message Object {
+-    string key = 1;
+-   bytes value = 2;
++  string key = 1;
++  bytes value = 2;
+ }
+
+# Write a diff and rewrite the file(s) in-place
+$ buf format simple -d -w
+diff -u simple/simple.proto.orig simple/simple.proto
+...
+
+The -w and -o flags cannot be used together in a single invocation.
+`,
+		Args: cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
