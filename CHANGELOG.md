@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.2.0] - 2022-03-24
 
 - Add `buf format` command to format `.proto` files.
