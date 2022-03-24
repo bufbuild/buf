@@ -16,8 +16,8 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "google/protobuf/compiler/plugin.proto";
 import "buf/alpha/image/v1/image.proto";
+import "google/protobuf/compiler/plugin.proto";
 
 // File defines a file with a path and some content.
 message File {
@@ -44,8 +44,8 @@ message RuntimeLibrary {
 }
 
 message PluginReference {
-// The owner of the plugin which identifies the
-// plugins to use with this generation.
+  // The owner of the plugin which identifies the
+  // plugins to use with this generation.
   string owner = 1;
   // The name of the plugin which identifies the
   // plugins to use with this generation.

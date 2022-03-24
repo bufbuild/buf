@@ -1,0 +1,142 @@
+syntax = "proto2";
+
+import "custom.proto";
+
+// Leading comment on Foo.
+message Foo {
+  // Trailing comment on Foo.
+
+  // Leading comment on extensions.
+  extensions 5 [
+    // Trailing comment on '['.
+
+    // Leading comment on extension_range_option.
+    (custom.extension_range_option) = true
+
+  // Leading comment on ']'.
+  ];
+
+  // Leading comment on deprecated.
+  option deprecated = true;
+  // Leading comment on message_set_wire_format.
+  option message_set_wire_format = false;
+
+  // Leading comment on something.
+  optional string something = 1 [
+    // Trailing comment on '['.
+    // Another trailing comment on '['.
+
+    // Leading comment on ctype.
+    ctype = CORD,
+    // Leading comment on deprecated.
+    deprecated = true
+  ]; // Trailing comment on ';'.
+  optional group Another =  2 [
+    // Trailing comment on '['.
+
+    // Leading comment on deprecated.
+    deprecated = true, // Trailing comment on deprecated.
+    // Another trailing comment on deprecated.
+
+    // Leading comment on ctype.
+    ctype = CORD
+
+  ] {
+    // Leading comment on one.
+    required string one = 3 [
+      deprecated = true,
+      ctype = CORD
+    ];
+    // Leading comment on two.
+    required string two = 4 [
+      (custom.field_value_thing) = { }
+    ];
+    // Leading comment on three.
+    required string three = 5 [
+      (custom.field_value_thing) = { /* Empty message literal */ }
+    ];
+    // Leading comment on four.
+    required string four = 6 [
+      (custom.field_value_thing) = {
+        // Trailing comment on '{'.
+        // Another trailing comment on '{'.
+      }
+    ];
+    // Leading comment on five.
+    required string five = 7 [
+      (custom.field_value_thing) = {
+        // Trailing comment on '{'.
+
+      // Leading comment on '}'.
+      }
+    ];
+  }
+}
+
+// Leading comment on Type.
+enum Type {
+  // Trailing comment on Type.
+
+  // Leading comment on allow_alias.
+  option allow_alias = false;
+  // Leading comment on deprecated.
+  option deprecated = true;
+
+  // Leading comment on TYPE_UNSPECIFIED.
+  TYPE_UNSPECIFIED = 0 [
+    // Trailing comment on '['.
+
+    // Leading comment on deprecated.
+    deprecated = true
+  ]; // Trailing comment on ';'.
+  // Leading comment on TYPE_ONE.
+  TYPE_ONE = 1; // Trailing comment on ';'.
+  // Leading comment on TYPE_TWO.
+  TYPE_TWO = 2 [
+    // Trailing comment on TYPE_TWO.
+
+    // Leading comment on enum_value_thing_option.
+    (custom.enum_value_thing_option) = {
+      // Trailing comment on message literal.
+
+      // Leading comment on foo.
+      foo:1, // Trailing comment on foo.
+      // Leading comment on bar.
+      bar:2 // Trailing comment on bar.
+      // Leading comment on recursive.
+      recursive: <
+        // Leading comment on foo.
+        foo: 1,
+        // Leading comment on bar.
+        bar: 2,
+      >
+    }
+  ];
+}
+
+// Leading comment on Foo extension.
+extend Foo {
+  // Trailing comment on Foo.
+
+  // Leading comment on additional.
+  optional string additional = 5;
+}
+
+// Leading comment on FooService.
+service FooService {
+  // Trailing comment on FooService.
+
+  // Leading comment on deprecated.
+  option deprecated = true;
+
+  // Leading comment on Foo.
+  rpc Foo(Foo) returns (Foo) {
+    // Trailing comment on Foo.
+
+    // Leading comment on deprecated.
+    option deprecated = true;
+
+    // Leading comment on idempotency_level.
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+}

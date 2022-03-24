@@ -16,8 +16,8 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/user.proto";
 import "buf/alpha/registry/v1alpha1/organization.proto";
+import "buf/alpha/registry/v1alpha1/user.proto";
 
 message Owner {
   oneof owner {

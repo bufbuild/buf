@@ -118,16 +118,14 @@ message DisplayTemplateElementsResponse {
   bool delete = 3;
 }
 
-message DisplayUserElementsRequest {
-}
+message DisplayUserElementsRequest {}
 
 message DisplayUserElementsResponse {
   // Display delete user element if true.
   bool delete = 1;
 }
 
-message DisplayServerElementsRequest {
-}
+message DisplayServerElementsRequest {}
 
 message DisplayServerElementsResponse {
   // Display server admin panel element if true.

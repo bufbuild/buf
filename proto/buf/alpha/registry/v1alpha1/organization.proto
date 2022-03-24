@@ -175,7 +175,7 @@ message SetOrganizationMemberRequest {
 
 message SetOrganizationMemberResponse {}
 
-message GetOrganizationSettingsRequest{
+message GetOrganizationSettingsRequest {
   // The ID of the organization for which to get the settings.
   string organization_id = 1;
 }
