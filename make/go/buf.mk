@@ -12,6 +12,7 @@ BUF_BREAKING_INPUT ?=
 # Settable
 BUF_BREAKING_AGAINST_INPUT ?=
 # Settable
+BUF_FORMAT_INPUT ?=
 
 .PHONY: bufgeneratedeps
 bufgeneratedeps:: $(BUF)
@@ -25,6 +26,9 @@ bufgeneratesteps::
 .PHONY: bufgenerate
 bufgenerate:
 	$(MAKE) bufgeneratedeps
+ifneq ($(BUF_FORMAT_INPUT),)
+	$(BUF_BIN) format -w $(BUF_FORMAT_INPUT)
+endif
 	$(MAKE) bufgenerateclean
 	$(MAKE) bufgeneratesteps
 
