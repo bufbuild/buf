@@ -268,8 +268,7 @@ message UserCanDeletePluginResponse {
   bool authorized = 1;
 }
 
-message UserCanDeleteUserRequest {
-}
+message UserCanDeleteUserRequest {}
 
 message UserCanDeleteUserResponse {
   bool authorized = 1;
@@ -277,7 +276,7 @@ message UserCanDeleteUserResponse {
 
 message UserCanSeeServerAdminPanelRequest {}
 
-message UserCanSeeServerAdminPanelResponse{
+message UserCanSeeServerAdminPanelResponse {
   bool authorized = 1;
 }
 

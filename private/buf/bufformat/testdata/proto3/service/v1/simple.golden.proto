@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+message Message {}
+
+service Ping {
+  option deprecated = true;
+
+  rpc Echo(Message) returns (Message) {
+    option deprecated = true;
+  }
+}

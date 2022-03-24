@@ -1,0 +1,79 @@
+syntax = "proto2";
+
+package foo.bar;
+
+import "google/protobuf/descriptor.proto";
+
+message Simple {
+  optional string name = 1;
+  optional uint64 id = 2;
+}
+
+extend .google./* identifier broken up strangely should still be accepted */protobuf.ExtensionRangeOptions {
+  optional string label = 20000;
+}
+
+message Test {
+  optional string foo = 1 [
+    json_name = "|foo|"
+  ];
+  repeated int32 array = 2;
+  optional Simple s = 3;
+  repeated Simple r = 4;
+  map<string, int32> m = 5;
+
+  optional bytes b = 6 [
+    default = "\x00\x01\x02\x03\x04\x05\x06\afubar!"
+  ];
+
+  extensions 100 to 200;
+
+  extensions 249, 300 to 350, 500 to 550, 20000 to max [
+    (label) = "jazz"
+  ];
+
+  message Nested {
+    extend google.protobuf.MessageOptions {
+      optional int32 fooblez = 20003;
+    }
+    message _NestedNested {
+      enum EEE {
+        OK = 0;
+        V1 = 1;
+        V2 = 2;
+        V3 = 3;
+        V4 = 4;
+        V5 = 5;
+        V6 = 6;
+      }
+      option (fooblez) = 10101;
+      extend Test {
+        optional string _garblez = 100;
+      }
+      option (rept) = {
+        // Trailing comment on '{'.
+
+        // Leading comment on 'foo'.
+        foo: "goo"/* Leading comment on ',' */, // Trailing comment on foo
+
+        // Leading comment on extension name.
+        [/* One */foo.bar.Test.Nested._NestedNested._garblez/* Two */]/* Three */: "boo" // Trailing comment on extension name.
+
+      // Leading comment on '}'.
+      };
+      message NestedNestedNested {
+        option (rept) = {
+          foo: "hoo"
+          [Test.Nested._NestedNested._garblez]: "spoo"
+        };
+
+        optional Test Test = 1;
+      }
+    }
+  }
+}
+
+extend google.protobuf.MessageOptions {
+  repeated Test rept = 20002;
+  optional Test.Nested._NestedNested.EEE eee = 20010;
+}

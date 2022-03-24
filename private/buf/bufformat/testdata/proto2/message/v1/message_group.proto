@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+
+
+// The following messages should all stay grouped together.
+message Foo {}
+message Bar {}
+message Baz {}
+message Qux {}
+
+

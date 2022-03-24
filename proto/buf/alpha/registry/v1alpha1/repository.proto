@@ -85,9 +85,9 @@ service RepositoryService {
   // DeleteRepositoryByFullName deletes a repository by full name.
   rpc DeleteRepositoryByFullName(DeleteRepositoryByFullNameRequest) returns (DeleteRepositoryByFullNameResponse);
   // DeprecateRepositoryByName deprecates the repository.
-  rpc DeprecateRepositoryByName(DeprecateRepositoryByNameRequest) returns(DeprecateRepositoryByNameResponse);
+  rpc DeprecateRepositoryByName(DeprecateRepositoryByNameRequest) returns (DeprecateRepositoryByNameResponse);
   // UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
-  rpc UndeprecateRepositoryByName(UndeprecateRepositoryByNameRequest) returns(UndeprecateRepositoryByNameResponse);
+  rpc UndeprecateRepositoryByName(UndeprecateRepositoryByNameRequest) returns (UndeprecateRepositoryByNameResponse);
   // GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
   // Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
   rpc GetRepositoriesByFullName(GetRepositoriesByFullNameRequest) returns (GetRepositoriesByFullNameResponse);
@@ -103,13 +103,13 @@ service RepositoryService {
   rpc GetRepositorySettings(GetRepositorySettingsRequest) returns (GetRepositorySettingsResponse);
 }
 
-message GetRepositoriesByFullNameRequest{
+message GetRepositoriesByFullNameRequest {
   // minimum length is 1
   // maximum length is 250
   repeated string full_names = 1;
 }
 
-message GetRepositoriesByFullNameResponse{
+message GetRepositoriesByFullNameResponse {
   repeated Repository repositories = 1;
 }
 
@@ -209,7 +209,7 @@ message DeleteRepositoryByFullNameRequest {
 
 message DeleteRepositoryByFullNameResponse {}
 
-message DeprecateRepositoryByNameRequest{
+message DeprecateRepositoryByNameRequest {
   string owner_name = 1;
   string repository_name = 2;
   // A message shown along with the deprecation warning for this repository.
@@ -217,16 +217,16 @@ message DeprecateRepositoryByNameRequest{
   string deprecation_message = 3;
 }
 
-message DeprecateRepositoryByNameResponse{
+message DeprecateRepositoryByNameResponse {
   Repository repository = 1;
 }
 
-message UndeprecateRepositoryByNameRequest{
+message UndeprecateRepositoryByNameRequest {
   string owner_name = 1;
   string repository_name = 2;
 }
 
-message UndeprecateRepositoryByNameResponse{
+message UndeprecateRepositoryByNameResponse {
   Repository repository = 1;
 }
 

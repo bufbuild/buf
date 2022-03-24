@@ -7,6 +7,7 @@ require (
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/google/go-cmp v0.5.7
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
+	github.com/jhump/protocompile v0.0.0-20220209020618-b218a88181be
 	github.com/jhump/protoreflect v1.11.1-0.20220213155251-0c2aedc66cf4
 	github.com/klauspost/compress v1.15.1
 	github.com/klauspost/pgzip v1.2.5

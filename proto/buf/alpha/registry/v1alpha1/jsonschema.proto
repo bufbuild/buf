@@ -24,7 +24,6 @@ service JSONSchemaService {
   rpc GetJSONSchema(GetJSONSchemaRequest) returns (GetJSONSchemaResponse);
 }
 
-
 message GetJSONSchemaRequest {
   string owner = 1;
   string repository = 2;

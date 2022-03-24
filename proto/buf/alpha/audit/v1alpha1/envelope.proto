@@ -16,16 +16,16 @@ syntax = "proto3";
 
 package buf.alpha.audit.v1alpha1;
 
-import "google/protobuf/timestamp.proto";
-import "buf/alpha/rpc/v1alpha1/error.proto";
-import "buf/alpha/module/v1alpha1/module.proto";
 import "buf/alpha/audit/v1alpha1/convert.proto";
-import "buf/alpha/audit/v1alpha1/role.proto";
+import "buf/alpha/audit/v1alpha1/module.proto";
 import "buf/alpha/audit/v1alpha1/plugin.proto";
 import "buf/alpha/audit/v1alpha1/repository.proto";
-import "buf/alpha/audit/v1alpha1/module.proto";
+import "buf/alpha/audit/v1alpha1/role.proto";
 import "buf/alpha/audit/v1alpha1/search.proto";
 import "buf/alpha/audit/v1alpha1/user.proto";
+import "buf/alpha/module/v1alpha1/module.proto";
+import "buf/alpha/rpc/v1alpha1/error.proto";
+import "google/protobuf/timestamp.proto";
 
 enum Action {
   ACTION_UNSPECIFIED = 0;

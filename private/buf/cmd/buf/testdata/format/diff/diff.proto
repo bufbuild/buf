@@ -1,0 +1,13 @@
+
+syntax = "proto3";
+
+
+
+package diff;
+
+
+message   Diff  {
+
+  string content = 1;
+
+  }

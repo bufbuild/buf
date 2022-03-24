@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add `buf format` command to format `.proto` files.
 - Fix build scripts to avoid using the `command-line-arguments` pseudo-package
   when building binaries and re-introduce checking for proper usage of private
   packages.

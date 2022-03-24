@@ -1,0 +1,10 @@
+enum Foo { /* C-style comment in the middle */ }
+
+enum Bar {
+  // Normal comment in the middle
+}
+
+enum Baz {
+
+// Body comment.
+}

@@ -16,8 +16,8 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "google/protobuf/timestamp.proto";
 import "buf/alpha/audit/v1alpha1/envelope.proto";
+import "google/protobuf/timestamp.proto";
 
 // AuditLogsService serves audit logs on the instance.
 service AuditLogsService {

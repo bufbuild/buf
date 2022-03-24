@@ -1,0 +1,22 @@
+syntax = "proto2";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.MessageOptions {
+  optional int32 something = 20003;
+}
+
+extend google.protobuf.FieldOptions {
+  optional int32 another = 20004;
+}
+
+message Foo {
+  option (/* One */  something  /* Two */) = 1;
+
+  string name = 1 [
+    // Leading comment on deprecated.
+    deprecated /* After deprecated */ = true,
+    // Leading comment on another.
+    ( /* One */  another /* Two */ ) = 2
+  ];
+}

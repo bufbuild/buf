@@ -374,8 +374,11 @@ func newRawRefProcessor(allowProtoFileRef bool) func(*internal.RawRef) error {
 			case ".proto":
 				if allowProtoFileRef {
 					fileInfo, err := os.Stat(rawRef.Path)
-					if err != nil || fileInfo.IsDir() {
+					if err != nil && !os.IsNotExist(err) {
 						return fmt.Errorf("path provided is not a valid proto file: %s, %w", rawRef.Path, err)
+					}
+					if fileInfo != nil && fileInfo.IsDir() {
+						return fmt.Errorf("path provided is not a valid proto file: a directory named %s already exists", rawRef.Path)
 					}
 					format = formatProtoFile
 					break

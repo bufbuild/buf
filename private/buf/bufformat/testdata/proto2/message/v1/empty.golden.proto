@@ -1,0 +1,11 @@
+message Foo {
+  /* C-style comment in the middle */
+}
+
+message Bar {
+  // Normal comment in the middle
+}
+
+message Baz {
+  // Body comment.
+}

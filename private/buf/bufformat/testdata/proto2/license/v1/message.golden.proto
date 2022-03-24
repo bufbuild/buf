@@ -1,0 +1,6 @@
+// This is a license header.
+// It's separated be a newline
+// before the messages.
+
+message Foo {}
+message Bar {}
