@@ -23,6 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufformat"
+	"github.com/bufbuild/buf/private/buf/bufwork"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -312,7 +313,11 @@ func run(
 			//
 			// TODO: Fix the buffetch.ProtoFileRef so that it works in
 			// these situtations.
-			return fmt.Errorf("input %s was not found - is the directory containing this file defined in your buf.work.yaml?", container.Arg(0))
+			return fmt.Errorf(
+				"input %s was not found - is the directory containing this file defined in your %s?",
+				container.Arg(0),
+				bufwork.ExternalConfigV1FilePath,
+			)
 		}
 		module, err = bufmodule.ModuleWithTargetPaths(
 			module,
