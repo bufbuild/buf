@@ -1900,6 +1900,29 @@ message Object {
 	)
 }
 
+func TestFormatSingleFile(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"format",
+		filepath.Join("testdata", "format", "simple"),
+		"-o",
+		filepath.Join(tempDir, "simple.formatted.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"format",
+		filepath.Join(tempDir, "simple.formatted.proto"),
+		"-d",
+	)
+}
+
 func TestFormatDiff(t *testing.T) {
 	tempDir := t.TempDir()
 	stdout := bytes.NewBuffer(nil)
