@@ -2042,6 +2042,18 @@ func TestFormatInvalidWriteWithModuleReference(t *testing.T) {
 	)
 }
 
+func TestFormatInvalidIncludePackageFiles(t *testing.T) {
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: this command does not support including package files`,
+		"format",
+		filepath.Join("testdata", "format", "simple", "simple.proto#include_package_files=true"),
+	)
+}
+
 func TestConvertRoundTrip(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(

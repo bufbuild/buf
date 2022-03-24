@@ -16,6 +16,7 @@ package format
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -331,6 +332,17 @@ func run(
 		if len(moduleConfigs) == 0 {
 			// Unreachable - we should always have at least one module.
 			return fmt.Errorf("could not build module for %s", container.Arg(0))
+		}
+		if protoFileRef.IncludePackageFiles() {
+			// TODO: We need to have a better answer here. Right now, it's
+			// possible that the other files in the same package are defined
+			// in a remote dependency, which makes it impossible to rewrite
+			// in-place.
+			//
+			// In the case that the user uses the -w flag, we'll either need
+			// to return an error, or omit the file that it can't rewrite in-place
+			// (potentially including a debug log).
+			return errors.New("this command does not support including package files")
 		}
 		module := moduleConfigs[0].Module()
 		fileInfos, err := module.TargetFileInfos(ctx)
