@@ -63,7 +63,19 @@ func NewCommand(
 		Use:   name + " <input>",
 		Short: "Format all Protobuf files from the specified input and output the result.",
 		Long: `
-By default, the formatted content is written to stdout. For example,
+By default, the input is the current directory and the formatted content is written to stdout. For example,
+
+# Write the current directory's formatted content to stdout
+$ buf format
+
+Rewrite the file(s) in-place with -w. For example,
+
+# Rewrite the files defined in the current directory in-place
+$ buf format -w
+
+Most people will want to use 'buf format -w'.
+
+Format a file, directory, or module reference by specifying an input. For example,
 
 # Write the formatted file to stdout
 $ buf format simple/simple.proto
@@ -78,14 +90,11 @@ message Object {
 
 # Write the formatted directory to stdout
 $ buf format simple
-syntax = "proto3";
+...
 
-package simple;
-
-message Object {
-  string key = 1;
-  bytes value = 2;
-}
+# Write the formatted module reference to stdout
+$ buf format buf.build/acme/petapis
+...
 
 Write the result to a specified output file or directory with -o. For example,
 
