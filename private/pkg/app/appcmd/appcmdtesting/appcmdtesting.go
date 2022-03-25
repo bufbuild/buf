@@ -115,8 +115,18 @@ func RunCommandExitCode(
 	// make the use something different than the actual command
 	// to make sure that all code is binary-name-agnostic.
 	use := "test"
-	stderrCopy := bytes.NewBuffer(nil)
 	stdoutCopy := bytes.NewBuffer(nil)
+	if stdout == nil {
+		stdout = stdoutCopy
+	} else {
+		stdout = io.MultiWriter(stdout, stdoutCopy)
+	}
+	stderrCopy := bytes.NewBuffer(nil)
+	if stderr == nil {
+		stderr = stderrCopy
+	} else {
+		stderr = io.MultiWriter(stderr, stderrCopy)
+	}
 	var env map[string]string
 	if newEnv != nil {
 		env = newEnv(use)
@@ -127,8 +137,8 @@ func RunCommandExitCode(
 			app.NewContainer(
 				env,
 				stdin,
-				io.MultiWriter(stdout, stdoutCopy),
-				io.MultiWriter(stderr, stderrCopy),
+				stdout,
+				stderr,
 				append([]string{"test"}, args...)...,
 			),
 			newCommand(use),

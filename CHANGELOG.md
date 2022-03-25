@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `--exit code` flag to `buf format` to exit with a non-zero exit code if
+  the files were not already formatted.
 
 ## [v1.2.1] - 2022-03-24
 
