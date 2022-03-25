@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Allow `--config` flag to be set when targeting a module within a workspace.
 
 ## [v1.3.0]
 
-- Add `--exit code` flag to `buf format` to exit with a non-zero exit code if
+- Add `--exit-code` flag to `buf format` to exit with a non-zero exit code if
   the files were not already formatted.
 
 ## [v1.2.1] - 2022-03-24
@@ -19,7 +19,6 @@
 - Fix build scripts to avoid using the `command-line-arguments` pseudo-package
   when building binaries and re-introduce checking for proper usage of private
   packages.
-- Allow `--config` flag to be set when targeting a module within a workspace.
 
 ## [v1.1.1] - 2022-03-21
 
