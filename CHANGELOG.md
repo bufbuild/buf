@@ -1,8 +1,8 @@
 # Changelog
 
-## [Unreleased]
+## [v1.2.1] - 2022-03-24
 
-- No changes yet.
+- Fix a few formatting edge cases.
 
 ## [v1.2.0] - 2022-03-24
 
@@ -672,7 +672,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.2.0...HEAD
+[v1.2.1]: https://github.com/bufbuild/buf/compare/v1.2.0...v1.2.1
 [v1.2.0]: https://github.com/bufbuild/buf/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/bufbuild/buf/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/bufbuild/buf/compare/v1.0.0...v1.1.0
