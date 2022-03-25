@@ -1882,6 +1882,195 @@ func TestConvertInvalidTypeName(t *testing.T) {
 	)
 }
 
+func TestFormat(t *testing.T) {
+	testRunStdout(
+		t,
+		nil,
+		0,
+		`
+syntax = "proto3";
+
+package simple;
+
+message Object {
+  string key = 1;
+  bytes value = 2;
+}
+		`,
+		"format",
+		filepath.Join("testdata", "format", "simple"),
+	)
+}
+
+func TestFormatSingleFile(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"format",
+		filepath.Join("testdata", "format", "simple"),
+		"-o",
+		filepath.Join(tempDir, "simple.formatted.proto"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"format",
+		filepath.Join(tempDir, "simple.formatted.proto"),
+		"-d",
+	)
+}
+
+func TestFormatDiff(t *testing.T) {
+	tempDir := t.TempDir()
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		0,
+		nil,
+		stdout,
+		"format",
+		filepath.Join("testdata", "format", "diff"),
+		"-d",
+		"-o",
+		filepath.Join(tempDir, "formatted"),
+	)
+	assert.Contains(
+		t,
+		stdout.String(),
+		`
+@@ -1,13 +1,7 @@
+-
+ syntax = "proto3";
+`,
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"format",
+		filepath.Join(tempDir, "formatted"),
+		"-d",
+	)
+}
+
+// Tests if the exit code is set for common invocations of buf format
+// with the --exit-code flag.
+func TestFormatExitCode(t *testing.T) {
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		bufcli.ExitCodeFileAnnotation,
+		nil,
+		stdout,
+		"format",
+		filepath.Join("testdata", "format", "diff"),
+		"--exit-code",
+	)
+	assert.NotEmpty(t, stdout.String())
+	stdout = bytes.NewBuffer(nil)
+	testRun(
+		t,
+		bufcli.ExitCodeFileAnnotation,
+		nil,
+		stdout,
+		"format",
+		filepath.Join("testdata", "format", "diff"),
+		"-d",
+		"--exit-code",
+	)
+	assert.NotEmpty(t, stdout.String())
+}
+
+// Tests if the image produced by the formatted result is
+// equivalent to the original result.
+func TestFormatEquivalence(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join("testdata", "format", "complex"),
+		"-o",
+		filepath.Join(tempDir, "image.bin"),
+		"--exclude-source-info",
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"format",
+		filepath.Join("testdata", "format", "complex"),
+		"-o",
+		filepath.Join(tempDir, "formatted"),
+	)
+	testRunStdout(
+		t,
+		nil,
+		0,
+		``,
+		"build",
+		filepath.Join(tempDir, "formatted"),
+		"-o",
+		filepath.Join(tempDir, "formatted.bin"),
+		"--exclude-source-info",
+	)
+	originalImageData, err := os.ReadFile(filepath.Join(tempDir, "image.bin"))
+	require.NoError(t, err)
+	formattedImageData, err := os.ReadFile(filepath.Join(tempDir, "formatted.bin"))
+	require.NoError(t, err)
+	require.Equal(t, originalImageData, formattedImageData)
+}
+
+func TestFormatInvalidFlagCombination(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: --output cannot be used with --write`,
+		"format",
+		filepath.Join("testdata", "format", "diff"),
+		"-w",
+		"-o",
+		filepath.Join(tempDir, "formatted"),
+	)
+}
+
+func TestFormatInvalidWriteWithModuleReference(t *testing.T) {
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: --write cannot be used with module reference inputs`,
+		"format",
+		"buf.build/acme/weather",
+		"-w",
+	)
+}
+
+func TestFormatInvalidIncludePackageFiles(t *testing.T) {
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: this command does not support including package files`,
+		"format",
+		filepath.Join("testdata", "format", "simple", "simple.proto#include_package_files=true"),
+	)
+}
+
 func TestConvertRoundTrip(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(

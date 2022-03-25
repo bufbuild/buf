@@ -1,0 +1,26 @@
+import "custom.proto";
+
+message Foo {
+  // Leading comment on map field.
+  map<string, int64> pairs = 1 [
+    deprecated = true,
+    lazy = true
+  ];
+
+  // Leading comment on name_with_options.
+  string name_with_options = 2 [
+    (custom.float_field_option) = "nan",
+    (custom.double_field_option) = "inf",
+    (custom.int32_field_option) = -3,
+    (custom.int64_field_option) = -4,
+    (custom.uint32_field_option) = 5,
+    (custom.uint64_field_option) = 6,
+    (custom.sint32_field_option) = -7,
+    (custom.sint64_field_option) = -8,
+    (custom.fixed32_field_option) = 9,
+    (custom.fixed64_field_option) = 10,
+    (custom.sfixed32_field_option) = -11,
+    (custom.sfixed64_field_option) = -12,
+    (custom.bytes_field_option) = "fcf7c1b8749cf99d88e5f34271d636178fb5d130"
+  ];
+}

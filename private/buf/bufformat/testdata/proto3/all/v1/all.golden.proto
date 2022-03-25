@@ -1,0 +1,232 @@
+// top-level comment 1
+
+// top-level comment 2
+
+syntax = "proto3"; // syntax-level-inline comment
+
+// between-syntax-and-package comment
+
+package all.v1; // package-level-inline comment
+
+import "custom.proto";
+// between-imports comment
+import "google/protobuf/duration.proto"; // import-inline comment  2
+// between-package-and-import comment
+
+// import comment
+import "google/protobuf/timestamp.proto"; // import-inline comment
+
+// option comment 5
+option (custom.file_option) = true; // option-inline comment 5
+// option comment 6
+option (custom.file_thing_option) = {
+  foo: 1
+  bar: 2
+  truth: false
+  recursive: {
+    foo: 3
+    bar: 4
+    truth: true
+  }
+}; // option-inlinecomment 6
+// option comment 3
+option go_package = "foopb"; // option-inline comment 3
+// between-imports-and-options comment
+
+// option comment
+option java_multiple_files = true; // option-inline comment
+// option comment 4
+option java_outer_classname = "FooProto"; // option-inline comment 4
+// option comment 2
+option java_package = "com.foo"; // option-inline comment 2
+
+// leading comment one1
+// leading comment one2
+message One {
+  // body comment one1
+
+  // message-option comment
+  // subsequent message-option comment
+  option (custom.message_option) = false; // message-option-inline comment
+  // message-option comment 2
+  option (custom.message_thing_option) = {
+    foo: 5
+  }; // message-option-inline comment 2
+
+  // body comment 2
+
+  // body comment 3
+
+  // nested-message comment
+  message Three {
+    int64 three_one = 1;
+  }
+
+  /*
+  c-style comment
+  */
+
+  int64 one_one = 1 [(custom.field_option) = true];
+  Two one_two = 2 [
+    (custom.field_option) = false,
+    (custom.field_thing_option) = {
+      foo: 6
+    }
+  ]; // field-option-inline comment
+
+  Three one_three = 3; /* field-inline c-style comment */
+
+  map<string, uint32> map_field = 4;
+
+  oneof oneof_field {
+    // oneof-body comment
+
+    // oneof-field comment
+    option (custom.oneof_option) = true; // oneof-option-field-inline comment
+    option (custom.oneof_thing_option) = {
+      foo: 7
+    }; // oneof-option-field-inline comment 2
+    int64 foo1 = 8;
+    string foo2 = 9;
+    // oneof-field comment 2
+    int64 woot3 = 10 [
+      (custom.field_option) = false,
+      (custom.field_thing_option) = {
+        foo: 8
+      }
+    ]; // oneof-option-field-inline comment 3
+    // oneof-field comment 2
+    custom.Thing custom_field = 11; // oneof-option-field-inline comment 4
+  }
+
+  int64 integer_field = 12 [
+    (custom.repeated_field_option) = 1,
+    (custom.repeated_field_option) = 2
+  ];
+  int64 integer_field_two = 13 [
+    (custom.field_thing_option) = {
+      foo: 9,
+      repeated_foo: [
+        1,
+        2
+      ]
+    },
+    (custom.repeated_field_thing_option) = {
+      foo: 1,
+      recursive: {
+        foo: 2,
+        repeated_foo: [
+          3,
+          4
+        ]
+      }
+    },
+    (custom.repeated_field_thing_option) = {
+      foo: 5,
+      recursive: {
+        foo: 6,
+        repeated_foo: [
+          7,
+          8
+        ]
+      }
+    },
+    (custom.repeated_field_thing_option) = {
+      foo: 1,
+      repeated_thing: [
+        {
+          foo: 1,
+          repeated_foo: [
+            1,
+            2
+          ]
+        },
+        {
+          foo: 3,
+          repeated_foo: [
+            3,
+            4
+          ]
+        }
+      ]
+    }
+  ];
+
+// body comment one2
+} // trailing comment one1
+
+message Two {
+  int64 two_one = 1;
+
+  reserved 2 to 10, 1000 to 1100;
+  reserved "foo";
+  reserved "bar", "baz";
+}
+
+enum EnumWithAlias {
+  // enum-body comment
+
+  ENUM_WITH_ALIAS_UNSPECIFIED = 0;
+  ENUM_WITH_ALIAS_FIRST = 1;
+  ENUM_WITH_ALIAS_SECOND = 2;
+  ENUM_WITH_ALIAS_THIRD = 3;
+  ENUM_WITH_ALIAS_OTHER_THIRD = 3;
+  option allow_alias = true;
+} // trailing enum comment
+
+// Empty is an empty message.
+message Empty {}
+
+// Pre-enum comment
+
+// OtherEnum is another enum.
+enum OtherEnum {
+  option (custom.enum_option) = 1;
+  // enum comment
+  OTHER_ENUM_UNSPECIFIED = 0 [
+    (custom.enum_value_option) = true,
+    (custom.enum_value_thing_option) = {
+      foo: 1,
+      bar: 2,
+      recursive: {
+        foo: 3,
+        recursive: {
+          bar: 2
+        }
+      }
+    }
+  ]; // enum-option-inline comment
+  // enum comment 2
+  OTHER_ENUM_FIRST = 1; // enum-option-inline comment 2
+  // comment28
+  OTHER_ENUM_SECOND = 2; // enum-option-inline comment 3
+}
+
+// Pre-service comment
+
+// ExampleService is the example service.
+service ExampleService {
+  option (custom.service_option) = true; // service-option-inline comment
+  option (custom.service_thing_option) = {
+    foo: 1
+  }; // service-option-inline comment 2
+  // rpc-leading comment
+  rpc Example(One) returns (Two) {
+    option (custom.method_option) = true;
+    option (custom.method_thing_option) = {
+      foo: 1,
+      bar: 2,
+      recursive: {
+        foo: 3,
+        recursive: {
+          bar: 2
+        }
+      }
+    }; // service-option-inline comment 2
+  } // rpc-inline comment
+
+  // service-body comment
+
+  // rpc-leading comment 2
+  rpc Foo(Empty) returns (One); // rpc-inline comment 2
+}

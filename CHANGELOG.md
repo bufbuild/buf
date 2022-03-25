@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+- No changes yet.
+
+## [v1.3.0]
+
+- Add `--exit code` flag to `buf format` to exit with a non-zero exit code if
+  the files were not already formatted.
+
+## [v1.2.1] - 2022-03-24
+
+- Fix a few formatting edge cases.
+
+## [v1.2.0] - 2022-03-24
+
+- Add `buf format` command to format `.proto` files.
 - Fix build scripts to avoid using the `command-line-arguments` pseudo-package
   when building binaries and re-introduce checking for proper usage of private
   packages.
@@ -668,7 +682,10 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.3.0...HEAD
+[v1.3.0]: https://github.com/bufbuild/buf/compare/v1.2.1...1.3.0
+[v1.2.1]: https://github.com/bufbuild/buf/compare/v1.2.0...v1.2.1
+[v1.2.0]: https://github.com/bufbuild/buf/compare/v1.1.1...v1.2.0
 [v1.1.1]: https://github.com/bufbuild/buf/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/bufbuild/buf/compare/v1.0.0...v1.1.0
 [v1.0.0]: https://github.com/bufbuild/buf/compare/v1.0.0-rc12...v1.0.0

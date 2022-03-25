@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/bufbuild/buf?include_prereleases)][badges.release]
 [![CI](https://github.com/bufbuild/buf/workflows/ci/badge.svg)][badges.ci]
 [![Docker](https://img.shields.io/docker/pulls/bufbuild/buf)][badges.docker]
-[![Homebrew](https://img.shields.io/badge/homebrew-v1.1.1-blue)][badges.homebrew]
+[![Homebrew](https://img.shields.io/badge/homebrew-v1.3.0-blue)][badges.homebrew]
 [![AUR](https://img.shields.io/aur/version/buf)][badges.aur]
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges.slack]
 [![Twitter](https://img.shields.io/twitter/follow/bufbuild?style=social)][badges.twitter]

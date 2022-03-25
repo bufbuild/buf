@@ -32,7 +32,7 @@ message ForceDeleteUserRequest {
   string user_id = 1;
 }
 
-message ForceDeleteUserResponse{
+message ForceDeleteUserResponse {
   // The deleted user.
   User user = 1;
   // The deleted organizations.

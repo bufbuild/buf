@@ -244,4 +244,5 @@ pregenerate:: updategitignores
 
 .PHONY: __checknodiffgeneratedinternal
 __checknodiffgeneratedinternal:
-	bash $(MAKEGO)/scripts/checknodiffgenerated.bash $(MAKE) generate
+	@echo bash $(MAKEGO)/scripts/checknodiffgenerated.bash make generate
+	@bash $(MAKEGO)/scripts/checknodiffgenerated.bash $(MAKE) generate

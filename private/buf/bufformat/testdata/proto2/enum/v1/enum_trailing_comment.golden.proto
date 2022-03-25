@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+enum Type {
+  TYPE_UNSPECIFIED = 0;
+}
+// This is a trailing comment on '}', but
+// it should remain here.
+
+// These comments are attached to the EOF.

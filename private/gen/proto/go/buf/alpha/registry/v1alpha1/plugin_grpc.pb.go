@@ -72,6 +72,9 @@ type PluginServiceClient interface {
 	// public templates, those owned by organizations the user is part of,
 	// and any created directly by the user.
 	ListTemplates(ctx context.Context, in *ListTemplatesRequest, opts ...grpc.CallOption) (*ListTemplatesResponse, error)
+	// ListTemplatesUserCanAccess is like ListTemplates, but does not return
+	// public templates.
+	ListTemplatesUserCanAccess(ctx context.Context, in *ListTemplatesUserCanAccessRequest, opts ...grpc.CallOption) (*ListTemplatesUserCanAccessResponse, error)
 	// ListUserPlugins lists all templates belonging to a user.
 	ListUserTemplates(ctx context.Context, in *ListUserTemplatesRequest, opts ...grpc.CallOption) (*ListUserTemplatesResponse, error)
 	// ListOrganizationTemplates lists all templates for an organization.
@@ -232,6 +235,15 @@ func (c *pluginServiceClient) ListTemplates(ctx context.Context, in *ListTemplat
 	return out, nil
 }
 
+func (c *pluginServiceClient) ListTemplatesUserCanAccess(ctx context.Context, in *ListTemplatesUserCanAccessRequest, opts ...grpc.CallOption) (*ListTemplatesUserCanAccessResponse, error) {
+	out := new(ListTemplatesUserCanAccessResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/ListTemplatesUserCanAccess", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *pluginServiceClient) ListUserTemplates(ctx context.Context, in *ListUserTemplatesRequest, opts ...grpc.CallOption) (*ListUserTemplatesResponse, error) {
 	out := new(ListUserTemplatesResponse)
 	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.PluginService/ListUserTemplates", in, out, opts...)
@@ -371,6 +383,9 @@ type PluginServiceServer interface {
 	// public templates, those owned by organizations the user is part of,
 	// and any created directly by the user.
 	ListTemplates(context.Context, *ListTemplatesRequest) (*ListTemplatesResponse, error)
+	// ListTemplatesUserCanAccess is like ListTemplates, but does not return
+	// public templates.
+	ListTemplatesUserCanAccess(context.Context, *ListTemplatesUserCanAccessRequest) (*ListTemplatesUserCanAccessResponse, error)
 	// ListUserPlugins lists all templates belonging to a user.
 	ListUserTemplates(context.Context, *ListUserTemplatesRequest) (*ListUserTemplatesResponse, error)
 	// ListOrganizationTemplates lists all templates for an organization.
@@ -442,6 +457,9 @@ func (UnimplementedPluginServiceServer) GetTemplate(context.Context, *GetTemplat
 }
 func (UnimplementedPluginServiceServer) ListTemplates(context.Context, *ListTemplatesRequest) (*ListTemplatesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTemplates not implemented")
+}
+func (UnimplementedPluginServiceServer) ListTemplatesUserCanAccess(context.Context, *ListTemplatesUserCanAccessRequest) (*ListTemplatesUserCanAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTemplatesUserCanAccess not implemented")
 }
 func (UnimplementedPluginServiceServer) ListUserTemplates(context.Context, *ListUserTemplatesRequest) (*ListUserTemplatesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListUserTemplates not implemented")
@@ -740,6 +758,24 @@ func _PluginService_ListTemplates_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PluginService_ListTemplatesUserCanAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTemplatesUserCanAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServiceServer).ListTemplatesUserCanAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.PluginService/ListTemplatesUserCanAccess",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServiceServer).ListTemplatesUserCanAccess(ctx, req.(*ListTemplatesUserCanAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _PluginService_ListUserTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListUserTemplatesRequest)
 	if err := dec(in); err != nil {
@@ -1000,6 +1036,10 @@ var PluginService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTemplates",
 			Handler:    _PluginService_ListTemplates_Handler,
+		},
+		{
+			MethodName: "ListTemplatesUserCanAccess",
+			Handler:    _PluginService_ListTemplatesUserCanAccess_Handler,
 		},
 		{
 			MethodName: "ListUserTemplates",

@@ -1,0 +1,18 @@
+message Foo {
+    optional group Bar = 1
+        {    }
+}
+
+message Bar {
+    optional group Baz =  2   { /* Comment inside the empty group */    }
+}
+
+message Baz {
+    optional group Qux =  3   {
+    // Trailing comment on '{'.
+    // Another trailing comment on '{'.
+
+    // Leading comment on '}'.
+    }
+}
+

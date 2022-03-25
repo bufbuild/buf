@@ -48,7 +48,7 @@ type RepositoryService interface {
 		pageToken string,
 		reverse bool,
 	) (repositories []*v1alpha1.Repository, nextPageToken string, err error)
-	// ListUserRepositories lists all repositories a user can access.
+	// ListRepositoriesUserCanAccess lists all repositories a user can access.
 	ListRepositoriesUserCanAccess(
 		ctx context.Context,
 		pageSize uint32,

@@ -130,6 +130,14 @@ type PluginService interface {
 		pageToken string,
 		reverse bool,
 	) (templates []*v1alpha1.Template, nextPageToken string, err error)
+	// ListTemplatesUserCanAccess is like ListTemplates, but does not return
+	// public templates.
+	ListTemplatesUserCanAccess(
+		ctx context.Context,
+		pageSize uint32,
+		pageToken string,
+		reverse bool,
+	) (templates []*v1alpha1.Template, nextPageToken string, err error)
 	// ListUserPlugins lists all templates belonging to a user.
 	ListUserTemplates(
 		ctx context.Context,

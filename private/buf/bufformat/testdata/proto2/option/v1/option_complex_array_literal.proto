@@ -1,0 +1,54 @@
+syntax = "proto2";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FileOptions {
+  optional List list = 80000;
+}
+
+message List {
+  repeated string names = 1;
+  repeated sint32 values = 2;
+  repeated List recursive = 3;
+}
+
+// Leading comment on (list).
+option (list) = {
+  names: [
+    // Trailing comment on '['.
+
+    // Leading comment on compound string.
+    "one"  /* One */  "two"  /* Two */  "three" // Trailing
+  ],
+
+  values: [
+    // Trailing comment on '['.
+
+    // Leading comment on '-42'.
+    -42, // Trailing on '-42'.
+
+    // Leading comment on '-43'.
+    - /* Between '-' and '43' */ 43 // Trailing on '43'.
+  ],
+
+  recursive: [
+    // Trailing comment on '['.
+
+    // Leading comment on '{'
+    {
+      // Leading comment on values key.
+      values: [
+        // Trailing comment on '['.
+    
+        // Leading comment on '-44'.
+        -44, // Trailing on '-44'.
+        // Leading on '45'.
+        45 // Trailing on '45'.
+      ]
+
+    // Leading on '}'.
+    }
+
+  // Leading comment on ']',
+  ]
+};

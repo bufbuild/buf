@@ -1,0 +1,25 @@
+syntax = "proto2";
+
+import "custom.proto";
+
+message Foo {
+  message Bar {
+    string name = 1 [(custom.field_thing_option) = {
+      // Trailing comment on '{'.
+
+      // Leading comment on repeated_foo field.
+      message_foo: [
+        // Trailing comment on array literal.
+
+        // Leading comment on '1'.
+        1, // Trailing comment on '1'.
+        // Leading comment on '2'.
+        2 // Trailing comment on '2'.
+
+      // Leading comment on ']'.
+      ]
+
+    // Leading comment on '}'.
+    }];
+  }
+}

@@ -1,0 +1,6 @@
+syntax = "proto2";
+
+enum Foo {
+  FOO_UNSPECIFIED = 0;
+  // There are no other enum values.
+}

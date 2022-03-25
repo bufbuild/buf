@@ -2,6 +2,9 @@
 
 SHELL := /usr/bin/env bash -o pipefail
 
+MAKEFLAGS += --no-builtin-rules
+MAKEFLAGS += --no-print-directory
+
 define _assert
 	$(if $(1),,$(error Assertion failed: $(2)))
 endef

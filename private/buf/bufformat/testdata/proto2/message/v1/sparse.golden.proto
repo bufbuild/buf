@@ -1,0 +1,7 @@
+message Foo {
+  // This is a trailing comment on the '{'.
+
+  string name = 1;
+
+  string value = 2; // In-line on value.
+}
