@@ -31,7 +31,6 @@ LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2022
 LICENSE_HEADER_IGNORES := \/testdata enterprise
-SKIP_GOLANGCI_LINT := 1
 # Comment out to use released buf
 BUF_GO_INSTALL_PATH := ./cmd/buf
 
