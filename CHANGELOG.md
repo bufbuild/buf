@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- No changes yet.
+
 ## [v1.3.0]
 
 - Add `--exit code` flag to `buf format` to exit with a non-zero exit code if
@@ -677,6 +681,7 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.3.0...HEAD
 [v1.3.0]: https://github.com/bufbuild/buf/compare/v1.2.1...1.3.0
 [v1.2.1]: https://github.com/bufbuild/buf/compare/v1.2.0...v1.2.1
 [v1.2.0]: https://github.com/bufbuild/buf/compare/v1.1.1...v1.2.0
