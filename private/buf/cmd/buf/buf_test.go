@@ -1944,19 +1944,6 @@ func TestFormatDiff(t *testing.T) {
 @@ -1,13 +1,7 @@
 -
  syntax = "proto3";
- 
--
--
- package diff;
- 
--
--message   Diff  {
--
-+message Diff {
-   string content = 1;
--
--  }
-+}
 `,
 	)
 	testRunStdout(
@@ -1968,6 +1955,34 @@ func TestFormatDiff(t *testing.T) {
 		filepath.Join(tempDir, "formatted"),
 		"-d",
 	)
+}
+
+// Tests if the exit code is set for common invocations of buf format
+// with the --exit-code flag.
+func TestFormatExitCode(t *testing.T) {
+	stdout := bytes.NewBuffer(nil)
+	testRun(
+		t,
+		bufcli.ExitCodeFileAnnotation,
+		nil,
+		stdout,
+		"format",
+		filepath.Join("testdata", "format", "diff"),
+		"--exit-code",
+	)
+	assert.NotEmpty(t, stdout.String())
+	stdout = bytes.NewBuffer(nil)
+	testRun(
+		t,
+		bufcli.ExitCodeFileAnnotation,
+		nil,
+		stdout,
+		"format",
+		filepath.Join("testdata", "format", "diff"),
+		"-d",
+		"--exit-code",
+	)
+	assert.NotEmpty(t, stdout.String())
 }
 
 // Tests if the image produced by the formatted result is

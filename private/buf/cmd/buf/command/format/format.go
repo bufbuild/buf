@@ -15,6 +15,7 @@
 package format
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -47,6 +48,7 @@ const (
 	disableSymlinksFlagName = "disable-symlinks"
 	errorFormatFlagName     = "error-format"
 	excludePathsFlagName    = "exclude-path"
+	exitCodeFlagName        = "exit-code"
 	outputFlagName          = "output"
 	outputFlagShortName     = "o"
 	pathsFlagName           = "path"
@@ -75,6 +77,31 @@ Rewrite the file(s) in-place with -w. For example,
 $ buf format -w
 
 Most people will want to use 'buf format -w'.
+
+Display a diff between the original and formatted content with -d. For example,
+
+# Write a diff instead of the formatted file
+$ buf format simple/simple.proto -d
+diff -u simple/simple.proto.orig simple/simple.proto
+--- simple/simple.proto.orig	2022-03-24 09:44:10.000000000 -0700
++++ simple/simple.proto	2022-03-24 09:44:10.000000000 -0700
+@@ -2,8 +2,7 @@
+
+ package simple;
+
+-
+ message Object {
+-    string key = 1;
+-   bytes value = 2;
++  string key = 1;
++  bytes value = 2;
+ }
+
+You can also use the --exit-code flag to exit with a non-zero exit code if there is a diff:
+
+$ buf format --exit-code
+$ buf format -w --exit-code
+$ buf format -d --exit-code
 
 Format a file, directory, or module reference by specifying an input. For example,
 
@@ -116,25 +143,6 @@ $ buf format simple.proto -w
 # Rewrite an entire directory in-place
 $ buf format proto -w
 
-Display a diff between the original and formatted content with -d. For example,
-
-# Write a diff instead of the formatted file
-$ buf format simple/simple.proto -d
-diff -u simple/simple.proto.orig simple/simple.proto
---- simple/simple.proto.orig	2022-03-24 09:44:10.000000000 -0700
-+++ simple/simple.proto	2022-03-24 09:44:10.000000000 -0700
-@@ -2,8 +2,7 @@
-
- package simple;
-
--
- message Object {
--    string key = 1;
--   bytes value = 2;
-+  string key = 1;
-+  bytes value = 2;
- }
-
 # Write a diff and rewrite the file(s) in-place
 $ buf format simple -d -w
 diff -u simple/simple.proto.orig simple/simple.proto
@@ -159,6 +167,7 @@ type flags struct {
 	DisableSymlinks bool
 	ErrorFormat     string
 	ExcludePaths    []string
+	ExitCode        bool
 	Paths           []string
 	Output          string
 	Write           bool
@@ -181,6 +190,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		diffFlagShortName,
 		false,
 		"Display diffs instead of rewriting files.",
+	)
+	flagSet.BoolVar(
+		&f.ExitCode,
+		exitCodeFlagName,
+		false,
+		"Exit with a non-zero exit code if files were not already formatted.",
 	)
 	flagSet.BoolVarP(
 		&f.Write,
@@ -393,7 +408,7 @@ func run(
 		if err != nil {
 			return err
 		}
-		return formatModule(
+		diffPresent, err := formatModule(
 			ctx,
 			container,
 			runner,
@@ -404,9 +419,16 @@ func run(
 			flags.Diff,
 			flags.Write,
 		)
+		if err != nil {
+			return err
+		}
+		if flags.ExitCode && diffPresent {
+			return bufcli.ErrFileAnnotation
+		}
+		return nil
 	}
 	for _, moduleConfig := range moduleConfigs {
-		if err := formatModule(
+		diffPresent, err := formatModule(
 			ctx,
 			container,
 			runner,
@@ -416,8 +438,12 @@ func run(
 			flags.ErrorFormat,
 			flags.Diff,
 			flags.Write,
-		); err != nil {
+		)
+		if err != nil {
 			return err
+		}
+		if flags.ExitCode && diffPresent {
+			return bufcli.ErrFileAnnotation
 		}
 	}
 	return nil
@@ -426,6 +452,8 @@ func run(
 // formatModule formats the module's target files and writes them to the
 // writeBucket, if any. If diff is true, the diff between the original and
 // formatted files is written to stdout.
+//
+// Returns true if there was a diff and no other error.
 func formatModule(
 	ctx context.Context,
 	container appflag.Container,
@@ -436,44 +464,46 @@ func formatModule(
 	errorFormat string,
 	diff bool,
 	rewrite bool,
-) (retErr error) {
+) (_ bool, retErr error) {
+	originalReadWriteBucket := storagemem.NewReadWriteBucket()
+	if err := bufmodule.TargetModuleFilesToBucket(
+		ctx,
+		module,
+		originalReadWriteBucket,
+	); err != nil {
+		return false, err
+	}
 	// Note that external paths are set properly for the files in this read bucket.
 	formattedReadBucket, err := bufformat.Format(ctx, module)
 	if err != nil {
-		return err
+		return false, err
 	}
-	var originalReadWriteBucket storage.ReadWriteBucket
-	if diff || rewrite {
-		originalReadWriteBucket = storagemem.NewReadWriteBucket()
-		if err := bufmodule.TargetModuleFilesToBucket(
-			ctx,
-			module,
-			originalReadWriteBucket,
-		); err != nil {
-			return err
-		}
+	diffBuffer := bytes.NewBuffer(nil)
+	if err := storage.Diff(
+		ctx,
+		runner,
+		diffBuffer,
+		originalReadWriteBucket,
+		formattedReadBucket,
+		storage.DiffWithExternalPaths(), // No need to set prefixes as the buckets are from the same location.
+	); err != nil {
+		return false, err
 	}
+	diffPresent := diffBuffer.Len() > 0
 	if diff {
-		if err := storage.Diff(
-			ctx,
-			runner,
-			container.Stdout(),
-			originalReadWriteBucket,
-			formattedReadBucket,
-			storage.DiffWithExternalPaths(), // No need to set prefixes as the buckets are from the same location.
-		); err != nil {
-			return err
+		if _, err := io.Copy(container.Stdout(), diffBuffer); err != nil {
+			return false, err
 		}
 		if writeBucket == nil || !rewrite {
 			// If the user specified --diff and has not explicitly overridden
 			// the --output or rewritten the sources in-place with --write, we
 			// can stop here.
-			return nil
+			return diffPresent, nil
 		}
 	}
 	if rewrite {
 		// Rewrite the sources in place.
-		return storage.WalkReadObjects(
+		if err := storage.WalkReadObjects(
 			ctx,
 			originalReadWriteBucket,
 			"",
@@ -507,7 +537,10 @@ func formatModule(
 				}
 				return nil
 			},
-		)
+		); err != nil {
+			return false, err
+		}
+		return diffPresent, nil
 	}
 	if writeBucket == nil || singleFileOutputFilename != "" {
 		// If the writeBucket is nil, we write the output to stdout.
@@ -522,14 +555,14 @@ func formatModule(
 		if singleFileOutputFilename != "" {
 			file, err := os.OpenFile(singleFileOutputFilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 			if err != nil {
-				return err
+				return false, err
 			}
 			defer func() {
 				retErr = multierr.Append(retErr, file.Close())
 			}()
 			writer = file
 		}
-		return storage.WalkReadObjects(
+		if err := storage.WalkReadObjects(
 			ctx,
 			formattedReadBucket,
 			"",
@@ -543,7 +576,10 @@ func formatModule(
 				}
 				return nil
 			},
-		)
+		); err != nil {
+			return false, err
+		}
+		return diffPresent, nil
 	}
 	// The user specified -o, so we copy the files into the output bucket.
 	if _, err := storage.Copy(
@@ -551,7 +587,7 @@ func formatModule(
 		formattedReadBucket,
 		writeBucket,
 	); err != nil {
-		return err
+		return false, err
 	}
-	return nil
+	return diffPresent, nil
 }
