@@ -38,6 +38,7 @@ BUF_GO_INSTALL_PATH := ./cmd/buf
 BUF_LINT_INPUT := .
 BUF_BREAKING_INPUT := .
 BUF_BREAKING_AGAINST_INPUT ?= .git\#branch=main
+BUF_FORMAT_INPUT := .
 
 include make/go/bootstrap.mk
 include make/go/dep_buf.mk
