@@ -183,6 +183,7 @@ enum Action {
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_TRACK_SERVICE_LIST_REPOSITORY_TRACKS_BY_REPOSITORY_COMMIT = 152;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_COMMIT_SERVICE_LIST_REPOSITORY_COMMITS_ON_TRACK = 153;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_PLUGIN_SERVICE_LIST_TEMPLATES_USER_CAN_ACCESS = 154;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_SERVICE_UPDATE_REPOSITORY_SETTINGS_BY_NAME = 155;
 }
 
 // ActionBufAlphaRegistryV1Alpha1DownloadInfo stores audit log details not included
@@ -538,6 +539,14 @@ message ActionBufAlphaRegistryV1Alpha1ListTemplatesUserCanAccessInfo {
   string reference = 1;
 }
 
+// ActionBufAlphaRegistryV1Alpha1UpdateRepositorySettingsByName stores audit log details not included
+// in actor or object for the UpdateRepositorySettingsByName action.
+message ActionBufAlphaRegistryV1Alpha1UpdateRepositorySettingsByName {
+  string owner_name = 1;
+  string repository_name = 2;
+  BufAlphaRegistryV1Alpha1Visibility visibility = 3;
+}
+
 message Event {
   // The ID representing the event.
   string event_id = 1;
@@ -620,6 +629,7 @@ message Event {
     ActionBufAlphaRegistryV1Alpha1Convert action_buf_alpha_registry_v1alpha1_convert = 58;
     ActionBufAlphaRegistryV1Alpha1ListRepositoryCommitsOnTrackInfo action_buf_alpha_registry_v1alpha1_list_repository_commits_on_track_info = 60; // machine has id 59
     ActionBufAlphaRegistryV1Alpha1ListTemplatesUserCanAccessInfo action_buf_alpha_registry_v1alpha1_list_templates_user_can_access_info = 61;
+    ActionBufAlphaRegistryV1Alpha1UpdateRepositorySettingsByName action_buf_alpha_registry_v1alpha1_update_repository_settings_by_name = 62;
   }
 }
 

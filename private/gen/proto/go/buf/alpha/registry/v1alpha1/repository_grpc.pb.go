@@ -71,6 +71,8 @@ type RepositoryServiceClient interface {
 	GetRepositoryContributor(ctx context.Context, in *GetRepositoryContributorRequest, opts ...grpc.CallOption) (*GetRepositoryContributorResponse, error)
 	// GetRepositorySettings gets the settings of a repository.
 	GetRepositorySettings(ctx context.Context, in *GetRepositorySettingsRequest, opts ...grpc.CallOption) (*GetRepositorySettingsResponse, error)
+	// UpdateRepositorySettingsByName updates the settings of a repository. Unspecified values mean no change is made.
+	UpdateRepositorySettingsByName(ctx context.Context, in *UpdateRepositorySettingsByNameRequest, opts ...grpc.CallOption) (*UpdateRepositorySettingsByNameResponse, error)
 }
 
 type repositoryServiceClient struct {
@@ -225,6 +227,15 @@ func (c *repositoryServiceClient) GetRepositorySettings(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *repositoryServiceClient) UpdateRepositorySettingsByName(ctx context.Context, in *UpdateRepositorySettingsByNameRequest, opts ...grpc.CallOption) (*UpdateRepositorySettingsByNameResponse, error) {
+	out := new(UpdateRepositorySettingsByNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositorySettingsByName", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RepositoryServiceServer is the server API for RepositoryService service.
 // All implementations should embed UnimplementedRepositoryServiceServer
 // for forward compatibility
@@ -264,6 +275,8 @@ type RepositoryServiceServer interface {
 	GetRepositoryContributor(context.Context, *GetRepositoryContributorRequest) (*GetRepositoryContributorResponse, error)
 	// GetRepositorySettings gets the settings of a repository.
 	GetRepositorySettings(context.Context, *GetRepositorySettingsRequest) (*GetRepositorySettingsResponse, error)
+	// UpdateRepositorySettingsByName updates the settings of a repository. Unspecified values mean no change is made.
+	UpdateRepositorySettingsByName(context.Context, *UpdateRepositorySettingsByNameRequest) (*UpdateRepositorySettingsByNameResponse, error)
 }
 
 // UnimplementedRepositoryServiceServer should be embedded to have forward compatible implementations.
@@ -317,6 +330,9 @@ func (UnimplementedRepositoryServiceServer) GetRepositoryContributor(context.Con
 }
 func (UnimplementedRepositoryServiceServer) GetRepositorySettings(context.Context, *GetRepositorySettingsRequest) (*GetRepositorySettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRepositorySettings not implemented")
+}
+func (UnimplementedRepositoryServiceServer) UpdateRepositorySettingsByName(context.Context, *UpdateRepositorySettingsByNameRequest) (*UpdateRepositorySettingsByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateRepositorySettingsByName not implemented")
 }
 
 // UnsafeRepositoryServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -618,6 +634,24 @@ func _RepositoryService_GetRepositorySettings_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryService_UpdateRepositorySettingsByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRepositorySettingsByNameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).UpdateRepositorySettingsByName(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/buf.alpha.registry.v1alpha1.RepositoryService/UpdateRepositorySettingsByName",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).UpdateRepositorySettingsByName(ctx, req.(*UpdateRepositorySettingsByNameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RepositoryService_ServiceDesc is the grpc.ServiceDesc for RepositoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -688,6 +722,10 @@ var RepositoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRepositorySettings",
 			Handler:    _RepositoryService_GetRepositorySettings_Handler,
+		},
+		{
+			MethodName: "UpdateRepositorySettingsByName",
+			Handler:    _RepositoryService_UpdateRepositorySettingsByName_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
