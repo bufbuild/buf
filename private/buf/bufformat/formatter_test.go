@@ -48,6 +48,11 @@ func testFormatProto2(t *testing.T) {
 	testFormatNoDiff(t, "testdata/proto2/license/v1")
 	testFormatNoDiff(t, "testdata/proto2/message/v1")
 	testFormatNoDiff(t, "testdata/proto2/option/v1")
+
+	// TODO: Temporarily skipping this test since it's
+	// due to a bug in protocompile.
+	//
+	// testFormatNoDiff(t, "testdata/proto2/utf8/v1")
 }
 
 func testFormatProto3(t *testing.T) {

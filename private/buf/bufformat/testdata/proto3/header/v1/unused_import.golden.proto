@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+// This import is unused, but it should
+// still be referenced.
+import "google/protobuf/timestamp.proto";
+
+message Foo {
+  string name = 1;
+}

@@ -47,30 +47,22 @@ message Foo {
       ctype = CORD
     ];
     // Leading comment on two.
-    required string two = 4 [
-      (custom.field_value_thing) = {}
-    ];
+    required string two = 4 [(custom.field_value_thing) = {}];
     // Leading comment on three.
-    required string three = 5 [
-      (custom.field_value_thing) = {
-        /* Empty message literal */
-      }
-    ];
+    required string three = 5 [(custom.field_value_thing) = {
+      /* Empty message literal */
+    }];
     // Leading comment on four.
-    required string four = 6 [
-      (custom.field_value_thing) = {
-        // Trailing comment on '{'.
-        // Another trailing comment on '{'.
-      }
-    ];
+    required string four = 6 [(custom.field_value_thing) = {
+      // Trailing comment on '{'.
+      // Another trailing comment on '{'.
+    }];
     // Leading comment on five.
-    required string five = 7 [
-      (custom.field_value_thing) = {
-        // Trailing comment on '{'.
+    required string five = 7 [(custom.field_value_thing) = {
+      // Trailing comment on '{'.
 
-      // Leading comment on '}'.
-      }
-    ];
+    // Leading comment on '}'.
+    }];
   }
 }
 

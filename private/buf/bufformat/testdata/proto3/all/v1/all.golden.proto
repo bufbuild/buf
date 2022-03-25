@@ -66,9 +66,7 @@ message One {
   c-style comment
   */
 
-  int64 one_one = 1 [
-    (custom.field_option) = true
-  ];
+  int64 one_one = 1 [(custom.field_option) = true];
   Two one_two = 2 [
     (custom.field_option) = false,
     (custom.field_thing_option) = {
