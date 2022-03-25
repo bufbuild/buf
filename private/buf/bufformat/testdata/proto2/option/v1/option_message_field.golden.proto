@@ -14,23 +14,17 @@ extend .google./* identifier broken up strangely should still be accepted */prot
 }
 
 message Test {
-  optional string foo = 1 [
-    json_name = "|foo|"
-  ];
+  optional string foo = 1 [json_name = "|foo|"];
   repeated int32 array = 2;
   optional Simple s = 3;
   repeated Simple r = 4;
   map<string, int32> m = 5;
 
-  optional bytes b = 6 [
-    default = "\x00\x01\x02\x03\x04\x05\x06\afubar!"
-  ];
+  optional bytes b = 6 [default = "\x00\x01\x02\x03\x04\x05\x06\afubar!"];
 
   extensions 100 to 200;
 
-  extensions 249, 300 to 350, 500 to 550, 20000 to max [
-    (label) = "jazz"
-  ];
+  extensions 249, 300 to 350, 500 to 550, 20000 to max [(label) = "jazz"];
 
   message Nested {
     extend google.protobuf.MessageOptions {

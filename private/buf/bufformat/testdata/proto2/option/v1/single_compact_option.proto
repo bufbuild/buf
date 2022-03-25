@@ -1,0 +1,6 @@
+syntax = "proto2";
+
+
+message Foo {
+  optional string name = 1 [  deprecated = true  ];
+}

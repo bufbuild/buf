@@ -20,8 +20,6 @@ message Foo {
   };
 
   // This is attached to the optional label.
-  optional string name = 1 [
-    deprecated = true
-  ];
+  optional string name = 1 [deprecated = true];
   repeated int64 values = 2;
 }
