@@ -43,7 +43,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorylist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryundeprecate"
-	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatecreate"
@@ -156,7 +155,6 @@ func NewRootCommand(name string) *appcmd.Command {
 									repositorydelete.NewCommand("delete", builder),
 									repositorydeprecate.NewCommand("deprecate", builder),
 									repositoryundeprecate.NewCommand("undeprecate", builder),
-									repositoryupdate.NewCommand("update", builder),
 								},
 							},
 							{
