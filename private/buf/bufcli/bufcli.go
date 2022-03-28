@@ -42,6 +42,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -54,6 +55,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -77,6 +79,9 @@ const (
 	inputHashtagFlagShortName = "#"
 
 	userPromptAttempts = 3
+
+	publicVisibility  = "public"
+	privateVisibility = "private"
 )
 
 var (
@@ -246,6 +251,20 @@ func BindDisableSymlinks(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 		`Do not follow symlinks when reading sources or configuration from the local filesystem.
 By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry.
 Symlinks are never followed in Windows.`,
+	)
+}
+
+var allVisibiltyStrings = []string{
+	publicVisibility,
+	privateVisibility,
+}
+
+func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string) {
+	flagSet.StringVar(
+		addr,
+		flagName,
+		"",
+		fmt.Sprintf(`The repository's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 }
 
@@ -951,4 +970,16 @@ func parseFullyQualifiedPath(
 		return "", "", err
 	}
 	return moduleReference.String(), components[1], nil
+}
+
+// VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
+func VisibilityFlagToVisibility(visibility string) (registryv1alpha1.Visibility, error) {
+	switch visibility {
+	case publicVisibility:
+		return registryv1alpha1.Visibility_VISIBILITY_PUBLIC, nil
+	case privateVisibility:
+		return registryv1alpha1.Visibility_VISIBILITY_PRIVATE, nil
+	default:
+		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
+	}
 }
