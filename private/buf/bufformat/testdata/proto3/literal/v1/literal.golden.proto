@@ -18,6 +18,9 @@ message Foo {
     (custom.sfixed64_field_option) = -6464,
     (custom.bool_field_option) = true,
     (custom.bytes_field_option) = "bytes",
-    (custom.string_field_option) = "this" "is a" "compound string"
+    (custom.string_field_option) =
+      "this"
+      "is a"
+      "compound string"
   ];
 }

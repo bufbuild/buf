@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+import "custom.proto";
+
+message Foo {
+  // one has a single compact option, so it should be written in-line.
+  string one = 1 [(custom.string_field_option) =
+    "this"
+    // Second element.
+    "is a"
+    // Third element.
+    "compound string"];
+
+    // two has multiple compact options, so it should be written across multiple lines.
+    string two = 2 [
+      deprecated = true,
+      (custom.string_field_option) =
+        "this"
+        // Second element.
+        "is a"
+        // Third element.
+        "compound string"
+    ];
+
+    // three has an array of compound string literals, but it's all in a single compact option.
+    string three = 3 [(custom.field_thing_option) = {
+      baz:
+        "One"
+        "Two"
+        "Three"
+      repeated_baz: [
+        // Firt element.
+        "this"
+        // Second element.
+        "is a"
+        // Third element.
+        "compound string" /* Trailing in array */,
+        "this" // The first element.
+        "is another" // The second element.
+        "compound string" // The last element.
+      ]
+    }];
+
+    // four has an array of compound string literals, but there are multiple compact options.
+    string four = 4 [
+      deprecated = true,
+      (custom.field_thing_option) = {
+        baz:
+          "One"
+          "Two"
+          "Three"
+        repeated_baz: [
+          // Firt element.
+          "this"
+          // Second element.
+          "is a"
+          // Third element.
+          "compound string" /* Trailing in array */,
+          "this" // The first element.
+          "is another" // The second element.
+          "compound string"
+          // Trailing comment on a newline.
+        ]
+      }
+    ];
+  }
