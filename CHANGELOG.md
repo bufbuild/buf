@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Allow `--config` flag to be set when targeting a module within a workspace.
+- Fix `buf format` so that the output directory (if any) is
+  created if and only if the input is successfully formatted.
 
 ## [v1.3.0]
 
