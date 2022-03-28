@@ -1,0 +1,4 @@
+syntax = "proto3";
+
+// Foo... is not a valid identifier.
+message Foo... {}

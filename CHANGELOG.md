@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Fix `buf format` so that the output directory (if any) is
+  created if and only if the input is successfully formatted.
 
 ## [v1.3.0]
 
