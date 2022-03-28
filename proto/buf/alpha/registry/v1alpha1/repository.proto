@@ -101,6 +101,8 @@ service RepositoryService {
   rpc GetRepositoryContributor(GetRepositoryContributorRequest) returns (GetRepositoryContributorResponse);
   // GetRepositorySettings gets the settings of a repository.
   rpc GetRepositorySettings(GetRepositorySettingsRequest) returns (GetRepositorySettingsResponse);
+  // UpdateRepositorySettingsByName updates the settings of a repository.
+  rpc UpdateRepositorySettingsByName(UpdateRepositorySettingsByNameRequest) returns (UpdateRepositorySettingsByNameResponse);
 }
 
 message GetRepositoriesByFullNameRequest {
@@ -278,3 +280,12 @@ message GetRepositorySettingsResponse {
   // excluding owning-organization's members that have an explicit role.
   uint32 contributors_count = 1;
 }
+
+message UpdateRepositorySettingsByNameRequest {
+  string owner_name = 1;
+  string repository_name = 2;
+  // Changes are only made to specified values. Unspecified ones are left unchanged.
+  Visibility visibility = 3;
+}
+
+message UpdateRepositorySettingsByNameResponse {}
