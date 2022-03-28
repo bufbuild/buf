@@ -16,6 +16,7 @@ package repositorycreate
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
@@ -70,6 +71,12 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(
+		&f.Format,
+		formatFlagName,
+		bufprint.FormatText.String(),
+		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
+	)
 	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
 	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
 }
