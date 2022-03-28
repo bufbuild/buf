@@ -378,3 +378,27 @@ func (s *repositoryService) GetRepositorySettings(ctx context.Context, repositor
 	}
 	return response.ContributorsCount, nil
 }
+
+// UpdateRepositorySettingsByName updates the settings of a repository.
+func (s *repositoryService) UpdateRepositorySettingsByName(
+	ctx context.Context,
+	ownerName string,
+	repositoryName string,
+	visibility v1alpha1.Visibility,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.UpdateRepositorySettingsByName(
+		ctx,
+		&v1alpha1.UpdateRepositorySettingsByNameRequest{
+			OwnerName:      ownerName,
+			RepositoryName: repositoryName,
+			Visibility:     visibility,
+		},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
