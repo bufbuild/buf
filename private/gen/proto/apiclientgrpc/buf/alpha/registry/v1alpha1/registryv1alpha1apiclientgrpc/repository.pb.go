@@ -379,7 +379,7 @@ func (s *repositoryService) GetRepositorySettings(ctx context.Context, repositor
 	return response.ContributorsCount, nil
 }
 
-// UpdateRepositorySettingsByName updates the settings of a repository. Unspecified values mean no change is made.
+// UpdateRepositorySettingsByName updates the settings of a repository.
 func (s *repositoryService) UpdateRepositorySettingsByName(
 	ctx context.Context,
 	ownerName string,
