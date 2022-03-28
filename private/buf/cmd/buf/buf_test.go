@@ -2069,6 +2069,36 @@ func TestFormatInvalidIncludePackageFiles(t *testing.T) {
 	)
 }
 
+func TestFormatInvalidInputDoesNotCreateDirectory(t *testing.T) {
+	tempDir := t.TempDir()
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: testdata/format/invalid/invalid.proto:4:12: syntax error: unexpected '.', expecting '{'`,
+		"format",
+		filepath.Join("testdata", "format", "invalid"),
+		"-o",
+		filepath.Join(tempDir, "formatted", "invalid"), // Directory output.
+	)
+	_, err := os.Stat(filepath.Join(tempDir, "formatted", "invalid"))
+	assert.True(t, os.IsNotExist(err))
+	testRunStdoutStderr(
+		t,
+		nil,
+		1,
+		"",
+		`Failure: testdata/format/invalid/invalid.proto:4:12: syntax error: unexpected '.', expecting '{'`,
+		"format",
+		filepath.Join("testdata", "format", "invalid"),
+		"-o",
+		filepath.Join(tempDir, "formatted", "invalid", "invalid.proto"), // Single file output.
+	)
+	_, err = os.Stat(filepath.Join(tempDir, "formatted", "invalid"))
+	assert.True(t, os.IsNotExist(err))
+}
+
 func TestConvertRoundTrip(t *testing.T) {
 	tempDir := t.TempDir()
 	testRunStdout(

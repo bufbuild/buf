@@ -289,7 +289,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	var readWriteBucket storage.ReadWriteBucket
+	var outputDirectory string
 	var singleFileOutputFilename string
 	if flags.Output != "-" {
 		// The output file type is determined based on its extension,
@@ -308,9 +308,6 @@ func run(
 		if err != nil {
 			return err
 		}
-		// The output directory will not be set for single file outputs
-		// in the current directory (e.g. simple.formatted.proto).
-		var outputDirectory string
 		if _, ok := outputRef.(buffetch.ProtoFileRef); ok {
 			if directory := filepath.Dir(flags.Output); directory != "." {
 				// The output is a single file, so we need to create
@@ -322,22 +319,12 @@ func run(
 				//
 				outputDirectory = directory
 			}
+			// The outputDirectory will not be set for single file outputs
+			// in the current directory (e.g. simple.formatted.proto).
 			singleFileOutputFilename = flags.Output
 		} else {
 			// The output is a directory, so we can just create it as-is.
 			outputDirectory = flags.Output
-		}
-		if outputDirectory != "" {
-			if err := os.MkdirAll(outputDirectory, 0755); err != nil {
-				return err
-			}
-			readWriteBucket, err = storageosProvider.NewReadWriteBucket(
-				outputDirectory,
-				storageos.ReadWriteBucketWithSymlinksIfSupported(),
-			)
-			if err != nil {
-				return err
-			}
 		}
 	}
 	if protoFileRef, ok := sourceOrModuleRef.(buffetch.ProtoFileRef); ok {
@@ -412,8 +399,9 @@ func run(
 			ctx,
 			container,
 			runner,
+			storageosProvider,
 			module,
-			readWriteBucket,
+			outputDirectory,
 			singleFileOutputFilename,
 			flags.ErrorFormat,
 			flags.Diff,
@@ -432,8 +420,9 @@ func run(
 			ctx,
 			container,
 			runner,
+			storageosProvider,
 			moduleConfig.Module(),
-			readWriteBucket,
+			outputDirectory,
 			singleFileOutputFilename,
 			flags.ErrorFormat,
 			flags.Diff,
@@ -458,8 +447,9 @@ func formatModule(
 	ctx context.Context,
 	container appflag.Container,
 	runner command.Runner,
+	storageosProvider storageos.Provider,
 	module bufmodule.Module,
-	writeBucket storage.WriteBucket,
+	outputDirectory string,
 	singleFileOutputFilename string,
 	errorFormat string,
 	diff bool,
@@ -494,7 +484,7 @@ func formatModule(
 		if _, err := io.Copy(container.Stdout(), diffBuffer); err != nil {
 			return false, err
 		}
-		if writeBucket == nil || !rewrite {
+		if outputDirectory == "" && singleFileOutputFilename == "" && !rewrite {
 			// If the user specified --diff and has not explicitly overridden
 			// the --output or rewritten the sources in-place with --write, we
 			// can stop here.
@@ -542,8 +532,37 @@ func formatModule(
 		}
 		return diffPresent, nil
 	}
-	if writeBucket == nil || singleFileOutputFilename != "" {
-		// If the writeBucket is nil, we write the output to stdout.
+	var readWriteBucket storage.ReadWriteBucket
+	if outputDirectory != "" {
+		// OK to use os.Stat instead of os.LStat here as this is CLI-only
+		if _, err := os.Stat(outputDirectory); err != nil {
+			// We don't need to check fileInfo.IsDir() because it's
+			// already handled by the storageosProvider.
+			if os.IsNotExist(err) {
+				if err := os.MkdirAll(outputDirectory, 0755); err != nil {
+					return false, err
+				}
+				// Although unlikely, if an error occurs in the midst of
+				// writing the formatted files, we want to clean up the
+				// directory we just created because it didn't previously
+				// exist.
+				defer func() {
+					if retErr != nil {
+						retErr = multierr.Append(retErr, os.RemoveAll(outputDirectory))
+					}
+				}()
+			}
+		}
+		readWriteBucket, err = storageosProvider.NewReadWriteBucket(
+			outputDirectory,
+			storageos.ReadWriteBucketWithSymlinksIfSupported(),
+		)
+		if err != nil {
+			return false, err
+		}
+	}
+	if readWriteBucket == nil || singleFileOutputFilename != "" {
+		// If the readWriteBucket is nil, we write the output to stdout.
 		//
 		// If a single file output was used, we can't just copy the content
 		// between buckets - we need to write all of the bucket's content
@@ -585,7 +604,7 @@ func formatModule(
 	if _, err := storage.Copy(
 		ctx,
 		formattedReadBucket,
-		writeBucket,
+		readWriteBucket,
 	); err != nil {
 		return false, err
 	}
