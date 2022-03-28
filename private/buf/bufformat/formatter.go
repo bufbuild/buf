@@ -1807,7 +1807,7 @@ func (f *formatter) writeLineEnd(node ast.Node) {
 //  // multiple lines.
 //  message Foo {}
 //
-func (f *formatter) writeMultilineComments(comments ast.Comments) error {
+func (f *formatter) writeMultilineComments(comments ast.Comments) {
 	var previousComment ast.Comment
 	for i := 0; i < comments.Len(); i++ {
 		comment := comments.Index(i)
@@ -1834,7 +1834,6 @@ func (f *formatter) writeMultilineComments(comments ast.Comments) error {
 		f.P(strings.TrimSpace(comment.RawText()))
 		previousComment = comments.Index(i)
 	}
-	return nil
 }
 
 // writeInlineComments writes the given comments in-line. Standard comments are
