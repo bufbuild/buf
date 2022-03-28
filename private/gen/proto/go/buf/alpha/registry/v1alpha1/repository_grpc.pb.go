@@ -71,7 +71,7 @@ type RepositoryServiceClient interface {
 	GetRepositoryContributor(ctx context.Context, in *GetRepositoryContributorRequest, opts ...grpc.CallOption) (*GetRepositoryContributorResponse, error)
 	// GetRepositorySettings gets the settings of a repository.
 	GetRepositorySettings(ctx context.Context, in *GetRepositorySettingsRequest, opts ...grpc.CallOption) (*GetRepositorySettingsResponse, error)
-	// UpdateRepositorySettingsByName updates the settings of a repository. Unspecified values mean no change is made.
+	// UpdateRepositorySettingsByName updates the settings of a repository.
 	UpdateRepositorySettingsByName(ctx context.Context, in *UpdateRepositorySettingsByNameRequest, opts ...grpc.CallOption) (*UpdateRepositorySettingsByNameResponse, error)
 }
 
@@ -275,7 +275,7 @@ type RepositoryServiceServer interface {
 	GetRepositoryContributor(context.Context, *GetRepositoryContributorRequest) (*GetRepositoryContributorResponse, error)
 	// GetRepositorySettings gets the settings of a repository.
 	GetRepositorySettings(context.Context, *GetRepositorySettingsRequest) (*GetRepositorySettingsResponse, error)
-	// UpdateRepositorySettingsByName updates the settings of a repository. Unspecified values mean no change is made.
+	// UpdateRepositorySettingsByName updates the settings of a repository.
 	UpdateRepositorySettingsByName(context.Context, *UpdateRepositorySettingsByNameRequest) (*UpdateRepositorySettingsByNameResponse, error)
 }
 

@@ -2083,9 +2083,10 @@ type UpdateRepositorySettingsByNameRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	OwnerName      string     `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
-	RepositoryName string     `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
-	Visibility     Visibility `protobuf:"varint,3,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`
+	OwnerName      string `protobuf:"bytes,1,opt,name=owner_name,json=ownerName,proto3" json:"owner_name,omitempty"`
+	RepositoryName string `protobuf:"bytes,2,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
+	// Changes are only made to specified values. Unspecified ones are left unchanged.
+	Visibility Visibility `protobuf:"varint,3,opt,name=visibility,proto3,enum=buf.alpha.registry.v1alpha1.Visibility" json:"visibility,omitempty"`
 }
 
 func (x *UpdateRepositorySettingsByNameRequest) Reset() {
