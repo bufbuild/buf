@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Update `buf format`'s file option order so that default
+  file options are sorted before custom options.
 - Fix `buf format` so that the output directory (if any) is
   created if and only if the input is successfully formatted.
 
