@@ -323,6 +323,14 @@ func (f *formatter) writeFileOption(optionNode *ast.OptionNode) {
 	f.writeNode(optionNode.Name)
 	f.Space()
 	f.writeInline(optionNode.Equals)
+	if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
+		// Compound string literals are written across multiple lines
+		// immediately after the '=', so we don't need a trailing
+		// space in the option prefix.
+		f.writeCompoundStringLiteralForSingleOption(node)
+		f.writeLineEnd(optionNode.Semicolon)
+		return
+	}
 	f.Space()
 	f.writeInline(optionNode.Val)
 	f.writeLineEnd(optionNode.Semicolon)
@@ -336,8 +344,15 @@ func (f *formatter) writeFileOption(optionNode *ast.OptionNode) {
 //
 func (f *formatter) writeOption(optionNode *ast.OptionNode) {
 	f.writeOptionPrefix(optionNode)
-	f.Space()
 	if optionNode.Semicolon != nil {
+		if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
+			// Compound string literals are written across multiple lines
+			// immediately after the '=', so we don't need a trailing
+			// space in the option prefix.
+			f.writeCompoundStringLiteralForSingleOption(node)
+			f.writeLineEnd(optionNode.Semicolon)
+			return
+		}
 		f.writeInline(optionNode.Val)
 		f.writeLineEnd(optionNode.Semicolon)
 		return
@@ -358,7 +373,6 @@ func (f *formatter) writeOption(optionNode *ast.OptionNode) {
 //
 func (f *formatter) writeLastCompactOption(optionNode *ast.OptionNode) {
 	f.writeOptionPrefix(optionNode)
-	f.Space()
 	f.writeLineEnd(optionNode.Val)
 }
 
@@ -380,6 +394,13 @@ func (f *formatter) writeOptionPrefix(optionNode *ast.OptionNode) {
 	}
 	f.Space()
 	f.writeInline(optionNode.Equals)
+	if _, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
+		// Compound string literals are written across multiple lines
+		// immediately after the '=', so we don't need a trailing
+		// space in the option prefix.
+		return
+	}
+	f.Space()
 }
 
 // writeOptionName writes an option name.
@@ -537,7 +558,6 @@ func (f *formatter) writeMessageLiteralElements(messageLiteralNode *ast.MessageL
 // message literal.
 func (f *formatter) writeMessageField(messageFieldNode *ast.MessageFieldNode) {
 	f.writeMessageFieldPrefix(messageFieldNode)
-	f.Space()
 	f.writeLineEnd(messageFieldNode.Val)
 }
 
@@ -546,7 +566,6 @@ func (f *formatter) writeMessageField(messageFieldNode *ast.MessageFieldNode) {
 // literal.
 func (f *formatter) writeMessageFieldWithSeparator(messageFieldNode *ast.MessageFieldNode) {
 	f.writeMessageFieldPrefix(messageFieldNode)
-	f.Space()
 	f.writeInline(messageFieldNode.Val)
 }
 
@@ -575,6 +594,13 @@ func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNo
 	if messageFieldNode.Sep != nil {
 		f.writeInline(messageFieldNode.Sep)
 	}
+	if _, ok := messageFieldNode.Val.(*ast.CompoundStringLiteralNode); ok {
+		// Compound string literals are written across multiple lines
+		// immediately after the ':', so we don't need a trailing
+		// space in the option prefix.
+		return
+	}
+	f.Space()
 }
 
 // writeEnum writes the enum node.
@@ -1030,6 +1056,13 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 			f.writeInline(optionNode.Name)
 			f.Space()
 			f.writeInline(optionNode.Equals)
+			if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
+				// If there's only a single compact option, the value needs to
+				// write its comments (if any) in a way that preserves the closing ']'.
+				f.writeCompoundStringLiteralForSingleOption(node)
+				f.writeInline(compactOptionsNode.CloseBracket)
+				return
+			}
 			f.Space()
 			f.writeInline(optionNode.Val)
 			f.writeInline(compactOptionsNode.CloseBracket)
@@ -1325,14 +1358,55 @@ func (f *formatter) writeBoolLiteral(boolLiteralNode *ast.BoolLiteralNode) {
 	f.WriteString(strconv.FormatBool(boolLiteralNode.Val))
 }
 
-// writeCompoundStringLiteral writes a compound string literal value (e.g. "one " "  string").
+// writeCompoundStringLiteral writes a compound string literal value.
+//
+// For example,
+//
+//  "one,"
+//  "two,"
+//  "three"
+//
 func (f *formatter) writeCompoundStringLiteral(compoundStringLiteralNode *ast.CompoundStringLiteralNode) {
-	for i, child := range compoundStringLiteralNode.Children() {
-		if i > 0 {
-			f.Space()
+	f.In()
+	for _, child := range compoundStringLiteralNode.Children() {
+		if !f.previousTrailingCommentsWroteNewline() {
+			// If the previous node didn't have trailing comments that
+			// wrote a newline, we need to add one here.
+			f.P()
 		}
-		f.writeInline(child)
+		f.writeBodyEnd(child)
 	}
+	f.Out()
+}
+
+// writeCompoundStringLiteralForSingleOption writes a compound string literal value,
+// but writes its comments suitable for a single value option.
+//
+// The last element is written with in-line comments so that the closing ';' or ']'
+// can exist on the same line.
+//
+// For example,
+//
+//  option (custom) =
+//    "one,"
+//    "two,"
+//    "three";
+//
+func (f *formatter) writeCompoundStringLiteralForSingleOption(compoundStringLiteralNode *ast.CompoundStringLiteralNode) {
+	f.In()
+	for i, child := range compoundStringLiteralNode.Children() {
+		if !f.previousTrailingCommentsWroteNewline() {
+			// If the previous node didn't have trailing comments that
+			// wrote a newline, we need to add one here.
+			f.P()
+		}
+		if i == len(compoundStringLiteralNode.Children())-1 {
+			f.writeBodyEndInline(child)
+			break
+		}
+		f.writeBodyEnd(child)
+	}
+	f.Out()
 }
 
 // writeCompoundStringLiteralForArray writes a compound string literal value,
@@ -1346,17 +1420,17 @@ func (f *formatter) writeCompoundStringLiteralForArray(
 ) {
 	for i, child := range compoundStringLiteralNode.Children() {
 		if i > 0 {
-			f.Space()
+			if !f.previousTrailingCommentsWroteNewline() {
+				// If the previous node didn't have trailing comments that
+				// wrote a newline, we need to add one here.
+				f.P()
+			}
 		}
-		if i == 0 {
-			f.writeStart(child)
-			continue
-		}
-		if lastElement && i == len(compoundStringLiteralNode.Children())-1 {
-			f.writeLineEnd(child)
+		if !lastElement && i == len(compoundStringLiteralNode.Children())-1 {
+			f.writeBodyEndInline(child)
 			return
 		}
-		f.writeInline(child)
+		f.writeBodyEnd(child)
 	}
 }
 

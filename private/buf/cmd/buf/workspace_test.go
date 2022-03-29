@@ -869,6 +869,18 @@ func TestWorkspaceRoots(t *testing.T) {
 		"--path",
 		filepath.Join("testdata", "workspace", "success", "roots", "module2", "root2", "c"),
 	)
+	testRunStdout(
+		t,
+		nil,
+		bufcli.ExitCodeFileAnnotation,
+		filepath.FromSlash(`testdata/workspace/success/roots/module2/root1/b/b.proto:3:1:Package name "b" should be suffixed with a correctly formed version, such as "b.v1".
+testdata/workspace/success/roots/module2/root2/c/c.proto:3:1:Package name "c" should be suffixed with a correctly formed version, such as "c.v1".
+testdata/workspace/success/roots/module2/root3/d/d.proto:3:1:Package name "d" should be suffixed with a correctly formed version, such as "d.v1".`),
+		"lint",
+		filepath.Join("testdata", "workspace", "success", "roots", "module2"),
+		"--config",
+		filepath.Join("testdata", "workspace", "success", "roots", "module2", "other.buf.yaml"),
+	)
 }
 
 func TestWorkspaceBreakingFail(t *testing.T) {

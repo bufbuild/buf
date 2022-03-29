@@ -8,7 +8,11 @@ option (list) = {
     // Trailing comment on '['.
 
     // Leading comment on compound string.
-    "one" /* One */"two" /* Two */"three" // Trailing
+    "one"
+    /* One */
+    "two"
+    /* Two */
+    "three" // Trailing
   ],
 
   values: [
