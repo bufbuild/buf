@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+import "custom.proto";
+
+option cc_enable_arenas = true;
+option java_multiple_files = true;
+option (file_option) = true;
