@@ -8,19 +8,23 @@ package custom;
 message Thing {
   int64 foo = 1;
   int64 bar = 2;
-  bool truth = 3;
-  Thing recursive = 4;
-  repeated int64 repeated_foo = 5;
-  repeated Thing repeated_thing = 6;
+  string baz = 3;
+  bool truth = 4;
+  Thing recursive = 5;
+  repeated int64 repeated_foo = 6;
+  repeated Thing repeated_thing = 7;
+  repeated string repeated_baz = 8;
 }
 
 extend google.protobuf.MessageOptions {
   bool message_option = 80001;
+  string string_message_option = 80002;
   Thing message_thing_option = 80003;
 }
 
 extend google.protobuf.FileOptions {
   bool file_option = 80002;
+  string string_file_option = 80003;
   Thing file_thing_option = 80004;
 }
 
