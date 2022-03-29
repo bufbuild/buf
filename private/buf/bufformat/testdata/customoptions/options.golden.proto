@@ -18,11 +18,13 @@ message Thing {
 
 extend google.protobuf.MessageOptions {
   bool message_option = 80001;
+  string string_message_option = 80002;
   Thing message_thing_option = 80003;
 }
 
 extend google.protobuf.FileOptions {
   bool file_option = 80002;
+  string string_file_option = 80003;
   Thing file_thing_option = 80004;
 }
 

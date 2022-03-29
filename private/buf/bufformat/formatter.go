@@ -309,6 +309,14 @@ func (f *formatter) writeFileOption(optionNode *ast.OptionNode) {
 	f.writeNode(optionNode.Name)
 	f.Space()
 	f.writeInline(optionNode.Equals)
+	if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
+		// Compound string literals are written across multiple lines
+		// immediately after the '=', so we don't need a trailing
+		// space in the option prefix.
+		f.writeCompoundStringLiteralForSingleOption(node)
+		f.writeLineEnd(optionNode.Semicolon)
+		return
+	}
 	f.Space()
 	f.writeInline(optionNode.Val)
 	f.writeLineEnd(optionNode.Semicolon)
@@ -323,6 +331,14 @@ func (f *formatter) writeFileOption(optionNode *ast.OptionNode) {
 func (f *formatter) writeOption(optionNode *ast.OptionNode) {
 	f.writeOptionPrefix(optionNode)
 	if optionNode.Semicolon != nil {
+		if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
+			// Compound string literals are written across multiple lines
+			// immediately after the '=', so we don't need a trailing
+			// space in the option prefix.
+			f.writeCompoundStringLiteralForSingleOption(node)
+			f.writeLineEnd(optionNode.Semicolon)
+			return
+		}
 		f.writeInline(optionNode.Val)
 		f.writeLineEnd(optionNode.Semicolon)
 		return
@@ -1029,7 +1045,7 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 			if node, ok := optionNode.Val.(*ast.CompoundStringLiteralNode); ok {
 				// If there's only a single compact option, the value needs to
 				// write its comments (if any) in a way that preserves the closing ']'.
-				f.writeCompoundStringLiteralForCompactOption(node)
+				f.writeCompoundStringLiteralForSingleOption(node)
 				f.writeInline(compactOptionsNode.CloseBracket)
 				return
 			}
@@ -1332,10 +1348,9 @@ func (f *formatter) writeBoolLiteral(boolLiteralNode *ast.BoolLiteralNode) {
 //
 // For example,
 //
-//  option (custom) =
-//    "one,"
-//    "two,"
-//    "three"
+//  "one,"
+//  "two,"
+//  "three"
 //
 func (f *formatter) writeCompoundStringLiteral(compoundStringLiteralNode *ast.CompoundStringLiteralNode) {
 	f.In()
@@ -1350,12 +1365,20 @@ func (f *formatter) writeCompoundStringLiteral(compoundStringLiteralNode *ast.Co
 	f.Out()
 }
 
-// writeCompoundStringLiteralForCompactOption writes a compound string literal value,
-// but writes its comments suitable for a single value compact option.
+// writeCompoundStringLiteralForSingleOption writes a compound string literal value,
+// but writes its comments suitable for a single value option.
 //
-// The last element is written with in-line comments so that the closing ']' can
-// exist on the same line.
-func (f *formatter) writeCompoundStringLiteralForCompactOption(compoundStringLiteralNode *ast.CompoundStringLiteralNode) {
+// The last element is written with in-line comments so that the closing ';' or ']'
+// can exist on the same line.
+//
+// For example,
+//
+//  option (custom) =
+//    "one,"
+//    "two,"
+//    "three";
+//
+func (f *formatter) writeCompoundStringLiteralForSingleOption(compoundStringLiteralNode *ast.CompoundStringLiteralNode) {
 	f.In()
 	for i, child := range compoundStringLiteralNode.Children() {
 		if !f.previousTrailingCommentsWroteNewline() {
@@ -1365,7 +1388,7 @@ func (f *formatter) writeCompoundStringLiteralForCompactOption(compoundStringLit
 		}
 		if i == len(compoundStringLiteralNode.Children())-1 {
 			f.writeBodyEndInline(child)
-			return
+			break
 		}
 		f.writeBodyEnd(child)
 	}
