@@ -18,6 +18,12 @@ message Foo {
     (custom.sfixed64_field_option) = -/* Finally */6464/* After */, // Trailing
     (custom.bool_field_option) = /* Before */true/* After */, // Trailing
     (custom.bytes_field_option) = /* Before */"bytes"/* After */, // Trailing
-    (custom.string_field_option) = /* One */"this" /* Two */"is a" /* Three */"compound string"/* Trailing */
+    (custom.string_field_option) =
+      /* One */
+      "this"
+      /* Two */
+      "is a"
+      /* Three */
+      "compound string" // Trailing
   ];
 }
