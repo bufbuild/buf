@@ -31,15 +31,7 @@ import (
 const (
 	formatFlagName     = "format"
 	visibilityFlagName = "visibility"
-
-	publicVisibility  = "public"
-	privateVisibility = "private"
 )
-
-var allVisibiltyStrings = []string{
-	publicVisibility,
-	privateVisibility,
-}
 
 // NewCommand returns a new Command
 func NewCommand(
