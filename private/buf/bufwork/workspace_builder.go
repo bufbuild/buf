@@ -56,9 +56,6 @@ func (w *workspaceBuilder) BuildWorkspace(
 	if workspaceConfig == nil {
 		return nil, errors.New("received a nil workspace config")
 	}
-	if configOverride != "" {
-		return nil, errors.New("the --config flag is not compatible with workspaces")
-	}
 	// We know that if the file is actually buf.work for legacy reasons, this will be wrong,
 	// but we accept that as this shouldn't happen often anymore and this is just
 	// used for error messages.
@@ -91,10 +88,15 @@ func (w *workspaceBuilder) BuildWorkspace(
 		if err := validateInputOverlap(directory, targetSubDirPath, workspaceID); err != nil {
 			return nil, err
 		}
+		// Ignore the configOverride for anything that isn't the target path
+		localConfigOverride := configOverride
+		if directory != targetSubDirPath {
+			localConfigOverride = ""
+		}
 		moduleConfig, err := bufconfig.ReadConfigOS(
 			ctx,
 			readBucketForDirectory,
-			bufconfig.ReadConfigOSWithOverride(configOverride),
+			bufconfig.ReadConfigOSWithOverride(localConfigOverride),
 		)
 		if err != nil {
 			return nil, fmt.Errorf(

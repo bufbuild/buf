@@ -2,13 +2,14 @@
 
 ## [Unreleased]
 
+- Allow `--config` flag to be set when targeting a module within a workspace.
 - Update `buf format` to write adjacent string literals across multiple lines.
-- Fix `buf format` so that the output directory (if any) is
-  created if and only if the input is successfully formatted.
+- Fix `buf format` so that the output directory (if any) is created if and only
+  if the input is successfully formatted.
 
 ## [v1.3.0]
 
-- Add `--exit code` flag to `buf format` to exit with a non-zero exit code if
+- Add `--exit-code` flag to `buf format` to exit with a non-zero exit code if
   the files were not already formatted.
 
 ## [v1.2.1] - 2022-03-24

@@ -1,0 +1,6 @@
+version: v1beta1
+build:
+  roots:
+    - root1
+    - root2
+    - root3

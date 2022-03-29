@@ -16,6 +16,7 @@ package bufwire
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -373,6 +374,9 @@ func (m *moduleConfigReader) getWorkspaceModuleConfigs(
 		return []ModuleConfig{
 			moduleConfig,
 		}, nil
+	}
+	if configOverride != "" {
+		return nil, errors.New("the --config flag is not compatible with workspaces")
 	}
 	// The target subDirPath points to the workspace configuration,
 	// so we construct a separate workspace for each of the configured
