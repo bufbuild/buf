@@ -206,7 +206,21 @@ func (f *formatter) writeFileHeader(fileNode *ast.FileNode) {
 		f.writeImport(importNode)
 	}
 	sort.Slice(optionNodes, func(i, j int) bool {
-		return stringForOptionName(optionNodes[i].Name) < stringForOptionName(optionNodes[j].Name)
+		// The default options (e.g. cc_enable_arenas) should always
+		// be sorted above custom options (which are identified by a
+		// leading '(').
+		left := stringForOptionName(optionNodes[i].Name)
+		right := stringForOptionName(optionNodes[j].Name)
+		if strings.HasPrefix(left, "(") && !strings.HasPrefix(right, "(") {
+			// Prefer the default option on the right.
+			return false
+		}
+		if !strings.HasPrefix(left, "(") && strings.HasPrefix(right, "(") {
+			// Prefer the default option on the left.
+			return true
+		}
+		// Both options are custom, so we defer to the standard sorting.
+		return left < right
 	})
 	for i, optionNode := range optionNodes {
 		if i == 0 && f.previousNode != nil {
