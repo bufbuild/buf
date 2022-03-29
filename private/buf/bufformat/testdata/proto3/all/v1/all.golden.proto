@@ -16,6 +16,16 @@ import "google/protobuf/duration.proto"; // import-inline comment  2
 // import comment
 import "google/protobuf/timestamp.proto"; // import-inline comment
 
+// option comment 3
+option go_package = "foopb"; // option-inline comment 3
+// between-imports-and-options comment
+
+// option comment
+option java_multiple_files = true; // option-inline comment
+// option comment 4
+option java_outer_classname = "FooProto"; // option-inline comment 4
+// option comment 2
+option java_package = "com.foo"; // option-inline comment 2
 // option comment 5
 option (custom.file_option) = true; // option-inline comment 5
 // option comment 6
@@ -29,16 +39,6 @@ option (custom.file_thing_option) = {
     truth: true
   }
 }; // option-inlinecomment 6
-// option comment 3
-option go_package = "foopb"; // option-inline comment 3
-// between-imports-and-options comment
-
-// option comment
-option java_multiple_files = true; // option-inline comment
-// option comment 4
-option java_outer_classname = "FooProto"; // option-inline comment 4
-// option comment 2
-option java_package = "com.foo"; // option-inline comment 2
 
 // leading comment one1
 // leading comment one2
