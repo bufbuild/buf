@@ -29,15 +29,7 @@ import (
 
 const (
 	visibilityFlagName = "visibility"
-
-	publicVisibility  = "public"
-	privateVisibility = "private"
 )
-
-var allVisibiltyStrings = []string{
-	publicVisibility,
-	privateVisibility,
-}
 
 // NewCommand returns a new Command
 func NewCommand(name string, builder appflag.Builder) *appcmd.Command {

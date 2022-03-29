@@ -151,6 +151,11 @@ var (
 	// These digests are used to make sure that the data written is actually what we expect, and if it is not,
 	// we clear an entry from the cache, i.e. delete the relevant data directory.
 	v1CacheModuleSumRelDirPath = normalpath.Join("v1", "module", "sum")
+
+	allVisibiltyStrings = []string{
+		publicVisibility,
+		privateVisibility,
+	}
 )
 
 // GlobalFlags contains global flags for buf commands.
@@ -252,11 +257,6 @@ func BindDisableSymlinks(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry.
 Symlinks are never followed in Windows.`,
 	)
-}
-
-var allVisibiltyStrings = []string{
-	publicVisibility,
-	privateVisibility,
 }
 
 func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string) {
