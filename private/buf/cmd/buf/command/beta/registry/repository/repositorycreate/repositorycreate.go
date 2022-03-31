@@ -63,14 +63,14 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
+	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
 	flagSet.StringVar(
 		&f.Format,
 		formatFlagName,
 		bufprint.FormatText.String(),
 		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
 	)
-	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
-	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
 }
 
 func run(

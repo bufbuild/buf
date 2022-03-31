@@ -152,6 +152,7 @@ var (
 	// we clear an entry from the cache, i.e. delete the relevant data directory.
 	v1CacheModuleSumRelDirPath = normalpath.Join("v1", "module", "sum")
 
+	// allVisibiltyStrings are the possible options that a user can set the visibility flag with.
 	allVisibiltyStrings = []string{
 		publicVisibility,
 		privateVisibility,
@@ -259,6 +260,7 @@ Symlinks are never followed in Windows.`,
 	)
 }
 
+// BindVisibility binds the visibility flag.
 func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string) {
 	flagSet.StringVar(
 		addr,
@@ -858,6 +860,18 @@ func ValidateErrorFormatFlagLint(errorFormatString string, errorFormatFlagName s
 	return validateErrorFormatFlag(buflint.AllFormatStrings, errorFormatString, errorFormatFlagName)
 }
 
+// VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
+func VisibilityFlagToVisibility(visibility string) (registryv1alpha1.Visibility, error) {
+	switch visibility {
+	case publicVisibility:
+		return registryv1alpha1.Visibility_VISIBILITY_PUBLIC, nil
+	case privateVisibility:
+		return registryv1alpha1.Visibility_VISIBILITY_PRIVATE, nil
+	default:
+		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
+	}
+}
+
 func validateErrorFormatFlag(validFormatStrings []string, errorFormatString string, errorFormatFlagName string) error {
 	for _, formatString := range validFormatStrings {
 		if errorFormatString == formatString {
@@ -970,16 +984,4 @@ func parseFullyQualifiedPath(
 		return "", "", err
 	}
 	return moduleReference.String(), components[1], nil
-}
-
-// VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
-func VisibilityFlagToVisibility(visibility string) (registryv1alpha1.Visibility, error) {
-	switch visibility {
-	case publicVisibility:
-		return registryv1alpha1.Visibility_VISIBILITY_PUBLIC, nil
-	case privateVisibility:
-		return registryv1alpha1.Visibility_VISIBILITY_PRIVATE, nil
-	default:
-		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
-	}
 }
