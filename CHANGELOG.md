@@ -2,12 +2,20 @@
 
 ## [Unreleased]
 
-- Fix `buf format` so that the output directory (if any) is
-  created if and only if the input is successfully formatted.
+- No changes yet.
 
-## [v1.3.0]
+## [v1.3.1] - 2022-03-30
 
-- Add `--exit code` flag to `buf format` to exit with a non-zero exit code if
+- Allow `--config` flag to be set when targeting a module within a workspace.
+- Update `buf format`'s file option order so that default file options are
+  sorted before custom options.
+- Update `buf format` to write adjacent string literals across multiple lines.
+- Fix `buf format` so that the output directory (if any) is created if and only
+  if the input is successfully formatted.
+
+## [v1.3.0] - 2022-03-25
+
+- Add `--exit-code` flag to `buf format` to exit with a non-zero exit code if
   the files were not already formatted.
 
 ## [v1.2.1] - 2022-03-24
@@ -682,7 +690,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.3.1...HEAD
+[v1.3.1]: https://github.com/bufbuild/buf/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/bufbuild/buf/compare/v1.2.1...1.3.0
 [v1.2.1]: https://github.com/bufbuild/buf/compare/v1.2.0...v1.2.1
 [v1.2.0]: https://github.com/bufbuild/buf/compare/v1.1.1...v1.2.0

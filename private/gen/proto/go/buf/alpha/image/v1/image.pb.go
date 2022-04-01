@@ -88,9 +88,8 @@ func (x *Image) GetFile() []*ImageFile {
 // ImageFile is an extended FileDescriptorProto.
 //
 // Since FileDescriptorProto does not have extensions, we copy the fields from
-// FileDescriptorProto, and then add our own extensions via the
-// buf_image_file_extension field. This is compatible with a
-// FileDescriptorProto.
+// FileDescriptorProto, and then add our own extensions via the buf_extension
+// field. This is compatible with a FileDescriptorProto.
 //
 // See https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto
 type ImageFile struct {
