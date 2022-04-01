@@ -93,3 +93,14 @@ func FromStringSlice(s []string) ([]uuid.UUID, error) {
 	}
 	return parsedUUIDS, nil
 }
+
+// NullUUID wraps id in uuid.NullUUID setting Valid: false if id is uuid.Nil.
+func NullUUID(id uuid.UUID) uuid.NullUUID {
+	if id.IsNil() {
+		return uuid.NullUUID{Valid: false}
+	}
+	return uuid.NullUUID{
+		Valid: true,
+		UUID:  id,
+	}
+}

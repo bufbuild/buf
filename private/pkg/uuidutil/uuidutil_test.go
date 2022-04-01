@@ -17,6 +17,7 @@ package uuidutil
 import (
 	"testing"
 
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -96,4 +97,17 @@ func TestFromStringSlice(t *testing.T) {
 	require.Equal(t, 2, len(uuids))
 	require.Equal(t, id1, uuids[0])
 	require.Equal(t, id2, uuids[1])
+}
+
+func TestNullUUID(t *testing.T) {
+	t.Parallel()
+	var id uuid.UUID
+	nullUUID := NullUUID(id)
+	require.False(t, nullUUID.Valid)
+	require.True(t, nullUUID.UUID.IsNil())
+	id, err := New()
+	require.NoError(t, err)
+	nullUUID = NullUUID(id)
+	require.True(t, nullUUID.Valid)
+	require.Equal(t, id, nullUUID.UUID)
 }
