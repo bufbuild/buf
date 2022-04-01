@@ -850,16 +850,6 @@ func ParseSourceAndType(
 	return moduleReference, moduleTypeName, nil
 }
 
-// ValidateErrorFormatFlag validates the error format flag for all commands but lint.
-func ValidateErrorFormatFlag(errorFormatString string, errorFormatFlagName string) error {
-	return validateErrorFormatFlag(bufanalysis.AllFormatStrings, errorFormatString, errorFormatFlagName)
-}
-
-// ValidateErrorFormatFlagLint validates the error format flag for lint.
-func ValidateErrorFormatFlagLint(errorFormatString string, errorFormatFlagName string) error {
-	return validateErrorFormatFlag(buflint.AllFormatStrings, errorFormatString, errorFormatFlagName)
-}
-
 // VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
 func VisibilityFlagToVisibility(visibility string) (registryv1alpha1.Visibility, error) {
 	switch visibility {
@@ -870,6 +860,16 @@ func VisibilityFlagToVisibility(visibility string) (registryv1alpha1.Visibility,
 	default:
 		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
 	}
+}
+
+// ValidateErrorFormatFlag validates the error format flag for all commands but lint.
+func ValidateErrorFormatFlag(errorFormatString string, errorFormatFlagName string) error {
+	return validateErrorFormatFlag(bufanalysis.AllFormatStrings, errorFormatString, errorFormatFlagName)
+}
+
+// ValidateErrorFormatFlagLint validates the error format flag for lint.
+func ValidateErrorFormatFlagLint(errorFormatString string, errorFormatFlagName string) error {
+	return validateErrorFormatFlag(buflint.AllFormatStrings, errorFormatString, errorFormatFlagName)
 }
 
 func validateErrorFormatFlag(validFormatStrings []string, errorFormatString string, errorFormatFlagName string) error {
