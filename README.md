@@ -24,6 +24,12 @@ The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf] API
 
 ## Installation
 
+### Linux
+
+```
+go install github.com/bufbuild/buf/cmd/buf@latest
+```
+
 ### Homebrew
 
 You can install `buf` using [Homebrew][brew] (macOS or Linux):
