@@ -81,14 +81,14 @@ While we intend to incrementally improve on the `buf` CLI and the [BSR](#the-buf
 
 The [Buf Schema Registry][bsr] (BSR) is a SaaS platform for managing your Protobuf APIs. It provides a centralized registry and a single source of truth for all of your Protobuf assets, including not just your `.proto` files but also [plugins] and code generation [templates]. Although the BSR provides an intuitive browser UI, `buf` enables you to perform most BSR-related tasks from the command line, such as [pushing] Protobuf sources to the registry and managing [users] and [repositories]. The BSR is currently in [**beta**][bsr_post].
 
-> The BSR is purely opt-in. We've made the core [features] of the `buf` CLI available to _all_ Protobuf users.
+> The BSR is not required to use `buf`. We've made the core [features] of the `buf` CLI available to _all_ Protobuf users.
 
 ## More advanced CLI features
 
 While `buf`'s [core features][features] should cover most use cases, we've included some more advanced features to cover edge cases:
 
-* **Automatic file discovery**. Buf walks your file tree and builds your `.proto` files in accordance with your supplied [build configuration][config.build], which means that you no longer need to manually specify `--proto_paths`. You can still, however, specify `.proto` files manually through CLI flags in cases where file discovery needs to be disabled.
-* **Fine-grained rule configuration** for [linting][lint_rules] and [breaking change][breaking.rules]. While we do have recommended defaults, you can always select the exact set of rules that your use case requires, with [40 lint rules][lint_rules] and [53 breaking change rules][breaking.rules] available.
+* **Automatic file discovery**. Buf walks your file tree and builds your `.proto` files in accordance with your supplied [build configuration][build_config], which means that you no longer need to manually specify `--proto_paths`. You can still, however, specify `.proto` files manually through CLI flags in cases where file discovery needs to be disabled.
+* **Fine-grained rule configuration** for [linting][lint_rules] and [breaking changes][breaking_rules]. While we do have recommended defaults, you can always select the exact set of rules that your use case requires, with [40 lint rules][lint_rules] and [53 breaking change rules][breaking_rules] available.
 * **Configurable error formats** for CLI output. `buf` outputs information in `file:line:column:message` form by default for each lint error and breaking change it encounters, but you can also select JSON and, in the near future, JUnit output.
 * **Editor integration** driven by `buf`'s granular error output. We currently provide linting integrations for both [Vim and Visual Studio Code][ide] but we plan to support other editors, such as Emacs and [JetBrains IDEs][jetbrains] like IntelliJ and GoLand, in the future.
 * **Universal Input targeting**. But enables you to perform actions like linting and breaking change detection not just against local `.proto` files but also against a broad range of other [Inputs], such as tarballs and ZIP files, remote Git repositories, and pre-built [image][images] files.
@@ -119,16 +119,16 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [bash]: https://www.gnu.org/software/bash
 [binary]: https://docs.buf.build/installation#binary
 [breaking]: https://docs.buf.build/breaking
-[breaking.rules]: https://docs.buf.build/breaking/rules
+[breaking_rules]: https://docs.buf.build/breaking/rules
 [breaking_usage]: https://docs.buf.build/breaking/usage
 [brew]: https://brew.sh
 [bsr]: https://docs.buf.build/bsr
 [bsr_post]: https://buf.build/blog/announcing-bsr
 [bsr_usage]: https://docs.buf.build/bsr/usage
 [buf]: https://buf.build
+[build_config]: https://docs.buf.build/build/usage/#configuration
 [build_usage]: https://docs.buf.build/build/usage
 [compiler]: https://docs.buf.build/build/internal-compiler
-[config.build]: https://docs.buf.build/build/usage/#configuration
 [contact]: https://docs.buf.build/contact
 [docker]: https://docs.buf.build/installation#use-the-docker-image
 [docs]: https://docs.buf.build
