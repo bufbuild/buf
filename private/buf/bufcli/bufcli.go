@@ -862,6 +862,20 @@ func VisibilityFlagToVisibility(visibility string) (registryv1alpha1.Visibility,
 	}
 }
 
+// VisibilityFlagToVisibilityAllowUnspecified parses the given string as a registryv1alpha1.Visibility.
+func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1alpha1.Visibility, error) {
+	switch visibility {
+	case publicVisibility:
+		return registryv1alpha1.Visibility_VISIBILITY_PUBLIC, nil
+	case privateVisibility:
+		return registryv1alpha1.Visibility_VISIBILITY_PRIVATE, nil
+	case "":
+		return registryv1alpha1.Visibility_VISIBILITY_UNSPECIFIED, nil
+	default:
+		return 0, fmt.Errorf("invalid visibility: %s", visibility)
+	}
+}
+
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.
 func ValidateErrorFormatFlag(errorFormatString string, errorFormatFlagName string) error {
 	return validateErrorFormatFlag(bufanalysis.AllFormatStrings, errorFormatString, errorFormatFlagName)
