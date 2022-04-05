@@ -74,7 +74,6 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
@@ -83,7 +82,6 @@ func run(
 	if err != nil {
 		return err
 	}
-
 	if err = service.UpdateRepositorySettingsByName(
 		ctx,
 		moduleIdentity.Owner(),

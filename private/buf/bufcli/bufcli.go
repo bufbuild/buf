@@ -862,7 +862,8 @@ func VisibilityFlagToVisibility(visibility string) (registryv1alpha1.Visibility,
 	}
 }
 
-// VisibilityFlagToVisibilityAllowUnspecified parses the given string as a registryv1alpha1.Visibility.
+// VisibilityFlagToVisibilityAllowUnspecified parses the given string as a registryv1alpha1.Visibility,
+// where an empty string will be parsed as unspecified
 func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1alpha1.Visibility, error) {
 	switch visibility {
 	case publicVisibility:
