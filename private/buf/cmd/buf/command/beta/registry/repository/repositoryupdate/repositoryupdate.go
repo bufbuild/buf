@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package repositorycreate
+package repositoryupdate
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
-	"github.com/bufbuild/buf/private/buf/bufprint"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -29,19 +28,15 @@ import (
 )
 
 const (
-	formatFlagName     = "format"
 	visibilityFlagName = "visibility"
 )
 
 // NewCommand returns a new Command
-func NewCommand(
-	name string,
-	builder appflag.Builder,
-) *appcmd.Command {
+func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "Create a new repository on the BSR.",
+		Short: "Update a BSR repository settings.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -54,7 +49,6 @@ func NewCommand(
 }
 
 type flags struct {
-	Format     string
 	Visibility string
 }
 
@@ -64,13 +58,6 @@ func newFlags() *flags {
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindVisibility(flagSet, &f.Visibility, visibilityFlagName)
-	_ = cobra.MarkFlagRequired(flagSet, visibilityFlagName)
-	flagSet.StringVar(
-		&f.Format,
-		formatFlagName,
-		bufprint.FormatText.String(),
-		fmt.Sprintf(`The output format to use. Must be one of %s.`, bufprint.AllFormatsString),
-	)
 }
 
 func run(
@@ -83,15 +70,10 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	visibility, err := bufcli.VisibilityFlagToVisibility(flags.Visibility)
+	visibility, err := bufcli.VisibilityFlagToVisibilityAllowUnspecified(flags.Visibility)
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	format, err := bufprint.ParseFormat(flags.Format)
-	if err != nil {
-		return appcmd.NewInvalidArgumentError(err.Error())
-	}
-
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
@@ -100,20 +82,19 @@ func run(
 	if err != nil {
 		return err
 	}
-	repository, err := service.CreateRepositoryByFullName(
+	if err = service.UpdateRepositorySettingsByName(
 		ctx,
-		moduleIdentity.Owner()+"/"+moduleIdentity.Repository(),
+		moduleIdentity.Owner(),
+		moduleIdentity.Repository(),
 		visibility,
-	)
-	if err != nil {
-		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
-			return bufcli.NewRepositoryNameAlreadyExistsError(container.Arg(0))
+	); err != nil {
+		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
+			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
 		return err
 	}
-	return bufprint.NewRepositoryPrinter(
-		apiProvider,
-		moduleIdentity.Remote(),
-		container.Stdout(),
-	).PrintRepository(ctx, format, repository)
+	if _, err := fmt.Fprintln(container.Stdout(), "Settings Updated."); err != nil {
+		return bufcli.NewInternalError(err)
+	}
+	return nil
 }
