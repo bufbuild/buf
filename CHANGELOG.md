@@ -2,7 +2,8 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf beta registry repository update` command which supports
+  visibility for now.
 
 ## [v1.3.1] - 2022-03-30
 

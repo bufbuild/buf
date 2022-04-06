@@ -42,6 +42,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -54,6 +55,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -77,6 +79,9 @@ const (
 	inputHashtagFlagShortName = "#"
 
 	userPromptAttempts = 3
+
+	publicVisibility  = "public"
+	privateVisibility = "private"
 )
 
 var (
@@ -146,6 +151,12 @@ var (
 	// These digests are used to make sure that the data written is actually what we expect, and if it is not,
 	// we clear an entry from the cache, i.e. delete the relevant data directory.
 	v1CacheModuleSumRelDirPath = normalpath.Join("v1", "module", "sum")
+
+	// allVisibiltyStrings are the possible options that a user can set the visibility flag with.
+	allVisibiltyStrings = []string{
+		publicVisibility,
+		privateVisibility,
+	}
 )
 
 // GlobalFlags contains global flags for buf commands.
@@ -246,6 +257,16 @@ func BindDisableSymlinks(flagSet *pflag.FlagSet, addr *bool, flagName string) {
 		`Do not follow symlinks when reading sources or configuration from the local filesystem.
 By default, symlinks are followed in this CLI, but never followed on the Buf Schema Registry.
 Symlinks are never followed in Windows.`,
+	)
+}
+
+// BindVisibility binds the visibility flag.
+func BindVisibility(flagSet *pflag.FlagSet, addr *string, flagName string) {
+	flagSet.StringVar(
+		addr,
+		flagName,
+		"",
+		fmt.Sprintf(`The repository's visibility setting. Must be one of %s.`, stringutil.SliceToString(allVisibiltyStrings)),
 	)
 }
 
@@ -827,6 +848,33 @@ func ParseSourceAndType(
 		return "", "", appcmd.NewInvalidArgumentErrorf("if a source isn't provided, the type needs to be a fully qualified path that includes the module reference; failed to parse the type: %v", err)
 	}
 	return moduleReference, moduleTypeName, nil
+}
+
+// VisibilityFlagToVisibility parses the given string as a registryv1alpha1.Visibility.
+func VisibilityFlagToVisibility(visibility string) (registryv1alpha1.Visibility, error) {
+	switch visibility {
+	case publicVisibility:
+		return registryv1alpha1.Visibility_VISIBILITY_PUBLIC, nil
+	case privateVisibility:
+		return registryv1alpha1.Visibility_VISIBILITY_PRIVATE, nil
+	default:
+		return 0, fmt.Errorf("invalid visibility: %s, expected one of %s", visibility, stringutil.SliceToString(allVisibiltyStrings))
+	}
+}
+
+// VisibilityFlagToVisibilityAllowUnspecified parses the given string as a registryv1alpha1.Visibility,
+// where an empty string will be parsed as unspecified
+func VisibilityFlagToVisibilityAllowUnspecified(visibility string) (registryv1alpha1.Visibility, error) {
+	switch visibility {
+	case publicVisibility:
+		return registryv1alpha1.Visibility_VISIBILITY_PUBLIC, nil
+	case privateVisibility:
+		return registryv1alpha1.Visibility_VISIBILITY_PRIVATE, nil
+	case "":
+		return registryv1alpha1.Visibility_VISIBILITY_UNSPECIFIED, nil
+	default:
+		return 0, fmt.Errorf("invalid visibility: %s", visibility)
+	}
 }
 
 // ValidateErrorFormatFlag validates the error format flag for all commands but lint.
