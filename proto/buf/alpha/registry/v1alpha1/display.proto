@@ -86,6 +86,8 @@ message DisplayRepositoryElementsResponse {
   bool settings = 1;
   // Display delete repository element if true.
   bool delete = 2;
+  // Display write repository element if true.
+  bool write = 3;
 }
 
 message DisplayPluginElementsRequest {
