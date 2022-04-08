@@ -33,7 +33,7 @@ type DisplayService interface {
 	DisplayRepositoryElements(
 		ctx context.Context,
 		repositoryId string,
-	) (settings bool, delete bool, err error)
+	) (settings bool, delete bool, write bool, err error)
 	// DisplayPluginElements returns which plugin elements should be displayed to the user.
 	DisplayPluginElements(
 		ctx context.Context,

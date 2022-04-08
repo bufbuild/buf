@@ -52,7 +52,7 @@ func (s *displayService) DisplayOrganizationElements(
 func (s *displayService) DisplayRepositoryElements(
 	ctx context.Context,
 	repositoryId string,
-) (settings bool, delete bool, _ error) {
+) (settings bool, delete bool, write bool, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -63,9 +63,9 @@ func (s *displayService) DisplayRepositoryElements(
 		},
 	)
 	if err != nil {
-		return false, false, err
+		return false, false, false, err
 	}
-	return response.Settings, response.Delete, nil
+	return response.Settings, response.Delete, response.Write, nil
 }
 
 // DisplayPluginElements returns which plugin elements should be displayed to the user.
