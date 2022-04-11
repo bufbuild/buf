@@ -38,7 +38,7 @@ var (
 	ErrNoModuleName = errors.New(`please specify a module name in your configuration file with the "name" key`)
 
 	// ErrNoConfigFile is used when the user tries to execute a command without a configuration file.
-	ErrNoConfigFile = errors.New(`please define a configuration file in the current directory; you can create one by running "buf config init"`)
+	ErrNoConfigFile = errors.New(`please define a configuration file in the current directory; you can create one by running "buf mod init"`)
 
 	// ErrFileAnnotation is used when we print file annotations and want to return an error.
 	//
