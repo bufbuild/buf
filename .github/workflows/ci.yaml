@@ -25,9 +25,9 @@ jobs:
             ~/.cache/buf/${{ runner.os }}/x86_64/go/pkg/mod
             ~/.cache/buf/${{ runner.os }}/x86_64/include
             ~/.cache/buf/${{ runner.os }}/x86_64/versions
-          key: ${{ runner.os }}-buf-lint1-${{ hashFiles('**/go.sum', 'make/**') }}
+          key: ${{ runner.os }}-buf-lint-${{ hashFiles('**/go.sum', 'make/**') }}
           restore-keys: |
-            ${{ runner.os }}-buf-lint1-
+            ${{ runner.os }}-buf-lint-
       - name: make-lint
         if: success()
         run: make lint
@@ -54,9 +54,9 @@ jobs:
             ~/.cache/buf/${{ runner.os }}/x86_64/go/pkg/mod
             ~/.cache/buf/${{ runner.os }}/x86_64/include
             ~/.cache/buf/${{ runner.os }}/x86_64/versions
-          key: ${{ runner.os }}-buf-test1-${{ hashFiles('**/go.sum', 'make/**') }}
+          key: ${{ runner.os }}-buf-test-${{ hashFiles('**/go.sum', 'make/**') }}
           restore-keys: |
-            ${{ runner.os }}-buf-test1-
+            ${{ runner.os }}-buf-test-
       - name: make-test
         if: success()
         run: make test
