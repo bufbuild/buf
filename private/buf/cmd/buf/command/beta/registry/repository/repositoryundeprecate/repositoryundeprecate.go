@@ -26,14 +26,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewCommand returns a new Command
-func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
+// NewCommandWithShort returns a new Command with the short given
+func NewCommandWithShort(name string,
+	builder appflag.Builder,
+	short string,
+) *appcmd.Command {
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "Undeprecate a BSR repository.",
+		Short: short,
 		Args:  cobra.ExactArgs(1),
 		Run:   builder.NewRunFunc(run, bufcli.NewErrorInterceptor()),
 	}
+}
+
+// NewCommand returns a new Command
+func NewCommand(name string,
+	builder appflag.Builder,
+) *appcmd.Command {
+	return NewCommandWithShort(name, builder, "Undeprecate a BSR repository.")
 }
 
 func run(ctx context.Context, container appflag.Container) error {

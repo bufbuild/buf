@@ -28,6 +28,13 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/modulecreate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/moduledelete"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/moduledeprecate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/moduleget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/modulelist"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/moduleundeprecate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/module/moduleupdate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationdelete"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationget"
@@ -148,7 +155,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "repository",
-								Short: "Manage repositories.",
+								Short: "Manage repositories. [deprecated - use registry mod instead]",
 								SubCommands: []*appcmd.Command{
 									repositorycreate.NewCommand("create", builder),
 									repositoryget.NewCommand("get", builder),
@@ -157,6 +164,19 @@ func NewRootCommand(name string) *appcmd.Command {
 									repositorydeprecate.NewCommand("deprecate", builder),
 									repositoryundeprecate.NewCommand("undeprecate", builder),
 									repositoryupdate.NewCommand("update", builder),
+								},
+							},
+							{
+								Use:   "mod",
+								Short: "Manage remote modules.",
+								SubCommands: []*appcmd.Command{
+									modulecreate.NewCommand("create", builder),
+									moduleget.NewCommand("get", builder),
+									modulelist.NewCommand("list", builder),
+									moduledelete.NewCommand("delete", builder),
+									moduledeprecate.NewCommand("deprecate", builder),
+									moduleundeprecate.NewCommand("undeprecate", builder),
+									moduleupdate.NewCommand("update", builder),
 								},
 							},
 							{

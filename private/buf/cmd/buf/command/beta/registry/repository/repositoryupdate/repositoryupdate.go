@@ -31,12 +31,16 @@ const (
 	visibilityFlagName = "visibility"
 )
 
-// NewCommand returns a new Command
-func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
+// NewCommandWithShort returns a new Command with the short given
+func NewCommandWithShort(
+	name string,
+	builder appflag.Builder,
+	short string,
+) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "Update a BSR repository settings.",
+		Short: short,
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -46,6 +50,14 @@ func NewCommand(name string, builder appflag.Builder) *appcmd.Command {
 		),
 		BindFlags: flags.Bind,
 	}
+}
+
+// NewCommand returns a new Command
+func NewCommand(
+	name string,
+	builder appflag.Builder,
+) *appcmd.Command {
+	return NewCommandWithShort(name, builder, "Update a BSR repository settings.")
 }
 
 type flags struct {
