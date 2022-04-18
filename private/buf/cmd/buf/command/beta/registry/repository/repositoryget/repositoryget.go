@@ -30,15 +30,16 @@ import (
 
 const formatFlagName = "format"
 
-// NewCommand returns a new Command
-func NewCommand(
+// NewCommandWithShort returns a new Command with the short given
+func NewCommandWithShort(
 	name string,
 	builder appflag.Builder,
+	short string,
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <buf.build/owner/repository>",
-		Short: "Get a BSR repository by name.",
+		Short: short,
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -48,6 +49,14 @@ func NewCommand(
 		),
 		BindFlags: flags.Bind,
 	}
+}
+
+// NewCommand returns a new Command
+func NewCommand(
+	name string,
+	builder appflag.Builder,
+) *appcmd.Command {
+	return NewCommandWithShort(name, builder, "Get a BSR repository by name.")
 }
 
 type flags struct {
