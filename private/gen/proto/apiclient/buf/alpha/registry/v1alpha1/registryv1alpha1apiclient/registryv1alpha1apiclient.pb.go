@@ -35,6 +35,7 @@ type Provider interface {
 	ImageServiceProvider
 	JSONSchemaServiceProvider
 	LocalResolveServiceProvider
+	ModuleServiceProvider
 	OrganizationServiceProvider
 	OwnerServiceProvider
 	PluginServiceProvider
@@ -111,6 +112,11 @@ type JSONSchemaServiceProvider interface {
 // LocalResolveServiceProvider provides a client-side LocalResolveService for an address.
 type LocalResolveServiceProvider interface {
 	NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error)
+}
+
+// ModuleServiceProvider provides a client-side ModuleService for an address.
+type ModuleServiceProvider interface {
+	NewModuleService(ctx context.Context, address string) (registryv1alpha1api.ModuleService, error)
 }
 
 // OrganizationServiceProvider provides a client-side OrganizationService for an address.

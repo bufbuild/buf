@@ -18,12 +18,6 @@ package buf.alpha.audit.v1alpha1;
 
 import "google/protobuf/timestamp.proto";
 
-enum BufAlphaRegistryV1Alpha1Visibility {
-  BUF_ALPHA_REGISTRY_V1_ALPHA1_VISIBILITY_UNSPECIFIED = 0;
-  BUF_ALPHA_REGISTRY_V1_ALPHA1_VISIBILITY_PUBLIC = 1;
-  BUF_ALPHA_REGISTRY_V1_ALPHA1_VISIBILITY_PRIVATE = 2;
-}
-
 message BufAlphaRegistryV1Alpha1RepositoryBranch {
   string id = 1;
   google.protobuf.Timestamp create_time = 2;
