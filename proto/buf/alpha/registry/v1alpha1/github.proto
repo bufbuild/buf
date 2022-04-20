@@ -16,12 +16,20 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-message GetIntegrationStatusRequest{}
+message GithubAppConfig {
+    string app_id = 1;
+}
 
-message GetIntegrationStatusResponse{}
+message GetGithubAppConfigRequest{
+    string id = 1;
+}
+
+message GetGithubAppConfigResponse{
+    GithubAppConfig app_config = 1;
+}
 
 
 // GithubService is the service used to interact with Github-related information 
 service GithubService {
-  rpc GetIntegrationStatus(GetIntegrationStatusRequest) returns (GetIntegrationStatusResponse);
+  rpc GetGithubAppConfig(GetGithubAppConfigRequest) returns (GetGithubAppConfigResponse);
 };
