@@ -273,6 +273,18 @@ func TestCyclicImport(t *testing.T) {
 	)
 }
 
+func TestDuplicateSyntheticOneofs(t *testing.T) {
+	// https://github.com/bufbuild/buf/issues/1071
+	t.Parallel()
+	testFileAnnotations(
+		t,
+		"duplicatesyntheticoneofs",
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a2.proto:5:1:duplicate symbol a.Foo: already defined as message in "a1.proto"`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a2.proto:6:3:duplicate symbol a.Foo._bar: already defined as oneof in "a1.proto"`),
+		filepath.FromSlash(`testdata/duplicatesyntheticoneofs/a2.proto:6:3:duplicate symbol a.Foo.bar: already defined as field in "a1.proto"`),
+	)
+}
+
 func TestOptionPanic(t *testing.T) {
 	t.Parallel()
 	require.NotPanics(t, func() {
