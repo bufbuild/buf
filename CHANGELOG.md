@@ -2,8 +2,11 @@
 
 ## [Unreleased]
 
-- Add `buf beta registry repository update` command which supports
-  visibility for now.
+- Fix issue where duplicate synthetic oneofs (such as with proto3 maps or
+  optional fields) did not result in a properly formed error.
+- Add `buf beta registry repository update` command which supports updating
+  repository visibility (public vs private). As with all beta commands, this
+  is likely to change in the future.
 
 ## [v1.3.1] - 2022-03-30
 
