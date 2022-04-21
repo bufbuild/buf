@@ -225,23 +225,32 @@ func ChunkByDir(paths []string, suggestedChunkSize int) [][]string {
 	}
 
 	dirToPaths := ByDir(paths...)
+	// Get the keys and sort them to keep the output of this stable
+	dirs := make([]string, 0, len(dirToPaths))
+	for dir := range dirToPaths {
+		dirs = append(dirs, dir)
+	}
+	sort.Strings(dirs)
 	// Create a slice of the per-directory path slices
 	pathsByDir := make([][]string, 0, len(dirToPaths))
-	for _, iPaths := range dirToPaths {
-		pathsByDir = append(pathsByDir, iPaths)
+	for _, dir := range dirs {
+		pathsByDir = append(pathsByDir, dirToPaths[dir])
 	}
-	// Sort the per-directory path slices by length, from smallest to greatest
-	sort.Slice(
+	// Sort the per-directory path slices by length, from greatest to smallest
+	// We do greatest to smallest because we pop the greatest off first, and
+	// This will approximate keeping things in alphabetical order given that
+	// pathsByDir is in alphabetical order of directories.
+	sort.SliceStable(
 		pathsByDir,
 		func(i int, j int) bool {
-			return len(pathsByDir[i]) < len(pathsByDir[j])
+			return len(pathsByDir[i]) > len(pathsByDir[j])
 		},
 	)
 
 	for len(pathsByDir) > 0 {
 		// Take the largest set of paths and remove from pathsByDir
-		chunk := pathsByDir[len(pathsByDir)-1]
-		pathsByDir = pathsByDir[:len(pathsByDir)-1]
+		chunk := pathsByDir[0]
+		pathsByDir = pathsByDir[1:]
 		// While our current chunk is less than the suggestedChunkSize, take the smallest
 		// set of paths and append them to the chunk, and then remove them from pathsByDir
 		//
@@ -251,8 +260,8 @@ func ChunkByDir(paths []string, suggestedChunkSize int) [][]string {
 		// suggestedChunkSize, as there are adversary cases to this algorithm, but we
 		// are not diving into that at the moment unless there is a need.
 		for len(chunk) < suggestedChunkSize && len(pathsByDir) > 0 {
-			chunk = append(chunk, pathsByDir[0]...)
-			pathsByDir = pathsByDir[1:]
+			chunk = append(chunk, pathsByDir[len(pathsByDir)-1]...)
+			pathsByDir = pathsByDir[:len(pathsByDir)-1]
 		}
 		// Append the chunk to the list of chunks
 		chunks = append(chunks, chunk)
