@@ -209,6 +209,58 @@ func ByDir(paths ...string) map[string][]string {
 	return m
 }
 
+// ChunkByDir splits paths into chunks of around the suggestedChunkSize while keeping
+// directory affinity, i.e. paths in the same directory will be in the same chunk.
+//
+// Paths are expected to be normalized.
+// If paths is nil or empty, returns empty.
+// If suggestedChunkSize is <=0, returns [][]string{paths}.
+func ChunkByDir(paths []string, suggestedChunkSize int) [][]string {
+	var chunks [][]string
+	if len(paths) == 0 {
+		return chunks
+	}
+	if suggestedChunkSize <= 0 {
+		return [][]string{paths}
+	}
+
+	dirToPaths := ByDir(paths...)
+	// Create a slice of the per-directory path slices
+	pathsByDir := make([][]string, 0, len(dirToPaths))
+	for _, iPaths := range dirToPaths {
+		pathsByDir = append(pathsByDir, iPaths)
+	}
+	// Sort the per-directory path slices by length, from smallest to greatest
+	sort.Slice(
+		pathsByDir,
+		func(i int, j int) bool {
+			return len(pathsByDir[i]) < len(pathsByDir[j])
+		},
+	)
+
+	for len(pathsByDir) > 0 {
+		// Take the largest set of paths and remove from pathsByDir
+		chunk := pathsByDir[len(pathsByDir)-1]
+		pathsByDir = pathsByDir[:len(pathsByDir)-1]
+		// While our current chunk is less than the suggestedChunkSize, take the smallest
+		// set of paths and append them to the chunk, and then remove them from pathsByDir
+		//
+		// This will mean that sometimes we have chunks larger than suggestedChunkSize, but
+		// this is best effort. We could likely use more-complicated algorithms here that
+		// smartly combine per-directory path sets that minimize the distance from
+		// suggestedChunkSize, as there are adversary cases to this algorithm, but we
+		// are not diving into that at the moment unless there is a need.
+		for len(chunk) < suggestedChunkSize && len(pathsByDir) > 0 {
+			chunk = append(chunk, pathsByDir[0]...)
+			pathsByDir = pathsByDir[1:]
+		}
+		// Append the chunk to the list of chunks
+		chunks = append(chunks, chunk)
+	}
+
+	return chunks
+}
+
 // ContainsPath returns true if the dirPath contains the path.
 //
 // The path and value are expected to be normalized and validated if Relative is used.
