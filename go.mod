@@ -8,7 +8,7 @@ require (
 	github.com/google/go-cmp v0.5.7
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
 	github.com/jhump/protocompile v0.0.0-20220216033700-d705409f108f
-	github.com/jhump/protoreflect v1.11.1-0.20220213155251-0c2aedc66cf4
+	github.com/jhump/protoreflect v1.12.1-0.20220421135116-51fbe966cf97
 	github.com/klauspost/compress v1.15.1
 	github.com/klauspost/pgzip v1.2.5
 	github.com/oklog/ulid/v2 v2.0.2
@@ -21,7 +21,7 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.21.0
-	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171
 	golang.org/x/tools v0.1.10
 	google.golang.org/grpc v1.45.0
 	google.golang.org/protobuf v1.28.0
@@ -38,10 +38,10 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
-	golang.org/x/net v0.0.0-20220325170049-de3da57026de // indirect
-	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8 // indirect
+	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
+	golang.org/x/sys v0.0.0-20220412211240-33da011f77ad // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	google.golang.org/genproto v0.0.0-20220324131243-acbaeb5b85eb // indirect
+	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
+	google.golang.org/genproto v0.0.0-20220414192740-2d67ff6cf2b4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
