@@ -16,14 +16,14 @@ package thread
 
 import (
 	"context"
-	"runtime"
 	"sync"
 
 	"go.uber.org/multierr"
 )
 
 var (
-	globalParallelism = runtime.GOMAXPROCS(0)
+	//globalParallelism = runtime.GOMAXPROCS(0)
+	globalParallelism = 1
 	globalLock        sync.RWMutex
 )
 

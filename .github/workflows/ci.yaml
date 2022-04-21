@@ -3,8 +3,8 @@ on: push
 # Prevent writing to the repository using the CI token.
 # Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
 permissions: read-all
-#env:
-  #MAKEFLAGS: '-j 2'
+env:
+  MAKEFLAGS: '-j 2'
 jobs:
   lint:
     runs-on: ubuntu-20.04
