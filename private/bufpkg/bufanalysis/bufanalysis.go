@@ -16,7 +16,6 @@ package bufanalysis
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -101,14 +100,8 @@ type FileInfo interface {
 
 // FileAnnotation is a file annotation.
 type FileAnnotation interface {
-	// Stringer returns the string representation in text format.
+	// Stringer returns the string representation of this annotation.
 	fmt.Stringer
-	// Marshaler returns the string representation in JSON foramt.
-	json.Marshaler
-	// MSVSString returns the string representation in MSVS format.
-	//
-	// https://docs.microsoft.com/en-us/cpp/build/formatting-the-output-of-a-custom-build-step-or-build-event?view=vs-2019
-	MSVSString() string
 
 	// FileInfo is the FileInfo for this annotation.
 	//
@@ -200,33 +193,16 @@ func PrintFileAnnotations(writer io.Writer, fileAnnotations []FileAnnotation, fo
 	if err != nil {
 		return err
 	}
-	for _, fileAnnotation := range fileAnnotations {
-		s, err := FormatFileAnnotation(fileAnnotation, format)
-		if err != nil {
-			return err
-		}
-		if _, err := writer.Write([]byte(s + "\n")); err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
-// FormatFileAnnotation formats the FileAnnotation.
-func FormatFileAnnotation(fileAnnotation FileAnnotation, format Format) (string, error) {
 	switch format {
 	case FormatText:
-		return fileAnnotation.String(), nil
+		return printAsText(writer, fileAnnotations)
 	case FormatJSON:
-		data, err := fileAnnotation.MarshalJSON()
-		if err != nil {
-			return "", err
-		}
-		return string(data), nil
+		return printAsJSON(writer, fileAnnotations)
 	case FormatMSVS:
-		return fileAnnotation.MSVSString(), nil
+		return printAsMSVS(writer, fileAnnotations)
 	default:
-		return "", fmt.Errorf("unknown FileAnnotation Format: %v", format)
+		return fmt.Errorf("unknown FileAnnotation Format: %v", format)
 	}
 }
 

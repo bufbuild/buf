@@ -32,6 +32,7 @@ type Provider interface {
 	DocServiceProvider
 	DownloadServiceProvider
 	GenerateServiceProvider
+	GithubServiceProvider
 	ImageServiceProvider
 	JSONSchemaServiceProvider
 	LocalResolveServiceProvider
@@ -97,6 +98,11 @@ type DownloadServiceProvider interface {
 // GenerateServiceProvider provides a client-side GenerateService for an address.
 type GenerateServiceProvider interface {
 	NewGenerateService(ctx context.Context, address string) (registryv1alpha1api.GenerateService, error)
+}
+
+// GithubServiceProvider provides a client-side GithubService for an address.
+type GithubServiceProvider interface {
+	NewGithubService(ctx context.Context, address string) (registryv1alpha1api.GithubService, error)
 }
 
 // ImageServiceProvider provides a client-side ImageService for an address.
