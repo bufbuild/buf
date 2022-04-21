@@ -15,6 +15,7 @@
 package bufanalysistesting
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
@@ -24,43 +25,55 @@ import (
 
 func TestBasic(t *testing.T) {
 	t.Parallel()
-	fileAnnotation := newFileAnnotation(
+	fileAnnotations := []bufanalysis.FileAnnotation{
+		newFileAnnotation(
+			t,
+			"path/to/file.proto",
+			1,
+			0,
+			1,
+			0,
+			"FOO",
+			"Hello.",
+		),
+		newFileAnnotation(
+			t,
+			"path/to/file.proto",
+			2,
+			1,
+			2,
+			1,
+			"FOO",
+			"Hello.",
+		),
+	}
+	sb := &strings.Builder{}
+	err := bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "text")
+	require.NoError(t, err)
+	assert.Equal(
 		t,
-		"path/to/file.proto",
-		1,
-		0,
-		1,
-		0,
-		"FOO",
-		"Hello.",
+		`path/to/file.proto:1:1:Hello.
+path/to/file.proto:2:1:Hello.
+`,
+		sb.String(),
 	)
-	s, err := bufanalysis.FormatFileAnnotation(fileAnnotation, bufanalysis.FormatText)
+	sb.Reset()
+	err = bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "json")
 	require.NoError(t, err)
-	assert.Equal(t, `path/to/file.proto:1:1:Hello.`, s)
-	s, err = bufanalysis.FormatFileAnnotation(fileAnnotation, bufanalysis.FormatJSON)
-	require.NoError(t, err)
-	assert.Equal(t, `{"path":"path/to/file.proto","start_line":1,"end_line":1,"type":"FOO","message":"Hello."}`, s)
-	s, err = bufanalysis.FormatFileAnnotation(fileAnnotation, bufanalysis.FormatMSVS)
-	require.NoError(t, err)
-	assert.Equal(t, `path/to/file.proto(1) : error FOO : Hello.`, s)
-
-	fileAnnotation = newFileAnnotation(
+	assert.Equal(
 		t,
-		"path/to/file.proto",
-		2,
-		1,
-		2,
-		1,
-		"FOO",
-		"Hello.",
+		`{"path":"path/to/file.proto","start_line":1,"end_line":1,"type":"FOO","message":"Hello."}
+{"path":"path/to/file.proto","start_line":2,"start_column":1,"end_line":2,"end_column":1,"type":"FOO","message":"Hello."}
+`,
+		sb.String(),
 	)
-	s, err = bufanalysis.FormatFileAnnotation(fileAnnotation, bufanalysis.FormatText)
+	sb.Reset()
+	err = bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "msvs")
 	require.NoError(t, err)
-	assert.Equal(t, `path/to/file.proto:2:1:Hello.`, s)
-	s, err = bufanalysis.FormatFileAnnotation(fileAnnotation, bufanalysis.FormatJSON)
-	require.NoError(t, err)
-	assert.Equal(t, `{"path":"path/to/file.proto","start_line":2,"start_column":1,"end_line":2,"end_column":1,"type":"FOO","message":"Hello."}`, s)
-	s, err = bufanalysis.FormatFileAnnotation(fileAnnotation, bufanalysis.FormatMSVS)
-	require.NoError(t, err)
-	assert.Equal(t, `path/to/file.proto(2,1) : error FOO : Hello.`, s)
+	assert.Equal(t,
+		`path/to/file.proto(1) : error FOO : Hello.
+path/to/file.proto(2,1) : error FOO : Hello.
+`,
+		sb.String(),
+	)
 }
