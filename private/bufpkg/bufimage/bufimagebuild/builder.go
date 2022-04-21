@@ -25,7 +25,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleprotoparse"
-	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/jhump/protoreflect/desc"
 	"github.com/jhump/protoreflect/desc/protoparse"
@@ -129,12 +129,8 @@ func getBuildResults(
 	ctx, span := trace.StartSpan(ctx, "parse")
 	defer span.End()
 
+	chunks := chunkPaths(paths)
 	var buildResults []*buildResult
-	chunkSize := 0
-	if parallelism := thread.Parallelism(); parallelism > 1 {
-		chunkSize = len(paths) / parallelism
-	}
-	chunks := stringutil.SliceToChunks(paths, chunkSize)
 	buildResultC := make(chan *buildResult, len(chunks))
 	for _, iPaths := range chunks {
 		iPaths := iPaths
@@ -534,6 +530,37 @@ func maybeAddUnusedImport(
 			unusedImportFilenames[errorUnusedImport.UnusedImport()] = struct{}{}
 		}
 	}
+}
+
+// We need to compile .proto files in the same directory in the same invocation.
+// If we do not, then conflicts across .proto files where the files do not import
+// each other will be undetected. See the test added in https://github.com/bufbuild/buf/pull/1072.
+//
+// Technically, you want to compile files in the same PACKAGE together, not directory,
+// but this is the best proxy you can have, and given that there is no rhyme or reason
+// to how people compile their files (do they do individual protoc invocations? do they
+// do one massive invocation?), any setup relying on more than per-directory compiles
+// is effectively undefined.
+//
+// Note the paths variable is expected to be normalized, which it is here, because
+// we pull it from TargetFileInfos.
+func chunkPaths(paths []string) [][]string {
+	return normalpath.ChunkByDir(paths, getChunkSize(paths))
+}
+
+// Get the size per chunk for the given number of paths.
+//
+// This attempts to create a number of chunks equal to thread.Parallelism().
+//
+// Example: if you have a slice of size 11, and chunk size is 2, you will end up
+// With 5 chunks of size 2, and 1 chunk of size 1.
+//
+// If we should not chunk, return 0.
+func getChunkSize(paths []string) int {
+	if parallelism := thread.Parallelism(); parallelism > 1 {
+		return len(paths) / parallelism
+	}
+	return 0
 }
 
 type buildResult struct {
