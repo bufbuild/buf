@@ -187,23 +187,23 @@ enum Action {
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_PLUGIN_SERVICE_LIST_TEMPLATES_USER_CAN_ACCESS = 154;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_REPOSITORY_SERVICE_UPDATE_REPOSITORY_SETTINGS_BY_NAME = 155;
   ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA1_GITHUB_SERVICE_GET_GITHUB_APP_CONFIG = 156;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_GET_MODULE = 157;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_GET_MODULE_BY_FULL_NAME = 158;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_LIST_MODULES = 159;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_LIST_USER_MODULES = 160;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_LIST_MODULES_USER_CAN_ACCESS = 161;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_LIST_ORGANIZATION_MODULES = 162;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_CREATE_MODULE_BY_FULL_NAME = 163;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_DELETE_MODULE = 164;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_DELETE_MODULE_BY_FULL_NAME = 165;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_DEPRECATE_MODULE_BY_NAME = 166;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_UNDEPRECATE_MODULE_BY_NAME = 167;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_GET_MODULES_BY_FULL_NAME = 168;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_LIST_MODULE_CONTRIBUTORS = 169;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_SET_MODULE_CONTRIBUTOR = 170;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_GET_MODULE_SETTINGS = 171;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_GET_MODULE_CONTRIBUTOR = 172;
-  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_MODULE_SERVICE_UPDATE_MODULE_SETTINGS_BY_NAME = 173;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_GET_REMOTE_MODULE = 157;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_GET_REMOTE_MODULE_BY_FULL_NAME = 158;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_LIST_REMOTE_MODULES = 159;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_LIST_USER_REMOTE_MODULES = 160;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_LIST_REMOTE_MODULES_USER_CAN_ACCESS = 161;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_LIST_ORGANIZATION_REMOTE_MODULES = 162;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_CREATE_REMOTE_MODULE_BY_FULL_NAME = 163;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_DELETE_REMOTE_MODULE = 164;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_DELETE_REMOTE_MODULE_BY_FULL_NAME = 165;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_DEPRECATE_REMOTE_MODULE_BY_NAME = 166;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_UNDEPRECATE_REMOTE_MODULE_BY_NAME = 167;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_GET_REMOTE_MODULES_BY_FULL_NAME = 168;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_LIST_REMOTE_MODULE_CONTRIBUTORS = 169;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_SET_REMOTE_MODULE_CONTRIBUTOR = 170;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_GET_REMOTE_MODULE_SETTINGS = 171;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_GET_REMOTE_MODULE_CONTRIBUTOR = 172;
+  ACTION_BUF_ALPHA_REGISTRY_V1_ALPHA2_REMOTE_MODULE_SERVICE_UPDATE_REMOTE_MODULE_SETTINGS_BY_NAME = 173;
 }
 
 // ActionBufAlphaRegistryV1Alpha1DownloadInfo stores audit log details not included
@@ -567,50 +567,50 @@ message ActionBufAlphaRegistryV1Alpha1UpdateRepositorySettingsByName {
   BufAlphaRegistryV1Alpha1Visibility visibility = 3;
 }
 
-// ActionBufAlphaRegistryV1Alpha2CreateModuleByFullNameInfo stores audit log details not included
-// in object for the CreateModuleByFullName action if the creation fails and details not included in
+// ActionBufAlphaRegistryV1Alpha2CreateRemoteModuleByFullNameInfo stores audit log details not included
+// in object for the CreateRemoteModuleByFullName action if the creation fails and details not included in
 // the object if the creation succeeds.
-message ActionBufAlphaRegistryV1Alpha2CreateModuleByFullNameInfo {
+message ActionBufAlphaRegistryV1Alpha2CreateRemoteModuleByFullNameInfo {
   string full_name = 1;
   buf.alpha.audit.v1alpha2.BufAlphaRegistryV1Alpha2Visibility visibility = 2;
 }
 
-// ActionBufAlphaRegistryV1Alpha2DeleteModuleInfo stores audit log details not included
-// in object for the DeleteModule action if the deletion fails.
-message ActionBufAlphaRegistryV1Alpha2DeleteModuleInfo {
+// ActionBufAlphaRegistryV1Alpha2DeleteRemoteModuleInfo stores audit log details not included
+// in object for the DeleteRemoteModule action if the deletion fails.
+message ActionBufAlphaRegistryV1Alpha2DeleteRemoteModuleInfo {
   string module_id = 1;
 }
 
-// ActionBufAlphaRegistryV1Alpha2DeleteModuleByFullNameInfo stores audit log details not included
-// in object for the DeleteModuleByFullName action if the deletion fails.
-message ActionBufAlphaRegistryV1Alpha2DeleteModuleByFullNameInfo {
+// ActionBufAlphaRegistryV1Alpha2DeleteRemoteModuleByFullNameInfo stores audit log details not included
+// in object for the DeleteRemoteModuleByFullName action if the deletion fails.
+message ActionBufAlphaRegistryV1Alpha2DeleteRemoteModuleByFullNameInfo {
   string full_name = 1;
 }
 
-// ActionBufAlphaRegistryV1Alpha2DeprecateModuleByNameInfo stores audit log details not included
-// in object for the DeprecateModuleByName action if the deprecation fails.
-message ActionBufAlphaRegistryV1Alpha2DeprecateModuleByNameInfo {
+// ActionBufAlphaRegistryV1Alpha2DeprecateRemoteModuleByNameInfo stores audit log details not included
+// in object for the DeprecateRemoteModuleByName action if the deprecation fails.
+message ActionBufAlphaRegistryV1Alpha2DeprecateRemoteModuleByNameInfo {
   string owner_name = 1;
   string module_name = 2;
   string deprecation_message = 3;
 }
 
-// ActionBufAlphaRegistryV1Alpha2UndeprecateModuleByNameInfo stores audit log details not included
-// in object for the UndeprecateModuleByName action if the undeprecation fails.
-message ActionBufAlphaRegistryV1Alpha2UndeprecateModuleByNameInfo {
+// ActionBufAlphaRegistryV1Alpha2UndeprecateRemoteModuleByNameInfo stores audit log details not included
+// in object for the UndeprecateRemoteModuleByName action if the undeprecation fails.
+message ActionBufAlphaRegistryV1Alpha2UndeprecateRemoteModuleByNameInfo {
   string owner_name = 1;
   string module_name = 2;
 }
 
-// ActionBufAlphaRegistryV1Alpha2SetModuleContributorInfo stores audit log details not included
-// in actor or object for the SetModuleContributor action.
-message ActionBufAlphaRegistryV1Alpha2SetModuleContributorInfo {
-  buf.alpha.audit.v1alpha2.BufAlphaRegistryV1Alpha2ModuleRole module_role = 1;
+// ActionBufAlphaRegistryV1Alpha2SetRemoteModuleContributorInfo stores audit log details not included
+// in actor or object for the SetRemoteModuleContributor action.
+message ActionBufAlphaRegistryV1Alpha2SetRemoteModuleContributorInfo {
+  buf.alpha.audit.v1alpha2.BufAlphaRegistryV1Alpha2RemoteModuleRole module_role = 1;
 }
 
-// ActionBufAlphaRegistryV1Alpha2UpdateModuleSettingsByName stores audit log details not included
-// in actor or object for the UpdateModuleSettingsByName action.
-message ActionBufAlphaRegistryV1Alpha2UpdateModuleSettingsByName {
+// ActionBufAlphaRegistryV1Alpha2UpdateRemoteModuleSettingsByName stores audit log details not included
+// in actor or object for the UpdateRemoteModuleSettingsByName action.
+message ActionBufAlphaRegistryV1Alpha2UpdateRemoteModuleSettingsByName {
   string owner_name = 1;
   string module_name = 2;
   buf.alpha.audit.v1alpha2.BufAlphaRegistryV1Alpha2Visibility visibility = 3;
@@ -699,13 +699,13 @@ message Event {
     ActionBufAlphaRegistryV1Alpha1ListRepositoryCommitsOnTrackInfo action_buf_alpha_registry_v1alpha1_list_repository_commits_on_track_info = 60; // machine has id 59
     ActionBufAlphaRegistryV1Alpha1ListTemplatesUserCanAccessInfo action_buf_alpha_registry_v1alpha1_list_templates_user_can_access_info = 61;
     ActionBufAlphaRegistryV1Alpha1UpdateRepositorySettingsByName action_buf_alpha_registry_v1alpha1_update_repository_settings_by_name = 62;
-    ActionBufAlphaRegistryV1Alpha2CreateModuleByFullNameInfo action_buf_alpha_registry_v1alpha2_create_module_by_full_name_info = 63;
-    ActionBufAlphaRegistryV1Alpha2DeleteModuleInfo action_buf_alpha_registry_v1alpha2_delete_module_info = 64;
-    ActionBufAlphaRegistryV1Alpha2DeleteModuleByFullNameInfo action_buf_alpha_registry_v1alpha2_delete_module_by_full_name_info = 65;
-    ActionBufAlphaRegistryV1Alpha2DeprecateModuleByNameInfo action_buf_alpha_registry_v1alpha2_deprecate_module_by_name_info = 66;
-    ActionBufAlphaRegistryV1Alpha2SetModuleContributorInfo action_buf_alpha_registry_v1alpha2_set_module_contributor_info = 67;
-    ActionBufAlphaRegistryV1Alpha2UndeprecateModuleByNameInfo action_buf_alpha_registry_v1alpha2_undeprecate_module_by_name_info = 68;
-    ActionBufAlphaRegistryV1Alpha2UpdateModuleSettingsByName action_buf_alpha_registry_v1alpha2_update_module_settings_by_name = 69;
+    ActionBufAlphaRegistryV1Alpha2CreateRemoteModuleByFullNameInfo action_buf_alpha_registry_v1alpha2_create_remote_module_by_full_name_info = 63;
+    ActionBufAlphaRegistryV1Alpha2DeleteRemoteModuleInfo action_buf_alpha_registry_v1alpha2_delete_remote_module_info = 64;
+    ActionBufAlphaRegistryV1Alpha2DeleteRemoteModuleByFullNameInfo action_buf_alpha_registry_v1alpha2_delete_remote_module_by_full_name_info = 65;
+    ActionBufAlphaRegistryV1Alpha2DeprecateRemoteModuleByNameInfo action_buf_alpha_registry_v1alpha2_deprecate_remote_module_by_name_info = 66;
+    ActionBufAlphaRegistryV1Alpha2SetRemoteModuleContributorInfo action_buf_alpha_registry_v1alpha2_set_remote_module_contributor_info = 67;
+    ActionBufAlphaRegistryV1Alpha2UndeprecateRemoteModuleByNameInfo action_buf_alpha_registry_v1alpha2_undeprecate_remote_module_by_name_info = 68;
+    ActionBufAlphaRegistryV1Alpha2UpdateRemoteModuleSettingsByName action_buf_alpha_registry_v1alpha2_update_remote_module_settings_by_name = 69;
   }
 }
 

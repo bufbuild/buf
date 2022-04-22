@@ -32,700 +32,700 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// ModuleServiceClient is the client API for ModuleService service.
+// RemoteModuleServiceClient is the client API for RemoteModuleService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type ModuleServiceClient interface {
-	// GetModule gets a module by ID.
-	GetModule(ctx context.Context, in *GetModuleRequest, opts ...grpc.CallOption) (*GetModuleResponse, error)
-	// GetModuleByFullName gets a module by full name.
-	GetModuleByFullName(ctx context.Context, in *GetModuleByFullNameRequest, opts ...grpc.CallOption) (*GetModuleByFullNameResponse, error)
-	// ListModules lists all modules.
-	ListModules(ctx context.Context, in *ListModulesRequest, opts ...grpc.CallOption) (*ListModulesResponse, error)
-	// ListUserModules lists all modules belonging to a user.
-	ListUserModules(ctx context.Context, in *ListUserModulesRequest, opts ...grpc.CallOption) (*ListUserModulesResponse, error)
-	// ListModulesUserCanAccess lists all modules a user can access.
-	ListModulesUserCanAccess(ctx context.Context, in *ListModulesUserCanAccessRequest, opts ...grpc.CallOption) (*ListModulesUserCanAccessResponse, error)
-	// ListOrganizationModules lists all modules for an organization.
-	ListOrganizationModules(ctx context.Context, in *ListOrganizationModulesRequest, opts ...grpc.CallOption) (*ListOrganizationModulesResponse, error)
-	// CreateModuleByFullName creates a new module by full name.
-	CreateModuleByFullName(ctx context.Context, in *CreateModuleByFullNameRequest, opts ...grpc.CallOption) (*CreateModuleByFullNameResponse, error)
-	// DeleteModule deletes a module.
-	DeleteModule(ctx context.Context, in *DeleteModuleRequest, opts ...grpc.CallOption) (*DeleteModuleResponse, error)
-	// DeleteModuleByFullName deletes a module by full name.
-	DeleteModuleByFullName(ctx context.Context, in *DeleteModuleByFullNameRequest, opts ...grpc.CallOption) (*DeleteModuleByFullNameResponse, error)
-	// DeprecateModuleByName deprecates the module.
-	DeprecateModuleByName(ctx context.Context, in *DeprecateModuleByNameRequest, opts ...grpc.CallOption) (*DeprecateModuleByNameResponse, error)
-	// UndeprecateModuleByName makes the module not deprecated and removes any deprecation_message.
-	UndeprecateModuleByName(ctx context.Context, in *UndeprecateModuleByNameRequest, opts ...grpc.CallOption) (*UndeprecateModuleByNameResponse, error)
-	// GetModulesByFullName gets modules by full name. Response order is unspecified.
+type RemoteModuleServiceClient interface {
+	// GetRemoteModule gets a module by ID.
+	GetRemoteModule(ctx context.Context, in *GetRemoteModuleRequest, opts ...grpc.CallOption) (*GetRemoteModuleResponse, error)
+	// GetRemoteModuleByFullName gets a module by full name.
+	GetRemoteModuleByFullName(ctx context.Context, in *GetRemoteModuleByFullNameRequest, opts ...grpc.CallOption) (*GetRemoteModuleByFullNameResponse, error)
+	// ListRemoteModules lists all modules.
+	ListRemoteModules(ctx context.Context, in *ListRemoteModulesRequest, opts ...grpc.CallOption) (*ListRemoteModulesResponse, error)
+	// ListUserRemoteModules lists all modules belonging to a user.
+	ListUserRemoteModules(ctx context.Context, in *ListUserRemoteModulesRequest, opts ...grpc.CallOption) (*ListUserRemoteModulesResponse, error)
+	// ListRemoteModulesUserCanAccess lists all modules a user can access.
+	ListRemoteModulesUserCanAccess(ctx context.Context, in *ListRemoteModulesUserCanAccessRequest, opts ...grpc.CallOption) (*ListRemoteModulesUserCanAccessResponse, error)
+	// ListOrganizationRemoteModules lists all modules for an organization.
+	ListOrganizationRemoteModules(ctx context.Context, in *ListOrganizationRemoteModulesRequest, opts ...grpc.CallOption) (*ListOrganizationRemoteModulesResponse, error)
+	// CreateRemoteModuleByFullName creates a new module by full name.
+	CreateRemoteModuleByFullName(ctx context.Context, in *CreateRemoteModuleByFullNameRequest, opts ...grpc.CallOption) (*CreateRemoteModuleByFullNameResponse, error)
+	// DeleteRemoteModule deletes a module.
+	DeleteRemoteModule(ctx context.Context, in *DeleteRemoteModuleRequest, opts ...grpc.CallOption) (*DeleteRemoteModuleResponse, error)
+	// DeleteRemoteModuleByFullName deletes a module by full name.
+	DeleteRemoteModuleByFullName(ctx context.Context, in *DeleteRemoteModuleByFullNameRequest, opts ...grpc.CallOption) (*DeleteRemoteModuleByFullNameResponse, error)
+	// DeprecateRemoteModuleByName deprecates the module.
+	DeprecateRemoteModuleByName(ctx context.Context, in *DeprecateRemoteModuleByNameRequest, opts ...grpc.CallOption) (*DeprecateRemoteModuleByNameResponse, error)
+	// UndeprecateRemoteModuleByName makes the module not deprecated and removes any deprecation_message.
+	UndeprecateRemoteModuleByName(ctx context.Context, in *UndeprecateRemoteModuleByNameRequest, opts ...grpc.CallOption) (*UndeprecateRemoteModuleByNameResponse, error)
+	// GetRemoteModulesByFullName gets modules by full name. Response order is unspecified.
 	// Errors if any of the modules don't exist or the caller does not have access to any of the modules.
-	GetModulesByFullName(ctx context.Context, in *GetModulesByFullNameRequest, opts ...grpc.CallOption) (*GetModulesByFullNameResponse, error)
-	// SetModuleContributor sets the role of a user in the module.
-	SetModuleContributor(ctx context.Context, in *SetModuleContributorRequest, opts ...grpc.CallOption) (*SetModuleContributorResponse, error)
-	// ListModuleContributors returns the list of contributors that has an explicit role against the module.
+	GetRemoteModulesByFullName(ctx context.Context, in *GetRemoteModulesByFullNameRequest, opts ...grpc.CallOption) (*GetRemoteModulesByFullNameResponse, error)
+	// SetRemoteModuleContributor sets the role of a user in the module.
+	SetRemoteModuleContributor(ctx context.Context, in *SetRemoteModuleContributorRequest, opts ...grpc.CallOption) (*SetRemoteModuleContributorResponse, error)
+	// ListRemoteModuleContributors returns the list of contributors that has an explicit role against the module.
 	// This does not include users who have implicit roles against the module, unless they have also been
 	// assigned a role explicitly.
-	ListModuleContributors(ctx context.Context, in *ListModuleContributorsRequest, opts ...grpc.CallOption) (*ListModuleContributorsResponse, error)
-	// GetModuleContributor returns the contributor information of a user in a module.
-	GetModuleContributor(ctx context.Context, in *GetModuleContributorRequest, opts ...grpc.CallOption) (*GetModuleContributorResponse, error)
-	// GetModuleSettings gets the settings of a module.
-	GetModuleSettings(ctx context.Context, in *GetModuleSettingsRequest, opts ...grpc.CallOption) (*GetModuleSettingsResponse, error)
-	// UpdateModuleSettingsByName updates the settings of a module.
-	UpdateModuleSettingsByName(ctx context.Context, in *UpdateModuleSettingsByNameRequest, opts ...grpc.CallOption) (*UpdateModuleSettingsByNameResponse, error)
+	ListRemoteModuleContributors(ctx context.Context, in *ListRemoteModuleContributorsRequest, opts ...grpc.CallOption) (*ListRemoteModuleContributorsResponse, error)
+	// GetRemoteModuleContributor returns the contributor information of a user in a module.
+	GetRemoteModuleContributor(ctx context.Context, in *GetRemoteModuleContributorRequest, opts ...grpc.CallOption) (*GetRemoteModuleContributorResponse, error)
+	// GetRemoteModuleSettings gets the settings of a module.
+	GetRemoteModuleSettings(ctx context.Context, in *GetRemoteModuleSettingsRequest, opts ...grpc.CallOption) (*GetRemoteModuleSettingsResponse, error)
+	// UpdateRemoteModuleSettingsByName updates the settings of a module.
+	UpdateRemoteModuleSettingsByName(ctx context.Context, in *UpdateRemoteModuleSettingsByNameRequest, opts ...grpc.CallOption) (*UpdateRemoteModuleSettingsByNameResponse, error)
 }
 
-type moduleServiceClient struct {
+type remoteModuleServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewModuleServiceClient(cc grpc.ClientConnInterface) ModuleServiceClient {
-	return &moduleServiceClient{cc}
+func NewRemoteModuleServiceClient(cc grpc.ClientConnInterface) RemoteModuleServiceClient {
+	return &remoteModuleServiceClient{cc}
 }
 
-func (c *moduleServiceClient) GetModule(ctx context.Context, in *GetModuleRequest, opts ...grpc.CallOption) (*GetModuleResponse, error) {
-	out := new(GetModuleResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/GetModule", in, out, opts...)
+func (c *remoteModuleServiceClient) GetRemoteModule(ctx context.Context, in *GetRemoteModuleRequest, opts ...grpc.CallOption) (*GetRemoteModuleResponse, error) {
+	out := new(GetRemoteModuleResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/GetRemoteModule", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) GetModuleByFullName(ctx context.Context, in *GetModuleByFullNameRequest, opts ...grpc.CallOption) (*GetModuleByFullNameResponse, error) {
-	out := new(GetModuleByFullNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleByFullName", in, out, opts...)
+func (c *remoteModuleServiceClient) GetRemoteModuleByFullName(ctx context.Context, in *GetRemoteModuleByFullNameRequest, opts ...grpc.CallOption) (*GetRemoteModuleByFullNameResponse, error) {
+	out := new(GetRemoteModuleByFullNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/GetRemoteModuleByFullName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) ListModules(ctx context.Context, in *ListModulesRequest, opts ...grpc.CallOption) (*ListModulesResponse, error) {
-	out := new(ListModulesResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/ListModules", in, out, opts...)
+func (c *remoteModuleServiceClient) ListRemoteModules(ctx context.Context, in *ListRemoteModulesRequest, opts ...grpc.CallOption) (*ListRemoteModulesResponse, error) {
+	out := new(ListRemoteModulesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/ListRemoteModules", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) ListUserModules(ctx context.Context, in *ListUserModulesRequest, opts ...grpc.CallOption) (*ListUserModulesResponse, error) {
-	out := new(ListUserModulesResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/ListUserModules", in, out, opts...)
+func (c *remoteModuleServiceClient) ListUserRemoteModules(ctx context.Context, in *ListUserRemoteModulesRequest, opts ...grpc.CallOption) (*ListUserRemoteModulesResponse, error) {
+	out := new(ListUserRemoteModulesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/ListUserRemoteModules", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) ListModulesUserCanAccess(ctx context.Context, in *ListModulesUserCanAccessRequest, opts ...grpc.CallOption) (*ListModulesUserCanAccessResponse, error) {
-	out := new(ListModulesUserCanAccessResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/ListModulesUserCanAccess", in, out, opts...)
+func (c *remoteModuleServiceClient) ListRemoteModulesUserCanAccess(ctx context.Context, in *ListRemoteModulesUserCanAccessRequest, opts ...grpc.CallOption) (*ListRemoteModulesUserCanAccessResponse, error) {
+	out := new(ListRemoteModulesUserCanAccessResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/ListRemoteModulesUserCanAccess", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) ListOrganizationModules(ctx context.Context, in *ListOrganizationModulesRequest, opts ...grpc.CallOption) (*ListOrganizationModulesResponse, error) {
-	out := new(ListOrganizationModulesResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/ListOrganizationModules", in, out, opts...)
+func (c *remoteModuleServiceClient) ListOrganizationRemoteModules(ctx context.Context, in *ListOrganizationRemoteModulesRequest, opts ...grpc.CallOption) (*ListOrganizationRemoteModulesResponse, error) {
+	out := new(ListOrganizationRemoteModulesResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/ListOrganizationRemoteModules", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) CreateModuleByFullName(ctx context.Context, in *CreateModuleByFullNameRequest, opts ...grpc.CallOption) (*CreateModuleByFullNameResponse, error) {
-	out := new(CreateModuleByFullNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/CreateModuleByFullName", in, out, opts...)
+func (c *remoteModuleServiceClient) CreateRemoteModuleByFullName(ctx context.Context, in *CreateRemoteModuleByFullNameRequest, opts ...grpc.CallOption) (*CreateRemoteModuleByFullNameResponse, error) {
+	out := new(CreateRemoteModuleByFullNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/CreateRemoteModuleByFullName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) DeleteModule(ctx context.Context, in *DeleteModuleRequest, opts ...grpc.CallOption) (*DeleteModuleResponse, error) {
-	out := new(DeleteModuleResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/DeleteModule", in, out, opts...)
+func (c *remoteModuleServiceClient) DeleteRemoteModule(ctx context.Context, in *DeleteRemoteModuleRequest, opts ...grpc.CallOption) (*DeleteRemoteModuleResponse, error) {
+	out := new(DeleteRemoteModuleResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/DeleteRemoteModule", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) DeleteModuleByFullName(ctx context.Context, in *DeleteModuleByFullNameRequest, opts ...grpc.CallOption) (*DeleteModuleByFullNameResponse, error) {
-	out := new(DeleteModuleByFullNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/DeleteModuleByFullName", in, out, opts...)
+func (c *remoteModuleServiceClient) DeleteRemoteModuleByFullName(ctx context.Context, in *DeleteRemoteModuleByFullNameRequest, opts ...grpc.CallOption) (*DeleteRemoteModuleByFullNameResponse, error) {
+	out := new(DeleteRemoteModuleByFullNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/DeleteRemoteModuleByFullName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) DeprecateModuleByName(ctx context.Context, in *DeprecateModuleByNameRequest, opts ...grpc.CallOption) (*DeprecateModuleByNameResponse, error) {
-	out := new(DeprecateModuleByNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/DeprecateModuleByName", in, out, opts...)
+func (c *remoteModuleServiceClient) DeprecateRemoteModuleByName(ctx context.Context, in *DeprecateRemoteModuleByNameRequest, opts ...grpc.CallOption) (*DeprecateRemoteModuleByNameResponse, error) {
+	out := new(DeprecateRemoteModuleByNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/DeprecateRemoteModuleByName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) UndeprecateModuleByName(ctx context.Context, in *UndeprecateModuleByNameRequest, opts ...grpc.CallOption) (*UndeprecateModuleByNameResponse, error) {
-	out := new(UndeprecateModuleByNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/UndeprecateModuleByName", in, out, opts...)
+func (c *remoteModuleServiceClient) UndeprecateRemoteModuleByName(ctx context.Context, in *UndeprecateRemoteModuleByNameRequest, opts ...grpc.CallOption) (*UndeprecateRemoteModuleByNameResponse, error) {
+	out := new(UndeprecateRemoteModuleByNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/UndeprecateRemoteModuleByName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) GetModulesByFullName(ctx context.Context, in *GetModulesByFullNameRequest, opts ...grpc.CallOption) (*GetModulesByFullNameResponse, error) {
-	out := new(GetModulesByFullNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/GetModulesByFullName", in, out, opts...)
+func (c *remoteModuleServiceClient) GetRemoteModulesByFullName(ctx context.Context, in *GetRemoteModulesByFullNameRequest, opts ...grpc.CallOption) (*GetRemoteModulesByFullNameResponse, error) {
+	out := new(GetRemoteModulesByFullNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/GetRemoteModulesByFullName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) SetModuleContributor(ctx context.Context, in *SetModuleContributorRequest, opts ...grpc.CallOption) (*SetModuleContributorResponse, error) {
-	out := new(SetModuleContributorResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/SetModuleContributor", in, out, opts...)
+func (c *remoteModuleServiceClient) SetRemoteModuleContributor(ctx context.Context, in *SetRemoteModuleContributorRequest, opts ...grpc.CallOption) (*SetRemoteModuleContributorResponse, error) {
+	out := new(SetRemoteModuleContributorResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/SetRemoteModuleContributor", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) ListModuleContributors(ctx context.Context, in *ListModuleContributorsRequest, opts ...grpc.CallOption) (*ListModuleContributorsResponse, error) {
-	out := new(ListModuleContributorsResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/ListModuleContributors", in, out, opts...)
+func (c *remoteModuleServiceClient) ListRemoteModuleContributors(ctx context.Context, in *ListRemoteModuleContributorsRequest, opts ...grpc.CallOption) (*ListRemoteModuleContributorsResponse, error) {
+	out := new(ListRemoteModuleContributorsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/ListRemoteModuleContributors", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) GetModuleContributor(ctx context.Context, in *GetModuleContributorRequest, opts ...grpc.CallOption) (*GetModuleContributorResponse, error) {
-	out := new(GetModuleContributorResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleContributor", in, out, opts...)
+func (c *remoteModuleServiceClient) GetRemoteModuleContributor(ctx context.Context, in *GetRemoteModuleContributorRequest, opts ...grpc.CallOption) (*GetRemoteModuleContributorResponse, error) {
+	out := new(GetRemoteModuleContributorResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/GetRemoteModuleContributor", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) GetModuleSettings(ctx context.Context, in *GetModuleSettingsRequest, opts ...grpc.CallOption) (*GetModuleSettingsResponse, error) {
-	out := new(GetModuleSettingsResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleSettings", in, out, opts...)
+func (c *remoteModuleServiceClient) GetRemoteModuleSettings(ctx context.Context, in *GetRemoteModuleSettingsRequest, opts ...grpc.CallOption) (*GetRemoteModuleSettingsResponse, error) {
+	out := new(GetRemoteModuleSettingsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/GetRemoteModuleSettings", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *moduleServiceClient) UpdateModuleSettingsByName(ctx context.Context, in *UpdateModuleSettingsByNameRequest, opts ...grpc.CallOption) (*UpdateModuleSettingsByNameResponse, error) {
-	out := new(UpdateModuleSettingsByNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/UpdateModuleSettingsByName", in, out, opts...)
+func (c *remoteModuleServiceClient) UpdateRemoteModuleSettingsByName(ctx context.Context, in *UpdateRemoteModuleSettingsByNameRequest, opts ...grpc.CallOption) (*UpdateRemoteModuleSettingsByNameResponse, error) {
+	out := new(UpdateRemoteModuleSettingsByNameResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.RemoteModuleService/UpdateRemoteModuleSettingsByName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ModuleServiceServer is the server API for ModuleService service.
-// All implementations should embed UnimplementedModuleServiceServer
+// RemoteModuleServiceServer is the server API for RemoteModuleService service.
+// All implementations should embed UnimplementedRemoteModuleServiceServer
 // for forward compatibility
-type ModuleServiceServer interface {
-	// GetModule gets a module by ID.
-	GetModule(context.Context, *GetModuleRequest) (*GetModuleResponse, error)
-	// GetModuleByFullName gets a module by full name.
-	GetModuleByFullName(context.Context, *GetModuleByFullNameRequest) (*GetModuleByFullNameResponse, error)
-	// ListModules lists all modules.
-	ListModules(context.Context, *ListModulesRequest) (*ListModulesResponse, error)
-	// ListUserModules lists all modules belonging to a user.
-	ListUserModules(context.Context, *ListUserModulesRequest) (*ListUserModulesResponse, error)
-	// ListModulesUserCanAccess lists all modules a user can access.
-	ListModulesUserCanAccess(context.Context, *ListModulesUserCanAccessRequest) (*ListModulesUserCanAccessResponse, error)
-	// ListOrganizationModules lists all modules for an organization.
-	ListOrganizationModules(context.Context, *ListOrganizationModulesRequest) (*ListOrganizationModulesResponse, error)
-	// CreateModuleByFullName creates a new module by full name.
-	CreateModuleByFullName(context.Context, *CreateModuleByFullNameRequest) (*CreateModuleByFullNameResponse, error)
-	// DeleteModule deletes a module.
-	DeleteModule(context.Context, *DeleteModuleRequest) (*DeleteModuleResponse, error)
-	// DeleteModuleByFullName deletes a module by full name.
-	DeleteModuleByFullName(context.Context, *DeleteModuleByFullNameRequest) (*DeleteModuleByFullNameResponse, error)
-	// DeprecateModuleByName deprecates the module.
-	DeprecateModuleByName(context.Context, *DeprecateModuleByNameRequest) (*DeprecateModuleByNameResponse, error)
-	// UndeprecateModuleByName makes the module not deprecated and removes any deprecation_message.
-	UndeprecateModuleByName(context.Context, *UndeprecateModuleByNameRequest) (*UndeprecateModuleByNameResponse, error)
-	// GetModulesByFullName gets modules by full name. Response order is unspecified.
+type RemoteModuleServiceServer interface {
+	// GetRemoteModule gets a module by ID.
+	GetRemoteModule(context.Context, *GetRemoteModuleRequest) (*GetRemoteModuleResponse, error)
+	// GetRemoteModuleByFullName gets a module by full name.
+	GetRemoteModuleByFullName(context.Context, *GetRemoteModuleByFullNameRequest) (*GetRemoteModuleByFullNameResponse, error)
+	// ListRemoteModules lists all modules.
+	ListRemoteModules(context.Context, *ListRemoteModulesRequest) (*ListRemoteModulesResponse, error)
+	// ListUserRemoteModules lists all modules belonging to a user.
+	ListUserRemoteModules(context.Context, *ListUserRemoteModulesRequest) (*ListUserRemoteModulesResponse, error)
+	// ListRemoteModulesUserCanAccess lists all modules a user can access.
+	ListRemoteModulesUserCanAccess(context.Context, *ListRemoteModulesUserCanAccessRequest) (*ListRemoteModulesUserCanAccessResponse, error)
+	// ListOrganizationRemoteModules lists all modules for an organization.
+	ListOrganizationRemoteModules(context.Context, *ListOrganizationRemoteModulesRequest) (*ListOrganizationRemoteModulesResponse, error)
+	// CreateRemoteModuleByFullName creates a new module by full name.
+	CreateRemoteModuleByFullName(context.Context, *CreateRemoteModuleByFullNameRequest) (*CreateRemoteModuleByFullNameResponse, error)
+	// DeleteRemoteModule deletes a module.
+	DeleteRemoteModule(context.Context, *DeleteRemoteModuleRequest) (*DeleteRemoteModuleResponse, error)
+	// DeleteRemoteModuleByFullName deletes a module by full name.
+	DeleteRemoteModuleByFullName(context.Context, *DeleteRemoteModuleByFullNameRequest) (*DeleteRemoteModuleByFullNameResponse, error)
+	// DeprecateRemoteModuleByName deprecates the module.
+	DeprecateRemoteModuleByName(context.Context, *DeprecateRemoteModuleByNameRequest) (*DeprecateRemoteModuleByNameResponse, error)
+	// UndeprecateRemoteModuleByName makes the module not deprecated and removes any deprecation_message.
+	UndeprecateRemoteModuleByName(context.Context, *UndeprecateRemoteModuleByNameRequest) (*UndeprecateRemoteModuleByNameResponse, error)
+	// GetRemoteModulesByFullName gets modules by full name. Response order is unspecified.
 	// Errors if any of the modules don't exist or the caller does not have access to any of the modules.
-	GetModulesByFullName(context.Context, *GetModulesByFullNameRequest) (*GetModulesByFullNameResponse, error)
-	// SetModuleContributor sets the role of a user in the module.
-	SetModuleContributor(context.Context, *SetModuleContributorRequest) (*SetModuleContributorResponse, error)
-	// ListModuleContributors returns the list of contributors that has an explicit role against the module.
+	GetRemoteModulesByFullName(context.Context, *GetRemoteModulesByFullNameRequest) (*GetRemoteModulesByFullNameResponse, error)
+	// SetRemoteModuleContributor sets the role of a user in the module.
+	SetRemoteModuleContributor(context.Context, *SetRemoteModuleContributorRequest) (*SetRemoteModuleContributorResponse, error)
+	// ListRemoteModuleContributors returns the list of contributors that has an explicit role against the module.
 	// This does not include users who have implicit roles against the module, unless they have also been
 	// assigned a role explicitly.
-	ListModuleContributors(context.Context, *ListModuleContributorsRequest) (*ListModuleContributorsResponse, error)
-	// GetModuleContributor returns the contributor information of a user in a module.
-	GetModuleContributor(context.Context, *GetModuleContributorRequest) (*GetModuleContributorResponse, error)
-	// GetModuleSettings gets the settings of a module.
-	GetModuleSettings(context.Context, *GetModuleSettingsRequest) (*GetModuleSettingsResponse, error)
-	// UpdateModuleSettingsByName updates the settings of a module.
-	UpdateModuleSettingsByName(context.Context, *UpdateModuleSettingsByNameRequest) (*UpdateModuleSettingsByNameResponse, error)
+	ListRemoteModuleContributors(context.Context, *ListRemoteModuleContributorsRequest) (*ListRemoteModuleContributorsResponse, error)
+	// GetRemoteModuleContributor returns the contributor information of a user in a module.
+	GetRemoteModuleContributor(context.Context, *GetRemoteModuleContributorRequest) (*GetRemoteModuleContributorResponse, error)
+	// GetRemoteModuleSettings gets the settings of a module.
+	GetRemoteModuleSettings(context.Context, *GetRemoteModuleSettingsRequest) (*GetRemoteModuleSettingsResponse, error)
+	// UpdateRemoteModuleSettingsByName updates the settings of a module.
+	UpdateRemoteModuleSettingsByName(context.Context, *UpdateRemoteModuleSettingsByNameRequest) (*UpdateRemoteModuleSettingsByNameResponse, error)
 }
 
-// UnimplementedModuleServiceServer should be embedded to have forward compatible implementations.
-type UnimplementedModuleServiceServer struct {
+// UnimplementedRemoteModuleServiceServer should be embedded to have forward compatible implementations.
+type UnimplementedRemoteModuleServiceServer struct {
 }
 
-func (UnimplementedModuleServiceServer) GetModule(context.Context, *GetModuleRequest) (*GetModuleResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetModule not implemented")
+func (UnimplementedRemoteModuleServiceServer) GetRemoteModule(context.Context, *GetRemoteModuleRequest) (*GetRemoteModuleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRemoteModule not implemented")
 }
-func (UnimplementedModuleServiceServer) GetModuleByFullName(context.Context, *GetModuleByFullNameRequest) (*GetModuleByFullNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetModuleByFullName not implemented")
+func (UnimplementedRemoteModuleServiceServer) GetRemoteModuleByFullName(context.Context, *GetRemoteModuleByFullNameRequest) (*GetRemoteModuleByFullNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRemoteModuleByFullName not implemented")
 }
-func (UnimplementedModuleServiceServer) ListModules(context.Context, *ListModulesRequest) (*ListModulesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListModules not implemented")
+func (UnimplementedRemoteModuleServiceServer) ListRemoteModules(context.Context, *ListRemoteModulesRequest) (*ListRemoteModulesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRemoteModules not implemented")
 }
-func (UnimplementedModuleServiceServer) ListUserModules(context.Context, *ListUserModulesRequest) (*ListUserModulesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListUserModules not implemented")
+func (UnimplementedRemoteModuleServiceServer) ListUserRemoteModules(context.Context, *ListUserRemoteModulesRequest) (*ListUserRemoteModulesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListUserRemoteModules not implemented")
 }
-func (UnimplementedModuleServiceServer) ListModulesUserCanAccess(context.Context, *ListModulesUserCanAccessRequest) (*ListModulesUserCanAccessResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListModulesUserCanAccess not implemented")
+func (UnimplementedRemoteModuleServiceServer) ListRemoteModulesUserCanAccess(context.Context, *ListRemoteModulesUserCanAccessRequest) (*ListRemoteModulesUserCanAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRemoteModulesUserCanAccess not implemented")
 }
-func (UnimplementedModuleServiceServer) ListOrganizationModules(context.Context, *ListOrganizationModulesRequest) (*ListOrganizationModulesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListOrganizationModules not implemented")
+func (UnimplementedRemoteModuleServiceServer) ListOrganizationRemoteModules(context.Context, *ListOrganizationRemoteModulesRequest) (*ListOrganizationRemoteModulesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListOrganizationRemoteModules not implemented")
 }
-func (UnimplementedModuleServiceServer) CreateModuleByFullName(context.Context, *CreateModuleByFullNameRequest) (*CreateModuleByFullNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateModuleByFullName not implemented")
+func (UnimplementedRemoteModuleServiceServer) CreateRemoteModuleByFullName(context.Context, *CreateRemoteModuleByFullNameRequest) (*CreateRemoteModuleByFullNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRemoteModuleByFullName not implemented")
 }
-func (UnimplementedModuleServiceServer) DeleteModule(context.Context, *DeleteModuleRequest) (*DeleteModuleResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteModule not implemented")
+func (UnimplementedRemoteModuleServiceServer) DeleteRemoteModule(context.Context, *DeleteRemoteModuleRequest) (*DeleteRemoteModuleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRemoteModule not implemented")
 }
-func (UnimplementedModuleServiceServer) DeleteModuleByFullName(context.Context, *DeleteModuleByFullNameRequest) (*DeleteModuleByFullNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteModuleByFullName not implemented")
+func (UnimplementedRemoteModuleServiceServer) DeleteRemoteModuleByFullName(context.Context, *DeleteRemoteModuleByFullNameRequest) (*DeleteRemoteModuleByFullNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRemoteModuleByFullName not implemented")
 }
-func (UnimplementedModuleServiceServer) DeprecateModuleByName(context.Context, *DeprecateModuleByNameRequest) (*DeprecateModuleByNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeprecateModuleByName not implemented")
+func (UnimplementedRemoteModuleServiceServer) DeprecateRemoteModuleByName(context.Context, *DeprecateRemoteModuleByNameRequest) (*DeprecateRemoteModuleByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeprecateRemoteModuleByName not implemented")
 }
-func (UnimplementedModuleServiceServer) UndeprecateModuleByName(context.Context, *UndeprecateModuleByNameRequest) (*UndeprecateModuleByNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UndeprecateModuleByName not implemented")
+func (UnimplementedRemoteModuleServiceServer) UndeprecateRemoteModuleByName(context.Context, *UndeprecateRemoteModuleByNameRequest) (*UndeprecateRemoteModuleByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UndeprecateRemoteModuleByName not implemented")
 }
-func (UnimplementedModuleServiceServer) GetModulesByFullName(context.Context, *GetModulesByFullNameRequest) (*GetModulesByFullNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetModulesByFullName not implemented")
+func (UnimplementedRemoteModuleServiceServer) GetRemoteModulesByFullName(context.Context, *GetRemoteModulesByFullNameRequest) (*GetRemoteModulesByFullNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRemoteModulesByFullName not implemented")
 }
-func (UnimplementedModuleServiceServer) SetModuleContributor(context.Context, *SetModuleContributorRequest) (*SetModuleContributorResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetModuleContributor not implemented")
+func (UnimplementedRemoteModuleServiceServer) SetRemoteModuleContributor(context.Context, *SetRemoteModuleContributorRequest) (*SetRemoteModuleContributorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetRemoteModuleContributor not implemented")
 }
-func (UnimplementedModuleServiceServer) ListModuleContributors(context.Context, *ListModuleContributorsRequest) (*ListModuleContributorsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListModuleContributors not implemented")
+func (UnimplementedRemoteModuleServiceServer) ListRemoteModuleContributors(context.Context, *ListRemoteModuleContributorsRequest) (*ListRemoteModuleContributorsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListRemoteModuleContributors not implemented")
 }
-func (UnimplementedModuleServiceServer) GetModuleContributor(context.Context, *GetModuleContributorRequest) (*GetModuleContributorResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetModuleContributor not implemented")
+func (UnimplementedRemoteModuleServiceServer) GetRemoteModuleContributor(context.Context, *GetRemoteModuleContributorRequest) (*GetRemoteModuleContributorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRemoteModuleContributor not implemented")
 }
-func (UnimplementedModuleServiceServer) GetModuleSettings(context.Context, *GetModuleSettingsRequest) (*GetModuleSettingsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetModuleSettings not implemented")
+func (UnimplementedRemoteModuleServiceServer) GetRemoteModuleSettings(context.Context, *GetRemoteModuleSettingsRequest) (*GetRemoteModuleSettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRemoteModuleSettings not implemented")
 }
-func (UnimplementedModuleServiceServer) UpdateModuleSettingsByName(context.Context, *UpdateModuleSettingsByNameRequest) (*UpdateModuleSettingsByNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateModuleSettingsByName not implemented")
+func (UnimplementedRemoteModuleServiceServer) UpdateRemoteModuleSettingsByName(context.Context, *UpdateRemoteModuleSettingsByNameRequest) (*UpdateRemoteModuleSettingsByNameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateRemoteModuleSettingsByName not implemented")
 }
 
-// UnsafeModuleServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to ModuleServiceServer will
+// UnsafeRemoteModuleServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RemoteModuleServiceServer will
 // result in compilation errors.
-type UnsafeModuleServiceServer interface {
-	mustEmbedUnimplementedModuleServiceServer()
+type UnsafeRemoteModuleServiceServer interface {
+	mustEmbedUnimplementedRemoteModuleServiceServer()
 }
 
-func RegisterModuleServiceServer(s grpc.ServiceRegistrar, srv ModuleServiceServer) {
-	s.RegisterService(&ModuleService_ServiceDesc, srv)
+func RegisterRemoteModuleServiceServer(s grpc.ServiceRegistrar, srv RemoteModuleServiceServer) {
+	s.RegisterService(&RemoteModuleService_ServiceDesc, srv)
 }
 
-func _ModuleService_GetModule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetModuleRequest)
+func _RemoteModuleService_GetRemoteModule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRemoteModuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).GetModule(ctx, in)
+		return srv.(RemoteModuleServiceServer).GetRemoteModule(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/GetModule",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/GetRemoteModule",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).GetModule(ctx, req.(*GetModuleRequest))
+		return srv.(RemoteModuleServiceServer).GetRemoteModule(ctx, req.(*GetRemoteModuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_GetModuleByFullName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetModuleByFullNameRequest)
+func _RemoteModuleService_GetRemoteModuleByFullName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRemoteModuleByFullNameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).GetModuleByFullName(ctx, in)
+		return srv.(RemoteModuleServiceServer).GetRemoteModuleByFullName(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleByFullName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/GetRemoteModuleByFullName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).GetModuleByFullName(ctx, req.(*GetModuleByFullNameRequest))
+		return srv.(RemoteModuleServiceServer).GetRemoteModuleByFullName(ctx, req.(*GetRemoteModuleByFullNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_ListModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListModulesRequest)
+func _RemoteModuleService_ListRemoteModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRemoteModulesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).ListModules(ctx, in)
+		return srv.(RemoteModuleServiceServer).ListRemoteModules(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/ListModules",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/ListRemoteModules",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).ListModules(ctx, req.(*ListModulesRequest))
+		return srv.(RemoteModuleServiceServer).ListRemoteModules(ctx, req.(*ListRemoteModulesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_ListUserModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListUserModulesRequest)
+func _RemoteModuleService_ListUserRemoteModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUserRemoteModulesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).ListUserModules(ctx, in)
+		return srv.(RemoteModuleServiceServer).ListUserRemoteModules(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/ListUserModules",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/ListUserRemoteModules",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).ListUserModules(ctx, req.(*ListUserModulesRequest))
+		return srv.(RemoteModuleServiceServer).ListUserRemoteModules(ctx, req.(*ListUserRemoteModulesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_ListModulesUserCanAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListModulesUserCanAccessRequest)
+func _RemoteModuleService_ListRemoteModulesUserCanAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRemoteModulesUserCanAccessRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).ListModulesUserCanAccess(ctx, in)
+		return srv.(RemoteModuleServiceServer).ListRemoteModulesUserCanAccess(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/ListModulesUserCanAccess",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/ListRemoteModulesUserCanAccess",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).ListModulesUserCanAccess(ctx, req.(*ListModulesUserCanAccessRequest))
+		return srv.(RemoteModuleServiceServer).ListRemoteModulesUserCanAccess(ctx, req.(*ListRemoteModulesUserCanAccessRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_ListOrganizationModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListOrganizationModulesRequest)
+func _RemoteModuleService_ListOrganizationRemoteModules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListOrganizationRemoteModulesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).ListOrganizationModules(ctx, in)
+		return srv.(RemoteModuleServiceServer).ListOrganizationRemoteModules(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/ListOrganizationModules",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/ListOrganizationRemoteModules",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).ListOrganizationModules(ctx, req.(*ListOrganizationModulesRequest))
+		return srv.(RemoteModuleServiceServer).ListOrganizationRemoteModules(ctx, req.(*ListOrganizationRemoteModulesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_CreateModuleByFullName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateModuleByFullNameRequest)
+func _RemoteModuleService_CreateRemoteModuleByFullName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRemoteModuleByFullNameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).CreateModuleByFullName(ctx, in)
+		return srv.(RemoteModuleServiceServer).CreateRemoteModuleByFullName(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/CreateModuleByFullName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/CreateRemoteModuleByFullName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).CreateModuleByFullName(ctx, req.(*CreateModuleByFullNameRequest))
+		return srv.(RemoteModuleServiceServer).CreateRemoteModuleByFullName(ctx, req.(*CreateRemoteModuleByFullNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_DeleteModule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteModuleRequest)
+func _RemoteModuleService_DeleteRemoteModule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRemoteModuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).DeleteModule(ctx, in)
+		return srv.(RemoteModuleServiceServer).DeleteRemoteModule(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/DeleteModule",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/DeleteRemoteModule",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).DeleteModule(ctx, req.(*DeleteModuleRequest))
+		return srv.(RemoteModuleServiceServer).DeleteRemoteModule(ctx, req.(*DeleteRemoteModuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_DeleteModuleByFullName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteModuleByFullNameRequest)
+func _RemoteModuleService_DeleteRemoteModuleByFullName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRemoteModuleByFullNameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).DeleteModuleByFullName(ctx, in)
+		return srv.(RemoteModuleServiceServer).DeleteRemoteModuleByFullName(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/DeleteModuleByFullName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/DeleteRemoteModuleByFullName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).DeleteModuleByFullName(ctx, req.(*DeleteModuleByFullNameRequest))
+		return srv.(RemoteModuleServiceServer).DeleteRemoteModuleByFullName(ctx, req.(*DeleteRemoteModuleByFullNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_DeprecateModuleByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeprecateModuleByNameRequest)
+func _RemoteModuleService_DeprecateRemoteModuleByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeprecateRemoteModuleByNameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).DeprecateModuleByName(ctx, in)
+		return srv.(RemoteModuleServiceServer).DeprecateRemoteModuleByName(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/DeprecateModuleByName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/DeprecateRemoteModuleByName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).DeprecateModuleByName(ctx, req.(*DeprecateModuleByNameRequest))
+		return srv.(RemoteModuleServiceServer).DeprecateRemoteModuleByName(ctx, req.(*DeprecateRemoteModuleByNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_UndeprecateModuleByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UndeprecateModuleByNameRequest)
+func _RemoteModuleService_UndeprecateRemoteModuleByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UndeprecateRemoteModuleByNameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).UndeprecateModuleByName(ctx, in)
+		return srv.(RemoteModuleServiceServer).UndeprecateRemoteModuleByName(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/UndeprecateModuleByName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/UndeprecateRemoteModuleByName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).UndeprecateModuleByName(ctx, req.(*UndeprecateModuleByNameRequest))
+		return srv.(RemoteModuleServiceServer).UndeprecateRemoteModuleByName(ctx, req.(*UndeprecateRemoteModuleByNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_GetModulesByFullName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetModulesByFullNameRequest)
+func _RemoteModuleService_GetRemoteModulesByFullName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRemoteModulesByFullNameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).GetModulesByFullName(ctx, in)
+		return srv.(RemoteModuleServiceServer).GetRemoteModulesByFullName(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/GetModulesByFullName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/GetRemoteModulesByFullName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).GetModulesByFullName(ctx, req.(*GetModulesByFullNameRequest))
+		return srv.(RemoteModuleServiceServer).GetRemoteModulesByFullName(ctx, req.(*GetRemoteModulesByFullNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_SetModuleContributor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetModuleContributorRequest)
+func _RemoteModuleService_SetRemoteModuleContributor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetRemoteModuleContributorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).SetModuleContributor(ctx, in)
+		return srv.(RemoteModuleServiceServer).SetRemoteModuleContributor(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/SetModuleContributor",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/SetRemoteModuleContributor",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).SetModuleContributor(ctx, req.(*SetModuleContributorRequest))
+		return srv.(RemoteModuleServiceServer).SetRemoteModuleContributor(ctx, req.(*SetRemoteModuleContributorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_ListModuleContributors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListModuleContributorsRequest)
+func _RemoteModuleService_ListRemoteModuleContributors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListRemoteModuleContributorsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).ListModuleContributors(ctx, in)
+		return srv.(RemoteModuleServiceServer).ListRemoteModuleContributors(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/ListModuleContributors",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/ListRemoteModuleContributors",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).ListModuleContributors(ctx, req.(*ListModuleContributorsRequest))
+		return srv.(RemoteModuleServiceServer).ListRemoteModuleContributors(ctx, req.(*ListRemoteModuleContributorsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_GetModuleContributor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetModuleContributorRequest)
+func _RemoteModuleService_GetRemoteModuleContributor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRemoteModuleContributorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).GetModuleContributor(ctx, in)
+		return srv.(RemoteModuleServiceServer).GetRemoteModuleContributor(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleContributor",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/GetRemoteModuleContributor",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).GetModuleContributor(ctx, req.(*GetModuleContributorRequest))
+		return srv.(RemoteModuleServiceServer).GetRemoteModuleContributor(ctx, req.(*GetRemoteModuleContributorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_GetModuleSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetModuleSettingsRequest)
+func _RemoteModuleService_GetRemoteModuleSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRemoteModuleSettingsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).GetModuleSettings(ctx, in)
+		return srv.(RemoteModuleServiceServer).GetRemoteModuleSettings(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleSettings",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/GetRemoteModuleSettings",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).GetModuleSettings(ctx, req.(*GetModuleSettingsRequest))
+		return srv.(RemoteModuleServiceServer).GetRemoteModuleSettings(ctx, req.(*GetRemoteModuleSettingsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ModuleService_UpdateModuleSettingsByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateModuleSettingsByNameRequest)
+func _RemoteModuleService_UpdateRemoteModuleSettingsByName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateRemoteModuleSettingsByNameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModuleServiceServer).UpdateModuleSettingsByName(ctx, in)
+		return srv.(RemoteModuleServiceServer).UpdateRemoteModuleSettingsByName(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/UpdateModuleSettingsByName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.RemoteModuleService/UpdateRemoteModuleSettingsByName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModuleServiceServer).UpdateModuleSettingsByName(ctx, req.(*UpdateModuleSettingsByNameRequest))
+		return srv.(RemoteModuleServiceServer).UpdateRemoteModuleSettingsByName(ctx, req.(*UpdateRemoteModuleSettingsByNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// ModuleService_ServiceDesc is the grpc.ServiceDesc for ModuleService service.
+// RemoteModuleService_ServiceDesc is the grpc.ServiceDesc for RemoteModuleService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var ModuleService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "buf.alpha.registry.v1alpha2.ModuleService",
-	HandlerType: (*ModuleServiceServer)(nil),
+var RemoteModuleService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "buf.alpha.registry.v1alpha2.RemoteModuleService",
+	HandlerType: (*RemoteModuleServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetModule",
-			Handler:    _ModuleService_GetModule_Handler,
+			MethodName: "GetRemoteModule",
+			Handler:    _RemoteModuleService_GetRemoteModule_Handler,
 		},
 		{
-			MethodName: "GetModuleByFullName",
-			Handler:    _ModuleService_GetModuleByFullName_Handler,
+			MethodName: "GetRemoteModuleByFullName",
+			Handler:    _RemoteModuleService_GetRemoteModuleByFullName_Handler,
 		},
 		{
-			MethodName: "ListModules",
-			Handler:    _ModuleService_ListModules_Handler,
+			MethodName: "ListRemoteModules",
+			Handler:    _RemoteModuleService_ListRemoteModules_Handler,
 		},
 		{
-			MethodName: "ListUserModules",
-			Handler:    _ModuleService_ListUserModules_Handler,
+			MethodName: "ListUserRemoteModules",
+			Handler:    _RemoteModuleService_ListUserRemoteModules_Handler,
 		},
 		{
-			MethodName: "ListModulesUserCanAccess",
-			Handler:    _ModuleService_ListModulesUserCanAccess_Handler,
+			MethodName: "ListRemoteModulesUserCanAccess",
+			Handler:    _RemoteModuleService_ListRemoteModulesUserCanAccess_Handler,
 		},
 		{
-			MethodName: "ListOrganizationModules",
-			Handler:    _ModuleService_ListOrganizationModules_Handler,
+			MethodName: "ListOrganizationRemoteModules",
+			Handler:    _RemoteModuleService_ListOrganizationRemoteModules_Handler,
 		},
 		{
-			MethodName: "CreateModuleByFullName",
-			Handler:    _ModuleService_CreateModuleByFullName_Handler,
+			MethodName: "CreateRemoteModuleByFullName",
+			Handler:    _RemoteModuleService_CreateRemoteModuleByFullName_Handler,
 		},
 		{
-			MethodName: "DeleteModule",
-			Handler:    _ModuleService_DeleteModule_Handler,
+			MethodName: "DeleteRemoteModule",
+			Handler:    _RemoteModuleService_DeleteRemoteModule_Handler,
 		},
 		{
-			MethodName: "DeleteModuleByFullName",
-			Handler:    _ModuleService_DeleteModuleByFullName_Handler,
+			MethodName: "DeleteRemoteModuleByFullName",
+			Handler:    _RemoteModuleService_DeleteRemoteModuleByFullName_Handler,
 		},
 		{
-			MethodName: "DeprecateModuleByName",
-			Handler:    _ModuleService_DeprecateModuleByName_Handler,
+			MethodName: "DeprecateRemoteModuleByName",
+			Handler:    _RemoteModuleService_DeprecateRemoteModuleByName_Handler,
 		},
 		{
-			MethodName: "UndeprecateModuleByName",
-			Handler:    _ModuleService_UndeprecateModuleByName_Handler,
+			MethodName: "UndeprecateRemoteModuleByName",
+			Handler:    _RemoteModuleService_UndeprecateRemoteModuleByName_Handler,
 		},
 		{
-			MethodName: "GetModulesByFullName",
-			Handler:    _ModuleService_GetModulesByFullName_Handler,
+			MethodName: "GetRemoteModulesByFullName",
+			Handler:    _RemoteModuleService_GetRemoteModulesByFullName_Handler,
 		},
 		{
-			MethodName: "SetModuleContributor",
-			Handler:    _ModuleService_SetModuleContributor_Handler,
+			MethodName: "SetRemoteModuleContributor",
+			Handler:    _RemoteModuleService_SetRemoteModuleContributor_Handler,
 		},
 		{
-			MethodName: "ListModuleContributors",
-			Handler:    _ModuleService_ListModuleContributors_Handler,
+			MethodName: "ListRemoteModuleContributors",
+			Handler:    _RemoteModuleService_ListRemoteModuleContributors_Handler,
 		},
 		{
-			MethodName: "GetModuleContributor",
-			Handler:    _ModuleService_GetModuleContributor_Handler,
+			MethodName: "GetRemoteModuleContributor",
+			Handler:    _RemoteModuleService_GetRemoteModuleContributor_Handler,
 		},
 		{
-			MethodName: "GetModuleSettings",
-			Handler:    _ModuleService_GetModuleSettings_Handler,
+			MethodName: "GetRemoteModuleSettings",
+			Handler:    _RemoteModuleService_GetRemoteModuleSettings_Handler,
 		},
 		{
-			MethodName: "UpdateModuleSettingsByName",
-			Handler:    _ModuleService_UpdateModuleSettingsByName_Handler,
+			MethodName: "UpdateRemoteModuleSettingsByName",
+			Handler:    _RemoteModuleService_UpdateRemoteModuleSettingsByName_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

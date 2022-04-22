@@ -24,7 +24,7 @@ enum BufAlphaRegistryV1Alpha2Visibility {
   BUF_ALPHA_REGISTRY_V1_ALPHA2_VISIBILITY_PRIVATE = 2;
 }
 
-message BufAlphaRegistryV1Alpha2ModuleBranch {
+message BufAlphaRegistryV1Alpha2RemoteModuleBranch {
   string id = 1;
   google.protobuf.Timestamp create_time = 2;
   // Field number '3' reserved for the update_time.
@@ -32,7 +32,7 @@ message BufAlphaRegistryV1Alpha2ModuleBranch {
   string module_id = 5;
 }
 
-message BufAlphaRegistryV1Alpha2ModuleTag {
+message BufAlphaRegistryV1Alpha2RemoteModuleTag {
   string id = 1;
   google.protobuf.Timestamp create_time = 2;
   // Field number '3' reserved for the update_time.
@@ -41,7 +41,7 @@ message BufAlphaRegistryV1Alpha2ModuleTag {
   string author = 6;
 }
 
-message BufAlphaRegistryV1Alpha2ModuleCommit {
+message BufAlphaRegistryV1Alpha2RemoteModuleCommit {
   string id = 1;
   google.protobuf.Timestamp create_time = 2;
   string digest = 3;
@@ -49,10 +49,10 @@ message BufAlphaRegistryV1Alpha2ModuleCommit {
   string branch = 5;
   int64 commit_sequence_id = 6;
   string author = 7;
-  repeated BufAlphaRegistryV1Alpha2ModuleTag tags = 8;
+  repeated BufAlphaRegistryV1Alpha2RemoteModuleTag tags = 8;
 }
 
-message BufAlphaRegistryV1Alpha2ModuleTrack {
+message BufAlphaRegistryV1Alpha2RemoteModuleTrack {
   string id = 1;
   google.protobuf.Timestamp create_time = 2;
   // Field number '3' reserved for the update_time.

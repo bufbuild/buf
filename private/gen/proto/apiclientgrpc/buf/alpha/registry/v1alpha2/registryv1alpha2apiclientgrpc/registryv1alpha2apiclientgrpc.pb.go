@@ -66,7 +66,7 @@ func WithContextModifierProvider(contextModifierProvider func(address string) (f
 	}
 }
 
-func (p *provider) NewModuleService(ctx context.Context, address string) (registryv1alpha2api.ModuleService, error) {
+func (p *provider) NewRemoteModuleService(ctx context.Context, address string) (registryv1alpha2api.RemoteModuleService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
@@ -82,9 +82,9 @@ func (p *provider) NewModuleService(ctx context.Context, address string) (regist
 	if err != nil {
 		return nil, err
 	}
-	return &moduleService{
+	return &remoteModuleService{
 		logger:          p.logger,
-		client:          v1alpha2.NewModuleServiceClient(clientConn),
+		client:          v1alpha2.NewRemoteModuleServiceClient(clientConn),
 		contextModifier: contextModifier,
 	}, nil
 }

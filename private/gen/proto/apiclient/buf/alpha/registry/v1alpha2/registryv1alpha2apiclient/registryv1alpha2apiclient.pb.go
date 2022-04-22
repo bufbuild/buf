@@ -23,10 +23,10 @@ import (
 
 // Provider provides all the types in registryv1alpha2apiclient.
 type Provider interface {
-	ModuleServiceProvider
+	RemoteModuleServiceProvider
 }
 
-// ModuleServiceProvider provides a client-side ModuleService for an address.
-type ModuleServiceProvider interface {
-	NewModuleService(ctx context.Context, address string) (registryv1alpha2api.ModuleService, error)
+// RemoteModuleServiceProvider provides a client-side RemoteModuleService for an address.
+type RemoteModuleServiceProvider interface {
+	NewRemoteModuleService(ctx context.Context, address string) (registryv1alpha2api.RemoteModuleService, error)
 }

@@ -16,11 +16,11 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha2;
 
-// The roles that users can have for a Module.
-enum ModuleRole {
-  MODULE_ROLE_UNSPECIFIED = 0;
-  MODULE_ROLE_OWNER = 1;
-  MODULE_ROLE_ADMIN = 2;
-  MODULE_ROLE_WRITE = 3;
-  MODULE_ROLE_READ = 4;
+// The roles that users can have for a RemoteModule.
+enum RemoteModuleRole {
+  REMOTE_MODULE_ROLE_UNSPECIFIED = 0;
+  REMOTE_MODULE_ROLE_OWNER = 1;
+  REMOTE_MODULE_ROLE_ADMIN = 2;
+  REMOTE_MODULE_ROLE_WRITE = 3;
+  REMOTE_MODULE_ROLE_READ = 4;
 }

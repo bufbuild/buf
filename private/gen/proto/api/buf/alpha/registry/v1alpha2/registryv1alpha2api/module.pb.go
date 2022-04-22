@@ -21,101 +21,101 @@ import (
 	v1alpha2 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha2"
 )
 
-// ModuleService is the Module service.
-type ModuleService interface {
-	// GetModule gets a module by ID.
-	GetModule(
+// RemoteModuleService is the RemoteModule service.
+type RemoteModuleService interface {
+	// GetRemoteModule gets a module by ID.
+	GetRemoteModule(
 		ctx context.Context,
 		id string,
-	) (module *v1alpha2.Module, counts *v1alpha2.ModuleCounts, err error)
-	// GetModuleByFullName gets a module by full name.
-	GetModuleByFullName(
+	) (module *v1alpha2.RemoteModule, counts *v1alpha2.RemoteModuleCounts, err error)
+	// GetRemoteModuleByFullName gets a module by full name.
+	GetRemoteModuleByFullName(
 		ctx context.Context,
 		fullName string,
-	) (module *v1alpha2.Module, counts *v1alpha2.ModuleCounts, err error)
-	// ListModules lists all modules.
-	ListModules(
+	) (module *v1alpha2.RemoteModule, counts *v1alpha2.RemoteModuleCounts, err error)
+	// ListRemoteModules lists all modules.
+	ListRemoteModules(
 		ctx context.Context,
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (modules []*v1alpha2.Module, nextPageToken string, err error)
-	// ListUserModules lists all modules belonging to a user.
-	ListUserModules(
+	) (modules []*v1alpha2.RemoteModule, nextPageToken string, err error)
+	// ListUserRemoteModules lists all modules belonging to a user.
+	ListUserRemoteModules(
 		ctx context.Context,
 		userId string,
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (modules []*v1alpha2.Module, nextPageToken string, err error)
-	// ListModulesUserCanAccess lists all modules a user can access.
-	ListModulesUserCanAccess(
+	) (modules []*v1alpha2.RemoteModule, nextPageToken string, err error)
+	// ListRemoteModulesUserCanAccess lists all modules a user can access.
+	ListRemoteModulesUserCanAccess(
 		ctx context.Context,
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (modules []*v1alpha2.Module, nextPageToken string, err error)
-	// ListOrganizationModules lists all modules for an organization.
-	ListOrganizationModules(
+	) (modules []*v1alpha2.RemoteModule, nextPageToken string, err error)
+	// ListOrganizationRemoteModules lists all modules for an organization.
+	ListOrganizationRemoteModules(
 		ctx context.Context,
 		organizationId string,
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (modules []*v1alpha2.Module, nextPageToken string, err error)
-	// CreateModuleByFullName creates a new module by full name.
-	CreateModuleByFullName(
+	) (modules []*v1alpha2.RemoteModule, nextPageToken string, err error)
+	// CreateRemoteModuleByFullName creates a new module by full name.
+	CreateRemoteModuleByFullName(
 		ctx context.Context,
 		fullName string,
 		visibility v1alpha2.Visibility,
-	) (module *v1alpha2.Module, err error)
-	// DeleteModule deletes a module.
-	DeleteModule(ctx context.Context, id string) (err error)
-	// DeleteModuleByFullName deletes a module by full name.
-	DeleteModuleByFullName(ctx context.Context, fullName string) (err error)
-	// DeprecateModuleByName deprecates the module.
-	DeprecateModuleByName(
+	) (module *v1alpha2.RemoteModule, err error)
+	// DeleteRemoteModule deletes a module.
+	DeleteRemoteModule(ctx context.Context, id string) (err error)
+	// DeleteRemoteModuleByFullName deletes a module by full name.
+	DeleteRemoteModuleByFullName(ctx context.Context, fullName string) (err error)
+	// DeprecateRemoteModuleByName deprecates the module.
+	DeprecateRemoteModuleByName(
 		ctx context.Context,
 		ownerName string,
 		moduleName string,
 		deprecationMessage string,
-	) (module *v1alpha2.Module, err error)
-	// UndeprecateModuleByName makes the module not deprecated and removes any deprecation_message.
-	UndeprecateModuleByName(
+	) (module *v1alpha2.RemoteModule, err error)
+	// UndeprecateRemoteModuleByName makes the module not deprecated and removes any deprecation_message.
+	UndeprecateRemoteModuleByName(
 		ctx context.Context,
 		ownerName string,
 		moduleName string,
-	) (module *v1alpha2.Module, err error)
-	// GetModulesByFullName gets modules by full name. Response order is unspecified.
+	) (module *v1alpha2.RemoteModule, err error)
+	// GetRemoteModulesByFullName gets modules by full name. Response order is unspecified.
 	// Errors if any of the modules don't exist or the caller does not have access to any of the modules.
-	GetModulesByFullName(ctx context.Context, fullNames []string) (modules []*v1alpha2.Module, err error)
-	// SetModuleContributor sets the role of a user in the module.
-	SetModuleContributor(
+	GetRemoteModulesByFullName(ctx context.Context, fullNames []string) (modules []*v1alpha2.RemoteModule, err error)
+	// SetRemoteModuleContributor sets the role of a user in the module.
+	SetRemoteModuleContributor(
 		ctx context.Context,
 		moduleId string,
 		userId string,
-		moduleRole v1alpha2.ModuleRole,
+		moduleRole v1alpha2.RemoteModuleRole,
 	) (err error)
-	// ListModuleContributors returns the list of contributors that has an explicit role against the module.
+	// ListRemoteModuleContributors returns the list of contributors that has an explicit role against the module.
 	// This does not include users who have implicit roles against the module, unless they have also been
 	// assigned a role explicitly.
-	ListModuleContributors(
+	ListRemoteModuleContributors(
 		ctx context.Context,
 		moduleId string,
 		pageSize uint32,
 		pageToken string,
 		reverse bool,
-	) (users []*v1alpha2.ModuleContributor, nextPageToken string, err error)
-	// GetModuleContributor returns the contributor information of a user in a module.
-	GetModuleContributor(
+	) (users []*v1alpha2.RemoteModuleContributor, nextPageToken string, err error)
+	// GetRemoteModuleContributor returns the contributor information of a user in a module.
+	GetRemoteModuleContributor(
 		ctx context.Context,
 		moduleId string,
 		userId string,
-	) (user *v1alpha2.ModuleContributor, err error)
-	// GetModuleSettings gets the settings of a module.
-	GetModuleSettings(ctx context.Context, moduleId string) (contributorsCount uint32, err error)
-	// UpdateModuleSettingsByName updates the settings of a module.
-	UpdateModuleSettingsByName(
+	) (user *v1alpha2.RemoteModuleContributor, err error)
+	// GetRemoteModuleSettings gets the settings of a module.
+	GetRemoteModuleSettings(ctx context.Context, moduleId string) (contributorsCount uint32, err error)
+	// UpdateRemoteModuleSettingsByName updates the settings of a module.
+	UpdateRemoteModuleSettingsByName(
 		ctx context.Context,
 		ownerName string,
 		moduleName string,
