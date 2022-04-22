@@ -16,9 +16,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             (unknown)
-// source: buf/alpha/registry/v1alpha1/module.proto
+// source: buf/alpha/registry/v1alpha2/module.proto
 
-package registryv1alpha1
+package registryv1alpha2
 
 import (
 	context "context"
@@ -85,7 +85,7 @@ func NewModuleServiceClient(cc grpc.ClientConnInterface) ModuleServiceClient {
 
 func (c *moduleServiceClient) GetModule(ctx context.Context, in *GetModuleRequest, opts ...grpc.CallOption) (*GetModuleResponse, error) {
 	out := new(GetModuleResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/GetModule", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/GetModule", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (c *moduleServiceClient) GetModule(ctx context.Context, in *GetModuleReques
 
 func (c *moduleServiceClient) GetModuleByFullName(ctx context.Context, in *GetModuleByFullNameRequest, opts ...grpc.CallOption) (*GetModuleByFullNameResponse, error) {
 	out := new(GetModuleByFullNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/GetModuleByFullName", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleByFullName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (c *moduleServiceClient) GetModuleByFullName(ctx context.Context, in *GetMo
 
 func (c *moduleServiceClient) ListModules(ctx context.Context, in *ListModulesRequest, opts ...grpc.CallOption) (*ListModulesResponse, error) {
 	out := new(ListModulesResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/ListModules", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/ListModules", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +112,7 @@ func (c *moduleServiceClient) ListModules(ctx context.Context, in *ListModulesRe
 
 func (c *moduleServiceClient) ListUserModules(ctx context.Context, in *ListUserModulesRequest, opts ...grpc.CallOption) (*ListUserModulesResponse, error) {
 	out := new(ListUserModulesResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/ListUserModules", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/ListUserModules", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (c *moduleServiceClient) ListUserModules(ctx context.Context, in *ListUserM
 
 func (c *moduleServiceClient) ListModulesUserCanAccess(ctx context.Context, in *ListModulesUserCanAccessRequest, opts ...grpc.CallOption) (*ListModulesUserCanAccessResponse, error) {
 	out := new(ListModulesUserCanAccessResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/ListModulesUserCanAccess", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/ListModulesUserCanAccess", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func (c *moduleServiceClient) ListModulesUserCanAccess(ctx context.Context, in *
 
 func (c *moduleServiceClient) ListOrganizationModules(ctx context.Context, in *ListOrganizationModulesRequest, opts ...grpc.CallOption) (*ListOrganizationModulesResponse, error) {
 	out := new(ListOrganizationModulesResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/ListOrganizationModules", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/ListOrganizationModules", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (c *moduleServiceClient) ListOrganizationModules(ctx context.Context, in *L
 
 func (c *moduleServiceClient) CreateModuleByFullName(ctx context.Context, in *CreateModuleByFullNameRequest, opts ...grpc.CallOption) (*CreateModuleByFullNameResponse, error) {
 	out := new(CreateModuleByFullNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/CreateModuleByFullName", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/CreateModuleByFullName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (c *moduleServiceClient) CreateModuleByFullName(ctx context.Context, in *Cr
 
 func (c *moduleServiceClient) DeleteModule(ctx context.Context, in *DeleteModuleRequest, opts ...grpc.CallOption) (*DeleteModuleResponse, error) {
 	out := new(DeleteModuleResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/DeleteModule", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/DeleteModule", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (c *moduleServiceClient) DeleteModule(ctx context.Context, in *DeleteModule
 
 func (c *moduleServiceClient) DeleteModuleByFullName(ctx context.Context, in *DeleteModuleByFullNameRequest, opts ...grpc.CallOption) (*DeleteModuleByFullNameResponse, error) {
 	out := new(DeleteModuleByFullNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/DeleteModuleByFullName", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/DeleteModuleByFullName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func (c *moduleServiceClient) DeleteModuleByFullName(ctx context.Context, in *De
 
 func (c *moduleServiceClient) DeprecateModuleByName(ctx context.Context, in *DeprecateModuleByNameRequest, opts ...grpc.CallOption) (*DeprecateModuleByNameResponse, error) {
 	out := new(DeprecateModuleByNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/DeprecateModuleByName", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/DeprecateModuleByName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (c *moduleServiceClient) DeprecateModuleByName(ctx context.Context, in *Dep
 
 func (c *moduleServiceClient) UndeprecateModuleByName(ctx context.Context, in *UndeprecateModuleByNameRequest, opts ...grpc.CallOption) (*UndeprecateModuleByNameResponse, error) {
 	out := new(UndeprecateModuleByNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/UndeprecateModuleByName", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/UndeprecateModuleByName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +184,7 @@ func (c *moduleServiceClient) UndeprecateModuleByName(ctx context.Context, in *U
 
 func (c *moduleServiceClient) GetModulesByFullName(ctx context.Context, in *GetModulesByFullNameRequest, opts ...grpc.CallOption) (*GetModulesByFullNameResponse, error) {
 	out := new(GetModulesByFullNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/GetModulesByFullName", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/GetModulesByFullName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (c *moduleServiceClient) GetModulesByFullName(ctx context.Context, in *GetM
 
 func (c *moduleServiceClient) SetModuleContributor(ctx context.Context, in *SetModuleContributorRequest, opts ...grpc.CallOption) (*SetModuleContributorResponse, error) {
 	out := new(SetModuleContributorResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/SetModuleContributor", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/SetModuleContributor", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +202,7 @@ func (c *moduleServiceClient) SetModuleContributor(ctx context.Context, in *SetM
 
 func (c *moduleServiceClient) ListModuleContributors(ctx context.Context, in *ListModuleContributorsRequest, opts ...grpc.CallOption) (*ListModuleContributorsResponse, error) {
 	out := new(ListModuleContributorsResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/ListModuleContributors", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/ListModuleContributors", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (c *moduleServiceClient) ListModuleContributors(ctx context.Context, in *Li
 
 func (c *moduleServiceClient) GetModuleContributor(ctx context.Context, in *GetModuleContributorRequest, opts ...grpc.CallOption) (*GetModuleContributorResponse, error) {
 	out := new(GetModuleContributorResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/GetModuleContributor", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleContributor", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +220,7 @@ func (c *moduleServiceClient) GetModuleContributor(ctx context.Context, in *GetM
 
 func (c *moduleServiceClient) GetModuleSettings(ctx context.Context, in *GetModuleSettingsRequest, opts ...grpc.CallOption) (*GetModuleSettingsResponse, error) {
 	out := new(GetModuleSettingsResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/GetModuleSettings", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleSettings", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func (c *moduleServiceClient) GetModuleSettings(ctx context.Context, in *GetModu
 
 func (c *moduleServiceClient) UpdateModuleSettingsByName(ctx context.Context, in *UpdateModuleSettingsByNameRequest, opts ...grpc.CallOption) (*UpdateModuleSettingsByNameResponse, error) {
 	out := new(UpdateModuleSettingsByNameResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.ModuleService/UpdateModuleSettingsByName", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha2.ModuleService/UpdateModuleSettingsByName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -356,7 +356,7 @@ func _ModuleService_GetModule_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/GetModule",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/GetModule",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).GetModule(ctx, req.(*GetModuleRequest))
@@ -374,7 +374,7 @@ func _ModuleService_GetModuleByFullName_Handler(srv interface{}, ctx context.Con
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/GetModuleByFullName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleByFullName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).GetModuleByFullName(ctx, req.(*GetModuleByFullNameRequest))
@@ -392,7 +392,7 @@ func _ModuleService_ListModules_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/ListModules",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/ListModules",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).ListModules(ctx, req.(*ListModulesRequest))
@@ -410,7 +410,7 @@ func _ModuleService_ListUserModules_Handler(srv interface{}, ctx context.Context
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/ListUserModules",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/ListUserModules",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).ListUserModules(ctx, req.(*ListUserModulesRequest))
@@ -428,7 +428,7 @@ func _ModuleService_ListModulesUserCanAccess_Handler(srv interface{}, ctx contex
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/ListModulesUserCanAccess",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/ListModulesUserCanAccess",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).ListModulesUserCanAccess(ctx, req.(*ListModulesUserCanAccessRequest))
@@ -446,7 +446,7 @@ func _ModuleService_ListOrganizationModules_Handler(srv interface{}, ctx context
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/ListOrganizationModules",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/ListOrganizationModules",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).ListOrganizationModules(ctx, req.(*ListOrganizationModulesRequest))
@@ -464,7 +464,7 @@ func _ModuleService_CreateModuleByFullName_Handler(srv interface{}, ctx context.
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/CreateModuleByFullName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/CreateModuleByFullName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).CreateModuleByFullName(ctx, req.(*CreateModuleByFullNameRequest))
@@ -482,7 +482,7 @@ func _ModuleService_DeleteModule_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/DeleteModule",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/DeleteModule",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).DeleteModule(ctx, req.(*DeleteModuleRequest))
@@ -500,7 +500,7 @@ func _ModuleService_DeleteModuleByFullName_Handler(srv interface{}, ctx context.
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/DeleteModuleByFullName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/DeleteModuleByFullName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).DeleteModuleByFullName(ctx, req.(*DeleteModuleByFullNameRequest))
@@ -518,7 +518,7 @@ func _ModuleService_DeprecateModuleByName_Handler(srv interface{}, ctx context.C
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/DeprecateModuleByName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/DeprecateModuleByName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).DeprecateModuleByName(ctx, req.(*DeprecateModuleByNameRequest))
@@ -536,7 +536,7 @@ func _ModuleService_UndeprecateModuleByName_Handler(srv interface{}, ctx context
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/UndeprecateModuleByName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/UndeprecateModuleByName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).UndeprecateModuleByName(ctx, req.(*UndeprecateModuleByNameRequest))
@@ -554,7 +554,7 @@ func _ModuleService_GetModulesByFullName_Handler(srv interface{}, ctx context.Co
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/GetModulesByFullName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/GetModulesByFullName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).GetModulesByFullName(ctx, req.(*GetModulesByFullNameRequest))
@@ -572,7 +572,7 @@ func _ModuleService_SetModuleContributor_Handler(srv interface{}, ctx context.Co
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/SetModuleContributor",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/SetModuleContributor",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).SetModuleContributor(ctx, req.(*SetModuleContributorRequest))
@@ -590,7 +590,7 @@ func _ModuleService_ListModuleContributors_Handler(srv interface{}, ctx context.
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/ListModuleContributors",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/ListModuleContributors",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).ListModuleContributors(ctx, req.(*ListModuleContributorsRequest))
@@ -608,7 +608,7 @@ func _ModuleService_GetModuleContributor_Handler(srv interface{}, ctx context.Co
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/GetModuleContributor",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleContributor",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).GetModuleContributor(ctx, req.(*GetModuleContributorRequest))
@@ -626,7 +626,7 @@ func _ModuleService_GetModuleSettings_Handler(srv interface{}, ctx context.Conte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/GetModuleSettings",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/GetModuleSettings",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).GetModuleSettings(ctx, req.(*GetModuleSettingsRequest))
@@ -644,7 +644,7 @@ func _ModuleService_UpdateModuleSettingsByName_Handler(srv interface{}, ctx cont
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.ModuleService/UpdateModuleSettingsByName",
+		FullMethod: "/buf.alpha.registry.v1alpha2.ModuleService/UpdateModuleSettingsByName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ModuleServiceServer).UpdateModuleSettingsByName(ctx, req.(*UpdateModuleSettingsByNameRequest))
@@ -656,7 +656,7 @@ func _ModuleService_UpdateModuleSettingsByName_Handler(srv interface{}, ctx cont
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ModuleService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "buf.alpha.registry.v1alpha1.ModuleService",
+	ServiceName: "buf.alpha.registry.v1alpha2.ModuleService",
 	HandlerType: (*ModuleServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -729,5 +729,5 @@ var ModuleService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "buf/alpha/registry/v1alpha1/module.proto",
+	Metadata: "buf/alpha/registry/v1alpha2/module.proto",
 }

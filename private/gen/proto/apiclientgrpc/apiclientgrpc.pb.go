@@ -20,7 +20,9 @@ import (
 	context "context"
 	apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	registryv1alpha2apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha2/registryv1alpha2apiclient"
 	registryv1alpha1apiclientgrpc "github.com/bufbuild/buf/private/gen/proto/apiclientgrpc/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientgrpc"
+	registryv1alpha2apiclientgrpc "github.com/bufbuild/buf/private/gen/proto/apiclientgrpc/buf/alpha/registry/v1alpha2/registryv1alpha2apiclientgrpc"
 	grpcclient "github.com/bufbuild/buf/private/pkg/transport/grpc/grpcclient"
 	zap "go.uber.org/zap"
 )
@@ -41,11 +43,17 @@ func NewProvider(
 			clientConnProvider,
 			providerOptions.bufAlphaRegistryV1alpha1ProviderOptions...,
 		),
+		bufAlphaRegistryV1alpha2Provider: registryv1alpha2apiclientgrpc.NewProvider(
+			logger,
+			clientConnProvider,
+			providerOptions.bufAlphaRegistryV1alpha2ProviderOptions...,
+		),
 	}
 }
 
 type provider struct {
 	bufAlphaRegistryV1alpha1Provider registryv1alpha1apiclient.Provider
+	bufAlphaRegistryV1alpha2Provider registryv1alpha2apiclient.Provider
 }
 
 // ProviderOption is an option for a new Provider.
@@ -58,6 +66,10 @@ func WithAddressMapper(addressMapper func(string) string) ProviderOption {
 			providerOptions.bufAlphaRegistryV1alpha1ProviderOptions,
 			registryv1alpha1apiclientgrpc.WithAddressMapper(addressMapper),
 		)
+		providerOptions.bufAlphaRegistryV1alpha2ProviderOptions = append(
+			providerOptions.bufAlphaRegistryV1alpha2ProviderOptions,
+			registryv1alpha2apiclientgrpc.WithAddressMapper(addressMapper),
+		)
 	}
 }
 
@@ -69,6 +81,10 @@ func WithContextModifierProvider(contextModifierProvider func(address string) (f
 			providerOptions.bufAlphaRegistryV1alpha1ProviderOptions,
 			registryv1alpha1apiclientgrpc.WithContextModifierProvider(contextModifierProvider),
 		)
+		providerOptions.bufAlphaRegistryV1alpha2ProviderOptions = append(
+			providerOptions.bufAlphaRegistryV1alpha2ProviderOptions,
+			registryv1alpha2apiclientgrpc.WithContextModifierProvider(contextModifierProvider),
+		)
 	}
 }
 
@@ -76,6 +92,11 @@ func (p *provider) BufAlphaRegistryV1alpha1() registryv1alpha1apiclient.Provider
 	return p.bufAlphaRegistryV1alpha1Provider
 }
 
+func (p *provider) BufAlphaRegistryV1alpha2() registryv1alpha2apiclient.Provider {
+	return p.bufAlphaRegistryV1alpha2Provider
+}
+
 type providerOptions struct {
 	bufAlphaRegistryV1alpha1ProviderOptions []registryv1alpha1apiclientgrpc.ProviderOption
+	bufAlphaRegistryV1alpha2ProviderOptions []registryv1alpha2apiclientgrpc.ProviderOption
 }

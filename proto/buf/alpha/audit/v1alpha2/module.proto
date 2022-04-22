@@ -14,25 +14,25 @@
 
 syntax = "proto3";
 
-package buf.alpha.audit.v1alpha1;
+package buf.alpha.audit.v1alpha2;
 
 import "google/protobuf/timestamp.proto";
 
-enum BufAlphaRegistryV1Alpha1Visibility {
-  BUF_ALPHA_REGISTRY_V1_ALPHA1_VISIBILITY_UNSPECIFIED = 0;
-  BUF_ALPHA_REGISTRY_V1_ALPHA1_VISIBILITY_PUBLIC = 1;
-  BUF_ALPHA_REGISTRY_V1_ALPHA1_VISIBILITY_PRIVATE = 2;
+enum BufAlphaRegistryV1Alpha2Visibility {
+  BUF_ALPHA_REGISTRY_V1_ALPHA2_VISIBILITY_UNSPECIFIED = 0;
+  BUF_ALPHA_REGISTRY_V1_ALPHA2_VISIBILITY_PUBLIC = 1;
+  BUF_ALPHA_REGISTRY_V1_ALPHA2_VISIBILITY_PRIVATE = 2;
 }
 
-message BufAlphaRegistryV1Alpha1RepositoryBranch {
+message BufAlphaRegistryV1Alpha2ModuleBranch {
   string id = 1;
   google.protobuf.Timestamp create_time = 2;
   // Field number '3' reserved for the update_time.
   string name = 4;
-  string repository_id = 5;
+  string module_id = 5;
 }
 
-message BufAlphaRegistryV1Alpha1RepositoryTag {
+message BufAlphaRegistryV1Alpha2ModuleTag {
   string id = 1;
   google.protobuf.Timestamp create_time = 2;
   // Field number '3' reserved for the update_time.
@@ -41,7 +41,7 @@ message BufAlphaRegistryV1Alpha1RepositoryTag {
   string author = 6;
 }
 
-message BufAlphaRegistryV1Alpha1RepositoryCommit {
+message BufAlphaRegistryV1Alpha2ModuleCommit {
   string id = 1;
   google.protobuf.Timestamp create_time = 2;
   string digest = 3;
@@ -49,10 +49,10 @@ message BufAlphaRegistryV1Alpha1RepositoryCommit {
   string branch = 5;
   int64 commit_sequence_id = 6;
   string author = 7;
-  repeated BufAlphaRegistryV1Alpha1RepositoryTag tags = 8;
+  repeated BufAlphaRegistryV1Alpha2ModuleTag tags = 8;
 }
 
-message BufAlphaRegistryV1Alpha1RepositoryTrack {
+message BufAlphaRegistryV1Alpha2ModuleTrack {
   string id = 1;
   google.protobuf.Timestamp create_time = 2;
   // Field number '3' reserved for the update_time.

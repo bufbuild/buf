@@ -40,15 +40,6 @@ enum RepositoryRole {
   REPOSITORY_ROLE_READ = 4;
 }
 
-// The roles that users can have for a Repository.
-enum ModuleRole {
-  MODULE_ROLE_UNSPECIFIED = 0;
-  MODULE_ROLE_OWNER = 1;
-  MODULE_ROLE_ADMIN = 2;
-  MODULE_ROLE_WRITE = 3;
-  MODULE_ROLE_READ = 4;
-}
-
 // The roles that users can have for a Template.
 enum TemplateRole {
   TEMPLATE_ROLE_UNSPECIFIED = 0;

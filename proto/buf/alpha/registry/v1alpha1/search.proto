@@ -16,8 +16,8 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/module.proto";
 import "buf/alpha/registry/v1alpha1/plugin.proto";
+import "buf/alpha/registry/v1alpha1/repository.proto";
 
 enum SearchFilter {
   SEARCH_FILTER_UNSPECIFIED = 0;
