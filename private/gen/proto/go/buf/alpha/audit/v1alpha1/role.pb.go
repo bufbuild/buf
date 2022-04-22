@@ -190,61 +190,6 @@ func (BufAlphaRegistryV1Alpha1RepositoryRole) EnumDescriptor() ([]byte, []int) {
 	return file_buf_alpha_audit_v1alpha1_role_proto_rawDescGZIP(), []int{2}
 }
 
-type BufAlphaRegistryV1Alpha1ModuleRole int32
-
-const (
-	BufAlphaRegistryV1Alpha1ModuleRole_BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_UNSPECIFIED BufAlphaRegistryV1Alpha1ModuleRole = 0
-	BufAlphaRegistryV1Alpha1ModuleRole_BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_OWNER       BufAlphaRegistryV1Alpha1ModuleRole = 1
-	BufAlphaRegistryV1Alpha1ModuleRole_BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_ADMIN       BufAlphaRegistryV1Alpha1ModuleRole = 2
-	BufAlphaRegistryV1Alpha1ModuleRole_BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_WRITE       BufAlphaRegistryV1Alpha1ModuleRole = 3
-	BufAlphaRegistryV1Alpha1ModuleRole_BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_READ        BufAlphaRegistryV1Alpha1ModuleRole = 4
-)
-
-// Enum value maps for BufAlphaRegistryV1Alpha1ModuleRole.
-var (
-	BufAlphaRegistryV1Alpha1ModuleRole_name = map[int32]string{
-		0: "BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_UNSPECIFIED",
-		1: "BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_OWNER",
-		2: "BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_ADMIN",
-		3: "BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_WRITE",
-		4: "BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_READ",
-	}
-	BufAlphaRegistryV1Alpha1ModuleRole_value = map[string]int32{
-		"BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_UNSPECIFIED": 0,
-		"BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_OWNER":       1,
-		"BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_ADMIN":       2,
-		"BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_WRITE":       3,
-		"BUF_ALPHA_REGISTRY_V1_ALPHA1_MODULE_ROLE_READ":        4,
-	}
-)
-
-func (x BufAlphaRegistryV1Alpha1ModuleRole) Enum() *BufAlphaRegistryV1Alpha1ModuleRole {
-	p := new(BufAlphaRegistryV1Alpha1ModuleRole)
-	*p = x
-	return p
-}
-
-func (x BufAlphaRegistryV1Alpha1ModuleRole) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (BufAlphaRegistryV1Alpha1ModuleRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_buf_alpha_audit_v1alpha1_role_proto_enumTypes[3].Descriptor()
-}
-
-func (BufAlphaRegistryV1Alpha1ModuleRole) Type() protoreflect.EnumType {
-	return &file_buf_alpha_audit_v1alpha1_role_proto_enumTypes[3]
-}
-
-func (x BufAlphaRegistryV1Alpha1ModuleRole) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use BufAlphaRegistryV1Alpha1ModuleRole.Descriptor instead.
-func (BufAlphaRegistryV1Alpha1ModuleRole) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_role_proto_rawDescGZIP(), []int{3}
-}
-
 type BufAlphaRegistryV1Alpha1TemplateRole int32
 
 const (
@@ -284,11 +229,11 @@ func (x BufAlphaRegistryV1Alpha1TemplateRole) String() string {
 }
 
 func (BufAlphaRegistryV1Alpha1TemplateRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_buf_alpha_audit_v1alpha1_role_proto_enumTypes[4].Descriptor()
+	return file_buf_alpha_audit_v1alpha1_role_proto_enumTypes[3].Descriptor()
 }
 
 func (BufAlphaRegistryV1Alpha1TemplateRole) Type() protoreflect.EnumType {
-	return &file_buf_alpha_audit_v1alpha1_role_proto_enumTypes[4]
+	return &file_buf_alpha_audit_v1alpha1_role_proto_enumTypes[3]
 }
 
 func (x BufAlphaRegistryV1Alpha1TemplateRole) Number() protoreflect.EnumNumber {
@@ -297,7 +242,7 @@ func (x BufAlphaRegistryV1Alpha1TemplateRole) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BufAlphaRegistryV1Alpha1TemplateRole.Descriptor instead.
 func (BufAlphaRegistryV1Alpha1TemplateRole) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_role_proto_rawDescGZIP(), []int{4}
+	return file_buf_alpha_audit_v1alpha1_role_proto_rawDescGZIP(), []int{3}
 }
 
 type BufAlphaRegistryV1Alpha1PluginRole int32
@@ -339,11 +284,11 @@ func (x BufAlphaRegistryV1Alpha1PluginRole) String() string {
 }
 
 func (BufAlphaRegistryV1Alpha1PluginRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_buf_alpha_audit_v1alpha1_role_proto_enumTypes[5].Descriptor()
+	return file_buf_alpha_audit_v1alpha1_role_proto_enumTypes[4].Descriptor()
 }
 
 func (BufAlphaRegistryV1Alpha1PluginRole) Type() protoreflect.EnumType {
-	return &file_buf_alpha_audit_v1alpha1_role_proto_enumTypes[5]
+	return &file_buf_alpha_audit_v1alpha1_role_proto_enumTypes[4]
 }
 
 func (x BufAlphaRegistryV1Alpha1PluginRole) Number() protoreflect.EnumNumber {
@@ -352,7 +297,7 @@ func (x BufAlphaRegistryV1Alpha1PluginRole) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use BufAlphaRegistryV1Alpha1PluginRole.Descriptor instead.
 func (BufAlphaRegistryV1Alpha1PluginRole) EnumDescriptor() ([]byte, []int) {
-	return file_buf_alpha_audit_v1alpha1_role_proto_rawDescGZIP(), []int{5}
+	return file_buf_alpha_audit_v1alpha1_role_proto_rawDescGZIP(), []int{4}
 }
 
 var File_buf_alpha_audit_v1alpha1_role_proto protoreflect.FileDescriptor
@@ -412,26 +357,7 @@ var file_buf_alpha_audit_v1alpha1_role_proto_rawDesc = []byte{
 	0x52, 0x49, 0x54, 0x45, 0x10, 0x03, 0x12, 0x35, 0x0a, 0x31, 0x42, 0x55, 0x46, 0x5f, 0x41, 0x4c,
 	0x50, 0x48, 0x41, 0x5f, 0x52, 0x45, 0x47, 0x49, 0x53, 0x54, 0x52, 0x59, 0x5f, 0x56, 0x31, 0x5f,
 	0x41, 0x4c, 0x50, 0x48, 0x41, 0x31, 0x5f, 0x52, 0x45, 0x50, 0x4f, 0x53, 0x49, 0x54, 0x4f, 0x52,
-	0x59, 0x5f, 0x52, 0x4f, 0x4c, 0x45, 0x5f, 0x52, 0x45, 0x41, 0x44, 0x10, 0x04, 0x2a, 0xad, 0x02,
-	0x0a, 0x22, 0x42, 0x75, 0x66, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
-	0x72, 0x79, 0x56, 0x31, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x4d, 0x6f, 0x64, 0x75, 0x6c, 0x65,
-	0x52, 0x6f, 0x6c, 0x65, 0x12, 0x38, 0x0a, 0x34, 0x42, 0x55, 0x46, 0x5f, 0x41, 0x4c, 0x50, 0x48,
-	0x41, 0x5f, 0x52, 0x45, 0x47, 0x49, 0x53, 0x54, 0x52, 0x59, 0x5f, 0x56, 0x31, 0x5f, 0x41, 0x4c,
-	0x50, 0x48, 0x41, 0x31, 0x5f, 0x4d, 0x4f, 0x44, 0x55, 0x4c, 0x45, 0x5f, 0x52, 0x4f, 0x4c, 0x45,
-	0x5f, 0x55, 0x4e, 0x53, 0x50, 0x45, 0x43, 0x49, 0x46, 0x49, 0x45, 0x44, 0x10, 0x00, 0x12, 0x32,
-	0x0a, 0x2e, 0x42, 0x55, 0x46, 0x5f, 0x41, 0x4c, 0x50, 0x48, 0x41, 0x5f, 0x52, 0x45, 0x47, 0x49,
-	0x53, 0x54, 0x52, 0x59, 0x5f, 0x56, 0x31, 0x5f, 0x41, 0x4c, 0x50, 0x48, 0x41, 0x31, 0x5f, 0x4d,
-	0x4f, 0x44, 0x55, 0x4c, 0x45, 0x5f, 0x52, 0x4f, 0x4c, 0x45, 0x5f, 0x4f, 0x57, 0x4e, 0x45, 0x52,
-	0x10, 0x01, 0x12, 0x32, 0x0a, 0x2e, 0x42, 0x55, 0x46, 0x5f, 0x41, 0x4c, 0x50, 0x48, 0x41, 0x5f,
-	0x52, 0x45, 0x47, 0x49, 0x53, 0x54, 0x52, 0x59, 0x5f, 0x56, 0x31, 0x5f, 0x41, 0x4c, 0x50, 0x48,
-	0x41, 0x31, 0x5f, 0x4d, 0x4f, 0x44, 0x55, 0x4c, 0x45, 0x5f, 0x52, 0x4f, 0x4c, 0x45, 0x5f, 0x41,
-	0x44, 0x4d, 0x49, 0x4e, 0x10, 0x02, 0x12, 0x32, 0x0a, 0x2e, 0x42, 0x55, 0x46, 0x5f, 0x41, 0x4c,
-	0x50, 0x48, 0x41, 0x5f, 0x52, 0x45, 0x47, 0x49, 0x53, 0x54, 0x52, 0x59, 0x5f, 0x56, 0x31, 0x5f,
-	0x41, 0x4c, 0x50, 0x48, 0x41, 0x31, 0x5f, 0x4d, 0x4f, 0x44, 0x55, 0x4c, 0x45, 0x5f, 0x52, 0x4f,
-	0x4c, 0x45, 0x5f, 0x57, 0x52, 0x49, 0x54, 0x45, 0x10, 0x03, 0x12, 0x31, 0x0a, 0x2d, 0x42, 0x55,
-	0x46, 0x5f, 0x41, 0x4c, 0x50, 0x48, 0x41, 0x5f, 0x52, 0x45, 0x47, 0x49, 0x53, 0x54, 0x52, 0x59,
-	0x5f, 0x56, 0x31, 0x5f, 0x41, 0x4c, 0x50, 0x48, 0x41, 0x31, 0x5f, 0x4d, 0x4f, 0x44, 0x55, 0x4c,
-	0x45, 0x5f, 0x52, 0x4f, 0x4c, 0x45, 0x5f, 0x52, 0x45, 0x41, 0x44, 0x10, 0x04, 0x2a, 0xb9, 0x02,
+	0x59, 0x5f, 0x52, 0x4f, 0x4c, 0x45, 0x5f, 0x52, 0x45, 0x41, 0x44, 0x10, 0x04, 0x2a, 0xb9, 0x02,
 	0x0a, 0x24, 0x42, 0x75, 0x66, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
 	0x72, 0x79, 0x56, 0x31, 0x41, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61,
 	0x74, 0x65, 0x52, 0x6f, 0x6c, 0x65, 0x12, 0x3a, 0x0a, 0x36, 0x42, 0x55, 0x46, 0x5f, 0x41, 0x4c,
@@ -502,14 +428,13 @@ func file_buf_alpha_audit_v1alpha1_role_proto_rawDescGZIP() []byte {
 	return file_buf_alpha_audit_v1alpha1_role_proto_rawDescData
 }
 
-var file_buf_alpha_audit_v1alpha1_role_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_buf_alpha_audit_v1alpha1_role_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
 var file_buf_alpha_audit_v1alpha1_role_proto_goTypes = []interface{}{
 	(BufAlphaRegistryV1Alpha1ServerRole)(0),       // 0: buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1ServerRole
 	(BufAlphaRegistryV1Alpha1OrganizationRole)(0), // 1: buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1OrganizationRole
 	(BufAlphaRegistryV1Alpha1RepositoryRole)(0),   // 2: buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1RepositoryRole
-	(BufAlphaRegistryV1Alpha1ModuleRole)(0),       // 3: buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1ModuleRole
-	(BufAlphaRegistryV1Alpha1TemplateRole)(0),     // 4: buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1TemplateRole
-	(BufAlphaRegistryV1Alpha1PluginRole)(0),       // 5: buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1PluginRole
+	(BufAlphaRegistryV1Alpha1TemplateRole)(0),     // 3: buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1TemplateRole
+	(BufAlphaRegistryV1Alpha1PluginRole)(0),       // 4: buf.alpha.audit.v1alpha1.BufAlphaRegistryV1Alpha1PluginRole
 }
 var file_buf_alpha_audit_v1alpha1_role_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -529,7 +454,7 @@ func file_buf_alpha_audit_v1alpha1_role_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_buf_alpha_audit_v1alpha1_role_proto_rawDesc,
-			NumEnums:      6,
+			NumEnums:      5,
 			NumMessages:   0,
 			NumExtensions: 0,
 			NumServices:   0,
