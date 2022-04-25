@@ -72,6 +72,7 @@ message FieldOptions {
   optional bool lazy = 5 [default = false];
   optional JSType jstype = 6 [default = JS_NORMAL];
   optional bool weak = 10 [default = false];
+  optional bool unverified_lazy = 15 [default = false];
   repeated UninterpretedOption uninterpreted_option = 999;
   enum CType {
     STRING = 0;
