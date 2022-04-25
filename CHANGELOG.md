@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Upgrade to `protoc` 3.20.1 support.
 
 ## [v1.4.0] - 2022-04-21
 
