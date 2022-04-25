@@ -35,9 +35,9 @@ const (
 	// DefaultMajorVersion is the default major version.
 	defaultMajorVersion = 3
 	// DefaultMinorVersion is the default minor version.
-	defaultMinorVersion = 19
+	defaultMinorVersion = 20
 	// DefaultPatchVersion is the default patch version.
-	defaultPatchVersion = 4
+	defaultPatchVersion = 1
 	// DefaultSuffixVersion is the default suffix version.
 	defaultSuffixVersion = ""
 )
@@ -53,6 +53,7 @@ var (
 		"objc":   {},
 		"php":    {},
 		"python": {},
+		"pyi":    {},
 		"ruby":   {},
 		"kotlin": {},
 	}
