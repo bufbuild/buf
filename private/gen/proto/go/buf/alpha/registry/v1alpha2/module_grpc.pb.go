@@ -36,42 +36,42 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RemoteModuleServiceClient interface {
-	// GetRemoteModule gets a module by ID.
+	// GetRemoteModule gets a remote_module by ID.
 	GetRemoteModule(ctx context.Context, in *GetRemoteModuleRequest, opts ...grpc.CallOption) (*GetRemoteModuleResponse, error)
-	// GetRemoteModuleByFullName gets a module by full name.
+	// GetRemoteModuleByFullName gets a remote_module by full name.
 	GetRemoteModuleByFullName(ctx context.Context, in *GetRemoteModuleByFullNameRequest, opts ...grpc.CallOption) (*GetRemoteModuleByFullNameResponse, error)
-	// ListRemoteModules lists all modules.
+	// ListRemoteModules lists all remote_modules.
 	ListRemoteModules(ctx context.Context, in *ListRemoteModulesRequest, opts ...grpc.CallOption) (*ListRemoteModulesResponse, error)
-	// ListUserRemoteModules lists all modules belonging to a user.
+	// ListUserRemoteModules lists all remote_modules belonging to a user.
 	ListUserRemoteModules(ctx context.Context, in *ListUserRemoteModulesRequest, opts ...grpc.CallOption) (*ListUserRemoteModulesResponse, error)
-	// ListRemoteModulesUserCanAccess lists all modules a user can access.
+	// ListRemoteModulesUserCanAccess lists all remote_modules a user can access.
 	ListRemoteModulesUserCanAccess(ctx context.Context, in *ListRemoteModulesUserCanAccessRequest, opts ...grpc.CallOption) (*ListRemoteModulesUserCanAccessResponse, error)
-	// ListOrganizationRemoteModules lists all modules for an organization.
+	// ListOrganizationRemoteModules lists all remote_modules for an organization.
 	ListOrganizationRemoteModules(ctx context.Context, in *ListOrganizationRemoteModulesRequest, opts ...grpc.CallOption) (*ListOrganizationRemoteModulesResponse, error)
-	// CreateRemoteModuleByFullName creates a new module by full name.
+	// CreateRemoteModuleByFullName creates a new remote_module by full name.
 	CreateRemoteModuleByFullName(ctx context.Context, in *CreateRemoteModuleByFullNameRequest, opts ...grpc.CallOption) (*CreateRemoteModuleByFullNameResponse, error)
-	// DeleteRemoteModule deletes a module.
+	// DeleteRemoteModule deletes a remote_module.
 	DeleteRemoteModule(ctx context.Context, in *DeleteRemoteModuleRequest, opts ...grpc.CallOption) (*DeleteRemoteModuleResponse, error)
-	// DeleteRemoteModuleByFullName deletes a module by full name.
+	// DeleteRemoteModuleByFullName deletes a remote_module by full name.
 	DeleteRemoteModuleByFullName(ctx context.Context, in *DeleteRemoteModuleByFullNameRequest, opts ...grpc.CallOption) (*DeleteRemoteModuleByFullNameResponse, error)
-	// DeprecateRemoteModuleByName deprecates the module.
+	// DeprecateRemoteModuleByName deprecates the remote_module.
 	DeprecateRemoteModuleByName(ctx context.Context, in *DeprecateRemoteModuleByNameRequest, opts ...grpc.CallOption) (*DeprecateRemoteModuleByNameResponse, error)
-	// UndeprecateRemoteModuleByName makes the module not deprecated and removes any deprecation_message.
+	// UndeprecateRemoteModuleByName makes the remote_module not deprecated and removes any deprecation_message.
 	UndeprecateRemoteModuleByName(ctx context.Context, in *UndeprecateRemoteModuleByNameRequest, opts ...grpc.CallOption) (*UndeprecateRemoteModuleByNameResponse, error)
-	// GetRemoteModulesByFullName gets modules by full name. Response order is unspecified.
-	// Errors if any of the modules don't exist or the caller does not have access to any of the modules.
+	// GetRemoteModulesByFullName gets remote_modules by full name. Response order is unspecified.
+	// Errors if any of the remote_modules don't exist or the caller does not have access to any of the remote_modules.
 	GetRemoteModulesByFullName(ctx context.Context, in *GetRemoteModulesByFullNameRequest, opts ...grpc.CallOption) (*GetRemoteModulesByFullNameResponse, error)
-	// SetRemoteModuleContributor sets the role of a user in the module.
+	// SetRemoteModuleContributor sets the role of a user in the remote_module.
 	SetRemoteModuleContributor(ctx context.Context, in *SetRemoteModuleContributorRequest, opts ...grpc.CallOption) (*SetRemoteModuleContributorResponse, error)
-	// ListRemoteModuleContributors returns the list of contributors that has an explicit role against the module.
-	// This does not include users who have implicit roles against the module, unless they have also been
+	// ListRemoteModuleContributors returns the list of contributors that has an explicit role against the remote_module.
+	// This does not include users who have implicit roles against the remote_module, unless they have also been
 	// assigned a role explicitly.
 	ListRemoteModuleContributors(ctx context.Context, in *ListRemoteModuleContributorsRequest, opts ...grpc.CallOption) (*ListRemoteModuleContributorsResponse, error)
-	// GetRemoteModuleContributor returns the contributor information of a user in a module.
+	// GetRemoteModuleContributor returns the contributor information of a user in a remote_module.
 	GetRemoteModuleContributor(ctx context.Context, in *GetRemoteModuleContributorRequest, opts ...grpc.CallOption) (*GetRemoteModuleContributorResponse, error)
-	// GetRemoteModuleSettings gets the settings of a module.
+	// GetRemoteModuleSettings gets the settings of a remote_module.
 	GetRemoteModuleSettings(ctx context.Context, in *GetRemoteModuleSettingsRequest, opts ...grpc.CallOption) (*GetRemoteModuleSettingsResponse, error)
-	// UpdateRemoteModuleSettingsByName updates the settings of a module.
+	// UpdateRemoteModuleSettingsByName updates the settings of a remote_module.
 	UpdateRemoteModuleSettingsByName(ctx context.Context, in *UpdateRemoteModuleSettingsByNameRequest, opts ...grpc.CallOption) (*UpdateRemoteModuleSettingsByNameResponse, error)
 }
 
@@ -240,42 +240,42 @@ func (c *remoteModuleServiceClient) UpdateRemoteModuleSettingsByName(ctx context
 // All implementations should embed UnimplementedRemoteModuleServiceServer
 // for forward compatibility
 type RemoteModuleServiceServer interface {
-	// GetRemoteModule gets a module by ID.
+	// GetRemoteModule gets a remote_module by ID.
 	GetRemoteModule(context.Context, *GetRemoteModuleRequest) (*GetRemoteModuleResponse, error)
-	// GetRemoteModuleByFullName gets a module by full name.
+	// GetRemoteModuleByFullName gets a remote_module by full name.
 	GetRemoteModuleByFullName(context.Context, *GetRemoteModuleByFullNameRequest) (*GetRemoteModuleByFullNameResponse, error)
-	// ListRemoteModules lists all modules.
+	// ListRemoteModules lists all remote_modules.
 	ListRemoteModules(context.Context, *ListRemoteModulesRequest) (*ListRemoteModulesResponse, error)
-	// ListUserRemoteModules lists all modules belonging to a user.
+	// ListUserRemoteModules lists all remote_modules belonging to a user.
 	ListUserRemoteModules(context.Context, *ListUserRemoteModulesRequest) (*ListUserRemoteModulesResponse, error)
-	// ListRemoteModulesUserCanAccess lists all modules a user can access.
+	// ListRemoteModulesUserCanAccess lists all remote_modules a user can access.
 	ListRemoteModulesUserCanAccess(context.Context, *ListRemoteModulesUserCanAccessRequest) (*ListRemoteModulesUserCanAccessResponse, error)
-	// ListOrganizationRemoteModules lists all modules for an organization.
+	// ListOrganizationRemoteModules lists all remote_modules for an organization.
 	ListOrganizationRemoteModules(context.Context, *ListOrganizationRemoteModulesRequest) (*ListOrganizationRemoteModulesResponse, error)
-	// CreateRemoteModuleByFullName creates a new module by full name.
+	// CreateRemoteModuleByFullName creates a new remote_module by full name.
 	CreateRemoteModuleByFullName(context.Context, *CreateRemoteModuleByFullNameRequest) (*CreateRemoteModuleByFullNameResponse, error)
-	// DeleteRemoteModule deletes a module.
+	// DeleteRemoteModule deletes a remote_module.
 	DeleteRemoteModule(context.Context, *DeleteRemoteModuleRequest) (*DeleteRemoteModuleResponse, error)
-	// DeleteRemoteModuleByFullName deletes a module by full name.
+	// DeleteRemoteModuleByFullName deletes a remote_module by full name.
 	DeleteRemoteModuleByFullName(context.Context, *DeleteRemoteModuleByFullNameRequest) (*DeleteRemoteModuleByFullNameResponse, error)
-	// DeprecateRemoteModuleByName deprecates the module.
+	// DeprecateRemoteModuleByName deprecates the remote_module.
 	DeprecateRemoteModuleByName(context.Context, *DeprecateRemoteModuleByNameRequest) (*DeprecateRemoteModuleByNameResponse, error)
-	// UndeprecateRemoteModuleByName makes the module not deprecated and removes any deprecation_message.
+	// UndeprecateRemoteModuleByName makes the remote_module not deprecated and removes any deprecation_message.
 	UndeprecateRemoteModuleByName(context.Context, *UndeprecateRemoteModuleByNameRequest) (*UndeprecateRemoteModuleByNameResponse, error)
-	// GetRemoteModulesByFullName gets modules by full name. Response order is unspecified.
-	// Errors if any of the modules don't exist or the caller does not have access to any of the modules.
+	// GetRemoteModulesByFullName gets remote_modules by full name. Response order is unspecified.
+	// Errors if any of the remote_modules don't exist or the caller does not have access to any of the remote_modules.
 	GetRemoteModulesByFullName(context.Context, *GetRemoteModulesByFullNameRequest) (*GetRemoteModulesByFullNameResponse, error)
-	// SetRemoteModuleContributor sets the role of a user in the module.
+	// SetRemoteModuleContributor sets the role of a user in the remote_module.
 	SetRemoteModuleContributor(context.Context, *SetRemoteModuleContributorRequest) (*SetRemoteModuleContributorResponse, error)
-	// ListRemoteModuleContributors returns the list of contributors that has an explicit role against the module.
-	// This does not include users who have implicit roles against the module, unless they have also been
+	// ListRemoteModuleContributors returns the list of contributors that has an explicit role against the remote_module.
+	// This does not include users who have implicit roles against the remote_module, unless they have also been
 	// assigned a role explicitly.
 	ListRemoteModuleContributors(context.Context, *ListRemoteModuleContributorsRequest) (*ListRemoteModuleContributorsResponse, error)
-	// GetRemoteModuleContributor returns the contributor information of a user in a module.
+	// GetRemoteModuleContributor returns the contributor information of a user in a remote_module.
 	GetRemoteModuleContributor(context.Context, *GetRemoteModuleContributorRequest) (*GetRemoteModuleContributorResponse, error)
-	// GetRemoteModuleSettings gets the settings of a module.
+	// GetRemoteModuleSettings gets the settings of a remote_module.
 	GetRemoteModuleSettings(context.Context, *GetRemoteModuleSettingsRequest) (*GetRemoteModuleSettingsResponse, error)
-	// UpdateRemoteModuleSettingsByName updates the settings of a module.
+	// UpdateRemoteModuleSettingsByName updates the settings of a remote_module.
 	UpdateRemoteModuleSettingsByName(context.Context, *UpdateRemoteModuleSettingsByNameRequest) (*UpdateRemoteModuleSettingsByNameResponse, error)
 }
 

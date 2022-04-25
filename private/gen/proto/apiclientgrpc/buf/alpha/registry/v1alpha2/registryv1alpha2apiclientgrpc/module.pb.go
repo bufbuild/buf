@@ -28,11 +28,11 @@ type remoteModuleService struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// GetRemoteModule gets a module by ID.
+// GetRemoteModule gets a remote_module by ID.
 func (s *remoteModuleService) GetRemoteModule(
 	ctx context.Context,
 	id string,
-) (module *v1alpha2.RemoteModule, counts *v1alpha2.RemoteModuleCounts, _ error) {
+) (remoteModule *v1alpha2.RemoteModule, counts *v1alpha2.RemoteModuleCounts, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -45,14 +45,14 @@ func (s *remoteModuleService) GetRemoteModule(
 	if err != nil {
 		return nil, nil, err
 	}
-	return response.Module, response.Counts, nil
+	return response.RemoteModule, response.Counts, nil
 }
 
-// GetRemoteModuleByFullName gets a module by full name.
+// GetRemoteModuleByFullName gets a remote_module by full name.
 func (s *remoteModuleService) GetRemoteModuleByFullName(
 	ctx context.Context,
 	fullName string,
-) (module *v1alpha2.RemoteModule, counts *v1alpha2.RemoteModuleCounts, _ error) {
+) (remoteModule *v1alpha2.RemoteModule, counts *v1alpha2.RemoteModuleCounts, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -65,16 +65,16 @@ func (s *remoteModuleService) GetRemoteModuleByFullName(
 	if err != nil {
 		return nil, nil, err
 	}
-	return response.Module, response.Counts, nil
+	return response.RemoteModule, response.Counts, nil
 }
 
-// ListRemoteModules lists all modules.
+// ListRemoteModules lists all remote_modules.
 func (s *remoteModuleService) ListRemoteModules(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (modules []*v1alpha2.RemoteModule, nextPageToken string, _ error) {
+) (remoteModules []*v1alpha2.RemoteModule, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -89,17 +89,17 @@ func (s *remoteModuleService) ListRemoteModules(
 	if err != nil {
 		return nil, "", err
 	}
-	return response.Modules, response.NextPageToken, nil
+	return response.RemoteModules, response.NextPageToken, nil
 }
 
-// ListUserRemoteModules lists all modules belonging to a user.
+// ListUserRemoteModules lists all remote_modules belonging to a user.
 func (s *remoteModuleService) ListUserRemoteModules(
 	ctx context.Context,
 	userId string,
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (modules []*v1alpha2.RemoteModule, nextPageToken string, _ error) {
+) (remoteModules []*v1alpha2.RemoteModule, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -115,16 +115,16 @@ func (s *remoteModuleService) ListUserRemoteModules(
 	if err != nil {
 		return nil, "", err
 	}
-	return response.Modules, response.NextPageToken, nil
+	return response.RemoteModules, response.NextPageToken, nil
 }
 
-// ListRemoteModulesUserCanAccess lists all modules a user can access.
+// ListRemoteModulesUserCanAccess lists all remote_modules a user can access.
 func (s *remoteModuleService) ListRemoteModulesUserCanAccess(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (modules []*v1alpha2.RemoteModule, nextPageToken string, _ error) {
+) (remoteModules []*v1alpha2.RemoteModule, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -139,17 +139,17 @@ func (s *remoteModuleService) ListRemoteModulesUserCanAccess(
 	if err != nil {
 		return nil, "", err
 	}
-	return response.Modules, response.NextPageToken, nil
+	return response.RemoteModules, response.NextPageToken, nil
 }
 
-// ListOrganizationRemoteModules lists all modules for an organization.
+// ListOrganizationRemoteModules lists all remote_modules for an organization.
 func (s *remoteModuleService) ListOrganizationRemoteModules(
 	ctx context.Context,
 	organizationId string,
 	pageSize uint32,
 	pageToken string,
 	reverse bool,
-) (modules []*v1alpha2.RemoteModule, nextPageToken string, _ error) {
+) (remoteModules []*v1alpha2.RemoteModule, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -165,15 +165,15 @@ func (s *remoteModuleService) ListOrganizationRemoteModules(
 	if err != nil {
 		return nil, "", err
 	}
-	return response.Modules, response.NextPageToken, nil
+	return response.RemoteModules, response.NextPageToken, nil
 }
 
-// CreateRemoteModuleByFullName creates a new module by full name.
+// CreateRemoteModuleByFullName creates a new remote_module by full name.
 func (s *remoteModuleService) CreateRemoteModuleByFullName(
 	ctx context.Context,
 	fullName string,
 	visibility v1alpha2.Visibility,
-) (module *v1alpha2.RemoteModule, _ error) {
+) (remoteModule *v1alpha2.RemoteModule, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -187,10 +187,10 @@ func (s *remoteModuleService) CreateRemoteModuleByFullName(
 	if err != nil {
 		return nil, err
 	}
-	return response.Module, nil
+	return response.RemoteModule, nil
 }
 
-// DeleteRemoteModule deletes a module.
+// DeleteRemoteModule deletes a remote_module.
 func (s *remoteModuleService) DeleteRemoteModule(ctx context.Context, id string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -207,7 +207,7 @@ func (s *remoteModuleService) DeleteRemoteModule(ctx context.Context, id string)
 	return nil
 }
 
-// DeleteRemoteModuleByFullName deletes a module by full name.
+// DeleteRemoteModuleByFullName deletes a remote_module by full name.
 func (s *remoteModuleService) DeleteRemoteModuleByFullName(ctx context.Context, fullName string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -224,13 +224,13 @@ func (s *remoteModuleService) DeleteRemoteModuleByFullName(ctx context.Context, 
 	return nil
 }
 
-// DeprecateRemoteModuleByName deprecates the module.
+// DeprecateRemoteModuleByName deprecates the remote_module.
 func (s *remoteModuleService) DeprecateRemoteModuleByName(
 	ctx context.Context,
 	ownerName string,
 	moduleName string,
 	deprecationMessage string,
-) (module *v1alpha2.RemoteModule, _ error) {
+) (remoteModule *v1alpha2.RemoteModule, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -245,15 +245,15 @@ func (s *remoteModuleService) DeprecateRemoteModuleByName(
 	if err != nil {
 		return nil, err
 	}
-	return response.Module, nil
+	return response.RemoteModule, nil
 }
 
-// UndeprecateRemoteModuleByName makes the module not deprecated and removes any deprecation_message.
+// UndeprecateRemoteModuleByName makes the remote_module not deprecated and removes any deprecation_message.
 func (s *remoteModuleService) UndeprecateRemoteModuleByName(
 	ctx context.Context,
 	ownerName string,
 	moduleName string,
-) (module *v1alpha2.RemoteModule, _ error) {
+) (remoteModule *v1alpha2.RemoteModule, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -267,12 +267,12 @@ func (s *remoteModuleService) UndeprecateRemoteModuleByName(
 	if err != nil {
 		return nil, err
 	}
-	return response.Module, nil
+	return response.RemoteModule, nil
 }
 
-// GetRemoteModulesByFullName gets modules by full name. Response order is unspecified.
-// Errors if any of the modules don't exist or the caller does not have access to any of the modules.
-func (s *remoteModuleService) GetRemoteModulesByFullName(ctx context.Context, fullNames []string) (modules []*v1alpha2.RemoteModule, _ error) {
+// GetRemoteModulesByFullName gets remote_modules by full name. Response order is unspecified.
+// Errors if any of the remote_modules don't exist or the caller does not have access to any of the remote_modules.
+func (s *remoteModuleService) GetRemoteModulesByFullName(ctx context.Context, fullNames []string) (remoteModules []*v1alpha2.RemoteModule, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -285,15 +285,15 @@ func (s *remoteModuleService) GetRemoteModulesByFullName(ctx context.Context, fu
 	if err != nil {
 		return nil, err
 	}
-	return response.Modules, nil
+	return response.RemoteModules, nil
 }
 
-// SetRemoteModuleContributor sets the role of a user in the module.
+// SetRemoteModuleContributor sets the role of a user in the remote_module.
 func (s *remoteModuleService) SetRemoteModuleContributor(
 	ctx context.Context,
 	moduleId string,
 	userId string,
-	moduleRole v1alpha2.RemoteModuleRole,
+	remoteModuleRole v1alpha2.RemoteModuleRole,
 ) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -301,9 +301,9 @@ func (s *remoteModuleService) SetRemoteModuleContributor(
 	_, err := s.client.SetRemoteModuleContributor(
 		ctx,
 		&v1alpha2.SetRemoteModuleContributorRequest{
-			ModuleId:   moduleId,
-			UserId:     userId,
-			ModuleRole: moduleRole,
+			ModuleId:         moduleId,
+			UserId:           userId,
+			RemoteModuleRole: remoteModuleRole,
 		},
 	)
 	if err != nil {
@@ -312,8 +312,8 @@ func (s *remoteModuleService) SetRemoteModuleContributor(
 	return nil
 }
 
-// ListRemoteModuleContributors returns the list of contributors that has an explicit role against the module.
-// This does not include users who have implicit roles against the module, unless they have also been
+// ListRemoteModuleContributors returns the list of contributors that has an explicit role against the remote_module.
+// This does not include users who have implicit roles against the remote_module, unless they have also been
 // assigned a role explicitly.
 func (s *remoteModuleService) ListRemoteModuleContributors(
 	ctx context.Context,
@@ -340,7 +340,7 @@ func (s *remoteModuleService) ListRemoteModuleContributors(
 	return response.Users, response.NextPageToken, nil
 }
 
-// GetRemoteModuleContributor returns the contributor information of a user in a module.
+// GetRemoteModuleContributor returns the contributor information of a user in a remote_module.
 func (s *remoteModuleService) GetRemoteModuleContributor(
 	ctx context.Context,
 	moduleId string,
@@ -362,7 +362,7 @@ func (s *remoteModuleService) GetRemoteModuleContributor(
 	return response.User, nil
 }
 
-// GetRemoteModuleSettings gets the settings of a module.
+// GetRemoteModuleSettings gets the settings of a remote_module.
 func (s *remoteModuleService) GetRemoteModuleSettings(ctx context.Context, moduleId string) (contributorsCount uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -379,7 +379,7 @@ func (s *remoteModuleService) GetRemoteModuleSettings(ctx context.Context, modul
 	return response.ContributorsCount, nil
 }
 
-// UpdateRemoteModuleSettingsByName updates the settings of a module.
+// UpdateRemoteModuleSettingsByName updates the settings of a remote_module.
 func (s *remoteModuleService) UpdateRemoteModuleSettingsByName(
 	ctx context.Context,
 	ownerName string,

@@ -42,9 +42,9 @@ message RemoteModule {
     string organization_id = 6;
   }
   Visibility visibility = 7;
-  // deprecated means this module is deprecated.
+  // deprecated means this remote_module is deprecated.
   bool deprecated = 8;
-  // deprecation_message is the message shown if the module is deprecated.
+  // deprecation_message is the message shown if the remote_module is deprecated.
   string deprecation_message = 9;
 }
 
@@ -60,48 +60,48 @@ message RemoteModuleContributor {
   // The role that the user has been explicitly assigned against the repository.
   RemoteModuleRole explicit_role = 3;
   // Optionally defines the role that the user has implicitly against the repository through the owning organization.
-  // If the module does not belong to an organization or the user is not part of the owning organization, this is unset.
+  // If the remote_module does not belong to an organization or the user is not part of the owning organization, this is unset.
   RemoteModuleRole implicit_role = 4;
 }
 
 // RemoteModuleService is the RemoteModule service.
 service RemoteModuleService {
-  // GetRemoteModule gets a module by ID.
+  // GetRemoteModule gets a remote_module by ID.
   rpc GetRemoteModule(GetRemoteModuleRequest) returns (GetRemoteModuleResponse);
-  // GetRemoteModuleByFullName gets a module by full name.
+  // GetRemoteModuleByFullName gets a remote_module by full name.
   rpc GetRemoteModuleByFullName(GetRemoteModuleByFullNameRequest) returns (GetRemoteModuleByFullNameResponse);
-  // ListRemoteModules lists all modules.
+  // ListRemoteModules lists all remote_modules.
   rpc ListRemoteModules(ListRemoteModulesRequest) returns (ListRemoteModulesResponse);
-  // ListUserRemoteModules lists all modules belonging to a user.
+  // ListUserRemoteModules lists all remote_modules belonging to a user.
   rpc ListUserRemoteModules(ListUserRemoteModulesRequest) returns (ListUserRemoteModulesResponse);
-  // ListRemoteModulesUserCanAccess lists all modules a user can access.
+  // ListRemoteModulesUserCanAccess lists all remote_modules a user can access.
   rpc ListRemoteModulesUserCanAccess(ListRemoteModulesUserCanAccessRequest) returns (ListRemoteModulesUserCanAccessResponse);
-  // ListOrganizationRemoteModules lists all modules for an organization.
+  // ListOrganizationRemoteModules lists all remote_modules for an organization.
   rpc ListOrganizationRemoteModules(ListOrganizationRemoteModulesRequest) returns (ListOrganizationRemoteModulesResponse);
-  // CreateRemoteModuleByFullName creates a new module by full name.
+  // CreateRemoteModuleByFullName creates a new remote_module by full name.
   rpc CreateRemoteModuleByFullName(CreateRemoteModuleByFullNameRequest) returns (CreateRemoteModuleByFullNameResponse);
-  // DeleteRemoteModule deletes a module.
+  // DeleteRemoteModule deletes a remote_module.
   rpc DeleteRemoteModule(DeleteRemoteModuleRequest) returns (DeleteRemoteModuleResponse);
-  // DeleteRemoteModuleByFullName deletes a module by full name.
+  // DeleteRemoteModuleByFullName deletes a remote_module by full name.
   rpc DeleteRemoteModuleByFullName(DeleteRemoteModuleByFullNameRequest) returns (DeleteRemoteModuleByFullNameResponse);
-  // DeprecateRemoteModuleByName deprecates the module.
+  // DeprecateRemoteModuleByName deprecates the remote_module.
   rpc DeprecateRemoteModuleByName(DeprecateRemoteModuleByNameRequest) returns (DeprecateRemoteModuleByNameResponse);
-  // UndeprecateRemoteModuleByName makes the module not deprecated and removes any deprecation_message.
+  // UndeprecateRemoteModuleByName makes the remote_module not deprecated and removes any deprecation_message.
   rpc UndeprecateRemoteModuleByName(UndeprecateRemoteModuleByNameRequest) returns (UndeprecateRemoteModuleByNameResponse);
-  // GetRemoteModulesByFullName gets modules by full name. Response order is unspecified.
-  // Errors if any of the modules don't exist or the caller does not have access to any of the modules.
+  // GetRemoteModulesByFullName gets remote_modules by full name. Response order is unspecified.
+  // Errors if any of the remote_modules don't exist or the caller does not have access to any of the remote_modules.
   rpc GetRemoteModulesByFullName(GetRemoteModulesByFullNameRequest) returns (GetRemoteModulesByFullNameResponse);
-  // SetRemoteModuleContributor sets the role of a user in the module.
+  // SetRemoteModuleContributor sets the role of a user in the remote_module.
   rpc SetRemoteModuleContributor(SetRemoteModuleContributorRequest) returns (SetRemoteModuleContributorResponse);
-  // ListRemoteModuleContributors returns the list of contributors that has an explicit role against the module.
-  // This does not include users who have implicit roles against the module, unless they have also been
+  // ListRemoteModuleContributors returns the list of contributors that has an explicit role against the remote_module.
+  // This does not include users who have implicit roles against the remote_module, unless they have also been
   // assigned a role explicitly.
   rpc ListRemoteModuleContributors(ListRemoteModuleContributorsRequest) returns (ListRemoteModuleContributorsResponse);
-  // GetRemoteModuleContributor returns the contributor information of a user in a module.
+  // GetRemoteModuleContributor returns the contributor information of a user in a remote_module.
   rpc GetRemoteModuleContributor(GetRemoteModuleContributorRequest) returns (GetRemoteModuleContributorResponse);
-  // GetRemoteModuleSettings gets the settings of a module.
+  // GetRemoteModuleSettings gets the settings of a remote_module.
   rpc GetRemoteModuleSettings(GetRemoteModuleSettingsRequest) returns (GetRemoteModuleSettingsResponse);
-  // UpdateRemoteModuleSettingsByName updates the settings of a module.
+  // UpdateRemoteModuleSettingsByName updates the settings of a remote_module.
   rpc UpdateRemoteModuleSettingsByName(UpdateRemoteModuleSettingsByNameRequest) returns (UpdateRemoteModuleSettingsByNameResponse);
 }
 
@@ -112,7 +112,7 @@ message GetRemoteModulesByFullNameRequest {
 }
 
 message GetRemoteModulesByFullNameResponse {
-  repeated RemoteModule modules = 1;
+  repeated RemoteModule remote_modules = 1;
 }
 
 message GetRemoteModuleRequest {
@@ -120,7 +120,7 @@ message GetRemoteModuleRequest {
 }
 
 message GetRemoteModuleResponse {
-  RemoteModule module = 1;
+  RemoteModule remote_module = 1;
   RemoteModuleCounts counts = 2;
 }
 
@@ -129,7 +129,7 @@ message GetRemoteModuleByFullNameRequest {
 }
 
 message GetRemoteModuleByFullNameResponse {
-  RemoteModule module = 1;
+  RemoteModule remote_module = 1;
   RemoteModuleCounts counts = 2;
 }
 
@@ -141,13 +141,13 @@ message ListRemoteModulesRequest {
 }
 
 message ListRemoteModulesResponse {
-  repeated RemoteModule modules = 1;
+  repeated RemoteModule remote_modules = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
 }
 
 message ListUserRemoteModulesRequest {
-  // The ID of the user whose modules should be listed.
+  // The ID of the user whose remote_modules should be listed.
   string user_id = 1;
   uint32 page_size = 2;
   // The first page is returned if this is empty.
@@ -156,7 +156,7 @@ message ListUserRemoteModulesRequest {
 }
 
 message ListUserRemoteModulesResponse {
-  repeated RemoteModule modules = 1;
+  repeated RemoteModule remote_modules = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
 }
@@ -169,13 +169,13 @@ message ListRemoteModulesUserCanAccessRequest {
 }
 
 message ListRemoteModulesUserCanAccessResponse {
-  repeated RemoteModule modules = 1;
+  repeated RemoteModule remote_modules = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
 }
 
 message ListOrganizationRemoteModulesRequest {
-  // The ID of the organization whose modules should be listed.
+  // The ID of the organization whose remote_modules should be listed.
   string organization_id = 1;
   uint32 page_size = 2;
   // The first page is returned if this is empty.
@@ -184,19 +184,19 @@ message ListOrganizationRemoteModulesRequest {
 }
 
 message ListOrganizationRemoteModulesResponse {
-  repeated RemoteModule modules = 1;
+  repeated RemoteModule remote_modules = 1;
   // There are no more pages if this is empty.
   string next_page_token = 2;
 }
 
 message CreateRemoteModuleByFullNameRequest {
-  // Must be unique across modules.
+  // Must be unique across remote_modules.
   string full_name = 1;
   Visibility visibility = 2;
 }
 
 message CreateRemoteModuleByFullNameResponse {
-  RemoteModule module = 1;
+  RemoteModule remote_module = 1;
 }
 
 message DeleteRemoteModuleRequest {
@@ -214,13 +214,13 @@ message DeleteRemoteModuleByFullNameResponse {}
 message DeprecateRemoteModuleByNameRequest {
   string owner_name = 1;
   string module_name = 2;
-  // A message shown along with the deprecation warning for this module.
+  // A message shown along with the deprecation warning for this remote_module.
   // It must be a utf8 encoded string containing 256 or fewer characters.
   string deprecation_message = 3;
 }
 
 message DeprecateRemoteModuleByNameResponse {
-  RemoteModule module = 1;
+  RemoteModule remote_module = 1;
 }
 
 message UndeprecateRemoteModuleByNameRequest {
@@ -229,17 +229,17 @@ message UndeprecateRemoteModuleByNameRequest {
 }
 
 message UndeprecateRemoteModuleByNameResponse {
-  RemoteModule module = 1;
+  RemoteModule remote_module = 1;
 }
 
 message SetRemoteModuleContributorRequest {
-  // The ID of the module for which the user's role will be set.
+  // The ID of the remote_module for which the user's role will be set.
   string module_id = 1;
   // The ID of the user whose role will be set.
   string user_id = 2;
   // The role to assign to the user.
   // Setting UNSPECIFIED means removing the user's role.
-  RemoteModuleRole module_role = 3;
+  RemoteModuleRole remote_module_role = 3;
 }
 
 message SetRemoteModuleContributorResponse {}
@@ -259,24 +259,24 @@ message ListRemoteModuleContributorsResponse {
 }
 
 message GetRemoteModuleContributorRequest {
-  // The ID of the module for which to get the contributor information.
+  // The ID of the remote_module for which to get the contributor information.
   string module_id = 1;
   // The ID of the user for which to get the contributor information.
   string user_id = 2;
 }
 
 message GetRemoteModuleContributorResponse {
-  // The contributor information of the user in the module.
+  // The contributor information of the user in the remote_module.
   RemoteModuleContributor user = 1;
 }
 
 message GetRemoteModuleSettingsRequest {
-  // The ID of the module for which to get the settings.
+  // The ID of the remote_module for which to get the settings.
   string module_id = 1;
 }
 
 message GetRemoteModuleSettingsResponse {
-  // The number of outside contributors in the module,
+  // The number of outside contributors in the remote_module,
   // excluding owning-organization's members that have an explicit role.
   uint32 contributors_count = 1;
 }
