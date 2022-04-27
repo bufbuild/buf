@@ -24,7 +24,6 @@ import (
 // Provider provides all the types in registryv1alpha1apiclient.
 type Provider interface {
 	AdminServiceProvider
-	AuditLogsServiceProvider
 	AuthnServiceProvider
 	AuthzServiceProvider
 	ConvertServiceProvider
@@ -57,11 +56,6 @@ type Provider interface {
 // AdminServiceProvider provides a client-side AdminService for an address.
 type AdminServiceProvider interface {
 	NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error)
-}
-
-// AuditLogsServiceProvider provides a client-side AuditLogsService for an address.
-type AuditLogsServiceProvider interface {
-	NewAuditLogsService(ctx context.Context, address string) (registryv1alpha1api.AuditLogsService, error)
 }
 
 // AuthnServiceProvider provides a client-side AuthnService for an address.
