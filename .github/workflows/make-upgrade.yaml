@@ -1,4 +1,4 @@
-name: ci
+name: make-upgrade
 on: push
 # Prevent writing to the repository using the CI token.
 # Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
