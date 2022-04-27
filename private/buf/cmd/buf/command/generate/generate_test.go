@@ -110,6 +110,18 @@ func TestCompareGeneratedStubsGoogleapisObjc(t *testing.T) {
 	)
 }
 
+func TestCompareGeneratedStubsGoogleapisPyi(t *testing.T) {
+	testingextended.SkipIfShort(t)
+	t.Parallel()
+	googleapisDirPath := buftesting.GetGoogleapisDirPath(t, buftestingDirPath)
+	testCompareGeneratedStubs(
+		t,
+		command.NewRunner(),
+		googleapisDirPath,
+		[]*testPluginInfo{{name: "pyi"}},
+	)
+}
+
 func TestCompareInsertionPointOutput(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()

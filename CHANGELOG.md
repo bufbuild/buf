@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Upgrade to `protoc` 3.20.1 support.
+
+## [v1.4.0] - 2022-04-21
+
 - Fix issue where duplicate synthetic oneofs (such as with proto3 maps or
   optional fields) did not result in a properly formed error.
 - Add `buf beta registry repository update` command which supports updating
@@ -694,7 +698,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.4.0...HEAD
+[v1.4.0]: https://github.com/bufbuild/buf/compare/v1.3.1...v1.4.0
 [v1.3.1]: https://github.com/bufbuild/buf/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/bufbuild/buf/compare/v1.2.1...1.3.0
 [v1.2.1]: https://github.com/bufbuild/buf/compare/v1.2.0...v1.2.1
