@@ -4,9 +4,6 @@ on: push
   #schedule:
     ## Runs "At 08:00 on Monday UTC." (see https://crontab.guru)
     #- cron: "0 08 * * 1"
-  #workflow_dispatch:
-# Prevent writing to the repository using the CI token.
-# Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
 permissions:
   contents: read
   pull-requests: write
@@ -27,7 +24,7 @@ jobs:
         if: success()
         run: make upgrade
         env:
-          BUF_BREAKING_AGAINST_INPUT: 'https://github.com/bufbuild/core.git#branch=main'
+          BUF_BREAKING_AGAINST_INPUT: 'https://github.com/bufbuild/buf.git#branch=main'
           BUF_INPUT_HTTPS_USERNAME: ${{ github.actor }}
           BUF_INPUT_HTTPS_PASSWORD: ${{ github.token }}
       - name: create-pull-request
