@@ -9,7 +9,6 @@
 [![Homebrew](https://img.shields.io/badge/homebrew-v1.4.0-blue)][badges_homebrew]
 [![AUR](https://img.shields.io/aur/version/buf)][badges_aur]
 [![Slack](https://img.shields.io/badge/slack-buf-%23e01563)][badges_slack]
-[![Twitter](https://img.shields.io/twitter/follow/bufbuild?style=social)][badges_twitter]
 
 The [`buf`][buf] CLI is a tool for working with [Protocol Buffers][protobuf].
 
@@ -115,7 +114,6 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [badges_license]: https://github.com/bufbuild/buf/blob/main/LICENSE
 [badges_release]: https://github.com/bufbuild/buf/releases
 [badges_slack]: https://join.slack.com/t/bufbuild/shared_invite/zt-f5k547ki-VDs_iC4TblNCu7ubhRD17w
-[badges_twitter]: https://twitter.com/intent/follow?screen_name=bufbuild
 [bash]: https://www.gnu.org/software/bash
 [binary]: https://docs.buf.build/installation#binary
 [breaking]: https://docs.buf.build/breaking
