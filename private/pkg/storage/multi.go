@@ -121,16 +121,31 @@ func (m *multiReadBucket) getObjectInfoAndDelegateIndex(
 ) (ObjectInfo, int, error) {
 	var objectInfos []ObjectInfo
 	var delegateIndices []int
+	var invalidPathError error
 	for i, delegate := range m.delegates {
 		objectInfo, err := delegate.Stat(ctx, path)
 		if err != nil {
 			if IsNotExist(err) {
 				continue
 			}
+			if IsInvalidPath(err) {
+				// As long as one of the delegates contains a valid
+				// representation for this file (e.g. a regular file),
+				// it's OK.
+				invalidPathError = err
+				continue
+			}
 			return nil, 0, err
 		}
 		objectInfos = append(objectInfos, objectInfo)
 		delegateIndices = append(delegateIndices, i)
+	}
+	if len(objectInfos) == 0 && invalidPathError != nil {
+		// None of the delegates contained the path, so
+		// we surface one of the invalid path errors. The
+		// path exists, but it might have the wrong file
+		// type.
+		return nil, 0, invalidPathError
 	}
 	switch len(objectInfos) {
 	case 0:
