@@ -1,5 +1,10 @@
 name: make-upgrade
 on: push
+#on:
+  #schedule:
+    ## Runs "At 08:00 on Monday UTC." (see https://crontab.guru)
+    #- cron: "0 08 * * 1"
+  #workflow_dispatch:
 # Prevent writing to the repository using the CI token.
 # Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
 permissions:
@@ -8,7 +13,7 @@ permissions:
 env:
   MAKEFLAGS: '-j 2'
 jobs:
-  lint:
+  make-upgrade:
     runs-on: ubuntu-20.04
     steps:
       - name: checkout
@@ -21,6 +26,10 @@ jobs:
       - name: make-upgrade
         if: success()
         run: make upgrade
+        env:
+          BUF_BREAKING_AGAINST_INPUT: 'https://github.com/bufbuild/core.git#branch=main'
+          BUF_INPUT_HTTPS_USERNAME: ${{ github.actor }}
+          BUF_INPUT_HTTPS_PASSWORD: ${{ github.token }}
       - name: create-pull-request
         uses: peter-evans/create-pull-request@v4
         with:
