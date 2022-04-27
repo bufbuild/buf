@@ -3,19 +3,8 @@ on: push
 # Prevent writing to the repository using the CI token.
 # Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
 permissions:
-  actions: read
-  checks: read
   contents: read
-  deployments: read
-  id-token: read
-  issues: read
-  discussions: read
-  packages: read
-  pages: read
   pull-requests: write
-  repository-projects: read
-  security-events: read
-  statuses: read
 env:
   MAKEFLAGS: '-j 2'
 jobs:
