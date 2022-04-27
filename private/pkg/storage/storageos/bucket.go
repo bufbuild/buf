@@ -284,7 +284,7 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 				// This error primarily serves as a sentinel error,
 				// but we preserve the original path argument so that
 				// the error still makes sense to the user.
-				return storage.NewErrInvalidPath(path)
+				return storage.NewErrNotExist(path)
 			}
 		}
 		return err
@@ -292,7 +292,7 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 	if !fileInfo.Mode().IsRegular() {
 		// making this a user error as any access means this was generally requested
 		// by the user, since we only call the function for Walk on regular files
-		return storage.NewErrInvalidPathf(path, "not a regular file")
+		return storage.NewErrNotExist(path)
 	}
 	return nil
 }

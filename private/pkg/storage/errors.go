@@ -16,7 +16,6 @@ package storage
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -30,8 +29,6 @@ var (
 
 	// errNotExist is the error returned if a path does not exist.
 	errNotExist = errors.New("does not exist")
-	// errInvalidPath is the error returned if a path is invalid.
-	errInvalidPath = errors.New("invalid path")
 )
 
 // NewErrNotExist returns a new error for a path not existing.
@@ -42,21 +39,6 @@ func NewErrNotExist(path string) error {
 // IsNotExist returns true for a error that is for a path not existing.
 func IsNotExist(err error) bool {
 	return errors.Is(err, errNotExist)
-}
-
-// NewErrInvalidPath returns a new error for an invalid path.
-func NewErrInvalidPath(path string) error {
-	return normalpath.NewError(path, errInvalidPath)
-}
-
-// NewErrInvalidPathf returns a new error for an invalid path.
-func NewErrInvalidPathf(path string, template string, args ...interface{}) error {
-	return normalpath.NewError(path, fmt.Errorf("%w: %s", errInvalidPath, fmt.Sprintf(template, args...)))
-}
-
-// IsInvalidPath returns true for a error that is for an invalid path.
-func IsInvalidPath(err error) bool {
-	return errors.Is(err, errInvalidPath)
 }
 
 // NewErrExistsMultipleLocations returns a new error if a path exists in multiple locations.
