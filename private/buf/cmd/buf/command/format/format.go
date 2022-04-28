@@ -103,7 +103,7 @@ $ buf format --exit-code
 $ buf format -w --exit-code
 $ buf format -d --exit-code
 
-Format a file, directory, or module reference by specifying an input. For example,
+Format a file, directory, or remote module by specifying an input. For example,
 
 # Write the formatted file to stdout
 $ buf format simple/simple.proto
@@ -120,7 +120,7 @@ message Object {
 $ buf format simple
 ...
 
-# Write the formatted module reference to stdout
+# Write the formatted remote module to stdout
 $ buf format buf.build/acme/petapis
 ...
 
@@ -132,7 +132,7 @@ $ buf format simple/simple.proto -o simple/simple.formatted.proto
 # Write the formatted directory to another directory, creating it if it doesn't exist
 $ buf format proto -o formatted
 
-# This also works with module references
+# This also works with remote modules
 $ buf format buf.build/acme/weather -o formatted
 
 Rewrite the file(s) in-place with -w. For example,

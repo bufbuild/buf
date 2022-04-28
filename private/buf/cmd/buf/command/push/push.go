@@ -47,7 +47,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <source>",
-		Short: "Push a module to a registry.",
+		Short: "Push a snapshot of the current module to a registry.",
 		Long:  bufcli.GetSourceLong(`the source to push`),
 		Args:  cobra.MaximumNArgs(1),
 		Run: builder.NewRunFunc(

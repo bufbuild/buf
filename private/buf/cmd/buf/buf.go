@@ -51,6 +51,8 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositorylist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryundeprecate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/repository/repositoryupdate"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/snapshot/snapshotget"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/snapshot/snapshotlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/tagcreate"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/tag/taglist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/template/templatecreate"
@@ -181,7 +183,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "track",
-								Short: "Manage a repository's tracks.",
+								Short: "Manage a remote module's tracks.",
 								SubCommands: []*appcmd.Command{
 									tracklist.NewCommand("list", builder),
 									trackdelete.NewCommand("delete", builder),
@@ -189,7 +191,7 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "tag",
-								Short: "Manage a repository's tags.",
+								Short: "Manage a remote module's tags.",
 								SubCommands: []*appcmd.Command{
 									tagcreate.NewCommand("create", builder),
 									taglist.NewCommand("list", builder),
@@ -197,10 +199,18 @@ func NewRootCommand(name string) *appcmd.Command {
 							},
 							{
 								Use:   "commit",
-								Short: "Manage a repository's commits.",
+								Short: "Manage a repository's commits. [deprecated - use buf beta registry snapshot]",
 								SubCommands: []*appcmd.Command{
 									commitget.NewCommand("get", builder),
 									commitlist.NewCommand("list", builder),
+								},
+							},
+							{
+								Use:   "snapshot",
+								Short: "Manage a remote module's snapshots",
+								SubCommands: []*appcmd.Command{
+									snapshotget.NewCommand("get", builder),
+									snapshotlist.NewCommand("list", builder),
 								},
 							},
 							{
