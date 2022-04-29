@@ -161,6 +161,7 @@ func RunTestSuite(
 	twoDirPath := filepath.Join(storagetestingDirPath, "testdata", "two")
 	threeDirPath := filepath.Join(storagetestingDirPath, "testdata", "three")
 	fourDirPath := filepath.Join(storagetestingDirPath, "testdata", "four")
+	fiveDirPath := filepath.Join(storagetestingDirPath, "testdata", "five")
 	symlinkSuccessDirPath := filepath.Join(storagetestingDirPath, "testdata", "symlink_success")
 	symlinkLoopDirPath := filepath.Join(storagetestingDirPath, "testdata", "symlink_loop")
 	defaultProvider := storageos.NewProvider()
@@ -469,6 +470,35 @@ func RunTestSuite(
 				"b/1.proto":   testProtoContent,
 				"b/2.proto":   testProtoContent,
 				"3.proto":     testProtoContent,
+			},
+		)
+	})
+
+	// this is testing that two roots can have a file with the same
+	// name, but one could be a directory and the other could be a
+	// regular file.
+	t.Run("multi-dir-file-collision", func(t *testing.T) {
+		t.Parallel()
+		readBucket, _ := newReadBucket(t, fiveDirPath, defaultProvider)
+		readBucketMulti := storage.MultiReadBucket(
+			storage.MapReadBucket(
+				readBucket,
+				storage.MapOnPrefix("root1"),
+			),
+			storage.MapReadBucket(
+				readBucket,
+				storage.MapOnPrefix("root2"),
+			),
+		)
+		AssertPathToContent(
+			t,
+			readBucketMulti,
+			"",
+			map[string]string{
+				// root1
+				"foo": testProtoContent,
+				// root2
+				"foo/bar.proto": testProtoContent,
 			},
 		)
 	})

@@ -17,9 +17,9 @@ package storageos
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/filepathextended"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -27,7 +27,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageutil"
 )
 
-// errNotDir is the error returned if a path does not dir.
+// errNotDir is the error returned if a path is not a directory.
 var errNotDir = errors.New("not a directory")
 
 type bucket struct {
@@ -256,12 +256,43 @@ func (b *bucket) validateExternalPath(path string, externalPath string) error {
 		if os.IsNotExist(err) {
 			return storage.NewErrNotExist(path)
 		}
+		// The path might have a regular file in one of its
+		// elements (e.g. 'foo/bar/baz.proto' where 'bar' is a
+		// regular file).
+		//
+		// In this case, the standard library will return an
+		// os.PathError, but there isn't an exported error value
+		// to check against (i.e. os.Is*). But we can still discover
+		// whether or not this is the case by checking if any of the
+		// path components represents a regular file (e.g. 'foo/bar').
+		//
+		// It's important that we detect these cases so that
+		// multi buckets don't unnecessarily fail when one of
+		// its delegates actually defines the path.
+		elements := strings.Split(normalpath.Normalize(externalPath), "/")
+		if len(elements) == 1 {
+			// The path is a single element, so there aren't
+			// any other files to check.
+			return err
+		}
+		for i := len(elements) - 1; i >= 0; i-- {
+			parentFileInfo, err := os.Stat(filepath.Join(elements[:i]...))
+			if err != nil {
+				continue
+			}
+			if parentFileInfo.Mode().IsRegular() {
+				// This error primarily serves as a sentinel error,
+				// but we preserve the original path argument so that
+				// the error still makes sense to the user.
+				return storage.NewErrNotExist(path)
+			}
+		}
 		return err
 	}
 	if !fileInfo.Mode().IsRegular() {
 		// making this a user error as any access means this was generally requested
 		// by the user, since we only call the function for Walk on regular files
-		return fmt.Errorf("%q is not a regular file", path)
+		return storage.NewErrNotExist(path)
 	}
 	return nil
 }

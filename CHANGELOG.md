@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 - Upgrade to `protoc` 3.20.1 support.
+- Fix an issue where `buf` would fail if two or more roots contained
+  a file with the same name, but with different file types (i.e. a
+  regular file vs. a directory).
 
 ## [v1.4.0] - 2022-04-21
 
