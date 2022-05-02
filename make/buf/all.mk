@@ -9,7 +9,6 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc \
-	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-connect \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-connectclient \
 	private/bufpkg/bufstyle/cmd/bufstyle \
 	private/pkg/bandeps/cmd/bandeps \
