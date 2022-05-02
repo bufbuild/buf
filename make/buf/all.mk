@@ -101,7 +101,6 @@ bufgeneratedeps:: \
 	installprotoc-gen-go-api \
 	installprotoc-gen-go-apiclient \
 	installprotoc-gen-go-apiclientgrpc \
-	installprotoc-gen-go-connect \
 	installprotoc-gen-go-connectclient \
 	$(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC)
 
