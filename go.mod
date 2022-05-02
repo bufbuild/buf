@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid v4.2.0+incompatible
-	github.com/google/go-cmp v0.5.7
+	github.com/google/go-cmp v0.5.8
 	github.com/jdxcode/netrc v0.0.0-20210204082910-926c7f70242a
 	github.com/jhump/protocompile v0.0.0-20220216033700-d705409f108f
 	github.com/jhump/protoreflect v1.12.1-0.20220417024638-438db461d753
