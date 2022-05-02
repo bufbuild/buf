@@ -6,7 +6,6 @@ managed:
     default: github.com/bufbuild/buf/private/gen/proto/go
     override:
       buf.build/bufbuild/buf: github.com/bufbuild/buf/private/gen/proto/go
-      buf.build/envoyproxy/envoy: github.com/envoyproxy/go-control-plane
 plugins:
   - name: connect-go
     out: private/gen/proto/connect

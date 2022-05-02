@@ -101,6 +101,7 @@ bufgeneratedeps:: \
 	installprotoc-gen-go-api \
 	installprotoc-gen-go-apiclient \
 	installprotoc-gen-go-apiclientgrpc \
+	installprotoc-gen-go-connect \
 	installprotoc-gen-go-connectclient \
 	$(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC)
 
@@ -118,7 +119,6 @@ bufgenerateprotogo:
 bufgenerateprotoconnectgo: $(PROTOC_GEN_CONNECT_GO)
 	$(BUF_BIN) generate $(BUF_PROTO_SOURCE) --template data/template/buf.connect-go.gen.yaml
 	$(BUF_BIN) generate proto --template data/template/buf.connect-go.gen.yaml
-	$(BUF_BIN) generate --template data/template/buf.connect-go.gen.yaml --path envoy/service/auth/v3 buf.build/envoyproxy/envoy
 
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
