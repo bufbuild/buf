@@ -9,6 +9,7 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc \
+	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-connectclient \
 	private/bufpkg/bufstyle/cmd/bufstyle \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
@@ -100,6 +101,7 @@ bufgeneratedeps:: \
 	installprotoc-gen-go-api \
 	installprotoc-gen-go-apiclient \
 	installprotoc-gen-go-apiclientgrpc \
+	installprotoc-gen-go-connectclient \
 	$(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC)
 
 .PHONY: bufgeneratecleango
@@ -112,13 +114,20 @@ bufgenerateclean:: bufgeneratecleango
 bufgenerateprotogo:
 	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
 
+.PHONY: bufgenerateprotoconnectgo
+bufgenerateprotoconnectgo: $(PROTOC_GEN_CONNECT_GO)
+	$(BUF_BIN) generate $(BUF_PROTO_SOURCE) --template data/template/buf.connect-go.gen.yaml
+	$(BUF_BIN) generate proto --template data/template/buf.connect-go.gen.yaml
+	$(BUF_BIN) generate --template data/template/buf.connect-go.gen.yaml --path envoy/service/auth/v3 buf.build/envoyproxy/envoy
+
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
 	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
 
 bufgeneratesteps:: \
 	bufgenerateprotogo \
-	bufgenerateprotogoclient
+	bufgenerateprotogoclient \
+	bufgenerateprotoconnectgo
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)

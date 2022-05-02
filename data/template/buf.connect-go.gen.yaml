@@ -1,0 +1,14 @@
+# This template is to generate connect go.
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: github.com/bufbuild/buf/private/gen/proto/go
+    override:
+      buf.build/bufbuild/buf: github.com/bufbuild/buf/private/gen/proto/go
+      buf.build/envoyproxy/envoy: github.com/envoyproxy/go-control-plane
+plugins:
+  - name: connect-go
+    out: private/gen/proto/connect
+    opt: 
+      - paths=source_relative
