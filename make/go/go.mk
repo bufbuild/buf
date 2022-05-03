@@ -21,7 +21,7 @@ GO_MOD_VERSION ?= 1.18
 # Settable
 GO_ALL_REPO_PKGS ?= ./cmd/... ./internal/...
 # Settable
-SKIP_GOLANGCI_LINT ?=
+SKIP_GOLANGCI_LINT ?= 1
 
 # Runtime
 GOPKGS ?= $(GO_ALL_REPO_PKGS)
