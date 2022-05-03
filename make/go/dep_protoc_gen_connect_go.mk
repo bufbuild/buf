@@ -1,7 +1,7 @@
 # Must be set
 $(call _assert_var,MAKEGO)
 $(call _conditional_include,$(MAKEGO)/base.mk)
-$(call _conditional_include,make/pkg/base.mk)
+$(call _conditional_include,make/go/base.mk)
 $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
