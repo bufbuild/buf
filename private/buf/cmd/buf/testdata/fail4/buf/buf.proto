@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package buf;
+
+message BufRequest {
+  string key = 1;
+}
+
+message BufResponse {
+}
+

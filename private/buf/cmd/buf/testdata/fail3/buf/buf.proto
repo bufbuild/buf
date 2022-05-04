@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package buf;
+
+service BufService {
+  rpc BufRPC(BufRequest) returns (BufResponse);
+}
+
+message BufRequest {
+  string key = 1;
+}
+
+message BufResponse {
+}
