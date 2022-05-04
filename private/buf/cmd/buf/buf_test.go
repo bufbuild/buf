@@ -482,20 +482,6 @@ func TestFailCheckBreaking5(t *testing.T) {
 	)
 }
 
-func TestFailCheckBreaking6(t *testing.T) {
-	t.Parallel()
-	testRunStdout(
-		t,
-		nil,
-		bufcli.ExitCodeFileAnnotation,
-		filepath.FromSlash(`testdata/fail4/buf/buf.proto:1:1:Previously present service "BufService" was deleted from package "buf".`),
-		"breaking",
-		filepath.Join("testdata", "fail4"),
-		"--against",
-		filepath.Join("testdata", "fail3"),
-	)
-}
-
 func TestCheckLsLintRules1(t *testing.T) {
 	t.Parallel()
 	expectedStdout := `
