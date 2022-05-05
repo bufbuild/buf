@@ -104,7 +104,7 @@ func run(
 	// interactively.
 	errC := make(chan error, 1)
 	go func() {
-		errC <- inner(container, flags)
+		errC <- inner(ctx, container, flags)
 		close(errC)
 	}()
 	select {
@@ -126,6 +126,7 @@ func run(
 }
 
 func inner(
+	ctx context.Context,
 	container appflag.Container,
 	flags *flags,
 ) error {
