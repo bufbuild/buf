@@ -19,14 +19,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
+	"github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
+	"github.com/bufbuild/buf/private/gen/proto/connectclient/buf/alpha/registry/v1alpha1/registryv1alpha1connectclient"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
+	"github.com/bufbuild/buf/private/pkg/transport/http2client"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -130,14 +135,30 @@ func run(
 			return err
 		}
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
-	if err != nil {
-		return err
+
+	// -------
+	var authnService registryv1alpha1api.AuthnService
+	if os.Getenv("USE_CONNECT") == "1" {
+		fmt.Println("Using connect")
+		// Initialize a connect client
+		h2cClient := http2client.NewClient(http2client.WithH2C())
+		authnService = registryv1alpha1connectclient.NewAuthnServiceClient(
+			h2cClient,
+			"http://"+remote,
+			connect.WithGRPC(),
+		)
+	} else {
+		fmt.Println("Using grpc")
+		registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+		if err != nil {
+			return err
+		}
+		authnService, err = registryProvider.NewAuthnService(ctx, remote)
+		if err != nil {
+			return err
+		}
 	}
-	authnService, err := registryProvider.NewAuthnService(ctx, remote)
-	if err != nil {
-		return err
-	}
+	//-----------
 	// Remove leading and trailing spaces from user-supplied token to avoid
 	// common input errors such as trailing new lines, as-is the case of using
 	// echo vs echo -n.
@@ -145,8 +166,10 @@ func run(
 	if token == "" {
 		return errors.New("token cannot be empty string")
 	}
+	fmt.Println(token)
 	user, err := authnService.GetCurrentUser(rpcauth.WithToken(ctx, token))
 	if err != nil {
+		fmt.Println(err)
 		// We don't want to use the default error from wrapError here if the error
 		// an unauthenticated error.
 		return errors.New("invalid token provided")

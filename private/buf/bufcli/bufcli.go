@@ -17,7 +17,6 @@ package bufcli
 import (
 	"bufio"
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -25,7 +24,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/benbjohnson/clock"
 	"github.com/bufbuild/buf/private/buf/bufapp"
 	"github.com/bufbuild/buf/private/buf/buffetch"
 	"github.com/bufbuild/buf/private/buf/bufwire"
@@ -49,8 +47,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/app/appname"
-	"github.com/bufbuild/buf/private/pkg/cert/certclient"
-	"github.com/bufbuild/buf/private/pkg/cert/certserver"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
@@ -162,23 +158,6 @@ var (
 		privateVisibility,
 	}
 )
-
-// ConnectConfig is a config for using Connect.
-type ConnectConfig struct {
-	ClientTLS                      *tls.Config
-	ServerTLS                      *tls.Config
-	GenerateServiceAddress         string
-	RepositoryCommitServiceAddress string
-	RepositoryServiceAddress       string
-	PluginServiceAddress           string
-	ImageServiceAddress            string
-	DownloadServiceAddress         string
-	Hostname                       string
-	RegistryHostname               string
-	ServeStaticMetaData            bool
-	RemoteToScope                  map[string]string
-	Clock                          clock.Clock
-}
 
 // GlobalFlags contains global flags for buf commands.
 type GlobalFlags struct{}
@@ -568,27 +547,6 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 		return nil, err
 	}
 	return bufapp.NewConfig(container, externalConfig)
-}
-
-// NewConnectConfig creates a new Config for use with Connect.
-func NewConnectConfig(container appflag.Container) (*ConnectConfig, error) {
-	externalConfig := bufapp.ExternalConfig{}
-	if err := appname.ReadConfig(container, &externalConfig); err != nil {
-		return nil, err
-	}
-	serverTLSConfig, err := certserver.NewServerTLSConfig(container, externalConfig.TLS)
-	if err != nil {
-		return nil, err
-	}
-	clientTLSConfig, err := certclient.NewClientTLSConfig(container, externalConfig.Client.TLS)
-	if err != nil {
-		return nil, err
-	}
-	return &ConnectConfig{
-		ServerTLS: serverTLSConfig,
-		ClientTLS: clientTLSConfig,
-		Clock:     clock.SystemClock,
-	}, nil
 }
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
