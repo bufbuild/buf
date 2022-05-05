@@ -100,13 +100,13 @@ func run(
 	// Note that this does not gracefully handle the case where the terminal is
 	// in no-echo mode, as is the case when prompting for a password
 	// interactively.
-	errc := make(chan error, 1)
+	errC := make(chan error, 1)
 	go func() {
-		errc <- inner(container, flags)
-		close(errc)
+		errC <- inner(container, flags)
+		close(errC)
 	}()
 	select {
-	case err := <-errc:
+	case err := <-errC:
 		return err
 	case <-ctx.Done():
 		ctxErr := ctx.Err()
