@@ -86,13 +86,25 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	errc := make(chan error)
+	// If a user sends a SIGINT to buf, the top-level application context is
+	// cancelled and signal masks are reset. However, during an interactive
+	// login the context is not respected; for example, it takes two SIGINTs
+	// to interrupt the process.
 
+	// Ideally we could just trigger an I/O timeout by setting the deadline on
+	// stdin, but when stdin is connected to a terminal the underlying fd is in
+	// blocking mode making it ineligible. As changing the mode of stdin is
+	// dangerous, this change takes an alternate approach of simply returning
+	// early.
+
+	// Note that this does not gracefully handle the case where the terminal is
+	// in no-echo mode, as is the case when prompting for a password
+	// interactively.
+	errc := make(chan error, 1)
 	go func() {
 		errc <- inner(container, flags)
 		close(errc)
 	}()
-
 	select {
 	case err := <-errc:
 		return err
