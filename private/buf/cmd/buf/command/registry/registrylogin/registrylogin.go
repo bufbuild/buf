@@ -136,7 +136,6 @@ func run(
 		}
 	}
 
-	// -------
 	var authnService registryv1alpha1api.AuthnService
 	if os.Getenv("USE_CONNECT") == "1" {
 		fmt.Println("Using connect")
@@ -158,7 +157,7 @@ func run(
 			return err
 		}
 	}
-	//-----------
+
 	// Remove leading and trailing spaces from user-supplied token to avoid
 	// common input errors such as trailing new lines, as-is the case of using
 	// echo vs echo -n.
@@ -166,7 +165,6 @@ func run(
 	if token == "" {
 		return errors.New("token cannot be empty string")
 	}
-	fmt.Println(token)
 	user, err := authnService.GetCurrentUser(rpcauth.WithToken(ctx, token))
 	if err != nil {
 		fmt.Println(err)
