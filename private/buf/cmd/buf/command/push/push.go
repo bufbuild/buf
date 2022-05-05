@@ -17,21 +17,16 @@ package push
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
-	"github.com/bufbuild/buf/private/gen/proto/connectclient/buf/alpha/registry/v1alpha1/registryv1alpha1connectclient"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
 	"github.com/bufbuild/buf/private/pkg/rpc"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/transport/http2client"
-	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -135,33 +130,14 @@ func run(
 	if err != nil {
 		return err
 	}
-
-	// -------
-	var service registryv1alpha1api.PushService
-	if os.Getenv("USE_CONNECT") == "1" {
-		// Initialize a connect client
-		h2cClient := http2client.NewClient()
-		fmt.Println("Using connect")
-
-		config, _ := bufcli.NewConnectConfig(container)
-		service = registryv1alpha1connectclient.NewPushServiceClient(
-			h2cClient,
-			config.PluginServiceAddress,
-			connect.WithGRPC(),
-		)
-	} else {
-		fmt.Println("Using grpc")
-		apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
-		if err != nil {
-			return err
-		}
-		service, err = apiProvider.NewPushService(ctx, moduleIdentity.Remote())
-		if err != nil {
-			return err
-		}
+	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	if err != nil {
+		return err
 	}
-	//-----------
-
+	service, err := apiProvider.NewPushService(ctx, moduleIdentity.Remote())
+	if err != nil {
+		return err
+	}
 	tracks := flags.Tracks
 	if tracks == nil {
 		tracks = []string{bufmoduleref.MainTrack}
