@@ -109,7 +109,14 @@ func run(
 	case err := <-errc:
 		return err
 	case <-ctx.Done():
-		return ctx.Err()
+		ctxErr := ctx.Err()
+		if errors.Is(ctxErr, context.Canceled) {
+			if _, err := fmt.Fprintln(container.Stdout()); err != nil {
+				return err
+			}
+			return nil
+		}
+		return ctxErr
 	}
 }
 
