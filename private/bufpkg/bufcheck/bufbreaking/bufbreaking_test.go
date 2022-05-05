@@ -620,6 +620,14 @@ func TestRunBreakingServiceNoDelete(t *testing.T) {
 	)
 }
 
+func TestRunBreakingPackageServiceNoDelete(t *testing.T) {
+	testBreaking(
+		t,
+		"breaking_package_service_no_delete",
+		bufanalysistesting.NewFileAnnotationNoLocation(t, "1.proto", "PACKAGE_SERVICE_NO_DELETE"),
+	)
+}
+
 func TestRunBreakingIgnoreUnstablePackagesTrue(t *testing.T) {
 	testBreaking(
 		t,

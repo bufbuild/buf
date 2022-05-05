@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package a;
+
+message ARequest {
+  string key = 1;
+}
+
+message AResponse {
+}
