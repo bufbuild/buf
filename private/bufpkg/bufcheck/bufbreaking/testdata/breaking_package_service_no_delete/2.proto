@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package b;
+
+service BService {
+  rpc BRPC(BRequest) returns (BResponse);
+}
+
+message BRequest {
+  string key = 1;
+}
+
+message BResponse {
+}

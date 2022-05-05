@@ -6,6 +6,7 @@
 - Fix an issue where `buf` would fail if two or more roots contained
   a file with the same name, but with different file types (i.e. a
   regular file vs. a directory).
+- Fix check for `PACKAGE_SERVICE_NO_DELETE` to detect deleted services.
 
 ## [v1.4.0] - 2022-04-21
 
