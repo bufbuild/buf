@@ -110,7 +110,10 @@ func run(
 		return err
 	case <-ctx.Done():
 		ctxErr := ctx.Err()
+		// Otherwise we will print "Failure: context canceled".
 		if errors.Is(ctxErr, context.Canceled) {
+			// Otherwise the next terminal line will be on the same line as the
+			// last output from buf.
 			if _, err := fmt.Fprintln(container.Stdout()); err != nil {
 				return err
 			}
