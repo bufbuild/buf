@@ -18,7 +18,6 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1connectclient "github.com/bufbuild/buf/private/gen/proto/connectclient/buf/alpha/registry/v1alpha1/registryv1alpha1connectclient"
@@ -69,14 +68,6 @@ func WithContextModifierProvider(contextModifierProvider func(address string) (f
 }
 
 func (p *provider) NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -86,684 +77,328 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 		address,
 		connect_go.WithGRPC(),
 	), nil
-	// return &adminService{
-	// 	logger:          p.logger,
-	// 	client:          adminServiceClient,
-	// 	contextModifier: contextModifier,
-	// }, nil
 }
 
 func (p *provider) NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	authnServiceClient := registryv1alpha1connectclient.NewAuthnServiceClient(
+	return registryv1alpha1connectclient.NewAuthnServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &authnService{
-		logger:          p.logger,
-		client:          authnServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	authzServiceClient := registryv1alpha1connectclient.NewAuthzServiceClient(
+	return registryv1alpha1connectclient.NewAuthzServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &authzService{
-		logger:          p.logger,
-		client:          authzServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewConvertService(ctx context.Context, address string) (registryv1alpha1api.ConvertService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	convertServiceClient := registryv1alpha1connectclient.NewConvertServiceClient(
+	return registryv1alpha1connectclient.NewConvertServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &convertService{
-		logger:          p.logger,
-		client:          convertServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewDisplayService(ctx context.Context, address string) (registryv1alpha1api.DisplayService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	displayServiceClient := registryv1alpha1connectclient.NewDisplayServiceClient(
+	return registryv1alpha1connectclient.NewDisplayServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &displayService{
-		logger:          p.logger,
-		client:          displayServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewDocService(ctx context.Context, address string) (registryv1alpha1api.DocService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	docServiceClient := registryv1alpha1connectclient.NewDocServiceClient(
+	return registryv1alpha1connectclient.NewDocServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &docService{
-		logger:          p.logger,
-		client:          docServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	downloadServiceClient := registryv1alpha1connectclient.NewDownloadServiceClient(
+	return registryv1alpha1connectclient.NewDownloadServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &downloadService{
-		logger:          p.logger,
-		client:          downloadServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewGenerateService(ctx context.Context, address string) (registryv1alpha1api.GenerateService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	generateServiceClient := registryv1alpha1connectclient.NewGenerateServiceClient(
+	return registryv1alpha1connectclient.NewGenerateServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &generateService{
-		logger:          p.logger,
-		client:          generateServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewGithubService(ctx context.Context, address string) (registryv1alpha1api.GithubService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	githubServiceClient := registryv1alpha1connectclient.NewGithubServiceClient(
+	return registryv1alpha1connectclient.NewGithubServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &githubService{
-		logger:          p.logger,
-		client:          githubServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewImageService(ctx context.Context, address string) (registryv1alpha1api.ImageService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	imageServiceClient := registryv1alpha1connectclient.NewImageServiceClient(
+	return registryv1alpha1connectclient.NewImageServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &imageService{
-		logger:          p.logger,
-		client:          imageServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (registryv1alpha1api.JSONSchemaService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	jSONSchemaServiceClient := registryv1alpha1connectclient.NewJSONSchemaServiceClient(
+	return registryv1alpha1connectclient.NewJSONSchemaServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &jSONSchemaService{
-		logger:          p.logger,
-		client:          jSONSchemaServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	localResolveServiceClient := registryv1alpha1connectclient.NewLocalResolveServiceClient(
+	return registryv1alpha1connectclient.NewLocalResolveServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &localResolveService{
-		logger:          p.logger,
-		client:          localResolveServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	organizationServiceClient := registryv1alpha1connectclient.NewOrganizationServiceClient(
+	return registryv1alpha1connectclient.NewOrganizationServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &organizationService{
-		logger:          p.logger,
-		client:          organizationServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	ownerServiceClient := registryv1alpha1connectclient.NewOwnerServiceClient(
+	return registryv1alpha1connectclient.NewOwnerServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &ownerService{
-		logger:          p.logger,
-		client:          ownerServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewPluginService(ctx context.Context, address string) (registryv1alpha1api.PluginService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	pluginServiceClient := registryv1alpha1connectclient.NewPluginServiceClient(
+	return registryv1alpha1connectclient.NewPluginServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &pluginService{
-		logger:          p.logger,
-		client:          pluginServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	pushServiceClient := registryv1alpha1connectclient.NewPushServiceClient(
+	return registryv1alpha1connectclient.NewPushServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &pushService{
-		logger:          p.logger,
-		client:          pushServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewRecommendationService(ctx context.Context, address string) (registryv1alpha1api.RecommendationService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	recommendationServiceClient := registryv1alpha1connectclient.NewRecommendationServiceClient(
+	return registryv1alpha1connectclient.NewRecommendationServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &recommendationService{
-		logger:          p.logger,
-		client:          recommendationServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	referenceServiceClient := registryv1alpha1connectclient.NewReferenceServiceClient(
+	return registryv1alpha1connectclient.NewReferenceServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &referenceService{
-		logger:          p.logger,
-		client:          referenceServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	repositoryBranchServiceClient := registryv1alpha1connectclient.NewRepositoryBranchServiceClient(
+	return registryv1alpha1connectclient.NewRepositoryBranchServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &repositoryBranchService{
-		logger:          p.logger,
-		client:          repositoryBranchServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	repositoryCommitServiceClient := registryv1alpha1connectclient.NewRepositoryCommitServiceClient(
+	return registryv1alpha1connectclient.NewRepositoryCommitServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &repositoryCommitService{
-		logger:          p.logger,
-		client:          repositoryCommitServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	repositoryServiceClient := registryv1alpha1connectclient.NewRepositoryServiceClient(
+	return registryv1alpha1connectclient.NewRepositoryServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &repositoryService{
-		logger:          p.logger,
-		client:          repositoryServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	repositoryTagServiceClient := registryv1alpha1connectclient.NewRepositoryTagServiceClient(
+	return registryv1alpha1connectclient.NewRepositoryTagServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &repositoryTagService{
-		logger:          p.logger,
-		client:          repositoryTagServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	repositoryTrackCommitServiceClient := registryv1alpha1connectclient.NewRepositoryTrackCommitServiceClient(
+	return registryv1alpha1connectclient.NewRepositoryTrackCommitServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &repositoryTrackCommitService{
-		logger:          p.logger,
-		client:          repositoryTrackCommitServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	repositoryTrackServiceClient := registryv1alpha1connectclient.NewRepositoryTrackServiceClient(
+	return registryv1alpha1connectclient.NewRepositoryTrackServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &repositoryTrackService{
-		logger:          p.logger,
-		client:          repositoryTrackServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	resolveServiceClient := registryv1alpha1connectclient.NewResolveServiceClient(
+	return registryv1alpha1connectclient.NewResolveServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &resolveService{
-		logger:          p.logger,
-		client:          resolveServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	searchServiceClient := registryv1alpha1connectclient.NewSearchServiceClient(
+	return registryv1alpha1connectclient.NewSearchServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &searchService{
-		logger:          p.logger,
-		client:          searchServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	tokenServiceClient := registryv1alpha1connectclient.NewTokenServiceClient(
+	return registryv1alpha1connectclient.NewTokenServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &tokenService{
-		logger:          p.logger,
-		client:          tokenServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
 
 func (p *provider) NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	userServiceClient := registryv1alpha1connectclient.NewUserServiceClient(
+	return registryv1alpha1connectclient.NewUserServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &userService{
-		logger:          p.logger,
-		client:          userServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
 }
