@@ -19,19 +19,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
-	"github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
-	"github.com/bufbuild/buf/private/gen/proto/connectclient/buf/alpha/registry/v1alpha1/registryv1alpha1connectclient"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
-	"github.com/bufbuild/buf/private/pkg/transport/http2client"
-	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -136,26 +131,26 @@ func run(
 		}
 	}
 
-	var authnService registryv1alpha1api.AuthnService
-	if os.Getenv("USE_CONNECT") == "1" {
-		fmt.Println("Using connect")
-		// Initialize a connect client
-		h2cClient := http2client.NewClient(http2client.WithH2C())
-		authnService = registryv1alpha1connectclient.NewAuthnServiceClient(
-			h2cClient,
-			"http://"+remote,
-			connect.WithGRPC(),
-		)
-	} else {
-		fmt.Println("Using grpc")
-		registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
-		if err != nil {
-			return err
-		}
-		authnService, err = registryProvider.NewAuthnService(ctx, remote)
-		if err != nil {
-			return err
-		}
+	// var authnService registryv1alpha1api.AuthnService
+	// if os.Getenv("USE_CONNECT") == "1" {
+	// 	fmt.Println("Using connect")
+	// 	// Initialize a connect client
+	// 	h2cClient := http2client.NewClient(http2client.WithH2C())
+	// 	authnService = registryv1alpha1connectclient.NewAuthnServiceClient(
+	// 		h2cClient,
+	// 		"http://"+remote,
+	// 		connect.WithGRPC(),
+	// 	)
+	// } else {
+	// 	fmt.Println("Using grpc")
+	// }
+	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
+	if err != nil {
+		return err
+	}
+	authnService, err := registryProvider.NewAuthnService(ctx, remote)
+	if err != nil {
+		return err
 	}
 
 	// Remove leading and trailing spaces from user-supplied token to avoid

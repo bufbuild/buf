@@ -18,22 +18,23 @@ package bufapiclient
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
+	"os"
 
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientgrpc/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientgrpc"
 	"github.com/bufbuild/buf/private/pkg/transport/grpc/grpcclient"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
+	"github.com/bufbuild/buf/private/pkg/transport/http2client"
 	"go.uber.org/zap"
 )
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider gRPC.
-//
-// If tlsConfig is nil, no TLS is used.
-func NewRegistryProvider(
+func newGRPCClientProvider(
 	ctx context.Context,
 	logger *zap.Logger,
 	tlsConfig *tls.Config,
-	options ...RegistryProviderOption,
+	options []RegistryProviderOption,
 ) (registryv1alpha1apiclient.Provider, error) {
 	registryProviderOptions := &registryProviderOptions{}
 	for _, option := range options {
@@ -49,6 +50,39 @@ func NewRegistryProvider(
 		registryv1alpha1apiclientgrpc.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclientgrpc.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
 	), nil
+}
+
+func newConnectClientProvider(
+	ctx context.Context,
+	logger *zap.Logger,
+	options []RegistryProviderOption,
+) (registryv1alpha1apiclient.Provider, error) {
+	registryProviderOptions := &registryProviderOptions{}
+	for _, option := range options {
+		option(registryProviderOptions)
+	}
+	httpclient := http2client.NewClient()
+	return registryv1alpha1apiclientconnect.NewProvider(
+		logger,
+		httpclient,
+		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
+		registryv1alpha1apiclientconnect.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
+	), nil
+}
+
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider gRPC.
+//
+// If tlsConfig is nil, no TLS is used.
+func NewRegistryProvider(
+	ctx context.Context,
+	logger *zap.Logger,
+	tlsConfig *tls.Config,
+	options ...RegistryProviderOption,
+) (registryv1alpha1apiclient.Provider, error) {
+	if os.Getenv("USE_CONNECT") == "1" {
+		return newConnectClientProvider(ctx, logger, options)
+	}
+	return newGRPCClientProvider(ctx, logger, tlsConfig, options)
 }
 
 // RegistryProviderOption is an option for a new registry Provider.
@@ -106,5 +140,12 @@ func NewHTTPClient(
 			tlsConfig,
 		),
 		httpclient.ClientWithObservability(),
+	)
+}
+
+// NewHTTP2Client returns a new HTTP/2 Client.
+func NewHTTP2Client() *http.Client {
+	return http2client.NewClient(
+		http2client.WithObservability(),
 	)
 }
