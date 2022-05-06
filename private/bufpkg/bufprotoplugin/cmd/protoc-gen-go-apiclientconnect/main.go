@@ -153,7 +153,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		interfaceGoIdent := apiGoImportPath.Ident(interfaceName)
 		interfaceGoIdentString := g.QualifiedGoIdent(interfaceGoIdent)
 		interfaceConnectGoIdent := connectGoImportPath.Ident("New" + interfaceName + "Client")
-		interfaceConnectGoIdentString := g.QualifiedGoIdent(interfaceConnectGoIdent)
+		_ = g.QualifiedGoIdent(interfaceConnectGoIdent)
 		structName := protogenutil.GetUnexportGoName(interfaceName)
 
 		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, address string) (`, interfaceGoIdentString, `, error) {`)
@@ -169,7 +169,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`address = p.addressMapper(address)`)
 		g.P(`}`)
 		g.P(`http2client := http2client.NewClient()`)
-		g.P(structName, `Client := `, interfaceConnectGoIdentString, `(`)
+		g.P(structName, `Client := newStuff(`)
 		g.P(`http2client,`)
 		g.P(`address,`)
 		g.P(withGRPCIdentString, `(),`)
