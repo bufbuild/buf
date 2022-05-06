@@ -18,6 +18,7 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
+
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1connectclient "github.com/bufbuild/buf/private/gen/proto/connectclient/buf/alpha/registry/v1alpha1/registryv1alpha1connectclient"
@@ -80,16 +81,16 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 		address = p.addressMapper(address)
 	}
 	http2client := http2client.NewClient()
-	adminServiceClient := registryv1alpha1connectclient.NewAdminServiceClient(
+	return registryv1alpha1connectclient.NewAdminServiceClient(
 		http2client,
 		address,
 		connect_go.WithGRPC(),
-	)
-	return &adminService{
-		logger:          p.logger,
-		client:          adminServiceClient,
-		contextModifier: contextModifier,
-	}, nil
+	), nil
+	// return &adminService{
+	// 	logger:          p.logger,
+	// 	client:          adminServiceClient,
+	// 	contextModifier: contextModifier,
+	// }, nil
 }
 
 func (p *provider) NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error) {

@@ -142,9 +142,9 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
-	connectGoImportPath, err := helper.NewPackageGoImportPath(
+	connectClientGoImportPath, err := helper.NewPackageGoImportPath(
 		goPackageFileSet,
-		"connect",
+		"connectclient",
 	)
 
 	// Iterate over the services and create a constructor function for each
@@ -152,8 +152,8 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		interfaceName := service.GoName
 		interfaceGoIdent := apiGoImportPath.Ident(interfaceName)
 		interfaceGoIdentString := g.QualifiedGoIdent(interfaceGoIdent)
-		interfaceConnectGoIdent := connectGoImportPath.Ident("New" + interfaceName + "Client")
-		_ = g.QualifiedGoIdent(interfaceConnectGoIdent)
+		interfaceConnectClientGoIdent := connectClientGoImportPath.Ident("New" + interfaceName + "Client")
+		interfaceConnectClientGoIdentString := g.QualifiedGoIdent(interfaceConnectClientGoIdent)
 		structName := protogenutil.GetUnexportGoName(interfaceName)
 
 		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, address string) (`, interfaceGoIdentString, `, error) {`)
@@ -169,7 +169,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`address = p.addressMapper(address)`)
 		g.P(`}`)
 		g.P(`http2client := http2client.NewClient()`)
-		g.P(structName, `Client := newStuff(`)
+		g.P(structName, `Client := `, interfaceConnectClientGoIdentString, `(`)
 		g.P(`http2client,`)
 		g.P(`address,`)
 		g.P(withGRPCIdentString, `(),`)
@@ -194,15 +194,15 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	loggerGoIdentString := g.QualifiedGoIdent(zapPackage.Ident("Logger"))
 
-	apiGoImportPath, err := helper.NewGoImportPath(
+	connectGoImportPath, err := helper.NewGoImportPath(
 		file,
-		"api",
+		"connect",
 	)
 
 	for _, service := range file.Services {
 		interfaceName := service.GoName
 		structName := protogenutil.GetUnexportGoName(interfaceName)
-		clientGoIdent := apiGoImportPath.Ident(interfaceName)
+		clientGoIdent := connectGoImportPath.Ident(interfaceName + "Client")
 		clientGoIdentString := g.QualifiedGoIdent(clientGoIdent)
 		newRequestGoIdent := connectGoPackage.Ident("NewRequest")
 		newRequestGoIdentString := g.QualifiedGoIdent(newRequestGoIdent)

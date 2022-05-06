@@ -18,14 +18,12 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
 )
 
-// ) registryv1alpha1api.AdminService {
 type adminService struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.AdminServiceClient

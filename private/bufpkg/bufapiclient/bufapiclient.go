@@ -18,23 +18,22 @@ package bufapiclient
 import (
 	"context"
 	"crypto/tls"
-	"net/http"
-	"os"
 
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
-	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientgrpc/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientgrpc"
 	"github.com/bufbuild/buf/private/pkg/transport/grpc/grpcclient"
 	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
-	"github.com/bufbuild/buf/private/pkg/transport/http2client"
 	"go.uber.org/zap"
 )
 
-func newGRPCClientProvider(
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider gRPC.
+//
+// If tlsConfig is nil, no TLS is used.
+func NewRegistryProvider(
 	ctx context.Context,
 	logger *zap.Logger,
 	tlsConfig *tls.Config,
-	options []RegistryProviderOption,
+	options ...RegistryProviderOption,
 ) (registryv1alpha1apiclient.Provider, error) {
 	registryProviderOptions := &registryProviderOptions{}
 	for _, option := range options {
@@ -50,55 +49,6 @@ func newGRPCClientProvider(
 		registryv1alpha1apiclientgrpc.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclientgrpc.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
 	), nil
-}
-
-func newConnectClientProvider(
-	ctx context.Context,
-	logger *zap.Logger,
-	tlsConfig *tls.Config,
-	options []RegistryProviderOption,
-) (registryv1alpha1apiclient.Provider, error) {
-	registryProviderOptions := &registryProviderOptions{}
-	for _, option := range options {
-		option(registryProviderOptions)
-	}
-	clientConnProvider, err := NewGRPCClientConnProvider(ctx, logger, tlsConfig)
-	if err != nil {
-		return nil, err
-	}
-	return registryv1alpha1apiclientconnect.NewProvider(
-		logger,
-		clientConnProvider,
-		registryv1alpha1apiclientgrpc.WithAddressMapper(registryProviderOptions.addressMapper),
-		registryv1alpha1apiclientgrpc.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
-	), nil
-}
-
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider gRPC.
-//
-// If tlsConfig is nil, no TLS is used.
-func NewRegistryProvider(
-	ctx context.Context,
-	logger *zap.Logger,
-	tlsConfig *tls.Config,
-	options ...RegistryProviderOption,
-) (registryv1alpha1apiclient.Provider, error) {
-	if os.Getenv("USE_CONNECT") == "1" {
-		// Initialize a connect client
-		_ = http2client.NewClient()
-		// this isust here for an example
-		// authnService = registryv1alpha1connectclient.NewAuthnServiceClient(
-		// 	h2cClient,
-		// 	"https://"+buftransport.PrependAPISubdomain(remote),
-		// 	connect.WithGRPC(),
-		// )
-		//  Replace the grpcclient provider with this  new connect provider when the plugin is done
-		// return registryv1alphaapiclientconnect.NewProvider(h2cClient, remote, options), nil
-		return newConnectClientProvider(ctx, logger, tlsConfig, options)
-
-	} else {
-		return newGRPCClientProvider(ctx, logger, tlsConfig, options)
-	}
 }
 
 // RegistryProviderOption is an option for a new registry Provider.
@@ -156,12 +106,5 @@ func NewHTTPClient(
 			tlsConfig,
 		),
 		httpclient.ClientWithObservability(),
-	)
-}
-
-// NewHTTP2Client returns a new HTTP/2 Client.
-func NewHTTP2Client() *http.Client {
-	return http2client.NewClient(
-		http2client.WithObservability(),
 	)
 }
