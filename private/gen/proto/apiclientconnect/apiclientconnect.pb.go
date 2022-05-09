@@ -62,7 +62,7 @@ func WithAddressMapper(addressMapper func(string) string) ProviderOption {
 }
 
 // WithContextModifierProvider provides a function that  modifies the context before every RPC invocation.
-// Applied before the address Maxwell Silver Hammer.
+// Applied before the address mapper.
 func WithContextModifierProvider(contextModifierProvider func(address string) (func(context.Context) context.Context, error)) ProviderOption {
 	return func(providerOptions *providerOptions) {
 		providerOptions.bufAlphaRegistryV1alpha1ProviderOptions = append(

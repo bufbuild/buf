@@ -30,6 +30,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// newGRPCClientProvider creates a new Provider using gRPC as its underlying transport.
+// If tlsConfig is nil, no TLS is used.
 func newGRPCClientProvider(
 	ctx context.Context,
 	logger *zap.Logger,
@@ -52,6 +54,7 @@ func newGRPCClientProvider(
 	), nil
 }
 
+// newConnectClientProvider creates a new Provider using Connect as its underlying transport.
 func newConnectClientProvider(
 	ctx context.Context,
 	logger *zap.Logger,
@@ -69,9 +72,8 @@ func newConnectClientProvider(
 	), nil
 }
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider gRPC.
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
 //
-// If tlsConfig is nil, no TLS is used.
 func NewRegistryProvider(
 	ctx context.Context,
 	logger *zap.Logger,
