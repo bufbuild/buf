@@ -74,422 +74,265 @@ func WithScheme(scheme string) ProviderOption {
 	}
 }
 
-func (p *provider) NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error) {
+// buildAddress modifies the given address with any additional options for transport such as the scheme and any subdomains
+func (p *provider) buildAddress(address string) string {
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
 	if p.scheme != "" {
 		address = p.scheme + "://" + address
 	}
+	return address
+}
+
+func (p *provider) NewAdminService(ctx context.Context, baseURL string) (registryv1alpha1api.AdminService, error) {
 	return registryv1alpha1connectclient.NewAdminServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewAuthnService(ctx context.Context, baseURL string) (registryv1alpha1api.AuthnService, error) {
 	return registryv1alpha1connectclient.NewAuthnServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewAuthzService(ctx context.Context, baseURL string) (registryv1alpha1api.AuthzService, error) {
 	return registryv1alpha1connectclient.NewAuthzServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewConvertService(ctx context.Context, address string) (registryv1alpha1api.ConvertService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewConvertService(ctx context.Context, baseURL string) (registryv1alpha1api.ConvertService, error) {
 	return registryv1alpha1connectclient.NewConvertServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewDisplayService(ctx context.Context, address string) (registryv1alpha1api.DisplayService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewDisplayService(ctx context.Context, baseURL string) (registryv1alpha1api.DisplayService, error) {
 	return registryv1alpha1connectclient.NewDisplayServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewDocService(ctx context.Context, address string) (registryv1alpha1api.DocService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewDocService(ctx context.Context, baseURL string) (registryv1alpha1api.DocService, error) {
 	return registryv1alpha1connectclient.NewDocServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewDownloadService(ctx context.Context, baseURL string) (registryv1alpha1api.DownloadService, error) {
 	return registryv1alpha1connectclient.NewDownloadServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewGenerateService(ctx context.Context, address string) (registryv1alpha1api.GenerateService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewGenerateService(ctx context.Context, baseURL string) (registryv1alpha1api.GenerateService, error) {
 	return registryv1alpha1connectclient.NewGenerateServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewGithubService(ctx context.Context, address string) (registryv1alpha1api.GithubService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewGithubService(ctx context.Context, baseURL string) (registryv1alpha1api.GithubService, error) {
 	return registryv1alpha1connectclient.NewGithubServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewImageService(ctx context.Context, address string) (registryv1alpha1api.ImageService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewImageService(ctx context.Context, baseURL string) (registryv1alpha1api.ImageService, error) {
 	return registryv1alpha1connectclient.NewImageServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (registryv1alpha1api.JSONSchemaService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewJSONSchemaService(ctx context.Context, baseURL string) (registryv1alpha1api.JSONSchemaService, error) {
 	return registryv1alpha1connectclient.NewJSONSchemaServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewLocalResolveService(ctx context.Context, baseURL string) (registryv1alpha1api.LocalResolveService, error) {
 	return registryv1alpha1connectclient.NewLocalResolveServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewOrganizationService(ctx context.Context, baseURL string) (registryv1alpha1api.OrganizationService, error) {
 	return registryv1alpha1connectclient.NewOrganizationServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewOwnerService(ctx context.Context, baseURL string) (registryv1alpha1api.OwnerService, error) {
 	return registryv1alpha1connectclient.NewOwnerServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewPluginService(ctx context.Context, address string) (registryv1alpha1api.PluginService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewPluginService(ctx context.Context, baseURL string) (registryv1alpha1api.PluginService, error) {
 	return registryv1alpha1connectclient.NewPluginServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewPushService(ctx context.Context, baseURL string) (registryv1alpha1api.PushService, error) {
 	return registryv1alpha1connectclient.NewPushServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewRecommendationService(ctx context.Context, address string) (registryv1alpha1api.RecommendationService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewRecommendationService(ctx context.Context, baseURL string) (registryv1alpha1api.RecommendationService, error) {
 	return registryv1alpha1connectclient.NewRecommendationServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewReferenceService(ctx context.Context, baseURL string) (registryv1alpha1api.ReferenceService, error) {
 	return registryv1alpha1connectclient.NewReferenceServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewRepositoryBranchService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryBranchService, error) {
 	return registryv1alpha1connectclient.NewRepositoryBranchServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewRepositoryCommitService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryCommitService, error) {
 	return registryv1alpha1connectclient.NewRepositoryCommitServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewRepositoryService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryService, error) {
 	return registryv1alpha1connectclient.NewRepositoryServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewRepositoryTagService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryTagService, error) {
 	return registryv1alpha1connectclient.NewRepositoryTagServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
 	return registryv1alpha1connectclient.NewRepositoryTrackCommitServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewRepositoryTrackService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryTrackService, error) {
 	return registryv1alpha1connectclient.NewRepositoryTrackServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewResolveService(ctx context.Context, baseURL string) (registryv1alpha1api.ResolveService, error) {
 	return registryv1alpha1connectclient.NewResolveServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewSearchService(ctx context.Context, baseURL string) (registryv1alpha1api.SearchService, error) {
 	return registryv1alpha1connectclient.NewSearchServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewTokenService(ctx context.Context, baseURL string) (registryv1alpha1api.TokenService, error) {
 	return registryv1alpha1connectclient.NewTokenServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }
 
-func (p *provider) NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error) {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
+func (p *provider) NewUserService(ctx context.Context, baseURL string) (registryv1alpha1api.UserService, error) {
 	return registryv1alpha1connectclient.NewUserServiceClient(
 		p.logger,
 		p.httpClient,
-		address,
+		p.buildAddress(baseURL),
 		connect_go.WithGRPC(),
 	), nil
 }

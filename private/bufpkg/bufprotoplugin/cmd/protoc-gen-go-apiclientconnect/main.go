@@ -144,6 +144,19 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`}`)
 	g.P()
 
+	// buildAddress helper function
+	g.P(`// buildAddress modifies the given address with any additional options for transport such as the scheme and any subdomains`)
+	g.P(`func (p *provider) buildAddress(address string) string {`)
+	g.P(`if p.addressMapper != nil {`)
+	g.P(`address = p.addressMapper(address)`)
+	g.P(`}`)
+	g.P(`if p.scheme != "" {`)
+	g.P(`address = p.scheme+"://"+address`)
+	g.P(`}`)
+	g.P(`return address`)
+	g.P(`}`)
+	g.P()
+
 	// Import path for the api named_go_package
 	apiGoImportPath, err := helper.NewPackageGoImportPath(
 		goPackageFileSet,
@@ -169,17 +182,11 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		interfaceConnectClientGoIdent := connectClientGoImportPath.Ident("New" + interfaceName + "Client")
 		interfaceConnectClientGoIdentString := g.QualifiedGoIdent(interfaceConnectClientGoIdent)
 
-		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, address string) (`, interfaceGoIdentString, `, error) {`)
-		g.P(`if p.addressMapper != nil {`)
-		g.P(`address = p.addressMapper(address)`)
-		g.P(`}`)
-		g.P(`if p.scheme != "" {`)
-		g.P(`address = p.scheme + "://" + address`)
-		g.P(`}`)
+		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, baseURL string) (`, interfaceGoIdentString, `, error) {`)
 		g.P(`return `, interfaceConnectClientGoIdentString, `(`)
 		g.P(`p.logger,`)
 		g.P(`p.httpClient,`)
-		g.P(`address,`)
+		g.P(`p.buildAddress(baseURL),`)
 		g.P(withGRPCIdentString, `(),`)
 		g.P(`), nil`)
 		g.P(`}`)
