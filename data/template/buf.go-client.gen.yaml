@@ -11,6 +11,10 @@ plugins:
     opt:
       - paths=source_relative
       - require_unimplemented_servers=false
+  - name: connect-go
+    out: private/gen/proto/connect
+    opt:
+      - paths=source_relative
   - name: go-api
     out: private/gen/proto/api
     opt:

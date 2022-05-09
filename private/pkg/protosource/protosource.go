@@ -831,14 +831,14 @@ func FullNameToService(files ...File) (map[string]Service, error) {
 func PackageToNameToService(files ...File) (map[string]map[string]Service, error) {
 	packageToNameToService := make(map[string]map[string]Service)
 	for _, file := range files {
+		pkg := file.Package()
+		nameToService, ok := packageToNameToService[pkg]
+		if !ok {
+			nameToService = make(map[string]Service)
+			packageToNameToService[pkg] = nameToService
+		}
 		for _, service := range file.Services() {
-			pkg := service.File().Package()
 			name := service.Name()
-			nameToService, ok := packageToNameToService[pkg]
-			if !ok {
-				nameToService = make(map[string]Service)
-				packageToNameToService[pkg] = nameToService
-			}
 			if _, ok := nameToService[name]; ok {
 				return nil, fmt.Errorf("duplicate service in package %q: %q", pkg, name)
 			}

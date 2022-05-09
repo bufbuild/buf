@@ -105,7 +105,7 @@ bufgeneratedeps:: \
 	installprotoc-gen-go-apiclientgrpc \
 	installprotoc-gen-go-connectclient \
 	installprotoc-gen-go-apiclientconnect \
-	$(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC)
+	$(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) $(PROTOC_GEN_CONNECT_GO)
 
 .PHONY: bufgeneratecleango
 bufgeneratecleango:
@@ -117,19 +117,13 @@ bufgenerateclean:: bufgeneratecleango
 bufgenerateprotogo:
 	$(BUF_BIN) generate proto --template data/template/buf.go.gen.yaml
 
-.PHONY: bufgenerateprotoconnectgo
-bufgenerateprotoconnectgo: $(PROTOC_GEN_CONNECT_GO)
-	$(BUF_BIN) generate $(BUF_PROTO_SOURCE) --template data/template/buf.connect-go.gen.yaml
-	$(BUF_BIN) generate proto --template data/template/buf.connect-go.gen.yaml
-
 .PHONY: bufgenerateprotogoclient
 bufgenerateprotogoclient:
 	$(BUF_BIN) generate proto --template data/template/buf.go-client.gen.yaml
 
 bufgeneratesteps:: \
 	bufgenerateprotogo \
-	bufgenerateprotogoclient \
-	bufgenerateprotoconnectgo
+	bufgenerateprotogoclient
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)

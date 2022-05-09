@@ -61,10 +61,9 @@ func newConnectClientProvider(
 	for _, option := range options {
 		option(registryProviderOptions)
 	}
-	httpclient := http2client.NewClient()
 	return registryv1alpha1apiclientconnect.NewProvider(
 		logger,
-		httpclient,
+		NewHTTP2Client(),
 		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclientconnect.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
 	), nil
@@ -146,6 +145,7 @@ func NewHTTPClient(
 // NewHTTP2Client returns a new HTTP/2 Client.
 func NewHTTP2Client() *http.Client {
 	return http2client.NewClient(
+		http2client.WithH2C(),
 		http2client.WithObservability(),
 	)
 }

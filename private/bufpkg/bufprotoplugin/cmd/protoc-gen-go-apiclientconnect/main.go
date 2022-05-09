@@ -25,11 +25,10 @@ import (
 )
 
 const (
-	contextPackage     = protogen.GoImportPath("context")
-	connectGoPackage   = protogen.GoImportPath("github.com/bufbuild/connect-go")
-	http2ClientPackage = protogen.GoImportPath("github.com/bufbuild/buf/private/pkg/transport/http2client")
-	zapPackage         = protogen.GoImportPath("go.uber.org/zap")
-	pluginName         = "apiclientconnect"
+	contextPackage   = protogen.GoImportPath("context")
+	connectGoPackage = protogen.GoImportPath("github.com/bufbuild/connect-go")
+	zapPackage       = protogen.GoImportPath("go.uber.org/zap")
+	pluginName       = "apiclientconnect"
 )
 
 func main() {
@@ -70,7 +69,6 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	connectGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("HTTPClient"))
 	withGRPCIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("WithGRPC"))
-	_ = g.QualifiedGoIdent(http2ClientPackage.Ident("HTTP2Client"))
 	loggerGoIdentString := g.QualifiedGoIdent(zapPackage.Ident("Logger"))
 	apiclientGoImportPath, err := helper.NewPackageGoImportPath(
 		goPackageFileSet,
@@ -159,9 +157,8 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`if p.addressMapper != nil {`)
 		g.P(`address = p.addressMapper(address)`)
 		g.P(`}`)
-		g.P(`http2client := http2client.NewClient()`)
 		g.P(`return `, interfaceConnectClientGoIdentString, `(`)
-		g.P(`http2client,`)
+		g.P(`p.httpClient,`)
 		g.P(`address,`)
 		g.P(withGRPCIdentString, `(),`)
 		g.P(`), nil`)
