@@ -180,7 +180,6 @@ func inner(
 	if err != nil {
 		return err
 	}
-
 	// Remove leading and trailing spaces from user-supplied token to avoid
 	// common input errors such as trailing new lines, as-is the case of using
 	// echo vs echo -n.
@@ -190,7 +189,6 @@ func inner(
 	}
 	user, err := authnService.GetCurrentUser(rpcauth.WithToken(ctx, token))
 	if err != nil {
-		fmt.Println(err)
 		// We don't want to use the default error from wrapError here if the error
 		// an unauthenticated error.
 		return errors.New("invalid token provided")

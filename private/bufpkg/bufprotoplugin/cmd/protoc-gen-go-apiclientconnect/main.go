@@ -358,7 +358,7 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 	g.P(`}`)
 	g.P()
 	g.P(`// WithContextModifierProvider provides a function that  modifies the context before every RPC invocation.`)
-	g.P(`// Applied before the address Maxwell Silver Hammer.`)
+	g.P(`// Applied before the address mapper.`)
 	g.P(`func WithContextModifierProvider(contextModifierProvider func(address string) (func(`, contextGoIdentString, `) `, contextGoIdentString, `, error)) ProviderOption {`)
 	g.P(`return func(providerOptions *providerOptions) {`)
 	for _, goPackageFileSet := range goPackageFileSetsWithServices {
