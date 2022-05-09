@@ -67,7 +67,7 @@ func NewConnectClientProvider(
 		NewHTTP2Client(),
 		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclientconnect.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
-		// registryv1alpha1apiclientconnect.WithScheme(registryProviderOptions.scheme),
+		registryv1alpha1apiclientconnect.WithScheme(registryProviderOptions.scheme),
 	), nil
 }
 
@@ -139,7 +139,7 @@ func NewHTTPClient(
 
 // NewHTTP2Client returns a new HTTP/2 Client.
 //
-// TODO: move this to the same location decided upon for the above NetHTTPClient
+// TODO: move this to the same location decided upon for the above NewHTTPClient
 func NewHTTP2Client() *http.Client {
 	return http2client.NewClient(
 		http2client.WithObservability(),
