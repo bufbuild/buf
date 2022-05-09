@@ -101,7 +101,7 @@ jobs:
             echo ::set-output name=tag::"$(echo "${GITHUB_REF}" | sed "s/refs\/tags\/v//")"
           fi
       - name: docker-build-push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           file: Dockerfile.buf
           platforms: ${{ steps.qemu.outputs.platforms }}
