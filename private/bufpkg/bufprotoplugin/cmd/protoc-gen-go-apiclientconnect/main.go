@@ -316,7 +316,7 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 	globalProviderGoIdent := globalAPIClientGoImportPath.Ident("Provider")
 	globalProviderGoIdentString := g.QualifiedGoIdent(globalProviderGoIdent)
 
-	g.P(`// NewProvider returns a new porker.`)
+	g.P(`// NewProvider returns a new provider.`)
 	g.P(`func NewProvider(`)
 	g.P(`logger *`, loggerGoIdentString, `,`)
 	g.P(`httpClient `, httpClientGoIdentString, `,`)
