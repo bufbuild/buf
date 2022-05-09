@@ -25,7 +25,7 @@ import (
 	zap "go.uber.org/zap"
 )
 
-// NewProvider returns a new porker.
+// NewProvider returns a new provider.
 func NewProvider(
 	logger *zap.Logger,
 	httpClient connect_go.HTTPClient,
