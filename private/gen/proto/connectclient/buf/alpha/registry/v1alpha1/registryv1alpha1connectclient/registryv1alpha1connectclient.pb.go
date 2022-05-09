@@ -19,228 +19,257 @@ package registryv1alpha1connectclient
 import (
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	connect_go "github.com/bufbuild/connect-go"
+	zap "go.uber.org/zap"
 )
 
 func NewAdminServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.AdminService {
-	return newAdminServiceClient(client, address, options...)
+	return newAdminServiceClient(logger, client, address, options...)
 }
 
 func NewAuthnServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.AuthnService {
-	return newAuthnServiceClient(client, address, options...)
+	return newAuthnServiceClient(logger, client, address, options...)
 }
 
 func NewAuthzServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.AuthzService {
-	return newAuthzServiceClient(client, address, options...)
+	return newAuthzServiceClient(logger, client, address, options...)
 }
 
 func NewConvertServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.ConvertService {
-	return newConvertServiceClient(client, address, options...)
+	return newConvertServiceClient(logger, client, address, options...)
 }
 
 func NewDisplayServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.DisplayService {
-	return newDisplayServiceClient(client, address, options...)
+	return newDisplayServiceClient(logger, client, address, options...)
 }
 
 func NewDocServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.DocService {
-	return newDocServiceClient(client, address, options...)
+	return newDocServiceClient(logger, client, address, options...)
 }
 
 func NewDownloadServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.DownloadService {
-	return newDownloadServiceClient(client, address, options...)
+	return newDownloadServiceClient(logger, client, address, options...)
 }
 
 func NewGenerateServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.GenerateService {
-	return newGenerateServiceClient(client, address, options...)
+	return newGenerateServiceClient(logger, client, address, options...)
 }
 
 func NewGithubServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.GithubService {
-	return newGithubServiceClient(client, address, options...)
+	return newGithubServiceClient(logger, client, address, options...)
 }
 
 func NewImageServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.ImageService {
-	return newImageServiceClient(client, address, options...)
+	return newImageServiceClient(logger, client, address, options...)
 }
 
 func NewJSONSchemaServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.JSONSchemaService {
-	return newJSONSchemaServiceClient(client, address, options...)
+	return newJSONSchemaServiceClient(logger, client, address, options...)
 }
 
 func NewLocalResolveServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.LocalResolveService {
-	return newLocalResolveServiceClient(client, address, options...)
+	return newLocalResolveServiceClient(logger, client, address, options...)
 }
 
 func NewOrganizationServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.OrganizationService {
-	return newOrganizationServiceClient(client, address, options...)
+	return newOrganizationServiceClient(logger, client, address, options...)
 }
 
 func NewOwnerServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.OwnerService {
-	return newOwnerServiceClient(client, address, options...)
+	return newOwnerServiceClient(logger, client, address, options...)
 }
 
 func NewPluginServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.PluginService {
-	return newPluginServiceClient(client, address, options...)
+	return newPluginServiceClient(logger, client, address, options...)
 }
 
 func NewPushServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.PushService {
-	return newPushServiceClient(client, address, options...)
+	return newPushServiceClient(logger, client, address, options...)
 }
 
 func NewRecommendationServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.RecommendationService {
-	return newRecommendationServiceClient(client, address, options...)
+	return newRecommendationServiceClient(logger, client, address, options...)
 }
 
 func NewReferenceServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.ReferenceService {
-	return newReferenceServiceClient(client, address, options...)
+	return newReferenceServiceClient(logger, client, address, options...)
 }
 
 func NewRepositoryBranchServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.RepositoryBranchService {
-	return newRepositoryBranchServiceClient(client, address, options...)
+	return newRepositoryBranchServiceClient(logger, client, address, options...)
 }
 
 func NewRepositoryCommitServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.RepositoryCommitService {
-	return newRepositoryCommitServiceClient(client, address, options...)
+	return newRepositoryCommitServiceClient(logger, client, address, options...)
 }
 
 func NewRepositoryServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.RepositoryService {
-	return newRepositoryServiceClient(client, address, options...)
+	return newRepositoryServiceClient(logger, client, address, options...)
 }
 
 func NewRepositoryTagServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.RepositoryTagService {
-	return newRepositoryTagServiceClient(client, address, options...)
+	return newRepositoryTagServiceClient(logger, client, address, options...)
 }
 
 func NewRepositoryTrackCommitServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.RepositoryTrackCommitService {
-	return newRepositoryTrackCommitServiceClient(client, address, options...)
+	return newRepositoryTrackCommitServiceClient(logger, client, address, options...)
 }
 
 func NewRepositoryTrackServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.RepositoryTrackService {
-	return newRepositoryTrackServiceClient(client, address, options...)
+	return newRepositoryTrackServiceClient(logger, client, address, options...)
 }
 
 func NewResolveServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.ResolveService {
-	return newResolveServiceClient(client, address, options...)
+	return newResolveServiceClient(logger, client, address, options...)
 }
 
 func NewSearchServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.SearchService {
-	return newSearchServiceClient(client, address, options...)
+	return newSearchServiceClient(logger, client, address, options...)
 }
 
 func NewTokenServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.TokenService {
-	return newTokenServiceClient(client, address, options...)
+	return newTokenServiceClient(logger, client, address, options...)
 }
 
 func NewUserServiceClient(
+	logger *zap.Logger,
 	client connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) registryv1alpha1api.UserService {
-	return newUserServiceClient(client, address, options...)
+	return newUserServiceClient(logger, client, address, options...)
 }

@@ -22,18 +22,22 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	v1alpha11 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
+	zap "go.uber.org/zap"
 )
 
 type downloadServiceClient struct {
 	client registryv1alpha1connect.DownloadServiceClient
+	logger *zap.Logger
 }
 
 func newDownloadServiceClient(
+	logger *zap.Logger,
 	httpClient connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) *downloadServiceClient {
 	return &downloadServiceClient{
+		logger: logger,
 		client: registryv1alpha1connect.NewDownloadServiceClient(
 			httpClient,
 			address,

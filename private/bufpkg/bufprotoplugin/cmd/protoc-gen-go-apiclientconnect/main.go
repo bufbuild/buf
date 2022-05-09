@@ -104,6 +104,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
 	g.P(`contextModifierProvider func(string) (func (`, contextGoIdentString, `) `, contextGoIdentString, `, error)`)
+	g.P(`scheme string`)
 	g.P(`}`)
 	g.P()
 
@@ -130,6 +131,15 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`func WithContextModifierProvider(contextModifierProvider func(address string) (func(`, contextGoIdentString, `) `, contextGoIdentString, `, error)) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
 	g.P(`provider.contextModifierProvider = contextModifierProvider`)
+	g.P(`}`)
+	g.P(`}`)
+	g.P()
+
+	// WithScheme functional option
+	g.P(`// WithScheme prepends the given scheme to the underlying transport address`)
+	g.P(`func WithScheme(scheme string) ProviderOption {`)
+	g.P(`return func(provider *provider) {`)
+	g.P(`provider.scheme = scheme`)
 	g.P(`}`)
 	g.P(`}`)
 	g.P()
@@ -163,7 +173,11 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`if p.addressMapper != nil {`)
 		g.P(`address = p.addressMapper(address)`)
 		g.P(`}`)
+		g.P(`if p.scheme != "" {`)
+		g.P(`address = p.scheme + "://" + address`)
+		g.P(`}`)
 		g.P(`return `, interfaceConnectClientGoIdentString, `(`)
+		g.P(`p.logger,`)
 		g.P(`p.httpClient,`)
 		g.P(`address,`)
 		g.P(withGRPCIdentString, `(),`)
@@ -188,6 +202,9 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		file,
 		"connect",
 	)
+	if err != nil {
+		return err
+	}
 
 	for _, service := range file.Services {
 		interfaceName := service.GoName

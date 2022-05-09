@@ -26,6 +26,7 @@ import (
 const (
 	contextPackage = protogen.GoImportPath("context")
 	connectPackage = protogen.GoImportPath("github.com/bufbuild/connect-go")
+	zapPackage     = protogen.GoImportPath("go.uber.org/zap")
 
 	pluginName = "connectclient"
 )
@@ -61,17 +62,19 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
+	loggerGoIdentString := g.QualifiedGoIdent(zapPackage.Ident("Logger"))
 
 	for _, service := range services {
 		interfaceName := service.GoName
 		apiInterfaceGoIdent := apiGoImportPath.Ident(interfaceName)
 		apiInterfaceGoIdentString := g.QualifiedGoIdent(apiInterfaceGoIdent)
 		g.P(`func `, "New"+service.GoName+"Client", `(`)
+		g.P(`logger *`, loggerGoIdentString, `,`)
 		g.P(`client `, g.QualifiedGoIdent(connectPackage.Ident("HTTPClient")), `,`)
 		g.P(`address string,`)
 		g.P(`options ...`, g.QualifiedGoIdent(connectPackage.Ident("ClientOption")), `,`)
 		g.P(`) `, apiInterfaceGoIdentString, ` {`)
-		g.P(`return `, "new"+service.GoName+"Client", `(client, address, options...)`)
+		g.P(`return `, "new"+service.GoName+"Client", `(logger, client, address, options...)`)
 		g.P(`}`)
 		g.P()
 	}
@@ -89,6 +92,7 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	}
 	connectPkgGoIdentString := g.QualifiedGoIdent(connectPackage.Ident("ClientOption"))
 	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
+	loggerGoIdentString := g.QualifiedGoIdent(zapPackage.Ident("Logger"))
 
 	for _, service := range file.Services {
 		interfaceName := service.GoName
@@ -96,14 +100,17 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 
 		g.P(`type `, structName, ` struct {`)
 		g.P(`client `, connectrpc.Ident(interfaceName+"Client"))
+		g.P(`logger *`, loggerGoIdentString)
 		g.P(`}`)
 		g.P()
 		g.P(`func new`, interfaceName, `Client(`)
+		g.P(`logger *`, loggerGoIdentString, `,`)
 		g.P(`httpClient `, g.QualifiedGoIdent(connectPackage.Ident("HTTPClient")), `,`)
 		g.P(`address string,`)
 		g.P(`options ...`, connectPkgGoIdentString, `,`)
 		g.P(`) *`, protogenutil.GetUnexportGoName(interfaceName+"Client"), ` {`)
 		g.P(`return &`, structName, `{`)
+		g.P(`logger: logger,`)
 		g.P(`client: `, connectrpc.Ident(`New`+interfaceName+`Client`), `(`)
 		g.P(`httpClient,`)
 		g.P(`address,`)

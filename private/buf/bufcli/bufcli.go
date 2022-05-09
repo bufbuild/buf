@@ -549,8 +549,7 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 	return bufapp.NewConfig(container, externalConfig)
 }
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
-func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
+func newGRPCRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
 	config, err := NewConfig(container)
 	if err != nil {
 		return nil, err
@@ -561,12 +560,30 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 	if buftransport.IsAPISubdomainEnabled(container) {
 		options = append(options, bufapiclient.RegistryProviderWithAddressMapper(buftransport.PrependAPISubdomain))
 	}
-	return bufapiclient.NewRegistryProvider(
+	return bufapiclient.NewGRPCClientProvider(
 		ctx,
 		container.Logger(),
 		config.TLS,
 		options...,
 	)
+}
+
+func newConnectRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
+	options := []bufapiclient.RegistryProviderOption{
+		bufapiclient.RegistryProviderWithScheme("https"),
+	}
+	if buftransport.IsAPISubdomainEnabled(container) {
+		options = append(options, bufapiclient.RegistryProviderWithAddressMapper(buftransport.PrependAPISubdomain))
+	}
+	return bufapiclient.NewConnectClientProvider(container.Logger(), options...)
+}
+
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
+func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
+	if os.Getenv("USE_CONNECT") == "1" {
+		return newConnectRegistryProvider(ctx, container)
+	}
+	return newGRPCRegistryProvider(ctx, container)
 }
 
 // NewContextModifierProvider returns a new context modifier provider for API providers.

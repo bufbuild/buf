@@ -19,7 +19,6 @@ import (
 	"context"
 	"crypto/tls"
 	"net/http"
-	"os"
 
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
@@ -30,13 +29,13 @@ import (
 	"go.uber.org/zap"
 )
 
-// newGRPCClientProvider creates a new Provider using gRPC as its underlying transport.
+// NewGRPCClientProvider creates a new Provider using gRPC as its underlying transport.
 // If tlsConfig is nil, no TLS is used.
-func newGRPCClientProvider(
+func NewGRPCClientProvider(
 	ctx context.Context,
 	logger *zap.Logger,
 	tlsConfig *tls.Config,
-	options []RegistryProviderOption,
+	options ...RegistryProviderOption,
 ) (registryv1alpha1apiclient.Provider, error) {
 	registryProviderOptions := &registryProviderOptions{}
 	for _, option := range options {
@@ -54,11 +53,10 @@ func newGRPCClientProvider(
 	), nil
 }
 
-// newConnectClientProvider creates a new Provider using Connect as its underlying transport.
-func newConnectClientProvider(
-	ctx context.Context,
+// NewConnectClientProvider creates a new Provider using Connect as its underlying transport.
+func NewConnectClientProvider(
 	logger *zap.Logger,
-	options []RegistryProviderOption,
+	options ...RegistryProviderOption,
 ) (registryv1alpha1apiclient.Provider, error) {
 	registryProviderOptions := &registryProviderOptions{}
 	for _, option := range options {
@@ -69,21 +67,8 @@ func newConnectClientProvider(
 		NewHTTP2Client(),
 		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclientconnect.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
+		// registryv1alpha1apiclientconnect.WithScheme(registryProviderOptions.scheme),
 	), nil
-}
-
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
-//
-func NewRegistryProvider(
-	ctx context.Context,
-	logger *zap.Logger,
-	tlsConfig *tls.Config,
-	options ...RegistryProviderOption,
-) (registryv1alpha1apiclient.Provider, error) {
-	if os.Getenv("USE_CONNECT") == "1" {
-		return newConnectClientProvider(ctx, logger, options)
-	}
-	return newGRPCClientProvider(ctx, logger, tlsConfig, options)
 }
 
 // RegistryProviderOption is an option for a new registry Provider.
@@ -92,6 +77,7 @@ type RegistryProviderOption func(*registryProviderOptions)
 type registryProviderOptions struct {
 	addressMapper           func(string) string
 	contextModifierProvider func(string) (func(context.Context) context.Context, error)
+	scheme                  string
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps
@@ -99,6 +85,13 @@ type registryProviderOptions struct {
 func RegistryProviderWithAddressMapper(addressMapper func(string) string) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
 		options.addressMapper = addressMapper
+	}
+}
+
+// RegistryProviderWithScheme returns a new RegistryProviderOption that adds the given scheme to the transport address
+func RegistryProviderWithScheme(scheme string) RegistryProviderOption {
+	return func(options *registryProviderOptions) {
+		options.scheme = scheme
 	}
 }
 
@@ -145,9 +138,10 @@ func NewHTTPClient(
 }
 
 // NewHTTP2Client returns a new HTTP/2 Client.
+//
+// TODO: move this to the same location decided upon for the above NetHTTPClient
 func NewHTTP2Client() *http.Client {
 	return http2client.NewClient(
-		http2client.WithH2C(),
 		http2client.WithObservability(),
 	)
 }

@@ -21,18 +21,22 @@ import (
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
+	zap "go.uber.org/zap"
 )
 
 type repositoryTrackServiceClient struct {
 	client registryv1alpha1connect.RepositoryTrackServiceClient
+	logger *zap.Logger
 }
 
 func newRepositoryTrackServiceClient(
+	logger *zap.Logger,
 	httpClient connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) *repositoryTrackServiceClient {
 	return &repositoryTrackServiceClient{
+		logger: logger,
 		client: registryv1alpha1connect.NewRepositoryTrackServiceClient(
 			httpClient,
 			address,
