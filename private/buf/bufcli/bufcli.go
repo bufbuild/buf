@@ -570,6 +570,7 @@ func newGRPCRegistryProvider(ctx context.Context, container appflag.Container) (
 
 func newConnectRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
 	options := []bufapiclient.RegistryProviderOption{
+		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
 		bufapiclient.RegistryProviderWithScheme("https"),
 	}
 	if buftransport.IsAPISubdomainEnabled(container) {
