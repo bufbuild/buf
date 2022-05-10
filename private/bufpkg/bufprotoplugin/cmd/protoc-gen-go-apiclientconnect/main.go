@@ -165,10 +165,10 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
-	// Import path for the connectclient named_go_package
-	connectClientGoImportPath, err := helper.NewPackageGoImportPath(
+	// Import path for the connect named_go_package
+	connectGoImportPath, err := helper.NewPackageGoImportPath(
 		goPackageFileSet,
-		"connectclient",
+		"connect",
 	)
 	if err != nil {
 		return err
@@ -179,16 +179,28 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		interfaceName := service.GoName
 		interfaceGoIdent := apiGoImportPath.Ident(interfaceName)
 		interfaceGoIdentString := g.QualifiedGoIdent(interfaceGoIdent)
-		interfaceConnectClientGoIdent := connectClientGoImportPath.Ident("New" + interfaceName + "Client")
-		interfaceConnectClientGoIdentString := g.QualifiedGoIdent(interfaceConnectClientGoIdent)
+		structName := protogenutil.GetUnexportGoName(interfaceName)
+		newClientGoIdent := connectGoImportPath.Ident("New" + interfaceName + "Client")
+		newClientGoIdentString := g.QualifiedGoIdent(newClientGoIdent)
 
 		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, baseURL string) (`, interfaceGoIdentString, `, error) {`)
-		g.P(`return `, interfaceConnectClientGoIdentString, `(`)
-		g.P(`p.logger,`)
+		g.P(`var contextModifier func(context.Context) context.Context`)
+		g.P(`var err error`)
+		g.P(`if p.contextModifierProvider != nil {`)
+		g.P(`contextModifier, err = p.contextModifierProvider(baseURL)`)
+		g.P(`if err != nil {`)
+		g.P(`return  nil, err`)
+		g.P(`}`)
+		g.P(`}`)
+		g.P(`return &`, structName, `{`)
+		g.P(`logger: p.logger,`)
+		g.P(`client: `, newClientGoIdentString, `(`)
 		g.P(`p.httpClient,`)
 		g.P(`p.buildAddress(baseURL),`)
 		g.P(withGRPCIdentString, `(),`)
-		g.P(`), nil`)
+		g.P(`),`)
+		g.P(`contextModifier: contextModifier,`)
+		g.P(`}, nil`)
 		g.P(`}`)
 		g.P()
 	}
