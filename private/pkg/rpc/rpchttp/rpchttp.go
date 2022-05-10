@@ -81,5 +81,6 @@ func fromHTTPHeader(httpHeader http.Header) map[string]string {
 			}
 		}
 	}
+
 	return headers
 }

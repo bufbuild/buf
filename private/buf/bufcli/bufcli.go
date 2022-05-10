@@ -568,20 +568,8 @@ func newGRPCRegistryProvider(ctx context.Context, container appflag.Container) (
 	)
 }
 
-func newConnectRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
-		bufapiclient.RegistryProviderWithScheme("https"),
-	}
-	if buftransport.IsAPISubdomainEnabled(container) {
-		options = append(options, bufapiclient.RegistryProviderWithAddressMapper(buftransport.PrependAPISubdomain))
-	}
-	return bufapiclient.NewConnectClientProvider(container.Logger(), options...)
-}
-
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	// Swap this with newConnectRegistryProvider to officially use Connect as the underlying transport
 	return newGRPCRegistryProvider(ctx, container)
 }
 
