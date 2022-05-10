@@ -18,13 +18,11 @@ package bufapiclient
 import (
 	"context"
 	"crypto/tls"
-	"net/http"
 
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientgrpc/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientgrpc"
 	"github.com/bufbuild/buf/private/pkg/transport/grpc/grpcclient"
-	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"github.com/bufbuild/buf/private/pkg/transport/http2client"
 	"go.uber.org/zap"
 )
@@ -64,7 +62,9 @@ func NewConnectClientProvider(
 	}
 	return registryv1alpha1apiclientconnect.NewProvider(
 		logger,
-		NewHTTP2Client(),
+		http2client.NewClient(
+			http2client.WithObservability(),
+		),
 		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclientconnect.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
 		registryv1alpha1apiclientconnect.WithScheme(registryProviderOptions.scheme),
@@ -120,28 +120,5 @@ func NewGRPCClientConnProvider(
 		),
 		grpcclient.ClientConnProviderWithObservability(),
 		grpcclient.ClientConnProviderWithGZIPCompression(),
-	)
-}
-
-// NewHTTPClient returns a new HTTP Client.
-//
-// TODO: move this to another location.
-func NewHTTPClient(
-	tlsConfig *tls.Config,
-) httpclient.Client {
-	return httpclient.NewClient(
-		httpclient.ClientWithTLSConfig(
-			tlsConfig,
-		),
-		httpclient.ClientWithObservability(),
-	)
-}
-
-// NewHTTP2Client returns a new HTTP/2 Client.
-//
-// TODO: move this to the same location decided upon for the above NewHTTPClient
-func NewHTTP2Client() *http.Client {
-	return http2client.NewClient(
-		http2client.WithObservability(),
 	)
 }
