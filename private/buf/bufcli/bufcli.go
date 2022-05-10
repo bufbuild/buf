@@ -581,9 +581,7 @@ func newConnectRegistryProvider(ctx context.Context, container appflag.Container
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	if os.Getenv("USE_CONNECT") == "1" {
-		return newConnectRegistryProvider(ctx, container)
-	}
+	// Swap this with newConnectRegistryProvider to officially use Connect as the underlying transport
 	return newGRPCRegistryProvider(ctx, container)
 }
 

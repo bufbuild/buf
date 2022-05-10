@@ -17,7 +17,6 @@
 package apiclientconnect
 
 import (
-	context "context"
 	apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1apiclientconnect "github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
@@ -50,27 +49,6 @@ type provider struct {
 
 // ProviderOption is an option for a new Provider.
 type ProviderOption func(*providerOptions)
-
-// WithAddressMapper maps the address with the given function.
-func WithAddressMapper(addressMapper func(string) string) ProviderOption {
-	return func(providerOptions *providerOptions) {
-		providerOptions.bufAlphaRegistryV1alpha1ProviderOptions = append(
-			providerOptions.bufAlphaRegistryV1alpha1ProviderOptions,
-			registryv1alpha1apiclientconnect.WithAddressMapper(addressMapper),
-		)
-	}
-}
-
-// WithContextModifierProvider provides a function that  modifies the context before every RPC invocation.
-// Applied before the address mapper.
-func WithContextModifierProvider(contextModifierProvider func(address string) (func(context.Context) context.Context, error)) ProviderOption {
-	return func(providerOptions *providerOptions) {
-		providerOptions.bufAlphaRegistryV1alpha1ProviderOptions = append(
-			providerOptions.bufAlphaRegistryV1alpha1ProviderOptions,
-			registryv1alpha1apiclientconnect.WithContextModifierProvider(contextModifierProvider),
-		)
-	}
-}
 
 func (p *provider) BufAlphaRegistryV1alpha1() registryv1alpha1apiclient.Provider {
 	return p.bufAlphaRegistryV1alpha1Provider
