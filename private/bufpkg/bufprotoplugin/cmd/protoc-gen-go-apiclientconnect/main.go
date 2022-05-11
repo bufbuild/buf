@@ -25,10 +25,11 @@ import (
 )
 
 const (
-	contextPackage   = protogen.GoImportPath("context")
-	connectGoPackage = protogen.GoImportPath("github.com/bufbuild/connect-go")
-	zapPackage       = protogen.GoImportPath("go.uber.org/zap")
-	pluginName       = "apiclientconnect"
+	contextPackage      = protogen.GoImportPath("context")
+	connectGoPackage    = protogen.GoImportPath("github.com/bufbuild/connect-go")
+	buftransportPackage = protogen.GoImportPath("github.com/bufbuild/buf/private/bufpkg/buftransport")
+	zapPackage          = protogen.GoImportPath("go.uber.org/zap")
+	pluginName          = "apiclientconnect"
 )
 
 func main() {
@@ -80,6 +81,9 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	providerGoIdent := apiclientGoImportPath.Ident("Provider")
 	providerGoIdentString := g.QualifiedGoIdent(providerGoIdent)
 
+	transportSchemeGoIdent := buftransportPackage.Ident("TransportScheme")
+	transportSchemeGoIdentString := g.QualifiedGoIdent(transportSchemeGoIdent)
+
 	// NewProvider constructor function
 	g.P(`// NewProvider returns a new Provider.`)
 	g.P(`func NewProvider(`)
@@ -104,7 +108,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
 	g.P(`contextModifierProvider func(string) (func (`, contextGoIdentString, `) `, contextGoIdentString, `, error)`)
-	g.P(`scheme string`)
+	g.P(`scheme `, transportSchemeGoIdentString)
 	g.P(`}`)
 	g.P()
 
@@ -137,7 +141,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 
 	// WithScheme functional option
 	g.P(`// WithScheme prepends the given scheme to the underlying transport address`)
-	g.P(`func WithScheme(scheme string) ProviderOption {`)
+	g.P(`func WithScheme(scheme `, transportSchemeGoIdentString, `) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
 	g.P(`provider.scheme = scheme`)
 	g.P(`}`)
@@ -150,8 +154,8 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`if p.addressMapper != nil {`)
 	g.P(`address = p.addressMapper(address)`)
 	g.P(`}`)
-	g.P(`if p.scheme != "" {`)
-	g.P(`address = p.scheme+"://"+address`)
+	g.P(`if p.scheme != 0 {`)
+	g.P(`address = p.scheme.String()+"://"+address`)
 	g.P(`}`)
 	g.P(`return address`)
 	g.P(`}`)

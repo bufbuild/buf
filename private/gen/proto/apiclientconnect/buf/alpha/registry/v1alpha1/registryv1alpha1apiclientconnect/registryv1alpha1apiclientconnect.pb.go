@@ -18,6 +18,8 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
+
+	buftransport "github.com/bufbuild/buf/private/bufpkg/buftransport"
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -46,7 +48,7 @@ type provider struct {
 	httpClient              connect_go.HTTPClient
 	addressMapper           func(string) string
 	contextModifierProvider func(string) (func(context.Context) context.Context, error)
-	scheme                  string
+	scheme                  buftransport.TransportScheme
 }
 
 // ProviderOption is an option for a new Provider.
@@ -68,7 +70,7 @@ func WithContextModifierProvider(contextModifierProvider func(address string) (f
 }
 
 // WithScheme prepends the given scheme to the underlying transport address
-func WithScheme(scheme string) ProviderOption {
+func WithScheme(scheme buftransport.TransportScheme) ProviderOption {
 	return func(provider *provider) {
 		provider.scheme = scheme
 	}
@@ -79,8 +81,8 @@ func (p *provider) buildAddress(address string) string {
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
+	if p.scheme != 0 {
+		address = p.scheme.String() + "://" + address
 	}
 	return address
 }
