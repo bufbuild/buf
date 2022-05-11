@@ -24,16 +24,32 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type authnService struct {
+type authnServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.AuthnServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewAuthnServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *authnServiceClient {
+	return &authnServiceClient{
+		client: registryv1alpha1connect.NewAuthnServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // GetCurrentUser gets information associated with the current user.
 //
 // The user's ID is retrieved from the request's authentication header.
-func (s *authnService) GetCurrentUser(ctx context.Context) (user *v1alpha1.User, _ error) {
+func (s *authnServiceClient) GetCurrentUser(ctx context.Context) (user *v1alpha1.User, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -51,7 +67,7 @@ func (s *authnService) GetCurrentUser(ctx context.Context) (user *v1alpha1.User,
 // GetCurrentUserSubject gets the currently logged in users subject.
 //
 // The user's ID is retrieved from the request's authentication header.
-func (s *authnService) GetCurrentUserSubject(ctx context.Context) (subject string, _ error) {
+func (s *authnServiceClient) GetCurrentUserSubject(ctx context.Context) (subject string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}

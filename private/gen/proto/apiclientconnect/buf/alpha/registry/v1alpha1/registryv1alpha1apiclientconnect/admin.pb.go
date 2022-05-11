@@ -24,15 +24,31 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type adminService struct {
+type adminServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.AdminServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewAdminServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *adminServiceClient {
+	return &adminServiceClient{
+		client: registryv1alpha1connect.NewAdminServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // ForceDeleteUser forces to delete a user. Resources and organizations that are
 // solely owned by the user will also be deleted.
-func (s *adminService) ForceDeleteUser(
+func (s *adminServiceClient) ForceDeleteUser(
 	ctx context.Context,
 	userId string,
 ) (user *v1alpha1.User, organizations []*v1alpha1.Organization, repositories []*v1alpha1.Repository, plugins []*v1alpha1.Plugin, templates []*v1alpha1.Template, _ error) {

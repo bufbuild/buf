@@ -26,16 +26,32 @@ import (
 	pluginpb "google.golang.org/protobuf/types/pluginpb"
 )
 
-type generateService struct {
+type generateServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.GenerateServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewGenerateServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *generateServiceClient {
+	return &generateServiceClient{
+		client: registryv1alpha1connect.NewGenerateServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // GeneratePlugins generates an array of files given the provided
 // module reference and plugin version and option tuples. No attempt
 // is made at merging insertion points.
-func (s *generateService) GeneratePlugins(
+func (s *generateServiceClient) GeneratePlugins(
 	ctx context.Context,
 	image *v1.Image,
 	plugins []*v1alpha1.PluginReference,
@@ -63,7 +79,7 @@ func (s *generateService) GeneratePlugins(
 
 // GenerateTemplate generates an array of files given the provided
 // module reference and template version.
-func (s *generateService) GenerateTemplate(
+func (s *generateServiceClient) GenerateTemplate(
 	ctx context.Context,
 	image *v1.Image,
 	templateOwner string,

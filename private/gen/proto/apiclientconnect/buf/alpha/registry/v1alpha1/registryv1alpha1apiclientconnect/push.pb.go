@@ -25,14 +25,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type pushService struct {
+type pushServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.PushServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewPushServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *pushServiceClient {
+	return &pushServiceClient{
+		client: registryv1alpha1connect.NewPushServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // Push pushes.
-func (s *pushService) Push(
+func (s *pushServiceClient) Push(
 	ctx context.Context,
 	owner string,
 	repository string,

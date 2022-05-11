@@ -24,15 +24,31 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type repositoryTrackCommitService struct {
+type repositoryTrackCommitServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.RepositoryTrackCommitServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewRepositoryTrackCommitServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *repositoryTrackCommitServiceClient {
+	return &repositoryTrackCommitServiceClient{
+		client: registryv1alpha1connect.NewRepositoryTrackCommitServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // GetRepositoryTrackCommitByRepositoryCommit returns the RepositoryTrackCommit associated given repository_commit on
 // the given repository_track. Returns NOT_FOUND if the RepositoryTrackCommit does not exist.
-func (s *repositoryTrackCommitService) GetRepositoryTrackCommitByRepositoryCommit(
+func (s *repositoryTrackCommitServiceClient) GetRepositoryTrackCommitByRepositoryCommit(
 	ctx context.Context,
 	repositoryTrackId string,
 	repositoryCommitId string,
@@ -56,7 +72,7 @@ func (s *repositoryTrackCommitService) GetRepositoryTrackCommitByRepositoryCommi
 
 // ListRepositoryTrackCommitsByRepositoryTrack lists the RepositoryTrackCommitS associated with a repository track,
 // ordered by their sequence id.
-func (s *repositoryTrackCommitService) ListRepositoryTrackCommitsByRepositoryTrack(
+func (s *repositoryTrackCommitServiceClient) ListRepositoryTrackCommitsByRepositoryTrack(
 	ctx context.Context,
 	repositoryTrackId string,
 	pageSize uint32,
@@ -83,7 +99,7 @@ func (s *repositoryTrackCommitService) ListRepositoryTrackCommitsByRepositoryTra
 }
 
 // GetRepositoryTrackCommitByReference returns the RepositoryTrackCommit associated with the given reference.
-func (s *repositoryTrackCommitService) GetRepositoryTrackCommitByReference(
+func (s *repositoryTrackCommitServiceClient) GetRepositoryTrackCommitByReference(
 	ctx context.Context,
 	repositoryOwner string,
 	repositoryName string,

@@ -24,15 +24,31 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type ownerService struct {
+type ownerServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.OwnerServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewOwnerServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *ownerServiceClient {
+	return &ownerServiceClient{
+		client: registryv1alpha1connect.NewOwnerServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // GetOwnerByName takes an owner name and returns the owner as
 // either a user or organization.
-func (s *ownerService) GetOwnerByName(ctx context.Context, name string) (owner *v1alpha1.Owner, _ error) {
+func (s *ownerServiceClient) GetOwnerByName(ctx context.Context, name string) (owner *v1alpha1.Owner, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}

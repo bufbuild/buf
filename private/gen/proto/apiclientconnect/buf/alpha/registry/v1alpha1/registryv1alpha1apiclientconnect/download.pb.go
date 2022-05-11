@@ -25,14 +25,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type downloadService struct {
+type downloadServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.DownloadServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewDownloadServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *downloadServiceClient {
+	return &downloadServiceClient{
+		client: registryv1alpha1connect.NewDownloadServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // Download downloads.
-func (s *downloadService) Download(
+func (s *downloadServiceClient) Download(
 	ctx context.Context,
 	owner string,
 	repository string,

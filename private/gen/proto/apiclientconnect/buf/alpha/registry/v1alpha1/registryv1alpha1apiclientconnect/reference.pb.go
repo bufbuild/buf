@@ -24,15 +24,31 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type referenceService struct {
+type referenceServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.ReferenceServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewReferenceServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *referenceServiceClient {
+	return &referenceServiceClient{
+		client: registryv1alpha1connect.NewReferenceServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // GetReferenceByName takes a reference name and returns the
 // reference either as a tag, branch, track or commit.
-func (s *referenceService) GetReferenceByName(
+func (s *referenceServiceClient) GetReferenceByName(
 	ctx context.Context,
 	name string,
 	owner string,

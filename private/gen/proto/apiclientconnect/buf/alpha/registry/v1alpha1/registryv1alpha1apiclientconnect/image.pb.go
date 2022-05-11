@@ -25,15 +25,31 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type imageService struct {
+type imageServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.ImageServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewImageServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *imageServiceClient {
+	return &imageServiceClient{
+		client: registryv1alpha1connect.NewImageServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // GetImage serves a compiled image for the local module. It automatically
 // downloads dependencies if necessary.
-func (s *imageService) GetImage(
+func (s *imageServiceClient) GetImage(
 	ctx context.Context,
 	owner string,
 	repository string,

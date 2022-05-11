@@ -24,14 +24,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type displayService struct {
+type displayServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.DisplayServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewDisplayServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *displayServiceClient {
+	return &displayServiceClient{
+		client: registryv1alpha1connect.NewDisplayServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // DisplayOrganizationElements returns which organization elements should be displayed to the user.
-func (s *displayService) DisplayOrganizationElements(
+func (s *displayServiceClient) DisplayOrganizationElements(
 	ctx context.Context,
 	organizationId string,
 ) (createRepository bool, createPlugin bool, createTemplate bool, settings bool, updateSettings bool, delete bool, _ error) {
@@ -52,7 +68,7 @@ func (s *displayService) DisplayOrganizationElements(
 }
 
 // DisplayRepositoryElements returns which repository elements should be displayed to the user.
-func (s *displayService) DisplayRepositoryElements(
+func (s *displayServiceClient) DisplayRepositoryElements(
 	ctx context.Context,
 	repositoryId string,
 ) (settings bool, delete bool, write bool, _ error) {
@@ -73,7 +89,7 @@ func (s *displayService) DisplayRepositoryElements(
 }
 
 // DisplayPluginElements returns which plugin elements should be displayed to the user.
-func (s *displayService) DisplayPluginElements(
+func (s *displayServiceClient) DisplayPluginElements(
 	ctx context.Context,
 	pluginId string,
 ) (createVersion bool, settings bool, delete bool, _ error) {
@@ -94,7 +110,7 @@ func (s *displayService) DisplayPluginElements(
 }
 
 // DisplayTemplateElements returns which template elements should be displayed to the user.
-func (s *displayService) DisplayTemplateElements(
+func (s *displayServiceClient) DisplayTemplateElements(
 	ctx context.Context,
 	templateId string,
 ) (createVersion bool, settings bool, delete bool, _ error) {
@@ -115,7 +131,7 @@ func (s *displayService) DisplayTemplateElements(
 }
 
 // DisplayUserElements returns which user elements should be displayed to the user.
-func (s *displayService) DisplayUserElements(ctx context.Context) (delete bool, _ error) {
+func (s *displayServiceClient) DisplayUserElements(ctx context.Context) (delete bool, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -131,7 +147,7 @@ func (s *displayService) DisplayUserElements(ctx context.Context) (delete bool, 
 }
 
 // DisplayServerElements returns which server elements should be displayed to the user.
-func (s *displayService) DisplayServerElements(ctx context.Context) (adminPanel bool, _ error) {
+func (s *displayServiceClient) DisplayServerElements(ctx context.Context) (adminPanel bool, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -148,7 +164,7 @@ func (s *displayService) DisplayServerElements(ctx context.Context) (adminPanel 
 
 // ListManageableRepositoryRoles returns which roles should be displayed
 // to the user when they are managing contributors on the repository.
-func (s *displayService) ListManageableRepositoryRoles(ctx context.Context, repositoryId string) (roles []v1alpha1.RepositoryRole, _ error) {
+func (s *displayServiceClient) ListManageableRepositoryRoles(ctx context.Context, repositoryId string) (roles []v1alpha1.RepositoryRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -167,7 +183,7 @@ func (s *displayService) ListManageableRepositoryRoles(ctx context.Context, repo
 
 // ListManageableUserRepositoryRoles returns which roles should be displayed
 // to the user when they are managing a specific contributor on the repository.
-func (s *displayService) ListManageableUserRepositoryRoles(
+func (s *displayServiceClient) ListManageableUserRepositoryRoles(
 	ctx context.Context,
 	repositoryId string,
 	userId string,
@@ -191,7 +207,7 @@ func (s *displayService) ListManageableUserRepositoryRoles(
 
 // ListManageablePluginRoles returns which roles should be displayed
 // to the user when they are managing contributors on the plugin.
-func (s *displayService) ListManageablePluginRoles(ctx context.Context, pluginId string) (roles []v1alpha1.PluginRole, _ error) {
+func (s *displayServiceClient) ListManageablePluginRoles(ctx context.Context, pluginId string) (roles []v1alpha1.PluginRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -210,7 +226,7 @@ func (s *displayService) ListManageablePluginRoles(ctx context.Context, pluginId
 
 // ListManageableUserPluginRoles returns which roles should be displayed
 // to the user when they are managing a specific contributor on the plugin.
-func (s *displayService) ListManageableUserPluginRoles(
+func (s *displayServiceClient) ListManageableUserPluginRoles(
 	ctx context.Context,
 	pluginId string,
 	userId string,
@@ -234,7 +250,7 @@ func (s *displayService) ListManageableUserPluginRoles(
 
 // ListManageableTemplateRoles returns which roles should be displayed
 // to the user when they are managing contributors on the template.
-func (s *displayService) ListManageableTemplateRoles(ctx context.Context, templateId string) (roles []v1alpha1.TemplateRole, _ error) {
+func (s *displayServiceClient) ListManageableTemplateRoles(ctx context.Context, templateId string) (roles []v1alpha1.TemplateRole, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -253,7 +269,7 @@ func (s *displayService) ListManageableTemplateRoles(ctx context.Context, templa
 
 // ListManageableUserTemplateRoles returns which roles should be displayed
 // to the user when they are managing a specific contributor on the template.
-func (s *displayService) ListManageableUserTemplateRoles(
+func (s *displayServiceClient) ListManageableUserTemplateRoles(
 	ctx context.Context,
 	templateId string,
 	userId string,

@@ -24,14 +24,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type repositoryService struct {
+type repositoryServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.RepositoryServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewRepositoryServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *repositoryServiceClient {
+	return &repositoryServiceClient{
+		client: registryv1alpha1connect.NewRepositoryServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // GetRepository gets a repository by ID.
-func (s *repositoryService) GetRepository(
+func (s *repositoryServiceClient) GetRepository(
 	ctx context.Context,
 	id string,
 ) (repository *v1alpha1.Repository, counts *v1alpha1.RepositoryCounts, _ error) {
@@ -52,7 +68,7 @@ func (s *repositoryService) GetRepository(
 }
 
 // GetRepositoryByFullName gets a repository by full name.
-func (s *repositoryService) GetRepositoryByFullName(
+func (s *repositoryServiceClient) GetRepositoryByFullName(
 	ctx context.Context,
 	fullName string,
 ) (repository *v1alpha1.Repository, counts *v1alpha1.RepositoryCounts, _ error) {
@@ -73,7 +89,7 @@ func (s *repositoryService) GetRepositoryByFullName(
 }
 
 // ListRepositories lists all repositories.
-func (s *repositoryService) ListRepositories(
+func (s *repositoryServiceClient) ListRepositories(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
@@ -98,7 +114,7 @@ func (s *repositoryService) ListRepositories(
 }
 
 // ListUserRepositories lists all repositories belonging to a user.
-func (s *repositoryService) ListUserRepositories(
+func (s *repositoryServiceClient) ListUserRepositories(
 	ctx context.Context,
 	userId string,
 	pageSize uint32,
@@ -125,7 +141,7 @@ func (s *repositoryService) ListUserRepositories(
 }
 
 // ListRepositoriesUserCanAccess lists all repositories a user can access.
-func (s *repositoryService) ListRepositoriesUserCanAccess(
+func (s *repositoryServiceClient) ListRepositoriesUserCanAccess(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
@@ -150,7 +166,7 @@ func (s *repositoryService) ListRepositoriesUserCanAccess(
 }
 
 // ListOrganizationRepositories lists all repositories for an organization.
-func (s *repositoryService) ListOrganizationRepositories(
+func (s *repositoryServiceClient) ListOrganizationRepositories(
 	ctx context.Context,
 	organizationId string,
 	pageSize uint32,
@@ -177,7 +193,7 @@ func (s *repositoryService) ListOrganizationRepositories(
 }
 
 // CreateRepositoryByFullName creates a new repository by full name.
-func (s *repositoryService) CreateRepositoryByFullName(
+func (s *repositoryServiceClient) CreateRepositoryByFullName(
 	ctx context.Context,
 	fullName string,
 	visibility v1alpha1.Visibility,
@@ -200,7 +216,7 @@ func (s *repositoryService) CreateRepositoryByFullName(
 }
 
 // DeleteRepository deletes a repository.
-func (s *repositoryService) DeleteRepository(ctx context.Context, id string) (_ error) {
+func (s *repositoryServiceClient) DeleteRepository(ctx context.Context, id string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -218,7 +234,7 @@ func (s *repositoryService) DeleteRepository(ctx context.Context, id string) (_ 
 }
 
 // DeleteRepositoryByFullName deletes a repository by full name.
-func (s *repositoryService) DeleteRepositoryByFullName(ctx context.Context, fullName string) (_ error) {
+func (s *repositoryServiceClient) DeleteRepositoryByFullName(ctx context.Context, fullName string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -236,7 +252,7 @@ func (s *repositoryService) DeleteRepositoryByFullName(ctx context.Context, full
 }
 
 // DeprecateRepositoryByName deprecates the repository.
-func (s *repositoryService) DeprecateRepositoryByName(
+func (s *repositoryServiceClient) DeprecateRepositoryByName(
 	ctx context.Context,
 	ownerName string,
 	repositoryName string,
@@ -261,7 +277,7 @@ func (s *repositoryService) DeprecateRepositoryByName(
 }
 
 // UndeprecateRepositoryByName makes the repository not deprecated and removes any deprecation_message.
-func (s *repositoryService) UndeprecateRepositoryByName(
+func (s *repositoryServiceClient) UndeprecateRepositoryByName(
 	ctx context.Context,
 	ownerName string,
 	repositoryName string,
@@ -285,7 +301,7 @@ func (s *repositoryService) UndeprecateRepositoryByName(
 
 // GetRepositoriesByFullName gets repositories by full name. Response order is unspecified.
 // Errors if any of the repositories don't exist or the caller does not have access to any of the repositories.
-func (s *repositoryService) GetRepositoriesByFullName(ctx context.Context, fullNames []string) (repositories []*v1alpha1.Repository, _ error) {
+func (s *repositoryServiceClient) GetRepositoriesByFullName(ctx context.Context, fullNames []string) (repositories []*v1alpha1.Repository, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -303,7 +319,7 @@ func (s *repositoryService) GetRepositoriesByFullName(ctx context.Context, fullN
 }
 
 // SetRepositoryContributor sets the role of a user in the repository.
-func (s *repositoryService) SetRepositoryContributor(
+func (s *repositoryServiceClient) SetRepositoryContributor(
 	ctx context.Context,
 	repositoryId string,
 	userId string,
@@ -330,7 +346,7 @@ func (s *repositoryService) SetRepositoryContributor(
 // ListRepositoryContributors returns the list of contributors that has an explicit role against the repository.
 // This does not include users who have implicit roles against the repository, unless they have also been
 // assigned a role explicitly.
-func (s *repositoryService) ListRepositoryContributors(
+func (s *repositoryServiceClient) ListRepositoryContributors(
 	ctx context.Context,
 	repositoryId string,
 	pageSize uint32,
@@ -357,7 +373,7 @@ func (s *repositoryService) ListRepositoryContributors(
 }
 
 // GetRepositoryContributor returns the contributor information of a user in a repository.
-func (s *repositoryService) GetRepositoryContributor(
+func (s *repositoryServiceClient) GetRepositoryContributor(
 	ctx context.Context,
 	repositoryId string,
 	userId string,
@@ -380,7 +396,7 @@ func (s *repositoryService) GetRepositoryContributor(
 }
 
 // GetRepositorySettings gets the settings of a repository.
-func (s *repositoryService) GetRepositorySettings(ctx context.Context, repositoryId string) (contributorsCount uint32, _ error) {
+func (s *repositoryServiceClient) GetRepositorySettings(ctx context.Context, repositoryId string) (contributorsCount uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -398,7 +414,7 @@ func (s *repositoryService) GetRepositorySettings(ctx context.Context, repositor
 }
 
 // UpdateRepositorySettingsByName updates the settings of a repository.
-func (s *repositoryService) UpdateRepositorySettingsByName(
+func (s *repositoryServiceClient) UpdateRepositorySettingsByName(
 	ctx context.Context,
 	ownerName string,
 	repositoryName string,

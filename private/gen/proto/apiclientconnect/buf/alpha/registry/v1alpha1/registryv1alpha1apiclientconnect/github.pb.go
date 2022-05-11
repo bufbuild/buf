@@ -24,14 +24,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type githubService struct {
+type githubServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.GithubServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewGithubServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *githubServiceClient {
+	return &githubServiceClient{
+		client: registryv1alpha1connect.NewGithubServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // GetGithubAppConfig returns a Github Application Configuration.
-func (s *githubService) GetGithubAppConfig(ctx context.Context) (appConfig *v1alpha1.GithubAppConfig, _ error) {
+func (s *githubServiceClient) GetGithubAppConfig(ctx context.Context) (appConfig *v1alpha1.GithubAppConfig, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}

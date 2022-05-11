@@ -24,14 +24,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type userService struct {
+type userServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.UserServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewUserServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *userServiceClient {
+	return &userServiceClient{
+		client: registryv1alpha1connect.NewUserServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // CreateUser creates a new user with the given username.
-func (s *userService) CreateUser(ctx context.Context, username string) (user *v1alpha1.User, _ error) {
+func (s *userServiceClient) CreateUser(ctx context.Context, username string) (user *v1alpha1.User, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -49,7 +65,7 @@ func (s *userService) CreateUser(ctx context.Context, username string) (user *v1
 }
 
 // GetUser gets a user by ID.
-func (s *userService) GetUser(ctx context.Context, id string) (user *v1alpha1.User, _ error) {
+func (s *userServiceClient) GetUser(ctx context.Context, id string) (user *v1alpha1.User, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -67,7 +83,7 @@ func (s *userService) GetUser(ctx context.Context, id string) (user *v1alpha1.Us
 }
 
 // GetUserByUsername gets a user by username.
-func (s *userService) GetUserByUsername(ctx context.Context, username string) (user *v1alpha1.User, _ error) {
+func (s *userServiceClient) GetUserByUsername(ctx context.Context, username string) (user *v1alpha1.User, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -85,7 +101,7 @@ func (s *userService) GetUserByUsername(ctx context.Context, username string) (u
 }
 
 // ListUsers lists all users.
-func (s *userService) ListUsers(
+func (s *userServiceClient) ListUsers(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
@@ -113,7 +129,7 @@ func (s *userService) ListUsers(
 
 // ListOrganizationUsers lists all users for an organization.
 // TODO: #663 move this to organization service
-func (s *userService) ListOrganizationUsers(
+func (s *userServiceClient) ListOrganizationUsers(
 	ctx context.Context,
 	organizationId string,
 	pageSize uint32,
@@ -140,7 +156,7 @@ func (s *userService) ListOrganizationUsers(
 }
 
 // DeleteUser deletes a user.
-func (s *userService) DeleteUser(ctx context.Context) (_ error) {
+func (s *userServiceClient) DeleteUser(ctx context.Context) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -156,7 +172,7 @@ func (s *userService) DeleteUser(ctx context.Context) (_ error) {
 }
 
 // Deactivate user deactivates a user.
-func (s *userService) DeactivateUser(ctx context.Context, id string) (_ error) {
+func (s *userServiceClient) DeactivateUser(ctx context.Context, id string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -174,7 +190,7 @@ func (s *userService) DeactivateUser(ctx context.Context, id string) (_ error) {
 }
 
 // UpdateUserServerRole update the role of an user in the server.
-func (s *userService) UpdateUserServerRole(
+func (s *userServiceClient) UpdateUserServerRole(
 	ctx context.Context,
 	userId string,
 	serverRole v1alpha1.ServerRole,
@@ -197,7 +213,7 @@ func (s *userService) UpdateUserServerRole(
 }
 
 // CountUsers returns the number of users in the server by the user state provided.
-func (s *userService) CountUsers(ctx context.Context, userStateFilter v1alpha1.UserState) (totalCount uint32, _ error) {
+func (s *userServiceClient) CountUsers(ctx context.Context, userStateFilter v1alpha1.UserState) (totalCount uint32, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}

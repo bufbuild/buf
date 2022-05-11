@@ -24,14 +24,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type organizationService struct {
+type organizationServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.OrganizationServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewOrganizationServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *organizationServiceClient {
+	return &organizationServiceClient{
+		client: registryv1alpha1connect.NewOrganizationServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // GetOrganization gets a organization by ID.
-func (s *organizationService) GetOrganization(ctx context.Context, id string) (organization *v1alpha1.Organization, _ error) {
+func (s *organizationServiceClient) GetOrganization(ctx context.Context, id string) (organization *v1alpha1.Organization, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -49,7 +65,7 @@ func (s *organizationService) GetOrganization(ctx context.Context, id string) (o
 }
 
 // GetOrganizationByName gets a organization by name.
-func (s *organizationService) GetOrganizationByName(ctx context.Context, name string) (organization *v1alpha1.Organization, _ error) {
+func (s *organizationServiceClient) GetOrganizationByName(ctx context.Context, name string) (organization *v1alpha1.Organization, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -67,7 +83,7 @@ func (s *organizationService) GetOrganizationByName(ctx context.Context, name st
 }
 
 // ListOrganizations lists all organizations.
-func (s *organizationService) ListOrganizations(
+func (s *organizationServiceClient) ListOrganizations(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
@@ -92,7 +108,7 @@ func (s *organizationService) ListOrganizations(
 }
 
 // ListUserOrganizations lists all organizations a user is member of.
-func (s *organizationService) ListUserOrganizations(
+func (s *organizationServiceClient) ListUserOrganizations(
 	ctx context.Context,
 	userId string,
 	pageSize uint32,
@@ -119,7 +135,7 @@ func (s *organizationService) ListUserOrganizations(
 }
 
 // CreateOrganization creates a new organization.
-func (s *organizationService) CreateOrganization(ctx context.Context, name string) (organization *v1alpha1.Organization, _ error) {
+func (s *organizationServiceClient) CreateOrganization(ctx context.Context, name string) (organization *v1alpha1.Organization, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -137,7 +153,7 @@ func (s *organizationService) CreateOrganization(ctx context.Context, name strin
 }
 
 // DeleteOrganization deletes a organization.
-func (s *organizationService) DeleteOrganization(ctx context.Context, id string) (_ error) {
+func (s *organizationServiceClient) DeleteOrganization(ctx context.Context, id string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -155,7 +171,7 @@ func (s *organizationService) DeleteOrganization(ctx context.Context, id string)
 }
 
 // DeleteOrganizationByName deletes a organization by name.
-func (s *organizationService) DeleteOrganizationByName(ctx context.Context, name string) (_ error) {
+func (s *organizationServiceClient) DeleteOrganizationByName(ctx context.Context, name string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -173,7 +189,7 @@ func (s *organizationService) DeleteOrganizationByName(ctx context.Context, name
 }
 
 // AddOrganizationMember add a role to an user in the organization.
-func (s *organizationService) AddOrganizationMember(
+func (s *organizationServiceClient) AddOrganizationMember(
 	ctx context.Context,
 	organizationId string,
 	userId string,
@@ -198,7 +214,7 @@ func (s *organizationService) AddOrganizationMember(
 }
 
 // UpdateOrganizationMember update the user's membership information in the organization.
-func (s *organizationService) UpdateOrganizationMember(
+func (s *organizationServiceClient) UpdateOrganizationMember(
 	ctx context.Context,
 	organizationId string,
 	userId string,
@@ -223,7 +239,7 @@ func (s *organizationService) UpdateOrganizationMember(
 }
 
 // RemoveOrganizationMember remove the role of an user in the organization.
-func (s *organizationService) RemoveOrganizationMember(
+func (s *organizationServiceClient) RemoveOrganizationMember(
 	ctx context.Context,
 	organizationId string,
 	userId string,
@@ -246,7 +262,7 @@ func (s *organizationService) RemoveOrganizationMember(
 }
 
 // SetOrganizationMember sets the role of a user in the organization.
-func (s *organizationService) SetOrganizationMember(
+func (s *organizationServiceClient) SetOrganizationMember(
 	ctx context.Context,
 	organizationId string,
 	userId string,
@@ -271,7 +287,7 @@ func (s *organizationService) SetOrganizationMember(
 }
 
 // GetOrganizationSettings gets the settings of an organization, including organization base roles.
-func (s *organizationService) GetOrganizationSettings(
+func (s *organizationServiceClient) GetOrganizationSettings(
 	ctx context.Context,
 	organizationId string,
 ) (repositoryBaseRole v1alpha1.RepositoryRole, pluginBaseRole v1alpha1.PluginRole, templateBaseRole v1alpha1.TemplateRole, membersCount uint32, _ error) {
@@ -292,7 +308,7 @@ func (s *organizationService) GetOrganizationSettings(
 }
 
 // UpdateOrganizationSettings update the organization settings including base roles.
-func (s *organizationService) UpdateOrganizationSettings(
+func (s *organizationServiceClient) UpdateOrganizationSettings(
 	ctx context.Context,
 	organizationId string,
 	repositoryBaseRole v1alpha1.RepositoryRole,

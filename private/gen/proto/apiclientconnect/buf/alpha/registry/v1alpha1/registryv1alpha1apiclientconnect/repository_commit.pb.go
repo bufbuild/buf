@@ -24,15 +24,31 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type repositoryCommitService struct {
+type repositoryCommitServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.RepositoryCommitServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewRepositoryCommitServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *repositoryCommitServiceClient {
+	return &repositoryCommitServiceClient{
+		client: registryv1alpha1connect.NewRepositoryCommitServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // ListRepositoryCommitsByBranch lists the repository commits associated
 // with a repository branch on a repository, ordered by their create time.
-func (s *repositoryCommitService) ListRepositoryCommitsByBranch(
+func (s *repositoryCommitServiceClient) ListRepositoryCommitsByBranch(
 	ctx context.Context,
 	repositoryOwner string,
 	repositoryName string,
@@ -64,7 +80,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsByBranch(
 
 // ListRepositoryCommitsByReference returns repository commits up-to and including
 // the provided reference.
-func (s *repositoryCommitService) ListRepositoryCommitsByReference(
+func (s *repositoryCommitServiceClient) ListRepositoryCommitsByReference(
 	ctx context.Context,
 	repositoryOwner string,
 	repositoryName string,
@@ -96,7 +112,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsByReference(
 
 // ListRepositoryCommitsOnTrack returns repository commits up-to and including
 // the provided reference.
-func (s *repositoryCommitService) ListRepositoryCommitsOnTrack(
+func (s *repositoryCommitServiceClient) ListRepositoryCommitsOnTrack(
 	ctx context.Context,
 	repositoryOwner string,
 	repositoryName string,
@@ -130,7 +146,7 @@ func (s *repositoryCommitService) ListRepositoryCommitsOnTrack(
 
 // GetRepositoryCommitByReference returns the repository commit matching
 // the provided reference, if it exists.
-func (s *repositoryCommitService) GetRepositoryCommitByReference(
+func (s *repositoryCommitServiceClient) GetRepositoryCommitByReference(
 	ctx context.Context,
 	repositoryOwner string,
 	repositoryName string,
@@ -156,7 +172,7 @@ func (s *repositoryCommitService) GetRepositoryCommitByReference(
 
 // GetRepositoryCommitBySequenceId returns the repository commit matching
 // the provided sequence ID and branch, if it exists.
-func (s *repositoryCommitService) GetRepositoryCommitBySequenceId(
+func (s *repositoryCommitServiceClient) GetRepositoryCommitBySequenceId(
 	ctx context.Context,
 	repositoryOwner string,
 	repositoryName string,

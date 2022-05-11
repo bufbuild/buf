@@ -24,14 +24,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type recommendationService struct {
+type recommendationServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.RecommendationServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewRecommendationServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *recommendationServiceClient {
+	return &recommendationServiceClient{
+		client: registryv1alpha1connect.NewRecommendationServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // RecommendedRepositories returns a list of recommended repositories.
-func (s *recommendationService) RecommendedRepositories(ctx context.Context) (repositories []*v1alpha1.RecommendedRepository, _ error) {
+func (s *recommendationServiceClient) RecommendedRepositories(ctx context.Context) (repositories []*v1alpha1.RecommendedRepository, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -47,7 +63,7 @@ func (s *recommendationService) RecommendedRepositories(ctx context.Context) (re
 }
 
 // RecommendedTemplates returns a list of recommended templates.
-func (s *recommendationService) RecommendedTemplates(ctx context.Context) (templates []*v1alpha1.RecommendedTemplate, _ error) {
+func (s *recommendationServiceClient) RecommendedTemplates(ctx context.Context) (templates []*v1alpha1.RecommendedTemplate, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -63,7 +79,7 @@ func (s *recommendationService) RecommendedTemplates(ctx context.Context) (templ
 }
 
 // ListRecommendedRepositories returns a list of recommended repositories that user have access to.
-func (s *recommendationService) ListRecommendedRepositories(ctx context.Context) (repositories []*v1alpha1.RecommendedRepository, _ error) {
+func (s *recommendationServiceClient) ListRecommendedRepositories(ctx context.Context) (repositories []*v1alpha1.RecommendedRepository, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -79,7 +95,7 @@ func (s *recommendationService) ListRecommendedRepositories(ctx context.Context)
 }
 
 // ListRecommendedTemplates returns a list of recommended templates that user have access to.
-func (s *recommendationService) ListRecommendedTemplates(ctx context.Context) (templates []*v1alpha1.RecommendedTemplate, _ error) {
+func (s *recommendationServiceClient) ListRecommendedTemplates(ctx context.Context) (templates []*v1alpha1.RecommendedTemplate, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -95,7 +111,7 @@ func (s *recommendationService) ListRecommendedTemplates(ctx context.Context) (t
 }
 
 // SetRecommendedRepositories set the list of repository recommendations in the server.
-func (s *recommendationService) SetRecommendedRepositories(ctx context.Context, repositories []*v1alpha1.SetRecommendedRepository) (_ error) {
+func (s *recommendationServiceClient) SetRecommendedRepositories(ctx context.Context, repositories []*v1alpha1.SetRecommendedRepository) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -113,7 +129,7 @@ func (s *recommendationService) SetRecommendedRepositories(ctx context.Context, 
 }
 
 // SetRecommendedTemplates set the list of template recommendations in the server.
-func (s *recommendationService) SetRecommendedTemplates(ctx context.Context, templates []*v1alpha1.SetRecommendedTemplate) (_ error) {
+func (s *recommendationServiceClient) SetRecommendedTemplates(ctx context.Context, templates []*v1alpha1.SetRecommendedTemplate) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}

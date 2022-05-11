@@ -21,7 +21,6 @@ import (
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
-	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
 )
@@ -86,562 +85,451 @@ func (p *provider) buildAddress(address string) string {
 	return address
 }
 
-func (p *provider) NewAdminService(ctx context.Context, baseURL string) (registryv1alpha1api.AdminService, error) {
+func (p *provider) NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &adminService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewAdminServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewAdminServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewAuthnService(ctx context.Context, baseURL string) (registryv1alpha1api.AuthnService, error) {
+func (p *provider) NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &authnService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewAuthnServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewAuthnServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewAuthzService(ctx context.Context, baseURL string) (registryv1alpha1api.AuthzService, error) {
+func (p *provider) NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &authzService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewAuthzServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewAuthzServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewConvertService(ctx context.Context, baseURL string) (registryv1alpha1api.ConvertService, error) {
+func (p *provider) NewConvertService(ctx context.Context, address string) (registryv1alpha1api.ConvertService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &convertService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewConvertServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewConvertServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewDisplayService(ctx context.Context, baseURL string) (registryv1alpha1api.DisplayService, error) {
+func (p *provider) NewDisplayService(ctx context.Context, address string) (registryv1alpha1api.DisplayService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &displayService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewDisplayServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewDisplayServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewDocService(ctx context.Context, baseURL string) (registryv1alpha1api.DocService, error) {
+func (p *provider) NewDocService(ctx context.Context, address string) (registryv1alpha1api.DocService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &docService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewDocServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewDocServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewDownloadService(ctx context.Context, baseURL string) (registryv1alpha1api.DownloadService, error) {
+func (p *provider) NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &downloadService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewDownloadServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewDownloadServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewGenerateService(ctx context.Context, baseURL string) (registryv1alpha1api.GenerateService, error) {
+func (p *provider) NewGenerateService(ctx context.Context, address string) (registryv1alpha1api.GenerateService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &generateService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewGenerateServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewGenerateServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewGithubService(ctx context.Context, baseURL string) (registryv1alpha1api.GithubService, error) {
+func (p *provider) NewGithubService(ctx context.Context, address string) (registryv1alpha1api.GithubService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &githubService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewGithubServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewGithubServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewImageService(ctx context.Context, baseURL string) (registryv1alpha1api.ImageService, error) {
+func (p *provider) NewImageService(ctx context.Context, address string) (registryv1alpha1api.ImageService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &imageService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewImageServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewImageServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewJSONSchemaService(ctx context.Context, baseURL string) (registryv1alpha1api.JSONSchemaService, error) {
+func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (registryv1alpha1api.JSONSchemaService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &jSONSchemaService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewJSONSchemaServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewJSONSchemaServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewLocalResolveService(ctx context.Context, baseURL string) (registryv1alpha1api.LocalResolveService, error) {
+func (p *provider) NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &localResolveService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewLocalResolveServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewLocalResolveServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewOrganizationService(ctx context.Context, baseURL string) (registryv1alpha1api.OrganizationService, error) {
+func (p *provider) NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &organizationService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewOrganizationServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewOrganizationServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewOwnerService(ctx context.Context, baseURL string) (registryv1alpha1api.OwnerService, error) {
+func (p *provider) NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &ownerService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewOwnerServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewOwnerServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewPluginService(ctx context.Context, baseURL string) (registryv1alpha1api.PluginService, error) {
+func (p *provider) NewPluginService(ctx context.Context, address string) (registryv1alpha1api.PluginService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &pluginService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewPluginServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewPluginServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewPushService(ctx context.Context, baseURL string) (registryv1alpha1api.PushService, error) {
+func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &pushService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewPushServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewPushServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewRecommendationService(ctx context.Context, baseURL string) (registryv1alpha1api.RecommendationService, error) {
+func (p *provider) NewRecommendationService(ctx context.Context, address string) (registryv1alpha1api.RecommendationService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &recommendationService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRecommendationServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewRecommendationServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewReferenceService(ctx context.Context, baseURL string) (registryv1alpha1api.ReferenceService, error) {
+func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &referenceService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewReferenceServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewReferenceServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewRepositoryBranchService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryBranchService, error) {
+func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &repositoryBranchService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryBranchServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewRepositoryBranchServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewRepositoryCommitService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryCommitService, error) {
+func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &repositoryCommitService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryCommitServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewRepositoryCommitServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewRepositoryService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryService, error) {
+func (p *provider) NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &repositoryService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewRepositoryServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewRepositoryTagService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryTagService, error) {
+func (p *provider) NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &repositoryTagService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryTagServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewRepositoryTagServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
+func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &repositoryTrackCommitService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryTrackCommitServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewRepositoryTrackCommitServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewRepositoryTrackService(ctx context.Context, baseURL string) (registryv1alpha1api.RepositoryTrackService, error) {
+func (p *provider) NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &repositoryTrackService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryTrackServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewRepositoryTrackServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewResolveService(ctx context.Context, baseURL string) (registryv1alpha1api.ResolveService, error) {
+func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &resolveService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewResolveServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewResolveServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewSearchService(ctx context.Context, baseURL string) (registryv1alpha1api.SearchService, error) {
+func (p *provider) NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &searchService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewSearchServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewSearchServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewTokenService(ctx context.Context, baseURL string) (registryv1alpha1api.TokenService, error) {
+func (p *provider) NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &tokenService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewTokenServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewTokenServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }
-
-func (p *provider) NewUserService(ctx context.Context, baseURL string) (registryv1alpha1api.UserService, error) {
+func (p *provider) NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
 	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(baseURL)
+		contextModifier, err = p.contextModifierProvider(address)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return &userService{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewUserServiceClient(
-			p.httpClient,
-			p.buildAddress(baseURL),
-			connect_go.WithGRPC(),
-		),
-		contextModifier: contextModifier,
-	}, nil
+	return NewUserServiceClient(
+		p.httpClient,
+		p.buildAddress(address),
+		contextModifier,
+		connect_go.WithGRPC(),
+	), nil
 }

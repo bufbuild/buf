@@ -25,15 +25,31 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type convertService struct {
+type convertServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.ConvertServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewConvertServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *convertServiceClient {
+	return &convertServiceClient{
+		client: registryv1alpha1connect.NewConvertServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // Convert converts a serialized message according to
 // the provided type name using an image.
-func (s *convertService) Convert(
+func (s *convertServiceClient) Convert(
 	ctx context.Context,
 	typeName string,
 	image *v1.Image,

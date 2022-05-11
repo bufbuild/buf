@@ -24,14 +24,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type searchService struct {
+type searchServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.SearchServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewSearchServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *searchServiceClient {
+	return &searchServiceClient{
+		client: registryv1alpha1connect.NewSearchServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // Search searches the BSR.
-func (s *searchService) Search(
+func (s *searchServiceClient) Search(
 	ctx context.Context,
 	query string,
 	pageSize uint32,

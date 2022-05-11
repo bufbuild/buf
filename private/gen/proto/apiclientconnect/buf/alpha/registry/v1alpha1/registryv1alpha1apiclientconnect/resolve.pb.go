@@ -25,10 +25,26 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type resolveService struct {
+type resolveServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.ResolveServiceClient
 	contextModifier func(context.Context) context.Context
+}
+
+func NewResolveServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *resolveServiceClient {
+	return &resolveServiceClient{
+		client: registryv1alpha1connect.NewResolveServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
 }
 
 // GetModulePins finds all the latest digests and respective dependencies of
@@ -38,7 +54,7 @@ type resolveService struct {
 // to make sure this function can do dependency resolution.
 //
 // This function also deals with tiebreaking what ModulePin wins for the same repository.
-func (s *resolveService) GetModulePins(
+func (s *resolveServiceClient) GetModulePins(
 	ctx context.Context,
 	moduleReferences []*v1alpha1.ModuleReference,
 	currentModulePins []*v1alpha1.ModulePin,
@@ -60,10 +76,26 @@ func (s *resolveService) GetModulePins(
 	return response.Msg.ModulePins, nil
 }
 
-type localResolveService struct {
+type localResolveServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.LocalResolveServiceClient
 	contextModifier func(context.Context) context.Context
+}
+
+func NewLocalResolveServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *localResolveServiceClient {
+	return &localResolveServiceClient{
+		client: registryv1alpha1connect.NewLocalResolveServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
 }
 
 // GetLocalModulePins gets the latest pins for the specified local module references.
@@ -78,7 +110,7 @@ type localResolveService struct {
 // 2. Having a separate method makes us able to say "do not make decisions about what
 //    wins between competing pins for the same repo". This should only be done in
 //    GetModulePins, not in this function, i.e. only done at the top level.
-func (s *localResolveService) GetLocalModulePins(
+func (s *localResolveServiceClient) GetLocalModulePins(
 	ctx context.Context,
 	localModuleReferences []*v1alpha11.LocalModuleReference,
 ) (localModuleResolveResults []*v1alpha11.LocalModuleResolveResult, dependencies []*v1alpha1.ModulePin, _ error) {

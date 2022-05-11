@@ -172,44 +172,30 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
-	// Import path for the connect named_go_package
-	connectGoImportPath, err := helper.NewPackageGoImportPath(
-		goPackageFileSet,
-		"connect",
-	)
-	if err != nil {
-		return err
-	}
 
 	// Iterate over the services and create a constructor function for each
 	for _, service := range goPackageFileSet.Services() {
 		interfaceName := service.GoName
 		interfaceGoIdent := apiGoImportPath.Ident(interfaceName)
 		interfaceGoIdentString := g.QualifiedGoIdent(interfaceGoIdent)
-		structName := protogenutil.GetUnexportGoName(interfaceName)
-		newClientGoIdent := connectGoImportPath.Ident("New" + interfaceName + "Client")
-		newClientGoIdentString := g.QualifiedGoIdent(newClientGoIdent)
 
-		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, baseURL string) (`, interfaceGoIdentString, `, error) {`)
+		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, address string) (`, interfaceGoIdentString, `, error) {`)
 		g.P(`var contextModifier func(context.Context) context.Context`)
 		g.P(`var err error`)
 		g.P(`if p.contextModifierProvider != nil {`)
-		g.P(`contextModifier, err = p.contextModifierProvider(baseURL)`)
+		g.P(`contextModifier, err = p.contextModifierProvider(address)`)
 		g.P(`if err != nil {`)
 		g.P(`return  nil, err`)
 		g.P(`}`)
 		g.P(`}`)
-		g.P(`return &`, structName, `{`)
-		g.P(`logger: p.logger,`)
-		g.P(`client: `, newClientGoIdentString, `(`)
+
+		g.P(`return New`, interfaceName, `Client(`)
 		g.P(`p.httpClient,`)
-		g.P(`p.buildAddress(baseURL),`)
+		g.P(`p.buildAddress(address),`)
+		g.P(`contextModifier,`)
 		g.P(withGRPCIdentString, `(),`)
-		g.P(`),`)
-		g.P(`contextModifier: contextModifier,`)
-		g.P(`}, nil`)
+		g.P(`), nil`)
 		g.P(`}`)
-		g.P()
 	}
 
 	return nil
@@ -231,21 +217,40 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
+	httpClientGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("HTTPClient"))
 
 	for _, service := range file.Services {
 		interfaceName := service.GoName
 		structName := protogenutil.GetUnexportGoName(interfaceName)
 		clientGoIdent := connectGoImportPath.Ident(interfaceName + "Client")
 		clientGoIdentString := g.QualifiedGoIdent(clientGoIdent)
+		newClientGoIdent := connectGoImportPath.Ident("New" + interfaceName + "Client")
+		newClientGoIdentString := g.QualifiedGoIdent(newClientGoIdent)
 		newRequestGoIdent := connectGoPackage.Ident("NewRequest")
 		newRequestGoIdentString := g.QualifiedGoIdent(newRequestGoIdent)
 
-		g.P(`type `, structName, ` struct {`)
+		g.P(`type `, structName, `Client struct {`)
 		g.P(`logger *`, loggerGoIdentString)
 		g.P(`client `, clientGoIdentString)
 		g.P(`contextModifier func (`, contextGoIdentString, `) `, contextGoIdentString)
 		g.P(`}`)
 		g.P()
+
+		g.P(`func New`, interfaceName, `Client(`)
+		g.P(`httpClient `, httpClientGoIdentString, `,`)
+		g.P(`address string,`)
+		g.P(`contextModifier func (`, contextGoIdentString, `) `, contextGoIdentString, `,`)
+		g.P(`options ...connect_go.ClientOption,`)
+		g.P(`) *`, structName, `Client {`)
+		g.P(`return &`, structName, `Client{`)
+		g.P(`client: `, newClientGoIdentString, `(`)
+		g.P(`httpClient,`)
+		g.P(`address,`)
+		g.P(`options...,`)
+		g.P(`),`)
+		g.P(`contextModifier: contextModifier,`)
+		g.P(`}`)
+		g.P(`}`)
 
 		for _, method := range service.Methods {
 			if err := protogenutil.ValidateMethodUnary(method); err != nil {
@@ -259,13 +264,13 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 			funcParameterStrings := append([]string{`ctx ` + contextGoIdentString}, requestParameterStrings...)
 			funcReturnStrings := append(responseParameterStrings, `_ error`)
 			if len(funcParameterStrings) > 2 || len(funcReturnStrings) > 2 {
-				g.P(method.Comments.Leading, `func (s *`, structName, `) `, funcName, `(`)
+				g.P(method.Comments.Leading, `func (s *`, structName, `Client) `, funcName, `(`)
 				for _, funcParameterString := range funcParameterStrings {
 					g.P(funcParameterString, `,`)
 				}
 				g.P(`) (`, strings.Join(funcReturnStrings, `, `), `) {`)
 			} else {
-				g.P(method.Comments.Leading, `func (s *`, structName, `) `, funcName, `(`, strings.Join(funcParameterStrings, `, `), `) (`, strings.Join(funcReturnStrings, `, `), `) {`)
+				g.P(method.Comments.Leading, `func (s *`, structName, `Client) `, funcName, `(`, strings.Join(funcParameterStrings, `, `), `) (`, strings.Join(funcReturnStrings, `, `), `) {`)
 			}
 			g.P(`if s.contextModifier != nil{`)
 			g.P(`ctx = s.contextModifier(ctx)`)

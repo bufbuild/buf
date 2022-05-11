@@ -24,16 +24,32 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type pluginService struct {
+type pluginServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.PluginServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewPluginServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *pluginServiceClient {
+	return &pluginServiceClient{
+		client: registryv1alpha1connect.NewPluginServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // ListPlugins returns all the plugins available to the user. This includes
 // public plugins, those uploaded to organizations the user is part of,
 // and any plugins uploaded directly by the user.
-func (s *pluginService) ListPlugins(
+func (s *pluginServiceClient) ListPlugins(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
@@ -58,7 +74,7 @@ func (s *pluginService) ListPlugins(
 }
 
 // ListUserPlugins lists all plugins belonging to a user.
-func (s *pluginService) ListUserPlugins(
+func (s *pluginServiceClient) ListUserPlugins(
 	ctx context.Context,
 	owner string,
 	pageSize uint32,
@@ -85,7 +101,7 @@ func (s *pluginService) ListUserPlugins(
 }
 
 // ListOrganizationPlugins lists all plugins for an organization.
-func (s *pluginService) ListOrganizationPlugins(
+func (s *pluginServiceClient) ListOrganizationPlugins(
 	ctx context.Context,
 	organization string,
 	pageSize uint32,
@@ -112,7 +128,7 @@ func (s *pluginService) ListOrganizationPlugins(
 }
 
 // GetPluginVersion returns the plugin version, if found.
-func (s *pluginService) GetPluginVersion(
+func (s *pluginServiceClient) GetPluginVersion(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -137,7 +153,7 @@ func (s *pluginService) GetPluginVersion(
 }
 
 // ListPluginVersions lists all the versions available for the specified plugin.
-func (s *pluginService) ListPluginVersions(
+func (s *pluginServiceClient) ListPluginVersions(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -166,7 +182,7 @@ func (s *pluginService) ListPluginVersions(
 }
 
 // CreatePlugin creates a new plugin.
-func (s *pluginService) CreatePlugin(
+func (s *pluginServiceClient) CreatePlugin(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -191,7 +207,7 @@ func (s *pluginService) CreatePlugin(
 }
 
 // GetPlugin returns the plugin, if found.
-func (s *pluginService) GetPlugin(
+func (s *pluginServiceClient) GetPlugin(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -216,7 +232,7 @@ func (s *pluginService) GetPlugin(
 // DeletePlugin deletes the plugin, if it exists. Note that deleting
 // a plugin may cause breaking changes for templates using that plugin,
 // and should be done with extreme care.
-func (s *pluginService) DeletePlugin(
+func (s *pluginServiceClient) DeletePlugin(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -239,7 +255,7 @@ func (s *pluginService) DeletePlugin(
 }
 
 // SetPluginContributor sets the role of a user in the plugin.
-func (s *pluginService) SetPluginContributor(
+func (s *pluginServiceClient) SetPluginContributor(
 	ctx context.Context,
 	pluginId string,
 	userId string,
@@ -266,7 +282,7 @@ func (s *pluginService) SetPluginContributor(
 // ListPluginContributors returns the list of contributors that has an explicit role against the plugin.
 // This does not include users who have implicit roles against the plugin, unless they have also been
 // assigned a role explicitly.
-func (s *pluginService) ListPluginContributors(
+func (s *pluginServiceClient) ListPluginContributors(
 	ctx context.Context,
 	pluginId string,
 	pageSize uint32,
@@ -293,7 +309,7 @@ func (s *pluginService) ListPluginContributors(
 }
 
 // DeprecatePlugin deprecates the plugin, if found.
-func (s *pluginService) DeprecatePlugin(
+func (s *pluginServiceClient) DeprecatePlugin(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -318,7 +334,7 @@ func (s *pluginService) DeprecatePlugin(
 }
 
 // UndeprecatePlugin makes the plugin not deprecated and removes any deprecation_message.
-func (s *pluginService) UndeprecatePlugin(
+func (s *pluginServiceClient) UndeprecatePlugin(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -341,7 +357,7 @@ func (s *pluginService) UndeprecatePlugin(
 }
 
 // GetTemplate returns the template, if found.
-func (s *pluginService) GetTemplate(
+func (s *pluginServiceClient) GetTemplate(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -366,7 +382,7 @@ func (s *pluginService) GetTemplate(
 // ListTemplates returns all the templates available to the user. This includes
 // public templates, those owned by organizations the user is part of,
 // and any created directly by the user.
-func (s *pluginService) ListTemplates(
+func (s *pluginServiceClient) ListTemplates(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
@@ -392,7 +408,7 @@ func (s *pluginService) ListTemplates(
 
 // ListTemplatesUserCanAccess is like ListTemplates, but does not return
 // public templates.
-func (s *pluginService) ListTemplatesUserCanAccess(
+func (s *pluginServiceClient) ListTemplatesUserCanAccess(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
@@ -417,7 +433,7 @@ func (s *pluginService) ListTemplatesUserCanAccess(
 }
 
 // ListUserPlugins lists all templates belonging to a user.
-func (s *pluginService) ListUserTemplates(
+func (s *pluginServiceClient) ListUserTemplates(
 	ctx context.Context,
 	owner string,
 	pageSize uint32,
@@ -444,7 +460,7 @@ func (s *pluginService) ListUserTemplates(
 }
 
 // ListOrganizationTemplates lists all templates for an organization.
-func (s *pluginService) ListOrganizationTemplates(
+func (s *pluginServiceClient) ListOrganizationTemplates(
 	ctx context.Context,
 	organization string,
 	pageSize uint32,
@@ -471,7 +487,7 @@ func (s *pluginService) ListOrganizationTemplates(
 }
 
 // GetTemplateVersion returns the template version, if found.
-func (s *pluginService) GetTemplateVersion(
+func (s *pluginServiceClient) GetTemplateVersion(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -496,7 +512,7 @@ func (s *pluginService) GetTemplateVersion(
 }
 
 // ListTemplateVersions lists all the template versions available for the specified template.
-func (s *pluginService) ListTemplateVersions(
+func (s *pluginServiceClient) ListTemplateVersions(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -525,7 +541,7 @@ func (s *pluginService) ListTemplateVersions(
 }
 
 // CreateTemplate creates a new template.
-func (s *pluginService) CreateTemplate(
+func (s *pluginServiceClient) CreateTemplate(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -552,7 +568,7 @@ func (s *pluginService) CreateTemplate(
 }
 
 // DeleteTemplate deletes the template, if it exists.
-func (s *pluginService) DeleteTemplate(
+func (s *pluginServiceClient) DeleteTemplate(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -575,7 +591,7 @@ func (s *pluginService) DeleteTemplate(
 }
 
 // CreateTemplateVersion creates a new template version.
-func (s *pluginService) CreateTemplateVersion(
+func (s *pluginServiceClient) CreateTemplateVersion(
 	ctx context.Context,
 	name string,
 	templateOwner string,
@@ -602,7 +618,7 @@ func (s *pluginService) CreateTemplateVersion(
 }
 
 // SetTemplateContributor sets the role of a user in the template.
-func (s *pluginService) SetTemplateContributor(
+func (s *pluginServiceClient) SetTemplateContributor(
 	ctx context.Context,
 	templateId string,
 	userId string,
@@ -629,7 +645,7 @@ func (s *pluginService) SetTemplateContributor(
 // ListTemplateContributors returns the list of contributors that has an explicit role against the template.
 // This does not include users who have implicit roles against the template, unless they have also been
 // assigned a role explicitly.
-func (s *pluginService) ListTemplateContributors(
+func (s *pluginServiceClient) ListTemplateContributors(
 	ctx context.Context,
 	templateId string,
 	pageSize uint32,
@@ -656,7 +672,7 @@ func (s *pluginService) ListTemplateContributors(
 }
 
 // DeprecateTemplate deprecates the template, if found.
-func (s *pluginService) DeprecateTemplate(
+func (s *pluginServiceClient) DeprecateTemplate(
 	ctx context.Context,
 	owner string,
 	name string,
@@ -681,7 +697,7 @@ func (s *pluginService) DeprecateTemplate(
 }
 
 // UndeprecateTemplate makes the template not deprecated and removes any deprecation_message.
-func (s *pluginService) UndeprecateTemplate(
+func (s *pluginServiceClient) UndeprecateTemplate(
 	ctx context.Context,
 	owner string,
 	name string,

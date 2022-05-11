@@ -24,10 +24,26 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type docService struct {
+type docServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.DocServiceClient
 	contextModifier func(context.Context) context.Context
+}
+
+func NewDocServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *docServiceClient {
+	return &docServiceClient{
+		client: registryv1alpha1connect.NewDocServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
 }
 
 // GetSourceDirectoryInfo retrieves the directory and file structure for the
@@ -35,7 +51,7 @@ type docService struct {
 //
 // The purpose of this is to get a representation of the file tree for a given
 // module to enable exploring the module by navigating through its contents.
-func (s *docService) GetSourceDirectoryInfo(
+func (s *docServiceClient) GetSourceDirectoryInfo(
 	ctx context.Context,
 	owner string,
 	repository string,
@@ -61,7 +77,7 @@ func (s *docService) GetSourceDirectoryInfo(
 
 // GetSourceFile retrieves the source contents for the given owner, repository,
 // reference, and path.
-func (s *docService) GetSourceFile(
+func (s *docServiceClient) GetSourceFile(
 	ctx context.Context,
 	owner string,
 	repository string,
@@ -89,7 +105,7 @@ func (s *docService) GetSourceFile(
 
 // GetModulePackages retrieves the list of packages for the module based on the given
 // owner, repository, and reference.
-func (s *docService) GetModulePackages(
+func (s *docServiceClient) GetModulePackages(
 	ctx context.Context,
 	owner string,
 	repository string,
@@ -115,7 +131,7 @@ func (s *docService) GetModulePackages(
 
 // GetModuleDocumentation retrieves the documentation for module based on the given
 // owner, repository, and reference.
-func (s *docService) GetModuleDocumentation(
+func (s *docServiceClient) GetModuleDocumentation(
 	ctx context.Context,
 	owner string,
 	repository string,
@@ -141,7 +157,7 @@ func (s *docService) GetModuleDocumentation(
 
 // GetPackageDocumentation retrieves a a slice of documentation structures
 // for the given owner, repository, reference, and package name.
-func (s *docService) GetPackageDocumentation(
+func (s *docServiceClient) GetPackageDocumentation(
 	ctx context.Context,
 	owner string,
 	repository string,

@@ -25,14 +25,30 @@ import (
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type tokenService struct {
+type tokenServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.TokenServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewTokenServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *tokenServiceClient {
+	return &tokenServiceClient{
+		client: registryv1alpha1connect.NewTokenServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // CreateToken creates a new token suitable for machine-to-machine authentication.
-func (s *tokenService) CreateToken(
+func (s *tokenServiceClient) CreateToken(
 	ctx context.Context,
 	note string,
 	expireTime *timestamppb.Timestamp,
@@ -57,7 +73,7 @@ func (s *tokenService) CreateToken(
 // GetToken gets the specific token for the user
 //
 // This method requires authentication.
-func (s *tokenService) GetToken(ctx context.Context, tokenId string) (token *v1alpha1.Token, _ error) {
+func (s *tokenServiceClient) GetToken(ctx context.Context, tokenId string) (token *v1alpha1.Token, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -77,7 +93,7 @@ func (s *tokenService) GetToken(ctx context.Context, tokenId string) (token *v1a
 // ListTokens lists the users active tokens
 //
 // This method requires authentication.
-func (s *tokenService) ListTokens(
+func (s *tokenServiceClient) ListTokens(
 	ctx context.Context,
 	pageSize uint32,
 	pageToken string,
@@ -104,7 +120,7 @@ func (s *tokenService) ListTokens(
 // DeleteToken deletes an existing token.
 //
 // This method requires authentication.
-func (s *tokenService) DeleteToken(ctx context.Context, tokenId string) (_ error) {
+func (s *tokenServiceClient) DeleteToken(ctx context.Context, tokenId string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}

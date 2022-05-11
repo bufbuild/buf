@@ -24,15 +24,31 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type jSONSchemaService struct {
+type jSONSchemaServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.JSONSchemaServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewJSONSchemaServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *jSONSchemaServiceClient {
+	return &jSONSchemaServiceClient{
+		client: registryv1alpha1connect.NewJSONSchemaServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // GetJSONSchema allows users to get an (approximate) json schema for a
 // protobuf type.
-func (s *jSONSchemaService) GetJSONSchema(
+func (s *jSONSchemaServiceClient) GetJSONSchema(
 	ctx context.Context,
 	owner string,
 	repository string,

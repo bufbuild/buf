@@ -24,14 +24,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type repositoryBranchService struct {
+type repositoryBranchServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.RepositoryBranchServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewRepositoryBranchServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *repositoryBranchServiceClient {
+	return &repositoryBranchServiceClient{
+		client: registryv1alpha1connect.NewRepositoryBranchServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // CreateRepositoryBranch creates a new repository branch.
-func (s *repositoryBranchService) CreateRepositoryBranch(
+func (s *repositoryBranchServiceClient) CreateRepositoryBranch(
 	ctx context.Context,
 	repositoryId string,
 	name string,
@@ -56,7 +72,7 @@ func (s *repositoryBranchService) CreateRepositoryBranch(
 }
 
 // ListRepositoryBranches lists the repository branches associated with a Repository.
-func (s *repositoryBranchService) ListRepositoryBranches(
+func (s *repositoryBranchServiceClient) ListRepositoryBranches(
 	ctx context.Context,
 	repositoryId string,
 	pageSize uint32,

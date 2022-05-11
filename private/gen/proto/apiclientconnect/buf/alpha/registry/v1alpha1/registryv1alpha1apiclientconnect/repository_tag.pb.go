@@ -24,14 +24,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type repositoryTagService struct {
+type repositoryTagServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.RepositoryTagServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewRepositoryTagServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *repositoryTagServiceClient {
+	return &repositoryTagServiceClient{
+		client: registryv1alpha1connect.NewRepositoryTagServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // CreateRepositoryTag creates a new repository tag.
-func (s *repositoryTagService) CreateRepositoryTag(
+func (s *repositoryTagServiceClient) CreateRepositoryTag(
 	ctx context.Context,
 	repositoryId string,
 	name string,
@@ -56,7 +72,7 @@ func (s *repositoryTagService) CreateRepositoryTag(
 }
 
 // ListRepositoryTags lists the repository tags associated with a Repository.
-func (s *repositoryTagService) ListRepositoryTags(
+func (s *repositoryTagServiceClient) ListRepositoryTags(
 	ctx context.Context,
 	repositoryId string,
 	pageSize uint32,

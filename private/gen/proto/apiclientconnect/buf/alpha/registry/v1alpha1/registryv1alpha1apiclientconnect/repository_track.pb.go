@@ -24,14 +24,30 @@ import (
 	zap "go.uber.org/zap"
 )
 
-type repositoryTrackService struct {
+type repositoryTrackServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.RepositoryTrackServiceClient
 	contextModifier func(context.Context) context.Context
 }
 
+func NewRepositoryTrackServiceClient(
+	httpClient connect_go.HTTPClient,
+	address string,
+	contextModifier func(context.Context) context.Context,
+	options ...connect_go.ClientOption,
+) *repositoryTrackServiceClient {
+	return &repositoryTrackServiceClient{
+		client: registryv1alpha1connect.NewRepositoryTrackServiceClient(
+			httpClient,
+			address,
+			options...,
+		),
+		contextModifier: contextModifier,
+	}
+}
+
 // CreateRepositoryTrack creates a new repository track.
-func (s *repositoryTrackService) CreateRepositoryTrack(
+func (s *repositoryTrackServiceClient) CreateRepositoryTrack(
 	ctx context.Context,
 	repositoryId string,
 	name string,
@@ -54,7 +70,7 @@ func (s *repositoryTrackService) CreateRepositoryTrack(
 }
 
 // ListRepositoryTracks lists the repository tracks associated with a repository.
-func (s *repositoryTrackService) ListRepositoryTracks(
+func (s *repositoryTrackServiceClient) ListRepositoryTracks(
 	ctx context.Context,
 	repositoryId string,
 	pageSize uint32,
@@ -81,7 +97,7 @@ func (s *repositoryTrackService) ListRepositoryTracks(
 }
 
 // DeleteRepositoryTrackByName deletes a repository track by name.
-func (s *repositoryTrackService) DeleteRepositoryTrackByName(
+func (s *repositoryTrackServiceClient) DeleteRepositoryTrackByName(
 	ctx context.Context,
 	ownerName string,
 	repositoryName string,
@@ -106,7 +122,7 @@ func (s *repositoryTrackService) DeleteRepositoryTrackByName(
 }
 
 // GetRepositoryTrackByName gets a repository track by name.
-func (s *repositoryTrackService) GetRepositoryTrackByName(
+func (s *repositoryTrackServiceClient) GetRepositoryTrackByName(
 	ctx context.Context,
 	ownerName string,
 	repositoryName string,
@@ -131,7 +147,7 @@ func (s *repositoryTrackService) GetRepositoryTrackByName(
 }
 
 // ListRepositoryTracksByRepositoryCommit lists the repository tracks associated with a repository commit.
-func (s *repositoryTrackService) ListRepositoryTracksByRepositoryCommit(
+func (s *repositoryTrackServiceClient) ListRepositoryTracksByRepositoryCommit(
 	ctx context.Context,
 	repositoryId string,
 	commit string,
