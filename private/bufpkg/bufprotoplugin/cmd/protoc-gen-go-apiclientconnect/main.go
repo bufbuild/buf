@@ -67,6 +67,12 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
+	globalAPIClientGoImportPath, err := helper.NewGlobalGoImportPath("apiclient")
+	if err != nil {
+		return err
+	}
+	providerSchemeGoIdent := globalAPIClientGoImportPath.Ident("ProviderScheme")
+	providerSchemeGoIdentString := g.QualifiedGoIdent(providerSchemeGoIdent)
 	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	httpClientGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("HTTPClient"))
 	withGRPCIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("WithGRPC"))
@@ -80,9 +86,6 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	}
 	providerGoIdent := apiclientGoImportPath.Ident("Provider")
 	providerGoIdentString := g.QualifiedGoIdent(providerGoIdent)
-
-	transportSchemeGoIdent := buftransportPackage.Ident("TransportScheme")
-	transportSchemeGoIdentString := g.QualifiedGoIdent(transportSchemeGoIdent)
 
 	// NewProvider constructor function
 	g.P(`// NewProvider returns a new Provider.`)
@@ -108,7 +111,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
 	g.P(`contextModifierProvider func(string) (func (`, contextGoIdentString, `) `, contextGoIdentString, `, error)`)
-	g.P(`scheme `, transportSchemeGoIdentString)
+	g.P(`scheme `, providerSchemeGoIdentString)
 	g.P(`}`)
 	g.P()
 
@@ -141,7 +144,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 
 	// WithScheme functional option
 	g.P(`// WithScheme prepends the given scheme to the underlying transport address`)
-	g.P(`func WithScheme(scheme `, transportSchemeGoIdentString, `) ProviderOption {`)
+	g.P(`func WithScheme(scheme `, providerSchemeGoIdentString, `) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
 	g.P(`provider.scheme = scheme`)
 	g.P(`}`)

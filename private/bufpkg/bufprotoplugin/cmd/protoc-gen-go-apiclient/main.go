@@ -95,6 +95,27 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 	if err != nil {
 		return err
 	}
+	g.P(`const (`)
+	g.P(`// ProviderSchemeHTTP represents a provider scheme of http`)
+	g.P(`ProviderSchemeHTTP ProviderScheme = iota + 1`)
+	g.P(`// ProviderSchemeHTTPS represents a provider scheme of https`)
+	g.P(`ProviderSchemeHTTPS`)
+	g.P(`)`)
+	g.P()
+	g.P(`// ProviderScheme represents a scheme that will be used by all clients returned from a given provider`)
+	g.P(`type ProviderScheme int`)
+	g.P()
+	g.P(`// String returns the string representation of the provider scheme`)
+	g.P(`func (s ProviderScheme) String() string {`)
+	g.P(`switch s {`)
+	g.P(`case ProviderSchemeHTTP:`)
+	g.P(`return "http"`)
+	g.P(`case ProviderSchemeHTTPS:`)
+	g.P(`return "https"`)
+	g.P(`}`)
+	g.P(`return "unknown"`)
+	g.P(`}`)
+
 	g.P(`// Provider provides all Providers.`)
 	g.P(`type Provider interface {`)
 	for _, goPackageFileSet := range goPackageFileSetsWithServices {

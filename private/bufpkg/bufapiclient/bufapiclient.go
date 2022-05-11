@@ -19,7 +19,7 @@ import (
 	"context"
 	"crypto/tls"
 
-	"github.com/bufbuild/buf/private/bufpkg/buftransport"
+	"github.com/bufbuild/buf/private/gen/proto/apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientgrpc/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientgrpc"
@@ -78,7 +78,7 @@ type RegistryProviderOption func(*registryProviderOptions)
 type registryProviderOptions struct {
 	addressMapper           func(string) string
 	contextModifierProvider func(string) (func(context.Context) context.Context, error)
-	scheme                  buftransport.TransportScheme
+	scheme                  apiclient.ProviderScheme
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps
@@ -90,7 +90,8 @@ func RegistryProviderWithAddressMapper(addressMapper func(string) string) Regist
 }
 
 // RegistryProviderWithScheme returns a new RegistryProviderOption that adds the given scheme to the transport address
-func RegistryProviderWithScheme(scheme buftransport.TransportScheme) RegistryProviderOption {
+// for all clients returned by a provider
+func RegistryProviderWithScheme(scheme apiclient.ProviderScheme) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
 		options.scheme = scheme
 	}

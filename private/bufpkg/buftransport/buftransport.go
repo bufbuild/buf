@@ -21,32 +21,11 @@ import (
 )
 
 const (
-	// TransportSchemeHTTP represents a transport scheme of http
-	TransportSchemeHTTP TransportScheme = iota + 1
-	// TransportSchemeHTTPS represents a transport scheme of https
-	TransportSchemeHTTPS
-)
-
-const (
 	apiSubdomain = "api"
 
 	// TODO: change to based on "use"
 	disableAPISubdomainEnvKey = "BUF_DISABLE_API_SUBDOMAIN"
 )
-
-// TransportScheme is a transport scheme
-type TransportScheme int
-
-// String returns the string representation of the transport scheme
-func (s TransportScheme) String() string {
-	switch s {
-	case TransportSchemeHTTP:
-		return "http"
-	case TransportSchemeHTTPS:
-		return "https"
-	}
-	return "unknown"
-}
 
 // IsAPISubdomainEnabled returns true if the container says to use the API subdomain.
 func IsAPISubdomainEnabled(container app.EnvContainer) bool {

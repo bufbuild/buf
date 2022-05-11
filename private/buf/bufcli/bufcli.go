@@ -41,6 +41,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
+	"github.com/bufbuild/buf/private/gen/proto/apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -571,7 +572,7 @@ func newGRPCRegistryProvider(ctx context.Context, container appflag.Container) (
 func newConnectRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
 	options := []bufapiclient.RegistryProviderOption{
 		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
-		bufapiclient.RegistryProviderWithScheme(buftransport.TransportSchemeHTTPS),
+		bufapiclient.RegistryProviderWithScheme(apiclient.ProviderSchemeHTTPS),
 	}
 	if buftransport.IsAPISubdomainEnabled(container) {
 		options = append(options, bufapiclient.RegistryProviderWithAddressMapper(buftransport.PrependAPISubdomain))
