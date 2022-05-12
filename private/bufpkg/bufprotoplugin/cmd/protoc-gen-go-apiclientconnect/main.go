@@ -190,6 +190,11 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	loggerGoIdentString := g.QualifiedGoIdent(zapPackage.Ident("Logger"))
 
+	// Import path for the api named_go_package
+	apiGoImportPath, err := helper.NewGoImportPath(
+		file,
+		"api",
+	)
 	// Import path for the connect named_go_package
 	connectGoImportPath, err := helper.NewGoImportPath(
 		file,
@@ -209,6 +214,8 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		newClientGoIdentString := g.QualifiedGoIdent(newClientGoIdent)
 		newRequestGoIdent := connectGoPackage.Ident("NewRequest")
 		newRequestGoIdentString := g.QualifiedGoIdent(newRequestGoIdent)
+		apiInterfaceGoIdent := apiGoImportPath.Ident(interfaceName)
+		apiInterfaceGoIdentString := g.QualifiedGoIdent(apiInterfaceGoIdent)
 
 		g.P(`type `, structName, `Client struct {`)
 		g.P(`logger *`, loggerGoIdentString)
@@ -222,7 +229,7 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`address string,`)
 		g.P(`contextModifier func (`, contextGoIdentString, `) `, contextGoIdentString, `,`)
 		g.P(`options ...connect_go.ClientOption,`)
-		g.P(`) *`, structName, `Client {`)
+		g.P(`) `, apiInterfaceGoIdentString, ` {`)
 		g.P(`return &`, structName, `Client{`)
 		g.P(`client: `, newClientGoIdentString, `(`)
 		g.P(`httpClient,`)

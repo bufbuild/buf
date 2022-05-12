@@ -18,6 +18,7 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
+	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	v1alpha11 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -36,7 +37,7 @@ func newDownloadServiceClient(
 	address string,
 	contextModifier func(context.Context) context.Context,
 	options ...connect_go.ClientOption,
-) *downloadServiceClient {
+) registryv1alpha1api.DownloadService {
 	return &downloadServiceClient{
 		client: registryv1alpha1connect.NewDownloadServiceClient(
 			httpClient,

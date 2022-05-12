@@ -18,6 +18,7 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
+	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
@@ -35,7 +36,7 @@ func newAuthnServiceClient(
 	address string,
 	contextModifier func(context.Context) context.Context,
 	options ...connect_go.ClientOption,
-) *authnServiceClient {
+) registryv1alpha1api.AuthnService {
 	return &authnServiceClient{
 		client: registryv1alpha1connect.NewAuthnServiceClient(
 			httpClient,
