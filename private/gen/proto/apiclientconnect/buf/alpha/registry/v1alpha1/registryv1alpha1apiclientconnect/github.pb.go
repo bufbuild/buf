@@ -30,7 +30,7 @@ type githubServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewGithubServiceClient(
+func newGithubServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,

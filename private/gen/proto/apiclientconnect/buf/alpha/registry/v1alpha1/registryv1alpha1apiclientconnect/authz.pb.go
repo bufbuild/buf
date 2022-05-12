@@ -30,7 +30,7 @@ type authzServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewAuthzServiceClient(
+func newAuthzServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,

@@ -30,7 +30,7 @@ type recommendationServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewRecommendationServiceClient(
+func newRecommendationServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,

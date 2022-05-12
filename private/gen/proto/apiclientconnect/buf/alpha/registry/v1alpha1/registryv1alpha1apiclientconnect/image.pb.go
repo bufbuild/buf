@@ -31,7 +31,7 @@ type imageServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewImageServiceClient(
+func newImageServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,

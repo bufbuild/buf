@@ -31,7 +31,7 @@ type resolveServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewResolveServiceClient(
+func newResolveServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,
@@ -82,7 +82,7 @@ type localResolveServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewLocalResolveServiceClient(
+func newLocalResolveServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,

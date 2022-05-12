@@ -31,7 +31,7 @@ type tokenServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewTokenServiceClient(
+func newTokenServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,

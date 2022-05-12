@@ -67,12 +67,6 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
-	globalAPIClientGoImportPath, err := helper.NewGlobalGoImportPath("apiclient")
-	if err != nil {
-		return err
-	}
-	providerSchemeGoIdent := globalAPIClientGoImportPath.Ident("ProviderScheme")
-	providerSchemeGoIdentString := g.QualifiedGoIdent(providerSchemeGoIdent)
 	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	httpClientGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("HTTPClient"))
 	withGRPCIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("WithGRPC"))
@@ -111,7 +105,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
 	g.P(`contextModifierProvider func(string) (func (`, contextGoIdentString, `) `, contextGoIdentString, `, error)`)
-	g.P(`scheme `, providerSchemeGoIdentString)
+	g.P(`scheme string`)
 	g.P(`}`)
 	g.P()
 
@@ -144,7 +138,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 
 	// WithScheme functional option
 	g.P(`// WithScheme prepends the given scheme to the underlying transport address`)
-	g.P(`func WithScheme(scheme `, providerSchemeGoIdentString, `) ProviderOption {`)
+	g.P(`func WithScheme(scheme string) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
 	g.P(`provider.scheme = scheme`)
 	g.P(`}`)
@@ -157,8 +151,8 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`if p.addressMapper != nil {`)
 	g.P(`address = p.addressMapper(address)`)
 	g.P(`}`)
-	g.P(`if p.scheme != 0 {`)
-	g.P(`address = p.scheme.String()+"://"+address`)
+	g.P(`if p.scheme != "" {`)
+	g.P(`address = p.scheme+"://"+address`)
 	g.P(`}`)
 	g.P(`return address`)
 	g.P(`}`)
@@ -189,13 +183,14 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`}`)
 		g.P(`}`)
 
-		g.P(`return New`, interfaceName, `Client(`)
+		g.P(`return new`, interfaceName, `Client(`)
 		g.P(`p.httpClient,`)
 		g.P(`p.buildAddress(address),`)
 		g.P(`contextModifier,`)
 		g.P(withGRPCIdentString, `(),`)
 		g.P(`), nil`)
 		g.P(`}`)
+		g.P()
 	}
 
 	return nil
@@ -236,7 +231,7 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`}`)
 		g.P()
 
-		g.P(`func New`, interfaceName, `Client(`)
+		g.P(`func new`, interfaceName, `Client(`)
 		g.P(`httpClient `, httpClientGoIdentString, `,`)
 		g.P(`address string,`)
 		g.P(`contextModifier func (`, contextGoIdentString, `) `, contextGoIdentString, `,`)

@@ -30,7 +30,7 @@ type repositoryTrackCommitServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewRepositoryTrackCommitServiceClient(
+func newRepositoryTrackCommitServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,

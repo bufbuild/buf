@@ -18,13 +18,12 @@ package bufapiclient
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
 
-	"github.com/bufbuild/buf/private/gen/proto/apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientgrpc/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientgrpc"
 	"github.com/bufbuild/buf/private/pkg/transport/grpc/grpcclient"
-	"github.com/bufbuild/buf/private/pkg/transport/http2client"
 	"go.uber.org/zap"
 )
 
@@ -55,6 +54,7 @@ func NewGRPCClientProvider(
 // NewConnectClientProvider creates a new Provider using Connect as its underlying transport.
 func NewConnectClientProvider(
 	logger *zap.Logger,
+	client *http.Client,
 	options ...RegistryProviderOption,
 ) (registryv1alpha1apiclient.Provider, error) {
 	registryProviderOptions := &registryProviderOptions{}
@@ -63,9 +63,7 @@ func NewConnectClientProvider(
 	}
 	return registryv1alpha1apiclientconnect.NewProvider(
 		logger,
-		http2client.NewClient(
-			http2client.WithObservability(),
-		),
+		client,
 		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclientconnect.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
 		registryv1alpha1apiclientconnect.WithScheme(registryProviderOptions.scheme),
@@ -78,7 +76,7 @@ type RegistryProviderOption func(*registryProviderOptions)
 type registryProviderOptions struct {
 	addressMapper           func(string) string
 	contextModifierProvider func(string) (func(context.Context) context.Context, error)
-	scheme                  apiclient.ProviderScheme
+	scheme                  string
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps
@@ -91,7 +89,7 @@ func RegistryProviderWithAddressMapper(addressMapper func(string) string) Regist
 
 // RegistryProviderWithScheme returns a new RegistryProviderOption that adds the given scheme to the transport address
 // for all clients returned by a provider
-func RegistryProviderWithScheme(scheme apiclient.ProviderScheme) RegistryProviderOption {
+func RegistryProviderWithScheme(scheme string) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
 		options.scheme = scheme
 	}

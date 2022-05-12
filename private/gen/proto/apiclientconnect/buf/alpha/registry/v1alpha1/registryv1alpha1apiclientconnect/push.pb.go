@@ -31,7 +31,7 @@ type pushServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewPushServiceClient(
+func newPushServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,

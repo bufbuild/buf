@@ -19,7 +19,6 @@ package registryv1alpha1apiclientconnect
 import (
 	context "context"
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
-	apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	connect_go "github.com/bufbuild/connect-go"
 	zap "go.uber.org/zap"
@@ -46,7 +45,7 @@ type provider struct {
 	httpClient              connect_go.HTTPClient
 	addressMapper           func(string) string
 	contextModifierProvider func(string) (func(context.Context) context.Context, error)
-	scheme                  apiclient.ProviderScheme
+	scheme                  string
 }
 
 // ProviderOption is an option for a new Provider.
@@ -68,7 +67,7 @@ func WithContextModifierProvider(contextModifierProvider func(address string) (f
 }
 
 // WithScheme prepends the given scheme to the underlying transport address
-func WithScheme(scheme apiclient.ProviderScheme) ProviderOption {
+func WithScheme(scheme string) ProviderOption {
 	return func(provider *provider) {
 		provider.scheme = scheme
 	}
@@ -79,8 +78,8 @@ func (p *provider) buildAddress(address string) string {
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
-	if p.scheme != 0 {
-		address = p.scheme.String() + "://" + address
+	if p.scheme != "" {
+		address = p.scheme + "://" + address
 	}
 	return address
 }
@@ -94,13 +93,14 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
-	return NewAdminServiceClient(
+	return newAdminServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -110,13 +110,14 @@ func (p *provider) NewAuthnService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
-	return NewAuthnServiceClient(
+	return newAuthnServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -126,13 +127,14 @@ func (p *provider) NewAuthzService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
-	return NewAuthzServiceClient(
+	return newAuthzServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewConvertService(ctx context.Context, address string) (registryv1alpha1api.ConvertService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -142,13 +144,14 @@ func (p *provider) NewConvertService(ctx context.Context, address string) (regis
 			return nil, err
 		}
 	}
-	return NewConvertServiceClient(
+	return newConvertServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewDisplayService(ctx context.Context, address string) (registryv1alpha1api.DisplayService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -158,13 +161,14 @@ func (p *provider) NewDisplayService(ctx context.Context, address string) (regis
 			return nil, err
 		}
 	}
-	return NewDisplayServiceClient(
+	return newDisplayServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewDocService(ctx context.Context, address string) (registryv1alpha1api.DocService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -174,13 +178,14 @@ func (p *provider) NewDocService(ctx context.Context, address string) (registryv
 			return nil, err
 		}
 	}
-	return NewDocServiceClient(
+	return newDocServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -190,13 +195,14 @@ func (p *provider) NewDownloadService(ctx context.Context, address string) (regi
 			return nil, err
 		}
 	}
-	return NewDownloadServiceClient(
+	return newDownloadServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewGenerateService(ctx context.Context, address string) (registryv1alpha1api.GenerateService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -206,13 +212,14 @@ func (p *provider) NewGenerateService(ctx context.Context, address string) (regi
 			return nil, err
 		}
 	}
-	return NewGenerateServiceClient(
+	return newGenerateServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewGithubService(ctx context.Context, address string) (registryv1alpha1api.GithubService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -222,13 +229,14 @@ func (p *provider) NewGithubService(ctx context.Context, address string) (regist
 			return nil, err
 		}
 	}
-	return NewGithubServiceClient(
+	return newGithubServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewImageService(ctx context.Context, address string) (registryv1alpha1api.ImageService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -238,13 +246,14 @@ func (p *provider) NewImageService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
-	return NewImageServiceClient(
+	return newImageServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (registryv1alpha1api.JSONSchemaService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -254,13 +263,14 @@ func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (re
 			return nil, err
 		}
 	}
-	return NewJSONSchemaServiceClient(
+	return newJSONSchemaServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -270,13 +280,14 @@ func (p *provider) NewLocalResolveService(ctx context.Context, address string) (
 			return nil, err
 		}
 	}
-	return NewLocalResolveServiceClient(
+	return newLocalResolveServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -286,13 +297,14 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 			return nil, err
 		}
 	}
-	return NewOrganizationServiceClient(
+	return newOrganizationServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -302,13 +314,14 @@ func (p *provider) NewOwnerService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
-	return NewOwnerServiceClient(
+	return newOwnerServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewPluginService(ctx context.Context, address string) (registryv1alpha1api.PluginService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -318,13 +331,14 @@ func (p *provider) NewPluginService(ctx context.Context, address string) (regist
 			return nil, err
 		}
 	}
-	return NewPluginServiceClient(
+	return newPluginServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -334,13 +348,14 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 			return nil, err
 		}
 	}
-	return NewPushServiceClient(
+	return newPushServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewRecommendationService(ctx context.Context, address string) (registryv1alpha1api.RecommendationService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -350,13 +365,14 @@ func (p *provider) NewRecommendationService(ctx context.Context, address string)
 			return nil, err
 		}
 	}
-	return NewRecommendationServiceClient(
+	return newRecommendationServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -366,13 +382,14 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 			return nil, err
 		}
 	}
-	return NewReferenceServiceClient(
+	return newReferenceServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -382,13 +399,14 @@ func (p *provider) NewRepositoryBranchService(ctx context.Context, address strin
 			return nil, err
 		}
 	}
-	return NewRepositoryBranchServiceClient(
+	return newRepositoryBranchServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -398,13 +416,14 @@ func (p *provider) NewRepositoryCommitService(ctx context.Context, address strin
 			return nil, err
 		}
 	}
-	return NewRepositoryCommitServiceClient(
+	return newRepositoryCommitServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -414,13 +433,14 @@ func (p *provider) NewRepositoryService(ctx context.Context, address string) (re
 			return nil, err
 		}
 	}
-	return NewRepositoryServiceClient(
+	return newRepositoryServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -430,13 +450,14 @@ func (p *provider) NewRepositoryTagService(ctx context.Context, address string) 
 			return nil, err
 		}
 	}
-	return NewRepositoryTagServiceClient(
+	return newRepositoryTagServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -446,13 +467,14 @@ func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address 
 			return nil, err
 		}
 	}
-	return NewRepositoryTrackCommitServiceClient(
+	return newRepositoryTrackCommitServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -462,13 +484,14 @@ func (p *provider) NewRepositoryTrackService(ctx context.Context, address string
 			return nil, err
 		}
 	}
-	return NewRepositoryTrackServiceClient(
+	return newRepositoryTrackServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -478,13 +501,14 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 			return nil, err
 		}
 	}
-	return NewResolveServiceClient(
+	return newResolveServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -494,13 +518,14 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 			return nil, err
 		}
 	}
-	return NewSearchServiceClient(
+	return newSearchServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -510,13 +535,14 @@ func (p *provider) NewTokenService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
-	return NewTokenServiceClient(
+	return newTokenServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
 }
+
 func (p *provider) NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -526,7 +552,7 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 			return nil, err
 		}
 	}
-	return NewUserServiceClient(
+	return newUserServiceClient(
 		p.httpClient,
 		p.buildAddress(address),
 		contextModifier,

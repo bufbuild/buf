@@ -20,27 +20,6 @@ import (
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 )
 
-const (
-	// ProviderSchemeHTTP represents a provider scheme of http
-	ProviderSchemeHTTP ProviderScheme = iota + 1
-	// ProviderSchemeHTTPS represents a provider scheme of https
-	ProviderSchemeHTTPS
-)
-
-// ProviderScheme represents a scheme that will be used by all clients returned from a given provider
-type ProviderScheme int
-
-// String returns the string representation of the provider scheme
-func (s ProviderScheme) String() string {
-	switch s {
-	case ProviderSchemeHTTP:
-		return "http"
-	case ProviderSchemeHTTPS:
-		return "https"
-	}
-	return "unknown"
-}
-
 // Provider provides all Providers.
 type Provider interface {
 	BufAlphaRegistryV1alpha1() registryv1alpha1apiclient.Provider

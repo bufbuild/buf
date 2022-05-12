@@ -30,7 +30,7 @@ type adminServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewAdminServiceClient(
+func newAdminServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,

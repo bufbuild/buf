@@ -30,7 +30,7 @@ type displayServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewDisplayServiceClient(
+func newDisplayServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,

@@ -30,7 +30,7 @@ type ownerServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func NewOwnerServiceClient(
+func newOwnerServiceClient(
 	httpClient connect_go.HTTPClient,
 	address string,
 	contextModifier func(context.Context) context.Context,
