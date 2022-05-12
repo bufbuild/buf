@@ -25,11 +25,10 @@ import (
 )
 
 const (
-	contextPackage      = protogen.GoImportPath("context")
-	connectGoPackage    = protogen.GoImportPath("github.com/bufbuild/connect-go")
-	buftransportPackage = protogen.GoImportPath("github.com/bufbuild/buf/private/bufpkg/buftransport")
-	zapPackage          = protogen.GoImportPath("go.uber.org/zap")
-	pluginName          = "apiclientconnect"
+	contextPackage   = protogen.GoImportPath("context")
+	connectGoPackage = protogen.GoImportPath("github.com/bufbuild/connect-go")
+	zapPackage       = protogen.GoImportPath("go.uber.org/zap")
+	pluginName       = "apiclientconnect"
 )
 
 func main() {
@@ -145,19 +144,6 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`}`)
 	g.P()
 
-	// buildAddress helper function
-	g.P(`// buildAddress modifies the given address with any additional options for transport such as the scheme and any subdomains`)
-	g.P(`func (p *provider) buildAddress(address string) string {`)
-	g.P(`if p.addressMapper != nil {`)
-	g.P(`address = p.addressMapper(address)`)
-	g.P(`}`)
-	g.P(`if p.scheme != "" {`)
-	g.P(`address = p.scheme+"://"+address`)
-	g.P(`}`)
-	g.P(`return address`)
-	g.P(`}`)
-	g.P()
-
 	// Import path for the api named_go_package
 	apiGoImportPath, err := helper.NewPackageGoImportPath(
 		goPackageFileSet,
@@ -185,7 +171,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 
 		g.P(`return new`, interfaceName, `Client(`)
 		g.P(`p.httpClient,`)
-		g.P(`p.buildAddress(address),`)
+		g.P(`p.addressMapper(address),`)
 		g.P(`contextModifier,`)
 		g.P(withGRPCIdentString, `(),`)
 		g.P(`), nil`)

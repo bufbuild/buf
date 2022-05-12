@@ -56,7 +56,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/transport/http2client"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -569,23 +568,8 @@ func newGRPCRegistryProvider(ctx context.Context, container appflag.Container) (
 	)
 }
 
-func newConnectRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	client := http2client.NewClient(
-		http2client.WithObservability(),
-	)
-	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
-		bufapiclient.RegistryProviderWithScheme("https"),
-	}
-	if buftransport.IsAPISubdomainEnabled(container) {
-		options = append(options, bufapiclient.RegistryProviderWithAddressMapper(buftransport.PrependAPISubdomain))
-	}
-	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
-}
-
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	// Swap this with newConnectRegistryProvider to officially use Connect as the underlying transport
 	return newGRPCRegistryProvider(ctx, container)
 }
 

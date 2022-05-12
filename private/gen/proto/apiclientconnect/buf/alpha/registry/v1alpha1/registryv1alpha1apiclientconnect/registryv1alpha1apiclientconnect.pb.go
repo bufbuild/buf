@@ -73,17 +73,6 @@ func WithScheme(scheme string) ProviderOption {
 	}
 }
 
-// buildAddress modifies the given address with any additional options for transport such as the scheme and any subdomains
-func (p *provider) buildAddress(address string) string {
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	if p.scheme != "" {
-		address = p.scheme + "://" + address
-	}
-	return address
-}
-
 func (p *provider) NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -95,7 +84,7 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 	}
 	return newAdminServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -112,7 +101,7 @@ func (p *provider) NewAuthnService(ctx context.Context, address string) (registr
 	}
 	return newAuthnServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -129,7 +118,7 @@ func (p *provider) NewAuthzService(ctx context.Context, address string) (registr
 	}
 	return newAuthzServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -146,7 +135,7 @@ func (p *provider) NewConvertService(ctx context.Context, address string) (regis
 	}
 	return newConvertServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -163,7 +152,7 @@ func (p *provider) NewDisplayService(ctx context.Context, address string) (regis
 	}
 	return newDisplayServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -180,7 +169,7 @@ func (p *provider) NewDocService(ctx context.Context, address string) (registryv
 	}
 	return newDocServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -197,7 +186,7 @@ func (p *provider) NewDownloadService(ctx context.Context, address string) (regi
 	}
 	return newDownloadServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -214,7 +203,7 @@ func (p *provider) NewGenerateService(ctx context.Context, address string) (regi
 	}
 	return newGenerateServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -231,7 +220,7 @@ func (p *provider) NewGithubService(ctx context.Context, address string) (regist
 	}
 	return newGithubServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -248,7 +237,7 @@ func (p *provider) NewImageService(ctx context.Context, address string) (registr
 	}
 	return newImageServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -265,7 +254,7 @@ func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (re
 	}
 	return newJSONSchemaServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -282,7 +271,7 @@ func (p *provider) NewLocalResolveService(ctx context.Context, address string) (
 	}
 	return newLocalResolveServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -299,7 +288,7 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 	}
 	return newOrganizationServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -316,7 +305,7 @@ func (p *provider) NewOwnerService(ctx context.Context, address string) (registr
 	}
 	return newOwnerServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -333,7 +322,7 @@ func (p *provider) NewPluginService(ctx context.Context, address string) (regist
 	}
 	return newPluginServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -350,7 +339,7 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 	}
 	return newPushServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -367,7 +356,7 @@ func (p *provider) NewRecommendationService(ctx context.Context, address string)
 	}
 	return newRecommendationServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -384,7 +373,7 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 	}
 	return newReferenceServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -401,7 +390,7 @@ func (p *provider) NewRepositoryBranchService(ctx context.Context, address strin
 	}
 	return newRepositoryBranchServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -418,7 +407,7 @@ func (p *provider) NewRepositoryCommitService(ctx context.Context, address strin
 	}
 	return newRepositoryCommitServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -435,7 +424,7 @@ func (p *provider) NewRepositoryService(ctx context.Context, address string) (re
 	}
 	return newRepositoryServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -452,7 +441,7 @@ func (p *provider) NewRepositoryTagService(ctx context.Context, address string) 
 	}
 	return newRepositoryTagServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -469,7 +458,7 @@ func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address 
 	}
 	return newRepositoryTrackCommitServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -486,7 +475,7 @@ func (p *provider) NewRepositoryTrackService(ctx context.Context, address string
 	}
 	return newRepositoryTrackServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -503,7 +492,7 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 	}
 	return newResolveServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -520,7 +509,7 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 	}
 	return newSearchServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -537,7 +526,7 @@ func (p *provider) NewTokenService(ctx context.Context, address string) (registr
 	}
 	return newTokenServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
@@ -554,7 +543,7 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 	}
 	return newUserServiceClient(
 		p.httpClient,
-		p.buildAddress(address),
+		p.addressMapper(address),
 		contextModifier,
 		connect_go.WithGRPC(),
 	), nil
