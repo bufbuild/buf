@@ -152,12 +152,23 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
+	// Import path for the connect named_go_package
+	connectGoImportPath, err := helper.NewPackageGoImportPath(
+		goPackageFileSet,
+		"connect",
+	)
+	if err != nil {
+		return err
+	}
 
 	// Iterate over the services and create a constructor function for each
 	for _, service := range goPackageFileSet.Services() {
 		interfaceName := service.GoName
+		structName := protogenutil.GetUnexportGoName(interfaceName)
 		interfaceGoIdent := apiGoImportPath.Ident(interfaceName)
 		interfaceGoIdentString := g.QualifiedGoIdent(interfaceGoIdent)
+		newClientGoIdent := connectGoImportPath.Ident("New" + interfaceName + "Client")
+		newClientGoIdentString := g.QualifiedGoIdent(newClientGoIdent)
 
 		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, address string) (`, interfaceGoIdentString, `, error) {`)
 		g.P(`var contextModifier func(context.Context) context.Context`)
@@ -169,12 +180,15 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`}`)
 		g.P(`}`)
 
-		g.P(`return new`, interfaceName, `Client(`)
+		g.P(`return &`, structName, `Client{`)
+		g.P(`logger: p.logger,`)
+		g.P(`client: `, newClientGoIdentString, `(`)
 		g.P(`p.httpClient,`)
 		g.P(`p.addressMapper(address),`)
-		g.P(`contextModifier,`)
 		g.P(withGRPCIdentString, `(),`)
-		g.P(`), nil`)
+		g.P(`),`)
+		g.P(`contextModifier: contextModifier,`)
+		g.P(`}, nil`)
 		g.P(`}`)
 		g.P()
 	}
@@ -190,11 +204,6 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	loggerGoIdentString := g.QualifiedGoIdent(zapPackage.Ident("Logger"))
 
-	// Import path for the api named_go_package
-	apiGoImportPath, err := helper.NewGoImportPath(
-		file,
-		"api",
-	)
 	// Import path for the connect named_go_package
 	connectGoImportPath, err := helper.NewGoImportPath(
 		file,
@@ -203,19 +212,14 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
-	httpClientGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("HTTPClient"))
 
 	for _, service := range file.Services {
 		interfaceName := service.GoName
 		structName := protogenutil.GetUnexportGoName(interfaceName)
 		clientGoIdent := connectGoImportPath.Ident(interfaceName + "Client")
 		clientGoIdentString := g.QualifiedGoIdent(clientGoIdent)
-		newClientGoIdent := connectGoImportPath.Ident("New" + interfaceName + "Client")
-		newClientGoIdentString := g.QualifiedGoIdent(newClientGoIdent)
 		newRequestGoIdent := connectGoPackage.Ident("NewRequest")
 		newRequestGoIdentString := g.QualifiedGoIdent(newRequestGoIdent)
-		apiInterfaceGoIdent := apiGoImportPath.Ident(interfaceName)
-		apiInterfaceGoIdentString := g.QualifiedGoIdent(apiInterfaceGoIdent)
 
 		g.P(`type `, structName, `Client struct {`)
 		g.P(`logger *`, loggerGoIdentString)
@@ -223,22 +227,6 @@ func generateServiceFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`contextModifier func (`, contextGoIdentString, `) `, contextGoIdentString)
 		g.P(`}`)
 		g.P()
-
-		g.P(`func new`, interfaceName, `Client(`)
-		g.P(`httpClient `, httpClientGoIdentString, `,`)
-		g.P(`address string,`)
-		g.P(`contextModifier func (`, contextGoIdentString, `) `, contextGoIdentString, `,`)
-		g.P(`options ...connect_go.ClientOption,`)
-		g.P(`) `, apiInterfaceGoIdentString, ` {`)
-		g.P(`return &`, structName, `Client{`)
-		g.P(`client: `, newClientGoIdentString, `(`)
-		g.P(`httpClient,`)
-		g.P(`address,`)
-		g.P(`options...,`)
-		g.P(`),`)
-		g.P(`contextModifier: contextModifier,`)
-		g.P(`}`)
-		g.P(`}`)
 
 		for _, method := range service.Methods {
 			if err := protogenutil.ValidateMethodUnary(method); err != nil {

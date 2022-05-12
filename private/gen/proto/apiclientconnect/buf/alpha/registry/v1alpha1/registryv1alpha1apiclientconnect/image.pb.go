@@ -18,7 +18,6 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -30,22 +29,6 @@ type imageServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.ImageServiceClient
 	contextModifier func(context.Context) context.Context
-}
-
-func newImageServiceClient(
-	httpClient connect_go.HTTPClient,
-	address string,
-	contextModifier func(context.Context) context.Context,
-	options ...connect_go.ClientOption,
-) registryv1alpha1api.ImageService {
-	return &imageServiceClient{
-		client: registryv1alpha1connect.NewImageServiceClient(
-			httpClient,
-			address,
-			options...,
-		),
-		contextModifier: contextModifier,
-	}
 }
 
 // GetImage serves a compiled image for the local module. It automatically

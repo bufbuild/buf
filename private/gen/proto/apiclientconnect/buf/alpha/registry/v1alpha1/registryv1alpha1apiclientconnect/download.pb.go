@@ -18,7 +18,6 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	v1alpha11 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -30,22 +29,6 @@ type downloadServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.DownloadServiceClient
 	contextModifier func(context.Context) context.Context
-}
-
-func newDownloadServiceClient(
-	httpClient connect_go.HTTPClient,
-	address string,
-	contextModifier func(context.Context) context.Context,
-	options ...connect_go.ClientOption,
-) registryv1alpha1api.DownloadService {
-	return &downloadServiceClient{
-		client: registryv1alpha1connect.NewDownloadServiceClient(
-			httpClient,
-			address,
-			options...,
-		),
-		contextModifier: contextModifier,
-	}
 }
 
 // Download downloads.

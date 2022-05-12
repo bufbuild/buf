@@ -18,7 +18,6 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
@@ -29,22 +28,6 @@ type referenceServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.ReferenceServiceClient
 	contextModifier func(context.Context) context.Context
-}
-
-func newReferenceServiceClient(
-	httpClient connect_go.HTTPClient,
-	address string,
-	contextModifier func(context.Context) context.Context,
-	options ...connect_go.ClientOption,
-) registryv1alpha1api.ReferenceService {
-	return &referenceServiceClient{
-		client: registryv1alpha1connect.NewReferenceServiceClient(
-			httpClient,
-			address,
-			options...,
-		),
-		contextModifier: contextModifier,
-	}
 }
 
 // GetReferenceByName takes a reference name and returns the

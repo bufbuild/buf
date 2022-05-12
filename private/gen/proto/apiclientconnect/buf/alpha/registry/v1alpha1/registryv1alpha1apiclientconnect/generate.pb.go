@@ -18,7 +18,6 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -31,22 +30,6 @@ type generateServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.GenerateServiceClient
 	contextModifier func(context.Context) context.Context
-}
-
-func newGenerateServiceClient(
-	httpClient connect_go.HTTPClient,
-	address string,
-	contextModifier func(context.Context) context.Context,
-	options ...connect_go.ClientOption,
-) registryv1alpha1api.GenerateService {
-	return &generateServiceClient{
-		client: registryv1alpha1connect.NewGenerateServiceClient(
-			httpClient,
-			address,
-			options...,
-		),
-		contextModifier: contextModifier,
-	}
 }
 
 // GeneratePlugins generates an array of files given the provided

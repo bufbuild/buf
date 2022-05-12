@@ -18,7 +18,6 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
@@ -29,22 +28,6 @@ type organizationServiceClient struct {
 	logger          *zap.Logger
 	client          registryv1alpha1connect.OrganizationServiceClient
 	contextModifier func(context.Context) context.Context
-}
-
-func newOrganizationServiceClient(
-	httpClient connect_go.HTTPClient,
-	address string,
-	contextModifier func(context.Context) context.Context,
-	options ...connect_go.ClientOption,
-) registryv1alpha1api.OrganizationService {
-	return &organizationServiceClient{
-		client: registryv1alpha1connect.NewOrganizationServiceClient(
-			httpClient,
-			address,
-			options...,
-		),
-		contextModifier: contextModifier,
-	}
 }
 
 // GetOrganization gets a organization by ID.
