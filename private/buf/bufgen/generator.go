@@ -166,6 +166,9 @@ func (g *generator) execPlugins(
 		index := i
 		currentPluginConfig := pluginConfig
 		if pluginConfig.Remote != "" {
+			// TODO: Depending on whether or not legacy plugins
+			// can coexist with WASM plugins hosted on the BSR,
+			// we'll probably need to do something extra here.
 			jobs = append(jobs, func(ctx context.Context) error {
 				response, err := g.execRemotePlugin(
 					ctx,

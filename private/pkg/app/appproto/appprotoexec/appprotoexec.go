@@ -22,6 +22,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
@@ -125,6 +126,44 @@ func NewHandler(
 	handlerOptions := newHandlerOptions()
 	for _, option := range options {
 		option(handlerOptions)
+	}
+	if strings.HasSuffix(pluginName, ".wasm") {
+		// For WASM modules, the pluginPath is
+		// equivalent to the plugin's name (unless
+		// otherwise overridden by the path field).
+		//
+		// For example,
+		//
+		//  version: v1
+		//  plugins:
+		//    - name: path/to/plugin.wasm
+		//      out: gen/proto
+		//
+		// or
+		//
+		//  version: v1
+		//  plugins:
+		//    - name: plugin.wasm  # This is effectively an alias as-is.
+		//      out: gen/proto
+		//      path: path/to/plugin.wasm
+		//
+		// TODO: I wonder if there's something fancier
+		// we could do, like installing the .wasm modules
+		// into a local plugin cache, and identifying them
+		// by name (similar to how they're discovered as
+		// binaries on PATH).
+		//
+		// Otherwise, users have to always write relative
+		// paths to their local WASM modules, which makes
+		// the buf.gen.yaml less portable.
+		//
+		// Note that users shouldn't install WASM modules to
+		// the PATH since they're not actually executable binaries.
+		pluginPath := pluginName
+		if handlerOptions.pluginPath != "" {
+			pluginPath = handlerOptions.pluginPath
+		}
+		return newWASMHandler(logger, pluginPath), nil
 	}
 	if handlerOptions.pluginPath != "" {
 		pluginPath, err := exec.LookPath(handlerOptions.pluginPath)
