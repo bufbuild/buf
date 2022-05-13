@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/rpc"
+	"github.com/bufbuild/connect-go"
 )
 
 const (
@@ -164,19 +164,28 @@ func NewTemplateNotFoundError(owner string, name string) error {
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
 func wrapError(err error) error {
-	if err == nil || (err.Error() == "" && !rpc.IsError(err)) {
-		// If the error is nil or empty and not an rpc error, we return it as-is.
+	if err == nil || (err.Error() == "" && !isConnectError(err)) {
+		// If the error is nil or empty and not a Connect error, we return it as-is.
 		// This is especially relevant for commands like lint and breaking.
 		return err
 	}
-	rpcCode := rpc.GetErrorCode(err)
+	connectCode := connect.CodeOf(err)
 	switch {
-	case rpcCode == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
+	case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
 		return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
-	case rpcCode == rpc.ErrorCodeUnavailable:
+	case connectCode == connect.CodeUnavailable:
 		return fmt.Errorf(`Failure: the server hosted at that remote is unavailable: %w`, err)
 	}
 	return fmt.Errorf("Failure: %w", err)
+}
+
+// isConnectError determines if the given error is an error created by the Connect package
+func isConnectError(err error) bool {
+	if err == nil {
+		return false
+	}
+	var connectErr *connect.Error
+	return errors.As(err, &connectErr)
 }
 
 // isEmptyUnknownError returns true if the given
@@ -190,5 +199,5 @@ func isEmptyUnknownError(err error) bool {
 	if err == nil {
 		return false
 	}
-	return err.Error() == "" && rpc.GetErrorCode(err) == rpc.ErrorCodeUnknown
+	return err.Error() == "" && connect.CodeOf(err) == connect.CodeUnknown
 }
