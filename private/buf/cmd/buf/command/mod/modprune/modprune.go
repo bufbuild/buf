@@ -26,8 +26,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/rpc"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 )
 
@@ -104,7 +104,7 @@ func run(
 	if len(requestReferences) > 0 {
 		protoDependencyModulePins, err := service.GetModulePins(ctx, bufmoduleref.NewProtoModuleReferencesForModuleReferences(requestReferences...), nil)
 		if err != nil {
-			if rpc.GetErrorCode(err) == rpc.ErrorCodeUnimplemented && remote != bufrpc.DefaultRemote {
+			if connect.CodeOf(err) == connect.CodeUnimplemented && remote != bufrpc.DefaultRemote {
 				return bufcli.NewUnimplementedRemoteError(err, remote, config.ModuleIdentity.IdentityString())
 			}
 			return err

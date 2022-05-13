@@ -25,8 +25,8 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
-	"github.com/bufbuild/buf/private/pkg/rpc"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -152,7 +152,7 @@ func run(
 		tracks,
 	)
 	if err != nil {
-		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
+		if connect.CodeOf(err) == connect.CodeAlreadyExists {
 			if _, err := container.Stderr().Write(
 				[]byte("The latest commit has the same content; not creating a new commit.\n"),
 			); err != nil {

@@ -21,8 +21,8 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
-	"github.com/bufbuild/buf/private/pkg/rpc"
 	"github.com/bufbuild/buf/private/pkg/storage"
+	"github.com/bufbuild/connect-go"
 	"go.uber.org/zap"
 )
 
@@ -51,7 +51,7 @@ func (m *moduleResolver) GetModulePin(ctx context.Context, moduleReference bufmo
 		nil,
 	)
 	if err != nil {
-		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
+		if connect.CodeOf(err) == connect.CodeNotFound {
 			// Required by ModuleResolver interface spec
 			return nil, storage.NewErrNotExist(moduleReference.String())
 		}
