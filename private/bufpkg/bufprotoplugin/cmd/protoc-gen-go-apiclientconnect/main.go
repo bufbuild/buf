@@ -104,7 +104,6 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
 	g.P(`contextModifierProvider func(string) (func (`, contextGoIdentString, `) `, contextGoIdentString, `, error)`)
-	g.P(`scheme string`)
 	g.P(`}`)
 	g.P()
 
@@ -131,15 +130,6 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`func WithContextModifierProvider(contextModifierProvider func(address string) (func(`, contextGoIdentString, `) `, contextGoIdentString, `, error)) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
 	g.P(`provider.contextModifierProvider = contextModifierProvider`)
-	g.P(`}`)
-	g.P(`}`)
-	g.P()
-
-	// WithScheme functional option
-	g.P(`// WithScheme prepends the given scheme to the underlying transport address`)
-	g.P(`func WithScheme(scheme string) ProviderOption {`)
-	g.P(`return func(provider *provider) {`)
-	g.P(`provider.scheme = scheme`)
 	g.P(`}`)
 	g.P(`}`)
 	g.P()

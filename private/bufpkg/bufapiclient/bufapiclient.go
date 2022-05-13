@@ -66,7 +66,6 @@ func NewConnectClientProvider(
 		client,
 		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclientconnect.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
-		registryv1alpha1apiclientconnect.WithScheme(registryProviderOptions.scheme),
 	), nil
 }
 
@@ -76,7 +75,6 @@ type RegistryProviderOption func(*registryProviderOptions)
 type registryProviderOptions struct {
 	addressMapper           func(string) string
 	contextModifierProvider func(string) (func(context.Context) context.Context, error)
-	scheme                  string
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps

@@ -46,7 +46,6 @@ type provider struct {
 	httpClient              connect_go.HTTPClient
 	addressMapper           func(string) string
 	contextModifierProvider func(string) (func(context.Context) context.Context, error)
-	scheme                  string
 }
 
 // ProviderOption is an option for a new Provider.
@@ -64,13 +63,6 @@ func WithAddressMapper(addressMapper func(string) string) ProviderOption {
 func WithContextModifierProvider(contextModifierProvider func(address string) (func(context.Context) context.Context, error)) ProviderOption {
 	return func(provider *provider) {
 		provider.contextModifierProvider = contextModifierProvider
-	}
-}
-
-// WithScheme prepends the given scheme to the underlying transport address
-func WithScheme(scheme string) ProviderOption {
-	return func(provider *provider) {
-		provider.scheme = scheme
 	}
 }
 
