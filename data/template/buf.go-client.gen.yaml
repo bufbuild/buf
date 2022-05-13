@@ -1,4 +1,4 @@
-# This template generates grpc-go and helper client-side packages.
+# This template generates connect-go and helper client-side packages.
 # This is for situations where the client-side is OSS.
 version: v1
 managed:
@@ -6,11 +6,6 @@ managed:
   go_package_prefix:
     default: github.com/bufbuild/buf/private/gen/proto/go
 plugins:
-  - name: go-grpc
-    out: private/gen/proto/go
-    opt:
-      - paths=source_relative
-      - require_unimplemented_servers=false
   - name: connect-go
     out: private/gen/proto/connect
     opt:
