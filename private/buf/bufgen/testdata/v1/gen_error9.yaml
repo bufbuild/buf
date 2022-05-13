@@ -12,7 +12,7 @@ managed:
 plugins:
   - name: go
     out: gen/go
-    opt: plugins=grpc
+    opt: plugins=connect
     path: /path/to/foo
     strategy: all
 

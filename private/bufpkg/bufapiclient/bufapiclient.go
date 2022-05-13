@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufapiclient provides client-side gRPC constructs.
+// Package bufapiclient provides client-side Connect constructs.
 package bufapiclient
 
 import (
