@@ -1,0 +1,33 @@
+package {{goPackageName}}connect
+{{! We only want to generate anything if there is at least one service. }}
+{{~#unless file.services}}
+
+{{! Render all of the import statements. This triggers a post-processing step. }}
+{{goImports}}
+
+// This is a compile-time assertion to ensure that this generated file and the connect package are
+// compatible. If you get a compiler error that this constant is not defined, this code was
+// generated with a version of connect newer than the one compiled into your binary. You can fix the
+// problem by either regenerating this code with an older version of connect or updating the connect
+// version compiled into your binary.
+const _ = {{{goImportAlias "github.com/bufbuild/connect-go"}}}.IsAtLeastVersion0_1_0
+{{#if file.service}}
+
+const (
+  {{#each file.service}}
+  // {{name}}Name is the fully-qualified name of the {{name}} service.
+  {{name}}Name = "{{name}}"
+  {{/each}}
+)
+
+{{#each file.service}}
+// {{name}}Client is a client for the {{name}} service.
+type {{name}}Client interface {
+  {{#each method}}
+  {{name}}({{{goImportAlias "context"}}}.Context, *{{{goImportAlias "github.com/bufbuild/connect-go"}}}.Request[{{{goType inputType}}}]) (*{{{goImportAlias "github.com/bufbuild/connect-go"}}}.Response[{{{goType outputType}}}], error)
+  {{/each}}
+}
+{{/each}}
+
+{{~/if~}}
+{{~/unless~}}

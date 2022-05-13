@@ -54,6 +54,8 @@ func (g *generator) Generate(
 	for _, option := range options {
 		option(generateOptions)
 	}
+	// TODO: We might actually want to control whether or not
+	// a plugin is a WASM module with a GenerateOption.
 	handler, err := NewHandler(
 		g.logger,
 		g.storageosProvider,

@@ -1,0 +1,13 @@
+version: v1
+plugins:
+  # TODO: Using a .tmpl suffix for a directory is a total hack.
+  # This would need to be cleaned up so that it's much more clear
+  # that a template-based plugin is being used.
+  #
+  # For example,
+  #
+  #  - name: data/template/connect-go
+  #    type: template
+  #    out: gen/proto/connect-go
+  - name: data/template/connect-go.tmpl
+    out: gen/proto/connect-go
