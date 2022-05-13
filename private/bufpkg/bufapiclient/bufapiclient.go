@@ -87,14 +87,6 @@ func RegistryProviderWithAddressMapper(addressMapper func(string) string) Regist
 	}
 }
 
-// RegistryProviderWithScheme returns a new RegistryProviderOption that adds the given scheme to the transport address
-// for all clients returned by a provider
-func RegistryProviderWithScheme(scheme string) RegistryProviderOption {
-	return func(options *registryProviderOptions) {
-		options.scheme = scheme
-	}
-}
-
 // RegistryProviderWithContextModifierProvider returns a new RegistryProviderOption that
 // creates a context modifier for a given address. This is used to modify the context
 // before every RPC invocation.
