@@ -35,10 +35,13 @@ plugins:
       - named_go_package=apiclient=github.com/bufbuild/buf/private/gen/proto/apiclient
       - named_go_package=apiclientgrpc=github.com/bufbuild/buf/private/gen/proto/apiclientgrpc
     strategy: all
-  - name: go-connectclient
-    out: private/gen/proto/connectclient
+  - name: go-apiclientconnect
+    out: private/gen/proto/apiclientconnect
     opt:
       - paths=source_relative
       - named_go_package=api=github.com/bufbuild/buf/private/gen/proto/api
-      - named_go_package=connectclient=github.com/bufbuild/buf/private/gen/proto/connectclient
       - named_go_package=connect=github.com/bufbuild/buf/private/gen/proto/connect
+      - named_go_package=connectclient=github.com/bufbuild/buf/private/gen/proto/connectclient
+      - named_go_package=apiclient=github.com/bufbuild/buf/private/gen/proto/apiclient
+      - named_go_package=apiclientconnect=github.com/bufbuild/buf/private/gen/proto/apiclientconnect
+    strategy: all

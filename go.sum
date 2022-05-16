@@ -5,8 +5,8 @@ github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kd
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/benbjohnson/clock v1.3.0 h1:ip6w0uFQkncKQ979AypyG0ER7mqUSBdKLOgAle/AT8A=
 github.com/benbjohnson/clock v1.3.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
-github.com/bufbuild/connect-go v0.0.0-20220422223031-8a73466bc418 h1:bmK5q1NeMf5aTfvRe0/+BQNaOgXUNjEfE1X+ZfFxT9w=
-github.com/bufbuild/connect-go v0.0.0-20220422223031-8a73466bc418/go.mod h1:RCgq8arxa016bt6/eazGaFFKCEmUMGOpO7bsqr6taRw=
+github.com/bufbuild/connect-go v0.0.0-20220512185436-c35ee255c4f0 h1:OAvP4M6i/WNcZBHosltg8ZEdwOOO6i3zp8GFd6T4kvU=
+github.com/bufbuild/connect-go v0.0.0-20220512185436-c35ee255c4f0/go.mod h1:RCgq8arxa016bt6/eazGaFFKCEmUMGOpO7bsqr6taRw=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
