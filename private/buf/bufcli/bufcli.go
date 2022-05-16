@@ -830,25 +830,6 @@ func validateErrorFormatFlag(validFormatStrings []string, errorFormatString stri
 	return appcmd.NewInvalidArgumentErrorf("--%s: invalid format: %q", errorFormatFlagName, errorFormatString)
 }
 
-func newGRPCRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	config, err := NewConfig(container)
-	if err != nil {
-		return nil, err
-	}
-	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
-	}
-	if buftransport.IsAPISubdomainEnabled(container) {
-		options = append(options, bufapiclient.RegistryProviderWithAddressMapper(buftransport.PrependAPISubdomain))
-	}
-	return bufapiclient.NewGRPCClientProvider(
-		ctx,
-		container.Logger(),
-		config.TLS,
-		options...,
-	)
-}
-
 // promptUser reads a line from Stdin, prompting the user with the prompt first.
 // The prompt is repeatedly shown until the user provides a non-empty response.
 // ErrNotATTY is returned if the input containers Stdin is not a terminal.

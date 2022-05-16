@@ -218,7 +218,7 @@ func getDependencies(
 		currentProtoModulePins,
 	)
 	if err != nil {
-		if connect.CodeOf(err) == connect.CodeAlreadyExists && remote != bufrpc.DefaultRemote {
+		if connect.CodeOf(err) == connect.CodeUnimplemented && remote != bufrpc.DefaultRemote {
 			return nil, bufcli.NewUnimplementedRemoteError(err, remote, moduleConfig.ModuleIdentity.IdentityString())
 		}
 		return nil, err
