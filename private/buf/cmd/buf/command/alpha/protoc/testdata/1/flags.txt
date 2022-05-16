@@ -5,6 +5,6 @@ text
 --go_out
 go_out
 --go_opt
-plugins=grpc
+plugins=connect
 --plugin
 /bin/protoc-gen-go
