@@ -36,7 +36,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 			{
 				Name:     "go",
 				Out:      "gen/go",
-				Opt:      "plugins=connect",
+				Opt:      "plugins=grpc",
 				Path:     "/path/to/foo",
 				Strategy: StrategyAll,
 			},
@@ -56,7 +56,7 @@ func TestReadConfigV1Beta1(t *testing.T) {
 			{
 				Name:     "go",
 				Out:      "gen/go",
-				Opt:      "plugins=connect,foo=bar",
+				Opt:      "plugins=grpc,foo=bar",
 				Path:     "/path/to/foo",
 				Strategy: StrategyAll,
 			},
@@ -149,7 +149,7 @@ func TestReadConfigV1(t *testing.T) {
 			{
 				Name:     "go",
 				Out:      "gen/go",
-				Opt:      "plugins=connect",
+				Opt:      "plugins=grpc",
 				Path:     "/path/to/foo",
 				Strategy: StrategyAll,
 			},
@@ -177,7 +177,7 @@ func TestReadConfigV1(t *testing.T) {
 			{
 				Name:     "go",
 				Out:      "gen/go",
-				Opt:      "plugins=connect,foo=bar",
+				Opt:      "plugins=grpc,foo=bar",
 				Path:     "/path/to/foo",
 				Strategy: StrategyAll,
 			},
@@ -386,7 +386,7 @@ func TestReadConfigV1(t *testing.T) {
 			{
 				Name:     "go",
 				Out:      "gen/go",
-				Opt:      "plugins=connect",
+				Opt:      "plugins=grpc",
 				Path:     "/path/to/foo",
 				Strategy: StrategyAll,
 			},

@@ -23,7 +23,7 @@ type ServerInfo struct {
 	// Path is the rpc method path.
 	//
 	// This is RPC-system dependent, but will be unique for a given RPC method.
-	// For Connect, this is /package.Service/Method.
+	// For gRPC, this is /package.Service/Method.
 	//
 	// May be empty, although almost never is in current practice.
 	Path string

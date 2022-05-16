@@ -76,7 +76,7 @@ func TestParseFlags(t *testing.T) {
 				"--error_format",
 				"text",
 				"--go_out",
-				"plugins=connect:go_out",
+				"plugins=grpc:go_out",
 				"foo.proto",
 			},
 			Expected: &env{
@@ -92,7 +92,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out: "go_out",
-						Opt: []string{"plugins=connect"},
+						Opt: []string{"plugins=grpc"},
 					},
 				},
 				FilePaths: []string{
@@ -109,7 +109,7 @@ func TestParseFlags(t *testing.T) {
 				"--go_out",
 				"go_out",
 				"--go_opt",
-				"plugins=connect",
+				"plugins=grpc",
 				"foo.proto",
 			},
 			Expected: &env{
@@ -125,7 +125,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out: "go_out",
-						Opt: []string{"plugins=connect"},
+						Opt: []string{"plugins=grpc"},
 					},
 				},
 				FilePaths: []string{
@@ -142,7 +142,7 @@ func TestParseFlags(t *testing.T) {
 				"--go_out",
 				"go_out",
 				"--go_opt",
-				"plugins=connect",
+				"plugins=grpc",
 				"--plugin",
 				"/bin/protoc-gen-go",
 				"foo.proto",
@@ -160,7 +160,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out:  "go_out",
-						Opt:  []string{"plugins=connect"},
+						Opt:  []string{"plugins=grpc"},
 						Path: "/bin/protoc-gen-go",
 					},
 				},
@@ -178,7 +178,7 @@ func TestParseFlags(t *testing.T) {
 				"--go_out",
 				"go_out",
 				"--go_opt",
-				"plugins=connect",
+				"plugins=grpc",
 				"--plugin",
 				"protoc-gen-go=/bin/foo",
 				"foo.proto",
@@ -196,7 +196,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out:  "go_out",
-						Opt:  []string{"plugins=connect"},
+						Opt:  []string{"plugins=grpc"},
 						Path: "/bin/foo",
 					},
 				},
@@ -223,7 +223,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out:  "go_out",
-						Opt:  []string{"plugins=connect"},
+						Opt:  []string{"plugins=grpc"},
 						Path: "/bin/protoc-gen-go",
 					},
 				},
@@ -250,7 +250,7 @@ func TestParseFlags(t *testing.T) {
 				PluginNameToPluginInfo: map[string]*pluginInfo{
 					"go": {
 						Out:  "go_out",
-						Opt:  []string{"plugins=connect"},
+						Opt:  []string{"plugins=grpc"},
 						Path: "/bin/protoc-gen-go",
 					},
 				},
@@ -273,7 +273,7 @@ func TestParseFlags(t *testing.T) {
 				"--error_format",
 				"text",
 				"--go_out",
-				"plugins=connect:go_out",
+				"plugins=grpc:go_out",
 				"--go_opt",
 				"foo=bar",
 				"foo.proto",
@@ -292,7 +292,7 @@ func TestParseFlags(t *testing.T) {
 					"go": {
 						Out: "go_out",
 						Opt: []string{
-							"plugins=connect",
+							"plugins=grpc",
 							"foo=bar",
 						},
 					},
@@ -309,7 +309,7 @@ func TestParseFlags(t *testing.T) {
 				"--error_format",
 				"text",
 				"--go_out",
-				"plugins=connect:go_out",
+				"plugins=grpc:go_out",
 				"--go_opt",
 				"foo=bar",
 				"--go_opt",
@@ -330,7 +330,7 @@ func TestParseFlags(t *testing.T) {
 					"go": {
 						Out: "go_out",
 						Opt: []string{
-							"plugins=connect",
+							"plugins=grpc",
 							"foo=bar",
 							"baz=bat",
 						},

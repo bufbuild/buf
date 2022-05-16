@@ -4,6 +4,7 @@ set -eo pipefail
 
 PROTOC_VERSION="3.20.1"
 PROTOC_GEN_GO_VERSION="v1.28.0"
+PROTOC_GEN_GO_GRPC_VERSION="a82cc96f07c960e02623688e4067ae6b7895334a"
 
 # Convert DOWNLOAD_CACHE from d:\path to /d/path
 DOWNLOAD_CACHE="$(echo "/${DOWNLOAD_CACHE}" | sed 's|\\|/|g' | sed 's/://')"
@@ -27,6 +28,7 @@ fi
 PATH="${DOWNLOAD_CACHE}/protoc/bin:${PATH}"
 
 go install google.golang.org/protobuf/cmd/protoc-gen-go@${PROTOC_GEN_GO_VERSION}
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@${PROTOC_GEN_GO_GRPC_VERSION}
 go install ./cmd/buf \
   ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-writer \
   ./private/buf/cmd/buf/command/alpha/protoc/internal/protoc-gen-insertion-point-receiver

@@ -19,9 +19,6 @@ import (
 	"strings"
 )
 
-// KeyPrefix is the prefix of headers set with rpc packages.
-const KeyPrefix = "rpc-"
-
 type outgoingHeadersContextKey struct{}
 type incomingHeadersContextKey struct{}
 

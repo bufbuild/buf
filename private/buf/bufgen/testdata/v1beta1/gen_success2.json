@@ -9,7 +9,7 @@
       "name": "go",
       "out": "gen/go",
       "opt": [
-        "plugins=connect",
+        "plugins=grpc",
         "foo=bar"
       ],
       "path": "/path/to/foo",

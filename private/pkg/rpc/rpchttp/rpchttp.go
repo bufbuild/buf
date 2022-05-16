@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/pkg/rpc"
+	"github.com/bufbuild/buf/private/pkg/rpc/rpcheader"
 )
 
 // NewServerInterceptor returns a new server interceptor for http.
@@ -62,7 +63,7 @@ func newHTTPRoundTripper(next http.RoundTripper) *httpRoundTripper {
 func (h *httpRoundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
 	if headers := rpc.GetOutgoingHeaders(request.Context()); len(headers) > 0 {
 		for key, value := range headers {
-			request.Header.Add(rpc.KeyPrefix+key, value)
+			request.Header.Add(rpcheader.KeyPrefix+key, value)
 		}
 	}
 	return h.next.RoundTrip(request)
@@ -74,8 +75,8 @@ func fromHTTPHeader(httpHeader http.Header) map[string]string {
 		key = strings.ToLower(key)
 		// prefix so that we strip out other headers
 		// rpc clients and servers should only be aware of headers set with the rpc package
-		if strings.HasPrefix(key, rpc.KeyPrefix) {
-			if key := strings.TrimPrefix(key, rpc.KeyPrefix); key != "" {
+		if strings.HasPrefix(key, rpcheader.KeyPrefix) {
+			if key := strings.TrimPrefix(key, rpcheader.KeyPrefix); key != "" {
 				headers[key] = values[0]
 			}
 		}
