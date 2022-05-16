@@ -22,22 +22,18 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	v1alpha11 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
-	zap "go.uber.org/zap"
 )
 
 type pushServiceClient struct {
 	client registryv1alpha1connect.PushServiceClient
-	logger *zap.Logger
 }
 
 func newPushServiceClient(
-	logger *zap.Logger,
 	httpClient connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) *pushServiceClient {
 	return &pushServiceClient{
-		logger: logger,
 		client: registryv1alpha1connect.NewPushServiceClient(
 			httpClient,
 			address,

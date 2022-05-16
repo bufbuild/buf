@@ -21,22 +21,18 @@ import (
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
-	zap "go.uber.org/zap"
 )
 
 type githubServiceClient struct {
 	client registryv1alpha1connect.GithubServiceClient
-	logger *zap.Logger
 }
 
 func newGithubServiceClient(
-	logger *zap.Logger,
 	httpClient connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) *githubServiceClient {
 	return &githubServiceClient{
-		logger: logger,
 		client: registryv1alpha1connect.NewGithubServiceClient(
 			httpClient,
 			address,

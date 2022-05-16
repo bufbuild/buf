@@ -22,23 +22,19 @@ import (
 	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
-	zap "go.uber.org/zap"
 	pluginpb "google.golang.org/protobuf/types/pluginpb"
 )
 
 type generateServiceClient struct {
 	client registryv1alpha1connect.GenerateServiceClient
-	logger *zap.Logger
 }
 
 func newGenerateServiceClient(
-	logger *zap.Logger,
 	httpClient connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) *generateServiceClient {
 	return &generateServiceClient{
-		logger: logger,
 		client: registryv1alpha1connect.NewGenerateServiceClient(
 			httpClient,
 			address,

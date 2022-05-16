@@ -21,23 +21,19 @@ import (
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
-	zap "go.uber.org/zap"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type tokenServiceClient struct {
 	client registryv1alpha1connect.TokenServiceClient
-	logger *zap.Logger
 }
 
 func newTokenServiceClient(
-	logger *zap.Logger,
 	httpClient connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) *tokenServiceClient {
 	return &tokenServiceClient{
-		logger: logger,
 		client: registryv1alpha1connect.NewTokenServiceClient(
 			httpClient,
 			address,

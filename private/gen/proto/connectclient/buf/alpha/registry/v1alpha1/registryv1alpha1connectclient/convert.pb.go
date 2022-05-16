@@ -22,22 +22,18 @@ import (
 	v1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/image/v1"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
-	zap "go.uber.org/zap"
 )
 
 type convertServiceClient struct {
 	client registryv1alpha1connect.ConvertServiceClient
-	logger *zap.Logger
 }
 
 func newConvertServiceClient(
-	logger *zap.Logger,
 	httpClient connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) *convertServiceClient {
 	return &convertServiceClient{
-		logger: logger,
 		client: registryv1alpha1connect.NewConvertServiceClient(
 			httpClient,
 			address,

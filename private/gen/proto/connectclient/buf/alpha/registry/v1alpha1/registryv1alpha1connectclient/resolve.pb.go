@@ -22,22 +22,18 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
 	v1alpha11 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
-	zap "go.uber.org/zap"
 )
 
 type resolveServiceClient struct {
 	client registryv1alpha1connect.ResolveServiceClient
-	logger *zap.Logger
 }
 
 func newResolveServiceClient(
-	logger *zap.Logger,
 	httpClient connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) *resolveServiceClient {
 	return &resolveServiceClient{
-		logger: logger,
 		client: registryv1alpha1connect.NewResolveServiceClient(
 			httpClient,
 			address,
@@ -74,17 +70,14 @@ func (s *resolveServiceClient) GetModulePins(
 
 type localResolveServiceClient struct {
 	client registryv1alpha1connect.LocalResolveServiceClient
-	logger *zap.Logger
 }
 
 func newLocalResolveServiceClient(
-	logger *zap.Logger,
 	httpClient connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) *localResolveServiceClient {
 	return &localResolveServiceClient{
-		logger: logger,
 		client: registryv1alpha1connect.NewLocalResolveServiceClient(
 			httpClient,
 			address,

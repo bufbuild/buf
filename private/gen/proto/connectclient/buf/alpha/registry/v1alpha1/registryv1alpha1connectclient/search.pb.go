@@ -21,22 +21,18 @@ import (
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
-	zap "go.uber.org/zap"
 )
 
 type searchServiceClient struct {
 	client registryv1alpha1connect.SearchServiceClient
-	logger *zap.Logger
 }
 
 func newSearchServiceClient(
-	logger *zap.Logger,
 	httpClient connect_go.HTTPClient,
 	address string,
 	options ...connect_go.ClientOption,
 ) *searchServiceClient {
 	return &searchServiceClient{
-		logger: logger,
 		client: registryv1alpha1connect.NewSearchServiceClient(
 			httpClient,
 			address,
