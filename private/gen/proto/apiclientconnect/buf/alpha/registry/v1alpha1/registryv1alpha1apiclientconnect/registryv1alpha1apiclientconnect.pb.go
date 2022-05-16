@@ -75,11 +75,14 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &adminServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewAdminServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -95,11 +98,14 @@ func (p *provider) NewAuthnService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &authnServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewAuthnServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -115,11 +121,14 @@ func (p *provider) NewAuthzService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &authzServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewAuthzServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -135,11 +144,14 @@ func (p *provider) NewConvertService(ctx context.Context, address string) (regis
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &convertServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewConvertServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -155,11 +167,14 @@ func (p *provider) NewDisplayService(ctx context.Context, address string) (regis
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &displayServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewDisplayServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -175,11 +190,14 @@ func (p *provider) NewDocService(ctx context.Context, address string) (registryv
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &docServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewDocServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -195,11 +213,14 @@ func (p *provider) NewDownloadService(ctx context.Context, address string) (regi
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &downloadServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewDownloadServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -215,11 +236,14 @@ func (p *provider) NewGenerateService(ctx context.Context, address string) (regi
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &generateServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewGenerateServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -235,11 +259,14 @@ func (p *provider) NewGithubService(ctx context.Context, address string) (regist
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &githubServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewGithubServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -255,11 +282,14 @@ func (p *provider) NewImageService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &imageServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewImageServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -275,11 +305,14 @@ func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (re
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &jSONSchemaServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewJSONSchemaServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -295,11 +328,14 @@ func (p *provider) NewLocalResolveService(ctx context.Context, address string) (
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &localResolveServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewLocalResolveServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -315,11 +351,14 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &organizationServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewOrganizationServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -335,11 +374,14 @@ func (p *provider) NewOwnerService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &ownerServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewOwnerServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -355,11 +397,14 @@ func (p *provider) NewPluginService(ctx context.Context, address string) (regist
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &pluginServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewPluginServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -375,11 +420,14 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &pushServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewPushServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -395,11 +443,14 @@ func (p *provider) NewRecommendationService(ctx context.Context, address string)
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &recommendationServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRecommendationServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -415,11 +466,14 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &referenceServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewReferenceServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -435,11 +489,14 @@ func (p *provider) NewRepositoryBranchService(ctx context.Context, address strin
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &repositoryBranchServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryBranchServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -455,11 +512,14 @@ func (p *provider) NewRepositoryCommitService(ctx context.Context, address strin
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &repositoryCommitServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryCommitServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -475,11 +535,14 @@ func (p *provider) NewRepositoryService(ctx context.Context, address string) (re
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &repositoryServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -495,11 +558,14 @@ func (p *provider) NewRepositoryTagService(ctx context.Context, address string) 
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &repositoryTagServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryTagServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -515,11 +581,14 @@ func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address 
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &repositoryTrackCommitServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryTrackCommitServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -535,11 +604,14 @@ func (p *provider) NewRepositoryTrackService(ctx context.Context, address string
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &repositoryTrackServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryTrackServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -555,11 +627,14 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &resolveServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewResolveServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -575,11 +650,14 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &searchServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewSearchServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -595,11 +673,14 @@ func (p *provider) NewTokenService(ctx context.Context, address string) (registr
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &tokenServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewTokenServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
@@ -615,11 +696,14 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 			return nil, err
 		}
 	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
 	return &userServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewUserServiceClient(
 			p.httpClient,
-			p.addressMapper(address),
+			address,
 			connect_go.WithGRPC(),
 		),
 		contextModifier: contextModifier,
