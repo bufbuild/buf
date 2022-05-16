@@ -18,18 +18,18 @@ package bufapiclient
 import (
 	"context"
 	"crypto/tls"
+	"net/http"
 
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientgrpc/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientgrpc"
 	"github.com/bufbuild/buf/private/pkg/transport/grpc/grpcclient"
-	"github.com/bufbuild/buf/private/pkg/transport/http/httpclient"
 	"go.uber.org/zap"
 )
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider gRPC.
-//
+// NewGRPCClientProvider creates a new Provider using gRPC as its underlying transport.
 // If tlsConfig is nil, no TLS is used.
-func NewRegistryProvider(
+func NewGRPCClientProvider(
 	ctx context.Context,
 	logger *zap.Logger,
 	tlsConfig *tls.Config,
@@ -48,6 +48,24 @@ func NewRegistryProvider(
 		clientConnProvider,
 		registryv1alpha1apiclientgrpc.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclientgrpc.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
+	), nil
+}
+
+// NewConnectClientProvider creates a new Provider using Connect as its underlying transport.
+func NewConnectClientProvider(
+	logger *zap.Logger,
+	client *http.Client,
+	options ...RegistryProviderOption,
+) (registryv1alpha1apiclient.Provider, error) {
+	registryProviderOptions := &registryProviderOptions{}
+	for _, option := range options {
+		option(registryProviderOptions)
+	}
+	return registryv1alpha1apiclientconnect.NewProvider(
+		logger,
+		client,
+		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
+		registryv1alpha1apiclientconnect.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
 	), nil
 }
 
@@ -92,19 +110,5 @@ func NewGRPCClientConnProvider(
 		),
 		grpcclient.ClientConnProviderWithObservability(),
 		grpcclient.ClientConnProviderWithGZIPCompression(),
-	)
-}
-
-// NewHTTPClient returns a new HTTP Client.
-//
-// TODO: move this to another location.
-func NewHTTPClient(
-	tlsConfig *tls.Config,
-) httpclient.Client {
-	return httpclient.NewClient(
-		httpclient.ClientWithTLSConfig(
-			tlsConfig,
-		),
-		httpclient.ClientWithObservability(),
 	)
 }

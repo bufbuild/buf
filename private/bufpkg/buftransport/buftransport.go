@@ -23,6 +23,8 @@ import (
 const (
 	apiSubdomain = "api"
 
+	schemeHTTPS = "https"
+
 	// TODO: change to based on "use"
 	disableAPISubdomainEnvKey = "BUF_DISABLE_API_SUBDOMAIN"
 )
@@ -40,4 +42,9 @@ func SetDisableAPISubdomain(env map[string]string) {
 // PrependAPISubdomain prepends the API subdomain to the given address.
 func PrependAPISubdomain(address string) string {
 	return apiSubdomain + "." + address
+}
+
+// PrependHTTPS prepends an https scheme to the given address
+func PrependHTTPS(address string) string {
+	return schemeHTTPS + "://" + address
 }
