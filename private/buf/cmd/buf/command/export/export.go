@@ -178,7 +178,6 @@ func run(
 	// to export those imports that are actually used. To figure this out, we build an image of images
 	// and use the fact that something is in an image to determine if it is actually used.
 	var images []bufimage.Image
-	var mergedImage bufimage.Image
 	_, isProtoFileRef := sourceOrModuleRef.(buffetch.ProtoFileRef)
 	// We gate on flags.ExcludeImports/buffetch.ProtoFileRef so that we don't waste time building if the
 	// result of the build is not relevant.
@@ -254,7 +253,10 @@ func run(
 			images = append(images, imageConfig.Image())
 		}
 	}
-	mergedImage, err = bufimage.MergeImages(images...)
+	// images will only be non-empty if !flags.ExcludeImports || isProtoFileRef
+	// mergedImage will be nil if images is empty
+	// therefore, we must gate on mergedImage != nil below
+	mergedImage, err := bufimage.MergeImages(images...)
 	if err != nil {
 		return err
 	}
@@ -285,7 +287,8 @@ func run(
 	for _, moduleFileSet := range moduleFileSets {
 		// If the reference was a proto file reference, we will use the image files as the basis
 		// for outputting source files.
-		if isProtoFileRef {
+		// We do an extra mergedImage != nil check even though this must be true
+		if isProtoFileRef && mergedImage != nil {
 			for _, protoFileRefImageFile := range mergedImage.Files() {
 				path := protoFileRefImageFile.Path()
 				if _, ok := writtenPaths[path]; ok {
@@ -326,7 +329,7 @@ func run(
 				if flags.ExcludeImports {
 					// Exclude imports, don't output here
 					continue
-				} else if mergedImage.GetFile(path) == nil {
+				} else if mergedImage == nil || mergedImage.GetFile(path) == nil {
 					// We check the merged image to see if the path exists. If it does,
 					// we use this import, so we want to output the file. If it doesn't,
 					// continue.
