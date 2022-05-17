@@ -4,6 +4,9 @@ lint:
   use:
     - DEFAULT
     - UNARY_RPC
+  ignore_only:
+    ENUM_ZERO_VALUE_SUFFIX:
+      - buf/alpha/plugin/v1alpha1/plugin.proto
 breaking:
   use:
     - FILE

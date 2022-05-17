@@ -1,0 +1,107 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto2";
+
+// Package plugin defines the interfaces needed for authoring Protobuf plugins.
+//
+// These interfaces are meant to be wire-compatible with google.protobuf.compiler's interfaces,
+// but have buf-specific extensions.
+//
+// See https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/compiler/plugin.proto.
+package buf.alpha.plugin.v1alpha1;
+
+import "buf/alpha/image/v1/image.proto";
+
+// CodeGeneratorRequest is the request written to a plugin's stdin.
+//
+// This is meant to be wire-compatible with google.protobuf.compiler.CodeGeneratorRequest.
+//
+// See https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/compiler/plugin.proto.
+message CodeGeneratorRequest {
+  // Buf does not send the compiler version over, as this information should not be
+  // relied on to make generation decisions.
+  reserved 3;
+  reserved "compiler_version";
+
+  repeated string file_to_generate = 1;
+  optional string parameter = 2;
+  // This field replaces the google.protobuf.FileDescriptorProto proto_file field on
+  // google.protobuf.compiler.CodeGeneratorRequest. buf.image.v1.ImageFile is meant
+  // to be wire-compatible with google.protobuf.FileDescriptorProto, but contains
+  // buf-specific extension
+  repeated buf.alpha.image.v1.ImageFile proto_file = 15;
+
+  // buf_extension contains buf-specific extensions to CodeGeneratorRequest.
+  //
+  // The prefixed name and high tag value is used to all but guarantee there
+  // will never be any conflict with Google's CodeGeneratorRequest definition.
+  optional CodeGeneratorRequestExtension buf_extension = 8042;
+}
+
+// CodeGeneratorRequestExtension contains extensions to CodeGeneratorRequests.
+//
+// The fields are not included directly on the CodeGeneratorRequest so that we
+// can both detect if extensions exist, which signifies this was created by buf and
+// not by protoc, and so that we can add fields in a freeform manner without
+// worrying about conflicts with CodeGeneratorRequest.
+message CodeGeneratorRequestExtension {
+  optional string base_import_path = 1;
+  repeated PluginInfo plugin_infos = 2;
+}
+
+message PluginInfo {
+  optional string name = 1;
+  optional string alias = 2;
+  optional string base_import_path = 3;
+}
+
+// CodeGeneratorResponse is the response written by a plugin to stdout.
+//
+// This is meant to be wire-compatible with google.protobuf.compiler.CodeGeneratorResponse.
+//
+// See https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/compiler/plugin.proto.
+message CodeGeneratorResponse {
+  enum Feature {
+    FEATURE_NONE = 0;
+    FEATURE_PROTO3_OPTIONAL = 1;
+  }
+  message File {
+    optional string name = 1;
+    optional string insertion_point = 2;
+    optional string content = 15;
+    optional GeneratedCodeInfo generated_code_info = 16;
+  }
+
+  optional string error = 1;
+  optional uint64 supported_features = 2;
+  repeated File file = 15;
+}
+
+
+// GeneratedCodeInfo describes the relationshiip between generated code and its
+// original source file.
+//
+// This is meant to be wire-compatible with google.protobuf.GeneratedCodeInfo.
+//
+// See https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/descriptor.proto.
+message GeneratedCodeInfo {
+  repeated Annotation annotation = 1;
+  message Annotation {
+    repeated int32 path = 1 [packed = true];
+    optional string source_file = 2;
+    optional int32 begin = 3;
+    optional int32 end = 4;
+  }
+}
