@@ -35,8 +35,12 @@ message CodeGeneratorRequest {
   reserved 3;
   reserved "compiler_version";
 
+  // Field copied from google.protobuf.compiler.CodeGeneratorRequest.
   repeated string file_to_generate = 1;
+  // Field copied from google.protobuf.compiler.CodeGeneratorRequest.
   optional string parameter = 2;
+  // Field copied from google.protobuf.compiler.CodeGeneratorRequest.
+  //
   // This field replaces the google.protobuf.FileDescriptorProto proto_file field on
   // google.protobuf.compiler.CodeGeneratorRequest. buf.image.v1.ImageFile is meant
   // to be wire-compatible with google.protobuf.FileDescriptorProto, but contains
@@ -73,19 +77,28 @@ message PluginInfo {
 //
 // See https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/compiler/plugin.proto.
 message CodeGeneratorResponse {
+  // Copied from google.protobuf.compiler.CodeGeneratorResponse.
   enum Feature {
     FEATURE_NONE = 0;
     FEATURE_PROTO3_OPTIONAL = 1;
   }
+  // Copied from google.protobuf.compiler.CodeGeneratorResponse.
   message File {
+    // Field copied from google.protobuf.compiler.CodeGeneratorResponse.
     optional string name = 1;
+    // Field copied from google.protobuf.compiler.CodeGeneratorResponse.
     optional string insertion_point = 2;
+    // Field copied from google.protobuf.compiler.CodeGeneratorResponse.
     optional string content = 15;
+    // Field copied from google.protobuf.compiler.CodeGeneratorResponse.
     optional GeneratedCodeInfo generated_code_info = 16;
   }
 
+  // Field copied from google.protobuf.compiler.CodeGeneratorResponse.
   optional string error = 1;
+  // Field copied from google.protobuf.compiler.CodeGeneratorResponse.
   optional uint64 supported_features = 2;
+  // Field copied from google.protobuf.compiler.CodeGeneratorResponse.
   repeated File file = 15;
 }
 
@@ -97,11 +110,17 @@ message CodeGeneratorResponse {
 //
 // See https://github.com/protocolbuffers/protobuf/blob/main/src/google/protobuf/descriptor.proto.
 message GeneratedCodeInfo {
+  // Field copied from google.protobuf.GeneratedCodeInfo.
   repeated Annotation annotation = 1;
+  // Copied from google.protobuf.GeneratedCodeInfo.
   message Annotation {
+    // Field copied from google.protobuf.GeneratedCodeInfo.
     repeated int32 path = 1 [packed = true];
+    // Field copied from google.protobuf.GeneratedCodeInfo.
     optional string source_file = 2;
+    // Field copied from google.protobuf.GeneratedCodeInfo.
     optional int32 begin = 3;
+    // Field copied from google.protobuf.GeneratedCodeInfo.
     optional int32 end = 4;
   }
 }
