@@ -102,7 +102,6 @@ message CodeGeneratorResponse {
   repeated File file = 15;
 }
 
-
 // GeneratedCodeInfo describes the relationshiip between generated code and its
 // original source file.
 //
