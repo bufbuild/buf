@@ -138,6 +138,11 @@ func NewModuleReferenceNotFoundError(reference bufmoduleref.ModuleReference) err
 	return fmt.Errorf("%q does not exist", reference)
 }
 
+// // NewNoCommitsError informs the user that a given repository track has no commits
+// func NewModuleReferenceNotFoundError(name string) error {
+// 	return fmt.Errorf("%q ", name)
+// }
+
 // NewTokenNotFoundError informs the user that a token with
 // that identifier does not exist.
 func NewTokenNotFoundError(tokenID string) error {
@@ -164,28 +169,29 @@ func NewTemplateNotFoundError(owner string, name string) error {
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
 func wrapError(err error) error {
-	if err == nil || (err.Error() == "" && !isConnectError(err)) {
-		// If the error is nil or empty and not a Connect error, we return it as-is.
-		// This is especially relevant for commands like lint and breaking.
+	// Attempt to convert err to a Connect error.  If it cannot be converted, we return it as-is.
+	// This is especially relevant for commands like lint and breaking.
+	connectError, ok := asConnectError(err)
+	if !ok {
 		return err
 	}
-	connectCode := connect.CodeOf(err)
+
+	connectCode := connectError.Code()
+	connectMessage := connectError.Message()
 	switch {
 	case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
 		return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
 	case connectCode == connect.CodeUnavailable:
 		return fmt.Errorf(`Failure: the server hosted at that remote is unavailable: %w`, err)
 	}
-	return fmt.Errorf("Failure: %w", err)
+	return fmt.Errorf("Failure: %s", connectMessage)
 }
 
-// isConnectError determines if the given error is an error created by the Connect package
-func isConnectError(err error) bool {
-	if err == nil {
-		return false
-	}
+// asConnectError uses errors.As to unwrap any error and look for a connect *Error.
+func asConnectError(err error) (*connect.Error, bool) {
 	var connectErr *connect.Error
-	return errors.As(err, &connectErr)
+	ok := errors.As(err, &connectErr)
+	return connectErr, ok
 }
 
 // isEmptyUnknownError returns true if the given
