@@ -39,6 +39,11 @@ func SetDisableAPISubdomain(env map[string]string) {
 	env[disableAPISubdomainEnvKey] = "disable"
 }
 
+// TrimAPISubdomain removes the API subdomain from the given address (if present).
+func TrimAPISubdomain(address string) string {
+	return strings.TrimPrefix(address, apiSubdomain+".")
+}
+
 // PrependAPISubdomain prepends the API subdomain to the given address.
 func PrependAPISubdomain(address string) string {
 	return apiSubdomain + "." + address
