@@ -15,10 +15,13 @@
 package studioagent
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufstudioagent"
@@ -27,6 +30,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/interrupt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/zap"
 )
 
 const (
@@ -91,6 +95,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
+	logger := container.Logger().Named("studio-agent")
 	disallowedHeaders := make(map[string]struct{}, len(flags.DisallowedHeaders))
 	for _, header := range flags.DisallowedHeaders {
 		disallowedHeaders[header] = struct{}{}
@@ -107,13 +112,14 @@ func run(
 	if err != nil {
 		return err
 	}
-	mux := bufstudioagent.NewHandler(container.Logger(), container.Arg(0), config.TLS, disallowedHeaders, forwardHeaders)
+	mux := bufstudioagent.NewHandler(logger, container.Arg(0), config.TLS, disallowedHeaders, forwardHeaders)
 	server := http.Server{
 		Addr:    ":" + flags.Port,
-		Handler: mux,
+		Handler: requestLoggingHandler(mux, logger),
 	}
 	signalC, closer := interrupt.NewSignalChannel()
 	go func() {
+		logger.Info(fmt.Sprintf("listening on %s", server.Addr))
 		if err = server.ListenAndServe(); err != nil {
 			closer()
 			return
@@ -123,5 +129,29 @@ func run(
 	if err != nil {
 		return err
 	}
+	if err := logger.Sync(); err != nil {
+		return err
+	}
 	return server.Shutdown(ctx)
+}
+
+func requestLoggingHandler(mux http.Handler, logger *zap.Logger) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		bodyBytes, err := ioutil.ReadAll(http.MaxBytesReader(w, r.Body, bufstudioagent.MaxMessageSizeBytesDefault))
+		if err != nil {
+			logger.Warn("error when reading request body")
+			return
+		}
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+		mux.ServeHTTP(w, r)
+		logger.Info(
+			"incoming request",
+			zap.String("address", r.RemoteAddr),
+			zap.String("method", r.Method),
+			zap.String("uri", r.RequestURI),
+			zap.Duration("duration", time.Since(start)),
+			zap.ByteString("requestBody", bodyBytes),
+		)
+	})
 }
