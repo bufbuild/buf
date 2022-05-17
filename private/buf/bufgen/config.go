@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -173,7 +173,7 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 			return fmt.Errorf("%s: plugin %s out is required", id, plugin.Name)
 		}
 		if plugin.Remote != "" {
-			if _, _, _, _, err := bufplugin.ParsePluginVersionPath(plugin.Remote); err != nil {
+			if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(plugin.Remote); err != nil {
 				return fmt.Errorf("%s: invalid remote plugin name: %w", id, err)
 			}
 			// We limit the amount of validation done on the client side intentionally
@@ -186,7 +186,7 @@ func validateExternalConfigV1(externalConfig ExternalConfigV1, id string) error 
 			continue
 		}
 		// Check that the plugin name doesn't look like a remote plugin
-		if _, _, _, _, err := bufplugin.ParsePluginVersionPath(plugin.Name); err == nil {
+		if _, _, _, _, err := bufremoteplugin.ParsePluginVersionPath(plugin.Name); err == nil {
 			return fmt.Errorf("%s: invalid plugin name, did you mean to use a remote plugin?", id)
 		}
 	}
