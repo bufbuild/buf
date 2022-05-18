@@ -47,7 +47,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <origin>",
-		Short: "Run a HTTP server as the studio agent with the origin be set as allowed origin for CORS options.",
+		Short: "Run an HTTP server as the studio agent with the origin be set as the allowed origin for CORS options.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -96,10 +96,12 @@ func run(
 	flags *flags,
 ) error {
 	logger := container.Logger().Named("studio-agent")
+	// convert the disallowedHeaders from a comma-separated string to a map
 	disallowedHeaders := make(map[string]struct{}, len(flags.DisallowedHeaders))
 	for _, header := range flags.DisallowedHeaders {
 		disallowedHeaders[header] = struct{}{}
 	}
+	// convert the forwardHeaders from a comma-separated string of colon-separated key-value pair to a map
 	forwardHeaders := make(map[string]string, len(flags.ForwardHeaders))
 	for _, pair := range flags.ForwardHeaders {
 		s := strings.Split(pair, ":")
@@ -112,7 +114,13 @@ func run(
 	if err != nil {
 		return err
 	}
-	mux := bufstudioagent.NewHandler(logger, container.Arg(0), config.TLS, disallowedHeaders, forwardHeaders)
+	mux := bufstudioagent.NewHandler(
+		logger,
+		container.Arg(0), // the origin from command argument
+		config.TLS,
+		disallowedHeaders,
+		forwardHeaders,
+	)
 	server := http.Server{
 		Addr:    ":" + flags.Port,
 		Handler: requestLoggingHandler(mux, logger),
