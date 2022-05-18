@@ -185,13 +185,13 @@ func wrapError(err error) error {
 		return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
 	case connectCode == connect.CodeUnavailable:
 		msg := `Failure: the server hosted at that remote is unavailable.`
+
 		// If the returned error is Unavailable, then determine if this is a DNS error.  If so, get the address used
 		// so that we can display a more helpful error message.
-		var dnsError *net.DNSError
-		ok := errors.As(err, &dnsError)
-		if ok {
+		if dnsError := (&net.DNSError{}); errors.As(err, &dnsError) && dnsError.IsNotFound {
 			return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, buftransport.TrimAPISubdomain(dnsError.Name))
 		}
+
 		return fmt.Errorf(msg)
 	}
 	return fmt.Errorf("Failure: %s", connectMessage)
