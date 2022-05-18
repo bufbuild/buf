@@ -16,6 +16,7 @@ package tokencreate
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -86,6 +87,10 @@ func run(
 	remote := container.Arg(0)
 	if remote == "" {
 		return appcmd.NewInvalidArgumentError("you must specify a remote module")
+	}
+	parts := strings.Split(remote, "/")
+	if len(parts) > 1 {
+		return appcmd.NewInvalidArgumentError("remote address cannot contain subdirectories")
 	}
 	var expireTime *timestamppb.Timestamp
 	var err error
