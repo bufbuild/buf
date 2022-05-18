@@ -172,12 +172,12 @@ func NewTemplateNotFoundError(owner string, name string) error {
 // can be recovered via 'errors.Is'.
 func wrapError(err error) error {
 
-	var connectError *connect.Error
+	// If error is nil or empty and not a Connect error, we return it as-is.
+	// This is especially relevant for commands like lint and breaking.
 	if err == nil || (err.Error() == "" && !isConnectError(err)) {
 		return err
 	}
-	// Attempt to convert err to a Connect error.  If it cannot be converted, we return it as-is.
-	// This is especially relevant for commands like lint and breaking.
+	// Attempt to convert err to a Connect error.  If it can be converted, then interpret it and return an intuitive error
 	connectError, ok := asConnectError(err)
 	if ok {
 		connectCode := connectError.Code()
@@ -198,7 +198,9 @@ func wrapError(err error) error {
 		}
 		return fmt.Errorf("Failure: %s", connectMessage)
 	}
-	return fmt.Errorf("Failure: %q", err)
+
+	// Error was not empty, but was not a Connect error
+	return fmt.Errorf("Failure: %w", err)
 }
 
 func isConnectError(err error) bool {
