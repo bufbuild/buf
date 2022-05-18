@@ -35,8 +35,8 @@ import (
 
 const (
 	portFlagName              = "port"
-	disallowedHeadersFlagName = "disallowed-headers"
-	forwardHeadersFlagName    = "forward-headers"
+	disallowedHeadersFlagName = "disallowed-header"
+	forwardHeadersFlagName    = "forward-header"
 )
 
 // NewCommand returns a new Command.
@@ -80,13 +80,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.DisallowedHeaders,
 		disallowedHeadersFlagName,
 		nil,
-		`The headers to be disallowed via the agent to the target server. Must be a comma-separated string (like --disallowed-headers=header1,header2).`,
+		`The headers to be disallowed via the agent to the target server. Multiple headers are appended if specified multiple times.`,
 	)
 	flagSet.StringSliceVar(
 		&f.ForwardHeaders,
 		forwardHeadersFlagName,
 		nil,
-		`The headers to be forwarded via the agent to the target server. Must be a comma-separated string of colon-separated key-value pair (like --forward-headers=fromHeader1:toHeader1,fromHeader2:toHeader2).`,
+		`The headers to be forwarded via the agent to the target server. Must be a colon-separated key-value pair (like --forward-header=fromHeader1:toHeader1). Multiple headers pairs are appended if specified multiple times.`,
 	)
 }
 
