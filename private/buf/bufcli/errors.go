@@ -179,32 +179,26 @@ func wrapError(err error) error {
 	// Attempt to convert err to a Connect error.  If it cannot be converted, we return it as-is.
 	// This is especially relevant for commands like lint and breaking.
 	connectError, ok := asConnectError(err)
-	if !ok {
-		return err
-	}
+	if ok {
+		connectCode := connectError.Code()
+		connectMessage := connectError.Message()
+		switch {
+		case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
+			return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
+		case connectCode == connect.CodeUnavailable:
+			msg := `Failure: the server hosted at that remote is unavailable.`
 
-	// if err == nil || (err.Error() == "" && !rpc.IsError(err)) {
-	// 	// If the error is nil or empty and not an rpc error, we return it as-is.
-	// 	// This is especially relevant for commands like lint and breaking.
-	// 	return err
-	// }
-	connectCode := connectError.Code()
-	connectMessage := connectError.Message()
-	switch {
-	case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
-		return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
-	case connectCode == connect.CodeUnavailable:
-		msg := `Failure: the server hosted at that remote is unavailable.`
+			// If the returned error is Unavailable, then determine if this is a DNS error.  If so, get the address used
+			// so that we can display a more helpful error message.
+			if dnsError := (&net.DNSError{}); errors.As(err, &dnsError) && dnsError.IsNotFound {
+				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, buftransport.TrimAPISubdomain(dnsError.Name))
+			}
 
-		// If the returned error is Unavailable, then determine if this is a DNS error.  If so, get the address used
-		// so that we can display a more helpful error message.
-		if dnsError := (&net.DNSError{}); errors.As(err, &dnsError) && dnsError.IsNotFound {
-			return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, buftransport.TrimAPISubdomain(dnsError.Name))
+			return fmt.Errorf(msg)
 		}
-
-		return fmt.Errorf(msg)
+		return fmt.Errorf("Failure: %s", connectMessage)
 	}
-	return fmt.Errorf("Failure: %s", connectMessage)
+	return fmt.Errorf("Failure: %q", err)
 }
 
 func isConnectError(err error) bool {
