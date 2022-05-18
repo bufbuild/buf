@@ -7,8 +7,10 @@ $(call _assert_var,CACHE_VERSIONS)
 $(call _assert_var,CACHE_BIN)
 
 # Settable
-# https://github.com/grpc/grpc-go/releases 20220304 checked 20220325
-PROTOC_GEN_GO_GRPC_VERSION ?= a82cc96f07c960e02623688e4067ae6b7895334a
+# https://github.com/grpc/grpc-go/releases 20220513 checked 20220517
+# You MUST use a commit instead of the release number due to the multi-module
+# setup of grpc-go and protoc-gen-go-grpc.
+PROTOC_GEN_GO_GRPC_VERSION ?= 46da11bc8bf12ea2b86d0783cd92e098ba0ccc99
 
 GO_GET_PKGS := $(GO_GET_PKGS) google.golang.org/grpc@$(PROTOC_GEN_GO_GRPC_VERSION)
 
