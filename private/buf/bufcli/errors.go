@@ -140,11 +140,6 @@ func NewModuleReferenceNotFoundError(reference bufmoduleref.ModuleReference) err
 	return fmt.Errorf("%q does not exist", reference)
 }
 
-// // NewNoCommitsError informs the user that a given repository track has no commits
-// func NewModuleReferenceNotFoundError(name string) error {
-// 	return fmt.Errorf("%q ", name)
-// }
-
 // NewTokenNotFoundError informs the user that a token with
 // that identifier does not exist.
 func NewTokenNotFoundError(tokenID string) error {
@@ -178,8 +173,7 @@ func wrapError(err error) error {
 		return err
 	}
 	// Attempt to convert err to a Connect error.  If it can be converted, then interpret it and return an intuitive error
-	connectError, ok := asConnectError(err)
-	if ok {
+	if connectError := (&connect.Error{}); errors.As(err, &connectError) {
 		connectCode := connectError.Code()
 		connectMessage := connectError.Message()
 		switch {
@@ -206,13 +200,6 @@ func wrapError(err error) error {
 func isConnectError(err error) bool {
 	var connectErr *connect.Error
 	return errors.As(err, &connectErr)
-}
-
-// asConnectError uses errors.As to unwrap any error and look for a connect *Error.
-func asConnectError(err error) (*connect.Error, bool) {
-	var connectErr *connect.Error
-	ok := errors.As(err, &connectErr)
-	return connectErr, ok
 }
 
 // isEmptyUnknownError returns true if the given
