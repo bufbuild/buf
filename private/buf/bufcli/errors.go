@@ -171,6 +171,11 @@ func NewTemplateNotFoundError(owner string, name string) error {
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
 func wrapError(err error) error {
+
+	var connectError *connect.Error
+	if err == nil || (err.Error() == "" && !isConnectError(err)) {
+		return err
+	}
 	// Attempt to convert err to a Connect error.  If it cannot be converted, we return it as-is.
 	// This is especially relevant for commands like lint and breaking.
 	connectError, ok := asConnectError(err)
@@ -178,6 +183,11 @@ func wrapError(err error) error {
 		return err
 	}
 
+	// if err == nil || (err.Error() == "" && !rpc.IsError(err)) {
+	// 	// If the error is nil or empty and not an rpc error, we return it as-is.
+	// 	// This is especially relevant for commands like lint and breaking.
+	// 	return err
+	// }
 	connectCode := connectError.Code()
 	connectMessage := connectError.Message()
 	switch {
@@ -195,6 +205,11 @@ func wrapError(err error) error {
 		return fmt.Errorf(msg)
 	}
 	return fmt.Errorf("Failure: %s", connectMessage)
+}
+
+func isConnectError(err error) bool {
+	var connectErr *connect.Error
+	return errors.As(err, &connectErr)
 }
 
 // asConnectError uses errors.As to unwrap any error and look for a connect *Error.
