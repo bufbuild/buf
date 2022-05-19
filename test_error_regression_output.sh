@@ -35,8 +35,6 @@ printf "buf.build/achiu/petapis" | ./compare.sh beta registry track delete buf.b
 printf "sma" | ./compare.sh  beta registry organization delete buf.build/sma
 ./compare.sh  beta registry plugin list buf.build
 ./compare.sh  beta registry plugin version list buf.build/achiu/plugins/twirp
-./compare.sh  beta registry plugin deprecate buf.build/achiu/plugins/twirp
-./compare.sh  beta registry plugin undeprecate buf.build/achiu/plugins/twirp
 printf "twirp" | ./compare.sh  beta registry plugin delete buf.build/achiu/plugins/twirp
 ./compare.sh  beta registry plugin create buf.build/achiu/plugins/twirp --visibility=private
 ./compare.sh  beta registry commit get buf.build/achiu/petapis
@@ -44,18 +42,14 @@ printf "twirp" | ./compare.sh  beta registry plugin delete buf.build/achiu/plugi
 ./compare.sh  beta registry repository create buf.build/achiu/bufcli --visibility=private
 ./compare.sh  beta registry repository list buf.build
 ./compare.sh  beta registry repository get buf.build/achiu/bufcli
-./compare.sh  beta registry repository deprecate buf.build/achiu/bufcli
-./compare.sh  beta registry repository undeprecate buf.build/achiu/bufcli
 printf "bufcli" | ./compare.sh  beta registry repository delete buf.build/achiu/bufcli
 ./compare.sh  beta registry repository update buf.build/achiu/bufcli --visibility=public
-./compare.sh  beta registry tag create buf.build/achiu/paymentapis:<commit SHA> paymenttag
+# ./compare.sh  beta registry tag create buf.build/achiu/paymentapis:<commit SHA> paymenttag # TODO: this isn't necessarily working for me just yet
 ./compare.sh  beta registry tag list buf.build/achiu/paymentapis
 ./compare.sh  beta registry track list buf.build/achiu/petapis
-print "buf.build/achiu/petapis" | ./compare.sh  beta registry track delete buf.build/achiu/petapis
+printf "buf.build/achiu/petapis" | ./compare.sh  beta registry track delete buf.build/achiu/petapis
 ./compare.sh  beta registry template create buf.build/achiu/templates/twirp-go --visibility public --config '{"version":"v1","plugins":[{"owner":"library","name":"go","opt":["paths=source_relative"]},{"owner":"achiu","name":"twirp","opt":["paths=source_relative"]}]}'
 ./compare.sh  beta registry template list buf.build
-./compare.sh  beta registry template deprecate buf.build/achiu/templates/twirp-go
-./compare.sh  beta registry template undeprecate buf.build/achiu/templates/twirp-go
 ./compare.sh  beta registry template list buf.build
 ./compare.sh  beta registry template version create buf.build/achiu/templates/twirp-go --name v1 --config '{"version":"v1","plugin_versions":[{"owner":"library","name":"go","version":"v1.27.1-1"},{"owner":"achiu","name":"twirp","version":"v8.1.0-1"}]}'
 ./compare.sh  beta registry template version list buf.build/achiu/templates/twirp-go
@@ -67,3 +61,12 @@ printf "testtemplate" | ./compare.sh  beta registry template delete buf.build/ac
 # The following is going to be noisy. Maybe we can do this manually?
 # ./compare.sh  alpha registry token create buf.build --note token-CLI # This is going to be different since the output returned is a generated sha
 # ./compare.sh  alpha registry token delete buf.build --token-id <id>
+
+#./compare.sh  beta registry repository deprecate buf.build/achiu/bufcli
+#./compare.sh  beta registry repository undeprecate buf.build/achiu/bufcli
+
+#./compare.sh  beta registry template deprecate buf.build/achiu/templates/twirp-go
+#./compare.sh  beta registry template undeprecate buf.build/achiu/templates/twirp-go
+
+#./compare.sh  beta registry plugin deprecate buf.build/achiu/plugins/twirp
+#./compare.sh  beta registry plugin undeprecate buf.build/achiu/plugins/twirp

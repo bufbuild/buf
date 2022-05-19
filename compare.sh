@@ -10,6 +10,7 @@ buf  $@ 2>&1 | tee $buf_out > /dev/null
 output=$(mktemp /tmp/out.XXXXXX)
 diff $buf_out $cbuf_out 2>&1 | tee $output > /dev/null
 if [ -s $output ]; then
+  echo "$@ differs!"
   echo "~~~~~~~~~~"
   cat $output
   echo "~~~~~~~~~~"
