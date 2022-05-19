@@ -164,30 +164,42 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("unknown Content-Type: %q", request.Header().Get("Content-Type")), http.StatusBadRequest)
 		return
 	}
-	url, err := url.Parse(envelopeRequest.GetTarget())
+	targetURL, err := url.Parse(envelopeRequest.GetTarget())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	var httpClient *http.Client
-	switch url.Scheme {
+	switch targetURL.Scheme {
 	case "http":
 		httpClient = i.H2CClient
 	case "https":
 		httpClient = i.TLSClient
 	default:
-		http.Error(w, fmt.Sprintf("must specify http or https url scheme, got %q", url.Scheme), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("must specify http or https url scheme, got %q", targetURL.Scheme), http.StatusBadRequest)
 		return
 	}
 	client := connect.NewClient[bytes.Buffer, bytes.Buffer](
 		httpClient,
-		url.String(),
+		targetURL.String(),
 		connect.WithGRPC(),
 		connect.WithCodec(codec),
 	)
 	// TODO: should this context be cloned to remove attached values (but keep timeout)?``
 	response, err := client.CallUnary(r.Context(), request)
 	if err != nil {
+		// Connect marks any issues connecting with the Unavailable
+		// status code. We need to differentiate between server sent
+		// errors with the Unavailable code and client connection
+		// errors.
+		if netErr := new(net.OpError); errors.As(err, &netErr) {
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+		if urlErr := new(url.Error); errors.As(err, &urlErr) {
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
 		if connectErr := new(connect.Error); errors.As(err, &connectErr) {
 			if connectErr.Code() == connect.CodeUnknown {
 				http.Error(w, err.Error(), http.StatusBadGateway)
@@ -196,7 +208,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			i.writeProtoMessage(w, &studiov1alpha1.InvokeResponse{
 				// connectErr.Meta contains the trailers for the
 				// caller to find out the error details.
-				Headers: headerToMetadata(connectErr.Meta()),
+				Headers: goHeadersToProtoHeaders(connectErr.Meta()),
 			})
 			return
 		}
@@ -204,9 +216,9 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	i.writeProtoMessage(w, &studiov1alpha1.InvokeResponse{
-		Headers:  headerToMetadata(response.Header()),
+		Headers:  goHeadersToProtoHeaders(response.Header()),
 		Body:     response.Msg.Bytes(),
-		Trailers: headerToMetadata(response.Trailer()),
+		Trailers: goHeadersToProtoHeaders(response.Trailer()),
 	})
 }
 
@@ -229,10 +241,10 @@ func (i *plainPostHandler) writeProtoMessage(w http.ResponseWriter, message prot
 	}
 }
 
-func headerToMetadata(in http.Header) []*studiov1alpha1.Metadata {
-	var out []*studiov1alpha1.Metadata
+func goHeadersToProtoHeaders(in http.Header) []*studiov1alpha1.Headers {
+	var out []*studiov1alpha1.Headers
 	for k, v := range in {
-		out = append(out, &studiov1alpha1.Metadata{
+		out = append(out, &studiov1alpha1.Headers{
 			Key:   k,
 			Value: v,
 		})
