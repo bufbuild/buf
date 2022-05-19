@@ -113,7 +113,7 @@ For feature requests, bugs, or technical questions, email us at [dev@buf.build][
 [badges_homebrew]: https://github.com/bufbuild/homebrew-buf
 [badges_license]: https://github.com/bufbuild/buf/blob/main/LICENSE
 [badges_release]: https://github.com/bufbuild/buf/releases
-[badges_slack]: https://join.slack.com/t/bufbuild/shared_invite/zt-f5k547ki-VDs_iC4TblNCu7ubhRD17w
+[badges_slack]: https://join.slack.com/t/bufbuild/shared_invite/zt-f5k547ki-dW9LjSwEnl6qTzbyZtPojw
 [bash]: https://www.gnu.org/software/bash
 [binary]: https://docs.buf.build/installation#binary
 [breaking]: https://docs.buf.build/breaking
