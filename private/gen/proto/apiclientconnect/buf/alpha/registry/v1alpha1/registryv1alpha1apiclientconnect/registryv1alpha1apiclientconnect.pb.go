@@ -664,6 +664,29 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 	}, nil
 }
 
+func (p *provider) NewStudioService(ctx context.Context, address string) (registryv1alpha1api.StudioService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	return &studioServiceClient{
+		logger: p.logger,
+		client: registryv1alpha1connect.NewStudioServiceClient(
+			p.httpClient,
+			address,
+			connect_go.WithGRPC(),
+		),
+		contextModifier: contextModifier,
+	}, nil
+}
+
 func (p *provider) NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
