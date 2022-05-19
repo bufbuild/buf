@@ -166,7 +166,6 @@ func NewTemplateNotFoundError(owner string, name string) error {
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
 func wrapError(err error) error {
-
 	// If error is nil or empty and not a Connect error, we return it as-is.
 	// This is especially relevant for commands like lint and breaking.
 	if err == nil || (err.Error() == "" && !isConnectError(err)) {
