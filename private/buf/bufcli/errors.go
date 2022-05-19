@@ -166,21 +166,21 @@ func NewTemplateNotFoundError(owner string, name string) error {
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
 func wrapError(err error) error {
-	// If error is nil or empty and not a Connect error, we return it as-is.
-	// This is especially relevant for commands like lint and breaking.
-	if err == nil || (err.Error() == "" && !isConnectError(err)) {
+	if err == nil {
+		return nil
+	}
+	// If error is empty and not a Connect error, we return it as-is.
+	if _, ok := connect.AsError(err); err.Error() == "" && !ok {
 		return err
 	}
 	// Attempt to convert err to a Connect error.  If it can be converted, then interpret it and return an intuitive error
 	if connectError := (&connect.Error{}); errors.As(err, &connectError) {
 		connectCode := connectError.Code()
-		connectMessage := connectError.Message()
 		switch {
 		case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
 			return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
 		case connectCode == connect.CodeUnavailable:
 			msg := `Failure: the server hosted at that remote is unavailable.`
-
 			// If the returned error is Unavailable, then determine if this is a DNS error.  If so, get the address used
 			// so that we can display a more helpful error message.
 			if dnsError := (&net.DNSError{}); errors.As(err, &dnsError) && dnsError.IsNotFound {
@@ -189,10 +189,10 @@ func wrapError(err error) error {
 
 			return fmt.Errorf(msg)
 		}
-		return fmt.Errorf("Failure: %s", connectMessage)
+		return fmt.Errorf("Failure: %s", connectError.Message())
 	}
 
-	// Error was not empty, but was not a Connect error
+	// Error was not a Connect error
 	return fmt.Errorf("Failure: %w", err)
 }
 

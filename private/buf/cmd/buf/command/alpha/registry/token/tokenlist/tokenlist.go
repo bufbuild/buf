@@ -17,7 +17,6 @@ package tokenlist
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
@@ -96,12 +95,11 @@ func run(
 ) (retErr error) {
 	bufcli.WarnAlphaCommand(ctx, container)
 	remote := container.Arg(0)
-	if remote == "" {
-		return appcmd.NewInvalidArgumentError("you must specify a remote module")
+	if err := appcmd.ValidateRemoteNotEmpty(remote); err != nil {
+		return err
 	}
-	parts := strings.Split(remote, "/")
-	if len(parts) > 1 {
-		return appcmd.NewInvalidArgumentError("remote address cannot contain subdirectories")
+	if err := appcmd.ValidateRemoteHasNoPaths(remote); err != nil {
+		return err
 	}
 	format, err := bufprint.ParseFormat(flags.Format)
 	if err != nil {
