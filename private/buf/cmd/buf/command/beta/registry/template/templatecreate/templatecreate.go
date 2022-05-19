@@ -20,7 +20,7 @@ import (
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/buf/bufprint"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -50,7 +50,7 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <buf.build/owner/" + bufplugin.TemplatesPathName + "/template>",
+		Use:   name + " <buf.build/owner/" + bufremoteplugin.TemplatesPathName + "/template>",
 		Short: "Create a new Buf template.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
@@ -111,7 +111,7 @@ func run(
 	if err != nil {
 		return appcmd.NewInvalidArgumentError(err.Error())
 	}
-	templateConfig, err := bufplugin.ParseTemplateConfig(flags.Config)
+	templateConfig, err := bufremoteplugin.ParseTemplateConfig(flags.Config)
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func run(
 	if err != nil {
 		return err
 	}
-	remote, owner, name, err := bufplugin.ParseTemplatePath(templatePath)
+	remote, owner, name, err := bufremoteplugin.ParseTemplatePath(templatePath)
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func run(
 		owner,
 		name,
 		visibility,
-		bufplugin.TemplateConfigToProtoPluginConfigs(templateConfig),
+		bufremoteplugin.TemplateConfigToProtoPluginConfigs(templateConfig),
 	)
 	if err != nil {
 		return err

@@ -17,6 +17,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -35,6 +36,7 @@ const (
 	licenseTypeFlagName     = "license-type"
 	yearRangeFlagName       = "year-range"
 	diffFlagName            = "diff"
+	exitCodeFlagName        = "exit-code"
 )
 
 func main() {
@@ -57,6 +59,7 @@ type flags struct {
 	CopyrightHolder string
 	YearRange       string
 	Diff            bool
+	ExitCode        bool
 }
 
 func newFlags() *flags {
@@ -89,9 +92,18 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		false,
 		"Print a diff instead of modifying the files.",
 	)
+	flagSet.BoolVar(
+		&f.ExitCode,
+		exitCodeFlagName,
+		false,
+		fmt.Sprintf("Exit with a non-zero exit code if a diff is present. Only valid with %s.", diffFlagName),
+	)
 }
 
 func run(ctx context.Context, container app.Container, flags *flags) error {
+	if flags.ExitCode && !flags.Diff {
+		return appcmd.NewInvalidArgumentErrorf("cannot specify %s without %s", exitCodeFlagName, diffFlagName)
+	}
 	licenseType, err := licenseheader.ParseLicenseType(flags.LicenseType)
 	if err != nil {
 		return appcmd.NewInvalidArgumentErrorf("--%s: %v", licenseTypeFlagName, err)
@@ -134,8 +146,13 @@ func run(ctx context.Context, container app.Container, flags *flags) error {
 				if err != nil {
 					return err
 				}
-				if _, err := os.Stdout.Write(diffData); err != nil {
-					return err
+				if len(diffData) > 0 {
+					if _, err := os.Stdout.Write(diffData); err != nil {
+						return err
+					}
+					if flags.ExitCode {
+						return app.NewError(100, "")
+					}
 				}
 			} else {
 				fileInfo, err := os.Stat(filename)

@@ -170,11 +170,15 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`}`)
 		g.P(`}`)
 
+		g.P(`if p.addressMapper != nil {`)
+		g.P(`address = p.addressMapper(address)`)
+		g.P(`}`)
+
 		g.P(`return &`, structName, `Client{`)
 		g.P(`logger: p.logger,`)
 		g.P(`client: `, newClientGoIdentString, `(`)
 		g.P(`p.httpClient,`)
-		g.P(`p.addressMapper(address),`)
+		g.P(`address,`)
 		g.P(withGRPCIdentString, `(),`)
 		g.P(`),`)
 		g.P(`contextModifier: contextModifier,`)
