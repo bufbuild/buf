@@ -196,12 +196,6 @@ func wrapError(err error) error {
 	return fmt.Errorf("Failure: %w", err)
 }
 
-// isConnectError returns true if the given error can be interpreted as a Connect error
-func isConnectError(err error) bool {
-	var connectErr *connect.Error
-	return errors.As(err, &connectErr)
-}
-
 // isEmptyUnknownError returns true if the given
 // error is non-nil, but has an empty message
 // and an unknown error code.
