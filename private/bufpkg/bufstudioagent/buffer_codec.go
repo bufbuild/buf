@@ -23,8 +23,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// bufferCodec is a `connect.Codec` for use with clients of type
-// `connect.Client[bytes.Buffer, bytes.Buffer]` which does not attempt to parse
+// bufferCodec is a connect.Codec for use with clients of type
+// connect.Client[bytes.Buffer, bytes.Buffer] which does not attempt to parse
 // messages but instead allows the application layer to work on the buffers
 // directly. This is useful for creating proxies.
 type bufferCodec struct {

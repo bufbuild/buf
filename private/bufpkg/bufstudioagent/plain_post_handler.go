@@ -37,6 +37,27 @@ import (
 // from the request body.
 const maxMessageSizeBytesDefault = 1024 * 1024 * 5
 
+// plainPostHandler implements a POST handler for forwarding requests that can
+// be called with simple CORS requests.
+//
+// Simple CORS requests are limited [1] to certain headers and content types, so
+// this handler expects base64 encoded protobuf messages in the body and writes
+// out base64 encoded protobuf messages to be able to use Content-Type: text/plain.
+//
+// Because of the content-type restriction we do not define a protobuf service
+// that gets served by connect but instead use a plain post handler.
+//
+// [1] https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#simple_requests).
+type plainPostHandler struct {
+	Logger              *zap.Logger
+	MaxMessageSizeBytes int64
+	B64Encoding         *base64.Encoding
+	TLSClient           *http.Client
+	H2CClient           *http.Client
+	DisallowedHeaders   map[string]struct{}
+	ForwardHeaders      map[string]string
+}
+
 func newPlainPostHandler(
 	logger *zap.Logger,
 	disallowedHeaders map[string]struct{},
@@ -71,27 +92,6 @@ func newPlainPostHandler(
 			},
 		},
 	}
-}
-
-// plainPostHandler implements a POST handler for forwarding requests that can
-// be called with simple CORS requests.
-//
-// Simple CORS requests are limited [1] to certain headers and content types, so
-// this handler expects base64 encoded protobuf messages in the body and writes
-// out base64 encoded protobuf messages to be able to use Content-Type: text/plain.
-//
-// Because of the content-type restriction we do not define a protobuf service
-// that gets served by connect but instead use a plain post handler.
-//
-// [1] https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#simple_requests).
-type plainPostHandler struct {
-	Logger              *zap.Logger
-	MaxMessageSizeBytes int64
-	B64Encoding         *base64.Encoding
-	TLSClient           *http.Client
-	H2CClient           *http.Client
-	DisallowedHeaders   map[string]struct{}
-	ForwardHeaders      map[string]string
 }
 
 func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -14,28 +14,63 @@
 
 syntax = "proto3";
 
-// Because the request agent needs to be able to receive simple CORS requests,
-// we're limited to the text/plain Content-Type. This isn't suported out of the
-// box in gRPC-Web, so for now we avoid using it and do plain POST with base64
-// proto request/response messages.
+// The buf.alpha.studio.v1alpha1 package contains types used by the buf studio
+// agent. Because browsers are not capable of sending gRPC requests directly,
+// users can run a studio agent to that receives enveloped requests from the
+// browser and forwards them as gRPC requests.
 //
-// We may explore websocket transports later, at which point we should define
-// services methods here.
+// Ideally the agent would be simple protocol translating HTTP proxy without
+// requiring any custom envelope. Unfortunately, js in the browser cannot set
+// per request proxy configuration and we cannot specify that we want to open a
+// connection to the request agent while specifying a different server in the
+// request's Host header. The studio agent and UI could communicate this through
+// a custom header instead, but reading custom headers requires a CORS-preflight
+// request.
+//
+// To facilitate easier deployment it in environments with complicated edge
+// configuration, it is a goal for the agent and UI to communicate without the
+// need for a CORS-preflight requests. This limits our ability to use custom
+// headers and restricts allowed values for the Content-Type header. Due to this
+// we cannot simply use gRPC-Web with an additional header, but instead rely on
+// enveloping the request and responses in a base64 encoded binary proto message
+// sent over a POST endpoint with text/plain as Content-Type.
+//
+// We may explore other transports such as WebSockets or WebTransport, at which
+// point we should define proper proto services and methods here as well.
 package buf.alpha.studio.v1alpha1;
 
-message Metadata {
+// Headers encode HTTP headers.
+message Headers {
   string key = 1;
   repeated string value = 2;
 }
 
+// InvokeRequest encodes an enveloped RPC request. See the package documentation
+// for more information.
 message InvokeRequest {
+  // Target server the agent should forward this request to, e.g.
+  // "https://api.acme.corp/pkg.Service/Method". Using the "http" scheme will
+  // cause the request to be forwarded as h2c, whereas "https" forwards the
+  // request with regular h2.
   string target = 1;
-  repeated Metadata headers = 2;
+
+  // Headers to send with the request. If body is set, a Content-Type header
+  // must be specified.
+  repeated Headers headers = 2;
+
+  // The message to be sent in the request (without any protocol specific framing).
   bytes body = 3;
 }
 
+// InvokeResponse encodes an enveloped RPC response. See the package documentation
+// for more information.
 message InvokeResponse {
-  repeated Metadata headers = 1;
+  // Headers received in the response.
+  repeated Headers headers = 1;
+
+  // The encoded message received in the response (without protocol specific framing).
   bytes body = 2;
-  repeated Metadata trailers = 3;
+
+  // Trailers received in the response.
+  repeated Headers trailers = 3;
 }
