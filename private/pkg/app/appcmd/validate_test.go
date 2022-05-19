@@ -42,5 +42,4 @@ func TestValidateRemoteHasNoPaths(t *testing.T) {
 
 	err = ValidateRemoteHasNoPaths("buf.build/test1/test2")
 	assert.Equal(t, err.Error(), `invalid remote address, must not contain any paths. Try removing "/test1/test2" from the address.`)
-
 }
