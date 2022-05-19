@@ -169,13 +169,15 @@ func wrapError(err error) error {
 	if err == nil {
 		return nil
 	}
+	connectErr, ok := connect.AsError(err)
+
 	// If error is empty and not a Connect error, we return it as-is.
-	if _, ok := connect.AsError(err); err.Error() == "" && !ok {
+	if !ok && err.Error() == "" {
 		return err
 	}
 	// Attempt to convert err to a Connect error.  If it can be converted, then interpret it and return an intuitive error
-	if connectError := (&connect.Error{}); errors.As(err, &connectError) {
-		connectCode := connectError.Code()
+	if ok {
+		connectCode := connectErr.Code()
 		switch {
 		case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
 			return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
@@ -189,7 +191,7 @@ func wrapError(err error) error {
 
 			return fmt.Errorf(msg)
 		}
-		return fmt.Errorf("Failure: %s", connectError.Message())
+		return fmt.Errorf("Failure: %s", connectErr.Message())
 	}
 
 	// Error was not a Connect error
