@@ -21,7 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
-	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/command"
@@ -32,7 +31,6 @@ import (
 )
 
 const (
-	trackFlagName           = "track"
 	tagFlagName             = "tag"
 	tagFlagShortName        = "t"
 	errorFormatFlagName     = "error-format"
@@ -61,7 +59,6 @@ func NewCommand(
 }
 
 type flags struct {
-	Tracks          []string
 	Tags            []string
 	ErrorFormat     string
 	DisableSymlinks bool
@@ -76,12 +73,6 @@ func newFlags() *flags {
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
 	bufcli.BindInputHashtag(flagSet, &f.InputHashtag)
 	bufcli.BindDisableSymlinks(flagSet, &f.DisableSymlinks, disableSymlinksFlagName)
-	flagSet.StringSliceVar(
-		&f.Tracks,
-		trackFlagName,
-		nil,
-		"Append the pushed module to this track. Multiple tracks are appended if specified multiple times.",
-	)
 	flagSet.StringSliceVarP(
 		&f.Tags,
 		tagFlagName,
@@ -138,10 +129,6 @@ func run(
 	if err != nil {
 		return err
 	}
-	tracks := flags.Tracks
-	if tracks == nil {
-		tracks = []string{bufmoduleref.MainTrack}
-	}
 	localModulePin, err := service.Push(
 		ctx,
 		moduleIdentity.Owner(),
@@ -149,7 +136,7 @@ func run(
 		"",
 		protoModule,
 		flags.Tags,
-		tracks,
+		nil,
 	)
 	if err != nil {
 		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
