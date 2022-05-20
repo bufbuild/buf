@@ -112,8 +112,6 @@ func (h *protocProxyHandler) Handle(
 	if getExperimentalAllowProto3Optional(protocVersion) {
 		args = append(
 			args,
-			// this flag may be deleted someday
-			// in that case, we will have to check that minor < certain_value
 			"--experimental_allow_proto3_optional",
 		)
 	}
