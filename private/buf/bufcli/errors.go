@@ -175,7 +175,7 @@ func wrapError(err error) error {
 	if !ok && err.Error() == "" {
 		return err
 	}
-	// Attempt to convert err to a Connect error.  If it can be converted, then interpret it and return an intuitive error
+	// If the error is a Connect error, then interpret it and return an intuitive message
 	if ok {
 		connectCode := connectErr.Code()
 		switch {
