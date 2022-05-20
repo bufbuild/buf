@@ -123,8 +123,8 @@ func ValidateCommit(commit string) error {
 // It performs client-side validation only, and is limited to properties
 // we do not think will change in the future.
 func ValidateBranch(branch string) error {
-	if branch != MainBranch {
-		return fmt.Errorf("branch is not %s", MainBranch)
+	if branch != Main {
+		return fmt.Errorf("branch is not %s", Main)
 	}
 	//if branch == "" {
 	//	return errors.New("repository branch is required")

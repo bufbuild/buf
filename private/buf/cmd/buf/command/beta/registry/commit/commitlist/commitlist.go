@@ -116,7 +116,7 @@ func run(
 
 	reference := moduleReference.Reference()
 	if reference == "" {
-		reference = bufmoduleref.MainTrack
+		reference = bufmoduleref.Main
 	}
 
 	repositoryCommits, nextPageToken, err := service.ListRepositoryCommitsByReference(
