@@ -27,14 +27,9 @@ func ValidateRemoteNotEmpty(remote string) error {
 }
 
 func ValidateRemoteHasNoPaths(remote string) error {
-	parts := strings.Split(remote, "/")
-	if len(parts) > 1 {
-		paths := "/" + strings.Join(parts[1:], "/")
-		// The remote has no paths, but ends in a /, which is valid
-		if paths == "/" {
-			return nil
-		}
-		return NewInvalidArgumentError(fmt.Sprintf(`invalid remote address, must not contain any paths. Try removing "%s" from the address.`, paths))
+	_, path, ok := strings.Cut(remote, "/")
+	if ok && path != "" {
+		return NewInvalidArgumentError(fmt.Sprintf(`invalid remote address, must not contain any paths. Try removing "/%s" from the address.`, path))
 	}
 	return nil
 }
