@@ -19,6 +19,7 @@ import (
 	"strings"
 )
 
+// ValidateRemoteNotEmpty validates that the given remote address is not an empty string
 func ValidateRemoteNotEmpty(remote string) error {
 	if remote == "" {
 		return NewInvalidArgumentError("you must specify a remote module")
@@ -26,6 +27,7 @@ func ValidateRemoteNotEmpty(remote string) error {
 	return nil
 }
 
+// ValidateRemoteHasNoPaths validates that the given remote address contains no paths/subdirectories after the root
 func ValidateRemoteHasNoPaths(remote string) error {
 	_, path, ok := strings.Cut(remote, "/")
 	if ok && path != "" {
