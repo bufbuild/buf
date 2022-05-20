@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
@@ -186,7 +187,8 @@ func wrapError(err error) error {
 			// If the returned error is Unavailable, then determine if this is a DNS error.  If so, get the address used
 			// so that we can display a more helpful error message.
 			if dnsError := (&net.DNSError{}); errors.As(err, &dnsError) && dnsError.IsNotFound {
-				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, buftransport.TrimAPISubdomain(dnsError.Name))
+				// The subdomain is added internally during transport so trim it off when showing the user the invalid address that they entered
+				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, strings.TrimPrefix(dnsError.Name, buftransport.APISubdomain+"."))
 			}
 
 			return fmt.Errorf(msg)
