@@ -35,6 +35,8 @@ const (
 	tagFlagShortName        = "t"
 	errorFormatFlagName     = "error-format"
 	disableSymlinksFlagName = "disable-symlinks"
+	// deprecated
+	trackFlagName = "track"
 )
 
 // NewCommand returns a new Command.
@@ -62,6 +64,8 @@ type flags struct {
 	Tags            []string
 	ErrorFormat     string
 	DisableSymlinks bool
+	// Deprecated
+	Tracks []string
 	// special
 	InputHashtag string
 }
@@ -89,6 +93,13 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 			stringutil.SliceToString(bufanalysis.AllFormatStrings),
 		),
 	)
+	flagSet.StringSliceVar(
+		&f.Tracks,
+		trackFlagName,
+		nil,
+		"Do not use. This flag never had any effect",
+	)
+	_ = flagSet.MarkHidden(trackFlagName)
 }
 
 func run(
@@ -96,6 +107,9 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) (retErr error) {
+	if len(flags.Tracks) > 0 {
+		return appcmd.NewInvalidArgumentErrorf("--%s has never had any effect, do not use.", trackFlagName)
+	}
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
