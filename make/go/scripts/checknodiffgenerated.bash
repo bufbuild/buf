@@ -7,9 +7,7 @@ set -euo pipefail
 STATUS_SHORT_PRE_FILE="$(mktemp)"
 STATUS_SHORT_POST_FILE="$(mktemp)"
 STATUS_SHORT_DIFF_FILE="$(mktemp)"
-trap 'rm -rf "${STATUS_SHORT_PRE_FILE}"' EXIT
-trap 'rm -rf "${STATUS_SHORT_POST_FILE}"' EXIT
-trap 'rm -rf "${STATUS_SHORT_DIFF_FILE}"' EXIT
+trap 'rm -rf "${STATUS_SHORT_PRE_FILE}" "${STATUS_SHORT_POST_FILE}" "${STATUS_SHORT_DIFF_FILE}"' EXIT
 
 git status --short > "${STATUS_SHORT_PRE_FILE}"
 "$@"
