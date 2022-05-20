@@ -36,10 +36,10 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StudioServiceClient interface {
-	// ListPresetAgents returns a list of preset agents in the server.
-	ListPresetAgents(ctx context.Context, in *ListPresetAgentsRequest, opts ...grpc.CallOption) (*ListPresetAgentsResponse, error)
-	// SetPresetAgents set the list of preset agents in the server.
-	SetPresetAgents(ctx context.Context, in *SetPresetAgentsRequest, opts ...grpc.CallOption) (*SetPresetAgentsResponse, error)
+	// ListStudioAgentPresets returns a list of agent presets in the server.
+	ListStudioAgentPresets(ctx context.Context, in *ListStudioAgentPresetsRequest, opts ...grpc.CallOption) (*ListStudioAgentPresetsResponse, error)
+	// SetStudioAgentPresets set the list of agent presets in the server.
+	SetStudioAgentPresets(ctx context.Context, in *SetStudioAgentPresetsRequest, opts ...grpc.CallOption) (*SetStudioAgentPresetsResponse, error)
 }
 
 type studioServiceClient struct {
@@ -50,18 +50,18 @@ func NewStudioServiceClient(cc grpc.ClientConnInterface) StudioServiceClient {
 	return &studioServiceClient{cc}
 }
 
-func (c *studioServiceClient) ListPresetAgents(ctx context.Context, in *ListPresetAgentsRequest, opts ...grpc.CallOption) (*ListPresetAgentsResponse, error) {
-	out := new(ListPresetAgentsResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.StudioService/ListPresetAgents", in, out, opts...)
+func (c *studioServiceClient) ListStudioAgentPresets(ctx context.Context, in *ListStudioAgentPresetsRequest, opts ...grpc.CallOption) (*ListStudioAgentPresetsResponse, error) {
+	out := new(ListStudioAgentPresetsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.StudioService/ListStudioAgentPresets", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *studioServiceClient) SetPresetAgents(ctx context.Context, in *SetPresetAgentsRequest, opts ...grpc.CallOption) (*SetPresetAgentsResponse, error) {
-	out := new(SetPresetAgentsResponse)
-	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.StudioService/SetPresetAgents", in, out, opts...)
+func (c *studioServiceClient) SetStudioAgentPresets(ctx context.Context, in *SetStudioAgentPresetsRequest, opts ...grpc.CallOption) (*SetStudioAgentPresetsResponse, error) {
+	out := new(SetStudioAgentPresetsResponse)
+	err := c.cc.Invoke(ctx, "/buf.alpha.registry.v1alpha1.StudioService/SetStudioAgentPresets", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -72,21 +72,21 @@ func (c *studioServiceClient) SetPresetAgents(ctx context.Context, in *SetPreset
 // All implementations should embed UnimplementedStudioServiceServer
 // for forward compatibility
 type StudioServiceServer interface {
-	// ListPresetAgents returns a list of preset agents in the server.
-	ListPresetAgents(context.Context, *ListPresetAgentsRequest) (*ListPresetAgentsResponse, error)
-	// SetPresetAgents set the list of preset agents in the server.
-	SetPresetAgents(context.Context, *SetPresetAgentsRequest) (*SetPresetAgentsResponse, error)
+	// ListStudioAgentPresets returns a list of agent presets in the server.
+	ListStudioAgentPresets(context.Context, *ListStudioAgentPresetsRequest) (*ListStudioAgentPresetsResponse, error)
+	// SetStudioAgentPresets set the list of agent presets in the server.
+	SetStudioAgentPresets(context.Context, *SetStudioAgentPresetsRequest) (*SetStudioAgentPresetsResponse, error)
 }
 
 // UnimplementedStudioServiceServer should be embedded to have forward compatible implementations.
 type UnimplementedStudioServiceServer struct {
 }
 
-func (UnimplementedStudioServiceServer) ListPresetAgents(context.Context, *ListPresetAgentsRequest) (*ListPresetAgentsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListPresetAgents not implemented")
+func (UnimplementedStudioServiceServer) ListStudioAgentPresets(context.Context, *ListStudioAgentPresetsRequest) (*ListStudioAgentPresetsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListStudioAgentPresets not implemented")
 }
-func (UnimplementedStudioServiceServer) SetPresetAgents(context.Context, *SetPresetAgentsRequest) (*SetPresetAgentsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetPresetAgents not implemented")
+func (UnimplementedStudioServiceServer) SetStudioAgentPresets(context.Context, *SetStudioAgentPresetsRequest) (*SetStudioAgentPresetsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetStudioAgentPresets not implemented")
 }
 
 // UnsafeStudioServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -100,38 +100,38 @@ func RegisterStudioServiceServer(s grpc.ServiceRegistrar, srv StudioServiceServe
 	s.RegisterService(&StudioService_ServiceDesc, srv)
 }
 
-func _StudioService_ListPresetAgents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListPresetAgentsRequest)
+func _StudioService_ListStudioAgentPresets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListStudioAgentPresetsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StudioServiceServer).ListPresetAgents(ctx, in)
+		return srv.(StudioServiceServer).ListStudioAgentPresets(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.StudioService/ListPresetAgents",
+		FullMethod: "/buf.alpha.registry.v1alpha1.StudioService/ListStudioAgentPresets",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StudioServiceServer).ListPresetAgents(ctx, req.(*ListPresetAgentsRequest))
+		return srv.(StudioServiceServer).ListStudioAgentPresets(ctx, req.(*ListStudioAgentPresetsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StudioService_SetPresetAgents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetPresetAgentsRequest)
+func _StudioService_SetStudioAgentPresets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetStudioAgentPresetsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StudioServiceServer).SetPresetAgents(ctx, in)
+		return srv.(StudioServiceServer).SetStudioAgentPresets(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/buf.alpha.registry.v1alpha1.StudioService/SetPresetAgents",
+		FullMethod: "/buf.alpha.registry.v1alpha1.StudioService/SetStudioAgentPresets",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StudioServiceServer).SetPresetAgents(ctx, req.(*SetPresetAgentsRequest))
+		return srv.(StudioServiceServer).SetStudioAgentPresets(ctx, req.(*SetStudioAgentPresetsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -144,12 +144,12 @@ var StudioService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*StudioServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ListPresetAgents",
-			Handler:    _StudioService_ListPresetAgents_Handler,
+			MethodName: "ListStudioAgentPresets",
+			Handler:    _StudioService_ListStudioAgentPresets_Handler,
 		},
 		{
-			MethodName: "SetPresetAgents",
-			Handler:    _StudioService_SetPresetAgents_Handler,
+			MethodName: "SetStudioAgentPresets",
+			Handler:    _StudioService_SetStudioAgentPresets_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

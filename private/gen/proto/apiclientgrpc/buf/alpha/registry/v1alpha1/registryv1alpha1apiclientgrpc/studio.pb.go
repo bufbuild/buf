@@ -28,14 +28,14 @@ type studioService struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// ListPresetAgents returns a list of preset agents in the server.
-func (s *studioService) ListPresetAgents(ctx context.Context) (agents []*v1alpha1.PresetAgent, _ error) {
+// ListStudioAgentPresets returns a list of agent presets in the server.
+func (s *studioService) ListStudioAgentPresets(ctx context.Context) (agents []*v1alpha1.StudioAgentPreset, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.ListPresetAgents(
+	response, err := s.client.ListStudioAgentPresets(
 		ctx,
-		&v1alpha1.ListPresetAgentsRequest{},
+		&v1alpha1.ListStudioAgentPresetsRequest{},
 	)
 	if err != nil {
 		return nil, err
@@ -43,14 +43,14 @@ func (s *studioService) ListPresetAgents(ctx context.Context) (agents []*v1alpha
 	return response.Agents, nil
 }
 
-// SetPresetAgents set the list of preset agents in the server.
-func (s *studioService) SetPresetAgents(ctx context.Context, agents []*v1alpha1.PresetAgent) (_ error) {
+// SetStudioAgentPresets set the list of agent presets in the server.
+func (s *studioService) SetStudioAgentPresets(ctx context.Context, agents []*v1alpha1.StudioAgentPreset) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.SetPresetAgents(
+	_, err := s.client.SetStudioAgentPresets(
 		ctx,
-		&v1alpha1.SetPresetAgentsRequest{
+		&v1alpha1.SetStudioAgentPresetsRequest{
 			Agents: agents,
 		},
 	)

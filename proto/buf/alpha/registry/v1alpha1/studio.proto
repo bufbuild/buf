@@ -16,8 +16,8 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-// PresetAgent is the information about an agent in the studio.
-message PresetAgent {
+// StudioAgentPreset is the information about an agent preset in the studio.
+message StudioAgentPreset {
   // The target agent URL in the studio.
   string url = 1;
   // The optional alias of the agent URL.
@@ -26,20 +26,20 @@ message PresetAgent {
 
 // StudioService is the Studio service.
 service StudioService {
-  // ListPresetAgents returns a list of preset agents in the server.
-  rpc ListPresetAgents(ListPresetAgentsRequest) returns (ListPresetAgentsResponse);
-  // SetPresetAgents set the list of preset agents in the server.
-  rpc SetPresetAgents(SetPresetAgentsRequest) returns (SetPresetAgentsResponse);
+  // ListStudioAgentPresets returns a list of agent presets in the server.
+  rpc ListStudioAgentPresets(ListStudioAgentPresetsRequest) returns (ListStudioAgentPresetsResponse);
+  // SetStudioAgentPresets set the list of agent presets in the server.
+  rpc SetStudioAgentPresets(SetStudioAgentPresetsRequest) returns (SetStudioAgentPresetsResponse);
 }
 
-message ListPresetAgentsRequest {}
+message ListStudioAgentPresetsRequest {}
 
-message ListPresetAgentsResponse {
-  repeated PresetAgent agents = 1;
+message ListStudioAgentPresetsResponse {
+  repeated StudioAgentPreset agents = 1;
 }
 
-message SetPresetAgentsRequest {
-  repeated PresetAgent agents = 1;
+message SetStudioAgentPresetsRequest {
+  repeated StudioAgentPreset agents = 1;
 }
 
-message SetPresetAgentsResponse {}
+message SetStudioAgentPresetsResponse {}
