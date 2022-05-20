@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
+	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/connect-go"
@@ -82,10 +83,10 @@ func run(
 ) error {
 	bufcli.WarnAlphaCommand(ctx, container)
 	remote := container.Arg(0)
-	if err := appcmd.ValidateRemoteNotEmpty(remote); err != nil {
+	if err := bufmoduleref.ValidateRemoteNotEmpty(remote); err != nil {
 		return err
 	}
-	if err := appcmd.ValidateRemoteHasNoPaths(remote); err != nil {
+	if err := bufmoduleref.ValidateRemoteHasNoPaths(remote); err != nil {
 		return err
 	}
 	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
