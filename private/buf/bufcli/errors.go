@@ -170,7 +170,7 @@ func wrapError(err error) error {
 	if err == nil {
 		return nil
 	}
-	connectErr, ok := connect.AsError(err)
+	connectErr, ok := asConnectError(err)
 
 	// If error is empty and not a Connect error, we return it as-is.
 	if !ok && err.Error() == "" {
@@ -198,6 +198,13 @@ func wrapError(err error) error {
 
 	// Error was not a Connect error
 	return fmt.Errorf("Failure: %w", err)
+}
+
+// asConnectError uses errors.As to unwrap any error and look for a *connect.Error.
+func asConnectError(err error) (*connect.Error, bool) {
+	var connectErr *connect.Error
+	ok := errors.As(err, &connectErr)
+	return connectErr, ok
 }
 
 // isEmptyUnknownError returns true if the given

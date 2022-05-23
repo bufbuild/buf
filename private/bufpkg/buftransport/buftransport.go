@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	// APISubdomain is the subdomain used for calls to the BSR API
 	APISubdomain = "api"
 
 	schemeHTTPS = "https"
