@@ -109,12 +109,9 @@ func (h *protocProxyHandler) Handle(
 		fmt.Sprintf("--descriptor_set_in=%s", descriptorFilePath),
 		fmt.Sprintf("--%s_out=%s", h.pluginName, tmpDir.AbsPath()),
 	}
-	featureProto3Optional := getFeatureProto3Optional(protocVersion)
-	if featureProto3Optional {
+	if getExperimentalAllowProto3Optional(protocVersion) {
 		args = append(
 			args,
-			// this flag may be deleted someday
-			// in that case, we will have to check that minor < certain_value
 			"--experimental_allow_proto3_optional",
 		)
 	}
@@ -144,7 +141,7 @@ func (h *protocProxyHandler) Handle(
 		// We don't know if this is a system error or plugin error, so we assume system error
 		return handlePotentialTooManyFilesError(err)
 	}
-	if featureProto3Optional {
+	if getFeatureProto3Optional(protocVersion) {
 		responseWriter.SetFeatureProto3Optional()
 	}
 	// no need for symlinks here, and don't want to support
