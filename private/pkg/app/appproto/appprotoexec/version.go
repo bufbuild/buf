@@ -46,44 +46,58 @@ func parseVersionForCLIVersion(value string) (_ *pluginpb.Version, retErr error)
 	// protoc always starts with "libprotoc "
 	value = strings.TrimPrefix(value, "libprotoc ")
 	split := strings.Split(value, ".")
-	if len(split) != 3 {
-		return nil, errors.New("more than three components split by '.'")
+	if n := len(split); n != 2 && n != 3 {
+		return nil, fmt.Errorf("%d components split by '.'", n)
 	}
 	major, err := strconv.ParseInt(split[0], 10, 32)
 	if err != nil {
 		return nil, err
 	}
-	minor, err := strconv.ParseInt(split[1], 10, 32)
-	if err != nil {
-		return nil, err
-	}
-	patchSplit := strings.Split(split[2], "-")
-	patch, err := strconv.ParseInt(patchSplit[0], 10, 32)
-	if err != nil {
-		return nil, err
-	}
 	var suffix string
-	switch len(patchSplit) {
+	restSplit := strings.SplitN(split[len(split)-1], "-", 2)
+	lastNumber, err := strconv.ParseInt(restSplit[0], 10, 32)
+	if err != nil {
+		return nil, err
+	}
+	switch len(restSplit) {
 	case 1:
 	case 2:
-		suffix = patchSplit[1]
+		suffix = restSplit[1]
 	default:
 		return nil, errors.New("more than two patch components split by '-'")
+	}
+	var minor int64
+	var patch int64
+	switch len(split) {
+	case 2:
+		minor = lastNumber
+	case 3:
+		minor, err = strconv.ParseInt(split[1], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		patch = lastNumber
 	}
 	return newVersion(int32(major), int32(minor), int32(patch), suffix), nil
 }
 
 func versionString(version *pluginpb.Version) string {
-	value := fmt.Sprintf("%d.%d.%d", version.GetMajor(), version.GetMinor(), version.GetPatch())
+	var value string
+	if version.GetMajor() <= 3 || version.GetPatch() != 0 {
+		value = fmt.Sprintf("%d.%d.%d", version.GetMajor(), version.GetMinor(), version.GetPatch())
+	} else {
+		value = fmt.Sprintf("%d.%d", version.GetMajor(), version.GetMinor())
+	}
 	if version.Suffix != nil {
 		value = value + "-" + version.GetSuffix()
 	}
 	return value
 }
 
-func getFeatureProto3Optional(version *pluginpb.Version) bool {
+// Should I set the --experimental_allow_proto3_optional flag?
+func getExperimentalAllowProto3Optional(version *pluginpb.Version) bool {
 	if version.GetSuffix() == "buf" {
-		return true
+		return false
 	}
 	if version.GetMajor() != 3 {
 		return false
@@ -91,12 +105,31 @@ func getFeatureProto3Optional(version *pluginpb.Version) bool {
 	return version.GetMinor() > 11 && version.GetMinor() < 15
 }
 
+// Should I notify that I am OK with the proto3 optional feature?
+func getFeatureProto3Optional(version *pluginpb.Version) bool {
+	if version.GetSuffix() == "buf" {
+		return true
+	}
+	if version.GetMajor() < 3 {
+		return false
+	}
+	if version.GetMajor() == 3 {
+		return version.GetMinor() > 11
+	}
+	// version.GetMajor() > 3
+	return true
+}
+
 func getKotlinSupported(version *pluginpb.Version) bool {
 	if version.GetSuffix() == "buf" {
 		return true
 	}
-	if version.GetMajor() != 3 {
+	if version.GetMajor() < 3 {
 		return false
 	}
-	return version.GetMinor() > 16
+	if version.GetMajor() == 3 {
+		return version.GetMinor() > 16
+	}
+	// version.GetMajor() > 3
+	return true
 }
