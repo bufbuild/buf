@@ -9,7 +9,7 @@ GO_BINS := $(GO_BINS) \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-api \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclient \
 	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientgrpc \
-	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-connectclient \
+	private/bufpkg/bufprotoplugin/cmd/protoc-gen-go-apiclientconnect \
 	private/bufpkg/bufstyle/cmd/bufstyle \
 	private/pkg/bandeps/cmd/bandeps \
 	private/pkg/git/cmd/git-ls-files-unstaged \
@@ -102,7 +102,7 @@ bufgeneratedeps:: \
 	installprotoc-gen-go-api \
 	installprotoc-gen-go-apiclient \
 	installprotoc-gen-go-apiclientgrpc \
-	installprotoc-gen-go-connectclient \
+	installprotoc-gen-go-apiclientconnect \
 	$(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) $(PROTOC_GEN_CONNECT_GO)
 
 .PHONY: bufgeneratecleango
@@ -125,7 +125,7 @@ bufgeneratesteps:: \
 
 .PHONY: bufrelease
 bufrelease: $(MINISIGN)
-	DOCKER_IMAGE=golang:1.18.1-buster bash make/buf/scripts/release.bash
+	DOCKER_IMAGE=golang:1.18.2-buster bash make/buf/scripts/release.bash
 
 # We have to manually set the Homebrew version on the Homebrew badge as there
 # is no badge on shields.io for Homebrew packages outside of homebrew-core

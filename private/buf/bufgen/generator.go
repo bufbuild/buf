@@ -21,7 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin"
+	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -271,7 +271,7 @@ func (g *generator) execRemotePlugin(
 	includeImports bool,
 	includeWellKnownTypes bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	remote, owner, name, version, err := bufplugin.ParsePluginVersionPath(pluginConfig.Remote)
+	remote, owner, name, version, err := bufremoteplugin.ParsePluginVersionPath(pluginConfig.Remote)
 	if err != nil {
 		return nil, fmt.Errorf("invalid plugin path: %w", err)
 	}

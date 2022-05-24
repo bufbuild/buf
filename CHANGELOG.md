@@ -7,6 +7,8 @@
   a file with the same name, but with different file types (i.e. a
   regular file vs. a directory).
 - Fix check for `PACKAGE_SERVICE_NO_DELETE` to detect deleted services.
+- Remove `buf beta registry track`.
+- Remove `buf beta registry branch`.
 
 ## [v1.4.0] - 2022-04-21
 

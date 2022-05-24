@@ -115,17 +115,6 @@ func NewRepositoryTagPrinter(writer io.Writer) RepositoryTagPrinter {
 	return newRepositoryTagPrinter(writer)
 }
 
-// RepositoryTrackPrinter is a repository track printer.
-type RepositoryTrackPrinter interface {
-	PrintRepositoryTrack(format Format, message *registryv1alpha1.RepositoryTrack) error
-	PrintRepositoryTracks(format Format, nextPageToken string, messages ...*registryv1alpha1.RepositoryTrack) error
-}
-
-// NewRepositoryTrackPrinter returns a new RepositoryTrackPrinter.
-func NewRepositoryTrackPrinter(writer io.Writer) RepositoryTrackPrinter {
-	return newRepositoryTrackPrinter(writer)
-}
-
 // RepositoryCommitPrinter is a repository commit printer.
 type RepositoryCommitPrinter interface {
 	PrintRepositoryCommit(ctx context.Context, format Format, repositoryCommit *registryv1alpha1.RepositoryCommit) error
