@@ -28,7 +28,7 @@ message StudioAgentPreset {
 service StudioService {
   // ListStudioAgentPresets returns a list of agent presets in the server.
   rpc ListStudioAgentPresets(ListStudioAgentPresetsRequest) returns (ListStudioAgentPresetsResponse);
-  // SetStudioAgentPresets set the list of agent presets in the server.
+  // SetStudioAgentPresets sets the list of agent presets in the server.
   rpc SetStudioAgentPresets(SetStudioAgentPresetsRequest) returns (SetStudioAgentPresetsResponse);
 }
 
