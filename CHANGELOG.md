@@ -9,6 +9,7 @@
 - Fix check for `PACKAGE_SERVICE_NO_DELETE` to detect deleted services.
 - Remove `buf beta registry track`.
 - Remove `buf beta registry branch`.
+- Switch RPC transport
 
 ## [v1.4.0] - 2022-04-21
 
