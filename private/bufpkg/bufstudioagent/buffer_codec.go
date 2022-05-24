@@ -41,7 +41,7 @@ func (b *bufferCodec) Marshal(src any) ([]byte, error) {
 		return typedSrc.Bytes(), nil
 	case proto.Message:
 		// When the codec is named "proto", connect will assume that it
-		// may also be used to unmarshall the errors in the
+		// may also be used to unmarshal the errors in the
 		// grpc-status-details-bin trailer. The type used is not
 		// exported so we match against the general proto.Message.
 		return proto.Marshal(typedSrc)
@@ -58,7 +58,7 @@ func (b *bufferCodec) Unmarshal(src []byte, dst any) error {
 		return err
 	case proto.Message:
 		// When the codec is named "proto", connect will assume that it
-		// may also be used to unmarshall the errors in the
+		// may also be used to unmarshal the errors in the
 		// grpc-status-details-bin trailer. The type used is not
 		// exported so we match against the general proto.Message.
 		return proto.Unmarshal(src, destination)
