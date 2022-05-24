@@ -38,7 +38,7 @@ const _ = grpc.SupportPackageIsVersion7
 type StudioServiceClient interface {
 	// ListStudioAgentPresets returns a list of agent presets in the server.
 	ListStudioAgentPresets(ctx context.Context, in *ListStudioAgentPresetsRequest, opts ...grpc.CallOption) (*ListStudioAgentPresetsResponse, error)
-	// SetStudioAgentPresets set the list of agent presets in the server.
+	// SetStudioAgentPresets sets the list of agent presets in the server.
 	SetStudioAgentPresets(ctx context.Context, in *SetStudioAgentPresetsRequest, opts ...grpc.CallOption) (*SetStudioAgentPresetsResponse, error)
 }
 
@@ -74,7 +74,7 @@ func (c *studioServiceClient) SetStudioAgentPresets(ctx context.Context, in *Set
 type StudioServiceServer interface {
 	// ListStudioAgentPresets returns a list of agent presets in the server.
 	ListStudioAgentPresets(context.Context, *ListStudioAgentPresetsRequest) (*ListStudioAgentPresetsResponse, error)
-	// SetStudioAgentPresets set the list of agent presets in the server.
+	// SetStudioAgentPresets sets the list of agent presets in the server.
 	SetStudioAgentPresets(context.Context, *SetStudioAgentPresetsRequest) (*SetStudioAgentPresetsResponse, error)
 }
 

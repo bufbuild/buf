@@ -46,7 +46,7 @@ func (s *studioServiceClient) ListStudioAgentPresets(ctx context.Context) (agent
 	return response.Msg.Agents, nil
 }
 
-// SetStudioAgentPresets set the list of agent presets in the server.
+// SetStudioAgentPresets sets the list of agent presets in the server.
 func (s *studioServiceClient) SetStudioAgentPresets(ctx context.Context, agents []*v1alpha1.StudioAgentPreset) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)

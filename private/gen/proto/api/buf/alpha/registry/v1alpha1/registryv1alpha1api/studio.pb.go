@@ -25,6 +25,6 @@ import (
 type StudioService interface {
 	// ListStudioAgentPresets returns a list of agent presets in the server.
 	ListStudioAgentPresets(ctx context.Context) (agents []*v1alpha1.StudioAgentPreset, err error)
-	// SetStudioAgentPresets set the list of agent presets in the server.
+	// SetStudioAgentPresets sets the list of agent presets in the server.
 	SetStudioAgentPresets(ctx context.Context, agents []*v1alpha1.StudioAgentPreset) (err error)
 }

@@ -43,7 +43,7 @@ const (
 type StudioServiceClient interface {
 	// ListStudioAgentPresets returns a list of agent presets in the server.
 	ListStudioAgentPresets(context.Context, *connect_go.Request[v1alpha1.ListStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.ListStudioAgentPresetsResponse], error)
-	// SetStudioAgentPresets set the list of agent presets in the server.
+	// SetStudioAgentPresets sets the list of agent presets in the server.
 	SetStudioAgentPresets(context.Context, *connect_go.Request[v1alpha1.SetStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.SetStudioAgentPresetsResponse], error)
 }
 
@@ -91,7 +91,7 @@ func (c *studioServiceClient) SetStudioAgentPresets(ctx context.Context, req *co
 type StudioServiceHandler interface {
 	// ListStudioAgentPresets returns a list of agent presets in the server.
 	ListStudioAgentPresets(context.Context, *connect_go.Request[v1alpha1.ListStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.ListStudioAgentPresetsResponse], error)
-	// SetStudioAgentPresets set the list of agent presets in the server.
+	// SetStudioAgentPresets sets the list of agent presets in the server.
 	SetStudioAgentPresets(context.Context, *connect_go.Request[v1alpha1.SetStudioAgentPresetsRequest]) (*connect_go.Response[v1alpha1.SetStudioAgentPresetsResponse], error)
 }
 
