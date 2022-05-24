@@ -28,13 +28,8 @@ import (
 )
 
 const (
-	// MainTrack is the name of the track created for every repository.
-	// This is the default track used if no track is specified.
-	MainTrack = "main"
-
-	// MainBranch is the name of the branch created for every repository.
-	// This is the default branch used if no branch or commit is specified.
-	MainBranch = MainTrack
+	// Main is the default reference used if no other reference is specified.
+	Main = "main"
 )
 
 // FileInfo contains module file info.
@@ -249,7 +244,7 @@ func ModuleReferenceForString(path string) (ModuleReference, error) {
 	}
 	if reference == "" {
 		// Default to the main branch if a ':' separator was not specified.
-		reference = MainBranch
+		reference = Main
 	}
 	return NewModuleReference(remote, owner, repository, reference)
 }
