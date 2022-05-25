@@ -34,11 +34,18 @@ func NewConnectClientProvider(
 	for _, option := range options {
 		option(registryProviderOptions)
 	}
+	providerOptions := []registryv1alpha1apiclientconnect.ProviderOption{
+		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
+		registryv1alpha1apiclientconnect.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
+	}
+	if registryProviderOptions.withGRPC {
+		providerOptions = append(providerOptions, registryv1alpha1apiclientconnect.WithGRPC())
+	}
+	// registryv1alpha1apiclientconnect.WithGRPC(registryProviderOptions.withGRPC),
 	return registryv1alpha1apiclientconnect.NewProvider(
 		logger,
 		client,
-		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
-		registryv1alpha1apiclientconnect.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
+		providerOptions...,
 	), nil
 }
 
@@ -48,6 +55,7 @@ type RegistryProviderOption func(*registryProviderOptions)
 type registryProviderOptions struct {
 	addressMapper           func(string) string
 	contextModifierProvider func(string) (func(context.Context) context.Context, error)
+	withGRPC                bool
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps
@@ -64,5 +72,13 @@ func RegistryProviderWithAddressMapper(addressMapper func(string) string) Regist
 func RegistryProviderWithContextModifierProvider(contextModifierProvider func(address string) (func(context.Context) context.Context, error)) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
 		options.contextModifierProvider = contextModifierProvider
+	}
+}
+
+// RegistryProviderWithGRPC returns a new RegistryProviderOption that allows for configuration of the underlying transport
+// of a provider
+func RegistryProviderWithGRPC() RegistryProviderOption {
+	return func(options *registryProviderOptions) {
+		options.withGRPC = true
 	}
 }
