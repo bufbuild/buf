@@ -26,7 +26,6 @@ require (
 	golang.org/x/net v0.0.0-20220517181318-183a9ca12b87
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171
 	golang.org/x/tools v0.1.10
-	google.golang.org/grpc v1.46.2
 	google.golang.org/protobuf v1.28.0
 	gopkg.in/yaml.v3 v3.0.0-20220512140231-539c8e751b99
 )
@@ -45,5 +44,6 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
+	google.golang.org/grpc v1.46.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
