@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
@@ -62,7 +61,7 @@ func NewCommand(
 type flags struct {
 	Port              string
 	DisallowedHeaders []string
-	ForwardHeaders    []string
+	ForwardHeaders    map[string]string
 }
 
 func newFlags() *flags {
@@ -74,7 +73,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.Port,
 		portFlagName,
 		"8080",
-		"The port to be exposed to accept HTTP request.",
+		"The port to be exposed to accept HTTP requests.",
 	)
 	flagSet.StringSliceVar(
 		&f.DisallowedHeaders,
@@ -82,11 +81,11 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		nil,
 		`The headers to be disallowed via the agent to the target server. Multiple headers are appended if specified multiple times.`,
 	)
-	flagSet.StringSliceVar(
+	flagSet.StringToStringVar(
 		&f.ForwardHeaders,
 		forwardHeadersFlagName,
 		nil,
-		`The headers to be forwarded via the agent to the target server. Must be a colon-separated key-value pair (like --forward-header=fromHeader1:toHeader1). Multiple header pairs are appended if specified multiple times.`,
+		`The headers to be forwarded via the agent to the target server. Must be a equal sign separated key-value pair (like --forward-header=fromHeader1=toHeader1). Multiple header pairs are appended if specified multiple times.`,
 	)
 }
 
@@ -101,15 +100,6 @@ func run(
 	for _, header := range flags.DisallowedHeaders {
 		disallowedHeaders[header] = struct{}{}
 	}
-	// convert the forwardHeaders from a list of colon-separated key-value pair string to a map
-	forwardHeaders := make(map[string]string, len(flags.ForwardHeaders))
-	for _, pair := range flags.ForwardHeaders {
-		s := strings.Split(pair, ":")
-		if len(s) != 2 {
-			return fmt.Errorf("unknown key-pair value of forward-headers: %s", pair)
-		}
-		forwardHeaders[s[0]] = s[1]
-	}
 	config, err := bufcli.NewConfig(container)
 	if err != nil {
 		return err
@@ -119,7 +109,7 @@ func run(
 		container.Arg(0), // the origin from command argument
 		config.TLS,
 		disallowedHeaders,
-		forwardHeaders,
+		flags.ForwardHeaders,
 	)
 	server := http.Server{
 		Addr:    ":" + flags.Port,
