@@ -41,7 +41,6 @@ func NewConnectClientProvider(
 	if registryProviderOptions.withGRPC {
 		providerOptions = append(providerOptions, registryv1alpha1apiclientconnect.WithGRPC())
 	}
-	// registryv1alpha1apiclientconnect.WithGRPC(registryProviderOptions.withGRPC),
 	return registryv1alpha1apiclientconnect.NewProvider(
 		logger,
 		client,
