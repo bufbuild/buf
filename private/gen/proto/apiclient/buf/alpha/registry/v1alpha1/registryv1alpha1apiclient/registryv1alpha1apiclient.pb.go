@@ -18,6 +18,7 @@ package registryv1alpha1apiclient
 
 import (
 	context "context"
+
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 )
 

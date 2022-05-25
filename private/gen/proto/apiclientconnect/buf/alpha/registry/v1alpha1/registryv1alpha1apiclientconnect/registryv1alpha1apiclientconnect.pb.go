@@ -18,6 +18,7 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
+
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -34,6 +35,7 @@ func NewProvider(
 	provider := &provider{
 		logger:     logger,
 		httpClient: httpClient,
+		withGRPC:   true, // defaults to using GRPC as the protocol if nothing is specified
 	}
 	for _, option := range options {
 		option(provider)
@@ -46,6 +48,7 @@ type provider struct {
 	httpClient              connect_go.HTTPClient
 	addressMapper           func(string) string
 	contextModifierProvider func(string) (func(context.Context) context.Context, error)
+	withGRPC                bool
 }
 
 // ProviderOption is an option for a new Provider.
@@ -66,6 +69,13 @@ func WithContextModifierProvider(contextModifierProvider func(address string) (f
 	}
 }
 
+// WithGRPC does things
+func WithGRPC(withGRPC bool) ProviderOption {
+	return func(provider *provider) {
+		provider.withGRPC = withGRPC
+	}
+}
+
 func (p *provider) NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -78,12 +88,16 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
+	options := []connect_go.ClientOption{}
+	if p.withGRPC {
+		options = append(options, connect_go.WithGRPC())
+	}
 	return &adminServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewAdminServiceClient(
 			p.httpClient,
 			address,
-			connect_go.WithGRPC(),
+			options...,
 		),
 		contextModifier: contextModifier,
 	}, nil
