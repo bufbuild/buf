@@ -86,7 +86,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.ForwardHeaders,
 		forwardHeadersFlagName,
 		nil,
-		`The headers to be forwarded via the agent to the target server. Must be a colon-separated key-value pair (like --forward-header=fromHeader1:toHeader1). Multiple headers pairs are appended if specified multiple times.`,
+		`The headers to be forwarded via the agent to the target server. Must be a colon-separated key-value pair (like --forward-header=fromHeader1:toHeader1). Multiple header pairs are appended if specified multiple times.`,
 	)
 }
 
@@ -96,12 +96,12 @@ func run(
 	flags *flags,
 ) error {
 	logger := container.Logger().Named("studio-agent")
-	// convert the disallowedHeaders from a comma-separated string to a map
+	// convert the disallowedHeaders from a list of string to a map
 	disallowedHeaders := make(map[string]struct{}, len(flags.DisallowedHeaders))
 	for _, header := range flags.DisallowedHeaders {
 		disallowedHeaders[header] = struct{}{}
 	}
-	// convert the forwardHeaders from a comma-separated string of colon-separated key-value pair to a map
+	// convert the forwardHeaders from a list of colon-separated key-value pair string to a map
 	forwardHeaders := make(map[string]string, len(flags.ForwardHeaders))
 	for _, pair := range flags.ForwardHeaders {
 		s := strings.Split(pair, ":")
@@ -148,7 +148,7 @@ func requestLoggingHandler(mux http.Handler, logger *zap.Logger) http.Handler {
 		start := time.Now()
 		bodyBytes, err := ioutil.ReadAll(http.MaxBytesReader(w, r.Body, bufstudioagent.MaxMessageSizeBytesDefault))
 		if err != nil {
-			logger.Warn("error when reading request body")
+			logger.Error("error when reading request body")
 			return
 		}
 		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
