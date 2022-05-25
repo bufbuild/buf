@@ -75,7 +75,7 @@ func RegistryProviderWithContextModifierProvider(contextModifierProvider func(ad
 }
 
 // RegistryProviderWithGRPC returns a new RegistryProviderOption that allows for configuration of the underlying transport
-// of a provider
+// of a provider.  Using this option sets the transport to gRPC while omitting it, defaults to using Connect.
 func RegistryProviderWithGRPC() RegistryProviderOption {
 	return func(options *registryProviderOptions) {
 		options.withGRPC = true

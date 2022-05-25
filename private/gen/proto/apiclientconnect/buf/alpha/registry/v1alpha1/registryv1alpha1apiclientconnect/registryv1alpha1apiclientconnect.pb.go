@@ -18,7 +18,6 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-	"fmt"
 
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
@@ -91,7 +90,6 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 	}
 	options := []connect_go.ClientOption{}
 	if p.withGRPC {
-		fmt.Println("Using GRPC........")
 		options = append(options, connect_go.WithGRPC())
 	}
 	return &adminServiceClient{
