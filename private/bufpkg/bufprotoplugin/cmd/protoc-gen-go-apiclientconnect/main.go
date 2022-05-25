@@ -68,7 +68,8 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	}
 	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	httpClientGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("HTTPClient"))
-	withGRPCIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("WithGRPC"))
+	withGRPCGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("WithGRPC"))
+	clientOptionGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("ClientOption"))
 	loggerGoIdentString := g.QualifiedGoIdent(zapPackage.Ident("Logger"))
 	apiclientGoImportPath, err := helper.NewPackageGoImportPath(
 		goPackageFileSet,
@@ -90,6 +91,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`provider := &provider{`)
 	g.P(`logger: logger,`)
 	g.P(`httpClient: httpClient,`)
+	g.P(`withGRPC: false, // defaults to using Connect as the underlying protocol`)
 	g.P(`}`)
 	g.P(`for _, option := range options {`)
 	g.P(`option(provider)`)
@@ -104,6 +106,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
 	g.P(`contextModifierProvider func(string) (func (`, contextGoIdentString, `) `, contextGoIdentString, `, error)`)
+	g.P(`withGRPC bool`)
 	g.P(`}`)
 	g.P()
 
@@ -130,6 +133,15 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`func WithContextModifierProvider(contextModifierProvider func(address string) (func(`, contextGoIdentString, `) `, contextGoIdentString, `, error)) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
 	g.P(`provider.contextModifierProvider = contextModifierProvider`)
+	g.P(`}`)
+	g.P(`}`)
+	g.P()
+
+	// WithGRPC functional option
+	g.P(`// WithGRPC configures the provider to use gRPC as the underlying protocol for all clients`)
+	g.P(`func WithGRPC() ProviderOption {`)
+	g.P(`return func(provider *provider) {`)
+	g.P(`provider.withGRPC = true`)
 	g.P(`}`)
 	g.P(`}`)
 	g.P()
@@ -174,12 +186,17 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`address = p.addressMapper(address)`)
 		g.P(`}`)
 
+		g.P(`options := []`, clientOptionGoIdentString, `{}`)
+		g.P(`if p.withGRPC {`)
+		g.P(`options = append(options, `, withGRPCGoIdentString, `())`)
+		g.P(`}`)
+
 		g.P(`return &`, structName, `Client{`)
 		g.P(`logger: p.logger,`)
 		g.P(`client: `, newClientGoIdentString, `(`)
 		g.P(`p.httpClient,`)
 		g.P(`address,`)
-		g.P(withGRPCIdentString, `(),`)
+		g.P(`options...,`)
 		g.P(`),`)
 		g.P(`contextModifier: contextModifier,`)
 		g.P(`}, nil`)
