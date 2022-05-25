@@ -56,6 +56,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/transport/http2client"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -551,7 +552,19 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	return newGRPCRegistryProvider(ctx, container)
+	client := http2client.NewClient(
+		http2client.WithObservability(),
+	)
+	options := []bufapiclient.RegistryProviderOption{
+		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
+		bufapiclient.RegistryProviderWithAddressMapper(func(address string) string {
+			if buftransport.IsAPISubdomainEnabled(container) {
+				address = buftransport.PrependAPISubdomain(address)
+			}
+			return buftransport.PrependHTTPS(address)
+		}),
+	}
+	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
 }
 
 // NewContextModifierProvider returns a new context modifier provider for API providers.
@@ -815,25 +828,6 @@ func validateErrorFormatFlag(validFormatStrings []string, errorFormatString stri
 		}
 	}
 	return appcmd.NewInvalidArgumentErrorf("--%s: invalid format: %q", errorFormatFlagName, errorFormatString)
-}
-
-func newGRPCRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	config, err := NewConfig(container)
-	if err != nil {
-		return nil, err
-	}
-	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
-	}
-	if buftransport.IsAPISubdomainEnabled(container) {
-		options = append(options, bufapiclient.RegistryProviderWithAddressMapper(buftransport.PrependAPISubdomain))
-	}
-	return bufapiclient.NewGRPCClientProvider(
-		ctx,
-		container.Logger(),
-		config.TLS,
-		options...,
-	)
 }
 
 // promptUser reads a line from Stdin, prompting the user with the prompt first.

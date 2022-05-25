@@ -54,11 +54,11 @@ type ResolveServiceClient interface {
 }
 
 // NewResolveServiceClient constructs a client for the buf.alpha.registry.v1alpha1.ResolveService
-// service. By default, it uses the binary Protobuf Codec, asks for gzipped responses, and sends
-// uncompressed requests. It doesn't have a default protocol; you must supply either the
-// connect.WithGRPC() or connect.WithGRPCWeb() options.
+// service. By default, it uses the Connect protocol with the binary Protobuf Codec, asks for
+// gzipped responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply
+// the connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
-// The URL supplied here should be the base URL for the gRPC server (for example,
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
 func NewResolveServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) ResolveServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
@@ -97,8 +97,8 @@ type ResolveServiceHandler interface {
 // NewResolveServiceHandler builds an HTTP handler from the service implementation. It returns the
 // path on which to mount the handler and the handler itself.
 //
-// By default, handlers support the gRPC and gRPC-Web protocols with the binary Protobuf and JSON
-// codecs.
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
 func NewResolveServiceHandler(svc ResolveServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
 	mux.Handle("/buf.alpha.registry.v1alpha1.ResolveService/GetModulePins", connect_go.NewUnaryHandler(
@@ -135,11 +135,12 @@ type LocalResolveServiceClient interface {
 }
 
 // NewLocalResolveServiceClient constructs a client for the
-// buf.alpha.registry.v1alpha1.LocalResolveService service. By default, it uses the binary Protobuf
-// Codec, asks for gzipped responses, and sends uncompressed requests. It doesn't have a default
-// protocol; you must supply either the connect.WithGRPC() or connect.WithGRPCWeb() options.
+// buf.alpha.registry.v1alpha1.LocalResolveService service. By default, it uses the Connect protocol
+// with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed requests. To
+// use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or connect.WithGRPCWeb()
+// options.
 //
-// The URL supplied here should be the base URL for the gRPC server (for example,
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
 func NewLocalResolveServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) LocalResolveServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
@@ -183,8 +184,8 @@ type LocalResolveServiceHandler interface {
 // NewLocalResolveServiceHandler builds an HTTP handler from the service implementation. It returns
 // the path on which to mount the handler and the handler itself.
 //
-// By default, handlers support the gRPC and gRPC-Web protocols with the binary Protobuf and JSON
-// codecs.
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
 func NewLocalResolveServiceHandler(svc LocalResolveServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
 	mux.Handle("/buf.alpha.registry.v1alpha1.LocalResolveService/GetLocalModulePins", connect_go.NewUnaryHandler(

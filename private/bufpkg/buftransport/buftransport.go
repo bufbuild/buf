@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	apiSubdomain = "api"
+	// APISubdomain is the subdomain used for calls to the BSR API
+	APISubdomain = "api"
 
 	schemeHTTPS = "https"
 
@@ -41,7 +42,7 @@ func SetDisableAPISubdomain(env map[string]string) {
 
 // PrependAPISubdomain prepends the API subdomain to the given address.
 func PrependAPISubdomain(address string) string {
-	return apiSubdomain + "." + address
+	return APISubdomain + "." + address
 }
 
 // PrependHTTPS prepends an https scheme to the given address

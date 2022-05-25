@@ -12,44 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufapiclient provides client-side gRPC constructs.
+// Package bufapiclient provides client-side Connect constructs.
 package bufapiclient
 
 import (
 	"context"
-	"crypto/tls"
 	"net/http"
 
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
-	"github.com/bufbuild/buf/private/gen/proto/apiclientgrpc/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientgrpc"
-	"github.com/bufbuild/buf/private/pkg/transport/grpc/grpcclient"
 	"go.uber.org/zap"
 )
-
-// NewGRPCClientProvider creates a new Provider using gRPC as its underlying transport.
-// If tlsConfig is nil, no TLS is used.
-func NewGRPCClientProvider(
-	ctx context.Context,
-	logger *zap.Logger,
-	tlsConfig *tls.Config,
-	options ...RegistryProviderOption,
-) (registryv1alpha1apiclient.Provider, error) {
-	registryProviderOptions := &registryProviderOptions{}
-	for _, option := range options {
-		option(registryProviderOptions)
-	}
-	clientConnProvider, err := NewGRPCClientConnProvider(ctx, logger, tlsConfig)
-	if err != nil {
-		return nil, err
-	}
-	return registryv1alpha1apiclientgrpc.NewProvider(
-		logger,
-		clientConnProvider,
-		registryv1alpha1apiclientgrpc.WithAddressMapper(registryProviderOptions.addressMapper),
-		registryv1alpha1apiclientgrpc.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
-	), nil
-}
 
 // NewConnectClientProvider creates a new Provider using Connect as its underlying transport.
 func NewConnectClientProvider(
@@ -92,23 +65,4 @@ func RegistryProviderWithContextModifierProvider(contextModifierProvider func(ad
 	return func(options *registryProviderOptions) {
 		options.contextModifierProvider = contextModifierProvider
 	}
-}
-
-// NewGRPCClientConnProvider returns a new gRPC ClientConnProvider.
-//
-// TODO: move this to another location.
-func NewGRPCClientConnProvider(
-	ctx context.Context,
-	logger *zap.Logger,
-	tlsConfig *tls.Config,
-) (grpcclient.ClientConnProvider, error) {
-	return grpcclient.NewClientConnProvider(
-		ctx,
-		logger,
-		grpcclient.ClientConnProviderWithTLSConfig(
-			tlsConfig,
-		),
-		grpcclient.ClientConnProviderWithObservability(),
-		grpcclient.ClientConnProviderWithGZIPCompression(),
-	)
 }
