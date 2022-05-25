@@ -21,7 +21,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/rpc"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 )
 
@@ -60,7 +60,7 @@ func run(
 		return err
 	}
 	if err := pluginService.UndeprecatePlugin(ctx, owner, name); err != nil {
-		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
+		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewPluginNotFoundError(owner, name)
 		}
 		return err

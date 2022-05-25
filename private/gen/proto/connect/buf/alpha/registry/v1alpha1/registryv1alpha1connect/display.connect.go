@@ -74,11 +74,11 @@ type DisplayServiceClient interface {
 }
 
 // NewDisplayServiceClient constructs a client for the buf.alpha.registry.v1alpha1.DisplayService
-// service. By default, it uses the binary Protobuf Codec, asks for gzipped responses, and sends
-// uncompressed requests. It doesn't have a default protocol; you must supply either the
-// connect.WithGRPC() or connect.WithGRPCWeb() options.
+// service. By default, it uses the Connect protocol with the binary Protobuf Codec, asks for
+// gzipped responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply
+// the connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
-// The URL supplied here should be the base URL for the gRPC server (for example,
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
 func NewDisplayServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) DisplayServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
@@ -268,8 +268,8 @@ type DisplayServiceHandler interface {
 // NewDisplayServiceHandler builds an HTTP handler from the service implementation. It returns the
 // path on which to mount the handler and the handler itself.
 //
-// By default, handlers support the gRPC and gRPC-Web protocols with the binary Protobuf and JSON
-// codecs.
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
 func NewDisplayServiceHandler(svc DisplayServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
 	mux.Handle("/buf.alpha.registry.v1alpha1.DisplayService/DisplayOrganizationElements", connect_go.NewUnaryHandler(

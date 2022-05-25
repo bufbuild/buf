@@ -23,7 +23,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/rpc"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -95,7 +95,7 @@ func run(
 		moduleOwner.Owner(),
 	)
 	if err != nil {
-		if rpc.GetErrorCode(err) == rpc.ErrorCodeAlreadyExists {
+		if connect.CodeOf(err) == connect.CodeAlreadyExists {
 			return bufcli.NewOrganizationNameAlreadyExistsError(container.Arg(0))
 		}
 		return err

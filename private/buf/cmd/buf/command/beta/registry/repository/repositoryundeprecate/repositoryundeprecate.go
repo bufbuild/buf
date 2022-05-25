@@ -22,7 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/rpc"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
 )
 
@@ -55,7 +55,7 @@ func run(ctx context.Context, container appflag.Container) error {
 		moduleIdentity.Owner(),
 		moduleIdentity.Repository(),
 	); err != nil {
-		if rpc.GetErrorCode(err) == rpc.ErrorCodeNotFound {
+		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewRepositoryNotFoundError(container.Arg(0))
 		}
 		return err

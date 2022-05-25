@@ -18,11 +18,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/rpc"
+	"github.com/bufbuild/connect-go"
 )
 
 const (
@@ -164,19 +167,44 @@ func NewTemplateNotFoundError(owner string, name string) error {
 // Note that this function will wrap the error so that the underlying error
 // can be recovered via 'errors.Is'.
 func wrapError(err error) error {
-	if err == nil || (err.Error() == "" && !rpc.IsError(err)) {
-		// If the error is nil or empty and not an rpc error, we return it as-is.
-		// This is especially relevant for commands like lint and breaking.
+	if err == nil {
+		return nil
+	}
+	connectErr, ok := asConnectError(err)
+
+	// If error is empty and not a Connect error, we return it as-is.
+	if !ok && err.Error() == "" {
 		return err
 	}
-	rpcCode := rpc.GetErrorCode(err)
-	switch {
-	case rpcCode == rpc.ErrorCodeUnauthenticated, isEmptyUnknownError(err):
-		return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
-	case rpcCode == rpc.ErrorCodeUnavailable:
-		return fmt.Errorf(`Failure: the server hosted at that remote is unavailable: %w`, err)
+	// If the error is a Connect error, then interpret it and return an intuitive message
+	if ok {
+		connectCode := connectErr.Code()
+		switch {
+		case connectCode == connect.CodeUnauthenticated, isEmptyUnknownError(err):
+			return errors.New(`Failure: you are not authenticated. Create a new entry in your netrc, using a Buf API Key as the password. For details, visit https://docs.buf.build/bsr/authentication`)
+		case connectCode == connect.CodeUnavailable:
+			msg := `Failure: the server hosted at that remote is unavailable.`
+			// If the returned error is Unavailable, then determine if this is a DNS error.  If so, get the address used
+			// so that we can display a more helpful error message.
+			if dnsError := (&net.DNSError{}); errors.As(err, &dnsError) && dnsError.IsNotFound {
+				// The subdomain is added internally during transport so trim it off when showing the user the invalid address that they entered
+				return fmt.Errorf(`%s Are you sure "%s" is a valid remote address?`, msg, strings.TrimPrefix(dnsError.Name, buftransport.APISubdomain+"."))
+			}
+
+			return fmt.Errorf(msg)
+		}
+		return fmt.Errorf("Failure: %s", connectErr.Message())
 	}
+
+	// Error was not a Connect error
 	return fmt.Errorf("Failure: %w", err)
+}
+
+// asConnectError uses errors.As to unwrap any error and look for a *connect.Error.
+func asConnectError(err error) (*connect.Error, bool) {
+	var connectErr *connect.Error
+	ok := errors.As(err, &connectErr)
+	return connectErr, ok
 }
 
 // isEmptyUnknownError returns true if the given
@@ -190,5 +218,5 @@ func isEmptyUnknownError(err error) bool {
 	if err == nil {
 		return false
 	}
-	return err.Error() == "" && rpc.GetErrorCode(err) == rpc.ErrorCodeUnknown
+	return err.Error() == "" && connect.CodeOf(err) == connect.CodeUnknown
 }

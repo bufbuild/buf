@@ -17,8 +17,10 @@ package bufmoduleref
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	modulev1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/module/v1alpha1"
+	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/netextended"
 )
 
@@ -146,6 +148,27 @@ func ValidateTag(tag string) error {
 func ValidateModuleFilePath(path string) error {
 	if path == "" {
 		return errors.New("empty path")
+	}
+	return nil
+}
+
+// ValidateRemoteNotEmpty validates that the given remote address is not an empty string
+// It performs client-side validation only, and is limited to fields
+// we do not think will change in the future.
+func ValidateRemoteNotEmpty(remote string) error {
+	if remote == "" {
+		return appcmd.NewInvalidArgumentError("you must specify a remote module")
+	}
+	return nil
+}
+
+// ValidateRemoteHasNoPaths validates that the given remote address contains no paths/subdirectories after the root
+// It performs client-side validation only, and is limited to fields
+// we do not think will change in the future.
+func ValidateRemoteHasNoPaths(remote string) error {
+	_, path, ok := strings.Cut(remote, "/")
+	if ok && path != "" {
+		return appcmd.NewInvalidArgumentError(fmt.Sprintf(`invalid remote address, must not contain any paths. Try removing "/%s" from the address.`, path))
 	}
 	return nil
 }
