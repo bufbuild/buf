@@ -32,12 +32,16 @@ import (
 )
 
 const (
+	// Note on versions: while Protobuf is on vX.0 where X >=21, and we
+	// download protoc vX.0, the version reported by protoc --version is 3.X.0.
+	// This is what we want to report here.
+
 	// DefaultMajorVersion is the default major version.
 	defaultMajorVersion = 3
 	// DefaultMinorVersion is the default minor version.
-	defaultMinorVersion = 20
+	defaultMinorVersion = 21
 	// DefaultPatchVersion is the default patch version.
-	defaultPatchVersion = 1
+	defaultPatchVersion = 0
 	// DefaultSuffixVersion is the default suffix version.
 	defaultSuffixVersion = ""
 )
