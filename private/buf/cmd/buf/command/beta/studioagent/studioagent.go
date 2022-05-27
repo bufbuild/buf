@@ -64,7 +64,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <origin>",
-		Short: "Run an HTTP(S) server as the studio agent with the origin be set as the allowed origin for CORS options.",
+		Short: "Run an HTTP(S) server as the Studio agent with the origin set as the allowed origin for CORS options.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -102,7 +102,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.DisallowedHeaders,
 		disallowedHeadersFlagName,
 		nil,
-		`The headers to be disallowed via the agent to the target server. Multiple headers are appended if specified multiple times.`,
+		`The headers disallowed via the agent to the target server. Multiple headers are appended if specified multiple times.`,
 	)
 	flagSet.StringToStringVar(
 		&f.ForwardHeaders,
