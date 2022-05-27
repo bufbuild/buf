@@ -15,10 +15,12 @@
 package studioagent
 
 import (
-	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
 
@@ -26,16 +28,32 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufstudioagent"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/interrupt"
+	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"go.uber.org/zap"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+)
+
+const (
+	// DefaultShutdownTimeout is the default shutdown timeout.
+	DefaultShutdownTimeout = 10 * time.Second
+	// DefaultReadHeaderTimeout is the default read header timeout.
+	DefaultReadHeaderTimeout = 30 * time.Second
+	// DefaultIdleTimeout is the amount of time an HTTP/2 connection can be idle.
+	DefaultIdleTimeout = 3 * time.Minute
 )
 
 const (
 	portFlagName              = "port"
 	disallowedHeadersFlagName = "disallowed-header"
 	forwardHeadersFlagName    = "forward-header"
+	caCertFlagName            = "ca-cert"
+	clientCertFlagName        = "client-cert"
+	clientKeyFlagName         = "client-key"
+	serverCertFlagName        = "server-cert"
+	serverKeyFlagName         = "server-key"
 )
 
 // NewCommand returns a new Command.
@@ -46,7 +64,7 @@ func NewCommand(
 	flags := newFlags()
 	return &appcmd.Command{
 		Use:   name + " <origin>",
-		Short: "Run an HTTP server as the studio agent with the origin be set as the allowed origin for CORS options.",
+		Short: "Run an HTTP(S) server as the studio agent with the origin be set as the allowed origin for CORS options.",
 		Args:  cobra.ExactArgs(1),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
@@ -62,6 +80,11 @@ type flags struct {
 	Port              string
 	DisallowedHeaders []string
 	ForwardHeaders    map[string]string
+	CACert            string
+	ClientCert        string
+	ClientKey         string
+	ServerCert        string
+	ServerKey         string
 }
 
 func newFlags() *flags {
@@ -85,7 +108,37 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.ForwardHeaders,
 		forwardHeadersFlagName,
 		nil,
-		`The headers to be forwarded via the agent to the target server. Must be a equal sign separated key-value pair (like --forward-header=fromHeader1=toHeader1). Multiple header pairs are appended if specified multiple times.`,
+		`The headers to be forwarded via the agent to the target server. Must be an equals sign separated key-value pair (like --forward-header=fromHeader1=toHeader1). Multiple header pairs are appended if specified multiple times.`,
+	)
+	flagSet.StringVar(
+		&f.CACert,
+		caCertFlagName,
+		"",
+		"The CA cert to be used in the client and server TLS configuration.",
+	)
+	flagSet.StringVar(
+		&f.ClientCert,
+		clientCertFlagName,
+		"",
+		"The cert to be used in the client TLS configuration.",
+	)
+	flagSet.StringVar(
+		&f.ClientKey,
+		clientKeyFlagName,
+		"",
+		"The key to be used in the client TLS configuration.",
+	)
+	flagSet.StringVar(
+		&f.ServerCert,
+		serverCertFlagName,
+		"",
+		"The cert to be used in the server TLS configuration.",
+	)
+	flagSet.StringVar(
+		&f.ServerKey,
+		serverKeyFlagName,
+		"",
+		"The key to be used in the server TLS configuration.",
 	)
 }
 
@@ -94,62 +147,95 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) error {
-	logger := container.Logger().Named("studio-agent")
-	// convert the disallowedHeaders from a list of string to a map
-	disallowedHeaders := make(map[string]struct{}, len(flags.DisallowedHeaders))
-	for _, header := range flags.DisallowedHeaders {
-		disallowedHeaders[header] = struct{}{}
+	// CA cert pool is optional. If it is nil, TLS uses the host's root CA set.
+	var caCertPool *x509.CertPool
+	var err error
+	if flags.CACert != "" {
+		caCertPool, err = newCACertPool(flags.CACert)
+		if err != nil {
+			return err
+		}
 	}
-	config, err := bufcli.NewConfig(container)
-	if err != nil {
-		return err
+	// client TLS config is optional. If it is nil, it uses the default configuration from http2.Transport.
+	var clientTLSConfig *tls.Config
+	if flags.ClientCert != "" || flags.ClientKey != "" {
+		clientTLSConfig, err = newTLSConfig(caCertPool, flags.ClientCert, flags.ClientKey)
+		if err != nil {
+			return fmt.Errorf("cannot create new client TLS config: %w", err)
+		}
+	}
+	// server TLS config is optional. If it is nil, we serve with a h2c handler.
+	var serverTLSConfig *tls.Config
+	if flags.ServerCert != "" || flags.ServerKey != "" {
+		serverTLSConfig, err = newTLSConfig(caCertPool, flags.ServerCert, flags.ServerKey)
+		if err != nil {
+			return fmt.Errorf("cannot create new server TLS config: %w", err)
+		}
 	}
 	mux := bufstudioagent.NewHandler(
-		logger,
+		container.Logger(),
 		container.Arg(0), // the origin from command argument
-		config.TLS,
-		disallowedHeaders,
+		clientTLSConfig,
+		stringutil.SliceToMap(flags.DisallowedHeaders),
 		flags.ForwardHeaders,
 	)
-	server := http.Server{
-		Addr:    ":" + flags.Port,
-		Handler: requestLoggingHandler(mux, logger),
+	httpServer := &http.Server{
+		Handler:           mux,
+		ReadHeaderTimeout: DefaultReadHeaderTimeout,
+		TLSConfig:         serverTLSConfig,
 	}
-	signalC, closer := interrupt.NewSignalChannel()
-	go func() {
-		logger.Info(fmt.Sprintf("listening on %s", server.Addr))
-		if err = server.ListenAndServe(); err != nil {
-			closer()
-			return
-		}
-	}()
-	<-signalC
+	if serverTLSConfig == nil {
+		httpServer.Handler = h2c.NewHandler(mux, &http2.Server{
+			IdleTimeout: DefaultIdleTimeout,
+		})
+	}
+	var httpListenConfig net.ListenConfig
+	httpListener, err := httpListenConfig.Listen(ctx, "tcp", fmt.Sprintf("0.0.0.0:%s", flags.Port))
 	if err != nil {
 		return err
 	}
-	if err := logger.Sync(); err != nil {
+	jobs := []func(context.Context) error{
+		func(ctx context.Context) error {
+			return httpServe(httpServer, httpListener)
+		},
+		func(ctx context.Context) error {
+			<-ctx.Done()
+			ctx, cancel := context.WithTimeout(context.Background(), DefaultShutdownTimeout)
+			defer cancel()
+			return httpServer.Shutdown(ctx)
+		},
+	}
+	if err := thread.Parallelize(ctx, jobs); err != http.ErrServerClosed {
 		return err
 	}
-	return server.Shutdown(ctx)
+	return nil
 }
 
-func requestLoggingHandler(mux http.Handler, logger *zap.Logger) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		bodyBytes, err := ioutil.ReadAll(http.MaxBytesReader(w, r.Body, bufstudioagent.MaxMessageSizeBytesDefault))
-		if err != nil {
-			logger.Error("error when reading request body")
-			return
-		}
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-		mux.ServeHTTP(w, r)
-		logger.Info(
-			"incoming request",
-			zap.String("address", r.RemoteAddr),
-			zap.String("method", r.Method),
-			zap.String("uri", r.RequestURI),
-			zap.Duration("duration", time.Since(start)),
-			zap.ByteString("requestBody", bodyBytes),
-		)
-	})
+func newCACertPool(caCertFile string) (*x509.CertPool, error) {
+	caCert, err := ioutil.ReadFile(caCertFile)
+	if err != nil {
+		return nil, fmt.Errorf("error opening ca cert file %s", caCertFile)
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	return caCertPool, nil
+}
+
+func newTLSConfig(caCertPool *x509.CertPool, certFile, keyFile string) (*tls.Config, error) {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, fmt.Errorf("error creating x509 keypair from cert file %s and key file %s", certFile, keyFile)
+	}
+	return &tls.Config{
+		MinVersion:   tls.VersionTLS12,
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caCertPool,
+	}, nil
+}
+
+func httpServe(httpServer *http.Server, listener net.Listener) error {
+	if httpServer.TLSConfig != nil {
+		return httpServer.ServeTLS(listener, "", "")
+	}
+	return httpServer.Serve(listener)
 }
