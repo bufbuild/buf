@@ -1046,7 +1046,7 @@ func RunTestSuite(
 			),
 		)
 
-		// This isn't great, but it tests the exact behaviour of the diff
+		// This isn't great, but it tests the exact behavior of the diff
 		// functionality. Headers are always "ToSlash" paths and `\n`. The
 		// contents of the diff are platform dependent.
 		diff1 := `@@ -1,2 +1,2 @@

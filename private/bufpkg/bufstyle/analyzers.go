@@ -76,5 +76,21 @@ func newAnalyzers() []*analysis.Analyzer {
 				return nil, nil
 			},
 		},
+		{
+			Name: "BEHAVIOUR",
+			Doc:  "Verifies that the word \"behaviour\" is not used in any comment.",
+			Run: func(pass *analysis.Pass) (interface{}, error) {
+				for _, file := range pass.Files {
+					for _, commentGroup := range file.Comments {
+						for _, comment := range commentGroup.List {
+							if strings.Contains(strings.ToLower(comment.Text), "behaviour") {
+								pass.Reportf(comment.Slash, `It is spelled "behavior" not "behaviour"`)
+							}
+						}
+					}
+				}
+				return nil, nil
+			},
+		},
 	}
 }
