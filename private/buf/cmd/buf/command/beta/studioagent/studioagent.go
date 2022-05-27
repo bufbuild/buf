@@ -37,12 +37,12 @@ import (
 )
 
 const (
-	// DefaultShutdownTimeout is the default shutdown timeout.
-	DefaultShutdownTimeout = 10 * time.Second
-	// DefaultReadHeaderTimeout is the default read header timeout.
-	DefaultReadHeaderTimeout = 30 * time.Second
-	// DefaultIdleTimeout is the amount of time an HTTP/2 connection can be idle.
-	DefaultIdleTimeout = 3 * time.Minute
+	// defaultShutdownTimeout is the default shutdown timeout.
+	defaultShutdownTimeout = 10 * time.Second
+	// defaultReadHeaderTimeout is the default read header timeout.
+	defaultReadHeaderTimeout = 30 * time.Second
+	// defaultIdleTimeout is the amount of time an HTTP/2 connection can be idle.
+	defaultIdleTimeout = 3 * time.Minute
 )
 
 const (
@@ -181,12 +181,12 @@ func run(
 	)
 	httpServer := &http.Server{
 		Handler:           mux,
-		ReadHeaderTimeout: DefaultReadHeaderTimeout,
+		ReadHeaderTimeout: defaultReadHeaderTimeout,
 		TLSConfig:         serverTLSConfig,
 	}
 	if serverTLSConfig == nil {
 		httpServer.Handler = h2c.NewHandler(mux, &http2.Server{
-			IdleTimeout: DefaultIdleTimeout,
+			IdleTimeout: defaultIdleTimeout,
 		})
 	}
 	var httpListenConfig net.ListenConfig
@@ -200,7 +200,7 @@ func run(
 		},
 		func(ctx context.Context) error {
 			<-ctx.Done()
-			ctx, cancel := context.WithTimeout(context.Background(), DefaultShutdownTimeout)
+			ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
 			defer cancel()
 			return httpServer.Shutdown(ctx)
 		},
