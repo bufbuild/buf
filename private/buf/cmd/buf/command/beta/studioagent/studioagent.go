@@ -179,15 +179,15 @@ func run(
 		stringutil.SliceToMap(flags.DisallowedHeaders),
 		flags.ForwardHeaders,
 	)
+	if serverTLSConfig == nil {
+		mux = h2c.NewHandler(mux, &http2.Server{
+			IdleTimeout: defaultIdleTimeout,
+		})
+	}
 	httpServer := &http.Server{
 		Handler:           mux,
 		ReadHeaderTimeout: defaultReadHeaderTimeout,
 		TLSConfig:         serverTLSConfig,
-	}
-	if serverTLSConfig == nil {
-		httpServer.Handler = h2c.NewHandler(mux, &http2.Server{
-			IdleTimeout: defaultIdleTimeout,
-		})
 	}
 	var httpListenConfig net.ListenConfig
 	httpListener, err := httpListenConfig.Listen(ctx, "tcp", fmt.Sprintf("0.0.0.0:%s", flags.Port))
