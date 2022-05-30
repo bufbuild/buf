@@ -58,12 +58,45 @@ func NewHTTPHandlerMapper(
 // HTTPHandlerMapperOption is an option for a new HTTPHandlerMapper.
 type HTTPHandlerMapperOption func(*httpHandlerMapper)
 
+// HTTPHandlerMapperWithPrefix returns a new HTTPHandlerMapperOption that uses the prefix.
+func HTTPHandlerMapperWithPrefix(prefix string) HTTPHandlerMapperOption {
+	return func(httpHandlerMapper *httpHandlerMapper) {
+		httpHandlerMapper.prefix = prefix
+	}
+}
+
+// NewPrefixedHTTPHandlerMapper returns a new Mapper.
+func NewPrefixedHTTPHandlerMapper(
+	handlers []PrefixedHTTPHandler,
+	options ...PrefixedHTTPHandlerMapperOption,
+) Mapper {
+	return newPrefixedHTTPHandlerMapper(
+		handlers,
+		options...,
+	)
+}
+
+// PrefixedHTTPHandlerMapperOption is an option for a new PrefixedHTTPHandlerMapper.
+type PrefixedHTTPHandlerMapperOption func(*prefixedHTTPHandlerMapper)
+
+// PrefixedHTTPHandlerMapperWithGlobalPrefix returns a new PrefixedHTTPHandlerMapperOption that uses the global prefix.
+func PrefixedHTTPHandlerMapperWithGlobalPrefix(globalPrefix string) PrefixedHTTPHandlerMapperOption {
+	return func(prefixedHTTPHandlerMapper *prefixedHTTPHandlerMapper) {
+		prefixedHTTPHandlerMapper.globalPrefix = globalPrefix
+	}
+}
+
 // PrefixedHTTPHandler is an http.Handler with a path prefix.
 //
 // A router should route all requests with the path prefix to this handler.
 type PrefixedHTTPHandler interface {
 	http.Handler
 	PathPrefix() string
+}
+
+// NewPrefixedHTTPHandler creates a new PrefixedHTTPHandler using a handler and prefix.
+func NewPrefixedHTTPHandler(handler http.Handler, prefix string) PrefixedHTTPHandler {
+	return newPrefixedHTTPHandler(handler, prefix)
 }
 
 // Runner is a runner.
