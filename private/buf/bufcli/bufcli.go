@@ -552,10 +552,16 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
+	config, err := NewConfig(container)
+	if err != nil {
+		return nil, err
+	}
 	client := http2client.NewClient(
 		http2client.WithObservability(),
+		http2client.WithTLSConfig(config.TLS),
 	)
 	options := []bufapiclient.RegistryProviderOption{
+		bufapiclient.RegistryProviderWithGRPC(),
 		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
 		bufapiclient.RegistryProviderWithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {
