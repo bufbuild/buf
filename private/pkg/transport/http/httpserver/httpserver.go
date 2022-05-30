@@ -127,6 +127,16 @@ func RunnerWithObservability(middleware func(http.Handler) http.Handler) RunnerO
 	}
 }
 
+// RunnerWithMaxBodySize returns a new RunnerOption that sets the max size of
+// incoming request body.
+//
+// The default is to not limit body size.
+func RunnerWithMaxBodySize(maxBodySize int64) RunnerOption {
+	return func(runner *runner) {
+		runner.maxBodySize = maxBodySize
+	}
+}
+
 // RunnerWithHealth returns a new RunnerOption that turns a health check endpoint on at /health.
 //
 // The default is to not turn on health.

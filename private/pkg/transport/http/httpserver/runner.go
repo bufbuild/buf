@@ -37,6 +37,7 @@ type runner struct {
 	tlsConfig         *tls.Config
 	observability     func(http.Handler) http.Handler
 	health            bool
+	maxBodySize       int64
 }
 
 func newRunner(logger *zap.Logger, options ...RunnerOption) *runner {
@@ -69,6 +70,13 @@ func (s *runner) Run(
 	mux.Use(middleware.Recoverer)
 	mux.Use(middleware.StripSlashes)
 	mux.Use(newZapMiddleware(s.logger))
+	// This sets a limit on the max body size. Ideally this could be configured
+	// in Connect itself: https://github.com/bufbuild/core/issues/4506
+	if s.maxBodySize > 0 {
+		mux.Use(func(next http.Handler) http.Handler {
+			return http.MaxBytesHandler(next, s.maxBodySize)
+		})
+	}
 	if s.observability != nil {
 		mux.Use(s.observability)
 	}
@@ -126,6 +134,7 @@ func (s *runner) Run(
 		zap.Duration("shutdown_timeout", s.shutdownTimeout),
 		zap.Bool("tls", s.tlsConfig != nil),
 		zap.Bool("observability", s.observability != nil),
+		zap.Int64("max_body_size", s.maxBodySize),
 	)
 	if err := eg.Wait(); err != http.ErrServerClosed {
 		return err
