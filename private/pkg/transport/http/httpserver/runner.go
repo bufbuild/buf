@@ -22,12 +22,12 @@ import (
 	"time"
 
 	"github.com/bufbuild/buf/private/pkg/rpc/rpchttp"
-	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"golang.org/x/sync/errgroup"
 )
 
 type runner struct {
@@ -35,7 +35,7 @@ type runner struct {
 	shutdownTimeout   time.Duration
 	readHeaderTimeout time.Duration
 	tlsConfig         *tls.Config
-	observability     bool
+	observability     func(http.Handler) http.Handler
 	health            bool
 }
 
@@ -69,8 +69,8 @@ func (s *runner) Run(
 	mux.Use(middleware.Recoverer)
 	mux.Use(middleware.StripSlashes)
 	mux.Use(newZapMiddleware(s.logger))
-	if s.observability {
-		mux.Use(openCensusMiddleware)
+	if s.observability != nil {
+		mux.Use(s.observability)
 	}
 	mux.Use(rpchttp.NewServerInterceptor())
 	for _, mapper := range mappers {
@@ -103,32 +103,31 @@ func (s *runner) Run(
 		})
 	}
 
-	jobs := []func(context.Context) error{
-		func(ctx context.Context) error {
-			return httpServe(httpServer, listener)
-		},
-		func(ctx context.Context) error {
-			<-ctx.Done()
-			start := time.Now()
-			s.logger.Info("shutdown_starting", zap.Duration("shutdown_timeout", s.shutdownTimeout))
-			defer s.logger.Info("shutdown_finished", zap.Duration("duration", time.Since(start)))
-			if s.shutdownTimeout != 0 {
-				ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
-				defer cancel()
-				return httpServer.Shutdown(ctx)
-			}
-			return httpServer.Close()
-		},
-	}
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		return httpServe(httpServer, listener)
+	})
+	eg.Go(func() error {
+		<-ctx.Done()
+		start := time.Now()
+		s.logger.Info("shutdown_starting", zap.Duration("shutdown_timeout", s.shutdownTimeout))
+		defer s.logger.Info("shutdown_finished", zap.Duration("duration", time.Since(start)))
+		if s.shutdownTimeout != 0 {
+			ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
+			defer cancel()
+			return httpServer.Shutdown(ctx)
+		}
+		return httpServer.Close()
+	})
 
 	s.logger.Info(
 		"starting",
 		zap.String("address", listener.Addr().String()),
 		zap.Duration("shutdown_timeout", s.shutdownTimeout),
 		zap.Bool("tls", s.tlsConfig != nil),
-		zap.Bool("observability", s.observability),
+		zap.Bool("observability", s.observability != nil),
 	)
-	if err := thread.Parallelize(ctx, jobs); err != http.ErrServerClosed {
+	if err := eg.Wait(); err != http.ErrServerClosed {
 		return err
 	}
 	return nil
