@@ -122,3 +122,8 @@ issues:
     - linters:
         - containedctx
       path: private/pkg/transport/grpc/grpcclient/client_conn_provider.go
+      # we actually want to use errgroup when starting an HTTP server
+    - linters:
+        - forbidigo
+      path: private/buf/cmd/buf/command/beta/studioagent/studioagent.go
+      text: "use of `errgroup"

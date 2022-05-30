@@ -21,8 +21,8 @@ import (
 	"os"
 )
 
-// newClientTLSConfigFromRootCertFiles creates a new tls.Config from a root certificate files.
-func newClientTLSConfigFromRootCertFiles(rootCertFilePaths ...string) (*tls.Config, error) {
+// NewClientTLSConfigFromRootCertFiles creates a new tls.Config from a root certificate files.
+func NewClientTLSConfigFromRootCertFiles(rootCertFilePaths ...string) (*tls.Config, error) {
 	rootCertDatas := make([][]byte, len(rootCertFilePaths))
 	for i, rootCertFilePath := range rootCertFilePaths {
 		rootCertData, err := os.ReadFile(rootCertFilePath)

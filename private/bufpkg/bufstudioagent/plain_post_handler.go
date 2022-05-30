@@ -33,9 +33,9 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// MaxMessageSizeBytesDefault determines the maximum number of bytes to read
+// maxMessageSizeBytesDefault determines the maximum number of bytes to read
 // from the request body.
-const MaxMessageSizeBytesDefault = 1024 * 1024 * 5
+const maxMessageSizeBytesDefault = 1024 * 1024 * 5
 
 // plainPostHandler implements a POST handler for forwarding requests that can
 // be called with simple CORS requests.
@@ -85,7 +85,7 @@ func newPlainPostHandler(
 			},
 		},
 		Logger:              logger,
-		MaxMessageSizeBytes: MaxMessageSizeBytesDefault,
+		MaxMessageSizeBytes: maxMessageSizeBytesDefault,
 		TLSClient: &http.Client{
 			Transport: &http2.Transport{
 				TLSClientConfig: tlsClientConfig,

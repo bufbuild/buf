@@ -17,9 +17,7 @@ package studioagent
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
@@ -28,12 +26,13 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufstudioagent"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/cert/certclient"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
-	"github.com/bufbuild/buf/private/pkg/thread"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -102,7 +101,7 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		&f.DisallowedHeaders,
 		disallowedHeadersFlagName,
 		nil,
-		`The headers disallowed via the agent to the target server. Multiple headers are appended if specified multiple times.`,
+		`The header names that are disallowed by this agent. When the agent receives an enveloped request with these headers set, it will return an error rather than forward the request to the target server. Multiple headers are appended if specified multiple times.`,
 	)
 	flagSet.StringToStringVar(
 		&f.ForwardHeaders,
@@ -148,10 +147,10 @@ func run(
 	flags *flags,
 ) error {
 	// CA cert pool is optional. If it is nil, TLS uses the host's root CA set.
-	var caCertPool *x509.CertPool
+	var rootCAConfig *tls.Config
 	var err error
 	if flags.CACert != "" {
-		caCertPool, err = newCACertPool(flags.CACert)
+		rootCAConfig, err = certclient.NewClientTLSConfigFromRootCertFiles(flags.CACert)
 		if err != nil {
 			return err
 		}
@@ -159,7 +158,7 @@ func run(
 	// client TLS config is optional. If it is nil, it uses the default configuration from http2.Transport.
 	var clientTLSConfig *tls.Config
 	if flags.ClientCert != "" || flags.ClientKey != "" {
-		clientTLSConfig, err = newTLSConfig(caCertPool, flags.ClientCert, flags.ClientKey)
+		clientTLSConfig, err = newTLSConfig(rootCAConfig, flags.ClientCert, flags.ClientKey)
 		if err != nil {
 			return fmt.Errorf("cannot create new client TLS config: %w", err)
 		}
@@ -167,7 +166,7 @@ func run(
 	// server TLS config is optional. If it is nil, we serve with a h2c handler.
 	var serverTLSConfig *tls.Config
 	if flags.ServerCert != "" || flags.ServerKey != "" {
-		serverTLSConfig, err = newTLSConfig(caCertPool, flags.ServerCert, flags.ServerKey)
+		serverTLSConfig, err = newTLSConfig(rootCAConfig, flags.ServerCert, flags.ServerKey)
 		if err != nil {
 			return fmt.Errorf("cannot create new server TLS config: %w", err)
 		}
@@ -194,43 +193,36 @@ func run(
 	if err != nil {
 		return err
 	}
-	jobs := []func(context.Context) error{
-		func(ctx context.Context) error {
-			return httpServe(httpServer, httpListener)
-		},
-		func(ctx context.Context) error {
-			<-ctx.Done()
-			ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
-			defer cancel()
-			return httpServer.Shutdown(ctx)
-		},
-	}
-	if err := thread.Parallelize(ctx, jobs); err != http.ErrServerClosed {
+
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		return httpServe(httpServer, httpListener)
+	})
+	eg.Go(func() error {
+		<-ctx.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
+		defer cancel()
+		return httpServer.Shutdown(ctx)
+	})
+	if err := eg.Wait(); err != http.ErrServerClosed {
 		return err
 	}
 	return nil
 }
 
-func newCACertPool(caCertFile string) (*x509.CertPool, error) {
-	caCert, err := ioutil.ReadFile(caCertFile)
-	if err != nil {
-		return nil, fmt.Errorf("error opening ca cert file %s", caCertFile)
+func newTLSConfig(baseConfig *tls.Config, certFile, keyFile string) (*tls.Config, error) {
+	config := baseConfig.Clone()
+	if config == nil {
+		config = &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		}
 	}
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
-	return caCertPool, nil
-}
-
-func newTLSConfig(caCertPool *x509.CertPool, certFile, keyFile string) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		return nil, fmt.Errorf("error creating x509 keypair from cert file %s and key file %s", certFile, keyFile)
 	}
-	return &tls.Config{
-		MinVersion:   tls.VersionTLS12,
-		Certificates: []tls.Certificate{cert},
-		RootCAs:      caCertPool,
-	}, nil
+	config.Certificates = []tls.Certificate{cert}
+	return config, nil
 }
 
 func httpServe(httpServer *http.Server, listener net.Listener) error {
