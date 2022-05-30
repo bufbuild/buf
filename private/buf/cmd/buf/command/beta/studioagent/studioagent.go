@@ -45,6 +45,7 @@ const (
 )
 
 const (
+	bindFlagName              = "bind"
 	portFlagName              = "port"
 	disallowedHeadersFlagName = "disallowed-header"
 	forwardHeadersFlagName    = "forward-header"
@@ -76,6 +77,7 @@ func NewCommand(
 }
 
 type flags struct {
+	BindAddress       string
 	Port              string
 	DisallowedHeaders []string
 	ForwardHeaders    map[string]string
@@ -91,6 +93,12 @@ func newFlags() *flags {
 }
 
 func (f *flags) Bind(flagSet *pflag.FlagSet) {
+	flagSet.StringVar(
+		&f.BindAddress,
+		bindFlagName,
+		"127.0.0.1",
+		"The address to be exposed to accept HTTP requests.",
+	)
 	flagSet.StringVar(
 		&f.Port,
 		portFlagName,
@@ -189,13 +197,14 @@ func run(
 		TLSConfig:         serverTLSConfig,
 	}
 	var httpListenConfig net.ListenConfig
-	httpListener, err := httpListenConfig.Listen(ctx, "tcp", fmt.Sprintf("0.0.0.0:%s", flags.Port))
+	httpListener, err := httpListenConfig.Listen(ctx, "tcp", fmt.Sprintf("%s:%s", flags.BindAddress, flags.Port))
 	if err != nil {
 		return err
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
+		container.Logger().Info(fmt.Sprintf("listening on %s", httpListener.Addr()))
 		return httpServe(httpServer, httpListener)
 	})
 	eg.Go(func() error {
