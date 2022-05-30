@@ -9,7 +9,7 @@
 - Fix check for `PACKAGE_SERVICE_NO_DELETE` to detect deleted services.
 - Remove `buf beta registry track`.
 - Remove `buf beta registry branch`.
-- Add `buf beta studio-agent` command which supports running an HTTP(S) server as the Studio agent
+- Add `buf beta studio-agent` command which supports running an HTTP(S) server as the Studio agent.
 
 ## [v1.4.0] - 2022-04-21
 
