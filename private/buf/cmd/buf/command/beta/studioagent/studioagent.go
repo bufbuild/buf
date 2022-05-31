@@ -47,6 +47,7 @@ const (
 const (
 	bindFlagName              = "bind"
 	portFlagName              = "port"
+	originFlagName            = "origin"
 	disallowedHeadersFlagName = "disallowed-header"
 	forwardHeadersFlagName    = "forward-header"
 	caCertFlagName            = "ca-cert"
@@ -63,9 +64,9 @@ func NewCommand(
 ) *appcmd.Command {
 	flags := newFlags()
 	return &appcmd.Command{
-		Use:   name + " <origin>",
-		Short: "Run an HTTP(S) server as the Studio agent with the origin set as the allowed origin for CORS options.",
-		Args:  cobra.ExactArgs(1),
+		Use:   name,
+		Short: "Run an HTTP(S) server as the Studio agent.",
+		Args:  cobra.ExactArgs(0),
 		Run: builder.NewRunFunc(
 			func(ctx context.Context, container appflag.Container) error {
 				return run(ctx, container, flags)
@@ -79,6 +80,7 @@ func NewCommand(
 type flags struct {
 	BindAddress       string
 	Port              string
+	Origin            string
 	DisallowedHeaders []string
 	ForwardHeaders    map[string]string
 	CACert            string
@@ -104,6 +106,12 @@ func (f *flags) Bind(flagSet *pflag.FlagSet) {
 		portFlagName,
 		"8080",
 		"The port to be exposed to accept HTTP requests.",
+	)
+	flagSet.StringVar(
+		&f.Origin,
+		originFlagName,
+		"studio.buf.build",
+		"The allowed origin for CORS options.",
 	)
 	flagSet.StringSliceVar(
 		&f.DisallowedHeaders,
@@ -181,7 +189,7 @@ func run(
 	}
 	mux := bufstudioagent.NewHandler(
 		container.Logger(),
-		container.Arg(0), // the origin from command argument
+		flags.Origin,
 		clientTLSConfig,
 		stringutil.SliceToMap(flags.DisallowedHeaders),
 		flags.ForwardHeaders,
