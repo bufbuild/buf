@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add `buf beta studio-agent` command which supports running an HTTP(S) server as the Studio agent.
+- Add `buf beta studio-agent` command to support the upcoming Buf Studio.
 
 ## [v1.5.0] - 2022-05-30
 
