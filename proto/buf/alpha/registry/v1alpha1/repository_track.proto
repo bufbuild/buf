@@ -19,6 +19,10 @@ package buf.alpha.registry.v1alpha1;
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "google/protobuf/timestamp.proto";
 
+// Tracks have been deprecated. The messages and services in this repository
+// will be removed soon.
+option deprecated = true;
+
 message RepositoryTrack {
   // primary key, unique, immutable
   string id = 1;

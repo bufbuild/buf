@@ -46,13 +46,19 @@ message RepositoryCommit {
 service RepositoryCommitService {
   // ListRepositoryCommitsByBranch lists the repository commits associated
   // with a repository branch on a repository, ordered by their create time.
-  rpc ListRepositoryCommitsByBranch(ListRepositoryCommitsByBranchRequest) returns (ListRepositoryCommitsByBranchResponse);
+  rpc ListRepositoryCommitsByBranch(ListRepositoryCommitsByBranchRequest) returns (ListRepositoryCommitsByBranchResponse) {
+    // Branches have been deprecated. This method will be removed in the future.
+    option deprecated = true;
+  }
   // ListRepositoryCommitsByReference returns repository commits up-to and including
   // the provided reference.
   rpc ListRepositoryCommitsByReference(ListRepositoryCommitsByReferenceRequest) returns (ListRepositoryCommitsByReferenceResponse);
   // ListRepositoryCommitsOnTrack returns repository commits up-to and including
   // the provided reference.
-  rpc ListRepositoryCommitsOnTrack(ListRepositoryCommitsOnTrackRequest) returns (ListRepositoryCommitsOnTrackResponse);
+  rpc ListRepositoryCommitsOnTrack(ListRepositoryCommitsOnTrackRequest) returns (ListRepositoryCommitsOnTrackResponse) {
+    // Tracks have been deprecated. This method will be removed in the future.
+    option deprecated = true;
+  }
   // GetRepositoryCommitByReference returns the repository commit matching
   // the provided reference, if it exists.
   rpc GetRepositoryCommitByReference(GetRepositoryCommitByReferenceRequest) returns (GetRepositoryCommitByReferenceResponse);

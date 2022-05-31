@@ -50,7 +50,7 @@ message Repository {
 
 message RepositoryCounts {
   uint32 tags_count = 1;
-  uint32 tracks_count = 2;
+  uint32 tracks_count = 2 [deprecated = true];
 }
 
 message RepositoryContributor {

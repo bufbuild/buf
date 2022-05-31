@@ -18,6 +18,10 @@ package buf.alpha.registry.v1alpha1;
 
 import "google/protobuf/timestamp.proto";
 
+// Tracks have been deprecated. The messages and services in this repository
+// will be removed soon.
+option deprecated = true;
+
 // RepositoryTrackCommit is the existence of a RepositoryCommit on a RepositoryTrack. Currently its only purpose is
 // for querying whether a RepositoryCommit is on a RepositoryTrack and determining it's sequence id.
 message RepositoryTrackCommit {
