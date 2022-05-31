@@ -30,7 +30,7 @@ message Reference {
     // The requested reference is a commit.
     RepositoryCommit commit = 3;
     // The requested reference is a track.
-    RepositoryTrack track = 4;
+    RepositoryTrack track = 4 [deprecated = true];
   }
 }
 
@@ -38,7 +38,7 @@ message Reference {
 // for reference information.
 service ReferenceService {
   // GetReferenceByName takes a reference name and returns the
-  // reference either as a tag, branch, track or commit.
+  // reference either as a tag, or commit.
   rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse);
 }
 

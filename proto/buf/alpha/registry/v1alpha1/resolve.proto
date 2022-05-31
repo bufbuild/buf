@@ -81,7 +81,7 @@ enum ResolvedReferenceType {
   RESOLVED_REFERENCE_TYPE_COMMIT = 1;
   RESOLVED_REFERENCE_TYPE_BRANCH = 2;
   RESOLVED_REFERENCE_TYPE_TAG = 3;
-  RESOLVED_REFERENCE_TYPE_TRACK = 4;
+  RESOLVED_REFERENCE_TYPE_TRACK = 4 [deprecated = true];
 }
 
 message LocalModuleResolveResult {
