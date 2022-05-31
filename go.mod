@@ -24,6 +24,7 @@ require (
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/net v0.0.0-20220526153639-5463443f8c37
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
 	golang.org/x/tools v0.1.10
 	google.golang.org/protobuf v1.28.0

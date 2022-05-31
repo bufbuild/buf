@@ -53,7 +53,7 @@ func NewClientTLSConfig(
 				),
 			}
 		}
-		return newClientTLSConfigFromRootCertFiles(rootCertFilePaths...)
+		return NewClientTLSConfigFromRootCertFiles(rootCertFilePaths...)
 	case "", "system":
 		return newClientSystemTLSConfig(), nil
 	case "false":
