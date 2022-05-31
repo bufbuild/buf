@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Add `buf beta studio-agent` command which supports running an HTTP(S) server as the Studio agent.
+
+## [v1.5.0] - 2022-05-30
+
 - Upgrade to `protoc` 3.20.1 support.
 - Fix an issue where `buf` would fail if two or more roots contained
   a file with the same name, but with different file types (i.e. a
@@ -9,7 +13,6 @@
 - Fix check for `PACKAGE_SERVICE_NO_DELETE` to detect deleted services.
 - Remove `buf beta registry track`.
 - Remove `buf beta registry branch`.
-- Add `buf beta studio-agent` command which supports running an HTTP(S) server as the Studio agent.
 
 ## [v1.4.0] - 2022-04-21
 
@@ -705,7 +708,8 @@ buf check breaking proto --against .git#branch=master,subdir=proto
 
 Initial beta release.
 
-[Unreleased]: https://github.com/bufbuild/buf/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/bufbuild/buf/compare/v1.5.0...HEAD
+[v1.5.0]: https://github.com/bufbuild/buf/compare/v1.4.0...v1.5.0
 [v1.4.0]: https://github.com/bufbuild/buf/compare/v1.3.1...v1.4.0
 [v1.3.1]: https://github.com/bufbuild/buf/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/bufbuild/buf/compare/v1.2.1...1.3.0
