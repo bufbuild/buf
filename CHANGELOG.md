@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- No changes yet.
+- Add `buf beta studio-agent` command to support the upcoming Buf Studio.
 
 ## [v1.5.0] - 2022-05-30
 
