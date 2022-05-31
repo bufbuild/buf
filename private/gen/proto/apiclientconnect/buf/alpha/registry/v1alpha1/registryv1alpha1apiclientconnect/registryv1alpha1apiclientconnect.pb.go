@@ -34,7 +34,6 @@ func NewProvider(
 	provider := &provider{
 		logger:     logger,
 		httpClient: httpClient,
-		withGRPC:   false, // defaults to using Connect as the underlying protocol
 	}
 	for _, option := range options {
 		option(provider)
@@ -47,7 +46,6 @@ type provider struct {
 	httpClient              connect_go.HTTPClient
 	addressMapper           func(string) string
 	contextModifierProvider func(string) (func(context.Context) context.Context, error)
-	withGRPC                bool
 }
 
 // ProviderOption is an option for a new Provider.
@@ -68,13 +66,6 @@ func WithContextModifierProvider(contextModifierProvider func(address string) (f
 	}
 }
 
-// WithGRPC configures the provider to use gRPC as the underlying protocol for all clients
-func WithGRPC() ProviderOption {
-	return func(provider *provider) {
-		provider.withGRPC = true
-	}
-}
-
 func (p *provider) NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
@@ -88,9 +79,6 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &adminServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewAdminServiceClient(
@@ -115,9 +103,6 @@ func (p *provider) NewAuthnService(ctx context.Context, address string) (registr
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &authnServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewAuthnServiceClient(
@@ -142,9 +127,6 @@ func (p *provider) NewAuthzService(ctx context.Context, address string) (registr
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &authzServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewAuthzServiceClient(
@@ -169,9 +151,6 @@ func (p *provider) NewConvertService(ctx context.Context, address string) (regis
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &convertServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewConvertServiceClient(
@@ -196,9 +175,6 @@ func (p *provider) NewDisplayService(ctx context.Context, address string) (regis
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &displayServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewDisplayServiceClient(
@@ -223,9 +199,6 @@ func (p *provider) NewDocService(ctx context.Context, address string) (registryv
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &docServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewDocServiceClient(
@@ -250,9 +223,6 @@ func (p *provider) NewDownloadService(ctx context.Context, address string) (regi
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &downloadServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewDownloadServiceClient(
@@ -277,9 +247,6 @@ func (p *provider) NewGenerateService(ctx context.Context, address string) (regi
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &generateServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewGenerateServiceClient(
@@ -304,9 +271,6 @@ func (p *provider) NewGithubService(ctx context.Context, address string) (regist
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &githubServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewGithubServiceClient(
@@ -331,9 +295,6 @@ func (p *provider) NewImageService(ctx context.Context, address string) (registr
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &imageServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewImageServiceClient(
@@ -358,9 +319,6 @@ func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (re
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &jSONSchemaServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewJSONSchemaServiceClient(
@@ -385,9 +343,6 @@ func (p *provider) NewLocalResolveService(ctx context.Context, address string) (
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &localResolveServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewLocalResolveServiceClient(
@@ -412,9 +367,6 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &organizationServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewOrganizationServiceClient(
@@ -439,9 +391,6 @@ func (p *provider) NewOwnerService(ctx context.Context, address string) (registr
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &ownerServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewOwnerServiceClient(
@@ -466,9 +415,6 @@ func (p *provider) NewPluginService(ctx context.Context, address string) (regist
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &pluginServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewPluginServiceClient(
@@ -493,9 +439,6 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &pushServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewPushServiceClient(
@@ -520,9 +463,6 @@ func (p *provider) NewRecommendationService(ctx context.Context, address string)
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &recommendationServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRecommendationServiceClient(
@@ -547,9 +487,6 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &referenceServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewReferenceServiceClient(
@@ -574,9 +511,6 @@ func (p *provider) NewRepositoryBranchService(ctx context.Context, address strin
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &repositoryBranchServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryBranchServiceClient(
@@ -601,9 +535,6 @@ func (p *provider) NewRepositoryCommitService(ctx context.Context, address strin
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &repositoryCommitServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryCommitServiceClient(
@@ -628,9 +559,6 @@ func (p *provider) NewRepositoryService(ctx context.Context, address string) (re
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &repositoryServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryServiceClient(
@@ -655,9 +583,6 @@ func (p *provider) NewRepositoryTagService(ctx context.Context, address string) 
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &repositoryTagServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryTagServiceClient(
@@ -682,9 +607,6 @@ func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address 
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &repositoryTrackCommitServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryTrackCommitServiceClient(
@@ -709,9 +631,6 @@ func (p *provider) NewRepositoryTrackService(ctx context.Context, address string
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &repositoryTrackServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewRepositoryTrackServiceClient(
@@ -736,9 +655,6 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &resolveServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewResolveServiceClient(
@@ -763,9 +679,6 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &searchServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewSearchServiceClient(
@@ -790,9 +703,6 @@ func (p *provider) NewStudioService(ctx context.Context, address string) (regist
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &studioServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewStudioServiceClient(
@@ -817,9 +727,6 @@ func (p *provider) NewTokenService(ctx context.Context, address string) (registr
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &tokenServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewTokenServiceClient(
@@ -844,9 +751,6 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 		address = p.addressMapper(address)
 	}
 	options := []connect_go.ClientOption{}
-	if p.withGRPC {
-		options = append(options, connect_go.WithGRPC())
-	}
 	return &userServiceClient{
 		logger: p.logger,
 		client: registryv1alpha1connect.NewUserServiceClient(

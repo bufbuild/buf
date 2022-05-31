@@ -561,7 +561,6 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 		http2client.WithTLSConfig(config.TLS),
 	)
 	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithGRPC(),
 		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
 		bufapiclient.RegistryProviderWithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {
