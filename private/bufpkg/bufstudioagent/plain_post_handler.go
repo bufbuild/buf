@@ -182,6 +182,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	client := connect.NewClient[bytes.Buffer, bytes.Buffer](
 		httpClient,
 		targetURL.String(),
+		connect.WithGRPC(),
 		connect.WithCodec(codec),
 	)
 	// TODO: should this context be cloned to remove attached values (but keep timeout)?``
