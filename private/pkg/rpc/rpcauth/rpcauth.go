@@ -119,15 +119,3 @@ func (f AuthenticatorFunc) Authenticate(ctx context.Context, token string) (*Use
 func WithContextUser(ctx context.Context, user *User) context.Context {
 	return context.WithValue(ctx, authContextKey{}, user)
 }
-
-func authenticate(ctx context.Context, authenticator Authenticator) (*User, bool) {
-	token, err := GetTokenFromHeader(ctx)
-	if err != nil {
-		return nil, false
-	}
-	user, err := authenticator.Authenticate(ctx, token)
-	if err != nil {
-		return nil, false
-	}
-	return user, true
-}
