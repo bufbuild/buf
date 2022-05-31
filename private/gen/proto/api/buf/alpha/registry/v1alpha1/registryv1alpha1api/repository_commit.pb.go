@@ -23,35 +23,12 @@ import (
 
 // RepositoryCommitService is the Repository commit service.
 type RepositoryCommitService interface {
-	// ListRepositoryCommitsByBranch lists the repository commits associated
-	// with a repository branch on a repository, ordered by their create time.
-	ListRepositoryCommitsByBranch(
-		ctx context.Context,
-		repositoryOwner string,
-		repositoryName string,
-		repositoryBranchName string,
-		pageSize uint32,
-		pageToken string,
-		reverse bool,
-	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
 	// ListRepositoryCommitsByReference returns repository commits up-to and including
 	// the provided reference.
 	ListRepositoryCommitsByReference(
 		ctx context.Context,
 		repositoryOwner string,
 		repositoryName string,
-		reference string,
-		pageSize uint32,
-		pageToken string,
-		reverse bool,
-	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
-	// ListRepositoryCommitsOnTrack returns repository commits up-to and including
-	// the provided reference.
-	ListRepositoryCommitsOnTrack(
-		ctx context.Context,
-		repositoryOwner string,
-		repositoryName string,
-		repositoryTrackName string,
 		reference string,
 		pageSize uint32,
 		pageToken string,

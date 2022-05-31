@@ -550,50 +550,6 @@ func (p *provider) NewRepositoryTagService(ctx context.Context, address string) 
 	}, nil
 }
 
-func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	return &repositoryTrackCommitServiceClient{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryTrackCommitServiceClient(
-			p.httpClient,
-			address,
-		),
-		contextModifier: contextModifier,
-	}, nil
-}
-
-func (p *provider) NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	return &repositoryTrackServiceClient{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryTrackServiceClient(
-			p.httpClient,
-			address,
-		),
-		contextModifier: contextModifier,
-	}, nil
-}
-
 func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error

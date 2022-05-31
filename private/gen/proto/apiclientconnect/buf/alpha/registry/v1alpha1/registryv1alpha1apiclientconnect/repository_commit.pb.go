@@ -30,38 +30,6 @@ type repositoryCommitServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// ListRepositoryCommitsByBranch lists the repository commits associated
-// with a repository branch on a repository, ordered by their create time.
-func (s *repositoryCommitServiceClient) ListRepositoryCommitsByBranch(
-	ctx context.Context,
-	repositoryOwner string,
-	repositoryName string,
-	repositoryBranchName string,
-	pageSize uint32,
-	pageToken string,
-	reverse bool,
-) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.ListRepositoryCommitsByBranch(
-		ctx,
-		connect_go.NewRequest(
-			&v1alpha1.ListRepositoryCommitsByBranchRequest{
-				RepositoryOwner:      repositoryOwner,
-				RepositoryName:       repositoryName,
-				RepositoryBranchName: repositoryBranchName,
-				PageSize:             pageSize,
-				PageToken:            pageToken,
-				Reverse:              reverse,
-			}),
-	)
-	if err != nil {
-		return nil, "", err
-	}
-	return response.Msg.RepositoryCommits, response.Msg.NextPageToken, nil
-}
-
 // ListRepositoryCommitsByReference returns repository commits up-to and including
 // the provided reference.
 func (s *repositoryCommitServiceClient) ListRepositoryCommitsByReference(
@@ -86,40 +54,6 @@ func (s *repositoryCommitServiceClient) ListRepositoryCommitsByReference(
 				PageSize:        pageSize,
 				PageToken:       pageToken,
 				Reverse:         reverse,
-			}),
-	)
-	if err != nil {
-		return nil, "", err
-	}
-	return response.Msg.RepositoryCommits, response.Msg.NextPageToken, nil
-}
-
-// ListRepositoryCommitsOnTrack returns repository commits up-to and including
-// the provided reference.
-func (s *repositoryCommitServiceClient) ListRepositoryCommitsOnTrack(
-	ctx context.Context,
-	repositoryOwner string,
-	repositoryName string,
-	repositoryTrackName string,
-	reference string,
-	pageSize uint32,
-	pageToken string,
-	reverse bool,
-) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	response, err := s.client.ListRepositoryCommitsOnTrack(
-		ctx,
-		connect_go.NewRequest(
-			&v1alpha1.ListRepositoryCommitsOnTrackRequest{
-				RepositoryOwner:     repositoryOwner,
-				RepositoryName:      repositoryName,
-				RepositoryTrackName: repositoryTrackName,
-				Reference:           reference,
-				PageSize:            pageSize,
-				PageToken:           pageToken,
-				Reverse:             reverse,
 			}),
 	)
 	if err != nil {
