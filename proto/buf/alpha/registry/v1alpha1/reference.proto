@@ -19,9 +19,11 @@ package buf.alpha.registry.v1alpha1;
 import "buf/alpha/registry/v1alpha1/repository_branch.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
-import "buf/alpha/registry/v1alpha1/repository_track.proto";
 
 message Reference {
+  reserved 4;
+  reserved "track";
+
   oneof reference {
     // The requested reference is a branch.
     RepositoryBranch branch = 1;
@@ -29,8 +31,6 @@ message Reference {
     RepositoryTag tag = 2;
     // The requested reference is a commit.
     RepositoryCommit commit = 3;
-    // The requested reference is a track.
-    RepositoryTrack track = 4 [deprecated = true];
   }
 }
 
