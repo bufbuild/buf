@@ -68,7 +68,6 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	}
 	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	httpClientGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("HTTPClient"))
-	clientOptionGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("ClientOption"))
 	loggerGoIdentString := g.QualifiedGoIdent(zapPackage.Ident("Logger"))
 	apiclientGoImportPath, err := helper.NewPackageGoImportPath(
 		goPackageFileSet,
@@ -174,14 +173,11 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`address = p.addressMapper(address)`)
 		g.P(`}`)
 
-		g.P(`options := []`, clientOptionGoIdentString, `{}`)
-
 		g.P(`return &`, structName, `Client{`)
 		g.P(`logger: p.logger,`)
 		g.P(`client: `, newClientGoIdentString, `(`)
 		g.P(`p.httpClient,`)
 		g.P(`address,`)
-		g.P(`options...,`)
 		g.P(`),`)
 		g.P(`contextModifier: contextModifier,`)
 		g.P(`}, nil`)
