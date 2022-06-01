@@ -114,38 +114,8 @@ func (f AuthenticatorFunc) Authenticate(ctx context.Context, token string) (*Use
 	return f(ctx, token)
 }
 
-// NewServerInterceptor returns a new ServerInterceptor.
-func NewServerInterceptor(authenticator Authenticator) rpc.ServerInterceptor {
-	return rpc.ServerInterceptorFunc(
-		func(
-			ctx context.Context,
-			request interface{},
-			serverInfo *rpc.ServerInfo,
-			serverHandler rpc.ServerHandler,
-		) (interface{}, error) {
-			user, ok := authenticate(ctx, authenticator)
-			if ok {
-				ctx = WithContextUser(ctx, user)
-			}
-			return serverHandler.Handle(ctx, request)
-		},
-	)
-}
-
 // WithContextUser sets the user on the context. It is intended to be used
 // by interceptors following token authentication.
 func WithContextUser(ctx context.Context, user *User) context.Context {
 	return context.WithValue(ctx, authContextKey{}, user)
-}
-
-func authenticate(ctx context.Context, authenticator Authenticator) (*User, bool) {
-	token, err := GetTokenFromHeader(ctx)
-	if err != nil {
-		return nil, false
-	}
-	user, err := authenticator.Authenticate(ctx, token)
-	if err != nil {
-		return nil, false
-	}
-	return user, true
 }
