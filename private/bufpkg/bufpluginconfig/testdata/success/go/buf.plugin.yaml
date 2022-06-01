@@ -1,0 +1,10 @@
+owner: buf
+name: grpc-go
+version: v1.2.0-1
+deps:
+  - java:v1.21.0-1
+runtime:
+  go:
+    deps:
+      - module: "google.golang.org/grpc"
+        version: v1.32.0
