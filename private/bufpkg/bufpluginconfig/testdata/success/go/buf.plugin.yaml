@@ -1,8 +1,8 @@
 owner: buf
 name: grpc-go
-version: v1.2.0-1
+version: v1.2.0
 deps:
-  - java:v1.21.0-1
+  - java:v1.21.0
 runtime:
   go:
     deps:

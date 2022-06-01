@@ -1,10 +1,10 @@
 owner: buf
 name: grpc-web
-version: v1.3.1-2
+version: v1.3.1
 opts:
   - path=source_relative
 deps:
-  - protocolbuffers/js:v1.27.0-1
+  - protocolbuffers/js:v1.27.0
 runtime:
   npm:
     deps:

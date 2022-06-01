@@ -1,8 +1,8 @@
 owner: buf
 name: grpc-java
-version: v1.46.0-1
+version: v1.46.0
 deps:
-  - java:v1.21.0-1
+  - java:v1.21.0
 runtime:
   archive:
     deps:

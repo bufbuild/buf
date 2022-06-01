@@ -1,6 +1,6 @@
 owner: buf
 name: grpc-web
-version: v1.3.1-2
+version: v1.3.1
 opts:
   - path=source_relative
 deps:
