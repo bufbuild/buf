@@ -42,6 +42,9 @@ const (
 // RepositoryCommitServiceClient is a client for the
 // buf.alpha.registry.v1alpha1.RepositoryCommitService service.
 type RepositoryCommitServiceClient interface {
+	// ListRepositoryCommitsByBranch lists the repository commits associated
+	// with a repository branch on a repository, ordered by their create time.
+	ListRepositoryCommitsByBranch(context.Context, *connect_go.Request[v1alpha1.ListRepositoryCommitsByBranchRequest]) (*connect_go.Response[v1alpha1.ListRepositoryCommitsByBranchResponse], error)
 	// ListRepositoryCommitsByReference returns repository commits up-to and including
 	// the provided reference.
 	ListRepositoryCommitsByReference(context.Context, *connect_go.Request[v1alpha1.ListRepositoryCommitsByReferenceRequest]) (*connect_go.Response[v1alpha1.ListRepositoryCommitsByReferenceResponse], error)
@@ -64,6 +67,11 @@ type RepositoryCommitServiceClient interface {
 func NewRepositoryCommitServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) RepositoryCommitServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &repositoryCommitServiceClient{
+		listRepositoryCommitsByBranch: connect_go.NewClient[v1alpha1.ListRepositoryCommitsByBranchRequest, v1alpha1.ListRepositoryCommitsByBranchResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByBranch",
+			opts...,
+		),
 		listRepositoryCommitsByReference: connect_go.NewClient[v1alpha1.ListRepositoryCommitsByReferenceRequest, v1alpha1.ListRepositoryCommitsByReferenceResponse](
 			httpClient,
 			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByReference",
@@ -84,9 +92,16 @@ func NewRepositoryCommitServiceClient(httpClient connect_go.HTTPClient, baseURL 
 
 // repositoryCommitServiceClient implements RepositoryCommitServiceClient.
 type repositoryCommitServiceClient struct {
+	listRepositoryCommitsByBranch    *connect_go.Client[v1alpha1.ListRepositoryCommitsByBranchRequest, v1alpha1.ListRepositoryCommitsByBranchResponse]
 	listRepositoryCommitsByReference *connect_go.Client[v1alpha1.ListRepositoryCommitsByReferenceRequest, v1alpha1.ListRepositoryCommitsByReferenceResponse]
 	getRepositoryCommitByReference   *connect_go.Client[v1alpha1.GetRepositoryCommitByReferenceRequest, v1alpha1.GetRepositoryCommitByReferenceResponse]
 	getRepositoryCommitBySequenceId  *connect_go.Client[v1alpha1.GetRepositoryCommitBySequenceIdRequest, v1alpha1.GetRepositoryCommitBySequenceIdResponse]
+}
+
+// ListRepositoryCommitsByBranch calls
+// buf.alpha.registry.v1alpha1.RepositoryCommitService.ListRepositoryCommitsByBranch.
+func (c *repositoryCommitServiceClient) ListRepositoryCommitsByBranch(ctx context.Context, req *connect_go.Request[v1alpha1.ListRepositoryCommitsByBranchRequest]) (*connect_go.Response[v1alpha1.ListRepositoryCommitsByBranchResponse], error) {
+	return c.listRepositoryCommitsByBranch.CallUnary(ctx, req)
 }
 
 // ListRepositoryCommitsByReference calls
@@ -110,6 +125,9 @@ func (c *repositoryCommitServiceClient) GetRepositoryCommitBySequenceId(ctx cont
 // RepositoryCommitServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryCommitService service.
 type RepositoryCommitServiceHandler interface {
+	// ListRepositoryCommitsByBranch lists the repository commits associated
+	// with a repository branch on a repository, ordered by their create time.
+	ListRepositoryCommitsByBranch(context.Context, *connect_go.Request[v1alpha1.ListRepositoryCommitsByBranchRequest]) (*connect_go.Response[v1alpha1.ListRepositoryCommitsByBranchResponse], error)
 	// ListRepositoryCommitsByReference returns repository commits up-to and including
 	// the provided reference.
 	ListRepositoryCommitsByReference(context.Context, *connect_go.Request[v1alpha1.ListRepositoryCommitsByReferenceRequest]) (*connect_go.Response[v1alpha1.ListRepositoryCommitsByReferenceResponse], error)
@@ -128,6 +146,11 @@ type RepositoryCommitServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewRepositoryCommitServiceHandler(svc RepositoryCommitServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
+	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByBranch", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByBranch",
+		svc.ListRepositoryCommitsByBranch,
+		opts...,
+	))
 	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByReference", connect_go.NewUnaryHandler(
 		"/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryCommitsByReference",
 		svc.ListRepositoryCommitsByReference,
@@ -148,6 +171,10 @@ func NewRepositoryCommitServiceHandler(svc RepositoryCommitServiceHandler, opts 
 
 // UnimplementedRepositoryCommitServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedRepositoryCommitServiceHandler struct{}
+
+func (UnimplementedRepositoryCommitServiceHandler) ListRepositoryCommitsByBranch(context.Context, *connect_go.Request[v1alpha1.ListRepositoryCommitsByBranchRequest]) (*connect_go.Response[v1alpha1.ListRepositoryCommitsByBranchResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryCommitService.ListRepositoryCommitsByBranch is not implemented"))
+}
 
 func (UnimplementedRepositoryCommitServiceHandler) ListRepositoryCommitsByReference(context.Context, *connect_go.Request[v1alpha1.ListRepositoryCommitsByReferenceRequest]) (*connect_go.Response[v1alpha1.ListRepositoryCommitsByReferenceResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryCommitService.ListRepositoryCommitsByReference is not implemented"))
