@@ -3,7 +3,7 @@ module github.com/bufbuild/buf
 go 1.18
 
 require (
-	github.com/bufbuild/connect-go v0.0.0-20220530165536-13559b804ed4
+	github.com/bufbuild/connect-go v0.1.0
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/google/go-cmp v0.5.8
@@ -23,8 +23,8 @@ require (
 	go.uber.org/atomic v1.9.0
 	go.uber.org/multierr v1.8.0
 	go.uber.org/zap v1.21.0
-	golang.org/x/net v0.0.0-20220526153639-5463443f8c37
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+	golang.org/x/net v0.0.0-20220531201128-c960675eff93
+	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
 	golang.org/x/tools v0.1.10
 	google.golang.org/protobuf v1.28.0
@@ -44,6 +44,6 @@ require (
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
-	google.golang.org/genproto v0.0.0-20220527130721-00d5c0f3be58 // indirect
+	google.golang.org/genproto v0.0.0-20220601144221-27df5f98adab // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_0_1
+const _ = connect_go.IsAtLeastVersion0_1_0
 
 const (
 	// OwnerServiceName is the fully-qualified name of the OwnerService service.
