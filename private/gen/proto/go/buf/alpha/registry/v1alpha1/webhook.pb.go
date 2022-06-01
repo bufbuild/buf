@@ -35,7 +35,7 @@ const (
 )
 
 // SubscribeToRepositoryRequest is the proto request representation of a
-// webhook request body.
+// webhook request body to subscribe.
 type SubscribeToRepositoryRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -75,7 +75,7 @@ func (*SubscribeToRepositoryRequest) Descriptor() ([]byte, []int) {
 }
 
 // CreateRepositoryResponse is the proto repsonse representation
-// of a webhook request.
+// of a webhook request to subscribe.
 type SubscribeToRepositoryResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -114,6 +114,8 @@ func (*SubscribeToRepositoryResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{1}
 }
 
+// UnsubscribeToRepositoryRequest is the proto request representation of a
+// webhook request body to unsubscribe.
 type UnsubscribeToRepositoryRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -152,6 +154,8 @@ func (*UnsubscribeToRepositoryRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{2}
 }
 
+// UnsubscribeToRepositoryResponse is the proto response representation
+// of a webhook request to unsubscribe.
 type UnsubscribeToRepositoryResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -190,6 +194,7 @@ func (*UnsubscribeToRepositoryResponse) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{3}
 }
 
+// TestRepositoryRequest is the request to initiate a test event.
 type TestRepositoryRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -228,6 +233,7 @@ func (*TestRepositoryRequest) Descriptor() ([]byte, []int) {
 	return file_buf_alpha_registry_v1alpha1_webhook_proto_rawDescGZIP(), []int{4}
 }
 
+// TestRepositoryResponse is the response to initiate a test event.
 type TestRepositoryResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
