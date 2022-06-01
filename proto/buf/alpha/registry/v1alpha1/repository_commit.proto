@@ -44,6 +44,9 @@ message RepositoryCommit {
 
 // RepositoryCommitService is the Repository commit service.
 service RepositoryCommitService {
+  // ListRepositoryCommitsByBranch lists the repository commits associated
+  // with a repository branch on a repository, ordered by their create time.
+  rpc ListRepositoryCommitsByBranch(ListRepositoryCommitsByBranchRequest) returns (ListRepositoryCommitsByBranchResponse);
   // ListRepositoryCommitsByReference returns repository commits up-to and including
   // the provided reference.
   rpc ListRepositoryCommitsByReference(ListRepositoryCommitsByReferenceRequest) returns (ListRepositoryCommitsByReferenceResponse);
@@ -53,6 +56,27 @@ service RepositoryCommitService {
   // GetRepositoryCommitBySequenceId returns the repository commit matching
   // the provided sequence ID and branch, if it exists.
   rpc GetRepositoryCommitBySequenceId(GetRepositoryCommitBySequenceIdRequest) returns (GetRepositoryCommitBySequenceIdResponse);
+}
+
+message ListRepositoryCommitsByBranchRequest {
+  // The owner of the repository which the repository branch belongs to.
+  string repository_owner = 1;
+  // The name of the repository which the repository branch belongs to.
+  string repository_name = 2;
+  // The name of the repository branch whose commits should be listed.
+  string repository_branch_name = 3;
+  uint32 page_size = 4;
+  // For now this is the id of he last commit returned in the previous page.
+  // This is directly set by the frontend when listing track history starting with a
+  // specific commit. If we page_token to be anything other than a commit id
+  // we need to change the frontend as well.
+  string page_token = 5;
+  bool reverse = 6;
+}
+
+message ListRepositoryCommitsByBranchResponse {
+  repeated RepositoryCommit repository_commits = 1;
+  string next_page_token = 2;
 }
 
 message ListRepositoryCommitsByReferenceRequest {
