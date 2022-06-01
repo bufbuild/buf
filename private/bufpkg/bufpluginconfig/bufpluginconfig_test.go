@@ -30,8 +30,8 @@ func TestParsePluginConfigArchiveYAML(t *testing.T) {
 		&PluginConfig{
 			Owner:   "buf",
 			Name:    "grpc-java",
-			Version: "v1.46.0-1",
-			Deps:    []string{"java:v1.21.0-1"},
+			Version: "v1.46.0",
+			Deps:    []string{"java:v1.21.0"},
 			Runtime: Runtime{
 				Archive: &ArchiveConfig{
 					Deps: []struct {
@@ -71,8 +71,8 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 		&PluginConfig{
 			Owner:   "buf",
 			Name:    "grpc-go",
-			Version: "v1.2.0-1",
-			Deps:    []string{"java:v1.21.0-1"},
+			Version: "v1.2.0",
+			Deps:    []string{"java:v1.21.0"},
 			Runtime: Runtime{
 				Go: &GoConfig{
 					Deps: []struct {
@@ -100,9 +100,9 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 		&PluginConfig{
 			Owner:   "buf",
 			Name:    "grpc-web",
-			Version: "v1.3.1-2",
+			Version: "v1.3.1",
 			Opts:    []string{"path=source_relative"},
-			Deps:    []string{"protocolbuffers/js:v1.27.0-1"},
+			Deps:    []string{"protocolbuffers/js:v1.27.0"},
 			Runtime: Runtime{
 				NPM: &NPMConfig{
 					Deps: []struct {
