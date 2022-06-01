@@ -25,37 +25,23 @@ service WebhookService {
 }
 
 // SubscribeToRepositoryRequest is the proto request representation of a
-// webhook request body.
-message SubscribeToRepositoryRequest {
-  //  // The owner name of the repository in the corresponding subscription request.
-  //  string owner_name = 1;
-  //  // The repository name that the subscriber wishes create a subscription for.
-  //  string repository_name = 2;
-  //  // The subscriber's callback URL where notifications
-  //  // should be delivered. It is considered good practice
-  //  // to use a unique callback URL for each subscription.
-  //  string callback_url = 3;
-  //  // Additional request parameter to be embedded into the request url.
-  //  string request_parameters = 4;
-  //  // Option 1:
-  //  // Additional optional headers for the callback request.
-  //  // List values can be embedded into a comma separated list
-  //  map<string, string> request_headers = 5;
-}
+// webhook request body to subscribe.
+message SubscribeToRepositoryRequest {}
 
 // CreateRepositoryResponse is the proto repsonse representation
-// of a webhook request.
-message SubscribeToRepositoryResponse {
-  //  // The repository name given in the corresponding subscription request.
-  //  string repository_name = 1;
-  //  // The owner associated with the repository.
-  //  string owner_name = 2;
-}
+// of a webhook request to subscribe.
+message SubscribeToRepositoryResponse {}
 
+// UnsubscribeToRepositoryRequest is the proto request representation of a
+// webhook request body to unsubscribe.
 message UnsubscribeToRepositoryRequest {}
 
+// UnsubscribeToRepositoryResponse is the proto response representation
+// of a webhook request to unsubscribe.
 message UnsubscribeToRepositoryResponse {}
 
+// TestRepositoryRequest is the request to initiate a test event.
 message TestRepositoryRequest {}
 
+// TestRepositoryResponse is the response to initiate a test event.
 message TestRepositoryResponse {}
