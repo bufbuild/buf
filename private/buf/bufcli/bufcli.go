@@ -550,6 +550,15 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
+	return newRegistryProv(container, bufapiclient.RegistryProviderWithOutgoingInterceptorProvider(bufrpc.NewTokenReaderInterceptorProvider(container)))
+}
+
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
+func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
+	return newRegistryProv(container, bufapiclient.RegistryProviderWithOutgoingInterceptorProvider(bufrpc.NewWithTokenInterceptorProvider(token)))
+}
+
+func newRegistryProv(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {
 	config, err := NewConfig(container)
 	if err != nil {
 		return nil, err
@@ -559,13 +568,17 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 		http2client.WithTLSConfig(config.TLS),
 	)
 	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithOutgoingInterceptorProvider(bufrpc.NewOutgoingHeaderInterceptorProvider(container)),
+		bufapiclient.RegistryProviderWithOutgoingInterceptorProvider(bufrpc.NewWithVersionInterceptorProvider(Version)),
 		bufapiclient.RegistryProviderWithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {
 				address = buftransport.PrependAPISubdomain(address)
 			}
 			return buftransport.PrependHTTPS(address)
 		}),
+	}
+
+	for _, opt := range opts {
+		options = append(options, opt)
 	}
 	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
 }
