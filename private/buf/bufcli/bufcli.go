@@ -550,12 +550,19 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProv(container, bufapiclient.RegistryProviderWithOutgoingInterceptorProvider(bufrpc.NewTokenReaderInterceptorProvider(container)))
+	return newRegistryProv(container, bufapiclient.RegistryProviderWithInterceptors(
+		bufrpc.NewTokenReaderInterceptor(container, "address"),
+		bufrpc.NewWithVersionInterceptor(Version),
+	))
 }
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
+// set in the header of all outgoing requests from this provider
 func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProv(container, bufapiclient.RegistryProviderWithOutgoingInterceptorProvider(bufrpc.NewWithTokenInterceptorProvider(token)))
+	return newRegistryProv(container, bufapiclient.RegistryProviderWithInterceptors(
+		bufrpc.NewWithTokenInterceptor(token),
+		bufrpc.NewWithVersionInterceptor(Version),
+	))
 }
 
 func newRegistryProv(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {
@@ -568,7 +575,6 @@ func newRegistryProv(container appflag.Container, opts ...bufapiclient.RegistryP
 		http2client.WithTLSConfig(config.TLS),
 	)
 	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithOutgoingInterceptorProvider(bufrpc.NewWithVersionInterceptorProvider(Version)),
 		bufapiclient.RegistryProviderWithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {
 				address = buftransport.PrependAPISubdomain(address)

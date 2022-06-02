@@ -36,7 +36,7 @@ func NewConnectClientProvider(
 	}
 	providerOptions := []registryv1alpha1apiclientconnect.ProviderOption{
 		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
-		registryv1alpha1apiclientconnect.WithInterceptorProvider(registryProviderOptions.outgoingHeaderInterceptorProvider),
+		registryv1alpha1apiclientconnect.WithInterceptors(registryProviderOptions.interceptors),
 	}
 	return registryv1alpha1apiclientconnect.NewProvider(
 		logger,
@@ -49,8 +49,8 @@ func NewConnectClientProvider(
 type RegistryProviderOption func(*registryProviderOptions)
 
 type registryProviderOptions struct {
-	addressMapper                     func(string) string
-	outgoingHeaderInterceptorProvider func(string) (connect.UnaryInterceptorFunc, error)
+	addressMapper func(string) string
+	interceptors  []connect.Interceptor
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps
@@ -61,10 +61,8 @@ func RegistryProviderWithAddressMapper(addressMapper func(string) string) Regist
 	}
 }
 
-// RegistryProviderWithOutgoingInterceptorProvider returns a new RegistryProviderOption that
-// adds the given interceptor to all clients returned from the provider
-func RegistryProviderWithOutgoingInterceptorProvider(interceptorProvider func(address string) (connect.UnaryInterceptorFunc, error)) RegistryProviderOption {
+func RegistryProviderWithInterceptors(interceptors ...connect.Interceptor) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
-		options.outgoingHeaderInterceptorProvider = interceptorProvider
+		options.interceptors = interceptors
 	}
 }

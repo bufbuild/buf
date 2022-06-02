@@ -102,7 +102,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`logger *`, loggerGoIdentString)
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
-	g.P(`interceptorProvider func(string) (connect_go.UnaryInterceptorFunc, error)`)
+	g.P(`interceptors  []connect_go.Interceptor`)
 	g.P(`}`)
 	g.P()
 
@@ -120,9 +120,9 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`}`)
 	g.P()
 
-	g.P(`func WithInterceptorProvider(interceptorProvider func(address string) (connect_go.UnaryInterceptorFunc, error)) ProviderOption {`)
+	g.P(`func WithInterceptors(interceptors []connect_go.Interceptor) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
-	g.P(`provider.interceptorProvider = interceptorProvider`)
+	g.P(`provider.interceptors = interceptors`)
 	g.P(`}`)
 	g.P(`}`)
 
@@ -154,17 +154,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 
 		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, address string) (`, interfaceGoIdentString, `, error) {`)
 
-		g.P(`interceptors := connect_go.WithInterceptors()`)
-		g.P(`if p.interceptorProvider != nil {`)
-		g.P(`interceptor, err := p.interceptorProvider(address)`)
-		g.P(`if err != nil {`)
-		g.P(`return nil, err`)
-		g.P(`}`)
-		g.P(`interceptors = connect_go.WithInterceptors(`)
-		g.P(`interceptor,`)
-		g.P(`)`)
-		g.P(`}`)
-
+		g.P(`interceptors := connect_go.WithInterceptors(p.interceptors...)`)
 		g.P(`if p.addressMapper != nil {`)
 		g.P(`address = p.addressMapper(address)`)
 		g.P(`}`)
