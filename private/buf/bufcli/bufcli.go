@@ -548,9 +548,10 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 	return bufapp.NewConfig(container, externalConfig)
 }
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider.
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider which uses a token reader interceptor to look
+// up the token in the container or in netrc.  It is then set in the header of all outgoing requests from this provider
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProv(container, bufapiclient.RegistryProviderWithInterceptors(
+	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithInterceptors(
 		bufrpc.NewTokenReaderInterceptor(container, "address"),
 		bufrpc.NewWithVersionInterceptor(Version),
 	))
@@ -559,13 +560,13 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
 // set in the header of all outgoing requests from this provider
 func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProv(container, bufapiclient.RegistryProviderWithInterceptors(
+	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithInterceptors(
 		bufrpc.NewWithTokenInterceptor(token),
 		bufrpc.NewWithVersionInterceptor(Version),
 	))
 }
 
-func newRegistryProv(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {
+func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {
 	config, err := NewConfig(container)
 	if err != nil {
 		return nil, err

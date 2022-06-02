@@ -36,6 +36,8 @@ const (
 	tokenEnvKey = "BUF_TOKEN"
 )
 
+// NewTokenReaderInterceptor returns a new Connect Interceptor that looks up an auth token on every request and when
+// found, sets it into the request header if not already set.
 func NewTokenReaderInterceptor(container appflag.Container, address string) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return connect.UnaryFunc(func(
@@ -62,6 +64,7 @@ func NewTokenReaderInterceptor(container appflag.Container, address string) conn
 	return interceptor
 }
 
+// NewWithVersionInterceptor returns a new Connect Interceptor that sets the Buf CLI version into all request headers
 func NewWithVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return connect.UnaryFunc(func(
@@ -75,14 +78,9 @@ func NewWithVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	return interceptor
 }
 
-// This is trying to mimic the current logic which actually has the context modifier setting the token as well as manually
-// setting it in the context.  See private/buf/cmd/buf/command/registry/registrylogin/registrylogin.go for an example
-//
-// The context modifier only sets the token if it's not set by i.e. something like this.
-//
-// The other option is to have two NewRegistryProvider functions -- one that has this interceptor and one that has the
-// reader applied
-//
+// NewWithTokenInterceptor returns a new Connect Interceptor that sets the given token into all request headers
+// This interceptor is useful for login requests where the user is explicitly providing a token (rather than expecting
+// it to be read from netrc)
 func NewWithTokenInterceptor(token string) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return connect.UnaryFunc(func(

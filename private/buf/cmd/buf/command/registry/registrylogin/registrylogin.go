@@ -178,7 +178,7 @@ func inner(
 	if token == "" {
 		return errors.New("token cannot be empty string")
 	}
-	registryProvider, err := bufcli.NewRegistryProviderWithToken(ctx, token)
+	registryProvider, err := bufcli.NewRegistryProviderWithToken(container, token)
 	if err != nil {
 		return err
 	}
