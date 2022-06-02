@@ -51,9 +51,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
-	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
-	"github.com/bufbuild/buf/private/pkg/rpc/rpcauth"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http2client"
@@ -561,7 +559,7 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 		http2client.WithTLSConfig(config.TLS),
 	)
 	options := []bufapiclient.RegistryProviderOption{
-		bufapiclient.RegistryProviderWithContextModifierProvider(NewContextModifierProvider(container)),
+		bufapiclient.RegistryProviderWithOutgoingInterceptorProvider(bufrpc.NewOutgoingHeaderInterceptorProvider(container)),
 		bufapiclient.RegistryProviderWithAddressMapper(func(address string) string {
 			if buftransport.IsAPISubdomainEnabled(container) {
 				address = buftransport.PrependAPISubdomain(address)
@@ -570,30 +568,6 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 		}),
 	}
 	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
-}
-
-// NewContextModifierProvider returns a new context modifier provider for API providers.
-//
-// Public for use in other packages that provide API provider constructors.
-func NewContextModifierProvider(
-	container appflag.Container,
-) func(string) (func(context.Context) context.Context, error) {
-	return func(address string) (func(context.Context) context.Context, error) {
-		token := container.Env(tokenEnvKey)
-		if token == "" {
-			machine, err := netrc.GetMachineForName(container, address)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
-			}
-			if machine != nil {
-				token = machine.Password()
-			}
-		}
-		return func(ctx context.Context) context.Context {
-			ctx = bufrpc.WithOutgoingCLIVersionHeader(ctx, Version)
-			return rpcauth.WithTokenIfNoneSet(ctx, token)
-		}, nil
-	}
 }
 
 // PromptUserForDelete is used to receieve user confirmation that a specific

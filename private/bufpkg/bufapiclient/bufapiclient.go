@@ -16,11 +16,11 @@
 package bufapiclient
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
+	"github.com/bufbuild/connect-go"
 	"go.uber.org/zap"
 )
 
@@ -36,7 +36,7 @@ func NewConnectClientProvider(
 	}
 	providerOptions := []registryv1alpha1apiclientconnect.ProviderOption{
 		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
-		registryv1alpha1apiclientconnect.WithContextModifierProvider(registryProviderOptions.contextModifierProvider),
+		registryv1alpha1apiclientconnect.WithInterceptorProvider(registryProviderOptions.outgoingHeaderInterceptorProvider),
 	}
 	return registryv1alpha1apiclientconnect.NewProvider(
 		logger,
@@ -49,8 +49,8 @@ func NewConnectClientProvider(
 type RegistryProviderOption func(*registryProviderOptions)
 
 type registryProviderOptions struct {
-	addressMapper           func(string) string
-	contextModifierProvider func(string) (func(context.Context) context.Context, error)
+	addressMapper                     func(string) string
+	outgoingHeaderInterceptorProvider func(string) (connect.UnaryInterceptorFunc, error)
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps
@@ -61,11 +61,10 @@ func RegistryProviderWithAddressMapper(addressMapper func(string) string) Regist
 	}
 }
 
-// RegistryProviderWithContextModifierProvider returns a new RegistryProviderOption that
-// creates a context modifier for a given address. This is used to modify the context
-// before every RPC invocation.
-func RegistryProviderWithContextModifierProvider(contextModifierProvider func(address string) (func(context.Context) context.Context, error)) RegistryProviderOption {
+// RegistryProviderWithOutgoingInterceptorProvider returns a new RegistryProviderOption that
+// adds the given interceptor to all clients returned from the provider
+func RegistryProviderWithOutgoingInterceptorProvider(interceptorProvider func(address string) (connect.UnaryInterceptorFunc, error)) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
-		options.contextModifierProvider = contextModifierProvider
+		options.outgoingHeaderInterceptorProvider = interceptorProvider
 	}
 }

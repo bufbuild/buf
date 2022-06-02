@@ -25,9 +25,8 @@ import (
 )
 
 type repositoryTrackServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.RepositoryTrackServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.RepositoryTrackServiceClient
 }
 
 // CreateRepositoryTrack creates a new repository track.
@@ -36,9 +35,6 @@ func (s *repositoryTrackServiceClient) CreateRepositoryTrack(
 	repositoryId string,
 	name string,
 ) (repositoryTrack *v1alpha1.RepositoryTrack, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.CreateRepositoryTrack(
 		ctx,
 		connect_go.NewRequest(
@@ -61,9 +57,6 @@ func (s *repositoryTrackServiceClient) ListRepositoryTracks(
 	pageToken string,
 	reverse bool,
 ) (repositoryTracks []*v1alpha1.RepositoryTrack, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListRepositoryTracks(
 		ctx,
 		connect_go.NewRequest(
@@ -87,9 +80,6 @@ func (s *repositoryTrackServiceClient) DeleteRepositoryTrackByName(
 	repositoryName string,
 	name string,
 ) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.DeleteRepositoryTrackByName(
 		ctx,
 		connect_go.NewRequest(
@@ -112,9 +102,6 @@ func (s *repositoryTrackServiceClient) GetRepositoryTrackByName(
 	repositoryName string,
 	name string,
 ) (repositoryTrack *v1alpha1.RepositoryTrack, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetRepositoryTrackByName(
 		ctx,
 		connect_go.NewRequest(
@@ -139,9 +126,6 @@ func (s *repositoryTrackServiceClient) ListRepositoryTracksByRepositoryCommit(
 	pageToken string,
 	reverse bool,
 ) (repositoryTracks []*v1alpha1.RepositoryTrack, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListRepositoryTracksByRepositoryCommit(
 		ctx,
 		connect_go.NewRequest(

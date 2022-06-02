@@ -25,9 +25,8 @@ import (
 )
 
 type referenceServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.ReferenceServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.ReferenceServiceClient
 }
 
 // GetReferenceByName takes a reference name and returns the
@@ -38,9 +37,6 @@ func (s *referenceServiceClient) GetReferenceByName(
 	owner string,
 	repositoryName string,
 ) (reference *v1alpha1.Reference, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetReferenceByName(
 		ctx,
 		connect_go.NewRequest(

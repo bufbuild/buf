@@ -25,9 +25,8 @@ import (
 )
 
 type searchServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.SearchServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.SearchServiceClient
 }
 
 // Search searches the BSR.
@@ -38,9 +37,6 @@ func (s *searchServiceClient) Search(
 	pageToken uint32,
 	filters []v1alpha1.SearchFilter,
 ) (searchResults []*v1alpha1.SearchResult, nextPageToken uint32, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.Search(
 		ctx,
 		connect_go.NewRequest(

@@ -19,6 +19,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/buf/private/pkg/rpc"
+	"github.com/bufbuild/connect-go"
 )
 
 const (
@@ -29,8 +30,8 @@ const (
 )
 
 // WithOutgoingCLIVersionHeader attaches the given CLI version to the context for rpc.
-func WithOutgoingCLIVersionHeader(ctx context.Context, cliVersion string) context.Context {
-	return rpc.WithOutgoingHeader(ctx, cliVersionHeaderName, cliVersion)
+func WithOutgoingCLIVersionHeader(req connect.AnyRequest, cliVersion string) {
+	req.Header().Set(cliVersionHeaderName, cliVersion)
 }
 
 // GetIncomingCLIVersionHeader gets the CLI version from the context for rpc.

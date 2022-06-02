@@ -25,9 +25,8 @@ import (
 )
 
 type repositoryTrackCommitServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.RepositoryTrackCommitServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.RepositoryTrackCommitServiceClient
 }
 
 // GetRepositoryTrackCommitByRepositoryCommit returns the RepositoryTrackCommit associated given repository_commit on
@@ -37,9 +36,6 @@ func (s *repositoryTrackCommitServiceClient) GetRepositoryTrackCommitByRepositor
 	repositoryTrackId string,
 	repositoryCommitId string,
 ) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetRepositoryTrackCommitByRepositoryCommit(
 		ctx,
 		connect_go.NewRequest(
@@ -63,9 +59,6 @@ func (s *repositoryTrackCommitServiceClient) ListRepositoryTrackCommitsByReposit
 	pageToken string,
 	reverse bool,
 ) (repositoryTrackCommits []*v1alpha1.RepositoryTrackCommit, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListRepositoryTrackCommitsByRepositoryTrack(
 		ctx,
 		connect_go.NewRequest(
@@ -90,9 +83,6 @@ func (s *repositoryTrackCommitServiceClient) GetRepositoryTrackCommitByReference
 	track string,
 	reference string,
 ) (repositoryTrackCommit *v1alpha1.RepositoryTrackCommit, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.GetRepositoryTrackCommitByReference(
 		ctx,
 		connect_go.NewRequest(

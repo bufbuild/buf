@@ -25,17 +25,13 @@ import (
 )
 
 type authzServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.AuthzServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.AuthzServiceClient
 }
 
 // UserCanCreateOrganizationRepository returns whether the user is authorized
 // to create repositories in an organization.
 func (s *authzServiceClient) UserCanCreateOrganizationRepository(ctx context.Context, organizationId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanCreateOrganizationRepository(
 		ctx,
 		connect_go.NewRequest(
@@ -52,9 +48,6 @@ func (s *authzServiceClient) UserCanCreateOrganizationRepository(ctx context.Con
 // UserCanSeeRepositorySettings returns whether the user is authorized
 // to see repository settings.
 func (s *authzServiceClient) UserCanSeeRepositorySettings(ctx context.Context, repositoryId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanSeeRepositorySettings(
 		ctx,
 		connect_go.NewRequest(
@@ -71,9 +64,6 @@ func (s *authzServiceClient) UserCanSeeRepositorySettings(ctx context.Context, r
 // UserCanSeeOrganizationSettings returns whether the user is authorized
 // to see organization settings.
 func (s *authzServiceClient) UserCanSeeOrganizationSettings(ctx context.Context, organizationId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanSeeOrganizationSettings(
 		ctx,
 		connect_go.NewRequest(
@@ -93,9 +83,6 @@ func (s *authzServiceClient) UserCanReadPlugin(
 	owner string,
 	name string,
 ) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanReadPlugin(
 		ctx,
 		connect_go.NewRequest(
@@ -117,9 +104,6 @@ func (s *authzServiceClient) UserCanCreatePluginVersion(
 	owner string,
 	name string,
 ) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanCreatePluginVersion(
 		ctx,
 		connect_go.NewRequest(
@@ -141,9 +125,6 @@ func (s *authzServiceClient) UserCanCreateTemplateVersion(
 	owner string,
 	name string,
 ) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanCreateTemplateVersion(
 		ctx,
 		connect_go.NewRequest(
@@ -161,9 +142,6 @@ func (s *authzServiceClient) UserCanCreateTemplateVersion(
 // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
 // a plugin in an organization.
 func (s *authzServiceClient) UserCanCreateOrganizationPlugin(ctx context.Context, organizationId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanCreateOrganizationPlugin(
 		ctx,
 		connect_go.NewRequest(
@@ -180,9 +158,6 @@ func (s *authzServiceClient) UserCanCreateOrganizationPlugin(ctx context.Context
 // UserCanCreateOrganizationPlugin returns whether the user is authorized to create
 // a template in an organization.
 func (s *authzServiceClient) UserCanCreateOrganizationTemplate(ctx context.Context, organizationId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanCreateOrganizationTemplate(
 		ctx,
 		connect_go.NewRequest(
@@ -203,9 +178,6 @@ func (s *authzServiceClient) UserCanSeePluginSettings(
 	owner string,
 	name string,
 ) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanSeePluginSettings(
 		ctx,
 		connect_go.NewRequest(
@@ -227,9 +199,6 @@ func (s *authzServiceClient) UserCanSeeTemplateSettings(
 	owner string,
 	name string,
 ) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanSeeTemplateSettings(
 		ctx,
 		connect_go.NewRequest(
@@ -247,9 +216,6 @@ func (s *authzServiceClient) UserCanSeeTemplateSettings(
 // UserCanAddOrganizationMember returns whether the user is authorized to add
 // any members to the organization and the list of roles they can add.
 func (s *authzServiceClient) UserCanAddOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanAddOrganizationMember(
 		ctx,
 		connect_go.NewRequest(
@@ -266,9 +232,6 @@ func (s *authzServiceClient) UserCanAddOrganizationMember(ctx context.Context, o
 // UserCanUpdateOrganizationMember returns whether the user is authorized to update
 // any members' membership information in the organization and the list of roles they can update.
 func (s *authzServiceClient) UserCanUpdateOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanUpdateOrganizationMember(
 		ctx,
 		connect_go.NewRequest(
@@ -285,9 +248,6 @@ func (s *authzServiceClient) UserCanUpdateOrganizationMember(ctx context.Context
 // UserCanRemoveOrganizationMember returns whether the user is authorized to remove
 // any members from the organization and the list of roles they can remove.
 func (s *authzServiceClient) UserCanRemoveOrganizationMember(ctx context.Context, organizationId string) (authorizedRoles []v1alpha1.OrganizationRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanRemoveOrganizationMember(
 		ctx,
 		connect_go.NewRequest(
@@ -304,9 +264,6 @@ func (s *authzServiceClient) UserCanRemoveOrganizationMember(ctx context.Context
 // UserCanDeleteOrganization returns whether the user is authorized
 // to delete an organization.
 func (s *authzServiceClient) UserCanDeleteOrganization(ctx context.Context, organizationId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanDeleteOrganization(
 		ctx,
 		connect_go.NewRequest(
@@ -323,9 +280,6 @@ func (s *authzServiceClient) UserCanDeleteOrganization(ctx context.Context, orga
 // UserCanDeleteRepository returns whether the user is authorized
 // to delete a repository.
 func (s *authzServiceClient) UserCanDeleteRepository(ctx context.Context, repositoryId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanDeleteRepository(
 		ctx,
 		connect_go.NewRequest(
@@ -342,9 +296,6 @@ func (s *authzServiceClient) UserCanDeleteRepository(ctx context.Context, reposi
 // UserCanDeleteTemplate returns whether the user is authorized
 // to delete a template.
 func (s *authzServiceClient) UserCanDeleteTemplate(ctx context.Context, templateId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanDeleteTemplate(
 		ctx,
 		connect_go.NewRequest(
@@ -361,9 +312,6 @@ func (s *authzServiceClient) UserCanDeleteTemplate(ctx context.Context, template
 // UserCanDeletePlugin returns whether the user is authorized
 // to delete a plugin.
 func (s *authzServiceClient) UserCanDeletePlugin(ctx context.Context, pluginId string) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanDeletePlugin(
 		ctx,
 		connect_go.NewRequest(
@@ -380,9 +328,6 @@ func (s *authzServiceClient) UserCanDeletePlugin(ctx context.Context, pluginId s
 // UserCanDeleteUser returns whether the user is authorized
 // to delete a user.
 func (s *authzServiceClient) UserCanDeleteUser(ctx context.Context) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanDeleteUser(
 		ctx,
 		connect_go.NewRequest(
@@ -397,9 +342,6 @@ func (s *authzServiceClient) UserCanDeleteUser(ctx context.Context) (authorized 
 // UserCanSeeServerAdminPanel returns whether the user is authorized
 // to see server admin panel.
 func (s *authzServiceClient) UserCanSeeServerAdminPanel(ctx context.Context) (authorized bool, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanSeeServerAdminPanel(
 		ctx,
 		connect_go.NewRequest(
@@ -414,9 +356,6 @@ func (s *authzServiceClient) UserCanSeeServerAdminPanel(ctx context.Context) (au
 // UserCanManageRepositoryContributors returns whether the user is authorized to manage
 // any contributors to the repository and the list of roles they can manage.
 func (s *authzServiceClient) UserCanManageRepositoryContributors(ctx context.Context, repositoryId string) (authorizedRoles []v1alpha1.RepositoryRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanManageRepositoryContributors(
 		ctx,
 		connect_go.NewRequest(
@@ -433,9 +372,6 @@ func (s *authzServiceClient) UserCanManageRepositoryContributors(ctx context.Con
 // UserCanManagePluginContributors returns whether the user is authorized to manage
 // any contributors to the plugin and the list of roles they can manage.
 func (s *authzServiceClient) UserCanManagePluginContributors(ctx context.Context, pluginId string) (authorizedRoles []v1alpha1.PluginRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanManagePluginContributors(
 		ctx,
 		connect_go.NewRequest(
@@ -452,9 +388,6 @@ func (s *authzServiceClient) UserCanManagePluginContributors(ctx context.Context
 // UserCanManageTemplateContributors returns whether the user is authorized to manage
 // any contributors to the template and the list of roles they can manage.
 func (s *authzServiceClient) UserCanManageTemplateContributors(ctx context.Context, templateId string) (authorizedRoles []v1alpha1.TemplateRole, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.UserCanManageTemplateContributors(
 		ctx,
 		connect_go.NewRequest(

@@ -42,10 +42,10 @@ func NewProvider(
 }
 
 type provider struct {
-	logger                  *zap.Logger
-	httpClient              connect_go.HTTPClient
-	addressMapper           func(string) string
-	contextModifierProvider func(string) (func(context.Context) context.Context, error)
+	logger              *zap.Logger
+	httpClient          connect_go.HTTPClient
+	addressMapper       func(string) string
+	interceptorProvider func(string) (connect_go.UnaryInterceptorFunc, error)
 }
 
 // ProviderOption is an option for a new Provider.
@@ -58,22 +58,21 @@ func WithAddressMapper(addressMapper func(string) string) ProviderOption {
 	}
 }
 
-// WithContextModifierProvider provides a function that  modifies the context before every RPC invocation.
-// Applied before the address mapper.
-func WithContextModifierProvider(contextModifierProvider func(address string) (func(context.Context) context.Context, error)) ProviderOption {
+func WithInterceptorProvider(interceptorProvider func(address string) (connect_go.UnaryInterceptorFunc, error)) ProviderOption {
 	return func(provider *provider) {
-		provider.contextModifierProvider = contextModifierProvider
+		provider.interceptorProvider = interceptorProvider
 	}
 }
-
 func (p *provider) NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -83,19 +82,21 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewAdminServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -105,19 +106,21 @@ func (p *provider) NewAuthnService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewAuthnServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -127,19 +130,21 @@ func (p *provider) NewAuthzService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewAuthzServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewConvertService(ctx context.Context, address string) (registryv1alpha1api.ConvertService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -149,19 +154,21 @@ func (p *provider) NewConvertService(ctx context.Context, address string) (regis
 		client: registryv1alpha1connect.NewConvertServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewDisplayService(ctx context.Context, address string) (registryv1alpha1api.DisplayService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -171,19 +178,21 @@ func (p *provider) NewDisplayService(ctx context.Context, address string) (regis
 		client: registryv1alpha1connect.NewDisplayServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewDocService(ctx context.Context, address string) (registryv1alpha1api.DocService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -193,19 +202,21 @@ func (p *provider) NewDocService(ctx context.Context, address string) (registryv
 		client: registryv1alpha1connect.NewDocServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -215,19 +226,21 @@ func (p *provider) NewDownloadService(ctx context.Context, address string) (regi
 		client: registryv1alpha1connect.NewDownloadServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewGenerateService(ctx context.Context, address string) (registryv1alpha1api.GenerateService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -237,19 +250,21 @@ func (p *provider) NewGenerateService(ctx context.Context, address string) (regi
 		client: registryv1alpha1connect.NewGenerateServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewGithubService(ctx context.Context, address string) (registryv1alpha1api.GithubService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -259,19 +274,21 @@ func (p *provider) NewGithubService(ctx context.Context, address string) (regist
 		client: registryv1alpha1connect.NewGithubServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewImageService(ctx context.Context, address string) (registryv1alpha1api.ImageService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -281,19 +298,21 @@ func (p *provider) NewImageService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewImageServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (registryv1alpha1api.JSONSchemaService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -303,19 +322,21 @@ func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (re
 		client: registryv1alpha1connect.NewJSONSchemaServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -325,19 +346,21 @@ func (p *provider) NewLocalResolveService(ctx context.Context, address string) (
 		client: registryv1alpha1connect.NewLocalResolveServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -347,19 +370,21 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 		client: registryv1alpha1connect.NewOrganizationServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -369,19 +394,21 @@ func (p *provider) NewOwnerService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewOwnerServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewPluginService(ctx context.Context, address string) (registryv1alpha1api.PluginService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -391,19 +418,21 @@ func (p *provider) NewPluginService(ctx context.Context, address string) (regist
 		client: registryv1alpha1connect.NewPluginServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -413,19 +442,21 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 		client: registryv1alpha1connect.NewPushServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewRecommendationService(ctx context.Context, address string) (registryv1alpha1api.RecommendationService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -435,19 +466,21 @@ func (p *provider) NewRecommendationService(ctx context.Context, address string)
 		client: registryv1alpha1connect.NewRecommendationServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -457,19 +490,21 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 		client: registryv1alpha1connect.NewReferenceServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -479,19 +514,21 @@ func (p *provider) NewRepositoryBranchService(ctx context.Context, address strin
 		client: registryv1alpha1connect.NewRepositoryBranchServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -501,19 +538,21 @@ func (p *provider) NewRepositoryCommitService(ctx context.Context, address strin
 		client: registryv1alpha1connect.NewRepositoryCommitServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -523,19 +562,21 @@ func (p *provider) NewRepositoryService(ctx context.Context, address string) (re
 		client: registryv1alpha1connect.NewRepositoryServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -545,19 +586,21 @@ func (p *provider) NewRepositoryTagService(ctx context.Context, address string) 
 		client: registryv1alpha1connect.NewRepositoryTagServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -567,19 +610,21 @@ func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address 
 		client: registryv1alpha1connect.NewRepositoryTrackCommitServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -589,19 +634,21 @@ func (p *provider) NewRepositoryTrackService(ctx context.Context, address string
 		client: registryv1alpha1connect.NewRepositoryTrackServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -611,19 +658,21 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 		client: registryv1alpha1connect.NewResolveServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -633,19 +682,21 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 		client: registryv1alpha1connect.NewSearchServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewStudioService(ctx context.Context, address string) (registryv1alpha1api.StudioService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -655,19 +706,21 @@ func (p *provider) NewStudioService(ctx context.Context, address string) (regist
 		client: registryv1alpha1connect.NewStudioServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -677,19 +730,21 @@ func (p *provider) NewTokenService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewTokenServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
 
 func (p *provider) NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
+	interceptors := connect_go.WithInterceptors()
+	if p.interceptorProvider != nil {
+		interceptor, err := p.interceptorProvider(address)
 		if err != nil {
 			return nil, err
 		}
+		interceptors = connect_go.WithInterceptors(
+			interceptor,
+		)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -699,7 +754,7 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 		client: registryv1alpha1connect.NewUserServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
