@@ -1,6 +1,0 @@
-// GetIncomingCLIVersionHeader gets the CLI version from the context for rpc.
-//
-// Returns empty if no CLI version is attached to the context.
-func GetIncomingCLIVersionHeader(ctx context.Context) string {
-	return rpc.GetIncomingHeader(ctx, cliVersionHeaderName)
-}

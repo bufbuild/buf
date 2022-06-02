@@ -171,14 +171,6 @@ func inner(
 			return err
 		}
 	}
-	registryProvider, err := bufcli.NewRegistryProvider(ctx, container)
-	if err != nil {
-		return err
-	}
-	authnService, err := registryProvider.NewAuthnService(ctx, remote)
-	if err != nil {
-		return err
-	}
 	// Remove leading and trailing spaces from user-supplied token to avoid
 	// common input errors such as trailing new lines, as-is the case of using
 	// echo vs echo -n.
@@ -186,7 +178,14 @@ func inner(
 	if token == "" {
 		return errors.New("token cannot be empty string")
 	}
-	// user, err := authnService.GetCurrentUser(rpcauth.WithToken(ctx, token))
+	registryProvider, err := bufcli.NewRegistryProviderWithToken(ctx, token)
+	if err != nil {
+		return err
+	}
+	authnService, err := registryProvider.NewAuthnService(ctx, remote)
+	if err != nil {
+		return err
+	}
 	user, err := authnService.GetCurrentUser(ctx)
 	if err != nil {
 		// We don't want to use the default error from wrapError here if the error
