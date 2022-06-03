@@ -45,8 +45,6 @@ type WebhookServiceClient interface {
 	SubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.SubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.SubscribeToRepositoryResponse], error)
 	// UnsubscribeToRepository for unsubscribing to a specific repository.
 	UnsubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.UnsubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.UnsubscribeToRepositoryResponse], error)
-	// TestRepository for initiating a test event which triggers a webhook with a "test_push" event for a given repository.
-	TestRepository(context.Context, *connect_go.Request[v1alpha1.TestRepositoryRequest]) (*connect_go.Response[v1alpha1.TestRepositoryResponse], error)
 }
 
 // NewWebhookServiceClient constructs a client for the buf.alpha.registry.v1alpha1.WebhookService
@@ -69,11 +67,6 @@ func NewWebhookServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 			baseURL+"/buf.alpha.registry.v1alpha1.WebhookService/UnsubscribeToRepository",
 			opts...,
 		),
-		testRepository: connect_go.NewClient[v1alpha1.TestRepositoryRequest, v1alpha1.TestRepositoryResponse](
-			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.WebhookService/TestRepository",
-			opts...,
-		),
 	}
 }
 
@@ -81,7 +74,6 @@ func NewWebhookServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 type webhookServiceClient struct {
 	subscribeToRepository   *connect_go.Client[v1alpha1.SubscribeToRepositoryRequest, v1alpha1.SubscribeToRepositoryResponse]
 	unsubscribeToRepository *connect_go.Client[v1alpha1.UnsubscribeToRepositoryRequest, v1alpha1.UnsubscribeToRepositoryResponse]
-	testRepository          *connect_go.Client[v1alpha1.TestRepositoryRequest, v1alpha1.TestRepositoryResponse]
 }
 
 // SubscribeToRepository calls buf.alpha.registry.v1alpha1.WebhookService.SubscribeToRepository.
@@ -94,11 +86,6 @@ func (c *webhookServiceClient) UnsubscribeToRepository(ctx context.Context, req 
 	return c.unsubscribeToRepository.CallUnary(ctx, req)
 }
 
-// TestRepository calls buf.alpha.registry.v1alpha1.WebhookService.TestRepository.
-func (c *webhookServiceClient) TestRepository(ctx context.Context, req *connect_go.Request[v1alpha1.TestRepositoryRequest]) (*connect_go.Response[v1alpha1.TestRepositoryResponse], error) {
-	return c.testRepository.CallUnary(ctx, req)
-}
-
 // WebhookServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.WebhookService
 // service.
 type WebhookServiceHandler interface {
@@ -106,8 +93,6 @@ type WebhookServiceHandler interface {
 	SubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.SubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.SubscribeToRepositoryResponse], error)
 	// UnsubscribeToRepository for unsubscribing to a specific repository.
 	UnsubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.UnsubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.UnsubscribeToRepositoryResponse], error)
-	// TestRepository for initiating a test event which triggers a webhook with a "test_push" event for a given repository.
-	TestRepository(context.Context, *connect_go.Request[v1alpha1.TestRepositoryRequest]) (*connect_go.Response[v1alpha1.TestRepositoryResponse], error)
 }
 
 // NewWebhookServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -127,11 +112,6 @@ func NewWebhookServiceHandler(svc WebhookServiceHandler, opts ...connect_go.Hand
 		svc.UnsubscribeToRepository,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.WebhookService/TestRepository", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.WebhookService/TestRepository",
-		svc.TestRepository,
-		opts...,
-	))
 	return "/buf.alpha.registry.v1alpha1.WebhookService/", mux
 }
 
@@ -144,8 +124,4 @@ func (UnimplementedWebhookServiceHandler) SubscribeToRepository(context.Context,
 
 func (UnimplementedWebhookServiceHandler) UnsubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.UnsubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.UnsubscribeToRepositoryResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.WebhookService.UnsubscribeToRepository is not implemented"))
-}
-
-func (UnimplementedWebhookServiceHandler) TestRepository(context.Context, *connect_go.Request[v1alpha1.TestRepositoryRequest]) (*connect_go.Response[v1alpha1.TestRepositoryResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.WebhookService.TestRepository is not implemented"))
 }

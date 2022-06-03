@@ -23,8 +23,6 @@ service WebhookService {
   rpc SubscribeToRepository(SubscribeToRepositoryRequest) returns (SubscribeToRepositoryResponse) {}
   // UnsubscribeToRepository for unsubscribing to a specific repository.
   rpc UnsubscribeToRepository(UnsubscribeToRepositoryRequest) returns (UnsubscribeToRepositoryResponse) {}
-  // TestRepository for initiating a test event which triggers a webhook with a "test_push" event for a given repository.
-  rpc TestRepository(TestRepositoryRequest) returns (TestRepositoryResponse) {}
 }
 
 // SubscribeToRepositoryRequest is the proto request representation of a
@@ -42,9 +40,3 @@ message UnsubscribeToRepositoryRequest {}
 // UnsubscribeToRepositoryResponse is the proto response representation
 // of a webhook request to unsubscribe.
 message UnsubscribeToRepositoryResponse {}
-
-// TestRepositoryRequest is the request to initiate a test event.
-message TestRepositoryRequest {}
-
-// TestRepositoryResponse is the response to initiate a test event.
-message TestRepositoryResponse {}

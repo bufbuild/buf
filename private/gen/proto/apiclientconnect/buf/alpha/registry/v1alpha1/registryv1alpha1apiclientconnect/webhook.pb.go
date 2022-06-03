@@ -61,19 +61,3 @@ func (s *webhookServiceClient) UnsubscribeToRepository(ctx context.Context) (_ e
 	}
 	return nil
 }
-
-// TestRepository for initiating a test event which triggers a webhook with a "test_push" event for a given repository.
-func (s *webhookServiceClient) TestRepository(ctx context.Context) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
-	_, err := s.client.TestRepository(
-		ctx,
-		connect_go.NewRequest(
-			&v1alpha1.TestRepositoryRequest{}),
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}

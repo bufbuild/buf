@@ -27,6 +27,4 @@ type WebhookService interface {
 	SubscribeToRepository(ctx context.Context) (err error)
 	// UnsubscribeToRepository for unsubscribing to a specific repository.
 	UnsubscribeToRepository(ctx context.Context) (err error)
-	// TestRepository for initiating a test event which triggers a webhook with a "test_push" event for a given repository.
-	TestRepository(ctx context.Context) (err error)
 }
