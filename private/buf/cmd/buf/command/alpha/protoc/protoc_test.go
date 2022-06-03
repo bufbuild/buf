@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -212,20 +211,20 @@ func TestCompareInsertionPointOutput(t *testing.T) {
 	)
 }
 
-func TestInsertionPointMixedPathsFail(t *testing.T) {
+func TestInsertionPointMixedPathsSuccess(t *testing.T) {
 	testingextended.SkipIfShort(t)
 	t.Parallel()
 	wd, err := os.Getwd()
 	require.NoError(t, err)
 	runner := command.NewRunner()
-	testInsertionPointMixedPathsFail(t, runner, ".", wd)
-	testInsertionPointMixedPathsFail(t, runner, wd, ".")
+	testInsertionPointMixedPathsSuccess(t, runner, ".", wd)
+	testInsertionPointMixedPathsSuccess(t, runner, wd, ".")
 }
 
-// testInsertionPointMixedPathsFail demonstrates that insertion points are only
-// able to generate to the same output directory, even if the absolute path points
-// to the same place.
-func testInsertionPointMixedPathsFail(t *testing.T, runner command.Runner, receiverOut string, writerOut string) {
+// testInsertionPointMixedPathsSuccess demonstrates that insertion points are able
+// to generate to the same output directory, even if the absolute path points to
+// the same place.
+func testInsertionPointMixedPathsSuccess(t *testing.T, runner command.Runner, receiverOut string, writerOut string) {
 	dirPath := filepath.Join("testdata", "insertion")
 	filePaths := buftesting.GetProtocFilePaths(t, dirPath, 100)
 	protocFlags := []string{
@@ -246,7 +245,7 @@ func testInsertionPointMixedPathsFail(t *testing.T, runner command.Runner, recei
 		protocFlags...,
 	)
 	require.Error(t, err)
-	appcmdtesting.RunCommandExitCode(
+	appcmdtesting.RunCommandSuccess(
 		t,
 		func(name string) *appcmd.Command {
 			return NewCommand(
@@ -254,7 +253,6 @@ func testInsertionPointMixedPathsFail(t *testing.T, runner command.Runner, recei
 				appflag.NewBuilder(name),
 			)
 		},
-		1,
 		func(string) map[string]string {
 			return map[string]string{
 				"PATH": os.Getenv("PATH"),
@@ -262,7 +260,6 @@ func testInsertionPointMixedPathsFail(t *testing.T, runner command.Runner, recei
 		},
 		nil,
 		nil,
-		io.Discard,
 		append(
 			append(
 				protocFlags,
