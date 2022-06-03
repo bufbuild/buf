@@ -30,6 +30,7 @@ type webhookServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
+// SubscribeToRepository for subscribing to a specific repository.
 func (s *webhookServiceClient) SubscribeToRepository(ctx context.Context) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -45,6 +46,7 @@ func (s *webhookServiceClient) SubscribeToRepository(ctx context.Context) (_ err
 	return nil
 }
 
+// UnsubscribeToRepository for unsubscribing to a specific repository.
 func (s *webhookServiceClient) UnsubscribeToRepository(ctx context.Context) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -60,6 +62,7 @@ func (s *webhookServiceClient) UnsubscribeToRepository(ctx context.Context) (_ e
 	return nil
 }
 
+// TestRepository for initiating a test event which triggers a webhook with a "test_push" event for a given repository.
 func (s *webhookServiceClient) TestRepository(ctx context.Context) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)

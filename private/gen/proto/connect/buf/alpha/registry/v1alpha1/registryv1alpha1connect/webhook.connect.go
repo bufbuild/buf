@@ -41,8 +41,11 @@ const (
 
 // WebhookServiceClient is a client for the buf.alpha.registry.v1alpha1.WebhookService service.
 type WebhookServiceClient interface {
+	// SubscribeToRepository for subscribing to a specific repository.
 	SubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.SubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.SubscribeToRepositoryResponse], error)
+	// UnsubscribeToRepository for unsubscribing to a specific repository.
 	UnsubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.UnsubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.UnsubscribeToRepositoryResponse], error)
+	// TestRepository for initiating a test event which triggers a webhook with a "test_push" event for a given repository.
 	TestRepository(context.Context, *connect_go.Request[v1alpha1.TestRepositoryRequest]) (*connect_go.Response[v1alpha1.TestRepositoryResponse], error)
 }
 
@@ -99,8 +102,11 @@ func (c *webhookServiceClient) TestRepository(ctx context.Context, req *connect_
 // WebhookServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.WebhookService
 // service.
 type WebhookServiceHandler interface {
+	// SubscribeToRepository for subscribing to a specific repository.
 	SubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.SubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.SubscribeToRepositoryResponse], error)
+	// UnsubscribeToRepository for unsubscribing to a specific repository.
 	UnsubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.UnsubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.UnsubscribeToRepositoryResponse], error)
+	// TestRepository for initiating a test event which triggers a webhook with a "test_push" event for a given repository.
 	TestRepository(context.Context, *connect_go.Request[v1alpha1.TestRepositoryRequest]) (*connect_go.Response[v1alpha1.TestRepositoryResponse], error)
 }
 
