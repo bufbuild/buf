@@ -192,7 +192,6 @@ func run(
 		httpserver.RunnerWithTLSConfig(
 			serverTLSConfig,
 		),
-		httpserver.RunnerWithHealth(),
 	)
 	return httpRunner.Run(
 		ctx,

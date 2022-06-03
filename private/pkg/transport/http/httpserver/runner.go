@@ -70,8 +70,6 @@ func (s *runner) Run(
 	mux.Use(middleware.Recoverer)
 	mux.Use(middleware.StripSlashes)
 	mux.Use(newZapMiddleware(s.logger))
-	// This sets a limit on the max body size. Ideally this could be configured
-	// in Connect itself: https://github.com/bufbuild/core/issues/4506
 	if s.maxBodySize > 0 {
 		mux.Use(func(next http.Handler) http.Handler {
 			return http.MaxBytesHandler(next, s.maxBodySize)
