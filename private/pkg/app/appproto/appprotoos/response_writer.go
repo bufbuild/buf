@@ -93,19 +93,25 @@ func (w *responseWriter) AddResponse(
 	response *pluginpb.CodeGeneratorResponse,
 	pluginOut string,
 ) error {
+	// It's important that we get a consistent output path
+	// so that we use the same in-memory bucket for paths
+	// set to the same directory.
+	//
+	// filepath.Abs calls filepath.Clean.
+	//
+	// For example:
+	//
+	// --insertion-point-receiver_out=insertion --insertion-point-writer_out=./insertion/ --insertion-point_writer_out=/foo/insertion
+	absPluginOut, err := filepath.Abs(normalpath.Unnormalize(pluginOut))
+	if err != nil {
+		return err
+	}
 	w.lock.Lock()
 	defer w.lock.Unlock()
 	return w.addResponse(
 		ctx,
 		response,
-		// It's important that we clean the plugin output path
-		// so that we use the same in-memory bucket for paths
-		// set to the same directory.
-		//
-		// For example,
-		//
-		// --insertion-point-receiver_out=insertion --insertion-point-writer_out=./insertion/
-		filepath.Clean(pluginOut),
+		absPluginOut,
 		w.createOutDirIfNotExists,
 	)
 }

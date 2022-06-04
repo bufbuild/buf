@@ -34,6 +34,8 @@ type ResponseWriter interface {
 	// If there is a .jar extension, this generates a jar. If there is a .zip
 	// extension, this generates a zip. If there is no extension, this outputs
 	// to the directory.
+	//
+	// pluginOut will be unnormalized within this function.
 	AddResponse(
 		ctx context.Context,
 		response *pluginpb.CodeGeneratorResponse,
