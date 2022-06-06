@@ -46,8 +46,8 @@ type Runtime struct {
 // GoConfig is the configuration for a Go plugin.
 type GoConfig struct {
 	// The minimum Go version required by the plugin.
-	Lang string `json:"lang" yaml:"lang"`
-	Deps []struct {
+	MinLangVersion string `json:"min_lang_version" yaml:"min_lang_version"`
+	Deps           []struct {
 		Module  string `json:"module" yaml:"module"`
 		Version string `json:"version" yaml:"version"`
 	} `json:"deps,omitempty" yaml:"deps,omitempty"`

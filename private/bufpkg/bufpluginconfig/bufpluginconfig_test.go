@@ -75,7 +75,7 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			Deps:    []string{"java:v1.21.0"},
 			Runtime: Runtime{
 				Go: &GoConfig{
-					Lang: "1.18",
+					MinLangVersion: "1.18",
 					Deps: []struct {
 						Module  string `json:"module" yaml:"module"`
 						Version string `json:"version" yaml:"version"`
