@@ -116,13 +116,17 @@ func RunnerWithTLSConfig(tlsConfig *tls.Config) RunnerOption {
 	}
 }
 
-// RunnerWithObservability returns a new RunnerOption that turns on
-// OpenCensus tracing and metrics.
-//
-// The default is to not turn on observability.
-func RunnerWithObservability(middleware func(http.Handler) http.Handler) RunnerOption {
+// RunnerWithMiddlewares returns a new RunnerOption that use middlewares when the Runner Run.
+func RunnerWithMiddlewares(middlewares ...func(http.Handler) http.Handler) RunnerOption {
 	return func(runner *runner) {
-		runner.observability = middleware
+		runner.middlewares = append(runner.middlewares, middlewares...)
+	}
+}
+
+// RunnerWithWalkFunc returns a new RunnerOption that runs chi.Walk when then Runner Run.
+func RunnerWithWalkFunc(walkFunc chi.WalkFunc) RunnerOption {
+	return func(runner *runner) {
+		runner.walkFunc = walkFunc
 	}
 }
 

@@ -35,9 +35,10 @@ type runner struct {
 	shutdownTimeout   time.Duration
 	readHeaderTimeout time.Duration
 	tlsConfig         *tls.Config
-	observability     func(http.Handler) http.Handler
+	middlewares       []func(http.Handler) http.Handler
 	health            bool
 	maxBodySize       int64
+	walkFunc          chi.WalkFunc
 }
 
 func newRunner(logger *zap.Logger, options ...RunnerOption) *runner {
@@ -66,7 +67,7 @@ func (s *runner) Run(
 		}
 	}()
 
-	mux := newLoggingRouter(s.logger, zap.InfoLevel, chi.NewMux(), "")
+	mux := chi.NewMux()
 	mux.Use(middleware.Recoverer)
 	mux.Use(middleware.StripSlashes)
 	mux.Use(newZapMiddleware(s.logger))
@@ -75,9 +76,7 @@ func (s *runner) Run(
 			return http.MaxBytesHandler(next, s.maxBodySize)
 		})
 	}
-	if s.observability != nil {
-		mux.Use(s.observability)
-	}
+	mux.Use(s.middlewares...)
 	mux.Use(rpchttp.NewServerInterceptor())
 	for _, mapper := range mappers {
 		if err := mapper.Map(mux); err != nil {
@@ -91,6 +90,11 @@ func (s *runner) Run(
 				responseWriter.WriteHeader(http.StatusOK)
 			},
 		)
+	}
+	if s.walkFunc != nil {
+		if err := chi.Walk(mux, s.walkFunc); err != nil {
+			return err
+		}
 	}
 
 	stdLogger, err := zap.NewStdLogAt(s.logger, zap.ErrorLevel)
@@ -131,7 +135,7 @@ func (s *runner) Run(
 		zap.String("address", listener.Addr().String()),
 		zap.Duration("shutdown_timeout", s.shutdownTimeout),
 		zap.Bool("tls", s.tlsConfig != nil),
-		zap.Bool("observability", s.observability != nil),
+		zap.Int("middlewares", len(s.middlewares)),
 		zap.Int64("max_body_size", s.maxBodySize),
 	)
 	if err := eg.Wait(); err != http.ErrServerClosed {
