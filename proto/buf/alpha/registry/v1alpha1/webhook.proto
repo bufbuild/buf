@@ -19,15 +19,12 @@ package buf.alpha.registry.v1alpha1;
 // WebhookService exposes the functionality for a caller to
 // subscribe to or unsubscribe to a Webhook for a given repository.
 service WebhookService {
-  rpc SubscribeToRepository(SubscribeToRepositoryRequest)
-      returns (SubscribeToRepositoryResponse) {}
+  rpc SubscribeToRepository(SubscribeToRepositoryRequest) returns (SubscribeToRepositoryResponse) {}
   // Analogous APIs with likely very similar request/response structures.
-  rpc UnsubscribeToRepository(UnsubscribeToRepositoryRequest)
-      returns (UnsubscribeToRepositoryResponse) {}
+  rpc UnsubscribeToRepository(UnsubscribeToRepositoryRequest) returns (UnsubscribeToRepositoryResponse) {}
   // Lists the subscriptions for a given repository. Will only return if the
   // the user has a role within the owner/repository.
-  rpc ListSubscriptionsForRepository(ListSubscriptionsForRepositoryRequest)
-      returns (ListSubscriptionsForRepositoryResponse) {}
+  rpc ListSubscriptionsForRepository(ListSubscriptionsForRepositoryRequest) returns (ListSubscriptionsForRepositoryResponse) {}
 }
 
 // SubscribeToRepositoryRequest is the proto request representation of a

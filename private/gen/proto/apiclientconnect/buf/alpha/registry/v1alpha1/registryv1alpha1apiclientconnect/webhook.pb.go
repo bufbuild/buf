@@ -30,15 +30,50 @@ type webhookServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// SubscribeToRepository for subscribing to a specific repository.
-func (s *webhookServiceClient) SubscribeToRepository(ctx context.Context) (_ error) {
+func (s *webhookServiceClient) SubscribeToRepository(
+	ctx context.Context,
+	event []v1alpha1.WebhookEvent,
+	ownerName string,
+	repositoryName string,
+	callbackUrl string,
+	requestHeaders *v1alpha1.Headers,
+) (repositoryNameResponse string, ownerNameResponse string, webhookId string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.SubscribeToRepository(
+	response, err := s.client.SubscribeToRepository(
 		ctx,
 		connect_go.NewRequest(
-			&v1alpha1.SubscribeToRepositoryRequest{}),
+			&v1alpha1.SubscribeToRepositoryRequest{
+				Event:          event,
+				OwnerName:      ownerName,
+				RepositoryName: repositoryName,
+				CallbackUrl:    callbackUrl,
+				RequestHeaders: requestHeaders,
+			}),
+	)
+	if err != nil {
+		return "", "", "", err
+	}
+	return response.Msg.RepositoryName, response.Msg.OwnerName, response.Msg.WebhookId, nil
+}
+
+// Analogous APIs with likely very similar request/response structures.
+func (s *webhookServiceClient) UnsubscribeToRepository(
+	ctx context.Context,
+	webhookSubscriptionId string,
+	event []v1alpha1.WebhookEvent,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.UnsubscribeToRepository(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.UnsubscribeToRepositoryRequest{
+				WebhookSubscriptionId: webhookSubscriptionId,
+				Event:                 event,
+			}),
 	)
 	if err != nil {
 		return err
@@ -46,18 +81,26 @@ func (s *webhookServiceClient) SubscribeToRepository(ctx context.Context) (_ err
 	return nil
 }
 
-// UnsubscribeToRepository for unsubscribing to a specific repository.
-func (s *webhookServiceClient) UnsubscribeToRepository(ctx context.Context) (_ error) {
+// Lists the subscriptions for a given repository. Will only return if the
+// the user has a role within the owner/repository.
+func (s *webhookServiceClient) ListSubscriptionsForRepository(
+	ctx context.Context,
+	repositoryName string,
+	ownerName string,
+) (subscribedWebhooks []*v1alpha1.SubscribedWebhook, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.UnsubscribeToRepository(
+	response, err := s.client.ListSubscriptionsForRepository(
 		ctx,
 		connect_go.NewRequest(
-			&v1alpha1.UnsubscribeToRepositoryRequest{}),
+			&v1alpha1.ListSubscriptionsForRepositoryRequest{
+				RepositoryName: repositoryName,
+				OwnerName:      ownerName,
+			}),
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return response.Msg.SubscribedWebhooks, nil
 }

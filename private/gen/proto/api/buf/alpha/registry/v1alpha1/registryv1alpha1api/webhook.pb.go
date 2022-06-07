@@ -18,13 +18,31 @@ package registryv1alpha1api
 
 import (
 	context "context"
+	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 // WebhookService exposes the functionality for a caller to
 // subscribe to or unsubscribe to a Webhook for a given repository.
 type WebhookService interface {
-	// SubscribeToRepository for subscribing to a specific repository.
-	SubscribeToRepository(ctx context.Context) (err error)
-	// UnsubscribeToRepository for unsubscribing to a specific repository.
-	UnsubscribeToRepository(ctx context.Context) (err error)
+	SubscribeToRepository(
+		ctx context.Context,
+		event []v1alpha1.WebhookEvent,
+		ownerName string,
+		repositoryName string,
+		callbackUrl string,
+		requestHeaders *v1alpha1.Headers,
+	) (repositoryNameResponse string, ownerNameResponse string, webhookId string, err error)
+	// Analogous APIs with likely very similar request/response structures.
+	UnsubscribeToRepository(
+		ctx context.Context,
+		webhookSubscriptionId string,
+		event []v1alpha1.WebhookEvent,
+	) (err error)
+	// Lists the subscriptions for a given repository. Will only return if the
+	// the user has a role within the owner/repository.
+	ListSubscriptionsForRepository(
+		ctx context.Context,
+		repositoryName string,
+		ownerName string,
+	) (subscribedWebhooks []*v1alpha1.SubscribedWebhook, err error)
 }
