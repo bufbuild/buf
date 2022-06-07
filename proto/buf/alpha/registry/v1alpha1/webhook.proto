@@ -19,24 +19,97 @@ package buf.alpha.registry.v1alpha1;
 // WebhookService exposes the functionality for a caller to
 // subscribe to or unsubscribe to a Webhook for a given repository.
 service WebhookService {
-  // SubscribeToRepository for subscribing to a specific repository.
-  rpc SubscribeToRepository(SubscribeToRepositoryRequest) returns (SubscribeToRepositoryResponse) {}
-  // UnsubscribeToRepository for unsubscribing to a specific repository.
-  rpc UnsubscribeToRepository(UnsubscribeToRepositoryRequest) returns (UnsubscribeToRepositoryResponse) {}
+  rpc SubscribeToRepository(SubscribeToRepositoryRequest)
+      returns (SubscribeToRepositoryResponse) {}
+  // Analogous APIs with likely very similar request/response structures.
+  rpc UnsubscribeToRepository(UnsubscribeToRepositoryRequest)
+      returns (UnsubscribeToRepositoryResponse) {}
+  // Lists the subscriptions for a given repository. Will only return if the
+  // the user has a role within the owner/repository.
+  rpc ListSubscriptionsForRepository(ListSubscriptionsForRepositoryRequest)
+      returns (ListSubscriptionsForRepositoryResponse) {}
 }
 
 // SubscribeToRepositoryRequest is the proto request representation of a
-// webhook request body to subscribe.
-message SubscribeToRepositoryRequest {}
+// webhook request body.
+message SubscribeToRepositoryRequest {
+  // The events to subscribe to for the given repository.
+  repeated WebhookEvent event = 1;
+  // The owner name of the repository in the corresponding subscription request.
+  string owner_name = 2;
+  // The repository name that the subscriber wishes create a subscription for.
+  string repository_name = 3;
+  // The subscriber's callback URL where notifications
+  // should be delivered. It is considered good practice
+  // to use a unique callback URL for each subscription.
+  string callback_url = 4;
+  // [Optional] Additional headers for the callback request.
+  Headers request_headers = 5;
+}
 
-// CreateRepositoryResponse is the proto repsonse representation
-// of a webhook request to subscribe.
-message SubscribeToRepositoryResponse {}
+// WebhookEvent contains the currently supported webhook event types.
+enum WebhookEvent {
+  // WEBHOOK_EVENT_UNSPECIFIED will result in a noop for registering webhooks.
+  WEBHOOK_EVENT_UNSPECIFIED = 0;
+  // WEBHOOK_EVENT_REPOSITORY_PUSH is emitted whenever a successful buf push
+  // is completed for a specific repository.
+  WEBHOOK_EVENT_REPOSITORY_PUSH = 1;
+}
 
-// UnsubscribeToRepositoryRequest is the proto request representation of a
-// webhook request body to unsubscribe.
-message UnsubscribeToRepositoryRequest {}
+// Headers is the http header representation.
+message Headers {
+  map<string, HeaderValue> headers = 1;
+}
 
-// UnsubscribeToRepositoryResponse is the proto response representation
-// of a webhook request to unsubscribe.
+// HeaderValue is the header value: a list of string values.
+message HeaderValue {
+  repeated string value = 1;
+}
+
+// SubscribeToRepositoryResponse is the proto repsonse representation
+// of a webhook request.
+message SubscribeToRepositoryResponse {
+  // The repository name given in the corresponding subscription request.
+  string repository_name = 1;
+  // The owner associated with the repository.
+  string owner_name = 2;
+  // For the user to unsubscribe from the webhook event.
+  string webhook_id = 3;
+}
+
+// UnsubscribeToRepositoryRequest is the request for unsubscribing to a webhook.
+message UnsubscribeToRepositoryRequest {
+  // The id of the webhook subscription.
+  string webhook_subscription_id = 1;
+  // The events of the webhook subscription.
+  repeated WebhookEvent event = 2;
+}
+
+// UnsubscribeToRepositoryResponse is the response for unsubscribing
+// from a webhook.
 message UnsubscribeToRepositoryResponse {}
+
+// ListSubscriptionsForRepositoryResponse is the request to get the
+// list of subscribed webhooks for a given repository.
+message ListSubscriptionsForRepositoryRequest {
+  // The repository name given in the corresponding subscription request.
+  string repository_name = 1;
+  // The owner associated with the repository.
+  string owner_name = 2;
+}
+
+// ListSubscriptionsForRepositoryResponse is the response for the list of
+// subscribed webhooks for a given repository.
+message ListSubscriptionsForRepositoryResponse {
+  // The list of subscribed webhooks for a given repository.
+  repeated SubscribedWebhook subscribed_webhooks = 1;
+}
+
+// SubscribedWebhook is the representation of a webhook event and webhook
+// subscription id.
+message SubscribedWebhook {
+  // The events associated with the subscription.
+  repeated WebhookEvent event = 1;
+  // The id of the associated subscription.
+  string webhook_subscription_id = 2;
+}
