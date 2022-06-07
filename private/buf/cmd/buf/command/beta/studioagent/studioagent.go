@@ -192,6 +192,7 @@ func run(
 		httpserver.RunnerWithTLSConfig(
 			serverTLSConfig,
 		),
+		httpserver.RunnerWithMaxBodySize(bufstudioagent.MaxMessageSizeBytesDefault),
 	)
 	return httpRunner.Run(
 		ctx,
