@@ -30,49 +30,42 @@ type webhookServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-func (s *webhookServiceClient) SubscribeToRepository(
+func (s *webhookServiceClient) CreateWebhook(
 	ctx context.Context,
 	event []v1alpha1.WebhookEvent,
 	ownerName string,
 	repositoryName string,
 	callbackUrl string,
-	requestHeaders *v1alpha1.Headers,
-) (repositoryNameResponse string, ownerNameResponse string, webhookId string, _ error) {
+) (webhookId string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.SubscribeToRepository(
+	response, err := s.client.CreateWebhook(
 		ctx,
 		connect_go.NewRequest(
-			&v1alpha1.SubscribeToRepositoryRequest{
+			&v1alpha1.CreateWebhookRequest{
 				Event:          event,
 				OwnerName:      ownerName,
 				RepositoryName: repositoryName,
 				CallbackUrl:    callbackUrl,
-				RequestHeaders: requestHeaders,
 			}),
 	)
 	if err != nil {
-		return "", "", "", err
+		return "", err
 	}
-	return response.Msg.RepositoryName, response.Msg.OwnerName, response.Msg.WebhookId, nil
+	return response.Msg.WebhookId, nil
 }
 
 // Analogous APIs with likely very similar request/response structures.
-func (s *webhookServiceClient) UnsubscribeToRepository(
-	ctx context.Context,
-	webhookSubscriptionId string,
-	event []v1alpha1.WebhookEvent,
-) (_ error) {
+func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookSubscriptionId string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	_, err := s.client.UnsubscribeToRepository(
+	_, err := s.client.DeleteWebhook(
 		ctx,
 		connect_go.NewRequest(
-			&v1alpha1.UnsubscribeToRepositoryRequest{
+			&v1alpha1.DeleteWebhookRequest{
 				WebhookSubscriptionId: webhookSubscriptionId,
-				Event:                 event,
 			}),
 	)
 	if err != nil {
@@ -83,24 +76,26 @@ func (s *webhookServiceClient) UnsubscribeToRepository(
 
 // Lists the subscriptions for a given repository. Will only return if the
 // the user has a role within the owner/repository.
-func (s *webhookServiceClient) ListSubscriptionsForRepository(
+func (s *webhookServiceClient) ListWebhooks(
 	ctx context.Context,
 	repositoryName string,
 	ownerName string,
-) (subscribedWebhooks []*v1alpha1.SubscribedWebhook, _ error) {
+	pageToken string,
+) (subscribedWebhooks []*v1alpha1.SubscribedWebhook, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
-	response, err := s.client.ListSubscriptionsForRepository(
+	response, err := s.client.ListWebhooks(
 		ctx,
 		connect_go.NewRequest(
-			&v1alpha1.ListSubscriptionsForRepositoryRequest{
+			&v1alpha1.ListWebhooksRequest{
 				RepositoryName: repositoryName,
 				OwnerName:      ownerName,
+				PageToken:      pageToken,
 			}),
 	)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return response.Msg.SubscribedWebhooks, nil
+	return response.Msg.SubscribedWebhooks, response.Msg.NextPageToken, nil
 }

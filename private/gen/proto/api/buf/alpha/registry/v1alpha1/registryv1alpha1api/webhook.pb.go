@@ -24,25 +24,21 @@ import (
 // WebhookService exposes the functionality for a caller to
 // subscribe to or unsubscribe to a Webhook for a given repository.
 type WebhookService interface {
-	SubscribeToRepository(
+	CreateWebhook(
 		ctx context.Context,
 		event []v1alpha1.WebhookEvent,
 		ownerName string,
 		repositoryName string,
 		callbackUrl string,
-		requestHeaders *v1alpha1.Headers,
-	) (repositoryNameResponse string, ownerNameResponse string, webhookId string, err error)
+	) (webhookId string, err error)
 	// Analogous APIs with likely very similar request/response structures.
-	UnsubscribeToRepository(
-		ctx context.Context,
-		webhookSubscriptionId string,
-		event []v1alpha1.WebhookEvent,
-	) (err error)
+	DeleteWebhook(ctx context.Context, webhookSubscriptionId string) (err error)
 	// Lists the subscriptions for a given repository. Will only return if the
 	// the user has a role within the owner/repository.
-	ListSubscriptionsForRepository(
+	ListWebhooks(
 		ctx context.Context,
 		repositoryName string,
 		ownerName string,
-	) (subscribedWebhooks []*v1alpha1.SubscribedWebhook, err error)
+		pageToken string,
+	) (subscribedWebhooks []*v1alpha1.SubscribedWebhook, nextPageToken string, err error)
 }
