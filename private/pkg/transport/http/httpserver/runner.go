@@ -76,8 +76,8 @@ func (s *runner) Run(
 			return http.MaxBytesHandler(next, s.maxBodySize)
 		})
 	}
-	mux.Use(s.middlewares...)
 	mux.Use(rpchttp.NewServerInterceptor())
+	mux.Use(s.middlewares...)
 	for _, mapper := range mappers {
 		if err := mapper.Map(mux); err != nil {
 			return err

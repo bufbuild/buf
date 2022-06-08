@@ -123,7 +123,8 @@ func RunnerWithMiddlewares(middlewares ...func(http.Handler) http.Handler) Runne
 	}
 }
 
-// RunnerWithWalkFunc returns a new RunnerOption that runs chi.Walk when then Runner Run.
+// RunnerWithWalkFunc returns a new RunnerOption that runs chi.Walk to walk the router
+// after all middlewares and routes have been mounted, but before the server is started.
 func RunnerWithWalkFunc(walkFunc chi.WalkFunc) RunnerOption {
 	return func(runner *runner) {
 		runner.walkFunc = walkFunc
