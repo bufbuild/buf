@@ -1,0 +1,4 @@
+version: v1
+plugins:
+  - name: wasm/example.wasm
+    out: wasm/gen

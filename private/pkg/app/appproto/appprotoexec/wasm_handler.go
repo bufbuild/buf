@@ -16,17 +16,17 @@ package appprotoexec
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
 	"github.com/bufbuild/buf/private/pkg/protoencoding"
 	wasmtime "github.com/bytecodealliance/wasmtime-go"
-	"github.com/wasmerio/wasmer-go/wasmer"
 	"go.opencensus.io/trace"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
@@ -42,7 +42,7 @@ func newWASMHandler(
 ) *wasmHandler {
 	// TODO: This should be threaded in from the app package
 	// (like command.Runner), but this is simpler for now.
-	engine := wastime.NewEngine()
+	engine := wasmtime.NewEngine()
 	return &wasmHandler{
 		logger:     logger.Named("appprotoexec"),
 		engine:     engine,
@@ -59,36 +59,69 @@ func (h *wasmHandler) Handle(
 	ctx, span := trace.StartSpan(ctx, "wasm_plugin")
 	span.AddAttributes(trace.StringAttribute("plugin", filepath.Base(h.pluginPath)))
 	defer span.End()
-	wasmBytes, err := ioutil.ReadFile(h.pluginPath)
+
+	linker := wasmtime.NewLinker(h.engine)
+	if err := linker.DefineWasi(); err != nil {
+		return err
+	}
+
+	// TODO: Right now we're using the protojson format.
+	// We'll need to update this to the binary form.
+	stdinBlob, err := protojson.Marshal(request)
 	if err != nil {
 		return err
 	}
-	module, err := wasmtime.NewModule(h.store, wasmBytes)
+
+	dir, err := ioutil.TempDir("", "out")
 	if err != nil {
 		return err
 	}
-	instance, err := wasmer.NewInstance(module, wasmer.NewImportObject())
+
+	defer os.RemoveAll(dir)
+	stdinPath := filepath.Join(dir, "stdin")
+	stderrPath := filepath.Join(dir, "stderr")
+	stdoutPath := filepath.Join(dir, "stdout")
+
+	if err := os.WriteFile(stdinPath, stdinBlob, 0755); err != nil {
+		return err
+	}
+
+	// Configure WASI imports to write stdout into a file.
+	wasiConfig := wasmtime.NewWasiConfig()
+	wasiConfig.SetStdinFile(stdinPath)
+	wasiConfig.SetStdoutFile(stdoutPath)
+	wasiConfig.SetStderrFile(stderrPath)
+
+	store := wasmtime.NewStore(h.engine)
+	store.SetWasi(wasiConfig)
+
+	wasm, err := os.ReadFile(h.pluginPath)
 	if err != nil {
 		return err
 	}
-	run, err := instance.Exports.GetFunction("_start")
+
+	module, err := wasmtime.NewModule(store.Engine, wasm)
 	if err != nil {
 		return err
 	}
-	requestData, err := protoencoding.NewWireMarshaler().Marshal(request)
+
+	instance, err := linker.Instantiate(store, module)
 	if err != nil {
 		return err
 	}
-	result, err := run(requestData)
+
+	fn := instance.GetExport(store, "_start").Func()
+	if _, err := fn.Call(store); err != nil {
+		return err
+	}
+
+	stdoutBlob, err := os.ReadFile(stdoutPath)
 	if err != nil {
 		return err
 	}
-	resultBytes, ok := result.([]byte)
-	if !ok {
-		return fmt.Errorf("expected []byte result, but got %T", resultBytes)
-	}
+
 	response := &pluginpb.CodeGeneratorResponse{}
-	if err := protoencoding.NewWireUnmarshaler(nil).Unmarshal(resultBytes, response); err != nil {
+	if err := protoencoding.NewJSONUnmarshaler(nil).Unmarshal(stdoutBlob, response); err != nil {
 		return err
 	}
 	response, err = normalizeCodeGeneratorResponse(response)
