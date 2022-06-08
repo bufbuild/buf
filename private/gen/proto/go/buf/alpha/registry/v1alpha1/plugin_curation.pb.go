@@ -35,6 +35,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Note: DO NOT rely on this service for any production functionality.
 // CuratedPlugin represents a protoc plugin curated by Buf, such as protoc-gen-go.
 type CuratedPlugin struct {
 	state         protoimpl.MessageState
