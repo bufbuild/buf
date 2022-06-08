@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/bufbuild/connect-go v0.1.0
+	github.com/go-chi/chi/v5 v5.0.7
 	github.com/gofrs/flock v0.8.1
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/google/go-cmp v0.5.8
