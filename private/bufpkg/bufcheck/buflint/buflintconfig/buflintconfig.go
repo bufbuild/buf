@@ -236,9 +236,12 @@ func configToJSON(config *Config) *configJSON {
 	sort.Slice(ignoreIDPathsJSON, func(i, j int) bool { return ignoreIDPathsJSON[i].ID < ignoreIDPathsJSON[j].ID })
 	// We should not be sorting in place for the config structure, since it will mutate the
 	// underlying config ordering.
-	use := config.Use
-	except := config.Except
-	ignoreRootPaths := config.IgnoreRootPaths
+	use := make([]string, len(config.Use))
+	copy(use, config.Use)
+	except := make([]string, len(config.Except))
+	copy(except, config.Except)
+	ignoreRootPaths := make([]string, len(config.IgnoreRootPaths))
+	copy(ignoreRootPaths, config.IgnoreRootPaths)
 	sort.Strings(use)
 	sort.Strings(except)
 	sort.Strings(ignoreRootPaths)
