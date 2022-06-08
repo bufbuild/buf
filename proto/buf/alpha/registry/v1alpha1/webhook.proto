@@ -93,6 +93,8 @@ message ListSubscriptionsForRepositoryRequest {
   string repository_name = 1;
   // The owner associated with the repository.
   string owner_name = 2;
+  // The next page token for paginating.
+  string next_page_token = 3;
 }
 
 // ListSubscriptionsForRepositoryResponse is the response for the list of
@@ -100,6 +102,8 @@ message ListSubscriptionsForRepositoryRequest {
 message ListSubscriptionsForRepositoryResponse {
   // The list of subscribed webhooks for a given repository.
   repeated SubscribedWebhook subscribed_webhooks = 1;
+  // The next page token for paginating.
+  string next_page_token = 2;
 }
 
 // SubscribedWebhook is the representation of a webhook event and webhook
