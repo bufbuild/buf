@@ -169,10 +169,12 @@ type idPathsJSON struct {
 func configToJSON(config *Config) *configJSON {
 	ignoreIDPathsJSON := make([]idPathsJSON, 0, len(config.IgnoreIDOrCategoryToRootPaths))
 	for ignoreID, rootPaths := range config.IgnoreIDOrCategoryToRootPaths {
-		sort.Strings(rootPaths)
+		rootPathsCopy := make([]string, len(rootPaths))
+		copy(rootPathsCopy, rootPaths)
+		sort.Strings(rootPathsCopy)
 		ignoreIDPathsJSON = append(ignoreIDPathsJSON, idPathsJSON{
 			ID:    ignoreID,
-			Paths: rootPaths,
+			Paths: rootPathsCopy,
 		})
 	}
 	sort.Slice(ignoreIDPathsJSON, func(i, j int) bool { return ignoreIDPathsJSON[i].ID < ignoreIDPathsJSON[j].ID })
