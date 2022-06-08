@@ -1,0 +1,19 @@
+- id: buf-breaking
+  name: buf breaking
+  language: golang
+  entry: buf breaking proto
+  # match files ending in .proto, .protobuf, or .pb
+  files: &protofiles '\.(?:proto(?:buf)?|pb)$'
+  pass_filenames: false
+- id: buf-lint
+  name: buf lint
+  language: golang
+  entry: buf lint
+  files: *protofiles
+  pass_filenames: false
+- id: buf-format
+  name: buf format
+  language: golang
+  entry: buf format -w --exit-code
+  files: *protofiles
+  pass_filenames: false
