@@ -2,17 +2,17 @@
   name: buf breaking
   language: golang
   entry: buf breaking
-  files: '\.proto$'
+  types: [proto]
   pass_filenames: false
 - id: buf-lint
   name: buf lint
   language: golang
   entry: buf lint
-  files: '\.proto$'
+  types: [proto]
   pass_filenames: false
 - id: buf-format
   name: buf format
   language: golang
   entry: buf format -w --exit-code
-  files: '\.proto$'
+  types: [proto]
   pass_filenames: false
