@@ -227,20 +227,30 @@ type idPathsJSON struct {
 func configToJSON(config *Config) *configJSON {
 	ignoreIDPathsJSON := make([]idPathsJSON, 0, len(config.IgnoreIDOrCategoryToRootPaths))
 	for ignoreID, rootPaths := range config.IgnoreIDOrCategoryToRootPaths {
-		sort.Strings(rootPaths)
+		rootPathsCopy := make([]string, len(rootPaths))
+		copy(rootPathsCopy, rootPaths)
+		sort.Strings(rootPathsCopy)
 		ignoreIDPathsJSON = append(ignoreIDPathsJSON, idPathsJSON{
 			ID:    ignoreID,
-			Paths: rootPaths,
+			Paths: rootPathsCopy,
 		})
 	}
 	sort.Slice(ignoreIDPathsJSON, func(i, j int) bool { return ignoreIDPathsJSON[i].ID < ignoreIDPathsJSON[j].ID })
-	sort.Strings(config.Use)
-	sort.Strings(config.Except)
-	sort.Strings(config.IgnoreRootPaths)
+	// We should not be sorting in place for the config structure, since it will mutate the
+	// underlying config ordering.
+	use := make([]string, len(config.Use))
+	copy(use, config.Use)
+	except := make([]string, len(config.Except))
+	copy(except, config.Except)
+	ignoreRootPaths := make([]string, len(config.IgnoreRootPaths))
+	copy(ignoreRootPaths, config.IgnoreRootPaths)
+	sort.Strings(use)
+	sort.Strings(except)
+	sort.Strings(ignoreRootPaths)
 	return &configJSON{
-		Use:                                  config.Use,
-		Except:                               config.Except,
-		IgnoreRootPaths:                      config.IgnoreRootPaths,
+		Use:                                  use,
+		Except:                               except,
+		IgnoreRootPaths:                      ignoreRootPaths,
 		IgnoreIDOrCategoryToRootPaths:        ignoreIDPathsJSON,
 		EnumZeroValueSuffix:                  config.EnumZeroValueSuffix,
 		RPCAllowSameRequestResponse:          config.RPCAllowSameRequestResponse,
