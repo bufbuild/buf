@@ -821,6 +821,9 @@ func TestCommentIgnoresOff(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 74, 7, 74, 16, "RPC_PASCAL_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 76, 7, 76, 28, "RPC_REQUEST_STANDARD_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 79, 7, 79, 28, "RPC_RESPONSE_STANDARD_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 5, 1, 5, 11, "PACKAGE_DIRECTORY_MATCH"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 5, 1, 5, 11, "PACKAGE_VERSION_SUFFIX"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 9, 26, 9, 28, "ENUM_FIRST_VALUE_ZERO"),
 	)
 }
 
@@ -870,6 +873,7 @@ func TestCommentIgnoresCascadeOff(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 72, 7, 72, 16, "RPC_PASCAL_CASE"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 72, 17, 72, 38, "RPC_REQUEST_STANDARD_NAME"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 72, 49, 72, 70, "RPC_RESPONSE_STANDARD_NAME"),
+		bufanalysistesting.NewFileAnnotation(t, "b.proto", 9, 26, 9, 28, "ENUM_FIRST_VALUE_ZERO"),
 	)
 }
 

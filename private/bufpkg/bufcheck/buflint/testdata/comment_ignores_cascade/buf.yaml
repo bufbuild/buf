@@ -1,6 +1,7 @@
 version: v1
 lint:
   use:
+    - ENUM_FIRST_VALUE_ZERO
     - ENUM_PASCAL_CASE
     - ENUM_NO_ALLOW_ALIAS
     - ENUM_ZERO_VALUE_SUFFIX

@@ -159,7 +159,21 @@ func checkEnumFirstValueZero(add addFunc, enum protosource.Enum) error {
 	if values := enum.Values(); len(values) > 0 {
 		if firstEnumValue := values[0]; firstEnumValue.Number() != 0 {
 			// proto3 compilation references the number
-			add(firstEnumValue, firstEnumValue.NumberLocation(), nil, "First enum value %q should have a numeric value of 0", firstEnumValue.Name())
+			add(
+				firstEnumValue,
+				firstEnumValue.NumberLocation(),
+				// also check the name location for this comment ignore, as the number location might not have the comment
+				// see https://github.com/bufbuild/buf/issues/1186
+				// also check the enum for this comment ignore
+				// this allows users to set this "globally" for an enum
+				// see https://github.com/bufbuild/buf/issues/161
+				[]protosource.Location{
+					firstEnumValue.NameLocation(),
+					firstEnumValue.Enum().Location(),
+				},
+				"First enum value %q should have a numeric value of 0",
+				firstEnumValue.Name(),
+			)
 		}
 	}
 	return nil
