@@ -41,11 +41,11 @@ const (
 
 // WebhookServiceClient is a client for the buf.alpha.registry.v1alpha1.WebhookService service.
 type WebhookServiceClient interface {
+	// Create a webhook.
 	CreateWebhook(context.Context, *connect_go.Request[v1alpha1.CreateWebhookRequest]) (*connect_go.Response[v1alpha1.CreateWebhookResponse], error)
-	// Analogous APIs with likely very similar request/response structures.
+	// Delete a webhook.
 	DeleteWebhook(context.Context, *connect_go.Request[v1alpha1.DeleteWebhookRequest]) (*connect_go.Response[v1alpha1.DeleteWebhookResponse], error)
-	// Lists the subscriptions for a given repository. Will only return if the
-	// the user has a role within the owner/repository.
+	// Lists the webhooks for a given repository.
 	ListWebhooks(context.Context, *connect_go.Request[v1alpha1.ListWebhooksRequest]) (*connect_go.Response[v1alpha1.ListWebhooksResponse], error)
 }
 
@@ -102,11 +102,11 @@ func (c *webhookServiceClient) ListWebhooks(ctx context.Context, req *connect_go
 // WebhookServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.WebhookService
 // service.
 type WebhookServiceHandler interface {
+	// Create a webhook.
 	CreateWebhook(context.Context, *connect_go.Request[v1alpha1.CreateWebhookRequest]) (*connect_go.Response[v1alpha1.CreateWebhookResponse], error)
-	// Analogous APIs with likely very similar request/response structures.
+	// Delete a webhook.
 	DeleteWebhook(context.Context, *connect_go.Request[v1alpha1.DeleteWebhookRequest]) (*connect_go.Response[v1alpha1.DeleteWebhookResponse], error)
-	// Lists the subscriptions for a given repository. Will only return if the
-	// the user has a role within the owner/repository.
+	// Lists the webhooks for a given repository.
 	ListWebhooks(context.Context, *connect_go.Request[v1alpha1.ListWebhooksRequest]) (*connect_go.Response[v1alpha1.ListWebhooksResponse], error)
 }
 

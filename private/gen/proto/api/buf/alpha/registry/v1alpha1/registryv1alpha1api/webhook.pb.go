@@ -22,8 +22,9 @@ import (
 )
 
 // WebhookService exposes the functionality for a caller to
-// subscribe to or unsubscribe to a Webhook for a given repository.
+// create/delete/list Webhooks for a given repository.
 type WebhookService interface {
+	// Create a webhook.
 	CreateWebhook(
 		ctx context.Context,
 		event []v1alpha1.WebhookEvent,
@@ -31,10 +32,9 @@ type WebhookService interface {
 		repositoryName string,
 		callbackUrl string,
 	) (webhookId string, err error)
-	// Analogous APIs with likely very similar request/response structures.
+	// Delete a webhook.
 	DeleteWebhook(ctx context.Context, webhookSubscriptionId string) (err error)
-	// Lists the subscriptions for a given repository. Will only return if the
-	// the user has a role within the owner/repository.
+	// Lists the webhooks for a given repository.
 	ListWebhooks(
 		ctx context.Context,
 		repositoryName string,

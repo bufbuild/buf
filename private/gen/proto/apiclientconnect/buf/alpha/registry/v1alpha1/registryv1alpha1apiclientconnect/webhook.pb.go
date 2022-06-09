@@ -30,6 +30,7 @@ type webhookServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
+// Create a webhook.
 func (s *webhookServiceClient) CreateWebhook(
 	ctx context.Context,
 	event []v1alpha1.WebhookEvent,
@@ -56,7 +57,7 @@ func (s *webhookServiceClient) CreateWebhook(
 	return response.Msg.WebhookId, nil
 }
 
-// Analogous APIs with likely very similar request/response structures.
+// Delete a webhook.
 func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookSubscriptionId string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -74,8 +75,7 @@ func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookSubscri
 	return nil
 }
 
-// Lists the subscriptions for a given repository. Will only return if the
-// the user has a role within the owner/repository.
+// Lists the webhooks for a given repository.
 func (s *webhookServiceClient) ListWebhooks(
 	ctx context.Context,
 	repositoryName string,

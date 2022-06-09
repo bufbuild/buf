@@ -17,13 +17,13 @@ syntax = "proto3";
 package buf.alpha.registry.v1alpha1;
 
 // WebhookService exposes the functionality for a caller to
-// subscribe to or unsubscribe to a Webhook for a given repository.
+// create/delete/list Webhooks for a given repository.
 service WebhookService {
+  // Create a webhook.
   rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse) {}
-  // Analogous APIs with likely very similar request/response structures.
+  // Delete a webhook.
   rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse) {}
-  // Lists the subscriptions for a given repository. Will only return if the
-  // the user has a role within the owner/repository.
+  // Lists the webhooks for a given repository.
   rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse) {}
 }
 
