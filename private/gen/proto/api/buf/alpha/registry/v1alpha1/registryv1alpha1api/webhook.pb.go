@@ -31,7 +31,7 @@ type WebhookService interface {
 		ownerName string,
 		repositoryName string,
 		callbackUrl string,
-	) (webhookId string, err error)
+	) (webhookSubscriptionId string, err error)
 	// Delete a webhook.
 	DeleteWebhook(ctx context.Context, webhookSubscriptionId string) (err error)
 	// Lists the webhooks for a given repository.

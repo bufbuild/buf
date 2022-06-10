@@ -37,7 +37,7 @@ func (s *webhookServiceClient) CreateWebhook(
 	ownerName string,
 	repositoryName string,
 	callbackUrl string,
-) (webhookId string, _ error) {
+) (webhookSubscriptionId string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -54,7 +54,7 @@ func (s *webhookServiceClient) CreateWebhook(
 	if err != nil {
 		return "", err
 	}
-	return response.Msg.WebhookId, nil
+	return response.Msg.WebhookSubscriptionId, nil
 }
 
 // Delete a webhook.

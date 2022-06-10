@@ -36,9 +36,8 @@ message CreateWebhookRequest {
   string owner_name = 2;
   // The repository name that the subscriber wishes create a subscription for.
   string repository_name = 3;
-  // The subscriber's callback URL where notifications
-  // should be delivered. It is considered good practice
-  // to use a unique callback URL for each subscription.
+  // The subscriber's callback URL where notifications should be delivered.
+  // It is considered good practice to use a unique callback URL for each subscription.
   string callback_url = 4;
 }
 
@@ -55,7 +54,7 @@ enum WebhookEvent {
 // of a webhook request.
 message CreateWebhookResponse {
   // For the user to unsubscribe from the webhook event.
-  string webhook_id = 1;
+  string webhook_subscription_id = 1;
 }
 
 // DeleteWebhookRequest is the request for unsubscribing to a webhook.
