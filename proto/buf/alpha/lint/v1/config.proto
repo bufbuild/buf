@@ -51,6 +51,8 @@ message Config {
   string service_suffix = 10;
   // allow_comment_ignores turns on comment-driven ignores.
   bool allow_comment_ignores = 11;
+  // comments_exclude_request_responses excludes requests and responses from comment checks.
+  bool comments_exclude_request_responses = 12;
 }
 
 // IDPaths represents a rule or category ID and the file and/or directory paths that are ignored for the rule.

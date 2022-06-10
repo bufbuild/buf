@@ -921,6 +921,21 @@ func FullNameToMethod(files ...File) (map[string]Method, error) {
 	return fullNameToMethod, nil
 }
 
+// RequestResponseMessageFullNames returns a map containing the full names of all Messages
+// that are either a request or response in a service within the given Files.
+func RequestResponseMessageFullNames(files ...File) map[string]struct{} {
+	requestResponseMessageFullNames := make(map[string]struct{})
+	for _, file := range files {
+		for _, service := range file.Services() {
+			for _, method := range service.Methods() {
+				requestResponseMessageFullNames[method.InputTypeName()] = struct{}{}
+				requestResponseMessageFullNames[method.OutputTypeName()] = struct{}{}
+			}
+		}
+	}
+	return requestResponseMessageFullNames
+}
+
 // StringToReservedTagRange maps the ReservedTagRanges in the ReservedDescriptor to a map
 // from string string to reserved TagRange.
 //

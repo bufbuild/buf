@@ -59,6 +59,8 @@ type Config struct {
 	ServiceSuffix string
 	// AllowCommentIgnores turns on comment-driven ignores.
 	AllowCommentIgnores bool
+	// CommentsExcludeRequestResponses excludes requests and responses from comment checks.
+	CommentsExcludeRequestResponses bool
 	// Version represents the version of the lint rule and category IDs that should be used with this config.
 	Version string
 }
@@ -91,6 +93,7 @@ func NewConfigV1(externalConfig ExternalConfigV1) *Config {
 		RPCAllowSameRequestResponse:          externalConfig.RPCAllowSameRequestResponse,
 		RPCAllowGoogleProtobufEmptyRequests:  externalConfig.RPCAllowGoogleProtobufEmptyRequests,
 		RPCAllowGoogleProtobufEmptyResponses: externalConfig.RPCAllowGoogleProtobufEmptyResponses,
+		CommentsExcludeRequestResponses:      externalConfig.CommentsExcludeRequestResponses,
 		ServiceSuffix:                        externalConfig.ServiceSuffix,
 		AllowCommentIgnores:                  externalConfig.AllowCommentIgnores,
 		Version:                              v1Version,
@@ -110,7 +113,8 @@ func ConfigForProto(protoConfig *lintv1.Config) *Config {
 		RPCAllowGoogleProtobufEmptyResponses: protoConfig.GetRpcAllowGoogleProtobufEmptyResponses(),
 		ServiceSuffix:                        protoConfig.GetServiceSuffix(),
 		AllowCommentIgnores:                  protoConfig.GetAllowCommentIgnores(),
-		Version:                              protoConfig.GetVersion(),
+		//CommentsExcludeRequestResponses:      protoConfig.GetCommentsExcludeRequestResponses(),
+		Version: protoConfig.GetVersion(),
 	}
 }
 
@@ -127,7 +131,8 @@ func ProtoForConfig(config *Config) *lintv1.Config {
 		RpcAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses,
 		ServiceSuffix:                        config.ServiceSuffix,
 		AllowCommentIgnores:                  config.AllowCommentIgnores,
-		Version:                              config.Version,
+		//CommentsExcludeRequestResponses:      config.CommentsExcludeRequestResponses,
+		Version: config.Version,
 	}
 }
 
@@ -161,6 +166,7 @@ type ExternalConfigV1 struct {
 	RPCAllowGoogleProtobufEmptyResponses bool                `json:"rpc_allow_google_protobuf_empty_responses,omitempty" yaml:"rpc_allow_google_protobuf_empty_responses,omitempty"`
 	ServiceSuffix                        string              `json:"service_suffix,omitempty" yaml:"service_suffix,omitempty"`
 	AllowCommentIgnores                  bool                `json:"allow_comment_ignores,omitempty" yaml:"allow_comment_ignores,omitempty"`
+	CommentsExcludeRequestResponses      bool                `json:"comments_exclude_request_responses,omitempty" yaml:"comments_exclude_request_responses,omitempty"`
 }
 
 // ExternalConfigV1Beta1ForConfig takes a *Config and returns the v1beta1 externalconfig representation.
@@ -192,6 +198,7 @@ func ExternalConfigV1ForConfig(config *Config) ExternalConfigV1 {
 		RPCAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses,
 		ServiceSuffix:                        config.ServiceSuffix,
 		AllowCommentIgnores:                  config.AllowCommentIgnores,
+		CommentsExcludeRequestResponses:      config.CommentsExcludeRequestResponses,
 	}
 }
 
@@ -216,6 +223,7 @@ type configJSON struct {
 	RPCAllowGoogleProtobufEmptyResponses bool          `json:"rpc_allow_google_protobuf_empty_response,omitempty"`
 	ServiceSuffix                        string        `json:"service_suffix,omitempty"`
 	AllowCommentIgnores                  bool          `json:"allow_comment_ignores,omitempty"`
+	CommentsExcludeRequestResponses      bool          `json:"comments_exclude_request_responses,omitempty"`
 	Version                              string        `json:"version,omitempty"`
 }
 
@@ -258,6 +266,7 @@ func configToJSON(config *Config) *configJSON {
 		RPCAllowGoogleProtobufEmptyResponses: config.RPCAllowGoogleProtobufEmptyResponses,
 		ServiceSuffix:                        config.ServiceSuffix,
 		AllowCommentIgnores:                  config.AllowCommentIgnores,
+		CommentsExcludeRequestResponses:      config.CommentsExcludeRequestResponses,
 		Version:                              config.Version,
 	}
 }

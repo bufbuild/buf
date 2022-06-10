@@ -158,7 +158,18 @@ func (m *v1beta1Migrator) maybeMigrateConfig(dirPath string) (bool, error) {
 				Excludes: excludes,
 			},
 			Breaking: bufbreakingconfig.ExternalConfigV1(v1beta1Config.Breaking),
-			Lint:     buflintconfig.ExternalConfigV1(v1beta1Config.Lint),
+			Lint: buflintconfig.ExternalConfigV1{
+				Use:                                  v1beta1Config.Lint.Use,
+				Except:                               v1beta1Config.Lint.Except,
+				Ignore:                               v1beta1Config.Lint.Ignore,
+				IgnoreOnly:                           v1beta1Config.Lint.IgnoreOnly,
+				EnumZeroValueSuffix:                  v1beta1Config.Lint.EnumZeroValueSuffix,
+				RPCAllowSameRequestResponse:          v1beta1Config.Lint.RPCAllowSameRequestResponse,
+				RPCAllowGoogleProtobufEmptyRequests:  v1beta1Config.Lint.RPCAllowGoogleProtobufEmptyRequests,
+				RPCAllowGoogleProtobufEmptyResponses: v1beta1Config.Lint.RPCAllowGoogleProtobufEmptyResponses,
+				ServiceSuffix:                        v1beta1Config.Lint.ServiceSuffix,
+				AllowCommentIgnores:                  v1beta1Config.Lint.AllowCommentIgnores,
+			},
 		}
 		newConfigPath := filepath.Join(dirPath, bufconfig.ExternalConfigV1FilePath)
 		if err := m.writeV1Config(newConfigPath, v1Config, ".", v1beta1Config.Name); err != nil {

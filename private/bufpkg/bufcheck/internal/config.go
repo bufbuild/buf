@@ -59,6 +59,7 @@ type ConfigBuilder struct {
 	RPCAllowGoogleProtobufEmptyRequests  bool
 	RPCAllowGoogleProtobufEmptyResponses bool
 	ServiceSuffix                        string
+	CommentsExcludeRequestResponses      bool
 }
 
 // NewConfig returns a new Config.
