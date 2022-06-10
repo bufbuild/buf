@@ -124,13 +124,13 @@ type LocalResolveServiceClient interface {
 	//
 	// We want this for two reasons:
 	//
-	// 1. It makes it easy to say "we know we're looking for owner/repo on this specific remote".
-	//    While we could just do this in GetModulePins by being aware of what our remote is
-	//    (something we probably still need to know, DNS problems aside, which are more
-	//    theoretical), this helps.
-	// 2. Having a separate method makes us able to say "do not make decisions about what
-	//    wins between competing pins for the same repo". This should only be done in
-	//    GetModulePins, not in this function, i.e. only done at the top level.
+	//  1. It makes it easy to say "we know we're looking for owner/repo on this specific remote".
+	//     While we could just do this in GetModulePins by being aware of what our remote is
+	//     (something we probably still need to know, DNS problems aside, which are more
+	//     theoretical), this helps.
+	//  2. Having a separate method makes us able to say "do not make decisions about what
+	//     wins between competing pins for the same repo". This should only be done in
+	//     GetModulePins, not in this function, i.e. only done at the top level.
 	GetLocalModulePins(context.Context, *connect_go.Request[v1alpha1.GetLocalModulePinsRequest]) (*connect_go.Response[v1alpha1.GetLocalModulePinsResponse], error)
 }
 
@@ -171,13 +171,13 @@ type LocalResolveServiceHandler interface {
 	//
 	// We want this for two reasons:
 	//
-	// 1. It makes it easy to say "we know we're looking for owner/repo on this specific remote".
-	//    While we could just do this in GetModulePins by being aware of what our remote is
-	//    (something we probably still need to know, DNS problems aside, which are more
-	//    theoretical), this helps.
-	// 2. Having a separate method makes us able to say "do not make decisions about what
-	//    wins between competing pins for the same repo". This should only be done in
-	//    GetModulePins, not in this function, i.e. only done at the top level.
+	//  1. It makes it easy to say "we know we're looking for owner/repo on this specific remote".
+	//     While we could just do this in GetModulePins by being aware of what our remote is
+	//     (something we probably still need to know, DNS problems aside, which are more
+	//     theoretical), this helps.
+	//  2. Having a separate method makes us able to say "do not make decisions about what
+	//     wins between competing pins for the same repo". This should only be done in
+	//     GetModulePins, not in this function, i.e. only done at the top level.
 	GetLocalModulePins(context.Context, *connect_go.Request[v1alpha1.GetLocalModulePinsRequest]) (*connect_go.Response[v1alpha1.GetLocalModulePinsResponse], error)
 }
 

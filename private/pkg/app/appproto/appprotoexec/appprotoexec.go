@@ -110,11 +110,11 @@ func GenerateWithPluginPath(pluginPath string) GenerateOption {
 //
 // protocPath and pluginPath are optional.
 //
-// - If the plugin path is set, this returns a new binary handler for that path.
-// - If the plugin path is unset, this does exec.LookPath for a binary named protoc-gen-pluginName,
-//   and if one is found, a new binary handler is returned for this.
-// - Else, if the name is in ProtocProxyPluginNames, this returns a new protoc proxy handler.
-// - Else, this returns error.
+//   - If the plugin path is set, this returns a new binary handler for that path.
+//   - If the plugin path is unset, this does exec.LookPath for a binary named protoc-gen-pluginName,
+//     and if one is found, a new binary handler is returned for this.
+//   - Else, if the name is in ProtocProxyPluginNames, this returns a new protoc proxy handler.
+//   - Else, this returns error.
 func NewHandler(
 	logger *zap.Logger,
 	storageosProvider storageos.Provider,

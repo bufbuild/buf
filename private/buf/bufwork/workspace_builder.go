@@ -223,9 +223,9 @@ func validateWorkspaceDirectoryNonEmpty(
 // overlap in either direction. The last argument is only used for
 // error reporting.
 //
-//  validateInputOverlap("foo", "bar", "buf.work.yaml")     -> OK
-//  validateInputOverlap("foo/bar", "foo", "buf.work.yaml") -> NOT OK
-//  validateInputOverlap("foo", "foo/bar", "buf.work.yaml") -> NOT OK
+//	validateInputOverlap("foo", "bar", "buf.work.yaml")     -> OK
+//	validateInputOverlap("foo/bar", "foo", "buf.work.yaml") -> NOT OK
+//	validateInputOverlap("foo", "foo/bar", "buf.work.yaml") -> NOT OK
 func validateInputOverlap(
 	workspaceDirectory string,
 	targetSubDirPath string,
