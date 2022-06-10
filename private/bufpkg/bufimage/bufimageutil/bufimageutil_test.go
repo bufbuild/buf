@@ -17,7 +17,7 @@ package bufimageutil
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"sort"
 	"testing"
 
@@ -209,7 +209,7 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 
 	expectedReader, err := bucket.Get(ctx, expectedFile)
 	require.NoError(t, err)
-	expected, err := ioutil.ReadAll(expectedReader)
+	expected, err := io.ReadAll(expectedReader)
 	require.NoError(t, err)
 	assert.Equal(t, string(expected), string(generated))
 

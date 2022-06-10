@@ -20,7 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/textproto"
@@ -103,7 +103,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusUnsupportedMediaType)
 		return
 	}
-	bodyBytes, err := ioutil.ReadAll(
+	bodyBytes, err := io.ReadAll(
 		base64.NewDecoder(
 			i.B64Encoding,
 			http.MaxBytesReader(w, r.Body, i.MaxMessageSizeBytes),

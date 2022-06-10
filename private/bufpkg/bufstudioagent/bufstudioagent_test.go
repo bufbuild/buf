@@ -20,7 +20,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -86,7 +86,7 @@ func testPlainPostHandler(t *testing.T, upstreamServer *httptest.Server) {
 
 	assert.Equal(t, http.StatusOK, response.StatusCode)
 	assert.Equal(t, "https://example.buf.build", response.Header.Get("Access-Control-Allow-Origin"))
-	responseBytes, err := ioutil.ReadAll(response.Body)
+	responseBytes, err := io.ReadAll(response.Body)
 	assert.NoError(t, err)
 	invokeResponse := &studiov1alpha1.InvokeResponse{}
 	protoUnmarshalBase64(t, responseBytes, invokeResponse)
@@ -141,7 +141,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, response.StatusCode)
-		responseBytes, err := ioutil.ReadAll(response.Body)
+		responseBytes, err := io.ReadAll(response.Body)
 		assert.NoError(t, err)
 		invokeResponse := &studiov1alpha1.InvokeResponse{}
 		protoUnmarshalBase64(t, responseBytes, invokeResponse)

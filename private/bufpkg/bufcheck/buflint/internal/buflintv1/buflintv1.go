@@ -34,45 +34,45 @@ import "github.com/bufbuild/buf/private/bufpkg/bufcheck/internal"
 // is shown below:
 //
 // Removed:
-//  * FILE_LAYOUT
-//  * PACKAGE_AFFINITY
-//  * SENSIBLE
-//  * STYLE_BASIC
-//  * STYLE_DEFAULT
-//  * OTHER
+//   - FILE_LAYOUT
+//   - PACKAGE_AFFINITY
+//   - SENSIBLE
+//   - STYLE_BASIC
+//   - STYLE_DEFAULT
+//   - OTHER
 //
 // Thus, the only remaining categories are:
 //
 // Categories:
-//  * MINIMAL
-//  * BASIC
-//  * DEFAULT
-//  * COMMENTS
-//  * UNARY_RPC
+//   - MINIMAL
+//   - BASIC
+//   - DEFAULT
+//   - COMMENTS
+//   - UNARY_RPC
 //
 // The rules included in the MINIMAL lint category have also been adjusted.
 // The difference is shown below:
 //
 // Removed:
-//  * ENUM_NO_ALLOW_ALIAS
-//  * FIELD_NO_DESCRIPTOR
-//  * IMPORT_NO_PUBLIC
-//  * IMPORT_NO_WEAK
-//  * PACKAGE_SAME_CSHARP_NAMESPACE
-//  * PACKAGE_SAME_GO_PACKAGE
-//  * PACKAGE_SAME_JAVA_MULTIPLE_FILES
-//  * PACKAGE_SAME_JAVA_PACKAGE
-//  * PACKAGE_SAME_PHP_NAMESPACE
-//  * PACKAGE_SAME_RUBY_PACKAGE
-//  * PACKAGE_SAME_SWIFT_PREFIX
+//   - ENUM_NO_ALLOW_ALIAS
+//   - FIELD_NO_DESCRIPTOR
+//   - IMPORT_NO_PUBLIC
+//   - IMPORT_NO_WEAK
+//   - PACKAGE_SAME_CSHARP_NAMESPACE
+//   - PACKAGE_SAME_GO_PACKAGE
+//   - PACKAGE_SAME_JAVA_MULTIPLE_FILES
+//   - PACKAGE_SAME_JAVA_PACKAGE
+//   - PACKAGE_SAME_PHP_NAMESPACE
+//   - PACKAGE_SAME_RUBY_PACKAGE
+//   - PACKAGE_SAME_SWIFT_PREFIX
 //
 // With these changes applied, the final result of MINIMAL is:
 //
 // MINIMAL:
-//  * DIRECTORY_SAME_PACKAGE
-//  * PACKAGE_DEFINED
-//  * PACKAGE_DIRECTORY_MATCH
-//  * PACKAGE_SAME_DIRECTORY
+//   - DIRECTORY_SAME_PACKAGE
+//   - PACKAGE_DEFINED
+//   - PACKAGE_DIRECTORY_MATCH
+//   - PACKAGE_SAME_DIRECTORY
 var VersionSpec = &internal.VersionSpec{
 	RuleBuilders:      v1RuleBuilders,
 	DefaultCategories: v1DefaultCategories,

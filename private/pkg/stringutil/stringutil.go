@@ -177,7 +177,7 @@ func SliceToHumanString(s []string) string {
 	}
 }
 
-// SliceToHumanStringQuoted prints the slice as `"e1", "e2", and "e3"``.
+// SliceToHumanStringQuoted prints the slice as `"e1", "e2", and "e3"`.
 func SliceToHumanStringQuoted(s []string) string {
 	switch len(s) {
 	case 0:
