@@ -98,7 +98,6 @@ type CreateWebhookRequest struct {
 	// The repository name that the subscriber wishes create a subscription for.
 	RepositoryName string `protobuf:"bytes,3,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
 	// The subscriber's callback URL where notifications should be delivered.
-	// It is considered good practice to use a unique callback URL for each subscription.
 	CallbackUrl string `protobuf:"bytes,4,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
 }
 

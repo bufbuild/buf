@@ -37,7 +37,6 @@ message CreateWebhookRequest {
   // The repository name that the subscriber wishes create a subscription for.
   string repository_name = 3;
   // The subscriber's callback URL where notifications should be delivered.
-  // It is considered good practice to use a unique callback URL for each subscription.
   string callback_url = 4;
 }
 
