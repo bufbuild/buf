@@ -31,7 +31,7 @@ service WebhookService {
 // webhook request body.
 message CreateWebhookRequest {
   // The events to subscribe to for the given repository.
-  repeated WebhookEvent event = 1;
+  repeated WebhookEvent webhook_event = 1;
   // The owner name of the repository in the corresponding subscription request.
   string owner_name = 2;
   // The repository name that the subscriber wishes create a subscription for.
@@ -90,7 +90,7 @@ message ListWebhooksResponse {
 // subscription id.
 message SubscribedWebhook {
   // The event associated with the subscription id.
-  WebhookEvent event = 1;
+  WebhookEvent webhook_event = 1;
   // The id of the associated subscription.
   string webhook_subscription_id = 2;
 }

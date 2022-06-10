@@ -33,7 +33,7 @@ type webhookServiceClient struct {
 // Create a webhook.
 func (s *webhookServiceClient) CreateWebhook(
 	ctx context.Context,
-	event []v1alpha1.WebhookEvent,
+	webhookEvent []v1alpha1.WebhookEvent,
 	ownerName string,
 	repositoryName string,
 	callbackUrl string,
@@ -45,7 +45,7 @@ func (s *webhookServiceClient) CreateWebhook(
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.CreateWebhookRequest{
-				Event:          event,
+				WebhookEvent:   webhookEvent,
 				OwnerName:      ownerName,
 				RepositoryName: repositoryName,
 				CallbackUrl:    callbackUrl,
