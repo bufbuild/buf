@@ -29,27 +29,27 @@
 // `import "acme/payment/v2/payment.proto";` from the acme/pet/v1/pet.proto file
 // will suffice as long as the buf.work.yaml file exists.
 //
-//   // buf.work.yaml
-//   version: v1
-//   directories:
-//     - paymentapis
-//     - petapis
+//	// buf.work.yaml
+//	version: v1
+//	directories:
+//	  - paymentapis
+//	  - petapis
 //
-//   $ tree
-//   .
-//   ├── buf.work.yaml
-//   ├── paymentapis
-//   │   ├── acme
-//   │   │   └── payment
-//   │   │       └── v2
-//   │   │           └── payment.proto
-//   │   └── buf.yaml
-//   └── petapis
-//       ├── acme
-//       │   └── pet
-//       │       └── v1
-//       │           └── pet.proto
-//       └── buf.yaml
+//	$ tree
+//	.
+//	├── buf.work.yaml
+//	├── paymentapis
+//	│   ├── acme
+//	│   │   └── payment
+//	│   │       └── v2
+//	│   │           └── payment.proto
+//	│   └── buf.yaml
+//	└── petapis
+//	    ├── acme
+//	    │   └── pet
+//	    │       └── v1
+//	    │           └── pet.proto
+//	    └── buf.yaml
 //
 // Note that inputs MUST NOT overlap with any of the directories defined in the buf.work.yaml
 // file. For example, it's not possible to build input "paymentapis/acme" since the image
