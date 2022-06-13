@@ -36,6 +36,14 @@ const (
 	tokenEnvKey = "BUF_TOKEN"
 )
 
+func NewTokenReaderInterceptorProvider(
+	container appflag.Container,
+) func(string) connect.UnaryInterceptorFunc {
+	return func(address string) connect.UnaryInterceptorFunc {
+		return NewTokenReaderInterceptor(container, address)
+	}
+}
+
 // NewTokenReaderInterceptor returns a new Connect Interceptor that looks up an auth token on every request and when
 // found, sets it into the request header if not already set.
 func NewTokenReaderInterceptor(container appflag.Container, address string) connect.UnaryInterceptorFunc {

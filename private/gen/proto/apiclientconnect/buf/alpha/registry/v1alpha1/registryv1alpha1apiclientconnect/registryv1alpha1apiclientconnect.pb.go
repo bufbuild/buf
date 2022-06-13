@@ -18,6 +18,7 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
+
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -499,14 +500,7 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 }
 
 func (p *provider) NewWebhookService(ctx context.Context, address string) (registryv1alpha1api.WebhookService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
+	interceptors := connect_go.WithInterceptors(p.interceptors...)
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -515,7 +509,7 @@ func (p *provider) NewWebhookService(ctx context.Context, address string) (regis
 		client: registryv1alpha1connect.NewWebhookServiceClient(
 			p.httpClient,
 			address,
+			interceptors,
 		),
-		contextModifier: contextModifier,
 	}, nil
 }
