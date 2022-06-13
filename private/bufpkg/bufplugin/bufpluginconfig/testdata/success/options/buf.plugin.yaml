@@ -1,0 +1,4 @@
+version: v1
+name: buf.build/protocolbuffers/java
+opts:
+  - annotate_code

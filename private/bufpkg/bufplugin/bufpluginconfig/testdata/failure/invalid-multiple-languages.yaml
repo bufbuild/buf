@@ -1,0 +1,10 @@
+version: v1
+name: buf.build/protocolbuffers/go
+opts:
+  - paths=source_relative
+runtime:
+  npm:
+    deps:
+      - "@types/google-protobuf:v3.15.6"
+  go:
+    min_version: 1.18
