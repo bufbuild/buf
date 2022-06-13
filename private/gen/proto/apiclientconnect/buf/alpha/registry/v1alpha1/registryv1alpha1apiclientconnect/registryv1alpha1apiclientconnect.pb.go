@@ -59,7 +59,7 @@ func WithAddressMapper(addressMapper func(string) string) ProviderOption {
 	}
 }
 
-// WithInterceptors adds the slice of interceptors as interceptors to all clients returned from this provider.
+// WithInterceptors adds the slice of interceptors to all clients returned from this provider.
 func WithInterceptors(interceptors []connect_go.Interceptor) ProviderOption {
 	return func(provider *provider) {
 		provider.interceptors = interceptors

@@ -121,7 +121,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`}`)
 	g.P()
 
-	g.P(`// WithInterceptors adds the slice of interceptors as interceptors to all clients returned from this provider.`)
+	g.P(`// WithInterceptors adds the slice of interceptors to all clients returned from this provider.`)
 	g.P(`func WithInterceptors(interceptors []connect_go.Interceptor) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
 	g.P(`provider.interceptors = interceptors`)
