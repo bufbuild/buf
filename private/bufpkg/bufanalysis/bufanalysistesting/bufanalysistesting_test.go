@@ -76,4 +76,21 @@ path/to/file.proto(2,1) : error FOO : Hello.
 `,
 		sb.String(),
 	)
+	sb.Reset()
+	err = bufanalysis.PrintFileAnnotations(sb, fileAnnotations, "junit")
+	require.NoError(t, err)
+	assert.Equal(t,
+		`<testsuites>
+  <testsuite name="path/to/file.proto" tests="2" failures="2" errors="0">
+    <testcase name="FOO_1">
+      <failure message="path/to/file.proto:1:1:Hello." type="FOO"></failure>
+    </testcase>
+    <testcase name="FOO_2_1">
+      <failure message="path/to/file.proto:2:1:Hello." type="FOO"></failure>
+    </testcase>
+  </testsuite>
+</testsuites>
+`,
+		sb.String(),
+	)
 }

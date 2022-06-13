@@ -17,6 +17,8 @@ package bufanalysis
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
+	"fmt"
 	"io"
 	"strconv"
 )
@@ -43,6 +45,96 @@ func printAsJSON(writer io.Writer, fileAnnotations []FileAnnotation) error {
 		fileAnnotations,
 		printFileAnnotationAsJSON,
 	)
+}
+
+func printAsJUnit(writer io.Writer, fileAnnotations []FileAnnotation) error {
+	encoder := xml.NewEncoder(writer)
+	encoder.Indent("", "  ")
+	testsuites := xml.StartElement{Name: xml.Name{Local: "testsuites"}}
+	err := encoder.EncodeToken(testsuites)
+	if err != nil {
+		return err
+	}
+	annotationsByPath := groupAnnotationsByPath(fileAnnotations)
+	for _, annotations := range annotationsByPath {
+		testsuite := xml.StartElement{Name: xml.Name{Local: "testsuite"}}
+		path := "<input>"
+		if fileInfo := annotations[0].FileInfo(); fileInfo != nil {
+			path = fileInfo.ExternalPath()
+		}
+		testsuite.Attr = append(testsuite.Attr, xml.Attr{Name: xml.Name{Local: "name"}, Value: path})
+		testsuite.Attr = append(testsuite.Attr, xml.Attr{Name: xml.Name{Local: "tests"}, Value: strconv.Itoa(len(annotations))})
+		testsuite.Attr = append(testsuite.Attr, xml.Attr{Name: xml.Name{Local: "failures"}, Value: strconv.Itoa(len(annotations))})
+		testsuite.Attr = append(testsuite.Attr, xml.Attr{Name: xml.Name{Local: "errors"}, Value: "0"})
+		if err := encoder.EncodeToken(testsuite); err != nil {
+			return err
+		}
+
+		for _, annotation := range annotations {
+			if err := printFileAnnotationAsJUnit(encoder, annotation); err != nil {
+				return err
+			}
+		}
+		if err := encoder.EncodeToken(xml.EndElement{Name: testsuite.Name}); err != nil {
+			return err
+		}
+	}
+	if err := encoder.EncodeToken(xml.EndElement{Name: testsuites.Name}); err != nil {
+		return err
+	}
+	if err := encoder.Flush(); err != nil {
+		return err
+	}
+	if _, err := writer.Write([]byte("\n")); err != nil {
+		return err
+	}
+	return nil
+}
+
+func printFileAnnotationAsJUnit(encoder *xml.Encoder, annotation FileAnnotation) error {
+	testcase := xml.StartElement{Name: xml.Name{Local: "testcase"}}
+	name := annotation.Type()
+	if annotation.StartColumn() != 0 {
+		name += fmt.Sprintf("_%d_%d", annotation.StartLine(), annotation.StartColumn())
+	} else if annotation.StartLine() != 0 {
+		name += fmt.Sprintf("_%d", annotation.StartLine())
+	}
+	testcase.Attr = append(testcase.Attr, xml.Attr{Name: xml.Name{Local: "name"}, Value: name})
+	if err := encoder.EncodeToken(testcase); err != nil {
+		return err
+	}
+	failure := xml.StartElement{Name: xml.Name{Local: "failure"}}
+	failure.Attr = append(failure.Attr, xml.Attr{Name: xml.Name{Local: "message"}, Value: annotation.String()})
+	failure.Attr = append(failure.Attr, xml.Attr{Name: xml.Name{Local: "type"}, Value: annotation.Type()})
+	if err := encoder.EncodeToken(failure); err != nil {
+		return err
+	}
+	if err := encoder.EncodeToken(xml.EndElement{Name: failure.Name}); err != nil {
+		return err
+	}
+	if err := encoder.EncodeToken(xml.EndElement{Name: testcase.Name}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func groupAnnotationsByPath(annotations []FileAnnotation) [][]FileAnnotation {
+	pathToIndex := make(map[string]int)
+	annotationsByPath := make([][]FileAnnotation, 0)
+	for _, annotation := range annotations {
+		path := "<input>"
+		if fileInfo := annotation.FileInfo(); fileInfo != nil {
+			path = fileInfo.ExternalPath()
+		}
+		index, ok := pathToIndex[path]
+		if !ok {
+			index = len(annotationsByPath)
+			pathToIndex[path] = index
+			annotationsByPath = append(annotationsByPath, nil)
+		}
+		annotationsByPath[index] = append(annotationsByPath[index], annotation)
+	}
+	return annotationsByPath
 }
 
 func printFileAnnotationAsText(buffer *bytes.Buffer, f FileAnnotation) error {
