@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 )
 
 func printAsText(writer io.Writer, fileAnnotations []FileAnnotation) error {
@@ -62,6 +63,7 @@ func printAsJUnit(writer io.Writer, fileAnnotations []FileAnnotation) error {
 		if fileInfo := annotations[0].FileInfo(); fileInfo != nil {
 			path = fileInfo.ExternalPath()
 		}
+		path = strings.TrimSuffix(path, ".proto")
 		testsuite.Attr = append(testsuite.Attr, xml.Attr{Name: xml.Name{Local: "name"}, Value: path})
 		testsuite.Attr = append(testsuite.Attr, xml.Attr{Name: xml.Name{Local: "tests"}, Value: strconv.Itoa(len(annotations))})
 		testsuite.Attr = append(testsuite.Attr, xml.Attr{Name: xml.Name{Local: "failures"}, Value: strconv.Itoa(len(annotations))})

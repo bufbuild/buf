@@ -81,7 +81,7 @@ path/to/file.proto(2,1) : error FOO : Hello.
 	require.NoError(t, err)
 	assert.Equal(t,
 		`<testsuites>
-  <testsuite name="path/to/file.proto" tests="2" failures="2" errors="0">
+  <testsuite name="path/to/file" tests="2" failures="2" errors="0">
     <testcase name="FOO_1">
       <failure message="path/to/file.proto:1:1:Hello." type="FOO"></failure>
     </testcase>
