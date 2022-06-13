@@ -55,6 +55,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http2client"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -549,12 +550,14 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 }
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider which uses a token reader interceptor to look
-// up the token in the container or in netrc.  It is then set in the header of all outgoing requests from this provider
+// up the token in the container or in netrc based on the address of each individual client from the provider.
+// It is then set in the header of all outgoing requests from this provider
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithInterceptors(
-		bufrpc.NewTokenReaderInterceptor(container, "address"),
-		bufrpc.NewWithVersionInterceptor(Version),
-	))
+	return newRegistryProviderWithOptions(container,
+		bufapiclient.RegistryProviderWithTokenInterceptorProvider(newTokenReaderInterceptorProvider(container)),
+		bufapiclient.RegistryProviderWithInterceptors(
+			bufrpc.NewWithVersionInterceptor(Version),
+		))
 }
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
@@ -564,6 +567,14 @@ func NewRegistryProviderWithToken(container appflag.Container, token string) (re
 		bufrpc.NewWithTokenInterceptor(token),
 		bufrpc.NewWithVersionInterceptor(Version),
 	))
+}
+
+func newTokenReaderInterceptorProvider(
+	container appflag.Container,
+) func(string) connect.Interceptor {
+	return func(address string) connect.Interceptor {
+		return bufrpc.NewTokenReaderInterceptor(container, address)
+	}
 }
 
 func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {

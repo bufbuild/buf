@@ -36,14 +36,6 @@ const (
 	tokenEnvKey = "BUF_TOKEN"
 )
 
-func NewTokenReaderInterceptorProvider(
-	container appflag.Container,
-) func(string) connect.UnaryInterceptorFunc {
-	return func(address string) connect.UnaryInterceptorFunc {
-		return NewTokenReaderInterceptor(container, address)
-	}
-}
-
 // NewTokenReaderInterceptor returns a new Connect Interceptor that looks up an auth token on every request and when
 // found, sets it into the request header if not already set.
 func NewTokenReaderInterceptor(container appflag.Container, address string) connect.UnaryInterceptorFunc {
@@ -63,6 +55,7 @@ func NewTokenReaderInterceptor(container appflag.Container, address string) conn
 				}
 			}
 
+			fmt.Println("Token reader", token)
 			if req.Header().Get(authenticationHeader) == "" {
 				req.Header().Set(authenticationHeader, authenticationTokenPrefix+token)
 			}
@@ -79,6 +72,7 @@ func NewWithVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
+			fmt.Println("With Version", version)
 			WithOutgoingCLIVersionHeader(req, version)
 			return next(ctx, req)
 		})
@@ -95,6 +89,7 @@ func NewWithTokenInterceptor(token string) connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
+			fmt.Println("With Token", token)
 			if token != "" {
 				req.Header().Set(authenticationHeader, authenticationTokenPrefix+token)
 			}
