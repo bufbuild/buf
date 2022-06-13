@@ -80,9 +80,11 @@ func DiffWithExternalPathPrefixes(
 
 // DiffWithTransform returns a DiffOption that adds a transform function. The transform function will be run on each
 // file being compared before it is diffed. transform takes the arguments:
-//  side: one or two whether it is the first or second item in the diff
-//  filename: the filename including path
-//  content: the file content.
+//
+//	side: one or two whether it is the first or second item in the diff
+//	filename: the filename including path
+//	content: the file content.
+//
 // transform returns a string that is the transformed content of filename.
 func DiffWithTransform(
 	transform func(side string, filename string, content []byte) []byte,

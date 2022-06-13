@@ -145,16 +145,15 @@ func (f *formatter) writeFile(fileNode *ast.FileNode) {
 //
 // For example,
 //
-//  syntax = "proto3";
+//	syntax = "proto3";
 //
-//  package acme.v1.weather;
+//	package acme.v1.weather;
 //
-//  import "acme/payment/v1/payment.proto";
-//  import "google/type/datetime.proto";
+//	import "acme/payment/v1/payment.proto";
+//	import "google/type/datetime.proto";
 //
-//  option cc_enable_arenas = true;
-//  option optimize_for = SPEED;
-//
+//	option cc_enable_arenas = true;
+//	option optimize_for = SPEED;
 func (f *formatter) writeFileHeader(fileNode *ast.FileNode) {
 	var (
 		packageNode *ast.PackageNode
@@ -263,8 +262,7 @@ func (f *formatter) writeFileTypes(fileNode *ast.FileNode) {
 //
 // For example,
 //
-//  syntax = "proto3";
-//
+//	syntax = "proto3";
 func (f *formatter) writeSyntax(syntaxNode *ast.SyntaxNode) {
 	f.writeStart(syntaxNode.Keyword)
 	f.Space()
@@ -278,8 +276,7 @@ func (f *formatter) writeSyntax(syntaxNode *ast.SyntaxNode) {
 //
 // For example,
 //
-//  package acme.weather.v1;
-//
+//	package acme.weather.v1;
 func (f *formatter) writePackage(packageNode *ast.PackageNode) {
 	f.writeStart(packageNode.Keyword)
 	f.Space()
@@ -291,8 +288,7 @@ func (f *formatter) writePackage(packageNode *ast.PackageNode) {
 //
 // For example,
 //
-//  import "google/protobuf/descriptor.proto";
-//
+//	import "google/protobuf/descriptor.proto";
 func (f *formatter) writeImport(importNode *ast.ImportNode) {
 	// We don't use f.writeStart here because the imports are sorted
 	// and potentially changed order.
@@ -340,8 +336,7 @@ func (f *formatter) writeFileOption(optionNode *ast.OptionNode) {
 //
 // For example,
 //
-//  option go_package = "github.com/foo/bar";
-//
+//	option go_package = "github.com/foo/bar";
 func (f *formatter) writeOption(optionNode *ast.OptionNode) {
 	f.writeOptionPrefix(optionNode)
 	if optionNode.Semicolon != nil {
@@ -366,11 +361,10 @@ func (f *formatter) writeOption(optionNode *ast.OptionNode) {
 //
 // For example,
 //
-//  [
-//    deprecated = true,
-//    json_name = "something" // Trailing comment on the last element.
-//  ]
-//
+//	[
+//	  deprecated = true,
+//	  json_name = "something" // Trailing comment on the last element.
+//	]
 func (f *formatter) writeLastCompactOption(optionNode *ast.OptionNode) {
 	f.writeOptionPrefix(optionNode)
 	f.writeLineEnd(optionNode.Val)
@@ -381,8 +375,7 @@ func (f *formatter) writeLastCompactOption(optionNode *ast.OptionNode) {
 //
 // For example,
 //
-//  deprecated =
-//
+//	deprecated =
 func (f *formatter) writeOptionPrefix(optionNode *ast.OptionNode) {
 	if optionNode.Keyword != nil {
 		// Compact options don't have the keyword.
@@ -407,10 +400,9 @@ func (f *formatter) writeOptionPrefix(optionNode *ast.OptionNode) {
 //
 // For example,
 //
-//  go_package
-//  (custom.thing)
-//  (custom.thing).bridge.(another.thing)
-//
+//	go_package
+//	(custom.thing)
+//	(custom.thing).bridge.(another.thing)
 func (f *formatter) writeOptionName(optionNameNode *ast.OptionNameNode) {
 	for i := 0; i < len(optionNameNode.Parts); i++ {
 		if i == 0 {
@@ -442,25 +434,24 @@ func (f *formatter) writeOptionName(optionNameNode *ast.OptionNameNode) {
 //
 // For example,
 //
-//  message Foo {
-//    option deprecated = true;
-//    reserved 50 to 100;
-//    extensions 150 to 200;
+//	message Foo {
+//	  option deprecated = true;
+//	  reserved 50 to 100;
+//	  extensions 150 to 200;
 //
-//    message Bar {
-//      string name = 1;
-//    }
-//    enum Baz {
-//      BAZ_UNSPECIFIED = 0;
-//    }
-//    extend Bar {
-//      string value = 2;
-//    }
+//	  message Bar {
+//	    string name = 1;
+//	  }
+//	  enum Baz {
+//	    BAZ_UNSPECIFIED = 0;
+//	  }
+//	  extend Bar {
+//	    string value = 2;
+//	  }
 //
-//    Bar bar = 1;
-//    Baz baz = 2;
-//  }
-//
+//	  Bar bar = 1;
+//	  Baz baz = 2;
+//	}
 func (f *formatter) writeMessage(messageNode *ast.MessageNode) {
 	var elementWriterFunc func()
 	if len(messageNode.Decls) != 0 {
@@ -487,16 +478,16 @@ func (f *formatter) writeMessage(messageNode *ast.MessageNode) {
 // writeMessageLiteral writes a message literal.
 //
 // For example,
-//  {
-//    foo: 1
-//    foo: 2
-//    foo: 3
-//    bar: <
-//      name:"abc"
-//      id:123
-//    >
-//  }
 //
+//	{
+//	  foo: 1
+//	  foo: 2
+//	  foo: 3
+//	  bar: <
+//	    name:"abc"
+//	    id:123
+//	  >
+//	}
 func (f *formatter) writeMessageLiteral(messageLiteralNode *ast.MessageLiteralNode) {
 	var elementWriterFunc func()
 	if len(messageLiteralNode.Elements) > 0 {
@@ -536,9 +527,8 @@ func (f *formatter) writeMessageLiteralForArray(
 //
 // For example,
 //
-//  foo: 1
-//  foo: 2
-//
+//	foo: 1
+//	foo: 2
 func (f *formatter) writeMessageLiteralElements(messageLiteralNode *ast.MessageLiteralNode) {
 	for i := 0; i < len(messageLiteralNode.Elements); i++ {
 		if i > 0 {
@@ -573,8 +563,7 @@ func (f *formatter) writeMessageFieldWithSeparator(messageFieldNode *ast.Message
 //
 // For example,
 //
-//  foo:"bar"
-//
+//	foo:"bar"
 func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNode) {
 	// The comments need to be written as a multiline comment above
 	// the message field name.
@@ -607,13 +596,12 @@ func (f *formatter) writeMessageFieldPrefix(messageFieldNode *ast.MessageFieldNo
 //
 // For example,
 //
-//  enum Foo {
-//    option deprecated = true;
-//    reserved 1 to 5;
+//	enum Foo {
+//	  option deprecated = true;
+//	  reserved 1 to 5;
 //
-//    FOO_UNSPECIFIED = 0;
-//  }
-//
+//	  FOO_UNSPECIFIED = 0;
+//	}
 func (f *formatter) writeEnum(enumNode *ast.EnumNode) {
 	var elementWriterFunc func()
 	if len(enumNode.Decls) > 0 {
@@ -642,10 +630,9 @@ func (f *formatter) writeEnum(enumNode *ast.EnumNode) {
 //
 // For example,
 //
-//  FOO_UNSPECIFIED = 1 [
-//    deprecated = true
-//  ];
-//
+//	FOO_UNSPECIFIED = 1 [
+//	  deprecated = true
+//	];
 func (f *formatter) writeEnumValue(enumValueNode *ast.EnumValueNode) {
 	f.writeStart(enumValueNode.Name)
 	f.Space()
@@ -664,11 +651,10 @@ func (f *formatter) writeEnumValue(enumValueNode *ast.EnumValueNode) {
 //
 // For example,
 //
-//  repeated string name = 1 [
-//    deprecated = true,
-//    json_name = "name"
-//  ];
-//
+//	repeated string name = 1 [
+//	  deprecated = true,
+//	  json_name = "name"
+//	];
 func (f *formatter) writeField(fieldNode *ast.FieldNode) {
 	// We need to handle the comments for the field label specially since
 	// a label might not be defined, but it has the leading comments attached
@@ -741,9 +727,9 @@ func (f *formatter) writeFieldReference(fieldReferenceNode *ast.FieldReferenceNo
 //
 // For example,
 //
-//  extend google.protobuf.FieldOptions {
-//    bool redacted = 33333;
-//  }
+//	extend google.protobuf.FieldOptions {
+//	  bool redacted = 33333;
+//	}
 func (f *formatter) writeExtend(extendNode *ast.ExtendNode) {
 	var elementWriterFunc func()
 	if len(extendNode.Decls) > 0 {
@@ -771,11 +757,10 @@ func (f *formatter) writeExtend(extendNode *ast.ExtendNode) {
 //
 // For example,
 //
-//  service FooService {
-//    option deprecated = true;
+//	service FooService {
+//	  option deprecated = true;
 //
-//    rpc Foo(FooRequest) returns (FooResponse) {};
-//
+//	  rpc Foo(FooRequest) returns (FooResponse) {};
 func (f *formatter) writeService(serviceNode *ast.ServiceNode) {
 	var elementWriterFunc func()
 	if len(serviceNode.Decls) > 0 {
@@ -804,10 +789,9 @@ func (f *formatter) writeService(serviceNode *ast.ServiceNode) {
 //
 // For example,
 //
-//  rpc Foo(FooRequest) returns (FooResponse) {
-//    option deprecated = true;
-//  };
-//
+//	rpc Foo(FooRequest) returns (FooResponse) {
+//	  option deprecated = true;
+//	};
 func (f *formatter) writeRPC(rpcNode *ast.RPCNode) {
 	var elementWriterFunc func()
 	if len(rpcNode.Decls) > 0 {
@@ -860,13 +844,12 @@ func (f *formatter) writeRPCType(rpcTypeNode *ast.RPCTypeNode) {
 //
 // For example,
 //
-//  oneof foo {
-//    option deprecated = true;
+//	oneof foo {
+//	  option deprecated = true;
 //
-//    string name = 1;
-//    int number = 2;
-//  }
-//
+//	  string name = 1;
+//	  int number = 2;
+//	}
 func (f *formatter) writeOneOf(oneOfNode *ast.OneOfNode) {
 	var elementWriterFunc func()
 	if len(oneOfNode.Decls) > 0 {
@@ -894,14 +877,13 @@ func (f *formatter) writeOneOf(oneOfNode *ast.OneOfNode) {
 //
 // For example,
 //
-//  optional group Key = 4 [
-//    deprecated = true,
-//    json_name = "key"
-//  ] {
-//    optional uint64 id = 1;
-//    optional string name = 2;
-//  }
-//
+//	optional group Key = 4 [
+//	  deprecated = true,
+//	  json_name = "key"
+//	] {
+//	  optional uint64 id = 1;
+//	  optional string name = 2;
+//	}
 func (f *formatter) writeGroup(groupNode *ast.GroupNode) {
 	var elementWriterFunc func()
 	if len(groupNode.Decls) > 0 {
@@ -948,10 +930,9 @@ func (f *formatter) writeGroup(groupNode *ast.GroupNode) {
 //
 // For example,
 //
-//  extensions 5-10, 100 to max [
-//    deprecated = true
-//  ];
-//
+//	extensions 5-10, 100 to max [
+//	  deprecated = true
+//	];
 func (f *formatter) writeExtensionRange(extensionRangeNode *ast.ExtensionRangeNode) {
 	f.writeStart(extensionRangeNode.Keyword)
 	f.Space()
@@ -974,8 +955,7 @@ func (f *formatter) writeExtensionRange(extensionRangeNode *ast.ExtensionRangeNo
 //
 // For example,
 //
-//  reserved 5-10, 100 to max;
-//
+//	reserved 5-10, 100 to max;
 func (f *formatter) writeReserved(reservedNode *ast.ReservedNode) {
 	f.writeStart(reservedNode.Keyword)
 	// Either names or ranges will be set, but never both.
@@ -1024,11 +1004,10 @@ func (f *formatter) writeRange(rangeNode *ast.RangeNode) {
 //
 // For example,
 //
-//  [
-//    deprecated = true,
-//    json_name = "something"
-//  ]
-//
+//	[
+//	  deprecated = true,
+//	  json_name = "something"
+//	]
 func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNode) {
 	if len(compactOptionsNode.Options) == 1 {
 		// If there's only a single compact option without comments, we can write it in-line.
@@ -1097,11 +1076,10 @@ func (f *formatter) writeCompactOptions(compactOptionsNode *ast.CompactOptionsNo
 //
 // For example,
 //
-//  [
-//    "foo",
-//    "bar"
-//  ]
-//
+//	[
+//	  "foo",
+//	  "bar"
+//	]
 func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
 	var elementWriterFunc func()
 	if len(arrayLiteralNode.Elements) > 0 {
@@ -1144,14 +1122,14 @@ func (f *formatter) writeArrayLiteral(arrayLiteralNode *ast.ArrayLiteralNode) {
 //
 // For example,
 //
-//  option (value) = /* In-line comment for '-42' */ -42;
+//	option (value) = /* In-line comment for '-42' */ -42;
 //
-//  option (thing) = {
-//    values: [
-//      // Leading comment on -42.
-//      -42, // Trailing comment on -42.
-//    ]
-//  }
+//	option (thing) = {
+//	  values: [
+//	    // Leading comment on -42.
+//	    -42, // Trailing comment on -42.
+//	  ]
+//	}
 //
 // The lastElement boolean is used to signal whether or not the composite value
 // should be written as the last element (i.e. it doesn't have a trailing comma).
@@ -1319,11 +1297,10 @@ func (f *formatter) writeCompoundIdent(compoundIdentNode *ast.CompoundIdentNode)
 //
 // For example,
 //
-//  message Foo {
-//    // These are comments attached to bar.
-//    bar.v1.Bar bar = 1;
-//  }
-//
+//	message Foo {
+//	  // These are comments attached to bar.
+//	  bar.v1.Bar bar = 1;
+//	}
 func (f *formatter) writeCompountIdentForFieldName(compoundIdentNode *ast.CompoundIdentNode) {
 	if compoundIdentNode.LeadingDot != nil {
 		f.writeStart(compoundIdentNode.LeadingDot)
@@ -1345,10 +1322,9 @@ func (f *formatter) writeCompountIdentForFieldName(compoundIdentNode *ast.Compou
 //
 // For example,
 //
-//  optional
-//  repeated
-//  required
-//
+//	optional
+//	repeated
+//	required
 func (f *formatter) writeFieldLabel(fieldLabel ast.FieldLabel) {
 	f.WriteString(fieldLabel.Val)
 }
@@ -1362,10 +1338,9 @@ func (f *formatter) writeBoolLiteral(boolLiteralNode *ast.BoolLiteralNode) {
 //
 // For example,
 //
-//  "one,"
-//  "two,"
-//  "three"
-//
+//	"one,"
+//	"two,"
+//	"three"
 func (f *formatter) writeCompoundStringLiteral(compoundStringLiteralNode *ast.CompoundStringLiteralNode) {
 	f.In()
 	for _, child := range compoundStringLiteralNode.Children() {
@@ -1387,11 +1362,10 @@ func (f *formatter) writeCompoundStringLiteral(compoundStringLiteralNode *ast.Co
 //
 // For example,
 //
-//  option (custom) =
-//    "one,"
-//    "two,"
-//    "three";
-//
+//	option (custom) =
+//	  "one,"
+//	  "two,"
+//	  "three";
 func (f *formatter) writeCompoundStringLiteralForSingleOption(compoundStringLiteralNode *ast.CompoundStringLiteralNode) {
 	f.In()
 	for i, child := range compoundStringLiteralNode.Children() {
@@ -1643,24 +1617,24 @@ func (f *formatter) writeNode(node ast.Node) {
 //
 // For example,
 //
-//  // Leading comment on 'message'.
-//  // Spread across multiple lines.
-//  message /* This is a trailing comment on 'message' */ Foo {}
+//	// Leading comment on 'message'.
+//	// Spread across multiple lines.
+//	message /* This is a trailing comment on 'message' */ Foo {}
 //
 // Newlines are preserved, so that any logical grouping of elements
 // is maintained in the formatted result.
 //
 // For example,
 //
-//  // Type represents a set of different types.
-//  enum Type {
-//    // Unspecified is the naming convention for default enum values.
-//    TYPE_UNSPECIFIED = 0;
+//	// Type represents a set of different types.
+//	enum Type {
+//	  // Unspecified is the naming convention for default enum values.
+//	  TYPE_UNSPECIFIED = 0;
 //
-//    // The following elements are the real values.
-//    TYPE_ONE = 1;
-//    TYPE_TWO = 2;
-//  }
+//	  // The following elements are the real values.
+//	  TYPE_ONE = 1;
+//	  TYPE_TWO = 2;
+//	}
 //
 // Start nodes are always indented according to the formatter's
 // current level of indentation (e.g. nested messages, fields, etc).
@@ -1743,9 +1717,8 @@ func (f *formatter) writeStart(node ast.Node) {
 //
 // For example,
 //
-//  // This is a leading comment on the syntax keyword.
-//  syntax = /* This is a leading comment on 'proto3' */" proto3";
-//
+//	// This is a leading comment on the syntax keyword.
+//	syntax = /* This is a leading comment on 'proto3' */" proto3";
 func (f *formatter) writeInline(node ast.Node) {
 	if _, ok := node.(ast.CompositeNode); ok {
 		// We only want to write comments for terminal nodes.
@@ -1779,12 +1752,11 @@ func (f *formatter) writeInline(node ast.Node) {
 //
 // For example,
 //
-//  message Foo {
-//    string bar = 1;
+//	message Foo {
+//	  string bar = 1;
 //
-//  // Leading comment on '}'.
-//  } // Trailing comment on '}.
-//
+//	// Leading comment on '}'.
+//	} // Trailing comment on '}.
 func (f *formatter) writeBodyEnd(node ast.Node) {
 	if _, ok := node.(ast.CompositeNode); ok {
 		// We only want to write comments for terminal nodes.
@@ -1824,14 +1796,13 @@ func (f *formatter) writeBodyEnd(node ast.Node) {
 //
 // For example,
 //
-//  message Foo {
-//    string bar = 1 [
-//      deprecated = true
+//	message Foo {
+//	  string bar = 1 [
+//	    deprecated = true
 //
-//    // Leading comment on ']'.
-//    ] /* Trailing comment on ']' */ ;
-//  }
-//
+//	  // Leading comment on ']'.
+//	  ] /* Trailing comment on ']' */ ;
+//	}
 func (f *formatter) writeBodyEndInline(node ast.Node) {
 	if _, ok := node.(ast.CompositeNode); ok {
 		// We only want to write comments for terminal nodes.
@@ -1862,9 +1833,8 @@ func (f *formatter) writeBodyEndInline(node ast.Node) {
 //
 // For example,
 //
-//  // This is a leading comment on the syntax keyword.
-//  syntax = " proto3" /* This is a leading comment on the ';'; // This is a trailing comment on the ';'.
-//
+//	// This is a leading comment on the syntax keyword.
+//	syntax = " proto3" /* This is a leading comment on the ';'; // This is a trailing comment on the ';'.
 func (f *formatter) writeLineEnd(node ast.Node) {
 	if _, ok := node.(ast.CompositeNode); ok {
 		// We only want to write comments for terminal nodes.
@@ -1891,10 +1861,9 @@ func (f *formatter) writeLineEnd(node ast.Node) {
 //
 // For example,
 //
-//  // This is a comment spread across
-//  // multiple lines.
-//  message Foo {}
-//
+//	// This is a comment spread across
+//	// multiple lines.
+//	message Foo {}
 func (f *formatter) writeMultilineComments(comments ast.Comments) {
 	var previousComment ast.Comment
 	for i := 0; i < comments.Len(); i++ {
@@ -1932,18 +1901,17 @@ func (f *formatter) writeMultilineComments(comments ast.Comments) {
 //
 // For example, given the following:
 //
-//  extend . google. // in-line comment
-//   protobuf .
-//    ExtensionRangeOptions {
-//     optional string label = 20000;
-//    }
+//	extend . google. // in-line comment
+//	 protobuf .
+//	  ExtensionRangeOptions {
+//	   optional string label = 20000;
+//	  }
 //
 // The formatted result is shown below:
 //
-//  extend .google.protobuf./* in-line comment */ExtensionRangeOptions {
-//    optional string label = 20000;
-//  }
-//
+//	extend .google.protobuf./* in-line comment */ExtensionRangeOptions {
+//	  optional string label = 20000;
+//	}
 func (f *formatter) writeInlineComments(comments ast.Comments) {
 	for i := 0; i < comments.Len(); i++ {
 		if i > 0 {
@@ -1968,12 +1936,11 @@ func (f *formatter) writeInlineComments(comments ast.Comments) {
 //
 // For example,
 //
-//  enum Type {
-//    TYPE_UNSPECIFIED = 0;
-//  }
-//  // This comment is attached to the '}'
-//  // So is this one.
-//
+//	enum Type {
+//	  TYPE_UNSPECIFIED = 0;
+//	}
+//	// This comment is attached to the '}'
+//	// So is this one.
 func (f *formatter) writeTrailingEndComments(comments ast.Comments) {
 	for i := 0; i < comments.Len(); i++ {
 		comment := comments.Index(i)
@@ -2010,10 +1977,9 @@ func (f *formatter) startsWithNewline(info ast.NodeInfo) bool {
 //
 // For example,
 //
-//  message Foo {
-//    string name = 1; // Like this.
-//  }
-//
+//	message Foo {
+//	  string name = 1; // Like this.
+//	}
 func (f *formatter) hasTrailingComment(node ast.Node) bool {
 	if node == nil {
 		return false

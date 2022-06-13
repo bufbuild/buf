@@ -159,13 +159,13 @@ func NewFileAnnotation(
 //
 // The order of sorting is:
 //
-//   ExternalPath
-//   StartLine
-//   StartColumn
-//   Type
-//   Message
-//   EndLine
-//   EndColumn
+//	ExternalPath
+//	StartLine
+//	StartColumn
+//	Type
+//	Message
+//	EndLine
+//	EndColumn
 func SortFileAnnotations(fileAnnotations []FileAnnotation) {
 	sort.Stable(sortFileAnnotations(fileAnnotations))
 }

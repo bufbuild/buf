@@ -63,13 +63,18 @@ type ModuleFile interface {
 // Terminology:
 //
 // Targets (Modules and ModuleFileSets):
-//   Just the files specified to build. This will either be sources, or will be specific files
-//   within sources, ie this is a subset of Sources. The difference between Targets and Sources happens
-//   when i.e. the --path flag is used.
+//
+//	Just the files specified to build. This will either be sources, or will be specific files
+//	within sources, ie this is a subset of Sources. The difference between Targets and Sources happens
+//	when i.e. the --path flag is used.
+//
 // Sources (Modules and ModuleFileSets):
-//   The files with no dependencies. This is a superset of Targets and subset of All.
+//
+//	The files with no dependencies. This is a superset of Targets and subset of All.
+//
 // All (ModuleFileSets only):
-//   All files including dependencies. This is a superset of Sources.
+//
+//	All files including dependencies. This is a superset of Sources.
 type Module interface {
 	// TargetFileInfos gets all FileInfos specified as target files. This is either
 	// all the FileInfos belonging to the module, or those specified by ModuleWithTargetPaths().
@@ -334,11 +339,11 @@ func ModuleToProtoModule(ctx context.Context, module Module) (*modulev1alpha1.Mo
 // ModuleDigestB1 returns the b1 digest for the Module.
 //
 // To create the module digest (SHA256):
-// 	1. For every file in the module (sorted lexicographically by path):
-// 		a. Add the file path
-//		b. Add the file contents
-// 	2. Add the dependency hashes (sorted lexicographically by the string representation)
-//	3. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
+//  1. For every file in the module (sorted lexicographically by path):
+//     a. Add the file path
+//     b. Add the file contents
+//  2. Add the dependency hashes (sorted lexicographically by the string representation)
+//  3. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
 func ModuleDigestB1(ctx context.Context, module Module) (string, error) {
 	hash := sha256.New()
 	// DependencyModulePins returns these sorted
@@ -392,14 +397,14 @@ func ModuleDigestB1(ctx context.Context, module Module) (string, error) {
 // ModuleDigestB3 returns the b3 digest for the Module.
 //
 // To create the module digest (SHA256):
-// 	1. For every file in the module (sorted lexicographically by path):
-// 		a. Add the file path
-// 		b. Add the file contents
-// 	2. Add the dependency's module identity and commit ID (sorted lexicographically by commit ID)
-// 	3. Add the module identity if available.
-// 	4. Add the module documentation if available.
-// 	5. Add the breaking and lint configurations if available.
-// 	6. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
+//  1. For every file in the module (sorted lexicographically by path):
+//     a. Add the file path
+//     b. Add the file contents
+//  2. Add the dependency's module identity and commit ID (sorted lexicographically by commit ID)
+//  3. Add the module identity if available.
+//  4. Add the module documentation if available.
+//  5. Add the breaking and lint configurations if available.
+//  6. Produce the final digest by URL-base64 encoding the summed bytes and prefixing it with the digest prefix
 func ModuleDigestB3(ctx context.Context, module Module) (string, error) {
 	hash := sha256.New()
 	// We do not want to change the sort order as the rest of the codebase relies on it,

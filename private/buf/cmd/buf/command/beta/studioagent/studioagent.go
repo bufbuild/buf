@@ -19,8 +19,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"net/http"
-	"time"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufstudioagent"
@@ -28,20 +26,9 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/cert/certclient"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
+	"github.com/bufbuild/buf/private/pkg/transport/http/httpserver"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
-	"golang.org/x/sync/errgroup"
-)
-
-const (
-	// defaultShutdownTimeout is the default shutdown timeout.
-	defaultShutdownTimeout = 10 * time.Second
-	// defaultReadHeaderTimeout is the default read header timeout.
-	defaultReadHeaderTimeout = 30 * time.Second
-	// defaultIdleTimeout is the amount of time an HTTP/2 connection can be idle.
-	defaultIdleTimeout = 3 * time.Minute
 )
 
 const (
@@ -194,37 +181,26 @@ func run(
 		stringutil.SliceToMap(flags.DisallowedHeaders),
 		flags.ForwardHeaders,
 	)
-	if serverTLSConfig == nil {
-		mux = h2c.NewHandler(mux, &http2.Server{
-			IdleTimeout: defaultIdleTimeout,
-		})
-	}
-	httpServer := &http.Server{
-		Handler:           mux,
-		ReadHeaderTimeout: defaultReadHeaderTimeout,
-		TLSConfig:         serverTLSConfig,
-	}
 	var httpListenConfig net.ListenConfig
 	httpListener, err := httpListenConfig.Listen(ctx, "tcp", fmt.Sprintf("%s:%s", flags.BindAddress, flags.Port))
 	if err != nil {
 		return err
 	}
 
-	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(func() error {
-		container.Logger().Info(fmt.Sprintf("listening on %s", httpListener.Addr()))
-		return httpServe(httpServer, httpListener)
-	})
-	eg.Go(func() error {
-		<-ctx.Done()
-		ctx, cancel := context.WithTimeout(context.Background(), defaultShutdownTimeout)
-		defer cancel()
-		return httpServer.Shutdown(ctx)
-	})
-	if err := eg.Wait(); err != http.ErrServerClosed {
-		return err
-	}
-	return nil
+	httpRunner := httpserver.NewRunner(
+		container.Logger(),
+		httpserver.RunnerWithTLSConfig(
+			serverTLSConfig,
+		),
+		httpserver.RunnerWithMaxBodySize(
+			bufstudioagent.MaxMessageSizeBytesDefault,
+		),
+	)
+	return httpRunner.Run(
+		ctx,
+		httpListener,
+		httpserver.NewHTTPHandlerMapper(mux),
+	)
 }
 
 func newTLSConfig(baseConfig *tls.Config, certFile, keyFile string) (*tls.Config, error) {
@@ -240,11 +216,4 @@ func newTLSConfig(baseConfig *tls.Config, certFile, keyFile string) (*tls.Config
 	}
 	config.Certificates = []tls.Certificate{cert}
 	return config, nil
-}
-
-func httpServe(httpServer *http.Server, listener net.Listener) error {
-	if httpServer.TLSConfig != nil {
-		return httpServer.ServeTLS(listener, "", "")
-	}
-	return httpServer.Serve(listener)
 }

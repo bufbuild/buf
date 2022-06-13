@@ -261,7 +261,7 @@ func NewResponseBuilder(container app.StderrContainer) ResponseBuilder {
 // and returns the leading whitespace substring, if any,
 // respecting utf-8 encoding.
 //
-//  leadingWhitespace("\u205F   foo ") -> "\u205F   "
+//	leadingWhitespace("\u205F   foo ") -> "\u205F   "
 func leadingWhitespace(buf []byte) []byte {
 	leadingSize := 0
 	iterBuf := buf

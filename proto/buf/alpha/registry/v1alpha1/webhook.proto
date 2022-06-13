@@ -1,0 +1,42 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+// WebhookService exposes the functionality for a caller to
+// subscribe to or unsubscribe to a Webhook for a given repository.
+service WebhookService {
+  // SubscribeToRepository for subscribing to a specific repository.
+  rpc SubscribeToRepository(SubscribeToRepositoryRequest) returns (SubscribeToRepositoryResponse) {}
+  // UnsubscribeToRepository for unsubscribing to a specific repository.
+  rpc UnsubscribeToRepository(UnsubscribeToRepositoryRequest) returns (UnsubscribeToRepositoryResponse) {}
+}
+
+// SubscribeToRepositoryRequest is the proto request representation of a
+// webhook request body to subscribe.
+message SubscribeToRepositoryRequest {}
+
+// CreateRepositoryResponse is the proto repsonse representation
+// of a webhook request to subscribe.
+message SubscribeToRepositoryResponse {}
+
+// UnsubscribeToRepositoryRequest is the proto request representation of a
+// webhook request body to unsubscribe.
+message UnsubscribeToRepositoryRequest {}
+
+// UnsubscribeToRepositoryResponse is the proto response representation
+// of a webhook request to unsubscribe.
+message UnsubscribeToRepositoryResponse {}

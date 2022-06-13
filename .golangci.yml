@@ -125,5 +125,5 @@ issues:
       # we actually want to use errgroup when starting an HTTP server
     - linters:
         - forbidigo
-      path: private/buf/cmd/buf/command/beta/studioagent/studioagent.go
+      path: private/pkg/transport/http/httpserver/runner.go
       text: "use of `errgroup"

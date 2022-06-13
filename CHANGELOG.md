@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Fix issue where `// buf:lint:ignore` comment ignores did not work for the
+  `ENUM_FIRST_VALUE_ZERO` rule.
 - Add `buf beta studio-agent` command to support the upcoming Buf Studio.
 
 ## [v1.5.0] - 2022-05-30
