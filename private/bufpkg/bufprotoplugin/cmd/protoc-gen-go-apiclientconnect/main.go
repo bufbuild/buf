@@ -102,7 +102,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`logger *`, loggerGoIdentString)
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
-	g.P(`interceptors  []connect_go.Interceptor`)
+	g.P(`tokenInterceptorProvider func(string) connect_go.Interceptor`)
 	g.P(`}`)
 	g.P()
 
@@ -119,12 +119,6 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`}`)
 	g.P(`}`)
 	g.P()
-
-	g.P(`func WithInterceptors(interceptors []connect_go.Interceptor) ProviderOption {`)
-	g.P(`return func(provider *provider) {`)
-	g.P(`provider.interceptors = interceptors`)
-	g.P(`}`)
-	g.P(`}`)
 
 	// Import path for the api named_go_package
 	apiGoImportPath, err := helper.NewPackageGoImportPath(
@@ -154,7 +148,10 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 
 		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, address string) (`, interfaceGoIdentString, `, error) {`)
 
-		g.P(`interceptors := connect_go.WithInterceptors(p.interceptors...)`)
+		g.P(`var interceptors []connect_go.Interceptor`)
+		g.P(`if p.tokenInterceptorProvider != nil {`)
+		g.P(`interceptors = append(interceptors, p.tokenInterceptorProvider(address))`)
+		g.P(`}`)
 		g.P(`if p.addressMapper != nil {`)
 		g.P(`address = p.addressMapper(address)`)
 		g.P(`}`)
@@ -164,7 +161,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`client: `, newClientGoIdentString, `(`)
 		g.P(`p.httpClient,`)
 		g.P(`address,`)
-		g.P(`interceptors,`)
+		g.P(`connect_go.WithInterceptors(interceptors...),`)
 		g.P(`),`)
 		g.P(`}, nil`)
 		g.P(`}`)

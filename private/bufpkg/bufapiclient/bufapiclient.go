@@ -36,7 +36,7 @@ func NewConnectClientProvider(
 	}
 	providerOptions := []registryv1alpha1apiclientconnect.ProviderOption{
 		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
-		registryv1alpha1apiclientconnect.WithInterceptors(registryProviderOptions.interceptors),
+		// registryv1alpha1apiclientconnect.WithInterceptors(registryProviderOptions.interceptors),
 	}
 	return registryv1alpha1apiclientconnect.NewProvider(
 		logger,

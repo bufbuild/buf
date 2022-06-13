@@ -18,7 +18,6 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
@@ -43,10 +42,10 @@ func NewProvider(
 }
 
 type provider struct {
-	logger        *zap.Logger
-	httpClient    connect_go.HTTPClient
-	addressMapper func(string) string
-	interceptors  []connect_go.Interceptor
+	logger                   *zap.Logger
+	httpClient               connect_go.HTTPClient
+	addressMapper            func(string) string
+	tokenInterceptorProvider func(string) connect_go.Interceptor
 }
 
 // ProviderOption is an option for a new Provider.
@@ -59,13 +58,11 @@ func WithAddressMapper(addressMapper func(string) string) ProviderOption {
 	}
 }
 
-func WithInterceptors(interceptors []connect_go.Interceptor) ProviderOption {
-	return func(provider *provider) {
-		provider.interceptors = interceptors
-	}
-}
 func (p *provider) NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -74,13 +71,16 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewAdminServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -89,13 +89,16 @@ func (p *provider) NewAuthnService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewAuthnServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -104,13 +107,16 @@ func (p *provider) NewAuthzService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewAuthzServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewConvertService(ctx context.Context, address string) (registryv1alpha1api.ConvertService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -119,13 +125,16 @@ func (p *provider) NewConvertService(ctx context.Context, address string) (regis
 		client: registryv1alpha1connect.NewConvertServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewDisplayService(ctx context.Context, address string) (registryv1alpha1api.DisplayService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -134,13 +143,16 @@ func (p *provider) NewDisplayService(ctx context.Context, address string) (regis
 		client: registryv1alpha1connect.NewDisplayServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewDocService(ctx context.Context, address string) (registryv1alpha1api.DocService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -149,13 +161,16 @@ func (p *provider) NewDocService(ctx context.Context, address string) (registryv
 		client: registryv1alpha1connect.NewDocServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -164,13 +179,16 @@ func (p *provider) NewDownloadService(ctx context.Context, address string) (regi
 		client: registryv1alpha1connect.NewDownloadServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewGenerateService(ctx context.Context, address string) (registryv1alpha1api.GenerateService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -179,13 +197,16 @@ func (p *provider) NewGenerateService(ctx context.Context, address string) (regi
 		client: registryv1alpha1connect.NewGenerateServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewGithubService(ctx context.Context, address string) (registryv1alpha1api.GithubService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -194,13 +215,16 @@ func (p *provider) NewGithubService(ctx context.Context, address string) (regist
 		client: registryv1alpha1connect.NewGithubServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewImageService(ctx context.Context, address string) (registryv1alpha1api.ImageService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -209,13 +233,16 @@ func (p *provider) NewImageService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewImageServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (registryv1alpha1api.JSONSchemaService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -224,13 +251,16 @@ func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (re
 		client: registryv1alpha1connect.NewJSONSchemaServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -239,13 +269,16 @@ func (p *provider) NewLocalResolveService(ctx context.Context, address string) (
 		client: registryv1alpha1connect.NewLocalResolveServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -254,13 +287,16 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 		client: registryv1alpha1connect.NewOrganizationServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -269,13 +305,16 @@ func (p *provider) NewOwnerService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewOwnerServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewPluginService(ctx context.Context, address string) (registryv1alpha1api.PluginService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -284,13 +323,16 @@ func (p *provider) NewPluginService(ctx context.Context, address string) (regist
 		client: registryv1alpha1connect.NewPluginServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -299,13 +341,16 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 		client: registryv1alpha1connect.NewPushServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewRecommendationService(ctx context.Context, address string) (registryv1alpha1api.RecommendationService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -314,13 +359,16 @@ func (p *provider) NewRecommendationService(ctx context.Context, address string)
 		client: registryv1alpha1connect.NewRecommendationServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -329,13 +377,16 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 		client: registryv1alpha1connect.NewReferenceServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -344,13 +395,16 @@ func (p *provider) NewRepositoryBranchService(ctx context.Context, address strin
 		client: registryv1alpha1connect.NewRepositoryBranchServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -359,13 +413,16 @@ func (p *provider) NewRepositoryCommitService(ctx context.Context, address strin
 		client: registryv1alpha1connect.NewRepositoryCommitServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -374,13 +431,16 @@ func (p *provider) NewRepositoryService(ctx context.Context, address string) (re
 		client: registryv1alpha1connect.NewRepositoryServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -389,13 +449,16 @@ func (p *provider) NewRepositoryTagService(ctx context.Context, address string) 
 		client: registryv1alpha1connect.NewRepositoryTagServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -404,13 +467,16 @@ func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address 
 		client: registryv1alpha1connect.NewRepositoryTrackCommitServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -419,13 +485,16 @@ func (p *provider) NewRepositoryTrackService(ctx context.Context, address string
 		client: registryv1alpha1connect.NewRepositoryTrackServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -434,13 +503,16 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 		client: registryv1alpha1connect.NewResolveServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -449,13 +521,16 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 		client: registryv1alpha1connect.NewSearchServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewStudioService(ctx context.Context, address string) (registryv1alpha1api.StudioService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -464,13 +539,16 @@ func (p *provider) NewStudioService(ctx context.Context, address string) (regist
 		client: registryv1alpha1connect.NewStudioServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -479,13 +557,16 @@ func (p *provider) NewTokenService(ctx context.Context, address string) (registr
 		client: registryv1alpha1connect.NewTokenServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -494,13 +575,16 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 		client: registryv1alpha1connect.NewUserServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }
 
 func (p *provider) NewWebhookService(ctx context.Context, address string) (registryv1alpha1api.WebhookService, error) {
-	interceptors := connect_go.WithInterceptors(p.interceptors...)
+	var interceptors []connect_go.Interceptor
+	if p.tokenInterceptorProvider != nil {
+		interceptors = append(interceptors, p.tokenInterceptorProvider(address))
+	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
 	}
@@ -509,7 +593,7 @@ func (p *provider) NewWebhookService(ctx context.Context, address string) (regis
 		client: registryv1alpha1connect.NewWebhookServiceClient(
 			p.httpClient,
 			address,
-			interceptors,
+			connect_go.WithInterceptors(interceptors...),
 		),
 	}, nil
 }

@@ -25,16 +25,12 @@ import (
 )
 
 type webhookServiceClient struct {
-	logger          *zap.Logger
-	client          registryv1alpha1connect.WebhookServiceClient
-	contextModifier func(context.Context) context.Context
+	logger *zap.Logger
+	client registryv1alpha1connect.WebhookServiceClient
 }
 
 // SubscribeToRepository for subscribing to a specific repository.
 func (s *webhookServiceClient) SubscribeToRepository(ctx context.Context) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.SubscribeToRepository(
 		ctx,
 		connect_go.NewRequest(
@@ -48,9 +44,6 @@ func (s *webhookServiceClient) SubscribeToRepository(ctx context.Context) (_ err
 
 // UnsubscribeToRepository for unsubscribing to a specific repository.
 func (s *webhookServiceClient) UnsubscribeToRepository(ctx context.Context) (_ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	_, err := s.client.UnsubscribeToRepository(
 		ctx,
 		connect_go.NewRequest(
