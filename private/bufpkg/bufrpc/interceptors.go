@@ -55,7 +55,6 @@ func NewTokenReaderInterceptor(container appflag.Container, address string) conn
 				}
 			}
 
-			fmt.Println("Token reader", token)
 			if req.Header().Get(authenticationHeader) == "" {
 				req.Header().Set(authenticationHeader, authenticationTokenPrefix+token)
 			}
@@ -72,7 +71,6 @@ func NewWithVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
-			fmt.Println("With Version", version)
 			WithOutgoingCLIVersionHeader(req, version)
 			return next(ctx, req)
 		})
@@ -89,7 +87,6 @@ func NewWithTokenInterceptor(token string) connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
-			fmt.Println("With Token", token)
 			if token != "" {
 				req.Header().Set(authenticationHeader, authenticationTokenPrefix+token)
 			}
