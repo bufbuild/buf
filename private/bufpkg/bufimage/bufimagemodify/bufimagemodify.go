@@ -76,10 +76,10 @@ func NewFileOptionSweeper() Sweeper {
 // they are provided. This is particularly useful for constructing a modifier
 // from its initial 'nil' value.
 //
-//  var modifier Modifier
-//  if config.JavaMultipleFiles {
-//    modifier = Merge(modifier, JavaMultipleFiles)
-//  }
+//	var modifier Modifier
+//	if config.JavaMultipleFiles {
+//	  modifier = Merge(modifier, JavaMultipleFiles)
+//	}
 func Merge(left Modifier, right Modifier) Modifier {
 	if left == nil {
 		return right
@@ -226,10 +226,10 @@ func GoPackageImportPathForFile(imageFile bufimage.ImageFile, importPathPrefix s
 // ObjcClassPrefix returns a Modifier that sets the objc_class_prefix file option
 // according to the package name. It is set to the uppercase first letter of each package sub-name,
 // not including the package version, with the following rules:
-//  * If the resulting abbreviation is 2 characters, add "X".
-//  * If the resulting abbreviation is 1 character, add "XX".
-//  * If the resulting abbreviation is "GPB", change it to "GPX".
-//    "GPB" is reserved by Google for the Protocol Buffers implementation.
+//   - If the resulting abbreviation is 2 characters, add "X".
+//   - If the resulting abbreviation is 1 character, add "XX".
+//   - If the resulting abbreviation is "GPB", change it to "GPX".
+//     "GPB" is reserved by Google for the Protocol Buffers implementation.
 func ObjcClassPrefix(
 	logger *zap.Logger,
 	sweeper Sweeper,

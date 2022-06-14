@@ -789,10 +789,11 @@ type GetBucketOption func(*getBucketOptions)
 //
 // The terminateFileNames are expected to be valid and have no slashes.
 // Example of terminateFileNames:
-// 	[][]string{
-// 		[]string{"buf.work.yaml", "buf.work"},
-// 		[]string{"buf.yaml", "buf.mod"},
-// 	}.
+//
+//	[][]string{
+//		[]string{"buf.work.yaml", "buf.work"},
+//		[]string{"buf.yaml", "buf.mod"},
+//	}.
 func WithGetBucketTerminateFileNames(terminateFileNames [][]string) GetBucketOption {
 	return func(getBucketOptions *getBucketOptions) {
 		getBucketOptions.terminateFileNames = terminateFileNames

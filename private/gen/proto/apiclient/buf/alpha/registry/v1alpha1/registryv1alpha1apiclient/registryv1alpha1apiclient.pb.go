@@ -50,6 +50,7 @@ type Provider interface {
 	StudioServiceProvider
 	TokenServiceProvider
 	UserServiceProvider
+	WebhookServiceProvider
 }
 
 // AdminServiceProvider provides a client-side AdminService for an address.
@@ -185,4 +186,9 @@ type TokenServiceProvider interface {
 // UserServiceProvider provides a client-side UserService for an address.
 type UserServiceProvider interface {
 	NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error)
+}
+
+// WebhookServiceProvider provides a client-side WebhookService for an address.
+type WebhookServiceProvider interface {
+	NewWebhookService(ctx context.Context, address string) (registryv1alpha1api.WebhookService, error)
 }

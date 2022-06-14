@@ -20,7 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/textproto"
@@ -33,9 +33,9 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// maxMessageSizeBytesDefault determines the maximum number of bytes to read
+// MaxMessageSizeBytesDefault determines the maximum number of bytes to read
 // from the request body.
-const maxMessageSizeBytesDefault = 1024 * 1024 * 5
+const MaxMessageSizeBytesDefault = 1024 * 1024 * 5
 
 // plainPostHandler implements a POST handler for forwarding requests that can
 // be called with simple CORS requests.
@@ -85,7 +85,7 @@ func newPlainPostHandler(
 			},
 		},
 		Logger:              logger,
-		MaxMessageSizeBytes: maxMessageSizeBytesDefault,
+		MaxMessageSizeBytes: MaxMessageSizeBytesDefault,
 		TLSClient: &http.Client{
 			Transport: &http2.Transport{
 				TLSClientConfig: tlsClientConfig,
@@ -103,7 +103,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusUnsupportedMediaType)
 		return
 	}
-	bodyBytes, err := ioutil.ReadAll(
+	bodyBytes, err := io.ReadAll(
 		base64.NewDecoder(
 			i.B64Encoding,
 			http.MaxBytesReader(w, r.Body, i.MaxMessageSizeBytes),

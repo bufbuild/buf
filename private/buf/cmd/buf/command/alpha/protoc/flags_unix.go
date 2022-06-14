@@ -22,12 +22,12 @@ package protoc
 // This is always true in unix, and is true if the path is not absolute in windows.
 // This is needed because i.e.:
 //
-//   # unix
-//   --go_out=opt:foo/bar
-//   --go_out=foo/bar
-//   # windows
-//   --go_out=opt:C:\foo\bar
-//   --go_out=C:\foo\bar
+//	# unix
+//	--go_out=opt:foo/bar
+//	--go_out=foo/bar
+//	# windows
+//	--go_out=opt:C:\foo\bar
+//	--go_out=C:\foo\bar
 //
 // protoc uses : in both unix and windows to separate the opt and out, but in windows,
 // if a full path is given, then we don't want it interpreted as something we should split.
