@@ -440,50 +440,6 @@ func (p *provider) NewRecommendationService(ctx context.Context, address string)
 	}, nil
 }
 
-func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	return &referenceServiceClient{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewReferenceServiceClient(
-			p.httpClient,
-			address,
-		),
-		contextModifier: contextModifier,
-	}, nil
-}
-
-func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
-	var contextModifier func(context.Context) context.Context
-	var err error
-	if p.contextModifierProvider != nil {
-		contextModifier, err = p.contextModifierProvider(address)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if p.addressMapper != nil {
-		address = p.addressMapper(address)
-	}
-	return &repositoryBranchServiceClient{
-		logger: p.logger,
-		client: registryv1alpha1connect.NewRepositoryBranchServiceClient(
-			p.httpClient,
-			address,
-		),
-		contextModifier: contextModifier,
-	}, nil
-}
-
 func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error

@@ -198,7 +198,7 @@ type ModuleReference struct {
 	Remote     string `protobuf:"bytes,1,opt,name=remote,proto3" json:"remote,omitempty"`
 	Owner      string `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
 	Repository string `protobuf:"bytes,3,opt,name=repository,proto3" json:"repository,omitempty"`
-	// either branch, tag, or commit
+	// either tag, or commit
 	Reference string `protobuf:"bytes,4,opt,name=reference,proto3" json:"reference,omitempty"`
 }
 

@@ -44,6 +44,8 @@ const (
 type RepositoryCommitServiceClient interface {
 	// ListRepositoryCommitsByBranch lists the repository commits associated
 	// with a repository branch on a repository, ordered by their create time.
+	//
+	// Deprecated: do not use.
 	ListRepositoryCommitsByBranch(context.Context, *connect_go.Request[v1alpha1.ListRepositoryCommitsByBranchRequest]) (*connect_go.Response[v1alpha1.ListRepositoryCommitsByBranchResponse], error)
 	// ListRepositoryCommitsByReference returns repository commits up-to and including
 	// the provided reference.
@@ -100,6 +102,8 @@ type repositoryCommitServiceClient struct {
 
 // ListRepositoryCommitsByBranch calls
 // buf.alpha.registry.v1alpha1.RepositoryCommitService.ListRepositoryCommitsByBranch.
+//
+// Deprecated: do not use.
 func (c *repositoryCommitServiceClient) ListRepositoryCommitsByBranch(ctx context.Context, req *connect_go.Request[v1alpha1.ListRepositoryCommitsByBranchRequest]) (*connect_go.Response[v1alpha1.ListRepositoryCommitsByBranchResponse], error) {
 	return c.listRepositoryCommitsByBranch.CallUnary(ctx, req)
 }
@@ -127,6 +131,8 @@ func (c *repositoryCommitServiceClient) GetRepositoryCommitBySequenceId(ctx cont
 type RepositoryCommitServiceHandler interface {
 	// ListRepositoryCommitsByBranch lists the repository commits associated
 	// with a repository branch on a repository, ordered by their create time.
+	//
+	// Deprecated: do not use.
 	ListRepositoryCommitsByBranch(context.Context, *connect_go.Request[v1alpha1.ListRepositoryCommitsByBranchRequest]) (*connect_go.Response[v1alpha1.ListRepositoryCommitsByBranchResponse], error)
 	// ListRepositoryCommitsByReference returns repository commits up-to and including
 	// the provided reference.
