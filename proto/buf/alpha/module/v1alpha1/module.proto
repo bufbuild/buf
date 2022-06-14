@@ -56,7 +56,7 @@ message ModuleReference {
   string remote = 1;
   string owner = 2;
   string repository = 3;
-  // either branch, tag, or commit
+  // either tag, or commit
   string reference = 4;
 }
 

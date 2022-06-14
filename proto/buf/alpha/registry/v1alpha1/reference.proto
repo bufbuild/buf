@@ -16,17 +16,14 @@ syntax = "proto3";
 
 package buf.alpha.registry.v1alpha1;
 
-import "buf/alpha/registry/v1alpha1/repository_branch.proto";
 import "buf/alpha/registry/v1alpha1/repository_commit.proto";
 import "buf/alpha/registry/v1alpha1/repository_tag.proto";
 
 message Reference {
-  reserved 4;
-  reserved "track";
+  reserved 1, 4;
+  reserved "branch", "track";
 
   oneof reference {
-    // The requested reference is a branch.
-    RepositoryBranch branch = 1;
     // The requested reference is a tag.
     RepositoryTag tag = 2;
     // The requested reference is a commit.

@@ -31,7 +31,7 @@ message RepositoryCommit {
   // Unique, immutable.
   string name = 4;
   // The branch on which this commit was created.
-  string branch = 5;
+  string branch = 5 [deprecated = true];
   // The commit sequence ID for this commit. This
   // is essentially what number commit this is on
   // the branch.
@@ -46,7 +46,12 @@ message RepositoryCommit {
 service RepositoryCommitService {
   // ListRepositoryCommitsByBranch lists the repository commits associated
   // with a repository branch on a repository, ordered by their create time.
-  rpc ListRepositoryCommitsByBranch(ListRepositoryCommitsByBranchRequest) returns (ListRepositoryCommitsByBranchResponse);
+  rpc ListRepositoryCommitsByBranch(ListRepositoryCommitsByBranchRequest) returns (ListRepositoryCommitsByBranchResponse) {
+    // ListRepositoryCommitsByBranch has been deprecated, use
+    // ListRepositoryCommitsByReference instead.
+    option deprecated = true;
+  }
+
   // ListRepositoryCommitsByReference returns repository commits up-to and including
   // the provided reference.
   rpc ListRepositoryCommitsByReference(ListRepositoryCommitsByReferenceRequest) returns (ListRepositoryCommitsByReferenceResponse);
@@ -97,11 +102,11 @@ message ListRepositoryCommitsByReferenceResponse {
 }
 
 message GetRepositoryCommitByReferenceRequest {
-  // The owner of the repository which the repository branch belongs to.
+  // The owner of the repository which the reference belongs to.
   string repository_owner = 1;
-  // The name of the repository which the repository branch belongs to.
+  // The name of the repository which the reference belongs to.
   string repository_name = 2;
-  // The reference that should be resolved to a commit. Can be a branch, tag or commit.
+  // The reference that should be resolved to a commit. Can be a tag or commit.
   string reference = 3;
 }
 
