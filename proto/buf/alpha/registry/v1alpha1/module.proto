@@ -32,11 +32,12 @@ message LocalModuleReference {
 //
 // It does not include a remote.
 message LocalModulePin {
+  reserved 5;
+  reserved "digest";
+
   string owner = 1;
   string repository = 2;
   string branch = 3;
   string commit = 4;
   google.protobuf.Timestamp create_time = 7;
-
-  reserved 5;
 }

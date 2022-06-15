@@ -62,12 +62,13 @@ message ModuleReference {
 
 // ModulePin is a module pin.
 message ModulePin {
+  reserved 6;
+  reserved "digest";
+
   string remote = 1;
   string owner = 2;
   string repository = 3;
   string branch = 4;
   string commit = 5;
   google.protobuf.Timestamp create_time = 7;
-
-  reserved 6;
 }
