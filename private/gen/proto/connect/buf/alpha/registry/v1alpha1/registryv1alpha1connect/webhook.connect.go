@@ -41,10 +41,12 @@ const (
 
 // WebhookServiceClient is a client for the buf.alpha.registry.v1alpha1.WebhookService service.
 type WebhookServiceClient interface {
-	// SubscribeToRepository for subscribing to a specific repository.
-	SubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.SubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.SubscribeToRepositoryResponse], error)
-	// UnsubscribeToRepository for unsubscribing to a specific repository.
-	UnsubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.UnsubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.UnsubscribeToRepositoryResponse], error)
+	// Create a webhook.
+	CreateWebhook(context.Context, *connect_go.Request[v1alpha1.CreateWebhookRequest]) (*connect_go.Response[v1alpha1.CreateWebhookResponse], error)
+	// Delete a webhook.
+	DeleteWebhook(context.Context, *connect_go.Request[v1alpha1.DeleteWebhookRequest]) (*connect_go.Response[v1alpha1.DeleteWebhookResponse], error)
+	// Lists the webhooks for a given repository.
+	ListWebhooks(context.Context, *connect_go.Request[v1alpha1.ListWebhooksRequest]) (*connect_go.Response[v1alpha1.ListWebhooksResponse], error)
 }
 
 // NewWebhookServiceClient constructs a client for the buf.alpha.registry.v1alpha1.WebhookService
@@ -57,14 +59,19 @@ type WebhookServiceClient interface {
 func NewWebhookServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) WebhookServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &webhookServiceClient{
-		subscribeToRepository: connect_go.NewClient[v1alpha1.SubscribeToRepositoryRequest, v1alpha1.SubscribeToRepositoryResponse](
+		createWebhook: connect_go.NewClient[v1alpha1.CreateWebhookRequest, v1alpha1.CreateWebhookResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.WebhookService/SubscribeToRepository",
+			baseURL+"/buf.alpha.registry.v1alpha1.WebhookService/CreateWebhook",
 			opts...,
 		),
-		unsubscribeToRepository: connect_go.NewClient[v1alpha1.UnsubscribeToRepositoryRequest, v1alpha1.UnsubscribeToRepositoryResponse](
+		deleteWebhook: connect_go.NewClient[v1alpha1.DeleteWebhookRequest, v1alpha1.DeleteWebhookResponse](
 			httpClient,
-			baseURL+"/buf.alpha.registry.v1alpha1.WebhookService/UnsubscribeToRepository",
+			baseURL+"/buf.alpha.registry.v1alpha1.WebhookService/DeleteWebhook",
+			opts...,
+		),
+		listWebhooks: connect_go.NewClient[v1alpha1.ListWebhooksRequest, v1alpha1.ListWebhooksResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.WebhookService/ListWebhooks",
 			opts...,
 		),
 	}
@@ -72,27 +79,35 @@ func NewWebhookServiceClient(httpClient connect_go.HTTPClient, baseURL string, o
 
 // webhookServiceClient implements WebhookServiceClient.
 type webhookServiceClient struct {
-	subscribeToRepository   *connect_go.Client[v1alpha1.SubscribeToRepositoryRequest, v1alpha1.SubscribeToRepositoryResponse]
-	unsubscribeToRepository *connect_go.Client[v1alpha1.UnsubscribeToRepositoryRequest, v1alpha1.UnsubscribeToRepositoryResponse]
+	createWebhook *connect_go.Client[v1alpha1.CreateWebhookRequest, v1alpha1.CreateWebhookResponse]
+	deleteWebhook *connect_go.Client[v1alpha1.DeleteWebhookRequest, v1alpha1.DeleteWebhookResponse]
+	listWebhooks  *connect_go.Client[v1alpha1.ListWebhooksRequest, v1alpha1.ListWebhooksResponse]
 }
 
-// SubscribeToRepository calls buf.alpha.registry.v1alpha1.WebhookService.SubscribeToRepository.
-func (c *webhookServiceClient) SubscribeToRepository(ctx context.Context, req *connect_go.Request[v1alpha1.SubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.SubscribeToRepositoryResponse], error) {
-	return c.subscribeToRepository.CallUnary(ctx, req)
+// CreateWebhook calls buf.alpha.registry.v1alpha1.WebhookService.CreateWebhook.
+func (c *webhookServiceClient) CreateWebhook(ctx context.Context, req *connect_go.Request[v1alpha1.CreateWebhookRequest]) (*connect_go.Response[v1alpha1.CreateWebhookResponse], error) {
+	return c.createWebhook.CallUnary(ctx, req)
 }
 
-// UnsubscribeToRepository calls buf.alpha.registry.v1alpha1.WebhookService.UnsubscribeToRepository.
-func (c *webhookServiceClient) UnsubscribeToRepository(ctx context.Context, req *connect_go.Request[v1alpha1.UnsubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.UnsubscribeToRepositoryResponse], error) {
-	return c.unsubscribeToRepository.CallUnary(ctx, req)
+// DeleteWebhook calls buf.alpha.registry.v1alpha1.WebhookService.DeleteWebhook.
+func (c *webhookServiceClient) DeleteWebhook(ctx context.Context, req *connect_go.Request[v1alpha1.DeleteWebhookRequest]) (*connect_go.Response[v1alpha1.DeleteWebhookResponse], error) {
+	return c.deleteWebhook.CallUnary(ctx, req)
+}
+
+// ListWebhooks calls buf.alpha.registry.v1alpha1.WebhookService.ListWebhooks.
+func (c *webhookServiceClient) ListWebhooks(ctx context.Context, req *connect_go.Request[v1alpha1.ListWebhooksRequest]) (*connect_go.Response[v1alpha1.ListWebhooksResponse], error) {
+	return c.listWebhooks.CallUnary(ctx, req)
 }
 
 // WebhookServiceHandler is an implementation of the buf.alpha.registry.v1alpha1.WebhookService
 // service.
 type WebhookServiceHandler interface {
-	// SubscribeToRepository for subscribing to a specific repository.
-	SubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.SubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.SubscribeToRepositoryResponse], error)
-	// UnsubscribeToRepository for unsubscribing to a specific repository.
-	UnsubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.UnsubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.UnsubscribeToRepositoryResponse], error)
+	// Create a webhook.
+	CreateWebhook(context.Context, *connect_go.Request[v1alpha1.CreateWebhookRequest]) (*connect_go.Response[v1alpha1.CreateWebhookResponse], error)
+	// Delete a webhook.
+	DeleteWebhook(context.Context, *connect_go.Request[v1alpha1.DeleteWebhookRequest]) (*connect_go.Response[v1alpha1.DeleteWebhookResponse], error)
+	// Lists the webhooks for a given repository.
+	ListWebhooks(context.Context, *connect_go.Request[v1alpha1.ListWebhooksRequest]) (*connect_go.Response[v1alpha1.ListWebhooksResponse], error)
 }
 
 // NewWebhookServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -102,14 +117,19 @@ type WebhookServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewWebhookServiceHandler(svc WebhookServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/buf.alpha.registry.v1alpha1.WebhookService/SubscribeToRepository", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.WebhookService/SubscribeToRepository",
-		svc.SubscribeToRepository,
+	mux.Handle("/buf.alpha.registry.v1alpha1.WebhookService/CreateWebhook", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.WebhookService/CreateWebhook",
+		svc.CreateWebhook,
 		opts...,
 	))
-	mux.Handle("/buf.alpha.registry.v1alpha1.WebhookService/UnsubscribeToRepository", connect_go.NewUnaryHandler(
-		"/buf.alpha.registry.v1alpha1.WebhookService/UnsubscribeToRepository",
-		svc.UnsubscribeToRepository,
+	mux.Handle("/buf.alpha.registry.v1alpha1.WebhookService/DeleteWebhook", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.WebhookService/DeleteWebhook",
+		svc.DeleteWebhook,
+		opts...,
+	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.WebhookService/ListWebhooks", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.WebhookService/ListWebhooks",
+		svc.ListWebhooks,
 		opts...,
 	))
 	return "/buf.alpha.registry.v1alpha1.WebhookService/", mux
@@ -118,10 +138,14 @@ func NewWebhookServiceHandler(svc WebhookServiceHandler, opts ...connect_go.Hand
 // UnimplementedWebhookServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedWebhookServiceHandler struct{}
 
-func (UnimplementedWebhookServiceHandler) SubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.SubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.SubscribeToRepositoryResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.WebhookService.SubscribeToRepository is not implemented"))
+func (UnimplementedWebhookServiceHandler) CreateWebhook(context.Context, *connect_go.Request[v1alpha1.CreateWebhookRequest]) (*connect_go.Response[v1alpha1.CreateWebhookResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.WebhookService.CreateWebhook is not implemented"))
 }
 
-func (UnimplementedWebhookServiceHandler) UnsubscribeToRepository(context.Context, *connect_go.Request[v1alpha1.UnsubscribeToRepositoryRequest]) (*connect_go.Response[v1alpha1.UnsubscribeToRepositoryResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.WebhookService.UnsubscribeToRepository is not implemented"))
+func (UnimplementedWebhookServiceHandler) DeleteWebhook(context.Context, *connect_go.Request[v1alpha1.DeleteWebhookRequest]) (*connect_go.Response[v1alpha1.DeleteWebhookResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.WebhookService.DeleteWebhook is not implemented"))
+}
+
+func (UnimplementedWebhookServiceHandler) ListWebhooks(context.Context, *connect_go.Request[v1alpha1.ListWebhooksRequest]) (*connect_go.Response[v1alpha1.ListWebhooksResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.WebhookService.ListWebhooks is not implemented"))
 }
