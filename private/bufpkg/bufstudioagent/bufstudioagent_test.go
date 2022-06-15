@@ -126,6 +126,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
 		responseBytes, err := io.ReadAll(response.Body)
+		require.NoError(t, err)
 		assert.Equal(t, `header "forbidden-header" disallowed by agent`+"\n", string(responseBytes))
 	})
 
@@ -193,6 +194,7 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
 		responseBytes, err := io.ReadAll(response.Body)
+		require.NoError(t, err)
 		assert.Contains(t, string(responseBytes), `&#34;not&amp;valid&lt;or&gt;safe&#39;scheme`)
 	})
 }
