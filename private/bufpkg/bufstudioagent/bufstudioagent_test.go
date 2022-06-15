@@ -24,6 +24,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"testing"
 
@@ -124,6 +125,8 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+		responseBytes, err := io.ReadAll(response.Body)
+		assert.Equal(t, `header "forbidden-header" disallowed by agent`+"\n", string(responseBytes))
 	})
 
 	t.Run("error_response", func(t *testing.T) {
@@ -172,6 +175,25 @@ func testPlainPostHandlerErrors(t *testing.T, upstreamServer *httptest.Server) {
 		response, err := agentServer.Client().Do(request)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusBadGateway, response.StatusCode)
+	})
+
+	t.Run("invalid_scheme", func(t *testing.T) {
+		parsedURL, err := url.Parse(upstreamServer.URL)
+		require.NoError(t, err)
+		parsedURL.Scheme = "not&valid<or>safe'scheme"
+
+		requestProto := &studiov1alpha1.InvokeRequest{
+			Target: parsedURL.String(),
+		}
+		requestBytes := protoMarshalBase64(t, requestProto)
+		request, err := http.NewRequest(http.MethodPost, agentServer.URL, bytes.NewReader(requestBytes))
+		require.NoError(t, err)
+		request.Header.Set("Content-Type", "text/plain")
+		response, err := agentServer.Client().Do(request)
+		require.NoError(t, err)
+		assert.Equal(t, http.StatusBadRequest, response.StatusCode)
+		responseBytes, err := io.ReadAll(response.Body)
+		assert.Contains(t, string(responseBytes), `&#34;not&amp;valid&lt;or&gt;safe&#39;scheme`)
 	})
 }
 

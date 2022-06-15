@@ -20,6 +20,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"html"
 	"io"
 	"net"
 	"net/http"
@@ -125,7 +126,7 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	request := connect.NewRequest(bytes.NewBuffer(envelopeRequest.GetBody()))
 	for _, header := range envelopeRequest.Headers {
 		if _, ok := i.DisallowedHeaders[textproto.CanonicalMIMEHeaderKey(header.Key)]; ok {
-			http.Error(w, fmt.Sprintf("header %q disallowed by agent", header.Key), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("header %q disallowed by agent", html.EscapeString(header.Key)), http.StatusBadRequest)
 			return
 		}
 		for _, value := range header.Value {
@@ -161,12 +162,12 @@ func (i *plainPostHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("missing Content-Type while body size is %d", len(request.Msg.Bytes())), http.StatusBadRequest)
 		return
 	default:
-		http.Error(w, fmt.Sprintf("unknown Content-Type: %q", request.Header().Get("Content-Type")), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("unknown Content-Type: %q", html.EscapeString(request.Header().Get("Content-Type"))), http.StatusBadRequest)
 		return
 	}
 	targetURL, err := url.Parse(envelopeRequest.GetTarget())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, html.EscapeString(err.Error()), http.StatusBadRequest)
 		return
 	}
 	var httpClient *http.Client
