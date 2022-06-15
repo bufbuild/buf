@@ -30,6 +30,8 @@ const (
 	// authenticationTokenPrefix is the standard OAuth token prefix.
 	// We use it for familiarity.
 	authenticationTokenPrefix = "Bearer "
+
+	KeyPrefix = "rpc-"
 )
 
 const (
@@ -56,7 +58,7 @@ func NewTokenReaderInterceptor(container appflag.Container, address string) conn
 			}
 
 			if req.Header().Get(authenticationHeader) == "" {
-				req.Header().Set(authenticationHeader, authenticationTokenPrefix+token)
+				req.Header().Set(KeyPrefix+authenticationHeader, authenticationTokenPrefix+token)
 			}
 			return next(ctx, req)
 		})
@@ -71,7 +73,7 @@ func NewWithVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
-			req.Header().Set(CliVersionHeaderName, version)
+			req.Header().Set(KeyPrefix+CliVersionHeaderName, version)
 			return next(ctx, req)
 		})
 	}
@@ -88,7 +90,7 @@ func NewWithTokenInterceptor(token string) connect.UnaryInterceptorFunc {
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
 			if token != "" {
-				req.Header().Set(authenticationHeader, authenticationTokenPrefix+token)
+				req.Header().Set(KeyPrefix+authenticationHeader, authenticationTokenPrefix+token)
 			}
 			return next(ctx, req)
 		})
