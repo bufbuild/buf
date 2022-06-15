@@ -183,6 +183,7 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 	filteredImage, err := ImageFilteredByTypes(image, typenames...)
 	require.NoError(t, err)
 	assert.NotNil(t, image)
+	assert.True(t, imageIsDependencyOrdered(filteredImage), "image files not in dependency order")
 
 	reflectDescriptors, err := desc.CreateFileDescriptorsFromSet(bufimage.ImageToFileDescriptorSet(filteredImage))
 	require.NoError(t, err)
@@ -220,4 +221,17 @@ func runDiffTest(t *testing.T, testdataDir string, typenames []string, expectedF
 		require.NoError(t, err)
 		require.NoError(t, writer.Close())
 	}
+}
+
+func imageIsDependencyOrdered(image bufimage.Image) bool {
+	seen := make(map[string]struct{})
+	for _, file := range image.Files() {
+		for _, importName := range file.Proto().Dependency {
+			if _, ok := seen[importName]; !ok {
+				return false
+			}
+		}
+		seen[file.Path()] = struct{}{}
+	}
+	return true
 }
