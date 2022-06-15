@@ -20,7 +20,6 @@ import (
 	"net/http"
 
 	"github.com/bufbuild/buf/private/pkg/observability"
-	"github.com/bufbuild/buf/private/pkg/rpc/rpchttp"
 	"golang.org/x/net/http2"
 )
 
@@ -42,9 +41,11 @@ func NewClient(clientOptions ...ClientOption) *http.Client {
 			return net.Dial(netw, addr)
 		}
 	}
-	roundTripper := rpchttp.NewClientInterceptor(baseTransport)
+	var roundTripper http.RoundTripper
 	if option.observability {
 		roundTripper = observability.NewHTTPTransport(roundTripper)
+	} else {
+		roundTripper = baseTransport
 	}
 	return &http.Client{
 		Transport: roundTripper,

@@ -15,28 +15,9 @@
 // Package bufrpc provides buf-specific rpc functionality.
 package bufrpc
 
-import (
-	"context"
-
-	"github.com/bufbuild/buf/private/pkg/rpc"
-	"github.com/bufbuild/connect-go"
-)
-
 const (
 	// DefaultRemote is the default remote if none can be inferred from a module name.
 	DefaultRemote = "buf.build"
 	// cliVersionHeaderName is the name of the header carrying the buf CLI version.
-	cliVersionHeaderName = "buf-version"
+	CliVersionHeaderName = "buf-version"
 )
-
-// WithOutgoingCLIVersionHeader attaches the given CLI version to the context for rpc.
-func WithOutgoingCLIVersionHeader(req connect.AnyRequest, cliVersion string) {
-	req.Header().Set(cliVersionHeaderName, cliVersion)
-}
-
-// GetIncomingCLIVersionHeader gets the CLI version from the context for rpc.
-//
-// Returns empty if no CLI version is attached to the context.
-func GetIncomingCLIVersionHeader(ctx context.Context) string {
-	return rpc.GetIncomingHeader(ctx, cliVersionHeaderName)
-}

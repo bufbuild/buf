@@ -71,7 +71,7 @@ func NewWithVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
-			WithOutgoingCLIVersionHeader(req, version)
+			req.Header().Set(CliVersionHeaderName, version)
 			return next(ctx, req)
 		})
 	}
