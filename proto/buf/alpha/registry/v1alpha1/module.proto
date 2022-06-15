@@ -36,6 +36,7 @@ message LocalModulePin {
   string repository = 2;
   string branch = 3;
   string commit = 4;
-  string digest = 5;
   google.protobuf.Timestamp create_time = 7;
+
+  reserved 5;
 }

@@ -67,6 +67,7 @@ message ModulePin {
   string repository = 3;
   string branch = 4;
   string commit = 5;
-  string digest = 6;
   google.protobuf.Timestamp create_time = 7;
+
+  reserved 6;
 }
