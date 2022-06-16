@@ -35,6 +35,11 @@ func TestValidateRemoteHasNoPaths(t *testing.T) {
 		InvalidPath string
 	}{
 		{
+			Name:        "Remote with one trailing slashes",
+			Input:       "buf.build/",
+			InvalidPath: "/",
+		},
+		{
 			Name:        "Remote with two trailing slashes",
 			Input:       "buf.build//",
 			InvalidPath: "//",
@@ -66,5 +71,4 @@ func TestValidateRemoteHasNoPaths(t *testing.T) {
 	}
 	require.NoError(t, ValidateRemoteHasNoPaths(""))
 	require.NoError(t, ValidateRemoteHasNoPaths("buf.build"))
-	require.NoError(t, ValidateRemoteHasNoPaths("buf.build/"))
 }
