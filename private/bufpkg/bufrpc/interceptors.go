@@ -30,17 +30,15 @@ const (
 	// AuthenticationTokenPrefix is the standard OAuth token prefix.
 	// We use it for familiarity.
 	AuthenticationTokenPrefix = "Bearer "
-
-	KeyPrefix = "rpc-"
 )
 
 const (
 	tokenEnvKey = "BUF_TOKEN"
 )
 
-// NewTokenReaderInterceptor returns a new Connect Interceptor that looks up an auth token on every request and when
+// NewWithTokenReaderInterceptor returns a new Connect Interceptor that looks up an auth token on every request and when
 // found, sets it into the request header if not already set.
-func NewTokenReaderInterceptor(container appflag.Container, address string) connect.UnaryInterceptorFunc {
+func NewWithTokenReaderInterceptor(container appflag.Container, address string) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return connect.UnaryFunc(func(
 			ctx context.Context,
@@ -58,7 +56,7 @@ func NewTokenReaderInterceptor(container appflag.Container, address string) conn
 			}
 
 			if req.Header().Get(AuthenticationHeader) == "" {
-				req.Header().Set(KeyPrefix+AuthenticationHeader, AuthenticationTokenPrefix+token)
+				req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
 			}
 			return next(ctx, req)
 		})
@@ -73,7 +71,7 @@ func NewWithVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 			ctx context.Context,
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
-			req.Header().Set(KeyPrefix+CliVersionHeaderName, version)
+			req.Header().Set(CliVersionHeaderName, version)
 			return next(ctx, req)
 		})
 	}
@@ -90,7 +88,7 @@ func NewWithTokenInterceptor(token string) connect.UnaryInterceptorFunc {
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
 			if token != "" {
-				req.Header().Set(KeyPrefix+AuthenticationHeader, AuthenticationTokenPrefix+token)
+				req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
 			}
 			return next(ctx, req)
 		})

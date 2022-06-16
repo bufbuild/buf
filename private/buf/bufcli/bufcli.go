@@ -573,7 +573,7 @@ func newTokenReaderInterceptorProvider(
 	container appflag.Container,
 ) func(string) connect.Interceptor {
 	return func(address string) connect.Interceptor {
-		return bufrpc.NewTokenReaderInterceptor(container, address)
+		return bufrpc.NewWithTokenReaderInterceptor(container, address)
 	}
 }
 
