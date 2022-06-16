@@ -554,7 +554,7 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 	return newRegistryProviderWithOptions(container,
 		bufapiclient.RegistryProviderWithTokenInterceptorProvider(newTokenReaderInterceptorProvider(container)),
 		bufapiclient.RegistryProviderWithInterceptors(
-			bufconnect.NewWithVersionInterceptor(Version),
+			bufconnect.NewSetCLIVersionInterceptor(Version),
 		))
 }
 
@@ -563,7 +563,7 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
 	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithInterceptors(
 		bufconnect.NewWithTokenInterceptor(token),
-		bufconnect.NewWithVersionInterceptor(Version),
+		bufconnect.NewSetCLIVersionInterceptor(Version),
 	))
 }
 

@@ -51,8 +51,8 @@ func NewWithTokenReaderInterceptor(container appflag.Container, address string) 
 	return interceptor
 }
 
-// NewWithVersionInterceptor returns a new Connect Interceptor that sets the Buf CLI version into all request headers
-func NewWithVersionInterceptor(version string) connect.UnaryInterceptorFunc {
+// NewSetCLIVersionInterceptor returns a new Connect Interceptor that sets the Buf CLI version into all request headers
+func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 		return connect.UnaryFunc(func(
 			ctx context.Context,
