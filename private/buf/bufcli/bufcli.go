@@ -32,6 +32,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufapimodule"
 	"github.com/bufbuild/buf/private/bufpkg/bufcheck/buflint"
 	"github.com/bufbuild/buf/private/bufpkg/bufconfig"
+	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagebuild"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule"
@@ -39,7 +40,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmodulecache"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
-	"github.com/bufbuild/buf/private/bufpkg/bufrpc"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -69,8 +69,6 @@ const (
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
 	inputSSHKeyFileEnvKey         = "BUF_INPUT_SSH_KEY_FILE"
 	inputSSHKnownHostsFilesEnvKey = "BUF_INPUT_SSH_KNOWN_HOSTS_FILES"
-
-	tokenEnvKey = "BUF_TOKEN"
 
 	alphaSuppressWarningsEnvKey = "BUF_ALPHA_SUPPRESS_WARNINGS"
 	betaSuppressWarningsEnvKey  = "BUF_BETA_SUPPRESS_WARNINGS"
@@ -556,7 +554,7 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 	return newRegistryProviderWithOptions(container,
 		bufapiclient.RegistryProviderWithTokenInterceptorProvider(newTokenReaderInterceptorProvider(container)),
 		bufapiclient.RegistryProviderWithInterceptors(
-			bufrpc.NewWithVersionInterceptor(Version),
+			bufconnect.NewWithVersionInterceptor(Version),
 		))
 }
 
@@ -564,8 +562,8 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 // set in the header of all outgoing requests from this provider
 func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
 	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithInterceptors(
-		bufrpc.NewWithTokenInterceptor(token),
-		bufrpc.NewWithVersionInterceptor(Version),
+		bufconnect.NewWithTokenInterceptor(token),
+		bufconnect.NewWithVersionInterceptor(Version),
 	))
 }
 
@@ -573,7 +571,7 @@ func newTokenReaderInterceptorProvider(
 	container appflag.Container,
 ) func(string) connect.Interceptor {
 	return func(address string) connect.Interceptor {
-		return bufrpc.NewWithTokenReaderInterceptor(container, address)
+		return bufconnect.NewWithTokenReaderInterceptor(container, address)
 	}
 }
 
@@ -594,10 +592,8 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 			return buftransport.PrependHTTPS(address)
 		}),
 	}
+	options = append(options, opts...)
 
-	for _, opt := range opts {
-		options = append(options, opt)
-	}
 	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
 }
 

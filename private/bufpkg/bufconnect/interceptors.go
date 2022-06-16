@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bufrpc
+package bufconnect
 
 import (
 	"context"
@@ -21,19 +21,6 @@ import (
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
-)
-
-const (
-	// AuthenticationHeader is the standard OAuth header used for authenticating
-	// a user. Ignore the misnomer.
-	AuthenticationHeader = "Authorization"
-	// AuthenticationTokenPrefix is the standard OAuth token prefix.
-	// We use it for familiarity.
-	AuthenticationTokenPrefix = "Bearer "
-)
-
-const (
-	tokenEnvKey = "BUF_TOKEN"
 )
 
 // NewWithTokenReaderInterceptor returns a new Connect Interceptor that looks up an auth token on every request and when

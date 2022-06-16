@@ -12,12 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufrpc provides buf-specific rpc functionality.
-package bufrpc
+// Package bufconnect provides buf-specific Connect functionality.
+package bufconnect
 
 const (
+	// AuthenticationHeader is the standard OAuth header used for authenticating
+	// a user. Ignore the misnomer.
+	AuthenticationHeader = "Authorization"
+	// AuthenticationTokenPrefix is the standard OAuth token prefix.
+	// We use it for familiarity.
+	AuthenticationTokenPrefix = "Bearer "
+	// CliVersionHeaderName is the name of the header carrying the buf CLI version.
+	CliVersionHeaderName = "buf-version"
 	// DefaultRemote is the default remote if none can be inferred from a module name.
 	DefaultRemote = "buf.build"
-	// cliVersionHeaderName is the name of the header carrying the buf CLI version.
-	CliVersionHeaderName = "buf-version"
+	// tokenEnvKey is the environment variable key for the auth token
+	tokenEnvKey = "BUF_TOKEN"
 )

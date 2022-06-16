@@ -41,11 +41,9 @@ func NewClient(clientOptions ...ClientOption) *http.Client {
 			return net.Dial(netw, addr)
 		}
 	}
-	var roundTripper http.RoundTripper
+	var roundTripper http.RoundTripper = baseTransport
 	if option.observability {
 		roundTripper = observability.NewHTTPTransport(roundTripper)
-	} else {
-		roundTripper = baseTransport
 	}
 	return &http.Client{
 		Transport: roundTripper,
