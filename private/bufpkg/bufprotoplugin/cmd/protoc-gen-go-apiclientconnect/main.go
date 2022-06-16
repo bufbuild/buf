@@ -68,6 +68,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	}
 	contextGoIdentString := g.QualifiedGoIdent(contextPackage.Ident("Context"))
 	httpClientGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("HTTPClient"))
+	interceptorGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("Interceptor"))
 	loggerGoIdentString := g.QualifiedGoIdent(zapPackage.Ident("Logger"))
 	apiclientGoImportPath, err := helper.NewPackageGoImportPath(
 		goPackageFileSet,
@@ -102,8 +103,8 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`logger *`, loggerGoIdentString)
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
-	g.P(`interceptors []connect_go.Interceptor`)
-	g.P(`tokenInterceptorProvider func(string) connect_go.Interceptor`)
+	g.P(`interceptors []`, interceptorGoIdentString)
+	g.P(`tokenInterceptorProvider func(string) `, interceptorGoIdentString)
 	g.P(`}`)
 	g.P()
 
@@ -122,7 +123,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P()
 
 	g.P(`// WithInterceptors adds the slice of interceptors to all clients returned from this provider.`)
-	g.P(`func WithInterceptors(interceptors []connect_go.Interceptor) ProviderOption {`)
+	g.P(`func WithInterceptors(interceptors []`, interceptorGoIdentString, `) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
 	g.P(`provider.interceptors = interceptors`)
 	g.P(`}`)
@@ -131,7 +132,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 
 	g.P(`// WithTokenInterceptorProvider provides a function that returns an interceptor that reads a token based on the given address`)
 	g.P(`// This interceptor is added as the last interceptor and will override any token interceptors specified in WithInterceptors`)
-	g.P(`func WithTokenInterceptorProvider(tokenInterceptorProvider func(address string) connect_go.Interceptor) ProviderOption {`)
+	g.P(`func WithTokenInterceptorProvider(tokenInterceptorProvider func(address string) `, interceptorGoIdentString, `) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
 	g.P(`provider.tokenInterceptorProvider = tokenInterceptorProvider`)
 	g.P(`}`)
@@ -154,6 +155,8 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
+
+	withInterceptorsGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("WithInterceptors"))
 
 	// Iterate over the services and create a constructor function for each
 	for _, service := range goPackageFileSet.Services() {
@@ -179,7 +182,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`client: `, newClientGoIdentString, `(`)
 		g.P(`p.httpClient,`)
 		g.P(`address,`)
-		g.P(`connect_go.WithInterceptors(interceptors...),`)
+		g.P(withInterceptorsGoIdentString, `(interceptors...),`)
 		g.P(`),`)
 		g.P(`}, nil`)
 		g.P(`}`)
