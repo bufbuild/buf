@@ -29,12 +29,56 @@ type webhookServiceClient struct {
 	client registryv1alpha1connect.WebhookServiceClient
 }
 
+<<<<<<< HEAD
 // SubscribeToRepository for subscribing to a specific repository.
 func (s *webhookServiceClient) SubscribeToRepository(ctx context.Context) (_ error) {
 	_, err := s.client.SubscribeToRepository(
+=======
+// Create a webhook.
+func (s *webhookServiceClient) CreateWebhook(
+	ctx context.Context,
+	webhookEvent []v1alpha1.WebhookEvent,
+	ownerName string,
+	repositoryName string,
+	callbackUrl string,
+) (webhookSubscriptionId string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.CreateWebhook(
+>>>>>>> main
 		ctx,
 		connect_go.NewRequest(
-			&v1alpha1.SubscribeToRepositoryRequest{}),
+			&v1alpha1.CreateWebhookRequest{
+				WebhookEvent:   webhookEvent,
+				OwnerName:      ownerName,
+				RepositoryName: repositoryName,
+				CallbackUrl:    callbackUrl,
+			}),
+	)
+	if err != nil {
+		return "", err
+	}
+	return response.Msg.WebhookSubscriptionId, nil
+}
+
+<<<<<<< HEAD
+// UnsubscribeToRepository for unsubscribing to a specific repository.
+func (s *webhookServiceClient) UnsubscribeToRepository(ctx context.Context) (_ error) {
+	_, err := s.client.UnsubscribeToRepository(
+=======
+// Delete a webhook.
+func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookSubscriptionId string) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.DeleteWebhook(
+>>>>>>> main
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.DeleteWebhookRequest{
+				WebhookSubscriptionId: webhookSubscriptionId,
+			}),
 	)
 	if err != nil {
 		return err
@@ -42,15 +86,27 @@ func (s *webhookServiceClient) SubscribeToRepository(ctx context.Context) (_ err
 	return nil
 }
 
-// UnsubscribeToRepository for unsubscribing to a specific repository.
-func (s *webhookServiceClient) UnsubscribeToRepository(ctx context.Context) (_ error) {
-	_, err := s.client.UnsubscribeToRepository(
+// Lists the webhooks for a given repository.
+func (s *webhookServiceClient) ListWebhooks(
+	ctx context.Context,
+	repositoryName string,
+	ownerName string,
+	pageToken string,
+) (subscribedWebhooks []*v1alpha1.SubscribedWebhook, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListWebhooks(
 		ctx,
 		connect_go.NewRequest(
-			&v1alpha1.UnsubscribeToRepositoryRequest{}),
+			&v1alpha1.ListWebhooksRequest{
+				RepositoryName: repositoryName,
+				OwnerName:      ownerName,
+				PageToken:      pageToken,
+			}),
 	)
 	if err != nil {
-		return err
+		return nil, "", err
 	}
-	return nil
+	return response.Msg.SubscribedWebhooks, response.Msg.NextPageToken, nil
 }

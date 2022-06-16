@@ -167,9 +167,6 @@ func ImageFilteredByTypes(image bufimage.Image, types ...string) (bufimage.Image
 		}
 		neededDescriptors = append(neededDescriptors, closure...)
 	}
-	// By file is more convenient but we loose dfs order from
-	// descriptorTransitiveClosure, if images need files ordered by
-	// dependencies may need to rethink this.
 	descriptorsByFile := make(map[string][]descriptorAndDirects)
 	for _, descriptor := range neededDescriptors {
 		descriptorsByFile[descriptor.Descriptor.File().Path()] = append(
@@ -179,7 +176,12 @@ func ImageFilteredByTypes(image bufimage.Image, types ...string) (bufimage.Image
 	}
 	// Create a new image with only the required descriptors.
 	var includedFiles []bufimage.ImageFile
-	for file, descriptors := range descriptorsByFile {
+	for _, imageFile := range image.Files() {
+		descriptors, ok := descriptorsByFile[imageFile.Path()]
+		if !ok {
+			continue
+		}
+
 		importsRequired := make(map[string]struct{})
 		typesToKeep := make(map[string]struct{})
 		for _, descriptor := range descriptors {
@@ -191,7 +193,6 @@ func ImageFilteredByTypes(image bufimage.Image, types ...string) (bufimage.Image
 			}
 		}
 
-		imageFile := image.GetFile(file)
 		includedFiles = append(includedFiles, imageFile)
 		imageFileDescriptor := imageFile.Proto()
 		// While employing

@@ -50,7 +50,6 @@ func TestReaderBasic(t *testing.T) {
 		"bar",
 		"main",
 		bufmoduletesting.TestCommit,
-		bufmoduletesting.TestDigest,
 		time.Now(),
 	)
 	require.NoError(t, err)
@@ -197,7 +196,6 @@ func TestCacherBasic(t *testing.T) {
 		"bar",
 		"main",
 		bufmoduletesting.TestCommit,
-		bufmoduletesting.TestDigest,
 		time.Now(),
 	)
 	require.NoError(t, err)
@@ -239,7 +237,6 @@ func TestModuleReaderCacherWithDocumentation(t *testing.T) {
 		"bar",
 		"main",
 		bufmoduletesting.TestCommit,
-		bufmoduletesting.TestDigest,
 		time.Now(),
 	)
 	require.NoError(t, err)
@@ -277,7 +274,6 @@ func TestModuleReaderCacherWithConfiguration(t *testing.T) {
 		"weather",
 		"main",
 		bufmoduletesting.TestCommit,
-		bufmoduletesting.TestDigestB3WithConfiguration,
 		time.Now(),
 	)
 	require.NoError(t, err)
