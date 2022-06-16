@@ -20,18 +20,18 @@ import (
 	"github.com/bufbuild/buf/private/pkg/rpc"
 )
 
-// WithToken adds the token to the context via a header.
+// WithToken adds the token to the outgoing context via a header.
 func WithToken(ctx context.Context, token string) context.Context {
 	if token != "" {
-		return rpc.WithOutgoingHeader(ctx, rpc.AuthenticationHeader, rpc.AuthenticationTokenPrefix+token)
+		return rpc.WithOutgoingContextHeader(ctx, rpc.AuthenticationHeader, rpc.AuthenticationTokenPrefix+token)
 	}
 	return ctx
 }
 
-// WithTokenIfNoneSet adds the token to the context via a header if none is already set.
+// WithTokenIfNoneSet adds the token to the outgoing context via a header if none is already set.
 // If a token is already set on the header, this function just returns the context as is.
 func WithTokenIfNoneSet(ctx context.Context, token string) context.Context {
-	if rpc.GetOutgoingHeader(ctx, rpc.AuthenticationHeader) != "" {
+	if rpc.GetOutgoingContextHeader(ctx, rpc.AuthenticationHeader) != "" {
 		return ctx
 	}
 	return WithToken(ctx, token)

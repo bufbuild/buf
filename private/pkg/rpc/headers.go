@@ -26,22 +26,19 @@ const (
 	// AuthenticationTokenPrefix is the standard OAuth token prefix.
 	// We use it for familiarity.
 	AuthenticationTokenPrefix = "Bearer "
-	// KeyPrefix is the prefix of both http and grpc headers
-	// set with rpc packages.
+	// KeyPrefix is the prefix of headers set with rpc packages.
 	KeyPrefix = "rpc-"
 )
 
 type outgoingHeadersContextKey struct{}
 type incomingHeadersContextKey struct{}
 
-// GetIncomingHeader gets the given header key.
+// GetIncomingContextHeader gets the given header key from an incoming context.
 //
-// Headers are simple key/value with no differentiation between unset and nil.
-// This is as opposed to i.e. grpc that does key/slice value with differentiation between unset and nil.
-// Headers are case-insensitive.
+// Headers are simple key/value with no differentiation between unset and nil and are case-insensitive.
 //
 // If the key is unset, this returns the empty string.
-func GetIncomingHeader(ctx context.Context, key string) string {
+func GetIncomingContextHeader(ctx context.Context, key string) string {
 	if contextValue := ctx.Value(incomingHeadersContextKey{}); contextValue != nil {
 		value, ok := contextValue.(map[string]string)[normalizeHeaderKey(key)]
 		if !ok {
@@ -53,14 +50,12 @@ func GetIncomingHeader(ctx context.Context, key string) string {
 	return ""
 }
 
-// GetOutgoingHeader gets the given header key.
+// GetOutgoingContextHeader gets the given header key from an outgoing context.
 //
-// Headers are simple key/value with no differentiation between unset and nil.
-// This is as opposed to i.e. grpc that does key/slice value with differentiation between unset and nil.
-// Headers are case-insensitive.
+// Headers are simple key/value with no differentiation between unset and nil and are case-insensitive.
 //
 // If the key is unset, this returns the empty string.
-func GetOutgoingHeader(ctx context.Context, key string) string {
+func GetOutgoingContextHeader(ctx context.Context, key string) string {
 	if contextValue := ctx.Value(outgoingHeadersContextKey{}); contextValue != nil {
 		value, ok := contextValue.(map[string]string)[normalizeHeaderKey(key)]
 		if !ok {
@@ -72,84 +67,72 @@ func GetOutgoingHeader(ctx context.Context, key string) string {
 	return ""
 }
 
-// GetIncomingHeaders gets the headers..
+// GetIncomingContextHeaders gets the headers from an incoming context
 //
-// Headers are simple key/value with no differentiation between unset and nil.
-// This is as opposed to i.e. grpc that does key/slice value with differentiation between unset and nil.
-// Headers are case-insensitive.
+// Headers are simple key/value with no differentiation between unset and nil and are case-insensitive.
 //
 // If there are no headers, returns an empty map.
-func GetIncomingHeaders(ctx context.Context) map[string]string {
+func GetIncomingContextHeaders(ctx context.Context) map[string]string {
 	return newHeaderMap(ctx.Value(incomingHeadersContextKey{}), 0)
 }
 
-// GetOutgoingHeaders gets the headers..
+// GetOutgoingContextHeaders gets the headers from an outgoing context
 //
-// Headers are simple key/value with no differentiation between unset and nil.
-// This is as opposed to i.e. grpc that does key/slice value with differentiation between unset and nil.
-// Headers are case-insensitive.
+// Headers are simple key/value with no differentiation between unset and nil and are case-insensitive.
 //
 // If there are no headers, returns an empty map.
-func GetOutgoingHeaders(ctx context.Context) map[string]string {
+func GetOutgoingContextHeaders(ctx context.Context) map[string]string {
 	return newHeaderMap(ctx.Value(outgoingHeadersContextKey{}), 0)
 }
 
-// WithIncomingHeader adds the given header to the context.
+// WithIncomingContextHeader adds the given header to an incoming context.
 //
-// Headers are simple key/value with no differentiation between unset and nil.
-// This is as opposed to i.e. grpc that does key/slice value with differentiation between unset and nil.
-// Headers are case-insensitive.
+// Headers are simple key/value with no differentiation between unset and nil and are case-insensitive.
 //
 // If the key or value is empty, this is a no-op.
 // If the key was already set, this will overwrite the value for the key.
-func WithIncomingHeader(ctx context.Context, key string, value string) context.Context {
+func WithIncomingContextHeader(ctx context.Context, key string, value string) context.Context {
 	if updatedHeaders := withHeader(ctx.Value(incomingHeadersContextKey{}), key, value); len(updatedHeaders) != 0 {
 		return context.WithValue(ctx, incomingHeadersContextKey{}, updatedHeaders)
 	}
 	return ctx
 }
 
-// WithOutgoingHeader adds the given header to the context.
+// WithOutgoingContextHeader adds the given header to the outgoing context.
 //
-// Headers are simple key/value with no differentiation between unset and nil.
-// This is as opposed to i.e. grpc that does key/slice value with differentiation between unset and nil.
-// Headers are case-insensitive.
+// Headers are simple key/value with no differentiation between unset and nil and are case-insensitive.
 //
 // If the key or value is empty, this is a no-op.
 // If the key was already set, this will overwrite the value for the key.
-func WithOutgoingHeader(ctx context.Context, key string, value string) context.Context {
+func WithOutgoingContextHeader(ctx context.Context, key string, value string) context.Context {
 	if updatedHeaders := withHeader(ctx.Value(outgoingHeadersContextKey{}), key, value); len(updatedHeaders) != 0 {
 		return context.WithValue(ctx, outgoingHeadersContextKey{}, updatedHeaders)
 	}
 	return ctx
 }
 
-// WithIncomingHeaders adds the given headers to the context.
+// WithIncomingContextHeaders adds the given headers to the incoming context.
 //
-// Headers are simple key/value with no differentiation between unset and nil.
-// This is as opposed to i.e. grpc that does key/slice value with differentiation between unset and nil.
-// Headers are case-insensitive.
+// Headers are simple key/value with no differentiation between unset and nil and are case-insensitive.
 //
 // If headers is empty or nil, this is a no-op.
 // If a key or value is empty, this is a no-op for that key.
 // If a key was already set, this will overwrite the value for the key.
-func WithIncomingHeaders(ctx context.Context, headers map[string]string) context.Context {
+func WithIncomingContextHeaders(ctx context.Context, headers map[string]string) context.Context {
 	if updatedHeaders := withHeaders(ctx.Value(incomingHeadersContextKey{}), headers); len(updatedHeaders) != 0 {
 		return context.WithValue(ctx, incomingHeadersContextKey{}, updatedHeaders)
 	}
 	return ctx
 }
 
-// WithOutgoingHeaders adds the given headers to the context.
+// WithOutgoingContextHeaders adds the given headers to the outgoing context.
 //
-// Headers are simple key/value with no differentiation between unset and nil.
-// This is as opposed to i.e. grpc that does key/slice value with differentiation between unset and nil.
-// Headers are case-insensitive.
+// Headers are simple key/value with no differentiation between unset and nil and are case-insensitive.
 //
 // If headers is empty or nil, this is a no-op.
 // If a key or value is empty, this is a no-op for that key.
 // If a key was already set, this will overwrite the value for the key.
-func WithOutgoingHeaders(ctx context.Context, headers map[string]string) context.Context {
+func WithOutgoingContextHeaders(ctx context.Context, headers map[string]string) context.Context {
 	if updatedHeaders := withHeaders(ctx.Value(outgoingHeadersContextKey{}), headers); len(updatedHeaders) != 0 {
 		return context.WithValue(ctx, outgoingHeadersContextKey{}, updatedHeaders)
 	}

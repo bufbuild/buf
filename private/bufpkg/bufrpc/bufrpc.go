@@ -30,12 +30,12 @@ const (
 
 // WithOutgoingCLIVersionHeader attaches the given CLI version to the context for rpc.
 func WithOutgoingCLIVersionHeader(ctx context.Context, cliVersion string) context.Context {
-	return rpc.WithOutgoingHeader(ctx, cliVersionHeaderName, cliVersion)
+	return rpc.WithOutgoingContextHeader(ctx, cliVersionHeaderName, cliVersion)
 }
 
 // GetIncomingCLIVersionHeader gets the CLI version from the context for rpc.
 //
 // Returns empty if no CLI version is attached to the context.
 func GetIncomingCLIVersionHeader(ctx context.Context) string {
-	return rpc.GetIncomingHeader(ctx, cliVersionHeaderName)
+	return rpc.GetIncomingContextHeader(ctx, cliVersionHeaderName)
 }

@@ -29,7 +29,7 @@ func NewServerInterceptor() func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			if len(request.Header) > 0 {
 				request = request.WithContext(
-					rpc.WithIncomingHeaders(
+					rpc.WithIncomingContextHeaders(
 						request.Context(),
 						fromHTTPHeader(
 							request.Header,
@@ -60,7 +60,7 @@ func newHTTPRoundTripper(next http.RoundTripper) *httpRoundTripper {
 }
 
 func (h *httpRoundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
-	if headers := rpc.GetOutgoingHeaders(request.Context()); len(headers) > 0 {
+	if headers := rpc.GetOutgoingContextHeaders(request.Context()); len(headers) > 0 {
 		for key, value := range headers {
 			request.Header.Add(rpc.KeyPrefix+key, value)
 		}
