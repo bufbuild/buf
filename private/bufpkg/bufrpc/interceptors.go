@@ -24,12 +24,12 @@ import (
 )
 
 const (
-	// authenticationHeader is the standard OAuth header used for authenticating
+	// AuthenticationHeader is the standard OAuth header used for authenticating
 	// a user. Ignore the misnomer.
-	authenticationHeader = "Authorization"
-	// authenticationTokenPrefix is the standard OAuth token prefix.
+	AuthenticationHeader = "Authorization"
+	// AuthenticationTokenPrefix is the standard OAuth token prefix.
 	// We use it for familiarity.
-	authenticationTokenPrefix = "Bearer "
+	AuthenticationTokenPrefix = "Bearer "
 
 	KeyPrefix = "rpc-"
 )
@@ -57,8 +57,8 @@ func NewTokenReaderInterceptor(container appflag.Container, address string) conn
 				}
 			}
 
-			if req.Header().Get(authenticationHeader) == "" {
-				req.Header().Set(KeyPrefix+authenticationHeader, authenticationTokenPrefix+token)
+			if req.Header().Get(AuthenticationHeader) == "" {
+				req.Header().Set(KeyPrefix+AuthenticationHeader, AuthenticationTokenPrefix+token)
 			}
 			return next(ctx, req)
 		})
@@ -90,7 +90,7 @@ func NewWithTokenInterceptor(token string) connect.UnaryInterceptorFunc {
 			req connect.AnyRequest,
 		) (connect.AnyResponse, error) {
 			if token != "" {
-				req.Header().Set(KeyPrefix+authenticationHeader, authenticationTokenPrefix+token)
+				req.Header().Set(KeyPrefix+AuthenticationHeader, AuthenticationTokenPrefix+token)
 			}
 			return next(ctx, req)
 		})
