@@ -25,35 +25,35 @@ func TestHeaders(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	assert.Equal(t, "", GetIncomingHeader(ctx, "foo"))
-	assert.Equal(t, "", GetOutgoingHeader(ctx, "foo"))
-	assert.NotNil(t, GetIncomingHeaders(ctx))
-	assert.Empty(t, GetIncomingHeaders(ctx))
-	assert.NotNil(t, GetOutgoingHeaders(ctx))
-	assert.Empty(t, GetOutgoingHeaders(ctx))
+	assert.Equal(t, "", GetIncomingContextHeader(ctx, "foo"))
+	assert.Equal(t, "", GetOutgoingContextHeader(ctx, "foo"))
+	assert.NotNil(t, GetIncomingContextHeaders(ctx))
+	assert.Empty(t, GetIncomingContextHeaders(ctx))
+	assert.NotNil(t, GetOutgoingContextHeaders(ctx))
+	assert.Empty(t, GetOutgoingContextHeaders(ctx))
 
-	ctx = WithIncomingHeader(ctx, "foo", "foo1")
-	assert.Equal(t, "foo1", GetIncomingHeader(ctx, "foo"))
-	assert.Equal(t, "", GetOutgoingHeader(ctx, "foo"))
-	assert.Equal(t, map[string]string{"foo": "foo1"}, GetIncomingHeaders(ctx))
-	assert.Empty(t, GetOutgoingHeaders(ctx))
+	ctx = WithIncomingContextHeader(ctx, "foo", "foo1")
+	assert.Equal(t, "foo1", GetIncomingContextHeader(ctx, "foo"))
+	assert.Equal(t, "", GetOutgoingContextHeader(ctx, "foo"))
+	assert.Equal(t, map[string]string{"foo": "foo1"}, GetIncomingContextHeaders(ctx))
+	assert.Empty(t, GetOutgoingContextHeaders(ctx))
 
-	ctx = WithIncomingHeader(ctx, "Foo", "foo2")
-	assert.Equal(t, "foo2", GetIncomingHeader(ctx, "Foo"))
-	assert.Equal(t, "foo2", GetIncomingHeader(ctx, "foo"))
-	assert.Equal(t, "", GetOutgoingHeader(ctx, "Foo"))
-	assert.Equal(t, "", GetOutgoingHeader(ctx, "foo"))
-	assert.Equal(t, map[string]string{"foo": "foo2"}, GetIncomingHeaders(ctx))
-	assert.Empty(t, GetOutgoingHeaders(ctx))
+	ctx = WithIncomingContextHeader(ctx, "Foo", "foo2")
+	assert.Equal(t, "foo2", GetIncomingContextHeader(ctx, "Foo"))
+	assert.Equal(t, "foo2", GetIncomingContextHeader(ctx, "foo"))
+	assert.Equal(t, "", GetOutgoingContextHeader(ctx, "Foo"))
+	assert.Equal(t, "", GetOutgoingContextHeader(ctx, "foo"))
+	assert.Equal(t, map[string]string{"foo": "foo2"}, GetIncomingContextHeaders(ctx))
+	assert.Empty(t, GetOutgoingContextHeaders(ctx))
 
-	ctx = WithOutgoingHeader(ctx, "bar", "bar1")
-	assert.Equal(t, "bar1", GetOutgoingHeader(ctx, "bar"))
-	assert.Equal(t, map[string]string{"bar": "bar1"}, GetOutgoingHeaders(ctx))
+	ctx = WithOutgoingContextHeader(ctx, "bar", "bar1")
+	assert.Equal(t, "bar1", GetOutgoingContextHeader(ctx, "bar"))
+	assert.Equal(t, map[string]string{"bar": "bar1"}, GetOutgoingContextHeaders(ctx))
 
-	ctx = WithOutgoingHeader(ctx, "Bar", "bar2")
-	assert.Equal(t, "bar2", GetOutgoingHeader(ctx, "Bar"))
-	assert.Equal(t, "bar2", GetOutgoingHeader(ctx, "bar"))
-	assert.Equal(t, map[string]string{"bar": "bar2"}, GetOutgoingHeaders(ctx))
+	ctx = WithOutgoingContextHeader(ctx, "Bar", "bar2")
+	assert.Equal(t, "bar2", GetOutgoingContextHeader(ctx, "Bar"))
+	assert.Equal(t, "bar2", GetOutgoingContextHeader(ctx, "bar"))
+	assert.Equal(t, map[string]string{"bar": "bar2"}, GetOutgoingContextHeaders(ctx))
 
 	headers := map[string]string{
 		"foo": "foo3",
@@ -64,10 +64,10 @@ func TestHeaders(t *testing.T) {
 		"bar": "bar4",
 		"baz": "baz4",
 	}
-	ctx = WithIncomingHeaders(ctx, headers)
-	assert.Equal(t, headers, GetIncomingHeaders(ctx))
-	ctx = WithIncomingHeaders(ctx, headers2)
-	assert.Equal(t, headers2, GetIncomingHeaders(ctx))
+	ctx = WithIncomingContextHeaders(ctx, headers)
+	assert.Equal(t, headers, GetIncomingContextHeaders(ctx))
+	ctx = WithIncomingContextHeaders(ctx, headers2)
+	assert.Equal(t, headers2, GetIncomingContextHeaders(ctx))
 	// make sure that the headers map is not modified
 	assert.Equal(
 		t,
@@ -77,10 +77,10 @@ func TestHeaders(t *testing.T) {
 		},
 		headers,
 	)
-	ctx = WithOutgoingHeaders(ctx, headers)
-	assert.Equal(t, headers, GetOutgoingHeaders(ctx))
-	ctx = WithOutgoingHeaders(ctx, headers2)
-	assert.Equal(t, headers2, GetOutgoingHeaders(ctx))
+	ctx = WithOutgoingContextHeaders(ctx, headers)
+	assert.Equal(t, headers, GetOutgoingContextHeaders(ctx))
+	ctx = WithOutgoingContextHeaders(ctx, headers2)
+	assert.Equal(t, headers2, GetOutgoingContextHeaders(ctx))
 	// make sure that the headers map is not modified
 	assert.Equal(
 		t,
