@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 )
@@ -148,6 +149,62 @@ func ParseConfig(config string) (*Config, error) {
 		return newConfig(externalConfig)
 	}
 	return nil, fmt.Errorf("invalid plugin configuration version: must be one of %v", AllConfigFilePaths)
+}
+
+// RuntimeConfigForProto maps the given *registryv1alpha1.RuntimeConfig into a *RuntimeConfig.
+//
+// TODO: This function will need to change if/when we adjust the structure of runtime dependencies
+// in the buf.plugin.yaml representation.
+func RuntimeConfigForProto(protoRuntimeConfig *registryv1alpha1.RuntimeConfig) (*RuntimeConfig, error) {
+	if protoRuntimeConfig == nil {
+		return nil, nil
+	}
+	switch protoRuntimeConfig.RuntimeConfig.(type) {
+	case *registryv1alpha1.RuntimeConfig_GoConfig:
+		protoGoConfig := protoRuntimeConfig.GetGoConfig()
+		if len(protoGoConfig.GetRuntimeLibraries()) == 0 && protoGoConfig.GetMinimumVersion() == "" {
+			return nil, fmt.Errorf("the plugin's go runtime configuration must have a non-empty value")
+		}
+		var deps []string
+		for _, protoRuntimeLibrary := range protoGoConfig.GetRuntimeLibraries() {
+			// TODO: We probably need more validation here, but we should be wary
+			// of client-side validation whenever possible.
+			deps = append(deps, protoRuntimeLibrary.GetModule()+":"+protoRuntimeLibrary.GetVersion())
+		}
+		return &RuntimeConfig{
+			Go: &GoRuntimeConfig{
+				MinVersion: protoGoConfig.GetMinimumVersion(),
+				Deps:       deps,
+			},
+		}, nil
+	case *registryv1alpha1.RuntimeConfig_NpmConfig:
+		protoNPMConfig := protoRuntimeConfig.GetNpmConfig()
+		if len(protoNPMConfig.GetRuntimeLibraries()) == 0 {
+			return nil, fmt.Errorf("the plugin's NPM runtime configuration must have a non-empty value")
+		}
+		var deps []string
+		for _, protoRuntimeLibrary := range protoNPMConfig.GetRuntimeLibraries() {
+			// TODO: We probably need more validation here, but we should be wary
+			// of client-side validation whenever possible.
+			deps = append(deps, protoRuntimeLibrary.GetPackage()+":"+protoRuntimeLibrary.GetVersion())
+		}
+		return &RuntimeConfig{
+			NPM: &NPMRuntimeConfig{
+				Deps: deps,
+			},
+		}, nil
+	}
+	// We'd normally return an error here, but this case will occur whenever the CLI interacts
+	// with a plugin that defines a runtime configuration it doesn't know about. In other words,
+	// if we ever add another runtime configuration to the *registryv1alpha1.RuntimeConfig later
+	// (e.g. Maven), old CLIs will hit this case if they interact with a plugin that defines it.
+	return nil, nil
+}
+
+// RuntimeConfigToProto maps the *RuntimeConfig to a *registryv1alpha1.RuntimeConfig.
+func RuntimeConfigToProto(runtimeConfig *RuntimeConfig) (*registryv1alpha1.RuntimeConfig, error) {
+	// TODO: Map the runtime configuration based on the dependency structure.
+	return nil, nil
 }
 
 // ExternalConfig represents the on-disk representation

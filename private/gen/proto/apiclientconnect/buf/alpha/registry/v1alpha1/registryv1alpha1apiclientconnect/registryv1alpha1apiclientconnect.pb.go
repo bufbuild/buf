@@ -462,6 +462,28 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 	}, nil
 }
 
+func (p *provider) NewRemotePluginService(ctx context.Context, address string) (registryv1alpha1api.RemotePluginService, error) {
+	var contextModifier func(context.Context) context.Context
+	var err error
+	if p.contextModifierProvider != nil {
+		contextModifier, err = p.contextModifierProvider(address)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if p.addressMapper != nil {
+		address = p.addressMapper(address)
+	}
+	return &remotePluginServiceClient{
+		logger: p.logger,
+		client: registryv1alpha1connect.NewRemotePluginServiceClient(
+			p.httpClient,
+			address,
+		),
+		contextModifier: contextModifier,
+	}, nil
+}
+
 func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
 	var contextModifier func(context.Context) context.Context
 	var err error
