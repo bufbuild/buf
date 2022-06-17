@@ -79,6 +79,8 @@ All rights reserved.`,
 		".sql":   "---",
 		".ts":    "//",
 		".tsx":   "//",
+		".bazel": "#",
+		".bzl":   "#",
 	}
 )
 
