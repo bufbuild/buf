@@ -26,7 +26,8 @@ FILE_IGNORES := $(FILE_IGNORES) \
 	.vscode/ \
 	private/buf/cmd/buf/workspacetests/other/proto/workspacetest/cache/ \
 	private/bufpkg/buftesting/cache/ \
-	private/pkg/storage/storageos/tmp/
+	private/pkg/storage/storageos/tmp/ \
+	private/buf/cmd/buf/command/alpha/protoc/test.txt
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2022
