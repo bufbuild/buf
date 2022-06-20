@@ -40,6 +40,8 @@ message RepositoryCommit {
   string author = 7;
   // The tags associated with this commit
   repeated buf.alpha.registry.v1alpha1.RepositoryTag tags = 8;
+  // The commit's draft name, if it is a draft commit.
+  optional string draft_name = 9;
 }
 
 // RepositoryCommitService is the Repository commit service.
@@ -61,6 +63,8 @@ service RepositoryCommitService {
   // GetRepositoryCommitBySequenceId returns the repository commit matching
   // the provided sequence ID and branch, if it exists.
   rpc GetRepositoryCommitBySequenceId(GetRepositoryCommitBySequenceIdRequest) returns (GetRepositoryCommitBySequenceIdResponse);
+  // ListRepositoryDraftCommits lists draft commits in a repository.
+  rpc ListRepositoryDraftCommits(ListRepositoryDraftCommitsRequest) returns (ListRepositoryDraftCommitsResponse);
 }
 
 message ListRepositoryCommitsByBranchRequest {
@@ -127,4 +131,22 @@ message GetRepositoryCommitBySequenceIdRequest {
 
 message GetRepositoryCommitBySequenceIdResponse {
   RepositoryCommit repository_commit = 1;
+}
+
+message ListRepositoryDraftCommitsRequest {
+  // The owner of the repository which the repository branch belongs to.
+  string repository_owner = 1;
+  // The name of the repository which the repository branch belongs to.
+  string repository_name = 2;
+  uint32 page_size = 3;
+  string page_token = 4;
+  // By default, draft commits are ordered by last update time descending.
+  // Reverse orders them ascending.
+  bool reverse = 5;
+}
+
+message ListRepositoryDraftCommitsResponse {
+  // Each commit will have draft_name set.
+  repeated RepositoryCommit repository_commits = 1;
+  string next_page_token = 2;
 }

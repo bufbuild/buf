@@ -30,13 +30,22 @@ message Reference {
     RepositoryCommit commit = 3;
     // The requested reference is the default reference.
     RepositoryMainReference main = 5;
+    // The requested reference is a draft commit.
+    RepositoryDraft draft = 6;
   }
 }
 
 message RepositoryMainReference {
   // Name is always 'main'.
   string name = 1;
-  // The latest commit in this repository.
+  // The latest non-draft commit in this repository.
+  RepositoryCommit commit = 2;
+}
+
+message RepositoryDraft {
+  // The name of the draft
+  string name = 1;
+  // The commit this draft points to.
   RepositoryCommit commit = 2;
 }
 
@@ -44,7 +53,7 @@ message RepositoryMainReference {
 // for reference information.
 service ReferenceService {
   // GetReferenceByName takes a reference name and returns the
-  // reference either as a 'main', tag, or commit.
+  // reference either as a 'main', tag, commit or draft.
   rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse);
 }
 
