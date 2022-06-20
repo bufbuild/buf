@@ -278,7 +278,6 @@ type ModulePin interface {
 	// all of these will be set
 	Branch() string
 	Commit() string
-	Digest() string
 	CreateTime() time.Time
 
 	isModulePin()
@@ -291,10 +290,9 @@ func NewModulePin(
 	repository string,
 	branch string,
 	commit string,
-	digest string,
 	createTime time.Time,
 ) (ModulePin, error) {
-	return newModulePin(remote, owner, repository, branch, commit, digest, createTime)
+	return newModulePin(remote, owner, repository, branch, commit, createTime)
 }
 
 // NewModulePinForProto returns a new ModulePin for the given proto ModulePin.
@@ -392,7 +390,6 @@ func ModulePinEqual(a ModulePin, b ModulePin) bool {
 		a.Repository() == b.Repository() &&
 		a.Branch() == b.Branch() &&
 		a.Commit() == b.Commit() &&
-		a.Digest() == b.Digest() &&
 		a.CreateTime().Equal(b.CreateTime())
 }
 
@@ -413,7 +410,6 @@ func DependencyModulePinsForBucket(
 			dep.Repository,
 			"",
 			dep.Commit,
-			"",
 			time.Time{},
 		)
 		if err != nil {

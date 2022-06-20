@@ -24,16 +24,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestModuleDigestB1(t *testing.T) {
-	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestData)
-	require.NoError(t, err)
-	module, err := bufmodule.NewModuleForBucket(context.Background(), readBucket)
-	require.NoError(t, err)
-	digest, err := bufmodule.ModuleDigestB1(context.Background(), module)
-	require.NoError(t, err)
-	require.Equal(t, bufmoduletesting.TestDigest, digest)
-}
-
 func TestModuleDigestB3(t *testing.T) {
 	readBucket, err := storagemem.NewReadBucket(bufmoduletesting.TestDataWithConfiguration)
 	require.NoError(t, err)
