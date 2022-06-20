@@ -65,6 +65,8 @@ service RepositoryCommitService {
   rpc GetRepositoryCommitBySequenceId(GetRepositoryCommitBySequenceIdRequest) returns (GetRepositoryCommitBySequenceIdResponse);
   // ListRepositoryDraftCommits lists draft commits in a repository.
   rpc ListRepositoryDraftCommits(ListRepositoryDraftCommitsRequest) returns (ListRepositoryDraftCommitsResponse);
+  // DeleteRepositoryDraftCommit deletes a draft.
+  rpc DeleteRepositoryDraftCommit(DeleteRepositoryDraftCommitRequest) returns (DeleteRepositoryDraftCommitResponse);
 }
 
 message ListRepositoryCommitsByBranchRequest {
@@ -150,3 +152,14 @@ message ListRepositoryDraftCommitsResponse {
   repeated RepositoryCommit repository_commits = 1;
   string next_page_token = 2;
 }
+
+message DeleteRepositoryDraftCommitRequest {
+  // The owner of the repository which the repository branch belongs to.
+  string repository_owner = 1;
+  // The name of the repository which the repository branch belongs to.
+  string repository_name = 2;
+  // The name of the draft to delete.
+  string draft_name = 3;
+}
+
+message DeleteRepositoryDraftCommitResponse {}
