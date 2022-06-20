@@ -147,3 +147,32 @@ func (s *repositoryCommitServiceClient) GetRepositoryCommitBySequenceId(
 	}
 	return response.Msg.RepositoryCommit, nil
 }
+
+// ListRepositoryDraftCommits lists draft commits in a repository.
+func (s *repositoryCommitServiceClient) ListRepositoryDraftCommits(
+	ctx context.Context,
+	repositoryOwner string,
+	repositoryName string,
+	pageSize uint32,
+	pageToken string,
+	reverse bool,
+) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	response, err := s.client.ListRepositoryDraftCommits(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.ListRepositoryDraftCommitsRequest{
+				RepositoryOwner: repositoryOwner,
+				RepositoryName:  repositoryName,
+				PageSize:        pageSize,
+				PageToken:       pageToken,
+				Reverse:         reverse,
+			}),
+	)
+	if err != nil {
+		return nil, "", err
+	}
+	return response.Msg.RepositoryCommits, response.Msg.NextPageToken, nil
+}

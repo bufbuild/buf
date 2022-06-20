@@ -25,7 +25,7 @@ import (
 // for reference information.
 type ReferenceService interface {
 	// GetReferenceByName takes a reference name and returns the
-	// reference either as a 'main', tag, or commit.
+	// reference either as a 'main', tag, commit or draft.
 	GetReferenceByName(
 		ctx context.Context,
 		name string,
