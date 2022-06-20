@@ -25,6 +25,8 @@ import (
 
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appproto"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -558,7 +560,8 @@ func ProtoPackagePascalCase(protoPackage string) string {
 	}
 	packageParts := strings.Split(protoPackage, ".")
 	for i, part := range packageParts {
-		packageParts[i] = strings.Title(part)
+		caser := cases.Title(language.English)
+		packageParts[i] = caser.String(part)
 	}
 	return strings.Join(packageParts, "")
 }
