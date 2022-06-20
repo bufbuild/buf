@@ -176,3 +176,28 @@ func (s *repositoryCommitServiceClient) ListRepositoryDraftCommits(
 	}
 	return response.Msg.RepositoryCommits, response.Msg.NextPageToken, nil
 }
+
+// DeleteRepositoryDraftCommit deletes a draft.
+func (s *repositoryCommitServiceClient) DeleteRepositoryDraftCommit(
+	ctx context.Context,
+	repositoryOwner string,
+	repositoryName string,
+	draftName string,
+) (_ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
+	_, err := s.client.DeleteRepositoryDraftCommit(
+		ctx,
+		connect_go.NewRequest(
+			&v1alpha1.DeleteRepositoryDraftCommitRequest{
+				RepositoryOwner: repositoryOwner,
+				RepositoryName:  repositoryName,
+				DraftName:       draftName,
+			}),
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -71,4 +71,11 @@ type RepositoryCommitService interface {
 		pageToken string,
 		reverse bool,
 	) (repositoryCommits []*v1alpha1.RepositoryCommit, nextPageToken string, err error)
+	// DeleteRepositoryDraftCommit deletes a draft.
+	DeleteRepositoryDraftCommit(
+		ctx context.Context,
+		repositoryOwner string,
+		repositoryName string,
+		draftName string,
+	) (err error)
 }

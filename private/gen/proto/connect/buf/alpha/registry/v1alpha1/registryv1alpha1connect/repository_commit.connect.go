@@ -58,6 +58,8 @@ type RepositoryCommitServiceClient interface {
 	GetRepositoryCommitBySequenceId(context.Context, *connect_go.Request[v1alpha1.GetRepositoryCommitBySequenceIdRequest]) (*connect_go.Response[v1alpha1.GetRepositoryCommitBySequenceIdResponse], error)
 	// ListRepositoryDraftCommits lists draft commits in a repository.
 	ListRepositoryDraftCommits(context.Context, *connect_go.Request[v1alpha1.ListRepositoryDraftCommitsRequest]) (*connect_go.Response[v1alpha1.ListRepositoryDraftCommitsResponse], error)
+	// DeleteRepositoryDraftCommit deletes a draft.
+	DeleteRepositoryDraftCommit(context.Context, *connect_go.Request[v1alpha1.DeleteRepositoryDraftCommitRequest]) (*connect_go.Response[v1alpha1.DeleteRepositoryDraftCommitResponse], error)
 }
 
 // NewRepositoryCommitServiceClient constructs a client for the
@@ -96,6 +98,11 @@ func NewRepositoryCommitServiceClient(httpClient connect_go.HTTPClient, baseURL 
 			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryCommitService/ListRepositoryDraftCommits",
 			opts...,
 		),
+		deleteRepositoryDraftCommit: connect_go.NewClient[v1alpha1.DeleteRepositoryDraftCommitRequest, v1alpha1.DeleteRepositoryDraftCommitResponse](
+			httpClient,
+			baseURL+"/buf.alpha.registry.v1alpha1.RepositoryCommitService/DeleteRepositoryDraftCommit",
+			opts...,
+		),
 	}
 }
 
@@ -106,6 +113,7 @@ type repositoryCommitServiceClient struct {
 	getRepositoryCommitByReference   *connect_go.Client[v1alpha1.GetRepositoryCommitByReferenceRequest, v1alpha1.GetRepositoryCommitByReferenceResponse]
 	getRepositoryCommitBySequenceId  *connect_go.Client[v1alpha1.GetRepositoryCommitBySequenceIdRequest, v1alpha1.GetRepositoryCommitBySequenceIdResponse]
 	listRepositoryDraftCommits       *connect_go.Client[v1alpha1.ListRepositoryDraftCommitsRequest, v1alpha1.ListRepositoryDraftCommitsResponse]
+	deleteRepositoryDraftCommit      *connect_go.Client[v1alpha1.DeleteRepositoryDraftCommitRequest, v1alpha1.DeleteRepositoryDraftCommitResponse]
 }
 
 // ListRepositoryCommitsByBranch calls
@@ -140,6 +148,12 @@ func (c *repositoryCommitServiceClient) ListRepositoryDraftCommits(ctx context.C
 	return c.listRepositoryDraftCommits.CallUnary(ctx, req)
 }
 
+// DeleteRepositoryDraftCommit calls
+// buf.alpha.registry.v1alpha1.RepositoryCommitService.DeleteRepositoryDraftCommit.
+func (c *repositoryCommitServiceClient) DeleteRepositoryDraftCommit(ctx context.Context, req *connect_go.Request[v1alpha1.DeleteRepositoryDraftCommitRequest]) (*connect_go.Response[v1alpha1.DeleteRepositoryDraftCommitResponse], error) {
+	return c.deleteRepositoryDraftCommit.CallUnary(ctx, req)
+}
+
 // RepositoryCommitServiceHandler is an implementation of the
 // buf.alpha.registry.v1alpha1.RepositoryCommitService service.
 type RepositoryCommitServiceHandler interface {
@@ -159,6 +173,8 @@ type RepositoryCommitServiceHandler interface {
 	GetRepositoryCommitBySequenceId(context.Context, *connect_go.Request[v1alpha1.GetRepositoryCommitBySequenceIdRequest]) (*connect_go.Response[v1alpha1.GetRepositoryCommitBySequenceIdResponse], error)
 	// ListRepositoryDraftCommits lists draft commits in a repository.
 	ListRepositoryDraftCommits(context.Context, *connect_go.Request[v1alpha1.ListRepositoryDraftCommitsRequest]) (*connect_go.Response[v1alpha1.ListRepositoryDraftCommitsResponse], error)
+	// DeleteRepositoryDraftCommit deletes a draft.
+	DeleteRepositoryDraftCommit(context.Context, *connect_go.Request[v1alpha1.DeleteRepositoryDraftCommitRequest]) (*connect_go.Response[v1alpha1.DeleteRepositoryDraftCommitResponse], error)
 }
 
 // NewRepositoryCommitServiceHandler builds an HTTP handler from the service implementation. It
@@ -193,6 +209,11 @@ func NewRepositoryCommitServiceHandler(svc RepositoryCommitServiceHandler, opts 
 		svc.ListRepositoryDraftCommits,
 		opts...,
 	))
+	mux.Handle("/buf.alpha.registry.v1alpha1.RepositoryCommitService/DeleteRepositoryDraftCommit", connect_go.NewUnaryHandler(
+		"/buf.alpha.registry.v1alpha1.RepositoryCommitService/DeleteRepositoryDraftCommit",
+		svc.DeleteRepositoryDraftCommit,
+		opts...,
+	))
 	return "/buf.alpha.registry.v1alpha1.RepositoryCommitService/", mux
 }
 
@@ -217,4 +238,8 @@ func (UnimplementedRepositoryCommitServiceHandler) GetRepositoryCommitBySequence
 
 func (UnimplementedRepositoryCommitServiceHandler) ListRepositoryDraftCommits(context.Context, *connect_go.Request[v1alpha1.ListRepositoryDraftCommitsRequest]) (*connect_go.Response[v1alpha1.ListRepositoryDraftCommitsResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryCommitService.ListRepositoryDraftCommits is not implemented"))
+}
+
+func (UnimplementedRepositoryCommitServiceHandler) DeleteRepositoryDraftCommit(context.Context, *connect_go.Request[v1alpha1.DeleteRepositoryDraftCommitRequest]) (*connect_go.Response[v1alpha1.DeleteRepositoryDraftCommitResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("buf.alpha.registry.v1alpha1.RepositoryCommitService.DeleteRepositoryDraftCommit is not implemented"))
 }
