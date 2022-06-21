@@ -566,7 +566,7 @@ func getTokenReader(container appflag.Container) func(string) (string, error) {
 	}
 }
 
-// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider which uses a token reader interceptor to look
+// NewRegistryProvider creates a new registryv1alpha1apiclient.Provider which uses a token reader to look
 // up the token in the container or in netrc based on the address of each individual client from the provider.
 // It is then set in the header of all outgoing requests from this provider
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {

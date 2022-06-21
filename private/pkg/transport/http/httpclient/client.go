@@ -34,12 +34,11 @@ func newClient(options ...ClientOption) *client {
 	for _, option := range options {
 		option(client)
 	}
-	baseTransport := &http.Transport{
+	var roundTripper http.RoundTripper = &http.Transport{
 		TLSClientConfig: client.tlsConfig,
 	}
-	var roundTripper http.RoundTripper = baseTransport
 	if client.observability {
-		roundTripper = observability.NewHTTPTransport(baseTransport)
+		roundTripper = observability.NewHTTPTransport(roundTripper)
 	}
 	client.httpClient = &http.Client{
 		Transport: roundTripper,
