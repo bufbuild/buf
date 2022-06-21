@@ -24,7 +24,7 @@ type Plugin interface {
 	// Options is the set of options available to the plugin.
 	//
 	// For now, all options are string values. This could eventually
-	// support other types (like Jt SON Schema and Terraform variables),
+	// support other types (like JSON Schema and Terraform variables),
 	// where strings are the default value unless otherwise specified.
 	//
 	// Note that some legacy plugins don't always express their options
