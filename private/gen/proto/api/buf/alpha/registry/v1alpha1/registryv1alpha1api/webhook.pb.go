@@ -27,7 +27,7 @@ type WebhookService interface {
 	// Create a webhook.
 	CreateWebhook(
 		ctx context.Context,
-		webhookEvent []v1alpha1.WebhookEvent,
+		webhookEvent v1alpha1.WebhookEvent,
 		ownerName string,
 		repositoryName string,
 		callbackUrl string,
