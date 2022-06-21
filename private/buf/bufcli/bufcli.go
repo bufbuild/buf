@@ -570,13 +570,13 @@ func getTokenReader(container appflag.Container) func(string) (string, error) {
 // up the token in the container or in netrc based on the address of each individual client from the provider.
 // It is then set in the header of all outgoing requests from this provider
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProviderWithOptions(container) //, bufapiclient.RegistryProviderWithTokenReader(getTokenReader(container)))
+	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithTokenReader(getTokenReader(container)))
 }
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
 // set in the header of all outgoing requests from this provider
 func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProviderWithOptions(container) //, bufapiclient.RegistryProviderWithToken(token))
+	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithToken(token))
 }
 
 func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {

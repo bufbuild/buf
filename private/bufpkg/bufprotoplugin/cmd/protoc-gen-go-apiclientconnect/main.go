@@ -179,9 +179,10 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 
 		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, address string) (`, interfaceGoIdentString, `, error) {`)
 
+		g.P(`var err error`)
 		g.P(`token := p.token`)
 		g.P(`if token == "" && p.tokenReader != nil {`)
-		g.P(`token, err := p.tokenReader(address)`)
+		g.P(`token, err = p.tokenReader(address)`)
 		g.P(`if err != nil {`)
 		g.P(`return nil, err`)
 		g.P(`}`)

@@ -18,7 +18,6 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-
 	bufconnect "github.com/bufbuild/buf/private/bufpkg/bufconnect"
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
@@ -85,9 +84,10 @@ func WithTokenReader(tokenReader func(string) (string, error)) ProviderOption {
 }
 
 func (p *provider) NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error) {
-	var token = p.token
+	var err error
+	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -109,9 +109,10 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 }
 
 func (p *provider) NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -133,9 +134,10 @@ func (p *provider) NewAuthnService(ctx context.Context, address string) (registr
 }
 
 func (p *provider) NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -157,9 +159,10 @@ func (p *provider) NewAuthzService(ctx context.Context, address string) (registr
 }
 
 func (p *provider) NewConvertService(ctx context.Context, address string) (registryv1alpha1api.ConvertService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -181,9 +184,10 @@ func (p *provider) NewConvertService(ctx context.Context, address string) (regis
 }
 
 func (p *provider) NewDisplayService(ctx context.Context, address string) (registryv1alpha1api.DisplayService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -205,9 +209,10 @@ func (p *provider) NewDisplayService(ctx context.Context, address string) (regis
 }
 
 func (p *provider) NewDocService(ctx context.Context, address string) (registryv1alpha1api.DocService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -229,9 +234,10 @@ func (p *provider) NewDocService(ctx context.Context, address string) (registryv
 }
 
 func (p *provider) NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -253,9 +259,10 @@ func (p *provider) NewDownloadService(ctx context.Context, address string) (regi
 }
 
 func (p *provider) NewGenerateService(ctx context.Context, address string) (registryv1alpha1api.GenerateService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -277,9 +284,10 @@ func (p *provider) NewGenerateService(ctx context.Context, address string) (regi
 }
 
 func (p *provider) NewGithubService(ctx context.Context, address string) (registryv1alpha1api.GithubService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -301,9 +309,10 @@ func (p *provider) NewGithubService(ctx context.Context, address string) (regist
 }
 
 func (p *provider) NewImageService(ctx context.Context, address string) (registryv1alpha1api.ImageService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -325,9 +334,10 @@ func (p *provider) NewImageService(ctx context.Context, address string) (registr
 }
 
 func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (registryv1alpha1api.JSONSchemaService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -349,9 +359,10 @@ func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (re
 }
 
 func (p *provider) NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -373,9 +384,10 @@ func (p *provider) NewLocalResolveService(ctx context.Context, address string) (
 }
 
 func (p *provider) NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -397,9 +409,10 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 }
 
 func (p *provider) NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -421,9 +434,10 @@ func (p *provider) NewOwnerService(ctx context.Context, address string) (registr
 }
 
 func (p *provider) NewPluginService(ctx context.Context, address string) (registryv1alpha1api.PluginService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -445,9 +459,10 @@ func (p *provider) NewPluginService(ctx context.Context, address string) (regist
 }
 
 func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -469,9 +484,10 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 }
 
 func (p *provider) NewRecommendationService(ctx context.Context, address string) (registryv1alpha1api.RecommendationService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -493,9 +509,10 @@ func (p *provider) NewRecommendationService(ctx context.Context, address string)
 }
 
 func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -517,9 +534,10 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 }
 
 func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -541,9 +559,10 @@ func (p *provider) NewRepositoryBranchService(ctx context.Context, address strin
 }
 
 func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -565,9 +584,10 @@ func (p *provider) NewRepositoryCommitService(ctx context.Context, address strin
 }
 
 func (p *provider) NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -589,9 +609,10 @@ func (p *provider) NewRepositoryService(ctx context.Context, address string) (re
 }
 
 func (p *provider) NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -613,9 +634,10 @@ func (p *provider) NewRepositoryTagService(ctx context.Context, address string) 
 }
 
 func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -637,9 +659,10 @@ func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address 
 }
 
 func (p *provider) NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -661,9 +684,10 @@ func (p *provider) NewRepositoryTrackService(ctx context.Context, address string
 }
 
 func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -685,9 +709,10 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 }
 
 func (p *provider) NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -709,9 +734,10 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 }
 
 func (p *provider) NewStudioService(ctx context.Context, address string) (registryv1alpha1api.StudioService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -733,9 +759,10 @@ func (p *provider) NewStudioService(ctx context.Context, address string) (regist
 }
 
 func (p *provider) NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -757,9 +784,10 @@ func (p *provider) NewTokenService(ctx context.Context, address string) (registr
 }
 
 func (p *provider) NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
@@ -781,9 +809,10 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 }
 
 func (p *provider) NewWebhookService(ctx context.Context, address string) (registryv1alpha1api.WebhookService, error) {
+	var err error
 	token := p.token
 	if token == "" && p.tokenReader != nil {
-		token, err := p.tokenReader(address)
+		token, err = p.tokenReader(address)
 		if err != nil {
 			return nil, err
 		}
