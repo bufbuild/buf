@@ -46,7 +46,7 @@ var (
 type Config struct {
 	// Name is the name of the plugin (e.g. 'buf.build/protocolbuffers/go').
 	Name bufpluginref.PluginIdentity
-	// Options is the set of options available to the plugin.
+	// Options is the default set of options passed into the plugin.
 	//
 	// For now, all options are string values. This could eventually
 	// support other types (like JSON Schema and Terraform variables),
@@ -73,26 +73,31 @@ type Config struct {
 //
 // Only one field will be set.
 type RuntimeConfig struct {
-	Go      *GoRuntimeConfig
-	NPM     *NPMRuntimeConfig
-	Archive *ArchiveRuntimeConfig
+	Go  *GoRuntimeConfig
+	NPM *NPMRuntimeConfig
 }
 
 // GoRuntimeConfig is the runtime configuration for a Go plugin.
 type GoRuntimeConfig struct {
 	MinVersion string
-	Deps       []string
+	Deps       []*GoRuntimeDependencyConfig
+}
+
+// GoRuntimeDependencyConfig is the go runtime dependency configuration.
+type GoRuntimeDependencyConfig struct {
+	Module  string
+	Version string
 }
 
 // NPMRuntimeConfig is the runtime configuration for a JavaScript NPM plugin.
 type NPMRuntimeConfig struct {
-	Deps []string
+	Deps []*NPMRuntimeDependencyConfig
 }
 
-// ArchiveRuntimeConfig is the runtime configuration for a plugin that can be downloaded
-// as an archive instead of a language-specific registry.
-type ArchiveRuntimeConfig struct {
-	Deps []string
+// NPMRuntimeDependencyConfig is the npm runtime dependency configuration.
+type NPMRuntimeDependencyConfig struct {
+	Package string
+	Version string
 }
 
 // GetConfigForBucket gets the Config for the YAML data at ConfigFilePath.
@@ -162,16 +167,18 @@ type ExternalConfig struct {
 // ExternalRuntimeConfig is the external configuration for the runtime
 // of a plugin.
 type ExternalRuntimeConfig struct {
-	Go      ExternalGoRuntimeConfig      `json:"go,omitempty" yaml:"go,omitempty"`
-	NPM     ExternalNPMRuntimeConfig     `json:"npm,omitempty" yaml:"npm,omitempty"`
-	Archive ExternalArchiveRuntimeConfig `json:"archive,omitempty" yaml:"archive,omitempty"`
+	Go  ExternalGoRuntimeConfig  `json:"go,omitempty" yaml:"go,omitempty"`
+	NPM ExternalNPMRuntimeConfig `json:"npm,omitempty" yaml:"npm,omitempty"`
 }
 
 // ExternalGoRuntimeConfig is the external runtime configuration for a Go plugin.
 type ExternalGoRuntimeConfig struct {
 	// The minimum Go version required by the plugin.
-	MinVersion string   `json:"min_version,omitempty" yaml:"min_version,omitempty"`
-	Deps       []string `json:"deps,omitempty" yaml:"deps,omitempty"`
+	MinVersion string `json:"min_version,omitempty" yaml:"min_version,omitempty"`
+	Deps       []struct {
+		Module  string `json:"module,omitempty" yaml:"module,omitempty"`
+		Version string `json:"version,omitempty" yaml:"version,omitempty"`
+	} `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 
 // IsEmpty returns true if the configuration is empty.
@@ -181,22 +188,14 @@ func (e ExternalGoRuntimeConfig) IsEmpty() bool {
 
 // ExternalNPMRuntimeConfig is the external runtime configuration for a JavaScript NPM plugin.
 type ExternalNPMRuntimeConfig struct {
-	Deps []string `json:"deps,omitempty" yaml:"deps,omitempty"`
+	Deps []struct {
+		Package string `json:"package,omitempty" yaml:"package,omitempty"`
+		Version string `json:"version,omitempty" yaml:"version,omitempty"`
+	} `json:"deps,omitempty" yaml:"deps,omitempty"`
 }
 
 // IsEmpty returns true if the configuration is empty.
 func (e ExternalNPMRuntimeConfig) IsEmpty() bool {
-	return len(e.Deps) == 0
-}
-
-// ExternalArchiveRuntimeConfig is the external runtime configuration for a plugin that can be
-// downloaded as an archive instead of a language-specific registry.
-type ExternalArchiveRuntimeConfig struct {
-	Deps []string `json:"deps,omitempty" yaml:"deps,omitempty"`
-}
-
-// IsEmpty returns true if the configuration is empty.
-func (e ExternalArchiveRuntimeConfig) IsEmpty() bool {
 	return len(e.Deps) == 0
 }
 

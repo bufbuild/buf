@@ -27,48 +27,27 @@ import (
 func TestGetConfigForBucket(t *testing.T) {
 	t.Parallel()
 	storageosProvider := storageos.NewProvider()
-	readWriteBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "success", "archive"))
+	readWriteBucket, err := storageosProvider.NewReadWriteBucket(filepath.Join("testdata", "success", "go"))
 	require.NoError(t, err)
 	pluginConfig, err := GetConfigForBucket(context.Background(), readWriteBucket)
 	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/protocolbuffers/java")
+	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/grpc/go")
 	require.NoError(t, err)
 	require.Equal(
 		t,
 		&Config{
 			Name: pluginIdentity,
-			Runtime: &RuntimeConfig{
-				Archive: &ArchiveRuntimeConfig{
-					Deps: []string{
-						"io.grpc:grpc-protobuf:v1.46.0",
-						"io.grpc:grpc-netty-shaded:v1.46.0",
-						"io.grpc:grpc-stub:v1.46.0",
-						"io.grpc:grpc-okhttp:v1.46.0",
-					},
-				},
+			Options: map[string]string{
+				"paths": "source_relative",
 			},
-		},
-		pluginConfig,
-	)
-}
-
-func TestParsePluginConfigArchiveYAML(t *testing.T) {
-	t.Parallel()
-	pluginConfig, err := ParseConfig(filepath.Join("testdata", "success", "archive", "buf.plugin.yaml"))
-	require.NoError(t, err)
-	pluginIdentity, err := bufpluginref.PluginIdentityForString("buf.build/protocolbuffers/java")
-	require.NoError(t, err)
-	require.Equal(
-		t,
-		&Config{
-			Name: pluginIdentity,
 			Runtime: &RuntimeConfig{
-				Archive: &ArchiveRuntimeConfig{
-					Deps: []string{
-						"io.grpc:grpc-protobuf:v1.46.0",
-						"io.grpc:grpc-netty-shaded:v1.46.0",
-						"io.grpc:grpc-stub:v1.46.0",
-						"io.grpc:grpc-okhttp:v1.46.0",
+				Go: &GoRuntimeConfig{
+					MinVersion: "1.18",
+					Deps: []*GoRuntimeDependencyConfig{
+						{
+							Module:  "google.golang.org/grpc",
+							Version: "v1.32.0",
+						},
 					},
 				},
 			},
@@ -92,9 +71,12 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 			},
 			Runtime: &RuntimeConfig{
 				Go: &GoRuntimeConfig{
-					MinVersion: "v1.18",
-					Deps: []string{
-						"google.golang.org/grpc:v1.32.0",
+					MinVersion: "1.18",
+					Deps: []*GoRuntimeDependencyConfig{
+						{
+							Module:  "google.golang.org/grpc",
+							Version: "v1.32.0",
+						},
 					},
 				},
 			},
@@ -118,9 +100,15 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 			},
 			Runtime: &RuntimeConfig{
 				NPM: &NPMRuntimeConfig{
-					Deps: []string{
-						"grpc-web:v1.3.1",
-						"@types/google-protobuf:v3.15.6",
+					Deps: []*NPMRuntimeDependencyConfig{
+						{
+							Package: "grpc-web",
+							Version: "^1.3.1",
+						},
+						{
+							Package: "@types/google-protobuf",
+							Version: "^3.15.6",
+						},
 					},
 				},
 			},

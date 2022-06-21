@@ -4,6 +4,7 @@ opts:
   - paths=source_relative
 runtime:
   go:
-    min_version: v1.18
+    min_version: 1.18
     deps:
-      - "google.golang.org/grpc:v1.32.0"
+      - module: google.golang.org/grpc
+        version: v1.32.0
