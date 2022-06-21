@@ -16,40 +16,9 @@ package bufconnect
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
 )
-
-// NewWithTokenReaderInterceptor returns a new Connect Interceptor that looks up an auth token on every request and when
-// found, sets it into the request header if not already set.
-func NewWithTokenReaderInterceptor(container appflag.Container, address string) connect.UnaryInterceptorFunc {
-	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-		return connect.UnaryFunc(func(
-			ctx context.Context,
-			req connect.AnyRequest,
-		) (connect.AnyResponse, error) {
-			token := container.Env(tokenEnvKey)
-			if token == "" {
-				machine, err := netrc.GetMachineForName(container, address)
-				if err != nil {
-					return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
-				}
-				if machine != nil {
-					token = machine.Password()
-				}
-			}
-
-			if req.Header().Get(AuthenticationHeader) == "" {
-				req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
-			}
-			return next(ctx, req)
-		})
-	}
-	return interceptor
-}
 
 // NewSetCLIVersionInterceptor returns a new Connect Interceptor that sets the Buf CLI version into all request headers
 func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {

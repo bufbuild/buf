@@ -51,11 +51,11 @@ import (
 	"github.com/bufbuild/buf/private/pkg/filelock"
 	"github.com/bufbuild/buf/private/pkg/git"
 	"github.com/bufbuild/buf/private/pkg/httpauth"
+	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http2client"
-	"github.com/bufbuild/connect-go"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -80,6 +80,9 @@ const (
 
 	publicVisibility  = "public"
 	privateVisibility = "private"
+
+	// tokenEnvKey is the environment variable key for the auth token
+	tokenEnvKey = "BUF_TOKEN"
 )
 
 var (
@@ -547,32 +550,33 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 	return bufapp.NewConfig(container, externalConfig)
 }
 
+func getTokenReader(container appflag.Container) func(string) (string, error) {
+	return func(address string) (string, error) {
+		token := container.Env(tokenEnvKey)
+		if token == "" {
+			machine, err := netrc.GetMachineForName(container, address)
+			if err != nil {
+				return "", fmt.Errorf("failed to read server password from netrc: %w", err)
+			}
+			if machine != nil {
+				token = machine.Password()
+			}
+		}
+		return token, nil
+	}
+}
+
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider which uses a token reader interceptor to look
 // up the token in the container or in netrc based on the address of each individual client from the provider.
 // It is then set in the header of all outgoing requests from this provider
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProviderWithOptions(container,
-		bufapiclient.RegistryProviderWithTokenInterceptorProvider(newTokenReaderInterceptorProvider(container)),
-		bufapiclient.RegistryProviderWithInterceptors(
-			bufconnect.NewSetCLIVersionInterceptor(Version),
-		))
+	return newRegistryProviderWithOptions(container) //, bufapiclient.RegistryProviderWithTokenReader(getTokenReader(container)))
 }
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
 // set in the header of all outgoing requests from this provider
 func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithInterceptors(
-		bufconnect.NewWithTokenInterceptor(token),
-		bufconnect.NewSetCLIVersionInterceptor(Version),
-	))
-}
-
-func newTokenReaderInterceptorProvider(
-	container appflag.Container,
-) func(string) connect.Interceptor {
-	return func(address string) connect.Interceptor {
-		return bufconnect.NewWithTokenReaderInterceptor(container, address)
-	}
+	return newRegistryProviderWithOptions(container) //, bufapiclient.RegistryProviderWithToken(token))
 }
 
 func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {
@@ -591,6 +595,9 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 			}
 			return buftransport.PrependHTTPS(address)
 		}),
+		bufapiclient.RegistryProviderWithInterceptors(
+			bufconnect.NewSetCLIVersionInterceptor(Version),
+		),
 	}
 	options = append(options, opts...)
 

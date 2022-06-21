@@ -25,10 +25,11 @@ import (
 )
 
 const (
-	contextPackage   = protogen.GoImportPath("context")
-	connectGoPackage = protogen.GoImportPath("github.com/bufbuild/connect-go")
-	zapPackage       = protogen.GoImportPath("go.uber.org/zap")
-	pluginName       = "apiclientconnect"
+	bufconnectPackage = protogen.GoImportPath("github.com/bufbuild/buf/private/bufpkg/bufconnect")
+	contextPackage    = protogen.GoImportPath("context")
+	connectGoPackage  = protogen.GoImportPath("github.com/bufbuild/connect-go")
+	zapPackage        = protogen.GoImportPath("go.uber.org/zap")
+	pluginName        = "apiclientconnect"
 )
 
 func main() {
@@ -103,8 +104,9 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`logger *`, loggerGoIdentString)
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
+	g.P(`token string`)
+	g.P(`tokenReader func(string) (string, error)`)
 	g.P(`interceptors []`, interceptorGoIdentString)
-	g.P(`tokenInterceptorProvider func(string) `, interceptorGoIdentString)
 	g.P(`}`)
 	g.P()
 
@@ -130,11 +132,18 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`}`)
 	g.P()
 
-	g.P(`// WithTokenInterceptorProvider provides a function that returns an interceptor that reads a token based on the given address`)
-	g.P(`// This interceptor is added as the last interceptor and will override any token interceptors specified in WithInterceptors`)
-	g.P(`func WithTokenInterceptorProvider(tokenInterceptorProvider func(address string) `, interceptorGoIdentString, `) ProviderOption {`)
+	g.P(`func WithToken(token string) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
-	g.P(`provider.tokenInterceptorProvider = tokenInterceptorProvider`)
+	g.P(`provider.token = token`)
+	g.P(`}`)
+	g.P(`}`)
+
+	g.P(`// WithTokenReader invokes a given function to lookup a token based on a given address`)
+	g.P(`// Useful for looking up token during client construction`)
+	g.P(`// If a token is explicitly provided via WithToken, then this option is ignored`)
+	g.P(`func WithTokenReader(tokenReader func(string) (string, error)) ProviderOption {`)
+	g.P(`return func(provider *provider) {`)
+	g.P(`provider.tokenReader = tokenReader`)
 	g.P(`}`)
 	g.P(`}`)
 	g.P()
@@ -166,13 +175,21 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		interfaceGoIdentString := g.QualifiedGoIdent(interfaceGoIdent)
 		newClientGoIdent := connectGoImportPath.Ident("New" + interfaceName + "Client")
 		newClientGoIdentString := g.QualifiedGoIdent(newClientGoIdent)
+		newWithTokenInterceptorGoIdentString := g.QualifiedGoIdent(bufconnectPackage.Ident("NewWithTokenInterceptor"))
 
 		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, address string) (`, interfaceGoIdentString, `, error) {`)
 
-		g.P(`interceptors := p.interceptors`)
-		g.P(`if p.tokenInterceptorProvider != nil {`)
-		g.P(`interceptors = append(interceptors, p.tokenInterceptorProvider(address))`)
+		g.P(`token := p.token`)
+		g.P(`if token == "" && p.tokenReader != nil {`)
+		g.P(`token, err := p.tokenReader(address)`)
+		g.P(`if err != nil {`)
+		g.P(`return nil, err`)
 		g.P(`}`)
+		g.P(`}`)
+		g.P(`tokenInterceptor := `, newWithTokenInterceptorGoIdentString, `(token)`)
+
+		g.P(`interceptors := p.interceptors`)
+		g.P(`interceptors = append(interceptors, tokenInterceptor)`)
 		g.P(`if p.addressMapper != nil {`)
 		g.P(`address = p.addressMapper(address)`)
 		g.P(`}`)

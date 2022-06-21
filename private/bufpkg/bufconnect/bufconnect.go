@@ -26,6 +26,4 @@ const (
 	CliVersionHeaderName = "buf-version"
 	// DefaultRemote is the default remote if none can be inferred from a module name.
 	DefaultRemote = "buf.build"
-	// tokenEnvKey is the environment variable key for the auth token
-	tokenEnvKey = "BUF_TOKEN"
 )
