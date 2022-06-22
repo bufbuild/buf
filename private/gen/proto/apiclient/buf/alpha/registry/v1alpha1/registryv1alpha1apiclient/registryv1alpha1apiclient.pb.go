@@ -41,7 +41,6 @@ type Provider interface {
 	PushServiceProvider
 	RecommendationServiceProvider
 	ReferenceServiceProvider
-	RemotePluginServiceProvider
 	RepositoryBranchServiceProvider
 	RepositoryCommitServiceProvider
 	RepositoryServiceProvider
@@ -144,11 +143,6 @@ type RecommendationServiceProvider interface {
 // ReferenceServiceProvider provides a client-side ReferenceService for an address.
 type ReferenceServiceProvider interface {
 	NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error)
-}
-
-// RemotePluginServiceProvider provides a client-side RemotePluginService for an address.
-type RemotePluginServiceProvider interface {
-	NewRemotePluginService(ctx context.Context, address string) (registryv1alpha1api.RemotePluginService, error)
 }
 
 // RepositoryBranchServiceProvider provides a client-side RepositoryBranchService for an address.

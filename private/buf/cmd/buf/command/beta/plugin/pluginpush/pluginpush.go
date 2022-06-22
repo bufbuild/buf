@@ -22,6 +22,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginsource"
+	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
 	"github.com/bufbuild/buf/private/pkg/storage"
@@ -169,19 +170,23 @@ func run(
 	// first create the metadata in the BSR, then push to the OCI registry, etc), or
 	// something else entirely. This might not actually be an issue depending on the
 	// OCI registry API.
+	//
+	//
 	apiProvider, err := bufcli.NewRegistryProvider(ctx, container)
 	if err != nil {
 		return err
 	}
-	service, err := apiProvider.NewRemotePluginService(ctx, pluginConfig.Name.Remote())
+	service, err := apiProvider.NewPluginService(ctx, pluginConfig.Name.Remote())
 	if err != nil {
 		return err
 	}
-	if _, err := service.CreateRemotePlugin(
+	// TODO: Refactor this to be a new endpoint that uses the protoPlugin
+	// object. This is simply left as a placeholder.
+	if _, err := service.CreatePlugin(
 		ctx,
 		pluginConfig.Name.Owner(),
 		pluginConfig.Name.Plugin(),
-		nil, // TODO: Add the protoPlugin.
+		registryv1alpha1.PluginVisibility_PLUGIN_VISIBILITY_PUBLIC,
 	); err != nil {
 		return err
 	}

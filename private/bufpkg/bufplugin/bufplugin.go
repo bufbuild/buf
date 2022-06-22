@@ -16,7 +16,6 @@ package bufplugin
 
 import (
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 // Plugin represents a plugin defined by a buf.plugin.yaml.
@@ -42,7 +41,7 @@ type Plugin interface {
 	// remote generation registry (e.g. the Go module proxy, NPM registry,
 	// etc).
 	Runtime() *bufpluginconfig.RuntimeConfig
-	// ImageDigest returns the plugin's source image digest.
+	// ContainerImageDigest returns the plugin's source image digest.
 	//
 	// For now we only support docker image sources, but this
 	// might evolve to support others later on.
@@ -56,32 +55,4 @@ func NewPlugin(
 	imageDigest string,
 ) (Plugin, error) {
 	return newPlugin(options, runtimeConfig, imageDigest)
-}
-
-// NewPluginForProto creates a new plugin from the given Protobuf representation.
-func NewPluginForProto(protoPlugin *registryv1alpha1.RemotePlugin) (Plugin, error) {
-	return newPluginForProto(protoPlugin)
-}
-
-// PluginToProtoPlugin maps the given Plugin into a *registryv1alpha1.RemotePlugin.
-func PluginToProtoPlugin(plugin Plugin) (*registryv1alpha1.RemotePlugin, error) {
-	var protoOptions []*registryv1alpha1.PluginOption
-	for name, value := range plugin.Options() {
-		protoOptions = append(
-			protoOptions,
-			&registryv1alpha1.PluginOption{
-				Name:        name,
-				StringValue: value,
-			},
-		)
-	}
-	protoRuntimeConfig, err := bufpluginconfig.RuntimeConfigToProto(plugin.Runtime())
-	if err != nil {
-		return nil, err
-	}
-	return &registryv1alpha1.RemotePlugin{
-		Options:              protoOptions,
-		RuntimeConfig:        protoRuntimeConfig,
-		ContainerImageDigest: plugin.ContainerImageDigest(),
-	}, nil
 }

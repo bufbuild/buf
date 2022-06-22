@@ -16,46 +16,14 @@ package bufplugin
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
-	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
 type plugin struct {
 	options              map[string]string
 	runtime              *bufpluginconfig.RuntimeConfig
 	containerImageDigest string
-}
-
-func newPluginForProto(
-	protoPlugin *registryv1alpha1.RemotePlugin,
-) (*plugin, error) {
-	if protoPlugin.GetContainerImageDigest() == "" {
-		return nil, errors.New("plugin must have a non-empty container image digest")
-	}
-	var options map[string]string
-	if opts := protoPlugin.GetOptions(); len(opts) > 0 {
-		options = make(map[string]string)
-		for _, opt := range opts {
-			if opt.Name == "" {
-				return nil, errors.New("plugin option must have a non-empty name")
-			}
-			if _, ok := options[opt.Name]; ok {
-				return nil, fmt.Errorf("plugin option %q was specified more than once", opt.Name)
-			}
-			options[opt.Name] = opt.StringValue
-		}
-	}
-	runtimeConfig, err := bufpluginconfig.RuntimeConfigForProto(protoPlugin.RuntimeConfig)
-	if err != nil {
-		return nil, err
-	}
-	return newPlugin(
-		options,
-		runtimeConfig,
-		protoPlugin.GetContainerImageDigest(),
-	)
 }
 
 func newPlugin(
