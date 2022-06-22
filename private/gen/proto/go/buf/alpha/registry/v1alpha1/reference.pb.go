@@ -138,7 +138,8 @@ type RepositoryMainReference struct {
 
 	// Name is always 'main'.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// The latest commit in this repository.
+	// The latest commit in this repository. If the repository has no commits,
+	// this will be empty.
 	Commit *RepositoryCommit `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
 }
 
