@@ -24,13 +24,13 @@ import "buf/alpha/registry/v1alpha1/repository_track.proto";
 message Reference {
   oneof reference {
     // The requested reference is a branch.
-    RepositoryBranch branch = 1 [deprecated=true];
+    RepositoryBranch branch = 1 [deprecated = true];
     // The requested reference is a tag.
     RepositoryTag tag = 2;
     // The requested reference is a commit.
     RepositoryCommit commit = 3;
     // The requested reference is a track.
-    RepositoryTrack track = 4 [deprecated=true];
+    RepositoryTrack track = 4 [deprecated = true];
     // The requested reference is the default reference.
     RepositoryMainReference main = 5;
   }
