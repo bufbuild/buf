@@ -30,8 +30,8 @@ service WebhookService {
 // CreateWebhookRequest is the proto request representation of a
 // webhook request body.
 message CreateWebhookRequest {
-  // The events to subscribe to for the given repository.
-  repeated WebhookEvent webhook_event = 1;
+  // The event to subscribe to for the given repository.
+  WebhookEvent webhook_event = 1;
   // The owner name of the repository in the corresponding subscription request.
   string owner_name = 2;
   // The repository name that the subscriber wishes create a subscription for.

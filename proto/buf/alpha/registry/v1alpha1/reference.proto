@@ -38,7 +38,8 @@ message Reference {
 message RepositoryMainReference {
   // Name is always 'main'.
   string name = 1;
-  // The latest non-draft commit in this repository.
+  // The latest commit in this repository. If the repository has no commits,
+  // this will be empty.
   RepositoryCommit commit = 2;
 }
 
@@ -53,7 +54,7 @@ message RepositoryDraft {
 // for reference information.
 service ReferenceService {
   // GetReferenceByName takes a reference name and returns the
-  // reference either as a 'main', tag, commit or draft.
+  // reference either as 'main', a tag, or commit.
   rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse);
 }
 
