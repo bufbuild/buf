@@ -31,14 +31,14 @@ type WebhookService interface {
 		ownerName string,
 		repositoryName string,
 		callbackUrl string,
-	) (webhookSubscriptionId string, err error)
+	) (webhook *v1alpha1.SubscribedWebhook, err error)
 	// Delete a webhook.
-	DeleteWebhook(ctx context.Context, webhookSubscriptionId string) (err error)
+	DeleteWebhook(ctx context.Context, webhookId string) (err error)
 	// Lists the webhooks for a given repository.
 	ListWebhooks(
 		ctx context.Context,
 		repositoryName string,
 		ownerName string,
 		pageToken string,
-	) (subscribedWebhooks []*v1alpha1.SubscribedWebhook, nextPageToken string, err error)
+	) (webhooks []*v1alpha1.SubscribedWebhook, nextPageToken string, err error)
 }
