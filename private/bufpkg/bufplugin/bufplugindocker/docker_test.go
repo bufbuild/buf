@@ -44,7 +44,7 @@ func Test_BuildSuccess(t *testing.T) {
 	}
 	dockerClient := createClient(t)
 	response, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile")
-	require.Nil(t, err)
+	require.Nilf(t, err, "failed to build docker plugin")
 	assert.Truef(
 		t,
 		strings.HasPrefix(response.Image, examplePluginIdentity+":"),
@@ -52,7 +52,7 @@ func Test_BuildSuccess(t *testing.T) {
 		examplePluginIdentity,
 		response.Image,
 	)
-	assert.NotEmpty(t, response.Digest)
+	assert.NotEmptyf(t, response.Digest, "expected non-empty image digest")
 }
 
 func Test_BuildFailure(t *testing.T) {
@@ -84,12 +84,12 @@ func TestMain(m *testing.M) {
 func createClient(t testing.TB) bufplugindocker.Client {
 	t.Helper()
 	logger, err := zap.NewDevelopment()
-	require.Nil(t, err)
+	require.Nilf(t, err, "failed to create zap logger")
 	dockerClient, err := bufplugindocker.NewClient(bufplugindocker.WithLogger(logger))
-	require.Nil(t, err)
+	require.Nilf(t, err, "failed to create client")
 	t.Cleanup(func() {
 		if err := dockerClient.Close(); err != nil {
-			t.Errorf("failed to close docker client: %v", err)
+			t.Errorf("failed to close client: %v", err)
 		}
 	})
 	return dockerClient
@@ -98,9 +98,9 @@ func createClient(t testing.TB) bufplugindocker.Client {
 func buildDockerPlugin(t testing.TB, dockerClient bufplugindocker.Client, dockerfilePath string) (*bufplugindocker.BuildResponse, error) {
 	t.Helper()
 	dockerfile, err := os.Open(dockerfilePath)
-	require.Nil(t, err)
+	require.Nilf(t, err, "failed to open dockerfile")
 	pluginName, err := bufpluginref.PluginIdentityForString(examplePluginIdentity)
-	require.Nil(t, err)
+	require.Nilf(t, err, "failed to create plugin identity")
 	pluginConfig := &bufpluginconfig.Config{Name: pluginName}
 	response, err := dockerClient.Build(context.Background(), dockerfile, pluginConfig, bufplugindocker.BuildParams{})
 	if err == nil {
