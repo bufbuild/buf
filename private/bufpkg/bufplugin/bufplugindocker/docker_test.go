@@ -17,6 +17,7 @@ package bufplugindocker_test
 import (
 	"context"
 	"os"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -76,6 +77,10 @@ func TestMain(m *testing.M) {
 			dockerEnabled = true
 		}
 		_ = cli.Close()
+	}
+	if dockerEnabled && runtime.GOOS == "windows" {
+		// Windows runners don't support building Linux images - need to disable for now.
+		dockerEnabled = false
 	}
 	// call flag.Parse() here if TestMain uses flags
 	os.Exit(m.Run())
