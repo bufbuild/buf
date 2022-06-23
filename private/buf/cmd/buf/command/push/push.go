@@ -151,6 +151,7 @@ func run(
 		protoModule,
 		flags.Tags,
 		nil,
+		"",
 	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeAlreadyExists {

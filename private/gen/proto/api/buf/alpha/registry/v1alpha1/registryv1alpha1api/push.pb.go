@@ -33,5 +33,6 @@ type PushService interface {
 		module *v1alpha1.Module,
 		tags []string,
 		tracks []string,
+		draftName string,
 	) (localModulePin *v1alpha11.LocalModulePin, err error)
 }
