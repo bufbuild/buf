@@ -42,8 +42,8 @@ func (r *RegistryAuth) ToHeader() (string, error) {
 	return buffer.String(), nil
 }
 
-// FromHeader decodes auth information from a base64 encoded JSON object (see ToHeader).
-func (r *RegistryAuth) FromHeader(encoded string) error {
+// fromHeader decodes auth information from a base64 encoded JSON object (see ToHeader).
+func (r *RegistryAuth) fromHeader(encoded string) error {
 	base64Reader := base64.NewDecoder(base64.URLEncoding, strings.NewReader(encoded))
 	if err := json.NewDecoder(base64Reader).Decode(r); err != nil {
 		return err

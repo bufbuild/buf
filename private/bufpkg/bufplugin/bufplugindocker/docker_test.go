@@ -107,7 +107,7 @@ func buildDockerPlugin(t testing.TB, dockerClient bufplugindocker.Client, docker
 	pluginName, err := bufpluginref.PluginIdentityForString(examplePluginIdentity)
 	require.Nilf(t, err, "failed to create plugin identity")
 	pluginConfig := &bufpluginconfig.Config{Name: pluginName}
-	response, err := dockerClient.Build(context.Background(), dockerfile, pluginConfig, bufplugindocker.BuildParams{})
+	response, err := dockerClient.Build(context.Background(), dockerfile, pluginConfig)
 	if err == nil {
 		t.Cleanup(func() {
 			if _, err := dockerClient.Delete(context.Background(), response.Image); err != nil {

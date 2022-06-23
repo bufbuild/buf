@@ -32,7 +32,7 @@ import (
 
 type Client interface {
 	// Build creates a Docker image for the plugin using the Dockerfile.plugin and plugin config.
-	Build(ctx context.Context, dockerfile io.Reader, config *bufpluginconfig.Config, params BuildParams) (*BuildResponse, error)
+	Build(ctx context.Context, dockerfile io.Reader, config *bufpluginconfig.Config, options ...BuildOption) (*BuildResponse, error)
 	// Push the Docker image to the remote registry.
 	Push(ctx context.Context, image string, auth RegistryAuth) (*PushResponse, error)
 	// Delete removes the Docker image from local Docker Engine.
@@ -41,11 +41,12 @@ type Client interface {
 	Close() error
 }
 
-type BuildParams struct {
-	// ConfigDirPath specifies the location where the .buildkit_node_id should be persisted.
-	// This is used to establish a session when building images using buildkit.
-	// If empty, the node id will be generated randomly and not persisted to disk.
-	ConfigDirPath string
+type BuildOption func(*buildParams)
+
+func WithConfigDirPath(path string) BuildOption {
+	return func(params *buildParams) {
+		params.ConfigDirPath = path
+	}
 }
 
 type BuildResponse struct {
@@ -68,8 +69,13 @@ type dockerAPIClient struct {
 
 var _ Client = (*dockerAPIClient)(nil)
 
-func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, pluginConfig *bufpluginconfig.Config, params BuildParams) (*BuildResponse, error) {
-	buildkitSession, err := createSession(fmt.Sprintf("%s/%s", pluginConfig.Name.Owner(), pluginConfig.Name.Plugin()), params.ConfigDirPath, zap.L())
+func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, pluginConfig *bufpluginconfig.Config, options ...BuildOption) (*BuildResponse, error) {
+	params := &buildParams{}
+	for _, option := range options {
+		option(params)
+	}
+	// TODO: Need to determine how contextDir parameter is used in Docker engine.
+	buildkitSession, err := createSession(ctx, fmt.Sprintf("%s/%s", pluginConfig.Name.Owner(), pluginConfig.Name.Plugin()), params.ConfigDirPath, zap.L())
 	if err != nil {
 		return nil, err
 	}
@@ -92,9 +98,8 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 		defer buildkitSession.Close()
 
 		response, err := d.cli.ImageBuild(ctx, dockerContext, types.ImageBuildOptions{
-			Tags:       []string{imageName},
-			Dockerfile: "Dockerfile",
-			Platform:   "linux/amd64",
+			Tags:     []string{imageName},
+			Platform: "linux/amd64",
 			Labels: map[string]string{
 				"build.buf.plugins.config.remote": pluginConfig.Name.Remote(),
 				"build.buf.plugins.config.owner":  pluginConfig.Name.Owner(),
@@ -188,4 +193,11 @@ func WithLogger(logger *zap.Logger) ClientOption {
 	return func(client *dockerAPIClient) {
 		client.logger = logger
 	}
+}
+
+type buildParams struct {
+	// ConfigDirPath specifies the location where the .buildkit_node_id should be persisted.
+	// This is used to establish a session when building images using buildkit.
+	// If empty, the node id will be generated randomly and not persisted to disk.
+	ConfigDirPath string
 }

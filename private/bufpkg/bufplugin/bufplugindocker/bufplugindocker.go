@@ -14,3 +14,7 @@
 
 // Package bufplugindocker contains utilities for building Buf plugins using the Docker API.
 package bufplugindocker
+
+// SourceFilePath is the default source file path
+// for the DockerSource.
+const SourceFilePath = "Dockerfile.plugin"

@@ -28,12 +28,15 @@ import (
 	"go.uber.org/zap"
 )
 
-const pathBuildkitNodeID = ".buildkit_node_id"
-const nodeIDLength = 32
+const (
+	pathBuildkitNodeID = ".buildkit_node_id"
+	// Matches length of node ID in Docker CLI
+	nodeIDLength = 32
+)
 
-func createSession(contextDir, configDirPath string, logger *zap.Logger) (*session.Session, error) {
+func createSession(ctx context.Context, contextDir, configDirPath string, logger *zap.Logger) (*session.Session, error) {
 	sharedKey := getBuildSharedKey(contextDir, configDirPath, logger)
-	s, err := session.NewSession(context.Background(), filepath.Base(contextDir), sharedKey)
+	s, err := session.NewSession(ctx, filepath.Base(contextDir), sharedKey)
 	if err != nil {
 		return nil, err
 	}

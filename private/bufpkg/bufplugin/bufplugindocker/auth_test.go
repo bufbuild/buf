@@ -47,7 +47,7 @@ func TestRegistryAuth_ToFromHeader(t *testing.T) {
 	encoded, err := auth.ToHeader()
 	require.NoError(t, err)
 	var decoded RegistryAuth
-	err = decoded.FromHeader(encoded)
+	err = decoded.fromHeader(encoded)
 	require.NoError(t, err)
 	assert.Equal(t, auth, decoded)
 }

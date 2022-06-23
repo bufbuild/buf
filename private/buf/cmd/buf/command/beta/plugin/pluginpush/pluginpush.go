@@ -24,7 +24,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginsource"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
@@ -113,10 +112,10 @@ func run(
 	}
 	// TODO: Once we support multiple plugin source types, this could be abstracted away
 	// in the bufpluginsource package. This is much simpler for now though.
-	dockerfile, err := sourceBucket.Get(ctx, bufpluginsource.DockerSourceFilePath)
+	dockerfile, err := sourceBucket.Get(ctx, bufplugindocker.SourceFilePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("please define a %s plugin source file in the target directory", bufpluginsource.DockerSourceFilePath)
+			return fmt.Errorf("please define a %s plugin source file in the target directory", bufplugindocker.SourceFilePath)
 		}
 		return err
 	}
@@ -132,13 +131,14 @@ func run(
 		retErr = multierr.Append(retErr, client.Close())
 	}()
 
-	buildResponse, err := client.Build(ctx, dockerfile, pluginConfig, bufplugindocker.BuildParams{
-		ConfigDirPath: container.ConfigDirPath(),
-	})
+	buildResponse, err := client.Build(ctx, dockerfile, pluginConfig, bufplugindocker.WithConfigDirPath(container.ConfigDirPath()))
 	if err != nil {
 		return err
 	}
 
+	// We build a Docker image using a unique ID label each time.
+	// After we're done publishing the image, we delete it to not leave a lot of images left behind.
+	// buildkit maintains a separate build cache so removing the image doesn't appear to impact future rebuilds.
 	defer func() {
 		if _, err := client.Delete(ctx, buildResponse.Image); err != nil {
 			// Not fatal - we did our best to clean up after ourselves.
@@ -146,6 +146,7 @@ func run(
 		}
 	}()
 
+	// TODO: Implement authentication to BSR registry using ~/.netrc
 	_, err = client.Push(ctx, buildResponse.Image, bufplugindocker.RegistryAuth{})
 	if err != nil {
 		return err
