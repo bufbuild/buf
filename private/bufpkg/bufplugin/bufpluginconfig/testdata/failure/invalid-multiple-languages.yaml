@@ -5,6 +5,7 @@ opts:
 runtime:
   npm:
     deps:
-      - "@types/google-protobuf:v3.15.6"
+      - package: @types/google-protobuf
+        version: ^3.15.6
   go:
     min_version: 1.18
