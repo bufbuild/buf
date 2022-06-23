@@ -25,11 +25,10 @@ import (
 )
 
 const (
-	bufconnectPackage = protogen.GoImportPath("github.com/bufbuild/buf/private/bufpkg/bufconnect")
-	contextPackage    = protogen.GoImportPath("context")
-	connectGoPackage  = protogen.GoImportPath("github.com/bufbuild/connect-go")
-	zapPackage        = protogen.GoImportPath("go.uber.org/zap")
-	pluginName        = "apiclientconnect"
+	contextPackage   = protogen.GoImportPath("context")
+	connectGoPackage = protogen.GoImportPath("github.com/bufbuild/connect-go")
+	zapPackage       = protogen.GoImportPath("go.uber.org/zap")
+	pluginName       = "apiclientconnect"
 )
 
 func main() {
