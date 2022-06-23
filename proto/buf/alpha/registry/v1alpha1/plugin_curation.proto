@@ -1,0 +1,139 @@
+// Copyright 2020-2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package buf.alpha.registry.v1alpha1;
+
+import "google/protobuf/timestamp.proto";
+
+// The supported languages for curated plugins.
+enum PluginLanguage {
+  PLUGIN_LANGUAGE_UNSPECIFIED = 0;
+  PLUGIN_LANGUAGE_GO = 1;
+  PLUGIN_LANGUAGE_NPM = 2;
+}
+
+// GoConfig is the configuration for a Go plugin.
+message GoConfig {
+  // RuntimeLibrary describes the runtime library dependency of the generated code.
+  message RuntimeLibrary {
+    // The name of the runtime library module, i.e. "google.golang.org/protobuf".
+    string module = 1;
+    // The version of the runtime library, i.e. "v1.27.1".
+    string version = 2;
+  }
+  // Optionally define the runtime libraries for the plugin.
+  repeated RuntimeLibrary runtime_libraries = 1;
+  // The minimum Go version required by the plugin.
+  string minimum_version = 2;
+}
+
+// NPMConfig is the configuration for a JavaScript NPM plugin.
+message NPMConfig {
+  // RuntimeLibrary describes the runtime library dependency of the generated code.
+  message RuntimeLibrary {
+    // The name of the runtime library package, i.e. "@grpc/grpc-js".
+    string package = 1;
+    // The version of the runtime library, i.e. "^1.27.1".
+    string version = 2;
+  }
+  // Optionally define the runtime libraries for the plugin.
+  repeated RuntimeLibrary runtime_libraries = 1;
+}
+
+// RuntimeConfig is the configuration for the runtime of a plugin.
+message RuntimeConfig {
+  oneof runtime_config {
+    GoConfig go_config = 1;
+    NPMConfig npm_config = 2;
+  }
+}
+
+// CuratedPlugin represents a protoc plugin curated by Buf, such as protoc-gen-go.
+message CuratedPlugin {
+  // The ID of the plugin, which uniquely identifies the plugin.
+  string id = 1;
+  // The name of the plugin, i.e. "connect-go".
+  string name = 2;
+  // The target language of the plugin.
+  PluginLanguage language = 3;
+  // Semver-formatted plugin version.
+  string version = 4;
+  // The full container image digest associated with this plugin version including
+  // the algorithm.
+  // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
+  string container_image_digest = 5;
+  // List of default plugin options in the form "{option}={defaultOption}"
+  repeated string options = 6;
+  // The creation time of the plugin.
+  google.protobuf.Timestamp create_time = 7;
+  // List of plugin dependencies in the form "{owner}/{name}:{version}"
+  repeated string dependencies = 8;
+  // Optionally specify the URL leading to the source code of the plugin, if available.
+  string source_url = 9;
+  // Optionally specify a brief description of the plugin functionality.
+  string description = 10;
+  // The configuration for the runtime of the plugin.
+  RuntimeConfig runtime_config = 11;
+}
+
+// PluginCurationService manages curated plugins.
+service PluginCurationService {
+  // ListCuratedPlugins returns all the curated plugins available.
+  rpc ListCuratedPlugins(ListCuratedPluginsRequest) returns (ListCuratedPluginsResponse);
+  // CreateCuratedPlugin creates a new curated plugin.
+  rpc CreateCuratedPlugin(CreateCuratedPluginRequest) returns (CreateCuratedPluginResponse);
+}
+
+message CreateCuratedPluginRequest {
+  // The name of the plugin, i.e. "connect-go".
+  string name = 1;
+  // The target language of the plugin.
+  PluginLanguage language = 2;
+  // Semver-formatted plugin version.
+  string version = 3;
+  // The full container image digest associated with this plugin version including
+  // the algorithm.
+  // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
+  string container_image_digest = 4;
+  // List of default plugin options in the form "{option}={defaultOption}"
+  repeated string options = 5;
+  // List of plugin dependencies in the form "{owner}/{name}:{version}"
+  repeated string dependencies = 6;
+  // The URL leading to the source code of the plugin, if available.
+  string source_url = 7;
+  // A brief description of the plugin functionality.
+  string description = 8;
+  // The configuration for the runtime of the plugin.
+  RuntimeConfig runtime_config = 9;
+}
+
+message CreateCuratedPluginResponse {
+  // The created plugin.
+  CuratedPlugin configuration = 1;
+}
+
+message ListCuratedPluginsRequest {
+  uint32 page_size = 1;
+  // The first page is returned if this is empty.
+  string page_token = 2;
+  bool reverse = 3;
+}
+
+message ListCuratedPluginsResponse {
+  repeated CuratedPlugin plugins = 1;
+  // There are no more pages if this is empty.
+  string next_page_token = 2;
+}
