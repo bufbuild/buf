@@ -20,15 +20,7 @@ import (
 	"strings"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
-	// Note that the semver package we're using conforms to the
-	// support SemVer syntax found in the go.mod file. This means
-	// that runtime dependencies will need to specify the 'v' prefix
-	// in their semantic version even if it isn't directly applicable
-	// to that runtime environment (e.g. NPM).
-	//
-	// We'll use this for now so that runtime dependencies are
-	// consistent across each runtime configuration, but we might need
-	// to change this later.
+	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/semver"
 )
 
@@ -83,15 +75,28 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 
 func newRuntimeConfig(externalRuntimeConfig ExternalRuntimeConfig) (*RuntimeConfig, error) {
 	var (
-		isArchiveEmpty = externalRuntimeConfig.Archive.IsEmpty()
-		isGoEmpty      = externalRuntimeConfig.Go.IsEmpty()
-		isNPMEmpty     = externalRuntimeConfig.NPM.IsEmpty()
+		isGoEmpty  = externalRuntimeConfig.Go.IsEmpty()
+		isNPMEmpty = externalRuntimeConfig.NPM.IsEmpty()
 	)
-	if isArchiveEmpty && isGoEmpty && isNPMEmpty {
+	var runtimeCount int
+	for _, isEmpty := range []bool{
+		isGoEmpty,
+		isNPMEmpty,
+	} {
+		if !isEmpty {
+			runtimeCount++
+		}
+		if runtimeCount > 1 {
+			// We might eventually want to support multiple runtime configuration,
+			// but it's safe to start with an error for now.
+			return nil, fmt.Errorf("%s configuration contains multiple runtime languages", ExternalConfigFilePath)
+		}
+	}
+	if runtimeCount == 0 {
 		// It's possible that the plugin doesn't have any runtime dependencies.
 		return nil, nil
 	}
-	if isArchiveEmpty && isGoEmpty && !isNPMEmpty {
+	if !isNPMEmpty {
 		npmRuntimeConfig, err := newNPMRuntimeConfig(externalRuntimeConfig.NPM)
 		if err != nil {
 			return nil, err
@@ -100,92 +105,73 @@ func newRuntimeConfig(externalRuntimeConfig ExternalRuntimeConfig) (*RuntimeConf
 			NPM: npmRuntimeConfig,
 		}, nil
 	}
-	if isArchiveEmpty && !isGoEmpty && isNPMEmpty {
-		goRuntimeConfig, err := newGoRuntimeConfig(externalRuntimeConfig.Go)
-		if err != nil {
-			return nil, err
-		}
-		return &RuntimeConfig{
-			Go: goRuntimeConfig,
-		}, nil
+	// At this point, the Go runtime is guaranteed to be specified. Note
+	// that this will change if/when there are more runtime languages supported.
+	goRuntimeConfig, err := newGoRuntimeConfig(externalRuntimeConfig.Go)
+	if err != nil {
+		return nil, err
 	}
-	if !isArchiveEmpty && isGoEmpty && isNPMEmpty {
-		archiveRuntimeConfig, err := newArchiveRuntimeConfig(externalRuntimeConfig.Archive)
-		if err != nil {
-			return nil, err
-		}
-		return &RuntimeConfig{
-			Archive: archiveRuntimeConfig,
-		}, nil
-	}
-	// If we made it this far, that means the config specifies multiple
-	// runtime languages.
-	//
-	// We might eventually want to support multiple runtime configuration
-	// (e.g. 'go' and 'archive'), but it's safe to start with an error for
-	// now.
-	return nil, fmt.Errorf("%s configuration contains multiple runtime languages", ExternalConfigFilePath)
+	return &RuntimeConfig{
+		Go: goRuntimeConfig,
+	}, nil
 }
 
 func newNPMRuntimeConfig(externalNPMRuntimeConfig ExternalNPMRuntimeConfig) (*NPMRuntimeConfig, error) {
-	if err := validateRuntimeDeps(externalNPMRuntimeConfig.Deps); err != nil {
-		return nil, err
+	var dependencies []*NPMRuntimeDependencyConfig
+	for _, dep := range externalNPMRuntimeConfig.Deps {
+		if dep.Package == "" {
+			return nil, errors.New("npm runtime dependency requires a non-empty package name")
+		}
+		if dep.Version == "" {
+			return nil, errors.New("npm runtime dependency requires a non-empty version name")
+		}
+		// TODO: Note that we don't have NPM-specific validation yet - any
+		// non-empty string will work for the package and version.
+		//
+		// For a complete set of the version syntax we need to support, see
+		// https://docs.npmjs.com/cli/v6/using-npm/semver
+		//
+		// https://github.com/Masterminds/semver might be a good candidate for
+		// this, but it might not support all of the constraints supported
+		// by NPM.
+		dependencies = append(
+			dependencies,
+			&NPMRuntimeDependencyConfig{
+				Package: dep.Package,
+				Version: dep.Version,
+			},
+		)
 	}
 	return &NPMRuntimeConfig{
-		Deps: externalNPMRuntimeConfig.Deps,
+		Deps: dependencies,
 	}, nil
 }
 
 func newGoRuntimeConfig(externalGoRuntimeConfig ExternalGoRuntimeConfig) (*GoRuntimeConfig, error) {
-	if err := validateRuntimeDeps(externalGoRuntimeConfig.Deps); err != nil {
-		return nil, err
+	if externalGoRuntimeConfig.MinVersion != "" && !modfile.GoVersionRE.MatchString(externalGoRuntimeConfig.MinVersion) {
+		return nil, fmt.Errorf("the go minimum version %q must be a valid semantic version in the form of <major>.<minor>", externalGoRuntimeConfig.MinVersion)
 	}
-	// The best we can do is verify that the minimum version
-	// is a valid semantic version, just like we do for the
-	// runtime dependencies.
-	//
-	// This will not actually verify that the go version is
-	// in the valid set. It's impossible to capture the
-	// real set of valid identifiers at any given time (for
-	// an old version of the buf CLI) without reaching out to
-	// some external source at runtime.
-	//
-	// Note that this ensures the user's configuration specifies
-	// a 'v' prefix in the version (e.g. v1.18) even though the
-	// minimum version is rendered without it in the go.mod.
-	if externalGoRuntimeConfig.MinVersion != "" && !semver.IsValid(externalGoRuntimeConfig.MinVersion) {
-		return nil, fmt.Errorf("the go minimum version %q must be a valid semantic version", externalGoRuntimeConfig.MinVersion)
+	var dependencies []*GoRuntimeDependencyConfig
+	for _, dep := range externalGoRuntimeConfig.Deps {
+		if dep.Module == "" {
+			return nil, errors.New("go runtime dependency requires a non-empty module name")
+		}
+		if dep.Version == "" {
+			return nil, errors.New("go runtime dependency requires a non-empty version name")
+		}
+		if !semver.IsValid(dep.Version) {
+			return nil, fmt.Errorf("go runtime dependency %s:%s does not have a valid semantic version", dep.Module, dep.Version)
+		}
+		dependencies = append(
+			dependencies,
+			&GoRuntimeDependencyConfig{
+				Module:  dep.Module,
+				Version: dep.Version,
+			},
+		)
 	}
 	return &GoRuntimeConfig{
 		MinVersion: externalGoRuntimeConfig.MinVersion,
-		Deps:       externalGoRuntimeConfig.Deps,
+		Deps:       dependencies,
 	}, nil
-}
-
-func newArchiveRuntimeConfig(externalArchiveRuntimeConfig ExternalArchiveRuntimeConfig) (*ArchiveRuntimeConfig, error) {
-	if err := validateRuntimeDeps(externalArchiveRuntimeConfig.Deps); err != nil {
-		return nil, err
-	}
-	return &ArchiveRuntimeConfig{
-		Deps: externalArchiveRuntimeConfig.Deps,
-	}, nil
-}
-
-func validateRuntimeDeps(dependencies []string) error {
-	seen := make(map[string]struct{}, len(dependencies))
-	for _, dependency := range dependencies {
-		split := strings.Split(dependency, ":")
-		if len(split) < 2 {
-			return fmt.Errorf(`runtime dependency %q must be specified as "<name>:<version>"`, dependency)
-		}
-		name, version := strings.Join(split[:len(split)-1], ":"), split[len(split)-1]
-		if _, ok := seen[name]; ok {
-			return fmt.Errorf("runtime dependency %q was specified more than once", name)
-		}
-		if !semver.IsValid(version) {
-			return fmt.Errorf("runtime dependency %q does not have a valid semantic version", dependency)
-		}
-		seen[name] = struct{}{}
-	}
-	return nil
 }
