@@ -96,9 +96,9 @@ message Webhook {
   WebhookEvent event = 1;
   // The id of the associated subscription.
   string webhook_id = 2;
-  // The webhook creation timestamp, immutable.
+  // The webhook creation timestamp.
   google.protobuf.Timestamp create_time = 3;
-  // The webhook last updated timestamp, mutable.
+  // The webhook last updated timestamp.
   google.protobuf.Timestamp update_time = 4;
   // The webhook repository name.
   string repository_name = 5;

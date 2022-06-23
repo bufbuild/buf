@@ -440,9 +440,9 @@ type Webhook struct {
 	Event WebhookEvent `protobuf:"varint,1,opt,name=event,proto3,enum=buf.alpha.registry.v1alpha1.WebhookEvent" json:"event,omitempty"`
 	// The id of the associated subscription.
 	WebhookId string `protobuf:"bytes,2,opt,name=webhook_id,json=webhookId,proto3" json:"webhook_id,omitempty"`
-	// The webhook creation timestamp, immutable.
+	// The webhook creation timestamp.
 	CreateTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	// The webhook last updated timestamp, mutable.
+	// The webhook last updated timestamp.
 	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 	// The webhook repository name.
 	RepositoryName string `protobuf:"bytes,5,opt,name=repository_name,json=repositoryName,proto3" json:"repository_name,omitempty"`
