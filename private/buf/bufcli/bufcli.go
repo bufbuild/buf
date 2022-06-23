@@ -42,6 +42,7 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
+	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
@@ -570,13 +571,23 @@ func getTokenReader(container appflag.Container) func(string) (string, error) {
 // up the token in the container or in netrc based on the address of each individual client from the provider.
 // It is then set in the header of all outgoing requests from this provider
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithTokenReader(getTokenReader(container)))
+	config := registryv1alpha1apiclientconnect.NewTokenConfigWithReader(
+		bufconnect.AuthenticationHeader,
+		bufconnect.AuthenticationTokenPrefix,
+		getTokenReader(container),
+	)
+	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithTokenConfig(config))
 }
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
 // set in the header of all outgoing requests from this provider
 func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
-	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithToken(token))
+	config := registryv1alpha1apiclientconnect.NewTokenConfig(
+		bufconnect.AuthenticationHeader,
+		bufconnect.AuthenticationTokenPrefix,
+		token,
+	)
+	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithTokenConfig(config))
 }
 
 func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {

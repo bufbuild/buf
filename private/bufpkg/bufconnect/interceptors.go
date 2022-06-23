@@ -33,3 +33,15 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	}
 	return interceptor
 }
+func NewWithTokenInterceptor(version string) connect.UnaryInterceptorFunc {
+	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+		return connect.UnaryFunc(func(
+			ctx context.Context,
+			req connect.AnyRequest,
+		) (connect.AnyResponse, error) {
+			req.Header().Set(CliVersionHeaderName, version)
+			return next(ctx, req)
+		})
+	}
+	return interceptor
+}

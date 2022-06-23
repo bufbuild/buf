@@ -37,8 +37,7 @@ func NewConnectClientProvider(
 	providerOptions := []registryv1alpha1apiclientconnect.ProviderOption{
 		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclientconnect.WithInterceptors(registryProviderOptions.interceptors),
-		registryv1alpha1apiclientconnect.WithToken(registryProviderOptions.token),
-		registryv1alpha1apiclientconnect.WithTokenReader(registryProviderOptions.tokenReader),
+		registryv1alpha1apiclientconnect.WithTokenConfig(registryProviderOptions.tokenConfig),
 	}
 	return registryv1alpha1apiclientconnect.NewProvider(
 		logger,
@@ -53,8 +52,7 @@ type RegistryProviderOption func(*registryProviderOptions)
 type registryProviderOptions struct {
 	addressMapper func(string) string
 	interceptors  []connect.Interceptor
-	token         string
-	tokenReader   func(string) (string, error)
+	tokenConfig   registryv1alpha1apiclientconnect.TokenConfig
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps
@@ -71,18 +69,8 @@ func RegistryProviderWithInterceptors(interceptors ...connect.Interceptor) Regis
 	}
 }
 
-// RegistryProviderWithToken returns a new RegistryProviderOption that sets the given token in the request headers
-// of clients returned from this provider
-func RegistryProviderWithToken(token string) RegistryProviderOption {
+func RegistryProviderWithTokenConfig(config registryv1alpha1apiclientconnect.TokenConfig) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
-		options.token = token
-	}
-}
-
-// RegistryProviderWithTokenReader returns a new RegistryProviderOption that invokes a function to lookup the auth
-// token by address
-func RegistryProviderWithTokenReader(tokenReader func(string) (string, error)) RegistryProviderOption {
-	return func(options *registryProviderOptions) {
-		options.tokenReader = tokenReader
+		options.tokenConfig = config
 	}
 }
