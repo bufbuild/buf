@@ -17,6 +17,7 @@ package bufplugindocker
 import (
 	"os"
 	"path"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,7 +37,9 @@ func Test_NodeIDPersistence(t *testing.T) {
 	st, err := os.Stat(path.Join(configDir, pathBuildkitNodeID))
 	assert.Nil(t, err)
 	assert.True(t, !st.IsDir())
-	assert.Equal(t, os.FileMode(0600), st.Mode().Perm())
+	if runtime.GOOS != "windows" {
+		assert.Equal(t, os.FileMode(0600), st.Mode().Perm())
+	}
 	assert.True(t, st.Size() > 0)
 	sharedKeyAgain := getBuildSharedKey(".", configDir, zap.L())
 	assert.Equal(t, sharedKey, sharedKeyAgain)
