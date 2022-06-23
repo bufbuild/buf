@@ -95,6 +95,29 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 	if err != nil {
 		return err
 	}
+	g.P(`type TokenConfig struct {`)
+	g.P(`Token      string`)
+	g.P(`Reader     func(string) (string, error)`)
+	g.P(`AuthHeader string`)
+	g.P(`AuthPrefix string`)
+	g.P(`}`)
+	g.P()
+	g.P(`func NewTokenConfig(header string, prefix string, token string) TokenConfig {`)
+	g.P(`return TokenConfig{`)
+	g.P(`Token:      token,`)
+	g.P(`AuthHeader: header,`)
+	g.P(`AuthPrefix: prefix,`)
+	g.P(`}`)
+	g.P(`}`)
+	g.P()
+	g.P(`func NewTokenConfigWithReader(header string, prefix string, reader func(string) (string, error)) TokenConfig {`)
+	g.P(`return TokenConfig{`)
+	g.P(`Reader:     reader,`)
+	g.P(`AuthHeader: header,`)
+	g.P(`AuthPrefix: prefix,`)
+	g.P(`}`)
+	g.P(`}`)
+	g.P()
 	g.P(`// Provider provides all Providers.`)
 	g.P(`type Provider interface {`)
 	for _, goPackageFileSet := range goPackageFileSetsWithServices {
@@ -107,6 +130,7 @@ func handleGlobal(helper protogenutil.NamedHelper, plugin *protogen.Plugin, goPa
 		funcName := stringutil.ToPascalCase(goPackageFileSet.ProtoPackage)
 		g.P(funcName, `() `, providerGoIdentString)
 	}
+
 	g.P(`}`)
 	return nil
 }

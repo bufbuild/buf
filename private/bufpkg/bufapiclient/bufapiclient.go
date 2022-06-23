@@ -18,6 +18,7 @@ package bufapiclient
 import (
 	"net/http"
 
+	"github.com/bufbuild/buf/private/gen/proto/apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
 	"github.com/bufbuild/connect-go"
@@ -52,7 +53,7 @@ type RegistryProviderOption func(*registryProviderOptions)
 type registryProviderOptions struct {
 	addressMapper func(string) string
 	interceptors  []connect.Interceptor
-	tokenConfig   registryv1alpha1apiclientconnect.TokenConfig
+	tokenConfig   apiclient.TokenConfig
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps
@@ -69,7 +70,7 @@ func RegistryProviderWithInterceptors(interceptors ...connect.Interceptor) Regis
 	}
 }
 
-func RegistryProviderWithTokenConfig(config registryv1alpha1apiclientconnect.TokenConfig) RegistryProviderOption {
+func RegistryProviderWithTokenConfig(config apiclient.TokenConfig) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
 		options.tokenConfig = config
 	}

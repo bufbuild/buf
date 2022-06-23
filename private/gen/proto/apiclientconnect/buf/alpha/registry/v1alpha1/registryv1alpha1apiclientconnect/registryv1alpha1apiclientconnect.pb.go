@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
+	apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	connect_go "github.com/bufbuild/connect-go"
@@ -43,34 +44,11 @@ func NewProvider(
 	return provider
 }
 
-type TokenConfig struct {
-	token      string
-	reader     func(string) (string, error)
-	authHeader string
-	authPrefix string
-}
-
-func NewTokenConfig(header string, prefix string, token string) TokenConfig {
-	return TokenConfig{
-		token:      token,
-		authHeader: header,
-		authPrefix: prefix,
-	}
-}
-
-func NewTokenConfigWithReader(header string, prefix string, reader func(string) (string, error)) TokenConfig {
-	return TokenConfig{
-		reader:     reader,
-		authHeader: header,
-		authPrefix: prefix,
-	}
-}
-
 type provider struct {
 	logger        *zap.Logger
 	httpClient    connect_go.HTTPClient
 	addressMapper func(string) string
-	tokenConfig   TokenConfig
+	tokenConfig   apiclient.TokenConfig
 	interceptors  []connect_go.Interceptor
 }
 
@@ -91,7 +69,7 @@ func WithInterceptors(interceptors []connect_go.Interceptor) ProviderOption {
 	}
 }
 
-func WithTokenConfig(config TokenConfig) ProviderOption {
+func WithTokenConfig(config apiclient.TokenConfig) ProviderOption {
 	return func(provider *provider) {
 		provider.tokenConfig = config
 	}
@@ -99,15 +77,15 @@ func WithTokenConfig(config TokenConfig) ProviderOption {
 
 func (p *provider) newTokenWriterInterceptor(address string) (connect_go.UnaryInterceptorFunc, error) {
 	var err error
-	token := p.tokenConfig.token
-	if token == "" && p.tokenConfig.reader != nil {
-		fmt.Println("Looking up token using reader")
-		token, err = p.tokenConfig.reader(address)
+	token := p.tokenConfig.Token
+	if token == "" && p.tokenConfig.Reader != nil {
+		fmt.Println("Reading token from file")
+		token, err = p.tokenConfig.Reader(address)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		fmt.Println("Using specified token")
+		fmt.Println("Token set explicitly")
 	}
 	return func(next connect_go.UnaryFunc) connect_go.UnaryFunc {
 		return connect_go.UnaryFunc(func(
@@ -116,7 +94,7 @@ func (p *provider) newTokenWriterInterceptor(address string) (connect_go.UnaryIn
 		) (connect_go.AnyResponse, error) {
 			if token != "" {
 				fmt.Println("Setting token", token)
-				req.Header().Set(p.tokenConfig.authHeader, p.tokenConfig.authPrefix+token)
+				req.Header().Set(p.tokenConfig.AuthHeader, p.tokenConfig.AuthPrefix+token)
 			}
 			return next(ctx, req)
 		})

@@ -78,8 +78,14 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
+	globalAPIClientGoImportPath, err := helper.NewGlobalGoImportPath("apiclient")
+	if err != nil {
+		return err
+	}
 	providerGoIdent := apiclientGoImportPath.Ident("Provider")
 	providerGoIdentString := g.QualifiedGoIdent(providerGoIdent)
+	tokenConfigGoIdent := globalAPIClientGoImportPath.Ident("TokenConfig")
+	tokenConfigGoIdentString := g.QualifiedGoIdent(tokenConfigGoIdent)
 
 	// NewProvider constructor function
 	g.P(`// NewProvider returns a new Provider.`)
@@ -98,35 +104,12 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`return provider`)
 	g.P(`}`)
 	g.P()
-	g.P(`type TokenConfig struct {`)
-	g.P(`token      string`)
-	g.P(`reader     func(string) (string, error)`)
-	g.P(`authHeader string`)
-	g.P(`authPrefix string`)
-	g.P(`}`)
-	g.P()
-	g.P(`func NewTokenConfig(header string, prefix string, token string) TokenConfig {`)
-	g.P(`return TokenConfig{`)
-	g.P(`token:      token,`)
-	g.P(`authHeader: header,`)
-	g.P(`authPrefix: prefix,`)
-	g.P(`}`)
-	g.P(`}`)
-	g.P()
-	g.P(`func NewTokenConfigWithReader(header string, prefix string, reader func(string) (string, error)) TokenConfig {`)
-	g.P(`return TokenConfig{`)
-	g.P(`reader:     reader,`)
-	g.P(`authHeader: header,`)
-	g.P(`authPrefix: prefix,`)
-	g.P(`}`)
-	g.P(`}`)
-	g.P()
 	// provider struct definition
 	g.P(`type provider struct {`)
 	g.P(`logger *`, loggerGoIdentString)
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
-	g.P(`tokenConfig TokenConfig`)
+	g.P(`tokenConfig `, tokenConfigGoIdentString)
 	g.P(`interceptors []`, interceptorGoIdentString)
 	g.P(`}`)
 	g.P()
@@ -153,7 +136,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`}`)
 	g.P()
 
-	g.P(`func WithTokenConfig(config TokenConfig) ProviderOption {`)
+	g.P(`func WithTokenConfig(config `, tokenConfigGoIdentString, `) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
 	g.P(`provider.tokenConfig = config`)
 	g.P(`}`)
@@ -162,9 +145,9 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 
 	g.P(`func (p *provider) newTokenWriterInterceptor(address string) (connect_go.UnaryInterceptorFunc, error) {`)
 	g.P(`var err error`)
-	g.P(`token := p.tokenConfig.token`)
-	g.P(`if token == "" && p.tokenConfig.reader != nil {`)
-	g.P(`token, err = p.tokenConfig.reader(address)`)
+	g.P(`token := p.tokenConfig.Token`)
+	g.P(`if token == "" && p.tokenConfig.Reader != nil {`)
+	g.P(`token, err = p.tokenConfig.Reader(address)`)
 	g.P(`if err != nil {`)
 	g.P(`return nil, err`)
 	g.P(`}`)
@@ -175,7 +158,7 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`req connect_go.AnyRequest,`)
 	g.P(`) (connect_go.AnyResponse, error) {`)
 	g.P(`if token != "" {`)
-	g.P(`req.Header().Set(p.tokenConfig.authHeader, p.tokenConfig.authPrefix+token)`)
+	g.P(`req.Header().Set(p.tokenConfig.AuthHeader, p.tokenConfig.AuthPrefix+token)`)
 	g.P(`}`)
 	g.P(`return next(ctx, req)`)
 	g.P(`})`)

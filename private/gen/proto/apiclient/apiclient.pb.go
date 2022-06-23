@@ -20,6 +20,29 @@ import (
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 )
 
+type TokenConfig struct {
+	Token      string
+	Reader     func(string) (string, error)
+	AuthHeader string
+	AuthPrefix string
+}
+
+func NewTokenConfig(header string, prefix string, token string) TokenConfig {
+	return TokenConfig{
+		Token:      token,
+		AuthHeader: header,
+		AuthPrefix: prefix,
+	}
+}
+
+func NewTokenConfigWithReader(header string, prefix string, reader func(string) (string, error)) TokenConfig {
+	return TokenConfig{
+		Reader:     reader,
+		AuthHeader: header,
+		AuthPrefix: prefix,
+	}
+}
+
 // Provider provides all Providers.
 type Provider interface {
 	BufAlphaRegistryV1alpha1() registryv1alpha1apiclient.Provider
