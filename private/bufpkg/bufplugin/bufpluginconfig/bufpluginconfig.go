@@ -46,6 +46,13 @@ var (
 type Config struct {
 	// Name is the name of the plugin (e.g. 'buf.build/protocolbuffers/go').
 	Name bufpluginref.PluginIdentity
+	// PluginVersion is the version of the plugin's implementation
+	// (e.g the protoc-gen-connect-go implementation is v0.2.0).
+	//
+	// This excludes any other details found in the buf.plugin.yaml
+	// or plugin source (e.g. Dockerfile) that would otherwise influence
+	// the plugin's behavior.
+	PluginVersion string
 	// Options is the default set of options passed into the plugin.
 	//
 	// For now, all options are string values. This could eventually
@@ -158,10 +165,11 @@ func ParseConfig(config string) (*Config, error) {
 // ExternalConfig represents the on-disk representation
 // of the plugin configuration at version v1.
 type ExternalConfig struct {
-	Version string                `json:"version,omitempty" yaml:"version,omitempty"`
-	Name    string                `json:"name,omitempty" yaml:"name,omitempty"`
-	Opts    []string              `json:"opts,omitempty" yaml:"opts,omitempty"`
-	Runtime ExternalRuntimeConfig `json:"runtime,omitempty" yaml:"runtime,omitempty"`
+	Version       string                `json:"version,omitempty" yaml:"version,omitempty"`
+	Name          string                `json:"name,omitempty" yaml:"name,omitempty"`
+	PluginVersion string                `json:"plugin_version,omitempty" yaml:"plugin_version,omitempty"`
+	Opts          []string              `json:"opts,omitempty" yaml:"opts,omitempty"`
+	Runtime       ExternalRuntimeConfig `json:"runtime,omitempty" yaml:"runtime,omitempty"`
 }
 
 // ExternalRuntimeConfig is the external configuration for the runtime
