@@ -64,8 +64,8 @@ func Test_BuildFailure(t *testing.T) {
 		t.Skip("docker tests disabled in short mode")
 	}
 	dockerClient := createClient(t)
-	_, err := buildDockerPlugin(t, dockerClient, "testdata/success/Dockerfile")
-	require.Nil(t, err)
+	_, err := buildDockerPlugin(t, dockerClient, "testdata/failure/Dockerfile")
+	assert.NotNil(t, err)
 }
 
 func TestMain(m *testing.M) {
@@ -103,7 +103,7 @@ func buildDockerPlugin(t testing.TB, dockerClient bufplugindocker.Client, docker
 	require.Nil(t, err)
 	pluginConfig := &bufpluginconfig.Config{Name: pluginName}
 	response, err := dockerClient.Build(context.Background(), dockerfile, pluginConfig, bufplugindocker.BuildParams{})
-	if err != nil {
+	if err == nil {
 		t.Cleanup(func() {
 			if _, err := dockerClient.Delete(context.Background(), response.Image); err != nil {
 				t.Errorf("failed to delete image: %q", response.Image)
