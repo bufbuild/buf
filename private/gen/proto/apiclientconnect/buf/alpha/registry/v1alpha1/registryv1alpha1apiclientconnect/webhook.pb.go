@@ -30,14 +30,14 @@ type webhookServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// Create a webhook.
+// Create a webhook, subscribes to a given repository event for a callback URL invocation.
 func (s *webhookServiceClient) CreateWebhook(
 	ctx context.Context,
 	webhookEvent v1alpha1.WebhookEvent,
 	ownerName string,
 	repositoryName string,
 	callbackUrl string,
-) (webhook *v1alpha1.SubscribedWebhook, _ error) {
+) (webhook *v1alpha1.Webhook, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -57,7 +57,7 @@ func (s *webhookServiceClient) CreateWebhook(
 	return response.Msg.Webhook, nil
 }
 
-// Delete a webhook.
+// Delete a webhook removes the event subscription.
 func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookId string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
@@ -75,13 +75,13 @@ func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookId stri
 	return nil
 }
 
-// Lists the webhooks for a given repository.
+// Lists the webhooks subscriptions for a given repository.
 func (s *webhookServiceClient) ListWebhooks(
 	ctx context.Context,
 	repositoryName string,
 	ownerName string,
 	pageToken string,
-) (webhooks []*v1alpha1.SubscribedWebhook, nextPageToken string, _ error) {
+) (webhooks []*v1alpha1.Webhook, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}

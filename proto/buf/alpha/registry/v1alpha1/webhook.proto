@@ -19,13 +19,13 @@ package buf.alpha.registry.v1alpha1;
 import "google/protobuf/timestamp.proto";
 
 // WebhookService exposes the functionality for a caller to
-// create/delete/list Webhooks for a given repository.
+// create/delete/list Webhooks for a given repository event.
 service WebhookService {
-  // Create a webhook.
+  // Create a webhook, subscribes to a given repository event for a callback URL invocation.
   rpc CreateWebhook(CreateWebhookRequest) returns (CreateWebhookResponse) {}
-  // Delete a webhook.
+  // Delete a webhook removes the event subscription.
   rpc DeleteWebhook(DeleteWebhookRequest) returns (DeleteWebhookResponse) {}
-  // Lists the webhooks for a given repository.
+  // Lists the webhooks subscriptions for a given repository.
   rpc ListWebhooks(ListWebhooksRequest) returns (ListWebhooksResponse) {}
 }
 
@@ -57,7 +57,7 @@ enum WebhookEvent {
 // of a webhook request.
 message CreateWebhookResponse {
   // Created webhook subscription.
-  SubscribedWebhook webhook = 1;
+  Webhook webhook = 1;
 }
 
 // DeleteWebhookRequest is the request for unsubscribing to a webhook.
@@ -85,16 +85,15 @@ message ListWebhooksRequest {
 // subscribed webhooks for a given repository.
 message ListWebhooksResponse {
   // The list of subscribed webhooks for a given repository.
-  repeated SubscribedWebhook webhooks = 1;
+  repeated Webhook webhooks = 1;
   // The next page token for paginating.
   string next_page_token = 2;
 }
 
-// SubscribedWebhook is the representation of a webhook event and webhook
-// subscription id.
-message SubscribedWebhook {
+// Webhook is the representation of a webhook repository event subscription.
+message Webhook {
   // The event associated with the subscription id.
-  WebhookEvent webhook_event = 1;
+  WebhookEvent event = 1;
   // The id of the associated subscription.
   string webhook_id = 2;
   // The webhook creation timestamp, immutable.
