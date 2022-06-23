@@ -294,6 +294,17 @@ If no argument is specified, defaults to ".".`,
 	)
 }
 
+// GetSourceDirLong gets the long command description for a directory-based command.
+func GetSourceDirLong(inputArgDescription string) string {
+	return fmt.Sprintf(
+		`The first argument is %s.
+The first argument must be one of format %s.
+If no argument is specified, defaults to ".".`,
+		inputArgDescription,
+		buffetch.SourceDirFormatsString,
+	)
+}
+
 // GetSourceOrModuleLong gets the long command description for an input-based command.
 func GetSourceOrModuleLong(inputArgDescription string) string {
 	return fmt.Sprintf(

@@ -41,6 +41,11 @@ var (
 	//
 	// This does not include deprecated formats.
 	ImageFormatsString = stringutil.SliceToString(imageFormatsNotDeprecated)
+	// SourceDirFormatsString is the string representation of all source directory formats.
+	// This includes all of the formats in SourceFormatsString except the protofile format.
+	//
+	// This does not include deprecated formats.
+	SourceDirFormatsString = stringutil.SliceToString(sourceDirFormatsNotDeprecated)
 	// SourceFormatsString is the string representation of all source formats.
 	//
 	// This does not include deprecated formats.
