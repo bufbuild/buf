@@ -1,0 +1,9 @@
+version: v1
+name: buf.build/grpc/go
+opts:
+  - paths=source_relative
+runtime:
+  go:
+    min_version: v1.18
+    deps:
+      - "google.golang.org/grpc:v1.32.0"
