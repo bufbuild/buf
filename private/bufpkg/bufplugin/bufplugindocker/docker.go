@@ -71,19 +71,23 @@ var _ Client = (*dockerAPIClient)(nil)
 func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, pluginConfig *bufpluginconfig.Config, params BuildParams) (*BuildResponse, error) {
 	buildkitSession, err := createSession(fmt.Sprintf("%s/%s", pluginConfig.Name.Owner(), pluginConfig.Name.Plugin()), params.ConfigDirPath, zap.L())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create buildkit session: %w", err)
 	}
 
 	dockerContext, err := createDockerContext(dockerfile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create docker context: %w", err)
 	}
 
 	eg, errGroupCtx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
-		return buildkitSession.Run(errGroupCtx, func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
+		err := buildkitSession.Run(errGroupCtx, func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
 			return d.cli.DialHijack(ctx, "/session", proto, meta)
 		})
+		if err != nil {
+			err = fmt.Errorf("failed to run buildkit session: %w", err)
+		}
+		return err
 	})
 
 	buildID := stringid.GenerateRandomID()
@@ -104,7 +108,7 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 			SessionID: buildkitSession.ID(),
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("failed ImageBuild: %w", err)
 		}
 		defer response.Body.Close()
 		scanner := bufio.NewScanner(response.Body)
@@ -112,18 +116,18 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 			d.logger.Debug(scanner.Text())
 		}
 		if err := scanner.Err(); err != nil {
-			return err
+			return fmt.Errorf("failed to scan response body: %w", err)
 		}
 		return nil
 	})
 
 	if err := eg.Wait(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build image: %w", err)
 	}
 
 	imageInfo, _, err := d.cli.ImageInspectWithRaw(ctx, imageName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to inspect image: %w", err)
 	}
 	return &BuildResponse{
 		Image:  imageName,
