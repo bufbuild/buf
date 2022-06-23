@@ -1,0 +1,9 @@
+version: v1
+name: buf.build/protocolbuffers/java
+runtime:
+  archive:
+    deps:
+      - "io.grpc:grpc-protobuf:v1.46.0"
+      - "io.grpc:grpc-netty-shaded:v1.46.0"
+      - "io.grpc:grpc-stub:v1.46.0"
+      - "io.grpc:grpc-okhttp:v1.46.0"
