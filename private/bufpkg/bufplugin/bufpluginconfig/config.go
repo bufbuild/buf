@@ -149,7 +149,7 @@ func newNPMRuntimeConfig(externalNPMRuntimeConfig ExternalNPMRuntimeConfig) (*NP
 
 func newGoRuntimeConfig(externalGoRuntimeConfig ExternalGoRuntimeConfig) (*GoRuntimeConfig, error) {
 	if externalGoRuntimeConfig.MinVersion != "" && !modfile.GoVersionRE.MatchString(externalGoRuntimeConfig.MinVersion) {
-		return nil, fmt.Errorf("the go minimum version %q must be a valid semantic version", externalGoRuntimeConfig.MinVersion)
+		return nil, fmt.Errorf("the go minimum version %q must be a valid semantic version in the form of <major>.<minor>", externalGoRuntimeConfig.MinVersion)
 	}
 	var dependencies []*GoRuntimeDependencyConfig
 	for _, dep := range externalGoRuntimeConfig.Deps {
