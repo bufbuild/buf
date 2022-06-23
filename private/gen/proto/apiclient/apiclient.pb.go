@@ -20,26 +20,33 @@ import (
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 )
 
+// TokenConfig represents a token configuration for a provider to determine setting auth tokens for outbound requests
 type TokenConfig struct {
-	Token      string
-	Reader     func(string) (string, error)
-	AuthHeader string
+	// Token is an auth token
+	Token string
+	// Reader is a function that looks up a token based on the given address
+	Reader func(string) (string, error)
+	// AuthHeaderKey is the key to use in the request header associated to the auth token
+	AuthHeaderKey string
+	// AuthPrefix is the prefix to append before the token in the request header
 	AuthPrefix string
 }
 
-func NewTokenConfig(header string, prefix string, token string) TokenConfig {
+// NewTokenConfig creates a new token config with an explicit token
+func NewTokenConfig(headerKey string, prefix string, token string) TokenConfig {
 	return TokenConfig{
-		Token:      token,
-		AuthHeader: header,
-		AuthPrefix: prefix,
+		Token:         token,
+		AuthHeaderKey: headerKey,
+		AuthPrefix:    prefix,
 	}
 }
 
-func NewTokenConfigWithReader(header string, prefix string, reader func(string) (string, error)) TokenConfig {
+// NewTokenConfigWithReader creates a new token config with a token reader function
+func NewTokenConfigWithReader(headerKey string, prefix string, reader func(string) (string, error)) TokenConfig {
 	return TokenConfig{
-		Reader:     reader,
-		AuthHeader: header,
-		AuthPrefix: prefix,
+		Reader:        reader,
+		AuthHeaderKey: headerKey,
+		AuthPrefix:    prefix,
 	}
 }
 

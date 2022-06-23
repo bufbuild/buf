@@ -18,8 +18,6 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-	"fmt"
-
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
 	apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
@@ -69,6 +67,8 @@ func WithInterceptors(interceptors []connect_go.Interceptor) ProviderOption {
 	}
 }
 
+// WithTokenConfig adds a token config to the provider, which will configure the setting of auth tokens for outbound
+// requests
 func WithTokenConfig(config apiclient.TokenConfig) ProviderOption {
 	return func(provider *provider) {
 		provider.tokenConfig = config
@@ -79,13 +79,10 @@ func (p *provider) newTokenWriterInterceptor(address string) (connect_go.UnaryIn
 	var err error
 	token := p.tokenConfig.Token
 	if token == "" && p.tokenConfig.Reader != nil {
-		fmt.Println("Reading token from file")
 		token, err = p.tokenConfig.Reader(address)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		fmt.Println("Token set explicitly")
 	}
 	return func(next connect_go.UnaryFunc) connect_go.UnaryFunc {
 		return connect_go.UnaryFunc(func(
@@ -93,13 +90,14 @@ func (p *provider) newTokenWriterInterceptor(address string) (connect_go.UnaryIn
 			req connect_go.AnyRequest,
 		) (connect_go.AnyResponse, error) {
 			if token != "" {
-				fmt.Println("Setting token", token)
-				req.Header().Set(p.tokenConfig.AuthHeader, p.tokenConfig.AuthPrefix+token)
+				req.Header().Set(p.tokenConfig.AuthHeaderKey, p.tokenConfig.AuthPrefix+token)
 			}
 			return next(ctx, req)
 		})
 	}, nil
 }
+
+// NewAdminService creates a new AdminService
 func (p *provider) NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -119,6 +117,7 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 	}, nil
 }
 
+// NewAuthnService creates a new AuthnService
 func (p *provider) NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -138,6 +137,7 @@ func (p *provider) NewAuthnService(ctx context.Context, address string) (registr
 	}, nil
 }
 
+// NewAuthzService creates a new AuthzService
 func (p *provider) NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -157,6 +157,7 @@ func (p *provider) NewAuthzService(ctx context.Context, address string) (registr
 	}, nil
 }
 
+// NewConvertService creates a new ConvertService
 func (p *provider) NewConvertService(ctx context.Context, address string) (registryv1alpha1api.ConvertService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -176,6 +177,7 @@ func (p *provider) NewConvertService(ctx context.Context, address string) (regis
 	}, nil
 }
 
+// NewDisplayService creates a new DisplayService
 func (p *provider) NewDisplayService(ctx context.Context, address string) (registryv1alpha1api.DisplayService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -195,6 +197,7 @@ func (p *provider) NewDisplayService(ctx context.Context, address string) (regis
 	}, nil
 }
 
+// NewDocService creates a new DocService
 func (p *provider) NewDocService(ctx context.Context, address string) (registryv1alpha1api.DocService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -214,6 +217,7 @@ func (p *provider) NewDocService(ctx context.Context, address string) (registryv
 	}, nil
 }
 
+// NewDownloadService creates a new DownloadService
 func (p *provider) NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -233,6 +237,7 @@ func (p *provider) NewDownloadService(ctx context.Context, address string) (regi
 	}, nil
 }
 
+// NewGenerateService creates a new GenerateService
 func (p *provider) NewGenerateService(ctx context.Context, address string) (registryv1alpha1api.GenerateService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -252,6 +257,7 @@ func (p *provider) NewGenerateService(ctx context.Context, address string) (regi
 	}, nil
 }
 
+// NewGithubService creates a new GithubService
 func (p *provider) NewGithubService(ctx context.Context, address string) (registryv1alpha1api.GithubService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -271,6 +277,7 @@ func (p *provider) NewGithubService(ctx context.Context, address string) (regist
 	}, nil
 }
 
+// NewImageService creates a new ImageService
 func (p *provider) NewImageService(ctx context.Context, address string) (registryv1alpha1api.ImageService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -290,6 +297,7 @@ func (p *provider) NewImageService(ctx context.Context, address string) (registr
 	}, nil
 }
 
+// NewJSONSchemaService creates a new JSONSchemaService
 func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (registryv1alpha1api.JSONSchemaService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -309,6 +317,7 @@ func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (re
 	}, nil
 }
 
+// NewLocalResolveService creates a new LocalResolveService
 func (p *provider) NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -328,6 +337,7 @@ func (p *provider) NewLocalResolveService(ctx context.Context, address string) (
 	}, nil
 }
 
+// NewOrganizationService creates a new OrganizationService
 func (p *provider) NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -347,6 +357,7 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 	}, nil
 }
 
+// NewOwnerService creates a new OwnerService
 func (p *provider) NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -366,6 +377,7 @@ func (p *provider) NewOwnerService(ctx context.Context, address string) (registr
 	}, nil
 }
 
+// NewPluginService creates a new PluginService
 func (p *provider) NewPluginService(ctx context.Context, address string) (registryv1alpha1api.PluginService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -385,6 +397,7 @@ func (p *provider) NewPluginService(ctx context.Context, address string) (regist
 	}, nil
 }
 
+// NewPushService creates a new PushService
 func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -404,6 +417,7 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 	}, nil
 }
 
+// NewRecommendationService creates a new RecommendationService
 func (p *provider) NewRecommendationService(ctx context.Context, address string) (registryv1alpha1api.RecommendationService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -423,6 +437,7 @@ func (p *provider) NewRecommendationService(ctx context.Context, address string)
 	}, nil
 }
 
+// NewReferenceService creates a new ReferenceService
 func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -442,6 +457,7 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 	}, nil
 }
 
+// NewRepositoryBranchService creates a new RepositoryBranchService
 func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -461,6 +477,7 @@ func (p *provider) NewRepositoryBranchService(ctx context.Context, address strin
 	}, nil
 }
 
+// NewRepositoryCommitService creates a new RepositoryCommitService
 func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -480,6 +497,7 @@ func (p *provider) NewRepositoryCommitService(ctx context.Context, address strin
 	}, nil
 }
 
+// NewRepositoryService creates a new RepositoryService
 func (p *provider) NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -499,6 +517,7 @@ func (p *provider) NewRepositoryService(ctx context.Context, address string) (re
 	}, nil
 }
 
+// NewRepositoryTagService creates a new RepositoryTagService
 func (p *provider) NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -518,6 +537,7 @@ func (p *provider) NewRepositoryTagService(ctx context.Context, address string) 
 	}, nil
 }
 
+// NewRepositoryTrackCommitService creates a new RepositoryTrackCommitService
 func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -537,6 +557,7 @@ func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address 
 	}, nil
 }
 
+// NewRepositoryTrackService creates a new RepositoryTrackService
 func (p *provider) NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -556,6 +577,7 @@ func (p *provider) NewRepositoryTrackService(ctx context.Context, address string
 	}, nil
 }
 
+// NewResolveService creates a new ResolveService
 func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -575,6 +597,7 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 	}, nil
 }
 
+// NewSearchService creates a new SearchService
 func (p *provider) NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -594,6 +617,7 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 	}, nil
 }
 
+// NewStudioService creates a new StudioService
 func (p *provider) NewStudioService(ctx context.Context, address string) (registryv1alpha1api.StudioService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -613,6 +637,7 @@ func (p *provider) NewStudioService(ctx context.Context, address string) (regist
 	}, nil
 }
 
+// NewTokenService creates a new TokenService
 func (p *provider) NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -632,6 +657,7 @@ func (p *provider) NewTokenService(ctx context.Context, address string) (registr
 	}, nil
 }
 
+// NewUserService creates a new UserService
 func (p *provider) NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
@@ -651,6 +677,7 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 	}, nil
 }
 
+// NewWebhookService creates a new WebhookService
 func (p *provider) NewWebhookService(ctx context.Context, address string) (registryv1alpha1api.WebhookService, error) {
 	interceptors := p.interceptors
 	tokenInterceptor, err := p.newTokenWriterInterceptor(address)

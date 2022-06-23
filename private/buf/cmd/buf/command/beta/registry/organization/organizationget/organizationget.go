@@ -94,10 +94,6 @@ func run(
 		ctx,
 		moduleOwner.Owner(),
 	)
-	organization, err = service.GetOrganizationByName(
-		ctx,
-		moduleOwner.Owner(),
-	)
 	if err != nil {
 		if connect.CodeOf(err) == connect.CodeNotFound {
 			return bufcli.NewOrganizationNotFoundError(container.Arg(0))
