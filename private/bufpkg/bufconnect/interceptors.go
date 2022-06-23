@@ -33,21 +33,3 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 	}
 	return interceptor
 }
-
-// NewWithTokenInterceptor returns a new Connect Interceptor that sets the given token into all request headers
-// This interceptor is useful for login requests where the user is explicitly providing a token (rather than expecting
-// it to be read from netrc)
-func NewWithTokenInterceptor(token string) connect.UnaryInterceptorFunc {
-	interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
-		return connect.UnaryFunc(func(
-			ctx context.Context,
-			req connect.AnyRequest,
-		) (connect.AnyResponse, error) {
-			if token != "" {
-				req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
-			}
-			return next(ctx, req)
-		})
-	}
-	return interceptor
-}
