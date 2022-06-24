@@ -16,29 +16,49 @@ package bufplugin
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
+	"golang.org/x/mod/semver"
 )
 
 type plugin struct {
+	version              string
 	options              map[string]string
 	runtime              *bufpluginconfig.RuntimeConfig
 	containerImageDigest string
 }
 
 func newPlugin(
+	version string,
 	options map[string]string,
 	runtimeConfig *bufpluginconfig.RuntimeConfig,
 	containerImageDigest string,
 ) (*plugin, error) {
+	if version == "" {
+		return nil, errors.New("plugin version is required")
+	}
+	if !semver.IsValid(version) {
+		// This will probably already be validated in other call-sites
+		// (e.g. when we construct a *bufpluginconfig.Config or when we
+		// map from the Protobuf representation), but we may as well
+		// include it at the lowest common denominator, too.
+		return nil, fmt.Errorf("plugin version %q must be a valid semantic version", version)
+	}
 	if containerImageDigest == "" {
 		return nil, errors.New("plugin image digest is required")
 	}
 	return &plugin{
+		version:              version,
 		options:              options,
 		runtime:              runtimeConfig,
 		containerImageDigest: containerImageDigest,
 	}, nil
+}
+
+// Version returns the plugin's version.
+func (p *plugin) Version() string {
+	return p.version
 }
 
 // Options returns the plugin's options.

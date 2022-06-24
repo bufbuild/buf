@@ -36,7 +36,8 @@ func TestGetConfigForBucket(t *testing.T) {
 	require.Equal(
 		t,
 		&Config{
-			Name: pluginIdentity,
+			Name:          pluginIdentity,
+			PluginVersion: "v1.5.0",
 			Options: map[string]string{
 				"paths": "source_relative",
 			},
@@ -65,7 +66,8 @@ func TestParsePluginConfigGoYAML(t *testing.T) {
 	require.Equal(
 		t,
 		&Config{
-			Name: pluginIdentity,
+			Name:          pluginIdentity,
+			PluginVersion: "v1.5.0",
 			Options: map[string]string{
 				"paths": "source_relative",
 			},
@@ -94,7 +96,8 @@ func TestParsePluginConfigNPMYAML(t *testing.T) {
 	require.Equal(
 		t,
 		&Config{
-			Name: pluginIdentity,
+			Name:          pluginIdentity,
+			PluginVersion: "v1.0.0",
 			Options: map[string]string{
 				"paths": "source_relative",
 			},
@@ -126,7 +129,8 @@ func TestParsePluginConfigOptionsYAML(t *testing.T) {
 	require.Equal(
 		t,
 		&Config{
-			Name: pluginIdentity,
+			Name:          pluginIdentity,
+			PluginVersion: "v2.0.0",
 			Options: map[string]string{
 				"annotate_code": "",
 			},

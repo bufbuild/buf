@@ -20,6 +20,9 @@ import (
 
 // Plugin represents a plugin defined by a buf.plugin.yaml.
 type Plugin interface {
+	// Version is the version of the plugin's implementation
+	// (e.g the protoc-gen-connect-go implementation is v0.2.0).
+	Version() string
 	// Options is the set of options available to the plugin.
 	//
 	// For now, all options are string values. This could eventually
@@ -50,9 +53,10 @@ type Plugin interface {
 
 // NewPlugin creates a new plugin from the given configuration and image digest.
 func NewPlugin(
+	version string,
 	options map[string]string,
 	runtimeConfig *bufpluginconfig.RuntimeConfig,
 	imageDigest string,
 ) (Plugin, error) {
-	return newPlugin(options, runtimeConfig, imageDigest)
+	return newPlugin(version, options, runtimeConfig, imageDigest)
 }
