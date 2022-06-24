@@ -69,3 +69,46 @@ func TestPluginIdentityForStringError(t *testing.T) {
 		})
 	}
 }
+
+func TestPluginReferenceForString(t *testing.T) {
+	t.Parallel()
+	expectedPluginReference, err := NewPluginReference("foo.com", "barr", "baz", "v1")
+	require.NoError(t, err)
+	require.Equal(t, "foo.com/barr/baz:v1", expectedPluginReference.String())
+	pluginReference, err := PluginReferenceForString("foo.com/barr/baz:v1")
+	require.NoError(t, err)
+	require.Equal(t, expectedPluginReference, pluginReference)
+}
+
+func TestPluginReferenceForStringError(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		Name  string
+		Input string
+	}{
+		{
+			Name:  "Plugin without a remote",
+			Input: "/barr/baz:v1",
+		},
+		{
+			Name:  "Plugin without an owner",
+			Input: "foo.com//baz:v1",
+		},
+		{
+			Name:  "Plugin without a plugin name",
+			Input: "foo.com/barr/:v1",
+		},
+		{
+			Name:  "Plugin without a reference",
+			Input: "foo.com/barr/baz:",
+		},
+	}
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.Name, func(t *testing.T) {
+			t.Parallel()
+			_, err := PluginReferenceForString(testCase.Input)
+			require.Error(t, err)
+		})
+	}
+}

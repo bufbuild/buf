@@ -132,8 +132,9 @@ func newConfigV1(externalConfig ExternalConfigV1, id string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		if plugin.Remote != "" {
-			// Always use StrategyAll for remote plugins
+			// Always use StrategyAll for remote plugins.
 			strategy = StrategyAll
 		}
 		opt, err := encoding.InterfaceSliceOrStringToCommaSepString(plugin.Opt)

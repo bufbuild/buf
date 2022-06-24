@@ -1,0 +1,3 @@
+version: v1
+plugins:
+  - buf.build/library/go:v1.5.0

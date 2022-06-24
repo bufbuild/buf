@@ -418,6 +418,34 @@ func TestReadConfigV1(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, successConfig, config)
 
+	successConfig = &Config{
+		PluginConfigs: []*PluginConfig{
+			{
+				Name:     "buf.build/library/go:v1.5.0",
+				Out:      "buf.build/library/go",
+				Strategy: StrategyAll,
+			},
+		},
+	}
+	readBucket, err = storagemem.NewReadBucket(nil)
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "shorthand_gen_success1.yaml")))
+	require.NoError(t, err)
+	require.Equal(t, successConfig, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "shorthand_gen_success1.yaml"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(string(data)))
+	require.NoError(t, err)
+	require.Equal(t, successConfig, config)
+	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(filepath.Join("testdata", "v1", "shorthand_gen_success1.json")))
+	require.NoError(t, err)
+	require.Equal(t, successConfig, config)
+	data, err = os.ReadFile(filepath.Join("testdata", "v1", "shorthand_gen_success1.json"))
+	require.NoError(t, err)
+	config, err = ReadConfig(ctx, provider, readBucket, ReadConfigWithOverride(string(data)))
+	require.NoError(t, err)
+	require.Equal(t, successConfig, config)
+
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error1.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error2.yaml"))
 	testReadConfigError(t, provider, readBucket, filepath.Join("testdata", "v1", "go_gen_error3.yaml"))

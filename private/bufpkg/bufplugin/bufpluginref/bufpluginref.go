@@ -55,6 +55,65 @@ func PluginIdentityForString(path string) (PluginIdentity, error) {
 	return NewPluginIdentity(remote, owner, plugin)
 }
 
+// PluginReference is a plugin reference.
+//
+// It references a specific version, but it's modeled as a generic reference
+// so that we can more easily support other reference types later.
+type PluginReference interface {
+	PluginIdentity
+
+	// Prints remote/owner/plugin:<reference>
+	fmt.Stringer
+
+	// The plugin version (e.g. v1.0.0).
+	Reference() string
+
+	isPluginReference()
+}
+
+// NewPluginReference returns a new validated PluginReference.
+func NewPluginReference(
+	remote string,
+	owner string,
+	plugin string,
+	reference string,
+) (PluginReference, error) {
+	return newPluginReference(remote, owner, plugin, reference)
+}
+
+// PluginReferenceForString returns a new PluginReference for the given string.
+//
+// This parses the path in the form remote/owner/plugin:reference
+func PluginReferenceForString(path string) (PluginReference, error) {
+	remote, owner, plugin, reference, err := parsePluginReferenceComponents(path)
+	if err != nil {
+		return nil, err
+	}
+	return NewPluginReference(remote, owner, plugin, reference)
+}
+
+// parsePluginReferenceComponents parses and returns the remote, owner, plugin,
+// and reference from the given path.
+func parsePluginReferenceComponents(path string) (remote string, owner string, plugin string, ref string, err error) {
+	remote, owner, rest, err := parsePluginIdentityComponents(path)
+	if err != nil {
+		return "", "", "", "", newInvalidPluginReferenceStringError(path)
+	}
+	restSplit := strings.Split(rest, ":")
+	plugin = strings.TrimSpace(restSplit[0])
+	if len(restSplit) == 1 {
+		return remote, owner, plugin, "", nil
+	}
+	if len(restSplit) == 2 {
+		ref := strings.TrimSpace(restSplit[1])
+		if ref == "" {
+			return "", "", "", "", newInvalidPluginReferenceStringError(path)
+		}
+		return remote, owner, plugin, ref, nil
+	}
+	return "", "", "", "", newInvalidPluginReferenceStringError(path)
+}
+
 func parsePluginIdentityComponents(path string) (remote string, owner string, plugin string, err error) {
 	slashSplit := strings.Split(path, "/")
 	if len(slashSplit) != 3 {
@@ -77,4 +136,8 @@ func parsePluginIdentityComponents(path string) (remote string, owner string, pl
 
 func newInvalidPluginIdentityStringError(s string) error {
 	return fmt.Errorf("plugin identity %q is invalid: must be in the form remote/owner/plugin", s)
+}
+
+func newInvalidPluginReferenceStringError(s string) error {
+	return fmt.Errorf("plugin reference %q is invalid: must be in the form remote/owner/plugin:reference", s)
 }

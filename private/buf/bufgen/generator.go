@@ -21,6 +21,7 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufimage/bufimagemodify"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
@@ -165,13 +166,15 @@ func (g *generator) execPlugins(
 	for i, pluginConfig := range config.PluginConfigs {
 		index := i
 		currentPluginConfig := pluginConfig
-		if pluginConfig.Remote != "" {
+		pluginReference := pluginReferenceForString(pluginConfig)
+		if pluginConfig.Remote != "" || pluginReference != nil {
 			jobs = append(jobs, func(ctx context.Context) error {
 				response, err := g.execRemotePlugin(
 					ctx,
 					container,
 					image,
 					currentPluginConfig,
+					pluginReference,
 					includeImports,
 					includeWellKnownTypes,
 				)
@@ -181,6 +184,7 @@ func (g *generator) execPlugins(
 				responses[index] = response
 				return nil
 			})
+			continue
 		}
 		if pluginConfig.Name != "" {
 			jobs = append(jobs, func(ctx context.Context) error {
@@ -268,12 +272,27 @@ func (g *generator) execRemotePlugin(
 	container app.EnvStdioContainer,
 	image bufimage.Image,
 	pluginConfig *PluginConfig,
+	pluginReference bufpluginref.PluginReference,
 	includeImports bool,
 	includeWellKnownTypes bool,
 ) (*pluginpb.CodeGeneratorResponse, error) {
-	remote, owner, name, version, err := bufremoteplugin.ParsePluginVersionPath(pluginConfig.Remote)
-	if err != nil {
-		return nil, fmt.Errorf("invalid plugin path: %w", err)
+	var (
+		remote  string
+		owner   string
+		name    string
+		version string
+	)
+	if pluginReference != nil {
+		remote = pluginReference.Remote()
+		owner = pluginReference.Owner()
+		name = pluginReference.Plugin()
+		version = pluginReference.Reference()
+	} else {
+		var err error
+		remote, owner, name, version, err = bufremoteplugin.ParsePluginVersionPath(pluginConfig.Remote)
+		if err != nil {
+			return nil, fmt.Errorf("invalid plugin path: %w", err)
+		}
 	}
 	generateService, err := g.registryProvider.NewGenerateService(ctx, remote)
 	if err != nil {
@@ -477,6 +496,17 @@ func validateResponses(
 		return err
 	}
 	return nil
+}
+
+// pluginReferenceForString returns the plugin reference
+// associated with the given *PluginConfig, if any. If a valid
+// plugin reference is not specified, nil is returned.
+func pluginReferenceForString(pluginConfig *PluginConfig) bufpluginref.PluginReference {
+	pluginReference, err := bufpluginref.PluginReferenceForString(pluginConfig.Name)
+	if err != nil {
+		return nil
+	}
+	return pluginReference
 }
 
 type generateOptions struct {

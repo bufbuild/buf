@@ -25,13 +25,16 @@ import (
 
 	"github.com/bufbuild/buf/private/bufpkg/bufimage"
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/pkg/app"
 	"github.com/bufbuild/buf/private/pkg/command"
+	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -166,16 +169,23 @@ type Config struct {
 
 // PluginConfig is a plugin configuration.
 type PluginConfig struct {
-	// One of Name and Remote is required
-	Name   string
+	// One of Name and Remote is required.
+	//
+	// Name is either a bufpluginref.PluginReference
+	// or the name of a binary on the local filesystem.
+	Name string
+	// Deprecated. Remote plugins should be specified
+	// with a Name that represents a bufpluginref.PluginReference.
 	Remote string
 	// Required
 	Out string
 	// Optional
 	Opt string
-	// Optional, exclusive with Remote
+	// Optional, exclusive with Remote or if Name represents
+	// a bufpluginref.PluginReference.
 	Path string
-	// Required
+	// Required, overridden to StrategyAll if Remote is set
+	// or if Name represents a bufpluginref.PluginReference.
 	Strategy Strategy
 }
 
@@ -274,6 +284,86 @@ type ExternalPluginConfigV1 struct {
 	Opt      interface{} `json:"opt,omitempty" yaml:"opt,omitempty"`
 	Path     string      `json:"path,omitempty" yaml:"path,omitempty"`
 	Strategy string      `json:"strategy,omitempty" yaml:"strategy,omitempty"`
+}
+
+// UnmarshalYAML customizes how an individual plugin can be configured so that
+// users can simply provide a list like so:
+//
+//  version: v1
+//  plugins:
+//    - buf.build/library/go:v1.5.0
+//
+// This configuration file is equivalent to the following:
+//
+//  version: v1
+//  plugins:
+//    - name: buf.build/library/go:v1.5.0
+//      out: buf.build/library/go
+//      strategy: all
+//
+func (e *ExternalPluginConfigV1) UnmarshalYAML(value *yaml.Node) error {
+	var plugin string
+	if err := value.Decode(&plugin); err == nil {
+		// The shorthand representation was used, so we implicitly assign
+		// the rest of the values.
+		pluginReference, err := bufpluginref.PluginReferenceForString(plugin)
+		if err != nil {
+			return err
+		}
+		e.Name = pluginReference.String()
+		e.Out = pluginReference.IdentityString()
+		e.Strategy = StrategyAll.String()
+		return nil
+	}
+	type rawExteternalPluginConfigV1 ExternalPluginConfigV1
+	if err := value.Decode((*rawExteternalPluginConfigV1)(e)); err != nil {
+		return err
+	}
+	return nil
+}
+
+// UnmarshalJSON customizes how an individual plugin can be configured so that
+// users can simply provide a list like so:
+//
+//  {
+//    "version": "v1",
+//    "plugins": [
+//      "buf.build/library/go:v1.5.0"
+//    ]
+//  }
+//
+// This configuration file is equivalent to the following:
+//
+//  {
+//    "version": "v1",
+//    "plugins": [
+//      {
+//        "name": "buf.build/library/go:v1.5.0",
+//        "out": "buf.build/library/go",
+//        "strategy": "all",
+//      }
+//    ]
+//  }
+//
+func (e *ExternalPluginConfigV1) UnmarshalJSON(data []byte) error {
+	var plugin string
+	if err := encoding.UnmarshalJSONStrict(data, &plugin); err == nil {
+		// The shorthand representation was used, so we implicitly assign
+		// the rest of the values.
+		pluginReference, err := bufpluginref.PluginReferenceForString(plugin)
+		if err != nil {
+			return err
+		}
+		e.Name = pluginReference.String()
+		e.Out = pluginReference.IdentityString()
+		e.Strategy = StrategyAll.String()
+		return nil
+	}
+	type rawExteternalPluginConfigV1 ExternalPluginConfigV1
+	if err := encoding.UnmarshalJSONStrict(data, (*rawExteternalPluginConfigV1)(e)); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ExternalManagedConfigV1 is an external managed mode configuration.
