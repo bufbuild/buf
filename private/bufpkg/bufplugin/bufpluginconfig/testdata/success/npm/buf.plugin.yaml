@@ -1,5 +1,6 @@
 version: v1
 name: buf.build/protocolbuffers/js
+plugin_version: v1.0.0
 opts:
   - paths=source_relative
 runtime:
