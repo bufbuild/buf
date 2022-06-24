@@ -75,21 +75,12 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	if err != nil {
 		return err
 	}
-	globalAPIClientGoImportPath, err := helper.NewGlobalGoImportPath("apiclient")
-	if err != nil {
-		return err
-	}
 	providerGoIdent := apiclientGoImportPath.Ident("Provider")
 	providerGoIdentString := g.QualifiedGoIdent(providerGoIdent)
-	tokenConfigGoIdent := globalAPIClientGoImportPath.Ident("TokenConfig")
-	tokenConfigGoIdentString := g.QualifiedGoIdent(tokenConfigGoIdent)
 
 	httpClientGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("HTTPClient"))
 	interceptorGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("Interceptor"))
 	unaryInterceptorFuncGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("UnaryInterceptorFunc"))
-	unaryFuncGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("UnaryFunc"))
-	anyRequestGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("AnyRequest"))
-	anyResponseGoIdentString := g.QualifiedGoIdent(connectGoPackage.Ident("AnyResponse"))
 
 	// NewProvider constructor function
 	g.P(`// NewProvider returns a new Provider.`)
@@ -113,8 +104,8 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`logger *`, loggerGoIdentString)
 	g.P(`httpClient `, httpClientGoIdentString)
 	g.P(`addressMapper func(string) string`)
-	g.P(`tokenConfig `, tokenConfigGoIdentString)
 	g.P(`interceptors []`, interceptorGoIdentString)
+	g.P(`authInterceptorProvider func(string)`, unaryInterceptorFuncGoIdentString)
 	g.P(`}`)
 	g.P()
 
@@ -137,36 +128,12 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 	g.P(`}`)
 	g.P(`}`)
 	g.P()
-
-	g.P(`// WithTokenConfig adds a token config to the provider, which will configure the setting of auth tokens for outbound`)
-	g.P(`// requests`)
-	g.P(`func WithTokenConfig(config `, tokenConfigGoIdentString, `) ProviderOption {`)
+	g.P(`// WithAuthInterceptorProvider configures a provider that, when invoked, returns an interceptor that can be added`)
+	g.P(`// to a client for setting the auth token`)
+	g.P(`func WithAuthInterceptorProvider(authInterceptorProvider func(string) `, unaryInterceptorFuncGoIdentString, `) ProviderOption {`)
 	g.P(`return func(provider *provider) {`)
-	g.P(`provider.tokenConfig = config`)
+	g.P(`provider.authInterceptorProvider = authInterceptorProvider`)
 	g.P(`}`)
-	g.P(`}`)
-	g.P()
-
-	g.P(`func (p *provider) newTokenWriterInterceptor(address string) (`, unaryInterceptorFuncGoIdentString, `, error) {`)
-	g.P(`var err error`)
-	g.P(`token := p.tokenConfig.Token`)
-	g.P(`if token == "" && p.tokenConfig.Reader != nil {`)
-	g.P(`token, err = p.tokenConfig.Reader(address)`)
-	g.P(`if err != nil {`)
-	g.P(`return nil, err`)
-	g.P(`}`)
-	g.P(`}`)
-	g.P(`return func(next `, unaryFuncGoIdentString, `) `, unaryFuncGoIdentString, ` {`)
-	g.P(`return `, unaryFuncGoIdentString, `(func(`)
-	g.P(`ctx context.Context,`)
-	g.P(`req `, anyRequestGoIdentString, `,`)
-	g.P(`) (`, anyResponseGoIdentString, `, error) {`)
-	g.P(`if token != "" {`)
-	g.P(`req.Header().Set(p.tokenConfig.AuthHeaderKey, p.tokenConfig.AuthPrefix+token)`)
-	g.P(`}`)
-	g.P(`return next(ctx, req)`)
-	g.P(`})`)
-	g.P(`}, nil`)
 	g.P(`}`)
 	g.P()
 
@@ -202,10 +169,11 @@ func generatePackageFile(helper protogenutil.NamedHelper, plugin *protogen.Plugi
 		g.P(`func (p *provider) New`, interfaceName, `(ctx `, contextGoIdentString, `, address string) (`, interfaceGoIdentString, `, error) {`)
 
 		g.P(`interceptors := p.interceptors`)
-		g.P(`tokenInterceptor, err := p.newTokenWriterInterceptor(address)`)
-		g.P(`if err == nil {`)
-		g.P(`interceptors = append(interceptors, tokenInterceptor)`)
+		g.P(`if p.authInterceptorProvider != nil {`)
+		g.P(`interceptor := p.authInterceptorProvider(address)`)
+		g.P(`interceptors = append(interceptors, interceptor)`)
 		g.P(`}`)
+
 		g.P(`if p.addressMapper != nil {`)
 		g.P(`address = p.addressMapper(address)`)
 		g.P(`}`)

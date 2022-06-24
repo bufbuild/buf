@@ -18,7 +18,6 @@ package bufapiclient
 import (
 	"net/http"
 
-	"github.com/bufbuild/buf/private/gen/proto/apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclientconnect/buf/alpha/registry/v1alpha1/registryv1alpha1apiclientconnect"
 	"github.com/bufbuild/connect-go"
@@ -38,7 +37,7 @@ func NewConnectClientProvider(
 	providerOptions := []registryv1alpha1apiclientconnect.ProviderOption{
 		registryv1alpha1apiclientconnect.WithAddressMapper(registryProviderOptions.addressMapper),
 		registryv1alpha1apiclientconnect.WithInterceptors(registryProviderOptions.interceptors),
-		registryv1alpha1apiclientconnect.WithTokenConfig(registryProviderOptions.tokenConfig),
+		registryv1alpha1apiclientconnect.WithAuthInterceptorProvider(registryProviderOptions.authInterceptorProvider),
 	}
 	return registryv1alpha1apiclientconnect.NewProvider(
 		logger,
@@ -51,9 +50,9 @@ func NewConnectClientProvider(
 type RegistryProviderOption func(*registryProviderOptions)
 
 type registryProviderOptions struct {
-	addressMapper func(string) string
-	interceptors  []connect.Interceptor
-	tokenConfig   apiclient.TokenConfig
+	addressMapper           func(string) string
+	interceptors            []connect.Interceptor
+	authInterceptorProvider func(string) connect.UnaryInterceptorFunc
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps
@@ -70,8 +69,8 @@ func RegistryProviderWithInterceptors(interceptors ...connect.Interceptor) Regis
 	}
 }
 
-func RegistryProviderWithTokenConfig(config apiclient.TokenConfig) RegistryProviderOption {
+func RegistryProviderWithAuthInterceptorProvider(authInterceptorProvider func(string) connect.UnaryInterceptorFunc) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
-		options.tokenConfig = config
+		options.authInterceptorProvider = authInterceptorProvider
 	}
 }

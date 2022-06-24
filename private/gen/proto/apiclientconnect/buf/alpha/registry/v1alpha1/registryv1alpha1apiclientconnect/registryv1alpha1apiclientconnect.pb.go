@@ -19,7 +19,6 @@ package registryv1alpha1apiclientconnect
 import (
 	context "context"
 	registryv1alpha1api "github.com/bufbuild/buf/private/gen/proto/api/buf/alpha/registry/v1alpha1/registryv1alpha1api"
-	apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient"
 	registryv1alpha1apiclient "github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	connect_go "github.com/bufbuild/connect-go"
@@ -43,11 +42,11 @@ func NewProvider(
 }
 
 type provider struct {
-	logger        *zap.Logger
-	httpClient    connect_go.HTTPClient
-	addressMapper func(string) string
-	tokenConfig   apiclient.TokenConfig
-	interceptors  []connect_go.Interceptor
+	logger                  *zap.Logger
+	httpClient              connect_go.HTTPClient
+	addressMapper           func(string) string
+	interceptors            []connect_go.Interceptor
+	authInterceptorProvider func(string) connect_go.UnaryInterceptorFunc
 }
 
 // ProviderOption is an option for a new Provider.
@@ -67,42 +66,20 @@ func WithInterceptors(interceptors []connect_go.Interceptor) ProviderOption {
 	}
 }
 
-// WithTokenConfig adds a token config to the provider, which will configure the setting of auth tokens for outbound
-// requests
-func WithTokenConfig(config apiclient.TokenConfig) ProviderOption {
+// WithAuthInterceptorProvider configures a provider that, when invoked, returns an interceptor that can be added
+// to a client for setting the auth token
+func WithAuthInterceptorProvider(authInterceptorProvider func(string) connect_go.UnaryInterceptorFunc) ProviderOption {
 	return func(provider *provider) {
-		provider.tokenConfig = config
+		provider.authInterceptorProvider = authInterceptorProvider
 	}
-}
-
-func (p *provider) newTokenWriterInterceptor(address string) (connect_go.UnaryInterceptorFunc, error) {
-	var err error
-	token := p.tokenConfig.Token
-	if token == "" && p.tokenConfig.Reader != nil {
-		token, err = p.tokenConfig.Reader(address)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return func(next connect_go.UnaryFunc) connect_go.UnaryFunc {
-		return connect_go.UnaryFunc(func(
-			ctx context.Context,
-			req connect_go.AnyRequest,
-		) (connect_go.AnyResponse, error) {
-			if token != "" {
-				req.Header().Set(p.tokenConfig.AuthHeaderKey, p.tokenConfig.AuthPrefix+token)
-			}
-			return next(ctx, req)
-		})
-	}, nil
 }
 
 // NewAdminService creates a new AdminService
 func (p *provider) NewAdminService(ctx context.Context, address string) (registryv1alpha1api.AdminService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -120,9 +97,9 @@ func (p *provider) NewAdminService(ctx context.Context, address string) (registr
 // NewAuthnService creates a new AuthnService
 func (p *provider) NewAuthnService(ctx context.Context, address string) (registryv1alpha1api.AuthnService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -140,9 +117,9 @@ func (p *provider) NewAuthnService(ctx context.Context, address string) (registr
 // NewAuthzService creates a new AuthzService
 func (p *provider) NewAuthzService(ctx context.Context, address string) (registryv1alpha1api.AuthzService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -160,9 +137,9 @@ func (p *provider) NewAuthzService(ctx context.Context, address string) (registr
 // NewConvertService creates a new ConvertService
 func (p *provider) NewConvertService(ctx context.Context, address string) (registryv1alpha1api.ConvertService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -180,9 +157,9 @@ func (p *provider) NewConvertService(ctx context.Context, address string) (regis
 // NewDisplayService creates a new DisplayService
 func (p *provider) NewDisplayService(ctx context.Context, address string) (registryv1alpha1api.DisplayService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -200,9 +177,9 @@ func (p *provider) NewDisplayService(ctx context.Context, address string) (regis
 // NewDocService creates a new DocService
 func (p *provider) NewDocService(ctx context.Context, address string) (registryv1alpha1api.DocService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -220,9 +197,9 @@ func (p *provider) NewDocService(ctx context.Context, address string) (registryv
 // NewDownloadService creates a new DownloadService
 func (p *provider) NewDownloadService(ctx context.Context, address string) (registryv1alpha1api.DownloadService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -240,9 +217,9 @@ func (p *provider) NewDownloadService(ctx context.Context, address string) (regi
 // NewGenerateService creates a new GenerateService
 func (p *provider) NewGenerateService(ctx context.Context, address string) (registryv1alpha1api.GenerateService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -260,9 +237,9 @@ func (p *provider) NewGenerateService(ctx context.Context, address string) (regi
 // NewGithubService creates a new GithubService
 func (p *provider) NewGithubService(ctx context.Context, address string) (registryv1alpha1api.GithubService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -280,9 +257,9 @@ func (p *provider) NewGithubService(ctx context.Context, address string) (regist
 // NewImageService creates a new ImageService
 func (p *provider) NewImageService(ctx context.Context, address string) (registryv1alpha1api.ImageService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -300,9 +277,9 @@ func (p *provider) NewImageService(ctx context.Context, address string) (registr
 // NewJSONSchemaService creates a new JSONSchemaService
 func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (registryv1alpha1api.JSONSchemaService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -320,9 +297,9 @@ func (p *provider) NewJSONSchemaService(ctx context.Context, address string) (re
 // NewLocalResolveService creates a new LocalResolveService
 func (p *provider) NewLocalResolveService(ctx context.Context, address string) (registryv1alpha1api.LocalResolveService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -340,9 +317,9 @@ func (p *provider) NewLocalResolveService(ctx context.Context, address string) (
 // NewOrganizationService creates a new OrganizationService
 func (p *provider) NewOrganizationService(ctx context.Context, address string) (registryv1alpha1api.OrganizationService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -360,9 +337,9 @@ func (p *provider) NewOrganizationService(ctx context.Context, address string) (
 // NewOwnerService creates a new OwnerService
 func (p *provider) NewOwnerService(ctx context.Context, address string) (registryv1alpha1api.OwnerService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -380,9 +357,9 @@ func (p *provider) NewOwnerService(ctx context.Context, address string) (registr
 // NewPluginCurationService creates a new PluginCurationService
 func (p *provider) NewPluginCurationService(ctx context.Context, address string) (registryv1alpha1api.PluginCurationService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -400,9 +377,9 @@ func (p *provider) NewPluginCurationService(ctx context.Context, address string)
 // NewPluginService creates a new PluginService
 func (p *provider) NewPluginService(ctx context.Context, address string) (registryv1alpha1api.PluginService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -420,9 +397,9 @@ func (p *provider) NewPluginService(ctx context.Context, address string) (regist
 // NewPushService creates a new PushService
 func (p *provider) NewPushService(ctx context.Context, address string) (registryv1alpha1api.PushService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -440,9 +417,9 @@ func (p *provider) NewPushService(ctx context.Context, address string) (registry
 // NewRecommendationService creates a new RecommendationService
 func (p *provider) NewRecommendationService(ctx context.Context, address string) (registryv1alpha1api.RecommendationService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -460,9 +437,9 @@ func (p *provider) NewRecommendationService(ctx context.Context, address string)
 // NewReferenceService creates a new ReferenceService
 func (p *provider) NewReferenceService(ctx context.Context, address string) (registryv1alpha1api.ReferenceService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -480,9 +457,9 @@ func (p *provider) NewReferenceService(ctx context.Context, address string) (reg
 // NewRepositoryBranchService creates a new RepositoryBranchService
 func (p *provider) NewRepositoryBranchService(ctx context.Context, address string) (registryv1alpha1api.RepositoryBranchService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -500,9 +477,9 @@ func (p *provider) NewRepositoryBranchService(ctx context.Context, address strin
 // NewRepositoryCommitService creates a new RepositoryCommitService
 func (p *provider) NewRepositoryCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryCommitService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -520,9 +497,9 @@ func (p *provider) NewRepositoryCommitService(ctx context.Context, address strin
 // NewRepositoryService creates a new RepositoryService
 func (p *provider) NewRepositoryService(ctx context.Context, address string) (registryv1alpha1api.RepositoryService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -540,9 +517,9 @@ func (p *provider) NewRepositoryService(ctx context.Context, address string) (re
 // NewRepositoryTagService creates a new RepositoryTagService
 func (p *provider) NewRepositoryTagService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTagService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -560,9 +537,9 @@ func (p *provider) NewRepositoryTagService(ctx context.Context, address string) 
 // NewRepositoryTrackCommitService creates a new RepositoryTrackCommitService
 func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackCommitService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -580,9 +557,9 @@ func (p *provider) NewRepositoryTrackCommitService(ctx context.Context, address 
 // NewRepositoryTrackService creates a new RepositoryTrackService
 func (p *provider) NewRepositoryTrackService(ctx context.Context, address string) (registryv1alpha1api.RepositoryTrackService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -600,9 +577,9 @@ func (p *provider) NewRepositoryTrackService(ctx context.Context, address string
 // NewResolveService creates a new ResolveService
 func (p *provider) NewResolveService(ctx context.Context, address string) (registryv1alpha1api.ResolveService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -620,9 +597,9 @@ func (p *provider) NewResolveService(ctx context.Context, address string) (regis
 // NewSearchService creates a new SearchService
 func (p *provider) NewSearchService(ctx context.Context, address string) (registryv1alpha1api.SearchService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -640,9 +617,9 @@ func (p *provider) NewSearchService(ctx context.Context, address string) (regist
 // NewStudioService creates a new StudioService
 func (p *provider) NewStudioService(ctx context.Context, address string) (registryv1alpha1api.StudioService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -660,9 +637,9 @@ func (p *provider) NewStudioService(ctx context.Context, address string) (regist
 // NewTokenService creates a new TokenService
 func (p *provider) NewTokenService(ctx context.Context, address string) (registryv1alpha1api.TokenService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -680,9 +657,9 @@ func (p *provider) NewTokenService(ctx context.Context, address string) (registr
 // NewUserService creates a new UserService
 func (p *provider) NewUserService(ctx context.Context, address string) (registryv1alpha1api.UserService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)
@@ -700,9 +677,9 @@ func (p *provider) NewUserService(ctx context.Context, address string) (registry
 // NewWebhookService creates a new WebhookService
 func (p *provider) NewWebhookService(ctx context.Context, address string) (registryv1alpha1api.WebhookService, error) {
 	interceptors := p.interceptors
-	tokenInterceptor, err := p.newTokenWriterInterceptor(address)
-	if err == nil {
-		interceptors = append(interceptors, tokenInterceptor)
+	if p.authInterceptorProvider != nil {
+		interceptor := p.authInterceptorProvider(address)
+		interceptors = append(interceptors, interceptor)
 	}
 	if p.addressMapper != nil {
 		address = p.addressMapper(address)

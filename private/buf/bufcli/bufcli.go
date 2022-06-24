@@ -41,7 +41,6 @@ import (
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
 	"github.com/bufbuild/buf/private/bufpkg/bufreflect"
 	"github.com/bufbuild/buf/private/bufpkg/buftransport"
-	"github.com/bufbuild/buf/private/gen/proto/apiclient"
 	"github.com/bufbuild/buf/private/gen/proto/apiclient/buf/alpha/registry/v1alpha1/registryv1alpha1apiclient"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app"
@@ -57,6 +56,7 @@ import (
 	"github.com/bufbuild/buf/private/pkg/storage/storageos"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/bufbuild/buf/private/pkg/transport/http2client"
+	"github.com/bufbuild/connect-go"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 	"golang.org/x/term"
@@ -562,45 +562,26 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 	return bufapp.NewConfig(container, externalConfig)
 }
 
-func getTokenReader(container appflag.Container) func(string) (string, error) {
-	return func(address string) (string, error) {
-		token := container.Env(tokenEnvKey)
-		if token == "" {
-			machine, err := netrc.GetMachineForName(container, address)
-			if err != nil {
-				return "", fmt.Errorf("failed to read server password from netrc: %w", err)
-			}
-			if machine != nil {
-				token = machine.Password()
-			}
-		}
-		return token, nil
-	}
-}
-
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider which uses a token reader to look
 // up the token in the container or in netrc based on the address of each individual client from the provider.
 // It is then set in the header of all outgoing requests from this provider
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
-	config := apiclient.NewTokenConfigWithReader(
-		bufconnect.AuthenticationHeader,
-		bufconnect.AuthenticationTokenPrefix,
-		getTokenReader(container),
+	return newRegistryProviderWithOptions(
+		container,
+		bufapiclient.RegistryProviderWithAuthInterceptorProvider(newAuthorizationInterceptorProvider(container)),
 	)
-	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithTokenConfig(config))
 }
 
 // NewRegistryProvider creates a new registryv1alpha1apiclient.Provider with a given token.  The provided token is
 // set in the header of all outgoing requests from this provider
 func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
-	config := apiclient.NewTokenConfig(
-		bufconnect.AuthenticationHeader,
-		bufconnect.AuthenticationTokenPrefix,
-		token,
+	return newRegistryProviderWithOptions(
+		container,
+		bufapiclient.RegistryProviderWithAuthInterceptorProvider(newAuthorizationInterceptorProviderWithToken(token)),
 	)
-	return newRegistryProviderWithOptions(container, bufapiclient.RegistryProviderWithTokenConfig(config))
 }
 
+// Returns a registry provider with the given options applied in addition to default ones for all providers
 func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapiclient.RegistryProviderOption) (registryv1alpha1apiclient.Provider, error) {
 	config, err := NewConfig(container)
 	if err != nil {
@@ -624,6 +605,53 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 	options = append(options, opts...)
 
 	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
+}
+
+// Returns a new provider function which, when invoked, returns an interceptor which will look up an auth token by
+// address and set it into the request header.  This is used for registry providers where the token is looked up by
+// the client address at the time of client construction (i.e. for clients where a user is already authenticated and
+// the token is stored in .netrc)
+func newAuthorizationInterceptorProvider(container appflag.Container) func(string) connect.UnaryInterceptorFunc {
+	return func(address string) connect.UnaryInterceptorFunc {
+		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+			return connect.UnaryFunc(func(
+				ctx context.Context,
+				req connect.AnyRequest,
+			) (connect.AnyResponse, error) {
+				token := container.Env(tokenEnvKey)
+				if token == "" {
+					machine, err := netrc.GetMachineForName(container, address)
+					if err != nil {
+						return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
+					}
+					if machine != nil {
+						token = machine.Password()
+					}
+				}
+				req.Header().Set(bufconnect.AuthenticationHeader, bufconnect.AuthenticationTokenPrefix+token)
+				return next(ctx, req)
+			})
+		}
+		return interceptor
+	}
+}
+
+// Returns a new provider function which, when invoked, returns an interceptor which sets the provided auth token into
+// the request header.  This is used for registry providers where the token is known at provider creation (i.e. when
+// logging in and explicitly pasting a token into stdin
+func newAuthorizationInterceptorProviderWithToken(token string) func(string) connect.UnaryInterceptorFunc {
+	return func(address string) connect.UnaryInterceptorFunc {
+		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+			return connect.UnaryFunc(func(
+				ctx context.Context,
+				req connect.AnyRequest,
+			) (connect.AnyResponse, error) {
+				req.Header().Set(bufconnect.AuthenticationHeader, bufconnect.AuthenticationTokenPrefix+token)
+				return next(ctx, req)
+			})
+		}
+		return interceptor
+	}
 }
 
 // PromptUserForDelete is used to receieve user confirmation that a specific
