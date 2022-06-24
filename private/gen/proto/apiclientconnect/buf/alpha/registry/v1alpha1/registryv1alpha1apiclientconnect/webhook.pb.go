@@ -30,14 +30,14 @@ type webhookServiceClient struct {
 	contextModifier func(context.Context) context.Context
 }
 
-// Create a webhook.
+// Create a webhook, subscribes to a given repository event for a callback URL invocation.
 func (s *webhookServiceClient) CreateWebhook(
 	ctx context.Context,
 	webhookEvent v1alpha1.WebhookEvent,
 	ownerName string,
 	repositoryName string,
 	callbackUrl string,
-) (webhookSubscriptionId string, _ error) {
+) (webhook *v1alpha1.Webhook, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -52,13 +52,13 @@ func (s *webhookServiceClient) CreateWebhook(
 			}),
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return response.Msg.WebhookSubscriptionId, nil
+	return response.Msg.Webhook, nil
 }
 
-// Delete a webhook.
-func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookSubscriptionId string) (_ error) {
+// Delete a webhook removes the event subscription.
+func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookId string) (_ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -66,7 +66,7 @@ func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookSubscri
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.DeleteWebhookRequest{
-				WebhookSubscriptionId: webhookSubscriptionId,
+				WebhookId: webhookId,
 			}),
 	)
 	if err != nil {
@@ -75,13 +75,13 @@ func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookSubscri
 	return nil
 }
 
-// Lists the webhooks for a given repository.
+// Lists the webhooks subscriptions for a given repository.
 func (s *webhookServiceClient) ListWebhooks(
 	ctx context.Context,
 	repositoryName string,
 	ownerName string,
 	pageToken string,
-) (subscribedWebhooks []*v1alpha1.SubscribedWebhook, nextPageToken string, _ error) {
+) (webhooks []*v1alpha1.Webhook, nextPageToken string, _ error) {
 	if s.contextModifier != nil {
 		ctx = s.contextModifier(ctx)
 	}
@@ -97,5 +97,5 @@ func (s *webhookServiceClient) ListWebhooks(
 	if err != nil {
 		return nil, "", err
 	}
-	return response.Msg.SubscribedWebhooks, response.Msg.NextPageToken, nil
+	return response.Msg.Webhooks, response.Msg.NextPageToken, nil
 }
