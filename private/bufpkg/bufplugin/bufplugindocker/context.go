@@ -20,17 +20,24 @@ import (
 	"io"
 	"io/fs"
 	"time"
+
+	"go.uber.org/multierr"
 )
 
 // createDockerContext builds a light-weight Docker context (tar file) from a given Dockerfile.
 // This is used to create images that don't rely on any other filesystem state to copy into the context.
-func createDockerContext(dockerfile io.Reader) (io.Reader, error) {
+func createDockerContext(dockerfile io.Reader) (reader io.Reader, retErr error) {
 	dockerfileBytes, err := io.ReadAll(dockerfile)
 	if err != nil {
 		return nil, err
 	}
 	var buffer bytes.Buffer
 	writer := tar.NewWriter(&buffer)
+	defer func() {
+		if err := writer.Close(); err != nil {
+			retErr = multierr.Append(retErr, err)
+		}
+	}()
 	dockerfileInfo := &fileInfo{
 		name: "Dockerfile",
 		size: int64(len(dockerfileBytes)),
@@ -38,18 +45,12 @@ func createDockerContext(dockerfile io.Reader) (io.Reader, error) {
 	}
 	header, err := tar.FileInfoHeader(dockerfileInfo, "")
 	if err != nil {
-		_ = writer.Close()
 		return nil, err
 	}
 	if err := writer.WriteHeader(header); err != nil {
-		_ = writer.Close()
 		return nil, err
 	}
 	if _, err := writer.Write(dockerfileBytes); err != nil {
-		_ = writer.Close()
-		return nil, err
-	}
-	if err := writer.Close(); err != nil {
 		return nil, err
 	}
 	return &buffer, nil
