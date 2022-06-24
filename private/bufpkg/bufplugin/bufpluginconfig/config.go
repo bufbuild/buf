@@ -29,6 +29,13 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	pluginVersion := externalConfig.PluginVersion
+	if pluginVersion == "" {
+		return nil, errors.New("a plugin_version is required")
+	}
+	if !semver.IsValid(pluginVersion) {
+		return nil, fmt.Errorf("plugin_version %q must be a valid semantic version", externalConfig.PluginVersion)
+	}
 	var options map[string]string
 	if len(externalConfig.Opts) > 0 {
 		// We only want to create a non-nil map if the user
@@ -67,9 +74,10 @@ func newConfig(externalConfig ExternalConfig) (*Config, error) {
 		return nil, err
 	}
 	return &Config{
-		Name:    pluginIdentity,
-		Options: options,
-		Runtime: runtimeConfig,
+		Name:          pluginIdentity,
+		PluginVersion: pluginVersion,
+		Options:       options,
+		Runtime:       runtimeConfig,
 	}, nil
 }
 
