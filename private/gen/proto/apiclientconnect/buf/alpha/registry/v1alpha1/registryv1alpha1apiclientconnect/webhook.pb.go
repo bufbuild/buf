@@ -18,7 +18,6 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
-
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
@@ -37,7 +36,7 @@ func (s *webhookServiceClient) CreateWebhook(
 	ownerName string,
 	repositoryName string,
 	callbackUrl string,
-) (webhookSubscriptionId string, _ error) {
+) (webhook *v1alpha1.Webhook, _ error) {
 	response, err := s.client.CreateWebhook(
 		ctx,
 		connect_go.NewRequest(
@@ -54,8 +53,8 @@ func (s *webhookServiceClient) CreateWebhook(
 	return response.Msg.Webhook, nil
 }
 
-// Delete a webhook.
-func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookSubscriptionId string) (_ error) {
+// Delete a webhook removes the event subscription.
+func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookId string) (_ error) {
 	_, err := s.client.DeleteWebhook(
 		ctx,
 		connect_go.NewRequest(
@@ -76,9 +75,6 @@ func (s *webhookServiceClient) ListWebhooks(
 	ownerName string,
 	pageToken string,
 ) (webhooks []*v1alpha1.Webhook, nextPageToken string, _ error) {
-	if s.contextModifier != nil {
-		ctx = s.contextModifier(ctx)
-	}
 	response, err := s.client.ListWebhooks(
 		ctx,
 		connect_go.NewRequest(
