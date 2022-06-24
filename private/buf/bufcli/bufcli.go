@@ -628,7 +628,9 @@ func newAuthorizationInterceptorProvider(container appflag.Container) func(strin
 						token = machine.Password()
 					}
 				}
-				req.Header().Set(bufconnect.AuthenticationHeader, bufconnect.AuthenticationTokenPrefix+token)
+				if token != "" {
+					req.Header().Set(bufconnect.AuthenticationHeader, bufconnect.AuthenticationTokenPrefix+token)
+				}
 				return next(ctx, req)
 			})
 		}
@@ -646,7 +648,9 @@ func newAuthorizationInterceptorProviderWithToken(token string) func(string) con
 				ctx context.Context,
 				req connect.AnyRequest,
 			) (connect.AnyResponse, error) {
-				req.Header().Set(bufconnect.AuthenticationHeader, bufconnect.AuthenticationTokenPrefix+token)
+				if token != "" {
+					req.Header().Set(bufconnect.AuthenticationHeader, bufconnect.AuthenticationTokenPrefix+token)
+				}
 				return next(ctx, req)
 			})
 		}
