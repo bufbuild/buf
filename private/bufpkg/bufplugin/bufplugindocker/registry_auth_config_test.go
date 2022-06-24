@@ -22,8 +22,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRegistryAuth_MarshalJSON(t *testing.T) {
-	auth := RegistryAuth{
+func TestRegistryAuthMarshalJSON(t *testing.T) {
+	auth := RegistryAuthConfig{
 		Username:      "someuser",
 		Password:      "somepass",
 		Email:         "someemail@buf.build",
@@ -31,14 +31,14 @@ func TestRegistryAuth_MarshalJSON(t *testing.T) {
 	}
 	encoded, err := json.Marshal(auth)
 	require.NoError(t, err)
-	var decoded RegistryAuth
+	var decoded RegistryAuthConfig
 	err = json.Unmarshal(encoded, &decoded)
 	require.NoError(t, err)
 	assert.Equal(t, auth, decoded)
 }
 
-func TestRegistryAuth_ToFromHeader(t *testing.T) {
-	auth := RegistryAuth{
+func TestRegistryAuthToFromHeader(t *testing.T) {
+	auth := RegistryAuthConfig{
 		Username:      "someuser",
 		Password:      "somepass",
 		Email:         "someemail@buf.build",
@@ -46,7 +46,7 @@ func TestRegistryAuth_ToFromHeader(t *testing.T) {
 	}
 	encoded, err := auth.ToHeader()
 	require.NoError(t, err)
-	var decoded RegistryAuth
+	var decoded RegistryAuthConfig
 	err = decoded.fromHeader(encoded)
 	require.NoError(t, err)
 	assert.Equal(t, auth, decoded)

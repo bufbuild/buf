@@ -17,6 +17,7 @@ package bufplugindocker
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -30,25 +31,31 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// Client is a small abstraction over a Docker API client, providing the basic APIs we need to build plugins.
+// It ensures that we pass the appropriate parameters to build images (i.e. platform 'linux/amd64').
 type Client interface {
 	// Build creates a Docker image for the plugin using the Dockerfile.plugin and plugin config.
 	Build(ctx context.Context, dockerfile io.Reader, config *bufpluginconfig.Config, options ...BuildOption) (*BuildResponse, error)
 	// Push the Docker image to the remote registry.
-	Push(ctx context.Context, image string, auth RegistryAuth) (*PushResponse, error)
+	Push(ctx context.Context, image string, auth *RegistryAuthConfig) (*PushResponse, error)
 	// Delete removes the Docker image from local Docker Engine.
 	Delete(ctx context.Context, image string) (*DeleteResponse, error)
 	// Close releases any resources used by the underlying Docker client.
 	Close() error
 }
 
-type BuildOption func(*buildParams)
+// BuildOption defines options for the image build call.
+type BuildOption func(*buildOptions)
 
+// WithConfigDirPath is a BuildOption which enables node ID persistence to the specified configuration directory.
+// If not set, a new node ID will be generated with each build call.
 func WithConfigDirPath(path string) BuildOption {
-	return func(params *buildParams) {
-		params.ConfigDirPath = path
+	return func(options *buildOptions) {
+		options.configDirPath = path
 	}
 }
 
+// BuildResponse returns details of a successful image build call.
 type BuildResponse struct {
 	// Image contains the Docker image name in the local Docker engine including the tag (i.e. plugins.buf.build/library/some-plugin:<id>, where <id> is a random id).
 	// It is created from the bufpluginconfig.Config's Name.IdentityString() and a unique id.
@@ -58,8 +65,10 @@ type BuildResponse struct {
 	Digest string
 }
 
+// PushResponse is a placeholder for data to be returned from a successful image push call.
 type PushResponse struct{}
 
+// DeleteResponse is a placeholder for data to be returned from a successful image delete call.
 type DeleteResponse struct{}
 
 type dockerAPIClient struct {
@@ -70,12 +79,12 @@ type dockerAPIClient struct {
 var _ Client = (*dockerAPIClient)(nil)
 
 func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, pluginConfig *bufpluginconfig.Config, options ...BuildOption) (*BuildResponse, error) {
-	params := &buildParams{}
+	params := &buildOptions{}
 	for _, option := range options {
 		option(params)
 	}
 	// TODO: Need to determine how contextDir parameter is used in Docker engine.
-	buildkitSession, err := createSession(ctx, fmt.Sprintf("%s/%s", pluginConfig.Name.Owner(), pluginConfig.Name.Plugin()), params.ConfigDirPath, zap.L())
+	buildkitSession, err := createSession(ctx, zap.L(), fmt.Sprintf("%s/%s", pluginConfig.Name.Owner(), pluginConfig.Name.Plugin()), params.configDirPath)
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +94,14 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 		return nil, err
 	}
 
+	// Use errgroup here over pkg.Thread - we aren't using concurrency here for performance reasons.
+	// We want both the buildkit session initialization to run alongside with the image build operation.
 	eg, errGroupCtx := errgroup.WithContext(ctx)
 	eg.Go(func() error {
+		// This links a buildkit session with an active Docker client.
+		// Behind the scenes, the session upgrades the connection to HTTP/2 and provides a gRPC server with services for advanced buildkit features (credentials, SSH, etc.).
+		// We don't currently require this to build any of our plugins.
+		// See https://pkg.go.dev/github.com/moby/buildkit/session#Session.Allow for more details.
 		return buildkitSession.Run(errGroupCtx, func(ctx context.Context, proto string, meta map[string][]string) (net.Conn, error) {
 			return d.cli.DialHijack(ctx, "/session", proto, meta)
 		})
@@ -136,7 +151,7 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 	}, nil
 }
 
-func (d *dockerAPIClient) Push(ctx context.Context, image string, auth RegistryAuth) (response *PushResponse, retErr error) {
+func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *RegistryAuthConfig) (response *PushResponse, retErr error) {
 	registryAuth, err := auth.ToHeader()
 	if err != nil {
 		return nil, err
@@ -172,32 +187,19 @@ func (d *dockerAPIClient) Close() error {
 	return d.cli.Close()
 }
 
-type ClientOption func(client *dockerAPIClient)
-
-func NewClient(options ...ClientOption) (Client, error) {
+// NewClient creates a new Client to use to build Docker plugins.
+func NewClient(logger *zap.Logger) (Client, error) {
+	if logger == nil {
+		return nil, errors.New("logger required")
+	}
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		return nil, err
 	}
-	dockerClient := &dockerAPIClient{cli: cli}
-	for _, option := range options {
-		option(dockerClient)
-	}
-	if dockerClient.logger == nil {
-		dockerClient.logger = zap.L()
-	}
+	dockerClient := &dockerAPIClient{cli: cli, logger: logger}
 	return dockerClient, nil
 }
 
-func WithLogger(logger *zap.Logger) ClientOption {
-	return func(client *dockerAPIClient) {
-		client.logger = logger
-	}
-}
-
-type buildParams struct {
-	// ConfigDirPath specifies the location where the .buildkit_node_id should be persisted.
-	// This is used to establish a session when building images using buildkit.
-	// If empty, the node id will be generated randomly and not persisted to disk.
-	ConfigDirPath string
+type buildOptions struct {
+	configDirPath string
 }

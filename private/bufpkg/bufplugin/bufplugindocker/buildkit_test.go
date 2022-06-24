@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func Test_NodeIDPersistence(t *testing.T) {
+func TestNodeIDPersistence(t *testing.T) {
 	t.Parallel()
 	configDir := path.Join("testdata", t.Name())
 	t.Cleanup(func() {
@@ -32,7 +32,7 @@ func Test_NodeIDPersistence(t *testing.T) {
 			t.Errorf("failed to remove persisted node id: %v", err)
 		}
 	})
-	sharedKey := getBuildSharedKey(".", configDir, zap.L())
+	sharedKey := getBuildSharedKey(zap.L(), ".", configDir)
 	assert.NotEmpty(t, sharedKey)
 	st, err := os.Stat(path.Join(configDir, pathBuildkitNodeID))
 	assert.Nil(t, err)
@@ -41,15 +41,15 @@ func Test_NodeIDPersistence(t *testing.T) {
 		assert.Equal(t, os.FileMode(0600), st.Mode().Perm())
 	}
 	assert.True(t, st.Size() > 0)
-	sharedKeyAgain := getBuildSharedKey(".", configDir, zap.L())
+	sharedKeyAgain := getBuildSharedKey(zap.L(), ".", configDir)
 	assert.Equal(t, sharedKey, sharedKeyAgain)
 }
 
-func Test_NodeIDSkipPersistence(t *testing.T) {
+func TestNodeIDSkipPersistence(t *testing.T) {
 	t.Parallel()
-	sharedKey := getBuildSharedKey(".", "", zap.L())
+	sharedKey := getBuildSharedKey(zap.L(), ".", "")
 	assert.NotEmpty(t, sharedKey)
-	sharedKeyAgain := getBuildSharedKey(".", "", zap.L())
+	sharedKeyAgain := getBuildSharedKey(zap.L(), ".", "")
 	assert.NotEmpty(t, sharedKeyAgain)
 	assert.NotEqual(t, sharedKey, sharedKeyAgain)
 }

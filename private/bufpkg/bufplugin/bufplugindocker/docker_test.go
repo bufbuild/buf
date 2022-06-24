@@ -35,7 +35,7 @@ var dockerEnabled = false
 
 const examplePluginIdentity = "plugins.buf.build/library/go"
 
-func Test_BuildSuccess(t *testing.T) {
+func TestBuildSuccess(t *testing.T) {
 	t.Parallel()
 	if !dockerEnabled {
 		t.Skip("docker disabled")
@@ -56,7 +56,7 @@ func Test_BuildSuccess(t *testing.T) {
 	assert.NotEmptyf(t, response.Digest, "expected non-empty image digest")
 }
 
-func Test_BuildFailure(t *testing.T) {
+func TestBuildFailure(t *testing.T) {
 	t.Parallel()
 	if !dockerEnabled {
 		t.Skip("docker disabled")
@@ -90,7 +90,7 @@ func createClient(t testing.TB) bufplugindocker.Client {
 	t.Helper()
 	logger, err := zap.NewDevelopment()
 	require.Nilf(t, err, "failed to create zap logger")
-	dockerClient, err := bufplugindocker.NewClient(bufplugindocker.WithLogger(logger))
+	dockerClient, err := bufplugindocker.NewClient(logger)
 	require.Nilf(t, err, "failed to create client")
 	t.Cleanup(func() {
 		if err := dockerClient.Close(); err != nil {

@@ -123,7 +123,7 @@ func run(
 		retErr = multierr.Append(retErr, dockerfile.Close())
 	}()
 
-	client, err := bufplugindocker.NewClient(bufplugindocker.WithLogger(container.Logger()))
+	client, err := bufplugindocker.NewClient(container.Logger())
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func run(
 	}()
 
 	// TODO: Implement authentication to BSR registry using ~/.netrc
-	_, err = client.Push(ctx, buildResponse.Image, bufplugindocker.RegistryAuth{})
+	_, err = client.Push(ctx, buildResponse.Image, &bufplugindocker.RegistryAuthConfig{})
 	if err != nil {
 		return err
 	}

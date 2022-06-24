@@ -20,7 +20,9 @@ import (
 	"strings"
 )
 
-type RegistryAuth struct {
+// RegistryAuthConfig represents the fields required to authenticate with the Docker Engine API.
+// Ref: https://docs.docker.com/engine/api/v1.41/#section/Authentication
+type RegistryAuthConfig struct {
 	Username      string `json:"username,omitempty"`
 	Password      string `json:"password,omitempty"`
 	Email         string `json:"email,omitempty"`
@@ -29,7 +31,7 @@ type RegistryAuth struct {
 
 // ToHeader marshals the auth information as a base64 encoded JSON object.
 // This is suitable for passing to the Docker API as the X-Registry-Auth header.
-func (r *RegistryAuth) ToHeader() (string, error) {
+func (r *RegistryAuthConfig) ToHeader() (string, error) {
 	var buffer strings.Builder
 	writer := base64.NewEncoder(base64.URLEncoding, &buffer)
 	err := json.NewEncoder(writer).Encode(r)
@@ -43,7 +45,7 @@ func (r *RegistryAuth) ToHeader() (string, error) {
 }
 
 // fromHeader decodes auth information from a base64 encoded JSON object (see ToHeader).
-func (r *RegistryAuth) fromHeader(encoded string) error {
+func (r *RegistryAuthConfig) fromHeader(encoded string) error {
 	base64Reader := base64.NewDecoder(base64.URLEncoding, strings.NewReader(encoded))
 	if err := json.NewDecoder(base64Reader).Decode(r); err != nil {
 		return err

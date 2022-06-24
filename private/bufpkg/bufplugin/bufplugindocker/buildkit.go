@@ -34,8 +34,8 @@ const (
 	nodeIDLength = 32
 )
 
-func createSession(ctx context.Context, contextDir, configDirPath string, logger *zap.Logger) (*session.Session, error) {
-	sharedKey := getBuildSharedKey(contextDir, configDirPath, logger)
+func createSession(ctx context.Context, logger *zap.Logger, contextDir, configDirPath string) (*session.Session, error) {
+	sharedKey := getBuildSharedKey(logger, contextDir, configDirPath)
 	s, err := session.NewSession(ctx, filepath.Base(contextDir), sharedKey)
 	if err != nil {
 		return nil, err
@@ -43,17 +43,17 @@ func createSession(ctx context.Context, contextDir, configDirPath string, logger
 	return s, nil
 }
 
-func getBuildSharedKey(dir, configDirPath string, logger *zap.Logger) string {
+func getBuildSharedKey(logger *zap.Logger, dir, configDirPath string) string {
 	// build session is hash of build dir with node based randomness
-	s := sha256.Sum256([]byte(fmt.Sprintf("%s:%s", getBuildNodeID(configDirPath, logger), dir)))
+	s := sha256.Sum256([]byte(fmt.Sprintf("%s:%s", getOrCreateBuildNodeID(logger, configDirPath), dir)))
 	return hex.EncodeToString(s[:])
 }
 
-func getBuildNodeID(configDirPath string, logger *zap.Logger) string {
+func getOrCreateBuildNodeID(logger *zap.Logger, configDirPath string) string {
 	var nodeIDPath string
 	if len(configDirPath) > 0 {
 		nodeIDPath = filepath.Join(configDirPath, pathBuildkitNodeID)
-		if nodeID := loadNodeID(nodeIDPath, logger); len(nodeID) > 0 {
+		if nodeID := loadNodeID(logger, nodeIDPath); len(nodeID) > 0 {
 			return nodeID
 		}
 	}
@@ -72,8 +72,8 @@ func getBuildNodeID(configDirPath string, logger *zap.Logger) string {
 	return nodeID
 }
 
-func loadNodeID(nodeIDPath string, logger *zap.Logger) string {
-	nodeID := ""
+func loadNodeID(logger *zap.Logger, nodeIDPath string) string {
+	var nodeID string
 	if nodeIDBytes, err := os.ReadFile(nodeIDPath); err == nil {
 		nodeID = strings.TrimSpace(string(nodeIDBytes))
 		decoded, err := hex.DecodeString(nodeID)
