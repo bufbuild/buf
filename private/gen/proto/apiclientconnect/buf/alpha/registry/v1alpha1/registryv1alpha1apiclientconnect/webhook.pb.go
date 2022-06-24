@@ -18,6 +18,7 @@ package registryv1alpha1apiclientconnect
 
 import (
 	context "context"
+
 	registryv1alpha1connect "github.com/bufbuild/buf/private/gen/proto/connect/buf/alpha/registry/v1alpha1/registryv1alpha1connect"
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	connect_go "github.com/bufbuild/connect-go"
@@ -29,7 +30,7 @@ type webhookServiceClient struct {
 	client registryv1alpha1connect.WebhookServiceClient
 }
 
-// Create a webhook.
+// Create a webhook, subscribes to a given repository event for a callback URL invocation.
 func (s *webhookServiceClient) CreateWebhook(
 	ctx context.Context,
 	webhookEvent v1alpha1.WebhookEvent,
@@ -48,9 +49,9 @@ func (s *webhookServiceClient) CreateWebhook(
 			}),
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return response.Msg.WebhookSubscriptionId, nil
+	return response.Msg.Webhook, nil
 }
 
 // Delete a webhook.
@@ -59,7 +60,7 @@ func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookSubscri
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.DeleteWebhookRequest{
-				WebhookSubscriptionId: webhookSubscriptionId,
+				WebhookId: webhookId,
 			}),
 	)
 	if err != nil {
@@ -68,13 +69,16 @@ func (s *webhookServiceClient) DeleteWebhook(ctx context.Context, webhookSubscri
 	return nil
 }
 
-// Lists the webhooks for a given repository.
+// Lists the webhooks subscriptions for a given repository.
 func (s *webhookServiceClient) ListWebhooks(
 	ctx context.Context,
 	repositoryName string,
 	ownerName string,
 	pageToken string,
-) (subscribedWebhooks []*v1alpha1.SubscribedWebhook, nextPageToken string, _ error) {
+) (webhooks []*v1alpha1.Webhook, nextPageToken string, _ error) {
+	if s.contextModifier != nil {
+		ctx = s.contextModifier(ctx)
+	}
 	response, err := s.client.ListWebhooks(
 		ctx,
 		connect_go.NewRequest(
@@ -87,5 +91,5 @@ func (s *webhookServiceClient) ListWebhooks(
 	if err != nil {
 		return nil, "", err
 	}
-	return response.Msg.SubscribedWebhooks, response.Msg.NextPageToken, nil
+	return response.Msg.Webhooks, response.Msg.NextPageToken, nil
 }
