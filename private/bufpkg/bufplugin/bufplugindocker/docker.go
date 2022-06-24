@@ -109,8 +109,12 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 
 	buildID := stringid.GenerateRandomID()
 	imageName := pluginConfig.Name.IdentityString() + ":" + buildID
-	eg.Go(func() error {
-		defer buildkitSession.Close()
+	eg.Go(func() (retErr error) {
+		defer func() {
+			if err := buildkitSession.Close(); err != nil {
+				retErr = multierr.Append(retErr, err)
+			}
+		}()
 
 		response, err := d.cli.ImageBuild(ctx, dockerContext, types.ImageBuildOptions{
 			Tags:     []string{imageName},
@@ -126,7 +130,11 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 		if err != nil {
 			return err
 		}
-		defer response.Body.Close()
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				retErr = multierr.Append(retErr, err)
+			}
+		}()
 		scanner := bufio.NewScanner(response.Body)
 		for scanner.Scan() {
 			d.logger.Debug(scanner.Text())
