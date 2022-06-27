@@ -16,19 +16,21 @@ package pluginpush
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 
 	"github.com/bufbuild/buf/private/buf/bufcli"
 	"github.com/bufbuild/buf/private/bufpkg/bufanalysis"
 	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginconfig"
-	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginsource"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufplugindocker"
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
-	"github.com/bufbuild/buf/private/pkg/storage"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -109,38 +111,45 @@ func run(
 	}
 	// TODO: Once we support multiple plugin source types, this could be abstracted away
 	// in the bufpluginsource package. This is much simpler for now though.
-	pluginSourceFilePath, err := storage.Exists(ctx, sourceBucket, bufpluginsource.DockerSourceFilePath)
+	dockerfile, err := sourceBucket.Get(ctx, bufplugindocker.SourceFilePath)
 	if err != nil {
-		return bufcli.NewInternalError(err)
+		if errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("please define a %s plugin source file in the target directory", bufplugindocker.SourceFilePath)
+		}
+		return err
 	}
-	if !pluginSourceFilePath {
-		return fmt.Errorf("please define a %s plugin source file in the target directory", bufpluginsource.DockerSourceFilePath)
+	defer func() {
+		retErr = multierr.Append(retErr, dockerfile.Close())
+	}()
+
+	client, err := bufplugindocker.NewClient(container.Logger())
+	if err != nil {
+		return err
 	}
-	// TODO: Build and push the image to the OCI registry with the Docker library.
-	// Once complete, use the digest in RPC below.
-	//
-	// We effectively need to codify the following:
-	//
-	//  $ docker build -f Dockerfile.twirp -t plugins.buf.build/demolab/twirp:v8.1.0-1 .
-	//  $ docker push plugins.buf.build/demolab/twirp:v8.1.0-1
-	//
-	// This will look something along the lines of:
-	//
-	//  readObjectCloser, err := sourceBucket.Get(pluginSourceFilePath)
-	//  if err != nil {
-	//    return nil, err
-	//  }
-	//  defer func() {
-	//    retErr = multierr.Append(retErr, readObjectCloser.Close())
-	//  }()
-	//  dockerfileContent, err := io.ReadAll(readObjectCloser)
-	//  if err != nil {
-	//    return nil, err
-	//  }
-	//  // Build and push to the OCI registry using the Docker library ...
-	//
-	// ---
-	//
+	defer func() {
+		retErr = multierr.Append(retErr, client.Close())
+	}()
+
+	buildResponse, err := client.Build(ctx, dockerfile, pluginConfig, bufplugindocker.WithConfigDirPath(container.ConfigDirPath()))
+	if err != nil {
+		return err
+	}
+
+	// We build a Docker image using a unique ID label each time.
+	// After we're done publishing the image, we delete it to not leave a lot of images left behind.
+	// buildkit maintains a separate build cache so removing the image doesn't appear to impact future rebuilds.
+	defer func() {
+		if _, err := client.Delete(ctx, buildResponse.Image); err != nil {
+			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", buildResponse.Image))
+		}
+	}()
+
+	// TODO: Implement authentication to BSR registry using ~/.netrc
+	_, err = client.Push(ctx, buildResponse.Image, &bufplugindocker.RegistryAuthConfig{})
+	if err != nil {
+		return err
+	}
+
 	// TODO: Now that the imageDigest is resolved, create a bufplugin.Plugin,
 	// then map it into a *registryv1alpha1.RemotePlugin
 	// (or *registryv1alpha1.CreateRemotePluginRequest) so that it can be pushed

@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package bufpluginsource will eventually act similar to the buffetch package,
-// where it abstracts away multiple types of plugin sources. For now, we only
-// support docker sources, so we only use this to capture the default plugin
-// source filename.
-package bufpluginsource
+// Package bufplugindocker contains utilities for building Buf plugins using the Docker API.
+package bufplugindocker
 
-// DockerSourceFilePath is the default source file path
+// SourceFilePath is the default source file path
 // for the DockerSource.
-const DockerSourceFilePath = "Dockerfile.plugin"
+const SourceFilePath = "Dockerfile.plugin"
