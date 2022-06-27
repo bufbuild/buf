@@ -49,10 +49,13 @@ func NewConnectClientProvider(
 // RegistryProviderOption is an option for a new registry Provider.
 type RegistryProviderOption func(*registryProviderOptions)
 
+// interceptorProviderFunc is a type that represents a function that returns an interceptor using a given address
+type interceptorProviderFunc func(string) connect.UnaryInterceptorFunc
+
 type registryProviderOptions struct {
 	addressMapper           func(string) string
 	interceptors            []connect.Interceptor
-	authInterceptorProvider func(string) connect.UnaryInterceptorFunc
+	authInterceptorProvider interceptorProviderFunc
 }
 
 // RegistryProviderWithAddressMapper returns a new RegistryProviderOption that maps
@@ -63,13 +66,16 @@ func RegistryProviderWithAddressMapper(addressMapper func(string) string) Regist
 	}
 }
 
+// RegistryProviderWithInterceptors adds the provided interceptors to all clients returned from the provider
 func RegistryProviderWithInterceptors(interceptors ...connect.Interceptor) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
 		options.interceptors = interceptors
 	}
 }
 
-func RegistryProviderWithAuthInterceptorProvider(authInterceptorProvider func(string) connect.UnaryInterceptorFunc) RegistryProviderOption {
+// RegistryProviderWithAuthInterceptorProvider adds the given interceptor provider, which when invoked with an address
+// will return an interceptor that looks up an auth token for the provided address
+func RegistryProviderWithAuthInterceptorProvider(authInterceptorProvider interceptorProviderFunc) RegistryProviderOption {
 	return func(options *registryProviderOptions) {
 		options.authInterceptorProvider = authInterceptorProvider
 	}

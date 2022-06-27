@@ -19,11 +19,8 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/bufbuild/buf/private/pkg/rpc"
-	"github.com/bufbuild/buf/private/pkg/rpc/rpcheader"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
@@ -80,7 +77,7 @@ func (s *runner) Run(
 			return http.MaxBytesHandler(next, s.maxBodySize)
 		})
 	}
-	mux.Use(NewServerInterceptor())
+	mux.Use(newServerInterceptor())
 	mux.Use(s.middlewares...)
 	for _, mapper := range mappers {
 		if err := mapper.Map(mux); err != nil {
@@ -160,7 +157,7 @@ func newServerInterceptor() func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			if len(request.Header) > 0 {
 				request = request.WithContext(
-					rpc.WithIncomingHeaders(
+					withIncomingHeaders(
 						request.Context(),
 						fromHTTPHeader(
 							request.Header,
@@ -171,19 +168,4 @@ func newServerInterceptor() func(http.Handler) http.Handler {
 			next.ServeHTTP(writer, request)
 		})
 	}
-}
-
-func fromHTTPHeader(httpHeader http.Header) map[string]string {
-	headers := make(map[string]string)
-	for key, values := range httpHeader {
-		key = strings.ToLower(key)
-		// prefix so that we strip out other headers
-		// rpc clients and servers should only be aware of headers set with the rpc package
-		if strings.HasPrefix(key, rpcheader.KeyPrefix) {
-			if key := strings.TrimPrefix(key, rpcheader.KeyPrefix); key != "" {
-				headers[key] = values[0]
-			}
-		}
-	}
-	return headers
 }

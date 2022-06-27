@@ -568,7 +568,7 @@ func NewConfig(container appflag.Container) (*bufapp.Config, error) {
 func NewRegistryProvider(ctx context.Context, container appflag.Container) (registryv1alpha1apiclient.Provider, error) {
 	return newRegistryProviderWithOptions(
 		container,
-		bufapiclient.RegistryProviderWithAuthInterceptorProvider(newAuthorizationInterceptorProvider(container)),
+		bufapiclient.RegistryProviderWithAuthInterceptorProvider(NewAuthorizationInterceptorProvider(container)),
 	)
 }
 
@@ -577,7 +577,7 @@ func NewRegistryProvider(ctx context.Context, container appflag.Container) (regi
 func NewRegistryProviderWithToken(container appflag.Container, token string) (registryv1alpha1apiclient.Provider, error) {
 	return newRegistryProviderWithOptions(
 		container,
-		bufapiclient.RegistryProviderWithAuthInterceptorProvider(newAuthorizationInterceptorProviderWithToken(token)),
+		bufapiclient.RegistryProviderWithAuthInterceptorProvider(NewAuthorizationInterceptorProviderWithToken(token)),
 	)
 }
 
@@ -607,11 +607,14 @@ func newRegistryProviderWithOptions(container appflag.Container, opts ...bufapic
 	return bufapiclient.NewConnectClientProvider(container.Logger(), client, options...)
 }
 
-// Returns a new provider function which, when invoked, returns an interceptor which will look up an auth token by
-// address and set it into the request header.  This is used for registry providers where the token is looked up by
-// the client address at the time of client construction (i.e. for clients where a user is already authenticated and
-// the token is stored in .netrc)
-func newAuthorizationInterceptorProvider(container appflag.Container) func(string) connect.UnaryInterceptorFunc {
+// NewAuthorizationInterceptorProvider returns a new provider function which, when invoked, returns an interceptor
+// which will look up an auth token by address and set it into the request header.  This is used for registry providers
+// where the token is looked up by the client address at the time of client construction (i.e. for clients where a
+// user is already authenticated and the token is stored in .netrc)
+//
+// Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
+// a client.
+func NewAuthorizationInterceptorProvider(container appflag.Container) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
@@ -638,10 +641,13 @@ func newAuthorizationInterceptorProvider(container appflag.Container) func(strin
 	}
 }
 
-// Returns a new provider function which, when invoked, returns an interceptor which sets the provided auth token into
-// the request header.  This is used for registry providers where the token is known at provider creation (i.e. when
-// logging in and explicitly pasting a token into stdin
-func newAuthorizationInterceptorProviderWithToken(token string) func(string) connect.UnaryInterceptorFunc {
+// NewAuthorizationInterceptorProviderWithToken returns a new provider function which, when invoked, returns an
+// interceptor which sets the provided auth token into the request header.  This is used for registry providers where
+// the token is known at provider creation (i.e. when logging in and explicitly pasting a token into stdin
+//
+// Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
+// a client.
+func NewAuthorizationInterceptorProviderWithToken(token string) func(string) connect.UnaryInterceptorFunc {
 	return func(address string) connect.UnaryInterceptorFunc {
 		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
 			return connect.UnaryFunc(func(
