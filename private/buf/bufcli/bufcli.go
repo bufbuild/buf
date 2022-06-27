@@ -64,7 +64,7 @@ import (
 
 const (
 	// Version is the CLI version of buf.
-	Version = "1.6.0-dev"
+	Version = "1.7.0-dev"
 
 	inputHTTPSUsernameEnvKey      = "BUF_INPUT_HTTPS_USERNAME"
 	inputHTTPSPasswordEnvKey      = "BUF_INPUT_HTTPS_PASSWORD"
@@ -290,6 +290,17 @@ The first argument must be one of format %s.
 If no argument is specified, defaults to ".".`,
 		inputArgDescription,
 		buffetch.SourceFormatsString,
+	)
+}
+
+// GetSourceDirLong gets the long command description for a directory-based command.
+func GetSourceDirLong(inputArgDescription string) string {
+	return fmt.Sprintf(
+		`The first argument is %s.
+The first argument must be one of format %s.
+If no argument is specified, defaults to ".".`,
+		inputArgDescription,
+		buffetch.SourceDirFormatsString,
 	)
 }
 

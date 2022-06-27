@@ -69,6 +69,12 @@ var (
 		formatTar,
 		formatZip,
 	}
+	sourceDirFormatsNotDeprecated = []string{
+		formatDir,
+		formatGit,
+		formatTar,
+		formatZip,
+	}
 	// sorted
 	moduleFormats = []string{
 		formatMod,

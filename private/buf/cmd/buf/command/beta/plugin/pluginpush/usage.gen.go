@@ -14,6 +14,6 @@
 
 // Generated. DO NOT EDIT.
 
-package main
+package pluginpush
 
 import _ "github.com/bufbuild/buf/private/usage"

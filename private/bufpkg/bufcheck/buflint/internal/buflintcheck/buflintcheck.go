@@ -245,7 +245,8 @@ func checkEnumZeroValueSuffix(add addFunc, enumValue protosource.EnumValue, suff
 		return nil
 	}
 	name := enumValue.Name()
-	if !strings.HasSuffix(name, suffix) {
+	expectedName := fieldToUpperSnakeCase(enumValue.Enum().Name()) + suffix
+	if name != expectedName {
 		add(
 			enumValue,
 			enumValue.NameLocation(),
@@ -254,9 +255,9 @@ func checkEnumZeroValueSuffix(add addFunc, enumValue protosource.EnumValue, suff
 			[]protosource.Location{
 				enumValue.Enum().Location(),
 			},
-			"Enum zero value name %q should be suffixed with %q.",
+			"Enum zero value name %q should be %q.",
 			name,
-			suffix,
+			expectedName,
 		)
 	}
 	return nil
