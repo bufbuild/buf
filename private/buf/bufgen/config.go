@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/bufbuild/buf/private/bufpkg/bufmodule/bufmoduleref"
+	"github.com/bufbuild/buf/private/bufpkg/bufplugin/bufpluginref"
 	"github.com/bufbuild/buf/private/bufpkg/bufremoteplugin"
 	"github.com/bufbuild/buf/private/pkg/encoding"
 	"github.com/bufbuild/buf/private/pkg/normalpath"
@@ -132,7 +133,7 @@ func newConfigV1(externalConfig ExternalConfigV1, id string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		if plugin.Remote != "" {
+		if _, err := bufpluginref.PluginReferenceForString(plugin.Name); plugin.Remote != "" || err == nil {
 			// Always use StrategyAll for remote plugins
 			strategy = StrategyAll
 		}
