@@ -293,6 +293,8 @@ func TestRunEnumZeroValueSuffixCustom(t *testing.T) {
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 44, 7, 44, 27, "ENUM_ZERO_VALUE_SUFFIX"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 60, 5, 60, 18, "ENUM_ZERO_VALUE_SUFFIX"),
 		bufanalysistesting.NewFileAnnotation(t, "a.proto", 64, 5, 64, 25, "ENUM_ZERO_VALUE_SUFFIX"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 70, 5, 70, 20, "ENUM_ZERO_VALUE_SUFFIX"),
+		bufanalysistesting.NewFileAnnotation(t, "a.proto", 76, 5, 76, 19, "ENUM_ZERO_VALUE_SUFFIX"),
 	)
 }
 

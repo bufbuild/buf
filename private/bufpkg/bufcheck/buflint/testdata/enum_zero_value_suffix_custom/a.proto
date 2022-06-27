@@ -11,7 +11,7 @@ enum SuccessTwo {
 }
 
 enum SuccessThree {
-  SUCCESS_THREE_OTHER = 0;
+  SUCCESS_THREEOTHER = 0;
 }
 
 enum FailTwo {
@@ -33,7 +33,7 @@ message Foo {
     }
 
     enum SuccessThree {
-      SUCCESS_THREE_OTHER = 0;
+      SUCCESS_THREEOTHER = 0;
     }
 
     enum FailTwo {
@@ -53,7 +53,7 @@ message Foo {
   }
 
   enum SuccessThree {
-    SUCCESS_THREE_OTHER = 0;
+    SUCCESS_THREEOTHER = 0;
   }
 
   enum FailTwo {
@@ -62,6 +62,18 @@ message Foo {
 
   enum FailThree {
     FAIL_TWO_UNSPECIFIED = 0;
+  }
+
+  enum FailFour {
+    // The suffix should just be OTHER without a leading
+    // '_' prefix.
+    FAIL_FOUR_OTHER = 0;
+  }
+
+  enum FailFive {
+    // The 'OTHER' suffix is correct, but the enum value's
+    // prefix doesn't match the enum (it should be FAIL_FIVEOTHER).
+    FAIL_FOUROTHER = 0;
   }
 }
 
