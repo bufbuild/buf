@@ -52,8 +52,6 @@ func newRunner(logger *zap.Logger, options ...RunnerOption) *runner {
 	return runner
 }
 
-// This should be the last interceptor installed.
-
 func (s *runner) Run(
 	ctx context.Context,
 	listener net.Listener,
@@ -152,6 +150,7 @@ func httpServe(httpServer *http.Server, listener net.Listener) error {
 	return httpServer.Serve(listener)
 }
 
+// This should be the last interceptor installed.
 func newServerInterceptor() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
