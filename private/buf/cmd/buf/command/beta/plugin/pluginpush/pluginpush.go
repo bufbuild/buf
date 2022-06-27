@@ -31,7 +31,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"go.uber.org/multierr"
-	"go.uber.org/zap"
 )
 
 const (
@@ -141,8 +140,7 @@ func run(
 	// buildkit maintains a separate build cache so removing the image doesn't appear to impact future rebuilds.
 	defer func() {
 		if _, err := client.Delete(ctx, buildResponse.Image); err != nil {
-			// Not fatal - we did our best to clean up after ourselves.
-			container.Logger().Warn("failed to delete image", zap.String("image", buildResponse.Image), zap.Error(err))
+			retErr = multierr.Append(retErr, fmt.Errorf("failed to delete image %q", buildResponse.Image))
 		}
 	}()
 

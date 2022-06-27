@@ -34,7 +34,7 @@ const (
 	nodeIDLength = 32
 )
 
-func createSession(ctx context.Context, logger *zap.Logger, contextDir, configDirPath string) (*session.Session, error) {
+func createSession(ctx context.Context, logger *zap.Logger, contextDir string, configDirPath string) (*session.Session, error) {
 	sharedKey := getBuildSharedKey(logger, contextDir, configDirPath)
 	s, err := session.NewSession(ctx, filepath.Base(contextDir), sharedKey)
 	if err != nil {
@@ -43,9 +43,9 @@ func createSession(ctx context.Context, logger *zap.Logger, contextDir, configDi
 	return s, nil
 }
 
-func getBuildSharedKey(logger *zap.Logger, dir, configDirPath string) string {
-	// build session is hash of build dir with node based randomness
-	s := sha256.Sum256([]byte(fmt.Sprintf("%s:%s", getOrCreateBuildNodeID(logger, configDirPath), dir)))
+func getBuildSharedKey(logger *zap.Logger, contextDir string, configDirPath string) string {
+	// build session is hash of build context dir with node based randomness
+	s := sha256.Sum256([]byte(fmt.Sprintf("%s:%s", getOrCreateBuildNodeID(logger, configDirPath), contextDir)))
 	return hex.EncodeToString(s[:])
 }
 

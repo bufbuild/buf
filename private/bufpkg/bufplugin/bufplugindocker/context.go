@@ -56,6 +56,8 @@ func createDockerContext(dockerfile io.Reader) (reader io.Reader, retErr error) 
 	return &buffer, nil
 }
 
+// fileInfo allows adding header information to tar files from files that don't necessarily come from a directory on disk.
+// In createDockerContext above, we use this to represent a Dockerfile loaded from any of the storage.ReadBucket supported types.
 type fileInfo struct {
 	name    string
 	size    int64

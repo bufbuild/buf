@@ -135,6 +135,9 @@ func (d *dockerAPIClient) Build(ctx context.Context, dockerfile io.Reader, plugi
 				retErr = multierr.Append(retErr, err)
 			}
 		}()
+		// TODO: We're just logging the messages from the image build.
+		// In a future PR, we might want to add support for parsing well known messages (i.e. the image id).
+		// This would allow us to potentially skip the ImageInspectWithRaw client call below.
 		scanner := bufio.NewScanner(response.Body)
 		for scanner.Scan() {
 			d.logger.Debug(scanner.Text())
@@ -173,6 +176,8 @@ func (d *dockerAPIClient) Push(ctx context.Context, image string, auth *Registry
 	defer func() {
 		retErr = multierr.Append(retErr, pushReader.Close())
 	}()
+	// TODO: Only logging the messages from push at the moment.
+	// We may wish to parse these to return additional status to the user (or additional details on error messages/failures).
 	pushScanner := bufio.NewScanner(pushReader)
 	for pushScanner.Scan() {
 		d.logger.Debug(pushScanner.Text())
@@ -204,8 +209,10 @@ func NewClient(logger *zap.Logger) (Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	dockerClient := &dockerAPIClient{cli: cli, logger: logger}
-	return dockerClient, nil
+	return &dockerAPIClient{
+		cli:    cli,
+		logger: logger,
+	}, nil
 }
 
 type buildOptions struct {
