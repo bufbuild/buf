@@ -58,6 +58,7 @@ func (s *pluginCurationServiceClient) ListCuratedPlugins(
 // CreateCuratedPlugin creates a new curated plugin.
 func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 	ctx context.Context,
+	owner string,
 	name string,
 	language v1alpha1.PluginLanguage,
 	version string,
@@ -75,6 +76,7 @@ func (s *pluginCurationServiceClient) CreateCuratedPlugin(
 		ctx,
 		connect_go.NewRequest(
 			&v1alpha1.CreateCuratedPluginRequest{
+				Owner:                owner,
 				Name:                 name,
 				Language:             language,
 				Version:              version,

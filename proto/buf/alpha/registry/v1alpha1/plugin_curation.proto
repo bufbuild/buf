@@ -98,26 +98,28 @@ service PluginCurationService {
 }
 
 message CreateCuratedPluginRequest {
+  // The owner of the plugin, i.e. "library".
+  string owner = 1;
   // The name of the plugin, i.e. "connect-go".
-  string name = 1;
+  string name = 2;
   // The target language of the plugin.
-  PluginLanguage language = 2;
+  PluginLanguage language = 3;
   // Semver-formatted plugin version.
-  string version = 3;
+  string version = 4;
   // The full container image digest associated with this plugin version including
   // the algorithm.
   // Ref: https://github.com/opencontainers/image-spec/blob/main/descriptor.md#digests
-  string container_image_digest = 4;
+  string container_image_digest = 5;
   // List of default plugin options in the form "{option}={defaultOption}"
-  repeated string options = 5;
+  repeated string options = 6;
   // List of plugin dependencies in the form "{owner}/{name}:{version}"
-  repeated string dependencies = 6;
+  repeated string dependencies = 7;
   // The URL leading to the source code of the plugin, if available.
-  string source_url = 7;
+  string source_url = 8;
   // A brief description of the plugin functionality.
-  string description = 8;
+  string description = 9;
   // The configuration for the runtime of the plugin.
-  RuntimeConfig runtime_config = 9;
+  RuntimeConfig runtime_config = 10;
 }
 
 message CreateCuratedPluginResponse {
