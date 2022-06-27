@@ -158,6 +158,7 @@ func run(
 	// to the BSR.
 	//
 	//  plugin, err := bufplugin.NewPlugin(
+	//    pluginConfig.PluginVersion(),
 	//    pluginConfig.Options(),
 	//    pluginConfig.Runtime(),
 	//    imageDigest,
