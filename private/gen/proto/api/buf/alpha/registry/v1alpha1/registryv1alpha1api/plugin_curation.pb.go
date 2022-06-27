@@ -33,6 +33,7 @@ type PluginCurationService interface {
 	// CreateCuratedPlugin creates a new curated plugin.
 	CreateCuratedPlugin(
 		ctx context.Context,
+		owner string,
 		name string,
 		language v1alpha1.PluginLanguage,
 		version string,
