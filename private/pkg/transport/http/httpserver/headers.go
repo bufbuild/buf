@@ -18,8 +18,6 @@ import (
 	"context"
 	"net/http"
 	"strings"
-
-	"github.com/bufbuild/buf/private/bufpkg/bufconnect"
 )
 
 const (
@@ -81,7 +79,7 @@ func fromHTTPHeader(httpHeader http.Header) map[string]string {
 		// Convert to lowercase and then trim the keyPrefix if it exists
 		key = strings.TrimPrefix(strings.ToLower(key), keyPrefix)
 		// If this header is one of the auth token header or CLI version, add it to the returned map
-		if key == bufconnect.AuthenticationHeader || key == bufconnect.CliVersionHeaderName {
+		if key == "Authorization" || key == "buf-version" {
 			headers[key] = values[0]
 		}
 	}
