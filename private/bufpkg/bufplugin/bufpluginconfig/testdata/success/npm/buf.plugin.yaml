@@ -1,0 +1,12 @@
+version: v1
+name: buf.build/protocolbuffers/js
+plugin_version: v1.0.0
+opts:
+  - paths=source_relative
+runtime:
+  npm:
+    deps:
+      - package: "grpc-web"
+        version: "^1.3.1"
+      - package: "@types/google-protobuf"
+        version: "^3.15.6"

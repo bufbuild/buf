@@ -1,0 +1,3 @@
+version: v1
+name: buf.build/protocolbuffers/go
+plugin_version: foo
