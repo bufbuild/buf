@@ -43,9 +43,15 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
-var dockerEnabled = false
+const (
+	examplePluginIdentity = "buf.build/library/go"
+	dockerVersion         = "1.41"
+)
 
-const examplePluginIdentity = "plugins.buf.build/library/go"
+var (
+	dockerEnabled = false
+	imagePattern  = regexp.MustCompile("^(?P<image>[^/]+/[^/]+/[^/:]+)(?::(?P<tag>[^/]+))?(?:/(?P<op>[^/]+))?$")
+)
 
 func TestBuildSuccess(t *testing.T) {
 	t.Parallel()
@@ -83,7 +89,6 @@ func TestBuildFailure(t *testing.T) {
 
 func TestPushSuccess(t *testing.T) {
 	t.Parallel()
-	dockerVersion := "1.41"
 	server := newDockerServer(t, dockerVersion)
 	listenerAddr := server.httpServer.Listener.Addr().String()
 	dockerClient := createClient(
@@ -101,7 +106,6 @@ func TestPushSuccess(t *testing.T) {
 
 func TestPushError(t *testing.T) {
 	t.Parallel()
-	dockerVersion := "1.41"
 	server := newDockerServer(t, dockerVersion)
 	// Send back an error on ImagePush (still return 200 OK).
 	server.pushErr = errors.New("failed to push image")
@@ -121,7 +125,6 @@ func TestPushError(t *testing.T) {
 
 func TestBuildError(t *testing.T) {
 	t.Parallel()
-	dockerVersion := "1.41"
 	server := newDockerServer(t, dockerVersion)
 	// Send back an error on ImageBuild (still return 200 OK).
 	server.buildErr = errors.New("failed to build image")
@@ -249,8 +252,6 @@ func (d *dockerServer) buildHandler(w http.ResponseWriter, r *http.Request) {
 	imageID := stringid.GenerateRandomID()
 	d.builtImages[imageID] = &builtImage{tags: r.URL.Query()["t"]}
 }
-
-var imagePattern = regexp.MustCompile("^(?P<image>[^/]+/[^/]+/[^/:]+)(?::(?P<tag>[^/]+))?(?:/(?P<op>[^/]+))?$")
 
 func (d *dockerServer) imagesHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := io.Copy(io.Discard, r.Body); err != nil {

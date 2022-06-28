@@ -236,6 +236,7 @@ type clientOptions struct {
 	version string
 }
 
+// ClientOption defines options for the NewClient call to customize the underlying Docker client.
 type ClientOption func(options *clientOptions)
 
 // WithHost allows specifying a Docker engine host to connect to (instead of the default lookup using DOCKER_HOST env var).
