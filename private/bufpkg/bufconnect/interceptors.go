@@ -16,8 +16,16 @@ package bufconnect
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/connect-go"
+)
+
+const (
+	// tokenEnvKey is the environment variable key for the auth token
+	tokenEnvKey = "BUF_TOKEN"
 )
 
 // NewSetCLIVersionInterceptor returns a new Connect Interceptor that sets the Buf CLI version into all request headers
@@ -32,4 +40,61 @@ func NewSetCLIVersionInterceptor(version string) connect.UnaryInterceptorFunc {
 		})
 	}
 	return interceptor
+}
+
+// NewAuthorizationInterceptorProvider returns a new provider function which, when invoked, returns an interceptor
+// which will look up an auth token by address and set it into the request header.  This is used for registry providers
+// where the token is looked up by the client address at the time of client construction (i.e. for clients where a
+// user is already authenticated and the token is stored in .netrc)
+//
+// Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
+// a client.
+func NewAuthorizationInterceptorProvider(container appflag.Container) func(string) connect.UnaryInterceptorFunc {
+	return func(address string) connect.UnaryInterceptorFunc {
+		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+			return connect.UnaryFunc(func(
+				ctx context.Context,
+				req connect.AnyRequest,
+			) (connect.AnyResponse, error) {
+				token := container.Env(tokenEnvKey)
+				if token == "" {
+					machine, err := netrc.GetMachineForName(container, address)
+					if err != nil {
+						return nil, fmt.Errorf("failed to read server password from netrc: %w", err)
+					}
+					if machine != nil {
+						token = machine.Password()
+					}
+				}
+				if token != "" {
+					req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
+				}
+				return next(ctx, req)
+			})
+		}
+		return interceptor
+	}
+}
+
+// NewAuthorizationInterceptorProviderWithToken returns a new provider function which, when invoked, returns an
+// interceptor which sets the provided auth token into the request header.  This is used for registry providers where
+// the token is known at provider creation (i.e. when logging in and explicitly pasting a token into stdin
+//
+// Note that the interceptor returned from this provider is always applied LAST in the series of interceptors added to
+// a client.
+func NewAuthorizationInterceptorProviderWithToken(token string) func(string) connect.UnaryInterceptorFunc {
+	return func(address string) connect.UnaryInterceptorFunc {
+		interceptor := func(next connect.UnaryFunc) connect.UnaryFunc {
+			return connect.UnaryFunc(func(
+				ctx context.Context,
+				req connect.AnyRequest,
+			) (connect.AnyResponse, error) {
+				if token != "" {
+					req.Header().Set(AuthenticationHeader, AuthenticationTokenPrefix+token)
+				}
+				return next(ctx, req)
+			})
+		}
+		return interceptor
+	}
 }
