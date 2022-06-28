@@ -189,10 +189,11 @@ func buildDockerPlugin(t testing.TB, dockerClient bufplugindocker.Client, docker
 
 // dockerServer allows testing some failure flows by simulating the responses to Docker CLI commands.
 type dockerServer struct {
-	httpServer *httptest.Server
-	t          testing.TB
-	buildErr   error
-	pushErr    error
+	httpServer    *httptest.Server
+	t             testing.TB
+	versionPrefix string
+	buildErr      error
+	pushErr       error
 	// protects builtImages
 	mu          sync.RWMutex
 	builtImages map[string]*builtImage
@@ -203,8 +204,12 @@ type builtImage struct {
 }
 
 func newDockerServer(t testing.TB, version string) *dockerServer {
-	dockerServer := &dockerServer{t: t, builtImages: make(map[string]*builtImage)}
 	versionPrefix := "/v" + version
+	dockerServer := &dockerServer{
+		t:             t,
+		builtImages:   make(map[string]*builtImage),
+		versionPrefix: versionPrefix,
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/session", dockerServer.sessionHandler)
 	mux.HandleFunc(versionPrefix+"/build", dockerServer.buildHandler)
@@ -223,6 +228,7 @@ func (d *dockerServer) sessionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if strings.EqualFold(r.Header.Get("Connection"), "upgrade") && r.ProtoMajor < 2 {
+		// Needed to allow h2c upgrade to proceed on the /session endpoint.
 		w.WriteHeader(http.StatusSwitchingProtocols)
 		return
 	}
@@ -244,13 +250,13 @@ func (d *dockerServer) buildHandler(w http.ResponseWriter, r *http.Request) {
 	d.builtImages[imageID] = &builtImage{tags: r.URL.Query()["t"]}
 }
 
+var imagePattern = regexp.MustCompile("^(?P<image>[^/]+/[^/]+/[^/:]+)(?::(?P<tag>[^/]+))?(?:/(?P<op>[^/]+))?$")
+
 func (d *dockerServer) imagesHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := io.Copy(io.Discard, r.Body); err != nil {
 		d.t.Error("failed to discard body:", err)
 	}
-	d.t.Logf("%s %s", r.Method, r.URL.Path)
-	pathSuffix := strings.TrimPrefix(r.URL.Path, "/v1.41/images/")
-	imagePattern := regexp.MustCompile("^(?P<image>[^/]+/[^/]+/[^/:]+)(?::(?P<tag>[^/]+))?(?:/(?P<op>[^/]+))?$")
+	pathSuffix := strings.TrimPrefix(r.URL.Path, d.versionPrefix+"/images/")
 	submatches := imagePattern.FindStringSubmatch(pathSuffix)
 	if len(submatches) == 0 {
 		w.WriteHeader(http.StatusBadRequest)

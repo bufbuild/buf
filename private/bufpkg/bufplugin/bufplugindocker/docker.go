@@ -210,11 +210,18 @@ func NewClient(logger *zap.Logger, options ...ClientOption) (Client, error) {
 	if logger == nil {
 		return nil, errors.New("logger required")
 	}
-	opts := []client.Opt{client.FromEnv}
+	opts := &clientOptions{}
 	for _, option := range options {
-		opts = option(opts)
+		option(opts)
 	}
-	cli, err := client.NewClientWithOpts(opts...)
+	dockerClientOpts := []client.Opt{client.FromEnv}
+	if len(opts.host) > 0 {
+		dockerClientOpts = append(dockerClientOpts, client.WithHost(opts.host))
+	}
+	if len(opts.version) > 0 {
+		dockerClientOpts = append(dockerClientOpts, client.WithVersion(opts.version))
+	}
+	cli, err := client.NewClientWithOpts(dockerClientOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -224,17 +231,26 @@ func NewClient(logger *zap.Logger, options ...ClientOption) (Client, error) {
 	}, nil
 }
 
-type ClientOption func(options []client.Opt) []client.Opt
+type clientOptions struct {
+	host    string
+	version string
+}
 
+type ClientOption func(options *clientOptions)
+
+// WithHost allows specifying a Docker engine host to connect to (instead of the default lookup using DOCKER_HOST env var).
+// This makes it suitable for use by parallel tests.
 func WithHost(host string) ClientOption {
-	return func(options []client.Opt) []client.Opt {
-		return append(options, client.WithHost(host))
+	return func(options *clientOptions) {
+		options.host = host
 	}
 }
 
+// WithVersion allows specifying a Docker API client version instead of using the default version negotiation algorithm.
+// This allows tests to implement the Docker engine API using stable URLs.
 func WithVersion(version string) ClientOption {
-	return func(options []client.Opt) []client.Opt {
-		return append(options, client.WithVersion(version))
+	return func(options *clientOptions) {
+		options.version = version
 	}
 }
 
