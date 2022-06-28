@@ -45,18 +45,6 @@ func normalizeHeaderKey(key string) string {
 }
 
 // Returns nil if there is no modification.
-func withHeader(contextValue interface{}, key string, value string) map[string]string {
-	if value != "" {
-		if normalizedKey := normalizeHeaderKey(key); normalizedKey != "" {
-			m := newHeaderMap(contextValue, 1)
-			m[normalizedKey] = value
-			return m
-		}
-	}
-	return nil
-}
-
-// Returns nil if there is no modification.
 func withHeaders(contextValue interface{}, headers map[string]string) map[string]string {
 	var m map[string]string
 	for key, value := range headers {
