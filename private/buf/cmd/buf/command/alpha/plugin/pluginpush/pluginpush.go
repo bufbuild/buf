@@ -87,6 +87,7 @@ func run(
 	container appflag.Container,
 	flags *flags,
 ) (retErr error) {
+	bufcli.WarnAlphaCommand(ctx, container)
 	if err := bufcli.ValidateErrorFormatFlag(flags.ErrorFormat, errorFormatFlagName); err != nil {
 		return err
 	}
