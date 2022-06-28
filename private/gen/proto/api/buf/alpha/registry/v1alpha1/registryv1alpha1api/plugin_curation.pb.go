@@ -21,24 +21,27 @@ import (
 	v1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 )
 
-// WebhookService exposes the functionality for a caller to
-// create/delete/list Webhooks for a given repository event.
-type WebhookService interface {
-	// Create a webhook, subscribes to a given repository event for a callback URL invocation.
-	CreateWebhook(
+// PluginCurationService manages curated plugins.
+type PluginCurationService interface {
+	// ListCuratedPlugins returns all the curated plugins available.
+	ListCuratedPlugins(
 		ctx context.Context,
-		webhookEvent v1alpha1.WebhookEvent,
-		ownerName string,
-		repositoryName string,
-		callbackUrl string,
-	) (webhook *v1alpha1.Webhook, err error)
-	// Delete a webhook removes the event subscription.
-	DeleteWebhook(ctx context.Context, webhookId string) (err error)
-	// Lists the webhooks subscriptions for a given repository.
-	ListWebhooks(
-		ctx context.Context,
-		repositoryName string,
-		ownerName string,
+		pageSize uint32,
 		pageToken string,
-	) (webhooks []*v1alpha1.Webhook, nextPageToken string, err error)
+		reverse bool,
+	) (plugins []*v1alpha1.CuratedPlugin, nextPageToken string, err error)
+	// CreateCuratedPlugin creates a new curated plugin.
+	CreateCuratedPlugin(
+		ctx context.Context,
+		owner string,
+		name string,
+		language v1alpha1.PluginLanguage,
+		version string,
+		containerImageDigest string,
+		options []string,
+		dependencies []string,
+		sourceUrl string,
+		description string,
+		runtimeConfig *v1alpha1.RuntimeConfig,
+	) (configuration *v1alpha1.CuratedPlugin, err error)
 }

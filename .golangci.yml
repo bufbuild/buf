@@ -127,3 +127,8 @@ issues:
         - forbidigo
       path: private/pkg/transport/http/httpserver/runner.go
       text: "use of `errgroup"
+      # we want to use errgroup here
+    - linters:
+        - forbidigo
+      path: private/bufpkg/bufplugin/bufplugindocker/docker.go
+      text: "use of `errgroup"
