@@ -83,12 +83,6 @@ func TestBuildFailure(t *testing.T) {
 
 func TestPushSuccess(t *testing.T) {
 	t.Parallel()
-	if !dockerEnabled {
-		t.Skip("docker disabled")
-	}
-	if testing.Short() {
-		t.Skip("docker tests disabled in short mode")
-	}
 	dockerVersion := "1.41"
 	server := newDockerServer(t, dockerVersion)
 	listenerAddr := server.httpServer.Listener.Addr().String()
@@ -107,12 +101,6 @@ func TestPushSuccess(t *testing.T) {
 
 func TestPushError(t *testing.T) {
 	t.Parallel()
-	if !dockerEnabled {
-		t.Skip("docker disabled")
-	}
-	if testing.Short() {
-		t.Skip("docker tests disabled in short mode")
-	}
 	dockerVersion := "1.41"
 	server := newDockerServer(t, dockerVersion)
 	// Send back an error on ImagePush (still return 200 OK).
@@ -133,12 +121,6 @@ func TestPushError(t *testing.T) {
 
 func TestBuildError(t *testing.T) {
 	t.Parallel()
-	if !dockerEnabled {
-		t.Skip("docker disabled")
-	}
-	if testing.Short() {
-		t.Skip("docker tests disabled in short mode")
-	}
 	dockerVersion := "1.41"
 	server := newDockerServer(t, dockerVersion)
 	// Send back an error on ImageBuild (still return 200 OK).
