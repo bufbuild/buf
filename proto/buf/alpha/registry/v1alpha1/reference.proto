@@ -24,21 +24,31 @@ import "buf/alpha/registry/v1alpha1/repository_track.proto";
 message Reference {
   oneof reference {
     // The requested reference is a branch.
-    RepositoryBranch branch = 1;
+    RepositoryBranch branch = 1 [deprecated = true];
     // The requested reference is a tag.
     RepositoryTag tag = 2;
     // The requested reference is a commit.
     RepositoryCommit commit = 3;
     // The requested reference is a track.
-    RepositoryTrack track = 4;
+    RepositoryTrack track = 4 [deprecated = true];
+    // The requested reference is the default reference.
+    RepositoryMainReference main = 5;
   }
+}
+
+message RepositoryMainReference {
+  // Name is always 'main'.
+  string name = 1;
+  // The latest commit in this repository. If the repository has no commits,
+  // this will be empty.
+  RepositoryCommit commit = 2;
 }
 
 // ReferenceService is a service that provides RPCs that allow the BSR to query
 // for reference information.
 service ReferenceService {
   // GetReferenceByName takes a reference name and returns the
-  // reference either as a tag, branch, track or commit.
+  // reference either as 'main', a tag, branch, track or commit.
   rpc GetReferenceByName(GetReferenceByNameRequest) returns (GetReferenceByNameResponse);
 }
 
