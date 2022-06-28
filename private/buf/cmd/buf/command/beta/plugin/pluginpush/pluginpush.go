@@ -27,6 +27,7 @@ import (
 	registryv1alpha1 "github.com/bufbuild/buf/private/gen/proto/go/buf/alpha/registry/v1alpha1"
 	"github.com/bufbuild/buf/private/pkg/app/appcmd"
 	"github.com/bufbuild/buf/private/pkg/app/appflag"
+	"github.com/bufbuild/buf/private/pkg/netrc"
 	"github.com/bufbuild/buf/private/pkg/stringutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -144,8 +145,17 @@ func run(
 		}
 	}()
 
-	// TODO: Implement authentication to BSR registry using ~/.netrc
-	_, err = client.Push(ctx, buildResponse.Image, &bufplugindocker.RegistryAuthConfig{})
+	machine, err := netrc.GetMachineForName(container, pluginConfig.Name.Remote())
+	if err != nil {
+		return err
+	}
+	authConfig := &bufplugindocker.RegistryAuthConfig{}
+	if machine != nil {
+		authConfig.ServerAddress = machine.Name()
+		authConfig.Username = machine.Login()
+		authConfig.Password = machine.Password()
+	}
+	_, err = client.Push(ctx, buildResponse.Image, authConfig)
 	if err != nil {
 		return err
 	}

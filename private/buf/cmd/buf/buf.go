@@ -26,6 +26,7 @@ import (
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/alpha/registry/token/tokenlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/convert"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/migratev1beta1"
+	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/plugin/pluginpush"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitget"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/commit/commitlist"
 	"github.com/bufbuild/buf/private/buf/cmd/buf/command/beta/registry/organization/organizationcreate"
@@ -236,6 +237,13 @@ func NewRootCommand(name string) *appcmd.Command {
 									tokendelete.NewCommand("delete", builder),
 								},
 							},
+						},
+					},
+					{
+						Use:   "plugin",
+						Short: "Manage plugins on the Buf Schema Registry.",
+						SubCommands: []*appcmd.Command{
+							pluginpush.NewCommand("push", builder),
 						},
 					},
 				},
